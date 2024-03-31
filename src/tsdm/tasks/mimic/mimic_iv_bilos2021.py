@@ -45,9 +45,10 @@ References:
 
 __all__ = [
     "Batch",
+    "Inputs",
+    "Sample",
     "MIMIC_IV_Bilos2021",
     "MIMIC_IV_SampleGenerator",
-    "Sample",
     "mimic_collate",
 ]
 

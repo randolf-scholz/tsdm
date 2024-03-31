@@ -1,38 +1,16 @@
 """Custom processed version of the MIMIC-III dataset."""
 
-__all__ = ["MIMIC_III_Scholz2024"]
+__all__ = [
+    # Classes
+    "MIMIC_III_Scholz2024",
+]
 
 import numpy as np
 import pandas as pd
-import pyarrow as pa
 
 import tsdm
 from tsdm.datasets.mimic.mimic_iii import MIMIC_III
-
-ARROW_DURATION_TYPES = {
-    pd.ArrowDtype(pa.duration(unit)) for unit in ["s", "ms", "us", "ns"]
-}
-
-ARROW_TIMESTAMP_TYPES = {
-    pd.ArrowDtype(pa.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
-}
-
-ARROW_DATE_TYPES = {pd.ArrowDtype(pa.date32()), pd.ArrowDtype(pa.date64())}
-
-
-def map_dtypes(df):
-    """Converts pyarrow date/timestamp/duration types to numpy equivalents.
-
-    Rationale: pyarrow types are currently bugged and do not support all operations.
-    """
-    for col, dtype in df.dtypes.items():
-        if dtype in ARROW_DURATION_TYPES:
-            df[col] = df[col].astype("timedelta64[ms]")
-        elif dtype in ARROW_TIMESTAMP_TYPES:
-            df[col] = df[col].astype("datetime64[ms]")
-        elif dtype in ARROW_DATE_TYPES:
-            df[col] = df[col].astype("datetime64[s]")
-    return df
+from tsdm.types.dtypes import map_pandas_arrowtime_numpy
 
 
 class MIMIC_III_Scholz2024(MIMIC_III):
@@ -49,7 +27,7 @@ class MIMIC_III_Scholz2024(MIMIC_III):
         # map dtypes in all tables.
         # NOTE: necessary since duration times are bugged in pyarrow 14.
         for name, table in ds.tables.items():
-            ds.tables[name] = map_dtypes(table)
+            ds.tables[name] = map_pandas_arrowtime_numpy(table)
 
         # Preprocessing
         admissions = ds.ADMISSIONS

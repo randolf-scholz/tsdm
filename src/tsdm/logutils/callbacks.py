@@ -17,6 +17,7 @@ __all__ = [
     "OptimizerCallback",
     "ScalarsCallback",
     "TableCallback",
+    "WrapCallback",
     # Functions
     "is_callback",
 ]

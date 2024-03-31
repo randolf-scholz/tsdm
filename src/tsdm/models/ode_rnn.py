@@ -5,56 +5,14 @@ __all__ = [
     "ODE_RNN",
 ]
 
-
-import sys
-from collections.abc import Iterator
-from contextlib import contextmanager
-from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-from types import ModuleType
 
 import torch
 from torch import Tensor, nn
-from typing_extensions import Optional
 
 from tsdm.models._models import BaseModel
 from tsdm.utils import deep_dict_update
-
-
-@contextmanager
-def add_to_path(p: Path) -> Iterator:
-    r"""Appends a path to environment variable PATH.
-
-    References:
-        - https://stackoverflow.com/a/41904558/9318372
-    """
-    old_path = sys.path
-    sys.path = sys.path[:]
-    sys.path.insert(0, str(p))
-    try:
-        yield
-    finally:
-        sys.path = old_path
-
-
-def path_import(
-    module_path: Path, /, *, module_name: Optional[str] = None
-) -> ModuleType:
-    r"""Return python module imported from the path.
-
-    References:
-        - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
-        - https://stackoverflow.com/a/41904558/9318372
-    """
-    module_name = module_name or module_path.parts[-1]
-    module_init = module_path.joinpath("__init__.py")
-    assert module_init.exists(), f"Module {module_path} has no __init__ file !!!"
-
-    with add_to_path(module_path):
-        spec = spec_from_file_location(module_name, str(module_init))
-        the_module = module_from_spec(spec)  # type: ignore[arg-type]
-        spec.loader.exec_module(the_module)  # type: ignore[union-attr]
-        return the_module
+from tsdm.utils.system import import_module
 
 
 class ODE_RNN(BaseModel, nn.Module):
@@ -165,7 +123,7 @@ class ODE_RNN(BaseModel, nn.Module):
         r"""Initialize the internal ODE-RNN model."""
         super().__init__()
         # TODO: Use tsdm.home_path or something
-        module = path_import(Path.home() / ".tsdm/models/ODE-RNN")
+        module = import_module(Path.home() / ".tsdm/models/ODE-RNN")
         create_net = module.lib.utils.create_net
         ODEFunc = module.lib.ode_func.ODEFunc
         DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver

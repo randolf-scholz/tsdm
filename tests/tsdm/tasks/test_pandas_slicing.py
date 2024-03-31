@@ -1,10 +1,9 @@
 """Check pandas MultiIndex Slicing."""
 
-import numpy as np
 import pandas as pd
 import pytest
 
-RNG = np.random.default_rng()
+from tsdm.constants import RNG
 
 
 def test_multiindex_slicing_0level() -> None:

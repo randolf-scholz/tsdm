@@ -31,6 +31,7 @@ __all__ = [
     # ABCs & Protocols
     "PreTrained",
     "PreTrainedBase",
+    "PreTrainedMetaClass",
 ]
 
 import inspect

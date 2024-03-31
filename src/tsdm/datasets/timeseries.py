@@ -6,10 +6,12 @@ __all__ = [
     "ETTh2",
     "ETTm1",
     "ETTm2",
+    "Electricity",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV_Bilos2021",
     "PhysioNet2012",
     "PhysioNet2019",
+    "Traffic",
     "USHCN",
     "USHCN_DeBrouwer2019",
 ]

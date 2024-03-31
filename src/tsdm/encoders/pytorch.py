@@ -5,8 +5,9 @@ __all__ = [
     "Time2Vec",
     "PositionalEncoding",
     # Encoders
-    "Time2VecEncoder",
     "PositionalEncoder",
+    "TensorEncoder",
+    "Time2VecEncoder",
 ]
 
 import torch

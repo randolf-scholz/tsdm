@@ -28,10 +28,29 @@ Some parts of the data are rather dirty, for example.::
       null
     ]
 
-already shows 12 different ways of saying "barcode not scanning".
+This already shows 12 different ways of saying "barcode not scanning".
 """
 
-__all__ = ["KEYS", "SCHEMAS", "TRUE_VALUES", "FALSE_VALUES", "NULL_VALUES"]
+__all__ = [
+    # Constants
+    "KEYS",
+    "SCHEMAS",
+    "TRUE_VALUES",
+    "FALSE_VALUES",
+    "NULL_VALUES",
+    "UNSTACKED_SCHEMAS",
+    # Types
+    "ID_TYPE",
+    "VALUE_TYPE",
+    "TIME_TYPE",
+    "DATE_TYPE",
+    "BOOL_TYPE",
+    "STRING_TYPE",
+    "DICT_TYPE",
+    "NULL_TYPE",
+    "TEXT_TYPE",
+    "INT8_TYPE",
+]
 
 import pyarrow as pa
 from typing_extensions import Literal, TypeAlias
@@ -76,9 +95,11 @@ NULL_VALUES = [
     "_",
     "__",
     "___",
+    # "none",
+    # "None",
+    # "NONE",
 ]
 
-extra_null_values = ["none", "None", "NONE"]
 
 KEYS: TypeAlias = Literal[
     # "CHANGELOG",

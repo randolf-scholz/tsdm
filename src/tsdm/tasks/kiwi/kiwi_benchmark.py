@@ -2,6 +2,7 @@ r"""Implementation of the kiwi task."""
 
 __all__ = [
     # Classes
+    "Batch",
     "KiwiBenchmark",
 ]
 

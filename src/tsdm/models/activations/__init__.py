@@ -1,14 +1,14 @@
 r"""Implementations of activation functions.
 
-Contains activations in both functional and modular form.
-
-See Also:
-    - `tsdm.models.activations.functional` for functional implementations.
-    - `tsdm.models.activations.modular` for modular implementations.
+Notes:
+    Contains activations in both functional and modular form.
+    - See `tsdm.models.activations.functional` for functional implementations.
+    - See `tsdm.models.activations.modular` for modular implementations.
 """
 
 __all__ = [
     # Sub-Modules
+    "base",
     "functional",
     "modular",
     # Constants
@@ -18,154 +18,60 @@ __all__ = [
     "TORCH_ACTIVATIONS",
     "TORCH_FUNCTIONAL_ACTIVATIONS",
     "TORCH_MODULAR_ACTIVATIONS",
-    "TORCH_SPECIAL_FUNCTIONAL_ACTIVATIONS",
     # ABCs & Protocols
     "Activation",
+    "ActivationABC",
+    # Classes
+    "HardBend",
+    # Functions
+    "geglu",
+    "hard_bend",
+    "reglu",
+    # utils
+    "get_activation",
 ]
 
-from torch import nn
+from tsdm.models.activations import base, functional, modular
+from tsdm.models.activations._torch_imports import (
+    TORCH_ACTIVATIONS,
+    TORCH_FUNCTIONAL_ACTIVATIONS,
+    TORCH_MODULAR_ACTIVATIONS,
+)
+from tsdm.models.activations.base import Activation, ActivationABC
+from tsdm.models.activations.functional import geglu, hard_bend, reglu
+from tsdm.models.activations.modular import HardBend
 
-from tsdm.models.activations import functional, modular
-from tsdm.models.activations.functional import Activation
-
-TORCH_FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
-    "relu": nn.functional.relu,
-    # Applies the rectified linear unit function element-wise.
-    "relu_": nn.functional.relu_,
-    # In-place version of relu().
-    "hardtanh": nn.functional.hardtanh,
-    # Applies the HardTanh function element-wise.
-    "hardtanh_": nn.functional.hardtanh_,
-    # In-place version of hardtanh().
-    "hardswish": nn.functional.hardswish,
-    # Applies the hardswish function, element-wise, as described in the paper:
-    "relu6": nn.functional.relu6,
-    # Applies the element-wise function `ReLU6(x)=\min(\max(0,x),6)`.
-    "elu": nn.functional.elu,
-    # Applies element-wise, `ELU(x)=\max(0,x)+\min(0,α⋅(\exp(x)−1))`.
-    "elu_": nn.functional.elu_,
-    # In-place version of elu().
-    "selu": nn.functional.selu,
-    # Applies element-wise, `SELU(x)=β⋅(\max(0,x)+\min(0,α⋅(e^x−1)))` with `α≈1.677` and `β≈1.05`.
-    "celu": nn.functional.celu,
-    # Applies element-wise, `CELU(x)= \max(0,x)+\min(0,α⋅(\exp(x/α)−1)`.
-    "leaky_relu": nn.functional.leaky_relu,
-    # Applies element-wise, `LeakyReLU(x)=\max(0,x)+negative_slope⋅\min(0,x)`.
-    "leaky_relu_": nn.functional.leaky_relu_,
-    # In-place version of leaky_relu().
-    "rrelu": nn.functional.rrelu,
-    # Randomized leaky ReLU.
-    "rrelu_": nn.functional.rrelu_,
-    # In-place version of rrelu().
-    "glu": nn.functional.glu,
-    # The gated linear unit.
-    "gelu": nn.functional.gelu,
-    # Applies element-wise the function `GELU(x)=x⋅Φ(x)`.
-    "logsigmoid": nn.functional.logsigmoid,
-    # Applies element-wise `LogSigmoid(x_i)=\log(1/(1+\exp(−x_i)))`.
-    "hardshrink": nn.functional.hardshrink,
-    # Applies the hard shrinkage function element-wise.
-    "tanhshrink": nn.functional.tanhshrink,
-    # Applies element-wise, `Tanhshrink(x)=x−\tanh(x)`.
-    "softsign": nn.functional.softsign,
-    # Applies element-wise, the function `SoftSign(x)=x/(1+∣x∣)`.
-    "softplus": nn.functional.softplus,
-    # Applies element-wise, the function `Softplus(x)=1/β⋅\log(1+\exp(β⋅x))`.
-    "softmin": nn.functional.softmin,
-    # Applies a softmin function.
-    "softmax": nn.functional.softmax,
-    # Applies a softmax function.
-    "softshrink": nn.functional.softshrink,
-    # Applies the soft shrinkage function elementwise
-    "gumbel_softmax": nn.functional.gumbel_softmax,
-    # Samples from the Gumbel-Softmax distribution and optionally discretizes.
-    "log_softmax": nn.functional.log_softmax,
-    # Applies a softmax followed by a logarithm.
-    "tanh": nn.functional.tanh,
-    # Applies element-wise, `\tanh(x)=(\exp(x)−\exp(−x))/(\exp(x)+\exp(−x))`.
-    "sigmoid": nn.functional.sigmoid,
-    # Applies the element-wise function `Sigmoid(x)=1/(1+\exp(−x))`.
-    "hardsigmoid": nn.functional.hardsigmoid,
-    # Applies the hardsigmoid function element-wise.
-    "silu": nn.functional.silu,
-    # Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
-    "mish": nn.functional.mish,
-    # Applies the Mish function, element-wise.
-    "instance_norm": nn.functional.instance_norm,
-    # Applies Instance Normalization for each channel in each data sample in a batch.
-    "normalize": nn.functional.normalize,
-    # Performs Lp normalization of inputs over specified dimension.
+FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
+    **TORCH_FUNCTIONAL_ACTIVATIONS,
+    "reglu": reglu,
+    "geglu": geglu,
+    "hard_bend": hard_bend,
 }
-r"""Dictionary containing all available functional activations in torch."""
-
-TORCH_SPECIAL_FUNCTIONAL_ACTIVATIONS = {
-    "threshold": nn.functional.threshold,
-    # Thresholds each element of the input Tensor.
-    "threshold_": nn.functional.threshold_,  # type: ignore[attr-defined]
-    # In-place version of threshold().
-    "prelu": nn.functional.prelu,
-    # `PReLU(x)=\max(0,x)+ω⋅\min(0,x)` where ω is a learnable parameter.
-    "batch_norm": nn.functional.batch_norm,
-    # Applies Batch Normalization for each channel across a batch of data.
-    "group_norm": nn.functional.group_norm,
-    # Applies Group Normalization for last certain number of dimensions.
-    "layer_norm": nn.functional.layer_norm,
-    # Applies Layer Normalization for last certain number of dimensions.
-    "local_response_norm": nn.functional.local_response_norm,
-    # Applies local response normalization over an input signal composed of several input planes.
-}
-"""Activations that do not adhere to standard signature"""
-
-FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = TORCH_FUNCTIONAL_ACTIVATIONS
 r"""Dictionary containing all available functional activations."""
 
-TORCH_MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
-    "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
-    "ELU": nn.ELU,
-    "Hardshrink": nn.Hardshrink,
-    "Hardsigmoid": nn.Hardsigmoid,
-    "Hardtanh": nn.Hardtanh,
-    "Hardswish": nn.Hardswish,
-    "Identity": nn.Identity,
-    "LeakyReLU": nn.LeakyReLU,
-    "LogSigmoid": nn.LogSigmoid,
-    "LogSoftmax": nn.LogSoftmax,
-    "MultiheadAttention": nn.MultiheadAttention,
-    "PReLU": nn.PReLU,
-    "ReLU": nn.ReLU,
-    "ReLU6": nn.ReLU6,
-    "RReLU": nn.RReLU,
-    "SELU": nn.SELU,
-    "CELU": nn.CELU,
-    "GELU": nn.GELU,
-    "Sigmoid": nn.Sigmoid,
-    "SiLU": nn.SiLU,
-    "Softmax": nn.Softmax,
-    "Softmax2d": nn.Softmax2d,
-    "Softplus": nn.Softplus,
-    "Softshrink": nn.Softshrink,
-    "Softsign": nn.Softsign,
-    "Tanh": nn.Tanh,
-    "Tanhshrink": nn.Tanhshrink,
-    "Threshold": nn.Threshold,
-}
-r"""Dictionary containing all available activations in torch."""
-
-MODULAR_ACTIVATIONS: dict[str, type[Activation]] = TORCH_MODULAR_ACTIVATIONS
-r"""Dictionary containing all available activations."""
-
-TORCH_ACTIVATIONS: dict[str, Activation | type[Activation]] = {
-    **TORCH_FUNCTIONAL_ACTIVATIONS,
+MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
     **TORCH_MODULAR_ACTIVATIONS,
+    "HardBend": HardBend,
 }
 r"""Dictionary containing all available activations."""
-
 
 ACTIVATIONS: dict[str, Activation | type[Activation]] = {
-    **TORCH_ACTIVATIONS,
+    **TORCH_MODULAR_ACTIVATIONS,
     **MODULAR_ACTIVATIONS,
+    **TORCH_FUNCTIONAL_ACTIVATIONS,
     **FUNCTIONAL_ACTIVATIONS,
 }
 r"""Dictionary containing all available activations."""
 
-del nn
+
+def get_activation(activation: object, /) -> Activation:
+    r"""Get an activation function by name."""
+    match activation:
+        case type() as cls:
+            return cls()
+        case str(name):
+            return get_activation(ACTIVATIONS[name])
+        case func if callable(func):
+            return func
+        case _:
+            raise TypeError(f"Invalid activation: {activation!r}")

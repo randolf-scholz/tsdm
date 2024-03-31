@@ -7,6 +7,8 @@ __all__ = [
     "arrow_false_like",
     "arrow_true_like",
     "arrow_null_like",
+    "arrow_full_like",
+    "arrow_where",
     "force_cast",
     "cast_columns",
     "cast_column",

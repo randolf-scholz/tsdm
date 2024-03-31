@@ -29,7 +29,7 @@ def test_jit_optimization() -> None:
     model_with_tanh = Foo(use_relu=False)
     scripted_with_tanh = jit.script(model_with_tanh)
     tanh_code: str = scripted_with_tanh.code  # pyright: ignore[reportAttributeAccessIssue,reportAssignmentType]
-    print(f"\n{'-'*80}\n{'model without relu'}\n{tanh_code}\n{'-'*80}")
+    print(f"\n{'-' * 80}\n{'model without relu'}\n{tanh_code}\n{'-' * 80}")
     assert "relu" not in tanh_code
     assert "tanh" in tanh_code
 
@@ -37,7 +37,7 @@ def test_jit_optimization() -> None:
     model_with_relu = Foo(use_relu=True)
     scripted_with_relu = jit.script(model_with_relu)
     relu_code: str = scripted_with_relu.code  # pyright: ignore[reportAttributeAccessIssue,reportAssignmentType]
-    print(f"\n{'-'*80}\n{'model with relu'}\n{relu_code}\n{'-'*80}")
+    print(f"\n{'-' * 80}\n{'model with relu'}\n{relu_code}\n{'-' * 80}")
     assert "relu" in relu_code
     assert "tanh" not in relu_code
 

@@ -4,9 +4,6 @@ default_language_version:
   python: python3.11
   node: "20.10.0"
 repos:
-  #  - repo: meta
-  #    hooks:
-  #      - id: identity
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -56,6 +53,13 @@ repos:
         description: "Enforce that RST directives have colons."
       - id: rst-inline-touching-normal
         description: "Detect mistake of inline code touching normal text in rst"
+  - repo: local
+    hooks:
+      - id: axes-axis
+        name: rename 'axes=' => 'axis='
+        types: [ python ]
+        language: pygrep
+        entry: "\baxes="
   # prettier
   #  - repo: https://github.com/pre-commit/mirrors-prettier
   #    rev: v4.0.0-alpha.8
@@ -69,7 +73,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
+    rev: v0.3.2
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -86,8 +90,10 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.54
+    rev: v0.1.61
     hooks:
+      - id: check-separator-length
+        files: (^src/|^tests/)
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
@@ -96,9 +102,9 @@ repos:
         files: (^src/|^tests/)
       - id: python-no-builtin-eval
         files: (^src/|^tests/)
-      - id: python-use-imported-attributes
+      - id: python-direct-imports
         files: (^src/|^tests/)
-      - id: python-check-no-mixed-args
+      - id: python-no-mixed-args
         files: ^src/
         args:
           - "--ignore-names"
@@ -110,11 +116,10 @@ repos:
           - "--ignore-dunder"
           # - "--allow-one"
           - "--ignore-without-positional-only"
-      - id: python-check-standard-generics
+      - id: python-standard-generics
         files: (^src/|^tests/)
-      - id: check-separator-length
-        files: (^src/|^tests/)
-      - id: python-check-dunder-all-exists
+
+      - id: python-check-dunder-all
         files: ^src/
       - id: python-check-typing
         files: (^src/|^tests/)
@@ -142,36 +147,29 @@ repos:
     rev: v0.9.0.6
     hooks:
     - id: shellcheck
-      args:
-        - "-x"
-        - "--shell=bash"
-        - "--color=always"
-        - "--format=gcc"
+      args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
+  # mypy
   - repo: local
     hooks:
-      - id: axes-axis
-        name: rename 'axes=' => 'axis='
-        types: [python]
-        language: pygrep
-        entry: "\baxes="
-      - id: mypy
-        name: mypy
-        language: system
-        pass_filenames: false
-        types_or: [python, pyi]
-        files: (^src/|^tests/)
-        entry: mypy
-        args:
-          [
-            "--hide-error-context",
-            "--hide-error-end",
-            "--no-pretty",
-            # "--no-error-summary",
-            "--",
-          ]
+    - id: mypy
+      name: mypy
+      language: system
+      require_serial: true
+      types_or: [python, pyi]
+      files: (^src/|^tests/)
+      entry: mypy
+      args:
+        [
+          "--scripts-are-modules",
+          "--hide-error-context",
+          "--hide-error-end",
+          "--no-pretty",
+          # "--no-error-summary",
+          "--",
+        ]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.352
+    rev: v1.1.354
     hooks:
       - id: pyright
         files: (^src/|^tests/)

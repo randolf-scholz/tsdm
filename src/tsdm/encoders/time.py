@@ -2,8 +2,10 @@ r"""Encoders for timedelta and datetime types."""
 
 __all__ = [
     # Classes
+    "DateTimeEncoder",
     "OldDateTimeEncoder",
     "PeriodicEncoder",
+    "PeriodicSocialTimeEncoder",
     "PositionalEncoder",
     "SocialTimeEncoder",
     "Time2Float",
@@ -114,6 +116,8 @@ class Time2Float(BaseEncoder):
 
 @dataclass(init=False)
 class DateTimeEncoder(BaseEncoder[NumericalArray, NumericalArray]):
+    """Encode DateTime as Float."""
+
     unit: TimeDelta
     r"""The base frequency to convert timedeltas to."""
     base_freq: TimeDelta

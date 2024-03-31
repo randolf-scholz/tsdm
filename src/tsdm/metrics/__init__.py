@@ -86,6 +86,8 @@ __all__ = [
     "q_quantile",
     "q_quantile_loss",
     "rmse",
+    # utils
+    "get_metric",
 ]
 
 
@@ -143,3 +145,16 @@ LOSSES: dict[str, Metric | type[Metric]] = {
     **MODULAR_LOSSES,
 }  # fmt: skip
 r"""Dictionary of all available losses."""
+
+
+def get_metric(metric: object, /) -> Metric:
+    r"""Get the metric from the given object."""
+    match metric:
+        case type() as cls:
+            return get_metric(cls())
+        case str() as name:
+            return get_metric(LOSSES[name])
+        case Metric() as m:
+            return m
+        case _:
+            raise TypeError(f"Invalid metric: {metric!r}")

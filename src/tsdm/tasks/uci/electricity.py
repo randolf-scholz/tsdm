@@ -6,6 +6,8 @@ __all__ = [
     "ElectricityDeepAR",
     "ElectricityTRMF",
     "ElectricityELBMBTTF",
+    "ElectricityNBEATS",
+    "ElectricityNHITS",
 ]
 
 

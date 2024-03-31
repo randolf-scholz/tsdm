@@ -28,6 +28,8 @@ Goals
 """
 
 __all__ = [
+    # Protocols & ABCs
+    "NumericalEncoder",
     # Functions
     "get_broadcast",
     "get_reduced_axes",
@@ -41,6 +43,8 @@ __all__ = [
     "StandardScaler",
     "TensorConcatenator",
     "TensorSplitter",
+    # Functions
+    "slice_size",
 ]
 
 from abc import abstractmethod

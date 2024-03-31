@@ -1,12 +1,10 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+"""ReZero module."""
 
 __all__ = [
     "ReZero",
     "ReZeroMLP",
     "ResNetBlock",
+    "ConcatEmbedding",
 ]
 
 from collections import OrderedDict

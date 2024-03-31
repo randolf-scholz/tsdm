@@ -1,6 +1,8 @@
 r"""Hash function utils."""
 
 __all__ = [
+    # Constants
+    "DEFAULT_HASH_METHOD",
     # Functions
     "hash_array",
     "hash_file",
@@ -9,6 +11,7 @@ __all__ = [
     "hash_numpy",
     "hash_object",
     "hash_pandas",
+    "hash_pyarrow",
     "hash_set",
     "to_alphanumeric",
     "to_base",

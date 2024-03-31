@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import torch
 
+from tsdm.constants import RNG
 from tsdm.encoders import PositionalEncoder
 from tsdm.encoders.pytorch import (
     PositionalEncoding as PositionalEncoder_Torch,
@@ -12,7 +13,6 @@ from tsdm.encoders.pytorch import (
 )
 
 __logger__ = logging.getLogger(__name__)
-RNG = np.random.default_rng()
 
 
 def test_PositionalEncoder() -> None:

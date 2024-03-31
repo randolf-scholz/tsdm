@@ -4,6 +4,7 @@ __all__ = [
     # Functions
     "approx_float_gcd",
     "float_gcd",
+    "irregularity_coefficient",
     "is_quasiregular",
     "is_regular",
     "regularity_coefficient",
@@ -161,7 +162,7 @@ def time_gcd(s: Series) -> float:
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
 
 
-def distributiveness(s: Series) -> float:
+def irregularity_coefficient(s: Series) -> float:
     r"""Compute the distributiveness of a time series.
 
     For a given irregular timeseries, we define this as the minimum:

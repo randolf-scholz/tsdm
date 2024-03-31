@@ -21,11 +21,11 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 from typing_extensions import ClassVar, Literal, TypeAlias
 
+from tsdm.constants import ROOT_3
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.pprint import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
-ROOT_3 = np.sqrt(3)
 METHOD: TypeAlias = Literal[
     None, "minimum", "quartile", "match-normal", "match-uniform"
 ]
