@@ -84,6 +84,7 @@ repos:
     hooks:
       - id: nbstripout-fast
         files: ^dev/
+  # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.1.63
     hooks:
@@ -115,7 +116,6 @@ repos:
           - "--ignore-without-positional-only"
       - id: python-standard-generics
         files: (^src/|^tests/)
-
       - id: python-check-dunder-all
         files: ^src/
       - id: python-check-typing
