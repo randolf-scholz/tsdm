@@ -389,7 +389,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
             If multiple horizons are given, these rules apply to the last horizon.
 
     The window is considered to be closed on the left and open on the right. Moreover,
-    the sampler can return multiple subsequent horizons, if `horizons` is a sequence of
+    the sampler can return multiple subsequent horizons if `horizons` is a sequence of
     `TimeDelta` objects. In this case, lists of the above objects are returned.
     """
 

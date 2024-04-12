@@ -162,7 +162,7 @@ def mimic_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
-        # get whole time interval
+        # get the whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 

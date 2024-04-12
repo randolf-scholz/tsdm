@@ -81,6 +81,8 @@
     <option name="requirementsPath" value="requirements.txt, requirements-dev.txt, requirements-extra.txt" />
   </component>
   <component name="PyDocumentationSettings">
+    <option name="format" value="GOOGLE" />
+    <option name="myDocStringFormat" value="Google" />
     <option name="renderExternalDocumentation" value="true" />
   </component>
   <component name="ReSTService">

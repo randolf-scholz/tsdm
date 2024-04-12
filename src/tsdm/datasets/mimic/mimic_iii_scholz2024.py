@@ -52,7 +52,7 @@ class MIMIC_III_Scholz2024(MIMIC_III):
         metadata = metadata.loc[
             (metadata.AGE >= 15 * YEAR) & (metadata.AGE <= 100 * YEAR)
         ]
-        # select patients with chartevents data.
+        # select patients with "chartevents" data.
         metadata = metadata.loc[metadata.HAS_CHARTEVENTS_DATA]
 
         # select relevant columns.

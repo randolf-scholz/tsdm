@@ -367,7 +367,7 @@ def lazy_torch_jit(func: Callable[P, R], /) -> Callable[P, R]:
 def recurse_on_builtin_container(
     func: Callable[[T], R], /, *, kind: type[T]
 ) -> Callable[[Nested[T]], Nested[R]]:
-    r"""Apply function to nested iterables of a given kind.
+    r"""Apply function to a nested iterables of a given kind.
 
     Args:
         kind: The type of the leave nodes

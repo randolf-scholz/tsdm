@@ -247,9 +247,8 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
         for k in range(self.num_folds):
             for key, split in self.folds[k].items():
                 mask = splits.index.isin(split)
-                splits[k] = splits[k].where(
-                    ~mask, key
-                )  # where cond is false is replaces with key
+                # Replace entries with `key` where cond is false.
+                splits[k] = splits[k].where(~mask, key)
         return splits
 
     @cached_property

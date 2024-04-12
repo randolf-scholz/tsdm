@@ -41,7 +41,7 @@ class ElectricityDeepState:
     Split:
 
     NBEATS claims a key at 2014-09-01 is used. But this seems wrong.
-    The date 2014-09-01 only ever occurs in Appendix A5, Figure 4&5 which show an example plot.
+    The date 2014-09-01 only ever occurs in Appendix A5, Figure 4&5 which shows an example plot.
     """
 
 

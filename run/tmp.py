@@ -50,9 +50,7 @@ else:
             " the `tomlkit` package for python versions < 3.11."
         ) from E
 
-PACKAGES: dict[str, list[str]] = (
-    metadata.packages_distributions()
-)  # type:ignore[assignment]
+PACKAGES: dict[str, list[str]] = metadata.packages_distributions()  # type:ignore[assignment]
 """A dictionary that maps module names to their pip-package names."""
 
 # NOTE: illogical type hint in stdlib, maybe open issue.
@@ -463,10 +461,12 @@ def main() -> None:
 
     # compute the dependencies from the source files
     modules_given = args.modules is not modules_default
-    imported_dependencies = set().union(*(
-        collect_dependencies(fname, raise_notfound=modules_given)
-        for fname in args.modules
-    ))
+    imported_dependencies = set().union(
+        *(
+            collect_dependencies(fname, raise_notfound=modules_given)
+            for fname in args.modules
+        )
+    )
     print(
         "imported_dependencies:",
         sorted(group_dependencies(imported_dependencies).imported_dependencies),
@@ -489,9 +489,12 @@ def main() -> None:
     )
     # compute the test dependencies from the test files
     tests_given = args.tests is not tests_default
-    imported_test_dependencies = set().union(*(
-        collect_dependencies(fname, raise_notfound=tests_given) for fname in args.tests
-    ))
+    imported_test_dependencies = set().union(
+        *(
+            collect_dependencies(fname, raise_notfound=tests_given)
+            for fname in args.tests
+        )
+    )
     # ignore direct dependencies
     imported_test_dependencies -= imported_dependencies
     # get dependencies from pyproject.toml

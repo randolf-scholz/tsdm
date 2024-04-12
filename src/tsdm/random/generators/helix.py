@@ -56,7 +56,7 @@ class Helix(IVP_GeneratorBase[NDArray]):
 
     def __post_init__(self) -> None:
         """Post-initialization hook."""
-        # extend to orthogonal basis
+        # extend to an orthogonal basis
         z = np.array(self.direction)
         x = np.array([-z[1], z[0], 0.0])
         y = np.cross(z, x)

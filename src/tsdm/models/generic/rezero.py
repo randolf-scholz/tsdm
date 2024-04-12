@@ -104,7 +104,7 @@ class ReZero(nn.Sequential):
     def __getitem__(
         self: nn.Sequential, item: int | slice
     ) -> nn.Module | nn.Sequential:
-        r"""Get a sub-model."""
+        r"""Get a submodel."""
         modules: list[nn.Module] = list(self._modules.values())
         if isinstance(item, slice):
             return ReZero(*modules[item], weights=self.weights[item])

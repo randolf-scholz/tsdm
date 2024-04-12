@@ -87,9 +87,9 @@ def make_sparse_triplets(df: DataFrame, /) -> DataFrame:
     Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
     (non-NaN entries), the result is an $N×(d+1)$ array $(t_i, v_i, x_i)_{i=1:N}$
 
-    - $t_i$ timestamp (index)
-    - $v_i$ one-hot encoded indicator variable
-    - $x_i$ observed value
+    - $t_i$ the timestamp (index)
+    - $v_i$ the one-hot encoded indicator variable
+    - $x_i$ the observed value
 
     ======  ====================
     column  data type
