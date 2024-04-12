@@ -32,7 +32,6 @@ MULTI: TypeAlias = Literal["multi"]
 DISCRETE_DATA = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # region expected results discrete data ------------------------------------------------
 EXPECTED_RESULTS_DISCRETE_BOUNDS = {
-    # fmt: off
     # horizons, stride=1, drop_last=True
     (2, 1, True): [
         (11, 13),
@@ -99,8 +98,7 @@ EXPECTED_RESULTS_DISCRETE_BOUNDS = {
     (2, 2, False): [(11, 13), (13, 15), (15, 17), (17, 19), (19, 21)],
     (3, 2, False): [(11, 14), (13, 16), (15, 18), (17, 20), (19, 22)],
     (4, 2, False): [(11, 15), (13, 17), (15, 19), (17, 21), (19, 23)],
-    # fmt: on
-}
+}  # fmt: skip
 
 EXPECTED_RESULTS_DISCRETE_SLICES = {
     # horizons, stride=1, drop_last=True
@@ -450,7 +448,6 @@ EXPECTED_RESULTS_DISCRETE_DATA: dict = flatten_dict(
 CONTINUOUS_DATA = [2.5, 3.3, 3.7, 4.0, 5.9, 6.4, 6.4, 6.6, 7.5, 8.9]
 # region expected results continuous data ----------------------------------------------
 EXPECTED_RESULTS_CONTINUOUS_BOUNDS = {
-    # fmt: off
     # horizons, stride=1.0, drop_last=True
     (2.5, 1.0, True): [(2.5, 5.0), (3.5, 6.0), (4.5, 7.0), (5.5, 8.0)],
     (3.5, 1.0, True): [(2.5, 6.0), (3.5, 7.0), (4.5, 8.0)],
@@ -491,8 +488,8 @@ EXPECTED_RESULTS_CONTINUOUS_BOUNDS = {
     (2.5, 2.5, False): [(2.5, 5.0), (5.0, 7.5), (7.5, 10.0)],
     (3.5, 2.5, False): [(2.5, 6.0), (5.0, 8.5), (7.5, 11.0)],
     (4.5, 2.5, False): [(2.5, 7.0), (5.0, 9.5), (7.5, 12.0)],
-    # fmt: on
-}
+}  # fmt: skip
+
 EXPECTED_RESULTS_CONTINUOUS_WINDOWS = {
     # horizons, stride=1.0, drop_last=True
     (2.5, 1.0, True): [
