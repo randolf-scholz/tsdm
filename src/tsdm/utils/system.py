@@ -241,5 +241,6 @@ def write_requirements(
     # Note: the first entry is the package itself!
     fname = f"requirements-{package}=={requirements.pop(package)}.txt"
     path = Path("requirements") if path is None else Path(path)
-    with open(path.joinpath(fname), "w", encoding="utf8") as file:
-        file.write("\n".join(f"{k}=={requirements[k]}" for k in sorted(requirements)))
+    file = path.joinpath(fname)
+    text = "\n".join(f"{k}=={requirements[k]}" for k in sorted(requirements))
+    file.write_text(text, encoding="utf8")

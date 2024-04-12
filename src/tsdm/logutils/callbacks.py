@@ -462,7 +462,7 @@ class HParamCallback(BaseCallback):
         run_name = Path(self.writer.log_dir).absolute()
 
         with open(run_name / f"{i}.yaml", "w", encoding="utf8") as file:
-            file.write(yaml.dump(scores))
+            yaml.safe_dump(scores, file)
 
         self.writer.add_hparams(
             hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name

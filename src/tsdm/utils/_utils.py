@@ -40,14 +40,12 @@ from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
 import numpy as np
-import pandas
 from numpy.typing import NDArray
-from pandas import Series
 from torch import nn
 from tqdm.autonotebook import tqdm
 from typing_extensions import Any, Literal, Optional, cast, overload
 
-from tsdm.constants import BOOLEAN_PAIRS, EMPTY_MAP
+from tsdm.constants import EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
 from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
 from tsdm.types.variables import K2, HashableType, K, T
@@ -389,27 +387,6 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     cls = getattr(module, config.pop("__name__"))
     opts = {key: val for key, val in config.items() if not is_dunder("key")}
     return cls(**opts)
-
-
-def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
-    r"""Return unique values, excluding nan."""
-    if ignore_nan:
-        mask = pandas.notna(series)
-        series = series[mask]
-    return Series(series.unique())
-
-
-def series_to_boolean(s: Series, uniques: Optional[Series] = None, /) -> Series:
-    r"""Convert Series to nullable boolean."""
-    assert pandas.api.types.is_string_dtype(s), "Series must be 'string' dtype!"
-    mask = pandas.notna(s)
-    values = get_uniques(s[mask]) if uniques is None else uniques
-    mapping = next(
-        set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
-    )
-    s = s.copy()
-    s[mask] = s[mask].map(mapping)
-    return s.astype(pandas.BooleanDtype())
 
 
 def repackage_zip(path: PathLike, /) -> None:

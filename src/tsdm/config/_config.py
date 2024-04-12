@@ -235,7 +235,7 @@ class Project:
 
         for package in flattened(package_structure):
             test_package_path = self.TESTS_PATH / package.replace(".", "/")
-            test_package_init = test_package_path / "__init__.py"
+            test_package_init_file = test_package_path / "__init__.py"
 
             if not test_package_path.exists():
                 if dry_run:
@@ -245,16 +245,19 @@ class Project:
                     test_package_path.mkdir(parents=True, exist_ok=True)
             if not test_package_path.exists():
                 if dry_run:
-                    print(f"Dry-Run: Creating {test_package_init}")
+                    print(f"Dry-Run: Creating {test_package_init_file}")
                 else:
                     raise RuntimeError(f"Creation of {test_package_path} failed!")
-            elif not test_package_init.exists():
+            elif not test_package_init_file.exists():
                 if dry_run:
-                    print(f"Dry-Run: Creating {test_package_init}")
+                    print(f"Dry-Run: Creating {test_package_init_file}")
                 else:
-                    print(f"Creating {test_package_init}")
-                    with open(test_package_init, "w", encoding="utf8") as file:
-                        file.write(f'"""Tests for {package}."""\n')
+                    print(f"Creating {test_package_init_file}")
+                    test_package_init_file.write_text(
+                        f'"""Tests for {package}."""\n',
+                        encoding="utf8",
+                    )
+
         if dry_run:
             print("Pass option `dry_run=False` to actually create the folders.")
 
