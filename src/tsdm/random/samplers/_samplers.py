@@ -144,7 +144,7 @@ def compute_grid(
 
     # NOTE: time-delta types should support divmod / floordiv!
     #  Importantly, floordiv always rounds down, even for negative numbers.
-    #  We use this formula for ceil-div: https://stackoverflow.com/a/17511341/9318372
+    #  We use this formula for ceil-div: https://stackoverflow.com/a/17511341
     zero_td = t_min - t_min
     if delta > zero_td:
         kmin = -int((t_0 - t_min) // delta)  # ⌈a/b⌉ = -(-a//b)

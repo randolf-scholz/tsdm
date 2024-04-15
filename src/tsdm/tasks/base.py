@@ -252,7 +252,7 @@ class ForecastingTask(Protocol[Key, Sample_co]):
 class TTT(ForecastingTask[Key, Sample_co]):
     """WIP: TimeSeriesTask."""
 
-    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
+    # ABCs should have slots https://stackoverflow.com/a/62628857
     # __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -537,7 +537,7 @@ class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
             - `__len__(self) -> int`.
     """
 
-    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
+    # ABCs should have slots https://stackoverflow.com/a/62628857
     # __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")

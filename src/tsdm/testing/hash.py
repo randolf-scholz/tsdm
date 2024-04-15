@@ -53,7 +53,7 @@ def to_base(n: int, base: int, /) -> list[int]:
     The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
 
     References:
-        - https://stackoverflow.com/a/28666223/9318372
+        - https://stackoverflow.com/a/28666223
     """
     assert n >= 0, "n must be non-negative!"
     digits = []

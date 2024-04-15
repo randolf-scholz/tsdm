@@ -130,7 +130,7 @@ def shared_grid_plot(
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
     References:
-        - https://stackoverflow.com/a/25814386/9318372
+        - https://stackoverflow.com/a/25814386
     """
     array = np.array(data)
 

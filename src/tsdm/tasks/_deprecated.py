@@ -41,7 +41,7 @@ class BaseTask(Generic[K]):
         dataset (Dataset): The attached dataset
     """
 
-    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
+    # ABCs should have slots https://stackoverflow.com/a/62628857
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
@@ -200,7 +200,7 @@ class OldBaseTask(Generic[K]):
         dataset (Dataset): The attached dataset
     """
 
-    # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
+    # __slots__ = ()  # https://stackoverflow.com/a/62628857
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""

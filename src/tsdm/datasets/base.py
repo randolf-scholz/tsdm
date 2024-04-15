@@ -75,6 +75,8 @@ class Dataset(Protocol[T_co]):
         else:
             webbrowser.open_new_tab(cls.INFO_URL)
 
+    # FIXME: https://discuss.python.org/t/41137
+
     @property
     @abstractmethod
     def rawdata_files(self) -> Sequence[str]:

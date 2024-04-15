@@ -40,7 +40,7 @@ def import_module(
 
     References:
         - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
-        - https://stackoverflow.com/a/41904558/9318372
+        - https://stackoverflow.com/a/41904558
     """
     module_name = module_name or module_path.parts[-1]
     module_init = module_path.joinpath("__init__.py")

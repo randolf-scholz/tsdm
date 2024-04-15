@@ -44,7 +44,7 @@ def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
 
     References:
-        https://stackoverflow.com/a/22058144/9318372
+        https://stackoverflow.com/a/22058144
     """
     match dirs:
         case str() as string:

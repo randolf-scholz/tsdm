@@ -79,7 +79,7 @@ def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -
     r"""Replace multiple substrings via dict.
 
     References:
-        https://stackoverflow.com/a/64500851/9318372
+        https://stackoverflow.com/a/64500851
     """
     replacements = dict(mapping, **strings)
     return last((s := s.replace(x, y) for x, y in replacements.items()))
@@ -281,7 +281,7 @@ def deep_dict_update(d: dict, new_kvals: Mapping, /) -> dict:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
     References:
-        - https://stackoverflow.com/a/30655448/9318372
+        - https://stackoverflow.com/a/30655448
     """
     # if not inplace:
     #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
@@ -298,7 +298,7 @@ def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
     r"""Update nested dictionary recursively in-place with key-value pairs.
 
     References:
-        - https://stackoverflow.com/a/30655448/9318372
+        - https://stackoverflow.com/a/30655448
     """
     # if not inplace:
     #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)

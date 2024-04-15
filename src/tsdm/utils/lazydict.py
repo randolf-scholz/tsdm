@@ -113,7 +113,7 @@ class LazyDict(dict[K, V]):
     #     r"""Create a new instance of the class."""
     #     # inherit Mixin Methods from MutableMapping
     #     # This is crucial because dict.get does not call __getitem__
-    #     # Reference: https://stackoverflow.com/a/2390997/9318372
+    #     # Reference: https://stackoverflow.com/a/2390997
     #     # cls.get = MutableMapping.get  # type: ignore[assignment, method-assign]
     #     # cls.clear = MutableMapping.clear  # type: ignore[method-assign]
     #     # cls.pop = MutableMapping.pop  # type: ignore[method-assign]

@@ -30,7 +30,7 @@ def approx_float_gcd(
     .. warning:: This implementation does not work 100% correctly yet!
 
     References:
-        - https://stackoverflow.com/q/45323619/9318372
+        - https://stackoverflow.com/q/45323619
     """
     warnings.warn(
         "The implementation of approx_float_gcd does not work 100% correctly yet!",
