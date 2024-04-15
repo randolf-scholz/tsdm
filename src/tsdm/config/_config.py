@@ -96,6 +96,7 @@ class Config(metaclass=ConfigMeta):
     @cached_property
     def CONFIG_FILE(self) -> dict:
         r"""Return dictionary containing basic configuration of TSDM."""
+        assert __package__ is not None
         path = resources.files(__package__) / "config.toml"
         with path.open("rb") as file:
             return tomllib.load(file)
@@ -159,6 +160,7 @@ class Project:
     @cached_property
     def ROOT_PACKAGE(self) -> ModuleType:
         r"""Get project root package."""
+        assert __package__ is not None
         hierarchy = __package__.split(".")
         return import_module(hierarchy[0])
 

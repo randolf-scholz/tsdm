@@ -52,7 +52,7 @@ from zipfile import ZipFile
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Any, Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils import replace
@@ -104,7 +104,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     randperm: DataFrame
     invperm: DataFrame
 
-    def __init__(self, *, use_corrected_dates: bool = True, **kwargs) -> None:
+    def __init__(self, *, use_corrected_dates: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.use_corrected_dates = use_corrected_dates
 

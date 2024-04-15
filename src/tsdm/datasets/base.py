@@ -22,27 +22,30 @@ import subprocess
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from functools import cached_property
+from os import PathLike
 from pathlib import Path
 from urllib.parse import urlparse
+from zipfile import ZipFile
 
 import pandas
-from pyarrow import Table, parquet
+from pyarrow import Table as PyArrowTable, parquet
 from tqdm.autonotebook import tqdm
 from typing_extensions import (
+    IO,
     Any,
     ClassVar,
-    Generic,
     Optional,
     Protocol,
+    Self,
     overload,
     runtime_checkable,
 )
 
 from tsdm.config import CONFIG
 from tsdm.testing.hash import validate_file_hash, validate_table_hash
-from tsdm.types.aliases import PathLike
+from tsdm.types.aliases import FilePath
 from tsdm.types.variables import T_co, str_var as Key
 from tsdm.utils import paths_exists, remote
 from tsdm.utils.decorators import wrap_method
@@ -75,11 +78,22 @@ class Dataset(Protocol[T_co]):
         else:
             webbrowser.open_new_tab(cls.INFO_URL)
 
+    @classmethod
+    @abstractmethod
+    def deserialize(cls, path: FilePath, /) -> Self:
+        """Deserialize the dataset (from cleaned format)."""
+        ...
+
+    @abstractmethod
+    def serialize(self, path: FilePath, /) -> None:
+        """Serialize the (cleaned) dataset to a specific path."""
+        ...
+
     # FIXME: https://discuss.python.org/t/41137
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Sequence[str]:
+    def rawdata_files(self) -> Sequence[str]:  # pyright: ignore[reportRedeclaration]
         """Return list of file names that make up the raw data."""
         ...
 
@@ -93,8 +107,8 @@ class Dataset(Protocol[T_co]):
 
     rawdata_files: Sequence[str]  # type: ignore[no-redef]
     # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
-    # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
+    # # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @abstractmethod
     def download(self) -> None:
@@ -232,48 +246,81 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         return f"{self.__class__.__name__}()"
 
     @staticmethod
-    def serialize(table: T_co, path: Path, /, **kwargs: Any) -> None:  # type: ignore[misc]
-        r"""Serialize the dataset."""
-        # NOTE: This should be type safe even for covariant types.
-        file_type = path.suffix
-        assert file_type.startswith("."), "File must have a suffix!"
-        file_type = file_type[1:]
+    def serialize_table(
+        table: Any,
+        path_or_buf: FilePath | IO[bytes],
+        /,
+        writer: Optional[str | Callable] = None,
+        **writer_kwargs: Any,
+    ) -> None:
+        r"""Serialize a table.
 
-        if isinstance(table, Table) and file_type == "parquet":
-            parquet.write_table(table, path, **kwargs)
-            return
+        Args:
+            table: Table to serialize.
+            path_or_buf: Path or buffer to write to.
+            writer: Writer to use.
+                If None, the extension of the path is used to determine the writer.
+                Pass string like `'csv' to use the corresponding pandas writer.
+            **writer_kwargs: Additional keyword arguments to pass to the writer.
+        """
+        match path_or_buf, writer:
+            case (str() | PathLike()) as filepath, _:
+                path = Path(filepath)
+                assert path.suffix.startswith("."), "File must have a suffix!"
+                writer = path.suffix[1:] if writer is None else writer
+                target = path
+            case target, str() | Callable():  # type: ignore[misc]
+                pass
+            case _:
+                raise TypeError(
+                    "Provide either a PathLike object or a buffer-like object with an extension!"
+                )
 
-        # check if table has a custom writer.
-        if hasattr(table, f"to_{file_type}"):
-            writer = getattr(table, f"to_{file_type}")
-            writer(path, **kwargs)
-            return
-
-        raise NotImplementedError(f"No loader for {file_type=}")
+        match writer, table:
+            case Callable() as writer_impl:  # type: ignore[misc]
+                writer_impl(target, **writer_kwargs)  # type: ignore[unreachable]
+            case "parquet", PyArrowTable() as arrow_table:
+                parquet.write_table(arrow_table, target, **writer_kwargs)
+            case str(extension) if hasattr(table, f"to_{extension}"):
+                writer_impl = getattr(table, f"to_{extension}")
+                writer_impl(target, **writer_kwargs)
+            case _:
+                raise NotImplementedError(f"No serializer implemented for {writer=}")
 
     @staticmethod
-    def deserialize(path: Path, /, **kwargs: Any) -> T_co:
-        r"""Deserialize the dataset."""
-        file_type = path.suffix
-        assert file_type.startswith("."), "File must have a suffix!"
-        file_type = file_type[1:]
-        pandas_version = tuple(int(i) for i in pandas.__version__.split("."))
+    def deserialize_table(
+        path_or_buf: FilePath | IO[bytes],
+        /,
+        loader: Optional[str | Callable] = None,
+        **loader_kwargs: Any,
+    ) -> Any:
+        r"""Deserialize a table."""
+        match path_or_buf, loader:
+            case (str() | PathLike()) as filepath, _:
+                path = Path(filepath)
+                assert path.suffix.startswith("."), "File must have a suffix!"
+                loader = path.suffix[1:] if loader is None else loader
+                target = path
+            case target, str() | Callable():  # type: ignore[misc]
+                pass
+            case _:
+                raise TypeError(
+                    "Provide either a PathLike object or a buffer-like object with an extension!"
+                )
 
-        if hasattr(pandas, f"read_{file_type}"):
-            loader = getattr(pandas, f"read_{file_type}")
-
-            if file_type in {"parquet", "feather"}:
-                if "engine" not in kwargs:
-                    kwargs["engine"] = "pyarrow"
-                if "dtype_backend" not in kwargs and pandas_version >= (2, 0, 0):
-                    kwargs["dtype_backend"] = "pyarrow"
-                table = loader(path, **kwargs)
-            else:
-                table = loader(path, **kwargs)
-
-            return table.squeeze()
-
-        raise NotImplementedError(f"No loader for {file_type=}")
+        match loader:
+            case Callable() as loader_impl:
+                return loader_impl(target, **loader_kwargs)
+            case str(extension) if hasattr(pandas, f"read_{extension}"):
+                loader_impl = getattr(pandas, f"read_{extension}")
+                if extension in {"csv", "parquet", "feather"}:
+                    loader_kwargs = {
+                        "engine": "pyarrow",
+                        "dtype_backend": "pyarrow",
+                    } | dict(loader_kwargs)
+                return loader_impl(target, **loader_kwargs).squeeze()
+            case _:
+                raise NotImplementedError(f"No loader available! {loader=}")
 
     @property
     def version_info(self) -> tuple[int, ...]:
@@ -310,7 +357,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         r"""Load the pre-processed dataset."""
         ...
 
-    def download_from_url(self, url: str, path: PathLike, /, **options: Any) -> None:
+    def download_from_url(self, url: str, path: FilePath, /, **options: Any) -> None:
         r"""Download files from a URL."""
         parsed_url = urlparse(url)
         path = Path(path)
@@ -442,6 +489,19 @@ class SingleTableDataset(BaseDataset[T_co]):
     table_shape: tuple[int, ...] = NotImplemented
     r"""Shape of the in-memory cleaned dataset table(s)."""
 
+    @classmethod
+    def from_table(cls, table: T_co, /) -> Self:
+        r"""Create a dataset from a table."""
+        obj = cls(initialize=False)
+        obj._table = table
+        return obj
+
+    @classmethod
+    def deserialize(cls, path: FilePath, /) -> Self:
+        r"""Deserialize the dataset."""
+        table = cls.deserialize_table(path)
+        return cls.from_table(table)
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(table: {repr_array(self.table)})"
 
@@ -455,7 +515,7 @@ class SingleTableDataset(BaseDataset[T_co]):
             return header + html_repr
         raise NotImplementedError
 
-    @cached_property
+    @property
     def table(self) -> T_co:
         r"""Store cached version of dataset."""
         if self._table is NotImplemented:
@@ -463,7 +523,7 @@ class SingleTableDataset(BaseDataset[T_co]):
         return self._table
 
     @cached_property
-    def dataset_file(self) -> PathLike:
+    def dataset_file(self) -> FilePath:
         r"""Return the dataset files."""
         return f"{self.__class__.__name__}.{self.DEFAULT_FILE_FORMAT}"
 
@@ -487,10 +547,10 @@ class SingleTableDataset(BaseDataset[T_co]):
     def load_table(self) -> T_co:
         r"""Load the dataset.
 
-        By default, `self.deserialize` is used to load the table from disk.
+        By default, `deserialize_table` is used to load the table from disk.
         Override this method if you want to customize loading the table from disk.
         """
-        return self.deserialize(self.dataset_path)
+        return self.deserialize_table(self.dataset_path)
 
     def load(
         self,
@@ -543,17 +603,19 @@ class SingleTableDataset(BaseDataset[T_co]):
         df = self.clean_table()
         if df is not None:
             self.LOGGER.debug("Serializing dataset.")
-            self.serialize(df, self.dataset_path)
+            self.serialize_table(df, self.dataset_path)
         self.LOGGER.debug("Finished cleaning dataset.")
 
         # Validate pre-processed file.
         if validate and self.dataset_hash is not NotImplemented:
             validate_file_hash(self.dataset_path, self.dataset_hash)
 
+    def serialize(self, path: FilePath, /) -> None:
+        r"""Serialize the dataset."""
+        self.serialize_table(self.table, path)
 
-class MultiTableDataset(
-    BaseDataset[dict[Key, T_co]], Mapping[Key, T_co], Generic[Key, T_co]
-):
+
+class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
@@ -564,6 +626,9 @@ class MultiTableDataset(
     DATASET_DIR: ClassVar[Path]
     """Path to pre-processed data directory."""
 
+    _tables: Mapping[Key, T_co] = NotImplemented
+    """INTERNAL: the dataset."""
+
     # Validation - Implement on per dataset basis!
     dataset_hashes: Mapping[Key, str | None] = NotImplemented
     r"""Hashes of the cleaned dataset file(s)."""
@@ -573,6 +638,62 @@ class MultiTableDataset(
     r"""Schemas of the in-memory cleaned dataset table(s)."""
     table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
     r"""Shapes of the in-memory cleaned dataset table(s)."""
+
+    @classmethod
+    def from_tables(cls, tables: Mapping[Key, T_co], /) -> Self:
+        r"""Create a dataset from a table."""
+        obj = cls(initialize=False)
+        obj._tables = tables
+        return obj
+
+    @classmethod
+    @overload
+    def deserialize(cls, path_or_buf: FilePath, /, *, key: None = ...) -> Self: ...
+    @classmethod
+    @overload
+    def deserialize(cls, path_or_buf: FilePath, /, *, key: Key) -> T_co: ...
+    @classmethod
+    def deserialize(
+        cls, path_or_buf: FilePath, /, *, key: Optional[Key] = None
+    ) -> Self:
+        r"""Deserialize the dataset."""
+        if key is None:
+            # assume ZipFile
+            tables = {}
+            with ZipFile(path_or_buf) as archive:
+                for fname in archive.namelist():
+                    with archive.open(fname) as file:
+                        name = Path(fname).stem
+                        extension = Path(fname).suffix[1:]
+                        tables[name] = cls.deserialize_table(file, loader=extension)
+
+            return cls.from_tables(tables)
+
+        raise NotImplementedError
+
+    def serialize(self, filepath: FilePath, /, *, key: Optional[Key] = None) -> None:
+        r"""Serialize the dataset.
+
+        Args:
+            filepath: Where to save the dataset.
+            key: If None, serialize the whole dataset (as a zip file).
+                 otherwise, save the selected table.
+        """
+        path = Path(filepath)
+        if key is None:
+            if path.suffix != ".zip":
+                raise ValueError(
+                    "Path must be a zip file if serializing whole dataset."
+                )
+            with ZipFile(path, "w") as archive:
+                extension = self.DEFAULT_FILE_FORMAT
+                for name, table in self.items():
+                    fname = f"{name}.{extension}"
+                    with archive.open(fname, "w") as file:
+                        self.serialize_table(table, file, writer=extension)
+            return
+
+        raise NotImplementedError
 
     @cached_property
     def _key_attributes(self) -> bool:
@@ -646,26 +767,29 @@ class MultiTableDataset(
     table_names: Collection[Key]  # type: ignore[no-redef]
     # Cf. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
-    @cached_property
+    @property
     def tables(self) -> dict[Key, T_co]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
 
-        if isinstance(self.table_names, Mapping):
-            type_hints = self.table_names
-        else:
-            return_type = get_return_typehint(self.clean_table)
-            type_hints = {key: str(return_type) for key in self.table_names}
+        if self._tables is NotImplemented:
+            if isinstance(self.table_names, Mapping):
+                type_hints = self.table_names
+            else:
+                return_type = get_return_typehint(self.clean_table)
+                type_hints = {key: str(return_type) for key in self.table_names}
 
-        return LazyDict({
-            key: LazyValue(
-                self.load,
-                args=(key,),
-                kwargs={"initializing": True},
-                type_hint=type_hints[key],
-            )
-            for key in self.table_names
-        })
+            self._tables = LazyDict({
+                key: LazyValue(  # type: ignore[misc]
+                    self.load,
+                    args=(key,),
+                    kwargs={"initializing": True},
+                    type_hint=type_hints[key],
+                )
+                for key in self.table_names
+            })
+
+        return self._tables
 
     @cached_property
     def dataset_files(self) -> dict[Key, str]:
@@ -745,20 +869,20 @@ class MultiTableDataset(
         df = self.clean_table(key=key)
         if df is not None:
             self.LOGGER.debug("Serializing dataset <%s>", key)
-            self.serialize(df, self.dataset_paths[key])
+            self.serialize_table(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
-    def load_table(self, key: Key) -> T_co:
+    def load_table(self, *, key: Key) -> T_co:
         r"""Load the selected DATASET_OBJECT.
 
         By default, `self.deserialize` is used to load the table from disk.
         Override this method if you want to customize loading the table from disk.
         """
-        return self.deserialize(self.dataset_paths[key])
+        return self.deserialize_table(self.dataset_paths[key])
 
     @overload
     def load(
@@ -826,7 +950,7 @@ class MultiTableDataset(
 
         # Load the table, make sure to use the cached version if it exists.
         self.LOGGER.debug("Starting to load dataset <%s>", key)
-        table = self.load_table(key)
+        table = self.load_table(key=key)
         self.LOGGER.debug("Finished loading dataset <%s>", key)
 
         # Validate the loaded table.

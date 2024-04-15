@@ -13,7 +13,7 @@ from itertools import product
 import torch
 from pandas import DataFrame, Series
 from torch import Tensor, jit
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
 from tsdm.data import MappingDataset, folds_as_frame, folds_from_groups
@@ -204,7 +204,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
     ) -> DataLoader:
         # Construct the dataset object
         ts, md = self.splits[key]
-        dataset = _Dataset(
+        dataset = KIWI_Dataset_Accessor(
             ts,
             md,
             observables=self.observables.index,
@@ -238,7 +238,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
 
 @dataclass
-class _Dataset(torch.utils.data.Dataset):
+class KIWI_Dataset_Accessor(Dataset):
     timeseries: DataFrame
     metadata: DataFrame
 

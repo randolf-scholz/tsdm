@@ -1,7 +1,7 @@
 """Test torch.jit compatibliity.."""
 
 from tempfile import TemporaryFile
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 from torch import Tensor, jit, nn
 
@@ -9,7 +9,7 @@ from torch import Tensor, jit, nn
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
-    key: Union[int, str]
+    key: int | str
     t: Tensor
     inputs: Tensor
     t_targets: Tensor

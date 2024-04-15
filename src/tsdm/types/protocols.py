@@ -83,13 +83,28 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.types.variables import K, K_contra, T, T_co, V, V_co, scalar_co
+from tsdm.types.variables import K, K_contra, T, T_co, T_contra, V, V_co, scalar_co
 
 P = ParamSpec("P")
 Scalar = TypeVar("Scalar")
 
 
 # region misc protocols ----------------------------------------------------------------
+@runtime_checkable
+class WriteBuffer(Protocol[T_contra]):
+    # REF: WriteBuffer from https://github.com/pandas-dev/pandas/blob/main/pandas/_typing.py
+    # REF: SupportsWrite from https://github.com/python/typeshed/blob/main/stdlib/_typeshed/__init__.pyi
+    # REF: IOBase from https://github.com/python/typeshed/blob/main/stdlib/io.pyi
+    # REF: IO from https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
+    @property
+    def mode(self) -> str: ...
+    def seek(self, offset: int, whence: int = 0, /) -> int: ...
+    def seekable(self) -> bool: ...
+    def tell(self) -> int: ...
+    def write(self, s: T_contra, /) -> Any: ...
+    def flush(self) -> Any: ...
+
+
 @runtime_checkable
 class GenericIterable(Protocol[T_co]):
     """Does not work currently!"""

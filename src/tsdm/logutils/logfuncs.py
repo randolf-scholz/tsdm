@@ -73,7 +73,7 @@ from tsdm.linalg import (
 )
 from tsdm.metrics import LOSSES, Metric
 from tsdm.models import Model
-from tsdm.types.aliases import JSON, PathLike
+from tsdm.types.aliases import JSON, FilePath
 from tsdm.types.variables import K, T, T_co
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
@@ -228,7 +228,7 @@ def compute_metrics(
     return results
 
 
-def make_checkpoint(step: int, objects: Mapping[str, Any], path: PathLike) -> None:
+def make_checkpoint(step: int, objects: Mapping[str, Any], path: FilePath) -> None:
     """Save checkpoints of given paths."""
     path = Path(path) / f"{step}"
     path.mkdir(parents=True, exist_ok=True)

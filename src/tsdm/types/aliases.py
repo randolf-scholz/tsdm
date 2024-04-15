@@ -12,7 +12,7 @@ __all__ = [
     "Nested",
     "Map",
     "PandasObject",
-    "PathLike",
+    "FilePath",
     "SizeLike",
     # Dtype Aliases
     "NumpyDtype",
@@ -90,7 +90,7 @@ r"""Type Alias for `Map`."""
 Nested: TypeAlias = T_co | Collection["Nested[T_co]"] | Mapping[Any, "Nested[T_co]"]
 r"""Type Alias for nested types (JSON-Like)."""
 
-PathLike: TypeAlias = str | Path | os.PathLike[str]
+FilePath: TypeAlias = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
 r"""Type Alias for path-like objects."""
 
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]

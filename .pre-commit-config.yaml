@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.64
+    rev: v0.1.68
     hooks:
       - id: check-separator-length
         files: (^src/|^tests/)
@@ -120,10 +120,6 @@ repos:
         files: ^src/
       - id: python-check-typing
         files: (^src/|^tests/)
-        args:
-          - "--check-overload-default-ellipsis"
-          - "--check-no-future-annotations"
-          # - "--check-no-hints-overload-implementation"
       - id: python-check-clean-interface
         files: ^src/
         args: ["--no-load-silent"]

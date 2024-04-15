@@ -68,7 +68,7 @@ from tsdm.logutils.logfuncs import (
 from tsdm.metrics import Metric
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-from tsdm.types.aliases import JSON, PathLike
+from tsdm.types.aliases import JSON, FilePath
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.pprint import repr_object
 
@@ -427,7 +427,7 @@ class CheckpointCallback(BaseCallback):
     """Callback to save checkpoints."""
 
     objects: Mapping[str, object]
-    path: PathLike
+    path: FilePath
 
     _: KW_ONLY
 
@@ -441,7 +441,7 @@ class HParamCallback(BaseCallback):
 
     history: DataFrame
     hparam_dict: JSON
-    results_dir: PathLike
+    results_dir: FilePath
 
     _: KW_ONLY
 

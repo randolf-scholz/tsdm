@@ -35,7 +35,7 @@ from typing_extensions import Any, ClassVar, Optional, TypeVar, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
-from tsdm.types.aliases import PandasDtype, PandasDTypeArg, PandasObject, PathLike
+from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg, PandasObject
 from tsdm.types.dtypes import TORCH_DTYPES
 from tsdm.types.protocols import NTuple
 from tsdm.types.variables import K
@@ -88,7 +88,7 @@ class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
         return data.astype(self.original_dtypes)
 
 
-class CSVEncoder(BaseEncoder[DataFrame, PathLike]):
+class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
     r"""Encode the data into a CSV file."""
 
     requires_fit: ClassVar[bool] = True
@@ -104,7 +104,7 @@ class CSVEncoder(BaseEncoder[DataFrame, PathLike]):
 
     def __init__(
         self,
-        filename: PathLike,
+        filename: FilePath,
         *,
         to_csv_kwargs: Optional[dict[str, Any]] = None,
         read_csv_kwargs: Optional[dict[str, Any]] = None,
@@ -116,11 +116,11 @@ class CSVEncoder(BaseEncoder[DataFrame, PathLike]):
     def fit(self, data: DataFrame, /) -> None:
         self.dtypes = data.dtypes
 
-    def encode(self, data: DataFrame, /) -> PathLike:
+    def encode(self, data: DataFrame, /) -> FilePath:
         data.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
-    def decode(self, str_or_path: Optional[PathLike] = None, /) -> DataFrame:
+    def decode(self, str_or_path: Optional[FilePath] = None, /) -> DataFrame:
         path = self.filename if str_or_path is None else Path(str_or_path)
         frame = pd.read_csv(path, **self.read_csv_kwargs)
         return DataFrame(frame).astype(self.dtypes)

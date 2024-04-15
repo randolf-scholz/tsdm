@@ -14,7 +14,6 @@ __all__ = [
 
 import torch
 from torch import Tensor, jit
-from typing_extensions import Union
 
 
 @jit.script
@@ -44,7 +43,7 @@ def relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
 @jit.script
 def geometric_mean(
     x: Tensor,
-    axis: Union[None, int, list[int]] = None,
+    axis: None | int | list[int] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Geometric mean of a tensor.
@@ -65,7 +64,7 @@ def geometric_mean(
 def scaled_norm(
     x: Tensor,
     p: float = 2.0,
-    axis: Union[None, int, list[int]] = None,
+    axis: None | int | list[int] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Shortcut for scaled norm.
@@ -100,7 +99,7 @@ def scaled_norm(
 def norm(
     x: Tensor,
     p: float = 2.0,
-    axis: Union[None, int, list[int]] = None,
+    axis: None | int | list[int] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Shortcut for non-scaled norm.
@@ -138,7 +137,7 @@ def norm(
 def tensor_norm(
     x: Tensor,
     p: float = 2.0,
-    axis: Union[None, int, list[int]] = None,
+    axis: None | int | list[int] = None,
     keepdim: bool = False,
     scaled: bool = False,
 ) -> Tensor:

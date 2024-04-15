@@ -15,13 +15,11 @@ from functools import cached_property
 from itertools import product
 
 import pandas as pd
-import torch
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
 from pandas.api.typing import NAType
 from sklearn.model_selection import ShuffleSplit
-from torch import Tensor, jit
-from torch.nn import MSELoss
-from torch.utils.data import DataLoader
+from torch import Tensor, jit, nn
+from torch.utils.data import DataLoader, Dataset
 from typing_extensions import Any, Literal, NamedTuple, Optional, TypeAlias, deprecated
 
 from tsdm.data import MappingDataset
@@ -214,7 +212,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        return jit.script(MSELoss())  # pyright: ignore
+        return jit.script(nn.MSELoss())  # pyright: ignore
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -323,7 +321,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
 
 @dataclass
-class _Dataset(torch.utils.data.Dataset):
+class _Dataset(Dataset):
     timeseries: DataFrame
     metadata: DataFrame
     observables: Sequence[str]

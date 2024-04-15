@@ -15,7 +15,7 @@ import torch
 from pandas import DataFrame, MultiIndex, Series
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
 from tsdm.data import MappingDataset, TimeSeriesSampleGenerator
@@ -324,7 +324,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
 
 @dataclass
-class _Dataset(torch.utils.data.Dataset):
+class _Dataset(Dataset):
     timeseries: DataFrame
     metadata: DataFrame
 

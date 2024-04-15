@@ -47,7 +47,7 @@ from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
-from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
+from tsdm.types.aliases import FilePath, Nested, NestedDict, NestedMapping
 from tsdm.types.variables import K2, HashableType, K, T
 
 
@@ -314,27 +314,27 @@ def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
 
 @overload
 def prepend_path(
-    files: Mapping[K, PathLike], parent: Path, /, *, keep_none: bool = ...
+    files: Mapping[K, FilePath], parent: Path, /, *, keep_none: bool = ...
 ) -> dict[K, Path]: ...
 @overload
 def prepend_path(
-    files: list[PathLike], parent: Path, /, *, keep_none: bool = ...
+    files: list[FilePath], parent: Path, /, *, keep_none: bool = ...
 ) -> list[Path]: ...
 @overload
 def prepend_path(
-    files: PathLike, parent: Path, /, *, keep_none: bool = ...
+    files: FilePath, parent: Path, /, *, keep_none: bool = ...
 ) -> Path: ...
 @overload
 def prepend_path(
-    files: Nested[PathLike], parent: Path, /, *, keep_none: bool = ...
+    files: Nested[FilePath], parent: Path, /, *, keep_none: bool = ...
 ) -> Nested[Path]: ...
 @overload
 def prepend_path(
-    files: Nested[Optional[PathLike]], parent: Path, /, *, keep_none: Literal[False]
+    files: Nested[Optional[FilePath]], parent: Path, /, *, keep_none: Literal[False]
 ) -> Nested[Path]: ...
 @overload
 def prepend_path(
-    files: Nested[Optional[PathLike]], parent: Path, /, *, keep_none: Literal[True]
+    files: Nested[Optional[FilePath]], parent: Path, /, *, keep_none: Literal[True]
 ) -> Nested[Optional[Path]]: ...
 def prepend_path(files, parent, /, *, keep_none=True):
     r"""Prepends the given path to all files in nested iterable.
@@ -358,7 +358,7 @@ def prepend_path(files, parent, /, *, keep_none=True):
             raise TypeError(f"Unsupported type: {type(files)}")
 
 
-def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
+def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
     r"""Check whether the files exist.
 
     The input can be arbitrarily nested data-structure with `Path` in leaves.
@@ -389,7 +389,7 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     return cls(**opts)
 
 
-def repackage_zip(path: PathLike, /) -> None:
+def repackage_zip(path: FilePath, /) -> None:
     """Remove the leading directory from a zip file."""
     original_path = Path(path)
 

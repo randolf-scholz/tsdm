@@ -373,7 +373,7 @@ def recurse_on_builtin_container(
         kind: The type of the leave nodes
         func: A function to apply to all leave Nodes
     """
-    if issubclass(kind, BUILTIN_CONTAINERS):
+    if issubclass(kind, BUILTIN_CONTAINERS):  # type: ignore[misc, arg-type]
         raise TypeError(f"kind must not be a builtin container! Got {kind=}")
 
     @wraps(func)

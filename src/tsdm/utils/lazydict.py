@@ -21,7 +21,6 @@ from typing_extensions import (
     Optional,
     Self,
     TypeAlias,
-    Union,
     cast,
     overload,
 )
@@ -73,15 +72,15 @@ class LazyValue(Generic[R]):
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
-LazySpec: TypeAlias = Union[
-    LazyValue[T],  # lazy value
-    Callable[[], T],  # no args
-    Callable[[Any], T],  # single arg
-    tuple[Callable[..., T], tuple],  # args
-    tuple[Callable[..., T], dict],  # kwargs
-    tuple[Callable[..., T], tuple, dict],  # args, kwargs
-    T,  # direct value
-]
+LazySpec: TypeAlias = (
+    LazyValue[T]  # lazy value
+    | Callable[[], T]  # no args
+    | Callable[[Any], T]  # single arg
+    | tuple[Callable[..., T], tuple]  # args
+    | tuple[Callable[..., T], dict]  # kwargs
+    | tuple[Callable[..., T], tuple, dict]  # args, kwargs
+    | T  # direct value
+)
 """A type alias for the possible values of a `LazyDict`."""
 
 

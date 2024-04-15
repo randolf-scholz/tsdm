@@ -84,7 +84,7 @@ from tsdm.logutils.callbacks import (
     OptimizerCallback,
 )
 from tsdm.metrics import Metric
-from tsdm.types.aliases import JSON, PathLike
+from tsdm.types.aliases import JSON, FilePath
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.pprint import repr_mapping
 
@@ -208,9 +208,9 @@ class DefaultLogger(BaseLogger):
 
     def __init__(
         self,
-        log_dir: PathLike,
-        checkpoint_dir: PathLike,
-        results_dir: PathLike,
+        log_dir: FilePath,
+        checkpoint_dir: FilePath,
+        results_dir: FilePath,
         *,
         checkpoint_frequency: int = 1,
         checkpointable_objects: Optional[Mapping[str, Any]] = None,

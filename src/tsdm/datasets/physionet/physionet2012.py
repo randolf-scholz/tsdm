@@ -496,8 +496,8 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         # NOTE: TS is missing a few records, since no time series data was available
         # For tasks, it is recommended to drop records with less than 24 observations
         # assert md.index == ts.index.get_level_values("RecordID").unique()
-        self.serialize(md, self.dataset_paths["raw_metadata"])
-        self.serialize(ts, self.dataset_paths["raw_timeseries"])
+        self.serialize_table(md, self.dataset_paths["raw_metadata"])
+        self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
 
     def clean_table(self, key: KEY) -> None | DataFrame:
         match key:

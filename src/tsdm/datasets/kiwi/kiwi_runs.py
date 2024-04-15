@@ -409,11 +409,13 @@ class KiwiRuns(MultiTableDataset):
 
         # Serialize tables
         self.LOGGER.info("Serializing metadata tables.")
-        self.serialize(
+        self.serialize_table(
             timeindex_description, self.dataset_paths["timeindex_description"]
         )
-        self.serialize(metadata, self.dataset_paths["metadata"])
-        self.serialize(metadata_description, self.dataset_paths["metadata_description"])
+        self.serialize_table(metadata, self.dataset_paths["metadata"])
+        self.serialize_table(
+            metadata_description, self.dataset_paths["metadata_description"]
+        )
 
     def clean_timeseries(self) -> None:
         r"""Clean timeseries data and save to disk."""
@@ -525,8 +527,8 @@ class KiwiRuns(MultiTableDataset):
 
         # Serialize Tables
         self.LOGGER.info("Serializing tiemseries tables.")
-        self.serialize(timeseries, self.dataset_paths["timeseries"])
-        self.serialize(
+        self.serialize_table(timeseries, self.dataset_paths["timeseries"])
+        self.serialize_table(
             timeseries_description, self.dataset_paths["timeseries_description"]
         )
 

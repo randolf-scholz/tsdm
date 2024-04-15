@@ -30,7 +30,7 @@ from typing_extensions import IO, Any, Optional
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing.hash import validate_file_hash
-from tsdm.types.aliases import PathLike
+from tsdm.types.aliases import FilePath
 
 
 class LinkParser(HTMLParser):
@@ -169,7 +169,7 @@ def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
 # ]
 def download_directory_to_zip(
     url: str,
-    zip_filename: PathLike,
+    zip_filename: FilePath,
     *,
     # session options
     username: Optional[str] = None,
@@ -218,7 +218,7 @@ def download_directory_to_zip(
 
 def download(
     url: str,
-    fname: Optional[PathLike | IOBase] = None,
+    fname: Optional[FilePath | IOBase] = None,
     *,
     # request options
     username: Optional[str] = None,
@@ -287,7 +287,7 @@ def download(
 
 
 def import_from_url(
-    url: str, fname: Optional[PathLike] = None, *args: Any, **kwargs: Any
+    url: str, fname: Optional[FilePath] = None, *args: Any, **kwargs: Any
 ) -> None:
     """Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)

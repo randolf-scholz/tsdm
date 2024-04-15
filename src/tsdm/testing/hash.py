@@ -38,7 +38,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from typing_extensions import Any, Literal, Optional
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.types.aliases import PathLike
+from tsdm.types.aliases import FilePath
 from tsdm.types.protocols import SupportsShape
 
 __logger__: logging.Logger = logging.getLogger(__name__)
@@ -159,7 +159,7 @@ def hash_pyarrow(array: pa.Array, /) -> int:
 
 
 def hash_file(
-    file: PathLike,
+    file: FilePath,
     *,
     block_size: int = 65536,
     hash_algorithm: str = "sha256",
@@ -195,7 +195,7 @@ def hash_array(
 
 
 def validate_file_hash(
-    file: PathLike | Sequence[PathLike] | Mapping[str, PathLike],
+    file: FilePath | Sequence[FilePath] | Mapping[str, FilePath],
     reference: None | str | Mapping[str, str | None] = None,
     /,
     *,

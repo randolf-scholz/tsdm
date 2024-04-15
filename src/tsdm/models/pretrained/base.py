@@ -57,7 +57,7 @@ from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.testing._testing import is_zipfile
-from tsdm.types.aliases import PathLike
+from tsdm.types.aliases import FilePath
 from tsdm.utils import LazyDict, initialize_from_config, paths_exists, repackage_zip
 from tsdm.utils.pprint import repr_mapping
 from tsdm.utils.remote import import_from_url
@@ -130,7 +130,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     download_url: Optional[str] = None
     """URL from which the raw data can be downloaded."""
 
-    __component_files: dict[str, PathLike]
+    __component_files: dict[str, FilePath]
 
     __component_aliases: dict[str, Collection[str]] = {
         "optimizer": OPTIMIZERS,

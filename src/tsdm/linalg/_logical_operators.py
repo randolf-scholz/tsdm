@@ -10,13 +10,13 @@ __all__ = [
 
 import torch
 from torch import Tensor, jit
-from typing_extensions import Optional, Union
+from typing_extensions import Optional
 
 
 @jit.script
 def aggregate_and(
     x: Tensor,
-    dim: Union[None, int, list[int]] = None,  # keep Union for JIT
+    dim: None | int | list[int] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
@@ -39,7 +39,7 @@ def aggregate_and(
 @jit.script
 def aggregate_or(
     x: Tensor,
-    dim: Union[None, int, list[int]] = None,  # keep Union for JIT
+    dim: None | int | list[int] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``OR`` across dim."""
