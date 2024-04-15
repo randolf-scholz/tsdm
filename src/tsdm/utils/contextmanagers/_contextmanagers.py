@@ -14,8 +14,7 @@ import importlib
 import logging
 import os
 import sys
-from collections.abc import Iterator
-from contextlib import ContextDecorator, contextmanager
+from contextlib import ContextDecorator
 from importlib.util import find_spec
 from pathlib import Path
 from time import perf_counter_ns
@@ -101,17 +100,31 @@ class timer(ContextDecorator):
         return False
 
 
-@contextmanager
-def add_to_path(p: Path) -> Iterator:
+class add_to_path(ContextDecorator):
     r"""Appends a path to environment variable PATH.
 
     References:
-        - https://stackoverflow.com/a/41904558/9318372
+        - https://stackoverflow.com/a/41904558
     """
-    old_path = sys.path
-    sys.path = sys.path[:]
-    sys.path.insert(0, str(p))
-    try:
-        yield
-    finally:
-        sys.path = old_path
+
+    path: Path
+    previous_path: list[str]
+
+    def __init__(self, path: str | Path) -> None:
+        self.path = Path(path)
+        if not self.path.exists():
+            raise FileNotFoundError(f"Path {self.path} does not exist.")
+
+    def __enter__(self) -> Self:
+        self.previous_path = sys.path.copy()
+        sys.path.insert(0, str(self.path))
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
+        sys.path = self.previous_path
+        return False
