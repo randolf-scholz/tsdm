@@ -42,7 +42,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     ) -> TDVar:
         match obj:
             case Callable() as func:  # type: ignore[misc]
-                return func(k)  # pyright: ignore
+                return func(k)
             case Lookup() as mapping:
                 return mapping[k]
             case _:
@@ -119,7 +119,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
         # set variables
         self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
-        self.deltax = deltax  # pyright: ignore
+        self.deltax = deltax
         self.stride = stride  # pyright: ignore
         self.intervals = DataFrame(
             intervals,
@@ -191,7 +191,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmin = Timestamp(time_str)
             case _:
-                self.xmin = tmin  # pyright: ignore
+                self.xmin = tmin
 
         match tmax:
             case None:
@@ -199,7 +199,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmax = Timestamp(time_str)
             case _:
-                self.xmax = tmax  # pyright: ignore
+                self.xmax = tmax
 
         total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
         self.stride = cast(

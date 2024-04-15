@@ -103,7 +103,7 @@ def test_boundary_encoder(data: D) -> None:
     encoded2 = encoder.encode(data2)
     xmin, xmax = data.min(), data.max()
     mask = (data2 >= xmin) & (data2 <= xmax)
-    assert (encoded2[mask] == data2[mask]).all()  # pyright: ignore
+    assert (encoded2[mask] == data2[mask]).all()
     assert (np.isnan(encoded2[~mask])).all()
 
     # test half-open interval + clip
