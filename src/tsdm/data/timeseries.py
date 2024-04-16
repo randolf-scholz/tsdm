@@ -155,6 +155,14 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             else:
                 self.metaindex = self.timeseries.index.copy().unique()
 
+    def __len__(self) -> int:
+        r"""Get the number of timeseries in the collection."""
+        return len(self.metaindex)
+
+    def __iter__(self) -> Iterator[Any]:
+        r"""Iterate over the timeseries in the collection."""
+        return iter(self.metaindex)
+
     @overload
     def __getitem__(self, key: slice | Series, /) -> Self: ...
     @overload
@@ -226,14 +234,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             timeseries_description=ts_desc,
             metadata_description=md_desc,
         )
-
-    def __len__(self) -> int:
-        r"""Get the length of the collection."""
-        return len(self.metaindex)
-
-    def __iter__(self) -> Iterator[Any]:
-        r"""Iterate over the collection."""
-        return iter(self.metaindex)
 
 
 # TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
