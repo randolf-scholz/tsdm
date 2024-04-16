@@ -39,7 +39,7 @@ r"""Dictionary of all available sklearn transforms."""
 SKLEARN_ENCODERS: dict[str, type[InvertibleTransform]] = {
     # "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
-    "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,
+    # "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,  # NOTE: Not left-invertible!
     # "KernelCenterer"      : sk_preprocessing.KernelCenterer,
     "LabelBinarizer"      : sk_preprocessing.LabelBinarizer,
     "LabelEncoder"        : sk_preprocessing.LabelEncoder,

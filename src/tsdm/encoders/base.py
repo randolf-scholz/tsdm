@@ -287,10 +287,6 @@ class BaseEncoder(Encoder[T, T2]):
         cls.fit = fit  # type: ignore[method-assign]
         cls.encode = encode  # type: ignore[method-assign]
         cls.decode = decode  # type: ignore[method-assign]
-        if not hasattr(cls, "transform"):
-            cls.transform = cls.encode
-        if not hasattr(cls, "inverse_transform"):
-            cls.inverse_transform = cls.decode
 
     @property
     def is_fitted(self) -> bool:
@@ -315,6 +311,35 @@ class BaseEncoder(Encoder[T, T2]):
     def is_bijective(self) -> bool:
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
+
+    # region method aliases ------------------------------------------------------------
+    def transform(self, data: T, /) -> T2:
+        r"""Alias for encode."""
+        return self.encode(data)
+
+    def inverse_transform(self, data: T2, /) -> T:
+        r"""Alias for decode."""
+        return self.decode(data)
+
+    # endregion method aliases ---------------------------------------------------------
+
+    # region chaining methods ----------------------------------------------------------
+    # def standardize(self) -> "ChainedEncoder[Self, StandardScaler]":
+    #     r"""Chain a standardize."""
+    #     return self >> StandardScaler()
+    #
+    # def minmax_scale(self) -> "ChainedEncoder[Self, MinMaxScaler]":
+    #     r"""Chain a minmax scaling."""
+    #     return self >> MinMaxScaler()
+    #
+    # def normalize(self) -> "ChainedEncoder[Self, Normalizer]":
+    #     r"""Chain a normalization."""
+    #     return self >> Normalizer()
+    #
+    # def quantile_transform(self) -> "ChainedEncoder[Self, QuantileTransformer]":
+    #     r"""Chain a quantile transformation."""
+    #     return self >> QuantileTransformer()
+    # endregion chaining methods -------------------------------------------------------
 
 
 class IdentityEncoder(BaseEncoder):
@@ -411,11 +436,13 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
     def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
         r"""Get the encoder at the given index."""
-        if isinstance(index, int):
-            return self.encoders[index]
-        if isinstance(index, slice):
-            return ChainedEncoder(*self.encoders[index])
-        raise ValueError(f"Index {index} not supported.")
+        match index:
+            case int(idx):
+                return self.encoders[idx]
+            case slice() as slc:
+                return ChainedEncoder(*self.encoders[slc])
+            case _:
+                raise ValueError(f"Index {index} not supported.")
 
     @property
     def requires_fit(self) -> bool:
