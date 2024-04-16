@@ -39,6 +39,7 @@ from typing_extensions import (
     Optional,
     Protocol,
     Self,
+    cast,
     overload,
     runtime_checkable,
 )
@@ -250,6 +251,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         table: Any,
         path_or_buf: FilePath | IO[bytes],
         /,
+        *,
         writer: Optional[str | Callable] = None,
         **writer_kwargs: Any,
     ) -> None:
@@ -264,12 +266,12 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             **writer_kwargs: Additional keyword arguments to pass to the writer.
         """
         match path_or_buf, writer:
-            case (str() | PathLike()) as filepath, _:
+            case [(str() | PathLike()) as filepath, _]:
                 path = Path(filepath)
                 assert path.suffix.startswith("."), "File must have a suffix!"
                 writer = path.suffix[1:] if writer is None else writer
                 target = path
-            case target, str() | Callable():  # type: ignore[misc]
+            case [target, str() | Callable()]:  # type: ignore[misc]
                 pass
             case _:
                 raise TypeError(
@@ -277,11 +279,11 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
                 )
 
         match writer, table:
-            case Callable() as writer_impl:  # type: ignore[misc]
+            case [Callable() as writer_impl, _]:  # type: ignore[misc]
                 writer_impl(target, **writer_kwargs)  # type: ignore[unreachable]
-            case "parquet", PyArrowTable() as arrow_table:
+            case ["parquet", PyArrowTable() as arrow_table]:
                 parquet.write_table(arrow_table, target, **writer_kwargs)
-            case str(extension) if hasattr(table, f"to_{extension}"):
+            case [str(extension), _] if hasattr(table, f"to_{extension}"):
                 writer_impl = getattr(table, f"to_{extension}")
                 writer_impl(target, **writer_kwargs)
             case _:
@@ -291,17 +293,18 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     def deserialize_table(
         path_or_buf: FilePath | IO[bytes],
         /,
+        *,
         loader: Optional[str | Callable] = None,
         **loader_kwargs: Any,
     ) -> Any:
         r"""Deserialize a table."""
         match path_or_buf, loader:
-            case (str() | PathLike()) as filepath, _:
+            case [(str() | PathLike()) as filepath, _]:
                 path = Path(filepath)
                 assert path.suffix.startswith("."), "File must have a suffix!"
                 loader = path.suffix[1:] if loader is None else loader
                 target = path
-            case target, str() | Callable():  # type: ignore[misc]
+            case [target, str() | Callable()]:  # type: ignore[misc]
                 pass
             case _:
                 raise TypeError(
@@ -309,8 +312,8 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
                 )
 
         match loader:
-            case Callable() as loader_impl:
-                return loader_impl(target, **loader_kwargs)
+            case Callable() as loader_impl:  # type: ignore[misc]
+                return loader_impl(target, **loader_kwargs)  # type: ignore[unreachable]
             case str(extension) if hasattr(pandas, f"read_{extension}"):
                 loader_impl = getattr(pandas, f"read_{extension}")
                 if extension in {"csv", "parquet", "feather"}:
@@ -490,7 +493,7 @@ class SingleTableDataset(BaseDataset[T_co]):
     r"""Shape of the in-memory cleaned dataset table(s)."""
 
     @classmethod
-    def from_table(cls, table: T_co, /) -> Self:
+    def from_table(cls, table: T_co, /) -> Self:  # type: ignore[misc]
         r"""Create a dataset from a table."""
         obj = cls(initialize=False)
         obj._table = table
@@ -626,7 +629,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     DATASET_DIR: ClassVar[Path]
     """Path to pre-processed data directory."""
 
-    _tables: Mapping[Key, T_co] = NotImplemented
+    _tables: dict[Key, T_co] = NotImplemented
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -643,27 +646,27 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     def from_tables(cls, tables: Mapping[Key, T_co], /) -> Self:
         r"""Create a dataset from a table."""
         obj = cls(initialize=False)
-        obj._tables = tables
+        obj._tables = dict(tables)
         return obj
 
     @classmethod
     @overload
-    def deserialize(cls, path_or_buf: FilePath, /, *, key: None = ...) -> Self: ...
+    def deserialize(cls, path_or_buf: FilePath, /) -> Self: ...
     @classmethod
     @overload
     def deserialize(cls, path_or_buf: FilePath, /, *, key: Key) -> T_co: ...
     @classmethod
     def deserialize(
         cls, path_or_buf: FilePath, /, *, key: Optional[Key] = None
-    ) -> Self:
+    ) -> Self | T_co:
         r"""Deserialize the dataset."""
         if key is None:
             # assume ZipFile
-            tables = {}
+            tables: dict[Key, T_co] = {}
             with ZipFile(path_or_buf) as archive:
                 for fname in archive.namelist():
                     with archive.open(fname) as file:
-                        name = Path(fname).stem
+                        name = cast(Key, Path(fname).stem)
                         extension = Path(fname).suffix[1:]
                         tables[name] = cls.deserialize_table(file, loader=extension)
 

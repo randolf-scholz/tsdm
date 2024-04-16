@@ -37,6 +37,7 @@ __all__ = [
     "SupportsLenAndGetItem",
     "MutableSequenceProtocol",
     # other
+    "WriteBuffer",
     "GenericIterable",
     "SupportsKwargsType",
     # Factory classes
@@ -92,6 +93,8 @@ Scalar = TypeVar("Scalar")
 # region misc protocols ----------------------------------------------------------------
 @runtime_checkable
 class WriteBuffer(Protocol[T_contra]):
+    """Protocol for objects that support writing."""
+
     # REF: WriteBuffer from https://github.com/pandas-dev/pandas/blob/main/pandas/_typing.py
     # REF: SupportsWrite from https://github.com/python/typeshed/blob/main/stdlib/_typeshed/__init__.pyi
     # REF: IOBase from https://github.com/python/typeshed/blob/main/stdlib/io.pyi
