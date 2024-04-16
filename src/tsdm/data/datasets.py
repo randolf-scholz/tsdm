@@ -27,12 +27,13 @@ from typing_extensions import (
     Self,
     TypeAlias,
     TypeVar,
+    cast,
     overload,
     runtime_checkable,
 )
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
-from tsdm.types.variables import K2, K, K_contra, V_co
+from tsdm.types.variables import K, K_contra, V_co
 from tsdm.utils.pprint import pprint_repr, repr_array
 
 # region Protocols ---------------------------------------------------------------------
@@ -48,7 +49,7 @@ class TorchDataset(Protocol[K_contra, V_co]):
         ...
 
 
-TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
+DS = TypeVar("DS", bound=TorchDataset)
 
 
 @runtime_checkable
@@ -188,7 +189,7 @@ class DataFrame2Dataset(MapDataset[K, DataFrame]):
 
 
 @pprint_repr
-class MappingDataset(Mapping[K, TorchDatasetVar]):
+class MappingDataset(Mapping[K, DS]):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
     ``ds[key]`` returns the dataset for the given key.
@@ -197,10 +198,10 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
 
-    datasets: Mapping[K, TorchDatasetVar]
+    datasets: Mapping[K, DS]
     index: list[K]
 
-    def __init__(self, datasets: Mapping[K, TorchDatasetVar], /) -> None:
+    def __init__(self, datasets: Mapping[K, DS], /) -> None:
         super().__init__()
         assert isinstance(datasets, Mapping)
         self.index = list(datasets.keys())
@@ -215,23 +216,31 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K, /) -> TorchDatasetVar: ...
+    def __getitem__(self, key: K, /) -> DS: ...
     @overload
-    def __getitem__(self, key: tuple[K, K2], /) -> Any: ...
-    def __getitem__(self, key, /):
+    def __getitem__(self, key: tuple[K, Any], /) -> Any: ...
+    def __getitem__(self, key: K | tuple[K, Any], /) -> DS | Any:
         r"""Get the dataset for the given key.
 
         If the key is a tuple, try to divert to the nested dataset.
         """
-        if not isinstance(key, tuple):
-            return self.datasets[key]
-        try:
-            outer = self.datasets[key[0]]
-            if len(key) == 2:
-                return outer[key[1]]
-            return outer[key[1:]]
-        except KeyError:
-            return self.datasets[key]  # type: ignore[index]
+        match key:
+            case k if key in self:
+                return self.datasets[cast(K, k)]
+            case [outer, inner]:
+                return self.datasets[outer][inner]
+            case _:
+                raise KeyError(key)
+
+        # if not isinstance(key, tuple):
+        #     return self.datasets[key]
+        # try:
+        #     outer = self.datasets[key[0]]
+        #     if len(key) == 2:
+        #         return outer[key[1]]
+        #     return outer[key[1:]]
+        # except KeyError:
+        #     return self.datasets[key]  # type: ignore[index]
 
     @classmethod
     def from_dataframe(
