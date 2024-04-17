@@ -703,7 +703,7 @@ class TripletDecoder(BaseEncoder):
     r"""The original columns."""
     value_column: Hashable
     r"""The name of the value column."""
-    channel_columns: Index | Hashable
+    channel_columns: Index
     r"""The name of the channel column(s)."""
 
     def __init__(

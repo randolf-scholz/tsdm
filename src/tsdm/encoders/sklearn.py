@@ -34,7 +34,7 @@ class SklearnTransform(Protocol[T_contra, T_co]):
 
 
 @runtime_checkable
-class SklearnEncoder(SklearnTransform[T, T2], Protocol[T, T2]):
+class SklearnEncoder(SklearnTransform[T, T2], Protocol):
     """Protocol for scikit-learn encoders."""
 
     @abstractmethod
