@@ -1,23 +1,17 @@
 """Test sklearn encoders."""
 
 import numpy as np
+import pytest
 from pytest import mark
-from sklearn import preprocessing as sk_preprocessing
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils.estimator_checks import check_estimator
 
 from tsdm.encoders.sklearn import (
     SKLEARN_ENCODERS,
     SKLEARN_TRANSFORMS,
-    InvertibleTransform,
-    Transform,
+    SklearnEncoder,
+    SklearnTransform,
 )
-
-_SKLEARN_NOT_ENCODERS = {
-    "Binarizer": sk_preprocessing.Binarizer,
-    "KernelCenterer": sk_preprocessing.KernelCenterer,
-    "Normalizer": sk_preprocessing.Normalizer,
-    "PolynomialFeatures": sk_preprocessing.PolynomialFeatures,
-    "SplineTransformer": sk_preprocessing.SplineTransformer,
-}
 
 BINARY_DATA = np.array(["yes", "no", "no", "yes", "yes"])
 CATEGORICAL_DATA = np.array([["car"], ["bike"], ["car"], ["bike"], ["house"]])
@@ -49,25 +43,31 @@ SAMPLE_DATA = {
 r"""Dictionary of all available sklearn encoders."""
 
 
-def test_all_checked() -> None:
-    assert (
-        _SKLEARN_NOT_ENCODERS.keys() | SKLEARN_ENCODERS.keys()
-        == SKLEARN_TRANSFORMS.keys()
-    )
+@mark.parametrize("name", SKLEARN_TRANSFORMS)
+def test_transform(name: str) -> None:
+    cls = SKLEARN_TRANSFORMS[name]
+    assert issubclass(cls, SklearnTransform)
+    assert issubclass(cls, BaseEstimator)
+    assert issubclass(cls, TransformerMixin)
+    assert name in SKLEARN_ENCODERS or not issubclass(cls, SklearnEncoder)
+    encoder = cls()
+    check_estimator(encoder)
 
 
-@mark.parametrize("cls", SKLEARN_TRANSFORMS.values(), ids=SKLEARN_TRANSFORMS)
-def test_transform(cls: type[Transform]) -> None:
-    assert issubclass(cls, Transform)
-
-
-@mark.parametrize("cls", SKLEARN_ENCODERS.values(), ids=SKLEARN_ENCODERS)
-def test_encoder(cls: type[InvertibleTransform]) -> None:
-    assert issubclass(cls, InvertibleTransform)
+@mark.parametrize("name", SKLEARN_ENCODERS)
+def test_encoder(name: str) -> None:
+    cls = SKLEARN_ENCODERS[name]
+    assert issubclass(cls, SklearnEncoder)
+    assert issubclass(cls, BaseEstimator)
+    assert issubclass(cls, TransformerMixin)
+    encoder = cls()
+    check_estimator(encoder)
 
 
 @mark.parametrize("name", SKLEARN_ENCODERS)
 def test_left_inverse(name: str) -> None:
+    if name == "KBinsDiscretizer":
+        pytest.xfail("KBinsDiscretizer is not left-invertible")
     cls = SKLEARN_ENCODERS[name]
     x = np.array(SAMPLE_DATA[name])
     # x = np.random.randn(10, 1)
@@ -78,6 +78,12 @@ def test_left_inverse(name: str) -> None:
     assert (x == x_hat).all() or np.allclose(x, x_hat)
 
 
-@mark.parametrize("cls", _SKLEARN_NOT_ENCODERS.values(), ids=_SKLEARN_NOT_ENCODERS)
-def test_not_encoder(cls: type[Transform]) -> None:
-    assert not issubclass(cls, InvertibleTransform)
+def test_shared_attrs():
+    shared_attrs = set.intersection(
+        *(set(dir(cls)) for cls in SKLEARN_ENCODERS.values())
+    )
+    shared_classes = set.intersection(
+        *(set(cls.__mro__) for cls in SKLEARN_ENCODERS.values())
+    )
+    print(shared_attrs)
+    print(shared_classes)

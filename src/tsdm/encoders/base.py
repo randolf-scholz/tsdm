@@ -312,7 +312,20 @@ class BaseEncoder(Encoder[T, T2]):
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
 
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
+        r"""Return the parameters of the encoder."""
+        return self.__dict__
+
+    def set_params(self, **kwargs: Any) -> None:
+        r"""Set the parameters of the encoder."""
+        self.__dict__.update(kwargs)
+
     # region method aliases ------------------------------------------------------------
+    def fit_transform(self, data: T, /) -> T2:
+        r"""Fit the encoder to the data and apply the transformation."""
+        self.fit(data)
+        return self.encode(data)
+
     def transform(self, data: T, /) -> T2:
         r"""Alias for encode."""
         return self.encode(data)

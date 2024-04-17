@@ -5,15 +5,43 @@ __all__ = [
     "SKLEARN_TRANSFORMS",
     "SKLEARN_ENCODERS",
     # ABCs & Protocols
-    "Transform",
-    "InvertibleTransform",
+    "SklearnTransform",
+    "SklearnEncoder",
 ]
 
+from abc import abstractmethod
+
 from sklearn import preprocessing as sk_preprocessing
+from typing_extensions import Any, Protocol, runtime_checkable
 
-from tsdm.encoders.base import InvertibleTransform, Transform
+from tsdm.types.variables import T2, T, T_co, T_contra
 
-SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
+
+@runtime_checkable
+class SklearnTransform(Protocol[T_contra, T_co]):
+    """Protocol for scikit-learn transformers."""
+
+    @abstractmethod
+    def fit(self, data: T_contra, /) -> None: ...
+    @abstractmethod
+    def transform(self, data: T_contra, /) -> T_co: ...
+    @abstractmethod
+    def fit_transform(self, data: T_contra, /) -> T_co: ...
+    @abstractmethod
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]: ...
+    @abstractmethod
+    def set_params(self, **params: Any) -> None: ...
+
+
+@runtime_checkable
+class SklearnEncoder(SklearnTransform[T, T2], Protocol[T, T2]):
+    """Protocol for scikit-learn encoders."""
+
+    @abstractmethod
+    def inverse_transform(self, data: T2, /) -> T: ...
+
+
+SKLEARN_TRANSFORMS: dict[str, type[SklearnTransform]] = {
     "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,
@@ -36,10 +64,10 @@ SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
 r"""Dictionary of all available sklearn transforms."""
 
 
-SKLEARN_ENCODERS: dict[str, type[InvertibleTransform]] = {
+SKLEARN_ENCODERS: dict[str, type[SklearnEncoder]] = {
     # "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
-    # "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,  # NOTE: Not left-invertible!
+    "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,  # NOTE: Not left-invertible!
     # "KernelCenterer"      : sk_preprocessing.KernelCenterer,
     "LabelBinarizer"      : sk_preprocessing.LabelBinarizer,
     "LabelEncoder"        : sk_preprocessing.LabelEncoder,
