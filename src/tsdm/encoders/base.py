@@ -17,6 +17,8 @@ __all__ = [
     "MappingEncoder",
     "PipedEncoder",
     "ParallelEncoder",
+    "TupleDecoder",
+    "TupleEncoder",
     # Functions
     "chain_encoders",
     "parallel_encoders",
@@ -207,7 +209,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
 
 
 E = TypeVar("E", bound=Encoder)
-"""Type alias for encoder_var."""
+"""Type alias for Encoder."""
 
 
 class BaseEncoder(Encoder[T, T2]):
@@ -375,6 +377,42 @@ class IdentityEncoder(BaseEncoder):
         return data
 
 
+class TupleEncoder(BaseEncoder):
+    r"""Wraps input into a tuple."""
+
+    requires_fit: ClassVar[bool] = False
+    is_injective: ClassVar[bool] = True
+    is_surjective: ClassVar[bool] = True
+    is_bijective: ClassVar[bool] = True
+
+    def __invert__(self) -> "TupleDecoder":
+        return TupleDecoder()
+
+    def encode(self, data: T, /) -> tuple[T]:
+        return (data,)
+
+    def decode(self, data: tuple[T], /) -> T:
+        return data[0]
+
+
+class TupleDecoder(BaseEncoder):
+    r"""Unwraps input from a tuple."""
+
+    requires_fit: ClassVar[bool] = False
+    is_injective: ClassVar[bool] = True
+    is_surjective: ClassVar[bool] = True
+    is_bijective: ClassVar[bool] = True
+
+    def __invert__(self) -> "TupleEncoder":
+        return TupleEncoder()
+
+    def encode(self, data: tuple[T], /) -> T:
+        return data[0]
+
+    def decode(self, data: T, /) -> tuple[T]:
+        return (data,)
+
+
 class CopyEncoder(BaseEncoder[T, T]):
     r"""Encoder that deepcopies the input."""
 
@@ -426,30 +464,25 @@ def invert_encoder(encoder: Encoder[T, T2], /) -> Encoder[T2, T]:
 
 
 @pprint_repr(recursive=2)
-class ChainedEncoder(BaseEncoder, Sequence[E]):
+class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
     r"""Represents function composition of encoders."""
 
-    encoders: list[E]
+    encoders: list[Encoder]
     r"""List of encoders."""
 
-    def __init__(self, *encoders: E, simplify: bool = True) -> None:
-        self.encoders = []
-        for encoder in encoders:
-            if simplify and isinstance(encoder, ChainedEncoder):
-                self.encoders.extend(encoder)
-            else:
-                self.encoders.append(encoder)
+    def __init__(self, *encoders: Encoder) -> None:
+        self.encoders = list(encoders)
 
     def __invert__(self) -> Self:
         cls = type(self)
-        return cls(*(~e for e in reversed(self.encoders)))  # type: ignore[arg-type]
+        return cls(*(~e for e in reversed(self.encoders)))
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> E: ...
+    def __getitem__(self, index: int) -> Encoder: ...
     @overload
     def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
@@ -501,67 +534,61 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
             data = encoder.decode(data)
         return data
 
-    def simplify(self) -> IdentityEncoder | E | Self:
+    def simplify(self) -> IdentityEncoder | Encoder | Self:
         r"""Simplify the chained encoder."""
-        # FIXME: https://github.com/python/mypy/issues/17134
-        # match self:
-        #     case []:
-        #         return IdentityEncoder()
-        #     case [encoder]:
-        #         return encoder.simplify()
-        #     case _:
-        #         cls = type(self)
-        #         return cls(*(e.simplify() for e in self))
+        # simplify the nested encoders
+        encoders: list[Encoder] = []
+        for encoder in (e.simplify() for e in self):
+            match encoder:
+                case PipedEncoder(encoders=nested):
+                    encoders.extend(reversed(nested))
+                case ChainedEncoder(encoders=nested):
+                    encoders.extend(nested)
+                case _:
+                    encoders.append(encoder)
 
-        if len(self) == 0:
-            return IdentityEncoder()
-        if len(self) == 1:
-            encoder = self[0]
-            return encoder.simplify()
-        cls = type(self)
-        return cls(*(e.simplify() for e in self))
+        # simplify self
+        match encoders:
+            case []:
+                return IdentityEncoder()
+            case [encoder]:
+                return encoder
+            case _:
+                return type(self)(*encoders)
 
 
 @overload
 def chain_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def chain_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
+def chain_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
 @overload
-def chain_encoders(*encoders: E, simplify: bool = ...) -> ChainedEncoder[E]: ...
+def chain_encoders(*encoders: Encoder, simplify: bool = ...) -> ChainedEncoder: ...
 def chain_encoders(*encoders, simplify=True):
     r"""Chain encoders."""
-    if len(encoders) == 0 and simplify:
-        return IdentityEncoder()
-    if len(encoders) == 1 and simplify:
-        return encoders[0]
-    return ChainedEncoder(*encoders, simplify=simplify)
+    encoder = ChainedEncoder(*encoders)
+    return encoder.simplify() if simplify else encoder
 
 
 @pprint_repr(recursive=2)
-class PipedEncoder(BaseEncoder, Sequence[E]):
+class PipedEncoder(BaseEncoder, Sequence[Encoder]):
     r"""Represents function composition of encoders."""
 
-    encoders: list[E]
+    encoders: list[Encoder]
     r"""List of encoders."""
 
-    def __init__(self, *encoders: E, simplify: bool = True) -> None:
-        self.encoders = []
-        for encoder in encoders:
-            if simplify and isinstance(encoder, PipedEncoder):
-                self.encoders.extend(encoder)
-            else:
-                self.encoders.append(encoder)
+    def __init__(self, *encoders: Encoder) -> None:
+        self.encoders = list(encoders)
 
     def __invert__(self) -> Self:
         cls = type(self)
-        return cls(*(~e for e in reversed(self.encoders)))  # type: ignore[arg-type]
+        return cls(*(~e for e in reversed(self.encoders)))
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> E: ...
+    def __getitem__(self, index: int) -> Encoder: ...
     @overload
     def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
@@ -613,40 +640,39 @@ class PipedEncoder(BaseEncoder, Sequence[E]):
             data = encoder.decode(data)
         return data
 
-    def simplify(self) -> IdentityEncoder | E | Self:
+    def simplify(self) -> IdentityEncoder | Encoder | Self:
         r"""Simplify the chained encoder."""
-        # FIXME: https://github.com/python/mypy/issues/17134
-        # match self:
-        #     case []:
-        #         return IdentityEncoder()
-        #     case [encoder]:
-        #         return encoder.simplify()
-        #     case _:
-        #         cls = type(self)
-        #         return cls(*(e.simplify() for e in self))
+        # simplify the nested encoders
+        encoders = []
+        for encoder in (e.simplify() for e in self):
+            match encoder:
+                case PipedEncoder(encoders=nested):
+                    encoders.extend(nested)
+                case ChainedEncoder(encoders=nested):
+                    encoders.extend(reversed(nested))
+                case _:
+                    encoders.append(encoder)
 
-        if len(self) == 0:
-            return IdentityEncoder()
-        if len(self) == 1:
-            encoder = self[0]
-            return encoder.simplify()
-        cls = type(self)
-        return cls(*(e.simplify() for e in self), simplify=True)
+        # simplify self
+        match encoders:
+            case []:
+                return IdentityEncoder()
+            case [encoder]:
+                return encoder
+            case _:
+                return type(self)(*encoders)
 
 
 @overload
 def pipe_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def pipe_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
+def pipe_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
 @overload
-def pipe_encoders(*encoders: E, simplify: bool = ...) -> PipedEncoder[E]: ...
+def pipe_encoders(*encoders: Encoder, simplify: bool = ...) -> PipedEncoder: ...
 def pipe_encoders(*encoders, simplify=True):
     r"""Chain encoders."""
-    if len(encoders) == 0 and simplify:
-        return IdentityEncoder()
-    if len(encoders) == 1 and simplify:
-        return encoders[0]
-    return PipedEncoder(*encoders, simplify=simplify)
+    encoder = PipedEncoder(*encoders)
+    return encoder.simplify() if simplify else encoder
 
 
 @overload
@@ -660,12 +686,12 @@ def pow_encoder(
 ) -> IdentityEncoder: ...
 @overload
 def pow_encoder(
-    e: E, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...
-) -> E: ...
+    e: Encoder, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...
+) -> Encoder: ...
 @overload
 def pow_encoder(
-    e: E, n: int, /, *, simplify: bool = ..., copy: bool = ...
-) -> PipedEncoder[E]: ...
+    e: Encoder, n: int, /, *, simplify: bool = ..., copy: bool = ...
+) -> PipedEncoder: ...
 def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Apply encoder n times."""
     encoder = encoder.simplify() if simplify else encoder
@@ -683,14 +709,17 @@ def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
 
 
 @pprint_repr(recursive=2)
-class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[E]):
+class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[Encoder]):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
     """
 
-    encoders: list[E]
+    encoders: list[Encoder]
     r"""The encoders."""
+
+    def __init__(self, *encoders: Encoder) -> None:
+        self.encoders = list(encoders)
 
     @property
     def requires_fit(self) -> bool:
@@ -713,21 +742,12 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[E]
     def is_injective(self) -> bool:
         return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
 
-    def __init__(self, *encoders: E, simplify: bool = True) -> None:
-        self.encoders = []
-
-        for encoder in encoders:
-            if simplify and isinstance(encoder, ParallelEncoder):
-                self.encoders.extend(encoder)
-            else:
-                self.encoders.append(encoder)
-
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> E: ...
+    def __getitem__(self, index: int) -> Encoder: ...
     @overload
     def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
@@ -756,7 +776,7 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[E]
             encoder.decode(x) for encoder, x in zip(self.encoders, data, strict=True)
         )
 
-    def simplify(self) -> IdentityEncoder | E | Self:
+    def simplify(self) -> IdentityEncoder | Encoder | Self:
         r"""Simplify the product encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
         # match self:
@@ -771,8 +791,8 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[E]
         if len(self.encoders) == 0:
             return IdentityEncoder()
         if len(self.encoders) == 1:
-            encoder = self.encoders[0]
-            return encoder.simplify()
+            encoder = self.encoders[0].simplify()
+            return TupleDecoder() >> encoder >> TupleEncoder()
         cls = type(self)
         return cls(*(e.simplify() for e in self.encoders))
 
@@ -780,21 +800,18 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[E]
 @overload
 def parallel_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def parallel_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
+def parallel_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
 @overload
 def parallel_encoders(
-    e1: E, e2: E, /, *encoders: E, simplify: bool = ...
-) -> ParallelEncoder[E]: ...
+    e1: Encoder, e2: Encoder, /, *encoders: Encoder, simplify: bool = ...
+) -> ParallelEncoder: ...
 def parallel_encoders(*encoders, simplify=True):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
     """
-    if len(encoders) == 0 and simplify:
-        return IdentityEncoder()
-    if len(encoders) == 1 and simplify:
-        return encoders[0]
-    return ParallelEncoder(*encoders, simplify=simplify)
+    encoder = ParallelEncoder(*encoders)
+    return encoder.simplify() if simplify else encoder
 
 
 @overload
@@ -808,12 +825,12 @@ def duplicate_encoder(
 ) -> IdentityEncoder: ...
 @overload
 def duplicate_encoder(
-    e: E, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...
-) -> E: ...
+    e: Encoder, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...
+) -> Encoder: ...
 @overload
 def duplicate_encoder(
-    e: E, n: int, /, *, simplify: bool = ..., copy: bool = ...
-) -> ParallelEncoder[E]: ...
+    e: Encoder, n: int, /, *, simplify: bool = ..., copy: bool = ...
+) -> ParallelEncoder: ...
 def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Duplicate an encoder."""
     encoder = encoder.simplify() if simplify else encoder
@@ -831,20 +848,23 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
 
 
 @pprint_repr(recursive=2)
-class MappingEncoder(BaseEncoder[Mapping[K, Any], Mapping[K, Any]], Mapping[K, E]):
+class MappingEncoder(
+    BaseEncoder[Mapping[K, Any], Mapping[K, Any]],
+    Mapping[K, Encoder],
+):
     r"""Creates an encoder that applies over a mapping."""
 
-    encoders: Mapping[K, E]
+    encoders: Mapping[K, Encoder]
     r"""Mapping of keys to encoders."""
 
     @property
     def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self.encoders.values())
 
-    def __init__(self, encoders: Mapping[K, E], /) -> None:
+    def __init__(self, encoders: Mapping[K, Encoder], /) -> None:
         self.encoders = encoders
 
-    def __getitem__(self, key: K, /) -> E:
+    def __getitem__(self, key: K, /) -> Encoder:
         r"""Get the encoder for the given key."""
         return self.encoders[key]
 
