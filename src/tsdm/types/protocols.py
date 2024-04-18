@@ -437,7 +437,7 @@ class TableKind(Protocol):
         """Return the corresponding column."""
         ...
 
-    # FIXME: https://github.com/pola-rs/polars/issues/11911
+    # NOTE: take is excluded, cf. https://github.com/pola-rs/polars/issues/11911
     # def take(self, indices: Any, /) -> Any:
     #     """Return an element/slice of the table."""
     #     ...

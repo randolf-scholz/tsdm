@@ -254,9 +254,6 @@ class GroupedSetFuncTS(nn.Module):
             [time_features_fast, fast], dim=-1
         )  # [..., d] -> [..., d+dₜ-1]
 
-        # FIXED ✔: https://github.com/pytorch/pytorch/issues/73291
-        # torch.cuda.synchronize()  # needed when cat holds 0-size tensor
-
         slow = self.slow_encoder(slow)
 
         fast = fast.swapaxes(-1, -2)

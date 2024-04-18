@@ -52,20 +52,20 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
         match scale:
             case "percent" | "fraction":
                 column_encoders[col] = (
-                    LogitBoxCoxEncoder()
-                    @ MinMaxScaler(0, 1, xmin=xmin, xmax=xmax)
-                    @ BoundaryEncoder(xmin, xmax, mode="clip")
+                    BoundaryEncoder(xmin, xmax, mode="clip")
+                    >> MinMaxScaler(0, 1, xmin=xmin, xmax=xmax)
+                    >> LogitBoxCoxEncoder()
                 )
             case "absolute":
                 if xmax is not None and xmax < np.inf:
                     column_encoders[col] = (
-                        BoxCoxEncoder()
-                        # @ MinMaxScaler(lower, upper)
-                        @ BoundaryEncoder(xmin, xmax, mode="clip")
+                        BoundaryEncoder(xmin, xmax, mode="clip")
+                        # >> MinMaxScaler(lower, upper)
+                        >> BoxCoxEncoder()
                     )
                 else:
-                    column_encoders[col] = BoxCoxEncoder() @ BoundaryEncoder(
-                        xmin, xmax, mode="clip"
+                    column_encoders[col] = (
+                        BoundaryEncoder(xmin, xmax, mode="clip") >> BoxCoxEncoder()
                     )
             case "linear":
                 column_encoders[col] = IdentityEncoder()
@@ -73,7 +73,12 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
                 raise ValueError(f"{scale=} unknown")
 
     encoder = (
-        FrameAsDict(
+        FrameEncoder(
+            column_encoders=column_encoders,
+            index_encoders={"measurement_time": OldDateTimeEncoder() >> MinMaxScaler()},
+        )
+        >> StandardScaler(axis=-1)
+        >> FrameAsDict(
             groups={
                 "key": ["run_id", "experiment_id"],
                 "T": ["measurement_time"],
@@ -81,11 +86,6 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
             },
             dtypes={"T": "float32", "X": "float32"},
             encode_index=True,
-        )
-        @ StandardScaler(axis=-1)
-        @ FrameEncoder(
-            column_encoders=column_encoders,
-            index_encoders={"measurement_time": MinMaxScaler() @ OldDateTimeEncoder()},
         )
     )
 

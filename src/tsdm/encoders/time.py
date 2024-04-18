@@ -135,11 +135,6 @@ class DateTimeEncoder(BaseEncoder[NumericalArray, NumericalArray]):
     def fit(self, data: NumericalArray[DT], /) -> None: ...
 
     def encode(self, data: NumericalArray[DT], /) -> NumericalArray[TD]:
-        # FIXME: remove this patch with pyarrow 14
-        # https://github.com/apache/arrow/issues/36789
-        if isinstance(data.dtype, pd.ArrowDtype):
-            data = data.astype("datetime64[ns]")
-
         return (data - self.offset) / pd.Timedelta(1, unit=self.unit)
 
     def decode(self, data: NumericalArray[TD], /) -> NumericalArray[DT]:
