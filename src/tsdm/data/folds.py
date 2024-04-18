@@ -154,34 +154,33 @@ def folds_as_frame(
 def folds_as_sparse_frame(df: DataFrame, /) -> DataFrame:
     r"""Create a sparse table holding the fold information."""
     # TODO: simplify this code. It should just be pd.concat(folds)
-    columns = df.columns
-
     # get categoricals
-    categories = {col: df[col].astype("category").dtype.categories for col in columns}
+    categories = {col: s.astype("category").dtype.categories for col, s in df.items()}
 
-    if isinstance(df.columns, MultiIndex):
-        index_tuples = [
-            (*col, cat)
-            for col, cats in zip(columns, categories, strict=True)
-            for cat in categories[col]
-        ]
-        names = [*df.columns.names, "partition"]
-    else:
-        index_tuples = [
-            (col, cat)
-            for col, cats in zip(columns, categories, strict=True)
-            for cat in categories[col]
-        ]
-        names = [df.columns.name, "partition"]
-
-    new_columns = MultiIndex.from_tuples(index_tuples, names=names)
-    result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
-
-    if isinstance(df.columns, MultiIndex):
-        for col in new_columns:
-            result[col] = df[col[:-1]] == col[-1]
-    else:
-        for col in new_columns:
-            result[col] = df[col[0]] == col[-1]
-
-    return result
+    match df.columns:
+        case MultiIndex() as multi_index:
+            index_tuples = [
+                (*col, cat)
+                for col, cats in zip(multi_index, categories, strict=True)
+                for cat in categories[col]
+            ]
+            names = [*df.columns.names, "partition"]
+            new_columns = MultiIndex.from_tuples(index_tuples, names=names)
+            result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+            for col in new_columns:
+                result[col] = df[col[:-1]] == col[-1]
+            return result
+        case Index() as index:
+            index_tuples = [
+                (col, cat)
+                for col, cats in zip(index, categories, strict=True)
+                for cat in categories[col]
+            ]
+            names = [df.columns.name, "partition"]
+            new_columns = MultiIndex.from_tuples(index_tuples, names=names)
+            result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+            for col in new_columns:
+                result[col] = df[col[0]] == col[-1]
+            return result
+        case _:
+            raise TypeError(f"Column type {type(df.columns)} not supported.")

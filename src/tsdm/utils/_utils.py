@@ -120,17 +120,21 @@ def flatten_nested(
     nested: Any, /, *, leaf_type: type[HashableType]
 ) -> set[HashableType]:
     r"""Flatten nested iterables of a given kind."""
-    if nested is None:
-        return set()
-    if isinstance(nested, leaf_type):
-        return {nested}
-    if isinstance(nested, Mapping):
-        return set.union(
-            *(flatten_nested(v, leaf_type=leaf_type) for v in nested.values())
-        )
-    if isinstance(nested, Iterable):
-        return set.union(*(flatten_nested(v, leaf_type=leaf_type) for v in nested))
-    raise ValueError(f"{type(nested)} is not understood")
+    match nested:
+        case None:
+            return set()
+        case leaf_type() as leaf:  # type: ignore[misc]
+            return {leaf}  # type: ignore[unreachable]
+        case Mapping() as mapping:
+            return set.union(
+                *(flatten_nested(v, leaf_type=leaf_type) for v in mapping.values())
+            )
+        case Iterable() as iterable:
+            return set.union(
+                *(flatten_nested(v, leaf_type=leaf_type) for v in iterable)
+            )
+        case _:
+            raise TypeError(f"{type(nested)=} not understood")
 
 
 def flatten_dict(

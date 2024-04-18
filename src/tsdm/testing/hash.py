@@ -79,17 +79,19 @@ def to_alphanumeric(n: int) -> str:
 
 def hash_object(x: Any, /) -> int:
     r"""Hash an object in a permutation invariant manner."""
-    if isinstance(x, Hashable):
-        return hash(x)
-    if isinstance(x, Index | MultiIndex):
-        return hash_pandas(x.to_frame())
-    if isinstance(x, DataFrame | Series):
-        return hash_pandas(x)
-    if isinstance(x, Mapping):
-        return hash_mapping(x)
-    if isinstance(x, Iterable):
-        return hash_iterable(x)
-    raise TypeError(f"Cannot hash object of type {type(x)}.")
+    match x:
+        case Hashable():
+            return hash(x)
+        case Index() | MultiIndex():
+            return hash_pandas(x.to_frame())
+        case DataFrame() | Series():
+            return hash_pandas(x)
+        case Mapping():
+            return hash_mapping(x)
+        case Iterable():
+            return hash_iterable(x)
+        case _:
+            raise TypeError(f"Cannot hash object of type {type(x)}.")
 
 
 def hash_set(x: Iterable[Hashable], /, *, ignore_duplicates: bool = False) -> int:

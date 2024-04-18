@@ -1,6 +1,10 @@
 """Implements `pyarrow`-backend for tsdm."""
 
 __all__ = [
+    # Constants
+    "STR",
+    "TEXT",
+    "STRING_TYPES",
     # Functions
     "is_string_array",
     "arrow_strip_whitespace",
@@ -47,11 +51,13 @@ from typing_extensions import Literal, overload
 
 from tsdm.types.dtypes import PYARROW_TO_POLARS
 
+STR = pa.string()
+TEXT = pa.large_string()
+STRING_TYPES = frozenset({STR, TEXT})
+
 
 def is_string_array(arr: Array, /) -> bool:
     """Check if an array is a string array."""
-    STRING_TYPES = frozenset({pa.string(), pa.large_string()})
-
     match arr.type:
         case _ if arr.type in STRING_TYPES:
             return True
@@ -78,23 +84,22 @@ def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
 
 def strip_whitespace_array(arr: Array, /) -> Array:
     """Strip whitespace from all string elements in an array."""
-    if isinstance(arr, pa.ChunkedArray):
-        return pa.chunked_array(
-            [strip_whitespace_array(chunk) for chunk in arr.chunks],
-        )
-    if isinstance(arr, ListArray) and arr.type.value_type == pa.string():
-        return pa.compute.map(
-            pa.compute.utf8_trim_whitespace,
-            arr,
-        )
-    if isinstance(arr, DictionaryArray) and arr.type.value_type == pa.string():
-        return DictionaryArray.from_arrays(
-            arr.indices,
-            pa.compute.utf8_trim_whitespace(arr.dictionary),
-        )
-    if isinstance(arr, Array) and arr.type in {pa.string(), pa.large_string()}:
-        return pa.compute.utf8_trim_whitespace(arr)
-    raise ValueError(f"Expected string array, got {arr.type}.")
+    match arr:
+        case pa.ChunkedArray(chunks=chunks):
+            return pa.chunked_array(map(strip_whitespace_array, chunks))  # type: ignore[has-type]
+        case ListArray(type=dtype) if dtype.value_type in STRING_TYPES:
+            return pa.array(map(pa.compute.utf8_trim_whitespace, arr), type=dtype)
+        case DictionaryArray(
+            type=dtype, indices=indices, dictionary=dictionary
+        ) if dtype.value_type in STRING_TYPES:
+            return DictionaryArray.from_arrays(
+                indices,
+                pa.compute.utf8_trim_whitespace(dictionary),
+            )
+        case Array(type=dtype) if dtype in STRING_TYPES:
+            return pa.compute.utf8_trim_whitespace(arr)
+        case _:
+            raise TypeError(f"Expected string array, got {arr.type}.")
 
 
 @overload
@@ -103,13 +108,15 @@ def arrow_strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
 def arrow_strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
 def arrow_strip_whitespace(obj, /, *cols):
     """Strip whitespace from all string elements in an arrow object."""
-    if isinstance(obj, Table):
-        return strip_whitespace_table(obj, *cols)
-    if isinstance(obj, Array):
-        if cols:
-            raise ValueError("Cannot specify columns for an Array.")
-        return strip_whitespace_array(obj)
-    raise TypeError(f"Expected Array or Table, got {type(obj)}.")
+    match obj:
+        case Table() as table:
+            return strip_whitespace_table(table, *cols)
+        case Array() as array:
+            if cols:
+                raise ValueError("Cannot specify columns for an Array.")
+            return strip_whitespace_array(array)
+        case _:
+            raise TypeError(f"Expected Array or Table, got {type(obj)}.")
 
 
 def arrow_false_like(arr: Array, /) -> BooleanArray:
@@ -154,7 +161,7 @@ def arrow_where(mask, x, y=NA, /):
 
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).
     """
-    pa.compute.replace_with_mask(x, mask, y)
+    return pa.compute.replace_with_mask(x, mask, y)
 
 
 @overload
@@ -165,30 +172,30 @@ def force_cast(x: Array, dtype: DataType, /) -> Array: ...  # type: ignore[misc]
 def force_cast(x: Table, /, **dtypes: DataType) -> Table: ...
 def force_cast(x, dtype=None, /, **dtypes):
     """Cast an array or table to the given data type, replacing non-castable elements with null."""
-    x = x.combine_chunks()  # deals with chunked arrays
+    match x:
+        case Array() as array:
+            array = array.combine_chunks()  # deals with chunked arrays
+            assert dtype is not None and not dtypes
+            return (
+                pl.from_arrow(array)
+                .cast(PYARROW_TO_POLARS[dtype], strict=False)
+                .to_arrow()
+                .cast(dtype)
+            )
+        case Table() as table:
+            if unknown_keys := set(dtypes.keys()) - set(table.column_names):
+                raise ValueError(f"Keys: {unknown_keys} not in table columns.")
 
-    if isinstance(x, Array):
-        assert dtype is not None and not dtypes
-        return (
-            pl.from_arrow(x)
-            .cast(PYARROW_TO_POLARS[dtype], strict=False)
-            .to_arrow()
-            .cast(dtype)
-        )
+            schema: pa.Schema = table.schema
+            current_dtypes = dict(zip(schema.names, schema.types, strict=True))
+            new_schema = pa.schema(current_dtypes | dtypes)
 
-    if unknown_keys := set(dtypes.keys()) - set(x.column_names):
-        raise ValueError(f"Keys: {unknown_keys} not in table columns.")
-
-    schema: pa.Schema = x.schema
-    current_dtypes = dict(zip(schema.names, schema.types, strict=True))
-    new_schema = pa.schema(current_dtypes | dtypes)
-
-    return pa.table(
-        {
-            name: force_cast(x[name], dtypes.get(name) or current_dtypes[name])
-            for name in x.column_names
-        },
-    ).cast(new_schema)
+            return pa.table({
+                name: force_cast(table[name], dtypes.get(name) or current_dtypes[name])
+                for name in table.column_names
+            }).cast(new_schema)
+        case _:
+            raise TypeError(f"Expected Array or Table, got {type(x)}.")
 
 
 def cast_column(table: Table, col: str, dtype: DataType, /, *, safe: bool) -> Table:

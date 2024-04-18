@@ -209,21 +209,22 @@ def slice_size(slc: slice) -> Optional[int]:
 
 
 @overload
-def get_reduced_axes(item: Index | tuple[Index, ...], /, axis: None) -> None: ...
+def get_reduced_axes(item: Index | tuple[Index, ...], axis: None) -> None: ...
 @overload
 def get_reduced_axes(
-    item: Index | tuple[Index, ...], /, axis: SizeLike
+    item: Index | tuple[Index, ...], axis: SizeLike
 ) -> tuple[int, ...]: ...
-@overload
-def get_reduced_axes(item: Index | tuple[Index, ...], /, axis: Axes) -> Axes: ...
 def get_reduced_axes(item, axis):
     """Determine if a slice would remove some axes."""
-    if axis is None:
-        return None
-    if isinstance(axis, int):
-        axis = (axis,)
-    if len(axis) == 0:
-        return axis
+    match axis:
+        case None:
+            return None
+        case []:
+            return ()  # type: ignore[unreachable]
+        case int(a):
+            axis = (a,)
+        case _:
+            axis = tuple(axis)
 
     match item:
         case int():
@@ -289,9 +290,6 @@ class NumericalEncoder(BaseEncoder[Arr, Arr]):
 
     def cast_params(self, params: Nested) -> Nested[Arr]:
         """Cast the parameters to the current backend."""
-        if isinstance(params, Tensor | np.ndarray | Series | DataFrame):
-            return self.backend.to_tensor(params)
-
         match params:
             case NTuple() as ntup:
                 cls = type(ntup)
@@ -369,7 +367,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     ) -> None: ...
     @overload  # at least one data type specific input.
     def __init__(
-        self: "BoundaryEncoder[Arr]",
+        self,
         lower_bound: None | float | Arr = ...,
         upper_bound: None | float | Arr = ...,
         *,
@@ -584,7 +582,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
 
     @overload
     def __init__(
-        self: "LinearScaler[Any]",
+        self,
         loc: float = ...,
         scale: float = ...,
         *,
@@ -592,7 +590,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
     ) -> None: ...
     @overload
     def __init__(
-        self: "LinearScaler[Arr]",
+        self,
         loc: float | Arr = ...,
         scale: float | Arr = ...,
         *,
@@ -725,7 +723,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     ) -> None: ...
     @overload
     def __init__(
-        self: "StandardScaler[Arr]",
+        self,
         mean: float | Arr = ...,
         stdv: float | Arr = ...,
         *,
@@ -862,7 +860,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
 
     @overload
     def __init__(
-        self: "MinMaxScaler[Any]",
+        self,
         ymin: float = ...,
         ymax: float = ...,
         *,
@@ -872,7 +870,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     ) -> None: ...
     @overload
     def __init__(
-        self: "MinMaxScaler[Arr]",
+        self,
         ymin: float | Arr = ...,
         ymax: float | Arr = ...,
         *,

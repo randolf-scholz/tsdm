@@ -171,7 +171,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
         match key:
-            case Series() as s if isinstance(s.index, MultiIndex):
+            case Series(index=MultiIndex()) as s:
                 ts = self.timeseries.loc[s]
             case Series() as s:
                 assert pandas.api.types.is_bool_dtype(s)

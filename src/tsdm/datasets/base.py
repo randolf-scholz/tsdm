@@ -266,7 +266,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             **writer_kwargs: Additional keyword arguments to pass to the writer.
         """
         match path_or_buf, writer:
-            case [(str() | PathLike()) as filepath, _]:
+            case [str() | PathLike() as filepath, _]:
                 path = Path(filepath)
                 assert path.suffix.startswith("."), "File must have a suffix!"
                 writer = path.suffix[1:] if writer is None else writer
@@ -299,7 +299,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     ) -> Any:
         r"""Deserialize a table."""
         match path_or_buf, loader:
-            case [(str() | PathLike()) as filepath, _]:
+            case [str() | PathLike() as filepath, _]:
                 path = Path(filepath)
                 assert path.suffix.startswith("."), "File must have a suffix!"
                 loader = path.suffix[1:] if loader is None else loader

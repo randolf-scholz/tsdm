@@ -910,11 +910,8 @@ class ValueEncoder(BaseEncoder):
         index = index.squeeze(axis="columns")
 
         if isinstance(index, Series):
-            decoded = columns.set_index(index)
-        else:
-            decoded = columns.set_index(MultiIndex.from_frame(index))
-
-        return decoded
+            return columns.set_index(index)
+        return columns.set_index(MultiIndex.from_frame(index))
 
 
 class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
@@ -1157,7 +1154,5 @@ class FrameAsTuple(BaseEncoder):
         index = index.squeeze(axis="columns")
 
         if isinstance(index, Series):
-            decoded = columns.set_index(index)
-        else:
-            decoded = columns.set_index(MultiIndex.from_frame(index))
-        return decoded
+            return columns.set_index(index)
+        return columns.set_index(MultiIndex.from_frame(index))
