@@ -28,6 +28,7 @@ from tsdm.utils.decorators._decorators import (
     Decorator,
     debug,
     decorator,
+    implements,
     return_namedtuple,
     timefun,
     trace,
@@ -48,3 +49,7 @@ DECORATORS: dict[str, Decorator] = {
     # "sphinx_value": sphinx_value,
 }
 r"""Dictionary of all available decorators."""
+
+CLASS_DECORATORS: dict[str, ClassDecorator] = {
+    "implements": implements,
+}

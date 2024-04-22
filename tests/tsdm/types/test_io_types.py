@@ -6,7 +6,6 @@ from typing import IO
 from pandas._typing import ReadBuffer, WriteBuffer
 
 WRITE_TYPES = {"pandas": WriteBuffer, "typing": IO}
-
 READ_TYPES = {"pandas": ReadBuffer, "io": IOBase, "typing": IO}
 
 

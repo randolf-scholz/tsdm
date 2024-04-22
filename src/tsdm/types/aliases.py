@@ -9,10 +9,11 @@ __all__ = [
     # Custom Type Aliases
     "Axes",
     "Dims",
-    "Nested",
-    "Map",
-    "PandasObject",
     "FilePath",
+    "Kwargs",
+    "Map",
+    "Nested",
+    "PandasObject",
     "SizeLike",
     # Dtype Aliases
     "NumpyDtype",
@@ -74,7 +75,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 from typing_extensions import Any, TypeAlias
 
-from tsdm.types.protocols import Lookup
+from tsdm.types.protocols import Lookup, SupportsKwargs
 from tsdm.types.variables import K, K_contra, T, T_co, V, V_co
 
 # region Custom Type Aliases -----------------------------------------------------------
@@ -84,6 +85,9 @@ Dims: TypeAlias = None | int | list[int]
 r"""Type Alias for dimensions compatible with torchscript."""
 SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for shape-like objects."""
+
+Kwargs: TypeAlias = SupportsKwargs[T_co]
+r"""Type Alias for keyword arguments."""
 
 Map: TypeAlias = Lookup[K_contra, V_co] | Callable[[K_contra], V_co]
 r"""Type Alias for `Map`."""

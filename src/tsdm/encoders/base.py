@@ -10,7 +10,7 @@ __all__ = [
     # Classes
     "ChainedEncoder",
     "CloneEncoder",
-    "CopyEncoder",
+    "DeepcopyEncoder",
     "DuplicateEncoder",
     "IdentityEncoder",
     "InverseEncoder",
@@ -29,9 +29,11 @@ __all__ = [
 ]
 
 import logging
+import pickle
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import deepcopy
+from dataclasses import KW_ONLY, dataclass
 from functools import wraps
 from inspect import getattr_static
 
@@ -39,13 +41,17 @@ from typing_extensions import (
     Any,
     ClassVar,
     Literal,
+    Optional,
     Protocol,
     Self,
     TypeVar,
+    deprecated,
     overload,
     runtime_checkable,
 )
 
+from tsdm.constants import EMPTY_MAP
+from tsdm.types.aliases import FilePath
 from tsdm.types.variables import T2, K, T
 from tsdm.utils.pprint import pprint_repr
 
@@ -92,7 +98,54 @@ class EncoderProtocol(Protocol[U, V]):
     def decode(self, data: V, /) -> U: ...
 
 
-class Encoder(EncoderProtocol[U, V], Protocol):
+class ParametrizedEncoder(EncoderProtocol[U, V], Protocol):
+    """Protocol for encoders with parameters."""
+
+    @property
+    @abstractmethod
+    def required_params(self) -> frozenset[str]: ...
+    @property
+    @abstractmethod
+    def params(self) -> dict[str, Any]: ...
+    @abstractmethod
+    def set_params(self, mapping: Mapping[str, Any], /, **kwargs: Any) -> None: ...
+
+    # region mixin methods -------------------------------------------------------------
+    @classmethod
+    def from_params(cls, mapping: Mapping[str, Any], /, **kwargs: Any) -> Self:
+        r"""Create an encoder from parameters."""
+        options = dict(mapping, **kwargs)
+        obj = object.__new__(cls)
+        obj.set_params(options)
+        return obj
+
+    @property
+    def requires_fit(self) -> bool:
+        """Check if the encoder requires fitting."""
+        params = self.params
+        return any(params[key] is NotImplemented for key in self.required_params)
+
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
+        r"""Alias for `self.params`."""
+        return self.params
+
+    # endregion mixin methods ---------------------------------------------------------
+
+
+class SerializableEncoder(EncoderProtocol[U, V], Protocol):
+    """Protocol for serializable encoders."""
+
+    @property
+    @abstractmethod
+    def is_serializable(self) -> bool: ...
+    @abstractmethod
+    def serialize(self, filepath: FilePath, /) -> None: ...
+    @classmethod
+    @abstractmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self: ...
+
+
+class Encoder(Protocol[U, V]):
     """Protocol for Encoders with algebraic mixin methods."""
 
     # region abstract methods ----------------------------------------------------------
@@ -114,6 +167,61 @@ class Encoder(EncoderProtocol[U, V], Protocol):
         r"""Simplify the encoder."""
         return self
 
+    # region parameter methods ---------------------------------------------------------
+    @property
+    def params(self) -> dict[str, Any]: ...
+
+    @property
+    def required_params(self) -> frozenset[str]:
+        raise NotImplementedError
+
+    def set_params(self, mapping: Mapping[str, Any] = EMPTY_MAP, **kwargs: Any) -> None:
+        raise NotImplementedError
+
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
+        return self.params
+
+    # endregion parameter methods ------------------------------------------------------
+
+    # region serialization methods -----------------------------------------------------
+    def is_serializable(self) -> bool:
+        r"""Check if the encoder is serializable."""
+        params = self.params
+        return not any(params[key] is NotImplemented for key in self.required_params)
+
+    def serialize(self, filepath: FilePath, /) -> None:
+        r"""Serialize the encoder to a file."""
+        with open(filepath, "wb") as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self:
+        r"""Deserialize the encoder from a file."""
+        with open(filepath, "rb") as file:
+            obj = pickle.load(file)
+            assert isinstance(obj, cls)
+            return obj
+
+    # endregion serialization methods --------------------------------------------------
+
+    # region method aliases ------------------------------------------------------------
+    def fit_transform(self, data: T, /) -> T2:
+        r"""Fit the encoder to the data and apply the transformation."""
+        self.fit(data)
+        return self.encode(data)
+
+    def transform(self, data: T, /) -> T2:
+        r"""Alias for encode."""
+        return self.encode(data)
+
+    def inverse_transform(self, data: T2, /) -> T:
+        r"""Alias for decode."""
+        return self.decode(data)
+
+    # endregion method aliases ---------------------------------------------------------
+
+    # region magic methods -------------------------------------------------------------
+    @deprecated("use .encode(data) instead.")
     def __call__(self, data: U, /) -> V:
         r"""Apply the encoder."""
         return self.encode(data)
@@ -196,15 +304,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
         """
         return ParallelEncoder(other, self)
 
-    def __pow__(self: "Encoder[T, T]", power: int, /) -> "Encoder[T, T]":
-        r"""Return the chain of itself multiple times.
-
-        Example:
-            enc = self ** n
-            enc(x) == self(self(...self(x)...))
-        """
-        return pow_encoder(self, power)
-
+    # endregion magic methods ----------------------------------------------------------
     # endregion mixin methods ----------------------------------------------------------
 
 
@@ -213,7 +313,7 @@ E = TypeVar("E", bound=Encoder)
 
 
 class BaseEncoder(Encoder[T, T2]):
-    r"""Base class that all encoders must subclass."""
+    r"""Base class for encoders implemented within this package."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
@@ -222,12 +322,6 @@ class BaseEncoder(Encoder[T, T2]):
     r"""Whether the encoder has been fitted."""
 
     # region abstract methods ----------------------------------------------------------
-    @property
-    @abstractmethod
-    def requires_fit(self) -> bool:
-        r"""Whether the encoder requires fitting."""
-        ...
-
     @abstractmethod
     def encode(self, data: T, /) -> T2:
         r"""Encode the data by transformation."""
@@ -305,45 +399,40 @@ class BaseEncoder(Encoder[T, T2]):
         self._is_fitted = value
 
     @property
-    def is_surjective(self) -> bool:
-        r"""Whether the encoder is surjective."""
-        raise NotImplementedError
+    def required_params(self) -> set[str]:
+        """The required parameters of the encoder."""
+        return set(self.params.keys())
 
-    @property
-    def is_injective(self) -> bool:
-        r"""Whether the encoder is injective."""
-        raise NotImplementedError
+    def is_serializable(self) -> bool:
+        """Check if the encoder is serializable.
 
-    @property
-    def is_bijective(self) -> bool:
-        r"""Whether the encoder is bijective."""
-        return self.is_surjective and self.is_injective
+        By default, an encoder can be serialized if all of its required parameters are initialized.
+        """
+        params = self.params
+        return any(params[k] is NotImplemented for k in self.required_params)
 
     def get_params(self, *, deep: bool = True) -> dict[str, Any]:
-        r"""Return the parameters of the encoder."""
-        return self.__dict__
+        r"""Return the parameters of the encoder.
 
-    def set_params(self, **kwargs: Any) -> None:
+        Compatibility interface with scikit-learn.
+        Use the property `self.params` to access the parameters directly.
+
+        Uninitialized required parameters are marked as `NotImplemented`.
+        Uninitialized optional parameters are marked as `None`.
+        """
+        return self.params
+
+    def set_params(
+        self, mapping: Mapping[str, Any] = EMPTY_MAP, /, **kwargs: Any
+    ) -> None:
         r"""Set the parameters of the encoder."""
-        self.__dict__.update(kwargs)
-
-    # region method aliases ------------------------------------------------------------
-    def fit_transform(self, data: T, /) -> T2:
-        r"""Fit the encoder to the data and apply the transformation."""
-        self.fit(data)
-        return self.encode(data)
-
-    def transform(self, data: T, /) -> T2:
-        r"""Alias for encode."""
-        return self.encode(data)
-
-    def inverse_transform(self, data: T2, /) -> T:
-        r"""Alias for decode."""
-        return self.decode(data)
-
-    # endregion method aliases ---------------------------------------------------------
+        self.__dict__.update(mapping, **kwargs)
 
     # region chaining methods ----------------------------------------------------------
+    # def pow(self, power: int, /) -> "PipedEncoder":
+    #     r"""Return the chain of itself multiple times."""
+    #     return pow_encoder(self, power)
+    #
     # def standardize(self) -> "ChainedEncoder[Self, StandardScaler]":
     #     r"""Chain a standardize."""
     #     return self >> StandardScaler()
@@ -362,13 +451,10 @@ class BaseEncoder(Encoder[T, T2]):
     # endregion chaining methods -------------------------------------------------------
 
 
-class IdentityEncoder(BaseEncoder):
+class IdentityEncoder(BaseEncoder[Any, Any]):
     r"""Dummy class that performs identity function."""
 
     requires_fit: ClassVar[bool] = False
-    is_injective: ClassVar[bool] = True
-    is_surjective: ClassVar[bool] = True
-    is_bijective: ClassVar[bool] = True
 
     def encode(self, data: T, /) -> T:
         return data
@@ -377,13 +463,48 @@ class IdentityEncoder(BaseEncoder):
         return data
 
 
+@dataclass
+class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
+    r"""Encodes the input into a tuple of itself.
+
+    .. math:: f(x) = (x, x, …, x)
+
+    Note:
+        In practice, when working with float arrays, we need to be careful how to select
+        the inverse. Due to rounding errors, the values in the tuple elements might be
+        slightly different. In this case, an aggregation function needs to be supplied.
+    """
+
+    requires_fit: ClassVar[bool] = False
+
+    num: int
+
+    _: KW_ONLY
+
+    aggregate_fn: Optional[Callable[[tuple[T, ...]], T]] = None
+
+    def encode(self, data: T, /) -> tuple[T, ...]:
+        return (data,) * self.num
+
+    def decode(self, data: tuple[T, ...], /) -> T:
+        if self.aggregate_fn is None:
+            try:
+                vals = set(data)
+            except TypeError as exc:
+                raise TypeError(
+                    "Data not hashable, please provide an aggregate_fn."
+                ) from exc
+            if len(vals) != 1:
+                raise ValueError("Data not constant, please provide an aggregate_fn.")
+            return vals.pop()
+
+        return self.aggregate_fn(data)
+
+
 class TupleEncoder(BaseEncoder):
     r"""Wraps input into a tuple."""
 
     requires_fit: ClassVar[bool] = False
-    is_injective: ClassVar[bool] = True
-    is_surjective: ClassVar[bool] = True
-    is_bijective: ClassVar[bool] = True
 
     def __invert__(self) -> "TupleDecoder":
         return TupleDecoder()
@@ -399,9 +520,6 @@ class TupleDecoder(BaseEncoder):
     r"""Unwraps input from a tuple."""
 
     requires_fit: ClassVar[bool] = False
-    is_injective: ClassVar[bool] = True
-    is_surjective: ClassVar[bool] = True
-    is_bijective: ClassVar[bool] = True
 
     def __invert__(self) -> "TupleEncoder":
         return TupleEncoder()
@@ -411,21 +529,6 @@ class TupleDecoder(BaseEncoder):
 
     def decode(self, data: T, /) -> tuple[T]:
         return (data,)
-
-
-class CopyEncoder(BaseEncoder[T, T]):
-    r"""Encoder that deepcopies the input."""
-
-    requires_fit: ClassVar[bool] = False
-    is_injective: ClassVar[bool] = True
-    is_surjective: ClassVar[bool] = True
-    is_bijective: ClassVar[bool] = True
-
-    def encode(self, data: T, /) -> T:
-        return deepcopy(data)
-
-    def decode(self, data: T, /) -> T:
-        return deepcopy(data)
 
 
 class InverseEncoder(BaseEncoder[T, T2]):
@@ -493,7 +596,7 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
             case slice() as slc:
                 return ChainedEncoder(*self.encoders[slc])
             case _:
-                raise ValueError(f"Index {index} not supported.")
+                raise TypeError(f"Type {type(index)} not supported.")
 
     @property
     def requires_fit(self) -> bool:
@@ -507,14 +610,6 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
     def is_fitted(self, value: bool) -> None:
         for encoder in self.encoders:
             encoder.is_fitted = value
-
-    @property
-    def is_surjective(self) -> bool:
-        return all(e.is_surjective for e in self.encoders)  # type: ignore[attr-defined]
-
-    @property
-    def is_injective(self) -> bool:
-        return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
 
     def fit(self, data: Any, /) -> None:
         for encoder in reversed(self.encoders):
@@ -599,7 +694,7 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
             case slice() as slc:
                 return PipedEncoder(*self.encoders[slc])
             case _:
-                raise ValueError(f"Index {index} not supported.")
+                raise TypeError(f"Type {type(index)} not supported.")
 
     @property
     def requires_fit(self) -> bool:
@@ -614,16 +709,8 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
         for encoder in self.encoders:
             encoder.is_fitted = value
 
-    @property
-    def is_surjective(self) -> bool:
-        return all(e.is_surjective for e in self.encoders)  # type: ignore[attr-defined]
-
-    @property
-    def is_injective(self) -> bool:
-        return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
-
     def fit(self, data: Any, /) -> None:
-        for encoder in reversed(self.encoders):
+        for encoder in self.encoders:
             try:
                 encoder.fit(data)
             except Exception as exc:
@@ -734,14 +821,6 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[En
         for encoder in self.encoders:
             encoder.is_fitted = value
 
-    @property
-    def is_surjective(self) -> bool:
-        return all(e.is_surjective for e in self.encoders)  # type: ignore[attr-defined]
-
-    @property
-    def is_injective(self) -> bool:
-        return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
-
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
         return len(self.encoders)
@@ -758,7 +837,7 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[En
             case slice() as slc:
                 return ParallelEncoder(*self.encoders[slc])
             case _:
-                raise ValueError(f"Index {index} not supported.")
+                raise TypeError(f"Type {type(index)} not supported.")
 
     def fit(self, data: tuple[Any, ...], /) -> None:
         for encoder, x in zip(self.encoders, data, strict=True):
@@ -848,6 +927,65 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
 
 
 @pprint_repr(recursive=2)
+class FactorizedEncoder(BaseEncoder, Sequence[Encoder]):
+    """Factorized Encoder.
+
+    Example:
+        enc = FactorizedEncoder(e1, e2, e3)
+        enc(x) == (e1(x), e2(x), e3(x))
+
+    Note:
+        This is essentially equivalent to chaining `DiagonalEncoder >> ParallelEncoder`.
+    """
+
+    encoders: list[Encoder]
+    aggregate_fn: Optional[Callable[[tuple[T, ...]], T]] = None
+
+    def __init__(
+        self,
+        *encoders: Encoder,
+        aggregate_fn: Optional[Callable[[tuple[T, ...]], T]] = None,
+    ) -> None:
+        self.encoders = list(encoders)
+        self.aggregate_fn = aggregate_fn
+
+    def __len__(self) -> int:
+        return len(self.encoders)
+
+    @overload
+    def __getitem__(self, index: int) -> Encoder: ...
+    @overload
+    def __getitem__(self, index: slice) -> Self: ...
+    def __getitem__(self, index):
+        r"""Get the encoder at the given index."""
+        match index:
+            case int(idx):
+                return self.encoders[idx]
+            case slice() as slc:
+                return FactorizedEncoder(*self.encoders[slc])
+            case _:
+                raise TypeError(f"Type {type(index)} not supported.")
+
+    def encode(self, data: T, /) -> tuple[T2, ...]:
+        return tuple(e.encode(data) for e in self.encoders)
+
+    def decode(self, data: tuple[T2, ...], /) -> T:
+        decoded_vals = [e.decode(x) for e, x in zip(self.encoders, data)]
+
+        if self.aggregate_fn is None:
+            try:
+                vals = set(decoded_vals)
+            except TypeError as exc:
+                raise TypeError(
+                    "Data not hashable, please provide an aggregate_fn."
+                ) from exc
+            if len(vals) != 1:
+                raise ValueError("Data not constant, please provide an aggregate_fn.")
+            return vals.pop()
+        return self.aggregate_fn(decoded_vals)
+
+
+@pprint_repr(recursive=2)
 class MappingEncoder(
     BaseEncoder[Mapping[K, Any], Mapping[K, Any]],
     Mapping[K, Encoder],
@@ -905,6 +1043,18 @@ class MappingEncoder(
             return IdentityEncoder()
         cls = type(self)
         return cls({k: e.simplify() for k, e in self.encoders.items()})
+
+
+class DeepcopyEncoder(BaseEncoder[T, T]):
+    r"""Encoder that deepcopies the input."""
+
+    requires_fit: ClassVar[bool] = False
+
+    def encode(self, data: T, /) -> T:
+        return deepcopy(data)
+
+    def decode(self, data: T, /) -> T:
+        return deepcopy(data)
 
 
 class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[T2, ...]]):

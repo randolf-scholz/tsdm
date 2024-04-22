@@ -111,7 +111,7 @@ __all__ = [
     "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
-    "CopyEncoder",
+    "DeepcopyEncoder",
     "DTypeEncoder",
     "DuplicateEncoder",
     "FrameAsDict",
@@ -126,7 +126,6 @@ __all__ = [
     "LogitEncoder",
     "MappingEncoder",
     "MinMaxScaler",
-    "OldDateTimeEncoder",
     "ParallelEncoder",
     "PeriodicEncoder",
     "PeriodicSocialTimeEncoder",
@@ -136,7 +135,6 @@ __all__ = [
     "TensorConcatenator",
     "TensorEncoder",
     "TensorSplitter",
-    "Time2Float",
     "TimeDeltaEncoder",
     "TripletDecoder",
     "TripletEncoder",
@@ -144,11 +142,12 @@ __all__ = [
 ]
 
 from tsdm.encoders import base, numerical, pytorch, time, transforms
+from tsdm.encoders._deprecated import OldDateTimeEncoder, Time2Float
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
     CloneEncoder,
-    CopyEncoder,
+    DeepcopyEncoder,
     DuplicateEncoder,
     Encoder,
     EncoderProtocol,
@@ -182,12 +181,10 @@ from tsdm.encoders.numerical import (
     TensorSplitter,
 )
 from tsdm.encoders.time import (
-    OldDateTimeEncoder,
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
     PositionalEncoder,
     SocialTimeEncoder,
-    Time2Float,
     TimeDeltaEncoder,
 )
 
@@ -196,7 +193,7 @@ ENCODERS: dict[str, type[Encoder]] = {
     "BoxCoxEncoder"             : BoxCoxEncoder,
     "ChainedEncoder"            : ChainedEncoder,
     "CloneEncoder"              : CloneEncoder,
-    "CopyEncoder"               : CopyEncoder,
+    "CopyEncoder"               : DeepcopyEncoder,
     "DateTimeEncoder"           : OldDateTimeEncoder,
     "DuplicateEncoder"          : DuplicateEncoder,
     "IdentityEncoder"           : IdentityEncoder,

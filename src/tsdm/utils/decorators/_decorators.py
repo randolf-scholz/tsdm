@@ -10,6 +10,7 @@ __all__ = [
     # "sphinx_value",
     "lazy_torch_jit",
     "return_namedtuple",
+    "implements",
     "timefun",
     "trace",
     "vectorize",
@@ -44,7 +45,7 @@ from typing_extensions import (
 
 from tsdm.types.aliases import BUILTIN_CONTAINERS, Nested
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import CollectionType, R, T
+from tsdm.types.variables import CollectionType, R, T, class_var as C
 from tsdm.utils.funcutils import rpartial
 
 __logger__: logging.Logger = logging.getLogger(__name__)
@@ -79,12 +80,24 @@ class Decorator(Protocol):
         ...
 
 
-class ClassDecorator(Protocol):
+class ClassDecorator(Protocol[C]):
     r"""Class Decorator Protocol."""
 
-    def __call__(self, cls: type, /) -> type:
+    def __call__(self, *args, **kwargs) -> Callable[[type], type]:
         r"""Decorate a class."""
         ...
+
+
+def implements(*protocols: type) -> Callable[[C], C]:
+    r"""Check if class implements a set of protocols."""
+
+    def _implements(cls: C) -> C:
+        for protocol in protocols:
+            if not issubclass(cls, protocol):
+                raise TypeError(f"{cls} does not implement {protocol}")
+        return cls
+
+    return _implements
 
 
 @dataclass

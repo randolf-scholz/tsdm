@@ -44,6 +44,7 @@ from tsdm.utils.pprint import repr_mapping
 
 E = TypeVar("E", bound=Encoder)
 F = TypeVar("F", bound=Encoder)
+TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
 
 
 class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
@@ -209,9 +210,6 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
         index_columns = data.columns.intersection(self.original_index_columns)
         data = data.set_index(index_columns.tolist())
         return data
-
-
-TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
 
 
 class TableEncoder(BaseEncoder[TableVar, TableVar]):
