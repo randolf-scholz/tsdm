@@ -6,17 +6,21 @@ __all__ = [
     "Encoder",
     "EncoderProtocol",
     "InvertibleTransform",
+    "ParametrizedEncoder",
+    "SerializableEncoder",
     "Transform",
     # Classes
     "ChainedEncoder",
     "CloneEncoder",
     "DeepcopyEncoder",
+    "DiagonalEncoder",
     "DuplicateEncoder",
+    "FactorizedEncoder",
     "IdentityEncoder",
     "InverseEncoder",
     "MappingEncoder",
-    "PipedEncoder",
     "ParallelEncoder",
+    "PipedEncoder",
     "TupleDecoder",
     "TupleEncoder",
     # Functions
@@ -970,7 +974,7 @@ class FactorizedEncoder(BaseEncoder, Sequence[Encoder]):
         return tuple(e.encode(data) for e in self.encoders)
 
     def decode(self, data: tuple[T2, ...], /) -> T:
-        decoded_vals = [e.decode(x) for e, x in zip(self.encoders, data)]
+        decoded_vals = [e.decode(x) for e, x in zip(self.encoders, data, strict=True)]
 
         if self.aggregate_fn is None:
             try:

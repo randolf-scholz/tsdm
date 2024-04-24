@@ -5,6 +5,8 @@ __all__ = [
     "data",
     "hash",
     # Functions
+    "assert_arrays_close",
+    "assert_arrays_equal",
     "assert_protocol",
     "check_shared_attrs",
     "is_dunder",
@@ -17,6 +19,8 @@ __all__ = [
 
 from tsdm.testing import data, hash
 from tsdm.testing._testing import (
+    assert_arrays_close,
+    assert_arrays_equal,
     assert_protocol,
     check_shared_attrs,
     is_dunder,

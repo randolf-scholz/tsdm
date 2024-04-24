@@ -1,19 +1,96 @@
 """Utilities for testing and validation."""
 
 __all__ = [
-    "is_flattened",
-    "is_dunder",
-    "is_zipfile",
+    # Functions
+    "assert_arrays_close",
+    "assert_arrays_equal",
     "assert_protocol",
     "check_shared_attrs",
+    "is_dunder",
+    "is_flattened",
+    "is_zipfile",
 ]
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
 from zipfile import BadZipFile, ZipFile
 
-from typing_extensions import get_protocol_members, is_protocol
+import numpy as np
+import pandas as pd
+import polars as pl
+import polars.testing
+import torch
+import torch.testing
+from typing_extensions import Any, get_protocol_members, is_protocol
+
+
+def assert_arrays_equal(array: Sequence, reference: Sequence, /) -> None:
+    assert type(array) == type(reference)
+
+    match array:
+        case pd.Series():
+            pd.testing.assert_series_equal(array, reference)
+        case pd.Index():
+            pd.testing.assert_index_equal(array, reference)
+        case pd.DataFrame():
+            pd.testing.assert_frame_equal(array, reference)
+        case np.ndarray():
+            np.testing.assert_array_equal(array, reference)
+        case pl.Series():
+            pl.testing.assert_series_equal(array, reference)
+        case pl.DataFrame():
+            pl.testing.assert_frame_equal(array, reference)
+        case torch.Tensor() as tensor:
+            assert torch.equal(tensor, reference)
+        case Sequence() as seq:
+            assert all(a == b for a, b in zip(seq, reference, strict=True))
+        case _:
+            raise TypeError(f"Unsupported {type(array)=}")
+
+
+def assert_arrays_close(
+    array: Sequence,
+    reference: Sequence,
+    /,
+    *,
+    atol: float = 1e-8,
+    rtol: float = 1e-5,
+) -> None:
+    """Assert that the arrays are close within tolerance."""
+    assert type(array) == type(reference)
+
+    match array:
+        case pd.Series():
+            pd.testing.assert_series_equal(
+                array, reference, check_exact=False, atol=atol, rtol=rtol
+            )
+        case pd.Index():
+            pd.testing.assert_index_equal(
+                array, reference, check_exact=False, atol=atol, rtol=rtol
+            )
+        case pd.DataFrame():
+            pd.testing.assert_frame_equal(
+                array, reference, check_exact=False, atol=atol, rtol=rtol
+            )
+        case np.ndarray():
+            np.testing.assert_allclose(array, reference, atol=atol, rtol=rtol)
+        case pl.Series():
+            pl.testing.assert_series_equal(
+                array, reference, check_exact=False, atol=atol, rtol=rtol
+            )
+        case pl.DataFrame():
+            pl.testing.assert_frame_equal(
+                array, reference, check_exact=False, atol=atol, rtol=rtol
+            )
+        case torch.Tensor() as tensor:
+            torch.testing.assert_close(tensor, reference, atol=atol, rtol=rtol)
+        case Sequence() as seq:
+            assert all(
+                abs(a - b) <= atol + rtol * abs(b)
+                for a, b in zip(seq, reference, strict=True)
+            )
+        case _:
+            raise TypeError(f"Unsupported {type(array)=}")
 
 
 def is_flattened(

@@ -16,9 +16,9 @@ from typing import TypeVar
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 from pandas import DataFrame, DatetimeIndex, Index, Series
 from typing_extensions import (
-    Any,
     ClassVar,
     Final,
     Optional,
@@ -28,59 +28,60 @@ from typing_extensions import (
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import DType, PandasObject
-from tsdm.types.protocols import NumericalArray
-from tsdm.types.time import DT, TD, DateTime, TimeDelta
+from tsdm.types.aliases import DType, PandasDtype
+from tsdm.types.time import DateTime, TimeDelta
 
-PandasType = TypeVar("PandasType", Index, Series, DataFrame)
+PandasVec = TypeVar("PandasVec", Index, Series)
 
 
 class TimeDeltaEncoder(BaseEncoder):
     r"""Encode TimeDelta as Float."""
 
-    requires_fit: ClassVar[bool] = True
-
-    unit: str = "s"
+    unit: pd.Timedelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
-    base_freq: str = "s"
-    r"""The frequency the decoding should be rounded to."""
-    original_dtype: Any
-
-    def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
-        self.unit = unit
-        self.base_freq = base_freq
-        self.timedelta = pd.Timedelta(1, unit=self.unit)
-
-    def encode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype("timedelta64[ns]") / self.timedelta
-
-    def decode(self, data: PandasObject, /) -> PandasObject:
-        result = data * self.timedelta
-        if hasattr(result, "apply"):
-            return result.apply(lambda x: x.round(self.base_freq))
-        if hasattr(result, "map"):
-            return result.map(lambda x: x.round(self.base_freq))
-        return result
-
-
-@dataclass(init=False)
-class DateTimeEncoder(BaseEncoder[PandasType, PandasType]):
-    """Encode Datetime as Float."""
-
-    base_unit: TimeDelta
-    r"""The base frequency to convert timedeltas to."""
-    offset: DateTime
-    r"""The starting point of the timeseries."""
-    original_dtype = NotImplemented
+    original_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
+
+    def __init__(self, *, unit: str | TimeDelta = NotImplemented) -> None:
+        self.unit = NotImplemented if unit is NotImplemented else pd.Timedelta(unit)
 
     @property
     def requires_fit(self) -> bool:
         return any((
-            self.offset is NotImplemented,
-            self.base_unit is NotImplemented,
+            self.unit is NotImplemented,
             self.original_dtype is NotImplemented,
         ))
+
+    def fit(self, data: PandasVec, /) -> None:
+        self.original_dtype = data.dtype
+
+        if self.unit is NotImplemented:
+            # FIXME: https://github.com/pandas-dev/pandas/issues/58403
+            # This looks awkward but is robust.
+            base_freq = np.gcd.reduce(data.astype(int))
+            self.unit = Index([base_freq]).astype(self.original_dtype).item()
+
+    def encode(self, data: PandasVec, /) -> PandasVec:
+        return data / self.unit
+
+    def decode(self, data: PandasVec, /) -> PandasVec:
+        # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
+        try:
+            return (data * self.unit).astype(self.original_dtype)
+        except pa.lib.ArrowNotImplementedError:
+            return data.astype(float).__mul__(self.unit).astype(self.original_dtype)
+
+
+@dataclass(init=False)
+class DateTimeEncoder(BaseEncoder):
+    """Encode Datetime as Float."""
+
+    offset: DateTime = NotImplemented
+    r"""The starting point of the timeseries."""
+    unit: pd.Timedelta = NotImplemented
+    r"""The base frequency to convert timedeltas to."""
+    original_dtype: PandasDtype = NotImplemented
+    r"""The original dtype of the Series."""
 
     def __init__(
         self,
@@ -88,37 +89,42 @@ class DateTimeEncoder(BaseEncoder[PandasType, PandasType]):
         unit: str | TimeDelta = NotImplemented,
         offset: str | TimeDelta = NotImplemented,
     ) -> None:
-        self.base_unit = (
-            NotImplemented if unit is NotImplemented else pd.Timedelta(unit)
-        )
+        self.unit = NotImplemented if unit is NotImplemented else pd.Timedelta(unit)
         self.offset = (
             NotImplemented if offset is NotImplemented else pd.Timestamp(offset)
         )
 
-    def fit(self, data: NumericalArray[DT], /) -> None:
+    @property
+    def requires_fit(self) -> bool:
+        return any((
+            self.offset is NotImplemented,
+            self.unit is NotImplemented,
+            self.original_dtype is NotImplemented,
+        ))
+
+    def fit(self, data: PandasVec, /) -> None:
         self.original_dtype = data.dtype
+
         if self.offset is NotImplemented:
             self.offset = data.min()
-        if self.base_unit is NotImplemented:
-            self.base_unit = pd.Timedelta(pd.infer_freq(data))
+        if self.unit is NotImplemented:
+            # FIXME: https://github.com/pandas-dev/pandas/issues/58403
+            self.unit = pd.Timedelta(pd.infer_freq(data.values))
 
-    def encode(self, data: NumericalArray[DT], /) -> NumericalArray[TD]:
-        return (data - self.offset) / self.base_unit
+    def encode(self, data: PandasVec, /) -> PandasVec:
+        return (data - self.offset) / self.unit
 
-    def decode(self, data: NumericalArray[TD], /) -> NumericalArray[DT]:
-        return (data * self.base_unit + self.offset).astype(self.original_dtype)
-        # .asfreq(self.original_freq)
-        # .round(self.base_freq)
-
-        # converted = pd.to_timedelta(data, unit=self.unit)
-        # datetimes = Series(
-        #     converted + self.offset, name=self.name, dtype=self.original_dtype
-        # )
-        # if self.kind == Series:
-        #     return datetimes.round(self.base_freq)
-        # return DatetimeIndex(
-        #     datetimes, freq=self.freq, name=self.name, dtype=self.original_dtype
-        # ).round(self.base_freq)
+    def decode(self, data: PandasVec, /) -> PandasVec:
+        # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
+        try:
+            return (data * self.unit + self.offset).astype(self.original_dtype)
+        except pa.lib.ArrowNotImplementedError:
+            return (
+                data.astype(float)
+                .__mul__(self.unit)
+                .__add__(self.offset)
+                .astype(self.original_dtype)
+            )
 
 
 class PositionalEncoder(BaseEncoder):
