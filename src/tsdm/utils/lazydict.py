@@ -139,7 +139,7 @@ class LazyDict(dict[K, V]):
         super().__init__()
         match other:
             case SupportsKeysAndGetItem() as lookup:
-                for key in lookup.keys():
+                for key in lookup.keys():  # noqa: SIM118
                     self.set_lazy(key, lookup[key])
             case Iterable() as iterable:
                 for key, value in iterable:

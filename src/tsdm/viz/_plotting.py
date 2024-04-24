@@ -247,7 +247,8 @@ def plot_spectrum(
         kernel = torch.tensor(kernel, dtype=torch.float32)
 
     with plt.style.context(style):
-        assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
+        assert len(kernel.shape) == 2
+        assert kernel.shape[0] == kernel.shape[1]
         eigs = eigvals(kernel).detach().cpu()
         fig, ax = plt.subplots(**figure_kwargs)  # type: ignore[arg-type]
         ax.set(**axis_kwargs)

@@ -51,7 +51,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
 
         match scale:
             case "percent" | "fraction":
-                assert xmin is not None and xmax is not None
+                assert (xmin, xmax) != (None, None)
                 column_encoders[col] = (
                     BoundaryEncoder(xmin, xmax, mode="clip")
                     >> MinMaxScaler(0, 1, xmin=xmin, xmax=xmax)

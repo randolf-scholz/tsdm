@@ -318,16 +318,16 @@ class TTT(ForecastingTask[Key, Sample_co]):
         # create LazyDicts for the Mapping attributes
         if self.dataloaders is NotImplemented:
             self.LOGGER.info("No DataLoaders provided. Caching them.")
-            self.dataloaders = LazyDict({key: self.make_dataloader for key in self})
+            self.dataloaders = LazyDict.fromkeys(self, self.make_dataloader)
         if self.generators is NotImplemented:
             self.LOGGER.info("No Generators provided. Caching them.")
-            self.generators = LazyDict({key: self.make_generator for key in self})
+            self.generators = LazyDict.fromkeys(self, self.make_generator)
         if self.samplers is NotImplemented:
             self.LOGGER.info("No Samplers provided. Caching them.")
-            self.samplers = LazyDict({key: self.make_sampler for key in self})
+            self.samplers = LazyDict.fromkeys(self, self.make_sampler)
         if self.splits is NotImplemented:
             self.LOGGER.info("No splits provided. Creating them.")
-            self.splits = LazyDict({key: self.make_split for key in self})
+            self.splits = LazyDict.fromkeys(self, self.make_split)
 
     def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the split keys."""
@@ -608,25 +608,25 @@ class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
         # create LazyDicts for the Mapping attributes
         if self.collate_fns is NotImplemented:
             self.LOGGER.info("No collate functions provided. Caching them.")
-            self.collate_fns = LazyDict({key: self.make_collate_fn for key in self})
+            self.collate_fns = LazyDict.fromkeys(self, self.make_collate_fn)
         if self.dataloaders is NotImplemented:
             self.LOGGER.info("No DataLoaders provided. Caching them.")
-            self.dataloaders = LazyDict({key: self.make_dataloader for key in self})
+            self.dataloaders = LazyDict.fromkeys(self, self.make_dataloader)
         if self.encoders is NotImplemented:
             self.LOGGER.info("No Encoders provided. Caching them.")
-            self.encoders = LazyDict({key: self.make_encoder for key in self})
+            self.encoders = LazyDict.fromkeys(self, self.make_encoder)
         if self.generators is NotImplemented:
             self.LOGGER.info("No Generators provided. Caching them.")
-            self.generators = LazyDict({key: self.make_generator for key in self})
+            self.generators = LazyDict.fromkeys(self, self.make_generator)
         if self.samplers is NotImplemented:
             self.LOGGER.info("No Samplers provided. Caching them.")
-            self.samplers = LazyDict({key: self.make_sampler for key in self})
+            self.samplers = LazyDict.fromkeys(self, self.make_sampler)
         if self.splits is NotImplemented:
             self.LOGGER.info("No splits provided. Creating them.")
-            self.splits = LazyDict({key: self.make_split for key in self})
+            self.splits = LazyDict.fromkeys(self, self.make_split)
         if self.test_metrics is NotImplemented:
             self.LOGGER.info("No test metrics provided. Caching them.")
-            self.test_metrics = LazyDict({key: self.make_test_metric for key in self})
+            self.test_metrics = LazyDict.fromkeys(self, self.make_test_metric)
 
     def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the split keys."""

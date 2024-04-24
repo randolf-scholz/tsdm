@@ -787,7 +787,8 @@ class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
 
     def __instancecheck__(self, other: object, /) -> bool:
         return isinstance(other, SupportsKeysAndGetItem) and all(
-            isinstance(key, str) for key in other.keys()
+            isinstance(key, str)
+            for key in other.keys()  # noqa: SIM118
         )
 
     def __subclasscheck__(self, other: type, /) -> bool:

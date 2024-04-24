@@ -48,14 +48,10 @@ def test_dataclass_protocol() -> None:
 
     @dataclass
     class MyDataClass:
-        """Dummy dataclass."""
-
         x: int
         y: int
 
     class Bar:
-        """Dummy class."""
-
         x: int
         y: int
 

@@ -12,7 +12,7 @@ from collections.abc import Callable
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
-from typing_extensions import Any, NamedTuple
+from typing_extensions import Any, ClassVar, NamedTuple
 
 from tsdm import datasets
 from tsdm.data import (
@@ -69,7 +69,7 @@ class KiwiBenchmark(TimeSeriesTask):
     stride: str = "15min"
     r"""The stride of the sliding window sampler."""
 
-    observables: list[str] = [
+    observables: ClassVar[list[str]] = [
         "Base",
         "DOT",
         "Glucose",
@@ -79,7 +79,7 @@ class KiwiBenchmark(TimeSeriesTask):
         "pH",
         "Temperature",
     ]
-    covariates: list[str] = [
+    covariates: ClassVar[list[str]] = [
         "Cumulated_feed_volume_glucose",
         "Cumulated_feed_volume_medium",
         "InducerConcentration",
@@ -87,7 +87,7 @@ class KiwiBenchmark(TimeSeriesTask):
         "Flow_Air",
         "Probe_Volume",
     ]
-    targets: list[str] = [
+    targets: ClassVar[list[str]] = [
         "Base",
         "DOT",
         "Glucose",
@@ -98,7 +98,7 @@ class KiwiBenchmark(TimeSeriesTask):
         "Temperature",
     ]
 
-    fold_kwargs: dict[str, Any] = {
+    fold_kwargs: ClassVar[dict[str, Any]] = {
         "seed": 2022,
         "num_folds": 5,
         "train": 7,
@@ -107,7 +107,7 @@ class KiwiBenchmark(TimeSeriesTask):
     }
     r"""The configuration of the fold generator."""
 
-    sampler_kwargs: dict[str, Any] = {
+    sampler_kwargs: ClassVar[dict[str, Any]] = {
         "observation_horizon": observation_horizon,
         "forecasting_horizon": forecasting_horizon,
         "stride": stride,
@@ -116,7 +116,7 @@ class KiwiBenchmark(TimeSeriesTask):
     }
     r"""The configuration of the sampler."""
 
-    generator_kwargs: dict[str, Any] = {
+    generator_kwargs: ClassVar[dict[str, Any]] = {
         "observables": observables,
         "covariates": covariates,
         "targets": targets,

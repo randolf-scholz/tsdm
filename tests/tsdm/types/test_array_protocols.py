@@ -216,7 +216,8 @@ def test_table(name: str) -> None:
 
     assert isinstance(table.shape, tuple)
     assert len(table.shape) == 2
-    assert isinstance(table.shape[0], int) and isinstance(table.shape[1], int)
+    assert isinstance(table.shape[0], int)
+    assert isinstance(table.shape[1], int)
     attrs.remove("shape")
 
     assert isinstance(table["floats"], SeriesKind)

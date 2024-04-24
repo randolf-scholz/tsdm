@@ -61,7 +61,8 @@ def test_time_series_sample_generator() -> None:
     key = next(iter(sampler))
 
     # validate key
-    assert isinstance(key, tuple) and len(key) == 2
+    assert isinstance(key, tuple)
+    assert len(key) == 2
     assert key[0] == 16130
     assert isinstance(key[1], Sequence)
     assert all(isinstance(horizon, np.ndarray) for horizon in key[1])

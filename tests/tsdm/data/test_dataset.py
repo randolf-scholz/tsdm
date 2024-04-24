@@ -52,9 +52,8 @@ def test_map_dataset_mapping():
     assert isinstance(dataset, MapDataset)
 
     class BareMapDataset:
-        """Bare implementation of MapDataset."""
-
-        data = {"a": 1, "b": 2, "c": 3}
+        def __init__(self):
+            self.data = {"a": 1, "b": 2, "c": 3}
 
         def __len__(self):
             return len(self.data)

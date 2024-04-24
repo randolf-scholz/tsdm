@@ -332,12 +332,11 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
 
     # validate encoding
     encoded = encoder.encode(X)
-    assert (
-        isinstance(encoded, pd.DataFrame)
-        and encoded.shape == X.shape
-        and encoded.columns.equals(X.columns)
-        and encoded.index.equals(X.index)
-    )
+    assert isinstance(encoded, pd.DataFrame)
+    assert encoded.shape == X.shape
+    assert encoded.columns.equals(X.columns)
+    assert encoded.index.equals(X.index)
+
     if encoder_type is MinMaxScaler:
         assert all(encoded.min() >= 0.0)
         assert all(encoded.max() <= 1.0)
@@ -381,12 +380,11 @@ def test_scaler_series(encoder_type: type[E]) -> None:
 
     # validate encoding
     encoded = encoder.encode(X)
-    assert (
-        isinstance(encoded, pd.Series)
-        and encoded.shape == X.shape
-        and encoded.name == X.name
-        and encoded.index.equals(X.index)
-    )
+    assert isinstance(encoded, pd.Series)
+    assert encoded.shape == X.shape
+    assert encoded.name == X.name
+    assert encoded.index.equals(X.index)
+
     if encoder_type is MinMaxScaler:
         assert encoded.min() >= 0.0
         assert encoded.max() <= 1.0

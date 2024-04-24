@@ -1028,7 +1028,7 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
 
         # dtype validation
         if not isinstance(self.dtypes, Mapping):
-            self.dtypes = {key: self.dtypes for key in self.groups}  # type: ignore[unreachable]
+            self.dtypes = dict.fromkeys(self.groups, self.dtypes)  # type: ignore[unreachable]
         for key in self.groups:
             val = self.dtypes.get(key, None)
             assert isinstance(val, None | str | torch.dtype)

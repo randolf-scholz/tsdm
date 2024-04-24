@@ -18,5 +18,5 @@ def test_frame2tensordict() -> None:
     encoded = encoder.encode(df)
     X = encoded["X"].numpy()
     Y = encoded["Y"].numpy()
-    assert (X == df["B"].values).all(), "X should be equal to B"
-    assert (Y == df[["A", "C", "D"]].values).all(), "Y should be equal to A, C, D"
+    assert (df["B"].values == X).all(), "X should be equal to B"
+    assert (df[["A", "C", "D"]].values == Y).all(), "Y should be equal to A, C, D"

@@ -306,7 +306,8 @@ def log_kernel(
     """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     K = kernel
-    assert len(K.shape) == 2 and K.shape[0] == K.shape[1]
+    assert len(K.shape) == 2
+    assert K.shape[0] == K.shape[1]
 
     log = writer.add_scalar
     ω = float("inf")

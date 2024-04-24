@@ -41,7 +41,7 @@ dependencies = [
     "scikit-learn>=1.4.2",
     "scipy>=1.13.0",
     "tensorboard>=2.16.2",
-    "torch>=2.2.2",
+    "torch>=2.3.0",
     "tqdm>=4.66.2",
     "typing-extensions>=4.11.0",
 ]
@@ -87,8 +87,8 @@ linters = [
     "ruff-lsp>=0.0.53",
 ]
 typing = [
-    "mypy>=1.9.0",
-    "pyright>=1.1.359",
+    "mypy>=1.10.0",
+    "pyright>=1.1.360",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20240423",
@@ -178,19 +178,19 @@ ignore = [
     "E202",  # Whitespace before ')'
     "E203",  # Whitespace before ':'
     "E221",  # Multiple spaces before operator
-    "E226",  # Missing whitespace around arithmetic operator
-    "E231",  # Missing whitespace after ','
+    #    "E226",  # Missing whitespace around arithmetic operator
+    #    "E231",  # Missing whitespace after ','
     "E241",  # Multiple spaces after comma
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
-    "E301",  # Expected 1 blank line, found 0
-    "E302",  # Expected 2 blank lines, found 1
+    #    "E301",  # Expected 1 blank line, found 0
+    #    "E302",  # Expected 2 blank lines, found 1
     # pyupgrade
     "UP007",  # Use `X | Y` for type annotations
-    "UP015",  # Unnecessary open mode parameters
+    #    "UP015",  # Unnecessary open mode parameters
     "UP035",  # deprecated-import
     # pylint
-    "PLC1901",  # compare-to-empty-string
+    #    "PLC1901",  # compare-to-empty-string
     "PLC2401",  # non-ascii-name
     "PLR0124",  # Name compared with itself
     "PLR2004",  # Magic value used in comparison
@@ -207,12 +207,9 @@ ignore = [
     "PLR0917",  # Too many positional arguments
     # PYI
     "PYI019",  # Methods like ... should return typing.Self instead of custom TypeVar
-    # PyTest
-    "PT013",   # Found incorrect import of pytest, use simple import pytest instead
-    "PT018",   # Assertion should be broken down into multiple parts
     # simplify
-    "SIM118",  # Use `key in dict` instead of `key in dict.keys()`
-    "SIM300",  # Yoda conditions are discouraged
+    #    "SIM118",  # Use `key in dict` instead of `key in dict.keys()`
+    #    "SIM300",  # Yoda conditions are discouraged
     # RUFF
     "RUF001",  # ambiguous-unicode-character-string
     "RUF002",  # ambiguous-unicode-character-docstring
@@ -220,17 +217,20 @@ ignore = [
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
     "RUF013",  # PEP 484 prohibits implicit Optional # FIXME: https://github.com/astral-sh/ruff/issues/9334
     "RUF022",  # __all__ not sorted
-    "RUF023",  # __slots__ not sorted
-    "RUF025",  # use dict.fromkeys instead of dict comprehension
+    #    "RUF023",  # __slots__ not sorted
+    #    "RUF025",  # use dict.fromkeys instead of dict comprehension
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
     # refurb
-    "FURB140", # reimplemented-starmap (less efficient than comprehension)
+    #    "FURB140", # reimplemented-starmap (less efficient than comprehension)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002"]
 "src/tsdm/metrics/*" = ["PLR6301"]
+"tests/*" =[
+    "PT013",   # Found incorrect import of pytest, use simple import pytest instead
+]
 
 [tool.ruff.lint.pylint]
 allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]

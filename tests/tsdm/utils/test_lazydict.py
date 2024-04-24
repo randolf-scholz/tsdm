@@ -76,7 +76,8 @@ def test_lazydict() -> None:
     empty: dict = {}
     other: dict = empty | LazyDict({0: lambda: 0})  # type: ignore[arg-type]
     assert other is not empty, "__ror__ should create a new dictionary"
-    assert isinstance(other, dict) and isinstance(other, LazyDict)
+    assert isinstance(other, dict)
+    assert isinstance(other, LazyDict)
     # for value in other.values():
     #     assert isinstance(value, int)
 

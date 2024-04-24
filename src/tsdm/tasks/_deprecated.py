@@ -171,17 +171,17 @@ class BaseTask(Generic[K]):
     @cached_property
     def splits(self) -> Mapping[K, TorchDataset]:
         r"""Cache dictionary of dataset splits."""
-        return LazyDict({k: self.make_split for k in self.splits})
+        return LazyDict.fromkeys(self, self.make_split)
 
     @cached_property
     def samplers(self) -> Mapping[K, TorchSampler]:
         r"""Return a dictionary of samplers for each split."""
-        return LazyDict({k: self.make_sampler for k in self.splits})
+        return LazyDict.fromkeys(self, self.make_sampler)
 
     @cached_property
     def dataloaders(self) -> Mapping[K, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
-        return LazyDict({k: self.make_dataloader for k in self.splits})
+        return LazyDict.fromkeys(self, self.make_dataloader)
 
 
 class OldBaseTask(Generic[K]):

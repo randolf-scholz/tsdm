@@ -298,7 +298,7 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
         if self.subsamplers is NotImplemented:
             self.subsamplers = {
                 key: RandomSampler(self.data[key], shuffle=self.shuffle)
-                for key in self.data.keys()
+                for key in self.data.keys()  # noqa: SIM118
             }
 
         self.index: Index = get_index(self.data)

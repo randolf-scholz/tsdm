@@ -175,10 +175,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
                 repackage_zip(self.rawdata_path)
 
         self.component_files = self.autodetect_component_files()
-
-        self.components = LazyDict({
-            k: self.get_component for k in self.component_files
-        })
+        self.components = LazyDict.fromkeys(self.component_files, self.get_component)
         self.device = device
 
     def __repr__(self) -> str:
@@ -313,7 +310,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         if self.rawdata_path.is_dir():
             file_path = self.rawdata_path / file
             if file_path.suffix in {".yaml", ".json"}:
-                with open(file_path, "r", encoding="utf8") as f:
+                with open(file_path, encoding="utf8") as f:
                     return self.__load_component(f, component, extension)
             with open(file_path, "rb") as f:
                 return self.__load_component(f, component, extension)
