@@ -184,9 +184,8 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
             try:
                 encoder.fit(data[group])
             except Exception as exc:
-                raise RuntimeError(
-                    f"Failed to fit {type(encoder)} on {group=}"
-                ) from exc
+                exc.add_note(f"Failed to fit {type(encoder).__name__!r} on {group=}")
+                raise
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()

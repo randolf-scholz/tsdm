@@ -15,13 +15,13 @@ from tsdm.encoders import (
     BaseEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
+    DateTimeEncoder,
     Encoder,
     FrameAsDict,
     FrameEncoder,
     IdentityEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
-    OldDateTimeEncoder,
     StandardScaler,
 )
 from tsdm.tasks import KiwiBenchmark
@@ -51,6 +51,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
 
         match scale:
             case "percent" | "fraction":
+                assert xmin is not None and xmax is not None
                 column_encoders[col] = (
                     BoundaryEncoder(xmin, xmax, mode="clip")
                     >> MinMaxScaler(0, 1, xmin=xmin, xmax=xmax)
@@ -75,7 +76,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     encoder = (
         FrameEncoder(
             column_encoders=column_encoders,
-            index_encoders={"measurement_time": OldDateTimeEncoder() >> MinMaxScaler()},
+            index_encoders={"measurement_time": DateTimeEncoder() >> MinMaxScaler()},
         )
         >> StandardScaler(axis=-1)
         >> FrameAsDict(

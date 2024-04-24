@@ -620,7 +620,8 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
             try:
                 encoder.fit(data)
             except Exception as exc:
-                raise RuntimeError(f"Failed to fit {type(encoder)}") from exc
+                exc.add_note(f"Failed to fit {type(encoder).__name__!r}")
+                raise
             data = encoder.encode(data)
 
     def encode(self, data: Any, /) -> Any:
@@ -718,7 +719,8 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
             try:
                 encoder.fit(data)
             except Exception as exc:
-                raise RuntimeError(f"Failed to fit {type(encoder)}") from exc
+                exc.add_note(f"Failed to fit {type(encoder).__name__!r}")
+                raise
             data = encoder.encode(data)
 
     def encode(self, data: Any, /) -> Any:

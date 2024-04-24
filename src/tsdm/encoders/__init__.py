@@ -111,8 +111,9 @@ __all__ = [
     "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
-    "DeepcopyEncoder",
     "DTypeEncoder",
+    "DateTimeEncoder",
+    "DeepcopyEncoder",
     "DuplicateEncoder",
     "FrameAsDict",
     "FrameAsTuple",
@@ -181,6 +182,7 @@ from tsdm.encoders.numerical import (
     TensorSplitter,
 )
 from tsdm.encoders.time import (
+    DateTimeEncoder,
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
     PositionalEncoder,
