@@ -58,7 +58,7 @@ class TimeDeltaEncoder(BaseEncoder):
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
-            base_freq = np.gcd.reduce(data.astype(int))
+            base_freq = np.gcd.reduce(data.dropna().astype(int))
             self.unit = Index([base_freq]).astype(self.original_dtype).item()
 
     def encode(self, data: PandasVec, /) -> PandasVec:
@@ -109,7 +109,10 @@ class DateTimeEncoder(BaseEncoder):
             self.offset = data.min()
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
-            self.unit = pd.Timedelta(pd.infer_freq(data.values))
+            deltas = data - self.offset
+            # This looks awkward but is robust.
+            base_freq = np.gcd.reduce(deltas.dropna().astype(int))
+            self.unit = Index([base_freq]).astype(deltas.dtype).item()
 
     def encode(self, data: PandasVec, /) -> PandasVec:
         return (data - self.offset) / self.unit

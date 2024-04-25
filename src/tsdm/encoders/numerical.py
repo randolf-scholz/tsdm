@@ -354,28 +354,39 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     lower_satisfied: Callable[[Arr], Arr]
     upper_satisfied: Callable[[Arr], Arr]
 
-    @overload  # only generic inputs.
-    def __init__(
-        self: "BoundaryEncoder[Any]",
-        lower_bound: None | float = ...,
-        upper_bound: None | float = ...,
-        *,
-        lower_included: bool = ...,
-        upper_included: bool = ...,
-        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = ...,
-        axis: Axes = ...,
-    ) -> None: ...
-    @overload  # at least one data type specific input.
-    def __init__(
-        self,
-        lower_bound: None | float | Arr = ...,
-        upper_bound: None | float | Arr = ...,
-        *,
-        lower_included: bool = ...,
-        upper_included: bool = ...,
-        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = ...,
-        axis: Axes = ...,
-    ) -> None: ...
+    @classmethod
+    def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
+        r"""Create a BoundaryEncoder from a pandas Interval."""
+        lower_bound = interval.left
+        upper_bound = interval.right
+        lower_included, upper_included = {
+            "left": (True, False),
+            "right": (False, True),
+            "both": (True, True),
+            "neither": (False, False),
+        }[interval.closed]
+        return cls(
+            lower_bound,
+            upper_bound,
+            lower_included=lower_included,
+            upper_included=upper_included,
+            **kwargs,
+        )
+
+    @property
+    def requires_fit(self) -> bool:
+        return True
+
+    @property
+    def lower_mode(self) -> ClippingMode:
+        """The mode for the lower boundary."""
+        return self.mode[0] if isinstance(self.mode, tuple) else self.mode
+
+    @property
+    def upper_mode(self) -> ClippingMode:
+        """The mode for the upper boundary."""
+        return self.mode[1] if isinstance(self.mode, tuple) else self.mode
+
     def __init__(
         self,
         lower_bound: None | float | Arr = NotImplemented,
@@ -416,69 +427,6 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
             and self.upper_bound <= self.lower_bound
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
-
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the BoundaryScalar."""
-
-        lower_bound: None | float | Arr2
-        upper_bound: None | float | Arr2
-
-        lower_value: float | Arr2
-        upper_value: float | Arr2
-
-        lower_included: bool
-        upper_included: bool
-
-        mode: ClippingMode | tuple[ClippingMode, ClippingMode]
-        axis: Axes = None
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the LinearScaler."""
-        return self.Parameters(
-            lower_bound=self.lower_bound,
-            lower_included=self.lower_included,
-            lower_value=self.lower_value,
-            upper_bound=self.upper_bound,
-            upper_included=self.upper_included,
-            upper_value=self.upper_value,
-            mode=self.mode,
-            axis=self.axis,
-        )
-
-    @classmethod
-    def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
-        r"""Create a BoundaryEncoder from a pandas Interval."""
-        lower_bound = interval.left
-        upper_bound = interval.right
-        lower_included, upper_included = {
-            "left": (True, False),
-            "right": (False, True),
-            "both": (True, True),
-            "neither": (False, False),
-        }[interval.closed]
-        return cls(
-            lower_bound,
-            upper_bound,
-            lower_included=lower_included,
-            upper_included=upper_included,
-            **kwargs,
-        )
-
-    @property
-    def requires_fit(self) -> bool:
-        return True
-
-    @property
-    def lower_mode(self) -> ClippingMode:
-        """The mode for the lower boundary."""
-        return self.mode[0] if isinstance(self.mode, tuple) else self.mode
-
-    @property
-    def upper_mode(self) -> ClippingMode:
-        """The mode for the upper boundary."""
-        return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
     def fit(self, data: Arr) -> None:
         # select the backend
@@ -556,6 +504,39 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     def decode(self, data: Arr, /) -> Arr:
         return data
 
+    # region parameters ----------------------------------------------------------------
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
+        r"""The parameters of the BoundaryScalar."""
+
+        lower_bound: None | float | Arr2
+        upper_bound: None | float | Arr2
+
+        lower_value: float | Arr2
+        upper_value: float | Arr2
+
+        lower_included: bool
+        upper_included: bool
+
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode]
+        axis: Axes = None
+
+    @property
+    def params(self) -> Parameters:
+        r"""Parameters of the LinearScaler."""
+        return self.Parameters(
+            lower_bound=self.lower_bound,
+            lower_included=self.lower_included,
+            lower_value=self.lower_value,
+            upper_bound=self.upper_bound,
+            upper_included=self.upper_included,
+            upper_value=self.upper_value,
+            mode=self.mode,
+            axis=self.axis,
+        )
+
+    # endregion parameters -------------------------------------------------------------
+
 
 @pprint_repr
 @dataclass(init=False)
@@ -580,22 +561,6 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
     backend: Backend[Arr]
     """The backend of the encoder."""
 
-    @overload
-    def __init__(
-        self,
-        loc: float = ...,
-        scale: float = ...,
-        *,
-        axis: Axes = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        loc: float | Arr = ...,
-        scale: float | Arr = ...,
-        *,
-        axis: Axes = ...,
-    ) -> None: ...
     def __init__(
         self,
         loc: float | Arr = 0.0,
@@ -610,23 +575,6 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
 
         if axis is not None:
             raise NotImplementedError("Axis not implemented yet.")
-
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the LinearScaler."""
-
-        loc: Arr2
-        scale: Arr2
-        axis: Axes
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the LinearScaler."""
-        return self.Parameters(
-            loc=self.loc,
-            scale=self.scale,
-            axis=self.axis,
-        )
 
     def __getitem__(self, item: int | slice | tuple[int | slice, ...], /) -> Self:
         r"""Return a slice of the LinearScaler.
@@ -672,6 +620,26 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
         # return (data - loc) / scale
         return (data - self.loc) / self.scale
 
+    # region parameters ----------------------------------------------------------------
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
+        r"""The parameters of the LinearScaler."""
+
+        loc: Arr2
+        scale: Arr2
+        axis: Axes
+
+    @property
+    def params(self) -> Parameters:
+        r"""Parameters of the LinearScaler."""
+        return self.Parameters(
+            loc=self.loc,
+            scale=self.scale,
+            axis=self.axis,
+        )
+
+    # endregion parameters -------------------------------------------------------------
+
 
 @dataclass(init=False)
 class StandardScaler(BaseEncoder[Arr, Arr]):
@@ -696,40 +664,13 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     def requires_fit(self) -> bool:
         return (self.mean is NotImplemented) or (self.stdv is NotImplemented)
 
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the StandardScalar."""
-
-        mean: Arr2
-        stdv: Arr2
-        axis: Axes
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the Standardizer."""
-        return self.Parameters(
-            mean=self.mean,
-            stdv=self.stdv,
-            axis=self.axis,
-        )
-
-    @overload
-    def __init__(
-        self: "StandardScaler[Any]",
-        mean: float = ...,
-        stdv: float = ...,
-        *,
-        axis: Axes = ...,
-    ) -> None: ...
-    @overload
     def __init__(
         self,
-        mean: float | Arr = ...,
-        stdv: float | Arr = ...,
+        mean: float | Arr = NotImplemented,
+        stdv: float | Arr = NotImplemented,
         *,
-        axis: Axes = ...,
-    ) -> None: ...
-    def __init__(self, mean=NotImplemented, stdv=NotImplemented, *, axis=()):
+        axis: Axes = (),
+    ) -> None:
         self.mean = cast(Arr, mean)
         self.stdv = cast(Arr, stdv)
         self.axis = axis
@@ -775,6 +716,26 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
         # return data * self.stdv[broadcast] + self.mean[broadcast]
         return data * self.stdv + self.mean
 
+    # region parameters ----------------------------------------------------------------
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
+        r"""The parameters of the StandardScalar."""
+
+        mean: Arr2
+        stdv: Arr2
+        axis: Axes
+
+    @property
+    def params(self) -> Parameters:
+        r"""Parameters of the Standardizer."""
+        return self.Parameters(
+            mean=self.mean,
+            stdv=self.stdv,
+            axis=self.axis,
+        )
+
+    # endregion parameters -------------------------------------------------------------
+
 
 @dataclass(init=False)
 class MinMaxScaler(BaseEncoder[Arr, Arr]):
@@ -799,13 +760,14 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         .. math:: x ↦ \frac{x - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ
 
         We transform the formula, to cater to the edge case, by extending with the
-        average of the min and max x-values: (Not implemented yet)
+        average of the min and max x-values:
 
         .. math::
             \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - xₘᵢₙ) + yₘᵢₙ \\
             = \frac{x +½(xₘₐₓ - xₘᵢₙ) -½(xₘₐₓ - xₘᵢₙ) - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
             = ½(yₘₐₓ - yₘᵢₙ) + \frac{x - ½(xₘₐₓ + xₘᵢₙ)}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
-            = \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - x̄) + ȳ
+            = \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - x̄) + ȳ \\
+            = γ⋅(x - x̄) + ȳ
 
         In particular, when xₘᵢₙ = xₘₐₓ, we have x̄ = xₘᵢₙ = xₘₐₓ, and formally set
         the scale to 1, making the transform x ↦ x + (ȳ - x̄)
@@ -832,52 +794,11 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     backend: Backend[Arr] = NotImplemented
     """The backend of the encoder."""
 
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the MinMaxScaler."""
-
-        xmin: Arr2
-        xmax: Arr2
-        ymin: Arr2
-        ymax: Arr2
-        axis: Axes
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the MinMaxScaler."""
-        return self.Parameters(
-            xmin=self.xmin,
-            xmax=self.xmax,
-            ymin=self.ymin,
-            ymax=self.ymax,
-            axis=self.axis,
-        )
-
     @property
     def requires_fit(self) -> bool:
         r"""Whether the scaler requires fitting."""
         return True
 
-    @overload
-    def __init__(
-        self,
-        ymin: float = ...,
-        ymax: float = ...,
-        *,
-        xmin: None | float = ...,
-        xmax: None | float = ...,
-        axis: Axes = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        ymin: float | Arr = ...,
-        ymax: float | Arr = ...,
-        *,
-        xmin: None | float | Arr = ...,
-        xmax: None | float | Arr = ...,
-        axis: Axes = ...,
-    ) -> None: ...
     def __init__(
         self,
         ymin: float | Arr = 0.0,
@@ -910,17 +831,6 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         # set initial backend
         self.switch_backend(get_backend(self.params))
 
-    def recompute_params(self):
-        """Computes derived parameters from the base parameters."""
-        self.xbar = (self.xmax + self.xmin) / 2
-        self.ybar = (self.ymax + self.ymin) / 2
-        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-
-    @classmethod
-    def from_params(cls, params: Parameters) -> Self:
-        r"""Construct a MinMaxScaler from parameters."""
-        return cls(**params._asdict())
-
     def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the MinMaxScaler."""
         # slice the parameters
@@ -936,23 +846,6 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         encoder.switch_backend(self.backend)
         encoder._is_fitted = self._is_fitted
         return encoder
-
-    def switch_backend(self, backend: str | Backend) -> None:
-        r"""Switch the backend of the scaler."""
-        self.backend: Backend[Arr] = Backend(backend)
-        # recast the parameters
-        # self.recast_parameters()
-
-    def recast_parameters(self) -> None:
-        r"""Recast the parameters to the current backend."""
-        # switch the backend of the parameters
-        self.xmin = self.backend.to_tensor(self.xmin)
-        self.xmax = self.backend.to_tensor(self.xmax)
-        self.ymin = self.backend.to_tensor(self.ymin)
-        self.ymax = self.backend.to_tensor(self.ymax)
-        self.xbar = self.backend.to_tensor(self.xbar)
-        self.ybar = self.backend.to_tensor(self.ybar)
-        self.scale = self.backend.to_tensor(self.scale)
 
     def fit(self, data: Arr, /) -> None:
         # switch the backend
@@ -1033,6 +926,58 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
             )
 
         return x
+
+    # region parameters ----------------------------------------------------------------
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
+        r"""The parameters of the MinMaxScaler."""
+
+        xmin: Arr2
+        xmax: Arr2
+        ymin: Arr2
+        ymax: Arr2
+        axis: Axes
+
+    @property
+    def params(self) -> Parameters:
+        r"""Parameters of the MinMaxScaler."""
+        return self.Parameters(
+            xmin=self.xmin,
+            xmax=self.xmax,
+            ymin=self.ymin,
+            ymax=self.ymax,
+            axis=self.axis,
+        )
+
+    def recompute_params(self):
+        """Computes derived parameters from the base parameters."""
+        self.xbar = (self.xmax + self.xmin) / 2
+        self.ybar = (self.ymax + self.ymin) / 2
+        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+
+    @classmethod
+    def from_params(cls, params: Parameters) -> Self:
+        r"""Construct a MinMaxScaler from parameters."""
+        return cls(**params._asdict())
+
+    def switch_backend(self, backend: str | Backend) -> None:
+        r"""Switch the backend of the scaler."""
+        self.backend: Backend[Arr] = Backend(backend)
+        # recast the parameters
+        # self.recast_parameters()
+
+    def recast_parameters(self) -> None:
+        r"""Recast the parameters to the current backend."""
+        # switch the backend of the parameters
+        self.xmin = self.backend.to_tensor(self.xmin)
+        self.xmax = self.backend.to_tensor(self.xmax)
+        self.ymin = self.backend.to_tensor(self.ymin)
+        self.ymax = self.backend.to_tensor(self.ymax)
+        self.xbar = self.backend.to_tensor(self.xbar)
+        self.ybar = self.backend.to_tensor(self.ybar)
+        self.scale = self.backend.to_tensor(self.scale)
+
+    # endregion parameters -------------------------------------------------------------
 
 
 class LogEncoder(BaseEncoder[NDArray, NDArray]):

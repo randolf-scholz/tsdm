@@ -364,7 +364,7 @@ class BaseEncoder(Encoder[T, T2]):
         original_decode = cls.decode
 
         @wraps(original_fit)
-        def fit(self: Self, data: T, /) -> None:
+        def fit_wrapper(self: Self, data: T, /) -> None:
             r"""Fit the encoder to the data."""
             if self.requires_fit:
                 self.LOGGER.info("Fitting encoder to data.")
@@ -376,22 +376,22 @@ class BaseEncoder(Encoder[T, T2]):
             self.is_fitted = True
 
         @wraps(original_encode)
-        def encode(self: Self, data: T, /) -> T2:
+        def encode_wrapper(self: Self, data: T, /) -> T2:
             r"""Encode the data."""
             if self.requires_fit and not self.is_fitted:
-                raise RuntimeError("Encoder has not been fitted.")
+                raise RuntimeError("Encoder has not been fitted!")
             return original_encode(self, data)
 
         @wraps(original_decode)
-        def decode(self: Self, data: T2, /) -> T:
+        def decode_wrapper(self: Self, data: T2, /) -> T:
             r"""Decode the data."""
             if self.requires_fit and not self.is_fitted:
-                raise RuntimeError("Encoder has not been fitted.")
+                raise RuntimeError("Encoder has not been fitted!")
             return original_decode(self, data)
 
-        cls.fit = fit  # type: ignore[method-assign]
-        cls.encode = encode  # type: ignore[method-assign]
-        cls.decode = decode  # type: ignore[method-assign]
+        cls.fit = fit_wrapper  # type: ignore[method-assign]
+        cls.encode = encode_wrapper  # type: ignore[method-assign]
+        cls.decode = decode_wrapper  # type: ignore[method-assign]
 
     @property
     def is_fitted(self) -> bool:
@@ -438,7 +438,7 @@ class BaseEncoder(Encoder[T, T2]):
     #     return pow_encoder(self, power)
     #
     # def standardize(self) -> "ChainedEncoder[Self, StandardScaler]":
-    #     r"""Chain a standardize."""
+    #     r"""Chain a standardizer."""
     #     return self >> StandardScaler()
     #
     # def minmax_scale(self) -> "ChainedEncoder[Self, MinMaxScaler]":
@@ -620,7 +620,10 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
             try:
                 encoder.fit(data)
             except Exception as exc:
-                exc.add_note(f"Failed to fit {type(encoder).__name__!r}")
+                index = self.encoders.index(encoder)
+                typ = type(self).__name__
+                enc = type(encoder).__name__
+                exc.add_note(f"{typ}[{index}]: Failed to fit {enc!r}.")
                 raise
             data = encoder.encode(data)
 
@@ -719,7 +722,10 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
             try:
                 encoder.fit(data)
             except Exception as exc:
-                exc.add_note(f"Failed to fit {type(encoder).__name__!r}")
+                index = self.encoders.index(encoder)
+                typ = type(self).__name__
+                enc = type(encoder).__name__
+                exc.add_note(f"{typ}[{index}]: Failed to fit {enc!r}.")
                 raise
             data = encoder.encode(data)
 
