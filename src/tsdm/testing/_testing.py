@@ -6,25 +6,34 @@ __all__ = [
     "assert_arrays_equal",
     "assert_protocol",
     "check_shared_attrs",
+    "is_builtin",
+    "is_builtin_type",
+    "is_builtin_constant",
+    "is_builtin_function",
+    "is_na_value",
     "is_dunder",
     "is_flattened",
     "is_zipfile",
 ]
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Hashable, Mapping, Sequence
+from inspect import isbuiltin as is_builtin_function
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas as pd
 import polars as pl
-import polars.testing
+import polars.testing as pl_testing
 import torch
 import torch.testing
 from typing_extensions import Any, get_protocol_members, is_protocol
 
+from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
+from tsdm.types.variables import T_contra
 
-def assert_arrays_equal(array: Sequence, reference: Sequence, /) -> None:
+
+def assert_arrays_equal(array: T_contra, reference: T_contra, /) -> None:
     assert type(array) == type(reference)
 
     match array:
@@ -37,9 +46,9 @@ def assert_arrays_equal(array: Sequence, reference: Sequence, /) -> None:
         case np.ndarray():
             np.testing.assert_array_equal(array, reference)
         case pl.Series():
-            pl.testing.assert_series_equal(array, reference)
+            pl_testing.assert_series_equal(array, reference)
         case pl.DataFrame():
-            pl.testing.assert_frame_equal(array, reference)
+            pl_testing.assert_frame_equal(array, reference)
         case torch.Tensor() as tensor:
             assert torch.equal(tensor, reference)
         case Sequence() as seq:
@@ -49,8 +58,8 @@ def assert_arrays_equal(array: Sequence, reference: Sequence, /) -> None:
 
 
 def assert_arrays_close(
-    array: Sequence,
-    reference: Sequence,
+    array: T_contra,
+    reference: T_contra,
     /,
     *,
     atol: float = 1e-8,
@@ -75,11 +84,11 @@ def assert_arrays_close(
         case np.ndarray():
             np.testing.assert_allclose(array, reference, atol=atol, rtol=rtol)
         case pl.Series():
-            pl.testing.assert_series_equal(
+            pl_testing.assert_series_equal(
                 array, reference, check_exact=False, atol=atol, rtol=rtol
             )
         case pl.DataFrame():
-            pl.testing.assert_frame_equal(
+            pl_testing.assert_frame_equal(
                 array, reference, check_exact=False, atol=atol, rtol=rtol
             )
         case torch.Tensor() as tensor:
@@ -91,6 +100,25 @@ def assert_arrays_close(
             )
         case _:
             raise TypeError(f"Unsupported {type(array)=}")
+
+
+def is_builtin_type(obj: object, /) -> bool:
+    """Check if the object is a builtin type."""
+    return isinstance(obj, type) and obj in BUILTIN_TYPES
+
+
+def is_builtin_constant(obj: object, /) -> bool:
+    """Check if the object is a builtin constant."""
+    return isinstance(obj, Hashable) and obj in BUILTIN_CONSTANTS
+
+
+def is_builtin(obj: object, /) -> bool:
+    """Check if the object is a builtin constant."""
+    return is_builtin_function(obj) or is_builtin_constant(obj) or is_builtin_type(obj)
+
+
+def is_na_value(obj: object, /) -> bool:
+    return isinstance(obj, Hashable) and obj in NA_VALUES
 
 
 def is_flattened(

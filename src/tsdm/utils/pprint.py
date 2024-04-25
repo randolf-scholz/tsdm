@@ -36,7 +36,7 @@ from pandas import DataFrame, MultiIndex
 from pyarrow import Array as pyarrow_array, Table as pyarrow_table
 from typing_extensions import Any, Final, Optional, Protocol, cast, overload
 
-from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
+from tsdm.testing import is_builtin, is_builtin_constant, is_builtin_type, is_na_value
 from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import (
@@ -93,7 +93,7 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
     match obj:
         case type() as cls:
             return f"<{cls.__name__}>"
-        case _ if type(obj) in BUILTIN_TYPES:
+        case _ if is_builtin_type(type(obj)):
             # return f"<{cls.__name__}>"
             return ""
         case SupportsArray():
@@ -131,15 +131,15 @@ def repr_shortform(
         case str() as string:
             return string
         case type() as cls:
-            return repr(cls)
-        case builtin if inspect.isbuiltin(builtin):
+            return cls.__name__
+        case builtin if is_builtin(builtin):
             return repr(builtin)
-        case constant if constant in BUILTIN_CONSTANTS:
-            return repr(constant)
-        case bool() | int() | float() | complex() | bytes() | slice() | range():
-            return repr(obj)
+        # case bool() | int() | float() | complex() | bytes() | slice() | range():
+        #     return repr(obj)
         case SupportsArray() as arr if arr.__array__().size <= 1:
             return repr(arr.__array__().item())
+        case nan if is_na_value(nan):
+            return repr(nan)
         case _:
             # set identifier
             if identifier is None:
@@ -331,7 +331,7 @@ def repr_mapping(
         },
     )
 
-    def to_string(key: Any, value: Any, justify: int = 0) -> str:
+    def to_string(key: Any, value: Any, /, *, justify: int = 0) -> str:
         """Encode key and value."""
         try:
             encoded_value = repr_fun(
@@ -344,10 +344,11 @@ def repr_mapping(
                 # wrapped=None,
             )
         except Exception as exc:
-            raise RuntimeError(
-                f"repr_mapping:{key=!r}: Failed to get string representation for value"
-                f" of type {type(value)}"
-            ) from exc
+            exc.add_note(
+                f"repr_mapping[{key=!r}]: Failed to convert"
+                f" value of type {type(value)!r} to string."
+            )
+            raise
 
         return f"{key!s:<{justify}}: {encoded_value}"
 
@@ -491,10 +492,10 @@ def repr_sequence(
         },
     )
 
-    def to_string(index: int, val: Any, /) -> str:
+    def to_string(index: int, value: Any, /) -> str:
         try:
             encoded_value = repr_fun(
-                val,
+                value,
                 align=align,
                 indent=indent + padding,
                 padding=padding,
@@ -503,10 +504,11 @@ def repr_sequence(
                 # wrapped=None,
             )
         except Exception as exc:
-            raise RuntimeError(
-                f"repr_sequence:{index=!r}: Failed to value of type"
-                f" {object.__repr__(type(val))}"
-            ) from exc
+            exc.add_note(
+                f"repr_sequence[{index}]: Failed to convert"
+                f" value of type {type(value)!r} to string."
+            )
+            raise
 
         return encoded_value
 
@@ -571,7 +573,7 @@ def repr_dataclass(
 
     # set title
     if title is None:
-        title = "" if self in BUILTIN_CONSTANTS else cls.__name__
+        title = "" if is_builtin_constant(self) else cls.__name__
 
     # set identifier
     if identifier is None:
@@ -639,7 +641,7 @@ def repr_namedtuple(
 
     # set title
     if title is None:
-        title = "" if self in BUILTIN_CONSTANTS else cls.__name__
+        title = "" if is_builtin_constant(self) else cls.__name__
 
     # set identifier
     if identifier is None:

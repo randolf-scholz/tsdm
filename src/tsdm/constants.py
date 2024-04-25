@@ -86,11 +86,14 @@ def CONST_NONE_FN(*_: Any, **__: Any) -> Literal[None]:
     return None
 
 
-BUILTIN_CONSTANTS = [None, True, False, Ellipsis, NotImplemented]
+CONSTANT_FUNCTIONS = {
+    None: CONST_NONE_FN,
+    True: CONST_TRUE_FN,
+    False: CONST_FALSE_FN,
+}
+
+BUILTIN_CONSTANTS = frozenset({None, True, False, Ellipsis, NotImplemented})
 """Builtin constants https://docs.python.org/3/library/constants.html."""
-
-CONSTANT_FUNCTIONS = [CONST_TRUE_FN, CONST_FALSE_FN, CONST_NONE_FN]
-
 BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
     type(None),
     bool,
@@ -131,14 +134,14 @@ NA_STRINGS: Final[frozenset[str]] = frozenset({
 })
 r"""String that correspond to NA values."""
 
-NA_VALUES: Final[set] = {
+NA_VALUES: Final[frozenset] = frozenset({
     None,
     float("nan"),
     np.nan,
     pandas.NA,
     pandas.NaT,
     np.datetime64("NaT"),
-}
+})
 r"""Values that correspond to NaN."""
 
 NULL_VALUES: Final[frozenset[str]] = frozenset({
