@@ -8,6 +8,8 @@ from typing_extensions import Literal, deprecated
 
 from tsdm.encoders.base import BaseEncoder
 
+__all__ = ["Time2Float", "OldDateTimeEncoder"]
+
 
 @deprecated("decode unimplemented")
 class Time2Float(BaseEncoder):

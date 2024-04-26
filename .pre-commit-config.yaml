@@ -1,4 +1,4 @@
-exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
+exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/|bugs/)'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
   python: python3.11
@@ -68,7 +68,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.1
+    rev: v0.4.2
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -86,24 +86,22 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.1
+    rev: v0.2.6
     hooks:
+      # pygrep hooks
       - id: check-separator-length
-        files: (^src/|^tests/)
-      - id: pyproject-validate-version
-      - id: pyproject-update-deps
-      - id: pyproject-check-deps
-        args: ["--known-unused-deps", "tensorboard", "pydantic"] # torch does not list this...
+      - id: pyarrow-timestamp-seconds
+      - id: python-consider-using-raw-string
       - id: python-no-blanket-type-ignore
-        files: (^src/|^tests/)
-      - id: python-rename-axes-axis
-        files: (^src/|^tests/)
       - id: python-no-builtin-eval
-        files: (^src/|^tests/)
+      - id: python-rename-axes-axis
+      - id: python-system-exit
+      # ast-based hooks
+      - id: python-check-dunder-all
+        files: '^src/'
+      - id: python-check-typing
       - id: python-direct-imports
-        files: (^src/|^tests/)
       - id: python-no-mixed-args
-        files: ^src/
         args:
           - "--ignore-names"
           - "forward"
@@ -115,13 +113,11 @@ repos:
           # - "--allow-one"
           - "--ignore-without-positional-only"
       - id: python-standard-generics
-        files: (^src/|^tests/)
-      - id: python-check-dunder-all
-        files: ^src/
-      - id: python-check-typing
-        files: (^src/|^tests/)
+      # script-based hooks
+      - id: pyproject-validate-version
+      - id: pyproject-update-deps
+      - id: pyproject-check-deps
       - id: python-check-clean-interface
-        files: ^src/
         args: ["--no-load-silent"]
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -154,7 +150,6 @@ repos:
         - "--hide-error-context"
         - "--hide-error-end"
         - "--no-pretty"
-        # - "--no-error-summary"
         - "--"
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python

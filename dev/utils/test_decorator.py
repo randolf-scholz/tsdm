@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-import functools
+from collections.abc import Callable
 from functools import wraps
 from inspect import signature
-from typing import Callable
 
 
 def debug(func):
@@ -156,7 +155,7 @@ def decorator_with_positionals(__fun__: Callable, a, b, /, c, d, *args, e, f, **
     assert callable(__fun__) or __fun__ is None
 
     def _decorator(func):
-        @functools.wraps(func)
+        @wraps(func)
         def wrapper(*func_args, **func_kwargs):
             print(f"""
                 {a=} reporting in
@@ -179,7 +178,7 @@ def decorator_without_positionals(__fun__: Callable, /, c, d, *, e, f):
     assert callable(__fun__) or __fun__ is None
 
     def _decorator(func):
-        @functools.wraps(func)
+        @wraps(func)
         def wrapper(*args, **kwargs):
             print(f"{x=} reporting in" for x in (c, d, e, f))
             return func(*args, **kwargs)
@@ -259,7 +258,7 @@ def multiplying(f_py=None, factor=1):
     assert callable(f_py) or f_py is None
 
     def _decorator(func):
-        @functools.wraps(func)
+        @wraps(func)
         def wrapper(*args, **kwargs):
             return factor * func(*args, **kwargs)
 

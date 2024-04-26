@@ -217,7 +217,7 @@ def parametrized_decorator(decorator):
 @parametrized_decorator
 @debug
 def linear(func, w=1, /, *, bias=0):
-    @functools.wraps(func)
+    @wraps(func)
     @debug
     def wrapper(*args, **kwargs):
         return w * func(*args, **kwargs) + bias
@@ -265,7 +265,7 @@ print("\n" + "=" * 80)
 @parametrized_decorator
 @debug
 def linear(func, w, /, *, bias=0):
-    @functools.wraps(func)
+    @wraps(func)
     @debug
     def wrapper(*args, **kwargs):
         return w * func(*args, **kwargs) + bias

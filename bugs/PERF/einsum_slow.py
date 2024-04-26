@@ -3,11 +3,11 @@
 # %config InteractiveShell.ast_node_interactivity='last_expr_or_assign'
 
 import gc
+from collections.abc import Iterator
 from contextlib import ContextDecorator
 from itertools import combinations, permutations, product
 from pathlib import Path
 from time import perf_counter
-from typing import Iterator
 
 import jax.numpy as jnp
 import numpy as np
