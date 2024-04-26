@@ -19,10 +19,10 @@ from tsdm.types.aliases import Axes
 
 @runtime_checkable
 class Metric(Protocol):
-    """Represents a metric."""
+    r"""Represents a metric."""
 
     def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
-        """Compute the loss."""
+        r"""Compute the loss."""
         ...
 
 

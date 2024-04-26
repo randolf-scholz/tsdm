@@ -346,7 +346,7 @@ def attribute(func: Callable[[T], R], /) -> R:
 
 
 def debug(func: Callable[P, R], /) -> Callable[P, R]:
-    """Print the function signature and return value."""
+    r"""Print the function signature and return value."""
 
     @wraps(func)
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -362,7 +362,7 @@ def debug(func: Callable[P, R], /) -> Callable[P, R]:
 
 
 def lazy_torch_jit(func: Callable[P, R], /) -> Callable[P, R]:
-    """Create decorator to lazily compile a function with `torch.jit.script`."""
+    r"""Create decorator to lazily compile a function with `torch.jit.script`."""
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -675,13 +675,13 @@ def wrap_method(
 
 
 def collect_exit_points(func: Callable, /) -> list[ast.Return]:
-    """Collect all exit points of a function as ast nodes."""
+    r"""Collect all exit points of a function as ast nodes."""
     tree = ast.parse(getsource(func))
     return [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
 
 
 def exit_point_names(func: Callable, /) -> list[tuple[str, ...]]:
-    """Return the variable names used in exit nodes."""
+    r"""Return the variable names used in exit nodes."""
     exit_points = collect_exit_points(func)
 
     var_names = []
@@ -704,7 +704,7 @@ def return_namedtuple(
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
 ) -> Callable[P, NTuple]:
-    """Convert a function's return type to a namedtuple."""
+    r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
     # noinspection PyUnresolvedReferences
@@ -744,7 +744,7 @@ def return_namedtuple(
 
 
 # def extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:
-#     """Decorator to extend a parent function.
+#     r"""Decorator to extend a parent function.
 #
 #     For example, when one wants to extend the __init__ of a parent class
 #     with an extra argument.

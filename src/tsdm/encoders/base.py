@@ -70,7 +70,7 @@ Y = TypeVar("Y")
 
 @runtime_checkable
 class Transform(Protocol[U_contra, V_co]):
-    """Protocol for transformers."""
+    r"""Protocol for transformers."""
 
     @abstractmethod
     def fit(self, data: U_contra, /) -> None: ...
@@ -80,7 +80,7 @@ class Transform(Protocol[U_contra, V_co]):
 
 @runtime_checkable
 class InvertibleTransform(Transform[U, V], Protocol):
-    """Protocol for invertible transformers."""
+    r"""Protocol for invertible transformers."""
 
     @abstractmethod
     def inverse_transform(self, data: V, /) -> U: ...
@@ -88,7 +88,7 @@ class InvertibleTransform(Transform[U, V], Protocol):
 
 @runtime_checkable
 class EncoderProtocol(Protocol[U, V]):
-    """Minimal Protocol for Encoders.
+    r"""Minimal Protocol for Encoders.
 
     This protocol should be used in applications that only use encoders, but do not need to
     worry about creating new encoders or chaining them together.
@@ -103,7 +103,7 @@ class EncoderProtocol(Protocol[U, V]):
 
 
 class ParametrizedEncoder(EncoderProtocol[U, V], Protocol):
-    """Protocol for encoders with parameters."""
+    r"""Protocol for encoders with parameters."""
 
     @property
     @abstractmethod
@@ -125,7 +125,7 @@ class ParametrizedEncoder(EncoderProtocol[U, V], Protocol):
 
     @property
     def requires_fit(self) -> bool:
-        """Check if the encoder requires fitting."""
+        r"""Check if the encoder requires fitting."""
         params = self.params
         return any(params[key] is NotImplemented for key in self.required_params)
 
@@ -137,7 +137,7 @@ class ParametrizedEncoder(EncoderProtocol[U, V], Protocol):
 
 
 class SerializableEncoder(EncoderProtocol[U, V], Protocol):
-    """Protocol for serializable encoders."""
+    r"""Protocol for serializable encoders."""
 
     @property
     @abstractmethod
@@ -150,7 +150,7 @@ class SerializableEncoder(EncoderProtocol[U, V], Protocol):
 
 
 class Encoder(Protocol[U, V]):
-    """Protocol for Encoders with algebraic mixin methods."""
+    r"""Protocol for Encoders with algebraic mixin methods."""
 
     # region abstract methods ----------------------------------------------------------
     @abstractmethod
@@ -313,7 +313,7 @@ class Encoder(Protocol[U, V]):
 
 
 E = TypeVar("E", bound=Encoder)
-"""Type alias for Encoder."""
+r"""Type alias for Encoder."""
 
 
 class BaseEncoder(Encoder[T, T2]):
@@ -404,11 +404,11 @@ class BaseEncoder(Encoder[T, T2]):
 
     @property
     def required_params(self) -> set[str]:
-        """The required parameters of the encoder."""
+        r"""The required parameters of the encoder."""
         return set(self.params.keys())
 
     def is_serializable(self) -> bool:
-        """Check if the encoder is serializable.
+        r"""Check if the encoder is serializable.
 
         By default, an encoder can be serialized if all of its required parameters are initialized.
         """
@@ -536,10 +536,10 @@ class TupleDecoder(BaseEncoder):
 
 
 class InverseEncoder(BaseEncoder[T, T2]):
-    """Applies an encoder in reverse."""
+    r"""Applies an encoder in reverse."""
 
     encoder: Encoder[T2, T]
-    """The encoder to invert."""
+    r"""The encoder to invert."""
 
     def __init__(self, encoder: Encoder[T2, T], /) -> None:
         self.encoder = encoder
@@ -940,7 +940,7 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
 
 @pprint_repr(recursive=2)
 class FactorizedEncoder(BaseEncoder, Sequence[Encoder]):
-    """Factorized Encoder.
+    r"""Factorized Encoder.
 
     Example:
         enc = FactorizedEncoder(e1, e2, e3)

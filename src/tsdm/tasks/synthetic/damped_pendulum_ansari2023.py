@@ -24,7 +24,7 @@ from tsdm.types.aliases import SplitID
 
 @final
 class DampedPendulum_Ansari2023(TimeSeriesTask):
-    """Forecasting task on synthetic damped pendulum data.
+    r"""Forecasting task on synthetic damped pendulum data.
 
     Note:
         - This uses scipy's builtin RK45 solver, instead of RK4.

@@ -50,7 +50,7 @@ TIMEDELTAS: dict[str, TimeDelta] = {
 
 
 def test_datetime_protocol_itself() -> None:
-    """Test the datetime protocol."""
+    r"""Test the datetime protocol."""
     non_callable_members = {
         member
         for member in get_protocol_members(DateTime)
@@ -61,7 +61,7 @@ def test_datetime_protocol_itself() -> None:
 
 
 def test_timedelta_protocol_itself() -> None:
-    """Test the datetime protocol."""
+    r"""Test the datetime protocol."""
     non_callable_members = {
         member
         for member in get_protocol_members(TimeDelta)
@@ -73,7 +73,7 @@ def test_timedelta_protocol_itself() -> None:
 
 @mark.parametrize("name", DATETIMES)
 def test_datetime_protocol(name: str) -> None:
-    """Test the datetime protocol."""
+    r"""Test the datetime protocol."""
     dt_value = DATETIMES[name]
     assert isinstance(dt_value, DateTime)
     assert issubclass(type(dt_value), DateTime)
@@ -87,7 +87,7 @@ def test_datetime_protocol(name: str) -> None:
 
 @mark.parametrize("name", TIMEDELTAS)
 def test_timedelta_protocol(name: str) -> None:
-    """Test the datetime protocol."""
+    r"""Test the datetime protocol."""
     td_value = TIMEDELTAS[name]
     assert isinstance(td_value, TimeDelta)
     assert issubclass(type(td_value), TimeDelta)
@@ -97,14 +97,14 @@ def test_timedelta_protocol(name: str) -> None:
 
 
 def test_joint_attrs_datetime() -> None:
-    """Test the joint attributes of datetime objects."""
+    r"""Test the joint attributes of datetime objects."""
     shared_attrs = set.intersection(*(set(dir(v)) for v in DATETIMES.values()))
     superfluous_attrs = shared_attrs - set(dir(DateTime))
     print(f"\nShared members not covered by DateTime:\n\t{superfluous_attrs}")
 
 
 def test_joint_attrs_timedelta() -> None:
-    """Test the joint attributes of datetime objects."""
+    r"""Test the joint attributes of datetime objects."""
     shared_attrs = set.intersection(*(set(dir(v)) for v in TIMEDELTAS.values()))
     superfluous_attrs = shared_attrs - set(dir(TimeDelta))
     print(f"\nShared members not covered by TimeDelta:\n\t{superfluous_attrs}")
@@ -147,7 +147,7 @@ def test_timedelta_assign() -> None:
 
 
 def test_dt_var() -> None:
-    """Type-Checking DT_VAR."""
+    r"""Type-Checking DT_VAR."""
     # TODO: submit issue to pyright
 
     def id_dt(x: DT, /) -> DT:
@@ -163,7 +163,7 @@ def test_dt_var() -> None:
 
 
 def test_td_var() -> None:
-    """Type-Checking TD_VAR."""
+    r"""Type-Checking TD_VAR."""
 
     def id_td(x: TD, /) -> TD:
         return x

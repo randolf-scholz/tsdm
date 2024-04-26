@@ -52,7 +52,7 @@ CLASSES: list[type] = [
 
 
 def test_abc() -> None:
-    """Test which builtins satisfy which protocols."""
+    r"""Test which builtins satisfy which protocols."""
     supports = defaultdict(list)
     for cls in CLASSES:
         for proto in ABCS:

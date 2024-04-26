@@ -21,7 +21,7 @@ from tsdm.utils.wrappers import autojit
 
 
 class TensorEncoder(BaseEncoder):
-    """Encodes nested data as tensors."""
+    r"""Encodes nested data as tensors."""
 
     requires_fit: ClassVar[bool] = False
 
@@ -166,7 +166,7 @@ class PositionalEncoding(nn.Module):
 
 
 class Time2VecEncoder(BaseEncoder):
-    """Wraps Time2Vec encoder."""
+    r"""Wraps Time2Vec encoder."""
 
     requires_fit: ClassVar[bool] = False
 
@@ -181,7 +181,7 @@ class Time2VecEncoder(BaseEncoder):
 
 
 class PositionalEncoder(BaseEncoder):
-    """Wraps PositionalEncoder encoder."""
+    r"""Wraps PositionalEncoder encoder."""
 
     requires_fit: ClassVar[bool] = False
 

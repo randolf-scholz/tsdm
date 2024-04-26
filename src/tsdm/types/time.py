@@ -47,7 +47,7 @@ _DT = TypeVar("_DT", bound="DateTime[Any]")
 
 @runtime_checkable
 class TimeDelta(Protocol):
-    """Time delta provides several arithmetical operations."""
+    r"""Time delta provides several arithmetical operations."""
 
     # unary operations
     def __pos__(self: _TD) -> _TD: ...
@@ -105,7 +105,7 @@ class TimeDelta(Protocol):
 
 @runtime_checkable
 class DateTime(Protocol[_TD]):  # bind appropriate TimeDelta type
-    """Datetime can be compared and subtracted."""
+    r"""Datetime can be compared and subtracted."""
 
     def __le__(self: _DT, other: _DT, /) -> bool: ...
     def __lt__(self: _DT, other: _DT, /) -> bool: ...

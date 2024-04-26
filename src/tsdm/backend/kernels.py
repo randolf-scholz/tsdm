@@ -68,11 +68,11 @@ from tsdm.types.variables import T
 P = ParamSpec("P")
 
 BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch"]
-"""A type alias for the supported backends."""
+r"""A type alias for the supported backends."""
 
 
 def gather_types(obj: object, /) -> set[BackendID]:
-    """Gather the backend types of a set of objects."""
+    r"""Gather the backend types of a set of objects."""
     types: set[BackendID] = set()
 
     match obj:
@@ -110,7 +110,7 @@ def gather_types(obj: object, /) -> set[BackendID]:
 
 
 def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
-    """Get the backend of a set of objects."""
+    r"""Get the backend of a set of objects."""
     types: set[BackendID] = gather_types(obj)
 
     match len(types):
@@ -123,7 +123,7 @@ def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
 
 
 class Kernels:  # Q: how to make this more elegant?
-    """A collection of kernels for numerical operations."""
+    r"""A collection of kernels for numerical operations."""
 
     clip: Mapping[BackendID, ClipProto] = {
         "numpy": numpy.clip,
@@ -203,7 +203,7 @@ class Kernels:  # Q: how to make this more elegant?
 
 
 class Backend(Generic[T]):
-    """Provides kernels for numerical operations."""
+    r"""Provides kernels for numerical operations."""
 
     __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
 

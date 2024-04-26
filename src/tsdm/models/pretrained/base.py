@@ -66,14 +66,14 @@ from tsdm.utils.remote import import_from_url
 
 
 class PreTrained(Protocol):
-    """Protocol for General Pretrained Models."""
+    r"""Protocol for General Pretrained Models."""
 
     components: Mapping[str, Any]
-    """Mapping of component names to their respective components."""
+    r"""Mapping of component names to their respective components."""
 
 
 class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
-    """Metaclass for PreTrained."""
+    r"""Metaclass for PreTrained."""
 
     def __init__(
         self,
@@ -82,7 +82,7 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
         namespace: dict[str, Any],
         **kwds: Any,
     ) -> None:
-        """When a new class/subclass is created, this method is called."""
+        r"""When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if not hasattr(self, "LOGGER"):
@@ -107,28 +107,28 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
-    """Logger for the class."""
+    r"""Logger for the class."""
     CHECKPOINT_URL: ClassVar[str] = NotImplemented
-    """URL with overview of available model checkpoints."""
+    r"""URL with overview of available model checkpoints."""
     DOWNLOAD_URL: ClassVar[str] = NotImplemented
-    """URL from which model checkpoints can be downloaded."""
+    r"""URL from which model checkpoints can be downloaded."""
     DOCUMENTATION_URL: ClassVar[str] = NotImplemented
-    """URL of online documentation for the model."""
+    r"""URL of online documentation for the model."""
     RAWDATA_DIR: ClassVar[Path]
-    """Default directory where the raw data is stored."""
+    r"""Default directory where the raw data is stored."""
 
     # Instance Variables
     components: Mapping[str, Any]
-    """Mapping of component names to their respective components."""
+    r"""Mapping of component names to their respective components."""
 
     device: str | torch.device
-    """Device which the model components are loaded to."""
+    r"""Device which the model components are loaded to."""
     rawdata_path: Path = NotImplemented
-    """Path where the raw data is stored (subpath of RAWDATA_DIR)."""
+    r"""Path where the raw data is stored (subpath of RAWDATA_DIR)."""
     rawdata_hash: Optional[dict[str, str]] = None
-    """Dictionary of hash-method:value pairs for the raw data."""
+    r"""Dictionary of hash-method:value pairs for the raw data."""
     download_url: Optional[str] = None
-    """URL from which the raw data can be downloaded."""
+    r"""URL from which the raw data can be downloaded."""
 
     __component_files: dict[str, FilePath]
 
@@ -139,7 +139,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         "encoder": ["encoder", "Encoder"],
         "hyperparameters": ["hyperparameters", "hparams", "hyperparameter", "hparam"],
     }
-    """Mapping of potential component aliases for the model."""
+    r"""Mapping of potential component aliases for the model."""
 
     def __init__(
         self,
@@ -179,7 +179,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         self.device = device
 
     def __repr__(self) -> str:
-        """Return a string representation of the model."""
+        r"""Return a string representation of the model."""
         return repr_mapping(self.components, wrapped=self, identifier="PreTrainedModel")
 
     @classmethod

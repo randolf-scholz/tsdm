@@ -39,39 +39,39 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     _: KW_ONLY
 
     alpha: float = 1.0
-    """Prey reproduciton rate."""
+    r"""Prey reproduciton rate."""
     beta: float = 0.5
-    """Prey capture rate."""
+    r"""Prey capture rate."""
     gamma: float = 0.7
-    """Predator death rate."""
+    r"""Predator death rate."""
     delta: float = 0.3
-    """Predator feeding rate."""
+    r"""Predator feeding rate."""
     prey0: float = 1.0
-    """Initial angle."""
+    r"""Initial angle."""
     predator0: float = 1.0
-    """Initial angular velocity."""
+    r"""Initial angular velocity."""
     observation_noise: Distribution = field(
         default_factory=lambda: uniform(loc=0.95, scale=0.1)
     )  # 5% noise
-    """Noise distribution."""
+    r"""Noise distribution."""
     parameter_noise: Distribution = field(
         default_factory=lambda: univariate_normal(loc=0, scale=1)
     )
-    """Noise distribution."""
+    r"""Noise distribution."""
 
     def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
-        """Generate (multiple) initial state(s) y₀."""
+        r"""Generate (multiple) initial state(s) y₀."""
         theta0 = self.prey0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.predator0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
     def _make_observations_impl(self, x: NDArray, /) -> NDArray:
-        """Create observations from the solution."""
+        r"""Create observations from the solution."""
         # multiplicative noise
         return x * self.observation_noise.rvs(size=x.shape)
 
     def system(self, t: Any, state: ArrayLike) -> NDArray:
-        """Vector field of the pendulum.
+        r"""Vector field of the pendulum.
 
         .. signature:: ``[(...B, N), (...B, N, 2) -> (...B, N, 2)``
 
@@ -92,13 +92,13 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
         return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
-        """Project the solution onto the constraint set."""
+        r"""Project the solution onto the constraint set."""
         if x.min() < (self.X_MIN - tol):
             raise RuntimeError("Integrator produced vastly negative values.")
 
         return x.clip(min=self.X_MIN)
 
     def validate_solution(self, x: NDArray, /) -> None:
-        """Validate constraints on the parameters."""
+        r"""Validate constraints on the parameters."""
         if (x_min := x.min()) < self.X_MIN:
             raise ValueError(f"Lower bound violated: {x_min}.")

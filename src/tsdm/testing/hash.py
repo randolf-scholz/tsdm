@@ -44,7 +44,7 @@ from tsdm.types.protocols import SupportsShape
 __logger__: logging.Logger = logging.getLogger(__name__)
 
 DEFAULT_HASH_METHOD = "sha256"
-"""The default hash method to use."""
+r"""The default hash method to use."""
 
 
 def to_base(n: int, base: int, /) -> list[int]:
@@ -148,7 +148,7 @@ def hash_pandas(
 
 
 def hash_numpy(array: NDArray, /) -> int:
-    """Hash a numpy array."""
+    r"""Hash a numpy array."""
     # TODO: there are probably better ways to hash numpy arrays.
     array = np.asarray(array)
     hash_value = hash(tuple(array.flatten()))
@@ -156,7 +156,7 @@ def hash_numpy(array: NDArray, /) -> int:
 
 
 def hash_pyarrow(array: pa.Array, /) -> int:
-    """Hash a pyarrow array."""
+    r"""Hash a pyarrow array."""
     raise NotImplementedError(f"Can't hash {type(array)} yet.")
 
 
@@ -181,7 +181,7 @@ def hash_file(
 def hash_array(
     array: Any, *, hash_algorithm: str = "pandas", **hash_kwargs: Any
 ) -> str:
-    """Hash an array like object (pandas/numpy/pyarrow/etc.)."""
+    r"""Hash an array like object (pandas/numpy/pyarrow/etc.)."""
     match hash_algorithm:
         case "pandas":
             hash_value = hash_pandas(array, **hash_kwargs)
@@ -206,7 +206,7 @@ def validate_file_hash(
     hash_algorithm: Optional[str] = None,
     hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
-    """Validate file(s), given reference hash value(s).
+    r"""Validate file(s), given reference hash value(s).
 
     Arguments:
         file: The file to validate. If a mapping is given, every file in the mapping is validated.
@@ -354,7 +354,7 @@ def validate_table_hash(
     logger: logging.Logger = __logger__,
     **hash_kwargs: Any,
 ) -> None:
-    """Validate the hash of a `pandas` object, given hash values from a table."""
+    r"""Validate the hash of a `pandas` object, given hash values from a table."""
     # Try to determine the hash algorithm from the array type
     name = f"{type(table)} of shape={table.shape}"
 
@@ -433,7 +433,7 @@ def validate_object_hash(
     logger: logging.Logger = __logger__,
     **hash_kwargs: Any,
 ) -> None:
-    """Validate object(s) given reference hash values."""
+    r"""Validate object(s) given reference hash values."""
     # Try to determine the hash algorithm from the array type
     match obj:
         case str() | Path():
@@ -544,7 +544,7 @@ def validate_table_schema(
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
 ) -> None:
-    """Validate the schema of a `pandas` object, given schema values from a table.
+    r"""Validate the schema of a `pandas` object, given schema values from a table.
 
     Check if the columns and dtypes of the table match the reference schema.
     Check if the shape of the table matches the reference schema.

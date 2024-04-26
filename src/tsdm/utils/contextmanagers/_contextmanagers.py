@@ -24,14 +24,14 @@ from typing_extensions import ClassVar, Literal, Optional, Self
 
 
 class ray_cluster(ContextDecorator):
-    """Context manager for starting and stopping a ray cluster."""
+    r"""Context manager for starting and stopping a ray cluster."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}/{__qualname__}")
-    """Logger for this class."""
+    r"""Logger for this class."""
     ray: ModuleType | None = None
-    """Ray module."""
+    r"""Ray module."""
     num_cpus: int
-    """Number of CPUs to use for the ray cluster."""
+    r"""Number of CPUs to use for the ray cluster."""
 
     def __init__(self, *, num_cpus: Optional[int] = None) -> None:
         super().__init__()
@@ -64,16 +64,16 @@ class ray_cluster(ContextDecorator):
 
 
 class timer(ContextDecorator):
-    """Context manager for timing a block of code."""
+    r"""Context manager for timing a block of code."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}/{__qualname__}")
 
     start_time: int
-    """Start time of the timer."""
+    r"""Start time of the timer."""
     end_time: int
-    """End time of the timer."""
+    r"""End time of the timer."""
     elapsed: float
-    """Elapsed time of the timer in seconds."""
+    r"""Elapsed time of the timer in seconds."""
 
     def __enter__(self) -> Self:
         self.LOGGER.info("Flushing pending writes.")

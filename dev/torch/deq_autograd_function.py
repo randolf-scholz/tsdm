@@ -18,26 +18,26 @@ from torch.autograd import grad
 
 # %%
 class CGS_STATE(NamedTuple):
-    """State of the conjugate gradient squared solver."""
+    r"""State of the conjugate gradient squared solver."""
 
     L: Callable[[Tensor], Tensor]
-    """The linear function."""
+    r"""The linear function."""
     x: Tensor
-    """Vector: Current iterate."""
+    r"""Vector: Current iterate."""
     r: Tensor
-    """Vector: Residual vector."""
+    r"""Vector: Residual vector."""
     p: Tensor
-    """Vector: Search direction."""
+    r"""Vector: Search direction."""
     q: Tensor
-    """Vector: """
+    r"""Vector: """
     r0star: Tensor
-    """Vector: Initial dual residual vector."""
+    r"""Vector: Initial dual residual vector."""
     rho: Tensor
-    """Scalar: Inner Product between r and r0star."""
+    r"""Scalar: Inner Product between r and r0star."""
 
 
 def cgs_step(state: CGS_STATE) -> CGS_STATE:
-    """Perform a single step of the conjugate gradient squared method."""
+    r"""Perform a single step of the conjugate gradient squared method."""
     # unpack state
     L = state.L
     x = state.x
@@ -70,7 +70,7 @@ def cgs(
     atol: float = 10**-8,
     rtol: float = 10**-5,
 ) -> CGS_STATE:
-    """Solves linear equation L(x)=y."""
+    r"""Solves linear equation L(x)=y."""
     tol = max(atol, rtol * y.norm())
     x0 = torch.zeros_like(y) if x0 is None else x0
     r0 = y - L(x0)
@@ -135,7 +135,7 @@ def fixed_point_iteration(
     atol: float = 10**-8,
     rtol: float = 10**-5,
 ) -> Tensor:
-    """Solves $z⁎=f(x，z⁎)$ via FP iteration."""
+    r"""Solves $z⁎=f(x，z⁎)$ via FP iteration."""
     if isinstance(f, nn.Module) and z0 is None:
         z = torch.zeros(f.hidden_size)
     elif z0 is None:
@@ -275,7 +275,7 @@ def deq_layer_factory(
     bsolver=cgs,
     bsolver_kwargs={},
 ) -> Callable[[Tensor], Tensor]:
-    """Create functional deq_layer for the given module."""
+    r"""Create functional deq_layer for the given module."""
 
     params, param_spec = pytree.tree_flatten({
         **dict(module.named_parameters()),
@@ -285,14 +285,14 @@ def deq_layer_factory(
     fsolver_kwargs = fsolver_kwargs | {"z0": torch.zeros(module.hidden_size)}
 
     def func(x: Tensor, z: Tensor, *params_and_buffers) -> Tensor:
-        """Function call $f(x, z, θ)$."""
+        r"""Function call $f(x, z, θ)$."""
         theta = pytree.tree_unflatten(params_and_buffers, param_spec)
         return torch.func.functional_call(module, theta, (x, z))
 
     class DEQ_Layer(torch.autograd.Function):
         @staticmethod
         def forward(x: Tensor, *params_and_buffers) -> Tensor:
-            """Compute the fixed point $z⁎ = f(x, z⁎)$."""
+            r"""Compute the fixed point $z⁎ = f(x, z⁎)$."""
             f = rpartial(func, *params_and_buffers)
             return fsolver(f, x, **fsolver_kwargs)
 

@@ -44,7 +44,7 @@ TORCH_SPECIAL_LOSSES_FUNCTIONAL: dict[str, Callable[..., Tensor]] = {
     "triplet_margin"               : nn.functional.triplet_margin_loss,
     "triplet_margin_with_distance" : nn.functional.triplet_margin_with_distance_loss,
 }  # fmt: skip
-"""Special losses that do not represent usual loss functions."""
+r"""Special losses that do not represent usual loss functions."""
 
 TORCH_ALIASES_FUNCTIONAL: dict[str, Metric] = {
     "mae"  : nn.functional.l1_loss,
@@ -91,4 +91,4 @@ TORCH_SPECIAL_LOSSES: dict[str, type[nn.Module]] = {
     "TripletMargin"             : nn.TripletMarginLoss,
     "TripletMarginWithDistance" : nn.TripletMarginWithDistanceLoss,
 }  # fmt: skip
-"""Special losses that do not represent usual loss functions."""
+r"""Special losses that do not represent usual loss functions."""

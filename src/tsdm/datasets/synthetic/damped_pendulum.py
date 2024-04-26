@@ -17,7 +17,7 @@ from tsdm.random import generators
 
 @final
 class DampedPendulum_Ansari2023(SingleTableDataset):
-    """Dataset Wrapper for the Damped Pendulum Generator.
+    r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
         We follow the description of the Damped Pendulum in paper [1], see

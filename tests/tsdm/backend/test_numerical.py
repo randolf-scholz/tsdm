@@ -9,7 +9,7 @@ from tsdm.backend.generic import is_singleton
 
 
 def test_is_singleton() -> None:
-    """Test the is_singleton function."""
+    r"""Test the is_singleton function."""
     # numpy
     assert is_singleton(np.array(1))
     assert is_singleton(np.array([1]))

@@ -149,7 +149,7 @@ class Traffic(TimeSeriesCollection):
 
 
 class DampedPendulum_Ansari2023(TimeSeriesCollection):
-    """Damped Pendulum Time Series Collection."""
+    r"""Damped Pendulum Time Series Collection."""
 
     def __init__(self) -> None:
         timeseries = _DampedPendulum().table

@@ -65,7 +65,7 @@ def assert_arrays_close(
     atol: float = 1e-8,
     rtol: float = 1e-5,
 ) -> None:
-    """Assert that the arrays are close within tolerance."""
+    r"""Assert that the arrays are close within tolerance."""
     assert type(array) == type(reference)
 
     match array:
@@ -103,17 +103,17 @@ def assert_arrays_close(
 
 
 def is_builtin_type(obj: object, /) -> bool:
-    """Check if the object is a builtin type."""
+    r"""Check if the object is a builtin type."""
     return isinstance(obj, type) and obj in BUILTIN_TYPES
 
 
 def is_builtin_constant(obj: object, /) -> bool:
-    """Check if the object is a builtin constant."""
+    r"""Check if the object is a builtin constant."""
     return isinstance(obj, Hashable) and obj in BUILTIN_CONSTANTS
 
 
 def is_builtin(obj: object, /) -> bool:
-    """Check if the object is a builtin constant."""
+    r"""Check if the object is a builtin constant."""
     return is_builtin_function(obj) or is_builtin_constant(obj) or is_builtin_type(obj)
 
 
@@ -146,7 +146,7 @@ def is_zipfile(path: Path, /) -> bool:
 
 
 def assert_protocol(obj: Any, proto: type, /) -> None:
-    """Assert that the object is a given protocol."""
+    r"""Assert that the object is a given protocol."""
     if not is_protocol(proto):
         raise TypeError(f"{proto} is not a protocol!")
 
@@ -165,7 +165,7 @@ def assert_protocol(obj: Any, proto: type, /) -> None:
 
 
 def check_shared_attrs(*classes: type, protocol: type) -> list[str]:
-    """Check that all classes satisfy the protocol."""
+    r"""Check that all classes satisfy the protocol."""
     if not is_protocol(protocol):
         raise TypeError(f"{protocol} is not a protocol!")
 

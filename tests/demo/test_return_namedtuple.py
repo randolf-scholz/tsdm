@@ -12,7 +12,7 @@ P = ParamSpec("P")
 
 
 def get_exit_point_names(func: Callable) -> list[tuple[str, ...]]:
-    """Return the variable names used in exit nodes."""
+    r"""Return the variable names used in exit nodes."""
     source = textwrap.dedent(getsource(func))
     tree = ast.parse(source)
     exit_points = [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
@@ -30,7 +30,7 @@ def get_exit_point_names(func: Callable) -> list[tuple[str, ...]]:
 
 
 def decorator(deco):
-    """Decorator Factory."""
+    r"""Decorator Factory."""
 
     @wraps(deco)
     def __decorator(__func__=None, **kwargs):
@@ -49,7 +49,7 @@ def return_namedtuple(
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
 ) -> Callable[P, tuple]:
-    """Convert a function's return type to a namedtuple."""
+    r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
     # noinspection PyUnresolvedReferences

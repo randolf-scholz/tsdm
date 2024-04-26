@@ -240,17 +240,17 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 #     "InSilicoTSC": InSilicoTSC,
 #     "KiwiBenchmarkTSC": KiwiBenchmarkTSC,
 # }
-# """Dictionary of all available timseries classes."""
+# r"""Dictionary of all available timseries classes."""
 #
 # OLD_DATASETS: dict[str, type[Dataset]] = {
 #     "KiwiRuns": KiwiRuns,
 # }
-# """Deprecated dataset classes."""
+# r"""Deprecated dataset classes."""
 #
 # OLD_TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
 #     "KiwiRunsTSC": KiwiRunsTSC,
 # }
-# """Deprecated timeseries classes."""
+# r"""Deprecated timeseries classes."""
 
 
 @pprint_repr
@@ -258,13 +258,13 @@ class Inputs(NamedTuple):
     r"""Tuple of inputs."""
 
     q: Series
-    """Query time points."""
+    r"""Query time points."""
     x: DataFrame
-    """Observations"""
+    r"""Observations"""
     u: Optional[DataFrame] = None
-    """Covariates."""
+    r"""Covariates."""
     metadata: Optional[DataFrame] = None
-    """Metadata."""
+    r"""Metadata."""
 
 
 @pprint_repr
@@ -272,9 +272,9 @@ class Targets(NamedTuple):
     r"""Tuple of inputs."""
 
     y: DataFrame
-    """Target values at the query times."""
+    r"""Target values at the query times."""
     metadata: Optional[DataFrame] = None
-    """Target metadata."""
+    r"""Target metadata."""
 
 
 @pprint_repr
@@ -282,11 +282,11 @@ class Sample(NamedTuple):
     r"""A sample for forecasting task."""
 
     key: Hashable
-    """The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)]."""
+    r"""The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)]."""
     inputs: Inputs
-    """The predictors the model is allowed to base its forecast on."""
+    r"""The predictors the model is allowed to base its forecast on."""
     targets: Targets
-    """The targets the model is supposed to predict."""
+    r"""The targets the model is supposed to predict."""
     rawdata: Optional[Any] = None
 
     def sparsify_index(self) -> Self:
@@ -518,7 +518,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     """
 
     dataset: TimeSeriesDataset | TimeSeriesCollection
-    """The dataset to sample from."""
+    r"""The dataset to sample from."""
 
     _: KW_ONLY
 
@@ -691,7 +691,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 @pprint_repr
 @dataclass
 class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
-    """Utility class for generating samples from a fixed slice of a time series.
+    r"""Utility class for generating samples from a fixed slice of a time series.
 
     Assumptions:
         - `data_source` is a multi-index dataframe whose innermost index is the time index.
@@ -706,11 +706,11 @@ class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
     _: KW_ONLY
 
     observables: Sequence[Hashable] = NotImplemented
-    """These columns are unmasked over the obs.-horizon in the input slice."""
+    r"""These columns are unmasked over the obs.-horizon in the input slice."""
     targets: Sequence[Hashable] = NotImplemented
-    """These columns are unmasked over the pred.-horizon in the target slice."""
+    r"""These columns are unmasked over the pred.-horizon in the target slice."""
     covariates: Sequence[Hashable] = ()
-    """These columns are unmasked over the whole inputs slice."""
+    r"""These columns are unmasked over the whole inputs slice."""
 
     def __post_init__(self) -> None:
         # set the index
@@ -790,16 +790,16 @@ class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
             raise ValueError("Targets contain columns that are not in the data source.")
 
     def __len__(self) -> int:
-        """Number of unique entries in the outer n-1 index levels."""
+        r"""Number of unique entries in the outer n-1 index levels."""
         return len(self.index)
 
     def __iter__(self) -> Iterator[PlainSample]:
-        """Iterate over all the samples in the dataset."""
+        r"""Iterate over all the samples in the dataset."""
         for key in self.index:
             yield self[key]
 
     def __getitem__(self, key: Hashable, /) -> PlainSample:
-        """Yield a single sample."""
+        r"""Yield a single sample."""
         # select the individual time series
         ts = self.data_source.loc[key]
         # get the slices

@@ -25,7 +25,7 @@ from tsdm.types.aliases import SizeLike
 
 @dataclass
 class BouncingBall(IVP_GeneratorBase[NDArray]):
-    """Bouncing Ball Simulation.
+    r"""Bouncing Ball Simulation.
 
     NOTE: This simulation differs from the reference in two regards:
 
@@ -42,18 +42,18 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     _: KW_ONLY
 
     x_min: Final[float] = -1.0
-    """Lower bound of the ball's position."""
+    r"""Lower bound of the ball's position."""
     x_max: Final[float] = +1.0
-    """Upper bound of the ball's position."""
+    r"""Upper bound of the ball's position."""
     v_min: Final[float] = 0.05
-    """Minimum velocity of the ball."""
+    r"""Minimum velocity of the ball."""
     v_max: Final[float] = 0.5
-    """Maximum velocity of the ball."""
+    r"""Maximum velocity of the ball."""
     y_noise: Final[float] = 0.05
-    """Standard deviation of the observation noise."""
+    r"""Standard deviation of the observation noise."""
 
     def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
-        """Generate (multiple) initial state(s) y₀."""
+        r"""Generate (multiple) initial state(s) y₀."""
         x0 = RNG.uniform(low=self.x_min, high=self.x_max, size=size)
         v0 = RNG.uniform(low=self.v_min, high=self.v_max, size=size) * RNG.choice(
             [-1, 1], size=size
@@ -61,7 +61,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         return np.stack([x0, v0], axis=-1)
 
     def _make_observations_impl(self, loc: NDArray, /) -> NDArray:
-        """Create observations from the solution."""
+        r"""Create observations from the solution."""
         x = loc[..., 0]
         # sample from truncated normal distribution
         # cf. https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html
@@ -71,7 +71,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         return y
 
     def _solve_ivp_impl(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
-        """Solve the initial value problem.
+        r"""Solve the initial value problem.
 
         NOTE: possibly not properly vectorized.
         """
@@ -124,7 +124,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         return np.stack([x, v], axis=-1)
 
     def validate_solution(self, sol: NDArray, /) -> None:
-        """Validate constraints on the parameters."""
+        r"""Validate constraints on the parameters."""
         x = sol[..., 0]
         if (x_min := x.min()) < self.x_min:
             raise ValueError(f"Lower bound violated: {x_min}<{self.x_min}.")

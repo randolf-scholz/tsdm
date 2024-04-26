@@ -4,7 +4,7 @@ from typing import Any, Protocol, Self, SupportsFloat, SupportsInt, TypeVar, rev
 
 
 class TimeDelta(Protocol):
-    """Time delta provides several arithmetical operations."""
+    r"""Time delta provides several arithmetical operations."""
 
     # unary operations
     def __pos__(self) -> Self: ...
@@ -66,7 +66,7 @@ TD = TypeVar("TD", bound=TimeDelta, contravariant=True)
 
 
 class DateTime(Protocol[TD]):  # bind appropriate TimeDelta type
-    """Datetime can be compared and subtracted."""
+    r"""Datetime can be compared and subtracted."""
 
     def __hash__(self) -> int: ...
 

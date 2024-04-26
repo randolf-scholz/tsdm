@@ -92,7 +92,7 @@ r"""TypeVar for tensor-like objects."""
 Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
 Scalar: TypeAlias = None | bool | int | float | complex | str
-"""Type Hint for scalar objects."""
+r"""Type Hint for scalar objects."""
 ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
 
@@ -108,7 +108,7 @@ PARAMETERS: TypeAlias = tuple[
     | dict[str, "PARAMETERS"],
     ...,
 ]
-"""Type Hint for parameters tuple."""
+r"""Type Hint for parameters tuple."""
 
 
 def invert_axis_selection(axis: Axes, /, *, ndim: int) -> tuple[int, ...]:
@@ -202,7 +202,7 @@ def get_broadcast(
 
 
 def slice_size(slc: slice) -> Optional[int]:
-    """Get the size of a slice."""
+    r"""Get the size of a slice."""
     if slc.stop is None or slc.start is None:
         return None
     return slc.stop - slc.start
@@ -215,7 +215,7 @@ def get_reduced_axes(
     item: Index | tuple[Index, ...], axis: SizeLike
 ) -> tuple[int, ...]: ...
 def get_reduced_axes(item, axis):
-    """Determine if a slice would remove some axes."""
+    r"""Determine if a slice would remove some axes."""
     match axis:
         case None:
             return None
@@ -261,13 +261,13 @@ def get_reduced_axes(item, axis):
 
 
 class NumericalEncoder(BaseEncoder[Arr, Arr]):
-    """Represents a numerical encoder."""
+    r"""Represents a numerical encoder."""
 
     backend: Backend[Arr]
-    """The backend of the encoder."""
+    r"""The backend of the encoder."""
 
     Parameters = NewType("Parameters", tuple)
-    """The type of the parameters of the encoder."""
+    r"""The type of the parameters of the encoder."""
 
     @property
     @abstractmethod
@@ -289,7 +289,7 @@ class NumericalEncoder(BaseEncoder[Arr, Arr]):
         raise NotImplementedError
 
     def cast_params(self, params: Nested) -> Nested[Arr]:
-        """Cast the parameters to the current backend."""
+        r"""Cast the parameters to the current backend."""
         match params:
             case NTuple() as ntup:
                 cls = type(ntup)
@@ -379,12 +379,12 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
 
     @property
     def lower_mode(self) -> ClippingMode:
-        """The mode for the lower boundary."""
+        r"""The mode for the lower boundary."""
         return self.mode[0] if isinstance(self.mode, tuple) else self.mode
 
     @property
     def upper_mode(self) -> ClippingMode:
-        """The mode for the upper boundary."""
+        r"""The mode for the upper boundary."""
         return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
     def __init__(
@@ -559,7 +559,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
     axis: Axes
     r"""Over which axis to perform the scaling."""
     backend: Backend[Arr]
-    """The backend of the encoder."""
+    r"""The backend of the encoder."""
 
     def __init__(
         self,
@@ -658,7 +658,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     axis: Axes
     r"""The axis to perform the scaling. If None, automatically select the axis."""
     backend: Backend[Arr] = NotImplemented
-    """The backend of the encoder."""
+    r"""The backend of the encoder."""
 
     @property
     def requires_fit(self) -> bool:
@@ -792,7 +792,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     safe_computation: bool
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
     backend: Backend[Arr] = NotImplemented
-    """The backend of the encoder."""
+    r"""The backend of the encoder."""
 
     @property
     def requires_fit(self) -> bool:
@@ -878,7 +878,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         self.scale = self.backend.where(dx != 0, scale, scale**0)
 
     def encode(self, x: Arr, /) -> Arr:
-        """Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
+        r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
         # broadcast = get_broadcast(x.shape, axis=self.axis, keep_axis=True)
 
         xmin = self.xmin  # [broadcast]
@@ -903,7 +903,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         return y
 
     def decode(self, y: Arr, /) -> Arr:
-        """Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
+        r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
         # broadcast = get_broadcast(y.shape, axis=self.axis, keep_axis=True)
 
         xmin = self.xmin  # [broadcast]
@@ -950,7 +950,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         )
 
     def recompute_params(self):
-        """Computes derived parameters from the base parameters."""
+        r"""Computes derived parameters from the base parameters."""
         self.xbar = (self.xmax + self.xmin) / 2
         self.ybar = (self.ymax + self.ymin) / 2
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
@@ -1012,7 +1012,7 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
 
 
 class LogitEncoder(BaseEncoder[NDArray, NDArray]):
-    """Logit encoder."""
+    r"""Logit encoder."""
 
     requires_fit: ClassVar[bool] = False
 

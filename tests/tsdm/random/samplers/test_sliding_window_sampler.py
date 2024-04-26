@@ -734,7 +734,7 @@ EXPECTED_RESULTS_CONTINUOUS_DATA: dict = flatten_dict(
 def test_sliding_window_sampler_discrete(
     *, drop_last: bool, stride: int, horizons: int, mode: str
 ) -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     sampler = SlidingSampler(
         DISCRETE_DATA,
         stride=stride,
@@ -775,7 +775,7 @@ def test_sliding_window_sampler_discrete(
 def test_sliding_window_sampler_continuous(
     *, drop_last: bool, stride: float, horizons: float, mode: str
 ) -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     sampler = SlidingSampler(
         CONTINUOUS_DATA,
         stride=stride,
@@ -826,7 +826,7 @@ DATETIME_DATA = {
 @mark.parametrize("mode", SlidingSampler.MODES)
 @mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
 def test_datetime_data(mode: str, data: Any) -> None:
-    """Test the SlidingWindowSampler with datetime/timedelta data."""
+    r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(
         data,
         stride="8h",
@@ -881,7 +881,7 @@ INTEGER_DATA: dict[str, Any] = {
 @mark.parametrize("mode", SlidingSampler.MODES)
 @mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
 def test_integer_data(mode: str, data: Any) -> None:
-    """Test the SlidingWindowSampler with datetime/timedelta data."""
+    r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(
         data,
         stride=2,
@@ -933,7 +933,7 @@ FLOAT_DATA = {
 @mark.parametrize("mode", SlidingSampler.MODES)
 @mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
 def test_float_data(mode: str, data: Any) -> None:
-    """Test the SlidingWindowSampler with datetime/timedelta data."""
+    r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(
         data,
         stride=2.1,
@@ -975,7 +975,7 @@ def test_float_data(mode: str, data: Any) -> None:
 # region specific tests ----------------------------------------------------------------
 # NOTE: here we have statically known mode, so they should be type checked.
 def test_pandas_timestamps() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     timedeltas = Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
     time: Iterable[DateTime] = pd.concat([
@@ -997,7 +997,7 @@ def test_pandas_timestamps() -> None:
 
 
 def test_windows_single() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
 
@@ -1047,7 +1047,7 @@ def test_windows_single() -> None:
 
 
 def test_windows_multi() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = [3, 1]
 
@@ -1085,7 +1085,7 @@ def test_windows_multi() -> None:
 
 
 def test_masks_single() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
 
@@ -1139,7 +1139,7 @@ def test_masks_single() -> None:
 
 
 def test_masks_multi() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = (3, 1)
 
@@ -1189,7 +1189,7 @@ def test_masks_multi() -> None:
 
 
 def test_bounds_single() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
 
@@ -1229,7 +1229,7 @@ def test_bounds_single() -> None:
 
 
 def test_bounds_multi() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     sampler = SlidingSampler(
         DISCRETE_DATA,
         horizons=(3, 1),
@@ -1257,7 +1257,7 @@ def test_bounds_multi() -> None:
 
 
 def test_slices_single() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
 
@@ -1296,7 +1296,7 @@ def test_slices_single() -> None:
 
 
 def test_slices_multi() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     sampler = SlidingSampler(
         DISCRETE_DATA,
         horizons=(3, 1),
@@ -1323,7 +1323,7 @@ def test_slices_multi() -> None:
 
 
 def test_unknown_single() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
     mode: str = "..."
@@ -1341,7 +1341,7 @@ def test_unknown_single() -> None:
 
 
 def test_unknown_multi() -> None:
-    """Test the SlidingWindowSampler."""
+    r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = (3, 1)
     mode: str = "..."

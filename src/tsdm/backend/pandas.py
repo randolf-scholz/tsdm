@@ -40,20 +40,20 @@ from tsdm.utils import joint_keys
 __logger__ = logging.getLogger(__name__)
 
 P = TypeVar("P", Index, Series, DataFrame)
-"""A type variable for pandas objects."""
+r"""A type variable for pandas objects."""
 
 PANDAS_TYPE: TypeAlias = Index | Series | DataFrame
-"""A type alias for pandas objects."""
+r"""A type alias for pandas objects."""
 
 
 def pandas_false_like(x: P, /) -> P:
-    """Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ m
 
 
 def pandas_true_like(x: P, /) -> P:
-    """Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ (~m)
 
@@ -61,7 +61,7 @@ def pandas_true_like(x: P, /) -> P:
 def pandas_infer_axes(
     x: P, /, *, axis: Axes = None
 ) -> Literal[None, "index", "columns"]:
-    """Convert axes specification to pandas-compatible axes specification.
+    r"""Convert axes specification to pandas-compatible axes specification.
 
     - Series: -1 → 0, -2 → Error
     - DataFrame: -1 → 1, -2 → 0
@@ -79,45 +79,45 @@ def pandas_infer_axes(
 
 
 def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
-    """Analogue to `numpy.clip`."""
+    r"""Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
     return x.clip(lower, upper, axis=axis)
 
 
 def pandas_nanmax(x: P, /, *, axis: Axes = None) -> P:
-    """Analogue to `numpy.nanmax`."""
+    r"""Analogue to `numpy.nanmax`."""
     return x.max(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
 def pandas_nanmin(x: P, /, *, axis: Axes = None) -> P:
-    """Analogue to `numpy.nanmin`."""
+    r"""Analogue to `numpy.nanmin`."""
     return x.min(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
 def pandas_nanmean(x: P, /, *, axis: Axes = None) -> P:
-    """Analogue to `numpy.nanmean`."""
+    r"""Analogue to `numpy.nanmean`."""
     return x.mean(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
 def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
-    """Analogue to `numpy.nanstd`."""
+    r"""Analogue to `numpy.nanstd`."""
     return x.std(axis=pandas_infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
 def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
-    """Analogue to `numpy.where`."""
+    r"""Analogue to `numpy.where`."""
     if isinstance(a, PANDAS_TYPE):  # type: ignore[misc,arg-type]
         return a.where(cond, b)
     return a if cond else pandas_like(b, a)  # scalar fallback
 
 
 def pandas_null_like(x: P, /) -> P:
-    """Returns a copy of the input filled with nulls."""
+    r"""Returns a copy of the input filled with nulls."""
     return pandas_where(pandas_true_like(x), x, NA)
 
 
 def pandas_like(x: ArrayLike, ref: P, /) -> P:
-    """Create a Series/DataFrame with the same modality as a reference."""
+    r"""Create a Series/DataFrame with the same modality as a reference."""
     match ref:
         case Index() as idx:
             return Index(x, dtype=idx.dtype, name=idx.name)
@@ -131,28 +131,28 @@ def pandas_like(x: ArrayLike, ref: P, /) -> P:
 
 # region auxiliary functions -----------------------------------------------------------
 def strip_whitespace_index(index: Index, /) -> Index:
-    """Strip whitespace from all string elements in an Index."""
+    r"""Strip whitespace from all string elements in an Index."""
     if index.dtype == "string":
         return index.str.strip()
     return index
 
 
 def strip_whitespace_series(series: Series, /) -> Series:
-    """Strip whitespace from all string elements in a Series."""
+    r"""Strip whitespace from all string elements in a Series."""
     if series.dtype == "string":
         return series.str.strip()
     return series
 
 
 def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
-    """Strip whitespace from selected columns in a DataFrame."""
+    r"""Strip whitespace from selected columns in a DataFrame."""
     return frame.assign(**{
         col: strip_whitespace_series(frame[col]) for col in (cols or frame)
     })
 
 
 def pandas_strip_whitespace(x: P, /) -> P:
-    """Strip whitespace from all string elements in a `pandas` object."""
+    r"""Strip whitespace from all string elements in a `pandas` object."""
     match x:
         case DataFrame() as df:
             return strip_whitespace_dataframe(df)
@@ -173,7 +173,7 @@ def detect_outliers_series(
     lower_inclusive: bool,
     upper_inclusive: bool,
 ) -> Series:
-    """Detect outliers in a Series, given boundary values."""
+    r"""Detect outliers in a Series, given boundary values."""
     # detect lower-bound violations
     match lower_bound, lower_inclusive:
         case None, _:
@@ -215,7 +215,7 @@ def detect_outliers_dataframe(
     lower_inclusive: Mapping[Any, bool],
     upper_inclusive: Mapping[Any, bool],
 ) -> DataFrame:
-    """Detect outliers in a DataFrame, given boundary values."""
+    r"""Detect outliers in a DataFrame, given boundary values."""
     given_bounds = joint_keys(
         lower_bound, upper_bound, lower_inclusive, upper_inclusive
     )
@@ -246,7 +246,7 @@ def remove_outliers_series(
     lower_inclusive: bool,
     upper_inclusive: bool,
 ) -> Series:
-    """Remove outliers from a Series, given boundary values."""
+    r"""Remove outliers from a Series, given boundary values."""
     if s.dtype == "category":
         __logger__.info("Skipping categorical column.")
         return s
@@ -297,7 +297,7 @@ def remove_outliers_dataframe(
     lower_inclusive: Mapping[T, bool],
     upper_inclusive: Mapping[T, bool],
 ) -> DataFrame:
-    """Remove outliers from a DataFrame, given boundary values."""
+    r"""Remove outliers from a DataFrame, given boundary values."""
     __logger__.info("Removing outliers from DataFrame.")
     df = df.copy() if not inplace else df
 

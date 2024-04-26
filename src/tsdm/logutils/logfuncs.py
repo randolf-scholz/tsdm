@@ -78,12 +78,12 @@ from tsdm.types.variables import K, T, T_co
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
-"""Type Alias for maybe wrapped values."""
+r"""Type Alias for maybe wrapped values."""
 
 
 @runtime_checkable
 class LogFunction(Protocol):
-    """Protocol for logging functions."""
+    r"""Protocol for logging functions."""
 
     def __call__(
         self,
@@ -96,12 +96,12 @@ class LogFunction(Protocol):
         prefix: str = "",
         postfix: str = "",
     ) -> None:
-        """Log to tensorboard."""
+        r"""Log to tensorboard."""
         ...
 
 
 def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
-    """Check if the function is a callback."""
+    r"""Check if the function is a callback."""
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
     P = inspect.Parameter
@@ -111,7 +111,7 @@ def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
 
 
 class AdamState(TypedDict):
-    """Adam optimizer state."""
+    r"""Adam optimizer state."""
 
     step: Tensor
     exp_avg: Tensor
@@ -119,7 +119,7 @@ class AdamState(TypedDict):
 
 
 def yield_optimizer_params(optimizer: Optimizer, /) -> Iterator[nn.Parameter]:
-    """Get parameters from optimizer."""
+    r"""Get parameters from optimizer."""
     for group in optimizer.param_groups:
         for param in group["params"]:
             if param.requires_grad:
@@ -165,7 +165,7 @@ def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
 
 
 class TargetsAndPredics(NamedTuple):
-    """Targets and predictions."""
+    r"""Targets and predictions."""
 
     targets: Tensor
     predics: Tensor
@@ -229,7 +229,7 @@ def compute_metrics(
 
 
 def make_checkpoint(step: int, objects: Mapping[str, Any], path: FilePath) -> None:
-    """Save checkpoints of given paths."""
+    r"""Save checkpoints of given paths."""
     path = Path(path) / f"{step}"
     path.mkdir(parents=True, exist_ok=True)
 
@@ -263,7 +263,7 @@ def log_config(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    """Log config to tensorboard."""
+    r"""Log config to tensorboard."""
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path = path / f"{identifier}-{step}.{fmt}"

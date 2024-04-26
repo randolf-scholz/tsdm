@@ -61,7 +61,7 @@ def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
 
 
 class ConfigMeta(type):
-    """Metaclass for Config."""
+    r"""Metaclass for Config."""
 
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
@@ -148,7 +148,7 @@ class Config(metaclass=ConfigMeta):
 
 
 class Project:
-    """Holds Project related data."""
+    r"""Holds Project related data."""
 
     DOC_URL = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
 
@@ -211,7 +211,7 @@ class Project:
         r"""Return the `results` directory."""
 
         class ResultsDir(dict):
-            """Results directory."""
+            r"""Results directory."""
 
             TEST_RESULTS_PATH = self.TEST_RESULTS_PATH
 
@@ -266,8 +266,8 @@ class Project:
 
 # region CONSTANTS
 PROJECT: Final[Project] = Project()
-"""Project configuration."""
+r"""Project configuration."""
 
 CONFIG: Final[Config] = Config()
-"""Configuration Class."""
+r"""Configuration Class."""
 # endregion CONSTANTS

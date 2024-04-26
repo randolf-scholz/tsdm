@@ -57,7 +57,7 @@ from tsdm.utils.pprint import repr_array, repr_mapping
 
 @runtime_checkable
 class Dataset(Protocol[T_co]):
-    """Protocol for Dataset."""
+    r"""Protocol for Dataset."""
 
     # TODO: make a bug report. Mypy does not honor the type hint for INFO_URL
     # INFO_URL: ClassVar[Optional[str]]
@@ -82,12 +82,12 @@ class Dataset(Protocol[T_co]):
     @classmethod
     @abstractmethod
     def deserialize(cls, path: FilePath, /) -> Self:
-        """Deserialize the dataset (from cleaned format)."""
+        r"""Deserialize the dataset (from cleaned format)."""
         ...
 
     @abstractmethod
     def serialize(self, path: FilePath, /) -> None:
-        """Serialize the (cleaned) dataset to a specific path."""
+        r"""Serialize the (cleaned) dataset to a specific path."""
         ...
 
     # FIXME: https://discuss.python.org/t/41137
@@ -95,12 +95,12 @@ class Dataset(Protocol[T_co]):
     @property
     @abstractmethod
     def rawdata_files(self) -> Sequence[str]:  # pyright: ignore[reportRedeclaration]
-        """Return list of file names that make up the raw data."""
+        r"""Return list of file names that make up the raw data."""
         ...
 
     @property
     def rawdata_paths(self) -> Mapping[str, Path]:
-        """Return mapping from filenames to paths to the rawdata files."""
+        r"""Return mapping from filenames to paths to the rawdata files."""
         return {
             str(fname): (self.RAWDATA_DIR / fname).absolute()
             for fname in self.rawdata_files
@@ -113,17 +113,17 @@ class Dataset(Protocol[T_co]):
 
     @abstractmethod
     def download(self) -> None:
-        """Download the dataset."""
+        r"""Download the dataset."""
         ...
 
     @abstractmethod
     def clean(self) -> None:
-        """Clean the dataset."""
+        r"""Clean the dataset."""
         ...
 
     @abstractmethod
     def load(self) -> T_co:
-        """Load the dataset."""
+        r"""Load the dataset."""
         ...
 
 
@@ -133,7 +133,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     def __init__(
         self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
-        """When a new class/subclass is created, this method is called."""
+        r"""When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
@@ -475,12 +475,12 @@ class SingleTableDataset(BaseDataset[T_co]):
     r"""Dataset class that consists of a singular DataFrame."""
 
     RAWDATA_DIR: ClassVar[Path]
-    """Path to raw data directory."""
+    r"""Path to raw data directory."""
     DATASET_DIR: ClassVar[Path]
-    """Path to pre-processed data directory."""
+    r"""Path to pre-processed data directory."""
 
     _table: T_co = NotImplemented
-    """INTERNAL: the dataset."""
+    r"""INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
     dataset_hash: str = NotImplemented
@@ -625,12 +625,12 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     """
 
     RAWDATA_DIR: ClassVar[Path]
-    """Path to raw data directory."""
+    r"""Path to raw data directory."""
     DATASET_DIR: ClassVar[Path]
-    """Path to pre-processed data directory."""
+    r"""Path to pre-processed data directory."""
 
     _tables: dict[Key, T_co] = NotImplemented
-    """INTERNAL: the dataset."""
+    r"""INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
     dataset_hashes: Mapping[Key, str | None] = NotImplemented
@@ -711,7 +711,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
             return False
 
         def attr_exists(obj: object, key: str) -> bool:
-            """Test if attribute exists using only __getattribute__ and not __getattr__."""
+            r"""Test if attribute exists using only __getattribute__ and not __getattr__."""
             try:
                 obj.__getattribute__(key)
             except AttributeError:

@@ -14,7 +14,7 @@ __logger__ = logging.getLogger(__name__)
 
 @mark.xfail(reason="Download link may be expired.")
 def test_pretrained() -> None:
-    """Test the serialization of models."""
+    r"""Test the serialization of models."""
     __logger__.info("Testing %s.", LinODEnet)
 
     checkpoints = LinODEnet.available_checkpoints()

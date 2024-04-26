@@ -72,7 +72,7 @@ def get_index(dataset: Dataset[T], /) -> Index:
 
 
 def get_first(dataset: Dataset[T], /) -> T:
-    """Return the first element of the dataset."""
+    r"""Return the first element of the dataset."""
     match dataset:
         case Series() | DataFrame() as pandas_dataset:
             return pandas_dataset.iloc[0]
@@ -85,7 +85,7 @@ def get_first(dataset: Dataset[T], /) -> T:
 
 
 def get_last(dataset: Dataset[T], /) -> T:
-    """Return the last element of the dataset."""
+    r"""Return the last element of the dataset."""
     match dataset:
         case Series() | DataFrame() as pandas_dataset:
             return pandas_dataset.iloc[-1]
@@ -171,24 +171,24 @@ class Sampler(Protocol[T_co]):
 
     @abstractmethod
     def __len__(self) -> int:
-        """The number of indices that can be drawn by __iter__."""
+        r"""The number of indices that can be drawn by __iter__."""
         ...
 
     @abstractmethod
     def __iter__(self) -> Iterator[T_co]:
-        """Return an iterator over the indices of the data source."""
+        r"""Return an iterator over the indices of the data source."""
         ...
 
     @property
     @abstractmethod
     def shuffle(self) -> bool:
-        """Whether to shuffle the indices."""
+        r"""Whether to shuffle the indices."""
         ...
 
     @property
     @abstractmethod
     def rng(self) -> Generator:
-        """The random number generator."""
+        r"""The random number generator."""
         ...
 
 
@@ -217,7 +217,7 @@ class BaseSampler(Sampler[T_co]):
 @pprint_repr
 @dataclass(init=False)
 class RandomSampler(BaseSampler[T_co]):
-    """Sample randomly from the data source.
+    r"""Sample randomly from the data source.
 
     Note:
         In contrast to torch.utils.data.RandomSampler, this sampler also works for map-style datasets.
@@ -256,7 +256,7 @@ class RandomSampler(BaseSampler[T_co]):
         rng: Generator = ...,
     ) -> None: ...
     def __init__(self, data, /, *, shuffle=False, rng=RNG):
-        """Initialize the sampler."""
+        r"""Initialize the sampler."""
         super().__init__(shuffle=shuffle, rng=rng)
         self.data = data
         self.index = get_index(self.data)
@@ -782,11 +782,11 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
 
 
 class DiscreteSlidingWindowSampler(BaseSampler):
-    """Sample a sliding window from the data source."""
+    r"""Sample a sliding window from the data source."""
 
 
 class RandomWindowSampler(BaseSampler):
-    """Sample a random window from the data source.
+    r"""Sample a random window from the data source.
 
     Args:
         mode: There are 4 modes, determining the output of the sampler (default: 'masks').

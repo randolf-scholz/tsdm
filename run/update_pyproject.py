@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Updates the pyproject.toml dependencies to the currently installed versions."""
+r"""Updates the pyproject.toml dependencies to the currently installed versions."""
 
 import json
 import re
@@ -14,7 +14,7 @@ pkg_dict: dict[str, str] = {pkg["name"].lower(): pkg["version"] for pkg in pip_l
 
 
 def strip(version: str) -> str:
-    """Strip the version string to the first three parts."""
+    r"""Strip the version string to the first three parts."""
     sub = version.split(".")
     version = ".".join(sub[:3])
     # strip everything after the first non-numeric, non-dot character
@@ -23,7 +23,7 @@ def strip(version: str) -> str:
 
 
 def update_versions(raw_file: str, version_pattern: re.Pattern) -> str:
-    """Update the dependencies in pyproject.toml according to version_pattern."""
+    r"""Update the dependencies in pyproject.toml according to version_pattern."""
     if version_pattern.groups != 3:
         raise ValueError(
             "version_pattern must have 3 groups (whole match, package name, version))"

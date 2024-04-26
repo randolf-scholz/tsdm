@@ -331,22 +331,22 @@ r"""Dictionary of all `pandas` data types."""
 PANDAS_ARROW_DURATION_TYPES: set[pd.ArrowDtype] = {
     pd.ArrowDtype(pa.duration(unit)) for unit in ["s", "ms", "us", "ns"]
 }
-"""Set of all `pandas` arrow duration types."""
+r"""Set of all `pandas` arrow duration types."""
 
 PANDAS_ARROW_TIMESTAMP_TYPES: set[pd.ArrowDtype] = {
     pd.ArrowDtype(pa.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
 }
-"""Set of all `pandas` arrow timestamp types."""
+r"""Set of all `pandas` arrow timestamp types."""
 
 PANDAS_ARROW_DATE_TYPES: set[pd.ArrowDtype] = {
     pd.ArrowDtype(pa.date32()),
     pd.ArrowDtype(pa.date64()),
 }
-"""Set of all `pandas` arrow date types."""
+r"""Set of all `pandas` arrow date types."""
 
 
 def map_pandas_arrowtime_numpy(df):
-    """Converts pyarrow date/timestamp/duration types to numpy equivalents.
+    r"""Converts pyarrow date/timestamp/duration types to numpy equivalents.
 
     Rationale: pyarrow types are currently bugged and do not support all operations.
     """

@@ -10,7 +10,7 @@ P = ParamSpec("P")
 
 
 class CallbackMetaclass(ABCMeta):
-    """Metaclass for callbacks."""
+    r"""Metaclass for callbacks."""
 
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
@@ -24,20 +24,20 @@ class CallbackMetaclass(ABCMeta):
 @dataclass(repr=False)
 class Foo(Generic[P], metaclass=CallbackMetaclass):
     LOGGER: ClassVar[logging.Logger]
-    """The debug-logger for the callback."""
+    r"""The debug-logger for the callback."""
     required_kwargs: ClassVar[set[str]]
-    """The required kwargs for the callback."""
+    r"""The required kwargs for the callback."""
     _: KW_ONLY
 
     freq: int = 0
 
     def __init_subclass__(cls) -> None:
-        """Automatically set the required kwargs for the callback."""
+        r"""Automatically set the required kwargs for the callback."""
         cls.required_kwargs = {"i"}
 
         @wraps(cls.callback)
         def __call__(self: Self, i: int, /, **kwargs: P.kwargs) -> None:
-            """Log something at the end of a batch/epoch."""
+            r"""Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
                 self.callback(i, **kwargs)
             else:
@@ -47,11 +47,11 @@ class Foo(Generic[P], metaclass=CallbackMetaclass):
         super().__init_subclass__()
 
     def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
-        """Log something at the end of a batch/epoch."""
+        r"""Log something at the end of a batch/epoch."""
 
     @abstractmethod
     def callback(self, i: int, /, **kwargs: P.kwargs) -> None:
-        """Log something at the end of a batch/epoch."""
+        r"""Log something at the end of a batch/epoch."""
 
 
 @dataclass

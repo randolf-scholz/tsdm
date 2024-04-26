@@ -37,7 +37,7 @@ def test_tasks(task_cls: type) -> None:
 
 
 def test_time_series_sample_generator() -> None:
-    """Test the TimeSeriesSampleGenerator."""
+    r"""Test the TimeSeriesSampleGenerator."""
     LOGGER = __logger__.getChild(TimeSeriesSampleGenerator.__name__)
     LOGGER.info("Testing.")
 

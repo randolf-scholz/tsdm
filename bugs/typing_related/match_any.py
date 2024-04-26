@@ -4,7 +4,7 @@ from typing import Any
 
 
 class UntypedClass(Any):
-    """Dummy class."""
+    r"""Dummy class."""
 
 
 reveal_type(UntypedClass)

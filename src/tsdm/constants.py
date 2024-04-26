@@ -38,13 +38,13 @@ import torch
 from typing_extensions import Any, Final, Literal, Never
 
 RNG = np.random.default_rng()
-"""Default random number generator."""
+r"""Default random number generator."""
 ROOT_3 = np.sqrt(3)
 r"""Square root of 3."""
 ATOL: Final[float] = 1e-6
-"""CONST: Default absolute precision."""
+r"""CONST: Default absolute precision."""
 RTOL: Final[float] = 1e-6
-"""CONST: Default relative precision."""
+r"""CONST: Default relative precision."""
 EPS: Final[dict[torch.dtype, float]] = {
     torch.float16: 1e-3,
     torch.float32: 1e-6,
@@ -56,7 +56,7 @@ EPS: Final[dict[torch.dtype, float]] = {
     # other floats
     torch.bfloat16: 1e-2,
 }
-"""CONST: Default epsilon for each dtype."""
+r"""CONST: Default epsilon for each dtype."""
 
 EMPTY_PATH: Final[Path] = Path()
 r"""Constant: Blank path."""
@@ -72,17 +72,17 @@ r"""Constant: Immutable Empty `Mapping`."""
 
 
 def CONST_TRUE_FN(*_: Any, **__: Any) -> Literal[True]:
-    """Constant True Function."""
+    r"""Constant True Function."""
     return True
 
 
 def CONST_FALSE_FN(*_: Any, **__: Any) -> Literal[False]:
-    """Constant False Function."""
+    r"""Constant False Function."""
     return False
 
 
 def CONST_NONE_FN(*_: Any, **__: Any) -> Literal[None]:
-    """Constant None Function."""
+    r"""Constant None Function."""
     return None
 
 
@@ -93,7 +93,7 @@ CONSTANT_FUNCTIONS = {
 }
 
 BUILTIN_CONSTANTS = frozenset({None, True, False, Ellipsis, NotImplemented})
-"""Builtin constants https://docs.python.org/3/library/constants.html."""
+r"""Builtin constants https://docs.python.org/3/library/constants.html."""
 BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
     type(None),
     bool,
@@ -114,7 +114,7 @@ BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
     type(Ellipsis),
     type(NotImplemented),
 })
-"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
+r"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
 
 
 NA_STRINGS: Final[frozenset[str]] = frozenset({

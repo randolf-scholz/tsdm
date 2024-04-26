@@ -38,7 +38,7 @@ from tsdm.types.aliases import Dims
 )
 @mark.parametrize("shape", [(1, 2, 3, 4)], ids=lambda x: f"shape={x}")
 def test_shape(*, shape: tuple[int, ...], dims: Dims, keepdim: bool) -> None:
-    """Check that the output shape is correct."""
+    r"""Check that the output shape is correct."""
     torch.manual_seed(0)
     x = torch.randn(*shape)
 

@@ -8,10 +8,10 @@ from torch import Tensor, jit, nn
 
 
 def test_jit_optimization() -> None:
-    """Checks that if/else with Final is optimized out by JIT."""
+    r"""Checks that if/else with Final is optimized out by JIT."""
 
     class Foo(nn.Module):
-        """A simple module with a conditional."""
+        r"""A simple module with a conditional."""
 
         use_relu: Final[bool]
 
@@ -20,7 +20,7 @@ def test_jit_optimization() -> None:
             self.use_relu = use_relu
 
         def forward(self, x: Tensor) -> Tensor:
-            """Forward pass."""
+            r"""Forward pass."""
             if self.use_relu:
                 return F.relu(x)
             return torch.tanh(x)

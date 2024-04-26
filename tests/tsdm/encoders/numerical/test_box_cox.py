@@ -8,7 +8,7 @@ from tsdm.encoders.box_cox import METHODS, BoxCoxEncoder, LogitBoxCoxEncoder
 
 @mark.parametrize("method", METHODS)
 def test_box_cox_encoder(method):
-    """Test BoxCoxEncoder."""
+    r"""Test BoxCoxEncoder."""
     data = np.linspace(0, 1000, 1000)
     encoder = BoxCoxEncoder(method=method)
 
@@ -23,7 +23,7 @@ def test_box_cox_encoder(method):
 
 @mark.parametrize("method", METHODS)
 def test_logit_box_cox_encoder(method):
-    """Test LogitBoxCoxEncoder."""
+    r"""Test LogitBoxCoxEncoder."""
     data = np.linspace(0, 1, 1000)
     encoder = LogitBoxCoxEncoder(method=method)
 

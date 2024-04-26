@@ -14,12 +14,12 @@ from tsdm.types.dtypes import map_pandas_arrowtime_numpy
 
 
 class MIMIC_III_Scholz2024(MIMIC_III):
-    """Custom processed version of the MIMIC-III dataset."""
+    r"""Custom processed version of the MIMIC-III dataset."""
 
     RAWDATA_DIR = MIMIC_III.RAWDATA_DIR
 
     def __init__(self, *args, **kwargs):
-        """Initialize the dataset."""
+        r"""Initialize the dataset."""
         super().__init__(*args, **kwargs)
 
         ds = tsdm.datasets.MIMIC_III()

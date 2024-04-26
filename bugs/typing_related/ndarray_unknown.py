@@ -7,14 +7,14 @@ from numpy.typing import NDArray
 
 
 class Unknown(Protocol):
-    """Dummy protocol."""
+    r"""Dummy protocol."""
 
 
 T = TypeVar("T", bound=Unknown)
 
 
 class Foo(Generic[T]):
-    """Dummy class."""
+    r"""Dummy class."""
 
     data: NDArray[T]
 

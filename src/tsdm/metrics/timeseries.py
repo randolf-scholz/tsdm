@@ -73,9 +73,9 @@ class TimeSeriesBaseLoss(nn.Module):
     time_axis: Final[tuple[int, ...]]
     r"""CONST: The time-axes over which the loss is computed."""
     channel_axis: Final[tuple[int, ...]]
-    """CONST: The channel-axes over which the loss is computed."""
+    r"""CONST: The channel-axes over which the loss is computed."""
     combined_axis: Final[tuple[int, ...]]
-    """CONST: The combined time- and channel-axes."""
+    r"""CONST: The combined time- and channel-axes."""
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize the weights."""
     normalize_channels: Final[bool]

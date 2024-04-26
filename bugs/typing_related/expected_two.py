@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""This is a test file for mypy."""
+r"""This is a test file for mypy."""
 
 # from __future__ import annotations
 
@@ -10,10 +10,10 @@ from functools import wraps
 from typing_extensions import Any, ClassVar, Protocol, Self, TypeVar, runtime_checkable
 
 encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
-"""Type variable for encoders."""
+r"""Type variable for encoders."""
 
 E = TypeVar("E", bound="BaseEncoder")
-"""Type alias for encoder_var."""
+r"""Type alias for encoder_var."""
 T = TypeVar("T")
 S = TypeVar("S")
 U = TypeVar("U")
@@ -25,11 +25,11 @@ Y = TypeVar("Y")
 
 @runtime_checkable
 class Encoder(Protocol[U, V]):
-    """Protocol for Encoders."""
+    r"""Protocol for Encoders."""
 
     @property
     def is_fitted(self) -> bool:
-        """Whether the encoder has been fitted."""
+        r"""Whether the encoder has been fitted."""
         ...
 
     @property
@@ -87,11 +87,11 @@ class Encoder(Protocol[U, V]):
         ...
 
     def encode(self, data: U, /) -> V:
-        """Encode the data by transformation."""
+        r"""Encode the data by transformation."""
         ...
 
     def decode(self, data: V, /) -> U:
-        """Decode the data by transformation."""
+        r"""Decode the data by transformation."""
         ...
 
     def fit(self, data: U, /) -> None:
@@ -105,7 +105,7 @@ class BaseEncoderMetaClass(type(Protocol)):  # type: ignore[misc]
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
-        """When a new class/subclass is created, this method is called."""
+        r"""When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:

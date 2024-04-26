@@ -91,26 +91,26 @@ from tsdm.utils.pprint import repr_mapping
 
 @runtime_checkable
 class Logger(Protocol):
-    """Generic Logger Protocol."""
+    r"""Generic Logger Protocol."""
 
     @property
     def callbacks(self) -> Mapping[str, Sequence[Callback]]:
-        """Callbacks to be called at the end of a batch/epoch."""
+        r"""Callbacks to be called at the end of a batch/epoch."""
         ...
 
     def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
-        """Call the logger."""
+        r"""Call the logger."""
         ...
 
 
 class BaseLogger(Logger):
-    """Base class for loggers."""
+    r"""Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
-    """The debug logger."""
+    r"""The debug logger."""
 
     _callbacks: dict[str, list[tuple[Callback[...], int, set[str]]]] = defaultdict(list)
-    """Callbacks to be called at the end of a batch/epoch."""
+    r"""Callbacks to be called at the end of a batch/epoch."""
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "LOGGER"):
@@ -119,13 +119,13 @@ class BaseLogger(Logger):
 
     @property
     def callbacks(self) -> dict[str, list[Callback]]:
-        """Callbacks to be called at the end of a batch/epoch."""
+        r"""Callbacks to be called at the end of a batch/epoch."""
         return {k: [cb for cb, _, _ in v] for k, v in self._callbacks.items()}
 
     def add_callback(
         self, key: str, callback: Callback, /, *, frequency: Optional[int] = None
     ) -> None:
-        """Add a callback to the logger."""
+        r"""Add a callback to the logger."""
         required_kwargs = set(
             callback.required_kwargs
             if hasattr(callback, "required_kwargs")
@@ -138,11 +138,11 @@ class BaseLogger(Logger):
         self._callbacks[key].append((callback, freq, required_kwargs))
 
     def combined_kwargs(self, key: str) -> set[str]:
-        """Get the combined kwargs of all callbacks."""
+        r"""Get the combined kwargs of all callbacks."""
         return set().union(*(kwargs for _, _, kwargs in self._callbacks[key]))
 
     def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
-        """Call the logger."""
+        r"""Call the logger."""
         combined_kwargs = self.combined_kwargs(key)
         if missing_kwargs := combined_kwargs - set(kwargs):
             raise TypeError(f"Missing required kwargs: {missing_kwargs}")
@@ -158,15 +158,15 @@ class BaseLogger(Logger):
             cb(i, **{k: kwargs[k] for k in callback_kwargs})
 
     def log_epoch_end(self, i: int, /, **kwargs: Any) -> None:
-        """Log the end of an epoch."""
+        r"""Log the end of an epoch."""
         self.callback("epoch", i, **kwargs)
 
     def log_batch_end(self, i: int, /, **kwargs: Any) -> None:
-        """Log the end of a batch."""
+        r"""Log the end of a batch."""
         self.callback("batch", i, **kwargs)
 
     def log_results(self, i: int, /, **kwargs: Any) -> None:
-        """Log the results of the experiment."""
+        r"""Log the results of the experiment."""
         self.callback("results", i, **kwargs)
 
     def __repr__(self) -> str:
@@ -177,34 +177,34 @@ class DefaultLogger(BaseLogger):
     r"""Logger that adds pre-made batch/epoch logging."""
 
     log_dir: Path
-    """Path to the logging directory."""
+    r"""Path to the logging directory."""
     results_dir: Path
-    """Path to the results directory."""
+    r"""Path to the results directory."""
     checkpoint_dir: Path
-    """Path to the checkpoint directory."""
+    r"""Path to the checkpoint directory."""
     checkpoint_frequency: int
-    """Frequency of checkpoints."""
+    r"""Frequency of checkpoints."""
 
     config: Optional[JSON] = None
-    """Configuration of the experiment."""
+    r"""Configuration of the experiment."""
     dataloaders: Optional[Mapping[str, DataLoader]] = None
-    """Dataloaders used for evaluation."""
+    r"""Dataloaders used for evaluation."""
     kernel: Optional[Tensor] = None
-    """Kernel used for the model."""
+    r"""Kernel used for the model."""
     history: Optional[DataFrame] = None
-    """History of the training process."""
+    r"""History of the training process."""
     hparam_dict: Optional[dict[str, Any]] = None
-    """Hyperparameters used for the experiment."""
+    r"""Hyperparameters used for the experiment."""
     lr_scheduler: Optional[TorchLRScheduler] = None
-    """Learning rate scheduler."""
+    r"""Learning rate scheduler."""
     metrics: Optional[Mapping[str, Metric]] = None
-    """Metrics used for evaluation."""
+    r"""Metrics used for evaluation."""
     model: Optional[TorchModule] = None
-    """Model used for training."""
+    r"""Model used for training."""
     optimizer: Optional[TorchOptimizer] = None
-    """Optimizer used for training."""
+    r"""Optimizer used for training."""
     predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None
-    """Function used for prediction."""
+    r"""Function used for prediction."""
 
     def __init__(
         self,

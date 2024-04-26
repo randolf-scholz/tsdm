@@ -75,17 +75,17 @@ class A:
     @classmethod
     @property
     def clsproperty(cls):
-        """A python 3.9 class-property"""
+        r"""A python 3.9 class-property"""
         return compute(f"{cls.__name__}'s clsproperty")
 
     @classmethod
     def clsmethod(cls):
-        """A python 3.9 class-method"""
+        r"""A python 3.9 class-method"""
         return compute(f"{cls.__name__}'s clsmethod")
 
     @property
     def instproperty(self):
-        """A python 3.9 instance-property"""
+        r"""A python 3.9 instance-property"""
         return compute(f"{self}'s instproperty")
 
     # our modified versions
@@ -93,17 +93,17 @@ class A:
     @ClassMethod
     @Property
     def myclsproperty(cls):
-        """A custom class-property"""
+        r"""A custom class-property"""
         return compute(f"{cls.__name__}'s myclsproperty")
 
     @ClassMethod
     def myclsmethod(cls):
-        """A custom classmethod"""
+        r"""A custom classmethod"""
         return compute(f"{cls.__name__}'s myclsmethod")
 
     @Property
     def myinstproperty(self):
-        """A custom instance-property"""
+        r"""A custom instance-property"""
         return compute(f"{self}'s myinstproperty")
 
 

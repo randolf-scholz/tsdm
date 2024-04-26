@@ -11,7 +11,7 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
 def test_base_logger() -> None:
-    """Test the BaseLogger class."""
+    r"""Test the BaseLogger class."""
     # initialize logger
     logger = tsdm.logutils.BaseLogger()
 

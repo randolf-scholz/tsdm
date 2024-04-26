@@ -87,7 +87,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
 
     @cached_property
     def filelist(self) -> dict[KEYS, str]:
-        """Mapping between table_names and contents of the zip file."""
+        r"""Mapping between table_names and contents of the zip file."""
         assert self.version_info >= (1, 4), "MIMIC-III v1.4+ is required."
         return {
             key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"  # type: ignore[misc]
@@ -146,7 +146,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
         return table
 
     def download_file(self, fname: str, /) -> None:
-        """Download a file from the MIMIC-III website."""
+        r"""Download a file from the MIMIC-III website."""
         if tuple(map(int, self.__version__.split("."))) < (1, 4):
             raise ValueError(
                 "MIMIC-III v1.4+ is required. At the time of writing, the website"
@@ -165,7 +165,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
 
 
 class MIMIC_III(MIMIC_III_RAW):
-    """Lightly preprocessed version of the MIMIC-III dataset."""
+    r"""Lightly preprocessed version of the MIMIC-III dataset."""
 
     RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
 

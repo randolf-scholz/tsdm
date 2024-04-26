@@ -24,7 +24,7 @@ from tsdm.types.variables import T
 
 
 def test_shapelike_protocol() -> None:
-    """Test the Shape protocol."""
+    r"""Test the Shape protocol."""
     data = [1, 2, 3]
     torch_tensor: torch.Tensor = torch.tensor(data)
     numpy_ndarray: NDArray = numpy.array(data)
@@ -44,7 +44,7 @@ def test_shapelike_protocol() -> None:
 
 
 def test_dataclass_protocol() -> None:
-    """Test the Dataclass protocol."""
+    r"""Test the Dataclass protocol."""
 
     @dataclass
     class MyDataClass:
@@ -121,16 +121,16 @@ def test_namedtuple_protocol_itself() -> None:
 
 
 def test_namedtuple_protocol() -> None:
-    """Test the NTuple protocol."""
+    r"""Test the NTuple protocol."""
 
     class MyTuple(NamedTuple):
-        """A point in 2D space."""
+        r"""A point in 2D space."""
 
         x: int
         y: int
 
     class Bar(tuple[int, int]):
-        """A point in 2D space."""
+        r"""A point in 2D space."""
 
         x: int
         y: int
@@ -223,7 +223,7 @@ def test_supportskwargs() -> None:
 
 
 def test_sequence_protocol() -> None:
-    """Validate the SequenceProtocol class."""
+    r"""Validate the SequenceProtocol class."""
 
     def foo(x: Sequence[T]) -> SequenceProtocol[T]:
         return x

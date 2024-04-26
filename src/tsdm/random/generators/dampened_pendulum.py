@@ -98,39 +98,39 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     _: KW_ONLY
 
     g: float = 9.81
-    """Gravitational acceleration."""
+    r"""Gravitational acceleration."""
     length: float = 1.0
-    """Length of the pendulum."""
+    r"""Length of the pendulum."""
     mass: float = 1.0
-    """Mass of the pendulum."""
+    r"""Mass of the pendulum."""
     gamma: float = 0.25
-    """Damping coefficient."""
+    r"""Damping coefficient."""
     theta0: float = np.pi
-    """Initial angle."""
+    r"""Initial angle."""
     omega0: float = 4.0
-    """Initial angular velocity."""
+    r"""Initial angular velocity."""
     observation_noise: Distribution = field(
         default_factory=lambda: univariate_normal(loc=0, scale=0.05)
     )
-    """Noise distribution."""
+    r"""Noise distribution."""
     parameter_noise: Distribution = field(
         default_factory=lambda: univariate_normal(loc=0, scale=1)
     )
-    """Noise distribution."""
+    r"""Noise distribution."""
 
     def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
-        """Generate (multiple) initial state(s) y₀."""
+        r"""Generate (multiple) initial state(s) y₀."""
         theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
     def _make_observations_impl(self, y: NDArray, /) -> NDArray:
-        """Create observations from the solution."""
+        r"""Create observations from the solution."""
         # add observation noise
         return y + self.observation_noise.rvs(size=y.shape)
 
     def system(self, t: ArrayLike, x: ArrayLike) -> NDArray:
-        """Vector field of the pendulum.
+        r"""Vector field of the pendulum.
 
         .. signature:: ``[(...,), (..., 2) -> (..., 2)``
 
@@ -154,13 +154,13 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
 
 
 class DampedPendulumXY(DampedPendulum):
-    """Dampened Pendulum Simulation.
+    r"""Dampened Pendulum Simulation.
 
     This variant returns only cartesian coordinates.
     """
 
     def _make_observations_impl(self, y: NDArray, /, *, noise: float = 0.05) -> NDArray:
-        """Create observations from the solution.
+        r"""Create observations from the solution.
 
         Noise is automatically scaled by the length of the pendulum.
         """
@@ -179,6 +179,6 @@ class DampedPendulumXY(DampedPendulum):
         return truncnorm.rvs(lower, upper, loc=loc, scale=noise)
 
     def validate_observations(self, values: NDArray, /) -> None:
-        """Validate constraints on the parameters."""
+        r"""Validate constraints on the parameters."""
         assert values.min() >= -self.length
         assert values.max() <= +self.length

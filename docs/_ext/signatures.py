@@ -9,7 +9,7 @@ from sphinx.application import Sphinx
 
 
 class Signature(Directive):
-    """Essentially just an admonition box without body, only a title.
+    r"""Essentially just an admonition box without body, only a title.
 
     References:
         - https://docutils.sourceforge.io/docutils/parsers/rst/directives/admonitions.py

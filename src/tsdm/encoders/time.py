@@ -74,7 +74,7 @@ class TimeDeltaEncoder(BaseEncoder):
 
 @dataclass(init=False)
 class DateTimeEncoder(BaseEncoder):
-    """Encode Datetime as Float."""
+    r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
     r"""The starting point of the timeseries."""

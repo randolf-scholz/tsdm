@@ -30,16 +30,16 @@ TABLES = {
 
 
 def test_one_to_one():
-    """Test an encoder that transforms a single column to a single column."""
+    r"""Test an encoder that transforms a single column to a single column."""
 
 
 def test_one_to_many():
-    """Test an encoder that transforms a single column to multiple columns."""
+    r"""Test an encoder that transforms a single column to multiple columns."""
 
 
 def test_many_to_many():
-    """Test an encoder that transforms multiple columns to multiple columns."""
+    r"""Test an encoder that transforms multiple columns to multiple columns."""
 
 
 def test_many_to_one():
-    """Test an encoder that transforms multiple columns to a single column."""
+    r"""Test an encoder that transforms multiple columns to a single column."""

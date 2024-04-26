@@ -26,7 +26,7 @@ r"""Type hint for models."""
 
 
 class ForecastingModel(Protocol):
-    """Generic forecasting model."""
+    r"""Generic forecasting model."""
 
     def __call__(
         self,
@@ -35,7 +35,7 @@ class ForecastingModel(Protocol):
         U: Optional[tuple[Tensor, Tensor]] = None,
         M: Optional[Tensor] = None,
     ) -> Tensor:
-        """Return the encoded forecast x(t) for time t.
+        r"""Return the encoded forecast x(t) for time t.
 
         Args:
             q: Query time at which to make the forecast.
@@ -55,7 +55,7 @@ class ForecastingModel(Protocol):
         U: Optional[tuple[Tensor, Tensor]] = None,
         M: Optional[Tensor] = None,
     ) -> Tensor:
-        """Return the actual forecast x(t) for time t.
+        r"""Return the actual forecast x(t) for time t.
 
         Args:
             q: Query time at which to make the forecast.
@@ -70,7 +70,7 @@ class ForecastingModel(Protocol):
 
 
 class StateSpaceForecastingModel(ForecastingModel, Protocol):
-    """State Space forecasting model."""
+    r"""State Space forecasting model."""
 
     def __call__(
         self,
@@ -81,7 +81,7 @@ class StateSpaceForecastingModel(ForecastingModel, Protocol):
         t0: Optional[Tensor] = None,
         z0: Optional[Tensor] = None,
     ) -> Tensor:
-        """Return the encoded forecast x(t) for time t.
+        r"""Return the encoded forecast x(t) for time t.
 
         Args:
             q: Query time at which to make the forecast.
@@ -105,7 +105,7 @@ class StateSpaceForecastingModel(ForecastingModel, Protocol):
         t0: Optional[Tensor] = None,
         z0: Optional[Tensor] = None,
     ) -> Tensor:
-        """Return the actual forecast x(t) for time t.
+        r"""Return the actual forecast x(t) for time t.
 
         Args:
             q: Query time at which to make the forecast.

@@ -6,7 +6,7 @@ from tsdm.encoders import FrameAsDict
 
 
 def test_frame2tensordict() -> None:
-    """Make sure that the column order is preserved."""
+    r"""Make sure that the column order is preserved."""
     df = DataFrame({
         "A": [1, 2, 3],
         "B": [4, 5, 6],

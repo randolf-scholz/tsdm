@@ -316,7 +316,7 @@ class LP(BaseMetric):
     """
 
     p: Final[float]
-    """The $p$-norm to use."""
+    r"""The $p$-norm to use."""
 
     def __init__(
         self,
@@ -369,7 +369,7 @@ class WLP(WeightedMetric):
     """
 
     p: Final[float]
-    """The $p$-norm to use."""
+    r"""The $p$-norm to use."""
 
     def __init__(
         self,

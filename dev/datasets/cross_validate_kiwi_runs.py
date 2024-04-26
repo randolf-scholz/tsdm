@@ -7,7 +7,7 @@ from sklearn.model_selection import ShuffleSplit
 
 
 def create_replicate_dict(experiments_per_run):
-    """Stores the list of possible (run_id, experiment_id) for each
+    r"""Stores the list of possible (run_id, experiment_id) for each
     replicate set as given by a tuple (run_id, color) in a dictionary
 
     args:
@@ -43,19 +43,19 @@ class ReplicateBasedSplitter:
         )  #
 
     def split(self, col_run_to_exp):
-        """generator that yields the lists of  pairs of index to create the train and test data.
+        r"""generator that yields the lists of  pairs of index to create the train and test data.
         Example usage s. below"""
         keys = list(col_run_to_exp.index())
         for train_repl_sets, test_repl_sets in self.splitter.split(keys):
             train_keys = list(
-                chain(
-                    *[col_run_to_exp[keys[key_index]] for key_index in train_repl_sets]
-                )
+                chain(*[
+                    col_run_to_exp[keys[key_index]] for key_index in train_repl_sets
+                ])
             )
             test_keys = list(
-                chain(
-                    *[col_run_to_exp[keys[key_index]] for key_index in test_repl_sets]
-                )
+                chain(*[
+                    col_run_to_exp[keys[key_index]] for key_index in test_repl_sets
+                ])
             )
             yield train_keys, test_keys
 

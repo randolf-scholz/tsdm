@@ -16,7 +16,7 @@ __logger__ = logging.getLogger(__name__)
 
 @pytest.mark.filterwarnings("ignore:Using __ror__ with a non-LazyDict")
 def test_lazydict() -> None:
-    """Test the LazyDict class."""
+    r"""Test the LazyDict class."""
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing.")
 
@@ -91,7 +91,7 @@ def test_lazydict() -> None:
 
 
 def test_lazydict_fromkeys() -> None:
-    """Test the fromkeys method of LazyDict."""
+    r"""Test the fromkeys method of LazyDict."""
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.fromkeys)
 
@@ -109,7 +109,7 @@ def test_lazydict_fromkeys() -> None:
 
 
 def test_lazydict_copy() -> None:
-    """Test the copy method of LazyDict."""
+    r"""Test the copy method of LazyDict."""
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.copy)
 

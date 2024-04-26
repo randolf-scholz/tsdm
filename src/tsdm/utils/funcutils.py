@@ -179,7 +179,7 @@ def get_mandatory_kwargs(func: Callable, /) -> set[str]:
 
 
 def get_parameter(func: Callable, name: str, /) -> Parameter:
-    """Get parameter from function."""
+    r"""Get parameter from function."""
     sig = inspect.signature(func)
     if name not in sig.parameters:
         raise ValueError(f"{func=} takes np argument named {name!r}.")
@@ -250,7 +250,7 @@ def is_positional_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_only_arg(func: Callable, name: str, /) -> bool: ...
 def is_positional_only_arg(func_or_param, name=None, /):
-    """Check if parameter is positional only argument."""
+    r"""Check if parameter is positional only argument."""
     match func_or_param, name:
         case Parameter() as param, None:
             return param.kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
@@ -266,7 +266,7 @@ def is_keyword_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_arg(func: Callable, name: str, /) -> bool: ...
 def is_keyword_arg(func_or_param, name=None, /):
-    """Check if parameter is keyword argument."""
+    r"""Check if parameter is keyword argument."""
     match func_or_param, name:
         case Parameter() as param, None:
             return param.kind in {KEYWORD_ONLY, POSITIONAL_OR_KEYWORD, VAR_KEYWORD}
@@ -282,7 +282,7 @@ def is_keyword_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_only_arg(func: Callable, name: str, /) -> bool: ...
 def is_keyword_only_arg(func_or_param, name=None, /):
-    """Check if parameter is keyword only argument."""
+    r"""Check if parameter is keyword only argument."""
     match func_or_param, name:
         case Parameter() as param, None:
             return param.kind in {KEYWORD_ONLY, VAR_KEYWORD}
@@ -298,7 +298,7 @@ def is_variadic_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_variadic_arg(func: Callable, name: str, /) -> bool: ...
 def is_variadic_arg(func_or_param, name=None, /):
-    """Check if parameter is variadic argument."""
+    r"""Check if parameter is variadic argument."""
     match func_or_param, name:
         case Parameter() as param, None:
             return param.kind in {VAR_POSITIONAL, VAR_KEYWORD}
@@ -316,7 +316,7 @@ def prod_fn(*funcs: Callable) -> Callable:
     """
 
     def __prod_fn(args, /):
-        """Argument is a tuple with the input for each function."""
+        r"""Argument is a tuple with the input for each function."""
         return tuple(f(arg) for f, arg in zip(funcs, args, strict=True))
 
     return __prod_fn

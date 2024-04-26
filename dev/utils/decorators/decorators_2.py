@@ -108,7 +108,7 @@ def debug(func):
 
 # @debug
 # def parametrized_decorator(decorator):
-#     """decorator needs to have the signature deco(func, *args, **kwargs)."""
+#     r"""decorator needs to have the signature deco(func, *args, **kwargs)."""
 #
 #     @debug
 #     def generated_decorator(func=None, **kwargs):
@@ -142,7 +142,7 @@ PARAM_KINDS = {
 
 @debug
 def is_strict(fun):
-    """Check whether the function signature is strict"""
+    r"""Check whether the function signature is strict"""
     sig = signature(fun)
     print(sig)
     for param in sig.parameters.values():
@@ -154,7 +154,7 @@ def is_strict(fun):
 
 @debug
 def parametrized_decorator(decorator):
-    """We do not allow general parametrization.
+    r"""We do not allow general parametrization.
 
 
     If the function definition contains positional-only parameters, or
@@ -170,7 +170,7 @@ def parametrized_decorator(decorator):
 
     """
 
-    """decorator needs to have the signature deco(func, *args, **kwargs)."""
+    r"""decorator needs to have the signature deco(func, *args, **kwargs)."""
 
     sig = signature(decorator)
     parameters = sig.parameters

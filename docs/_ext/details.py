@@ -16,7 +16,7 @@ from sphinx.application import Sphinx
 
 
 class Details(Directive):
-    """Collapsible admonition box.
+    r"""Collapsible admonition box.
 
     .. admonition:: Show/Hide
       :class: dropdown

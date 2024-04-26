@@ -34,7 +34,7 @@ from tsdm.types.aliases import FilePath
 
 
 class LinkParser(HTMLParser):
-    """Parse links from an HTML page."""
+    r"""Parse links from an HTML page."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -58,7 +58,7 @@ def download_io(
     request_options: Mapping[str, Any] = EMPTY_MAP,
     chunk_size: int = 1024,
 ) -> None:
-    """Download a file from a URL to an IO stream."""
+    r"""Download a file from a URL to an IO stream."""
     if session is None:
         # construct the request
         request_options = {
@@ -100,7 +100,7 @@ def stream_download(
     request_options: Mapping[str, Any] = EMPTY_MAP,
     chunk_size: int = 1024,
 ) -> Iterator[bytes]:
-    """Download a file as a bytes-stream."""
+    r"""Download a file as a bytes-stream."""
     if session is None:
         # construct the request
         request_options = {
@@ -132,7 +132,7 @@ def stream_download(
 
 
 def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
-    """Iterate over the contents of a directory."""
+    r"""Iterate over the contents of a directory."""
     response = session.get(url)
     if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
@@ -179,7 +179,7 @@ def download_directory_to_zip(
     add_toplevel_dir: bool = True,
     zip_options: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
-    """Download a directory from a URL to a zip file."""
+    r"""Download a directory from a URL to a zip file."""
     path = Path(zip_filename)
     assert path.suffix == ".zip", f"{path=} must have .zip suffix!"
     stem = f"{path.stem}/" if add_toplevel_dir else ""
@@ -289,7 +289,7 @@ def download(
 def import_from_url(
     url: str, fname: Optional[FilePath] = None, *args: Any, **kwargs: Any
 ) -> None:
-    """Wrap download so that it works with Kaggle and GitHub."""
+    r"""Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
     path = Path(url.split("/")[-1] if fname is None else fname)
     logger = logging.getLogger(__name__)

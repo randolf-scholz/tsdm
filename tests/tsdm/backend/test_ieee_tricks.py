@@ -37,7 +37,7 @@ TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
     ids=["torch", "pandas", "numpy"],
 )
 def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
-    """Analogous to `ones_like`.
+    r"""Analogous to `ones_like`.
 
     Candidates for creating ones are:
     - `x**0`  gets rid of NANs
@@ -61,7 +61,7 @@ def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["torch", "pandas", "numpy"],
 )
 def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
-    """Analogous to `zeros_like`.
+    r"""Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
     - `x - x`  # keeps NANs
@@ -93,7 +93,7 @@ def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
 def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
-    """Analogous to `ones_like(x, dtype=bool)`.
+    r"""Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
     - `where(x!=x, x!=x, x==x)`
@@ -123,7 +123,7 @@ def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
 def test_false_like(data: T, expected: T, formula: SelfMap[T]) -> None:
-    """Analogous to `zeros_like(x, dtype=bool)`.
+    r"""Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:
     - XOR-trick: (x==x) ^ (x==x)

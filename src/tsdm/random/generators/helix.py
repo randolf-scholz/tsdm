@@ -38,24 +38,24 @@ class Helix(IVP_GeneratorBase[NDArray]):
     """
 
     angular_velocity: float = 1.0
-    """Angular velocity."""
+    r"""Angular velocity."""
     phase: float = 0.0
-    """Initial angle in radians."""
+    r"""Initial angle in radians."""
     radius: float = 1.0
-    """Radius of the helix."""
+    r"""Radius of the helix."""
     pitch: float = 1.0
-    """Pitch of the helix."""
+    r"""Pitch of the helix."""
     direction: tuple[float, float, float] = (0.0, 0.0, 1.0)
-    """Direction of the helix."""
+    r"""Direction of the helix."""
     observation_noise: Distribution = field(
         default_factory=lambda: multivariate_normal(mean=np.zeros(3), cov=0.1)
     )
-    """Noise distribution."""
+    r"""Noise distribution."""
     seed: Generator = field(default_factory=default_rng)
-    """Random number generator."""
+    r"""Random number generator."""
 
     def __post_init__(self) -> None:
-        """Post-initialization hook."""
+        r"""Post-initialization hook."""
         # extend to an orthogonal basis
         z = np.array(self.direction)
         x = np.array([-z[1], z[0], 0.0])
@@ -72,11 +72,11 @@ class Helix(IVP_GeneratorBase[NDArray]):
         pass
 
     def _make_observations_impl(self, sol: NDArray, /) -> NDArray:
-        """Additive noise."""
+        r"""Additive noise."""
         return sol + self.observation_noise.rvs(size=sol.shape)
 
     def system(self, t: Any, state: NDArray) -> NDArray:
-        """System function."""
+        r"""System function."""
         # 1. transform to basis
         state = np.einsum("...i,ij->...j", state, self.T)
         # 2. extract variables

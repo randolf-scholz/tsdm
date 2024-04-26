@@ -3,11 +3,11 @@
 
 class ClassWithPrePostInit(type):
     def __pre_init__(cls) -> None:
-        """Pre-initialization hook."""
+        r"""Pre-initialization hook."""
         ...
 
     def __post_init__(cls) -> None:
-        """Post-initialization hook."""
+        r"""Post-initialization hook."""
         ...
 
     def __call__(cls, *init_args, **init_kwargs):

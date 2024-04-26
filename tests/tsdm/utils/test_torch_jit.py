@@ -17,7 +17,7 @@ class Sample(NamedTuple):
 
 
 def test_jit_namedtuple():
-    """Test torch.jit compatibliity with namedtuple."""
+    r"""Test torch.jit compatibliity with namedtuple."""
 
     class Foo(nn.Module):
         def forward(self, x: Sample) -> Sample:

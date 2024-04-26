@@ -13,7 +13,7 @@ from tsdm.random.generators._generators import IVP_GeneratorBase
 
 @dataclass
 class DuffingOszillator(IVP_GeneratorBase[NDArray]):
-    """Duffing Oszillator Simulation.
+    r"""Duffing Oszillator Simulation.
 
     References:
         - https://en.wikipedia.org/wiki/Duffing_equation
@@ -22,15 +22,15 @@ class DuffingOszillator(IVP_GeneratorBase[NDArray]):
     _: KW_ONLY
 
     alpha: float = 1.0
-    """Linear stiffness."""
+    r"""Linear stiffness."""
     beta: float = 1.0
-    """Nonlinear stiffness."""
+    r"""Nonlinear stiffness."""
     delta: float = 0.0
-    """Damping coefficient  (default: undamped)."""
+    r"""Damping coefficient  (default: undamped)."""
     gamma: float = 0.0
-    """Amplitude of periodic driving force (default: no driving force)."""
+    r"""Amplitude of periodic driving force (default: no driving force)."""
     omega: float = 1.0
-    """Angular frequency of periodic driving force."""
+    r"""Angular frequency of periodic driving force."""
 
     def system(self, t: Any, state: NDArray) -> NDArray:
         x = state[..., 0]

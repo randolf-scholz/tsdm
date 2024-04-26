@@ -19,7 +19,7 @@ from tsdm.types.aliases import Axes
 
 
 def torch_nanmin(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
-    """Analogue to `numpy.nanmin`."""
+    r"""Analogue to `numpy.nanmin`."""
     return torch.amin(
         torch.where(torch.isnan(x), float("+inf"), x),
         dim=axis,  # type: ignore[arg-type]
@@ -28,7 +28,7 @@ def torch_nanmin(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
 
 
 def torch_nanmax(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
-    """Analogue to `numpy.nanmax`."""
+    r"""Analogue to `numpy.nanmax`."""
     return torch.amax(
         torch.where(torch.isnan(x), float("-inf"), x),
         dim=axis,  # type: ignore[arg-type]
@@ -37,7 +37,7 @@ def torch_nanmax(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
 
 
 def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
-    """Analogue to `numpy.nanstd`."""
+    r"""Analogue to `numpy.nanstd`."""
     r = x - torch.nanmean(x, dim=axis, keepdim=True)
     return torch.sqrt(
         torch.nanmean(
@@ -49,7 +49,7 @@ def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
 
 
 def torch_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
-    """Return a tensor of the same dtype and other options as `ref`."""
+    r"""Return a tensor of the same dtype and other options as `ref`."""
     return torch.tensor(x, dtype=ref.dtype, device=ref.device)
 
 

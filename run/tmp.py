@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Prints the direct dependencies of a module line by line.."""
+r"""Prints the direct dependencies of a module line by line.."""
 
 # TODO: add support for extras.
 
@@ -51,7 +51,7 @@ else:
         ) from E
 
 PACKAGES: dict[str, list[str]] = metadata.packages_distributions()  # type:ignore[assignment]
-"""A dictionary that maps module names to their pip-package names."""
+r"""A dictionary that maps module names to their pip-package names."""
 
 # NOTE: illogical type hint in stdlib, maybe open issue.
 # https://github.com/python/cpython/blob/608927b01447b110de5094271fbc4d49c60130b0/Lib/importlib/metadata/__init__.py#L933-L947C29
@@ -59,12 +59,12 @@ PACKAGES: dict[str, list[str]] = metadata.packages_distributions()  # type:ignor
 
 
 def normalize_dep_name(dep: str, /) -> str:
-    """Normalize a dependency name."""
+    r"""Normalize a dependency name."""
     return dep.lower().replace("-", "_")
 
 
 def get_deps_import(node: ast.Import, /) -> set[str]:
-    """Extract dependencies from an `import ...` statement."""
+    r"""Extract dependencies from an `import ...` statement."""
     dependencies = set()
     for alias in node.names:
         module = alias.name.split(".")[0]
@@ -74,7 +74,7 @@ def get_deps_import(node: ast.Import, /) -> set[str]:
 
 
 def get_deps_importfrom(node: ast.ImportFrom, /) -> set[str]:
-    """Extract dependencies from an `from y import ...` statement."""
+    r"""Extract dependencies from an `from y import ...` statement."""
     assert node.module is not None
     module_name = node.module.split(".")[0]
     if module_name.startswith("_"):  # ignore _private modules
@@ -83,7 +83,7 @@ def get_deps_importfrom(node: ast.ImportFrom, /) -> set[str]:
 
 
 def get_deps_tree(tree: ast.AST, /) -> set[str]:
-    """Extract the set of dependencies from `ast.AST` object."""
+    r"""Extract the set of dependencies from `ast.AST` object."""
     dependencies: set[str] = set()
 
     for node in ast.walk(tree):
@@ -96,7 +96,7 @@ def get_deps_tree(tree: ast.AST, /) -> set[str]:
 
 
 def get_deps_file(file_path: str | Path, /) -> set[str]:
-    """Extract set of dependencies imported by a script."""
+    r"""Extract set of dependencies imported by a script."""
     path = Path(file_path)
 
     if path.suffix != ".py":
@@ -109,7 +109,7 @@ def get_deps_file(file_path: str | Path, /) -> set[str]:
 
 
 def get_deps_module(module: str | ModuleType, /, *, silent: bool = True) -> set[str]:
-    """Extract set of dependencies imported by a module."""
+    r"""Extract set of dependencies imported by a module."""
     # NOTE: Generally there is no correct way to do it without importing the module.
     # This is because modules can be imported dynamically.
 
@@ -138,7 +138,7 @@ def get_deps_module(module: str | ModuleType, /, *, silent: bool = True) -> set[
 
 
 def get_deps_pyproject_section(config: dict[str, Any], /, *, section: str) -> set[str]:
-    """Get the dependencies from a section of pyproject.toml.
+    r"""Get the dependencies from a section of pyproject.toml.
 
     Looking up the section must either result in a list of strings or a dict.
     """
@@ -161,7 +161,7 @@ def get_deps_pyproject_section(config: dict[str, Any], /, *, section: str) -> se
 
 
 def get_name_pyproject(fname: str | Path = "pyproject.toml", /) -> str:
-    """Get the name of the project from pyproject.toml."""
+    r"""Get the name of the project from pyproject.toml."""
     with open(fname, "rb") as file:
         config = tomllib.load(file)
 
@@ -192,7 +192,7 @@ def get_name_pyproject(fname: str | Path = "pyproject.toml", /) -> str:
 
 
 def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
-    """Extract the dependencies from a pyproject.toml file.
+    r"""Extract the dependencies from a pyproject.toml file.
 
     There are 6 sections we check:
     - pyproject.dependencies
@@ -237,7 +237,7 @@ def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
 
 
 def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
-    """Extract the test dependencies from a pyproject.toml file."""
+    r"""Extract the test dependencies from a pyproject.toml file."""
     with open(fname, "rb") as file:
         pyproject = tomllib.load(file)
 
@@ -306,14 +306,14 @@ def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]
 
 
 class GroupedDependencies(NamedTuple):
-    """A named tuple containing the dependencies grouped by type."""
+    r"""A named tuple containing the dependencies grouped by type."""
 
     imported_dependencies: set[str]
     stdlib_dependencies: set[str]
 
 
 def group_dependencies(dependencies: set[str], /) -> GroupedDependencies:
-    """Splits the dependencies into first-party and third-party."""
+    r"""Splits the dependencies into first-party and third-party."""
     imported_dependencies = set()
     stdlib_dependencies = set()
 
@@ -330,7 +330,7 @@ def group_dependencies(dependencies: set[str], /) -> GroupedDependencies:
 
 
 def collect_dependencies(fname: str | Path, /, raise_notfound: bool = True) -> set[str]:
-    """Collect the third-party dependencies from files in the given path."""
+    r"""Collect the third-party dependencies from files in the given path."""
     path = Path(fname)
     dependencies = set()
 
@@ -358,7 +358,7 @@ def validate_dependencies(
     imported_dependencies: set[str],
     raise_unused_dependencies: bool = True,
 ) -> None:
-    """Validate the dependencies."""
+    r"""Validate the dependencies."""
     # extract 3rd party dependencies.
     imported_dependencies = group_dependencies(
         imported_dependencies
@@ -402,7 +402,7 @@ def validate_dependencies(
 
 
 def main() -> None:
-    """Print the third-party dependencies of a module."""
+    r"""Print the third-party dependencies of a module."""
     # usage
     modules_default = ["src/"]
     tests_default = ["tests/"]

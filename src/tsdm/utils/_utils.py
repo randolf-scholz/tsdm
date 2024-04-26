@@ -394,7 +394,7 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
 
 
 def repackage_zip(path: FilePath, /) -> None:
-    """Remove the leading directory from a zip file."""
+    r"""Remove the leading directory from a zip file."""
     original_path = Path(path)
 
     if not is_zipfile(original_path):
@@ -433,6 +433,6 @@ def repackage_zip(path: FilePath, /) -> None:
 
 
 def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
-    """Find joint keys in a collection of Mappings."""
+    r"""Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
     return set.intersection(*map(set, (d.keys() for d in mappings)))

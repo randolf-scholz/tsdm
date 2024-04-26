@@ -81,7 +81,7 @@ LazySpec: TypeAlias = (
     | tuple[Callable[..., T], tuple, dict]  # args, kwargs
     | T  # direct value
 )
-"""A type alias for the possible values of a `LazyDict`."""
+r"""A type alias for the possible values of a `LazyDict`."""
 
 
 @pprint_repr

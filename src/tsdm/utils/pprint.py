@@ -68,7 +68,7 @@ r"""Default align for repr_mapping."""
 
 
 class ReprProtocol(Protocol):
-    """Protocol for recursive repr functions."""
+    r"""Protocol for recursive repr functions."""
 
     def __call__(
         self,
@@ -332,7 +332,7 @@ def repr_mapping(
     )
 
     def to_string(key: Any, value: Any, /, *, justify: int = 0) -> str:
-        """Encode key and value."""
+        r"""Encode key and value."""
         try:
             encoded_value = repr_fun(
                 value,
@@ -754,7 +754,7 @@ def pprint_repr(cls: type[T], /) -> type[T]: ...
 def pprint_repr(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
 @decorator
 def pprint_repr(cls, /, **kwds):
-    """Add appropriate __repr__ to class."""
+    r"""Add appropriate __repr__ to class."""
     assert isinstance(cls, type), "Must be a class!"
     repr_func: Callable[..., str]
 

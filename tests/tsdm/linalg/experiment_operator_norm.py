@@ -8,7 +8,7 @@ from tsdm.constants import RNG
 
 
 def f(x, p):
-    """Normal Lᴾ norm.
+    r"""Normal Lᴾ norm.
 
     .. signature:: ``[(..., n), (m,)] -> (..., m)``
     """
@@ -19,7 +19,7 @@ def f(x, p):
 
 
 def g(x, p):
-    """Scaled Lᴾ norm.
+    r"""Scaled Lᴾ norm.
 
     .. signature:: ``[(..., n), (m,)] -> (..., m)``
     """
@@ -30,17 +30,17 @@ def g(x, p):
 
 
 def max_norm(x, p):
-    """Maximum norm."""
+    r"""Maximum norm."""
     return np.max(np.abs(x)) * np.ones_like(p)
 
 
 def gmean(x):
-    """Geometric mean."""
+    r"""Geometric mean."""
     return np.prod(np.abs(x)) ** (1 / len(x))
 
 
 def exp_scaled_norm():
-    """Plot the scaled Lᴾ norm for different values of p."""
+    r"""Plot the scaled Lᴾ norm for different values of p."""
     N = 7
     x = RNG.normal(size=N)
     p = np.logspace(-3, 3, 1000)

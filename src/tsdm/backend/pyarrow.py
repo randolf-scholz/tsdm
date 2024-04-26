@@ -57,7 +57,7 @@ STRING_TYPES = frozenset({STR, TEXT})
 
 
 def is_string_array(arr: Array, /) -> bool:
-    """Check if an array is a string array."""
+    r"""Check if an array is a string array."""
     match arr.type:
         case _ if arr.type in STRING_TYPES:
             return True
@@ -70,7 +70,7 @@ def is_string_array(arr: Array, /) -> bool:
 
 
 def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
-    """Strip whitespace from selected columns in table."""
+    r"""Strip whitespace from selected columns in table."""
     for col in cols or table.column_names:
         if is_string_array(table[col]):
             # Trimming the string column col
@@ -83,7 +83,7 @@ def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
 
 
 def strip_whitespace_array(arr: Array, /) -> Array:
-    """Strip whitespace from all string elements in an array."""
+    r"""Strip whitespace from all string elements in an array."""
     match arr:
         case pa.ChunkedArray(chunks=chunks):
             return pa.chunked_array(map(strip_whitespace_array, chunks))  # type: ignore[has-type]
@@ -107,7 +107,7 @@ def arrow_strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
 @overload
 def arrow_strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
 def arrow_strip_whitespace(obj, /, *cols):
-    """Strip whitespace from all string elements in an arrow object."""
+    r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
         case Table() as table:
             return strip_whitespace_table(table, *cols)
@@ -120,18 +120,18 @@ def arrow_strip_whitespace(obj, /, *cols):
 
 
 def arrow_false_like(arr: Array, /) -> BooleanArray:
-    """Creates a `BooleanArray` of False values with the same length as arr."""
+    r"""Creates a `BooleanArray` of False values with the same length as arr."""
     m = arr.is_valid()
     return pa.compute.xor(m, m)
 
 
 def arrow_true_like(arr: Array, /) -> BooleanArray:
-    """Creates a `BooleanArray` of True values with the same length as arr."""
+    r"""Creates a `BooleanArray` of True values with the same length as arr."""
     return pa.compute.invert(arrow_false_like(arr))
 
 
 def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
-    """Creates an `Array` of `fill_value` with the same length as arr."""
+    r"""Creates an `Array` of `fill_value` with the same length as arr."""
     if not isinstance(fill_value, Scalar):
         fill_value = pa.scalar(fill_value)
     if fill_value is NA:
@@ -143,7 +143,7 @@ def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
 
 
 def arrow_null_like(arr: Array, /) -> Array:
-    """Creates an `Array` of null-values with the same length as arr."""
+    r"""Creates an `Array` of null-values with the same length as arr."""
     return arrow_full_like(arr, fill_value=NA)
 
 
@@ -157,7 +157,7 @@ def arrow_where(  # type: ignore[misc]
     /,
 ) -> Array: ...
 def arrow_where(mask, x, y=NA, /):
-    """Select elements from x or y depending on mask.
+    r"""Select elements from x or y depending on mask.
 
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).
     """
@@ -171,7 +171,7 @@ def force_cast(x: Array, dtype: DataType, /) -> Array: ...  # type: ignore[misc]
 @overload
 def force_cast(x: Table, /, **dtypes: DataType) -> Table: ...
 def force_cast(x, dtype=None, /, **dtypes):
-    """Cast an array or table to the given data type, replacing non-castable elements with null."""
+    r"""Cast an array or table to the given data type, replacing non-castable elements with null."""
     match x:
         case Array() as array:
             array = array.combine_chunks()  # deals with chunked arrays
@@ -200,7 +200,7 @@ def force_cast(x, dtype=None, /, **dtypes):
 
 
 def cast_column(table: Table, col: str, dtype: DataType, /, *, safe: bool) -> Table:
-    """Concatenate columns into a new column."""
+    r"""Concatenate columns into a new column."""
     index = table.column_names.index(col)
     try:
         casted_column = (
@@ -216,7 +216,7 @@ def cast_column(table: Table, col: str, dtype: DataType, /, *, safe: bool) -> Ta
 
 
 def cast_columns(table: Table, /, **dtypes: DataType) -> Table:
-    """Cast columns to the given data types."""
+    r"""Cast columns to the given data types."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types, strict=True))
     if unknown_keys := set(dtypes.keys()) - set(current_dtypes.keys()):
@@ -243,7 +243,7 @@ def unsafe_cast_columns(table: Table, /, **dtypes: DataType) -> Table:
 
 
 def is_numeric(array: Array, /) -> Array:
-    """Return mask determining if each element can be cast to the given data type."""
+    r"""Return mask determining if each element can be cast to the given data type."""
     prior_null = pa.compute.is_null(array)
     post_null = pa.compute.is_null(
         Array.from_pandas(
@@ -288,7 +288,7 @@ def compute_entropy(value_counts: Array, /) -> float:
 
 
 def or_(masks: Sequence[Array], /) -> Array:
-    """Compute the logical OR of a sequence of boolean arrays."""
+    r"""Compute the logical OR of a sequence of boolean arrays."""
     match n := len(masks):
         case 0:
             return pa.array([])
@@ -299,7 +299,7 @@ def or_(masks: Sequence[Array], /) -> Array:
 
 
 def and_(masks: Sequence[Array], /) -> Array:
-    """Compute the logical AND of a sequence of boolean arrays."""
+    r"""Compute the logical AND of a sequence of boolean arrays."""
     match n := len(masks):
         case 0:
             return pa.array([])
@@ -312,7 +312,7 @@ def and_(masks: Sequence[Array], /) -> Array:
 def filter_nulls(
     table: Table, /, *cols: str, aggregation: Literal["or", "and"] = "or"
 ) -> Table:
-    """Filter rows with null values in the given columns."""
+    r"""Filter rows with null values in the given columns."""
     agg = {"or": or_, "and": and_}[aggregation]
     masks = [table[col].is_null() for col in cols]
     mask = pa.compute.invert(agg(masks))
@@ -320,13 +320,13 @@ def filter_nulls(
 
 
 def set_nulls_series(series: Array, values: Sequence, /) -> Array:
-    """Set values to null if they match any of the given values."""
+    r"""Set values to null if they match any of the given values."""
     mask = pa.compute.is_in(series, pa.array(values, type=series.type))
     return pa.compute.replace_with_mask(series, mask, pa.null())
 
 
 def set_nulls(table: Table, /, **cols: Sequence) -> Table:
-    """For given columns set all matching values ito null."""
+    r"""For given columns set all matching values ito null."""
     for col, values in cols.items():
         table = table.set_column(col, set_nulls_series(table[col], values))
 
@@ -334,7 +334,7 @@ def set_nulls(table: Table, /, **cols: Sequence) -> Table:
 
 
 def table_info(table: Table, /) -> None:
-    """Print information about a table."""
+    r"""Print information about a table."""
     size = table.nbytes / (1024 * 1024 * 1024)
     print(f"shape={table.shape}  {size=:.3f} GiB")
     M = max(map(len, table.column_names)) + 1

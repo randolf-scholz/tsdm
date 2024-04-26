@@ -14,7 +14,7 @@ from tsdm.types.aliases import Axes
 
 
 def numpy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
-    """Create an array of the same shape as `x`."""
+    r"""Create an array of the same shape as `x`."""
     return np.array(x, dtype=ref.dtype, copy=False)
 
 

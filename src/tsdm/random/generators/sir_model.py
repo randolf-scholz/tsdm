@@ -37,15 +37,15 @@ class SIR(IVP_GeneratorBase[NDArray]):
 
     _: KW_ONLY
     alpha: float = 0.1
-    """Recovery rate."""
+    r"""Recovery rate."""
     beta: float = 0.5
-    """Transmission rate."""
+    r"""Transmission rate."""
 
     @staticmethod
     def _get_initial_state_impl(
         size: SizeLike = (), *, weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
-        """Generate (multiple) initial state(s) y₀.
+        r"""Generate (multiple) initial state(s) y₀.
 
         We simply use a Dirichlet distribution with parameters 100:1:0.
         """

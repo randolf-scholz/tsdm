@@ -6,7 +6,7 @@ from tsdm.utils import flatten_dict, last, pairwise_disjoint, replace, unflatten
 
 
 def test_last():
-    """Test `tsdm.utils.last`."""
+    r"""Test `tsdm.utils.last`."""
     # test with Sequence.
     seq = [1, 2, 3]
     assert last(seq) == 3
@@ -21,7 +21,7 @@ def test_last():
 
 
 def test_last_empty():
-    """Test `tsdm.utils.last` with empty input."""
+    r"""Test `tsdm.utils.last` with empty input."""
     with pytest.raises(ValueError, match="Sequence is empty!"):
         last([])
 
@@ -33,7 +33,7 @@ def test_last_empty():
 
 
 def test_replace():
-    """Test `tsdm.utils.replace`."""
+    r"""Test `tsdm.utils.replace`."""
     string = "Hello World"
     replacements = {"Hello": "Goodbye", "World": "Earth"}
     assert replace(string, replacements) == "Goodbye Earth"
@@ -43,7 +43,7 @@ def test_replace():
 
 
 def test_flatten_dict():
-    """Test `tsdm.utils.flatten_dict`."""
+    r"""Test `tsdm.utils.flatten_dict`."""
     d = {"a": {"b": {"c": 1}, "d": {"e": 2}, "f": 3}}
     assert flatten_dict(d) == {"a.b.c": 1, "a.d.e": 2, "a.f": 3}
 
@@ -52,7 +52,7 @@ def test_flatten_dict():
 
 
 def test_unflatten_dict():
-    """Test `tsdm.utils.unflatten_dict`."""
+    r"""Test `tsdm.utils.unflatten_dict`."""
     d = {"a.b.c": 1, "a.d.e": 2, "a.f": 3}
     assert unflatten_dict(d) == {"a": {"b": {"c": 1}, "d": {"e": 2}, "f": 3}}
 
@@ -61,7 +61,7 @@ def test_unflatten_dict():
 
 
 def test_pairwise_disjoint():
-    """Test `tsdm.utils.pairwise_disjoint`."""
+    r"""Test `tsdm.utils.pairwise_disjoint`."""
     sets: list[set[int]] = []
     assert pairwise_disjoint(sets) is True
 

@@ -81,7 +81,7 @@ CALLBACKS: dict[str, type[Callback]] = {
     "ScalarsCallback"     : ScalarsCallback,
     "TableCallback"       : TableCallback,
 }  # fmt: skip
-"""Dictionary of all available callbacks."""
+r"""Dictionary of all available callbacks."""
 
 LOGFUNCS: dict[str, LogFunction] = {
     "log_kernel"       : log_kernel,
@@ -92,10 +92,10 @@ LOGFUNCS: dict[str, LogFunction] = {
     "log_values"       : log_values,
     "log_table"        : log_table,
 }  # fmt: skip
-"""Dictionary of all available log functions."""
+r"""Dictionary of all available log functions."""
 
 LOGGERS: dict[str, type[Logger]] = {
     "BaseLogger"    : BaseLogger,
     "DefaultLogger" : DefaultLogger,
 }  # fmt: skip
-"""Dictionary of all available loggers."""
+r"""Dictionary of all available loggers."""

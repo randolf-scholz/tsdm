@@ -70,7 +70,7 @@ def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
 def compare_dataframes(
     given: DataFrame, reference: DataFrame, *, rtol: float = 1e-5, atol: float = 1e-5
 ) -> None:
-    """Compare two dataframes."""
+    r"""Compare two dataframes."""
     assert given.shape == reference.shape, "Shapes must match!"
     assert given.columns.equals(reference.columns), "Columns must match!"
     assert given.index.equals(reference.index), "Indices must match!"

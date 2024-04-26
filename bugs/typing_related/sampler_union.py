@@ -51,7 +51,7 @@ Dataset: TypeAlias = MapDataset[K, V] | IterableDataset[V]
 
 @dataclass
 class Sampler(Generic[K]):
-    """Sample random indices that can be used to sample from a dataset."""
+    r"""Sample random indices that can be used to sample from a dataset."""
 
     data: Dataset[K, Any]
     # index: list[K]

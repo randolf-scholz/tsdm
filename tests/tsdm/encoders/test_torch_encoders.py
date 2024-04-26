@@ -16,7 +16,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_PositionalEncoder() -> None:
-    """Test the PositionalEncoder."""
+    r"""Test the PositionalEncoder."""
     LOGGER = __logger__.getChild(PositionalEncoder.__name__)
     LOGGER.info("Testing.")
 
@@ -53,7 +53,7 @@ def test_PositionalEncoder() -> None:
 
 
 def test_PositionalEncoder_Torch() -> None:
-    """Test the PositionalEncoder_Torch."""
+    r"""Test the PositionalEncoder_Torch."""
     LOGGER = __logger__.getChild(PositionalEncoder_Torch.__name__)
     LOGGER.info("Testing.")
 
@@ -89,7 +89,7 @@ def test_PositionalEncoder_Torch() -> None:
 
 
 def test_Time2Vec() -> None:
-    """Test the Time2Vec encoder."""
+    r"""Test the Time2Vec encoder."""
     LOGGER = __logger__.getChild(Time2Vec.__name__)
     LOGGER.info("Testing.")
 

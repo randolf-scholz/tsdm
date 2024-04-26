@@ -16,13 +16,13 @@ from tsdm.types.protocols import NumericalArray, SupportsShape
 
 
 def false_like(x: NumericalArray, /) -> NumericalArray[bool]:
-    """Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x  # pylint: disable=comparison-with-itself
     return z ^ z
 
 
 def true_like(x: NumericalArray, /) -> NumericalArray[bool]:
-    """Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
     # (𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True
     z = x == x  # pylint: disable=comparison-with-itself
@@ -30,7 +30,7 @@ def true_like(x: NumericalArray, /) -> NumericalArray[bool]:
 
 
 def is_singleton(x: SupportsShape, /) -> bool:
-    """Determines whether a tensor like object has a single element."""
+    r"""Determines whether a tensor like object has a single element."""
     return prod(x.shape) == 1
     # numpy: size, len  / shape + prod
     # torch: size + prod / numel / shape + prod
@@ -42,10 +42,10 @@ def is_singleton(x: SupportsShape, /) -> bool:
 
 
 def is_scalar(x: object, /) -> bool:
-    """Determines whether an object is a scalar."""
+    r"""Determines whether an object is a scalar."""
     return isinstance(x, bool | float | int | pa.Scalar | str)
 
 
 def to_scalar():
-    """Convert a singleton to a scalar."""
+    r"""Convert a singleton to a scalar."""
     raise NotImplementedError

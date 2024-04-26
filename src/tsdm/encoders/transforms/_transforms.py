@@ -33,7 +33,7 @@ class Transform(Protocol[T2_contra, T_co]):
 
     @abstractmethod
     def __call__(self, x: T2_contra, /) -> T_co:
-        """Apply the transformation."""
+        r"""Apply the transformation."""
         ...
 
 

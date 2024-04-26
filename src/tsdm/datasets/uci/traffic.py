@@ -110,7 +110,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
     @cached_property
     def weekdays(self) -> dict[int, str]:
-        """Encoding of weekdays."""
+        r"""Encoding of weekdays."""
         if self.use_corrected_dates:
             weekdays = {
                 1: "Sunday",
@@ -135,7 +135,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
     @cached_property
     def dates(self) -> pd.DatetimeIndex:
-        """Dates of the dataset."""
+        r"""Dates of the dataset."""
         if self.use_corrected_dates:
             dates = pd.date_range("2008-01-01", "2009-03-26", freq="d", name="day")
             anomalies = pd.DatetimeIndex({
@@ -299,7 +299,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         return ts
 
     def _clean_labels(self) -> DataFrame:
-        """Clean the labels of the PEMS-SF dataset."""
+        r"""Clean the labels of the PEMS-SF dataset."""
         # Shuffle the dates according to the permutation the authors applied.
         shuffled_dates = self.dates[self.randperm]
 

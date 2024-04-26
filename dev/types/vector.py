@@ -6,7 +6,7 @@ ScalarType = TypeVar("ScalarType")
 
 
 class Vector(Protocol[ScalarType]):
-    """An element of an abstract vector space."""
+    r"""An element of an abstract vector space."""
 
     def __len__(self) -> int: ...
     def __pos__(self) -> Self: ...
@@ -47,7 +47,7 @@ v: Vector[float] = MyVector([1.0, 2.0, 3.0])
 
 
 def scalar_multiplication(vector, scalar):
-    """Multiply a vector by a compatible scalar."""
+    r"""Multiply a vector by a compatible scalar."""
     return scalar * vector
 
 

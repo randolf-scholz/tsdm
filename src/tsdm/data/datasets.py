@@ -41,11 +41,11 @@ from tsdm.utils.pprint import pprint_repr, repr_array
 
 @runtime_checkable
 class TorchDataset(Protocol[K_contra, V_co]):
-    """Protocol version of `torch.utils.data.Dataset`."""
+    r"""Protocol version of `torch.utils.data.Dataset`."""
 
     @abstractmethod
     def __getitem__(self, key: K_contra, /) -> V_co:
-        """Map key to sample."""
+        r"""Map key to sample."""
         ...
 
 
@@ -54,7 +54,7 @@ DS = TypeVar("DS", bound=TorchDataset)
 
 @runtime_checkable
 class PandasDataset(Protocol[K, V_co]):
-    """Protocol version of `pandas.DataFrame`/`Series`.
+    r"""Protocol version of `pandas.DataFrame`/`Series`.
 
     Note that in particular, `__getitem__` is not present, as it returns columns,
     but we are usually interested in the rows.
@@ -63,35 +63,35 @@ class PandasDataset(Protocol[K, V_co]):
     @property
     @abstractmethod
     def index(self) -> ArrayKind[K]:
-        """Returns the row labels of the DataFrame."""
+        r"""Returns the row labels of the DataFrame."""
         ...
 
     @property
     @abstractmethod
     def loc(self) -> SupportsGetItem[K, V_co]:
-        """Access a group of rows and columns by label(s) or a boolean array."""
+        r"""Access a group of rows and columns by label(s) or a boolean array."""
         ...
 
     @property
     @abstractmethod
     def iloc(self) -> SupportsGetItem[int, V_co]:
-        """Purely integer location-based indexing for selection by position."""
+        r"""Purely integer location-based indexing for selection by position."""
         ...
 
 
 @runtime_checkable
 class IterableDataset(Protocol[V_co]):
-    """Protocol version of `torch.utils.data.IterableDataset`."""
+    r"""Protocol version of `torch.utils.data.IterableDataset`."""
 
     @abstractmethod
     def __iter__(self) -> Iterator[V_co]:
-        """Iterate over the dataset."""
+        r"""Iterate over the dataset."""
         ...
 
 
 @runtime_checkable
 class IndexableDataset(Protocol[V_co]):
-    """Protocol version of `torch.utils.data.IterableDataset` with len and getitem.
+    r"""Protocol version of `torch.utils.data.IterableDataset` with len and getitem.
 
     Note:
         - We deviate from the original in that we require a `len()` method.
@@ -106,23 +106,23 @@ class IndexableDataset(Protocol[V_co]):
 
     @abstractmethod
     def __len__(self) -> int:
-        """Length of the dataset."""
+        r"""Length of the dataset."""
         ...
 
     @abstractmethod
     def __iter__(self) -> Iterator[V_co]:
-        """Iterate over the dataset."""
+        r"""Iterate over the dataset."""
         ...
 
     @abstractmethod
     def __getitem__(self, key: int, /) -> V_co:
-        """Map key to sample."""
+        r"""Map key to sample."""
         ...
 
 
 @runtime_checkable
 class MapDataset(Protocol[K, V_co]):
-    """Protocol version of `torch.utils.data.Dataset` with a `keys()` method.
+    r"""Protocol version of `torch.utils.data.Dataset` with a `keys()` method.
 
     Note:
         We deviate from the original in that we require a `keys()` method.
@@ -133,34 +133,34 @@ class MapDataset(Protocol[K, V_co]):
 
     @abstractmethod
     def __len__(self) -> int:
-        """Length of the dataset."""
+        r"""Length of the dataset."""
         ...
 
     @abstractmethod
     def __getitem__(self, key: K, /) -> V_co:
-        """Map key to sample."""
+        r"""Map key to sample."""
         ...
 
     @abstractmethod
     def keys(self) -> Reversible[K] | IndexableDataset[K]:
-        """Iterate over the keys."""
+        r"""Iterate over the keys."""
         ...
 
 
 TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
-"""Type alias for a "tabular" dataset."""
+r"""Type alias for a "tabular" dataset."""
 
 SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
-"""Type alias for a sequential dataset."""
+r"""Type alias for a sequential dataset."""
 
 Dataset: TypeAlias = IndexableDataset[V_co] | MapDataset[Any, V_co]
-"""Type alias for a generic dataset."""
+r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 
 
 @dataclass
 class DataFrame2Dataset(MapDataset[K, DataFrame]):
-    """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting ``.loc``.
+    r"""Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting ``.loc``.
 
     It is assumed that the DataFrame has a MultiIndex.
     """

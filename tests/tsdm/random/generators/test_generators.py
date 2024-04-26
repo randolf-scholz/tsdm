@@ -18,7 +18,7 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 @mark.flaky(reruns=3)
 def test_bouncing_ball() -> None:
-    """Test Bouncing Ball."""
+    r"""Test Bouncing Ball."""
     # sample from generator
     t = np.linspace(-10, 20, 256)
     y = BouncingBall().rvs(t)
@@ -36,7 +36,7 @@ def test_bouncing_ball() -> None:
 
 @mark.flaky(reruns=3)
 def test_lotka_volterra() -> None:
-    """Test Lotka-Volterra."""
+    r"""Test Lotka-Volterra."""
     # sample from generator
     t = np.linspace(0, 20, 256)
     y = LotkaVolterra().rvs(t)
@@ -57,7 +57,7 @@ def test_lotka_volterra() -> None:
 
 @mark.flaky(reruns=3)
 def test_damped_pendulum() -> None:
-    """Test Damped Pendulum."""
+    r"""Test Damped Pendulum."""
     # sample from generator
     t = np.linspace(0, 10, 256)
     y = DampedPendulum().rvs(t)
@@ -92,7 +92,7 @@ def test_damped_pendulum_batch() -> None:
 
 @mark.flaky(reruns=3)
 def test_damped_pendulum_xy() -> None:
-    """Test Damped Pendulum XY."""
+    r"""Test Damped Pendulum XY."""
     # sample from generator
     t = np.linspace(0, 10, 512)
     y = DampedPendulumXY().rvs(t)
@@ -114,7 +114,7 @@ def test_damped_pendulum_xy() -> None:
 
 @mark.flaky(reruns=3)
 def test_sir_model() -> None:
-    """Test SIR model."""
+    r"""Test SIR model."""
     # sample from generator
     t = np.linspace(0, 100, 256)
     y = SIR(alpha=0.1, beta=0.5).rvs(t)

@@ -19,12 +19,12 @@ from typing_extensions import (
 )
 
 GenericActivation: TypeAlias = Callable[Concatenate[Tensor, ...], Tensor]
-"""Type alias for generic activation functions (may require additional args!)."""
+r"""Type alias for generic activation functions (may require additional args!)."""
 
 
 @runtime_checkable
 class Activation(Protocol):
-    """Protocol for Activation Components."""
+    r"""Protocol for Activation Components."""
 
     @abstractmethod
     def __call__(self, x: Tensor, /) -> Tensor:
@@ -36,7 +36,7 @@ class Activation(Protocol):
 
 
 class ActivationABC(nn.Module):
-    """Abstract Base Class for Activation components."""
+    r"""Abstract Base Class for Activation components."""
 
     @abstractmethod
     def forward(self, x: Tensor, /) -> Tensor:

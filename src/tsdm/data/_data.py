@@ -51,18 +51,18 @@ __logger__: logging.Logger = logging.getLogger(__name__)
 
 
 class Schema(NamedTuple):
-    """Table schema."""
+    r"""Table schema."""
 
     shape: Optional[tuple[int, int]] = None
-    """Shape of the table."""
+    r"""Shape of the table."""
     columns: Optional[Sequence[str]] = None
-    """Column names of the table."""
+    r"""Column names of the table."""
     dtypes: Optional[Sequence[str]] = None
-    """Data types of the columns."""
+    r"""Data types of the columns."""
 
 
 class InlineTable(TypedDict, Generic[tuple_co]):
-    """A table of data in a dictionary."""
+    r"""A table of data in a dictionary."""
 
     data: Required[Sequence[tuple_co]]
     columns: NotRequired[list[str]]
@@ -72,7 +72,7 @@ class InlineTable(TypedDict, Generic[tuple_co]):
 
 
 class BoundaryInformation(TypedDict):
-    """Information about the boundaries of a single variable."""
+    r"""Information about the boundaries of a single variable."""
 
     lower_bound: float | None
     upper_bound: float | None
@@ -82,7 +82,7 @@ class BoundaryInformation(TypedDict):
 
 
 class MultipleBoundaryInformation(TypedDict):
-    """Information about the boundaries of multiple variables."""
+    r"""Information about the boundaries of multiple variables."""
 
     name: Sequence[str]
     lower_bound: Sequence[float | None]
@@ -93,7 +93,7 @@ class MultipleBoundaryInformation(TypedDict):
 
 
 class BoundaryTable(TypedDict):
-    """A table of boundary information, indexed by variable name."""
+    r"""A table of boundary information, indexed by variable name."""
 
     lower_bound: Mapping[str, float | None]
     upper_bound: Mapping[str, float | None]
@@ -110,7 +110,7 @@ def make_dataframe(
     schema: Mapping[str, Any] = NotImplemented,
     index: str | list[str] = NotImplemented,
 ) -> DataFrame:
-    """Make a DataFrame from a dictionary."""
+    r"""Make a DataFrame from a dictionary."""
     if dtypes is not NotImplemented and schema is not NotImplemented:
         raise ValueError("Cannot specify both dtypes and schema.")
 
@@ -143,7 +143,7 @@ def strip_whitespace(frame: Series, /) -> Series: ...  # type: ignore[misc]
 @overload
 def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[misc]
 def strip_whitespace(table, /, *cols):
-    """Strip whitespace from all string columns in a table or frame."""
+    r"""Strip whitespace from all string columns in a table or frame."""
     match table:
         case Table() as table:
             return strip_whitespace_table(table, *cols)
@@ -206,7 +206,7 @@ def detect_outliers(
     lower_inclusive=None,
     upper_inclusive=None,
 ):
-    """Detect outliers in a Series or DataFrame, given boundary values."""
+    r"""Detect outliers in a Series or DataFrame, given boundary values."""
     options = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
@@ -285,7 +285,7 @@ def remove_outliers(
     drop=True,
     inplace=False,
 ):
-    """Remove outliers from a DataFrame, given boundary values."""
+    r"""Remove outliers from a DataFrame, given boundary values."""
     options = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,

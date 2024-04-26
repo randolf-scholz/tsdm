@@ -50,7 +50,7 @@ DATA = {
 
 @mark.parametrize("data", DATA.values(), ids=DATA)
 def test_boundary_encoder(data: D) -> None:
-    """Test the boundary encoder."""
+    r"""Test the boundary encoder."""
     # test clip + numpy
     encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
     encoder.fit(data)
@@ -195,7 +195,7 @@ def test_linear_scaler(tensor_type: T) -> None:
 def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
-    """Test the get_broadcast function."""
+    r"""Test the get_broadcast function."""
     if (isinstance(axis, tuple) and any(abs(a) > len(shape) - 1 for a in axis)) or (
         isinstance(axis, int) and abs(axis) > len(shape)
     ):
@@ -226,7 +226,7 @@ def test_get_broadcast(
 
 
 def test_reduce_axes() -> None:
-    """Test the get_reduced_axes function."""
+    r"""Test the get_reduced_axes function."""
     axis: tuple[int, ...] = (-2, -1)
     assert get_reduced_axes(..., axis) == axis
     assert get_reduced_axes(0, axis) == (-1,)
@@ -318,7 +318,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
 
 @mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_dataframe(encoder_type: type[E]) -> None:
-    """Check whether the scaler-encoders work as expected on DataFrame."""
+    r"""Check whether the scaler-encoders work as expected on DataFrame."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
 
@@ -367,7 +367,7 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
 
 @mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_series(encoder_type: type[E]) -> None:
-    """Check whether the scaler-encoders work as expected on Series."""
+    r"""Check whether the scaler-encoders work as expected on Series."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.Series.")
 
@@ -400,7 +400,7 @@ def test_scaler_series(encoder_type: type[E]) -> None:
 
 @mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
 def test_standard_scaler(axis):
-    """Test the MinMaxScaler."""
+    r"""Test the MinMaxScaler."""
     TRUE_SHAPE = {
         (): (),
         (-2, -1): (4, 5),
@@ -430,7 +430,7 @@ def test_standard_scaler(axis):
 
 @mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
 def test_minmax_scaler(axis):
-    """Test the MinMaxScaler."""
+    r"""Test the MinMaxScaler."""
     TRUE_SHAPE = {
         None: (2, 3, 4, 5),
         (-2, -1): (4, 5),

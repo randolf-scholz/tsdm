@@ -161,7 +161,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         os.rename(file, fname)
 
     def make_histograms(self) -> tuple[plt.Figure, plt.Axes]:
-        """Make histograms of the timeseries."""
+        r"""Make histograms of the timeseries."""
         fig, axes = plt.subplots(
             16, 6, figsize=(20, 32), constrained_layout=True, sharey=True
         )

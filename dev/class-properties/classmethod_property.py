@@ -25,7 +25,7 @@ def compute(obj, s):
 class MyMetaClass(ABCMeta):
     @property
     def expensive_metaclass_property(cls):
-        """This may take a while to compute!"""
+        r"""This may take a while to compute!"""
         return compute(cls, "metaclass property")
 
 
@@ -34,17 +34,17 @@ class MyBaseClass(ABC, metaclass=MyMetaClass):
     @classmethod
     @property
     def expensive_class_property(cls):
-        """This may take a while to compute!"""
+        r"""This may take a while to compute!"""
         return compute(cls, "class property")
 
     @property
     def expensive_instance_property(self):
-        """This may take a while to compute!"""
+        r"""This may take a while to compute!"""
         return compute(self, "instance property")
 
 
 class MyClass(MyBaseClass):
-    """Some subclass of MyBaseClass"""
+    r"""Some subclass of MyBaseClass"""
 
 
 help(MyClass)

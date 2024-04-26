@@ -144,7 +144,7 @@ MUTABLE_ARRAY_ATTRS = get_protocol_members(MutableArray)
 
 @mark.parametrize("name", SUPPORTS_ARRAYS)
 def test_supports_array(name: str) -> None:
-    """Test the SupportsArray protocol."""
+    r"""Test the SupportsArray protocol."""
     obj = SUPPORTS_ARRAYS[name]
     assert isinstance(obj, SupportsArray)
     assert issubclass(obj.__class__, SupportsArray)
@@ -153,7 +153,7 @@ def test_supports_array(name: str) -> None:
 
 @mark.parametrize("name", SERIES)
 def test_series(name: str) -> None:
-    """Test the Series protocol."""
+    r"""Test the Series protocol."""
     series = SERIES[name]
     cls = series.__class__
     assert isinstance(series, SeriesKind), SERIES_ATTRS - set(dir(series))
@@ -191,7 +191,7 @@ def test_series(name: str) -> None:
 
 @mark.parametrize("name", TABLES)
 def test_table(name: str) -> None:
-    """Test the Table protocol."""
+    r"""Test the Table protocol."""
     table = TABLES[name]
     assert isinstance(table, TableKind), TABLE_ATTRS - set(dir(table))
     assert not isinstance(table, SeriesKind)
@@ -229,27 +229,27 @@ def test_table(name: str) -> None:
 
 @mark.parametrize("name", ARRAYS)
 def test_array(name: str) -> None:
-    """Test the Array protocol."""
+    r"""Test the Array protocol."""
     array = ARRAYS[name]
     assert_protocol(array, ArrayKind)
 
 
 @mark.parametrize("name", NUMERICAL_ARRAYS)
 def test_numerical_array(name: str) -> None:
-    """Test the NumericalArray protocol."""
+    r"""Test the NumericalArray protocol."""
     numerical_array = NUMERICAL_ARRAYS[name]
     assert_protocol(numerical_array, NumericalArray)
 
 
 @mark.parametrize("name", MUTABLE_ARRAYS)
 def test_mutable_array(name: str) -> None:
-    """Test the MutableArray protocol."""
+    r"""Test the MutableArray protocol."""
     mutable_array = MUTABLE_ARRAYS[name]
     assert_protocol(mutable_array, MutableArray)
 
 
 def test_shared_attrs() -> None:
-    """Test which shared attributes exist that are not covered by protocols."""
+    r"""Test which shared attributes exist that are not covered by protocols."""
     print("\nShared Attributes not covered by protocols:")
     for proto, examples in EXAMPLES.items():
         protocol_members = get_protocol_members(proto)
@@ -306,7 +306,7 @@ def test_joint_attrs_mutable_array() -> None:
 
 
 def test_table_manual() -> None:
-    """Test the Table protocol (shape and __len__ and __getitem__)."""
+    r"""Test the Table protocol (shape and __len__ and __getitem__)."""
     LOGGER = __logger__.getChild(SupportsShape.__name__)
     LOGGER.info("Testing.")
 

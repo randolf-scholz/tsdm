@@ -145,13 +145,13 @@ from tsdm.utils import LazyDict
 from tsdm.utils.pprint import pprint_repr
 
 Sample_co = TypeVar("Sample_co", covariant=True)
-"""Covariant type variable for `Sample`."""
+r"""Covariant type variable for `Sample`."""
 
 SplitID = TypeVar("SplitID", bound=Hashable)
-"""Type of a split ID."""
+r"""Type of a split ID."""
 
 Batch = NewType("Batch", Any)
-"""Type of a batch."""
+r"""Type of a batch."""
 
 TRAIN: TypeAlias = Literal["train"]
 VALID: TypeAlias = Literal["valid"]
@@ -185,7 +185,7 @@ def infer_split_type(self, key: str | Iterable) -> TRAIN | INFERENCE | UNKNOWN:
 
 @dataclass
 class Split(Generic[Sample_co]):
-    """Represents a split of a dataset."""
+    r"""Represents a split of a dataset."""
 
     name: Hashable = NotImplemented
     r"""List of index."""
@@ -210,7 +210,7 @@ class Split(Generic[Sample_co]):
 
 @runtime_checkable
 class ForecastingTask(Protocol[Key, Sample_co]):
-    """Protocol for tasks.
+    r"""Protocol for tasks.
 
     A task should provide 3 things:
 
@@ -222,23 +222,23 @@ class ForecastingTask(Protocol[Key, Sample_co]):
     @property
     @abstractmethod
     def samplers(self) -> Mapping[SPLIT, Sampler[Key]]:
-        """Samplers for the different splits."""
+        r"""Samplers for the different splits."""
         ...
 
     @property
     @abstractmethod
     def generators(self) -> Mapping[SPLIT, MapDataset[Key, Sample_co]]:
-        """Generators for the different splits."""
+        r"""Generators for the different splits."""
         ...
 
     @property
     @abstractmethod
     def test_metric(self) -> Metric:
-        """The test metric used to evalutate models."""
+        r"""The test metric used to evalutate models."""
         ...
 
     # def eval(self, model: Callable, split: SPLIT) -> Iterator[Tensor]:
-    #     """Yield the element-wise errors."""
+    #     r"""Yield the element-wise errors."""
     #     sampler = self.samplers[split]
     #     generator = self.generators[split]
     #     metric = self.test_metric
@@ -250,7 +250,7 @@ class ForecastingTask(Protocol[Key, Sample_co]):
 
 
 class TTT(ForecastingTask[Key, Sample_co]):
-    """WIP: TimeSeriesTask."""
+    r"""WIP: TimeSeriesTask."""
 
     # ABCs should have slots https://stackoverflow.com/a/62628857
     # __slots__ = ()
@@ -292,7 +292,7 @@ class TTT(ForecastingTask[Key, Sample_co]):
     r"""List of patterns to match for infererence splits."""
 
     validate: bool = True
-    """Whether to validate the folds."""
+    r"""Whether to validate the folds."""
     initialize: bool = True
 
     def __post_init__(self) -> None:
@@ -582,7 +582,7 @@ class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
     r"""List of patterns to match for infererence splits."""
 
     validate: bool = True
-    """Whether to validate the folds."""
+    r"""Whether to validate the folds."""
     initialize: bool = True
 
     def __post_init__(self) -> None:

@@ -5,12 +5,12 @@ from abc import ABC, abstractmethod
 from typing import Generic, Literal, Sequence, TypeVar
 
 KEYS = TypeVar("KeyType")
-"""Type hint for index"""
+r"""Type hint for index"""
 
 
 class BaseClass(ABC, Generic[KEYS]):
     # index: Sequence[KeyType]
-    # """The index"""
+    # r"""The index"""
 
     @property
     @abstractmethod

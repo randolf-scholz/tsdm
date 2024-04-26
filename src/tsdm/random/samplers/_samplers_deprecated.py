@@ -157,18 +157,18 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
     data: NDArray[DTVar]  # type: ignore[type-var]
     seq_len: TDVar
-    """The length of the sequences."""
+    r"""The length of the sequences."""
     stride: TDVar
-    """The stride at which to sample."""
+    r"""The stride at which to sample."""
     xmax: DTVar
-    """The maximum value at which to stop sampling."""
+    r"""The maximum value at which to stop sampling."""
     xmin: DTVar
-    """The minimum value at which to start sampling."""
+    r"""The minimum value at which to start sampling."""
     # total_delta: TDVar
     return_mask: bool = False
-    """Whether to return masks instead of indices."""
+    r"""Whether to return masks instead of indices."""
     shuffle: bool = False
-    """Whether to shuffle the data."""
+    r"""Whether to shuffle the data."""
 
     def __init__(
         self,

@@ -122,7 +122,7 @@ class Electricity(SingleTableDataset):
         return df.rename_axis(index="time", columns="client")
 
     def make_zero_plot(self) -> plt.Axes:
-        """Plot number of zero values per timestamp."""
+        r"""Plot number of zero values per timestamp."""
         return (
             self.table.where(self.table > 0)
             .isna()

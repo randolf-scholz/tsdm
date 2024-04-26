@@ -7,7 +7,7 @@ from sklearn.utils.estimator_checks import parametrize_with_checks
 
 
 class MyEstimator:
-    """Dummy estimator."""
+    r"""Dummy estimator."""
 
     def get_params(self, *, deep=True):
         return {}

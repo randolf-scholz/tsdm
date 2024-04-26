@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.6
+    rev: v0.2.7
     hooks:
       # pygrep hooks
       - id: check-separator-length

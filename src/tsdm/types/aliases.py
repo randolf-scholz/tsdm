@@ -100,15 +100,15 @@ r"""Type Alias for path-like objects."""
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
 SplitID: TypeAlias = Hashable
-"""Type Alias for split identifiers."""
+r"""Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 
 # region Dtype Aliases -----------------------------------------------------------------
 NumpyDtype: TypeAlias = np.dtype
-"""Type Alias for `numpy` dtypes."""
+r"""Type Alias for `numpy` dtypes."""
 NumpyDtypeArg: TypeAlias = str | type | NumpyDtype
-"""Type Alias for `numpy` dtype arguments."""
+r"""Type Alias for `numpy` dtype arguments."""
 PandasDtype: TypeAlias = ExtensionDtype | NumpyDtype
 r"""Type Alias for `pandas` dtype."""
 PandasDTypeArg: TypeAlias = str | type | PandasDtype
@@ -124,11 +124,11 @@ r"""Type Alias for `pandas` objects."""
 
 # region Scalar Type Aliases -----------------------------------------------------------
 Scalar: TypeAlias = bool | int | float | complex | str | bytes
-"""Type Alias for scalars."""
+r"""Type Alias for scalars."""
 StringScalar: TypeAlias = str | bytes
-"""Type Alias for string scalars."""
+r"""Type Alias for string scalars."""
 NumericalScalar: TypeAlias = bool | int | float | complex
-"""Type Alias for numerical scalars."""
+r"""Type Alias for numerical scalars."""
 TorchScalar: TypeAlias = bool | int | float | str
 r"""Type Alias for scalars allowed by torchscript."""
 TimeScalar: TypeAlias = datetime | timedelta

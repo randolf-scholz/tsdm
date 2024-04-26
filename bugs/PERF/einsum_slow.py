@@ -42,7 +42,7 @@ class PerformanceTimer(ContextDecorator):
 
 # %%
 def generate_reductions(n: int, m: int) -> Iterator[str]:
-    """Generate all possible einsum-reductions over m-axes of an n-dim tensor."""
+    r"""Generate all possible einsum-reductions over m-axes of an n-dim tensor."""
     assert m <= n, "m must be smaller or equal to n"
     operator = "ijklmnopqrstuv"[:n]
     for subset in combinations(operator, m):

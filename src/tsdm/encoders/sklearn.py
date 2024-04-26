@@ -19,7 +19,7 @@ from tsdm.types.variables import T2, T, T_co, T_contra
 
 @runtime_checkable
 class SklearnTransform(Protocol[T_contra, T_co]):
-    """Protocol for scikit-learn transformers."""
+    r"""Protocol for scikit-learn transformers."""
 
     @abstractmethod
     def fit(self, data: T_contra, /) -> None: ...
@@ -35,7 +35,7 @@ class SklearnTransform(Protocol[T_contra, T_co]):
 
 @runtime_checkable
 class SklearnEncoder(SklearnTransform[T, T2], Protocol):
-    """Protocol for scikit-learn encoders."""
+    r"""Protocol for scikit-learn encoders."""
 
     @abstractmethod
     def inverse_transform(self, data: T2, /) -> T: ...

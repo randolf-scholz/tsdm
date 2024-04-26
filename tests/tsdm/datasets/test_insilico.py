@@ -9,7 +9,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_caching() -> None:
-    """Test the caching of the dataset."""
+    r"""Test the caching of the dataset."""
     # NOTE: this test must be executed first!!!
     LOGGER = __logger__.getChild(InSilico.__name__)
     LOGGER.info("Testing caching.")
@@ -28,7 +28,7 @@ def test_caching() -> None:
 
 
 def test_dataset_protocol() -> None:
-    """Test the attributes of the dataset."""
+    r"""Test the attributes of the dataset."""
     LOGGER = __logger__.getChild(InSilico.__name__)
     LOGGER.info("Testing attributes.")
     ds = InSilico()

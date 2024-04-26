@@ -25,7 +25,7 @@ DT_TRAIN_DATA = [
     "2022-01-01T10:04:30",
     "2022-01-01T10:05:00",
 ]
-"""Example datetime data in ISO 8601 format with 30s steps."""
+r"""Example datetime data in ISO 8601 format with 30s steps."""
 
 DT_TEST_DATA = [
     "2022-01-01T08:05:30",
@@ -34,7 +34,7 @@ DT_TEST_DATA = [
     "2022-01-01T10:07:00",
     "2023-01-01T10:07:30",
 ]
-"""Example datetime data in ISO 8601 format with 30s steps."""
+r"""Example datetime data in ISO 8601 format with 30s steps."""
 
 DT_TRAIN_ARRAYS = {
     "python": list(map(datetime.fromisoformat, DT_TRAIN_DATA)),
@@ -47,7 +47,7 @@ DT_TRAIN_ARRAYS = {
     "polars": pl.Series(DT_TRAIN_DATA).cast(dtype=pl.Datetime()),
     "pyarrow": pa.array(DT_TRAIN_DATA).cast(pa.timestamp("s")),
 }
-"""Example data for training datetime encoders."""
+r"""Example data for training datetime encoders."""
 
 DT_TEST_ARRAYS = {
     "python": list(map(datetime.fromisoformat, DT_TEST_DATA)),
@@ -60,7 +60,7 @@ DT_TEST_ARRAYS = {
     "polars": pl.Series(DT_TEST_DATA).cast(dtype=pl.Datetime()),
     "pyarrow": pa.array(DT_TEST_DATA).cast(pa.timestamp("s")),
 }
-"""Example data for testing datetime encoders."""
+r"""Example data for testing datetime encoders."""
 # endregion datetime sample data -------------------------------------------------------
 
 # region timedelta sample data ---------------------------------------------------------
@@ -72,7 +72,7 @@ TD_TRAIN_DATA = [
     timedelta(seconds=120),
     timedelta(seconds=150),
 ]
-"""Example timedelta data with 30s steps."""
+r"""Example timedelta data with 30s steps."""
 
 TD_TEST_DATA = [
     timedelta(seconds=30),
@@ -81,7 +81,7 @@ TD_TEST_DATA = [
     timedelta(seconds=46),
     timedelta(seconds=47),
 ]
-"""Example timedelta test data with variable steps."""
+r"""Example timedelta test data with variable steps."""
 
 TD_TRAIN_ARRAYS = {
     "python": TD_TRAIN_DATA,
@@ -94,7 +94,7 @@ TD_TRAIN_ARRAYS = {
     "polars": pl.Series(TD_TRAIN_DATA).cast(dtype=pl.Duration()),
     "pyarrow": pa.array(TD_TRAIN_DATA).cast(pa.duration("s")),
 }
-"""Example data for training timedelta encoders."""
+r"""Example data for training timedelta encoders."""
 
 TD_TEST_ARRAYS = {
     "python": TD_TEST_DATA,
@@ -107,13 +107,13 @@ TD_TEST_ARRAYS = {
     "polars": pl.Series(TD_TEST_DATA).cast(dtype=pl.Duration()),
     "pyarrow": pa.array(TD_TEST_DATA).cast(pa.duration("s")),
 }
-"""Example data for testing timedelta encoders."""
+r"""Example data for testing timedelta encoders."""
 # endregion timedelta sample data ------------------------------------------------------
 
 
 @pytest.mark.parametrize("name", DT_TRAIN_ARRAYS)
 def test_datetime_encoder(name: str) -> None:
-    """Test DateTimeEncoder with different data types."""
+    r"""Test DateTimeEncoder with different data types."""
     match name:
         case "numpy":
             pytest.xfail("https://github.com/pandas-dev/pandas/issues/58403")
@@ -139,7 +139,7 @@ def test_datetime_encoder(name: str) -> None:
 
 @pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)
 def test_timedelta_encoder(name: str) -> None:
-    """Test DateTimeEncoder with different data types."""
+    r"""Test DateTimeEncoder with different data types."""
     match name:
         case "python" | "polars" | "pyarrow":
             pytest.xfail("Universal backend not implemented!")

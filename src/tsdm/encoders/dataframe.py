@@ -48,7 +48,7 @@ TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
 
 
 class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
-    """Converts dtypes of a DataFrame.
+    r"""Converts dtypes of a DataFrame.
 
     Args:
         dtypes: A mapping from column names to dtypes.
@@ -214,7 +214,7 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
 
 
 class TableEncoder(BaseEncoder[TableVar, TableVar]):
-    """Encodes a table of data, by applying transformations to single columns or groups of columns.
+    r"""Encodes a table of data, by applying transformations to single columns or groups of columns.
 
     Args:
         encoders: A mapping from column names to encoders.
@@ -1040,7 +1040,7 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
             )
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
-        """Encode a DataFrame as a dict of Tensors.
+        r"""Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
         if columns in the dataframe are missing, the correponding tensor columns

@@ -173,7 +173,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
 
     @cached_property
     def filelist(self) -> dict[KEYS, str]:
-        """Mapping between table_names and contents of the zip file."""
+        r"""Mapping between table_names and contents of the zip file."""
         top = f"mimic-iv-{self.__version__}"
 
         files = {
@@ -279,7 +279,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
 
 
 class MIMIC_IV(MIMIC_IV_RAW):
-    """Lightly preprocessed version of the MIMIC-IV dataset.
+    r"""Lightly preprocessed version of the MIMIC-IV dataset.
 
     The following preprocessing steps are applied:
 

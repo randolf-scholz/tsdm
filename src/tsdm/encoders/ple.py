@@ -9,7 +9,7 @@ References:
 #
 #
 # class PLE(BaseEncoder):
-#     """Piecewise Linear Encoding (PLE)."""
+#     r"""Piecewise Linear Encoding (PLE)."""
 #
 #     bins: list[float]
 #
@@ -18,7 +18,7 @@ References:
 #         return True
 #
 #     def __init__(self, bins: list[float] = None) -> None:
-#         """Bins."""
+#         r"""Bins."""
 #         self.bins = bins
 #
 #     def encode(self, data: T, /) -> S:
