@@ -27,7 +27,7 @@ import logging
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from functools import wraps
+from functools import cached_property
 from itertools import chain
 from pathlib import Path
 
@@ -44,9 +44,7 @@ from typing_extensions import (
     ClassVar,
     Literal,
     Optional,
-    ParamSpec,
     Protocol,
-    Self,
     TypeGuard,
     TypeVar,
     overload,
@@ -71,13 +69,11 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.utils.funcutils import get_mandatory_kwargs
-from tsdm.utils.pprint import repr_object
-
-P = ParamSpec("P")
+from tsdm.utils.pprint import pprint_repr
 
 
 @runtime_checkable
-class Callback(Protocol[P]):
+class Callback(Protocol):
     r"""Protocol for callbacks.
 
     Callbacks should be initialized with mutable objects that are being logged.
@@ -85,12 +81,8 @@ class Callback(Protocol[P]):
     mutable object.
     """
 
-    # required_kwargs: ClassVar[set[str]]
-    # r"""The required kwargs for the callback."""
-
-    # @property
-    # def frequency(self) -> int:
-    #     r"""The frequency at which the callback is called."""
+    frequency: int = 1
+    r"""The frequency at which the callback should be called."""
 
     @property
     @abstractmethod
@@ -99,21 +91,15 @@ class Callback(Protocol[P]):
         ...
 
     @abstractmethod
-    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:  # pyright: ignore
+    def __call__(self, step: int, /, **state_dict: Any) -> None:  # pyright: ignore
         r"""Log something at time index i."""
         ...
 
 
-# NOTE: overloads from MutableSequence.
-# NOTE: Use PEP 695: Type Parameter Syntax in 3.12
 CB = TypeVar("CB", bound=Callback)
 
 
-@overload
-def is_callback(obj: CB, /) -> TypeGuard[CB]: ...
-@overload
-def is_callback(obj: object, /) -> TypeGuard[Callback]: ...
-def is_callback(obj: object, /) -> bool:
+def is_callback(obj: object, /) -> TypeGuard[Callback]:
     r"""Check if the function is a callback."""
     if not callable(obj):
         return False
@@ -131,53 +117,33 @@ def is_callback(obj: object, /) -> bool:
     )
 
 
+@pprint_repr
 @dataclass(repr=False)
-class BaseCallback(Callback[P]):
+class BaseCallback(Callback):
     r"""Base class for callbacks."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the class."""
 
-    # required_kwargs: ClassVar[set[str]]
-    # r"""The required kwargs for the callback."""
-
     _: KW_ONLY
 
     frequency: int = 1
-    r"""The frequency at which the callback is called."""
+    r"""The frequency at which the callback is executed."""
 
-    # @property
-    # def required_kwargs(self) -> set[str]:
-    #     r"""The required kwargs for the callback."""
-    #     return get_mandatory_kwargs(self.callback)
-
-    @property
+    @cached_property
     def required_kwargs(self) -> set[str]:
         r"""The required kwargs for the callback."""
-        return get_mandatory_kwargs(self.callback)
-
-    def __init_subclass__(cls) -> None:
-        r"""Automatically set the required kwargs for the callback."""
-        super().__init_subclass__()  # Important!
-
-        @wraps(cls.callback)
-        def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:
-            r"""Log something at the end of a batch/epoch."""
-            if i % self.frequency == 0:
-                self.callback(i, **state_dict)
-
-        cls.__call__ = __call__  # type: ignore[method-assign]
+        return get_mandatory_kwargs(self.__call__)
 
     @abstractmethod
-    def callback(self, i: int, /, **state_dict: P.kwargs) -> None:  # pyright: ignore
-        r"""Log something at the end of a batch/epoch."""
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
+        r"""Implementation of the callback."""
+        ...
 
-    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:  # pyright: ignore
-        r"""Log something at the end of a batch/epoch."""
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the callback."""
-        return repr_object(self)
+    def callback(self, step: int, /, **state_dict: Any) -> None:
+        r"""Call the callback."""
+        if self.frequency % step == 0:
+            self(step, **state_dict)
 
 
 class CallbackList(BaseCallback, MutableSequence[CB]):
@@ -185,6 +151,11 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
 
     callbacks: list[CB]
     r"""The callbacks to log."""
+
+    @property
+    def required_kwargs(self) -> set[str]:
+        r"""The required kwargs for the callback."""
+        return set().union(*(callback.required_kwargs for callback in self.callbacks))
 
     def insert(self, index: int, value: CB) -> None:
         self.callbacks.insert(index, value)
@@ -213,25 +184,10 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
     def __len__(self) -> int:
         return len(self.callbacks)
 
-    @property
-    def required_kwargs(self) -> set[str]:
-        r"""The required kwargs for the callback."""
-        # result: set[str] = set()
-        return set().union(
-            *(
-                (
-                    callback.required_kwargs
-                    if hasattr(callback, "required_kwargs")
-                    else get_mandatory_kwargs(callback)
-                )
-                for callback in self.callbacks
-            )
-        )
-
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
         r"""Log something at the end of a batch/epoch."""
         for callback in self.callbacks:
-            callback(i, **state_dict)
+            callback(step, **state_dict)
 
 
 @dataclass
@@ -239,19 +195,21 @@ class ConfigCallback(BaseCallback):
     r"""Callback to log the config to tensorboard."""
 
     config: JSON
-    writer: SummaryWriter | Path
 
     _: KW_ONLY
 
+    writer: SummaryWriter | Path
+
+    # Optional parameters
     fmt: Literal["json", "yaml", "toml"] = "yaml"
     name: str = "config"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **_: Any) -> None:
+    def __call__(self, step: int, /, **_: Any) -> None:
         r"""Log the config to tensorboard."""
         log_config(
-            i,
+            step,
             self.writer,
             config=self.config,
             fmt=self.fmt,
@@ -267,30 +225,33 @@ class WrapCallback(BaseCallback):
 
     func: Callable[..., None]
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
-        self.func(i, **state_dict)
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
+        self.func(step, **state_dict)
 
 
 @dataclass
 class EvaluationCallback(BaseCallback):
     r"""Callback to log evaluation metrics to tensorboard."""
 
+    model: Model
+
     _: KW_ONLY
 
+    predict_fn: Callable[..., tuple[Tensor, Tensor]]
     dataloaders: Mapping[str, DataLoader]
     metrics: (
         Sequence[str | Metric | type[Metric]]
         | Mapping[str, str | Metric | type[Metric]]
     )
-    model: Model
-    predict_fn: Callable[..., tuple[Tensor, Tensor]]
     writer: SummaryWriter
 
+    # Optional parameters
     history: DataFrame = NotImplemented
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
+    # non-init fields
     best_epoch: DataFrame = field(init=False)
 
     def __post_init__(self) -> None:
@@ -317,35 +278,35 @@ class EvaluationCallback(BaseCallback):
             raise ValueError("Could not find a validation split!")
         self._val_key = candidate
 
-    def callback(self, i: int, /, **_: Any) -> None:
+    def __call__(self, step: int, /, **_: Any) -> None:
         # update the history
-        self.compute_results(i)
-        self.compute_best_epoch(i)
+        self.compute_results(step)
+        self.compute_best_epoch(step)
 
         for key in self.dataloaders:
             log_values(
-                i,
+                step,
                 self.writer,
-                scalars=self.history.loc[i, key].to_dict(),
+                scalars=self.history.loc[step, key].to_dict(),
                 key=key,
                 name=self.name,
                 prefix=self.prefix,
                 postfix=self.postfix,
             )
             log_values(
-                i,
+                step,
                 self.writer,
-                scalars=self.best_epoch.loc[i, key].to_dict(),
+                scalars=self.best_epoch.loc[step, key].to_dict(),
                 key=key,
                 name="score",
                 prefix=self.prefix,
                 postfix=self.postfix,
             )
 
-        path = Path(self.writer.log_dir) / f"history-{i}.parquet"
+        path = Path(self.writer.log_dir) / f"history-{step}.parquet"
         self.history.to_parquet(path)
 
-    def compute_results(self, i: int) -> None:
+    def compute_results(self, step: int) -> None:
         r"""Return the results at the minimal validation loss."""
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
@@ -353,12 +314,12 @@ class EvaluationCallback(BaseCallback):
                 self.metrics, targets=result.targets, predics=result.predics
             )
             for metric, value in scalars.items():
-                self.history.loc[i, (key, metric)] = value.cpu().item()
+                self.history.loc[step, (key, metric)] = value.cpu().item()
 
-    def compute_best_epoch(self, i: int) -> None:
+    def compute_best_epoch(self, step: int) -> None:
         r"""Compute the best epoch for the given index."""
         # unoptimized...
-        mask = self.history.index <= i
+        mask = self.history.index <= step
         best_epochs = (
             self.history.loc[mask, self._val_key]
             .rolling(5, min_periods=1)
@@ -368,7 +329,7 @@ class EvaluationCallback(BaseCallback):
         for key in self.dataloaders:
             for metric in self.metrics:
                 best_value = self.history.loc[best_epochs[metric], (key, metric)]
-                self.best_epoch.loc[i, (key, metric)] = best_value
+                self.best_epoch.loc[step, (key, metric)] = best_value
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
@@ -405,7 +366,7 @@ class EvaluationCallback(BaseCallback):
 #
 #     _: KW_ONLY
 #
-#     def callback(self, i: int | str, /, **objects: Any) -> None:
+#     def __call__(self, step: int | str, /, **objects: Any) -> None:
 #         r"""Log the test-error selected by validation-error."""
 #
 #         # add postfix
@@ -428,27 +389,27 @@ class CheckpointCallback(BaseCallback):
     r"""Callback to save checkpoints."""
 
     objects: Mapping[str, object]
-    path: FilePath
 
     _: KW_ONLY
 
-    def callback(self, i: int, /, **_: Any) -> None:
-        make_checkpoint(i, self.path, objects=self.objects)
+    path: FilePath
+
+    def __call__(self, step: int, /, **_: Any) -> None:
+        make_checkpoint(step, self.path, objects=self.objects)
 
 
 @dataclass
 class HParamCallback(BaseCallback):
     r"""Callback to log hyperparameters to tensorboard."""
 
-    history: DataFrame
     hparam_dict: JSON
-    results_dir: FilePath
 
     _: KW_ONLY
 
+    history: DataFrame
     writer: SummaryWriter
 
-    def callback(self, i: int, /, **_: Any) -> None:
+    def __call__(self, step: int, /, **_: Any) -> None:
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
 
         scores: dict[str, dict[str, float]] = {
@@ -462,7 +423,7 @@ class HParamCallback(BaseCallback):
         metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
         run_name = Path(self.writer.log_dir).absolute()
 
-        with open(run_name / f"{i}.yaml", "w", encoding="utf8") as file:
+        with open(run_name / f"{step}.yaml", "w", encoding="utf8") as file:
             yaml.safe_dump(scores, file)
 
         self.writer.add_hparams(
@@ -476,10 +437,12 @@ class KernelCallback(BaseCallback):
     r"""Callback to log kernel information to tensorboard."""
 
     kernel: Tensor
-    writer: SummaryWriter
 
     _: KW_ONLY
 
+    writer: SummaryWriter
+
+    # Optional Parameters
     log_figures: bool = True
     log_scalars: bool = True
 
@@ -495,9 +458,9 @@ class KernelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **_: Any) -> None:
+    def __call__(self, step: int, /, **_: Any) -> None:
         log_kernel(
-            i,
+            step,
             self.writer,
             kernel=self.kernel,
             log_figures=self.log_figures,
@@ -519,17 +482,19 @@ class LRSchedulerCallback(BaseCallback):
     r"""Callback to log learning rate information to tensorboard."""
 
     lr_scheduler: LRScheduler
-    writer: SummaryWriter
 
     _: KW_ONLY
 
+    writer: SummaryWriter
+
+    # Optional Parameters
     name: str = "lr_scheduler"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **_: Any) -> None:
+    def __call__(self, step: int, /, **_: Any) -> None:
         log_lr_scheduler(
-            i,
+            step,
             self.writer,
             lr_scheduler=self.lr_scheduler,
             name=self.name,
@@ -546,20 +511,22 @@ class MetricsCallback(BaseCallback):
         Sequence[str | Metric | type[Metric]]
         | Mapping[str, str | Metric | type[Metric]]
     )
-    writer: SummaryWriter
 
     _: KW_ONLY
 
+    writer: SummaryWriter
+
+    # Optional Parameters
     key: str = ""
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(  # type: ignore[override]
-        self, i: int, /, *, targets: Tensor, predics: Tensor, **_: Any
+    def __call__(  # type: ignore[override]
+        self, step: int, /, *, targets: Tensor, predics: Tensor, **_: Any
     ) -> None:
         log_metrics(
-            i,
+            step,
             self.writer,
             metrics=self.metrics,
             targets=targets,
@@ -576,21 +543,23 @@ class ModelCallback(BaseCallback):
     r"""Callback to log model information to tensorboard."""
 
     model: Model
-    writer: SummaryWriter
 
     _: KW_ONLY
 
+    writer: SummaryWriter
+
+    # Optional Parameters
     log_histograms: bool = False
     log_norms: bool = True
     name: str = "model"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
         if "model" in state_dict:
             self.model = state_dict["model"]
         log_model(
-            i,
+            step,
             self.writer,
             model=self.model,
             log_histograms=self.log_histograms,
@@ -606,21 +575,23 @@ class OptimizerCallback(BaseCallback):
     r"""Callback to log optimizer information to tensorboard."""
 
     optimizer: Optimizer
-    writer: SummaryWriter
 
     _: KW_ONLY
 
+    writer: SummaryWriter
+
+    # Optional Parameters
     log_histograms: bool = False
     log_norms: bool = True
     name: str = "optimizer"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
         if "optimizer" in state_dict:
             self.optimizer = state_dict["optimizer"]
         log_optimizer(
-            i,
+            step,
             self.writer,
             optimizer=self.optimizer,
             log_histograms=self.log_histograms,
@@ -636,21 +607,23 @@ class ScalarsCallback(BaseCallback):
     r"""Callback to log multiple values to tensorboard."""
 
     scalars: dict[str, Tensor]
-    writer: SummaryWriter
 
     _: KW_ONLY
 
+    writer: SummaryWriter
+
+    # Optional Parameters
     key: str = ""
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
         for key, value in state_dict.items():
             if key in self.scalars:
                 self.scalars[key] = value
         log_values(
-            i,
+            step,
             self.writer,
             scalars=self.scalars,
             key=self.key,
@@ -665,26 +638,21 @@ class TableCallback(BaseCallback):
     r"""Callback to log a table to disk."""
 
     table: DataFrame
-    writer: SummaryWriter | Path
 
     _: KW_ONLY
 
+    writer: SummaryWriter | Path
+
+    # Optional Parameters
     options: Optional[dict[str, Any]] = None
     filetype: str = "parquet"
     name: str = "tables"
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
-        if (
-            hasattr(self.table, "name")
-            and isinstance(self.table.name, str)
-            and self.table.name in state_dict
-        ):
-            self.table = state_dict[self.table.name]
-
+    def __call__(self, step: int, /, **_: Any) -> None:
         log_table(
-            i,
+            step,
             self.writer,
             table=self.table,
             options=self.options,

@@ -54,9 +54,10 @@ __all__ = [
 ]
 
 import logging
+from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Mapping, Sequence
-from pathlib import Path
+from collections.abc import Callable, Iterator, Mapping
+from dataclasses import KW_ONLY, dataclass
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -75,6 +76,7 @@ from typing_extensions import (
 
 from tsdm.logutils.callbacks import (
     Callback,
+    CallbackList,
     CheckpointCallback,
     EvaluationCallback,
     HParamCallback,
@@ -85,8 +87,7 @@ from tsdm.logutils.callbacks import (
 )
 from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.funcutils import get_mandatory_kwargs
-from tsdm.utils.pprint import repr_mapping
+from tsdm.utils.pprint import pprint_repr
 
 
 @runtime_checkable
@@ -94,100 +95,94 @@ class Logger(Protocol):
     r"""Generic Logger Protocol."""
 
     @property
-    def callbacks(self) -> Mapping[str, Sequence[Callback]]:
+    @abstractmethod
+    def callbacks(self) -> Mapping[str, list[Callback]]:
         r"""Callbacks to be called at the end of a batch/epoch."""
         ...
 
-    def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
+    @abstractmethod
+    def callback(self, key: str, step: int, /, **kwargs: Any) -> None:
         r"""Call the logger."""
         ...
 
 
-class BaseLogger(Logger):
+@pprint_repr
+class BaseLogger(Logger, Mapping[str, CallbackList]):
     r"""Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
-    r"""The debug logger."""
+    r"""Logger for the Encoder."""
 
-    _callbacks: dict[str, list[tuple[Callback[...], int, set[str]]]] = defaultdict(list)
+    callbacks: dict[str, CallbackList] = defaultdict(CallbackList)
     r"""Callbacks to be called at the end of a batch/epoch."""
 
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, "LOGGER"):
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-        return super().__new__(cls)
+    def __len__(self) -> int:
+        return len(self.callbacks)
 
-    @property
-    def callbacks(self) -> dict[str, list[Callback]]:
-        r"""Callbacks to be called at the end of a batch/epoch."""
-        return {k: [cb for cb, _, _ in v] for k, v in self._callbacks.items()}
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.callbacks)
 
-    def add_callback(
-        self, key: str, callback: Callback, /, *, frequency: Optional[int] = None
-    ) -> None:
+    def __getitem__(self, key: str, /) -> list[Callback]:
+        return self.callbacks[key]
+
+    def add_callback(self, key: str, callback: Callback) -> None:
         r"""Add a callback to the logger."""
-        required_kwargs = set(
-            callback.required_kwargs
-            if hasattr(callback, "required_kwargs")
-            else get_mandatory_kwargs(callback)
-        )
+        self.callbacks[key].append(callback)
 
-        # set the frequency
-        freq = getattr(callback, "frequency", 1) if frequency is None else frequency
-
-        self._callbacks[key].append((callback, freq, required_kwargs))
-
-    def combined_kwargs(self, key: str) -> set[str]:
+    def required_kwargs(self, key: str) -> set[str]:
         r"""Get the combined kwargs of all callbacks."""
-        return set().union(*(kwargs for _, _, kwargs in self._callbacks[key]))
+        return self.callbacks[key].required_kwargs
 
-    def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
+    def callback(self, step: int, key: str, /, **state_dict: Any) -> None:
         r"""Call the logger."""
-        combined_kwargs = self.combined_kwargs(key)
-        if missing_kwargs := combined_kwargs - set(kwargs):
+        return self[key].callback(step, **state_dict)
+
+        required_kwargs = self.required_kwargs(key)
+        if missing_kwargs := required_kwargs - set(state_dict):
             raise TypeError(f"Missing required kwargs: {missing_kwargs}")
-        if unexpected_kwargs := set(kwargs) - combined_kwargs:
+        if unexpected_kwargs := set(state_dict) - required_kwargs:
             raise RuntimeWarning(f"Unexpected kwargs: {unexpected_kwargs}")
 
-        # call callbacks
-        for cb, freq, callback_kwargs in self._callbacks[key]:
-            if i % freq:
-                self.LOGGER.debug("skipping callback %s", cb)
-                continue
-            self.LOGGER.debug("executing callback %s", cb)
-            cb(i, **{k: kwargs[k] for k in callback_kwargs})
+        # execute callbacks
+        for callback in self.callbacks[key]:
+            if callback.frequency % step == 0:
+                kwargs = {k: state_dict[k] for k in callback.required_kwargs}
+                callback(step, **kwargs)
 
-    def log_epoch_end(self, i: int, /, **kwargs: Any) -> None:
+    def log_epoch_end(self, step: int, /, **state_dict: Any) -> None:
         r"""Log the end of an epoch."""
-        self.callback("epoch", i, **kwargs)
+        self.callback("epoch", step, **state_dict)
 
-    def log_batch_end(self, i: int, /, **kwargs: Any) -> None:
+    def log_batch_end(self, step: int, /, **state_dict: Any) -> None:
         r"""Log the end of a batch."""
-        self.callback("batch", i, **kwargs)
+        self.callback("batch", step, **state_dict)
 
-    def log_results(self, i: int, /, **kwargs: Any) -> None:
+    def log_results(self, step: int, /, **state_dict: Any) -> None:
         r"""Log the results of the experiment."""
-        self.callback("results", i, **kwargs)
-
-    def __repr__(self) -> str:
-        return repr_mapping(self.callbacks, wrapped=self)
+        self.callback("results", step, **state_dict)
 
 
+@pprint_repr
+@dataclass(repr=False)
 class DefaultLogger(BaseLogger):
     r"""Logger that adds pre-made batch/epoch logging."""
 
-    log_dir: Path
+    _: KW_ONLY
+
+    log_dir: FilePath
     r"""Path to the logging directory."""
-    results_dir: Path
+    results_dir: FilePath
     r"""Path to the results directory."""
-    checkpoint_dir: Path
+    checkpoint_dir: FilePath
     r"""Path to the checkpoint directory."""
-    checkpoint_frequency: int
+
+    # Optional Arguments
+    checkpoint_frequency: int = 1
     r"""Frequency of checkpoints."""
 
     config: Optional[JSON] = None
     r"""Configuration of the experiment."""
-    dataloaders: Optional[Mapping[str, DataLoader]] = None
+    dataloaders: Optional[dict[str, DataLoader]] = None
     r"""Dataloaders used for evaluation."""
     kernel: Optional[Tensor] = None
     r"""Kernel used for the model."""
@@ -197,7 +192,7 @@ class DefaultLogger(BaseLogger):
     r"""Hyperparameters used for the experiment."""
     lr_scheduler: Optional[TorchLRScheduler] = None
     r"""Learning rate scheduler."""
-    metrics: Optional[Mapping[str, Metric]] = None
+    metrics: Optional[dict[str, Metric]] = None
     r"""Metrics used for evaluation."""
     model: Optional[TorchModule] = None
     r"""Model used for training."""
@@ -205,126 +200,93 @@ class DefaultLogger(BaseLogger):
     r"""Optimizer used for training."""
     predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None
     r"""Function used for prediction."""
+    checkpointable_objects: Optional[dict[str, Any]] = None
+    r"""Objects to be checkpointed."""
+    # derived from other arguments
+    writer: SummaryWriter = NotImplemented
+    r"""SummaryWriter used for logging."""
 
-    def __init__(
-        self,
-        *,
-        log_dir: FilePath,
-        checkpoint_dir: FilePath,
-        results_dir: FilePath,
-        checkpoint_frequency: int = 1,
-        checkpointable_objects: Optional[Mapping[str, Any]] = None,
-        config: Optional[JSON] = None,
-        dataloaders: Optional[Mapping[str, DataLoader]] = None,
-        hparam_dict: Optional[dict[str, Any]] = None,
-        kernel: Optional[Tensor] = None,
-        lr_scheduler: Optional[TorchLRScheduler] = None,
-        metrics: Optional[Mapping[str, Metric]] = None,
-        model: Optional[TorchModule] = None,
-        optimizer: Optional[TorchOptimizer] = None,
-        predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None,
-    ) -> None:
-        # convert to an absolute path
-        self.log_dir = Path(log_dir).absolute()
-        self.checkpoint_dir = Path(checkpoint_dir).absolute()
-        self.results_dir = Path(results_dir).absolute()
-
-        self.config = config
-        self.dataloaders = dataloaders
-        self.hparam_dict = hparam_dict
-        self.kernel = kernel
-        self.lr_scheduler = lr_scheduler
-        self.metrics = metrics
-        self.model = model
-        self.optimizer = optimizer
-        self.predict_fn = predict_fn
-        self.writer = SummaryWriter(log_dir=self.log_dir)
-
-        checkpointable_objects = (
-            {} if checkpointable_objects is None else checkpointable_objects
+    def __post_init__(self) -> None:
+        r"""Post-initialization steps."""
+        # self.log_dir = Path(self.log_dir).absolute()
+        # self.checkpoint_dir = Path(self.checkpoint_dir).absolute()
+        # self.results_dir = Path(self.results_dir).absolute()
+        self.writer = (
+            SummaryWriter(log_dir=self.log_dir)
+            if self.writer is NotImplemented
+            else self.writer
         )
 
-        # region default batch callbacks -----------------------------------------------
-        if self.metrics is not None:
-            self.add_callback(
-                "batch",
-                MetricsCallback(
-                    self.metrics,
-                    self.writer,
-                    key="batch",
-                ),
-            )
-        if self.optimizer is not None:
-            self.add_callback(
-                "batch",
-                OptimizerCallback(
-                    self.optimizer,
-                    self.writer,
-                    log_histograms=False,
-                ),
-            )
-        # endregion --------------------------------------------------------------------
+        # add default objects to checkpointable objects
+        objects: dict[str, Any] = {}
+        for key in ("config", "model", "optimizer", "lr_scheduler"):
+            if (val := getattr(self, key)) is not None:
+                objects[key] = val
 
-        # region default epoch callbacks -----------------------------------------------
+        if self.checkpointable_objects is not None and objects:
+            self.checkpointable_objects = objects | dict(self.checkpointable_objects)
+
+        if (
+            self.history is None
+            and self.metrics is not None
+            and self.dataloaders is not None
+        ):
+            self.history = DataFrame(
+                columns=MultiIndex.from_product([self.dataloaders, self.metrics])
+            )
+
+        # set default callbacks
+        self.callbacks["batch"].extend(self.make_default_batch_callbacks())
+        self.callbacks["epoch"].extend(self.make_default_epoch_callbacks())
+        self.callbacks["result"].extend(self.make_default_result_callbacks())
+
+    def make_default_batch_callbacks(self) -> Iterator[Callback]:
+        r"""Make the default batch callbacks."""
+        if self.metrics is not None:
+            yield MetricsCallback(self.metrics, writer=self.writer, key="batch")
+        if self.optimizer is not None:
+            yield OptimizerCallback(
+                self.optimizer, writer=self.writer, log_histograms=False
+            )
+
+    def make_default_result_callbacks(self) -> Iterator[Callback]:
+        r"""Make the default result callbacks."""
+        if self.history is not None and self.hparam_dict is not None:
+            yield HParamCallback(
+                self.hparam_dict, history=self.history, writer=self.writer
+            )
+
+    def make_default_epoch_callbacks(self) -> Iterator[Callback]:
+        r"""Make the default epoch callbacks."""
         if (
             self.metrics is not None
             and self.model is not None
             and self.dataloaders is not None
             and self.predict_fn is not None
+            and self.history is not None
         ):
-            self.history = DataFrame(
-                columns=MultiIndex.from_product([dataloaders, metrics])
-            )
-            self.add_callback(
-                "epoch",
-                EvaluationCallback(
-                    model=self.model,
-                    writer=self.writer,
-                    metrics=self.metrics,
-                    dataloaders=self.dataloaders,
-                    history=self.history,
-                    predict_fn=self.predict_fn,
-                ),
+            yield EvaluationCallback(
+                model=self.model,
+                writer=self.writer,
+                metrics=self.metrics,
+                dataloaders=self.dataloaders,
+                history=self.history,
+                predict_fn=self.predict_fn,
             )
 
         # if self.model is not None:
-        #     self.add_callback("epoch", ModelCallback(self.model, self.writer))
+        #     yield ModelCallback(self.model, self.writer)
 
         # if self.optimizer is not None:
-        #     self.add_callback("epoch", OptimizerCallback(self.optimizer, self.writer))
+        #     yield OptimizerCallback(self.optimizer, self.writer)
 
         if self.lr_scheduler is not None:
-            self.add_callback(
-                "epoch", LRSchedulerCallback(self.lr_scheduler, self.writer)
-            )
+            yield LRSchedulerCallback(self.lr_scheduler, writer=self.writer)
         if self.kernel is not None:
-            self.add_callback("epoch", KernelCallback(self.kernel, self.writer))
-
-        self.add_callback(
-            "epoch",
-            CheckpointCallback(
-                {
-                    "config": self.config,
-                    "model": self.model,
-                    "optimizer": self.optimizer,
-                    "lr_scheduler": self.lr_scheduler,
-                }
-                | dict(checkpointable_objects),
+            yield KernelCallback(self.kernel, writer=self.writer)
+        if self.checkpointable_objects is not None:
+            yield CheckpointCallback(
+                self.checkpointable_objects,
                 path=self.checkpoint_dir,
-                frequency=checkpoint_frequency,
-            ),
-        )
-        # endregion --------------------------------------------------------------------
-
-        # region default results callbacks ---------------------------------------------
-        if self.history is not None and self.hparam_dict is not None:
-            self.add_callback(
-                "results",
-                HParamCallback(
-                    hparam_dict=self.hparam_dict,
-                    history=self.history,
-                    results_dir=self.results_dir,
-                    writer=self.writer,
-                ),
+                frequency=self.checkpoint_frequency,
             )
-        # endregion --------------------------------------------------------------------
