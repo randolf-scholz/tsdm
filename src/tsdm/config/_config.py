@@ -64,7 +64,12 @@ class ConfigMeta(type):
     r"""Metaclass for Config."""
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        /,
+        **kwds: Any,
     ) -> None:
         super().__init__(name, bases, namespace, **kwds)
 

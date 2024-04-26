@@ -1,3 +1,7 @@
+"""Deprecated Encoders."""
+
+__all__ = ["Time2Float", "OldDateTimeEncoder"]
+
 from copy import deepcopy
 from typing import Any, ClassVar, Optional
 
@@ -7,8 +11,6 @@ from pandas import DatetimeIndex, Series
 from typing_extensions import Literal, deprecated
 
 from tsdm.encoders.base import BaseEncoder
-
-__all__ = ["Time2Float", "OldDateTimeEncoder"]
 
 
 @deprecated("decode unimplemented")

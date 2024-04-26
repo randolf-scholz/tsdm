@@ -46,6 +46,7 @@ from typing_extensions import (
     Optional,
     ParamSpec,
     Protocol,
+    Self,
     TypeGuard,
     TypeVar,
     overload,
@@ -112,7 +113,7 @@ CB = TypeVar("CB", bound=Callback)
 def is_callback(obj: CB, /) -> TypeGuard[CB]: ...
 @overload
 def is_callback(obj: object, /) -> TypeGuard[Callback]: ...
-def is_callback(obj, /):
+def is_callback(obj: object, /) -> bool:
     r"""Check if the function is a callback."""
     if not callable(obj):
         return False
@@ -160,7 +161,7 @@ class BaseCallback(Callback[P]):
         super().__init_subclass__()  # Important!
 
         @wraps(cls.callback)
-        def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:
+        def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:
             r"""Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
                 self.callback(i, **state_dict)
@@ -251,8 +252,8 @@ class ConfigCallback(BaseCallback):
         r"""Log the config to tensorboard."""
         log_config(
             i,
+            self.writer,
             config=self.config,
-            writer=self.writer,
             fmt=self.fmt,
             name=self.name,
             prefix=self.prefix,
@@ -324,8 +325,8 @@ class EvaluationCallback(BaseCallback):
         for key in self.dataloaders:
             log_values(
                 i,
+                self.writer,
                 scalars=self.history.loc[i, key].to_dict(),
-                writer=self.writer,
                 key=key,
                 name=self.name,
                 prefix=self.prefix,
@@ -333,8 +334,8 @@ class EvaluationCallback(BaseCallback):
             )
             log_values(
                 i,
+                self.writer,
                 scalars=self.best_epoch.loc[i, key].to_dict(),
-                writer=self.writer,
                 key=key,
                 name="score",
                 prefix=self.prefix,
@@ -432,7 +433,7 @@ class CheckpointCallback(BaseCallback):
     _: KW_ONLY
 
     def callback(self, i: int, /, **_: Any) -> None:
-        make_checkpoint(i, self.objects, path=self.path)
+        make_checkpoint(i, self.path, objects=self.objects)
 
 
 @dataclass
@@ -497,8 +498,8 @@ class KernelCallback(BaseCallback):
     def callback(self, i: int, /, **_: Any) -> None:
         log_kernel(
             i,
+            self.writer,
             kernel=self.kernel,
-            writer=self.writer,
             log_figures=self.log_figures,
             log_scalars=self.log_scalars,
             log_distances=self.log_distances,
@@ -529,8 +530,8 @@ class LRSchedulerCallback(BaseCallback):
     def callback(self, i: int, /, **_: Any) -> None:
         log_lr_scheduler(
             i,
+            self.writer,
             lr_scheduler=self.lr_scheduler,
-            writer=self.writer,
             name=self.name,
             prefix=self.prefix,
             postfix=self.postfix,
@@ -559,8 +560,8 @@ class MetricsCallback(BaseCallback):
     ) -> None:
         log_metrics(
             i,
+            self.writer,
             metrics=self.metrics,
-            writer=self.writer,
             targets=targets,
             predics=predics,
             key=self.key,
@@ -590,8 +591,8 @@ class ModelCallback(BaseCallback):
             self.model = state_dict["model"]
         log_model(
             i,
+            self.writer,
             model=self.model,
-            writer=self.writer,
             log_histograms=self.log_histograms,
             log_norms=self.log_norms,
             name=self.name,
@@ -620,8 +621,8 @@ class OptimizerCallback(BaseCallback):
             self.optimizer = state_dict["optimizer"]
         log_optimizer(
             i,
+            self.writer,
             optimizer=self.optimizer,
-            writer=self.writer,
             log_histograms=self.log_histograms,
             log_norms=self.log_norms,
             name=self.name,
@@ -650,8 +651,8 @@ class ScalarsCallback(BaseCallback):
                 self.scalars[key] = value
         log_values(
             i,
+            self.writer,
             scalars=self.scalars,
-            writer=self.writer,
             key=self.key,
             name=self.name,
             prefix=self.prefix,
@@ -684,8 +685,8 @@ class TableCallback(BaseCallback):
 
         log_table(
             i,
+            self.writer,
             table=self.table,
-            writer=self.writer,
             options=self.options,
             filetype=self.filetype,
             name=self.name,

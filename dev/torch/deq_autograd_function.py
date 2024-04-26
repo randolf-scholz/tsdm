@@ -5,7 +5,8 @@
 
 # %%
 import warnings
-from typing import Callable, NamedTuple, Optional
+from collections.abc import Callable
+from typing import NamedTuple, Optional
 
 import numpy as np
 import torch

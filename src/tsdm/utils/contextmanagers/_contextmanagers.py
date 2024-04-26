@@ -54,6 +54,7 @@ class ray_cluster(ContextDecorator):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
+        /,
     ) -> Literal[False]:
         self.LOGGER.warning("Tearing down ray cluster.")
 
@@ -91,6 +92,7 @@ class timer(ContextDecorator):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
+        /,
     ) -> Literal[False]:
         self.end_time = perf_counter_ns()
         self.elapsed = (self.end_time - self.start_time) / 10**9
@@ -125,6 +127,7 @@ class add_to_path(ContextDecorator):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
+        /,
     ) -> Literal[False]:
         sys.path = self.previous_path
         return False

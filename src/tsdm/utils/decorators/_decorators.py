@@ -83,7 +83,7 @@ class Decorator(Protocol):
 class ClassDecorator(Protocol[C]):
     r"""Class Decorator Protocol."""
 
-    def __call__(self, *args, **kwargs) -> Callable[[type], type]:
+    def __call__(self) -> Callable[[C], C]:
         r"""Decorate a class."""
         ...
 

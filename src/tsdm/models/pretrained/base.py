@@ -80,6 +80,7 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
+        /,
         **kwds: Any,
     ) -> None:
         r"""When a new class/subclass is created, this method is called."""

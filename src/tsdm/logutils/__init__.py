@@ -83,6 +83,16 @@ CALLBACKS: dict[str, type[Callback]] = {
 }  # fmt: skip
 r"""Dictionary of all available callbacks."""
 
+
+log_kernel2: LogFunction = log_kernel
+log_lr_scheduler2: LogFunction = log_lr_scheduler
+log_metrics2: LogFunction = log_metrics
+log_model2: LogFunction = log_model
+log_optimizer2: LogFunction = log_optimizer
+log_values2: LogFunction = log_values
+log_table2: LogFunction = log_table
+
+
 LOGFUNCS: dict[str, LogFunction] = {
     "log_kernel"       : log_kernel,
     "log_lr_scheduler" : log_lr_scheduler,

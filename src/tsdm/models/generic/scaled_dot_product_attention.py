@@ -38,10 +38,10 @@ class ScaledDotProductAttention(nn.Module):
 
     def __init__(
         self,
+        *,
         dim_k: int,
         dim_v: int,
         output_size: int,
-        *,
         num_heads: int = 4,
         dim_k_latent: Optional[int] = None,
         dim_v_latent: Optional[int] = None,

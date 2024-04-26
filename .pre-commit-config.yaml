@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.7
+    rev: v0.2.9
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -102,6 +102,7 @@ repos:
       - id: python-check-typing
       - id: python-direct-imports
       - id: python-no-mixed-args
+        files: '^src/'
         args:
           - "--ignore-names"
           - "forward"
@@ -109,16 +110,19 @@ repos:
           - "--ignore-decorators"
           - "jit.script"
           - "torch.no_grad"
-          - "--ignore-dunder"
+          - "--allow-two"
+          - "--"
+#          - "--ignore-dunder"
           # - "--allow-one"
-          - "--ignore-without-positional-only"
+#          - "--ignore-without-positional-only"
       - id: python-standard-generics
       # script-based hooks
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
+        args: ["--known-unused-deps", "tensorboard", "pydantic"]
       - id: python-check-clean-interface
-        args: ["--no-load-silent"]
+        files: 'src/'
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.39.0

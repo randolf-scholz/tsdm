@@ -88,8 +88,8 @@ class LogFunction(Protocol):
     def __call__(
         self,
         step: int,
-        logged_object: Any,
         writer: SummaryWriter,
+        logged_object: Any,
         /,
         *,
         name: str = "",
@@ -173,7 +173,11 @@ class TargetsAndPredics(NamedTuple):
 
 @torch.no_grad()
 def eval_metric(
-    metric: str | Metric | type[Metric], /, *, targets: Tensor, predics: Tensor
+    metric: str | Metric | type[Metric],
+    /,
+    *,
+    targets: Tensor,
+    predics: Tensor,
 ) -> Tensor:
     r"""Evaluate a metric."""
     match metric:
@@ -228,12 +232,12 @@ def compute_metrics(
     return results
 
 
-def make_checkpoint(step: int, objects: Mapping[str, Any], path: FilePath) -> None:
+def make_checkpoint(step: int, path: FilePath, *, objects: Mapping[str, Any]) -> None:
     r"""Save checkpoints of given paths."""
     path = Path(path) / f"{step}"
     path.mkdir(parents=True, exist_ok=True)
 
-    for name, obj in objects.items():
+    for name, obj in dict(objects).items():
         match obj:
             case None:
                 pass
@@ -255,8 +259,9 @@ def make_checkpoint(step: int, objects: Mapping[str, Any], path: FilePath) -> No
 
 def log_config(
     step: int | str,
-    config: JSON,
     writer: SummaryWriter | Path,
+    /,
+    config: JSON,
     *,
     fmt: Literal["json", "yaml", "toml"] = "yaml",
     name: str = "config",
@@ -283,8 +288,9 @@ def log_config(
 @torch.no_grad()
 def log_kernel(
     step: int,
-    kernel: Tensor,
     writer: SummaryWriter,
+    /,
+    kernel: Tensor,
     *,
     log_figures: bool = True,
     log_scalars: bool = True,
@@ -412,8 +418,9 @@ def log_kernel(
 
 def log_lr_scheduler(
     step: int,
-    lr_scheduler: LRScheduler,
     writer: SummaryWriter,
+    /,
+    lr_scheduler: LRScheduler,
     *,
     name: str = "lr_scheduler",
     prefix: str = "",
@@ -428,11 +435,12 @@ def log_lr_scheduler(
 
 def log_metrics(
     step: int,
+    writer: SummaryWriter,
+    /,
     metrics: (
         Sequence[str | Metric | type[Metric]]
         | Mapping[str, str | Metric | type[Metric]]
     ),
-    writer: SummaryWriter,
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
     targets: Optional[Tensor] = None,
@@ -456,15 +464,22 @@ def log_metrics(
 
     scalars = compute_metrics(metrics, targets=targets, predics=predics)
     log_values(
-        step, scalars, writer, key=key, name=name, prefix=prefix, postfix=postfix
+        step,
+        writer,
+        scalars=scalars,
+        key=key,
+        name=name,
+        prefix=prefix,
+        postfix=postfix,
     )
 
 
 @torch.no_grad()
 def log_model(
     step: int,
-    model: Model,
     writer: SummaryWriter,
+    /,
+    model: Model,
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
@@ -503,8 +518,9 @@ def log_model(
 
 def log_optimizer(
     step: int,
-    optimizer: Optimizer,
     writer: SummaryWriter,
+    /,
+    optimizer: Optimizer,
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
@@ -554,8 +570,9 @@ def log_optimizer(
 
 def log_values(
     step: int,
-    scalars: Mapping[str, Tensor],
     writer: SummaryWriter,
+    /,
+    scalars: Mapping[str, Tensor],
     *,
     key: str = "",
     name: str = "metrics",
@@ -570,8 +587,9 @@ def log_values(
 
 def log_table(
     step: int,
-    table: DataFrame,
     writer: SummaryWriter | Path,
+    /,
+    table: DataFrame,
     *,
     options: Optional[dict[str, Any]] = None,
     filetype: str = "parquet",
@@ -602,8 +620,9 @@ def log_table(
 
 def log_plot(
     step: int,
-    plot: MaybeWrapped[Figure],
     writer: SummaryWriter,
+    /,
+    plot: MaybeWrapped[Figure],
     *,
     name: str = "forecastplot",
     prefix: str = "",

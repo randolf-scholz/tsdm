@@ -208,10 +208,10 @@ class DefaultLogger(BaseLogger):
 
     def __init__(
         self,
+        *,
         log_dir: FilePath,
         checkpoint_dir: FilePath,
         results_dir: FilePath,
-        *,
         checkpoint_frequency: int = 1,
         checkpointable_objects: Optional[Mapping[str, Any]] = None,
         config: Optional[JSON] = None,
