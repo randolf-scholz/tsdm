@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:nomarker
-#     text_representation:
-#       extension: .py
-#       format_name: nomarker
-#       format_version: '1.0'
-#       jupytext_version: 1.14.0
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
 # # Merging all data sources
 
 from pathlib import Path
