@@ -5,20 +5,22 @@ __all__ = [
     "callbacks",
     "logfuncs",
     "loggers",
+    "utils",
     # Constants
     "LOGGERS",
     "LOGFUNCS",
     "CALLBACKS",
     # ABCs & Protocols
-    "Logger",
-    "Callback",
-    "LogFunction",
-    "BaseLogger",
     "BaseCallback",
+    "BaseLogger",
+    "Callback",
+    "CallbackSequence",
+    "LogFunction",
+    "Logger",
     # Classes
+    "CallbackList",
     "CheckpointCallback",
     "ConfigCallback",
-    "DefaultLogger",
     "EvaluationCallback",
     "HParamCallback",
     "KernelCallback",
@@ -28,21 +30,31 @@ __all__ = [
     "OptimizerCallback",
     "ScalarsCallback",
     "TableCallback",
+    "WrapCallback",
     # Functions
-    "make_checkpoint",
+    "is_callback",
+    "is_logfunc",
+    "log_config",
     "log_kernel",
     "log_lr_scheduler",
     "log_metrics",
     "log_model",
     "log_optimizer",
+    "log_plot",
     "log_table",
     "log_values",
+    # extras
+    "save_checkpoint",
 ]
 
-from tsdm.logutils import callbacks, logfuncs, loggers
+from tsdm.logutils import callbacks, logfuncs, loggers, utils
 from tsdm.logutils.callbacks import (
+    # ABCs & Protocols & Structural classes
     BaseCallback,
     Callback,
+    CallbackList,
+    CallbackSequence,
+    # Callbacks
     CheckpointCallback,
     ConfigCallback,
     EvaluationCallback,
@@ -54,21 +66,30 @@ from tsdm.logutils.callbacks import (
     OptimizerCallback,
     ScalarsCallback,
     TableCallback,
+    WrapCallback,
+    # Functions
+    is_callback,
 )
 from tsdm.logutils.logfuncs import (
+    # Protocols
     LogFunction,
+    # Functions
+    is_logfunc,
+    log_config,
     log_kernel,
     log_lr_scheduler,
     log_metrics,
     log_model,
     log_optimizer,
+    log_plot,
     log_table,
     log_values,
-    make_checkpoint,
 )
 from tsdm.logutils.loggers import BaseLogger, DefaultLogger, Logger
+from tsdm.logutils.utils import save_checkpoint
 
 CALLBACKS: dict[str, type[Callback]] = {
+    "CallbackList"        : CallbackList,
     "CheckpointCallback"  : CheckpointCallback,
     "ConfigCallback"      : ConfigCallback,
     "EvaluationCallback"  : EvaluationCallback,
@@ -80,27 +101,21 @@ CALLBACKS: dict[str, type[Callback]] = {
     "OptimizerCallback"   : OptimizerCallback,
     "ScalarsCallback"     : ScalarsCallback,
     "TableCallback"       : TableCallback,
+    "WrapCallback"        : WrapCallback,
 }  # fmt: skip
 r"""Dictionary of all available callbacks."""
 
 
-log_kernel2: LogFunction = log_kernel
-log_lr_scheduler2: LogFunction = log_lr_scheduler
-log_metrics2: LogFunction = log_metrics
-log_model2: LogFunction = log_model
-log_optimizer2: LogFunction = log_optimizer
-log_values2: LogFunction = log_values
-log_table2: LogFunction = log_table
-
-
 LOGFUNCS: dict[str, LogFunction] = {
+    "log_config"       : log_config,
     "log_kernel"       : log_kernel,
     "log_lr_scheduler" : log_lr_scheduler,
     "log_metrics"      : log_metrics,
     "log_model"        : log_model,
     "log_optimizer"    : log_optimizer,
-    "log_values"       : log_values,
+    "log_plot"         : log_plot,
     "log_table"        : log_table,
+    "log_values"       : log_values,
 }  # fmt: skip
 r"""Dictionary of all available log functions."""
 

@@ -1,9 +1,10 @@
 """Callback utilities for logging."""
 
 __all__ = [
-    # ABCs & Protocols
-    "Callback",
+    # ABCs & Protocols & Structural classes
     "BaseCallback",
+    "Callback",
+    "CallbackSequence",
     "CallbackList",
     # Callbacks
     "CheckpointCallback",
@@ -25,7 +26,14 @@ __all__ = [
 import inspect
 import logging
 from abc import abstractmethod
-from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableSequence,
+    Sequence,
+)
 from dataclasses import KW_ONLY, dataclass, field
 from functools import cached_property
 from itertools import chain
@@ -52,8 +60,6 @@ from typing_extensions import (
 )
 
 from tsdm.logutils.logfuncs import (
-    TargetsAndPredics,
-    compute_metrics,
     log_config,
     log_kernel,
     log_lr_scheduler,
@@ -62,12 +68,13 @@ from tsdm.logutils.logfuncs import (
     log_optimizer,
     log_table,
     log_values,
-    make_checkpoint,
 )
+from tsdm.logutils.utils import TargetsAndPredics, compute_metrics, save_checkpoint
 from tsdm.metrics import Metric
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, FilePath
+from tsdm.types.protocols import MutableSequenceProtocol
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.pprint import pprint_repr
 
@@ -91,9 +98,18 @@ class Callback(Protocol):
         ...
 
     @abstractmethod
-    def __call__(self, step: int, /, **state_dict: Any) -> None:  # pyright: ignore
+    def callback(self, step: int, /, **state_dict: Any) -> None:  # pyright: ignore
         r"""Log something at time index i."""
         ...
+
+
+@runtime_checkable
+class CallbackSequence(MutableSequenceProtocol[Callback], Callback, Protocol):
+    r"""Protocol for sequences of callbacks.
+
+    Helper Protocol, in practice, this should be the intersection
+    of `MutableSequence[Callback]` and `Callback`.
+    """
 
 
 CB = TypeVar("CB", bound=Callback)
@@ -141,15 +157,16 @@ class BaseCallback(Callback):
         ...
 
     def callback(self, step: int, /, **state_dict: Any) -> None:
-        r"""Call the callback."""
-        if self.frequency % step == 0:
+        r"""Executes the callback if `step` is a multiple of the frequency."""
+        if step % self.frequency == 0:
+            self.LOGGER.debug("Logging at step %d", step)
             self(step, **state_dict)
 
 
-class CallbackList(BaseCallback, MutableSequence[CB]):
+class CallbackList(BaseCallback, MutableSequence[Callback]):
     r"""Callback to log multiple callbacks."""
 
-    callbacks: list[CB]
+    callbacks: list[Callback]
     r"""The callbacks to log."""
 
     @property
@@ -157,20 +174,23 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
         r"""The required kwargs for the callback."""
         return set().union(*(callback.required_kwargs for callback in self.callbacks))
 
-    def insert(self, index: int, value: CB) -> None:
-        self.callbacks.insert(index, value)
+    def __len__(self) -> int:
+        return len(self.callbacks)
+
+    def __iter__(self) -> Iterator[Callback]:
+        return iter(self.callbacks)
 
     @overload
-    def __getitem__(self, index: int) -> CB: ...
+    def __getitem__(self, index: int) -> Callback: ...
     @overload
-    def __getitem__(self, index: slice) -> MutableSequence[CB]: ...
+    def __getitem__(self, index: slice) -> MutableSequence[Callback]: ...
     def __getitem__(self, index):
         return self.callbacks[index]
 
     @overload
-    def __setitem__(self, index: int, value: CB) -> None: ...
+    def __setitem__(self, index: int, value: Callback) -> None: ...
     @overload
-    def __setitem__(self, index: slice, value: Iterable[CB]) -> None: ...
+    def __setitem__(self, index: slice, value: Iterable[Callback]) -> None: ...
     def __setitem__(self, index, value):
         self.callbacks[index] = value
 
@@ -181,13 +201,23 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
     def __delitem__(self, index):
         del self.callbacks[index]
 
-    def __len__(self) -> int:
-        return len(self.callbacks)
-
     def __call__(self, step: int, /, **state_dict: Any) -> None:
         r"""Log something at the end of a batch/epoch."""
-        for callback in self.callbacks:
-            callback(step, **state_dict)
+        for obj in self.callbacks:
+            obj.callback(step, **state_dict)
+
+    def insert(self, index: int, value: Callback) -> None:
+        self.callbacks.insert(index, value)
+
+
+@dataclass
+class WrapCallback(BaseCallback):
+    r"""Wraps callable as a callback."""
+
+    func: Callable[..., None]
+
+    def __call__(self, step: int, /, **state_dict: Any) -> None:
+        self.func(step, **state_dict)
 
 
 @dataclass
@@ -217,16 +247,6 @@ class ConfigCallback(BaseCallback):
             prefix=self.prefix,
             postfix=self.postfix,
         )
-
-
-@dataclass
-class WrapCallback(BaseCallback):
-    r"""Wraps callable as a callback."""
-
-    func: Callable[..., None]
-
-    def __call__(self, step: int, /, **state_dict: Any) -> None:
-        self.func(step, **state_dict)
 
 
 @dataclass
@@ -395,7 +415,7 @@ class CheckpointCallback(BaseCallback):
     path: FilePath
 
     def __call__(self, step: int, /, **_: Any) -> None:
-        make_checkpoint(step, self.path, objects=self.objects)
+        save_checkpoint(step, self.path, objects=self.objects)
 
 
 @dataclass

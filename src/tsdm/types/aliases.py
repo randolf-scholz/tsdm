@@ -35,6 +35,7 @@ __all__ = [
     "MaybeList",
     "MaybeSet",
     "MaybeTuple",
+    "MaybeWrapped",
     # Configuration
     "JSON",
     "TOML",
@@ -152,6 +153,8 @@ MaybeIterable: TypeAlias = T | Iterable[T]
 r"""Type Alias for T | Iterable[T]."""
 MaybeCallable: TypeAlias = T | Callable[[], T]
 r"""Type Alias for objects that maybe needs to be created first."""
+MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
+r"""Type Alias for maybe wrapped values."""
 # endregion Maybe Type Aliases ---------------------------------------------------------
 
 

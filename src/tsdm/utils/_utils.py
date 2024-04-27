@@ -47,7 +47,7 @@ from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
-from tsdm.types.aliases import FilePath, Nested, NestedDict, NestedMapping
+from tsdm.types.aliases import FilePath, MaybeWrapped, Nested, NestedDict, NestedMapping
 from tsdm.types.variables import K2, HashableType, K, T
 
 
@@ -436,3 +436,41 @@ def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
     r"""Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
     return set.intersection(*map(set, (d.keys() for d in mappings)))
+
+
+def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
+    r"""Unpack wrapped values."""
+    if callable(x):
+        try:
+            return x(step)  # type: ignore[call-arg]
+        except TypeError:
+            return x()  # type: ignore[call-arg]
+
+    return x
+
+
+def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
+    r"""Fast way to 'transpose' a list of dictionaries.
+
+    Assumptions:
+        - all dictionaries have the same keys
+        - the keys are always in the same order
+        - at least one item in the input
+        - can iterate multiple times over lst
+
+    Example:
+        >>> list_of_dicts = [
+        ...     {"name": "Alice", "age": 30},
+        ...     {"name": "Bob", "age": 25},
+        ...     {"name": "Charlie", "age": 35},
+        ... ]
+        >>> transpose_list_of_dicts(list_of_dicts)
+        {'name': ('Alice', 'Bob', 'Charlie'), 'age': (30, 25, 35)}
+    """
+    return dict(
+        zip(
+            next(iter(lst)),
+            zip(*(d.values() for d in lst), strict=True),
+            strict=True,
+        )
+    )

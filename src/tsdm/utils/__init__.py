@@ -26,7 +26,9 @@ __all__ = [
     "repackage_zip",
     "replace",
     "round_relative",
+    "transpose_list_of_dicts",
     "unflatten_dict",
+    "unpack_maybewrapped",
     # funcutils
     "accepts_varkwargs",
     "dataclass_args_kwargs",
@@ -59,7 +61,9 @@ from tsdm.utils._utils import (
     repackage_zip,
     replace,
     round_relative,
+    transpose_list_of_dicts,
     unflatten_dict,
+    unpack_maybewrapped,
 )
 from tsdm.utils.funcutils import (
     accepts_varkwargs,

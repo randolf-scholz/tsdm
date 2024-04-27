@@ -77,6 +77,7 @@ from typing_extensions import (
 from tsdm.logutils.callbacks import (
     Callback,
     CallbackList,
+    CallbackSequence,
     CheckpointCallback,
     EvaluationCallback,
     HParamCallback,
@@ -96,24 +97,19 @@ class Logger(Protocol):
 
     @property
     @abstractmethod
-    def callbacks(self) -> Mapping[str, list[Callback]]:
+    def callbacks(self) -> Mapping[str, CallbackSequence]:
         r"""Callbacks to be called at the end of a batch/epoch."""
-        ...
-
-    @abstractmethod
-    def callback(self, key: str, step: int, /, **kwargs: Any) -> None:
-        r"""Call the logger."""
         ...
 
 
 @pprint_repr
-class BaseLogger(Logger, Mapping[str, CallbackList]):
+class BaseLogger(Logger, Mapping[str, CallbackSequence]):
     r"""Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
-    callbacks: dict[str, CallbackList] = defaultdict(CallbackList)
+    callbacks: dict[str, CallbackSequence] = defaultdict(CallbackList)
     r"""Callbacks to be called at the end of a batch/epoch."""
 
     def __len__(self) -> int:
@@ -122,44 +118,24 @@ class BaseLogger(Logger, Mapping[str, CallbackList]):
     def __iter__(self) -> Iterator[str]:
         return iter(self.callbacks)
 
-    def __getitem__(self, key: str, /) -> list[Callback]:
+    def __getitem__(self, key: str, /) -> CallbackSequence:
         return self.callbacks[key]
 
     def add_callback(self, key: str, callback: Callback) -> None:
         r"""Add a callback to the logger."""
         self.callbacks[key].append(callback)
 
-    def required_kwargs(self, key: str) -> set[str]:
-        r"""Get the combined kwargs of all callbacks."""
-        return self.callbacks[key].required_kwargs
-
-    def callback(self, step: int, key: str, /, **state_dict: Any) -> None:
-        r"""Call the logger."""
-        return self[key].callback(step, **state_dict)
-
-        required_kwargs = self.required_kwargs(key)
-        if missing_kwargs := required_kwargs - set(state_dict):
-            raise TypeError(f"Missing required kwargs: {missing_kwargs}")
-        if unexpected_kwargs := set(state_dict) - required_kwargs:
-            raise RuntimeWarning(f"Unexpected kwargs: {unexpected_kwargs}")
-
-        # execute callbacks
-        for callback in self.callbacks[key]:
-            if callback.frequency % step == 0:
-                kwargs = {k: state_dict[k] for k in callback.required_kwargs}
-                callback(step, **kwargs)
-
     def log_epoch_end(self, step: int, /, **state_dict: Any) -> None:
         r"""Log the end of an epoch."""
-        self.callback("epoch", step, **state_dict)
+        self["epoch"].callback(step, **state_dict)
 
     def log_batch_end(self, step: int, /, **state_dict: Any) -> None:
         r"""Log the end of a batch."""
-        self.callback("batch", step, **state_dict)
+        self["batch"].callback(step, **state_dict)
 
     def log_results(self, step: int, /, **state_dict: Any) -> None:
         r"""Log the results of the experiment."""
-        self.callback("results", step, **state_dict)
+        self["result"].callback(step, **state_dict)
 
 
 @pprint_repr

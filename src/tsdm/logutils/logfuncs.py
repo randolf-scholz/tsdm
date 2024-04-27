@@ -1,16 +1,11 @@
-r"""TODO: Add module summary line.
-
-TODO: Add module description.
-"""
+r"""Functions that realize logging via a `tensorboard.SummaryWriter`."""
 
 __all__ = [
     # Protocols
     "LogFunction",
-    # Classes
-    "TargetsAndPredics",
-    "AdamState",
+    # utilities
+    "is_logfunc",
     # Functions
-    "make_checkpoint",
     "log_config",
     "log_kernel",
     "log_lr_scheduler",
@@ -20,19 +15,11 @@ __all__ = [
     "log_plot",
     "log_table",
     "log_values",
-    # utilities
-    "compute_metrics",
-    "eval_metric",
-    "is_logfunc",
-    "transpose_list_of_dicts",
-    "unpack_maybewrapped",
-    "yield_optimizer_params",
 ]
 
 import inspect
 import json
-import pickle
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import torch
@@ -40,18 +27,15 @@ import yaml
 from matplotlib.figure import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
-from torch import Tensor, jit, nn
+from torch import Tensor
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard import SummaryWriter
 from typing_extensions import (
     Any,
     Literal,
-    NamedTuple,
     Optional,
     Protocol,
-    TypeAlias,
-    TypedDict,
     TypeGuard,
     runtime_checkable,
 )
@@ -71,14 +55,12 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.metrics import LOSSES, Metric
+from tsdm.logutils.utils import compute_metrics
+from tsdm.metrics import Metric
 from tsdm.models import Model
-from tsdm.types.aliases import JSON, FilePath
-from tsdm.types.variables import K, T, T_co
+from tsdm.types.aliases import JSON, MaybeWrapped
+from tsdm.utils import transpose_list_of_dicts, unpack_maybewrapped
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
-
-MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
-r"""Type Alias for maybe wrapped values."""
 
 
 @runtime_checkable
@@ -100,161 +82,17 @@ class LogFunction(Protocol):
         ...
 
 
-def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
+def is_logfunc(func: object, /) -> TypeGuard[LogFunction]:
     r"""Check if the function is a callback."""
+    if not callable(func):
+        return False
+
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
     P = inspect.Parameter
     return len(params) >= 6 and all(
         p.kind in {P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD} for p in params[:3]
     )
-
-
-class AdamState(TypedDict):
-    r"""Adam optimizer state."""
-
-    step: Tensor
-    exp_avg: Tensor
-    exp_avg_sq: Tensor
-
-
-def yield_optimizer_params(optimizer: Optimizer, /) -> Iterator[nn.Parameter]:
-    r"""Get parameters from optimizer."""
-    for group in optimizer.param_groups:
-        for param in group["params"]:
-            if param.requires_grad:
-                yield param
-
-
-def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
-    r"""Unpack wrapped values."""
-    if callable(x):
-        try:
-            return x(step)  # type: ignore[call-arg]
-        except TypeError:
-            return x()  # type: ignore[call-arg]
-
-    return x
-
-
-def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
-    r"""Fast way to 'transpose' a list of dictionaries.
-
-    Assumptions:
-        - all dictionaries have the same keys
-        - the keys are always in the same order
-        - at least one item in the input
-        - can iterate multiple times over lst
-
-    Example:
-        >>> list_of_dicts = [
-        ...     {"name": "Alice", "age": 30},
-        ...     {"name": "Bob", "age": 25},
-        ...     {"name": "Charlie", "age": 35},
-        ... ]
-        >>> transpose_list_of_dicts(list_of_dicts)
-        {'name': ('Alice', 'Bob', 'Charlie'), 'age': (30, 25, 35)}
-    """
-    return dict(
-        zip(
-            next(iter(lst)),
-            zip(*(d.values() for d in lst), strict=True),
-            strict=True,
-        )
-    )
-
-
-class TargetsAndPredics(NamedTuple):
-    r"""Targets and predictions."""
-
-    targets: Tensor
-    predics: Tensor
-
-
-@torch.no_grad()
-def eval_metric(
-    metric: str | Metric | type[Metric],
-    /,
-    *,
-    targets: Tensor,
-    predics: Tensor,
-) -> Tensor:
-    r"""Evaluate a metric."""
-    match metric:
-        case str() as metric_name:
-            _metric = LOSSES[metric_name]
-            return eval_metric(_metric, targets=targets, predics=predics)
-        case type() as metric_type:
-            metric_func = metric_type()
-            assert isinstance(metric_func, Metric)
-            return metric_func(targets, predics)
-        case Metric() as func:
-            return func(targets, predics)
-        case _:
-            raise TypeError(f"{type(metric)=} not understood!")
-
-
-@torch.no_grad()
-def compute_metrics(
-    metrics: (
-        str
-        | Metric
-        | type[Metric]
-        | Sequence[str | Metric | type[Metric]]
-        | Mapping[str, str | Metric | type[Metric]]
-    ),
-    /,
-    *,
-    targets: Tensor,
-    predics: Tensor,
-) -> dict[str, Tensor]:
-    r"""Compute multiple metrics."""
-    match metrics:
-        case str() as name:
-            return {name: eval_metric(LOSSES[name], targets=targets, predics=predics)}
-        case type() as klass:
-            return {
-                klass.__name__: eval_metric(klass, targets=targets, predics=predics)
-            }
-        case Metric() as func:
-            return {func.__class__.__name__: func(targets, predics)}
-        case Sequence() as sequence:
-            results: dict[str, Tensor] = {}
-            for metric in sequence:
-                results |= compute_metrics(metric, targets=targets, predics=predics)
-        case Mapping() as mapping:
-            return {
-                key: eval_metric(metric, targets=targets, predics=predics)
-                for key, metric in mapping.items()
-            }
-        case _:
-            raise TypeError(f"{type(metrics)=} not understood!")
-    return results
-
-
-def make_checkpoint(step: int, path: FilePath, *, objects: Mapping[str, Any]) -> None:
-    r"""Save checkpoints of given paths."""
-    path = Path(path) / f"{step}"
-    path.mkdir(parents=True, exist_ok=True)
-
-    for name, obj in dict(objects).items():
-        match obj:
-            case None:
-                pass
-            case jit.ScriptModule():
-                jit.save(obj, path / name)
-            case nn.Module():
-                torch.save(obj, path / name)
-            case Optimizer():
-                torch.save(obj, path / name)
-            case LRScheduler():
-                torch.save(obj, path / name)
-            case dict() | list() | tuple() | set() | str() | int() | float() | None:
-                with open(path / f"{name}.yaml", "w", encoding="utf8") as file:
-                    yaml.safe_dump(obj, file)
-            case _:
-                with open(path / f"{name}.pickle", "wb") as file:
-                    pickle.dump(obj, file)
 
 
 def log_config(
