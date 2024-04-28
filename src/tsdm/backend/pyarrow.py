@@ -35,6 +35,7 @@ from collections.abc import Sequence
 import pandas as pd
 import polars as pl
 import pyarrow as pa
+import pyarrow.compute as pc
 from pyarrow import (
     NA,
     Array,
@@ -88,16 +89,16 @@ def strip_whitespace_array(arr: Array, /) -> Array:
         case pa.ChunkedArray(chunks=chunks):
             return pa.chunked_array(map(strip_whitespace_array, chunks))  # type: ignore[has-type]
         case ListArray(type=dtype) if dtype.value_type in STRING_TYPES:
-            return pa.array(map(pa.compute.utf8_trim_whitespace, arr), type=dtype)
+            return pa.array(map(pc.utf8_trim_whitespace, arr), type=dtype)
         case DictionaryArray(
             type=dtype, indices=indices, dictionary=dictionary
         ) if dtype.value_type in STRING_TYPES:
             return DictionaryArray.from_arrays(
                 indices,
-                pa.compute.utf8_trim_whitespace(dictionary),
+                pc.utf8_trim_whitespace(dictionary),
             )
         case Array(type=dtype) if dtype in STRING_TYPES:
-            return pa.compute.utf8_trim_whitespace(arr)
+            return pc.utf8_trim_whitespace(arr)
         case _:
             raise TypeError(f"Expected string array, got {arr.type}.")
 
@@ -122,12 +123,12 @@ def arrow_strip_whitespace(obj, /, *cols):
 def arrow_false_like(arr: Array, /) -> BooleanArray:
     r"""Creates a `BooleanArray` of False values with the same length as arr."""
     m = arr.is_valid()
-    return pa.compute.xor(m, m)
+    return pc.xor(m, m)
 
 
 def arrow_true_like(arr: Array, /) -> BooleanArray:
     r"""Creates a `BooleanArray` of True values with the same length as arr."""
-    return pa.compute.invert(arrow_false_like(arr))
+    return pc.invert(arrow_false_like(arr))
 
 
 def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
@@ -137,9 +138,9 @@ def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
     if fill_value is NA:
         fill_value = fill_value.cast(arr.type)
     if fill_value.type == arr.type:
-        return pa.compute.replace_with_mask(arr, arrow_false_like(arr), fill_value)
+        return pc.replace_with_mask(arr, arrow_false_like(arr), fill_value)
     empty = arrow_null_like(arr).cast(fill_value.type)
-    return pa.compute.replace_with_mask(empty, arrow_true_like(arr), fill_value)
+    return pc.replace_with_mask(empty, arrow_true_like(arr), fill_value)
 
 
 def arrow_null_like(arr: Array, /) -> Array:
@@ -161,7 +162,7 @@ def arrow_where(mask, x, y=NA, /):
 
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).
     """
-    return pa.compute.replace_with_mask(x, mask, y)
+    return pc.replace_with_mask(x, mask, y)
 
 
 @overload
@@ -244,8 +245,8 @@ def unsafe_cast_columns(table: Table, /, **dtypes: DataType) -> Table:
 
 def is_numeric(array: Array, /) -> Array:
     r"""Return mask determining if each element can be cast to the given data type."""
-    prior_null = pa.compute.is_null(array)
-    post_null = pa.compute.is_null(
+    prior_null = pc.is_null(array)
+    post_null = pc.is_null(
         Array.from_pandas(
             pd.to_numeric(
                 pd.Series(array, dtype="string[pyarrow]"),
@@ -257,9 +258,9 @@ def is_numeric(array: Array, /) -> Array:
         )
     )
 
-    return pa.compute.or_(
+    return pc.or_(
         prior_null,
-        pa.compute.invert(post_null),
+        pc.invert(post_null),
     )
 
 
@@ -273,16 +274,16 @@ def compute_entropy(value_counts: Array, /) -> float:
         of a uniform distribution of n choices is log₂(n), the normalization
         ensures that the entropy is in the range [0, 1].
     """
-    counts = pa.compute.struct_field(value_counts, 1)
+    counts = pc.struct_field(value_counts, 1)
 
-    freqs = pa.compute.divide(
-        pa.compute.cast(counts, pa.float64()),
-        pa.compute.sum(counts),
+    freqs = pc.divide(
+        pc.cast(counts, pa.float64()),
+        pc.sum(counts),
     )
 
-    H = pa.compute.divide(
-        pa.compute.sum(pa.compute.multiply(freqs, pa.compute.log2(freqs))),
-        pa.compute.log2(len(counts)),
+    H = pc.divide(
+        pc.sum(pc.multiply(freqs, pc.log2(freqs))),
+        pc.log2(len(counts)),
     )
     return -H.as_py()
 
@@ -295,7 +296,7 @@ def or_(masks: Sequence[Array], /) -> Array:
         case 1:
             return masks[0]
         case _:
-            return pa.compute.or_(or_(masks[: n // 2]), or_(masks[n // 2 :]))
+            return pc.or_(or_(masks[: n // 2]), or_(masks[n // 2 :]))
 
 
 def and_(masks: Sequence[Array], /) -> Array:
@@ -306,7 +307,7 @@ def and_(masks: Sequence[Array], /) -> Array:
         case 1:
             return masks[0]
         case _:
-            return pa.compute.and_(and_(masks[: n // 2]), and_(masks[n // 2 :]))
+            return pc.and_(and_(masks[: n // 2]), and_(masks[n // 2 :]))
 
 
 def filter_nulls(
@@ -315,14 +316,14 @@ def filter_nulls(
     r"""Filter rows with null values in the given columns."""
     agg = {"or": or_, "and": and_}[aggregation]
     masks = [table[col].is_null() for col in cols]
-    mask = pa.compute.invert(agg(masks))
+    mask = pc.invert(agg(masks))
     return table.filter(mask)
 
 
 def set_nulls_series(series: Array, values: Sequence, /) -> Array:
     r"""Set values to null if they match any of the given values."""
-    mask = pa.compute.is_in(series, pa.array(values, type=series.type))
-    return pa.compute.replace_with_mask(series, mask, pa.null())
+    mask = pc.is_in(series, pa.array(values, type=series.type))
+    return pc.replace_with_mask(series, mask, pa.null())
 
 
 def set_nulls(table: Table, /, **cols: Sequence) -> Table:
@@ -340,7 +341,7 @@ def table_info(table: Table, /) -> None:
     M = max(map(len, table.column_names)) + 1
     for name, col in tqdm(zip(table.column_names, table.columns, strict=True)):
         num_total = len(col)
-        num_null = pa.compute.sum(pa.compute.is_null(col)).as_py()
+        num_null = pc.sum(pc.is_null(col)).as_py()
         value_counts = col.value_counts()
         num_uniques = len(value_counts) - bool(num_null)
         nulls = f"{num_null / num_total:8.3%}" if num_null else "--------"

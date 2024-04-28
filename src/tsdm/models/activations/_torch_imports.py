@@ -1,6 +1,7 @@
 """Activations imported from torch."""
 
 __all__ = [
+    # CONSTANTS
     "TORCH_ACTIVATIONS",
     "TORCH_FUNCTIONAL_ACTIVATIONS",
     "TORCH_MODULAR_ACTIVATIONS",
