@@ -94,7 +94,9 @@ class SetFuncTS(nn.Module):
             input_size + dim_time - 1, dim_vals, hidden_size=dim_vals
         )
         self.attention = ScaledDotProductAttention(
-            dim_keys + input_size + dim_time - 1, dim_vals, latent_size
+            dim_k=dim_keys + input_size + dim_time - 1,
+            dim_v=dim_vals,
+            output_size=latent_size,
         )
         self.head = MLP(latent_size, output_size)
         self.register_buffer("dummy", torch.zeros(1))
@@ -217,7 +219,9 @@ class GroupedSetFuncTS(nn.Module):
         # self.value_encoder = MLP(input_size, dim_vals, hidden_size=dim_vals)
 
         self.attention = ScaledDotProductAttention(
-            dim_keys + input_size, dim_vals, latent_size
+            dim_k=dim_keys + input_size,
+            dim_v=dim_vals,
+            output_size=latent_size,
         )
         self.head = ReZeroMLP(latent_size, output_size)
         # self.head = MLP(latent_size, output_size)

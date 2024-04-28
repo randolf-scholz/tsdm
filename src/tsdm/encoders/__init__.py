@@ -109,12 +109,12 @@ __all__ = [
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
-    "ChainedEncoder",
-    "CloneEncoder",
+    "ChainedEncoder",  # Structural
+    "CloneEncoder",  # Structural
     "DTypeEncoder",
     "DateTimeEncoder",
-    "DeepcopyEncoder",
-    "DuplicateEncoder",
+    "DeepcopyEncoder",  # Structural
+    "DuplicateEncoder",  # Structural
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
@@ -127,8 +127,9 @@ __all__ = [
     "LogitEncoder",
     "MappingEncoder",
     "MinMaxScaler",
-    "ParallelEncoder",
+    "ParallelEncoder",  # Structural
     "PeriodicEncoder",
+    "PipedEncoder",  # Structural
     "PeriodicSocialTimeEncoder",
     "PositionalEncoder",
     "SocialTimeEncoder",
@@ -156,6 +157,7 @@ from tsdm.encoders.base import (
     InvertibleTransform,
     MappingEncoder,
     ParallelEncoder,
+    PipedEncoder,
     Transform,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
