@@ -55,6 +55,7 @@ from typing_extensions import (
     Protocol,
     TypeGuard,
     TypeVar,
+    final,
     overload,
     runtime_checkable,
 )
@@ -156,6 +157,7 @@ class BaseCallback(Callback):
         r"""Implementation of the callback."""
         ...
 
+    @final
     def callback(self, step: int, /, **state_dict: Any) -> None:
         r"""Executes the callback if `step` is a multiple of the frequency."""
         if step % self.frequency == 0:
