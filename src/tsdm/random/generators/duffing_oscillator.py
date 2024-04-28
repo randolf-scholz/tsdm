@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import Any
 
-from tsdm.random.generators._generators import IVP_GeneratorBase
+from tsdm.random.generators.base import IVP_GeneratorBase
 
 
 @dataclass

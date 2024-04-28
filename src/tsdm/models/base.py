@@ -1,11 +1,12 @@
 r"""Base Model that all other models must subclass."""
 
 __all__ = [
+    # ABCs & Protocols
     "Model",
-    # Protocols
     "ForecastingModel",
     "StateSpaceForecastingModel",
     # Classes
+    "BaseModelMetaClass",
     "BaseModel",
 ]
 

@@ -22,7 +22,7 @@ __all__ = [
     "solve_ivp",
 ]
 
-from tsdm.random.generators._generators import (
+from tsdm.random.generators.base import (
     IVP_Generator,
     IVP_Solver,
     TimeSeriesGenerator,

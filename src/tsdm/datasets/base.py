@@ -40,6 +40,7 @@ from typing_extensions import (
     Protocol,
     Self,
     cast,
+    final,
     overload,
     runtime_checkable,
 )
@@ -560,6 +561,7 @@ class SingleTableDataset(BaseDataset[T_co]):
         """
         return self.deserialize_table(self.dataset_path)
 
+    @final
     def load(
         self,
         *,
@@ -591,6 +593,7 @@ class SingleTableDataset(BaseDataset[T_co]):
 
         return table
 
+    @final
     def clean(self, *, force: bool = False, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
         # Skip if dataset file already exists.
@@ -824,6 +827,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         """
         ...
 
+    @final
     def clean(
         self,
         key: Optional[Key] = None,
@@ -909,6 +913,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         validate: bool = ...,
         initializing: bool = ...,
     ) -> T_co: ...
+    @final
     def load(
         self,
         key: Optional[Key] = None,

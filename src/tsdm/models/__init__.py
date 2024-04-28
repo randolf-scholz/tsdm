@@ -24,7 +24,7 @@ __all__ = [
     "GroupedSetFuncTS",
 ]
 from tsdm.models import activations, generic, pretrained
-from tsdm.models._models import (
+from tsdm.models.base import (
     BaseModel,
     ForecastingModel,
     Model,

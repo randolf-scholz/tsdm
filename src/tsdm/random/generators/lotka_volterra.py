@@ -13,7 +13,7 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
 from typing_extensions import Any, ClassVar
 
-from tsdm.random.generators._generators import IVP_GeneratorBase
+from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 

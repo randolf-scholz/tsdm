@@ -10,10 +10,11 @@ contains generators for synthetic dataset. By design, each generator consists of
 
 __all__ = [
     # ABCs & Protocols
-    "TimeSeriesGenerator",
     "IVP_Generator",
     "IVP_GeneratorBase",
     "IVP_Solver",
+    "ODE",
+    "TimeSeriesGenerator",
     # Functions
     "solve_ivp",
 ]
@@ -21,8 +22,8 @@ __all__ = [
 from abc import abstractmethod
 
 import numpy as np
-import scipy.stats
 from numpy.typing import ArrayLike
+from scipy.integrate import solve_ivp as scipy_solve_ivp
 from scipy.optimize import OptimizeResult as OdeResult
 from scipy.stats import rv_continuous
 from typing_extensions import (
@@ -122,9 +123,7 @@ def solve_ivp(
     t_eval = np.asarray(t)
     t0 = t_eval.min()
     tf = t_eval.max()
-    sol: OdeResult = scipy.integrate.solve_ivp(
-        system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs
-    )
+    sol: OdeResult = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
     # NOTE: output shape: (d, n_timestamps), move time axis to the front
     return np.moveaxis(sol.y, -1, 0)
 
@@ -238,7 +237,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         r"""Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
-        if self.ivp_solver is scipy.integrate.solve_ivp:
+        if self.ivp_solver is scipy_solve_ivp:
             raise ValueError(
                 "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
                 " since it requires separate bounds [t0,tf] and evaluation points"
@@ -289,5 +288,5 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
 
 if TYPE_CHECKING:
     scipy_dist: type[Distribution] = rv_continuous
-    scipy_solver: IVP_Solver = scipy.integrate.solve_ivp
+    scipy_solver: IVP_Solver = scipy_solve_ivp
     _solve_ivp: IVP_Solver = solve_ivp

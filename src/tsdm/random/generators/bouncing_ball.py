@@ -19,7 +19,7 @@ from scipy.stats import truncnorm
 from typing_extensions import Final
 
 from tsdm.constants import RNG
-from tsdm.random.generators._generators import IVP_GeneratorBase
+from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.types.aliases import SizeLike
 
 

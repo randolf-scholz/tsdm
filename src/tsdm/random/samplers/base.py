@@ -5,15 +5,22 @@ Note:
 """
 
 __all__ = [
-    # ABCs
+    # CONSTANTS
+    "RNG",
+    # ABCs & Protocols
     "BaseSampler",
+    "Sampler",
     # Classes
     "RandomSampler",
-    # "TimeSliceSampler",
+    "DiscreteSlidingWindowSampler",
     "HierarchicalSampler",
+    "RandomWindowSampler",
     "SlidingSampler",
     # Functions
     "compute_grid",
+    "get_first",
+    "get_index",
+    "get_last",
 ]
 
 from abc import abstractmethod
@@ -48,6 +55,7 @@ from tsdm.types.variables import K2, K, T, T_co
 from tsdm.utils.pprint import pprint_repr
 
 RNG: Generator = np.random.default_rng()
+"""Default random number generator for samplers."""
 
 
 # region helper functions --------------------------------------------------------------

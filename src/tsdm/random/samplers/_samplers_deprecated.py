@@ -11,7 +11,7 @@ from pandas import DataFrame, Timedelta, Timestamp
 from typing_extensions import Any, Generic, Optional, cast, deprecated
 
 from tsdm.constants import RNG
-from tsdm.random.samplers._samplers import BaseSampler, compute_grid
+from tsdm.random.samplers.base import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
 from tsdm.types.time import DTVar, TDVar
 

@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from scipy.stats import multivariate_normal
 from typing_extensions import Any
 
-from tsdm.random.generators._generators import IVP_GeneratorBase
+from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 

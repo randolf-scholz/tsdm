@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 from torch import Tensor, nn
 
-from tsdm.models._models import BaseModel
+from tsdm.models.base import BaseModel
 from tsdm.utils import deep_dict_update
 from tsdm.utils.system import import_module
 
