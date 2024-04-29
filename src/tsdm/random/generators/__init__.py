@@ -8,8 +8,8 @@ Note:
 __all__ = [
     # CONSTANTS
     "GENERATORS",
+    "IVP_SOLVERS",
     # ABCs & Protocols
-    "TimeSeriesGenerator",
     "IVP_Generator",
     "IVP_Solver",
     # Classes
@@ -25,7 +25,6 @@ __all__ = [
 from tsdm.random.generators.base import (
     IVP_Generator,
     IVP_Solver,
-    TimeSeriesGenerator,
     solve_ivp,
 )
 from tsdm.random.generators.bouncing_ball import BouncingBall
@@ -33,7 +32,7 @@ from tsdm.random.generators.dampened_pendulum import DampedPendulum, DampedPendu
 from tsdm.random.generators.lotka_volterra import LotkaVolterra
 from tsdm.random.generators.sir_model import SIR
 
-GENERATORS: dict[str, type[TimeSeriesGenerator]] = {
+GENERATORS: dict[str, type[IVP_Generator]] = {
     "BouncingBall"     : BouncingBall,
     "DampedPendulum"   : DampedPendulum,
     "DampedPendulumXY" : DampedPendulumXY,
@@ -41,3 +40,8 @@ GENERATORS: dict[str, type[TimeSeriesGenerator]] = {
     "SIR"              : SIR,
 }  # fmt: skip
 r"""Dictionary of all available generators."""
+
+IVP_SOLVERS: dict[str, IVP_Solver] = {
+    "solve_ivp" : solve_ivp,
+}  # fmt: skip
+"""Dictionary of all available IVP solvers."""

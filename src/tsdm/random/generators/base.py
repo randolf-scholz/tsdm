@@ -9,12 +9,13 @@ contains generators for synthetic dataset. By design, each generator consists of
 """
 
 __all__ = [
+    # Constants
+    "RNG",
     # ABCs & Protocols
     "IVP_Generator",
     "IVP_GeneratorBase",
     "IVP_Solver",
     "ODE",
-    "TimeSeriesGenerator",
     # Functions
     "solve_ivp",
 ]
@@ -23,12 +24,10 @@ from abc import abstractmethod
 
 import numpy as np
 from numpy.random import Generator
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.integrate import solve_ivp as scipy_solve_ivp
 from scipy.optimize import OptimizeResult as OdeResult
-from scipy.stats import rv_continuous
 from typing_extensions import (
-    TYPE_CHECKING,
     Any,
     Optional,
     Protocol,
@@ -37,20 +36,13 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.random.stats.distributions import Distribution
+from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
 from tsdm.types.callback_protocols import NullMap, SelfMap
 from tsdm.types.variables import T_co
 
-
-@runtime_checkable
-class TimeSeriesGenerator(Protocol[T_co]):
-    r"""Protocol for generators."""
-
-    @abstractmethod
-    def rvs(self, t: ArrayLike, size: Size = ()) -> T_co:
-        r"""Random variates of the given type."""
-        ...
+RNG: Generator = np.random.default_rng()
+"""Default random number generator."""
 
 
 @runtime_checkable
@@ -73,7 +65,7 @@ class ODE(Protocol[T_co]):
             y: list of states at time t
 
         Returns:
-            f(t, y(t)) value of the veector field at time t and state y(t)
+            $f(t, y(t))$ value of the veector field at time $t$ and state $y(t)$.
         """
         ...
 
@@ -118,28 +110,22 @@ class IVP_Solver(Protocol[T_co]):
         ...
 
 
-def solve_ivp(
-    system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any
-) -> np.ndarray:
-    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
-    t_eval = np.asarray(t)
-    t0 = t_eval.min()
-    tf = t_eval.max()
-    sol: OdeResult = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
-    # NOTE: output shape: (d, n_timestamps), move time axis to the front
-    return np.moveaxis(sol.y, -1, 0)
-
-
 @runtime_checkable
-class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
+class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
     r"""Protocol for Generators that solve Initial Value Problems (IVP).
 
     Needs to implement the following things:
 
     - `get_initial_state` to generate initial states x₀
     - `solve_ivp` to solve the initial value problem
+    - `make_observations` to create observations from the solution
 
-    Subsumes ODE-Generators and SDE-Generators.
+    The goal is a general framework that works for both ODEs, SDEs, and discrete-time systems.
+    Thus, an IVP-Generator may incorporate multiple random distributions:
+
+    - a distribution for the initial state x₀
+    - a distribution for the observation noise
+    - a distribution for the process noise
 
     Examples:
         Nonlinear ODE
@@ -149,10 +135,9 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
                    y(t) &= g(t, x(t))
     """
 
+    # region abstract methods ----------------------------------------------------------
     @abstractmethod
-    def get_initial_state(
-        self, size: Size = (), *, rng: Optional[Generator] = None
-    ) -> T_co:
+    def get_initial_state(self, size: Size = ()) -> T_co:
         r"""Generate (multiple) initial state(s) y₀."""
         ...
 
@@ -166,8 +151,25 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         r"""Solve the initial value problem."""
         ...
 
-    def rvs(self, t: ArrayLike, size: Size = ()) -> T_co:
+    @abstractmethod
+    def set_rng(self, random_state: Optional[int | Generator], /) -> None:
+        r"""Set the internal random number generator of the IVP_Generator."""
+        ...
+
+    # endregion abstract methods -------------------------------------------------------
+
+    # region mixin methods -------------------------------------------------------------
+    def rvs(
+        self,
+        t: ArrayLike,
+        size: Size = (),
+        *,
+        random_state: Optional[int | Generator] = None,
+    ) -> T_co:
         r"""Random variates of the given type."""
+        # set the random state
+        self.set_rng(random_state)
+
         # get the initial state
         y0 = self.get_initial_state(size=size)
 
@@ -179,9 +181,14 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
 
         return obs
 
+    # endregion mixin methods ----------------------------------------------------------
+
 
 class IVP_GeneratorBase(IVP_Generator[T_co]):
     r"""Base class for IVP_Generators."""
+
+    rng: Generator = RNG
+    r"""the internal Random Number Generator."""
 
     @property
     def system(self) -> ODE | Any:
@@ -192,6 +199,42 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
     def ivp_solver(self) -> IVP_Solver[T_co]:
         r"""Initial value problem solver."""
         return cast(IVP_Solver[T_co], solve_ivp)
+
+    # region implementation ------------------------------------------------------------
+    @abstractmethod
+    def _get_initial_state_impl(self, *, size: Size = ()) -> T_co:
+        r"""Generate (multiple) initial state(s) y₀."""
+        ...
+
+    @abstractmethod
+    def _make_observations_impl(self, sol: Any, /) -> T_co:
+        r"""Create observations from the solution."""
+        ...
+
+    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        r"""Solve the initial value problem."""
+        if self.ivp_solver is NotImplemented or self.system is NotImplemented:
+            raise NotImplementedError
+        if self.ivp_solver is scipy_solve_ivp:
+            raise ValueError(
+                "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
+                " since it requires separate bounds [t0,tf] and evaluation points"
+                " t_eval. Please use the wrapped version"
+                " tsdm.random.generators.solve_ivp instead."
+            )
+        # solve the initial value problem
+        return self.ivp_solver(self.system, t, y0=y0)
+
+    # endregion implementation ---------------------------------------------------------
+    def set_rng(self, random_state: Optional[int | Generator], /) -> None:
+        r"""Set the internal random number generator of the IVP_Generator."""
+        match random_state:
+            case (None | int()) as seed:
+                self.rng = np.random.default_rng(seed)
+            case Generator() as generator:
+                self.rng = generator
+            case _:
+                raise TypeError(f"Unsupported {type(random_state)=}")
 
     @final
     def get_initial_state(self, size: Size = ()) -> T_co:
@@ -225,33 +268,6 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         # validate solution
         self.validate_solution(sol)
         return sol
-
-    # region implementation ------------------------------------------------------------
-    @abstractmethod
-    def _get_initial_state_impl(self, *, size: Size = ()) -> T_co:
-        r"""Generate (multiple) initial state(s) y₀."""
-        ...
-
-    @abstractmethod
-    def _make_observations_impl(self, sol: Any, /) -> T_co:
-        r"""Create observations from the solution."""
-        ...
-
-    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
-        r"""Solve the initial value problem."""
-        if self.ivp_solver is NotImplemented or self.system is NotImplemented:
-            raise NotImplementedError
-        if self.ivp_solver is scipy_solve_ivp:
-            raise ValueError(
-                "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
-                " since it requires separate bounds [t0,tf] and evaluation points"
-                " t_eval. Please use the wrapped version"
-                " tsdm.random.generators.solve_ivp instead."
-            )
-        # solve the initial value problem
-        return self.ivp_solver(self.system, t, y0=y0)
-
-    # endregion implementation ---------------------------------------------------------
 
     # region validation and projection -------------------------------------------------
     # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
@@ -290,7 +306,14 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
     # endregion validation and projection ----------------------------------------------
 
 
-if TYPE_CHECKING:
-    scipy_dist: type[Distribution] = rv_continuous
-    scipy_solver: IVP_Solver = scipy_solve_ivp
-    _solve_ivp: IVP_Solver = solve_ivp
+def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
+    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    t_eval = np.asarray(t)
+    t0 = t_eval.min()
+    tf = t_eval.max()
+    sol: OdeResult = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
+    # NOTE: output shape: (d, n_timestamps), move time axis to the front
+    return np.moveaxis(sol.y, -1, 0)
+
+
+assert issubclass(IVP_GeneratorBase, IVP_Generator)

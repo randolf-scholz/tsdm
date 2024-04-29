@@ -2,16 +2,15 @@
 
 __all__ = ["Helix"]
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
-from numpy.random import Generator, default_rng
 from numpy.typing import NDArray
 from scipy.stats import multivariate_normal
 from typing_extensions import Any
 
+from tsdm.random.distributions import RV
 from tsdm.random.generators.base import IVP_GeneratorBase
-from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import Size
 
 
@@ -47,12 +46,11 @@ class Helix(IVP_GeneratorBase[NDArray]):
     r"""Pitch of the helix."""
     direction: tuple[float, float, float] = (0.0, 0.0, 1.0)
     r"""Direction of the helix."""
-    observation_noise: Distribution = field(
-        default_factory=lambda: multivariate_normal(mean=np.zeros(3), cov=0.1)
-    )
-    r"""Noise distribution."""
-    seed: Generator = field(default_factory=default_rng)
-    r"""Random number generator."""
+
+    @property
+    def observation_noise(self) -> RV:
+        r"""Noise distribution."""
+        return multivariate_normal(mean=np.zeros(3), cov=0.1, random_state=self.rng)
 
     def __post_init__(self) -> None:
         r"""Post-initialization hook."""

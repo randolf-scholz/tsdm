@@ -2,10 +2,9 @@
 
 __all__ = [
     # ABCs & Protocols
-    "Generator",
-    "TimeSeriesGenerator",
+    "RV",
+    "TimeSeriesRV",
     "Distribution",
-    "TimeSeriesDistribution",
     # Classes
     "Dirichlet",
 ]
@@ -13,8 +12,9 @@ __all__ = [
 from abc import abstractmethod
 
 import numpy as np
+from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import Protocol, runtime_checkable
+from typing_extensions import Optional, Protocol, runtime_checkable
 
 from tsdm.constants import RNG
 from tsdm.types.aliases import Size
@@ -22,27 +22,35 @@ from tsdm.types.variables import T_co
 
 
 @runtime_checkable
-class Generator(Protocol[T_co]):
-    r"""Protocol for generators."""
+class RV(Protocol[T_co]):
+    r"""Protocol for random variable."""
 
     @abstractmethod
-    def rvs(self, size: Size = ()) -> T_co:
+    def rvs(
+        self, size: Size = (), *, random_state: Optional[int | Generator] = None
+    ) -> T_co:
         r"""Random variates of the given type."""
         ...
 
 
 @runtime_checkable
-class TimeSeriesGenerator(Protocol[T_co]):
-    r"""Protocol for generators."""
+class TimeSeriesRV(Protocol[T_co]):
+    r"""Protocol for time series random variable $p(x∣t)$."""
 
     @abstractmethod
-    def rvs(self, t: ArrayLike, size: Size = ()) -> T_co:
-        r"""Random variates of the given type."""
+    def rvs(
+        self,
+        t: ArrayLike,
+        size: Size = (),
+        *,
+        random_state: Optional[int | Generator] = None,
+    ) -> T_co:
+        r"""Generate random time series."""
         ...
 
 
 @runtime_checkable
-class _Distribution(Protocol[T_co]):
+class Distribution(RV[T_co], Protocol[T_co]):
     r"""Protocol for distributions.
 
     We follow the design of `scipy.stats.rv_continuous` and `scipy.stats.rv_discrete`.
@@ -102,18 +110,6 @@ class _Distribution(Protocol[T_co]):
             return self.sf(x).log()
         except AttributeError as exc:
             raise NotImplementedError from exc
-
-
-@runtime_checkable
-class Distribution(_Distribution[T_co], Generator[T_co], Protocol[T_co]):
-    r"""Protocol for distributions."""
-
-
-@runtime_checkable
-class TimeSeriesDistribution(
-    _Distribution[T_co], TimeSeriesGenerator[T_co], Protocol[T_co]
-):
-    r"""Protocol for time-series distributions."""
 
 
 class Dirichlet:

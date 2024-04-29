@@ -6,14 +6,14 @@ References:
 
 __all__ = ["DampedPendulum", "DampedPendulumXY"]
 
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, truncnorm
 
+from tsdm.random.distributions import RV
 from tsdm.random.generators.base import IVP_GeneratorBase
-from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import Size
 
 
@@ -109,14 +109,16 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     r"""Initial angle."""
     omega0: float = 4.0
     r"""Initial angular velocity."""
-    observation_noise: Distribution = field(
-        default_factory=lambda: univariate_normal(loc=0, scale=0.05)
-    )
-    r"""Noise distribution."""
-    parameter_noise: Distribution = field(
-        default_factory=lambda: univariate_normal(loc=0, scale=1)
-    )
-    r"""Noise distribution."""
+
+    @property
+    def observation_noise(self) -> RV:
+        r"""Noise distribution."""
+        return univariate_normal(loc=0, scale=0.05, random_state=self.rng)
+
+    @property
+    def parameter_noise(self) -> RV:
+        r"""Noise distribution."""
+        return univariate_normal(loc=0, scale=1, random_state=self.rng)
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
@@ -176,7 +178,7 @@ class DampedPendulumXY(DampedPendulum):
         noise = noise * self.length
         lower = (loc_min - loc) / noise
         upper = (loc_max - loc) / noise
-        return truncnorm.rvs(lower, upper, loc=loc, scale=noise)
+        return truncnorm.rvs(lower, upper, loc=loc, scale=noise, random_state=self.rng)
 
     def validate_observations(self, values: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""

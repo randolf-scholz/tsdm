@@ -6,15 +6,15 @@ References:
 
 __all__ = ["LotkaVolterra"]
 
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
 from typing_extensions import Any, ClassVar
 
+from tsdm.random.distributions import RV
 from tsdm.random.generators.base import IVP_GeneratorBase
-from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import Size
 
 
@@ -50,14 +50,16 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     r"""Initial angle."""
     predator0: float = 1.0
     r"""Initial angular velocity."""
-    observation_noise: Distribution = field(
-        default_factory=lambda: uniform(loc=0.95, scale=0.1)
-    )  # 5% noise
-    r"""Noise distribution."""
-    parameter_noise: Distribution = field(
-        default_factory=lambda: univariate_normal(loc=0, scale=1)
-    )
-    r"""Noise distribution."""
+
+    @property
+    def observation_noise(self) -> RV:
+        r"""Noise distribution."""
+        return uniform(loc=0.95, scale=0.1, random_state=self.rng)
+
+    @property
+    def parameter_noise(self) -> RV:
+        r"""Noise distribution."""
+        return univariate_normal(loc=0, scale=1, random_state=self.rng)
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""

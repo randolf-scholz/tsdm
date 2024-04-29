@@ -2,7 +2,6 @@ r"""Statistical Analysis."""
 
 __all__ = [
     # Sub-Modules
-    "regularity_tests",
     "distributions",
     # Functions
     "approx_float_gcd",
@@ -14,8 +13,7 @@ __all__ = [
     "sparsity",
     "time_gcd",
 ]
-
-from tsdm.random.stats import distributions, regularity_tests
+from tsdm.random import distributions
 from tsdm.random.stats._stats import data_overview, sparsity
 from tsdm.random.stats.regularity_tests import (
     approx_float_gcd,
