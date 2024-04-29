@@ -1,8 +1,63 @@
 r"""Test `module.class`."""
 
+import numpy as np
 import pytest
+import torch
+from torch import jit
 
-from tsdm.utils import flatten_dict, last, pairwise_disjoint, replace, unflatten_dict
+from tsdm.utils import (
+    axes_to_tuple,
+    dims_to_list,
+    flatten_dict,
+    last,
+    pairwise_disjoint,
+    replace,
+    size_to_tuple,
+    unflatten_dict,
+)
+
+
+@pytest.mark.parametrize("dims", [None, 0, 1, [], [0], [-1], [-1, -2]])
+def test_dims_to_list(dims):
+    r"""Test `tsdm.utils.dims_to_list`."""
+    x = torch.randn(4, 2, 2, 1)
+
+    # test
+    dims_list = dims_to_list(dims, ndim=x.ndim)
+    result = x.mean(dims_list)
+    reference = x.mean(dim=dims)
+    torch.testing.assert_close(result, reference)
+
+    # test with jit.script
+    if dims == []:
+        pytest.xfail("JIT compiler cannot determine type of empty list.")
+    f = jit.script(dims_to_list)
+    dims_list = f(dims, ndim=x.ndim)
+    result = x.mean(dims_list)
+    reference = x.mean(dim=dims)
+    torch.testing.assert_close(result, reference)
+
+
+@pytest.mark.parametrize("axis", [None, 0, 1, (), (0,), (-1,), (-1, -2)])
+def test_axes_to_tuple(axis):
+    r"""Test `tsdm.utils.axes_to_tuple`."""
+    rng = np.random.default_rng()
+    x = rng.uniform(size=(4, 2, 2, 1))
+
+    axes_tuple = axes_to_tuple(axis, ndim=x.ndim)
+    result = np.mean(x, axis=axes_tuple)
+    reference = np.mean(x, axis=axis)
+    np.testing.assert_allclose(result, reference)
+
+
+@pytest.mark.parametrize("size", [None, 0, 1, (), (0,), (1,), (1, 2)])
+def test_size_to_tuple(size):
+    sizes_tuple = size_to_tuple(size)
+    rng = np.random.default_rng(42)
+    result = rng.uniform(size=sizes_tuple)
+    rng = np.random.default_rng(42)
+    reference = rng.uniform(size=size)
+    np.testing.assert_allclose(result, reference)
 
 
 def test_last():

@@ -3,8 +3,10 @@ r"""Utility functions."""
 __all__ = [
     # Classes
     # Functions
+    "axes_to_tuple",
     "deep_dict_update",
     "deep_kval_update",
+    "dims_to_list",
     "flatten_dict",
     "flatten_nested",
     "initialize_from_config",
@@ -18,6 +20,7 @@ __all__ = [
     "repackage_zip",
     "replace",
     "round_relative",
+    "size_to_tuple",
     "unflatten_dict",
 ]
 
@@ -47,8 +50,80 @@ from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
-from tsdm.types.aliases import FilePath, MaybeWrapped, Nested, NestedDict, NestedMapping
+from tsdm.types.aliases import (
+    Axes,
+    Dims,
+    FilePath,
+    MaybeWrapped,
+    Nested,
+    NestedDict,
+    NestedMapping,
+    Shape,
+    Size,
+)
 from tsdm.types.variables import K2, HashableType, K, T
+
+
+def axes_to_tuple(axes: Axes, *, ndim: int) -> tuple[int, ...]:
+    """Convert axes to tuple.
+
+    Note:
+        - `ndarray.mean(axis=None)` contracts over all axes, returns scalar.
+        - `ndarray.mean(axis=[])`   contracts over no axes, returns copy.
+        - `ndarray.mean(axis=k)`    contracts over the k-th axis.
+        - `ndarray.mean(axis=tuple(range(ndim)))` contracts over all axes, returns scalar.
+    """
+    if axes is None:
+        return tuple(range(ndim))
+    if isinstance(axes, int):
+        return (axes,)
+    return tuple(axes)
+
+
+def dims_to_list(dims: Dims, *, ndim: int) -> list[int]:
+    """Convert dimensions to list.
+
+    Note:
+        - `tensor.mean(dim=None)` contracts over all dims, returns 1d-tensor (1 element).
+        - `tensor.mean(dim=[])`   contracts over all dims, returns 1d-tensor (1 element).
+        - `tensor.mean(dim=k)`    contracts over the k-th dimension.
+        - `tensor.mean(dim=list(range(ndim)))` contracts over all dims, returns 1d-tensor (1 element).
+    """
+    if dims is None:
+        return list(range(ndim))
+    if isinstance(dims, int):
+        return [dims]
+    return list(dims)
+
+
+def size_to_tuple(size: Size) -> tuple[int, ...]:
+    """Convert size to tuple.
+
+    Note:
+        - `np.random.normal(size=None)` produces a scalar.
+        - `np.random.normal(size=())`   produces a 0d-array (1 element).
+        - `np.random.normal(size=k)`    produces a 1d-array (k elements).
+    """
+    if size is None:
+        return ()
+    if isinstance(size, int):
+        return (size,)
+    return tuple(size)
+
+
+def shape_to_tuple(shape: Shape) -> tuple[int, ...]:
+    """Convert shape to tuple.
+
+    Note:
+        - `np.ones(shape=None)` produces a 0d-array (1 element).
+        - `np.ones(shape=())`   produces a 0d-array (1 element).
+        - `np.ones(shape=k)`    produces a 1d-array (k elements).
+    """
+    if shape is None:
+        return ()
+    if isinstance(shape, int):
+        return (shape,)
+    return tuple(shape)
 
 
 def last(iterable: Iterable[T], /) -> T:

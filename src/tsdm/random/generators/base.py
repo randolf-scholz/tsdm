@@ -22,6 +22,7 @@ __all__ = [
 from abc import abstractmethod
 
 import numpy as np
+from numpy.random import Generator
 from numpy.typing import ArrayLike
 from scipy.integrate import solve_ivp as scipy_solve_ivp
 from scipy.optimize import OptimizeResult as OdeResult
@@ -29,6 +30,7 @@ from scipy.stats import rv_continuous
 from typing_extensions import (
     TYPE_CHECKING,
     Any,
+    Optional,
     Protocol,
     cast,
     final,
@@ -36,7 +38,7 @@ from typing_extensions import (
 )
 
 from tsdm.random.stats.distributions import Distribution
-from tsdm.types.aliases import SizeLike
+from tsdm.types.aliases import Size
 from tsdm.types.callback_protocols import NullMap, SelfMap
 from tsdm.types.variables import T_co
 
@@ -46,7 +48,7 @@ class TimeSeriesGenerator(Protocol[T_co]):
     r"""Protocol for generators."""
 
     @abstractmethod
-    def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
+    def rvs(self, t: ArrayLike, size: Size = ()) -> T_co:
         r"""Random variates of the given type."""
         ...
 
@@ -148,7 +150,9 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
     """
 
     @abstractmethod
-    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+    def get_initial_state(
+        self, size: Size = (), *, rng: Optional[Generator] = None
+    ) -> T_co:
         r"""Generate (multiple) initial state(s) y₀."""
         ...
 
@@ -162,7 +166,7 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         r"""Solve the initial value problem."""
         ...
 
-    def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
+    def rvs(self, t: ArrayLike, size: Size = ()) -> T_co:
         r"""Random variates of the given type."""
         # get the initial state
         y0 = self.get_initial_state(size=size)
@@ -190,7 +194,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         return cast(IVP_Solver[T_co], solve_ivp)
 
     @final
-    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+    def get_initial_state(self, size: Size = ()) -> T_co:
         r"""Generate (multiple) initial state(s) y₀."""
         # get the initial state
         y0 = self._get_initial_state_impl(size=size)
@@ -224,7 +228,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
 
     # region implementation ------------------------------------------------------------
     @abstractmethod
-    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> T_co:
+    def _get_initial_state_impl(self, *, size: Size = ()) -> T_co:
         r"""Generate (multiple) initial state(s) y₀."""
         ...
 

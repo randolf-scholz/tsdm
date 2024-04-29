@@ -41,8 +41,8 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int, /
     ) -> TDVar:
         match obj:
-            case Callable() as func:
-                return func(k)
+            case Callable() as func:  # type: ignore[misc]
+                return func(k)  # pyright: ignore[reportCallIssue]
             case Lookup() as mapping:
                 return mapping[k]
             case _:

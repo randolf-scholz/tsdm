@@ -14,7 +14,7 @@ from scipy.stats import norm as univariate_normal, truncnorm
 
 from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Distribution
-from tsdm.types.aliases import SizeLike
+from tsdm.types.aliases import Size
 
 
 @dataclass
@@ -118,7 +118,7 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     )
     r"""Noise distribution."""
 
-    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
         theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)

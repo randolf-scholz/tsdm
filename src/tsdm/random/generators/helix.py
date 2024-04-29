@@ -12,7 +12,7 @@ from typing_extensions import Any
 
 from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Distribution
-from tsdm.types.aliases import SizeLike
+from tsdm.types.aliases import Size
 
 
 @dataclass
@@ -68,7 +68,7 @@ class Helix(IVP_GeneratorBase[NDArray]):
         self.Q = np.stack([self.x, self.y, self.z], axis=-1)
         self.Qt = self.Q.T  # cache transpose
 
-    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         pass
 
     def _make_observations_impl(self, sol: NDArray, /) -> NDArray:

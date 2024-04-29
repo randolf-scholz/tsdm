@@ -13,13 +13,17 @@ __all__ = [
     # Classes
     "DataFrame2Dataset",
     "MappingDataset",
+    # Functions
+    "get_first_sample",
+    "get_index",
+    "get_last_sample",
 ]
 
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Reversible
 from dataclasses import KW_ONLY, dataclass
 
-from pandas import DataFrame, Index, MultiIndex
+from pandas import DataFrame, Index, MultiIndex, Series
 from typing_extensions import (
     Any,
     Optional,
@@ -33,7 +37,7 @@ from typing_extensions import (
 )
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
-from tsdm.types.variables import K, K_contra, V_co
+from tsdm.types.variables import K, K_contra, T, V_co
 from tsdm.utils.pprint import pprint_repr, repr_array
 
 # region Protocols ---------------------------------------------------------------------
@@ -258,3 +262,49 @@ class MappingDataset(Mapping[K, DS]):
             index = df.index
 
         return cls({idx: df.loc[idx] for idx in index})
+
+
+def get_index(dataset: Dataset[T], /) -> Index:
+    r"""Return an index object for the dataset.
+
+    We support the following data types:
+        - Series, DataFrame.
+        - Mapping Types
+        - Iterable Types
+    """
+    match dataset:
+        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
+        case Series() | DataFrame() as pandas_dataset:
+            return pandas_dataset.index
+        case MapDataset() as map_dataset:
+            return Index(map_dataset.keys())
+        case IndexableDataset() as iterable_dataset:
+            return Index(range(len(iterable_dataset)))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def get_first_sample(dataset: Dataset[T], /) -> T:
+    r"""Return the first element of the dataset."""
+    match dataset:
+        case Series() | DataFrame() as pandas_dataset:
+            return pandas_dataset.iloc[0]
+        case MapDataset() as map_dataset:
+            return map_dataset[next(iter(map_dataset.keys()))]
+        case IndexableDataset() as iterable_dataset:
+            return next(iter(iterable_dataset))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def get_last_sample(dataset: Dataset[T], /) -> T:
+    r"""Return the last element of the dataset."""
+    match dataset:
+        case Series() | DataFrame() as pandas_dataset:
+            return pandas_dataset.iloc[-1]
+        case MapDataset() as map_dataset:
+            return map_dataset[next(reversed(map_dataset.keys()))]
+        case IndexableDataset() as iterable_dataset:
+            return next(reversed(iterable_dataset))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")

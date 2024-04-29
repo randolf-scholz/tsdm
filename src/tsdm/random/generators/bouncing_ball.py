@@ -20,7 +20,7 @@ from typing_extensions import Final
 
 from tsdm.constants import RNG
 from tsdm.random.generators.base import IVP_GeneratorBase
-from tsdm.types.aliases import SizeLike
+from tsdm.types.aliases import Size
 
 
 @dataclass
@@ -52,7 +52,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     y_noise: Final[float] = 0.05
     r"""Standard deviation of the observation noise."""
 
-    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
         x0 = RNG.uniform(low=self.x_min, high=self.x_max, size=size)
         v0 = RNG.uniform(low=self.v_min, high=self.v_max, size=size) * RNG.choice(

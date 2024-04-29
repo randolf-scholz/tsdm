@@ -11,8 +11,10 @@ __all__ = [
     "LazyDict",
     "LazyValue",
     # utils
+    "axes_to_tuple",
     "deep_dict_update",
     "deep_kval_update",
+    "dims_to_list",
     "flatten_dict",
     "flatten_nested",
     "initialize_from_config",
@@ -26,6 +28,7 @@ __all__ = [
     "repackage_zip",
     "replace",
     "round_relative",
+    "size_to_tuple",
     "transpose_list_of_dicts",
     "unflatten_dict",
     "unpack_maybewrapped",
@@ -46,8 +49,10 @@ __all__ = [
 
 from tsdm.utils import decorators, remote, system
 from tsdm.utils._utils import (
+    axes_to_tuple,
     deep_dict_update,
     deep_kval_update,
+    dims_to_list,
     flatten_dict,
     flatten_nested,
     initialize_from_config,
@@ -61,6 +66,7 @@ from tsdm.utils._utils import (
     repackage_zip,
     replace,
     round_relative,
+    size_to_tuple,
     transpose_list_of_dicts,
     unflatten_dict,
     unpack_maybewrapped,

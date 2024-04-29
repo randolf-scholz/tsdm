@@ -17,7 +17,7 @@ from numpy.typing import ArrayLike, NDArray
 from typing_extensions import Protocol, runtime_checkable
 
 from tsdm.constants import RNG
-from tsdm.types.aliases import SizeLike
+from tsdm.types.aliases import Size
 from tsdm.types.variables import T_co
 
 
@@ -26,7 +26,7 @@ class Generator(Protocol[T_co]):
     r"""Protocol for generators."""
 
     @abstractmethod
-    def rvs(self, size: SizeLike = ()) -> T_co:
+    def rvs(self, size: Size = ()) -> T_co:
         r"""Random variates of the given type."""
         ...
 
@@ -36,7 +36,7 @@ class TimeSeriesGenerator(Protocol[T_co]):
     r"""Protocol for generators."""
 
     @abstractmethod
-    def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
+    def rvs(self, t: ArrayLike, size: Size = ()) -> T_co:
         r"""Random variates of the given type."""
         ...
 
@@ -124,7 +124,7 @@ class Dirichlet:
         raise NotImplementedError
 
     @classmethod
-    def rvs(cls, alphas: ArrayLike, size: SizeLike = ()) -> NDArray:
+    def rvs(cls, alphas: ArrayLike, size: Size = ()) -> NDArray:
         r"""Random variates of the Dirichlet distribution."""
         alphas = np.asarray(alphas)
         size = (size,) if isinstance(size, int) else size

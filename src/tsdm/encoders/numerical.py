@@ -75,7 +75,7 @@ from typing_extensions import (
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axes, Nested, SizeLike
+from tsdm.types.aliases import Axes, Nested, Size
 from tsdm.types.protocols import NTuple, NumericalArray
 from tsdm.utils.pprint import pprint_repr
 
@@ -201,7 +201,7 @@ def get_broadcast(
     return tuple(None if a in contracted_axes else slice(None) for a in range(rank))
 
 
-def slice_size(slc: slice) -> Optional[int]:
+def slice_size(slc: slice, /) -> Optional[int]:
     r"""Get the size of a slice."""
     if slc.stop is None or slc.start is None:
         return None
@@ -212,7 +212,7 @@ def slice_size(slc: slice) -> Optional[int]:
 def get_reduced_axes(item: Index | tuple[Index, ...], axis: None) -> None: ...
 @overload
 def get_reduced_axes(
-    item: Index | tuple[Index, ...], axis: SizeLike
+    item: Index | tuple[Index, ...], axis: Size
 ) -> tuple[int, ...]: ...
 def get_reduced_axes(item, axis):
     r"""Determine if a slice would remove some axes."""

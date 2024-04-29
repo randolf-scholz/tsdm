@@ -18,9 +18,6 @@ __all__ = [
     "SlidingSampler",
     # Functions
     "compute_grid",
-    "get_first",
-    "get_index",
-    "get_last",
 ]
 
 from abc import abstractmethod
@@ -33,7 +30,7 @@ import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series, Timedelta, Timestamp
+from pandas import Index, Series, Timedelta, Timestamp
 from typing_extensions import (
     Any,
     ClassVar,
@@ -48,10 +45,18 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.data.datasets import Dataset, IndexableDataset, MapDataset, SequentialDataset
+from tsdm.data.datasets import (
+    Dataset,
+    IndexableDataset,
+    MapDataset,
+    SequentialDataset,
+    get_first_sample,
+    get_index,
+    get_last_sample,
+)
 from tsdm.types.protocols import VectorLike
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
-from tsdm.types.variables import K2, K, T, T_co
+from tsdm.types.variables import K2, K, T_co
 from tsdm.utils.pprint import pprint_repr
 
 RNG: Generator = np.random.default_rng()
@@ -59,52 +64,6 @@ RNG: Generator = np.random.default_rng()
 
 
 # region helper functions --------------------------------------------------------------
-def get_index(dataset: Dataset[T], /) -> Index:
-    r"""Return an index object for the dataset.
-
-    We support the following data types:
-        - Series, DataFrame.
-        - Mapping Types
-        - Iterable Types
-    """
-    match dataset:
-        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
-        case Series() | DataFrame() as pandas_dataset:
-            return pandas_dataset.index
-        case MapDataset() as map_dataset:
-            return Index(map_dataset.keys())
-        case IndexableDataset() as iterable_dataset:
-            return Index(range(len(iterable_dataset)))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-def get_first(dataset: Dataset[T], /) -> T:
-    r"""Return the first element of the dataset."""
-    match dataset:
-        case Series() | DataFrame() as pandas_dataset:
-            return pandas_dataset.iloc[0]
-        case MapDataset() as map_dataset:
-            return map_dataset[next(iter(map_dataset.keys()))]
-        case IndexableDataset() as iterable_dataset:
-            return next(iter(iterable_dataset))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-def get_last(dataset: Dataset[T], /) -> T:
-    r"""Return the last element of the dataset."""
-    match dataset:
-        case Series() | DataFrame() as pandas_dataset:
-            return pandas_dataset.iloc[-1]
-        case MapDataset() as map_dataset:
-            return map_dataset[next(reversed(map_dataset.keys()))]
-        case IndexableDataset() as iterable_dataset:
-            return next(reversed(iterable_dataset))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
 def compute_grid(
     tmin: str | DateTime[TD],
     tmax: str | DateTime[TD],
@@ -572,8 +531,8 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         super().__init__(shuffle=shuffle, rng=rng)
 
         # region set basic attributes --------------------------------------------------
-        self.tmin = get_first(data_source)
-        self.tmax = get_last(data_source)
+        self.tmin = get_first_sample(data_source)
+        self.tmax = get_last_sample(data_source)
         zero_td = cast(Any, self.tmin - self.tmin)  # timedelta of the correct type
         dt_type: type[DT] = type(self.tmin)
         td_type: type[Any] = type(zero_td)

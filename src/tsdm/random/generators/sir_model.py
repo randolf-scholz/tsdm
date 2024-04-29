@@ -10,7 +10,7 @@ from typing_extensions import ClassVar
 
 from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Dirichlet
-from tsdm.types.aliases import SizeLike
+from tsdm.types.aliases import Size
 
 
 @dataclass
@@ -43,7 +43,7 @@ class SIR(IVP_GeneratorBase[NDArray]):
 
     @staticmethod
     def _get_initial_state_impl(
-        size: SizeLike = (), *, weights: ArrayLike = (100, 1, 0)
+        size: Size = (), *, weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀.
 

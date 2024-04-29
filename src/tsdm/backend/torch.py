@@ -54,10 +54,7 @@ def torch_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
 
 
 def torch_apply_along_axes(
-    op: Callable[..., Tensor],
-    /,
-    *tensors: Tensor,
-    axis: Axes,
+    op: Callable[..., Tensor], /, *tensors: Tensor, axis: Axes
 ) -> Tensor:
     r"""Apply a function to multiple tensors along axes.
 
@@ -67,17 +64,15 @@ def torch_apply_along_axes(
     assert len(tensors) >= 1, "at least one tensor is required"
 
     if axis is None:
-        axis = ()
+        axes = ()
     elif isinstance(axis, int):
-        axis = (axis,)
+        axes = (axis,)
     else:
-        axis = tuple(axis)
+        axes = tuple(axis)
 
     rank = len(tensors[0].shape)
     source = tuple(range(rank))
-    inverse_permutation: tuple[int, ...] = axis + tuple(
-        ax for ax in range(rank) if ax not in axis
-    )
+    inverse_permutation = axes + tuple(ax for ax in range(rank) if ax not in axes)
     perm = tuple(np.argsort(inverse_permutation))
     tensors = tuple(torch.moveaxis(tensor, source, perm) for tensor in tensors)
     result = op(*tensors)
