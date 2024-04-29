@@ -11,6 +11,7 @@ from pandas import DatetimeIndex, Series
 from typing_extensions import Literal, deprecated
 
 from tsdm.encoders.base import BaseEncoder
+from tsdm.utils import timedelta, timestamp
 
 
 @deprecated("decode unimplemented")
@@ -124,7 +125,9 @@ class OldDateTimeEncoder(BaseEncoder):
             case _:
                 raise TypeError(f"Incompatible {type(data)=}")
 
-        self.offset = pd.Timestamp(Series(data).iloc[0])
+        offset = timestamp(Series(data).iloc[0])
+        assert offset is not pd.NaT
+        self.offset = offset
         self.name = None if data.name is None else str(data.name)
         self.original_dtype = data.dtype
         if isinstance(data, DatetimeIndex):
@@ -136,7 +139,7 @@ class OldDateTimeEncoder(BaseEncoder):
         if isinstance(data.dtype, pd.ArrowDtype):
             data = data.astype("datetime64[ns]")
 
-        return (data - self.offset) / pd.Timedelta(1, unit=self.unit)
+        return (data - self.offset) / timedelta(1, unit=self.unit)
 
     def decode(self, data: Series, /) -> Series | DatetimeIndex:
         converted = pd.to_timedelta(data, unit=self.unit)

@@ -21,6 +21,7 @@ from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.utils import timedelta, timestamp
 from tsdm.utils.pprint import pprint_repr
 
 
@@ -120,8 +121,8 @@ class ElectricityLim2021(TimeSeriesTask):
 
         super().__init__(dataset=dataset)
 
-        self.observation_period = pd.Timedelta("7d")
-        self.forecasting_period = pd.Timedelta("1d")
+        self.observation_period = timedelta("7d")
+        self.forecasting_period = timedelta("1d")
         self.observation_horizon = 24 * 7
         self.forecasting_horizon = 24
 
@@ -132,10 +133,10 @@ class ElectricityLim2021(TimeSeriesTask):
     def boundaries(self) -> dict[str, pd.Timestamp]:
         r"""Start and end dates of the training, validation and test sets."""
         return {
-            "start": pd.Timestamp("2014-01-01"),
-            "train": pd.Timestamp("2014-08-08"),
-            "valid": pd.Timestamp("2014-09-01"),
-            "final": pd.Timestamp("2014-09-08"),
+            "start": timestamp("2014-01-01"),
+            "train": timestamp("2014-08-08"),
+            "valid": timestamp("2014-09-01"),
+            "final": timestamp("2014-09-08"),
         }
 
     @cached_property

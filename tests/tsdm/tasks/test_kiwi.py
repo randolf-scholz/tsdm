@@ -2,7 +2,6 @@ r"""Test task implementation with InSilico."""
 
 import logging
 
-import pandas as pd
 import pytest
 import torch.utils.data
 from pandas import DataFrame, MultiIndex
@@ -14,6 +13,7 @@ from tsdm.data.timeseries import Sample, TimeSeriesCollection
 from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
+from tsdm.utils import timedelta
 
 __logger__ = logging.getLogger(__name__)
 
@@ -68,8 +68,8 @@ def test_kiwi_task(SplitID=(0, "train")):
     targets: list[str] = generator.targets
     assert set(observables) | set(covariates) | set(targets) == set(x.columns)
 
-    td_observation = pd.Timedelta(task.observation_horizon)
-    td_forecasting = pd.Timedelta(task.forecasting_horizon)
+    td_observation = timedelta(task.observation_horizon)
+    td_forecasting = timedelta(task.forecasting_horizon)
     mask_observation = time < (
         time.min() + td_observation
     )  # FIXME: broken test! this mask is incorrect!

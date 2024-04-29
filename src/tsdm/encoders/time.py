@@ -30,6 +30,7 @@ from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasDtype
 from tsdm.types.time import DateTime, TimeDelta
+from tsdm.utils import timedelta, timestamp
 
 PandasVec = TypeVar("PandasVec", Index, Series)
 
@@ -43,7 +44,7 @@ class TimeDeltaEncoder(BaseEncoder):
     r"""The original dtype of the Series."""
 
     def __init__(self, *, unit: str | TimeDelta = NotImplemented) -> None:
-        self.unit = NotImplemented if unit is NotImplemented else pd.Timedelta(unit)
+        self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
 
     @property
     def requires_fit(self) -> bool:
@@ -89,10 +90,8 @@ class DateTimeEncoder(BaseEncoder):
         unit: str | TimeDelta = NotImplemented,
         offset: str | TimeDelta = NotImplemented,
     ) -> None:
-        self.unit = NotImplemented if unit is NotImplemented else pd.Timedelta(unit)
-        self.offset = (
-            NotImplemented if offset is NotImplemented else pd.Timestamp(offset)
-        )
+        self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
+        self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
 
     @property
     def requires_fit(self) -> bool:

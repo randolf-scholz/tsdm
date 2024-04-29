@@ -7,13 +7,14 @@ from itertools import count
 
 import numpy as np
 from numpy._typing import NDArray
-from pandas import DataFrame, Timedelta, Timestamp
+from pandas import DataFrame
 from typing_extensions import Any, Generic, Optional, cast, deprecated
 
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
 from tsdm.types.time import DTVar, TDVar
+from tsdm.utils import timedelta, timestamp
 
 
 @deprecated("Use SlidingWindowSampler instead.")
@@ -189,7 +190,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case None:
                 self.xmin = self.data[0]
             case str() as time_str:
-                self.xmin = Timestamp(time_str)
+                self.xmin = timestamp(time_str)
             case _:
                 self.xmin = tmin
 
@@ -197,16 +198,16 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case None:
                 self.xmax = self.data[-1]
             case str() as time_str:
-                self.xmax = Timestamp(time_str)
+                self.xmax = timestamp(time_str)
             case _:
                 self.xmax = tmax
 
         total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
         self.stride = cast(
-            TDVar, Timedelta(stride) if isinstance(stride, str) else stride
+            TDVar, timedelta(stride) if isinstance(stride, str) else stride
         )
         self.seq_len = cast(
-            TDVar, Timedelta(seq_len) if isinstance(seq_len, str) else seq_len
+            TDVar, timedelta(seq_len) if isinstance(seq_len, str) else seq_len
         )
 
         # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
@@ -301,7 +302,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 #         super().__init__(shuffle=shuffle)
 #         self.data = np.asarray(data_source)
 #         self.mode = mode
-#         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
+#         self.stride = timedelta(stride) if isinstance(stride, str) else stride
 #
 #         match tmin:
 #             case None:
@@ -309,7 +310,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 #                     self.data.iloc[0] if isinstance(self.data, Series) else self.data[0]
 #                 )
 #             case str() as time_str:
-#                 self.tmin = Timestamp(time_str)
+#                 self.tmin = timestamp(time_str)
 #             case _:
 #                 self.tmin = tmin
 #
@@ -321,7 +322,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 #                     else self.data[-1]
 #                 )
 #             case str() as time_str:
-#                 self.tmax = Timestamp(time_str)
+#                 self.tmax = timestamp(time_str)
 #             case _:
 #                 self.tmax = tmax
 #

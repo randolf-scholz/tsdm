@@ -30,7 +30,7 @@ import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
-from pandas import Index, Series, Timedelta, Timestamp
+from pandas import Index, Series, Timedelta
 from typing_extensions import (
     Any,
     ClassVar,
@@ -45,6 +45,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
+from tsdm.constants import RNG
 from tsdm.data.datasets import (
     Dataset,
     IndexableDataset,
@@ -57,10 +58,8 @@ from tsdm.data.datasets import (
 from tsdm.types.protocols import VectorLike
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import K2, K, T_co
+from tsdm.utils import timedelta, timestamp
 from tsdm.utils.pprint import pprint_repr
-
-RNG: Generator = np.random.default_rng()
-"""Default random number generator for samplers."""
 
 
 # region helper functions --------------------------------------------------------------
@@ -100,10 +99,10 @@ def compute_grid(
     # Python just lacks some critical abilities like
     #  typeof https://github.com/python/typing/issues/769
     #  or generic bounds https://github.com/python/typing/issues/548
-    t_min = cast(Any, Timestamp(tmin) if isinstance(tmin, str) else tmin)
-    t_max = cast(Any, Timestamp(tmax) if isinstance(tmax, str) else tmax)
-    t_0 = cast(Any, Timestamp(offset) if isinstance(offset, str) else offset)
-    delta = Timedelta(step) if isinstance(step, str) else step
+    t_min = cast(Any, timestamp(tmin) if isinstance(tmin, str) else tmin)
+    t_max = cast(Any, timestamp(tmax) if isinstance(tmax, str) else tmax)
+    t_0 = cast(Any, timestamp(offset) if isinstance(offset, str) else offset)
+    delta = timedelta(step) if isinstance(step, str) else step
 
     # validate inputs
     if (t_min > t_0) or (t_0 > t_max):
@@ -539,7 +538,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         self.data = np.array(data_source, dtype=dt_type)
         self.mode = mode
         self.drop_last = drop_last
-        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
+        self.stride = timedelta(stride) if isinstance(stride, str) else stride
         assert self.stride > zero_td, "stride must be positive."
         # endregion set basic attributes -----------------------------------------------
 
@@ -547,7 +546,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         match horizons:
             case str() as string:
                 self.multi_horizon = False
-                self.horizons = np.array([Timedelta(string)], dtype=td_type)
+                self.horizons = np.array([timedelta(string)], dtype=td_type)
             case Iterable() as iterable:
                 values = list(iterable)
                 self.multi_horizon = True

@@ -1,6 +1,6 @@
 r"""Tests for time related types."""
 
-from datetime import datetime, timedelta
+from datetime import datetime as python_datetime, timedelta as python_timedelta
 
 import numpy
 import numpy as np
@@ -9,6 +9,7 @@ from pytest import mark
 from typing_extensions import get_protocol_members
 
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
+from tsdm.utils import timedelta, timestamp
 
 ISO_DATE = "2021-01-01"
 
@@ -17,36 +18,36 @@ DT_INT = 10
 DT_NUMPY = numpy.datetime64(ISO_DATE)
 DT_NUMPY_FLOAT = numpy.float64(10.0)
 DT_NUMPY_INT = numpy.int64(10)
-DT_PANDAS = pandas.Timestamp(ISO_DATE)
-DT_PYTHON = datetime.fromisoformat(ISO_DATE)
+DT_PANDAS = timestamp(ISO_DATE)
+DT_PYTHON = python_datetime.fromisoformat(ISO_DATE)
 DATETIMES: dict[str, DateTime] = {
-    "float": DT_FLOAT,
-    "int": DT_INT,  # pyright: ignore[reportAssignmentType]
-    "numpy": DT_NUMPY,
-    "numpy_float": DT_NUMPY_FLOAT,
-    "numpy_int": DT_NUMPY_INT,
-    "pandas": DT_PANDAS,
-    "python": DT_PYTHON,
-    # "arrow": pyarrow.scalar(DT, type=pyarrow.timestamp("s")),
-}
+    "float"       : DT_FLOAT,
+    "int"         : DT_INT,  # pyright: ignore[reportAssignmentType]
+    "numpy"       : DT_NUMPY,
+    "numpy_float" : DT_NUMPY_FLOAT,
+    "numpy_int"   : DT_NUMPY_INT,
+    "pandas"      : DT_PANDAS,
+    "python"      : DT_PYTHON,
+    # "arrow": pyarrow.scalar(DT, type=pyarrow.timestamp("ms")),
+}  # fmt: skip
 
 TD_FLOAT = 10.0
 TD_INT = 10
 TD_NUMPY = numpy.timedelta64(1, "D")
 TD_NUMPY_FLOAT = numpy.float64(10.0)
 TD_NUMPY_INT = numpy.int64(10)
-TD_PANDAS = pandas.Timedelta(days=1)
-TD_PYTHON = timedelta(days=1)
+TD_PANDAS = timedelta(days=1)
+TD_PYTHON = python_timedelta(days=1)
 TIMEDELTAS: dict[str, TimeDelta] = {
-    "float": TD_FLOAT,
-    "int": TD_INT,  # pyright: ignore[reportAssignmentType]
-    "numpy": TD_NUMPY,
-    "numpy_float": TD_NUMPY_FLOAT,
-    "numpy_int": TD_NUMPY_INT,
-    "pandas": TD_PANDAS,
-    "python": TD_PYTHON,
+    "float"       : TD_FLOAT,
+    "int"         : TD_INT,  # pyright: ignore[reportAssignmentType]
+    "numpy"       : TD_NUMPY,
+    "numpy_float" : TD_NUMPY_FLOAT,
+    "numpy_int"   : TD_NUMPY_INT,
+    "pandas"      : TD_PANDAS,
+    "python"      : TD_PYTHON,
     # "arrow": pyarrow.scalar(TD, type=pyarrow_td_type),
-}
+}  # fmt: skip
 
 
 def test_datetime_protocol_itself() -> None:

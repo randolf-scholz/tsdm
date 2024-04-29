@@ -9,11 +9,12 @@ __all__ = [
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
-from pandas import Timedelta, Timestamp, date_range, timedelta_range
+from pandas import date_range, timedelta_range
 from typing_extensions import Optional
 
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
 from tsdm.types.time import DTVar, TDVar
+from tsdm.utils import timedelta, timestamp
 
 
 def sample_timestamps(
@@ -38,9 +39,9 @@ def sample_timestamps(
         include_start: If `True`, then `start` will always be the first sampled timestamp.
         include_final: If `True`, then `final` will always be the final sampled timestamp.
     """
-    start_dt = Timestamp(start)
-    final_dt = start_dt + Timedelta("24h") if final is None else Timestamp(final)
-    freq_td = Timedelta(freq)
+    start_dt = timestamp(start)
+    final_dt = start_dt + timedelta("24h") if final is None else timestamp(final)
+    freq_td = timedelta(freq)
     start_dt, final_dt = start_dt.round(freq_td), final_dt.round(freq_td)
 
     # randomly sample timestamps
@@ -77,9 +78,9 @@ def sample_timedeltas(
     freq: str | TDVar = "1s",
 ) -> NDArray:
     r"""Create randomly sampled timedeltas."""
-    low_dt = Timedelta(low)
-    high_dt = Timedelta(high)
-    freq_dt = Timedelta(freq)
+    low_dt = timedelta(low)
+    high_dt = timedelta(high)
+    freq_dt = timedelta(freq)
     low_dt, high_dt = low_dt.round(freq_dt), high_dt.round(freq_dt)
 
     # randomly sample timedeltas

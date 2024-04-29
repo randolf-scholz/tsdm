@@ -389,9 +389,9 @@ class BaseEncoder(Encoder[T, T2]):
                 raise RuntimeError("Encoder has not been fitted!")
             return original_decode(self, data)
 
-        cls.fit = fit_wrapper  # type: ignore[method-assign]
-        cls.encode = encode_wrapper  # type: ignore[method-assign]
-        cls.decode = decode_wrapper  # type: ignore[method-assign]
+        cls.fit = fit_wrapper  # type: ignore[assignment]
+        cls.encode = encode_wrapper  # type: ignore[assignment]
+        cls.decode = decode_wrapper  # type: ignore[assignment]
 
     @property
     def is_fitted(self) -> bool:

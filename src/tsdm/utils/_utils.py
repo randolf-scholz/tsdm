@@ -12,6 +12,8 @@ __all__ = [
     "initialize_from_config",
     "joint_keys",
     "last",
+    "timedelta",
+    "timestamp",
     "now",
     "pairwise_disjoint",
     "pairwise_disjoint_masks",
@@ -38,6 +40,7 @@ from collections.abc import (
     Sequence,
 )
 from datetime import datetime
+from functools import wraps
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -45,6 +48,8 @@ from zipfile import ZipFile
 
 import numpy as np
 from numpy.typing import NDArray
+from pandas import Timedelta, Timestamp
+from pandas.api.typing import NaTType
 from torch import nn
 from tqdm.autonotebook import tqdm
 from typing_extensions import Any, Literal, Optional, cast, overload
@@ -63,6 +68,28 @@ from tsdm.types.aliases import (
     Size,
 )
 from tsdm.types.variables import K2, HashableType, K, T
+
+
+@wraps(Timedelta)
+def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Timedelta:
+    r"""Utility function that ensures that the constructor does not return NaT."""
+    td = (
+        Timedelta(unit=unit, **kwargs)
+        if value is Ellipsis
+        else Timedelta(value, unit=unit, **kwargs)
+    )
+    if isinstance(td, NaTType):
+        raise TypeError("Constructor returned NaT")
+    return td
+
+
+@wraps(Timestamp)
+def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
+    r"""Utility function that ensures that the constructor does not return NaT."""
+    ts = Timestamp(**kwargs) if value is Ellipsis else Timestamp(value, **kwargs)
+    if isinstance(ts, NaTType):
+        raise TypeError("Constructor returned NaT")
+    return ts
 
 
 def axes_to_tuple(axes: Axes, *, ndim: int) -> tuple[int, ...]:

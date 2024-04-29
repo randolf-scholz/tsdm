@@ -99,7 +99,7 @@ class Callback(Protocol):
         ...
 
     @abstractmethod
-    def callback(self, step: int, /, **state_dict: Any) -> None:  # pyright: ignore
+    def callback(self, step: int, /, **state_dict: Any) -> None:
         r"""Log something at time index i."""
         ...
 

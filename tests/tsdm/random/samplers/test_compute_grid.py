@@ -18,6 +18,7 @@ from typing_extensions import NamedTuple
 
 from tsdm.random.samplers import compute_grid
 from tsdm.types.time import DTVar, TDVar
+from tsdm.utils import timedelta
 
 __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]
@@ -156,10 +157,10 @@ def test_grid_extra() -> None:
     LOGGER.info("Testing on extra data")
 
     tmin = pd.Timestamp(0)
-    tmax = tmin + pd.Timedelta(2, "h")
-    timedelta = pd.Timedelta("15m")
-    offset = tmin + timedelta
+    tmax = tmin + timedelta(2, "h")
+    td = timedelta("15m")
+    offset = tmin + td
 
-    _validate_grid_results(tmin, tmax, timedelta, offset)
+    _validate_grid_results(tmin, tmax, td, offset)
 
     LOGGER.info("Finished testing on extra data")

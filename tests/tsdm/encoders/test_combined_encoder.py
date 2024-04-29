@@ -25,6 +25,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.tasks import KiwiBenchmark
+from tsdm.utils import timedelta
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -123,7 +124,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     if pa_version >= (15, 0, 0):  # FIXME: https://github.com/apache/arrow/issues/39156
         reference_index = inputs.index
         decoded_index = decoded.index
-        freq = pd.Timedelta("1us")
+        freq = timedelta("1us")
         assert decoded_index.notna().all()
         assert decoded_index.shape == reference_index.shape
         assert decoded_index.dtype == reference_index.dtype

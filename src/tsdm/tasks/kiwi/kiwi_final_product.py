@@ -27,6 +27,7 @@ from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.utils import timedelta
 from tsdm.utils.pprint import pprint_repr
 
 
@@ -80,7 +81,7 @@ def get_time_table(
     index = ts.reset_index(level=[2]).index.unique()
     df = DataFrame(index=index, columns=columns)
 
-    min_wait = Timedelta(t_min)
+    min_wait = timedelta(t_min)
 
     for idx, group in ts.groupby(level=[0, 1]):
         slc = group.reset_index(level=[0, 1], drop=True)
@@ -141,8 +142,8 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
         # Initialize other attributes
         self.target = target
-        self.t_min = Timedelta(t_min)
-        self.delta_t = Timedelta(delta_t)
+        self.t_min = timedelta(t_min)
+        self.delta_t = timedelta(delta_t)
 
         self.eval_batch_size = eval_batch_size
         self.train_batch_size = train_batch_size
