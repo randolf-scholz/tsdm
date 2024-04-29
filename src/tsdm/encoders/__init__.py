@@ -127,16 +127,18 @@ __all__ = [
     "LogitEncoder",
     "MappingEncoder",
     "MinMaxScaler",
+    "OldDateTimeEncoder",
     "ParallelEncoder",  # Structural
     "PeriodicEncoder",
-    "PipedEncoder",  # Structural
     "PeriodicSocialTimeEncoder",
+    "PipedEncoder",  # Structural
     "PositionalEncoder",
     "SocialTimeEncoder",
     "StandardScaler",
     "TensorConcatenator",
     "TensorEncoder",
     "TensorSplitter",
+    "Time2Float",
     "TimeDeltaEncoder",
     "TripletDecoder",
     "TripletEncoder",

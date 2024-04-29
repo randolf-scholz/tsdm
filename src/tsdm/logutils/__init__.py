@@ -15,6 +15,7 @@ __all__ = [
     "BaseLogger",
     "Callback",
     "CallbackSequence",
+    "DefaultLogger",
     "LogFunction",
     "Logger",
     # Classes

@@ -132,8 +132,18 @@ def is_flattened(
 
 
 def is_dunder(name: str, /) -> bool:
-    r"""Check if the name is a dunder method."""
-    return name.isidentifier() and name.startswith("__") and name.endswith("__")
+    r"""Check if the name is a dunder method.
+
+    Equivalent to the regex pattern: `^__.*__$`
+    """
+    return (
+        name.isidentifier()
+        and name.startswith("__")
+        and not name.startswith("___")
+        and name.endswith("__")
+        and not name.endswith("___")
+        and len(name) > 4
+    )
 
 
 def is_zipfile(path: Path, /) -> bool:
