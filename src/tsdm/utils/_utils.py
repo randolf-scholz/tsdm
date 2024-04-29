@@ -20,6 +20,7 @@ __all__ = [
     "repackage_zip",
     "replace",
     "round_relative",
+    "shape_to_tuple",
     "size_to_tuple",
     "unflatten_dict",
 ]
@@ -119,8 +120,6 @@ def shape_to_tuple(shape: Shape) -> tuple[int, ...]:
         - `np.ones(shape=())`   produces a 0d-array (1 element).
         - `np.ones(shape=k)`    produces a 1d-array (k elements).
     """
-    if shape is None:
-        return ()
     if isinstance(shape, int):
         return (shape,)
     return tuple(shape)

@@ -87,7 +87,7 @@ Dims: TypeAlias = None | int | list[int]
 r"""Type Alias for dimensions compatible with torchscript."""  # FIXME: https://github.com/pytorch/pytorch/issues/64700
 Size: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
-Shape: TypeAlias = None | int | tuple[int, ...]
+Shape: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
 
 Kwargs: TypeAlias = SupportsKwargs[T_co]

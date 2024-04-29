@@ -5,6 +5,7 @@ import pytest
 import torch
 from torch import jit
 
+from tsdm.types.aliases import Axes, Dims, Shape, Size
 from tsdm.utils import (
     axes_to_tuple,
     dims_to_list,
@@ -12,13 +13,14 @@ from tsdm.utils import (
     last,
     pairwise_disjoint,
     replace,
+    shape_to_tuple,
     size_to_tuple,
     unflatten_dict,
 )
 
 
-@pytest.mark.parametrize("dims", [None, 0, 1, [], [0], [-1], [-1, -2]])
-def test_dims_to_list(dims):
+@pytest.mark.parametrize("dims", [None, 0, 1, [], [0], [-1], [-1, -2]], ids=str)
+def test_dims_to_list(dims: Dims) -> None:
     r"""Test `tsdm.utils.dims_to_list`."""
     x = torch.randn(4, 2, 2, 1)
 
@@ -26,7 +28,9 @@ def test_dims_to_list(dims):
     dims_list = dims_to_list(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
-    torch.testing.assert_close(result, reference)
+    assert type(result) == type(reference)
+    assert result.shape == reference.shape
+    assert (result == reference).all()
 
     # test with jit.script
     if dims == []:
@@ -35,11 +39,15 @@ def test_dims_to_list(dims):
     dims_list = f(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
-    torch.testing.assert_close(result, reference)
+    assert type(result) == type(reference)
+    assert result.shape == reference.shape
+    assert (result == reference).all()
 
 
-@pytest.mark.parametrize("axis", [None, 0, 1, (), (0,), (-1,), (-1, -2)])
-def test_axes_to_tuple(axis):
+@pytest.mark.parametrize(
+    "axis", [None, 0, 1, (), (0,), (-1,), (-1, -2), (0, 1, 2, 3)], ids=str
+)
+def test_axes_to_tuple(axis: Axes) -> None:
     r"""Test `tsdm.utils.axes_to_tuple`."""
     rng = np.random.default_rng()
     x = rng.uniform(size=(4, 2, 2, 1))
@@ -47,17 +55,32 @@ def test_axes_to_tuple(axis):
     axes_tuple = axes_to_tuple(axis, ndim=x.ndim)
     result = np.mean(x, axis=axes_tuple)
     reference = np.mean(x, axis=axis)
-    np.testing.assert_allclose(result, reference)
+    assert type(result) == type(reference)
+    assert result.shape == reference.shape
+    assert (result == reference).all()
 
 
-@pytest.mark.parametrize("size", [None, 0, 1, (), (0,), (1,), (1, 2)])
-def test_size_to_tuple(size):
+@pytest.mark.parametrize("shape", [0, 1, (), (0,), (1,), (1, 2)], ids=str)
+def test_shape_to_tuple(shape: Shape) -> None:
+    r"""Test `tsdm.utils.shape_to_tuple`."""
+    shape_tuple = shape_to_tuple(shape)
+    result = np.ones(shape_tuple)
+    reference = np.ones(shape)
+    assert type(result) == type(reference)
+    assert result.shape == reference.shape
+    assert (result == reference).all()
+
+
+@pytest.mark.parametrize("size", [0, 1, (), (0,), (1,), (1, 2)], ids=str)
+def test_size_to_tuple(size: Size) -> None:
     sizes_tuple = size_to_tuple(size)
     rng = np.random.default_rng(42)
     result = rng.uniform(size=sizes_tuple)
     rng = np.random.default_rng(42)
     reference = rng.uniform(size=size)
-    np.testing.assert_allclose(result, reference)
+    assert type(result) == type(reference)
+    assert result.shape == reference.shape
+    assert (result == reference).all()
 
 
 def test_last():
