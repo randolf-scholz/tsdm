@@ -120,10 +120,17 @@ class Dirichlet:
         raise NotImplementedError
 
     @classmethod
-    def rvs(cls, alphas: ArrayLike, size: Size = ()) -> NDArray:
+    def rvs(
+        cls,
+        alphas: ArrayLike,
+        size: Size = (),
+        *,
+        random_state: Optional[int | Generator] = None,
+    ) -> NDArray:
         r"""Random variates of the Dirichlet distribution."""
         alphas = np.asarray(alphas)
         size = (size,) if isinstance(size, int) else size
-        x = RNG.gamma(shape=alphas, size=size + alphas.shape)
+        rng = RNG if random_state is None else np.random.default_rng(random_state)
+        x = rng.gamma(shape=alphas, size=size + alphas.shape)
         x /= x.sum(axis=-1, keepdims=True)
         return x

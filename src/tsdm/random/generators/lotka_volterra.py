@@ -52,25 +52,29 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     r"""Initial angular velocity."""
 
     @property
-    def observation_noise(self) -> RV:
+    def observation_noise_dist(self) -> RV:
         r"""Noise distribution."""
-        return uniform(loc=0.95, scale=0.1, random_state=self.rng)
+        return uniform(loc=0.95, scale=0.1)
 
     @property
-    def parameter_noise(self) -> RV:
+    def initial_state_dist(self) -> RV:
         r"""Noise distribution."""
-        return univariate_normal(loc=0, scale=1, random_state=self.rng)
+        return univariate_normal(loc=0, scale=1)
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
-        theta0 = self.prey0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
-        omega0 = self.predator0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
+        p = self.initial_state_dist
+        prey_noise = p.rvs(size=size, random_state=self.rng).clip(-2, +2)
+        predator_noise = p.rvs(size=size, random_state=self.rng).clip(-2, +2)
+        theta0 = self.prey0 + prey_noise
+        omega0 = self.predator0 + predator_noise
         return np.stack([theta0, omega0], axis=-1)
 
     def _make_observations_impl(self, x: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         # multiplicative noise
-        return x * self.observation_noise.rvs(size=x.shape)
+        p = self.observation_noise_dist
+        return x * p.rvs(size=x.shape, random_state=self.rng)
 
     def system(self, t: Any, state: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.

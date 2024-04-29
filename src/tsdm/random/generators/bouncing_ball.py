@@ -54,9 +54,8 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
         x0 = self.rng.uniform(low=self.x_min, high=self.x_max, size=size)
-        v0 = self.rng.uniform(
-            low=self.v_min, high=self.v_max, size=size
-        ) * self.rng.choice([-1, 1], size=size)
+        d0 = self.rng.choice([-1, 1], size=size)
+        v0 = d0 * self.rng.uniform(low=self.v_min, high=self.v_max, size=size)
         return np.stack([x0, v0], axis=-1)
 
     def _make_observations_impl(self, loc: NDArray, /) -> NDArray:
@@ -67,7 +66,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         lower = (self.x_min - x) / self.y_noise
         upper = (self.x_max - x) / self.y_noise
         y = truncnorm.rvs(lower, upper, loc=x, scale=self.y_noise)
-        return y
+        return np.asarray(y)
 
     def _solve_ivp_impl(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
         r"""Solve the initial value problem.

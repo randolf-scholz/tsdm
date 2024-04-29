@@ -111,25 +111,27 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     r"""Initial angular velocity."""
 
     @property
-    def observation_noise(self) -> RV:
+    def observation_noise_dist(self) -> RV:
         r"""Noise distribution."""
-        return univariate_normal(loc=0, scale=0.05, random_state=self.rng)
+        return univariate_normal(loc=0, scale=0.05)
 
     @property
-    def parameter_noise(self) -> RV:
+    def initial_state_dist(self) -> RV:
         r"""Noise distribution."""
-        return univariate_normal(loc=0, scale=1, random_state=self.rng)
+        return univariate_normal(loc=0, scale=1)
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
-        theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
-        omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)
+        p = self.initial_state_dist
+        theta0 = self.theta0 + p.rvs(size=size, random_state=self.rng).clip(-2, +2)
+        omega0 = self.omega0 * p.rvs(size=size, random_state=self.rng).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
     def _make_observations_impl(self, y: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         # add observation noise
-        return y + self.observation_noise.rvs(size=y.shape)
+        p = self.observation_noise_dist
+        return y + p.rvs(size=y.shape, random_state=self.rng)
 
     def system(self, t: ArrayLike, x: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.
@@ -178,7 +180,10 @@ class DampedPendulumXY(DampedPendulum):
         noise = noise * self.length
         lower = (loc_min - loc) / noise
         upper = (loc_max - loc) / noise
-        return truncnorm.rvs(lower, upper, loc=loc, scale=noise, random_state=self.rng)
+        result = truncnorm.rvs(
+            lower, upper, loc=loc, scale=noise, random_state=self.rng
+        )
+        return np.asarray(result)
 
     def validate_observations(self, values: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""
