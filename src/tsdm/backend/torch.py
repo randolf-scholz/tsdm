@@ -15,10 +15,10 @@ import torch
 from numpy.typing import ArrayLike
 from torch import Tensor
 
-from tsdm.types.aliases import Axes
+from tsdm.types.aliases import Axis
 
 
-def torch_nanmin(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
+def torch_nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanmin`."""
     return torch.amin(
         torch.where(torch.isnan(x), float("+inf"), x),
@@ -27,7 +27,7 @@ def torch_nanmin(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
     )
 
 
-def torch_nanmax(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
+def torch_nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanmax`."""
     return torch.amax(
         torch.where(torch.isnan(x), float("-inf"), x),
@@ -36,7 +36,7 @@ def torch_nanmax(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
     )
 
 
-def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
+def torch_nanstd(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanstd`."""
     r = x - torch.nanmean(x, dim=axis, keepdim=True)
     return torch.sqrt(
@@ -54,7 +54,7 @@ def torch_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
 
 
 def torch_apply_along_axes(
-    op: Callable[..., Tensor], /, *tensors: Tensor, axis: Axes
+    op: Callable[..., Tensor], /, *tensors: Tensor, axis: Axis
 ) -> Tensor:
     r"""Apply a function to multiple tensors along axes.
 

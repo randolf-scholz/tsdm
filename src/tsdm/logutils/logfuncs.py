@@ -109,7 +109,8 @@ def log_config(
     r"""Log config to tensorboard."""
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path = path / f"{identifier}-{step}.{fmt}"
+    path /= f"{identifier}-{step}.{fmt}"
+
     match fmt:
         case "json":
             with open(path, "w", encoding="utf8") as file:
@@ -439,7 +440,7 @@ def log_table(
     options = {} if options is None else options
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path = path / f"{identifier + '-' * bool(identifier)}{step}"
+    path /= f"{identifier + '-' * bool(identifier)}{step}"
 
     match filetype:
         case "parquet":

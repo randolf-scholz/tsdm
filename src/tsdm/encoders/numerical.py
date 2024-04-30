@@ -75,7 +75,7 @@ from typing_extensions import (
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axes, Nested, Size
+from tsdm.types.aliases import Axis, Nested, Size
 from tsdm.types.protocols import NTuple, NumericalArray
 from tsdm.utils.pprint import pprint_repr
 
@@ -111,7 +111,7 @@ PARAMETERS: TypeAlias = tuple[
 r"""Type Hint for parameters tuple."""
 
 
-def invert_axis_selection(axis: Axes, /, *, ndim: int) -> tuple[int, ...]:
+def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:
     r"""Invert axes-selection for a rank `ndim` tensor.
 
     Example:
@@ -144,7 +144,7 @@ def get_broadcast(
     original_shape: tuple[int, ...],
     /,
     *,
-    axis: Axes,
+    axis: Axis,
     keep_axis: bool = False,
 ) -> tuple[slice | None, ...]:
     r"""Creates an indexer that broadcasts a tensors contracted via `axis`.
@@ -341,7 +341,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
 
     _: KW_ONLY
 
-    axis: Axes = None
+    axis: Axis = None
     lower_included: bool = True
     upper_included: bool = True
     mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask"
@@ -473,7 +473,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         upper_included: bool
 
         mode: ClippingMode | tuple[ClippingMode, ClippingMode]
-        axis: Axes = None
+        axis: Axis = None
 
     @property
     def params(self) -> Parameters:
@@ -510,7 +510,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
     scale: Arr  # NDArray[np.number] | Tensor
     r"""The scaling factor."""
 
-    axis: Axes
+    axis: Axis
     r"""Over which axis to perform the scaling."""
     backend: Backend[Arr]
     r"""The backend of the encoder."""
@@ -520,7 +520,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
         loc: float | Arr = 0.0,
         scale: float | Arr = 1.0,
         *,
-        axis: Axes = None,
+        axis: Axis = None,
     ) -> None:
         r"""Initialize the MinMaxScaler."""
         self.loc = cast(Arr, loc)
@@ -581,7 +581,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
 
         loc: Arr2
         scale: Arr2
-        axis: Axes
+        axis: Axis
 
     @property
     def params(self) -> Parameters:
@@ -609,7 +609,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
 
     _: KW_ONLY
 
-    axis: Axes
+    axis: Axis
     r"""The axis to perform the scaling. If None, automatically select the axis."""
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
@@ -623,7 +623,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
         mean: float | Arr = NotImplemented,
         stdv: float | Arr = NotImplemented,
         *,
-        axis: Axes = (),
+        axis: Axis = (),
     ) -> None:
         self.mean = cast(Arr, mean)
         self.stdv = cast(Arr, stdv)
@@ -677,7 +677,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
 
         mean: Arr2
         stdv: Arr2
-        axis: Axes
+        axis: Axis
 
     @property
     def params(self) -> Parameters:
@@ -741,7 +741,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
 
     _: KW_ONLY
 
-    axis: Axes
+    axis: Axis
     r"""Over which axis to perform the scaling."""
     safe_computation: bool
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
@@ -760,7 +760,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         *,
         xmin: None | float | Arr = None,
         xmax: None | float | Arr = None,
-        axis: Axes = (),
+        axis: Axis = (),
     ) -> None:
         self.safe_computation = True
         self.ymin = cast(Arr, ymin)
@@ -890,7 +890,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         xmax: Arr2
         ymin: Arr2
         ymax: Arr2
-        axis: Axes
+        axis: Axis
 
     @property
     def params(self) -> Parameters:

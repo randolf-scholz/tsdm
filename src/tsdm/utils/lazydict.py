@@ -39,7 +39,7 @@ from tsdm.utils.pprint import pprint_repr
 class LazyValue(Generic[R]):
     r"""A placeholder for uninitialized values."""
 
-    __slots__ = ("func", "args", "kwargs", "type_hint")
+    __slots__ = ("args", "func", "kwargs", "type_hint")
     # we use slots since lots of instances of lazy-value might be created.
 
     func: Callable[..., R]

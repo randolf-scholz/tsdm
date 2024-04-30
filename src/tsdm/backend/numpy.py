@@ -10,7 +10,7 @@ from collections.abc import Callable
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from tsdm.types.aliases import Axes
+from tsdm.types.aliases import Axis
 
 
 def numpy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
@@ -22,7 +22,7 @@ def numpy_apply_along_axes(
     op: Callable[..., NDArray],
     /,
     *arrays: NDArray,
-    axis: Axes,
+    axis: Axis,
 ) -> NDArray:
     r"""Apply a function to multiple arrays along axes.
 

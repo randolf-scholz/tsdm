@@ -7,7 +7,7 @@ __all__ = [
     "SplitID",
     # namedtuple
     # Custom Type Aliases
-    "Axes",
+    "Axis",
     "Dims",
     "FilePath",
     "Kwargs",
@@ -81,7 +81,7 @@ from tsdm.types.protocols import Lookup, SupportsKwargs
 from tsdm.types.variables import K, K_contra, T, T_co, V, V_co
 
 # region Custom Type Aliases -----------------------------------------------------------
-Axes: TypeAlias = None | int | tuple[int, ...]
+Axis: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""
 Dims: TypeAlias = None | int | list[int]
 r"""Type Alias for dimensions compatible with torchscript."""  # FIXME: https://github.com/pytorch/pytorch/issues/64700

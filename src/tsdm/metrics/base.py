@@ -14,7 +14,7 @@ import torch
 from torch import Tensor, nn
 from typing_extensions import Final, Protocol, runtime_checkable
 
-from tsdm.types.aliases import Axes
+from tsdm.types.aliases import Axis
 
 
 @runtime_checkable
@@ -79,7 +79,7 @@ class WeightedMetric(BaseMetric, Metric):
         *,
         learnable: bool = False,
         normalize: bool = False,
-        axis: Axes = None,
+        axis: Axis = None,
     ) -> None:
         r"""Initialize the loss function."""
         w = torch.as_tensor(weight, dtype=torch.float32)

@@ -22,7 +22,7 @@ from torch import Tensor, jit
 from typing_extensions import Final
 
 from tsdm.metrics.base import BaseMetric, WeightedMetric
-from tsdm.types.aliases import Axes
+from tsdm.types.aliases import Axis
 from tsdm.utils.wrappers import autojit
 
 
@@ -378,7 +378,7 @@ class WLP(WeightedMetric):
         p: float = 2.0,
         learnable: bool = False,
         normalize: bool = False,
-        axis: Axes = None,
+        axis: Axis = None,
     ):
         super().__init__(weight, normalize=normalize, learnable=learnable, axis=axis)
         self.p = p

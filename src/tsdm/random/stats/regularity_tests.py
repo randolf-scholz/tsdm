@@ -82,7 +82,7 @@ def float_gcd(x: ArrayLike) -> float:
     assert np.allclose(z, np.rint(z)), "something went wrong"
 
     gcd = np.gcd.reduce(np.rint(z).astype(int))
-    gcd = gcd * 2 ** (-fac)
+    gcd *= 2 ** (-fac)
 
     z = x / gcd
     z_int = np.rint(z).astype(int)

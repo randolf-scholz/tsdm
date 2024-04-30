@@ -33,7 +33,7 @@ from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, Series
 from typing_extensions import Any, Literal, TypeAlias, TypeVar
 
-from tsdm.types.aliases import Axes, Scalar
+from tsdm.types.aliases import Axis, Scalar
 from tsdm.types.variables import T
 from tsdm.utils import joint_keys
 
@@ -59,7 +59,7 @@ def pandas_true_like(x: P, /) -> P:
 
 
 def pandas_infer_axes(
-    x: P, /, *, axis: Axes = None
+    x: P, /, *, axis: Axis = None
 ) -> Literal[None, "index", "columns"]:
     r"""Convert axes specification to pandas-compatible axes specification.
 
@@ -84,22 +84,22 @@ def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
     return x.clip(lower, upper, axis=axis)
 
 
-def pandas_nanmax(x: P, /, *, axis: Axes = None) -> P:
+def pandas_nanmax(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmax`."""
     return x.max(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
-def pandas_nanmin(x: P, /, *, axis: Axes = None) -> P:
+def pandas_nanmin(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmin`."""
     return x.min(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
-def pandas_nanmean(x: P, /, *, axis: Axes = None) -> P:
+def pandas_nanmean(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmean`."""
     return x.mean(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
-def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
+def pandas_nanstd(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanstd`."""
     return x.std(axis=pandas_infer_axes(x, axis=axis), skipna=True, ddof=0)
 

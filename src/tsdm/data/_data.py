@@ -198,13 +198,13 @@ def detect_outliers(
 # endregion overloads ------------------------------------------------------------------
 def detect_outliers(
     obj,
-    description=None,
+    description=NotImplemented,
     /,
     *,
-    lower_bound=None,
-    upper_bound=None,
-    lower_inclusive=None,
-    upper_inclusive=None,
+    lower_bound=NotImplemented,
+    upper_bound=NotImplemented,
+    lower_inclusive=NotImplemented,
+    upper_inclusive=NotImplemented,
 ):
     r"""Detect outliers in a Series or DataFrame, given boundary values."""
     options = {
@@ -214,15 +214,15 @@ def detect_outliers(
         "upper_inclusive": upper_inclusive,
     }
 
-    if description is not None:
-        assert all(val is None for val in options.values())
-        options |= {key: description[key] for key in options}
+    if description is not NotImplemented:
+        assert not any(val is not NotImplemented for val in options.values())
+        options = {key: description[key] for key in options}
 
     match obj:
         case Series() as s:
-            return detect_outliers_series(s, **options)  # pyright: ignore
+            return detect_outliers_series(s, **options)
         case DataFrame() as df:
-            return detect_outliers_dataframe(df, **options)  # pyright: ignore
+            return detect_outliers_dataframe(df, **options)
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
 
@@ -275,13 +275,13 @@ def remove_outliers(
 # endregion overloads ------------------------------------------------------------------
 def remove_outliers(
     obj,
-    description=None,
+    description=NotImplemented,
     /,
     *,
-    lower_bound=None,
-    upper_bound=None,
-    lower_inclusive=None,
-    upper_inclusive=None,
+    lower_bound=NotImplemented,
+    upper_bound=NotImplemented,
+    lower_inclusive=NotImplemented,
+    upper_inclusive=NotImplemented,
     drop=True,
     inplace=False,
 ):
@@ -293,17 +293,17 @@ def remove_outliers(
         "upper_inclusive": upper_inclusive,
     }
 
-    if description is not None:
-        assert all(val is None for val in options.values())
-        options |= {key: description[key] for key in options}
+    if description is not NotImplemented:
+        assert not any(val is not NotImplemented for val in options.values())
+        options = {key: description[key] for key in options}
 
     options |= {"drop": drop, "inplace": inplace}
 
     match obj:
         case Series() as s:
-            return remove_outliers_series(s, **options)  # pyright: ignore
+            return remove_outliers_series(s, **options)
         case DataFrame() as df:
-            return remove_outliers_dataframe(df, **options)  # pyright: ignore
+            return remove_outliers_dataframe(df, **options)
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 

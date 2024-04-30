@@ -5,7 +5,7 @@ import pytest
 import torch
 from torch import jit
 
-from tsdm.types.aliases import Axes, Dims, Shape, Size
+from tsdm.types.aliases import Axis, Dims, Shape, Size
 from tsdm.utils import (
     axes_to_tuple,
     dims_to_list,
@@ -47,7 +47,7 @@ def test_dims_to_list(dims: Dims) -> None:
 @pytest.mark.parametrize(
     "axis", [None, 0, 1, (), (0,), (-1,), (-1, -2), (0, 1, 2, 3)], ids=str
 )
-def test_axes_to_tuple(axis: Axes) -> None:
+def test_axes_to_tuple(axis: Axis) -> None:
     r"""Test `tsdm.utils.axes_to_tuple`."""
     rng = np.random.default_rng()
     x = rng.uniform(size=(4, 2, 2, 1))

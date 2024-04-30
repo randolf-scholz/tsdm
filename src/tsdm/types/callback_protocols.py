@@ -22,7 +22,7 @@ from collections.abc import Callable
 from numpy.typing import ArrayLike
 from typing_extensions import Protocol, SupportsIndex, SupportsInt
 
-from tsdm.types.aliases import Axes, Scalar
+from tsdm.types.aliases import Axis, Scalar
 from tsdm.types.variables import T, T_co, T_contra
 
 
@@ -76,7 +76,7 @@ class ClipProto(Protocol[T]):
 class ContractionProto(Protocol[T]):
     r"""Bound Protocol for contractions (support `axes` keyword argument)."""
 
-    def __call__(self, x: T, /, *, axis: Axes = None) -> T: ...
+    def __call__(self, x: T, /, *, axis: Axis = None) -> T: ...
 
 
 class IsScalarProto(Protocol[T_contra]):
@@ -106,7 +106,7 @@ class WhereProto(Protocol[T]):
 class ApplyAlongAxes(Protocol[T]):
     r"""Bound-Protocol for `apply_along_axes`-function."""
 
-    def __call__(self, op: Callable[..., T], /, *tensors: T, axis: Axes) -> T: ...
+    def __call__(self, op: Callable[..., T], /, *tensors: T, axis: Axis) -> T: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

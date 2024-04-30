@@ -87,8 +87,6 @@ def test_boundary_encoder2(
     upper_included: bool,
 ) -> None:
     r"""Test the boundary encoder."""
-    lower, upper = bounds
-
     # create the encoder
     encoder = BoundaryEncoder(
         bounds[0],

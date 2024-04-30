@@ -57,7 +57,7 @@ from typing_extensions import Any, Literal, Optional, cast, overload
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
 from tsdm.types.aliases import (
-    Axes,
+    Axis,
     Dims,
     FilePath,
     MaybeWrapped,
@@ -92,7 +92,7 @@ def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
     return ts
 
 
-def axes_to_tuple(axes: Axes, *, ndim: int) -> tuple[int, ...]:
+def axes_to_tuple(axes: Axis, *, ndim: int) -> tuple[int, ...]:
     """Convert axes to tuple.
 
     Note:

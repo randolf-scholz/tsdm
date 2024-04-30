@@ -177,7 +177,7 @@ class DampedPendulumXY(DampedPendulum):
         # sample from truncated normal distribution
         # cf. https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html
         loc_min, loc_max = -self.length, +self.length
-        noise = noise * self.length
+        noise *= self.length
         lower = (loc_min - loc) / noise
         upper = (loc_max - loc) / noise
         result = truncnorm.rvs(

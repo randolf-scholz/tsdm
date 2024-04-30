@@ -150,13 +150,13 @@ class BaseTask(Generic[K]):
 
         match self.split_type(key):
             case "train":
-                kwargs = self.dataloader_configs["train"]
+                default_kwargs = self.dataloader_configs["train"]
             case "infer":
-                kwargs = self.dataloader_configs["train"]
+                default_kwargs = self.dataloader_configs["train"]
             case _:
                 raise ValueError(f"Unknown split type: {self.split_type(key)=}")
 
-        kwargs = kwargs | dataloader_kwargs
+        kwargs = default_kwargs | dataloader_kwargs
         dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
         return dataloader
 
