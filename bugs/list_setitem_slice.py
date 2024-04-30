@@ -31,3 +31,7 @@ if __name__ == "__main__":
     items = [0, 1, 2, 3]
     items[-17:1] = [-1]
     assert items == [-1, 1, 2, 3]
+
+
+if True:
+    x = 0  # fmt: skip

@@ -5,9 +5,8 @@ __all__ = ["Helix"]
 from dataclasses import dataclass
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import multivariate_normal
-from typing_extensions import Any
 
 from tsdm.random.distributions import RV
 from tsdm.random.generators.base import IVP_GeneratorBase
@@ -84,21 +83,24 @@ class Helix(IVP_GeneratorBase[NDArray]):
         p = self.observation_noise_dist
         return sol + p.rvs(size=sol.shape, random_state=self.rng)
 
-    def system(self, t: Any, state: NDArray) -> NDArray:
+    def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""System function."""
+        T = np.asarray(t)
+        S = np.asarray(state)
+
         # 1. transform to basis
-        state = np.einsum("...i,ij->...j", state, self.Q)
+        S = np.einsum("...i,ij->...j", S, self.Q)
         # 2. extract variables
-        x = state[..., 0]
-        y = state[..., 1]
-        z = state[..., 2]
+        x = S[..., 0]
+        y = S[..., 1]
+        z = S[..., 2]
         # get the current angle (-> new phase)
         theta = np.arctan2(y, x)
 
         # 3. compute future state
-        x = self.radius * np.cos(self.angular_velocity * t + theta)
-        y = self.radius * np.sin(self.angular_velocity * t + theta)
-        z = self.pitch * t + z
+        x = self.radius * np.cos(self.angular_velocity * T + theta)
+        y = self.radius * np.sin(self.angular_velocity * T + theta)
+        z = self.pitch * T + z
 
         result = np.stack([x, y, z], axis=-1)
         # 4. Transform back to the standard basis

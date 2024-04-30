@@ -23,7 +23,7 @@ from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Reversible
 from dataclasses import KW_ONLY, dataclass
 
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex
 from typing_extensions import (
     Any,
     Optional,
@@ -63,6 +63,11 @@ class PandasDataset(Protocol[K, V_co]):
     Note that in particular, `__getitem__` is not present, as it returns columns,
     but we are usually interested in the rows.
     """
+
+    @abstractmethod
+    def __len__(self) -> int:
+        r"""Length of the dataset."""
+        ...
 
     @property
     @abstractmethod
@@ -119,8 +124,8 @@ class IndexableDataset(Protocol[V_co]):
         ...
 
     @abstractmethod
-    def __getitem__(self, key: int, /) -> V_co:
-        r"""Map key to sample."""
+    def __getitem__(self, index: int, /) -> V_co:
+        r"""Lookup value for integer index."""
         ...
 
 
@@ -154,10 +159,12 @@ class MapDataset(Protocol[K, V_co]):
 TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
 r"""Type alias for a "tabular" dataset."""
 
-SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
+SequentialDataset: TypeAlias = IndexableDataset[V_co] | PandasDataset[Any, V_co]
 r"""Type alias for a sequential dataset."""
 
-Dataset: TypeAlias = IndexableDataset[V_co] | MapDataset[Any, V_co]
+Dataset: TypeAlias = (
+    IndexableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
+)
 r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 
@@ -274,7 +281,7 @@ def get_index(dataset: Dataset[T], /) -> Index:
     """
     match dataset:
         # NOTE: Series and DataFrame satisfy the MapDataset protocol.
-        case Series() | DataFrame() as pandas_dataset:
+        case PandasDataset() as pandas_dataset:
             return pandas_dataset.index
         case MapDataset() as map_dataset:
             return Index(map_dataset.keys())
@@ -287,7 +294,7 @@ def get_index(dataset: Dataset[T], /) -> Index:
 def get_first_sample(dataset: Dataset[T], /) -> T:
     r"""Return the first element of the dataset."""
     match dataset:
-        case Series() | DataFrame() as pandas_dataset:
+        case PandasDataset() as pandas_dataset:
             return pandas_dataset.iloc[0]
         case MapDataset() as map_dataset:
             return map_dataset[next(iter(map_dataset.keys()))]
@@ -300,7 +307,7 @@ def get_first_sample(dataset: Dataset[T], /) -> T:
 def get_last_sample(dataset: Dataset[T], /) -> T:
     r"""Return the last element of the dataset."""
     match dataset:
-        case Series() | DataFrame() as pandas_dataset:
+        case PandasDataset() as pandas_dataset:
             return pandas_dataset.iloc[-1]
         case MapDataset() as map_dataset:
             return map_dataset[next(reversed(map_dataset.keys()))]

@@ -5,8 +5,7 @@ __all__ = ["DuffingOszillator"]
 from dataclasses import KW_ONLY, dataclass
 
 import numpy as np
-from numpy.typing import NDArray
-from typing_extensions import Any
+from numpy.typing import ArrayLike, NDArray
 
 from tsdm.random.generators.base import IVP_GeneratorBase
 
@@ -32,15 +31,18 @@ class DuffingOszillator(IVP_GeneratorBase[NDArray]):
     omega: float = 1.0
     r"""Angular frequency of periodic driving force."""
 
-    def system(self, t: Any, state: NDArray) -> NDArray:
-        x = state[..., 0]
-        p = state[..., 1]
+    def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
+        T = np.asarray(t)
+        S = np.asarray(state)
+
+        x = S[..., 0]
+        p = S[..., 1]
         return np.stack(
             [
                 p,
                 -self.alpha * x
                 - self.beta * x**3
-                + self.gamma * np.cos(self.omega * t),
+                + self.gamma * np.cos(self.omega * T),
             ],
             axis=-1,
         )

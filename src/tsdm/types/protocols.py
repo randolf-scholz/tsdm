@@ -11,7 +11,7 @@ __all__ = [
     "Hash",
     "Lookup",
     "ShapeLike",
-    "VectorLike",
+    "Seq",
     # Mixins
     "SupportsArray",
     "SupportsDataframe",
@@ -118,10 +118,10 @@ class GenericIterable(Protocol[T_co]):
 
 
 @runtime_checkable
-class VectorLike(Protocol[T_co]):
-    r"""Alternative to `Sequence` without `__reversed__`, `index` and `count`.
+class Seq(Protocol[T_co]):
+    r"""Alternative to `Sequence` without `__contains__`, `__reversed__`, `index` and `count`.
 
-    We remove these 3 sinc they are not present on certain vector data structures,
+    We remove these methods, as they are not present on certain vector data structures,
     for example, `__reversed__` is not present on `pandas.Index`.
 
     Examples:
@@ -134,15 +134,15 @@ class VectorLike(Protocol[T_co]):
 
     @abstractmethod
     def __len__(self) -> int: ...
+
     @overload
     @abstractmethod
     def __getitem__(self, index: int, /) -> T_co: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> "VectorLike[T_co]": ...
+    def __getitem__(self, index: slice, /) -> "Seq[T_co]": ...
 
     # Mixin methods
-    # TODO: implement mixin methods
     def __iter__(self) -> Iterator[T_co]:
         for i in range(len(self)):
             yield self[i]

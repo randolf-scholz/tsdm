@@ -1,9 +1,10 @@
 # mypy: ignore-errors
+# FIXME: https://github.com/python/mypy/pull/16020
 r"""Test Sliding Window Sampler."""
 
 import datetime
 import logging
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from typing_extensions import Any, Literal, TypeAlias, assert_type
 
 from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingSampler
+from tsdm.types.protocols import Seq
 from tsdm.types.time import DateTime
 from tsdm.utils import flatten_dict
 
@@ -762,8 +764,7 @@ def test_sliding_window_sampler_discrete(
 
     for m1, m2 in zip(sampler, expected, strict=True):
         assert np.array_equal(
-            m1,
-            m2,  # type: ignore[arg-type]
+            m1, m2
         ), f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
 
 
@@ -803,8 +804,7 @@ def test_sliding_window_sampler_continuous(
 
     for m1, m2 in zip(sampler, expected, strict=True):
         assert np.array_equal(
-            m1,
-            m2,  # type: ignore[arg-type]
+            m1, m2
         ), f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
 
 
@@ -978,7 +978,7 @@ def test_pandas_timestamps() -> None:
     r"""Test the SlidingWindowSampler."""
     timedeltas = Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
-    time: Iterable[DateTime] = pd.concat([
+    time: Seq[DateTime] = pd.concat([
         Series([tmin]),
         tmin + timedeltas.cumsum(),
     ]).reset_index(drop=True)

@@ -9,8 +9,6 @@ contains generators for synthetic dataset. By design, each generator consists of
 """
 
 __all__ = [
-    # Constants
-    "RNG",
     # ABCs & Protocols
     "IVP_Generator",
     "IVP_GeneratorBase",
@@ -21,6 +19,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
+from collections.abc import Callable
 
 import numpy as np
 from numpy.random import Generator
@@ -36,13 +35,11 @@ from typing_extensions import (
     runtime_checkable,
 )
 
+from tsdm.constants import RNG
 from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
 from tsdm.types.callback_protocols import NullMap, SelfMap
 from tsdm.types.variables import T_co
-
-RNG: Generator = np.random.default_rng()
-"""Default random number generator."""
 
 
 @runtime_checkable
@@ -50,7 +47,7 @@ class ODE(Protocol[T_co]):
     r"""Represents a system of ordinary differential equations."""
 
     @abstractmethod
-    def __call__(self, t: ArrayLike, y: ArrayLike) -> T_co:
+    def __call__(self, t: ArrayLike, state: ArrayLike) -> T_co:
         r"""Evaluate the vector field at given time and state.
 
         .. signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
@@ -62,10 +59,10 @@ class ODE(Protocol[T_co]):
 
         Args:
             t: list of time stamps
-            y: list of states at time t
+            state: state of the system at time t
 
         Returns:
-            $f(t, y(t))$ value of the veector field at time $t$ and state $y(t)$.
+            $f(t, y(t))$ value of the vector field at time $t$ and state $y(t)$.
         """
         ...
 
@@ -190,10 +187,13 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
     rng: Generator = RNG
     r"""the internal Random Number Generator."""
 
-    @property
-    def system(self) -> ODE | Any:
-        r"""System of differential equations."""
-        return NotImplemented
+    # @property
+    # @abstractmethod
+    # def system(self) -> ODE | Any:  # pyright: ignore[reportRedeclaration]
+    #     r"""System of differential equations."""
+
+    system: Callable[[ArrayLike, ArrayLike], T_co]
+    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @property
     def ivp_solver(self) -> IVP_Solver[T_co]:

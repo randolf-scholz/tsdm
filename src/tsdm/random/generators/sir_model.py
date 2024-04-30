@@ -42,7 +42,7 @@ class SIR(IVP_GeneratorBase[NDArray]):
     r"""Transmission rate."""
 
     def _get_initial_state_impl(
-        self, size: Size = (), *, weights: ArrayLike = (100, 1, 0)
+        self, *, size: Size = (), weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀.
 

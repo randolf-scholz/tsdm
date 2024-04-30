@@ -120,8 +120,8 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
         # set variables
         self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
-        self.deltax = deltax
-        self.stride = stride  # pyright: ignore
+        self.deltax = deltax  # pyright: ignore[reportAttributeAccessIssue]
+        self.stride = stride  # pyright: ignore[reportAttributeAccessIssue]
         self.intervals = DataFrame(
             intervals,
             columns=["lower_bound", "upper_bound", "delta", "stride"],
@@ -192,7 +192,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmin = timestamp(time_str)
             case _:
-                self.xmin = tmin
+                self.xmin = tmin  # pyright: ignore[reportAttributeAccessIssue]
 
         match tmax:
             case None:
@@ -200,7 +200,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmax = timestamp(time_str)
             case _:
-                self.xmax = tmax
+                self.xmax = tmax  # pyright: ignore[reportAttributeAccessIssue]
 
         total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
         self.stride = cast(

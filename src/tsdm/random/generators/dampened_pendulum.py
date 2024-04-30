@@ -133,7 +133,7 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
         p = self.observation_noise_dist
         return y + p.rvs(size=y.shape, random_state=self.rng)
 
-    def system(self, t: ArrayLike, x: ArrayLike) -> NDArray:
+    def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.
 
         .. signature:: ``[(...,), (..., 2) -> (..., 2)``
@@ -143,9 +143,9 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
             - ``[(,), (..., 2) -> (..., 2)``
         """
         t = np.asarray(t)
-        state = np.asarray(x)
-        theta = state[..., 0]
-        omega = state[..., 1]
+        y = np.asarray(state)
+        theta = y[..., 0]
+        omega = y[..., 1]
 
         alpha = self.g / self.length
         beta = self.gamma / self.mass

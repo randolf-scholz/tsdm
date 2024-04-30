@@ -50,12 +50,13 @@ from tsdm.data.datasets import (
     Dataset,
     IndexableDataset,
     MapDataset,
+    PandasDataset,
     SequentialDataset,
     get_first_sample,
     get_index,
     get_last_sample,
 )
-from tsdm.types.protocols import VectorLike
+from tsdm.types.protocols import Seq
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import K2, K, T_co
 from tsdm.utils import timedelta, timestamp
@@ -147,15 +148,21 @@ class Sampler(Protocol[T_co]):
 
     @property
     @abstractmethod
-    def shuffle(self) -> bool:
+    def shuffle(self) -> bool:  # pyright: ignore[reportRedeclaration]
         r"""Whether to shuffle the indices."""
         ...
 
+    shuffle: bool  # type: ignore[no-redef]
+    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+
     @property
     @abstractmethod
-    def rng(self) -> Generator:
+    def rng(self) -> Generator:  # pyright: ignore[reportRedeclaration]
         r"""The random number generator."""
         ...
+
+    rng: Generator  # type: ignore[no-redef]
+    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
 
 @dataclass
@@ -205,7 +212,16 @@ class RandomSampler(BaseSampler[T_co]):
 
     @overload
     def __init__(
-        self: "RandomSampler[T_co]",
+        self,
+        data: PandasDataset[Any, T_co],
+        /,
+        *,
+        shuffle: bool = ...,
+        rng: Generator = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
         data: MapDataset[Any, T_co],
         /,
         *,
@@ -214,7 +230,7 @@ class RandomSampler(BaseSampler[T_co]):
     ) -> None: ...
     @overload
     def __init__(
-        self: "RandomSampler[T_co]",
+        self,
         data: IndexableDataset[T_co],
         /,
         *,
@@ -225,13 +241,14 @@ class RandomSampler(BaseSampler[T_co]):
         r"""Initialize the sampler."""
         super().__init__(shuffle=shuffle, rng=rng)
         self.data = data
-        self.index = get_index(self.data)
+        self.index = get_index(data)
         self.size = len(self.index)
 
     def __iter__(self) -> Iterator[T_co]:
         n = self.size
         index = self.index[self.rng.permutation(n)] if self.shuffle else self.index
-        data = self.data  # avoids attribute lookup in the loop
+        # avoids attribute lookup in the loop
+        data = self.data.iloc if isinstance(self.data, PandasDataset) else self.data
         for key in index:
             yield data[key]
 
@@ -305,26 +322,24 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             yield key, next(activate_iterators[key])
 
 
-# TODO: Hierarchical sampler for Sequence
-
+# U: TypeAlias = Any  # unknown (not statically known)
+# U: TypeAlias = S | B | M | W  # unknown (not statically known)
 S: TypeAlias = Literal["slices"]  # slice
 M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
 W: TypeAlias = Literal["windows"]  # windows
-# U: TypeAlias = Any  # unknown (not statically known)
-# U: TypeAlias = S | B | M | W  # unknown (not statically known)
 U: TypeAlias = str  # unknown (not statically known)
-
-Mode = TypeVar("Mode", S, B, M, W, U)
-Modes: TypeAlias = S | B | M | W | U
+Mode: TypeAlias = S | B | M | W | U
+ModeVar = TypeVar("ModeVar", S, B, M, W, U)
 
 ONE: TypeAlias = Literal["one"]
 MULTI: TypeAlias = Literal["multi"]
-Horizons = TypeVar("Horizons", ONE, MULTI)
+Horizon: TypeAlias = ONE | MULTI
+HorizonVar = TypeVar("HorizonVar", ONE, MULTI)
 
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
-class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
+class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
     r"""Sampler that generates a single sliding window over an interval.
 
     Note:
@@ -366,7 +381,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
 
     horizons: TDLike | NDArray[TDLike]  # type: ignore[type-var]
     stride: TDLike
-    mode: Mode
+    mode: ModeVar
     multi_horizon: bool
     shuffle: bool
     drop_last: bool
@@ -378,155 +393,299 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     cumulative_horizons: NDArray[TDLike]  # pyright: ignore
     # grid: Final[NDArray[np.integer]]
 
+    # region __new__ overloads ---------------------------------------------------------
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: S,
+        horizons: Seq[str | Timedelta],
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, S, MULTI]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: B,
+        horizons: Seq[str | Timedelta],
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, B, MULTI]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: M,
+        horizons: Seq[str | Timedelta],
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, M, MULTI]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: W,
+        horizons: Seq[str | Timedelta],
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, W, MULTI]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: S,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, S, ONE]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: B,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, B, ONE]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: M,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, M, ONE]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: W,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, W, ONE]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: str,
+        horizons: Seq[str | Timedelta],
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, U, MULTI]": ...
+    @overload
+    def __new__(
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: str,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
+        rng: Generator = ...,
+    ) -> "SlidingSampler[DT, U, ONE]": ...
+    def __new__(  # type: ignore[misc]
+        cls,
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        mode: Mode,
+        horizons: str | Timedelta | Seq[str | Timedelta],
+        stride: str | Timedelta,
+        drop_last: bool = False,
+        shuffle: bool = False,
+        rng: Generator = RNG,
+    ) -> "SlidingSampler[DT, ModeVar, HorizonVar]":
+        return super().__new__(cls)
+
+    # endregion __new__ overloads --------------------------------------------------------
+
     # region __init__ overloads --------------------------------------------------------
     # NOTE: We use SequenceProtocol instead of Sequence in order to exclude str <: Sequence[str]
     #  cf. https://github.com/python/typing/issues/256#issuecomment-1442633430
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, S, MULTI]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: VectorLike[str | Timedelta],
-        stride: str | Timedelta,
-        mode: S,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, B, MULTI]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: VectorLike[str | Timedelta],
-        stride: str | Timedelta,
-        mode: B,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, M, MULTI]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: VectorLike[str | Timedelta],
-        stride: str | Timedelta,
-        mode: M,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, W, MULTI]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: VectorLike[str | Timedelta],
-        stride: str | Timedelta,
-        mode: W,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, S, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
-        mode: S,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, B, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
-        mode: B,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, M, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
-        mode: M,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingSampler[DT, W, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
-        mode: W,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload  # fallback mode=str
-    def __init__(
-        self: "SlidingSampler[DT, U, MULTI]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: VectorLike[str | Timedelta],
-        stride: str | Timedelta,
-        mode: str,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload  # fallback mode=str
-    def __init__(
-        self: "SlidingSampler[DT, U, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
-        mode: str,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, S, MULTI]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: VectorLike[str | Timedelta],
+    #     stride: str | Timedelta,
+    #     mode: S,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, B, MULTI]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: VectorLike[str | Timedelta],
+    #     stride: str | Timedelta,
+    #     mode: B,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, M, MULTI]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: VectorLike[str | Timedelta],
+    #     stride: str | Timedelta,
+    #     mode: M,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, W, MULTI]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: VectorLike[str | Timedelta],
+    #     stride: str | Timedelta,
+    #     mode: W,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, S, ONE]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: str | Timedelta,
+    #     stride: str | Timedelta,
+    #     mode: S,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, B, ONE]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: str | Timedelta,
+    #     stride: str | Timedelta,
+    #     mode: B,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, M, ONE]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: str | Timedelta,
+    #     stride: str | Timedelta,
+    #     mode: M,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingSampler[DT, W, ONE]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: str | Timedelta,
+    #     stride: str | Timedelta,
+    #     mode: W,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload  # fallback mode=str
+    # def __init__(
+    #     self: "SlidingSampler[DT, U, MULTI]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: VectorLike[str | Timedelta],
+    #     stride: str | Timedelta,
+    #     mode: str,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
+    # @overload  # fallback mode=str
+    # def __init__(
+    #     self: "SlidingSampler[DT, U, ONE]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     horizons: str | Timedelta,
+    #     stride: str | Timedelta,
+    #     mode: str,
+    #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> None: ...
     # endregion __init__ overloads -----------------------------------------------------
     def __init__(
         self,
-        data_source,
+        data_source: SequentialDataset[DT],
         /,
         *,
-        horizons,
-        stride,
-        mode,
-        drop_last=False,
-        shuffle=False,
-        rng=RNG,
-    ):
-        # FIXME: we can do better typing-wise once PEP696 is accepted and HKTs are supported.
+        mode: ModeVar,
+        horizons: str | Timedelta | Seq[str | Timedelta],
+        stride: str | Timedelta,
+        drop_last: bool = False,
+        shuffle: bool = False,
+        rng: Generator = RNG,
+    ) -> None:
         super().__init__(shuffle=shuffle, rng=rng)
 
         # region set basic attributes --------------------------------------------------
@@ -586,8 +745,6 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
 
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
-    # @overload  # fallback (pyright: first match for Any)
-    # def __iter__(self: "SlidingWindowSampler[DT, Never, MULTI]", /) -> Iterator[list]: ...  # type: ignore[type-var]
     @overload
     def __iter__(self: "SlidingSampler[DT, S, MULTI]", /) -> Iterator[list[slice]]: ...
     @overload
@@ -598,8 +755,6 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     def __iter__(self: "SlidingSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...  # pyright: ignore
     @overload  # fallback mode=str
     def __iter__(self: "SlidingSampler[DT, U, MULTI]", /) -> Iterator[list]: ...
-    # @overload  # fallback (pyright: first match for Any)
-    # def __iter__(self: "SlidingWindowSampler[DT, Never, ONE]", /) -> Iterator: ...  # type: ignore[type-var]
     @overload
     def __iter__(self: "SlidingSampler[DT, S, ONE]", /) -> Iterator[slice]: ...
     @overload
@@ -607,12 +762,12 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     @overload
     def __iter__(self: "SlidingSampler[DT, M, ONE]", /) -> Iterator[NDArray[np.bool_]]: ...
     @overload
-    def __iter__(self: "SlidingSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ...  # pyright: ignore
+    def __iter__(self: "SlidingSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ... # pyright: ignore
     @overload  # fallback mode=str
     def __iter__(self: "SlidingSampler[DT, U, ONE]", /) -> Iterator: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
-    def __iter__(self, /):  # pyright: ignore
+    def __iter__(self, /):  # pyright: ignore[reportInconsistentOverload]
         r"""Iterate through.
 
         For each k, we return either:
