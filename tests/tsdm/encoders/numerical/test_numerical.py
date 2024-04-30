@@ -7,14 +7,15 @@ from tempfile import TemporaryFile
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from numpy.typing import NDArray
-from pytest import mark, skip
-from typing_extensions import Any, TypeVar, assert_type
+from typing_extensions import Any, TypeAlias, TypeVar, assert_type
 
 from tsdm.constants import RNG
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
+    ClippingMode,
     LinearScaler,
     MinMaxScaler,
     StandardScaler,
@@ -32,26 +33,125 @@ T = TypeVar(
 )
 D = TypeVar("D", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
 E = TypeVar("E", StandardScaler, MinMaxScaler)
+Bounds: TypeAlias = tuple[float | None, float | None]
 
 
-_DATA = [-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]
-_DATA_2D = [[-2.0, -1.1, -1.0, -0.9], [0.0, 0.3, 0.5, 1.0], [1.5, 2.0, 2.5, 3.0]]
+DATA_1D = [
+    float("-inf"),
+    -1.1,
+    -1.0,
+    -0.9,
+    -0.0,
+    +0.0,
+    +0.3,
+    +1.0,
+    +1.5,
+    float("+inf"),
+]
+DATA_2D = [
+    [-2.0, -1.1, -1.0, -0.9],
+    [ 0.0,  0.3,  0.5,  1.0],
+    [ 1.5,  2.0,  2.5,  3.0],
+]  # fmt: skip
 
 DATA = {
-    "numpy-1D": np.array(_DATA),
-    "numpy-2D": np.array(_DATA_2D),
-    "torch-1D": torch.tensor(_DATA),
-    "torch-2D": torch.tensor(_DATA_2D),
-    "pandas-index": pd.Index(_DATA),
-    "pandas-series": pd.Series(_DATA),
+    "numpy-1D": np.array(DATA_1D),
+    "numpy-2D": np.array(DATA_2D),
+    "torch-1D": torch.tensor(DATA_1D),
+    "torch-2D": torch.tensor(DATA_2D),
+    "pandas-I": pd.Index(DATA_1D),
+    "pandas-S": pd.Series(DATA_1D),
     # "pandas-dataframe": pd.DataFrame(_DATA_2D),
 }
+BOUNDS: list[Bounds] = [
+    (-1, +1),
+    (0, 1),
+    (0, float("inf")),
+    (0, None),
+    (0, float("nan")),
+    (0, pd.NA),
+]
 
 
-@mark.parametrize("data", DATA.values(), ids=DATA)
+@pytest.mark.parametrize("upper_included", [True, False])
+@pytest.mark.parametrize("lower_included", [True, False])
+@pytest.mark.parametrize("bounds", BOUNDS, ids=str)
+@pytest.mark.parametrize("mode", ["clip", "mask"])
+@pytest.mark.parametrize("data", DATA.values(), ids=DATA)
+def test_boundary_encoder2(
+    *,
+    data: D,
+    mode: ClippingMode,
+    bounds: Bounds,
+    lower_included: bool,
+    upper_included: bool,
+) -> None:
+    r"""Test the boundary encoder."""
+    lower, upper = bounds
+
+    # create the encoder
+    encoder = BoundaryEncoder(
+        bounds[0],
+        bounds[1],
+        mode=mode,
+        lower_included=lower_included,
+        upper_included=upper_included,
+        axis=-1,
+    )
+
+    # fit the encoder
+    encoder.fit(data)
+
+    # compute the encoded data
+    encoded = encoder.encode(data)
+    assert type(encoded) == type(data)
+    assert encoded.shape == data.shape
+    assert encoded.dtype == data.dtype
+
+    # assert lb == (float("-inf") if lower is None else lower)
+    # assert ub == (float("+inf") if upper is None else upper)
+    lb, ub = encoder.lower_bound, encoder.upper_bound
+    nan_data = np.isnan(data)
+    nan_encoded = np.isnan(encoded)
+
+    match pd.isna(lb), mode, lower_included:
+        case True, _, _:
+            lower_mask = np.zeros_like(data, dtype=bool)
+        case False, "clip", _:
+            lower_mask = data <= lb
+        case False, "mask", True:
+            lower_mask = data < lb
+        case False, "mask", False:
+            lower_mask = data <= lb
+        case _:
+            raise ValueError(f"Unexpected combination: {lb=} {mode=} {lower_included=}")
+
+    match pd.isna(ub), mode, upper_included:
+        case True, _, _:
+            upper_mask = np.zeros_like(data, dtype=bool)
+        case False, "clip", _:
+            upper_mask = data >= ub
+        case False, "mask", True:
+            upper_mask = data > ub
+        case False, "mask", False:
+            upper_mask = data >= ub
+        case _:
+            raise ValueError(f"Unexpected combination: {ub=} {mode=} {upper_included=}")
+
+    match mode:
+        case "clip":
+            assert (nan_data == nan_encoded).all()
+            assert ((encoded == ub) == upper_mask).all()
+            assert ((encoded == lb) == lower_mask).all()
+        case "mask":
+            assert (nan_encoded == (nan_data | lower_mask | upper_mask)).all()
+        case _:
+            raise ValueError(f"Unexpected mode: {mode=}")
+
+
+@pytest.mark.parametrize("data", DATA.values(), ids=DATA)
 def test_boundary_encoder(data: D) -> None:
     r"""Test the boundary encoder."""
-    # test clip + numpy
     encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
     encoder.fit(data)
     encoded = encoder.encode(data)
@@ -128,7 +228,9 @@ def test_boundary_encoder(data: D) -> None:
     assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
 
 
-@mark.parametrize("tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor])
+@pytest.mark.parametrize(
+    "tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor]
+)
 def test_linear_scaler(tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(LinearScaler.__name__)
@@ -190,8 +292,8 @@ def test_linear_scaler(tensor_type: T) -> None:
     # assert encoder.params[0].shape == (2, 3)
 
 
-@mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=str)
-@mark.parametrize("axis", [(1, -1), (-1,), -2, 0, None, ()], ids=str)
+@pytest.mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=str)
+@pytest.mark.parametrize("axis", [(1, -1), (-1,), -2, 0, None, ()], ids=str)
 def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
@@ -199,7 +301,7 @@ def test_get_broadcast(
     if (isinstance(axis, tuple) and any(abs(a) > len(shape) - 1 for a in axis)) or (
         isinstance(axis, int) and abs(axis) > len(shape)
     ):
-        skip(f"{shape=} {axis=}")
+        pytest.skip(f"{shape=} {axis=}")
 
     arr: NDArray = RNG.normal(size=shape)
 
@@ -243,8 +345,10 @@ def test_reduce_axes() -> None:
     assert get_reduced_axes((1, ...), axis) == (-3, -2, -1)
 
 
-@mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
-@mark.parametrize("tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor])
+@pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
+@pytest.mark.parametrize(
+    "tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor]
+)
 def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
@@ -316,7 +420,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     LOGGER.info("Testing finished!")
 
 
-@mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
+@pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_dataframe(encoder_type: type[E]) -> None:
     r"""Check whether the scaler-encoders work as expected on DataFrame."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
@@ -365,7 +469,7 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
                 assert x == y
 
 
-@mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
+@pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_series(encoder_type: type[E]) -> None:
     r"""Check whether the scaler-encoders work as expected on Series."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
@@ -398,7 +502,7 @@ def test_scaler_series(encoder_type: type[E]) -> None:
     assert np.allclose(X, decoded)
 
 
-@mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
+@pytest.mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
 def test_standard_scaler(axis):
     r"""Test the MinMaxScaler."""
     TRUE_SHAPE = {
@@ -428,7 +532,7 @@ def test_standard_scaler(axis):
     assert np.allclose(X, decoded)
 
 
-@mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
+@pytest.mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
 def test_minmax_scaler(axis):
     r"""Test the MinMaxScaler."""
     TRUE_SHAPE = {

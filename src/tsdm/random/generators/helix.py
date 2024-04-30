@@ -47,36 +47,47 @@ class Helix(IVP_GeneratorBase[NDArray]):
     direction: tuple[float, float, float] = (0.0, 0.0, 1.0)
     r"""Direction of the helix."""
 
-    @property
-    def observation_noise(self) -> RV:
-        r"""Noise distribution."""
-        return multivariate_normal(mean=np.zeros(3), cov=0.1, random_state=self.rng)
-
     def __post_init__(self) -> None:
         r"""Post-initialization hook."""
-        # extend to an orthogonal basis
-        z = np.array(self.direction)
-        x = np.array([-z[1], z[0], 0.0])
-        y = np.cross(z, x)
-        self.x = x / np.linalg.norm(x)
-        self.y = y / np.linalg.norm(y)
-        self.z = z / np.linalg.norm(z)
+        # construct ONB using revised Frisvad algorithm
+        # REF: Building an Orthonormal Basis, Revisited https://jcgt.org/published/0006/01/01/
+        d = np.array(self.direction)
+        x, y, z = d
+
+        s = np.copysign(1.0, z)
+        a = -1.0 / (s + z)
+        b = x * y * a
+        u = np.array([1.0 + s * a * x**2, s * b, -s * x])
+        v = np.array([b, s + a * y**2, -a * y])
 
         # get transformation matrix w.r.t. standard basis
-        self.Q = np.stack([self.x, self.y, self.z], axis=-1)
+        self.Q = np.stack([u, v, d], axis=-1)
+        self.Q /= np.linalg.norm(self.Q, axis=0)
         self.Qt = self.Q.T  # cache transpose
 
+    @property
+    def initial_state_dist(self) -> RV:
+        r"""Noise distribution."""
+        return multivariate_normal(mean=np.zeros(3), cov=0.1)
+
+    @property
+    def observation_noise_dist(self) -> RV:
+        r"""Noise distribution."""
+        return multivariate_normal(mean=np.zeros(3), cov=0.1)
+
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
-        pass
+        p = self.initial_state_dist
+        return p.rvs(size=size, random_state=self.rng)
 
     def _make_observations_impl(self, sol: NDArray, /) -> NDArray:
         r"""Additive noise."""
-        return sol + self.observation_noise.rvs(size=sol.shape)
+        p = self.observation_noise_dist
+        return sol + p.rvs(size=sol.shape, random_state=self.rng)
 
     def system(self, t: Any, state: NDArray) -> NDArray:
         r"""System function."""
         # 1. transform to basis
-        state = np.einsum("...i,ij->...j", state, self.T)
+        state = np.einsum("...i,ij->...j", state, self.Q)
         # 2. extract variables
         x = state[..., 0]
         y = state[..., 1]

@@ -63,12 +63,7 @@ def torch_apply_along_axes(
     assert len({t.shape for t in tensors}) <= 1, "all tensors must have the same shape"
     assert len(tensors) >= 1, "at least one tensor is required"
 
-    if axis is None:
-        axes = ()
-    elif isinstance(axis, int):
-        axes = (axis,)
-    else:
-        axes = tuple(axis)
+    axes = () if axis is None else (axis,) if isinstance(axis, int) else tuple(axis)
 
     rank = len(tensors[0].shape)
     source = tuple(range(rank))

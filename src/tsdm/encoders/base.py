@@ -326,6 +326,18 @@ class BaseEncoder(Encoder[T, T2]):
     r"""Whether the encoder has been fitted."""
 
     # region abstract methods ----------------------------------------------------------
+    @property
+    @abstractmethod
+    def params(self) -> dict[str, Any]: ...
+
+    @property
+    def requires_fit(self) -> bool:
+        r"""Check if the encoder requires fitting."""
+        return any(
+            val is NotImplemented or getattr(val, "requires_fit", False)
+            for val in self.params.values()
+        )
+
     @abstractmethod
     def encode(self, data: T, /) -> T2:
         r"""Encode the data by transformation."""

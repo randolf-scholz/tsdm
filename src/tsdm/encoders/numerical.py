@@ -48,8 +48,8 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Callable, Iterable
-from dataclasses import KW_ONLY, dataclass
+from collections.abc import Iterable
+from dataclasses import KW_ONLY, dataclass, field
 from types import EllipsisType
 
 import numpy as np
@@ -307,7 +307,7 @@ class NumericalEncoder(BaseEncoder[Arr, Arr]):
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass
 class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
 
@@ -336,23 +336,20 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
-    lower_bound: None | float | Arr
-    upper_bound: None | float | Arr
+    lower_bound: None | float | Arr = NotImplemented
+    upper_bound: None | float | Arr = NotImplemented
 
     _: KW_ONLY
 
+    axis: Axes = None
     lower_included: bool = True
     upper_included: bool = True
-
     mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask"
-    axis: Axes = None
 
     # derived attributes
-    backend: Backend[Arr]
-    lower_value: float | Arr
-    upper_value: float | Arr
-    lower_satisfied: Callable[[Arr], Arr]
-    upper_satisfied: Callable[[Arr], Arr]
+    backend: Backend[Arr] = field(init=False)
+    lower_value: float = field(init=False, default=NotImplemented)
+    upper_value: float = field(init=False, default=NotImplemented)
 
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
@@ -375,7 +372,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
 
     @property
     def requires_fit(self) -> bool:
-        return True
+        return any(p is NotImplemented for p in self.params)
 
     @property
     def lower_mode(self) -> ClippingMode:
@@ -387,37 +384,12 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         r"""The mode for the upper boundary."""
         return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
-    def __init__(
-        self,
-        lower_bound: None | float | Arr = NotImplemented,
-        upper_bound: None | float | Arr = NotImplemented,
-        *,
-        lower_included: bool = True,
-        upper_included: bool = True,
-        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask",
-        axis: Axes = None,
-    ) -> None:
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-        self.lower_included = lower_included
-        self.upper_included = upper_included
-        self.mode = mode
-        self.axis = axis
-
+    def __post_init__(self) -> None:
         if pd.isna(self.lower_bound):
             self.lower_bound = None
 
         if pd.isna(self.upper_bound):
             self.upper_bound = None
-
-        if self.lower_bound is None and not self.lower_included:
-            raise ValueError(
-                "If no lower_bound is provided, then lower_included must be True."
-            )
-        if self.upper_bound is None and not self.upper_included:
-            raise ValueError(
-                "If no upper_bound is provided, then upper_included must be True."
-            )
 
         if (
             self.upper_bound is not None
@@ -448,7 +420,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
             case _, "clip":
                 self.lower_value = self.lower_bound  # type: ignore[assignment]
             case _:
-                self.lower_value = NotImplemented
+                raise NotImplementedError
 
         # set upper_value
         match self.upper_bound, self.upper_mode:
@@ -459,40 +431,22 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
             case _, "clip":
                 self.upper_value = self.upper_bound  # type: ignore[assignment]
             case _:
-                self.upper_value = NotImplemented
+                raise NotImplementedError
 
-        # set lower comparison function
-        match self.lower_bound, self.lower_included:
-            case None, _:
-                self.lower_satisfied = self.backend.true_like
-            case _, True:
-                self.lower_satisfied = self._ge
-            case _, False:
-                self.lower_satisfied = self._gt
-            case _:
-                raise ValueError(f"Invalid {self.lower_bound=}/{self.lower_included=}")
-
-        # set upper comparison function
-        match self.upper_bound, self.upper_included:
-            case None, _:
-                self.upper_satisfied = self.backend.true_like
-            case _, True:
-                self.upper_satisfied = self._le
-            case _, False:
-                self.upper_satisfied = self._lt
-            case _:
-                raise ValueError(f"Invalid {self.upper_bound=}/{self.upper_included=}")
-
-    def _ge(self, x: Arr) -> Arr:
-        return (x >= self.lower_bound) | self.backend.isnan(x)
-
-    def _gt(self, x: Arr) -> Arr:
+    def lower_satisfied(self, x: Arr) -> Arr:
+        r"""Return a boolean mask for the lower boundary (true: value ok)."""
+        if self.lower_bound is None:
+            return self.backend.true_like(x)
+        if self.lower_included or self.lower_included is None:
+            return (x >= self.lower_bound) | self.backend.isnan(x)
         return (x > self.lower_bound) | self.backend.isnan(x)
 
-    def _le(self, x: Arr) -> Arr:
-        return (x <= self.upper_bound) | self.backend.isnan(x)
-
-    def _lt(self, x: Arr) -> Arr:
+    def upper_satisfied(self, x: Arr) -> Arr:
+        r"""Return a boolean mask for the upper boundary (true: value ok)."""
+        if self.upper_bound is None:
+            return self.backend.true_like(x)
+        if self.upper_included or self.upper_included is None:
+            return (x <= self.upper_bound) | self.backend.isnan(x)
         return (x < self.upper_bound) | self.backend.isnan(x)
 
     def encode(self, data: Arr, /) -> Arr:

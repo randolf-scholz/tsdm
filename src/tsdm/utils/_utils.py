@@ -132,8 +132,6 @@ def size_to_tuple(size: Size) -> tuple[int, ...]:
         - `np.random.normal(size=())`   produces a 0d-array (1 element).
         - `np.random.normal(size=k)`    produces a 1d-array (k elements).
     """
-    if size is None:
-        return ()
     if isinstance(size, int):
         return (size,)
     return tuple(size)

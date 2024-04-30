@@ -118,7 +118,7 @@ def test_datetime_assign() -> None:
     dt_numpy_float: DateTime[np.float64] = DT_NUMPY_FLOAT
     dt_numpy_int: DateTime[np.int64] = DT_NUMPY_INT
     dt_pandas: DateTime[pandas.Timedelta] = DT_PANDAS
-    dt_python: DateTime[timedelta] = DT_PYTHON
+    dt_python: DateTime[python_timedelta] = DT_PYTHON
 
     assert isinstance(dt_float, DateTime)
     assert isinstance(dt_int, DateTime)
