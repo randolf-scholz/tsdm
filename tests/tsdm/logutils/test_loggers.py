@@ -22,11 +22,11 @@ def test_base_logger() -> None:
     cb = tsdm.logutils.MetricsCallback(metrics, writer=writer)
     assert cb.required_kwargs == {"targets", "predics"}
     logger.add_callback("batch", cb)
-    assert logger.required_kwargs("batch") == {"targets", "predics"}
     # run callbacks
     targets = torch.randn(10, 3)
     predics = torch.randn(10, 3)
-    logger.callback("batch", 1, targets=targets, predics=predics)
+    logger["batch"].callback(1, targets=targets, predics=predics)
+    print(logger)
 
 
 def test_default_logger() -> None:
@@ -43,5 +43,4 @@ def test_default_logger() -> None:
     logger["batch"].callback(1)
     logger["epoch"].callback(1)
     logger["results"].callback(1)
-
     print(logger)

@@ -77,7 +77,7 @@ from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.types.protocols import MutableSequenceProtocol
 from tsdm.utils.funcutils import get_mandatory_kwargs
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.pprint import pprint_repr, pprint_sequence
 
 
 @runtime_checkable
@@ -165,7 +165,8 @@ class BaseCallback(Callback):
             self(step, **state_dict)
 
 
-class CallbackList(BaseCallback, MutableSequence[Callback]):
+@pprint_sequence
+class CallbackList(MutableSequence[Callback], BaseCallback):
     r"""Callback to log multiple callbacks."""
 
     callbacks: list[Callback]
@@ -175,6 +176,10 @@ class CallbackList(BaseCallback, MutableSequence[Callback]):
     def required_kwargs(self) -> set[str]:
         r"""The required kwargs for the callback."""
         return set().union(*(callback.required_kwargs for callback in self.callbacks))
+
+    def __init__(self, iterable: Iterable[Callback] = NotImplemented, /) -> None:
+        r"""Initialize the callback."""
+        self.callbacks = list(iterable) if iterable is not NotImplemented else []
 
     def __len__(self) -> int:
         return len(self.callbacks)
@@ -429,14 +434,26 @@ class HParamCallback(BaseCallback):
     _: KW_ONLY
 
     history: DataFrame
+    r"""The history of the metrics, must have columns for train, valid, and test."""
     writer: SummaryWriter
+
+    def __post_init__(self):
+        r"""Validate the inputs."""
+        assert isinstance(self.history, DataFrame)
+        assert isinstance(self.history.columns, MultiIndex)
+        splits = set(self.history.columns.levels[0])
+        metrics = set(self.history.columns.levels[1])
+        assert set(self.history.columns) == set(
+            MultiIndex.from_product([splits, metrics])
+        )
+        assert splits == {"train", "valid", "test"}
 
     def __call__(self, step: int, /, **_: Any) -> None:
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
 
         scores: dict[str, dict[str, float]] = {
             split: {
-                metric: float(self.history.loc[idx, (split, metric)])
+                str(metric): float(self.history.loc[idx, (split, metric)])
                 for metric, idx in best_epochs["valid"].items()
             }
             for split in ("train", "valid", "test")

@@ -57,7 +57,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Mapping
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -88,7 +88,7 @@ from tsdm.logutils.callbacks import (
 )
 from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.pprint import pprint_mapping, pprint_repr
 
 
 @runtime_checkable
@@ -102,14 +102,17 @@ class Logger(Protocol):
         ...
 
 
-@pprint_repr
-class BaseLogger(Logger, Mapping[str, CallbackSequence]):
+@pprint_mapping
+@dataclass
+class BaseLogger(Mapping[str, CallbackSequence]):
     r"""Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
-    callbacks: dict[str, CallbackSequence] = defaultdict(CallbackList)
+    callbacks: dict[str, CallbackSequence] = field(
+        default_factory=lambda: defaultdict(CallbackList)
+    )
     r"""Callbacks to be called at the end of a batch/epoch."""
 
     def __len__(self) -> int:

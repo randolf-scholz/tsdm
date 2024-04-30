@@ -14,6 +14,9 @@ __all__ = [
     # Functions
     "get_identifier",
     "pprint_repr",
+    "pprint_dataclass",
+    "pprint_mapping",
+    "pprint_sequence",
     "repr_array",
     "repr_dataclass",
     "repr_dtype",
@@ -284,7 +287,7 @@ def repr_mapping(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self) * bool(recursive)
+        identifier = "<mapping>" * bool(recursive)
 
     # # TODO: automatic linebreak detection if string length exceeds max_length
     # if recursive:
@@ -465,7 +468,7 @@ def repr_sequence(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self) * bool(recursive)
+        identifier = "<sequence>" * bool(recursive)
 
     # create callable to stringify subitems
     if repr_fun is NotImplemented:
@@ -577,7 +580,7 @@ def repr_dataclass(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self) * bool(recursive)
+        identifier = "<dataclass>" * bool(recursive)
 
     if recursive:
         return repr_mapping(
@@ -749,13 +752,54 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
 
 
 @overload
+def pprint_sequence(cls: type[T], /) -> type[T]: ...
+@overload
+def pprint_sequence(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
+@decorator
+def pprint_sequence(cls, /, **kwds):
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, Sequence):
+        raise TypeError(f"Expected Sequence type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_sequence, **kwds)
+    return cls
+
+
+@overload
+def pprint_mapping(cls: type[T], /) -> type[T]: ...
+@overload
+def pprint_mapping(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
+@decorator
+def pprint_mapping(cls, /, **kwds):
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, Mapping):
+        raise TypeError(f"Expected Mapping type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
+    return cls
+
+
+@overload
+def pprint_dataclass(cls: type[T], /) -> type[T]: ...
+@overload
+def pprint_dataclass(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
+@decorator
+def pprint_dataclass(cls, /, **kwds):
+    r"""Add appropriate __repr__ to class."""
+    if not is_dataclass(cls):
+        raise TypeError(f"Expected Sequence type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
+    return cls
+
+
+@overload
 def pprint_repr(cls: type[T], /) -> type[T]: ...
 @overload
 def pprint_repr(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
 @decorator
 def pprint_repr(cls, /, **kwds):
     r"""Add appropriate __repr__ to class."""
-    assert isinstance(cls, type), "Must be a class!"
+    if not isinstance(cls, type):
+        raise TypeError("Must be a class!")
+
     repr_func: Callable[..., str]
 
     if is_dataclass(cls):
