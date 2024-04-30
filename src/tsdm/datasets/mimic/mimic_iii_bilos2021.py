@@ -51,20 +51,18 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
 
     rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
-        "complete_tensor.csv": (
-            "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
-        )
+        "complete_tensor.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
     }
     rawdata_schemas = {
         "complete_tensor.csv": {
-            "UNIQUE_ID": "int16",
-            "TIME_STAMP": "int16",
-            "LABEL_CODE": "int16",
-            "VALUENORM": "float32",
-            "MEAN": "float32",
-            "STD": "float32",
+            "UNIQUE_ID"  : "int16",
+            "TIME_STAMP" : "int16",
+            "LABEL_CODE" : "int16",
+            "VALUENORM"  : "float32",
+            "MEAN"       : "float32",
+            "STD"        : "float32",
         }
-    }
+    }  # fmt: skip
 
     rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
     table_names = ["timeseries"]

@@ -277,7 +277,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = [  # pyright: ignore
+    table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
         "timeseries_description",
         "metadata",
@@ -293,18 +293,10 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         "us.txt.gz",
     ]
     rawdata_hashes = {
-        "data_format.txt": (
-            "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca"
-        ),
-        "ushcn-stations.txt": (
-            "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024"
-        ),
-        "station_file_format.txt": (
-            "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b"
-        ),
-        "us.txt.gz": (
-            "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192"
-        ),
+        "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
+        "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
+        "station_file_format.txt": "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
+        "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }
     rawdata_schemas = {
         "timeseries": {
@@ -331,15 +323,15 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         },
     }  # fmt: skip
 
-    table_shapes = {  # pyright: ignore
-        "timeseries": (204771562, 5),
-        "metadata": (1218, 9),
-        "state_codes": (48, 3),
-        "metadata_description": (9, 6),
-        "timeseries_description": (8, 6),
-    }
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"             : (204771562, 5),
+        "metadata"               : (1218, 9),
+        "state_codes"            : (48, 3),
+        "metadata_description"   : (9, 6),
+        "timeseries_description" : (8, 6),
+    }  # fmt: skip
 
-    table_schemas = {  # pyright: ignore
+    table_schemas = {# pyright: ignore[reportAssignmentType]
         "timeseries": {
             "PRCP" : "int16[pyarrow]",
             "SNOW" : "int16[pyarrow]",

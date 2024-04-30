@@ -99,6 +99,9 @@ class Dataset(Protocol[T_co]):
         r"""Return list of file names that make up the raw data."""
         ...
 
+    rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
+    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+
     @property
     def rawdata_paths(self) -> Mapping[str, Path]:
         r"""Return mapping from filenames to paths to the rawdata files."""
@@ -107,10 +110,8 @@ class Dataset(Protocol[T_co]):
             for fname in self.rawdata_files
         }
 
-    rawdata_files: Sequence[str]  # type: ignore[no-redef]
-    # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    # rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
-    # # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # rawdata_paths: Mapping[str, Path] | cached_property[Mapping[str, Path]]  # type: ignore[no-redef]
+    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @abstractmethod
     def download(self) -> None:
@@ -770,13 +771,13 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
 
     @property
     @abstractmethod
-    def table_names(self) -> Collection[Key]:  # pyright: ignore
+    def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
         r"""Return the index of the dataset."""
         # TODO: use abstract-attribute!
-        # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
+        # REF: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
-    table_names: Collection[Key]  # type: ignore[no-redef]
-    # Cf. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
+    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @property
     def tables(self) -> dict[Key, T_co]:

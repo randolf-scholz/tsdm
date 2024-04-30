@@ -25,6 +25,8 @@ from getpass import getpass
 
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 
@@ -62,33 +64,27 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
 
-    table_names = ["timeseries", "metadata"]  # pyright: ignore
+    table_names = ["timeseries", "metadata"]  # pyright: ignore[reportAssignmentType]
     rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
-        "complete_tensor.csv": (
-            "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
-        ),
+        "complete_tensor.csv": "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2",
     }
     rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
     rawdata_schemas = {
         "complete_tensor.csv": {
-            "UNIQUE_ID": "int16",
-            "TIME_STAMP": "int16",
-            "LABEL_CODE": "int16",
-            "VALUENORM": "float32",
-            "MEAN": "float32",
-            "STD": "float32",
+            "UNIQUE_ID"  : "int16",
+            "TIME_STAMP" : "int16",
+            "LABEL_CODE" : "int16",
+            "VALUENORM"  : "float32",
+            "MEAN"       : "float32",
+            "STD"        : "float32",
         }
+    }  # fmt: skip
+    dataset_hashes = {  # pyright: ignore[reportAssignmentType]
+        "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
+        "metadata": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
     }
-    dataset_hashes = {  # pyright: ignore
-        "timeseries": (
-            "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b"
-        ),
-        "metadata": (
-            "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4"
-        ),
-    }
-    table_shapes = {  # pyright: ignore
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries": (552327, 96),
         "metadata": (96, 3),
     }
@@ -160,7 +156,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, fname)
 
-    def make_histograms(self) -> tuple[plt.Figure, plt.Axes]:
+    def make_histograms(self) -> tuple[Figure, Axes]:
         r"""Make histograms of the timeseries."""
         fig, axes = plt.subplots(
             16, 6, figsize=(20, 32), constrained_layout=True, sharey=True

@@ -52,9 +52,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
 
     rawdata_files = ["full_dataset.csv"]
     rawdata_hashes = {
-        "full_dataset.csv": (
-            "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
-        )
+        "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
     }
     rawdata_schemas = {
         "full_dataset.csv": {

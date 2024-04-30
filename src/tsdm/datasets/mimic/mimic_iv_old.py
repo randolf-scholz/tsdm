@@ -50,9 +50,7 @@ class MIMIC_IV(MultiTableDataset):
     __version__ = "1.0"
     rawdata_files = ["mimic-iv-1.0.zip"]
     rawdata_hashes = {
-        "mimic-iv-1.0.zip": (
-            "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
-        )
+        "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
     }
 
     internal_files = {
@@ -89,7 +87,7 @@ class MIMIC_IV(MultiTableDataset):
 
     def clean_table(self, key: str) -> None: ...
 
-    def load_table(self, key: str) -> pd.DataFrame:
+    def load_table(self, *, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
     def download_file(self, fname: str, /) -> None:

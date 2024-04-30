@@ -183,18 +183,14 @@ ignore = [
     "E241",  # Multiple spaces after comma
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
-    #    "E301",  # Expected 1 blank line, found 0
-    #    "E302",  # Expected 2 blank lines, found 1
     # pyupgrade
     "UP007",  # Use `X | Y` for type annotations
-    #    "UP015",  # Unnecessary open mode parameters
     "UP035",  # deprecated-import
     # pylint
-    #    "PLC1901",  # compare-to-empty-string
     "PLC2401",  # non-ascii-name
     "PLR0124",  # Name compared with itself
     "PLR2004",  # Magic value used in comparison
-    "PLR6104",  # non-augmented-assignment
+#    "PLR6104",  # non-augmented-assignment
     "PLR6301",  # no-self-use
     # pylint "too-many-*" rules
     "PLR0904",  # Too many public methods
@@ -207,9 +203,6 @@ ignore = [
     "PLR0917",  # Too many positional arguments
     # PYI
     "PYI019",  # Methods like ... should return typing.Self instead of custom TypeVar
-    # simplify
-    #    "SIM118",  # Use `key in dict` instead of `key in dict.keys()`
-    #    "SIM300",  # Yoda conditions are discouraged
     # RUFF
     "RUF001",  # ambiguous-unicode-character-string
     "RUF002",  # ambiguous-unicode-character-docstring
@@ -222,12 +215,12 @@ ignore = [
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
     # refurb
-    #    "FURB140", # reimplemented-starmap (less efficient than comprehension)
+    # "FURB140", # reimplemented-starmap (less efficient than comprehension)
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"src/tsdm/linalg/*" = ["FBT001", "FBT002"]
-"src/tsdm/metrics/*" = ["PLR6301"]
+"src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
+"src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
 "tests/*" =[
     "PT013",   # Found incorrect import of pytest, use simple import pytest instead
 ]
@@ -260,7 +253,7 @@ docstring-code-line-length = "dynamic"
 # endregion ruff configuration ---------------------------------------------------------
 
 
-# region PyLint Configuration ----------------------------------------------------------
+# region pylint Configuration ----------------------------------------------------------
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
 enable = ["useless-suppression"]
@@ -305,7 +298,7 @@ max-line-length = 120
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
 # trigger E1101 when accessed. Python regular expressions are accepted.
 generated-members = ["numpy.*", "torch.*"]
-# endregion PyLint Configuration -------------------------------------------------------
+# endregion pyliny Configuration -------------------------------------------------------
 
 
 # region mypy configuration ------------------------------------------------------------
@@ -380,17 +373,24 @@ pdb = false
 
 [[tool.mypy.overrides]]
 module = [
+    "h5py.*",
+    "matplotlib.*",
+    "modin.*",
+    "numba.*",
     "pandas.*",
     "pyarrow.*",
     "pytest_benchmark.*",
     "scipy.*",
     "sklearn.*",
+    "tqdm.*",
+    "github.*",
 ]
 ignore_missing_imports = true
 # endregion mypy configuration ---------------------------------------------------------
 
 
-# region Pyright Configuration ---------------------------------------------------------
+
+# region pyright Configuration ---------------------------------------------------------
 [tool.pyright]
 root = ""
 venv = ".venv"
@@ -408,19 +408,19 @@ executionEnvironments = [
     {root = "src/", pythonVersion = "3.11", pythonPlatform = "Linux", extraPaths = [""]}
 ]
 typeCheckingMode = "standard"
-useLibraryCodeForTypes = false # `pandas` has way too many false positives
+useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 # Type Check Diagnostics Settings
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
+#reportIncompatibleMethodOverride = false  # FIXME: temporary
+#reportIncompatibleVariableOverride = false  # FIXME: temporary
 #reportMissingImports = false
 #reportMissingTypeStubs = false
+#reportOverlappingOverload = false
+#reportPrivateImportUsage = false
+#reportSelfClsParameterName = false
+#reportUnnecessaryTypeIgnoreComment = true  # highlight any unnecessary # type: ignore
 #reportUnsupportedDunderAll = false
-reportOverlappingOverload = false
-reportPrivateImportUsage = false
-reportUnnecessaryTypeIgnoreComment = true  # highlight any unnecessary # type: ignore
-reportSelfClsParameterName = false
-reportIncompatibleMethodOverride = false  # FIXME: temporary
-reportIncompatibleVariableOverride = false  # FIXME: temporary
-# endregion Pyright Configuration ------------------------------------------------------
+# endregion pyright Configuration ------------------------------------------------------
 
 
 # region pytest configuration ----------------------------------------------------------
@@ -428,7 +428,7 @@ reportIncompatibleVariableOverride = false  # FIXME: temporary
 # NOTE: currently unused https://docs.pytest.org/en/stable/reference/customize.html
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "8.0"
 testpaths = ["src/", "tests/"]
 addopts = [
     "--doctest-modules",

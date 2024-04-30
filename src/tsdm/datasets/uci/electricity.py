@@ -42,7 +42,7 @@ __all__ = ["Electricity"]
 
 from zipfile import ZipFile
 
-import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import SingleTableDataset
@@ -97,9 +97,7 @@ class Electricity(SingleTableDataset):
 
     rawdata_files = ["LD2011_2014.txt.zip"]
     rawdata_hashes = {
-        "LD2011_2014.txt.zip": (
-            "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
-        ),
+        "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
     }
     table_shape = (140256, 370)
     table_hash = "pandas:7114453877232760046"
@@ -121,7 +119,7 @@ class Electricity(SingleTableDataset):
             )
         return df.rename_axis(index="time", columns="client")
 
-    def make_zero_plot(self) -> plt.Axes:
+    def make_zero_plot(self) -> Axes:
         r"""Plot number of zero values per timestamp."""
         return (
             self.table.where(self.table > 0)

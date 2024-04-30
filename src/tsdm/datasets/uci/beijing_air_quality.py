@@ -135,9 +135,7 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
 
     rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
     rawdata_hashes = {
-        "PRSA2017_Data_20130301-20170228.zip": (
-            "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
-        )
+        "PRSA2017_Data_20130301-20170228.zip": "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
     }
 
     rawdata_schema = {
@@ -161,9 +159,12 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "WSPM"    : "float32[pyarrow]",
     }  # fmt: skip
 
-    table_names = ["timeseries", "timeseries_description"]  # pyright: ignore
+    table_names = [
+        "timeseries",
+        "timeseries_description",
+    ]  # pyright: ignore[reportAssignmentType]
 
-    table_schemas = {  # pyright: ignore
+    table_schemas = {# pyright: ignore[reportAssignmentType]
         "timeseries": {
             "PM2.5" : "float[pyarrow]",
             "PM10"  : "float[pyarrow]",

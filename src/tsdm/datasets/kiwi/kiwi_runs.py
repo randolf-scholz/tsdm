@@ -286,18 +286,16 @@ class KiwiRuns(MultiTableDataset):
     ]
 
     table_hashes = {
-        "timeseries": "pandas:BUOOC5Z2OKCIW",
-        "metadata": "pandas:PRI8003H72CW",
-        "timeseries_description": "pandas:WHK7T51NT1HS",
-        "metadata_description": "pandas:6A8LIT5JTX99",
-        "timeindex_description": "pandas:BAKJST6Y68SAM",
-    }
+        "timeseries"             : "pandas:BUOOC5Z2OKCIW",
+        "metadata"               : "pandas:PRI8003H72CW",
+        "timeseries_description" : "pandas:WHK7T51NT1HS",
+        "metadata_description"   : "pandas:6A8LIT5JTX99",
+        "timeindex_description"  : "pandas:BAKJST6Y68SAM",
+    }  # fmt: skip
 
     rawdata_files = ["kiwi_experiments.pk"]
     rawdata_hashes = {
-        "kiwi_experiments.pk": (
-            "sha256:dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
-        ),
+        "kiwi_experiments.pk": "sha256:dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181",
     }
 
     timeseries: DataFrame

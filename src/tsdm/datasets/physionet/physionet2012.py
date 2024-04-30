@@ -323,15 +323,9 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
     rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
 
     rawdata_hashes = {
-        "set-a.tar.gz": (
-            "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920"
-        ),
-        "set-b.tar.gz": (
-            "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30"
-        ),
-        "set-c.tar.gz": (
-            "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1"
-        ),
+        "set-a.tar.gz": "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
+        "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
+        "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
     }
 
     rawdata_schema = {
@@ -340,7 +334,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "Value": "float32[pyarrow]",
     }
 
-    table_names = [  # pyright: ignore
+    table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
         "metadata",
         "timeseries_description",
@@ -349,7 +343,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "raw_metadata",
     ]
 
-    table_schemas = {  # pyright: ignore
+    table_schemas = {# pyright: ignore[reportAssignmentType]
         "timeseries": {
             "Albumin"     : "float32[pyarrow]",
             "ALP"         : "float32[pyarrow]",
