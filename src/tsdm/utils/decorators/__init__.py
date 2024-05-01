@@ -8,6 +8,7 @@ __all__ = [
     "Decorator",
     "ClassDecorator",
     # Functions
+    "autojit",
     "debug",
     "decorator",
     "implements",
@@ -21,10 +22,10 @@ __all__ = [
     # context managers
 ]
 
-
 from tsdm.utils.decorators._decorators import (
     ClassDecorator,
     Decorator,
+    autojit,
     debug,
     decorator,
     implements,
@@ -51,5 +52,6 @@ r"""Dictionary of all available decorators."""
 
 CLASS_DECORATORS: dict[str, ClassDecorator] = {
     "implements": implements,
+    "autojit"   : autojit,
 }  # fmt: skip
 r"""Dictionary of all available class decorators."""

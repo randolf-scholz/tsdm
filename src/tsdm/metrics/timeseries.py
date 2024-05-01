@@ -32,7 +32,7 @@ from typing_extensions import Final, Optional, Protocol, runtime_checkable
 
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.types.aliases import Axis
-from tsdm.utils.wrappers import autojit
+from tsdm.utils.decorators import autojit
 
 
 @runtime_checkable

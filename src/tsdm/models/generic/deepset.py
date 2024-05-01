@@ -15,7 +15,7 @@ from typing_extensions import Optional
 
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP
-from tsdm.utils.wrappers import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit

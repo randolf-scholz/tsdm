@@ -23,7 +23,7 @@ from typing_extensions import Final
 
 from tsdm.metrics.base import BaseMetric, WeightedMetric
 from tsdm.types.aliases import Axis
-from tsdm.utils.wrappers import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit

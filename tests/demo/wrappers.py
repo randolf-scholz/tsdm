@@ -6,7 +6,6 @@ __all__ = [
     "IterValues",
     "IterItems",
     # Functions
-    "autojit",
     "iter_items",
     "iter_keys",
     "iter_values",
@@ -16,58 +15,10 @@ __all__ = [
 from collections.abc import Iterator, Mapping
 from functools import wraps
 
-from torch import jit, nn
-from typing_extensions import Any, Protocol, overload, override
+from typing_extensions import Protocol, overload, override
 
-from tsdm.config import CONFIG
 from tsdm.types.protocols import MappingProtocol
-from tsdm.types.variables import K, T, V_co, torch_module_var
-
-
-def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
-    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
-
-    Makes it so that
-
-    .. code-block:: python
-
-        class MyModule: ...
-
-
-        model = jit.script(MyModule())
-
-    and
-
-    .. code-block:: python
-
-        @autojit
-        class MyModule: ...
-
-
-        model = MyModule()
-
-    are (roughly?) equivalent
-    """
-    assert isinstance(base_class, type)
-    assert issubclass(base_class, nn.Module)
-
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
-        r"""A simple Wrapper."""
-
-        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
-            # Note: If __new__() does not return an instance of cls,
-            # then the new instance's __init__() method will not be invoked.
-            instance: torch_module_var = base_class(*args, **kwargs)
-
-            if CONFIG.autojit:
-                scripted: torch_module_var = jit.script(instance)
-                return scripted
-            return instance
-
-    assert isinstance(WrappedClass, type)
-    assert issubclass(WrappedClass, base_class)
-    return WrappedClass
+from tsdm.types.variables import K, T, V_co
 
 
 class IterKeys(MappingProtocol[K, V_co], Protocol[K, V_co]):
@@ -119,7 +70,7 @@ def iter_keys(obj, /):
         return WrappedClass
 
     try:  # instantiate object
-        new_obj = WrappedClass(obj)  # pyright: ignore
+        new_obj = WrappedClass(obj)
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -155,7 +106,7 @@ def iter_values(obj, /):
         return WrappedClass
 
     try:  # instantiate object
-        new_obj = WrappedClass(obj)  # pyright: ignore
+        new_obj = WrappedClass(obj)
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -189,7 +140,7 @@ def iter_items(obj, /):
         return WrappedClass
 
     try:  # instantiate object
-        new_obj = WrappedClass(obj)  # pyright: ignore
+        new_obj = WrappedClass(obj)
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj

@@ -15,7 +15,7 @@ from torch import Tensor, jit, nn
 from typing_extensions import ClassVar, Final
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.utils.wrappers import autojit
+from tsdm.utils.decorators import autojit
 
 # TODO: Add TensorEncoder
 
