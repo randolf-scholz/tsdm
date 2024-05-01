@@ -94,7 +94,7 @@ def test_namedtuple_decorator():
 
     assert str(foo(5, 3)) == "foo_tuple(q=1, r=2)"
 
-    @return_namedtuple(name="divmod")  # pyright: ignore
+    @return_namedtuple(name="divmod")  # pyright: ignore[reportCallIssue]
     def bar(x: int, y: int) -> tuple[int, int]:
         q, r = divmod(x, y)
         return q, r

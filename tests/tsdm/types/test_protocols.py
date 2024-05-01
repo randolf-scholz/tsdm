@@ -1,14 +1,14 @@
 r"""Test other protocols."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import NamedTuple
 
 import numpy
 import pandas
 import torch
 from numpy._typing import NDArray
 from pytest import mark
+from typing_extensions import NamedTuple, assert_type
 
 from tsdm.types.protocols import (
     Dataclass,
@@ -20,7 +20,7 @@ from tsdm.types.protocols import (
     is_dataclass,
     is_namedtuple,
 )
-from tsdm.types.variables import T
+from tsdm.types.variables import K, T, V
 
 
 def test_shapelike_protocol() -> None:
@@ -273,3 +273,12 @@ def test_get_interscetion_indexable() -> None:
     }
     attrs = sorted(shared_attrs - excluded_attrs)
     print("Shared attributes:\n" + "\n".join(attrs))
+
+
+def test_supportskeysgetitem() -> None:
+    r"""Test the SupportsKeysAndGetItem protocol."""
+
+    def foo(x: Mapping[K, V]) -> SupportsKeysAndGetItem[K, V]:
+        return x
+
+    assert_type(foo({"a": 1}), SupportsKeysAndGetItem[str, int])

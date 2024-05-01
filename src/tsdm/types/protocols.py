@@ -43,8 +43,10 @@ __all__ = [
     # Factory classes
     "Dataclass",
     "NTuple",
+    "Slotted",
     "is_dataclass",
     "is_namedtuple",
+    "is_slotted",
     # Functions
     # TypeVars
     "ArrayType",
@@ -1009,7 +1011,7 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
 def is_dataclass(obj: type, /) -> TypeGuard[type[Dataclass]]: ...
 @overload
 def is_dataclass(obj: object, /) -> TypeGuard[Dataclass]: ...
-def is_dataclass(obj, /):  # pyright: ignore
+def is_dataclass(obj: object, /) -> TypeGuard[Dataclass | type[Dataclass]]:
     r"""Check if the object is a dataclass."""
     if isinstance(obj, type):
         return issubclass(obj, Dataclass)  # type: ignore[misc]
@@ -1020,14 +1022,22 @@ def is_dataclass(obj, /):  # pyright: ignore
 def is_namedtuple(obj: type, /) -> TypeGuard[type[NTuple]]: ...
 @overload
 def is_namedtuple(obj: object, /) -> TypeGuard[NTuple]: ...
-def is_namedtuple(obj, /):  # pyright: ignore
+def is_namedtuple(obj: object, /) -> TypeGuard[NTuple | type[NTuple]]:
     r"""Check if the object is a namedtuple."""
     if isinstance(obj, type):
         return issubclass(obj, NTuple)  # type: ignore[misc]
     return issubclass(type(obj), NTuple)  # type: ignore[misc]
 
 
-# NOTE: TypedDict not supported, since instances of type-dicts forget their parent class.
-#  and are just plain dicts.
+class Slotted(Protocol):
+    r"""Protocol for objects that are slotted."""
+
+    __slots__: tuple[str, ...]
+
+
+def is_slotted(obj: object, /) -> TypeGuard[Slotted]:
+    r"""Check if the object is slotted."""
+    return hasattr(obj, "__slots__")
+
 
 # endregion generic factory-protocols --------------------------------------------------

@@ -14,10 +14,12 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass
 
 from typing_extensions import (
     Any,
     Generic,
+    Never,
     Optional,
     Self,
     TypeAlias,
@@ -36,11 +38,10 @@ from tsdm.utils.funcutils import (
 from tsdm.utils.pprint import pprint_repr
 
 
+@pprint_repr
+@dataclass(slots=True, init=False)  # use slots since many instances might be created.
 class LazyValue(Generic[R]):
     r"""A placeholder for uninitialized values."""
-
-    __slots__ = ("args", "func", "kwargs", "type_hint")
-    # we use slots since lots of instances of lazy-value might be created.
 
     func: Callable[..., R]
     args: Iterable[Any]
@@ -52,13 +53,13 @@ class LazyValue(Generic[R]):
         func: Callable[..., R],
         /,
         *,
-        args: Iterable[Any] = NotImplemented,
-        kwargs: Mapping[str, Any] = NotImplemented,
+        args: Iterable[Any] = (),
+        kwargs: Mapping[str, Any] = EMPTY_MAP,
         type_hint: Optional[str] = None,
     ) -> None:
         self.func = func
-        self.args = args if args is not NotImplemented else ()
-        self.kwargs = kwargs if kwargs is not NotImplemented else {}
+        self.args = args
+        self.kwargs = kwargs
         self.type_hint = (
             get_return_typehint(self.func) if type_hint is None else type_hint
         )
@@ -73,14 +74,14 @@ class LazyValue(Generic[R]):
 
 
 LazySpec: TypeAlias = (
-    LazyValue[T]  # lazy value
-    | Callable[[], T]  # no args
-    | Callable[[Any], T]  # single arg
-    | tuple[Callable[..., T], tuple]  # args
-    | tuple[Callable[..., T], dict]  # kwargs
-    | tuple[Callable[..., T], tuple, dict]  # args, kwargs
-    | T  # direct value
-)
+    LazyValue[V]                            # lazy value
+    | Callable[[], V]                       # no args
+    | Callable[[Any], V]                    # single arg
+    | tuple[Callable[..., V], tuple]        # args
+    | tuple[Callable[..., V], dict]         # kwargs
+    | tuple[Callable[..., V], tuple, dict]  # args, kwargs
+    | V                                     # direct value
+)  # fmt: skip
 r"""A type alias for the possible values of a `LazyDict`."""
 
 
@@ -123,21 +124,54 @@ class LazyDict(dict[K, V]):
 
     # inherit update from MutableMapping
     # update = MutableMapping.update
+    @overload
+    def __new__(cls, /) -> "LazyDict": ...
+    @overload
+    def __new__(cls, /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
+    @overload
+    def __new__(cls, mapping: Mapping[K, LazySpec[V]], /) -> "LazyDict[K, V]": ...
+    @overload
+    def __new__(
+        cls, mapping: Mapping[K, LazySpec[V]], /, **kwargs: LazySpec[V]
+    ) -> "LazyDict[K | str, V]": ...
+    @overload
+    def __new__(
+        cls, iterable: Iterable[tuple[K, LazySpec[V]]], /
+    ) -> "LazyDict[K, V]": ...
+    @overload
+    def __new__(
+        cls, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]
+    ) -> "LazyDict[K | str, V]": ...
+    def __new__(  # type: ignore[misc]
+        cls,
+        map_or_iterable: Mapping[K, LazySpec[V]]
+        | Iterable[tuple[K, LazySpec[V]]] = EMPTY_MAP,
+        /,
+        **kwargs: LazySpec[V],
+    ) -> Self:
+        r"""Create a new instance of the class."""
+        return super().__new__(cls)
 
-    @overload
-    def __init__(self, /, **kwargs: LazySpec[V]) -> None: ...
-    @overload
+    # @overload
+    # def __init__(self, /, **kwargs: LazySpec[V]) -> None: ...
+    # @overload
+    # def __init__(
+    #     self, mapping: SupportsKeysAndGetItem[K, LazySpec[V]], /, **kwargs: LazySpec[V]
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]
+    # ) -> None: ...
     def __init__(
-        self, mapping: SupportsKeysAndGetItem[K, LazySpec[V]], /, **kwargs: LazySpec[V]
-    ) -> None: ...
-    @overload
-    def __init__(
-        self, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]
-    ) -> None: ...
-    def __init__(self, other=EMPTY_MAP, /, **kwargs):  # pyright: ignore
+        self,
+        map_or_iterable: SupportsKeysAndGetItem[K, LazySpec[V]]
+        | Iterable[tuple[K, LazySpec[V]]] = EMPTY_MAP,
+        /,
+        **kwargs: LazySpec[V],
+    ) -> None:
         r"""Initialize the dictionary."""
         super().__init__()
-        match other:
+        match map_or_iterable:
             case SupportsKeysAndGetItem() as lookup:
                 for key in lookup.keys():  # noqa: SIM118
                     self.set_lazy(key, lookup[key])
@@ -145,10 +179,10 @@ class LazyDict(dict[K, V]):
                 for key, value in iterable:
                     self.set_lazy(key, value)
             case _:
-                raise TypeError(f"Invalid type for {other=}")
+                raise TypeError(f"Invalid type for {map_or_iterable=}")
 
         for key, value in kwargs.items():
-            self.set_lazy(key, value)  # pyright: ignore
+            self.set_lazy(key, value)  # pyright: ignore[reportArgumentType]
 
     def __getitem__(self, key: K, /) -> V:
         r"""Get the value of the key."""
@@ -174,26 +208,16 @@ class LazyDict(dict[K, V]):
         lazy_value = self._make_lazy_function(key, value)
         super().__setitem__(key, lazy_value)  # type: ignore[assignment]
 
-    def __or__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
+    def __or__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":  # pyright: ignore[reportIncompatibleMethodOverride]
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
-        if isinstance(other, self.__class__):
-            return other | self  # pyright: ignore
-
-        warnings.warn(
-            "Using __ror__ with a non-LazyDict is not recommended, "
-            "It causes all values to be evaluated.",
-            category=RuntimeWarning,
-            source=LazyDict,
-            stacklevel=2,
+    def __ror__(self, other: Mapping[K2, T], /) -> Never:  # pyright: ignore[reportIncompatibleMethodOverride]
+        raise NotImplementedError(
+            "Using __ror__ with a non-LazyDict is not supported,"
+            " since it would causes all values to be evaluated.",
         )
-
-        new = cast("LazyDict[K | K2, V | T]", LazyDict(other))
-        new.update(self)  # type: ignore[arg-type]
-        return new
 
     def __ior__(self, other: "SupportsKeysAndGetItem[K, V]", /) -> Self:  # type: ignore[override, misc]
         # TODO: fix typing error
@@ -207,7 +231,7 @@ class LazyDict(dict[K, V]):
     def copy(self) -> Self:
         r"""Return a shallow copy of the dictionary."""
         new = self.__class__()
-        new.update(self)  # type: ignore[arg-type]
+        new.update(self)
         return new
 
     @overload  # type: ignore[override]
@@ -251,12 +275,16 @@ class LazyDict(dict[K, V]):
 
     @classmethod  # type: ignore[override]
     @overload
-    def fromkeys(cls, iterable: Iterable[K], value: None = ..., /) -> Self: ...
+    def fromkeys(
+        cls, iterable: Iterable[K], value: None = ..., /
+    ) -> "LazyDict[K, Any | None]": ...
     @classmethod
     @overload
-    def fromkeys(cls, iterable: Iterable[K], value: LazySpec[V], /) -> Self: ...
+    def fromkeys(
+        cls, iterable: Iterable[K], value: LazySpec[V], /
+    ) -> "LazyDict[K, V]": ...
     @classmethod
-    def fromkeys(cls, iterable, value=None):
+    def fromkeys(cls, iterable, value=None):  # pyright: ignore[reportInconsistentOverload, reportIncompatibleMethodOverride]
         r"""Create a new LazyDict from the keys."""
         return cls({k: value for k in iterable})
 

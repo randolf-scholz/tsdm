@@ -782,21 +782,14 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     @property
     def tables(self) -> dict[Key, T_co]:
         r"""Store cached version of dataset."""
-        # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
-
         if self._tables is NotImplemented:
-            if isinstance(self.table_names, Mapping):
-                type_hints = self.table_names
-            else:
-                return_type = get_return_typehint(self.clean_table)
-                type_hints = {key: str(return_type) for key in self.table_names}
-
+            # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
             self._tables = LazyDict({
-                key: LazyValue(  # type: ignore[misc]
+                key: LazyValue(
                     self.load,
                     args=(key,),
                     kwargs={"initializing": True},
-                    type_hint=type_hints[key],
+                    type_hint=get_return_typehint(self.clean_table),
                 )
                 for key in self.table_names
             })
