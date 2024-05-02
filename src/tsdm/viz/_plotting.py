@@ -13,8 +13,9 @@ from collections.abc import Callable, Mapping
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnchoredText
-from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import mode
 from torch import Tensor

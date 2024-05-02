@@ -45,7 +45,6 @@ class ODE_RNN(BaseModel, nn.Module):
         - https://papers.nips.cc/paper/2019/hash/42a6845a557bef704ad8ac9cb4461d43-Abstract.html
     """
 
-    model_path: Path
     url: str = r"https://github.com/YuliaRubanova/latent_ode.git"
 
     HP: dict = {

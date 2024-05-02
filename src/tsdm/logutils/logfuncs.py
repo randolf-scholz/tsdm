@@ -30,7 +30,7 @@ from pandas import DataFrame
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 from typing_extensions import (
     Any,
     Literal,

@@ -43,7 +43,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     ) -> TDVar:
         match obj:
             case Callable() as func:  # type: ignore[misc]
-                return func(k)  # pyright: ignore[reportCallIssue]
+                return func(k)
             case Lookup() as mapping:
                 return mapping[k]
             case _:
@@ -120,7 +120,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
         # set variables
         self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
-        self.deltax = deltax  # pyright: ignore[reportAttributeAccessIssue]
+        self.deltax = deltax
         self.stride = stride  # pyright: ignore[reportAttributeAccessIssue]
         self.intervals = DataFrame(
             intervals,

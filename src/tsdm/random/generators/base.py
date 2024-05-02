@@ -189,7 +189,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
 
     # @property
     # @abstractmethod
-    # def system(self) -> ODE | Any:  # pyright: ignore[reportRedeclaration]
+    # def system(self) -> ODE | Any:
     #     r"""System of differential equations."""
 
     system: Callable[[ArrayLike, ArrayLike], T_co]

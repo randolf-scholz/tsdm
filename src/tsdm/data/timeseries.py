@@ -83,10 +83,10 @@ class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
         return len(self.timeindex)
 
     @overload
-    def __getitem__(self, key: Index | slice | list[Hashable], /) -> DataFrame: ...
+    def __getitem__(self, key: Index | slice | list[Hashable]) -> DataFrame: ...
     @overload
-    def __getitem__(self, key: Hashable, /) -> Series: ...
-    def __getitem__(self, key, /):
+    def __getitem__(self, key: Hashable) -> Series: ...
+    def __getitem__(self, key):
         r"""Get item from timeseries."""
         # we might get an index object, or a slice, or boolean mask...
         return self.timeseries.loc[key]
@@ -552,7 +552,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = self.dataset.metadata.columns
         self.validate()
 
-    def __getitem__(self, key: Hashable, /) -> Sample:
+    def __getitem__(self, key: Hashable) -> Sample:
         return self.make_sample(
             key,
             sparse_index=self.sparse_index,
@@ -798,7 +798,7 @@ class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
         for key in self.index:
             yield self[key]
 
-    def __getitem__(self, key: Hashable, /) -> PlainSample:
+    def __getitem__(self, key: Hashable) -> PlainSample:
         r"""Yield a single sample."""
         # select the individual time series
         ts = self.data_source.loc[key]

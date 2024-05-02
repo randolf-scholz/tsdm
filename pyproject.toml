@@ -412,7 +412,7 @@ useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 reportOverlappingOverload = false
 #reportPrivateImportUsage = false
 #reportSelfClsParameterName = false
-reportUnnecessaryTypeIgnoreComment = true  # highlight any unnecessary # type: ignore
+reportUnnecessaryTypeIgnoreComment = false  # highlight any unnecessary # type: ignore
 #reportUnsupportedDunderAll = false
 # endregion pyright Configuration ------------------------------------------------------
 

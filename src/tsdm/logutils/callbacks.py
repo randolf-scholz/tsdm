@@ -35,7 +35,6 @@ from collections.abc import (
     Sequence,
 )
 from dataclasses import KW_ONLY, dataclass, field
-from functools import cached_property
 from itertools import chain
 from pathlib import Path
 
@@ -45,7 +44,7 @@ from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.autonotebook import tqdm
 from typing_extensions import (
     Any,
@@ -98,6 +97,9 @@ class Callback(Protocol):
         r"""The required kwargs for the callback."""
         ...
 
+    # required_kwargs: set[str] | cached_property[set[str]]
+    # # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+
     @abstractmethod
     def callback(self, step: int, /, **state_dict: Any) -> None:
         r"""Log something at time index i."""
@@ -147,7 +149,7 @@ class BaseCallback(Callback):
     frequency: int = 1
     r"""The frequency at which the callback is executed."""
 
-    @cached_property
+    @property
     def required_kwargs(self) -> set[str]:
         r"""The required kwargs for the callback."""
         return get_mandatory_kwargs(self.__call__)
