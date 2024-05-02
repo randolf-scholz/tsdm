@@ -114,7 +114,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             if not valid_strides:
                 break
 
-            intervals.extend([  # pyright: ignore
+            intervals.extend([  # pyright: ignore[reportArgumentType]
                 (x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides
             ])
 

@@ -760,7 +760,7 @@ def pprint_sequence(cls, /, **kwds):
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_sequence, **kwds)
+    cls.__repr__ = partialmethod(repr_sequence, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
     return cls
 
 
@@ -773,7 +773,7 @@ def pprint_mapping(cls, /, **kwds):
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_mapping, **kwds)
+    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
     return cls
 
 
@@ -784,9 +784,9 @@ def pprint_dataclass(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
 @decorator
 def pprint_dataclass(cls, /, **kwds):
     r"""Add appropriate __repr__ to class."""
-    if not is_dataclass(cls):
+    if not (issubclass(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_dataclass, **kwds)
+    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
     return cls
 
 
@@ -817,5 +817,5 @@ def pprint_repr(cls, /, **kwds):
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = partialmethod(repr_func, **kwds)  # pyright: ignore
+    cls.__repr__ = partialmethod(repr_func, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
     return cls
