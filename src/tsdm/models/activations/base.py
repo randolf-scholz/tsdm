@@ -1,4 +1,4 @@
-"""Base classes for activations."""
+r"""Base classes for activations."""
 
 __all__ = [
     # ABCs & Protocols

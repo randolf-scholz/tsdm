@@ -1,4 +1,4 @@
-"""Dataset Wrapper for the Damped Pendulum Generator."""
+r"""Dataset Wrapper for the Damped Pendulum Generator."""
 
 __all__ = ["DampedPendulum_Ansari2023"]
 

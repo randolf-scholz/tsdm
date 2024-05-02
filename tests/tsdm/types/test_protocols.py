@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 import numpy
 import pandas
+import pytest
 import torch
 from numpy._typing import NDArray
-from pytest import mark
 from typing_extensions import NamedTuple, assert_type
 
 from tsdm.types.protocols import (
@@ -111,7 +111,7 @@ def test_dataclass_protocol() -> None:
     assert not issubclass(Bar, Dataclass)  # type: ignore[misc]
 
 
-@mark.xfail(reason="Attribute __dataclass_fields__ does not exist on class.")
+@pytest.mark.xfail(reason="Attribute __dataclass_fields__ does not exist on class.")
 def test_dataclass_protocol_itself() -> None:
     assert issubclass(Dataclass, Dataclass)  # type: ignore[misc]
 

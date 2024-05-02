@@ -1,4 +1,4 @@
-"""Test torch.jit compatibliity.."""
+r"""Test torch.jit compatibliity.."""
 
 from tempfile import TemporaryFile
 from typing import NamedTuple

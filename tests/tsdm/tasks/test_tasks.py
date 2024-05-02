@@ -4,7 +4,7 @@ import logging
 from collections.abc import Sequence
 
 import numpy as np
-from pytest import mark
+import pytest
 
 from tsdm.data import TimeSeriesSampleGenerator
 from tsdm.data.timeseries import Sample, TimeSeriesCollection, TimeSeriesDataset
@@ -27,8 +27,8 @@ TASKS = {
 }
 
 
-@mark.slow
-@mark.parametrize("task_cls", TASKS.values(), ids=TASKS)
+@pytest.mark.slow
+@pytest.mark.parametrize("task_cls", TASKS.values(), ids=TASKS)
 def test_tasks(task_cls: type) -> None:
     task = task_cls()
     key = (0, "train")

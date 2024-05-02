@@ -1,4 +1,4 @@
-"""Plotting configuration."""
+r"""Plotting configuration."""
 
 __all__ = ["MATPLOTLIB_CONFIG", "enable_latex_plotting"]
 

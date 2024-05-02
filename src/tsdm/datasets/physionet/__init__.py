@@ -1,4 +1,4 @@
-"""Datasets from the PhysioNet project.
+r"""Datasets from the PhysioNet project.
 
 References:
     - `PhysioNet <https://physionet.org/>`_

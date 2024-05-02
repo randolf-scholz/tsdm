@@ -1,4 +1,4 @@
-"""Test which builtins satisfy which protocols."""
+r"""Test which builtins satisfy which protocols."""
 
 import pprint
 from collections import abc, defaultdict

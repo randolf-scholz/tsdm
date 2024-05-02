@@ -1,4 +1,4 @@
-"""Numerical functions with shared signatures for multiple backends."""
+r"""Numerical functions with shared signatures for multiple backends."""
 
 __all__ = [
     # Classes

@@ -109,7 +109,7 @@ def main():
         "numpy_int": numpy.int64(10),
         "pandas": pandas.Timestamp(ISO_DATE),
         "python": datetime.fromisoformat(ISO_DATE),
-        # "arrow": pyarrow.scalar(DT, type=pyarrow.timestamp("s")),
+        # "arrow": pyarrow.scalar(DT, type=pyarrow.timestamp("ms")),
     }
 
     d = datetime.fromisoformat(ISO_DATE)

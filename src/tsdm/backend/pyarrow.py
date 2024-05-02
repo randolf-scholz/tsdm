@@ -1,4 +1,4 @@
-"""Implements `pyarrow`-backend for tsdm."""
+r"""Implements `pyarrow`-backend for tsdm."""
 
 __all__ = [
     # Constants

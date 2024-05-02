@@ -1,12 +1,12 @@
-"""Tests for tsdm.encoders.box_cox."""
+r"""Tests for tsdm.encoders.box_cox."""
 
 import numpy as np
-from pytest import mark
+import pytest
 
 from tsdm.encoders.box_cox import METHODS, BoxCoxEncoder, LogitBoxCoxEncoder
 
 
-@mark.parametrize("method", METHODS)
+@pytest.mark.parametrize("method", METHODS)
 def test_box_cox_encoder(method):
     r"""Test BoxCoxEncoder."""
     data = np.linspace(0, 1000, 1000)
@@ -21,7 +21,7 @@ def test_box_cox_encoder(method):
     assert np.allclose(decoded.min(), 0.0)
 
 
-@mark.parametrize("method", METHODS)
+@pytest.mark.parametrize("method", METHODS)
 def test_logit_box_cox_encoder(method):
     r"""Test LogitBoxCoxEncoder."""
     data = np.linspace(0, 1, 1000)

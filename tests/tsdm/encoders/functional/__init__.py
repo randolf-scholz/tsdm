@@ -1,1 +1,1 @@
-"""Test tsdm.encoders.functional."""
+r"""Test tsdm.encoders.functional."""

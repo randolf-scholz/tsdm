@@ -1,4 +1,4 @@
-"""Tasks based on UCI datasets."""
+r"""Tasks based on UCI datasets."""
 
 __all__ = [
     "ElectricityDeepAR",

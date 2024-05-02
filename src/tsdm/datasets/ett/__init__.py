@@ -1,4 +1,4 @@
-"""ETT dataset."""
+r"""ETT dataset."""
 
 __all__ = ["ETT"]
 

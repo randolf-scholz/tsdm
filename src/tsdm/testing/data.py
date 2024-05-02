@@ -1,4 +1,4 @@
-"""Test functions for data (pandas/numpy/polars/pyarrow/etc.)."""
+r"""Test functions for data (pandas/numpy/polars/pyarrow/etc.)."""
 
 __all__ = [
     # functions

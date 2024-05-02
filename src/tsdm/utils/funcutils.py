@@ -1,4 +1,4 @@
-"""Utility functions relating to function arguments and return values."""
+r"""Utility functions relating to function arguments and return values."""
 
 __all__ = [
     # Constants

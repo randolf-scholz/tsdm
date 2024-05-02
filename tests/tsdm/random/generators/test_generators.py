@@ -2,7 +2,7 @@ r"""Test synthetic generators."""
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pytest import mark
+import pytest
 
 from tsdm.config import PROJECT
 from tsdm.random.generators import (
@@ -16,7 +16,7 @@ from tsdm.random.generators import (
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-@mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=3)
 def test_bouncing_ball() -> None:
     r"""Test Bouncing Ball."""
     # sample from generator
@@ -34,7 +34,7 @@ def test_bouncing_ball() -> None:
     fig.savefig(RESULT_DIR / "bouncing_ball.png")
 
 
-@mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=3)
 def test_lotka_volterra() -> None:
     r"""Test Lotka-Volterra."""
     # sample from generator
@@ -55,7 +55,7 @@ def test_lotka_volterra() -> None:
     fig.savefig(RESULT_DIR / "lotka_volterra.png")
 
 
-@mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=3)
 def test_damped_pendulum() -> None:
     r"""Test Damped Pendulum."""
     # sample from generator
@@ -82,7 +82,7 @@ def test_damped_pendulum() -> None:
     fig.savefig(RESULT_DIR / "damped_pendulum.png")
 
 
-@mark.xfail(reason="batching not supported by scipy solve_ivp")
+@pytest.mark.xfail(reason="batching not supported by scipy solve_ivp")
 def test_damped_pendulum_batch() -> None:
     t = np.linspace(0, 10, 128)
     num_sequences = 3
@@ -90,7 +90,7 @@ def test_damped_pendulum_batch() -> None:
     assert y.shape == (num_sequences, t.size, 2)
 
 
-@mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=3)
 def test_damped_pendulum_xy() -> None:
     r"""Test Damped Pendulum XY."""
     # sample from generator
@@ -112,7 +112,7 @@ def test_damped_pendulum_xy() -> None:
     fig.savefig(RESULT_DIR / "damped_pendulum_xy.png")
 
 
-@mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=3)
 def test_sir_model() -> None:
     r"""Test SIR model."""
     # sample from generator

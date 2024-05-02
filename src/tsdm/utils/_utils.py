@@ -93,7 +93,7 @@ def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
 
 
 def axes_to_tuple(axes: Axis, *, ndim: int) -> tuple[int, ...]:
-    """Convert axes to tuple.
+    r"""Convert axes to tuple.
 
     Note:
         - `ndarray.mean(axis=None)` contracts over all axes, returns scalar.
@@ -109,7 +109,7 @@ def axes_to_tuple(axes: Axis, *, ndim: int) -> tuple[int, ...]:
 
 
 def dims_to_list(dims: Dims, *, ndim: int) -> list[int]:
-    """Convert dimensions to list.
+    r"""Convert dimensions to list.
 
     Note:
         - `tensor.mean(dim=None)` contracts over all dims, returns 1d-tensor (1 element).
@@ -125,7 +125,7 @@ def dims_to_list(dims: Dims, *, ndim: int) -> list[int]:
 
 
 def size_to_tuple(size: Size) -> tuple[int, ...]:
-    """Convert size to tuple.
+    r"""Convert size to tuple.
 
     Note:
         - `np.random.normal(size=None)` produces a scalar.
@@ -138,7 +138,7 @@ def size_to_tuple(size: Size) -> tuple[int, ...]:
 
 
 def shape_to_tuple(shape: Shape) -> tuple[int, ...]:
-    """Convert shape to tuple.
+    r"""Convert shape to tuple.
 
     Note:
         - `np.ones(shape=None)` produces a 0d-array (1 element).

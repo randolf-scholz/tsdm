@@ -1,4 +1,4 @@
-"""Implement `pandas`-backend for tsdm."""
+r"""Implement `pandas`-backend for tsdm."""
 
 __all__ = [
     # Functions

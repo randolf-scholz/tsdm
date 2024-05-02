@@ -1,4 +1,4 @@
-"""Implementations for torch backend."""
+r"""Implementations for torch backend."""
 
 __all__ = [
     "torch_nanmin",

@@ -86,11 +86,12 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.13
+    rev: v0.2.16
     hooks:
       # pygrep hooks
       - id: check-separator-length
       - id: pyarrow-timestamp-seconds
+        exclude: 'dtypes.py'
       - id: python-consider-using-raw-string
       - id: python-no-blanket-type-ignore
       - id: python-no-builtin-eval

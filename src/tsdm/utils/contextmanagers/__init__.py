@@ -1,4 +1,4 @@
-"""Context managers."""
+r"""Context managers."""
 
 __all__ = [
     # CONSTANTS

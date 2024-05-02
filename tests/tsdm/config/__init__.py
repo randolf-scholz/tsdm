@@ -1,1 +1,1 @@
-"""Tests for tsdm.config."""
+r"""Tests for tsdm.config."""

@@ -1,4 +1,4 @@
-"""Test time encoders."""
+r"""Test time encoders."""
 
 from datetime import datetime, timedelta
 
@@ -38,27 +38,27 @@ r"""Example datetime data in ISO 8601 format with 30s steps."""
 
 DT_TRAIN_ARRAYS = {
     "python": list(map(datetime.fromisoformat, DT_TRAIN_DATA)),
-    "numpy": np.array(DT_TRAIN_DATA, dtype="datetime64[s]"),
-    "pandas-index-numpy": pd.Index(DT_TRAIN_DATA).astype("datetime64[s]"),
-    "pandas-index-arrow": pd.Index(DT_TRAIN_DATA).astype("timestamp[s][pyarrow]"),
-    "pandas-series-numpy": pd.Series(DT_TRAIN_DATA).astype("datetime64[s]"),
-    "pandas-series-arrow": pd.Series(DT_TRAIN_DATA).astype("timestamp[s][pyarrow]"),
+    "numpy": np.array(DT_TRAIN_DATA, dtype="datetime64[ms]"),
+    "pandas-index-numpy": pd.Index(DT_TRAIN_DATA).astype("datetime64[ms]"),
+    "pandas-index-arrow": pd.Index(DT_TRAIN_DATA).astype("timestamp[ms][pyarrow]"),
+    "pandas-series-numpy": pd.Series(DT_TRAIN_DATA).astype("datetime64[ms]"),
+    "pandas-series-arrow": pd.Series(DT_TRAIN_DATA).astype("timestamp[ms][pyarrow]"),
     "pandas-datetimeindex": pd.DatetimeIndex(DT_TRAIN_DATA),
     "polars": pl.Series(DT_TRAIN_DATA).cast(dtype=pl.Datetime()),
-    "pyarrow": pa.array(DT_TRAIN_DATA).cast(pa.timestamp("s")),
+    "pyarrow": pa.array(DT_TRAIN_DATA).cast(pa.timestamp("ms")),
 }
 r"""Example data for training datetime encoders."""
 
 DT_TEST_ARRAYS = {
     "python": list(map(datetime.fromisoformat, DT_TEST_DATA)),
-    "numpy": np.array(DT_TEST_DATA, dtype="datetime64[s]"),
-    "pandas-index-numpy": pd.Index(DT_TEST_DATA).astype("datetime64[s]"),
-    "pandas-index-arrow": pd.Index(DT_TEST_DATA).astype("timestamp[s][pyarrow]"),
-    "pandas-series-numpy": pd.Series(DT_TEST_DATA).astype("datetime64[s]"),
-    "pandas-series-arrow": pd.Series(DT_TEST_DATA).astype("timestamp[s][pyarrow]"),
+    "numpy": np.array(DT_TEST_DATA, dtype="datetime64[ms]"),
+    "pandas-index-numpy": pd.Index(DT_TEST_DATA).astype("datetime64[ms]"),
+    "pandas-index-arrow": pd.Index(DT_TEST_DATA).astype("timestamp[ms][pyarrow]"),
+    "pandas-series-numpy": pd.Series(DT_TEST_DATA).astype("datetime64[ms]"),
+    "pandas-series-arrow": pd.Series(DT_TEST_DATA).astype("timestamp[ms][pyarrow]"),
     "pandas-datetimeindex": pd.DatetimeIndex(DT_TEST_DATA),
     "polars": pl.Series(DT_TEST_DATA).cast(dtype=pl.Datetime()),
-    "pyarrow": pa.array(DT_TEST_DATA).cast(pa.timestamp("s")),
+    "pyarrow": pa.array(DT_TEST_DATA).cast(pa.timestamp("ms")),
 }
 r"""Example data for testing datetime encoders."""
 # endregion datetime sample data -------------------------------------------------------

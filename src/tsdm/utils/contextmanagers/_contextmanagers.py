@@ -1,4 +1,4 @@
-"""Context managers for use in decorators."""
+r"""Context managers for use in decorators."""
 
 __all__ = [
     # Protocol

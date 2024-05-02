@@ -1,4 +1,4 @@
-"""Datasets from the UCI machine learning repository.
+r"""Datasets from the UCI machine learning repository.
 
 References:
 - `UCI Machine Learning Repository <https://archive.ics.uci.edu/>`_

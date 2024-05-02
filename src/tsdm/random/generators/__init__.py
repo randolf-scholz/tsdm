@@ -1,4 +1,4 @@
-"""Synthetic Data Generators.
+r"""Synthetic Data Generators.
 
 Note:
     Generators are used to create synthetic data.
@@ -44,4 +44,4 @@ r"""Dictionary of all available generators."""
 IVP_SOLVERS: dict[str, IVP_Solver] = {
     "solve_ivp" : solve_ivp,
 }  # fmt: skip
-"""Dictionary of all available IVP solvers."""
+r"""Dictionary of all available IVP solvers."""

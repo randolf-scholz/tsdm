@@ -82,6 +82,7 @@ tests = [
 ]
 linters = [
     "pylint>=3.1.0",
+    "pylint-gitlab>=2.0.0",
     "ruff>=0.4.2",
     "ruff-lsp>=0.0.53",
 ]
@@ -220,9 +221,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
-"tests/*" =[
-    "PT013",   # Found incorrect import of pytest, use simple import pytest instead
-]
 
 [tool.ruff.lint.pylint]
 allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]
@@ -297,7 +295,7 @@ max-line-length = 120
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
 # trigger E1101 when accessed. Python regular expressions are accepted.
 generated-members = ["numpy.*", "torch.*"]
-# endregion pyliny Configuration -------------------------------------------------------
+# endregion pylint Configuration -------------------------------------------------------
 
 
 # region mypy configuration ------------------------------------------------------------
@@ -388,23 +386,18 @@ ignore_missing_imports = true
 # endregion mypy configuration ---------------------------------------------------------
 
 
-
 # region pyright Configuration ---------------------------------------------------------
 [tool.pyright]
-root = "/home/rscholz/Projects/KIWI/tsdm"
 venv = ".venv"
 venvPath = "."
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
-#stubPath = ""
 include = ["src/", "tests/"]
-#executionEnvironments = [
-#    {root = "src/", pythonVersion = "3.11", pythonPlatform = "Linux", extraPaths = [""]}
-#]
-typeCheckingMode = "standard"
-useLibraryCodeForTypes = false  # `pandas` has way too many false positives
+
 # Type Check Diagnostics Settings
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
+typeCheckingMode = "standard"
+useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 #reportIncompatibleMethodOverride = false  # FIXME: temporary
 #reportIncompatibleVariableOverride = false  # FIXME: temporary
 #reportMissingImports = false

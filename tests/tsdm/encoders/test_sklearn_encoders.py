@@ -1,8 +1,7 @@
-"""Test sklearn encoders."""
+r"""Test sklearn encoders."""
 
 import numpy as np
 import pytest
-from pytest import mark
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
 
@@ -43,7 +42,7 @@ SAMPLE_DATA = {
 r"""Dictionary of all available sklearn encoders."""
 
 
-@mark.parametrize("name", SKLEARN_TRANSFORMS)
+@pytest.mark.parametrize("name", SKLEARN_TRANSFORMS)
 def test_transform(name: str) -> None:
     cls = SKLEARN_TRANSFORMS[name]
     assert issubclass(cls, SklearnTransform)
@@ -54,7 +53,7 @@ def test_transform(name: str) -> None:
     check_estimator(encoder)
 
 
-@mark.parametrize("name", SKLEARN_ENCODERS)
+@pytest.mark.parametrize("name", SKLEARN_ENCODERS)
 def test_encoder(name: str) -> None:
     cls = SKLEARN_ENCODERS[name]
     assert issubclass(cls, SklearnEncoder)
@@ -64,7 +63,7 @@ def test_encoder(name: str) -> None:
     check_estimator(encoder)
 
 
-@mark.parametrize("name", SKLEARN_ENCODERS)
+@pytest.mark.parametrize("name", SKLEARN_ENCODERS)
 def test_left_inverse(name: str) -> None:
     if name == "KBinsDiscretizer":
         pytest.xfail("KBinsDiscretizer is not left-invertible")

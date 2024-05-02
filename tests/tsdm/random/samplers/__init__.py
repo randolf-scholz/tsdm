@@ -1,1 +1,1 @@
-"""Tests for tsdm.random.samplers."""
+r"""Tests for tsdm.random.samplers."""

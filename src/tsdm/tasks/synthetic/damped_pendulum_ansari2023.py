@@ -1,4 +1,4 @@
-"""Forecasting task on synthetic damped pendulum data.
+r"""Forecasting task on synthetic damped pendulum data.
 
 References:
     - Neural Continuous-Discrete State Space Models

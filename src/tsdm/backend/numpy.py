@@ -1,4 +1,4 @@
-"""Implements `numpy`-backend for tsdm."""
+r"""Implements `numpy`-backend for tsdm."""
 
 __all__ = [
     "numpy_like",

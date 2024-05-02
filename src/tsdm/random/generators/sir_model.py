@@ -1,4 +1,4 @@
-"""Implementation of the SIR model from epidemiology."""
+r"""Implementation of the SIR model from epidemiology."""
 
 __all__ = ["SIR"]
 

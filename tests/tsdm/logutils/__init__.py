@@ -1,1 +1,1 @@
-"""Tests for tsdm.logutils."""
+r"""Tests for tsdm.logutils."""

@@ -1,1 +1,1 @@
-"""Tests for tsdm.models.activations."""
+r"""Tests for tsdm.models.activations."""

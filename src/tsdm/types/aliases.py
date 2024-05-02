@@ -1,4 +1,4 @@
-"""Collection of Useful Type Aliases."""
+r"""Collection of Useful Type Aliases."""
 
 __all__ = [
     # Constants

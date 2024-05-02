@@ -1,4 +1,4 @@
-"""ReZero module."""
+r"""ReZero module."""
 
 __all__ = [
     "ReZero",

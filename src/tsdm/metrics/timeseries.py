@@ -1,4 +1,4 @@
-"""Loss functions for time series.
+r"""Loss functions for time series.
 
 Note:
     Contains losses in modular form.

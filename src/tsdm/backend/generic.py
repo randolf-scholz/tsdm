@@ -1,4 +1,4 @@
-"""Generic kernels that work for a variety of backends."""
+r"""Generic kernels that work for a variety of backends."""
 
 __all__ = [
     "false_like",

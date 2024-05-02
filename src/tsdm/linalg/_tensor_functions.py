@@ -1,4 +1,4 @@
-"""Tensor functions."""
+r"""Tensor functions."""
 
 __all__ = [
     # Functions

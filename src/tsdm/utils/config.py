@@ -1,4 +1,4 @@
-"""Implements the BaseConfig class."""
+r"""Implements the BaseConfig class."""
 
 __all__ = [
     # Classes

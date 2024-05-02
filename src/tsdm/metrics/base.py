@@ -1,4 +1,4 @@
-"""Base class for a loss function."""
+r"""Base class for a loss function."""
 
 __all__ = [
     # ABCs & Protocols

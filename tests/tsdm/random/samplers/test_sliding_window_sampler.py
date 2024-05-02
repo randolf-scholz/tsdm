@@ -8,9 +8,9 @@ from collections.abc import Iterator
 
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.typing import NDArray
 from pandas import Series
-from pytest import mark
 from typing_extensions import Any, Literal, TypeAlias, assert_type
 
 from tsdm.constants import RNG
@@ -729,10 +729,10 @@ EXPECTED_RESULTS_CONTINUOUS_DATA: dict = flatten_dict(
 
 
 # write parametrized unit test with the above data for all modes
-@mark.parametrize("drop_last", [False, True], ids=lambda x: f"drop_last={x}")
-@mark.parametrize("stride", [1, 2], ids=lambda x: f"stride={x}")
-@mark.parametrize("horizons", [2, 3, 4], ids=lambda x: f"horizon={x}")
-@mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
+@pytest.mark.parametrize("drop_last", [False, True], ids=lambda x: f"drop_last={x}")
+@pytest.mark.parametrize("stride", [1, 2], ids=lambda x: f"stride={x}")
+@pytest.mark.parametrize("horizons", [2, 3, 4], ids=lambda x: f"horizon={x}")
+@pytest.mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
 def test_sliding_window_sampler_discrete(
     *, drop_last: bool, stride: int, horizons: int, mode: str
 ) -> None:
@@ -769,10 +769,10 @@ def test_sliding_window_sampler_discrete(
 
 
 # write parametrized unit test with the above data for all modes
-@mark.parametrize("drop_last", [False, True], ids=lambda x: f"drop_last={x}")
-@mark.parametrize("stride", [1.0, 2.5], ids=lambda x: f"stride={x}")
-@mark.parametrize("horizons", [2.5, 3.5, 4.5], ids=lambda x: f"horizon={x}")
-@mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
+@pytest.mark.parametrize("drop_last", [False, True], ids=lambda x: f"drop_last={x}")
+@pytest.mark.parametrize("stride", [1.0, 2.5], ids=lambda x: f"stride={x}")
+@pytest.mark.parametrize("horizons", [2.5, 3.5, 4.5], ids=lambda x: f"horizon={x}")
+@pytest.mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
 def test_sliding_window_sampler_continuous(
     *, drop_last: bool, stride: float, horizons: float, mode: str
 ) -> None:
@@ -823,8 +823,8 @@ DATETIME_DATA = {
 }
 
 
-@mark.parametrize("mode", SlidingSampler.MODES)
-@mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
+@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
 def test_datetime_data(mode: str, data: Any) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(
@@ -878,8 +878,8 @@ INTEGER_DATA: dict[str, Any] = {
 }
 
 
-@mark.parametrize("mode", SlidingSampler.MODES)
-@mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
+@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
 def test_integer_data(mode: str, data: Any) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(
@@ -930,8 +930,8 @@ FLOAT_DATA = {
 }
 
 
-@mark.parametrize("mode", SlidingSampler.MODES)
-@mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
+@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
 def test_float_data(mode: str, data: Any) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(

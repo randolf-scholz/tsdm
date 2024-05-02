@@ -1,4 +1,4 @@
-"""Holds synthetic datasets for testing, debugging and benchmarking."""
+r"""Holds synthetic datasets for testing, debugging and benchmarking."""
 
 __all__ = ["DampedPendulum_Ansari2023"]
 

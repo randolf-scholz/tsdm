@@ -1,4 +1,4 @@
-"""Dampened Pendulum Simulation.
+r"""Dampened Pendulum Simulation.
 
 References:
     - https://en.wikipedia.org/wiki/Pendulum_(mechanics)

@@ -204,43 +204,6 @@ ruff:
     paths:
       - $BADGE_DIR/
 
-#flake8:
-#  # see .flake8 for configuration
-#  stage: analysis
-#  cache:
-#    - key: venv
-#      paths:
-#        - "$VENV_DIR"
-#      policy: pull
-#  needs:
-#    - setup
-#  script:
-#    - flake8 --version
-#    - flake8 $MODULEDIR
-#    - flake8 $TESTDIR
-#    - isort $MODULEDIR --check-only --diff
-#  after_script:
-#    - source ${VENVNAME}/bin/activate
-#    - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
-#    - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
-#    # generate flake8 badge
-#    - python -m pybadges
-#      --left-text="flake8"
-#      --right-text="$TEXT"
-#      --right-color="$COLOR"
-#      --whole-link="https://flake8.pycqa.org/en/latest/"
-#      > $BADGE_DIR/flake8.svg
-#    # generate black code style badge
-#    - python -m pybadges
-#      --left-text="code style"
-#      --right-text="black"
-#      --right-color="black"
-#      --whole-link="https://github.com/psf/black"
-#      > $BADGE_DIR/black.svg
-#  artifacts:
-#    paths:
-#      - $BADGE_DIR/
-
 mypy:
   # see pyproject.toml for configuration
   stage: analysis

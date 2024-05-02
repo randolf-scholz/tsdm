@@ -5,7 +5,7 @@ from datetime import datetime as python_datetime, timedelta as python_timedelta
 import numpy
 import numpy as np
 import pandas
-from pytest import mark
+import pytest
 from typing_extensions import get_protocol_members
 
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
@@ -72,7 +72,7 @@ def test_timedelta_protocol_itself() -> None:
     assert issubclass(TimeDelta, TimeDelta)
 
 
-@mark.parametrize("name", DATETIMES)
+@pytest.mark.parametrize("name", DATETIMES)
 def test_datetime_protocol(name: str) -> None:
     r"""Test the datetime protocol."""
     dt_value = DATETIMES[name]
@@ -86,7 +86,7 @@ def test_datetime_protocol(name: str) -> None:
     assert issubclass(type(dt_new), DateTime)
 
 
-@mark.parametrize("name", TIMEDELTAS)
+@pytest.mark.parametrize("name", TIMEDELTAS)
 def test_timedelta_protocol(name: str) -> None:
     r"""Test the datetime protocol."""
     td_value = TIMEDELTAS[name]

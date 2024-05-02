@@ -1,4 +1,4 @@
-"""Deprecated Task code."""
+r"""Deprecated Task code."""
 
 __all__ = [
     # ABCs & Protocols

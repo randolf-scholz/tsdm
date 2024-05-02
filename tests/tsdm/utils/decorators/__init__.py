@@ -1,1 +1,1 @@
-"""Tests for tsdm.utils.decorators."""
+r"""Tests for tsdm.utils.decorators."""

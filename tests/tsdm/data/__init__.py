@@ -1,1 +1,1 @@
-"""Tests for tsdm.data."""
+r"""Tests for tsdm.data."""

@@ -1,4 +1,4 @@
-"""Test compatibility with sklearn encoders."""
+r"""Test compatibility with sklearn encoders."""
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 

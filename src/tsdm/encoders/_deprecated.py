@@ -1,4 +1,4 @@
-"""Deprecated Encoders."""
+r"""Deprecated Encoders."""
 
 __all__ = ["Time2Float", "OldDateTimeEncoder"]
 

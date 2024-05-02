@@ -1,4 +1,4 @@
-"""Test basic encoder functionality."""
+r"""Test basic encoder functionality."""
 
 from tsdm.encoders import EncoderProtocol, IdentityEncoder
 

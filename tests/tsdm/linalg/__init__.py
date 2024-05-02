@@ -1,1 +1,1 @@
-"""Tests for tsdm.linalg."""
+r"""Tests for tsdm.linalg."""

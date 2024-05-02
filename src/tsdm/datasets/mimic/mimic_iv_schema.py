@@ -1,4 +1,4 @@
-"""Schema for the KIWI-dataset.
+r"""Schema for the KIWI-dataset.
 
 Some parts of the data are rather dirty, for example.::
 
@@ -57,7 +57,7 @@ from typing_extensions import Literal, TypeAlias
 
 ID_TYPE = pa.uint32()
 VALUE_TYPE = pa.float64()
-TIME_TYPE = pa.timestamp("s")
+TIME_TYPE = pa.timestamp("ms")
 DATE_TYPE = pa.date32()
 BOOL_TYPE = pa.bool_()
 STRING_TYPE = pa.string()

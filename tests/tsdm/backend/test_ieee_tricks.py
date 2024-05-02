@@ -1,4 +1,4 @@
-"""This module contains tests for some tricks with tensor-types.
+r"""This module contains tests for some tricks with tensor-types.
 
 Often, we need some constant tensor that is the same shape/device as given tensor.
 Typical values are zeros, ones, NaNs, ±inf, True, False, etc.
@@ -14,8 +14,8 @@ from typing import TypeVar
 
 import numpy
 import pandas
+import pytest
 import torch
-from pytest import mark
 
 from tsdm.backend.generic import false_like, true_like
 from tsdm.types.callback_protocols import SelfMap
@@ -26,8 +26,8 @@ DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
 TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
 
 
-@mark.parametrize("formula", [lambda z: z**0], ids=["x**0"])
-@mark.parametrize(
+@pytest.mark.parametrize("formula", [lambda z: z**0], ids=["x**0"])
+@pytest.mark.parametrize(
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA))),
@@ -50,8 +50,8 @@ def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     assert all(result == expected)
 
 
-@mark.parametrize("formula", [lambda z: z**0 - z**0], ids=["x**0 - x**0"])
-@mark.parametrize(
+@pytest.mark.parametrize("formula", [lambda z: z**0 - z**0], ids=["x**0 - x**0"])
+@pytest.mark.parametrize(
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA))),
@@ -73,7 +73,7 @@ def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     assert all(result == expected)
 
 
-@mark.parametrize(
+@pytest.mark.parametrize(
     "formula",
     [
         true_like,
@@ -81,7 +81,7 @@ def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ],
     ids=["true_like", "(x==x)|(x!=x)"],
 )
-@mark.parametrize(
+@pytest.mark.parametrize(
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA), dtype=torch.bool)),
@@ -103,7 +103,7 @@ def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     assert all(result == expected)
 
 
-@mark.parametrize(
+@pytest.mark.parametrize(
     "formula",
     [
         false_like,
@@ -111,7 +111,7 @@ def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ],
     ids=["false_like", "(x==x)^(x==x)"],
 )
-@mark.parametrize(
+@pytest.mark.parametrize(
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA), dtype=torch.bool)),

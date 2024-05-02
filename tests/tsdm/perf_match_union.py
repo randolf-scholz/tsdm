@@ -1,4 +1,4 @@
-"""Test performance of match statements with union types."""
+r"""Test performance of match statements with union types."""
 
 from random import choice
 

@@ -1,4 +1,4 @@
-"""Datasets from the U.S. Historical Climatology Network (USHCN).
+r"""Datasets from the U.S. Historical Climatology Network (USHCN).
 
 References:
     - `CDIAC data archive <https://data.ess-dive.lbl.gov/portals/CDIAC>`_

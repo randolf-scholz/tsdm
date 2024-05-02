@@ -1,4 +1,4 @@
-"""Timeseries data structures and functions."""
+r"""Timeseries data structures and functions."""
 
 __all__ = [
     # NamedTuples

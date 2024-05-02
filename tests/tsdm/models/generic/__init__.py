@@ -1,1 +1,1 @@
-"""Tests for tsdm.models.generic."""
+r"""Tests for tsdm.models.generic."""

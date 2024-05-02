@@ -1,4 +1,4 @@
-"""Test the Array protocol."""
+r"""Test the Array protocol."""
 
 import logging
 from array import array as python_array
@@ -9,9 +9,9 @@ import numpy
 import pandas
 import polars
 import pyarrow
+import pytest
 import torch
 from numpy.typing import NDArray
-from pytest import mark
 from typing_extensions import get_protocol_members
 
 from tsdm.testing import assert_protocol
@@ -142,7 +142,7 @@ NUMERICAL_ARRAY_ATTRS = get_protocol_members(NumericalArray)
 MUTABLE_ARRAY_ATTRS = get_protocol_members(MutableArray)
 
 
-@mark.parametrize("name", SUPPORTS_ARRAYS)
+@pytest.mark.parametrize("name", SUPPORTS_ARRAYS)
 def test_supports_array(name: str) -> None:
     r"""Test the SupportsArray protocol."""
     obj = SUPPORTS_ARRAYS[name]
@@ -151,7 +151,7 @@ def test_supports_array(name: str) -> None:
     assert isinstance(obj.__array__(), numpy.ndarray)
 
 
-@mark.parametrize("name", SERIES)
+@pytest.mark.parametrize("name", SERIES)
 def test_series(name: str) -> None:
     r"""Test the Series protocol."""
     series = SERIES[name]
@@ -189,7 +189,7 @@ def test_series(name: str) -> None:
     assert not attrs, f"Forgot to test: {attrs}!"
 
 
-@mark.parametrize("name", TABLES)
+@pytest.mark.parametrize("name", TABLES)
 def test_table(name: str) -> None:
     r"""Test the Table protocol."""
     table = TABLES[name]
@@ -227,21 +227,21 @@ def test_table(name: str) -> None:
     assert not attrs, f"Forgot to test: {attrs}!"
 
 
-@mark.parametrize("name", ARRAYS)
+@pytest.mark.parametrize("name", ARRAYS)
 def test_array(name: str) -> None:
     r"""Test the Array protocol."""
     array = ARRAYS[name]
     assert_protocol(array, ArrayKind)
 
 
-@mark.parametrize("name", NUMERICAL_ARRAYS)
+@pytest.mark.parametrize("name", NUMERICAL_ARRAYS)
 def test_numerical_array(name: str) -> None:
     r"""Test the NumericalArray protocol."""
     numerical_array = NUMERICAL_ARRAYS[name]
     assert_protocol(numerical_array, NumericalArray)
 
 
-@mark.parametrize("name", MUTABLE_ARRAYS)
+@pytest.mark.parametrize("name", MUTABLE_ARRAYS)
 def test_mutable_array(name: str) -> None:
     r"""Test the MutableArray protocol."""
     mutable_array = MUTABLE_ARRAYS[name]

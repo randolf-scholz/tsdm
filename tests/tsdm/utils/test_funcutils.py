@@ -1,4 +1,4 @@
-"""Tests for `tsdm.utils.funcutils` module."""
+r"""Tests for `tsdm.utils.funcutils` module."""
 
 from tsdm.utils.funcutils import (
     is_keyword_arg,

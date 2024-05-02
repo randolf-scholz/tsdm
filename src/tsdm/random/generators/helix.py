@@ -1,4 +1,4 @@
-"""Generator for helix motion."""
+r"""Generator for helix motion."""
 
 __all__ = ["Helix"]
 

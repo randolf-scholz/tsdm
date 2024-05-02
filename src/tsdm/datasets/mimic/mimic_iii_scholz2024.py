@@ -1,4 +1,4 @@
-"""Custom processed version of the MIMIC-III dataset."""
+r"""Custom processed version of the MIMIC-III dataset."""
 
 __all__ = [
     # Classes

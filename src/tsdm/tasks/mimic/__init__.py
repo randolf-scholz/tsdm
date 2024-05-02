@@ -1,4 +1,4 @@
-"""Tasks based on MIMIC databases."""
+r"""Tasks based on MIMIC databases."""
 
 __all__ = [
     "MIMIC_III_Bilos2021",

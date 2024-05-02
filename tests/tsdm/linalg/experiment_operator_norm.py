@@ -1,4 +1,4 @@
-"""Experiments with the scaled Lᴾ norm."""
+r"""Experiments with the scaled Lᴾ norm."""
 
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,4 +1,4 @@
-"""Duffing Oszillator Simulation."""
+r"""Duffing Oszillator Simulation."""
 
 __all__ = ["DuffingOszillator"]
 

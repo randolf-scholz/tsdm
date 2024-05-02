@@ -1,14 +1,14 @@
-"""Test DtypeConverter."""
+r"""Test DtypeConverter."""
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
-from pytest import fixture
 
 from tsdm.encoders.dataframe import DTypeEncoder
 
 
-@fixture
+@pytest.fixture
 def frame():
     return pd.DataFrame({
         "A": pd.to_timedelta(["1 days", "2 days", "3 days"]),

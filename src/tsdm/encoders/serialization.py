@@ -1,4 +1,4 @@
-"""Future serialization module.
+r"""Future serialization module.
 
 Long Term Goals
 ---------------

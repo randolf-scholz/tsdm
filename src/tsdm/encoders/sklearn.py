@@ -1,4 +1,4 @@
-"""Encoders based on scikit-learn transformers."""
+r"""Encoders based on scikit-learn transformers."""
 
 __all__ = [
     # Constants

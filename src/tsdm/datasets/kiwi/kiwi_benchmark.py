@@ -1,4 +1,4 @@
-"""The KIWI Benchmark Dataset."""
+r"""The KIWI Benchmark Dataset."""
 
 __all__ = [
     "KiwiBenchmarkTSC",

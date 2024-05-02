@@ -1,4 +1,4 @@
-"""Custom processed version of the MIMIC-IV dataset."""
+r"""Custom processed version of the MIMIC-IV dataset."""
 
 __all__ = ["MIMIC_IV_Scholz2024"]
 

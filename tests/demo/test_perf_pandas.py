@@ -1,4 +1,4 @@
-"""Test pandas boolean array performance."""
+r"""Test pandas boolean array performance."""
 
 import operator
 from functools import reduce

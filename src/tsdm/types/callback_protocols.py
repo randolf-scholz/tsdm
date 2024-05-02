@@ -1,4 +1,4 @@
-"""Callabck protocols for TSDM."""
+r"""Callabck protocols for TSDM."""
 
 __all__ = [
     # generic callback-protocols

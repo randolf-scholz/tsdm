@@ -1,4 +1,4 @@
-"""Activations imported from torch."""
+r"""Activations imported from torch."""
 
 __all__ = [
     # CONSTANTS

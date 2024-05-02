@@ -4,11 +4,10 @@ import pickle
 
 import numpy as np
 import pandas as pd
-import pandas.testing
 import pyarrow as pa
+import pytest
 import torch
 from pandas import DataFrame
-from pytest import mark
 
 from tsdm.config import PROJECT
 from tsdm.encoders import (
@@ -30,8 +29,8 @@ from tsdm.utils import timedelta
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-# @mark.xfail(reason="https://github.com/pandas-dev/pandas/issues/56409")
-@mark.slow
+# @pytest.mark.xfail(reason="https://github.com/pandas-dev/pandas/issues/56409")
+@pytest.mark.slow
 def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     r"""Test complicated combined encoder."""
     torch.manual_seed(0)

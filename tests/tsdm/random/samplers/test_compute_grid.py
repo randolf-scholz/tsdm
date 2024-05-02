@@ -6,6 +6,7 @@ from datetime import datetime as py_dt, timedelta as py_td
 from typing import Generic
 
 import pandas as pd
+import pytest
 from numpy import (
     datetime64 as np_dt,
     float32 as np_float,
@@ -13,7 +14,6 @@ from numpy import (
     timedelta64 as np_td,
 )
 from pandas import Timedelta as pd_td, Timestamp as pd_dt
-from pytest import mark
 from typing_extensions import NamedTuple
 
 from tsdm.random.samplers import compute_grid
@@ -138,7 +138,7 @@ def test_edge_case() -> None:
     print(grid)
 
 
-@mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("mode", MODES)
 def test_grid_pandas(mode: str) -> None:
     r"""Test compute_grid function with various input types."""
     LOGGER = __logger__.getChild(compute_grid.__name__)

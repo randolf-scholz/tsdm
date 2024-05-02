@@ -1,4 +1,4 @@
-"""Deprecated samplers."""
+r"""Deprecated samplers."""
 
 __all__ = ["IntervalSampler", "SequenceSampler"]
 

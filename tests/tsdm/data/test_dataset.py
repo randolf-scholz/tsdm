@@ -4,7 +4,7 @@ import logging
 from collections.abc import Mapping
 
 import pandas as pd
-from pytest import mark
+import pytest
 
 from tsdm.data import MapDataset, PandasDataset
 from tsdm.testing import assert_protocol
@@ -22,21 +22,21 @@ DATASETS = {
 }
 
 
-@mark.parametrize("name", DATASETS)
+@pytest.mark.parametrize("name", DATASETS)
 def test_map_dataset(name: str) -> None:
     r"""Test object."""
     dataset = DATASETS[name]
     assert_protocol(dataset, MapDataset)
 
 
-@mark.parametrize("name", DATASETS)
+@pytest.mark.parametrize("name", DATASETS)
 def test_pandas_dataset(name: str) -> None:
     r"""Test object."""
     dataset = DATASETS[name]
     assert_protocol(dataset, PandasDataset)
 
 
-@mark.parametrize("name", DATASETS)
+@pytest.mark.parametrize("name", DATASETS)
 def test_pandas_mapping(name: str) -> None:
     r"""Test object."""
     dataset = DATASETS[name]

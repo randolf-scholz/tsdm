@@ -4,7 +4,7 @@ import random
 from collections.abc import Iterable, Iterator
 from string import ascii_letters
 
-from pytest import fixture, mark
+import pytest
 
 from tsdm.random.samplers import HierarchicalSampler, RandomSampler
 
@@ -14,7 +14,7 @@ def exhaust_iterable(obj: Iterable, /) -> None:
         pass
 
 
-@mark.flaky(reruns=2)
+@pytest.mark.flaky(reruns=2)
 def test_hierarchical_sampler() -> None:
     data = {
         "foo": [1, 2, 3, 4],
@@ -37,7 +37,7 @@ def test_hierarchical_sampler() -> None:
     assert list(sampler) != list(key_pairs)  # can fail with low probability
 
 
-@fixture
+@pytest.fixture
 def benchmark_data():
     # for each letter in the alphabet, list of random digits of size range(100, 1000)
     data = {
@@ -47,14 +47,14 @@ def benchmark_data():
     return data
 
 
-@mark.benchmark
+@pytest.mark.benchmark
 def test_benchmark_hierarchical_sampler(benchmark, benchmark_data):
     sampler = HierarchicalSampler(benchmark_data, shuffle=True)
     benchmark(exhaust_iterable, sampler)
 
 
-@mark.benchmark
-@mark.parametrize("method", ["iter_with_iter", "iter_with_yield"])
+@pytest.mark.benchmark
+@pytest.mark.parametrize("method", ["iter_with_iter", "iter_with_yield"])
 def test_iter_speed(benchmark, method):
     class Foo:
         def __init__(self):

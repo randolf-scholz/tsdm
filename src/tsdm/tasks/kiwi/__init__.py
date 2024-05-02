@@ -1,4 +1,4 @@
-"""Tasks based on the KIWI dataset."""
+r"""Tasks based on the KIWI dataset."""
 
 __all__ = [
     "InSilicoTask",

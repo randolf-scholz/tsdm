@@ -1,4 +1,4 @@
-"""Probability distributions."""
+r"""Probability distributions."""
 
 __all__ = [
     # ABCs & Protocols

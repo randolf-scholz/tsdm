@@ -1,4 +1,4 @@
-"""Tests for the numerical backend."""
+r"""Tests for the numerical backend."""
 
 import numpy as np
 import pandas as pd

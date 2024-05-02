@@ -1,17 +1,17 @@
-"""Test the RandomSampler."""
+r"""Test the RandomSampler."""
 
 from typing import assert_type
 
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.typing import NDArray
-from pytest import mark
 
 from tsdm.data import IndexableDataset, MapDataset
 from tsdm.random.samplers import RandomSampler
 
 
-@mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
+@pytest.mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
 def test_random_sampler_dict() -> None:
     r"""Test RandomSampler."""
     data: dict[int, object] = {
@@ -39,7 +39,7 @@ def test_random_sampler_dict() -> None:
     assert list(sampler) != list(data.values())
 
 
-@mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
+@pytest.mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
 def test_random_sampler_list() -> None:
     r"""Test RandomSampler."""
     indices = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
@@ -132,7 +132,7 @@ STRING_DATA = {
 }
 
 
-@mark.parametrize("data", STRING_DATA.values(), ids=STRING_DATA)
+@pytest.mark.parametrize("data", STRING_DATA.values(), ids=STRING_DATA)
 def test_string_data(data):
     sampler = RandomSampler(data, shuffle=True)
 

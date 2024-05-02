@@ -1,4 +1,4 @@
-"""Bouncing Ball Simulation.
+r"""Bouncing Ball Simulation.
 
 References:
     - https://github.com/rtqichen/torchdiffeq/blob/master/examples/bouncing_ball.py

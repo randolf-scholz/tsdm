@@ -1,4 +1,4 @@
-"""Metrics imported from torch."""
+r"""Metrics imported from torch."""
 
 __all__ = [
     # Constants

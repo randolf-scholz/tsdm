@@ -1,4 +1,4 @@
-"""Datasets from the KIWI project.
+r"""Datasets from the KIWI project.
 
 References:
 - `KIWI project <https://kiwi-biolab.de/>`_

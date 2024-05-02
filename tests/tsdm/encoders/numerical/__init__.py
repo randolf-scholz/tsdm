@@ -1,1 +1,1 @@
-"""Tests for tsdm.encoders.numerical."""
+r"""Tests for tsdm.encoders.numerical."""

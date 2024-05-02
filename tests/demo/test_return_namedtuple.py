@@ -1,4 +1,4 @@
-"""Test namedtuple decorator."""
+r"""Test namedtuple decorator."""
 
 import ast
 import textwrap

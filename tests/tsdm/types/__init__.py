@@ -1,1 +1,1 @@
-"""Tests for tsdm.utils.types."""
+r"""Tests for tsdm.utils.types."""

@@ -1,4 +1,4 @@
-"""Tasks based on the USHCN database."""
+r"""Tasks based on the USHCN database."""
 
 __all__ = ["USHCN_DeBrouwer2019"]
 

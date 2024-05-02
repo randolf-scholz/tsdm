@@ -1,4 +1,4 @@
-"""Callback utilities for logging."""
+r"""Callback utilities for logging."""
 
 __all__ = [
     # ABCs & Protocols & Structural classes

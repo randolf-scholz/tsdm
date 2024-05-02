@@ -1,4 +1,4 @@
-"""Tasks based on synthetic data."""
+r"""Tasks based on synthetic data."""
 
 __all__ = ["DampedPendulum_Ansari2023"]
 

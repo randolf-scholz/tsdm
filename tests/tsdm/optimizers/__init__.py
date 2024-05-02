@@ -1,1 +1,1 @@
-"""Tests for tsdm.optimizers."""
+r"""Tests for tsdm.optimizers."""

@@ -1,4 +1,4 @@
-"""Test IO Protocol types."""
+r"""Test IO Protocol types."""
 
 from io import IOBase
 from tempfile import TemporaryFile

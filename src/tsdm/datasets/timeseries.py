@@ -1,4 +1,4 @@
-"""Time series dataset."""
+r"""Time series dataset."""
 
 __all__ = [
     "DampedPendulum_Ansari2023",

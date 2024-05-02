@@ -1,4 +1,4 @@
-"""Lotka–Volterra Simulation.
+r"""Lotka–Volterra Simulation.
 
 References:
     - https://en.wikipedia.org/wiki/Lotka-Volterra_equations

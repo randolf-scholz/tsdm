@@ -1,15 +1,15 @@
-"""Test scaled norm."""
+r"""Test scaled norm."""
 
+import pytest
 import torch
-from pytest import mark
 
 from tsdm import linalg
 from tsdm.constants import ATOL, RTOL
 from tsdm.types.aliases import Dims
 
 
-@mark.parametrize("keepdim", [False, True], ids=lambda x: f"keepdim={x}")
-@mark.parametrize(
+@pytest.mark.parametrize("keepdim", [False, True], ids=lambda x: f"keepdim={x}")
+@pytest.mark.parametrize(
     "dims",
     [
         None,
@@ -36,7 +36,7 @@ from tsdm.types.aliases import Dims
     ],
     ids=lambda x: f"axis={x}",
 )
-@mark.parametrize("shape", [(1, 2, 3, 4)], ids=lambda x: f"shape={x}")
+@pytest.mark.parametrize("shape", [(1, 2, 3, 4)], ids=lambda x: f"shape={x}")
 def test_shape(*, shape: tuple[int, ...], dims: Dims, keepdim: bool) -> None:
     r"""Check that the output shape is correct."""
     torch.manual_seed(0)

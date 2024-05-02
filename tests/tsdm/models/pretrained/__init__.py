@@ -1,1 +1,1 @@
-"""Tests for tsdm.models.pretrained."""
+r"""Tests for tsdm.models.pretrained."""

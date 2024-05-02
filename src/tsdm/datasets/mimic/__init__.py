@@ -1,4 +1,4 @@
-"""Datasets from the MIMIC project.
+r"""Datasets from the MIMIC project.
 
 References:
     - MIMIC-III dataset <https://physionet.org/content/mimiciii>

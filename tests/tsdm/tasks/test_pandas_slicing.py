@@ -1,4 +1,4 @@
-"""Check pandas MultiIndex Slicing."""
+r"""Check pandas MultiIndex Slicing."""
 
 import pandas as pd
 import pytest

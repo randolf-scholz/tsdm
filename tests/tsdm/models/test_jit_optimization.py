@@ -1,4 +1,4 @@
-"""Test whether the JIT compiler optimizes out if/else with Final."""
+r"""Test whether the JIT compiler optimizes out if/else with Final."""
 
 from typing import Final
 
