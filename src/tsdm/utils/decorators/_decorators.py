@@ -41,12 +41,20 @@ from typing_extensions import (
     Protocol,
     Self,
     cast,
+    overload,
 )
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import BUILTIN_CONTAINERS, Nested
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import CollectionType, R, T, class_var as C, torch_module_var
+from tsdm.types.variables import (
+    CollectionType,
+    R_co,
+    T,
+    T_contra,
+    class_var as C,
+    torch_module_var,
+)
 from tsdm.utils.funcutils import rpartial
 
 __logger__: logging.Logger = logging.getLogger(__name__)
@@ -73,10 +81,10 @@ PARAM_TYPES = (
 )
 
 
-class Decorator(Protocol):
+class Decorator(Protocol[T_contra, P, R_co]):
     r"""Decorator Protocol."""
 
-    def __call__(self, func: Callable, /) -> Callable:
+    def __call__(self, obj: T_contra, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
         r"""Decorate a function."""
         ...
 
@@ -178,7 +186,18 @@ def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
     return WrappedClass
 
 
-def decorator(deco: Callable, /) -> Callable:
+class ParametrizedDecorator(Protocol[T_contra, P, R_co]):
+    @overload
+    def __call__(self, obj: T_contra, /, *args: P.args, **kwargs: P.kwargs) -> R_co: ...
+    @overload
+    def __call__(
+        self, obj: None = ..., /, *args: P.args, **kwargs: P.kwargs
+    ) -> Decorator[T_contra, Any, R_co]: ...
+
+
+def decorator(
+    deco: Decorator[T_contra, P, R_co],
+) -> ParametrizedDecorator[T_contra, P, R_co]:
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -295,7 +314,6 @@ def decorator(deco: Callable, /) -> Callable:
 
     deco_sig = signature(deco)
     ErrorHandler = DecoratorError(deco)
-    # param_iterator = iter(deco_sig.parameters.items())
 
     BUCKETS: dict[Any, set[str]] = {key: set() for key in PARAM_TYPES}
 
@@ -339,64 +357,64 @@ def decorator(deco: Callable, /) -> Callable:
             error_msg,
         )
 
-    # (1b) modify the signature to add a new parameter '__func__' as the single
-    # positional-only argument with a default value.
-    # params = list(deco_sig.parameters.values())
-    # index = _last_positional_only_arg_index(deco_sig)
-    # params.insert(
-    #     index, Parameter("__func__", kind=Parameter.POSITIONAL_ONLY, default=_DECORATED)
-    # )
-    # del params[0]
-    # new_sig = deco_sig.replace(parameters=params)
-
+    @overload
+    def __parametrized_decorator(
+        obj: T_contra, /, *args: P.args, **kwargs: P.kwargs
+    ) -> R_co: ...
+    @overload
+    def __parametrized_decorator(
+        obj: None = ..., /, *args: P.args, **kwargs: P.kwargs
+    ) -> Decorator[T_contra, Any, R_co]: ...
     @wraps(deco)
     def __parametrized_decorator(
-        __func__: Optional[Callable] = None, *args: Any, **kwargs: Any
-    ) -> Callable:
+        obj: Optional[T_contra] = None, /, *args: P.args, **kwargs: P.kwargs
+    ) -> R_co | Decorator[T_contra, Any, R_co]:
         __logger__.debug(
             "DECORATING \n\tfunc=%s: \n\targs=%s, \n\tkwargs=%s", deco, args, kwargs
         )
 
-        if __func__ is None:
+        if obj is None:
             __logger__.debug("%s: Decorator used in BRACKET mode.", deco)
-            return rpartial(deco, *args, **kwargs)
+            ret: Decorator[T_contra, Any, R_co] = rpartial(deco, *args, **kwargs)
+            return ret
 
-        assert callable(__func__), "First argument must be callable!"
         __logger__.debug("%s: Decorator in FUNCTIONAL/BARE mode.", deco)
-        return deco(*(__func__, *args), **kwargs)
+        return deco(obj, *args, **kwargs)
 
-    return __parametrized_decorator
+    return __parametrized_decorator  # pyright: ignore[reportReturnType]
 
 
-def attribute(func: Callable[[T], R], /) -> R:
+def attribute(func: Callable[[T], R_co], /) -> R_co:
     r"""Create a decorator that converts method to attribute."""
 
     @wraps(func, updated=())
     class __attribute:
         __slots__ = ("func", "payload")
         sentinel = object()
-        func: Callable[[T], R]
-        payload: R
+        func: Callable[[T], R_co]
+        payload: R_co
 
         def __init__(self, function: Callable) -> None:
             self.func = function
             self.payload = cast(Any, self.sentinel)
 
-        def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
+        def __get__(
+            self, obj: T | None, obj_type: Optional[type] = None
+        ) -> Self | R_co:
             if obj is None:
                 return self
             if self.payload is self.sentinel:
                 self.payload = self.func(obj)
             return self.payload
 
-    return cast(R, __attribute(func))
+    return cast(R_co, __attribute(func))
 
 
-def debug(func: Callable[P, R], /) -> Callable[P, R]:
+def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     r"""Print the function signature and return value."""
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
         args_repr = [f"{type(a)}" for a in args]
         kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
         sign = ", ".join(args_repr + kwargs_repr)
@@ -408,11 +426,11 @@ def debug(func: Callable[P, R], /) -> Callable[P, R]:
     return __wrapper
 
 
-def lazy_torch_jit(func: Callable[P, R], /) -> Callable[P, R]:
+def lazy_torch_jit(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     r"""Create decorator to lazily compile a function with `torch.jit.script`."""
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
         # script the original function if it hasn't been scripted yet
         if __wrapper.__scripted is None:  # type: ignore[attr-defined]
             __wrapper.__scripted = jit.script(__wrapper.__original_fn)  # type: ignore[attr-defined]
@@ -425,8 +443,8 @@ def lazy_torch_jit(func: Callable[P, R], /) -> Callable[P, R]:
 
 
 def recurse_on_builtin_container(
-    func: Callable[[T], R], /, *, kind: type[T]
-) -> Callable[[Nested[T]], Nested[R]]:
+    func: Callable[[T], R_co], /, *, kind: type[T]
+) -> Callable[[Nested[T]], Nested[R_co]]:
     r"""Apply function to a nested iterables of a given kind.
 
     Args:
@@ -437,7 +455,7 @@ def recurse_on_builtin_container(
         raise TypeError(f"kind must not be a builtin container! Got {kind=}")
 
     @wraps(func)
-    def recurse(x: Nested[T]) -> Nested[R]:
+    def recurse(x: Nested[T]) -> Nested[R_co]:
         match x:
             case kind():  # type: ignore[misc]
                 return func(x)  # type: ignore[unreachable]
@@ -459,8 +477,8 @@ def recurse_on_builtin_container(
 
 @decorator
 def timefun(
-    func: Callable[P, R], /, *, append: bool = False, loglevel: int = logging.WARNING
-) -> Callable[P, R | tuple[R, float]]:
+    func: Callable[P, R_co], /, *, append: bool = False, loglevel: int = logging.WARNING
+) -> Callable[P, R_co | tuple[R_co, float]]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default, appends the execution time (in seconds) to the function call.
@@ -474,7 +492,7 @@ def timefun(
     timefun_logger = logging.getLogger("timefun")
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R | tuple[R, float]:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co | tuple[R_co, float]:
         gc.collect()
         gc.disable()
         try:
@@ -496,12 +514,12 @@ def timefun(
     return __wrapper
 
 
-def trace(func: Callable[P, R], /) -> Callable[P, R]:
+def trace(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     r"""Log entering and exiting of function."""
     logger = logging.getLogger("trace")
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
         logger.info(
             "%s",
             "\n\t".join((
@@ -527,10 +545,9 @@ def trace(func: Callable[P, R], /) -> Callable[P, R]:
     return __wrapper
 
 
-@decorator
 def vectorize(
-    func: Callable[[T], R], /, *, kind: type[CollectionType]
-) -> Callable[[T | CollectionType], R | CollectionType]:
+    func: Callable[[T], R_co], /, *, kind: type[CollectionType]
+) -> Callable[[T | CollectionType], R_co | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly.
@@ -566,13 +583,13 @@ def vectorize(
 
 @decorator
 def wrap_func(
-    func: Callable[P, R],
+    func: Callable[P, R_co],
     /,
     *,
     before: Optional[Callable[..., None]] = None,
     after: Optional[Callable[..., None]] = None,
     pass_args: bool = False,
-) -> Callable[P, R]:
+) -> Callable[P, R_co]:
     r"""Wrap a function with pre- and post-hooks."""
     logger = __logger__.getChild(func.__name__)
 
@@ -585,7 +602,7 @@ def wrap_func(
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre(*args, **kwargs)
                 return func(*args, **kwargs)
 
@@ -593,7 +610,7 @@ def wrap_func(
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
                 result = func(*args, **kwargs)
                 post(*args, **kwargs)
                 return result
@@ -602,7 +619,7 @@ def wrap_func(
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre(*args, **kwargs)
                 result = func(*args, **kwargs)
                 post(*args, **kwargs)
@@ -612,7 +629,7 @@ def wrap_func(
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre()
                 return func(*args, **kwargs)
 
@@ -620,7 +637,7 @@ def wrap_func(
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
                 result = func(*args, **kwargs)
                 post()
                 return result
@@ -629,7 +646,7 @@ def wrap_func(
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre()
                 result = func(*args, **kwargs)
                 post()
@@ -643,13 +660,13 @@ def wrap_func(
 
 @decorator
 def wrap_method(
-    func: Callable[Concatenate[T, P], R],
+    func: Callable[Concatenate[T, P], R_co],
     /,
     *,
     before: Optional[Callable[Concatenate[T, ...], None]] = None,
     after: Optional[Callable[Concatenate[T, ...], None]] = None,
     pass_args: bool = False,
-) -> Callable[Concatenate[T, P], R]:
+) -> Callable[Concatenate[T, P], R_co]:
     r"""Wrap a function with pre- and post-hooks."""
     logger = __logger__.getChild(func.__name__)
 
@@ -663,7 +680,7 @@ def wrap_method(
 
             # Q: Why do we have to add pyright ignore in this one, but not the others?
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:  # pyright: ignore[reportRedeclaration]
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:  # pyright: ignore[reportRedeclaration]
                 pre(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
@@ -671,7 +688,7 @@ def wrap_method(
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
                 result = func(self, *args, **kwargs)
                 post(self, *args, **kwargs)
                 return result
@@ -680,7 +697,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
                 post(self, *args, **kwargs)
@@ -690,7 +707,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre(self)
                 return func(self, *args, **kwargs)
 
@@ -698,7 +715,7 @@ def wrap_method(
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
                 result = func(self, *args, **kwargs)
                 post(self)
                 return result
@@ -707,7 +724,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre(self)
                 result = func(self, *args, **kwargs)
                 post(self)
@@ -788,45 +805,41 @@ def return_namedtuple(
     return __wrapper
 
 
-# def extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:
-#     r"""Decorator to extend a parent function.
-#
-#     For example, when one wants to extend the __init__ of a parent class
-#     with an extra argument.
-#
-#     This will synthesize a new function that combines the extra arguments with
-#     the ones of the parent function. The new arguments passed to the synthesized
-#     function are available within the function body.
-#
-#     Example:
-#
-#     class Parent:
-#         def foo(self, a, b, /, *, key):
-#             ...
-#
-#     class Child(Parent):
-#
-#         @extends(Parent.foo)
-#         def foo(self, c, *parent_args, *, bar, **parent_kwargs):
-#             super().foo(*parent_args, **parent_kwargs)
-#             ...
-#
-#     the synthesized function will roughly look like this:
-#
-#         def __synthetic__init__(self, a, b, c, /, *, foo, bar):
-#             parent_args = (a, b)
-#             parent_kwargs = dict(key=key)
-#             func_args = (c,)
-#             func_kwargs = dict(bar=bar)
-#             wrapped_func(*parent_args, *func_args, **parent_kwargs, **func_kwargs)
-#
-#     Note:
-#
-#         - neither parent nor child func may have varargs.
-#         -
-#         - The child func may reuse keyword arguments from the parent func and give them different keywords.
-#           - if keyword args are reused, they won't be included in parent_kwargs.
-#         - additional positional only args must have defaults values (LSP!)
-#         - additional positional only arguments are always added after positional-only arguments of the parent.
-#     """
-#     ...
+def _extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:
+    r"""Decorator to extend a parent function.
+
+    For example, when one wants to extend the __init__ of a parent class
+    with an extra argument.
+
+    This will synthesize a new function that combines the extra arguments with
+    the ones of the parent function. The new arguments passed to the synthesized
+    function are available within the function body.
+
+    Example:
+        class Parent:
+            def foo(self, a, b, /, *, key):
+                ...
+
+        class Child(Parent):
+            @extends(Parent.foo)
+            def foo(self, c, *parent_args, *, bar, **parent_kwargs):
+                super().foo(*parent_args, **parent_kwargs)
+                ...
+
+    the synthesized function will roughly look like this:
+
+        def __synthetic__init__(self, a, b, c, /, *, foo, bar):
+            parent_args = (a, b)
+            parent_kwargs = dict(key=key)
+            func_args = (c,)
+            func_kwargs = dict(bar=bar)
+            wrapped_func(*parent_args, *func_args, **parent_kwargs, **func_kwargs)
+
+    Note:
+        - neither parent nor child func may have varargs.
+        - The child func may reuse keyword arguments from the parent func and give them different keywords.
+          - if keyword args are reused, they won't be included in parent_kwargs.
+        - additional positional only args must have defaults values (LSP!)
+        - additional positional only arguments are always added after positional-only arguments of the parent.
+    """
+    raise NotImplementedError("Not yet implemented.")

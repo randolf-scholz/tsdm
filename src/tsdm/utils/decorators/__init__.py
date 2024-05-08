@@ -18,8 +18,6 @@ __all__ = [
     "vectorize",
     "wrap_func",
     "wrap_method",
-    # "sphinx_value",
-    # context managers
 ]
 
 from tsdm.utils.decorators._decorators import (
@@ -46,7 +44,6 @@ DECORATORS: dict[str, Decorator] = {
     "vectorize"    : vectorize,
     "wrap_func"    : wrap_func,
     "wrap_method"  : wrap_method,
-    # "sphinx_value": sphinx_value,
 }  # fmt: skip
 r"""Dictionary of all available decorators."""
 
