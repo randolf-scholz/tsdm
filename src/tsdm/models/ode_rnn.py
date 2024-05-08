@@ -60,7 +60,7 @@ class ODE_RNN(BaseModel, nn.Module):
         "concat_mask": True,
         # dimensionality of input
         "input_dim": None,
-        # device: 'cpu' or 'cuda'
+        # device: can be 'cpu' or 'cuda'
         "device": torch.device("cpu"),
         # Number of units per layer in each of GRU update networks
         "n_gru_units": 100,

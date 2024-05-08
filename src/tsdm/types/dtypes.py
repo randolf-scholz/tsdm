@@ -73,11 +73,10 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import pandas
-import pandas as pd
 import polars
 import pyarrow
-import pyarrow as pa
 import torch
+from pandas import ArrowDtype
 from pandas.api.extensions import ExtensionDtype
 from typing_extensions import Final
 
@@ -91,10 +90,8 @@ NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
     "float16"     : np.float16,
     "float32"     : np.float32,
     "float64"     : np.float64,
-    # "float128": np.float128,
     "complex64"   : np.complex64,
     "complex128"  : np.complex128,
-    # "complex256": np.complex256,
     "uint8"       : np.uint8,
     "uint16"      : np.uint16,
     "uint32"      : np.uint32,
@@ -328,19 +325,19 @@ PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
 }  # fmt: skip
 r"""Dictionary of all `pandas` data types."""
 
-PANDAS_ARROW_DURATION_TYPES: set[pd.ArrowDtype] = {
-    pd.ArrowDtype(pa.duration(unit)) for unit in ["s", "ms", "us", "ns"]
+PANDAS_ARROW_DURATION_TYPES: set[ArrowDtype] = {
+    ArrowDtype(pyarrow.duration(unit)) for unit in ["s", "ms", "us", "ns"]
 }
 r"""Set of all `pandas` arrow duration types."""
 
-PANDAS_ARROW_TIMESTAMP_TYPES: set[pd.ArrowDtype] = {
-    pd.ArrowDtype(pa.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
+PANDAS_ARROW_TIMESTAMP_TYPES: set[ArrowDtype] = {
+    ArrowDtype(pyarrow.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
 }
 r"""Set of all `pandas` arrow timestamp types."""
 
-PANDAS_ARROW_DATE_TYPES: set[pd.ArrowDtype] = {
-    pd.ArrowDtype(pa.date32()),
-    pd.ArrowDtype(pa.date64()),
+PANDAS_ARROW_DATE_TYPES: set[ArrowDtype] = {
+    ArrowDtype(pyarrow.date32()),
+    ArrowDtype(pyarrow.date64()),
 }
 r"""Set of all `pandas` arrow date types."""
 

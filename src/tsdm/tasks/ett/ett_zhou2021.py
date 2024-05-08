@@ -115,7 +115,6 @@ class ETT_Zhou2021(OldBaseTask):
         self,
         dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"],
         *,
-        # dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
         target: TARGET = "OT",
@@ -145,8 +144,6 @@ class ETT_Zhou2021(OldBaseTask):
 
         # Fit the Preprocessors
         self.preprocessor.fit(self.splits["train"])
-        # Set the Encoder
-        # self.pre_encoder = initialize_from_table(ENCODERS, __name__=pre_encoder)
 
     @cached_property
     def dataset(self) -> DataFrame:
@@ -186,7 +183,6 @@ class ETT_Zhou2021(OldBaseTask):
 
         ds = self.splits[key]
         tensors = self.preprocessor.encode(ds)
-        # tensors = self.encoder.encode(ds)
         dataset = TensorDataset(*tensors)
         sampler = SequenceSampler(
             dataset,

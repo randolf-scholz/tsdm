@@ -23,9 +23,6 @@ def is_partition(
     union: Optional[Collection[Hashable]] = None,
 ) -> bool:
     r"""Check if partition is a valid partition of union."""
-    # if len(partition) == 1:
-    #     return is_partition(*next(iter(partition)), union=union)
-
     sets = (set(p) for p in partition)
     part_union = set().union(*sets)
 

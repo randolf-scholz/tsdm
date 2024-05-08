@@ -98,10 +98,8 @@ def gather_types(obj: object, /) -> set[BackendID]:
         ):
             # FIXME: https://github.com/python/cpython/issues/106246
             # use PythonScalar instead of Scalar when the above issue is fixed
-            # types.add("fallback")
             pass
         case EllipsisType() | NotImplementedType():
-            # types.add("fallback")
             pass
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}.")
@@ -239,30 +237,3 @@ class Backend(Generic[T]):
             implementations = getattr(Kernels, attr)
             impl = implementations.get(self.selected_backend, NotImplemented)
             setattr(self, attr, impl)
-
-        # # select the kernels
-        # self.clip = Kernels.clip.get(self.selected_backend, NotImplemented)
-        # self.isnan = Kernels.isnan.get(self.selected_backend, NotImplemented)
-        # self.where = Kernels.where.get(self.selected_backend, NotImplemented)
-        #
-        # # contractions
-        # self.nanmax = Kernels.nanmax.get(self.selected_backend, NotImplemented)
-        # self.nanmean = Kernels.nanmean.get(self.selected_backend, NotImplemented)
-        # self.nanmin = Kernels.nanmin.get(self.selected_backend, NotImplemented)
-        # self.nanstd = Kernels.nanstd.get(self.selected_backend, NotImplemented)
-        #
-        # # tensor creation
-        # self.tensor_like = Kernels.tensor_like.get(
-        #     self.selected_backend, NotImplemented
-        # )
-        # self.to_tensor = Kernels.to_tensor.get(self.selected_backend, NotImplemented)
-        # self.true_like = Kernels.true_like.get(self.selected_backend, NotImplemented)
-        # self.false_like = Kernels.false_like.get(self.selected_backend, NotImplemented)
-        #
-        # # other
-        # self.strip_whitespace = Kernels.strip_whitespace.get(
-        #     self.selected_backend, NotImplemented
-        # )
-        # self.apply_along_axes = Kernels.apply_along_axes.get(
-        #     self.selected_backend, NotImplemented
-        # )

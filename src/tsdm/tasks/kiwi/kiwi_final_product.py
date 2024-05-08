@@ -43,7 +43,6 @@ class Sample(NamedTuple):
 
 def get_induction_time(s: Series) -> Timestamp | NAType:
     r"""Compute the induction time."""
-    # s = ts.loc[run_id, experiment_id]
     inducer = s["InducerConcentration"]
     total_induction = inducer[-1] - inducer[0]
 
@@ -72,7 +71,6 @@ def get_time_table(
 ) -> DataFrame:
     r"""Compute the induction time and final product time for each run and experiment."""
     columns = [
-        # "slice",
         "t_min",
         "t_induction",
         "t_max",
@@ -99,7 +97,6 @@ def get_time_table(
         df.loc[idx, "t_min"] = slc.index[0] + min_wait
         df.loc[idx, "t_induction"] = t_induction
         df.loc[idx, "target_time"] = t_target
-        # df.loc[idx, "slice"] = slice(t_min, t_max)
     return df
 
 
@@ -280,7 +277,6 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
             timeseries = timeseries.set_index("measurement_time", append=True)
             metadata = self.metadata.loc[idx]
             splits[key] = timeseries, metadata
-            # splits[key] = Split(key[0], key[1], timeseries, metadata)
         return splits
 
     def make_dataloader(
@@ -356,75 +352,3 @@ class _Dataset(Dataset):
                 self.metadata.loc[key].copy(deep=True),
             ),
         )
-
-
-# def make_sample(self, DS, idx: tuple[tuple[int, int], slice]) -> Sample:
-#     r"""Return a sample from the dataset."""
-#     print(idx)
-#     key, slc = idx
-#     ts, md = deepcopy(DS[key])
-#     # get targets
-#     target_time = md["target_time"]
-#     target_value = md["target_value"]
-#     # mask target values
-#     md["target_value"] = float("nan")
-#     # mask observation horizon
-#     mask = (ts.index <= slc.start) & (slc.stop <= ts.index)
-#     # mask observables outside observation range
-#     ts.loc[~mask, self.observables] = float("nan")
-#     # select the data
-#
-#     index = idx
-#     inputs = (ts[slc.start : target_time], md)
-#     targets = target_value
-#     originals = deepcopy(DS[key])
-#
-#     return self.Sample(index, inputs, targets, originals)
-
-
-# class Batch(NamedTuple):
-#     timeseries: list[Tensor]
-#     targets: NDArray
-#     encoded_targets: NDArray
-#
-#
-# @torch.no_grad()
-# def my_collate(samples: list[tuple]) -> tuple[list[Tensor], NDArray, NDArray]:
-#     timeseries = []
-#     targets = []
-#     encoded_targets = []
-#
-#     for idx, (ts_data, md_data), target, originals in samples:
-#         timeseries.append(encoder.encode(ts_data))
-#         targets.append(target)
-#         encoded_targets.append(target_encoder.encode(target))
-#
-#     # timeseries = torch.cat(timeseries)
-#     targets = np.stack(targets)
-#     encoded_targets = torch.tensor(targets)
-#
-#     return Batch(timeseries, targets, encoded_targets)
-
-
-# class Batch(NamedTuple):
-#     r"""Represents a batch of elements."""
-#
-#     index: Any
-#     timeseries: Any
-#     metadata: Any
-#     targets: Any
-#
-#     def __repr__(self) -> str:
-#         return repr_namedtuple(self)
-
-
-# class Split(NamedTuple):
-#     r"""Represents a data split."""
-#
-#     number: int
-#     partition: Literal["train", "test"]
-#     timeseries: Tensor
-#     metadata: Tensor
-#
-#     def __repr__(self) -> str:
-#         return repr_namedtuple(self)

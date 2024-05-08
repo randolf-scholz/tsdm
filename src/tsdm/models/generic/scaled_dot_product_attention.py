@@ -63,7 +63,6 @@ class ScaledDotProductAttention(nn.Module):
         self.Wk = nn.Parameter(Wk)
         self.Wv = nn.Parameter(Wv)
         self.Wo = nn.Parameter(Wo)
-        # self.softmax = nn.Softmax(dim=-2)
         self.register_buffer("scale", torch.tensor(1 / sqrt(dim_q)))
         self.register_buffer("attention_weights", torch.tensor([]))
 
@@ -86,7 +85,6 @@ class ScaledDotProductAttention(nn.Module):
         QK = torch.einsum("hd, ...hd -> ...h", Q, K)
         QK[mask] = float("-inf")
         w = nn.functional.softmax(self.scale * QK, dim=-2)
-        # w = self.softmax(self.scale * QK)
         self.attention_weights = w
         QKV = torch.nanmean(w[..., None] * V, dim=-3)  # ...h, ...Lhv -> ...hv
         return torch.einsum("...hv, hvr -> ...r", QKV, self.Wo)

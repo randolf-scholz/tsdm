@@ -369,12 +369,7 @@ class TimeSeriesWMSE(WeightedTimeSeriesLoss):
             r = torch.where(c > 0, s, 0.0)
             r = torch.sum(r, dim=self.time_axis, keepdim=True)
         else:
-            # c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
             r = torch.sum(r, dim=self.time_axis + self.channel_axis, keepdim=True)
-
-        # # aggregate over time
-        # s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
-        # r = torch.where(c > 0, s, 0.0)
 
         # aggregate over batch-dimensions
         r = torch.mean(r)

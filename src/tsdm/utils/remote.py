@@ -153,20 +153,20 @@ def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
 
 
 # NOTE: Session options as of requests 2.26.0
-# __attrs__ = [
-#     "headers",
-#     "cookies",
-#     "auth",
-#     "proxies",
-#     "hooks",
-#     "params",
-#     "verify",
-#     "cert",
-#     "adapters",
-#     "stream",
-#     "trust_env",
-#     "max_redirects",
-# ]
+#
+# - "headers"
+# - "cookies"
+# - "auth"
+# - "proxies"
+# - "hooks"
+# - "params"
+# - "verify"
+# - "cert"
+# - "adapters"
+# - "stream"
+# - "trust_env"
+# - "max_redirects"
+#
 def download_directory_to_zip(
     url: str,
     zip_filename: FilePath,
@@ -211,7 +211,7 @@ def download_directory_to_zip(
                 # get relative path w.r.t. the base url
                 file_name = os.path.relpath(href, url)
                 pbar.set_description(f"Downloading {file_name}")
-                # file_size = int(session.head(href).headers.get("content-length", 0))
+
                 with archive.open(stem + file_name, "w", force_zip64=True) as file:
                     download_io(href, file, session=session)
 
@@ -310,84 +310,3 @@ def import_from_url(
         )
     else:  # default parsing, including for UCI dataset
         download(url, path, *args, **kwargs)
-
-
-# def shorthash(inputs) -> str:
-#     r"""Roughly good for 2¹⁶=65536 items."""
-#     encoded = json.dumps(dictionary, sort_keys=True).encode()
-#
-#     return shake_256(inputs).hexdigest(8)
-
-
-# def validate(
-#     self,
-#     filespec: Nested[str | Path],
-#     /,
-#     *,
-#     reference: Optional[str | Mapping[str, str]] = None,
-# ) -> None:
-#     r"""Validate the file hash."""
-#     self.LOGGER.debug("Starting to validate dataset")
-#
-#     if isinstance(filespec, Mapping):
-#         for value in filespec.values():
-#             self.validate(value, reference=reference)
-#         return
-#
-#     if isinstance(filespec, Sequence) and not isinstance(filespec, (str, Path)):
-#         for value in filespec:
-#             self.validate(value, reference=reference)
-#         return
-#
-#     assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
-#     file = Path(filespec)
-#
-#     if not file.exists():
-#         raise FileNotFoundError(f"File {file.name!r} does not exist!")
-#
-#     filehash = sha256(file.read_bytes()).hexdigest()
-#
-#     if reference is None:
-#         warnings.warn(
-#             f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
-#             f"The filehash is {filehash!r}."
-#         )
-#
-#     elif isinstance(reference, str):
-#         if filehash != reference:
-#             warnings.warn(
-#                 f"File {file.name!r} failed to validate!"
-#                 f"File hash {filehash!r} does not match reference {reference!r}."
-#                 f"Ignore this warning if the file format is parquet."
-#             )
-#         self.LOGGER.info(
-#             f"File {file.name!r} validated successfully {filehash=!r}."
-#         )
-#
-#     elif isinstance(reference, Mapping):
-#         if not (file.name in reference) ^ (file.stem in reference):
-#             warnings.warn(
-#                 f"File {file.name!r} cannot be validated as it is not contained in {reference}."
-#                 f"The filehash is {filehash!r}."
-#                 f"Ignore this warning if the file format is parquet."
-#             )
-#         elif file.name in reference and filehash != reference[file.name]:
-#             warnings.warn(
-#                 f"File {file.name!r} failed to validate!"
-#                 f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
-#                 f"Ignore this warning if the file format is parquet."
-#             )
-#         elif file.stem in reference and filehash != reference[file.stem]:
-#             warnings.warn(
-#                 f"File {file.name!r} failed to validate!"
-#                 f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
-#                 f"Ignore this warning if the file format is parquet."
-#             )
-#         else:
-#             self.LOGGER.info(
-#                 f"File {file.name!r} validated successfully {filehash=!r}."
-#             )
-#     else:
-#         raise TypeError(f"Unsupported type for {reference=}.")
-#
-#     self.LOGGER.debug("Finished validating file.")

@@ -97,7 +97,6 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
         case type() as cls:
             return f"<{cls.__name__}>"
         case _ if is_builtin_type(type(obj)):
-            # return f"<{cls.__name__}>"
             return ""
         case SupportsArray():
             return "<array>"
@@ -137,8 +136,6 @@ def repr_shortform(
             return cls.__name__
         case builtin if is_builtin(builtin):
             return repr(builtin)
-        # case bool() | int() | float() | complex() | bytes() | slice() | range():
-        #     return repr(obj)
         case SupportsArray() as arr if arr.__array__().size <= 1:
             return repr(arr.__array__().item())
         case nan if is_na_value(nan):
@@ -264,7 +261,6 @@ def repr_mapping(
 
     # set separators
     br = "\n" if linebreaks else ""
-    # key_sep = ": "
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
 
@@ -272,7 +268,6 @@ def repr_mapping(
     left, right = "{", "}"
 
     # set max_key_length
-
     max_key_length = (
         max((len(str(key)) for key in obj), default=0) if (align and linebreaks) else 0
     )
@@ -289,25 +284,7 @@ def repr_mapping(
     if identifier is None:
         identifier = "<mapping>" * bool(recursive)
 
-    # # TODO: automatic linebreak detection if string length exceeds max_length
-    # if recursive:
-    #     if repr_fun not in RECURSIVE_REPR_FUNS:
-    #         raise ValueError("Must use repr_short for recursive=True.")
-    #
-    #     to_string = partial(
-    #         repr_fun,
-    #         align=align,
-    #         indent=indent + max_key_length,
-    #         padding=padding,
-    #         recursive=recursive if isinstance(recursive, bool) else recursive - 1,
-    #         repr_fun=repr_fun,
-    #     )
-    #
-    #     # def to_string(x: Any) -> str:
-    #     #     return repr_fun(x).replace("\n", br + pad)
-    #
-    # else:
-    #     to_string = partial(repr_short, indent=indent + max_key_length)
+    # TODO: add automatic linebreak detection if string length exceeds max_length
 
     # create callable to stringify subitems
     if repr_fun is NotImplemented:
@@ -343,8 +320,6 @@ def repr_mapping(
                 indent=indent + padding,
                 padding=padding,
                 recursive=recurse,
-                # repr_fun=repr_fun,
-                # wrapped=None,
             )
         except Exception as exc:
             exc.add_note(
@@ -360,13 +335,11 @@ def repr_mapping(
     tail_half = max(len(obj) - head_half, head_half)
     head_items = [
         to_string(key, value, justify=max_key_length)
-        # f"{str(key):<{max_key_length}}: {to_string(value)}"
         for i, (key, value) in enumerate(obj.items())
         if i < head_half
     ]
     tail_items = [
         to_string(key, value, justify=max_key_length)
-        # f"{str(key):<{max_key_length}}: {to_string(value)}"
         for i, (key, value) in enumerate(obj.items())
         if i >= tail_half
     ]
@@ -503,8 +476,6 @@ def repr_sequence(
                 indent=indent + padding,
                 padding=padding,
                 recursive=recurse,
-                # repr_fun=repr_fun,
-                # wrapped=None,
             )
         except Exception as exc:
             exc.add_note(

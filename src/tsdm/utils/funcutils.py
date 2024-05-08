@@ -35,7 +35,7 @@ from inspect import Parameter
 from typing_extensions import Any, Optional, ParamSpec, TypeAlias, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
-from tsdm.types.variables import R
+from tsdm.types.variables import R_co
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -56,8 +56,8 @@ P = ParamSpec("P")
 
 
 def rpartial(
-    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Callable[..., R]:
+    func: Callable[P, R_co], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Callable[..., R_co]:
     r"""Apply positional arguments from the right.
 
     References:
@@ -66,7 +66,7 @@ def rpartial(
     """
 
     @wraps(func)
-    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
+    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R_co:
         # FIXME: https://github.com/python/typeshed/issues/8703
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 
@@ -188,12 +188,6 @@ def get_parameter(func: Callable, name: str, /) -> Parameter:
 
 def get_return_typehint(func: Callable, /) -> Any:
     r"""Get the return typehint of a function."""
-    # if isinstance(self.func, FunctionType | MethodType):
-    #     ann = self.func.__annotations__.get("return", object)  # type: ignore[unreachable]
-    # else:
-    #     ann = self.func.__call__.__annotations__.get("return", object)  # type: ignore[operator]
-    #
-    # ann.__name__ if isinstance(ann, type) else str(ann)
     sig = inspect.signature(func)
     ann = sig.return_annotation
 

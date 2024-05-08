@@ -16,8 +16,6 @@ from tsdm.datasets.base import MultiTableDataset
 class KiwiBenchmark(MultiTableDataset):
     r"""KIWI Benchmark Dataset."""
 
-    # https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW
-    # SOURCE_URL = r"https://tubcloud.tu-berlin.de/s/rorBS7Lwbgmreti/download/"
     SOURCE_URL = r"https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW/download/"
     INFO_URL = r"https://kiwi-biolab.de/"
     HOME_URL = r"https://kiwi-biolab.de/"

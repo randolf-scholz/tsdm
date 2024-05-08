@@ -386,9 +386,6 @@ def deep_dict_update(d: dict, new_kvals: Mapping, /) -> dict:
     References:
         - https://stackoverflow.com/a/30655448
     """
-    # if not inplace:
-    #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
-
     for key, value in new_kvals.items():
         if isinstance(value, Mapping) and value:
             d[key] = deep_dict_update(d.get(key, {}), value)
@@ -403,14 +400,10 @@ def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
     References:
         - https://stackoverflow.com/a/30655448
     """
-    # if not inplace:
-    #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
-
     for key, value in d.items():
         if isinstance(value, Mapping) and value:
             d[key] = deep_kval_update(d.get(key, {}), **new_kvals)
         elif key in new_kvals:
-            # if value is not None or not safe:
             d[key] = new_kvals[key]
     return d
 

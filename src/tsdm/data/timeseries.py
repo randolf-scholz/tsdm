@@ -236,23 +236,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         )
 
 
-# TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
-#     "InSilicoTSC": InSilicoTSC,
-#     "KiwiBenchmarkTSC": KiwiBenchmarkTSC,
-# }
-# r"""Dictionary of all available timseries classes."""
-#
-# OLD_DATASETS: dict[str, type[Dataset]] = {
-#     "KiwiRuns": KiwiRuns,
-# }
-# r"""Deprecated dataset classes."""
-#
-# OLD_TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
-#     "KiwiRunsTSC": KiwiRunsTSC,
-# }
-# r"""Deprecated timeseries classes."""
-
-
 @pprint_repr
 class Inputs(NamedTuple):
     r"""Tuple of inputs."""

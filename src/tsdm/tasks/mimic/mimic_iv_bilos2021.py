@@ -358,18 +358,3 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         )
         kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)
-
-
-# Remark: The following code is found in the repo:
-#
-# t_val = 2.16, and time is divided by 1000
-# if self.validation:
-#     assert val_options is not None, 'Validation set options should be fed'
-#     self.df_before = self.df.loc[self.df['Time'] <= val_options['T_val']].copy()
-#     self.df_after = self.df.loc[self.df['Time'] > val_options['T_val']].sort_values('Time').copy()
-#     if val_options.get("T_stop"):
-#         self.df_after = self.df_after.loc[self.df_after['Time'] < val_options['T_stop']].sort_values('Time').copy()
-#     self.df_after = self.df_after.groupby('ID').head(val_options['max_val_samples']).copy()
-#     self.df = self.df_before  # We remove observations after T_val
-#     self.df_after.ID = self.df_after.ID.astype(np.int)
-#     self.df_after.sort_values('Time', inplace=True)

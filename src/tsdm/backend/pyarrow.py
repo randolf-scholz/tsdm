@@ -231,6 +231,7 @@ def cast_columns(table: Table, /, **dtypes: DataType) -> Table:
 
 
 def unsafe_cast_columns(table: Table, /, **dtypes: DataType) -> Table:
+    r"""Cast columns to the given data types, replacing non-castable elements with null."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types, strict=True))
     if unknown_keys := set(dtypes.keys()) - set(current_dtypes.keys()):

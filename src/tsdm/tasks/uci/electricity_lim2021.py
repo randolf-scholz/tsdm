@@ -165,24 +165,6 @@ class ElectricityLim2021(TimeSeriesTask):
         r"""Return the split of the dataset."""
         return self.dataset[self.masks[key]]
 
-    # @cached_property
-    # def dataloader_kwargs(self) -> dict:
-    #     r"""Return the kwargs for the dataloader."""
-    #     return {
-    #         "batch_size": 1,
-    #         "shuffle": False,
-    #         "sampler": None,
-    #         "batch_sampler": None,
-    #         "num_workers": 0,
-    #         "collate_fn": lambda x: x,
-    #         "pin_memory": False,
-    #         "drop_last": False,
-    #         "timeout": 0,
-    #         "worker_init_fn": None,
-    #         "prefetch_factor": 2,
-    #         "persistent_workers": False,
-    #     }
-
     def make_dataloader(
         self, key: KeyType, /, *, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:

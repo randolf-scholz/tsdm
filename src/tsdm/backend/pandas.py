@@ -296,6 +296,7 @@ def remove_outliers_dataframe(
     upper_bound: Mapping[T, float | None],
     lower_inclusive: Mapping[T, bool],
     upper_inclusive: Mapping[T, bool],
+    erroron_extra_bounds: bool = False,
 ) -> DataFrame:
     r"""Remove outliers from a DataFrame, given boundary values."""
     __logger__.info("Removing outliers from DataFrame.")
@@ -307,8 +308,8 @@ def remove_outliers_dataframe(
 
     if missing_bounds := set(df.columns) - given_bounds:
         raise ValueError(f"Columns {missing_bounds} do not have bounds!")
-    # if extra_bounds := given_bounds - set(df.columns):
-    #     raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
+    if (extra_bounds := given_bounds - set(df.columns)) and erroron_extra_bounds:
+        raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
     # compute mask for values that are considered outliers
     mask = detect_outliers_dataframe(

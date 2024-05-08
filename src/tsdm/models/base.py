@@ -153,6 +153,5 @@ class BaseModel(metaclass=BaseModelMetaClass):
             subprocess.run(
                 f"git clone {self.SOURCE_URL} {self.model_path}", shell=True, check=True
             )
-            # subprocess.run(F"git -C {model_path} pull", shell=True)
 
         self.LOGGER.info("Finished importing model from %s", self.SOURCE_URL)

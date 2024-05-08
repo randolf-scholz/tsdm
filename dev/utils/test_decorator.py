@@ -18,66 +18,6 @@ def debug(func):
     return wrapper
 
 
-# class deco_meta(ABCMeta):
-#     @debug
-#     def __init__(cls, *args,  __init__=2, **kwargs):
-#         super().__init__(*args, **kwargs)
-#
-#
-# class deco(metaclass=deco_meta):
-#     @debug
-#     def __new__(cls, *args,  __new__=2, **kwargs):
-#         return super().__new__(cls)
-#
-#     @debug
-#     def __init__(self, *args, __init__=None, __func__=None, **kwargs):
-#         pass
-#
-#     @debug
-#     def __call__(self, *args,  __call__=None, **kwargs):
-#         pass
-#
-# @deco
-# @debug
-# def dummy_function(*args, **kwargs):
-#     return
-#
-# print(dummy_function(1))
-# #
-# print("="*80 + "\n" + "="*80)
-#
-# @deco(1,2,3, a=2, b=2, c=3)
-# @debug
-# def dummy_function(*args, **kwargs):
-#     return
-#
-# print(dummy_function(1))
-
-
-# sys.exit(0)
-
-
-# def decoratorFunctionWithArguments(arg1, arg2, arg3):
-#     def wrap(f):
-#         print("Inside wrap()")
-#         def wrapped_f(*args):
-#             print("Inside wrapped_f()")
-#             print("Decorator arguments:", arg1, arg2, arg3)
-#             f(*args)
-#             print("After f(*args)")
-#         return wrapped_f
-#     return wrap
-#
-# @decoratorFunctionWithArguments("hello", "world", 42)
-# def sayHello(a1, a2, a3, a4):
-#     print('sayHello arguments:', a1, a2, a3, a4)
-#
-# sayHello(1,2, 3, 4)
-
-
-##############################################
-
-
 @debug
 def parametrized(decorator):
     @debug
@@ -245,15 +185,6 @@ def identity(x):
     return x
 
 
-print(identity(3))
-
-# @add(bias=2)
-# def identity(x):
-#     return x
-# print(identity(3))
-
-
-#
 def multiplying(f_py=None, factor=1):
     assert callable(f_py) or f_py is None
 
@@ -265,26 +196,3 @@ def multiplying(f_py=None, factor=1):
         return wrapper
 
     return _decorator(f_py) if callable(f_py) else _decorator
-
-
-#
-#
-# @multiplying
-# def summing(x): return sum(x)
-#
-# print(summing(range(10)))
-# # 45
-#
-#
-# @multiplying()
-# def summing(x): return sum(x)
-#
-# print(summing(range(10)))
-# # 45
-#
-#
-# @multiplying(10)
-# def summing(x): return sum(x)
-#
-# print(summing(range(10)))
-# 450

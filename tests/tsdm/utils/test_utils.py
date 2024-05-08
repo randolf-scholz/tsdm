@@ -73,6 +73,7 @@ def test_shape_to_tuple(shape: Shape) -> None:
 
 @pytest.mark.parametrize("size", [0, 1, (), (0,), (1,), (1, 2)], ids=str)
 def test_size_to_tuple(size: Size) -> None:
+    r"""Test `tsdm.utils.size_to_tuple`."""
     sizes_tuple = size_to_tuple(size)
     rng = np.random.default_rng(42)
     result = rng.uniform(size=sizes_tuple)

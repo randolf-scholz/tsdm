@@ -322,22 +322,6 @@ def logarithmic_norm(
     m = torch.eye(N, dtype=torch.bool, device=x.device)
     x = torch.where(m, x.real, x.abs())
 
-    # if scaled:
-    #     shift = int(coldim < rowdim) * (1 - int(keepdim))
-    #     if p == 1:
-    #         x = x.mean(dim=coldim, keepdim=keepdim)
-    #         return x.amax(dim=rowdim - shift, keepdim=keepdim)
-    #     if p == -1:
-    #         x = x.mean(dim=coldim, keepdim=keepdim)
-    #         return x.amin(dim=rowdim - shift, keepdim=keepdim)
-    #     shift = int(rowdim < coldim) * (1 - int(keepdim))
-    #     if p == float("inf"):
-    #         x = x.mean(dim=rowdim, keepdim=keepdim)
-    #         return x.amax(dim=coldim - shift, keepdim=keepdim)
-    #     if p == -float("inf"):
-    #         x = x.mean(dim=rowdim, keepdim=keepdim)
-    #         return x.amin(dim=coldim - shift, keepdim=keepdim)
-
     shift = int(coldim < rowdim) * (1 - int(keepdim))
     if p == 1:
         x = x.sum(dim=coldim, keepdim=keepdim)

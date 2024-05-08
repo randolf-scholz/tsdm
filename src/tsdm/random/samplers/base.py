@@ -57,7 +57,7 @@ from tsdm.data.datasets import (
     get_last_sample,
 )
 from tsdm.types.protocols import Seq
-from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
+from tsdm.types.time import DT, TD, DateTime, TimeDelta
 from tsdm.types.variables import K2, K, T_co
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.pprint import pprint_repr
@@ -322,8 +322,6 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             yield key, next(activate_iterators[key])
 
 
-# U: TypeAlias = Any  # unknown (not statically known)
-# U: TypeAlias = S | B | M | W  # unknown (not statically known)
 S: TypeAlias = Literal["slices"]  # slice
 M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
@@ -379,8 +377,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
 
     data: NDArray[DT]  # type: ignore[type-var]
 
-    horizons: TDLike | NDArray[TDLike]  # type: ignore[type-var]
-    stride: TDLike
+    horizons: TimeDelta | NDArray[TimeDelta]  # type: ignore[type-var]
+    stride: TimeDelta
     mode: ModeVar
     multi_horizon: bool
     shuffle: bool
@@ -390,8 +388,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
     # dependent variables
     tmin: DT
     tmax: DT
-    cumulative_horizons: NDArray[TDLike]  # pyright: ignore
-    # grid: Final[NDArray[np.integer]]
+    cumulative_horizons: NDArray[TimeDelta]  # type: ignore[type-var,unused-ignore]
 
     # region __new__ overloads ---------------------------------------------------------
     @overload
@@ -540,140 +537,6 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
 
     # endregion __new__ overloads --------------------------------------------------------
 
-    # region __init__ overloads --------------------------------------------------------
-    # NOTE: We use SequenceProtocol instead of Sequence in order to exclude str <: Sequence[str]
-    #  cf. https://github.com/python/typing/issues/256#issuecomment-1442633430
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, S, MULTI]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: VectorLike[str | Timedelta],
-    #     stride: str | Timedelta,
-    #     mode: S,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, B, MULTI]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: VectorLike[str | Timedelta],
-    #     stride: str | Timedelta,
-    #     mode: B,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, M, MULTI]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: VectorLike[str | Timedelta],
-    #     stride: str | Timedelta,
-    #     mode: M,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, W, MULTI]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: VectorLike[str | Timedelta],
-    #     stride: str | Timedelta,
-    #     mode: W,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, S, ONE]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: str | Timedelta,
-    #     stride: str | Timedelta,
-    #     mode: S,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, B, ONE]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: str | Timedelta,
-    #     stride: str | Timedelta,
-    #     mode: B,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, M, ONE]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: str | Timedelta,
-    #     stride: str | Timedelta,
-    #     mode: M,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self: "SlidingSampler[DT, W, ONE]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: str | Timedelta,
-    #     stride: str | Timedelta,
-    #     mode: W,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload  # fallback mode=str
-    # def __init__(
-    #     self: "SlidingSampler[DT, U, MULTI]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: VectorLike[str | Timedelta],
-    #     stride: str | Timedelta,
-    #     mode: str,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # @overload  # fallback mode=str
-    # def __init__(
-    #     self: "SlidingSampler[DT, U, ONE]",
-    #     data_source: SequentialDataset[DT],
-    #     /,
-    #     *,
-    #     horizons: str | Timedelta,
-    #     stride: str | Timedelta,
-    #     mode: str,
-    #     shuffle: bool = ...,
-    #     drop_last: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> None: ...
-    # endregion __init__ overloads -----------------------------------------------------
     def __init__(
         self,
         data_source: SequentialDataset[DT],
@@ -714,7 +577,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
                     if isinstance(values[0], str)
                     else np.array(values, dtype=td_type)
                 )
-            case TDLike() as td:
+            case TimeDelta() as td:
                 self.multi_horizon = False
                 self.horizons = np.array([td], dtype=td_type)
             case _:
@@ -752,7 +615,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
     @overload
     def __iter__(self: "SlidingSampler[DT, M, MULTI]", /) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
-    def __iter__(self: "SlidingSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...  # pyright: ignore
+    def __iter__(self: "SlidingSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...  # type: ignore[type-var,unused-ignore]
     @overload  # fallback mode=str
     def __iter__(self: "SlidingSampler[DT, U, MULTI]", /) -> Iterator[list]: ...
     @overload
@@ -762,7 +625,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
     @overload
     def __iter__(self: "SlidingSampler[DT, M, ONE]", /) -> Iterator[NDArray[np.bool_]]: ...
     @overload
-    def __iter__(self: "SlidingSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ... # pyright: ignore
+    def __iter__(self: "SlidingSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ...  # type: ignore[type-var,unused-ignore]
     @overload  # fallback mode=str
     def __iter__(self: "SlidingSampler[DT, U, ONE]", /) -> Iterator: ...
     # fmt: on
@@ -835,71 +698,6 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
                     ]
             case _:
                 raise TypeError(f"Invalid mode {self.mode=}")
-
-
-#
-# # class SlidingSampler: ...
-# class SlidingSliceSampler:
-#     @overload
-#     def __iter__(self, /) -> Iterator[slice]: ...
-#     @overload
-#     def __iter__(self, /) -> Iterator[list[slice]]: ...
-#     def __iter__(self):
-#         horizons = super().__iter__()
-#
-#         if not self.multi_horizon:
-#             for horizon in horizons:
-#                 yield slice(horizons[0], horizons[-1])
-#             return
-#
-#         for horizon in horizons:
-#             yield [
-#                 slice(start, stop) for start, stop in sliding_window_view(horizon, 2)
-#             ]
-#
-#
-# class SlidingMaskSampler:
-#     @overload
-#     def __iter__(self, /) -> Iterator[NDArray[np.bool_]]: ...
-#     @overload
-#     def __iter__(self, /) -> Iterator[list[NDArray[np.bool_]]]: ...
-#     def __iter__(self):
-#         horizons = super().__iter__()
-#
-#         if self.multi_horizon:
-#             for horizon in horizons:
-#                 yield (horizons[0] <= self.data) & (self.data < horizons[-1])
-#             return
-#
-#         for horizon in horizons:
-#             yield [
-#                 (start <= self.data) & (self.data < stop)
-#                 for start, stop in sliding_window_view(horizon, 2)
-#             ]
-#
-#         yield (horizons[0] <= self.data) & (self.data < horizons[-1])
-#
-#
-# class SlidingWindowSampler:
-#     @overload
-#     def __iter__(self, /) -> Iterator[NDArray[DT]]: ...
-#     @overload
-#     def __iter__(self, /) -> Iterator[list[NDArray[DT]]]: ...
-#     def __iter__(self):
-#         horizons = super().__iter__()
-#
-#         if self.multi_horizon:
-#             for horizon in horizons:
-#                 yield self.data[(horizons[0] <= self.data) & (self.data < horizons[-1])]
-#             return
-#         for horizon in horizons:
-#             yield [
-#                 self.data[(start <= self.data) & (self.data < stop)]
-#                 for start, stop in sliding_window_view(horizon, 2)
-#             ]
-#
-#
-# class SlidingBoundsSampler: ...
 
 
 class DiscreteSlidingWindowSampler(BaseSampler):

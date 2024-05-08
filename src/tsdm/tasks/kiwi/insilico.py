@@ -23,8 +23,6 @@ from tsdm.types.aliases import SplitID
 class InSilicoTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
 
-    # dataset: TimeSeriesCollection
-
     observation_horizon: str = "2h"
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: str = "1h'"

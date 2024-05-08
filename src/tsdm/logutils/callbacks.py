@@ -386,33 +386,6 @@ class EvaluationCallback(BaseCallback):
         return TargetsAndPredics(targets=targets, predics=predics)
 
 
-# @dataclass
-# class HParamCallback(BaseCallback):
-#     r"""Callback to log hyperparameters to tensorboard."""
-#
-#     hparam_dict: dict[str, Any]
-#     writer: SummaryWriter
-#
-#     _: KW_ONLY
-#
-#     def __call__(self, step: int | str, /, **objects: Any) -> None:
-#         r"""Log the test-error selected by validation-error."""
-#
-#         # add postfix
-#         test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
-#
-#         self.writer.add_hparams(
-#             hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
-#         )
-#         print(f"{test_scores=} achieved by {self.hparam_dict=}")
-#
-#         # # FIXME: https://github.com/pytorch/pytorch/issues/32651
-#         # # os.path.dirname(os.path.realpath(__file__)) + os.sep + log_path
-#         # for files in (self.log_dir / "hparam").iterdir():
-#         #     shutil.move(files, self.log_dir)
-#         # (self.log_dir / "hparam").rmdir()
-
-
 @dataclass
 class CheckpointCallback(BaseCallback):
     r"""Callback to save checkpoints."""

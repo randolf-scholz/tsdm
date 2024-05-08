@@ -243,16 +243,6 @@ class MappingDataset(Mapping[K, DS]):
             case _:
                 raise KeyError(key)
 
-        # if not isinstance(key, tuple):
-        #     return self.datasets[key]
-        # try:
-        #     outer = self.datasets[key[0]]
-        #     if len(key) == 2:
-        #         return outer[key[1]]
-        #     return outer[key[1:]]
-        # except KeyError:
-        #     return self.datasets[key]  # type: ignore[index]
-
     @classmethod
     def from_dataframe(
         cls, df: DataFrame, /, *, levels: Optional[list[str]] = None

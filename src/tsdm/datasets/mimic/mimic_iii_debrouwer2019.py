@@ -89,7 +89,6 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         "metadata": (96, 3),
     }
 
-    # dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     KEYS = ["timeseries", "metadata"]
 
     timeseries: DataFrame

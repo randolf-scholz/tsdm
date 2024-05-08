@@ -51,14 +51,13 @@ __all__ = [
     "T2",
     "T2_co",
     "T2_contra",
-    "I",
     "K",
     "K_co",
     "K_contra",
     "K2",
     "K2_co",
     "K2_contra",
-    "R",
+    "R_co",
     "V",
     "V_co",
     "V_contra",
@@ -238,10 +237,6 @@ r"""T(ype) variable (covariant)."""
 T2_contra = TypeVar("T2_contra", bound=Any, contravariant=True)
 r"""T(ype) variable (contravariant)."""
 
-# inputs are always contravariant!
-I = TypeVar("I", contravariant=True)  # noqa: E741,PLC0105
-r"""I(nput) type variable (always contravariant)."""
-
 K = TypeVar("K", bound=abc.Hashable)
 r"""K(ey) type variable bound to `Hashable` (invariant)."""
 K_co = TypeVar("K_co", bound=abc.Hashable, covariant=True)
@@ -257,7 +252,7 @@ K2_contra = TypeVar("K2_contra", bound=abc.Hashable, contravariant=True)
 r"""K(ey) type variable bound to `Hashable` (contravariant)."""
 
 # outputs/returns are always covariant!
-R = TypeVar("R", covariant=True)  # noqa: PLC0105
+R_co = TypeVar("R_co", covariant=True)
 r"""R(eturn) type variable (always covariant)."""
 
 V = TypeVar("V")

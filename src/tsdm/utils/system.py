@@ -20,7 +20,6 @@ __all__ = [
 import inspect
 import logging
 import subprocess
-import sys
 from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
@@ -79,27 +78,6 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
     if not hasattr(module, "__all__"):
         return d
 
-    # for item in module.__all__:
-    #     obj = getattr(module, item)
-    #     if inspect.ismodule(obj):
-    #         # d[item] = f":mod:`~{obj.__name__}`"
-    #         if not item.startswith("_"):
-    #             d |= get_napoleon_type_aliases(obj)
-    #     if hasattr(obj, "__module__") and hasattr(obj, "__qualname__"):
-    #         d[item] = f"{obj.__module__}.{obj.__qualname__}"
-    # elif inspect.ismethod(obj):
-    #     d[item] = f":meth:`~{obj.__module__}.{obj.__qualname__}`"
-    # elif inspect.isfunction(obj):
-    #     d[item] = f":func:`~{obj.__module__}.{obj.__qualname__}`"
-    # elif inspect.isclass(obj):
-    #     if issubclass(obj, Exception):
-    #         d[item] = f":exc:`~{obj.__module__}.{obj.__qualname__}`"
-    #     d[item] = f":class:`~{obj.__module__}.{obj.__qualname__}`"
-    # else:
-    #     pass
-
-    # d[item] = f":obj:`~{module.__name__}.{item}`"
-
     for item in module.__all__:
         obj = getattr(module, item)
         if inspect.ismodule(obj):
@@ -115,23 +93,6 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
         else:
             d[item] = item
 
-    # for item in module.__all__:
-    #     obj = getattr(module, item)
-    #     if inspect.ismodule(obj):
-    #         d[item] = f":mod:`~{obj.__name__}`"
-    #         if not item.startswith("_"):
-    #             d |= get_napoleon_type_aliases(obj)
-    #     elif inspect.ismethod(obj):
-    #         d[item] = f":meth:`~{obj.__module__}.{obj.__qualname__}`"
-    #     elif inspect.isfunction(obj):
-    #         d[item] = f":func:`~{obj.__module__}.{obj.__qualname__}`"
-    #     elif inspect.isclass(obj):
-    #         if issubclass(obj, Exception):
-    #             d[item] = f":exc:`~{obj.__module__}.{obj.__qualname__}`"
-    #         d[item] = f":class:`~{obj.__module__}.{obj.__qualname__}`"
-    #     else:
-    #         d[item] = f":obj:`~{module.__name__}.{item}`"
-
     __logger__.info("Found napoleon type aliases: %s", repr_mapping(d, maxitems=-1))
     return d
 
@@ -145,10 +106,9 @@ def query_bool(question: str, /, *, default: Optional[bool] = True) -> bool:
         try:
             print(question)
             choice = input(prompt).lower()
-        except KeyboardInterrupt:
-            # TODO: use exception notes
-            print("Operation aborted.")
-            sys.exit(0)
+        except KeyboardInterrupt as exc:
+            exc.add_note("Operation aborted.")
+            raise
 
         if not choice and default is not None:
             return default
@@ -184,10 +144,9 @@ def query_choice(
             print(question)
             print(options)
             choice = input("Your choice (int or name)")
-        except KeyboardInterrupt:
-            # TODO: use exception notes
-            print("Operation aborted.")
-            sys.exit(0)
+        except KeyboardInterrupt as exc:
+            exc.add_note("Operation aborted.")
+            raise
 
         if choice in choices:
             return choice

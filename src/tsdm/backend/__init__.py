@@ -24,8 +24,3 @@ __all__ = [
 
 from tsdm.backend import generic, numpy, pandas, pyarrow, torch
 from tsdm.backend.kernels import Backend, BackendID, Kernels, get_backend
-
-# KERNELS = {
-#     "where": where_kernel,
-#     "clip": clip_kernel,
-# }

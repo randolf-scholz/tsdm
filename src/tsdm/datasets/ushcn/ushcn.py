@@ -456,20 +456,13 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             stacklevel=2,
         )
 
-        # table = pl.read_csv(self.rawdata_paths["us.txt.gz"], separator="\n")
-        table = csv.read_csv(
-            self.rawdata_paths["us.txt.gz"],
-            # compression="gzip",
-        )
-        print(table.schema)
-
-        # column: (start, stop)
+        # column schema: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
-            "COOP_ID": (1, 6),
-            "YEAR": (7, 10),
-            "MONTH": (11, 12),
-            "ELEMENT": (13, 16),
-        }
+            "COOP_ID" : (1, 6),
+            "YEAR"    : (7, 10),
+            "MONTH"   : (11, 12),
+            "ELEMENT" : (13, 16),
+        }  # fmt: skip
 
         # Add columns for each day of the month.
         for k, i in enumerate(range(17, 258, 8)):

@@ -68,7 +68,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2
+    rev: v0.4.3
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -80,13 +80,13 @@ repos:
         files: (^src/|^tests/)
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
-    rev: v1.0.3
+    rev: v1.0.4
     hooks:
       - id: nbstripout-fast
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.16
+    rev: v0.2.18
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -155,7 +155,7 @@ repos:
         - "--"
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.361
+    rev: v1.1.362
     hooks:
       - id: pyright
         files: (^src/|^tests/)

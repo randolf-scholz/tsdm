@@ -386,32 +386,6 @@ def describe(
     s: Series | DataFrame,
     /,
     *,
-    # entropy: bool = True,
-    # # special values
-    # max_value: bool = True,
-    # mean_value: bool = True,
-    # median_value: bool = True,
-    # min_value: bool = True,
-    # mode_value: bool = True,
-    # std_value: bool = True,
-    # # counts of special values
-    # max_count: bool = True,
-    # min_count: bool = True,
-    # nan_count: bool = True,
-    # neg_count: bool = True,
-    # pos_count: bool = True,
-    # unique_count: bool = True,
-    # zero_count: bool = True,
-    # # frequencies of special values
-    # max_rate: bool = True,
-    # min_rate: bool = True,
-    # mode_rate: bool = True,
-    # nan_rate: bool = True,
-    # neg_rate: bool = True,
-    # pos_rate: bool = True,
-    # zero_rate: bool = True,
-    # unique_rate: bool = True,
-    # stats
     quantiles: tuple[float, ...] = (0, 0.01, 0.5, 0.99, 1),
 ) -> DataFrame:
     r"""Describe a DataFrame on a per column basis."""

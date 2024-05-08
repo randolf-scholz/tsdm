@@ -131,10 +131,6 @@ class KiwiBenchmark(TimeSeriesTask):
         *,
         observation_horizon: str = "2h",
         forecasting_horizon: str = "1h",
-        # stride: str = "15min",
-        # observables: list[str] | None = None,
-        # covariates: list[str] | None = None,
-        # targets: list[str] | None = None,
         fold_kwargs: dict[str, Any] | None = None,
         sampler_kwargs: dict[str, Any] | None = None,
         generator_kwargs: dict[str, Any] | None = None,
@@ -174,20 +170,6 @@ class KiwiBenchmark(TimeSeriesTask):
         dataset.timeseries = dataset.timeseries.astype("float32")
 
         super().__init__(dataset=dataset)
-
-        # NOTE: We disable this for now, because this is not the right place to do it.
-        # # forward fill covariates
-        # ts.loc[:, self.covariates] = (
-        #     ts.loc[:, self.covariates]
-        #     .groupby(["run_id", "experiment_id"])
-        #     .ffill()
-        #     .fillna(0)  # covariates before first entry
-        # )
-
-    # @staticmethod
-    # def default_test_metric(*, targets, predictions):
-    #     r"""TODO: implement this."""
-    #     return TimeSeriesMSE()
 
     def make_folds(self, /, **kwargs: Any) -> DataFrame:
         r"""Group by RunID and color which indicates replicates."""
@@ -274,8 +256,6 @@ class KiwiBenchmark(TimeSeriesTask):
                 for col in self.dataset.timeseries.columns
             },
             index_encoders={
-                # "run_id": IdentityEncoder(),
-                # "experiment_id": IdentityEncoder(),
                 "measurement_time": MinMaxScaler() @ OldDateTimeEncoder(),
             },
         )

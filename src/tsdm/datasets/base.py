@@ -60,9 +60,6 @@ from tsdm.utils.pprint import repr_array, repr_mapping
 class Dataset(Protocol[T_co]):
     r"""Protocol for Dataset."""
 
-    # TODO: make a bug report. Mypy does not honor the type hint for INFO_URL
-    # INFO_URL: ClassVar[Optional[str]]
-    # r"""HTTP address containing additional information about the dataset."""
     SOURCE_URL: ClassVar[str] = NotImplemented
     r"""Web address from where the dataset can be downloaded."""
     INFO_URL: ClassVar[str] = NotImplemented
@@ -109,9 +106,6 @@ class Dataset(Protocol[T_co]):
             str(fname): (self.RAWDATA_DIR / fname).absolute()
             for fname in self.rawdata_files
         }
-
-    # rawdata_paths: Mapping[str, Path] | cached_property[Mapping[str, Path]]  # type: ignore[no-redef]
-    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @abstractmethod
     def download(self) -> None:

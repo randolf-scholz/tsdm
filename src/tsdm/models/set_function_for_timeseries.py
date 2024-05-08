@@ -216,7 +216,6 @@ class GroupedSetFuncTS(nn.Module):
         )
 
         self.value_encoder = ReZeroMLP(input_size, dim_vals, latent_size=dim_vals)
-        # self.value_encoder = MLP(input_size, dim_vals, hidden_size=dim_vals)
 
         self.attention = ScaledDotProductAttention(
             dim_k=dim_keys + input_size,
@@ -224,7 +223,6 @@ class GroupedSetFuncTS(nn.Module):
             output_size=latent_size,
         )
         self.head = ReZeroMLP(latent_size, output_size)
-        # self.head = MLP(latent_size, output_size)
 
         self.register_buffer("ZERO", torch.tensor(0.0))
 
@@ -288,7 +286,7 @@ class GroupedSetFuncTS(nn.Module):
     @jit.export
     def forward_padded(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
         r""".. signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
-        # X, Y = list(zip(*batch))
+        # Note: `X, Y = list(zip(*batch))` not supported by JIT
         X = []
         Y = []
         for x, y in batch:

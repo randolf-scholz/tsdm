@@ -29,7 +29,7 @@ from typing_extensions import (
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.protocols import SupportsKeysAndGetItem
-from tsdm.types.variables import K2, K, R, T, V
+from tsdm.types.variables import K2, K, R_co, T, V
 from tsdm.utils.funcutils import (
     get_function_args,
     get_return_typehint,
@@ -40,17 +40,17 @@ from tsdm.utils.pprint import pprint_repr
 
 @pprint_repr
 @dataclass(slots=True, init=False)  # use slots since many instances might be created.
-class LazyValue(Generic[R]):
+class LazyValue(Generic[R_co]):
     r"""A placeholder for uninitialized values."""
 
-    func: Callable[..., R]
+    func: Callable[..., R_co]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
     type_hint: str
 
     def __init__(
         self,
-        func: Callable[..., R],
+        func: Callable[..., R_co],
         /,
         *,
         args: Iterable[Any] = (),
@@ -64,7 +64,7 @@ class LazyValue(Generic[R]):
             get_return_typehint(self.func) if type_hint is None else type_hint
         )
 
-    def __call__(self) -> R:
+    def __call__(self) -> R_co:
         r"""Execute the function and return the result."""
         return self.func(*self.args, **self.kwargs)
 
@@ -109,21 +109,7 @@ class LazyDict(dict[K, V]):
 
     __slots__ = ()
 
-    # def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-    #     r"""Create a new instance of the class."""
-    #     # inherit Mixin Methods from MutableMapping
-    #     # This is crucial because dict.get does not call __getitem__
-    #     # Reference: https://stackoverflow.com/a/2390997
-    #     # cls.get = MutableMapping.get  # type: ignore[assignment, method-assign]
-    #     # cls.clear = MutableMapping.clear  # type: ignore[method-assign]
-    #     # cls.pop = MutableMapping.pop  # type: ignore[method-assign]
-    #     # cls.popitem = MutableMapping.popitem  # type: ignore[method-assign]
-    #     # cls.setdefault = MutableMapping.setdefault  # type: ignore[method-assign]
-    #     cls.update = MutableMapping.update  # type: ignore[method-assign]
-    #     return super().__new__(cls, *args, **kwargs)  # type: ignore[type-var]
-
-    # inherit update from MutableMapping
-    # update = MutableMapping.update
+    # fmt: off
     @overload
     def __new__(cls, /) -> "LazyDict": ...
     @overload
@@ -131,17 +117,12 @@ class LazyDict(dict[K, V]):
     @overload
     def __new__(cls, mapping: Mapping[K, LazySpec[V]], /) -> "LazyDict[K, V]": ...
     @overload
-    def __new__(
-        cls, mapping: Mapping[K, LazySpec[V]], /, **kwargs: LazySpec[V]
-    ) -> "LazyDict[K | str, V]": ...
+    def __new__(cls, mapping: Mapping[K, LazySpec[V]], /, **kwargs: LazySpec[V]) -> "LazyDict[K | str, V]": ...
     @overload
-    def __new__(
-        cls, iterable: Iterable[tuple[K, LazySpec[V]]], /
-    ) -> "LazyDict[K, V]": ...
+    def __new__(cls, iterable: Iterable[tuple[K, LazySpec[V]]], /) -> "LazyDict[K, V]": ...
     @overload
-    def __new__(
-        cls, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]
-    ) -> "LazyDict[K | str, V]": ...
+    def __new__(cls, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]) -> "LazyDict[K | str, V]": ...
+    # fmt: on
     def __new__(  # type: ignore[misc]
         cls,
         map_or_iterable: Mapping[K, LazySpec[V]]
@@ -152,16 +133,6 @@ class LazyDict(dict[K, V]):
         r"""Create a new instance of the class."""
         return super().__new__(cls)
 
-    # @overload
-    # def __init__(self, /, **kwargs: LazySpec[V]) -> None: ...
-    # @overload
-    # def __init__(
-    #     self, mapping: SupportsKeysAndGetItem[K, LazySpec[V]], /, **kwargs: LazySpec[V]
-    # ) -> None: ...
-    # @overload
-    # def __init__(
-    #     self, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]
-    # ) -> None: ...
     def __init__(
         self,
         map_or_iterable: SupportsKeysAndGetItem[K, LazySpec[V]]

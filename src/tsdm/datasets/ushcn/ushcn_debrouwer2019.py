@@ -28,7 +28,6 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
     INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
-    # rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_hashes = {
         "small_chunked_sporadic.csv": "sha256:671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf",
@@ -52,8 +51,6 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
     dataset_hash = (
         "sha256:bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86"
     )
-
-    # dataset_files = "SmallChunkedSporadic.feather"
 
     def clean_table(self) -> DataFrame:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""

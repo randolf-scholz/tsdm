@@ -138,8 +138,6 @@ def regularity_coefficient(
     if ignore_duplicates:
         zero = np.array(0, dtype=Δt.dtype)
         Δt = Δt[Δt > zero]
-    # Δt_min = np.min(Δt)
-    # return Δt_min / gcd
     coef: float = ((np.max(s) - np.min(s)) / gcd) / len(Δt)
     return coef
 

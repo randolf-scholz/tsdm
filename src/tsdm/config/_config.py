@@ -120,8 +120,6 @@ class Config(metaclass=ConfigMeta):
 
         # further initialization
         self.LOGDIR.mkdir(parents=True, exist_ok=True)
-        # self.LOGGER.info("Available Models: %s", set(self.MODELS))
-        # self.LOGGER.info("Available Datasets: %s", set(self.DATASETS))
         self.LOGGER.debug("Initializing folder structure")
         generate_folders(self.CONFIG_FILE["folders"], parent=self.BASEDIR)
         self.LOGGER.debug("Created folder structure in %s", self.BASEDIR)
@@ -136,20 +134,6 @@ class Config(metaclass=ConfigMeta):
         assert isinstance(value, bool)
         self._autojit = bool(value)
         os.environ["TSDM_AUTOJIT"] = str(value)
-
-    # @cached_property
-    # def MODELS(self) -> dict:
-    #     r"""Dictionary containing sources of the available models."""
-    #     path = resources.files(config_files) / "models.yaml"
-    #     with path.open("r", encoding="utf8") as file:
-    #         return yaml.safe_load(file)
-    #
-    # @cached_property
-    # def DATASETS(self) -> dict:
-    #     r"""Dictionary containing sources of the available datasets."""
-    #     path = resources.files(config_files) / "datasets.yaml"
-    #     with path.open("r", encoding="utf8") as file:
-    #         return yaml.safe_load(file)
 
 
 class Project:

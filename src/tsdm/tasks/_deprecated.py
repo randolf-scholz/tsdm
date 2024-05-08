@@ -78,7 +78,6 @@ class BaseTask(Generic[K]):
         r"""Return a string representation of the object."""
         string = (
             f"{self.__class__.__name__}("
-            # f"dataset={self.dataset.name}, "
             f"test_metric={type(self.test_metric).__name__})"
         )
         return string
@@ -200,7 +199,7 @@ class OldBaseTask(Generic[K]):
         dataset (Dataset): The attached dataset
     """
 
-    # __slots__ = ()  # https://stackoverflow.com/a/62628857
+    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""

@@ -237,23 +237,11 @@ class ForecastingTask(Protocol[Key, Sample_co]):
         r"""The test metric used to evalutate models."""
         ...
 
-    # def eval(self, model: Callable, split: SPLIT) -> Iterator[Tensor]:
-    #     r"""Yield the element-wise errors."""
-    #     sampler = self.samplers[split]
-    #     generator = self.generators[split]
-    #     metric = self.test_metric
-    #
-    #     for key in sampler:
-    #         sample = generator[key]
-    #         predictions = model(sample.inputs)
-    #         yield metric(sample.targets, predictions)
-
 
 class TTT(ForecastingTask[Key, Sample_co]):
     r"""WIP: TimeSeriesTask."""
 
-    # ABCs should have slots https://stackoverflow.com/a/62628857
-    # __slots__ = ()
+    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
@@ -537,8 +525,7 @@ class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
             - `__len__(self) -> int`.
     """
 
-    # ABCs should have slots https://stackoverflow.com/a/62628857
-    # __slots__ = ()
+    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
