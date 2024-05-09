@@ -5,6 +5,7 @@ from datetime import datetime as python_datetime, timedelta as python_timedelta
 import numpy
 import numpy as np
 import pandas
+import pyarrow
 import pytest
 from typing_extensions import get_protocol_members
 
@@ -20,6 +21,7 @@ DT_NUMPY_FLOAT = numpy.float64(10.0)
 DT_NUMPY_INT = numpy.int64(10)
 DT_PANDAS = timestamp(ISO_DATE)
 DT_PYTHON = python_datetime.fromisoformat(ISO_DATE)
+DT_ARROW = pyarrow.scalar(DT_PYTHON, type=pyarrow.timestamp("ms"))
 DATETIMES: dict[str, DateTime] = {
     "float"       : DT_FLOAT,
     "int"         : DT_INT,  # pyright: ignore[reportAssignmentType]
@@ -28,7 +30,7 @@ DATETIMES: dict[str, DateTime] = {
     "numpy_int"   : DT_NUMPY_INT,
     "pandas"      : DT_PANDAS,
     "python"      : DT_PYTHON,
-    # "arrow": pyarrow.scalar(DT, type=pyarrow.timestamp("ms")),
+    # NOT SUPPORTED: "arrow"       : DT_ARROW,
 }  # fmt: skip
 
 TD_FLOAT = 10.0
@@ -38,6 +40,7 @@ TD_NUMPY_FLOAT = numpy.float64(10.0)
 TD_NUMPY_INT = numpy.int64(10)
 TD_PANDAS = timedelta(days=1)
 TD_PYTHON = python_timedelta(days=1)
+TD_ARROW = pyarrow.scalar(10, type=pyarrow.duration("ms"))
 TIMEDELTAS: dict[str, TimeDelta] = {
     "float"       : TD_FLOAT,
     "int"         : TD_INT,  # pyright: ignore[reportAssignmentType]
@@ -46,7 +49,7 @@ TIMEDELTAS: dict[str, TimeDelta] = {
     "numpy_int"   : TD_NUMPY_INT,
     "pandas"      : TD_PANDAS,
     "python"      : TD_PYTHON,
-    # "arrow": pyarrow.scalar(TD, type=pyarrow_td_type),
+    # NOT SUPPORTED: "arrow"       : TD_ARROW,
 }  # fmt: skip
 
 
@@ -73,7 +76,9 @@ def test_timedelta_protocol_itself() -> None:
 
 
 @pytest.mark.parametrize("name", DATETIMES)
-def test_datetime_protocol(name: str) -> None:
+def test_datetime_protocol(
+    name: str,
+) -> None:
     r"""Test the datetime protocol."""
     dt_value = DATETIMES[name]
     assert isinstance(dt_value, DateTime)

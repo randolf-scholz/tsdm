@@ -13,7 +13,6 @@ import warnings
 
 import pandas as pd
 from pandas import DataFrame
-from pyarrow import csv
 from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers

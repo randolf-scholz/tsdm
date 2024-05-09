@@ -48,93 +48,80 @@ PL_SERIES = polars.Series(_SERIES_DATA)
 PY_ARRAY = memoryview(python_array("i", [1, 2, 3]))
 TORCH_TENSOR = torch.tensor(_ARRAY_DATA)
 
+TEST_OBJECTS = {
+    "python_array"     : PY_ARRAY,
+    "numpy_ndarray"    : NP_ARRAY,
+    "pandas_index"     : PD_INDEX,
+    "pandas_series"    : PD_SERIES,
+    "pandas_dataframe" : PD_DATAFRAME,
+    "polars_series"    : PL_SERIES,
+    "polars_dataframe" : PL_DATAFRAME,
+    "pyarrow_array"    : PA_ARRAY,
+    "pyarrow_table"    : PA_TABLE,
+    "torch_tensor"     : TORCH_TENSOR,
+}  # fmt: skip
+
+
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
-    "numpy_ndarray": NP_ARRAY,
-    "pandas_dataframe": PD_DATAFRAME,
-    "pandas_index": PD_INDEX,
-    "pandas_series": PD_SERIES,
-    "polars_dataframe": PL_DATAFRAME,
-    "polars_series": PL_SERIES,
-    "pyarrow_array": PA_ARRAY,
-    "pyarrow_table": PA_TABLE,
-    # "python_array": PY_ARRAY,
-    "torch_tensor": TORCH_TENSOR,
-}
+    "numpy_ndarray"    : NP_ARRAY,
+    "pandas_dataframe" : PD_DATAFRAME,
+    "pandas_index"     : PD_INDEX,
+    "pandas_series"    : PD_SERIES,
+    "polars_dataframe" : PL_DATAFRAME,
+    "polars_series"    : PL_SERIES,
+    "pyarrow_array"    : PA_ARRAY,
+    "pyarrow_table"    : PA_TABLE,
+    "torch_tensor"     : TORCH_TENSOR,
+}  # fmt: skip
 
 SERIES: dict[str, SeriesKind[str]] = {
-    # "numpy_ndarray": NP_ARRAY,
-    # "pandas_dataframe": PD_DATAFRAME,
-    "pandas_index": PD_INDEX,
-    "pandas_series": PD_SERIES,
-    # "polars_dataframe": PL_DATAFRAME,
-    "polars_series": PL_SERIES,
-    "pyarrow_array": PA_ARRAY,
-    # "pyarrow_table": PA_TABLE,
-    # "python_array": PY_ARRAY,
-    # "torch_tensor": TORCH_TENSOR,
-}
+    "pandas_index"  : PD_INDEX,
+    "pandas_series" : PD_SERIES,
+    "polars_series" : PL_SERIES,
+    "pyarrow_array" : PA_ARRAY,
+}  # fmt: skip
 
 TABLES: dict[str, TableKind] = {
-    # "numpy_ndarray": NP_ARRAY,    # missing __dataframe__
-    "pandas_dataframe": PD_DATAFRAME,
-    # "pandas_index": PD_INDEX,    # missing __dataframe__
-    # "pandas_series": PD_SERIES,    # missing __dataframe__
-    "polars_dataframe": PL_DATAFRAME,
-    # "polars_series": PL_SERIES,    # missing __dataframe__
-    # "pyarrow_array": PA_ARRAY,    # missing __dataframe__
-    "pyarrow_table": PA_TABLE,
-    # "python_array": PY_ARRAY,  # missing __dataframe__
-    # "torch_tensor": TORCH_TENSOR,    # missing __dataframe__
-}
+    "pandas_dataframe" : PD_DATAFRAME,
+    "polars_dataframe" : PL_DATAFRAME,
+    "pyarrow_table"    : PA_TABLE,
+}  # fmt: skip
 
 ARRAYS: dict[str, ArrayKind] = {
-    "numpy_ndarray": NP_ARRAY,
-    "pandas_dataframe": PD_DATAFRAME,
-    "pandas_index": PD_INDEX,
-    "pandas_series": PD_SERIES,
-    "polars_dataframe": PL_DATAFRAME,
-    "polars_series": PL_SERIES,
-    # "pyarrow_array": PA_ARRAY,  # missing shape
-    "pyarrow_table": PA_TABLE,
-    # "python_array": PY_ARRAY,  # missing __array__
-    "torch_tensor": TORCH_TENSOR,
-}
+    "numpy_ndarray"    : NP_ARRAY,
+    "pandas_index"     : PD_INDEX,
+    "pandas_series"    : PD_SERIES,
+    "pandas_dataframe" : PD_DATAFRAME,
+    "polars_series"    : PL_SERIES,
+    "polars_dataframe" : PL_DATAFRAME,
+    "pyarrow_table"    : PA_TABLE,
+    "torch_tensor"     : TORCH_TENSOR,
+}  # fmt: skip
 
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
-    "numpy_ndarray": NP_ARRAY,
-    "pandas_dataframe": PD_DATAFRAME,
-    "pandas_index": PD_INDEX,
-    "pandas_series": PD_SERIES,
-    # "polars_dataframe": PL_DATAFRAME,  # missing r-methods
-    # "polars_series": PL_SERIES,  # missing ndim
-    # "pyarrow_array": PA_ARRAY,
-    # "pyarrow_table": PA_TABLE,
-    # "python_array": PY_ARRAY,
-    "torch_tensor": TORCH_TENSOR,
-}
+    "numpy_ndarray"    : NP_ARRAY,
+    "pandas_dataframe" : PD_DATAFRAME,
+    "pandas_index"     : PD_INDEX,
+    "pandas_series"    : PD_SERIES,
+    "torch_tensor"     : TORCH_TENSOR,
+}  # fmt: skip
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
-    "numpy_ndarray": NP_ARRAY,
-    "pandas_dataframe": PD_DATAFRAME,
-    # "pandas_index": PD_INDEX,  # missing i-methods
-    "pandas_series": PD_SERIES,
-    # "polars_dataframe": PL_DATAFRAME,  # missing i-methods
-    # "polars_series": PL_SERIES,  # missing i-methods
-    # "pyarrow_array": PA_ARRAY,  # missing i-methods
-    # "pyarrow_table": PA_TABLE,  # missing i-methods
-    # "python_array": PY_ARRAY,
-    "torch_tensor": TORCH_TENSOR,
-}
+    "numpy_ndarray"    : NP_ARRAY,
+    "pandas_dataframe" : PD_DATAFRAME,
+    "pandas_series"    : PD_SERIES,
+    "torch_tensor"     : TORCH_TENSOR,
+}  # fmt: skip
 
 EXAMPLES: dict[type, dict[str, Any]] = {
-    SeriesKind: SERIES,
-    TableKind: TABLES,
-    ArrayKind: ARRAYS,
-    NumericalArray: NUMERICAL_ARRAYS,
-    MutableArray: MUTABLE_ARRAYS,
-}
+    SeriesKind     : SERIES,
+    TableKind      : TABLES,
+    ArrayKind      : ARRAYS,
+    NumericalArray : NUMERICAL_ARRAYS,
+    MutableArray   : MUTABLE_ARRAYS,
+}  # fmt: skip
 
-# frozensets of attributes
+# frozen sets of attributes
 TABLE_ATTRS = get_protocol_members(TableKind)
 SERIES_ATTRS = get_protocol_members(SeriesKind)
 ARRAY_ATTRS = get_protocol_members(ArrayKind)
@@ -246,6 +233,18 @@ def test_mutable_array(name: str) -> None:
     r"""Test the MutableArray protocol."""
     mutable_array = MUTABLE_ARRAYS[name]
     assert_protocol(mutable_array, MutableArray)
+
+
+@pytest.mark.parametrize("proto", EXAMPLES)
+@pytest.mark.parametrize("name", TEST_OBJECTS)
+def test_all_protocols(proto: type, name: str) -> None:
+    r"""Test the NumericalArray protocol."""
+    obj = TEST_OBJECTS[name]
+    if name in EXAMPLES[proto]:
+        assert_protocol(obj, proto)
+    else:
+        with pytest.raises(AssertionError):
+            assert_protocol(obj, proto)
 
 
 def test_shared_attrs() -> None:

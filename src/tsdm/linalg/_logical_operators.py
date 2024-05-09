@@ -20,19 +20,21 @@ def aggregate_and(
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
-    if dim is None:
-        dims = list(range(x.ndim))
-    elif isinstance(dim, int):
-        dims = [dim]
-    else:
-        dims = dim
+    dims: list[int] = (
+        list(range(x.ndim))
+        if dim is None
+        else [dim]
+        if isinstance(dim, int)
+        else list(dim)
+    )
 
     if keepdim:
         for d in dims:
             x = torch.all(x, dim=d, keepdim=keepdim)
-    else:
-        for i, d in enumerate(dims):
-            x = torch.all(x, dim=d - i, keepdim=keepdim)
+        return x
+
+    for i, d in enumerate(dims):
+        x = torch.all(x, dim=d - i, keepdim=keepdim)
     return x
 
 
@@ -43,19 +45,21 @@ def aggregate_or(
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``OR`` across dim."""
-    if dim is None:
-        dims = list(range(x.ndim))
-    elif isinstance(dim, int):
-        dims = [dim]
-    else:
-        dims = dim
+    dims: list[int] = (
+        list(range(x.ndim))
+        if dim is None
+        else [dim]
+        if isinstance(dim, int)
+        else list(dim)
+    )
 
     if keepdim:
         for d in dims:
             x = torch.any(x, dim=d, keepdim=keepdim)
-    else:
-        for i, d in enumerate(dims):
-            x = torch.any(x, dim=d - i, keepdim=keepdim)
+        return x
+
+    for i, d in enumerate(dims):
+        x = torch.any(x, dim=d - i, keepdim=keepdim)
     return x
 
 
