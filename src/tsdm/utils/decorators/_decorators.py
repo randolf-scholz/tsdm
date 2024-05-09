@@ -420,7 +420,7 @@ def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
         sign = ", ".join(args_repr + kwargs_repr)
         print(f"Calling {func.__name__}({sign})")
         value = func(*args, **kwargs)
-        # print(f"{func.__name__!r} returned {value!r}")
+        print(f"{func.__name__!r} returned {value!r}")
         return value
 
     return __wrapper

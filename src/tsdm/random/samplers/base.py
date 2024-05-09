@@ -48,7 +48,6 @@ from typing_extensions import (
 from tsdm.constants import RNG
 from tsdm.data.datasets import (
     Dataset,
-    IndexableDataset,
     MapDataset,
     PandasDataset,
     SequentialDataset,
@@ -188,7 +187,7 @@ class BaseSampler(Sampler[T_co]):
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass  # (init=False)
 class RandomSampler(BaseSampler[T_co]):
     r"""Sample randomly from the data source.
 
@@ -210,38 +209,57 @@ class RandomSampler(BaseSampler[T_co]):
     index: Index = field(init=False)
     size: int = field(init=False)
 
-    @overload
-    def __init__(
-        self,
-        data: PandasDataset[Any, T_co],
-        /,
-        *,
-        shuffle: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        data: MapDataset[Any, T_co],
-        /,
-        *,
-        shuffle: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        data: IndexableDataset[T_co],
-        /,
-        *,
-        shuffle: bool = ...,
-        rng: Generator = ...,
-    ) -> None: ...
-    def __init__(self, data, /, *, shuffle=False, rng=RNG):
-        r"""Initialize the sampler."""
-        super().__init__(shuffle=shuffle, rng=rng)
-        self.data = data
-        self.index = get_index(data)
+    # region __new__ overloads ---------------------------------------------------------
+    # @overload
+    # def __new__(
+    #     cls,
+    #     data: PandasDataset[Any, T_co],
+    #     /,
+    #     *,
+    #     shuffle: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> Self: ...
+    # @overload
+    # def __new__(
+    #     cls,
+    #     data: MapDataset[Any, T_co],
+    #     /,
+    #     *,
+    #     shuffle: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> Self: ...
+    # @overload
+    # def __new__(
+    #     cls,
+    #     data: IndexableDataset[T_co],
+    #     /,
+    #     *,
+    #     shuffle: bool = ...,
+    #     rng: Generator = ...,
+    # ) -> Self: ...
+    # def __new__(
+    #     cls,
+    #     data: Dataset[T_co],
+    #     /,
+    #     *,
+    #     shuffle: bool = False,
+    #     rng: Generator = RNG,
+    # ) -> None:
+    #     return super().__new__(cls, shuffle=shuffle, rng=rng)
+
+    # endregion __new__ overloads ------------------------------------------------------
+    #
+    # def __init__(
+    #     self, data: Dataset[T_co], /, *, shuffle: bool = False, rng: Generator = RNG
+    # ) -> None:
+    #     r"""Initialize the sampler."""
+    #     super().__init__(shuffle=shuffle, rng=rng)
+    #     self.data = data
+    #     self.index = get_index(data)
+    #     self.size = len(self.index)
+
+    def __post_init__(self):
+        self.index = get_index(self.data)
         self.size = len(self.index)
 
     def __iter__(self) -> Iterator[T_co]:
@@ -256,8 +274,6 @@ class RandomSampler(BaseSampler[T_co]):
         return self.size
 
 
-# class HierarchicalMappingSampler: ...  # subsamplers for MapDataset
-# class HierarchicalSequenceSampler: ...  # subsamplers for IndexableDataset
 @pprint_repr
 @dataclass
 class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
