@@ -811,7 +811,7 @@ class SequenceProtocol(Protocol[T_co]):
 
     Note:
         We intentionally exclude `Reversible`, since `tuple` fakes this:
-        `tuple` has not attribute `__reversed__`, rather it used the
+        `tuple` has no attribute `__reversed__`, rather, it uses the
         `Sequence.register(tuple)` to artificially become a nominal subtype.
 
     References:
