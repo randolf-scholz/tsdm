@@ -1,7 +1,7 @@
 r"""Test the logutils module."""
 
 import torch
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 import tsdm
 from tsdm.config import PROJECT

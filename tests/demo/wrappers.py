@@ -70,7 +70,7 @@ def iter_keys(obj, /):
         return WrappedClass
 
     try:  # instantiate object
-        new_obj = WrappedClass(obj)
+        new_obj = WrappedClass(obj)  # pyright: ignore[reportCallIssue]
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -106,7 +106,7 @@ def iter_values(obj, /):
         return WrappedClass
 
     try:  # instantiate object
-        new_obj = WrappedClass(obj)
+        new_obj = WrappedClass(obj)  # pyright: ignore[reportCallIssue]
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -140,7 +140,7 @@ def iter_items(obj, /):
         return WrappedClass
 
     try:  # instantiate object
-        new_obj = WrappedClass(obj)
+        new_obj = WrappedClass(obj)  # pyright: ignore[reportCallIssue]
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj

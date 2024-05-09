@@ -195,9 +195,9 @@ class ParametrizedDecorator(Protocol[T_contra, P, R_co]):
     ) -> Decorator[T_contra, Any, R_co]: ...
 
 
-def decorator(
-    deco: Decorator[T_contra, P, R_co],
-) -> ParametrizedDecorator[T_contra, P, R_co]:
+# FIXME: Untyped, because it leads to issues!
+#  Decorator[T_contra, P, R_co] -> ParametrizedDecorator[T_contra, P, R_co]
+def decorator(deco):
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:

@@ -41,7 +41,7 @@ class InSilicoTask(TimeSeriesTask):
 
     @staticmethod
     def default_test_metric(*, targets, predictions):
-        pass
+        raise NotImplementedError("No default test metric implemented.")
 
     def make_sampler(self, key: SplitID, /) -> Sampler:
         split: TimeSeriesCollection = self.splits[key]

@@ -559,7 +559,7 @@ class InverseEncoder(BaseEncoder[U, V]):
     def __repr__(self) -> str:
         return f"~{self.encoder}"
 
-    def fit(self, data: T, /) -> None:
+    def fit(self, data: U, /) -> None:
         raise NotImplementedError("Inverse encoders cannot be fitted.")
 
     @property
