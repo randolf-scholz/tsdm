@@ -219,7 +219,6 @@ class OldBaseTask(Generic[K]):
         r"""Return a string representation of the object."""
         string = (
             f"{self.__class__.__name__}("
-            # f"dataset={self.dataset.name}, "
             f"test_metric={type(self.test_metric).__name__})"
         )
         return string
@@ -270,7 +269,6 @@ class OldBaseTask(Generic[K]):
     def dataloaders(self) -> Mapping[Any, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
         kwargs: dict[Any, Any] = {
-            # "key": key,
             "batch_size": self.eval_batch_size,
             "shuffle": False,
             "drop_last": False,

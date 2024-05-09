@@ -92,7 +92,6 @@ def scaled_norm(
     x_max = x.abs().amax(dim=dim, keepdim=True)
     result = x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=True).pow(1 / p)
     return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
-    # return x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
 
 
 @jit.script
@@ -111,12 +110,13 @@ def norm(
     # TODO: deal with nan values
     x = x.abs()
 
-    if axis is None:
-        dim = list(range(x.ndim))
-    elif isinstance(axis, int):
-        dim = [axis]
-    else:
-        dim = axis
+    dim: list[int] = (
+        list(range(x.ndim))
+        if axis is None
+        else [axis]
+        if isinstance(axis, int)
+        else list(axis)
+    )
 
     # non-scaled
     if p == float("inf"):
@@ -130,7 +130,6 @@ def norm(
     x_max = x.amax(dim=dim, keepdim=True)
     result = x_max * (x / x_max).pow(p).sum(dim=dim, keepdim=True).pow(1 / p)
     return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
-    # return x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
 
 
 @jit.script

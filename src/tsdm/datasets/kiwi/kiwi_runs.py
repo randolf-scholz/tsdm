@@ -90,23 +90,6 @@ COLUMN_DTYPES = {
         "Volume"                          : "Float32",
         "Acid"                            : "Int32",
     },
-    # "setpoints" : {
-    #     "cultivation_age"             : "Int32",
-    #     "setpoint_id"                 : "Int32",
-    #     "unit"                        : "string[pyarrow]",
-    #     "Feed_glc_cum_setpoints"      : "Int32",
-    #     "Flow_Air"                    : "Int32",
-    #     "InducerConcentration"        : "Float32",
-    #     "Puls_AceticAcid"             : "Int32",
-    #     "Puls_Glucose"                : "Int32",
-    #     "Puls_Medium"                 : "Int32",
-    #     "StirringSpeed"               : "Int32",
-    #     "pH"                          : "Float32",
-    #     "Flow_Nitrogen"               : "Int32",
-    #     "Flow_O2"                     : "Int32",
-    #     "Feed_dextrine_cum_setpoints" : "Int32",
-    #     "Temperature"                 : "Int32",
-    # },
     "metadata_description" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
@@ -130,13 +113,6 @@ COLUMN_DTYPES = {
         "start_time" : "datetime64[ns]",
         "end_time"   : "datetime64[ns]",
     },
-    # "setpoints_features" : {
-    #     "unit"  : "string[pyarrow]",
-    #     "scale" : "string[pyarrow]",
-    #     "dtype": "string[pyarrow]",
-    #     "lower" : "Float32",
-    #     "upper" : "Float32",
-    # },
 }  # fmt: skip
 
 SELECTED_COLUMNS = {

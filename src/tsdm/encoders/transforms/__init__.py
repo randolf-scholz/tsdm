@@ -50,23 +50,23 @@ from tsdm.encoders.transforms._transforms import (
 )
 
 SKLEARN_TRANSFORMS: dict[str, Transform] = {
-    "binarize": binarize,
-    "label_binarize": label_binarize,
-    "maxabs_scale": maxabs_scale,
-    "minmax_scale": minmax_scale,
-    "normalize": normalize,
-    "power_transform": power_transform,
-    "quantile_transform": quantile_transform,
-    "robust_scale": robust_scale,
-    "scale": scale,
-}
+    "binarize"           : binarize,
+    "label_binarize"     : label_binarize,
+    "maxabs_scale"       : maxabs_scale,
+    "minmax_scale"       : minmax_scale,
+    "normalize"          : normalize,
+    "power_transform"    : power_transform,
+    "quantile_transform" : quantile_transform,
+    "robust_scale"       : robust_scale,
+    "scale"              : scale,
+}  # fmt: skip
+r"""Dictionary of all available scikit-learn encoders."""
 
 TRANSFORMS: dict[str, Transform] = {
-    "make_dense_triplets": make_dense_triplets,
-    "make_masked_format": make_masked_format,
-    "make_sparse_triplets": make_sparse_triplets,
-    "time2float": time2float,
-    "time2int": time2int,
-    # "triplet2dense": triplet2dense,
-}
+    "make_dense_triplets"  : make_dense_triplets,
+    "make_masked_format"   : make_masked_format,
+    "make_sparse_triplets" : make_sparse_triplets,
+    "time2float"           : time2float,
+    "time2int"             : time2int,
+}  # fmt: skip
 r"""Dictionary of all available functional encoders."""

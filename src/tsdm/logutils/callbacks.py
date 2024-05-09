@@ -97,9 +97,6 @@ class Callback(Protocol):
         r"""The required kwargs for the callback."""
         ...
 
-    # required_kwargs: set[str] | cached_property[set[str]]
-    # # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-
     @abstractmethod
     def callback(self, step: int, /, **state_dict: Any) -> None:
         r"""Log something at time index i."""

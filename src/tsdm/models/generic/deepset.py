@@ -44,9 +44,7 @@ class DeepSet(nn.ModuleDict):
         hidden_size: Optional[int] = None,
         encoder_layers: int = 2,
         decoder_layers: int = 2,
-        # aggregation: Literal["min", "max", "sum", "mean", "prod"] = "sum",
-    ):
-        # super().__init__()
+    ) -> None:
         latent_size = inputs_size if latent_size is None else latent_size
         hidden_size = inputs_size if hidden_size is None else hidden_size
         encoder = MLP(
@@ -99,9 +97,7 @@ class DeepSetReZero(nn.ModuleDict):
         hidden_size: Optional[int] = None,
         encoder_layers: int = 2,
         decoder_layers: int = 2,
-        # aggregation: Literal["min", "max", "sum", "mean", "prod"] = "sum",
-    ):
-        # super().__init__()
+    ) -> None:
         latent_size = inputs_size if latent_size is None else latent_size
         hidden_size = inputs_size if hidden_size is None else hidden_size
         encoder = ReZeroMLP(

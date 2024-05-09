@@ -187,9 +187,6 @@ class DefaultLogger(BaseLogger):
 
     def __post_init__(self) -> None:
         r"""Post-initialization steps."""
-        # self.log_dir = Path(self.log_dir).absolute()
-        # self.checkpoint_dir = Path(self.checkpoint_dir).absolute()
-        # self.results_dir = Path(self.results_dir).absolute()
         self.writer = (
             SummaryWriter(log_dir=self.log_dir)
             if self.writer is NotImplemented
@@ -252,12 +249,6 @@ class DefaultLogger(BaseLogger):
                 history=self.history,
                 predict_fn=self.predict_fn,
             )
-
-        # if self.model is not None:
-        #     yield ModelCallback(self.model, self.writer)
-
-        # if self.optimizer is not None:
-        #     yield OptimizerCallback(self.optimizer, self.writer)
 
         if self.lr_scheduler is not None:
             yield LRSchedulerCallback(self.lr_scheduler, writer=self.writer)

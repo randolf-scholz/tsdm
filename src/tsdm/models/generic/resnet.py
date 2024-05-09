@@ -34,15 +34,6 @@ class ResNetBlock(nn.Sequential):
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [
-            # {
-            #     "__name__": "BatchNorm1d",
-            #     "__module__": "torch.nn",
-            #     "num_features": int,
-            #     "eps": 1e-05,
-            #     "momentum": 0.1,
-            #     "affine": True,
-            #     "track_running_stats": True,
-            # },
             ReverseDense.HP,
         ],
     }
@@ -74,7 +65,6 @@ class ResNetBlock(nn.Sequential):
             self.add_module(key, module)
             subblocks[key] = module
 
-        # self.subblocks = nn.Sequential(subblocks)
         super().__init__(subblocks)
 
 

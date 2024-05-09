@@ -79,12 +79,6 @@ from tsdm.types.aliases import Axis, Nested, Size
 from tsdm.types.protocols import NTuple, NumericalArray
 from tsdm.utils.pprint import pprint_repr
 
-# NumericalArray: TypeAlias = Tensor | NDArray | DataFrame | Series
-# r"""Type Hint for tensor-like objects."""
-# T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
-# r"""TypeVar for tensor-like objects."""
-
-
 Arr = TypeVar("Arr", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
 Arr2 = TypeVar("Arr2", bound=NumericalArray)
@@ -561,17 +555,9 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
         self.backend: Backend[Arr] = Backend(selected_backend)
 
     def encode(self, data: Arr, /) -> Arr:
-        # broadcast = get_broadcast(data.shape, axis=self.axis)
-        # loc = self.loc[broadcast] if self.loc.ndim > 0 else self.loc
-        # scale = self.scale[broadcast] if self.scale.ndim > 0 else self.scale
-        # return data * scale + loc
         return data * self.scale + self.loc
 
     def decode(self, data: Arr, /) -> Arr:
-        # broadcast = get_broadcast(data.shape, axis=self.axis)
-        # loc = self.loc[broadcast] if self.loc.ndim > 0 else self.loc
-        # scale = self.scale[broadcast] if self.scale.ndim > 0 else self.scale
-        # return (data - loc) / scale
         return (data - self.loc) / self.scale
 
     # region parameters ----------------------------------------------------------------
@@ -654,20 +640,20 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
 
         if self.mean_learnable:
             self.mean = self.backend.nanmean(data, axis=axes)
-        # self.mean = self.backend.to_tensor(self.mean)
 
         if self.stdv_learnable:
             self.stdv = self.backend.nanstd(data, axis=axes)
-        # self.stdv = self.backend.to_tensor(self.stdv)
 
     def encode(self, data: Arr, /) -> Arr:
-        # broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
-        # return (data - self.mean[broadcast]) / self.stdv[broadcast]
+        # TODO: consider adding broadcasting
+        #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
+        #   2. return (data - self.mean[broadcast]) / self.stdv[broadcast]
         return (data - self.mean) / self.stdv
 
     def decode(self, data: Arr, /) -> Arr:
-        # broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
-        # return data * self.stdv[broadcast] + self.mean[broadcast]
+        # TODO: consider adding broadcasting
+        #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
+        #   2. return data * self.stdv[broadcast] + self.mean[broadcast]
         return data * self.stdv + self.mean
 
     # region parameters ----------------------------------------------------------------
@@ -833,21 +819,22 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
 
     def encode(self, x: Arr, /) -> Arr:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
-        # broadcast = get_broadcast(x.shape, axis=self.axis, keep_axis=True)
+        # TODO: consider adding broadcasting
 
-        xmin = self.xmin  # [broadcast]
-        xmax = self.xmax  # [broadcast]
-        ymin = self.ymin  # [broadcast]
-        ymax = self.ymax  # [broadcast]
-        xbar = self.xbar  # [broadcast]
-        ybar = self.ybar  # [broadcast]
-        scale = self.scale  # [broadcast]
+        # unpacking for easier readability
+        xmin = self.xmin
+        xmax = self.xmax
+        ymin = self.ymin
+        ymax = self.ymax
+        xbar = self.xbar
+        ybar = self.ybar
+        scale = self.scale
 
         y = (x - xbar) * scale + ybar
 
         if self.safe_computation:
-            # NOTE: Ensure the conditions
-            # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
+            # NOTE: ensures the conditions
+            #   x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
             y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
             y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
             y = self.backend.where(
@@ -858,21 +845,22 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
 
     def decode(self, y: Arr, /) -> Arr:
         r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
-        # broadcast = get_broadcast(y.shape, axis=self.axis, keep_axis=True)
+        # TODO: consider adding broadcasting
 
-        xmin = self.xmin  # [broadcast]
-        xmax = self.xmax  # [broadcast]
-        ymin = self.ymin  # [broadcast]
-        ymax = self.ymax  # [broadcast]
-        xbar = self.xbar  # [broadcast]
-        ybar = self.ybar  # [broadcast]
-        scale = self.scale  # [broadcast]
+        # unpacking for easier readability
+        xmin = self.xmin
+        xmax = self.xmax
+        ymin = self.ymin
+        ymax = self.ymax
+        xbar = self.xbar
+        ybar = self.ybar
+        scale = self.scale
 
         x = (y - ybar) / scale + xbar
 
         if self.safe_computation:
-            # ensure the conditions
-            # y < yₘᵢₙ ⟹ x < xₘᵢₙ  ∧  y > yₘₐₓ ⟹ x > xₘₐₓ  ∧  y∈[yₘᵢₙ, yₘₐₓ] ⟹ x∈[xₘᵢₙ, xₘₐₓ]
+            # NOTE: ensures the conditions
+            #   y < yₘᵢₙ ⟹ x < xₘᵢₙ  ∧  y > yₘₐₓ ⟹ x > xₘₐₓ  ∧  y∈[yₘᵢₙ, yₘₐₓ] ⟹ x∈[xₘᵢₙ, xₘₐₓ]
             x = self.backend.where(y < ymin, self.backend.clip(x, None, xmin), x)
             x = self.backend.where(y > ymax, self.backend.clip(x, xmax, None), x)
             x = self.backend.where(
@@ -917,8 +905,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     def switch_backend(self, backend: str | Backend) -> None:
         r"""Switch the backend of the scaler."""
         self.backend: Backend[Arr] = Backend(backend)
-        # recast the parameters
-        # self.recast_parameters()
+        self.recast_parameters()
 
     def recast_parameters(self) -> None:
         r"""Recast the parameters to the current backend."""

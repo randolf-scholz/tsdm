@@ -488,8 +488,7 @@ def operator_norm(
     rowdim, coldim = dim
     assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
 
-    # c = (coldim / rowdim) ** (1 / p) if scaled else 1.0
-    # branchless:
+    # branchless version of c = (coldim / rowdim) ** (1 / p) if scaled else 1.0
     c = (coldim / rowdim) ** (float(scaled) / p)
 
     if p == 2:

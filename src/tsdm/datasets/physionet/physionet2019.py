@@ -504,10 +504,6 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             case "metadata":
                 self.LOGGER.info("Removing outliers from metadata.")
                 return remove_outliers(self.raw_metadata, self.metadata_description)
-                # md = remove_outliers(self.raw_metadata, self.metadata_description)
-                # self.LOGGER.info("Dropping completely missing rows.")
-                # md = md.dropna(how="all", axis="index")
-                # return md
             case "raw_timeseries" | "raw_metadata":
                 return self._clean_all_rawdatasets()
             case _:

@@ -32,13 +32,6 @@ def true_like(x: NumericalArray, /) -> NumericalArray[bool]:
 def is_singleton(x: SupportsShape, /) -> bool:
     r"""Determines whether a tensor like object has a single element."""
     return prod(x.shape) == 1
-    # numpy: size, len  / shape + prod
-    # torch: size + prod / numel / shape + prod
-    # table: shape + prod
-    # DataFrame: shape + prod
-    # Series: shape + prod
-    # pyarrow table: shape + prod
-    # pyarrow array: ????
 
 
 def is_scalar(x: object, /) -> bool:

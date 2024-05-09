@@ -57,7 +57,7 @@ class ConvBlock(nn.Sequential):
         ] = "replicate",
         num_subblocks: int = 3,
         activation: Literal["ReLU", "leaky_relu", "Tanh", "Sigmoid"] = "ReLU",
-    ):
+    ) -> None:
         super().__init__()
 
         self.conv_kwargs: dict[str, Any] = {
@@ -86,5 +86,4 @@ class ConvBlock(nn.Sequential):
             self.add_module(key, module)
             subblocks[key] = module
 
-        # self.subblocks = nn.Sequential(subblocks)
         super().__init__(subblocks)

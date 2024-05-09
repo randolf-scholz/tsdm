@@ -151,7 +151,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.metaindex = self.metadata.index.copy().unique()
             elif isinstance(self.timeseries.index, MultiIndex):
                 self.metaindex = self.timeseries.index.copy().droplevel(-1).unique()
-                # self.timeseries = self.timeseries.droplevel(0)
             else:
                 self.metaindex = self.timeseries.index.copy().unique()
 
@@ -211,10 +210,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 md_desc = self.metadata_description
 
         if isinstance(ts.index, MultiIndex):
-            # ~~index = ts.index.droplevel(-1).unique()~~
             return TimeSeriesCollection(
                 name=self.name,
-                # metaindex=index,  # NOTE: regenerate metaindex.
                 timeseries=ts,
                 metadata=md,
                 timeindex_description=tidx_desc,

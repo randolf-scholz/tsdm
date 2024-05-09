@@ -194,12 +194,10 @@ class BoxCoxEncoder(BaseEncoder):
         assert self.bounds[0] <= self.offset <= self.bounds[1]
 
     def encode(self, data: Series, /) -> Series:
-        # assert all(np.isnan(data) | (data >= 0))
         return np.log(data + self.offset)
 
     def decode(self, data: Series, /) -> Series:
         return np.maximum(np.exp(data) - self.offset, 0)
-        # assert all(np.isnan(decoded) | (decoded >= 0))
 
 
 @pprint_repr
@@ -373,11 +371,9 @@ class LogitBoxCoxEncoder(BaseEncoder):
         assert self.bounds[0] <= self.offset <= self.bounds[1]
 
     def encode(self, data: Series, /) -> Series:
-        # assert all(np.isnan(data) | ((data >= 0) & (data <= 1)))
         return np.log(data + self.offset) - np.log((1 - data) + self.offset)
 
     def decode(self, data: Series, /) -> Series:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
         return np.clip(r, 0, 1)
-        # assert all(np.isnan(decoded) | ((decoded >= 0) & (decoded <= 1)))

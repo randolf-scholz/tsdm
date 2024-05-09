@@ -37,15 +37,6 @@ class ResNetBlock(nn.Sequential):
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [
-            # {
-            #     "__name__": "BatchNorm1d",
-            #     "__module__": "torch.nn",
-            #     "num_features": int,
-            #     "eps": 1e-05,
-            #     "momentum": 0.1,
-            #     "affine": True,
-            #     "track_running_stats": True,
-            # },
             ReverseDense.HP,
         ],
     }
@@ -77,7 +68,6 @@ class ResNetBlock(nn.Sequential):
             self.add_module(key, module)
             subblocks[key] = module
 
-        # self.subblocks = nn.Sequential(subblocks)
         super().__init__(subblocks)
 
 
@@ -209,7 +199,6 @@ class ReZeroMLP(nn.Sequential):
             for _ in range(num_blocks)
         ]
 
-        # self.encoder = ReverseDense(input_size=input_size, output_size=latent_size)
         self.blocks = ReZero(*blocks)
         self.decoder = ReverseDense(
             input_size=self.latent_size, output_size=self.output_size

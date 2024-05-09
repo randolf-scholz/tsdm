@@ -388,7 +388,6 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
     `TimeDelta` objects. In this case, lists of the above objects are returned.
     """
 
-    # Mode: ClassVar[TypeAlias] = B | M | W | S
     MODES: ClassVar[tuple[B, S, M, W]] = ("bounds", "slices", "masks", "windows")
 
     data: NDArray[DT]  # type: ignore[type-var]
@@ -662,11 +661,6 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
 
         if self.shuffle:
             grid = grid[self.rng.permutation(len(grid))]
-
-        # make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
-        # for k in grid:  # NOTE: k is some range of integers.
-        #     yield make_fn(window + k * stride)
-        # return
 
         # create generator expression for the windows
         iter_horizons = (window + k * stride for k in grid)

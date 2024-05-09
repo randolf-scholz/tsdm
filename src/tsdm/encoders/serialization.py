@@ -9,42 +9,44 @@ Long Term Goals
     -> create a "deserialize" classmethod that loads the parameters from a file
 """
 
-# from pathlib import Path
-#
-#
-# def serialize(parameters: dict, *, path: Path) -> None:
-#     r"""Serialize parameters as zipfile.
-#
-#     The
-#
-#     - we collect all non-tensorial parameters in a file (json/yaml/toml),
-#       mapped as a dictionary.
-#     -
-#
-#     Args:
-#         parameters: Parameters to serialize.
-#             We allow nested structures of the following types:
-#             - containers (dict/list/tuple)
-#               - dict keys must be valid python identifiers
-#             - tensors: numpy.ndarray/torch.Tensor/pandas.DataFrame/pandas.Series
-#                 - tensors are serialized using functions provided by the respective
-#                   tensor libraries
-#             - leaf values: None/bool/int/float/str/etc...
-#               - everything that is not a container or tensor is considered a leaf
-#               - leaf values are serialized as json/yaml/toml
-#
-#         path: Path to zipfile.
-#     """
-#     ...
-#
-#
-# def deserialize(path: Path) -> dict:
-#     r"""Deserialize parameters from zipfile.
-#
-#     The file is traversed recursively, and the following rules are applied:
-#     - if the file is zip, apply deserialization recursively
-#     - if the file is json/yaml/toml, deserialize as dictionary
-#     - if the file is a tensor, deserialize using the respective tensor library
-#       - use the filename as key to the dictionary
-#     """
-#     ...
+__all__ = ["serialize", "deserialize"]
+
+from pathlib import Path
+
+
+def serialize(parameters: dict, *, path: Path) -> None:
+    r"""Serialize parameters as zipfile.
+
+    The
+
+    - we collect all non-tensorial parameters in a file (json/yaml/toml),
+      mapped as a dictionary.
+    -
+
+    Args:
+        parameters: Parameters to serialize.
+            We allow nested structures of the following types:
+            - containers (dict/list/tuple)
+              - dict keys must be valid python identifiers
+            - tensors: numpy.ndarray/torch.Tensor/pandas.DataFrame/pandas.Series
+                - tensors are serialized using functions provided by the respective
+                  tensor libraries
+            - leaf values: None/bool/int/float/str/etc...
+              - everything that is not a container or tensor is considered a leaf
+              - leaf values are serialized as json/yaml/toml
+
+        path: Path to zipfile.
+    """
+    raise NotImplementedError
+
+
+def deserialize(path: Path) -> dict:
+    r"""Deserialize parameters from zipfile.
+
+    The file is traversed recursively, and the following rules are applied:
+    - if the file is zip, apply deserialization recursively
+    - if the file is json/yaml/toml, deserialize as dictionary
+    - if the file is a tensor, deserialize using the respective tensor library
+      - use the filename as key to the dictionary
+    """
+    raise NotImplementedError

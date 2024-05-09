@@ -62,8 +62,6 @@ from tsdm.utils import LazyDict, initialize_from_config, paths_exists, repackage
 from tsdm.utils.pprint import repr_mapping
 from tsdm.utils.remote import import_from_url
 
-# TODO: loading components!
-
 
 class PreTrained(Protocol):
     r"""Protocol for General Pretrained Models."""
@@ -91,8 +89,6 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
 
         if not hasattr(self, "RAWDATA_DIR"):
             self.RAWDATA_DIR = CONFIG.MODELDIR / self.__name__
-            # if os.environ.get("GENERATING_DOCS", False):
-            #     cls.RAWDATA_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
 
 
 class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
@@ -418,27 +414,10 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         )
 
     def __load_torch_lr_scheduler(
-        self,
-        file: str | Path | IO[bytes],
-        /,  # FIXME: https://github.com/PyCQA/pycodestyle/issues/951
+        self, file: str | Path | IO[bytes], /
     ) -> TorchLRScheduler:
         r"""Load a torch learning rate scheduler."""
         return cast(
             TorchLRScheduler,
             self.__load_torch_component(file, component="lr_scheduler"),
         )
-
-    # def load(self, *, force: bool = False, validate: bool = True) -> torch.nn.Module:
-    #     r"""Load the selected DATASET_OBJECT."""
-    #     if not self.rawdata_path_exists():
-    #         self.download(force=force, validate=validate)
-    #     else:
-    #         self.LOGGER.debug("Dataset files already exist!")
-    #
-    #     if validate:
-    #         self.validate(self.rawdata_path, reference=self.RAWDATA_HASH)
-    #
-    #     self.LOGGER.debug("Starting to load dataset.")
-    #     ds = self._load()
-    #     self.LOGGER.debug("Finished loading dataset.")
-    #     return ds

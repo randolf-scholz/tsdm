@@ -201,7 +201,6 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
 
     def decode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
-        # index = data.index.to_frame()
 
         for group, encoder in self.encoders.items():
             data[group] = encoder.decode(data[group])
@@ -504,7 +503,6 @@ class FrameSplitter(BaseEncoder, Mapping):
         self.fixed_columns = set().union(*column_sets)
         assert pairwise_disjoint(column_sets)
 
-        # self.keep_index = keep_index
         self.dropna = dropna
         self.fillna = fillna
 
@@ -527,24 +525,8 @@ class FrameSplitter(BaseEncoder, Mapping):
     def fit(self, original: DataFrame, /) -> None:
         data = DataFrame(original).copy()
 
-        # if self.dropna and not data.index.is_monotonic_increasing:
-        #     raise ValueError(f"If {self.dropna=}, Index must be monotonic increasing!")
-
         self.original_dtypes = original.dtypes
         self.original_columns = original.columns
-
-        # self.variable_indices = {col: [] for col in self.original_columns}
-        # for group, columns in self.groups.items():
-        #     if columns is Ellipsis:
-        #         continue
-        #     for column in columns:
-        #         self.variable_indices[column].append(group)
-        # self.inverse_groups = {}
-        # for group, columns in self.groups.items():
-        #     if columns is Ellipsis:
-        #         continue
-        #     for column in columns:
-        #         self.inverse_groups[column] = group
 
         if self.has_ellipsis:
             self.ellipsis_columns = [
@@ -816,7 +798,6 @@ class TensorEncoder(BaseEncoder):
     ) -> None:
         self.names = names
         self.dtype = torch.float32 if dtype is None else dtype
-        # default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.device = torch.device("cpu") if device is None else device
 
         if names is not None:
@@ -961,9 +942,6 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
         self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
         self.inferred_dtypes = {}
-
-    # def __repr__(self) -> str:
-    #     return repr_mapping(self.groups, wrapped=self)
 
     def __len__(self) -> int:
         return len(self.groups)
