@@ -12,7 +12,7 @@ from tsdm.models.pretrained import LinODEnet
 __logger__ = logging.getLogger(__name__)
 
 
-@pytest.mark.xfail(reason="Download link may be expired.")
+@pytest.mark.xfail(reason="Download link expired.")
 def test_pretrained() -> None:
     r"""Test the serialization of models."""
     __logger__.info("Testing %s.", LinODEnet)
@@ -33,5 +33,5 @@ def test_pretrained() -> None:
     hyperparameters = pretrained.components["hparams"]
     assert isinstance(hyperparameters, dict)
 
-    # optimizer = pretrained.components["optimizer"]
-    # assert isinstance(optimizer, torch.optim.Optimizer)
+    optimizer = pretrained.components["optimizer"]
+    assert isinstance(optimizer, torch.optim.Optimizer)

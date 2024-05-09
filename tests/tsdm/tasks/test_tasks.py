@@ -98,7 +98,5 @@ def test_time_series_sample_generator() -> None:
         sparse_columns=True,
     )
 
-    # assert isinstance(subkey, tuple)
-
     sample = generator[inner_key]
     assert isinstance(sample, Sample)

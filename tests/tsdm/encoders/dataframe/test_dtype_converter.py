@@ -23,17 +23,7 @@ def frame():
     })
 
 
-# NOTE: This test is disabled because of lack of type-hinting support for hypothesis.
-# @given(
-#     data_frames(
-#         columns=[
-#             column(name="A", dtype=np.dtype("timedelta64[ns]")),
-#             column(name="B", dtype=np.int_),
-#             column(name="C", dtype=np.float_),
-#             column(name="D", dtype=np.float_),
-#         ]
-#     )
-# )
+# TODO: consider trying hypothesis
 def test_dtype_converter(frame):
     encoder = DTypeEncoder({
         "A": "duration[ns][pyarrow]",

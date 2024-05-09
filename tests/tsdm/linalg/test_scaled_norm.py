@@ -32,7 +32,6 @@ from tsdm.types.aliases import Dims
         [0, 2, 3],
         [1, 2, 3],
         [0, 1, 2, 3],
-        # ((1, 2, 3, 4), []),  # BAD RESULT
     ],
     ids=lambda x: f"axis={x}",
 )

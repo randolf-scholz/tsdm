@@ -4,7 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colormaps
 
+from tsdm.config import PROJECT
 from tsdm.constants import RNG
+
+RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
 def f(x, p):
@@ -56,7 +59,7 @@ def exp_scaled_norm():
     ax.set_ylabel("‖x‖ₚ")
     ax.legend()
     fig.suptitle("Scaled Lₚ norm vs unscaled Lₚ norm.")
-    fig.savefig("scaled_norm.png", dpi=500)
+    fig.savefig(RESULTS_DIR / "scaled_norm.png", dpi=500)
     fig.show()
 
 
@@ -91,7 +94,13 @@ def unit_circle_lp_scaled():
     cmap = colormaps["bwr"]
     colors = cmap(np.linspace(1, 0, len(p_values)))
 
-    fig, axes = plt.subplots(ncols=2, figsize=(16, 9), constrained_layout=True)
+    fig, axes = plt.subplots(
+        ncols=2,
+        figsize=(16, 9),
+        constrained_layout=True,
+        sharex=True,
+        sharey=True,
+    )
 
     for k, p in enumerate(p_values):
         axes[0].plot(*unit_circle_normal[k], lw=2, label=f"p={p:+g}", color=colors[k])
@@ -106,6 +115,11 @@ def unit_circle_lp_scaled():
         axes[1].set_ylim(-4.5, 4.5)
         axes[0].legend(loc="lower right", fontsize=14)
         axes[1].legend(loc="lower right", fontsize=14)
-    # fig.suptitle("Unit circle of the Lₚ norm vs the scaled Lₚ norm.", fontsize=20)
-    fig.savefig("unit_circle.png", dpi=300)
+    fig.suptitle("Unit circle of the Lₚ norm vs the scaled Lₚ norm.", fontsize=20)
+    fig.savefig(RESULTS_DIR / "unit_circle.png", dpi=300)
     fig.show()
+
+
+if __name__ == "__main__":
+    exp_scaled_norm()
+    unit_circle_lp_scaled()

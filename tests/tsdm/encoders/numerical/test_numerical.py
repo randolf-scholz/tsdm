@@ -106,8 +106,6 @@ def test_boundary_encoder2(
     assert encoded.shape == data.shape
     assert encoded.dtype == data.dtype
 
-    # assert lb == (float("-inf") if lower is None else lower)
-    # assert ub == (float("+inf") if upper is None else upper)
     lb, ub = encoder.lower_bound, encoder.upper_bound
     nan_data = np.isnan(data)
     nan_encoded = np.isnan(encoded)
@@ -261,18 +259,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     if tensor_type == pd.DataFrame:
         return
 
-    # LOGGER.info("Testing slicing.")
-    # encoder = encoder[2]  # select the third encoder
-    # Y = encoded
-    # # encoder.fit(X[:, 2])
-    # encoded = encoder.encode(X[:, 2])
-    # decoded = encoder.decode(encoded)
-    # assert np.allclose(Y[:, 2], encoded)
-    # assert np.allclose(X[:, 2], decoded)
-    # assert encoder.params[0].shape == ()
-
     LOGGER.info("Testing with many batch-dim.")
-    # weird input
     data = RNG.uniform(size=(1, 2, 3, 4, 5))
     X = tensor_type(data)
     encoder = encoder_type()
@@ -281,13 +268,6 @@ def test_linear_scaler(tensor_type: T) -> None:
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
     assert isinstance(encoder.params[0], float), f"{encoder.params}"
-
-    # encoder = encoder[:-1]  # select the first two components
-    # # encoder.fit(X)
-    # encoded = encoder.encode(X[:-1])
-    # decoded = encoder.decode(encoded)
-    # assert np.allclose(X, decoded)
-    # assert encoder.params[0].shape == (2, 3)
 
 
 @pytest.mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=str)
@@ -398,7 +378,6 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
         return
 
     LOGGER.info("Testing with many batch-dim.")
-    # weird input
     data = RNG.uniform(size=(2, 3, 4, 5))
     X = tensor_type(data)
     encoder = encoder_type(axis=(-2, -1))
@@ -407,13 +386,6 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
     assert encoder.params[0].shape == (4, 5), f"{encoder.params}"
-
-    # encoder = encoder[:-1]  # select the first two component
-    # # encoder.fit(X)
-    # encoded = encoder.encode(X[:-1])
-    # decoded = encoder.decode(encoded)
-    # assert np.allclose(X, decoded)
-    # assert encoder.params[0].shape == (2, 5)
 
     LOGGER.info("Testing finished!")
 
@@ -520,8 +492,7 @@ def test_standard_scaler(axis):
     assert encoder.params[0].shape == TRUE_SHAPE
     encoded = encoder.encode(X)
 
-    if axis is None:
-        # std = 0.0
+    if axis is None:  # std = 0.0
         return
 
     assert np.allclose(encoded.mean(), 0.0)

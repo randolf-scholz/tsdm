@@ -3,52 +3,47 @@ r"""Tests for the numerical backend."""
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pytest
 import torch
 
 from tsdm.backend.generic import is_singleton
+from tsdm.types.protocols import SupportsShape
+
+CASES: dict[str, tuple[SupportsShape, bool]] = {
+    "ndarray-()"       : (np.array(1)                        , True),
+    "ndarray-(0,)"     : (np.array([])                       , False),
+    "ndarray-(1, 0)"   : (np.array([[]])                     , False),
+    "ndarray-(1, 1)"   : (np.array([[1]])                    , True),
+    "ndarray-(1,)"     : (np.array([1])                      , True),
+    "ndarray-(2, 1)"   : (np.array([[1], [2]])               , False),
+    "ndarray-(2,)"     : (np.array([1, 2])                   , False),
+    "Series-(0,)"      : (pd.Series([])                      , False),
+    "Series-(1,)"      : (pd.Series([1])                     , True),
+    "Series-(2,)"      : (pd.Series([1, 2])                  , False),
+    "DataFrame-(0, 0)" : (pd.DataFrame([])                   , False),
+    "DataFrame-(1, 0)" : (pd.DataFrame([[]])                 , False),
+    "DataFrame-(1, 1)" : (pd.DataFrame([[1]])                , True),
+    "DataFrame-(1, 2)" : (pd.DataFrame({"x": [1], "y": [2]}) , False),
+    "DataFrame-(2, 1)" : (pd.DataFrame([[1], [2]])           , False),
+    "DataFrame-(2, 2)" : (pd.DataFrame([[1, 2], [3, 4]])     , False),
+    "Table-(0, 0)"     : (pa.table({})                       , False),
+    "Table-(0, 1)"     : (pa.table({"x": []})                , False),
+    "Table-(1, 1)"     : (pa.table({"x": [1]})               , True),
+    "Table-(1, 2)"     : (pa.table({"x": [1], "y": [2]})     , False),
+    "Table-(2, 1)"     : (pa.table({"x": [1, 2]})            , False),
+    "Tensor-()"        : (torch.tensor(1)                    , True),
+    "Tensor-(0,)"      : (torch.tensor([])                   , False),
+    "Tensor-(1, 0)"    : (torch.tensor([[]])                 , False),
+    "Tensor-(1, 1)"    : (torch.tensor([[1]])                , True),
+    "Tensor-(1,)"      : (torch.tensor([1])                  , True),
+    "Tensor-(2, 1)"    : (torch.tensor([[1], [2]])           , False),
+    "Tensor-(2,)"      : (torch.tensor([1, 2])               , False),
+}  # fmt: skip
 
 
-def test_is_singleton() -> None:
+@pytest.mark.parametrize("name", CASES)
+def test_is_singleton(name: str) -> None:
     r"""Test the is_singleton function."""
-    # numpy
-    assert is_singleton(np.array(1))
-    assert is_singleton(np.array([1]))
-    assert is_singleton(np.array([[1]]))
-    assert not is_singleton(np.array([]))
-    assert not is_singleton(np.array([1, 2]))
-    assert not is_singleton(np.array([[1], [2]]))
-
-    # pandas.Series
-    assert is_singleton(pd.Series(1))
-    assert is_singleton(pd.Series([1]))
-    assert is_singleton(pd.Series([[1]]))
-    assert not is_singleton(pd.Series([1, 2]))
-    assert not is_singleton(pd.Series([]))
-
-    # pandas.DataFrame
-    assert is_singleton(pd.DataFrame([1]))
-    assert is_singleton(pd.DataFrame([[1]]))
-    assert not is_singleton(pd.DataFrame([1, 2]))
-    assert not is_singleton(pd.DataFrame([]))
-    assert not is_singleton(pd.DataFrame([[1], [2]]))
-    assert not is_singleton(pd.DataFrame({"a": [1, 2], "b": [3, 4]}))
-
-    # pyarrow.Table
-    assert is_singleton(pa.table({"x": [1]}))
-    assert is_singleton(pa.table({"x": [[1]]}))
-    assert not is_singleton(pa.table({"x": [1, 2]}))
-    assert not is_singleton(pa.table({"x": [1], "y": [2]}))
-
-    # torch.Tensor
-    assert is_singleton(torch.tensor(1))
-    assert is_singleton(torch.tensor([1]))
-    assert is_singleton(torch.tensor([[1]]))
-    assert not is_singleton(torch.tensor([]))
-    assert not is_singleton(torch.tensor([1, 2]))
-    assert not is_singleton(torch.tensor([[1], [2]]))
-
-    # assert is_singleton(1)
-    # assert is_singleton(1.0)
-    # assert is_singleton([0])
-    # assert is_singleton((0,))
-    # assert is_singleton({0})
+    x, expected = CASES[name]
+    assert is_singleton(x) is expected
+    assert name == f"{x.__class__.__name__}-{tuple(x.shape)}"

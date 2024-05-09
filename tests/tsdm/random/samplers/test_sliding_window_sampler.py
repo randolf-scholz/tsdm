@@ -26,8 +26,7 @@ S: TypeAlias = Literal["slices"]  # slice
 M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
 W: TypeAlias = Literal["windows"]  # windows (list)
-# U: TypeAlias = S | B | M | W  # unknown (not statically known)
-U: TypeAlias = str  # unknown
+U: TypeAlias = str  # unknown (not statically known)
 ONE: TypeAlias = Literal["one"]
 MULTI: TypeAlias = Literal["multi"]
 
@@ -220,7 +219,7 @@ EXPECTED_RESULTS_DISCRETE_MASKS = {
         np.array([F, F, F, F, F, T, T, F, F, F]),  # (16, 18)
         np.array([F, F, F, F, F, F, T, T, F, F]),  # (17, 19)
         np.array([F, F, F, F, F, F, F, T, T, F]),  # (18, 20)
-        # np.array([F, F, F, F, F, F, F, F, T, T]),
+        # excluded: np.array([F, F, F, F, F, F, F, F, T, T]),
     ],
     (3, 1, True): [
         np.array([T, T, T, F, F, F, F, F, F, F]),  # (11, 14)
@@ -230,7 +229,7 @@ EXPECTED_RESULTS_DISCRETE_MASKS = {
         np.array([F, F, F, F, T, T, T, F, F, F]),  # (15, 18)
         np.array([F, F, F, F, F, T, T, T, F, F]),  # (16, 19)
         np.array([F, F, F, F, F, F, T, T, T, F]),  # (17, 20)
-        # np.array([F, F, F, F, F, F, F, T, T, T]),
+        # excluded: np.array([F, F, F, F, F, F, F, T, T, T]),
     ],
     (4, 1, True): [
         np.array([T, T, T, T, F, F, F, F, F, F]),  # (11, 15)
@@ -239,7 +238,7 @@ EXPECTED_RESULTS_DISCRETE_MASKS = {
         np.array([F, F, F, T, T, T, T, F, F, F]),  # (14, 18)
         np.array([F, F, F, F, T, T, T, T, F, F]),  # (15, 19)
         np.array([F, F, F, F, F, T, T, T, T, F]),  # (16, 20)
-        # np.array([F, F, F, F, F, F, T, T, T, T]),
+        # excluded: np.array([F, F, F, F, F, F, T, T, T, T]),
     ],
     # horizons, stride=2, drop_last=True
     (2, 2, True): [
@@ -247,7 +246,7 @@ EXPECTED_RESULTS_DISCRETE_MASKS = {
         np.array([F, F, T, T, F, F, F, F, F, F]),  # (13, 15)
         np.array([F, F, F, F, T, T, F, F, F, F]),  # (15, 17)
         np.array([F, F, F, F, F, F, T, T, F, F]),  # (17, 19)
-        # np.array([F, F, F, F, F, F, F, F, T, T]),
+        # excluded: np.array([F, F, F, F, F, F, F, F, T, T]),
     ],
     (3, 2, True): [
         np.array([T, T, T, F, F, F, F, F, F, F]),  # (11, 14)
@@ -259,7 +258,7 @@ EXPECTED_RESULTS_DISCRETE_MASKS = {
         np.array([T, T, T, T, F, F, F, F, F, F]),  # (11, 15)
         np.array([F, F, T, T, T, T, F, F, F, F]),  # (13, 17)
         np.array([F, F, F, F, T, T, T, T, F, F]),  # (15, 19)
-        # np.array([F, F, F, F, F, F, T, T, T, T]),
+        # excluded: np.array([F, F, F, F, F, F, T, T, T, T]),
     ],
     # horizons, stride=1, drop_last=False
     (2, 1, False): [
@@ -332,7 +331,7 @@ EXPECTED_RESULTS_DISCRETE_WINDOWS = {
         np.array([16, 17]),  # (16, 18)
         np.array([17, 18]),  # (17, 19)
         np.array([18, 19]),  # (18, 20)
-        # np.array([19, 20]),
+        # excluded: np.array([19, 20]),
     ],
     (3, 1, True): [
         np.array([11, 12, 13]),  # (11, 14)
@@ -342,7 +341,7 @@ EXPECTED_RESULTS_DISCRETE_WINDOWS = {
         np.array([15, 16, 17]),  # (15, 18)
         np.array([16, 17, 18]),  # (16, 19)
         np.array([17, 18, 19]),  # (17, 20)
-        # np.array([18, 19, 20]),
+        # excluded: np.array([18, 19, 20]),
     ],
     (4, 1, True): [
         np.array([11, 12, 13, 14]),  # (11, 15)
@@ -351,7 +350,7 @@ EXPECTED_RESULTS_DISCRETE_WINDOWS = {
         np.array([14, 15, 16, 17]),  # (14, 18)
         np.array([15, 16, 17, 18]),  # (15, 19)
         np.array([16, 17, 18, 19]),  # (16, 20)
-        # np.array([17, 18, 19, 20]),
+        # excluded: np.array([17, 18, 19, 20]),
     ],
     # horizons, stride=2, drop_last=True
     (2, 2, True): [
@@ -359,7 +358,7 @@ EXPECTED_RESULTS_DISCRETE_WINDOWS = {
         np.array([13, 14]),  # (13, 15)
         np.array([15, 16]),  # (15, 17)
         np.array([17, 18]),  # (17, 19)
-        # np.array([19, 20]),
+        # excluded: np.array([19, 20]),
     ],
     (3, 2, True): [
         np.array([11, 12, 13]),  # (11, 14)
@@ -371,7 +370,7 @@ EXPECTED_RESULTS_DISCRETE_WINDOWS = {
         np.array([11, 12, 13, 14]),  # (11, 15)
         np.array([13, 14, 15, 16]),  # (13, 17)
         np.array([15, 16, 17, 18]),  # (15, 19)
-        # np.array([17, 18, 19, 20]),
+        # excluded: np.array([17, 18, 19, 20]),
     ],
     # horizons, stride=1, drop_last=False
     (2, 1, False): [

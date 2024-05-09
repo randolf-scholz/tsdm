@@ -28,17 +28,6 @@ def test_kiwi_task(SplitID=(0, "train")):
     LOGGER.info("Testing.")
     task = KiwiBenchmark()
 
-    # reveal_type(task)
-    # reveal_type(task.folds)
-    # reveal_type(task.index)
-    # reveal_type(task.splits)
-    # reveal_type(task.samplers)
-    # reveal_type(task.generators)
-    # reveal_type(task.dataloaders)
-    # reveal_type(task.encoders)
-    # reveal_type(task.train_split)
-    # reveal_type(task.collate_fns)
-
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[SplitID], TimeSeriesCollection)
@@ -70,9 +59,7 @@ def test_kiwi_task(SplitID=(0, "train")):
 
     td_observation = timedelta(task.observation_horizon)
     td_forecasting = timedelta(task.forecasting_horizon)
-    mask_observation = time < (
-        time.min() + td_observation
-    )  # FIXME: broken test! this mask is incorrect!
+    mask_observation = time < (time.min() + td_observation)  # FIXME: mask incorrect!
     mask_forecasting = time >= (time.min() + td_observation)
     assert all(mask_observation ^ mask_forecasting), f"{key=}"
     assert all(~mask_forecasting | (time >= (time.max() - td_forecasting))), f"{key=}"

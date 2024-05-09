@@ -1,8 +1,6 @@
 r"""Test compatibility with sklearn encoders."""
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-
-# from tsdm.encoders.numerical import MinMaxScaler, StandardScaler
 from sklearn.utils.estimator_checks import parametrize_with_checks
 
 
@@ -31,14 +29,3 @@ class MyEstimator:
 @parametrize_with_checks([MinMaxScaler(), StandardScaler()])
 def test_sklearn_compatibility(estimator, check):
     check(estimator)
-
-
-# a = StandardScaler()
-# # a.__name__ = "StandardScaler"
-# b = MinMaxScaler()
-# # b.__name__ = "MinMaxScaler"
-# c = MyEstimator()
-#
-# estimators = [a, b, c]
-# for e in estimators:
-#     e.__name__ = type(e).__name__

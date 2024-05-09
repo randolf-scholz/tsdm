@@ -120,7 +120,6 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         case _:
             raise ValueError(f"Unknown mode {mode=}")
     return the_tuple
-    # return tmin, tmax, timedelta, offset  # type: ignore[return-value]
 
 
 def test_edge_case() -> None:

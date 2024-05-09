@@ -69,7 +69,6 @@ def test_left_inverse(name: str) -> None:
         pytest.xfail("KBinsDiscretizer is not left-invertible")
     cls = SKLEARN_ENCODERS[name]
     x = np.array(SAMPLE_DATA[name])
-    # x = np.random.randn(10, 1)
     encoder = cls()
     encoder.fit(x)
     z = encoder.transform(x)

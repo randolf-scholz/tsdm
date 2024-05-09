@@ -13,30 +13,30 @@ def test_iteritems() -> None:
     iter_obj = iter_items(mapping_obj)
     keys = list(iter_obj.keys())
 
-    # test __getitem__
+    # test `__getitem__()`
     for key in keys:
         assert iter_obj[key] == mapping_obj[key]
 
-    # test .get()
+    # test `get()`
     for key in keys:
         assert iter_obj.get(key) == mapping_obj[key]
 
-    # test .keys()
+    # test `keys()`
     for key in keys:
         assert isinstance(key, str)
 
-    # test .values()
+    # test `values()`
     for value in iter_obj.values():
         assert isinstance(value, int)
 
-    # test .items()
+    # test `items()`
     for item in iter_obj.items():
         assert isinstance(item, tuple)
         assert len(item) == 2
         assert isinstance(item[0], str)
         assert isinstance(item[1], int)
 
-    # test __iter__
+    # test `__iter__()`
     for element in iter_obj:
         assert isinstance(element, tuple)
         assert len(element) == 2
@@ -50,30 +50,30 @@ def test_iterkeys() -> None:
     iter_obj = iter_keys(mapping_obj)
     keys = list(iter_obj.keys())
 
-    # test __getitem__
+    # test `__getitem__()`
     for key in keys:
         assert iter_obj[key] == mapping_obj[key]
 
-    # test .get()
+    # test `get()`
     for key in keys:
         assert iter_obj.get(key) == mapping_obj[key]
 
-    # test .keys()
+    # test `keys()`
     for key in keys:
         assert isinstance(key, str)
 
-    # test .values()
+    # test `values()`
     for value in iter_obj.values():
         assert isinstance(value, int)
 
-    # test .items()
+    # test `items()`
     for item in iter_obj.items():
         assert isinstance(item, tuple)
         assert len(item) == 2
         assert isinstance(item[0], str)
         assert isinstance(item[1], int)
 
-    # test __iter__
+    # test `__iter__()`
     for element in iter_obj:
         assert isinstance(element, str)
 
@@ -84,29 +84,29 @@ def test_itervalues() -> None:
     iter_obj = iter_values(mapping_obj)
     keys = list(iter_obj.keys())
 
-    # test __getitem__
+    # test `__getitem__()`
     for key in keys:
         assert iter_obj[key] == mapping_obj[key]
 
-    # test .get()
+    # test `get()`
     for key in keys:
         assert iter_obj.get(key) == mapping_obj[key]
 
-    # test .keys()
+    # test `keys()`
     for key in keys:
         assert isinstance(key, str)
 
-    # test .values()
+    # test `values()`
     for value in iter_obj.values():
         assert isinstance(value, int)
 
-    # test .items()
+    # test `items()`
     for item in iter_obj.items():
         assert isinstance(item, tuple)
         assert len(item) == 2
         assert isinstance(item[0], str)
         assert isinstance(item[1], int)
 
-    # test __iter__
+    # test `__iter__()`
     for element in iter_obj:
         assert isinstance(element, int)
