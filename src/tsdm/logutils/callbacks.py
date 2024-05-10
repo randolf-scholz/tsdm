@@ -75,8 +75,8 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.types.protocols import MutableSequenceProtocol
+from tsdm.utils.decorators import pprint_repr, pprint_sequence
 from tsdm.utils.funcutils import get_mandatory_kwargs
-from tsdm.utils.pprint import pprint_repr, pprint_sequence
 
 
 @runtime_checkable

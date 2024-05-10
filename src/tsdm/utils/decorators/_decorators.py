@@ -1,65 +1,26 @@
 r"""Submodule containing general purpose decorators."""
 
 __all__ = [
-    # Classes
-    "Decorator",
-    "ClassDecorator",
     # Functions
     "decorator",
-    "debug",
-    # "sphinx_value",
-    "lazy_torch_jit",
-    "return_namedtuple",
-    "implements",
-    "timefun",
-    "trace",
-    "vectorize",
-    "wrap_func",
-    "wrap_method",
-    # Class Decorators
-    # Exceptions
+    # Classes
     "DecoratorError",
 ]
 
-import ast
-import gc
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from inspect import Parameter, getsource, signature
-from time import perf_counter_ns
-from types import GenericAlias
+from inspect import Parameter, signature
 
-from torch import jit, nn
-from typing_extensions import (
-    Any,
-    Concatenate,
-    NamedTuple,
-    Optional,
-    ParamSpec,
-    Protocol,
-    Self,
-    cast,
-    overload,
-)
+from typing_extensions import Any, Optional, Self, cast
 
-from tsdm.config import CONFIG
 from tsdm.types.aliases import BUILTIN_CONTAINERS, Nested
-from tsdm.types.protocols import NTuple
-from tsdm.types.variables import (
-    CollectionType,
-    R_co,
-    T,
-    T_contra,
-    class_var as C,
-    torch_module_var,
-)
+from tsdm.types.variables import Fun, P, R_co, T
 from tsdm.utils.funcutils import rpartial
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 
-P = ParamSpec("P")
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -79,22 +40,6 @@ PARAM_TYPES = (
     (KEYWORD_ONLY, False),
     (VAR_KEYWORD, True),
 )
-
-
-class Decorator(Protocol[T_contra, P, R_co]):
-    r"""Decorator Protocol."""
-
-    def __call__(self, obj: T_contra, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
-        r"""Decorate a function."""
-        ...
-
-
-class ClassDecorator(Protocol[C]):
-    r"""Class Decorator Protocol."""
-
-    def __call__(self, cls: C, /) -> C:
-        r"""Decorate a class."""
-        ...
 
 
 @dataclass
@@ -128,76 +73,9 @@ class DecoratorError(Exception):
         return super().__str__() + "\n" + "\n".join(default_message)
 
 
-def implements(*protocols: type) -> Callable[[C], C]:
-    r"""Check if class implements a set of protocols."""
-
-    def __wrapper(cls: C, /) -> C:
-        for protocol in protocols:
-            if not issubclass(cls, protocol):
-                raise TypeError(f"{cls} does not implement {protocol}")
-        return cls
-
-    return __wrapper
-
-
-def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
-    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
-
-    Makes it so that
-
-    .. code-block:: python
-
-        class MyModule: ...
-
-
-        model = jit.script(MyModule())
-
-    and
-
-    .. code-block:: python
-
-        @autojit
-        class MyModule: ...
-
-
-        model = MyModule()
-
-    are (roughly?) equivalent
-    """
-    assert isinstance(base_class, type)
-    assert issubclass(base_class, nn.Module)
-
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
-        r"""A simple Wrapper."""
-
-        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
-            # Note: If __new__() does not return an instance of cls,
-            # then the new instance's __init__() method will not be invoked.
-            instance: torch_module_var = base_class(*args, **kwargs)
-
-            if CONFIG.autojit:
-                scripted: torch_module_var = jit.script(instance)
-                return scripted
-            return instance
-
-    assert isinstance(WrappedClass, type)
-    assert issubclass(WrappedClass, base_class)
-    return WrappedClass
-
-
-class ParametrizedDecorator(Protocol[T_contra, P, R_co]):
-    @overload
-    def __call__(self, obj: T_contra, /, *args: P.args, **kwargs: P.kwargs) -> R_co: ...
-    @overload
-    def __call__(
-        self, obj: None = ..., /, *args: P.args, **kwargs: P.kwargs
-    ) -> Decorator[T_contra, Any, R_co]: ...
-
-
-# FIXME: Untyped, because it leads to issues!
-#  Decorator[T_contra, P, R_co] -> ParametrizedDecorator[T_contra, P, R_co]
-def decorator(deco):
+# NOTE: Type hinting is severely limited because HKTs are not supported.
+#   The lack of an explicit FunctionType is a problem.
+def decorator(deco: Fun, /) -> Fun:
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -310,7 +188,8 @@ def decorator(deco):
 
     I.e. we insert a single positional only argument with default, which is the function to be wrapped.
     """
-    __logger__.debug(">>>>> Creating decorator %s <<<<<", deco)
+    logger = __logger__.getChild(deco.__name__)
+    logger.debug("Creating decorator.")
 
     deco_sig = signature(deco)
     ErrorHandler = DecoratorError(deco)
@@ -357,31 +236,21 @@ def decorator(deco):
             error_msg,
         )
 
-    @overload
-    def __parametrized_decorator(
-        obj: T_contra, /, *args: P.args, **kwargs: P.kwargs
-    ) -> R_co: ...
-    @overload
-    def __parametrized_decorator(
-        obj: None = ..., /, *args: P.args, **kwargs: P.kwargs
-    ) -> Decorator[T_contra, Any, R_co]: ...
     @wraps(deco)
-    def __parametrized_decorator(
-        obj: Optional[T_contra] = None, /, *args: P.args, **kwargs: P.kwargs
-    ) -> R_co | Decorator[T_contra, Any, R_co]:
-        __logger__.debug(
-            "DECORATING \n\tfunc=%s: \n\targs=%s, \n\tkwargs=%s", deco, args, kwargs
-        )
-
+    def __parametrized_decorator(obj=None, /, *args, **kwargs):
         if obj is None:
-            __logger__.debug("%s: Decorator used in BRACKET mode.", deco)
-            ret: Decorator[T_contra, Any, R_co] = rpartial(deco, *args, **kwargs)
-            return ret
+            logger.debug(
+                "Decorator used in BRACKET mode.\n"
+                "Creating decorator with fixed arguments \n\targs=%s, \n\tkwargs=%s",
+                args,
+                kwargs,
+            )
+            return rpartial(deco, *args, **kwargs)
 
-        __logger__.debug("%s: Decorator in FUNCTIONAL/BARE mode.", deco)
+        logger.debug("Decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
-    return __parametrized_decorator  # pyright: ignore[reportReturnType]
+    return cast(Fun, __parametrized_decorator)
 
 
 def attribute(func: Callable[[T], R_co], /) -> R_co:
@@ -408,38 +277,6 @@ def attribute(func: Callable[[T], R_co], /) -> R_co:
             return self.payload
 
     return cast(R_co, __attribute(func))
-
-
-def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
-    r"""Print the function signature and return value."""
-
-    @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-        args_repr = [f"{type(a)}" for a in args]
-        kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
-        sign = ", ".join(args_repr + kwargs_repr)
-        print(f"Calling {func.__name__}({sign})")
-        value = func(*args, **kwargs)
-        print(f"{func.__name__!r} returned {value!r}")
-        return value
-
-    return __wrapper
-
-
-def lazy_torch_jit(func: Callable[P, R_co], /) -> Callable[P, R_co]:
-    r"""Create decorator to lazily compile a function with `torch.jit.script`."""
-
-    @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-        # script the original function if it hasn't been scripted yet
-        if __wrapper.__scripted is None:  # type: ignore[attr-defined]
-            __wrapper.__scripted = jit.script(__wrapper.__original_fn)  # type: ignore[attr-defined]
-        return __wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
-
-    __wrapper.__original_fn = func  # type: ignore[attr-defined]
-    __wrapper.__scripted = None  # type: ignore[attr-defined]
-    __wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
-    return __wrapper
 
 
 def recurse_on_builtin_container(
@@ -473,336 +310,6 @@ def recurse_on_builtin_container(
                 raise TypeError(f"Unsupported type: {type(x)}")
 
     return recurse
-
-
-@decorator
-def timefun(
-    func: Callable[P, R_co], /, *, append: bool = False, loglevel: int = logging.WARNING
-) -> Callable[P, R_co | tuple[R_co, float]]:
-    r"""Log the execution time of the function. Use as decorator.
-
-    By default, appends the execution time (in seconds) to the function call.
-
-    `outputs, time_elapse = timefun(f, append=True)(inputs)`
-
-    If the function call failed, `outputs=None` and `time_elapsed=float('nan')` are returned.
-
-    If `append=True`, then the decorated function will return a tuple of the form `(func(x), time_elapsed)`.
-    """
-    timefun_logger = logging.getLogger("timefun")
-
-    @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co | tuple[R_co, float]:
-        gc.collect()
-        gc.disable()
-        try:
-            start_time = perf_counter_ns()
-            result = func(*args, **kwargs)
-            end_time = perf_counter_ns()
-            elapsed = (end_time - start_time) / 10**9
-            timefun_logger.log(
-                loglevel, "%s executed in %.4f s", func.__qualname__, elapsed
-            )
-        except Exception as exc:
-            timefun_logger.exception("Execution of %s failed!", func.__qualname__)
-            raise RuntimeError("Function execution failed") from exc
-        finally:
-            gc.enable()
-
-        return (result, elapsed) if append else result
-
-    return __wrapper
-
-
-def trace(func: Callable[P, R_co], /) -> Callable[P, R_co]:
-    r"""Log entering and exiting of function."""
-    logger = logging.getLogger("trace")
-
-    @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-        logger.info(
-            "%s",
-            "\n\t".join((
-                f"{func.__qualname__}: ENTERING",
-                f"args={tuple(type(arg).__name__ for arg in args)}",
-                f"kwargs={str({k: type(v).__name__ for k, v in kwargs.items()})}",
-            )),
-        )
-        try:
-            logger.info("%s: EXECUTING", func.__qualname__)
-            result = func(*args, **kwargs)
-        except Exception as exc:
-            logger.exception("Execution of %s failed!", func.__qualname__)
-            raise RuntimeError(
-                f"Function execution failed with Exception {exc}"
-            ) from exc
-        logger.info(
-            "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
-        )
-        logger.info("%s", "\n\t".join((f"{func.__qualname__}: EXITING",)))
-        return result
-
-    return __wrapper
-
-
-def vectorize(
-    func: Callable[[T], R_co], /, *, kind: type[CollectionType]
-) -> Callable[[T | CollectionType], R_co | CollectionType]:
-    r"""Vectorize a function with a single, positional-only input.
-
-    The signature will change accordingly.
-
-    Examples:
-        >>> @vectorize(kind=list)
-        ... def f(x):
-        ...     return x + 1
-        >>> assert f(1) == 2
-        >>> assert f(1, 2) == [2, 3]
-    """
-    params = list(signature(func).parameters.values())
-
-    if not params:
-        raise ValueError(f"{func} has no parameters")
-    if params[0].kind not in {
-        Parameter.POSITIONAL_ONLY,
-        Parameter.POSITIONAL_OR_KEYWORD,
-    }:
-        raise ValueError(f"{func} must have a single positional parameter!")
-    for param in params[1:]:
-        if param.kind not in {Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD}:
-            raise ValueError(f"{func} must have a single positional parameter!")
-
-    @wraps(func)
-    def __wrapper(arg, *args):
-        if not args:
-            return func(arg)
-        return kind(func(x) for x in (arg, *args))  # type: ignore[call-arg]
-
-    return __wrapper
-
-
-@decorator
-def wrap_func(
-    func: Callable[P, R_co],
-    /,
-    *,
-    before: Optional[Callable[..., None]] = None,
-    after: Optional[Callable[..., None]] = None,
-    pass_args: bool = False,
-) -> Callable[P, R_co]:
-    r"""Wrap a function with pre- and post-hooks."""
-    logger = __logger__.getChild(func.__name__)
-
-    match before, after, pass_args:
-        case None, None, bool():
-            logger.debug("No hooks to add, returning as-is.")
-            return func
-
-        case Callable() as pre, None, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre(*args, **kwargs)
-                return func(*args, **kwargs)
-
-        case None, Callable() as post, True:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-                result = func(*args, **kwargs)
-                post(*args, **kwargs)
-                return result
-
-        case Callable() as pre, Callable() as post, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre(*args, **kwargs)
-                result = func(*args, **kwargs)
-                post(*args, **kwargs)
-                return result
-
-        case Callable() as pre, None, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre()
-                return func(*args, **kwargs)
-
-        case None, Callable() as post, False:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-                result = func(*args, **kwargs)
-                post()
-                return result
-
-        case Callable() as pre, Callable() as post, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre()
-                result = func(*args, **kwargs)
-                post()
-                return result
-
-        case _:
-            raise TypeError("Got unexpected arguments.")
-
-    return __wrapper  # type: ignore[unreachable]
-
-
-@decorator
-def wrap_method(
-    func: Callable[Concatenate[T, P], R_co],
-    /,
-    *,
-    before: Optional[Callable[Concatenate[T, ...], None]] = None,
-    after: Optional[Callable[Concatenate[T, ...], None]] = None,
-    pass_args: bool = False,
-) -> Callable[Concatenate[T, P], R_co]:
-    r"""Wrap a function with pre- and post-hooks."""
-    logger = __logger__.getChild(func.__name__)
-
-    match before, after, pass_args:
-        case None, None, bool():
-            logger.debug("No hooks to add, returning as-is.")
-            return func
-
-        case Callable() as pre, None, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
-
-            # Q: Why do we have to add pyright ignore in this one, but not the others?
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:  # pyright: ignore[reportRedeclaration]
-                pre(self, *args, **kwargs)
-                return func(self, *args, **kwargs)
-
-        case None, Callable() as post, True:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
-                result = func(self, *args, **kwargs)
-                post(self, *args, **kwargs)
-                return result
-
-        case Callable() as pre, Callable() as post, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre(self, *args, **kwargs)
-                result = func(self, *args, **kwargs)
-                post(self, *args, **kwargs)
-                return result
-
-        case Callable() as pre, None, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre(self)
-                return func(self, *args, **kwargs)
-
-        case None, Callable() as post, False:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
-                result = func(self, *args, **kwargs)
-                post(self)
-                return result
-
-        case Callable() as pre, Callable() as post, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
-                pre(self)
-                result = func(self, *args, **kwargs)
-                post(self)
-                return result
-
-        case _:
-            raise TypeError("Got unexpected arguments.")
-
-    return __wrapper  # type: ignore[unreachable]
-
-
-def collect_exit_points(func: Callable, /) -> list[ast.Return]:
-    r"""Collect all exit points of a function as ast nodes."""
-    tree = ast.parse(getsource(func))
-    return [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
-
-
-def exit_point_names(func: Callable, /) -> list[tuple[str, ...]]:
-    r"""Return the variable names used in exit nodes."""
-    exit_points = collect_exit_points(func)
-
-    var_names = []
-    for exit_point in exit_points:
-        assert isinstance(exit_point.value, ast.Tuple)
-
-        e: tuple[str, ...] = ()
-        for obj in exit_point.value.elts:
-            assert isinstance(obj, ast.Name)
-            e += (obj.id,)
-        var_names.append(e)
-    return var_names
-
-
-@decorator
-def return_namedtuple(
-    func: Callable[P, tuple],
-    /,
-    *,
-    name: Optional[str] = None,
-    field_names: Optional[Sequence[str]] = None,
-) -> Callable[P, NTuple]:
-    r"""Convert a function's return type to a namedtuple."""
-    name = f"{func.__name__}_tuple" if name is None else name
-
-    # noinspection PyUnresolvedReferences
-    return_type: GenericAlias = func.__annotations__.get("return", NotImplemented)
-    if return_type is NotImplemented:
-        raise DecoratorError(func, "No return type hint found.")
-    if not issubclass(return_type.__origin__, tuple):
-        raise DecoratorError(func, "Return type hint is not a tuple.")
-
-    type_hints = return_type.__args__
-    potential_return_names = set(exit_point_names(func))
-
-    if len(type_hints) == 0:
-        raise DecoratorError(func, "Return type hint is an empty tuple.")
-    if Ellipsis in type_hints:
-        raise DecoratorError(func, "Return type hint is a variable length tuple.")
-    if field_names is None:
-        if len(potential_return_names) != 1:
-            raise DecoratorError(func, "Automatic detection of names failed.")
-        field_names = potential_return_names.pop()
-    elif any(len(r) != len(type_hints) for r in potential_return_names):
-        raise DecoratorError(
-            func, "Number of names does not match number of return values."
-        )
-
-    # create namedtuple
-    tuple_type: type[NTuple] = NamedTuple(  # type: ignore[misc]
-        name, zip(field_names, type_hints, strict=True)
-    )
-
-    @wraps(func)
-    def __wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:
-        # noinspection PyCallingNonCallable
-        return tuple_type(*func(*func_args, **func_kwargs))
-
-    return __wrapper
 
 
 def _extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:

@@ -23,7 +23,7 @@ from typing_extensions import ClassVar, Literal, TypeAlias
 
 from tsdm.constants import ROOT_3
 from tsdm.encoders.base import BaseEncoder
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
 METHOD: TypeAlias = Literal[

@@ -16,6 +16,8 @@ __all__ = [
     "get_mandatory_kwargs",
     "get_parameter",
     "get_parameter_kind",
+    "get_exit_point_names",
+    "yield_exit_points",
     "get_return_typehint",
     "is_keyword_arg",
     "is_keyword_only_arg",
@@ -27,15 +29,16 @@ __all__ = [
     "rpartial",
 ]
 
+import ast
 import inspect
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from functools import wraps
-from inspect import Parameter
+from inspect import Parameter, getsource
 
-from typing_extensions import Any, Optional, ParamSpec, TypeAlias, overload
+from typing_extensions import Any, Optional, TypeAlias, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
-from tsdm.types.variables import R_co
+from tsdm.types.variables import P, R_co
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -51,8 +54,6 @@ PARAMETER_KINDS = {
     "keyword_only": {KEYWORD_ONLY, VAR_KEYWORD},
     "variadic": {VAR_POSITIONAL, VAR_KEYWORD},
 }
-
-P = ParamSpec("P")
 
 
 def rpartial(
@@ -184,6 +185,30 @@ def get_parameter(func: Callable, name: str, /) -> Parameter:
     if name not in sig.parameters:
         raise ValueError(f"{func=} takes np argument named {name!r}.")
     return sig.parameters[name]
+
+
+def yield_exit_points(func: Callable, /) -> Iterator[ast.Return]:
+    r"""Collect all exit points of a function as ast nodes."""
+    tree = ast.parse(getsource(func))
+
+    for node in ast.walk(tree):
+        match node:
+            case ast.Return():
+                yield node
+
+
+def get_exit_point_names(func: Callable, /) -> set[tuple[str, ...]]:
+    r"""Return the variable names used in exit nodes."""
+    names = set()
+    for exit_point in yield_exit_points(func):
+        assert isinstance(exit_point.value, ast.Tuple)
+        exit_point_names: list[str] = []
+        for obj in exit_point.value.elts:
+            assert isinstance(obj, ast.Name)
+            exit_point_names.append(obj.id)
+
+        names.add(tuple(exit_point_names))
+    return names
 
 
 def get_return_typehint(func: Callable, /) -> Any:

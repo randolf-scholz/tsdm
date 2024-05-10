@@ -13,6 +13,8 @@ import subprocess
 import sys
 from collections import namedtuple
 
+import tsdm.utils.decorators.func_decorators
+
 try:
     import torch
 
@@ -327,7 +329,7 @@ def get_env_info():
 
     if TORCH_AVAILABLE:
         version_str = torch.__version__
-        debug_mode_str = str(torch.version.debug)
+        debug_mode_str = str(tsdm.utils.decorators.func_decorators.debug)
         cuda_available_str = str(torch.cuda.is_available())
         cuda_version_str = torch.version.cuda
         if (

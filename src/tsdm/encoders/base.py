@@ -57,7 +57,7 @@ from typing_extensions import (
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import FilePath
 from tsdm.types.variables import K, T
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 U = TypeVar("U")
 U_contra = TypeVar("U_contra", contravariant=True)

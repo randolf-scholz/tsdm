@@ -2,16 +2,24 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Constants
-    "DECORATORS",
     "CLASS_DECORATORS",
+    "CLASS_DECORATOR_FACTORIES",
+    "FUNCTION_DECORATORS",
     # Protocols
-    "Decorator",
     "ClassDecorator",
+    "ClassDecoratorFactory",
+    "FunctionDecorator",
+    "FunctionDecoratorFactory",
     # Functions
     "autojit",
     "debug",
     "decorator",
     "implements",
+    "pprint_dataclass",
+    "pprint_mapping",
+    "pprint_namedtuple",
+    "pprint_repr",
+    "pprint_sequence",
     "return_namedtuple",
     "timefun",
     "trace",
@@ -20,13 +28,25 @@ __all__ = [
     "wrap_method",
 ]
 
+
 from tsdm.utils.decorators._decorators import (
-    ClassDecorator,
-    Decorator,
-    autojit,
-    debug,
     decorator,
+)
+from tsdm.utils.decorators.class_decorators import (
+    ClassDecorator,
+    ClassDecoratorFactory,
+    autojit,
     implements,
+    pprint_dataclass,
+    pprint_mapping,
+    pprint_namedtuple,
+    pprint_repr,
+    pprint_sequence,
+)
+from tsdm.utils.decorators.func_decorators import (
+    FunctionDecorator,
+    FunctionDecoratorFactory,
+    debug,
     return_namedtuple,
     timefun,
     trace,
@@ -35,20 +55,28 @@ from tsdm.utils.decorators._decorators import (
     wrap_method,
 )
 
-DECORATORS: dict[str, Decorator] = {
-    "decorator"    : decorator,
-    "debug"        : debug,
-    "named_return" : return_namedtuple,
-    "timefun"      : timefun,
-    "trace"        : trace,
-    "vectorize"    : vectorize,
-    "wrap_func"    : wrap_func,
-    "wrap_method"  : wrap_method,
+FUNCTION_DECORATORS: dict[str, FunctionDecorator] = {
+    "debug"            : debug,
+    "return_namedtuple": return_namedtuple,
+    "timefun"          : timefun,
+    "trace"            : trace,
+    "wrap_func"        : wrap_func,
+    "wrap_method"      : wrap_method,
+    "vectorize"        : vectorize,
 }  # fmt: skip
-r"""Dictionary of all available decorators."""
+r"""Dictionary of all available function decorators."""
 
 CLASS_DECORATORS: dict[str, ClassDecorator] = {
-    "implements": implements,
-    "autojit"   : autojit,
+    "autojit"          : autojit,
+    "pprint_dataclass" : pprint_dataclass,
+    "pprint_mapping"   : pprint_mapping,
+    "pprint_repr"      : pprint_repr,
+    "pprint_sequence"  : pprint_sequence,
+    "pprint_namedtuple": pprint_sequence,
 }  # fmt: skip
 r"""Dictionary of all available class decorators."""
+
+CLASS_DECORATOR_FACTORIES: dict[str, ClassDecoratorFactory] = {
+    "implements": implements,
+}  # fmt: skip
+r"""Dictionary of all available class decorator factories."""

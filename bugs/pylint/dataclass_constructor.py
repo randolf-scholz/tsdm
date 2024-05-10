@@ -6,6 +6,8 @@ from dataclasses import KW_ONLY, ClassVar, dataclass
 from functools import wraps
 from typing import Any, Generic, Mapping, ParamSpec, Self, Sequence
 
+import tsdm.utils.decorators.func_decorators
+
 P = ParamSpec("P")
 
 
@@ -41,7 +43,7 @@ class Foo(Generic[P], metaclass=CallbackMetaclass):
             if i % self.frequency == 0:
                 self.callback(i, **kwargs)
             else:
-                self.LOGGER.debug("Skipping callback.")
+                tsdm.utils.decorators.func_decorators.debug("Skipping callback.")
 
         cls.__call__ = __call__  # type: ignore[method-assign]
         super().__init_subclass__()

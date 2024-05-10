@@ -19,15 +19,7 @@ import pandas
 import torch
 from numpy import ndarray
 from torch import Tensor
-from typing_extensions import (
-    Generic,
-    Literal,
-    ParamSpec,
-    Self,
-    TypeAlias,
-    cast,
-    get_args,
-)
+from typing_extensions import Generic, Literal, Self, TypeAlias, cast, get_args
 
 from tsdm.backend.generic import (
     false_like as universal_false_like,
@@ -64,8 +56,6 @@ from tsdm.types.callback_protocols import (
     WhereProto,
 )
 from tsdm.types.variables import T
-
-P = ParamSpec("P")
 
 BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch"]
 r"""A type alias for the supported backends."""

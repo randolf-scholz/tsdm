@@ -45,19 +45,27 @@ __all__ = [
     "tuple_co",
     "tuple_contra",
     # Generic Type Variables
-    "T",
-    "T_co",
-    "T_contra",
-    "T2",
-    "T2_co",
-    "T2_contra",
+    "P",
+    "P2",
+    "Cls",
+    "Cls_co",
+    "Cls_contra",
+    "Fun",
+    "Fun_co",
+    "Fun_contra",
     "K",
-    "K_co",
-    "K_contra",
     "K2",
     "K2_co",
     "K2_contra",
+    "K_co",
+    "K_contra",
     "R_co",
+    "T",
+    "T2",
+    "T2_co",
+    "T2_contra",
+    "T_co",
+    "T_contra",
     "V",
     "V_co",
     "V_contra",
@@ -119,7 +127,7 @@ from types import GenericAlias, ModuleType
 from numpy import ndarray
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
-from typing_extensions import Any, TypeVar
+from typing_extensions import Any, ParamSpec, TypeVar
 
 # region Custom Type Variables ---------------------------------------------------------
 alias_var = TypeVar("alias_var", bound=GenericAlias)
@@ -223,6 +231,9 @@ r"""Contravariant type variable for `tuple`."""
 
 # Generic purpose type variables
 # region Generic Type Variables --------------------------------------------------------
+P = ParamSpec("P")
+P2 = ParamSpec("P2")
+
 T = TypeVar("T", bound=Any)
 r"""T(ype) variable (invariant)."""
 T_co = TypeVar("T_co", bound=Any, covariant=True)
@@ -250,6 +261,20 @@ K2_co = TypeVar("K2_co", bound=abc.Hashable, covariant=True)
 r"""K(ey) type variable bound to `Hashable` (covariant)."""
 K2_contra = TypeVar("K2_contra", bound=abc.Hashable, contravariant=True)
 r"""K(ey) type variable bound to `Hashable` (contravariant)."""
+
+Fun = TypeVar("Fun", bound=abc.Callable)
+r"""Fun(ction) type variable (invariant)."""
+Fun_co = TypeVar("Fun_co", bound=abc.Callable, covariant=True)
+r"""Fun(ction) type variable (covariant)."""
+Fun_contra = TypeVar("Fun_contra", bound=abc.Callable, contravariant=True)
+r"""Fun(ction) type variable (contravariant)."""
+
+Cls = TypeVar("Cls", bound=type)
+r"""Cls type variable (invariant)."""
+Cls_co = TypeVar("Cls_co", bound=type, covariant=True)
+r"""Cls type variable (covariant)."""
+Cls_contra = TypeVar("Cls_contra", bound=type, contravariant=True)
+r"""Cls type variable (contravariant)."""
 
 # outputs/returns are always covariant!
 R_co = TypeVar("R_co", covariant=True)

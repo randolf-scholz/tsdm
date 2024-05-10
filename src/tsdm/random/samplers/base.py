@@ -59,7 +59,7 @@ from tsdm.types.protocols import Seq
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
 from tsdm.types.variables import K2, K, T_co
 from tsdm.utils import timedelta, timestamp
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 
 # region helper functions --------------------------------------------------------------

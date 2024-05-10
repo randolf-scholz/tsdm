@@ -69,7 +69,7 @@ from typing_extensions import Any, NamedTuple, deprecated
 from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

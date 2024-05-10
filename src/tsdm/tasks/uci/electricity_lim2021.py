@@ -22,7 +22,7 @@ from tsdm.encoders import BaseEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.utils import timedelta, timestamp
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

@@ -88,7 +88,7 @@ from tsdm.logutils.callbacks import (
 )
 from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.pprint import pprint_mapping, pprint_repr
+from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 
 @runtime_checkable

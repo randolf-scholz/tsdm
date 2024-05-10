@@ -77,7 +77,7 @@ from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axis, Nested, Size
 from tsdm.types.protocols import NTuple, NumericalArray
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 Arr = TypeVar("Arr", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""

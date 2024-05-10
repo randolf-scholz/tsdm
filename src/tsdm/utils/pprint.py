@@ -13,10 +13,6 @@ __all__ = [
     "ReprProtocol",
     # Functions
     "get_identifier",
-    "pprint_repr",
-    "pprint_dataclass",
-    "pprint_mapping",
-    "pprint_sequence",
     "repr_array",
     "repr_dataclass",
     "repr_dtype",
@@ -31,13 +27,12 @@ import inspect
 import logging
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from dataclasses import is_dataclass
-from functools import partialmethod
 from math import prod
 from types import FunctionType
 
 from pandas import DataFrame, MultiIndex
 from pyarrow import Array as pyarrow_array, Table as pyarrow_table
-from typing_extensions import Any, Final, Optional, Protocol, cast, overload
+from typing_extensions import Any, Final, Optional, Protocol, cast
 
 from tsdm.testing import is_builtin, is_builtin_constant, is_builtin_type, is_na_value
 from tsdm.types.aliases import DType
@@ -51,8 +46,6 @@ from tsdm.types.protocols import (
     SupportsItem,
     SupportsShape,
 )
-from tsdm.types.variables import T
-from tsdm.utils.decorators import decorator
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 
@@ -720,73 +713,3 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     repr_sequence,
     repr_shortform,
 ]
-
-
-@overload
-def pprint_sequence(cls: type[T], /) -> type[T]: ...
-@overload
-def pprint_sequence(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
-@decorator
-def pprint_sequence(cls, /, **kwds):
-    r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, Sequence):
-        raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_sequence, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
-    return cls
-
-
-@overload
-def pprint_mapping(cls: type[T], /) -> type[T]: ...
-@overload
-def pprint_mapping(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
-@decorator
-def pprint_mapping(cls, /, **kwds):
-    r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, Mapping):
-        raise TypeError(f"Expected Mapping type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
-    return cls
-
-
-@overload
-def pprint_dataclass(cls: type[T], /) -> type[T]: ...
-@overload
-def pprint_dataclass(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
-@decorator
-def pprint_dataclass(cls, /, **kwds):
-    r"""Add appropriate __repr__ to class."""
-    if not (issubclass(cls, type) and is_dataclass(cls)):
-        raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
-    return cls
-
-
-@overload
-def pprint_repr(cls: type[T], /) -> type[T]: ...
-@overload
-def pprint_repr(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
-@decorator
-def pprint_repr(cls, /, **kwds):
-    r"""Add appropriate __repr__ to class."""
-    if not isinstance(cls, type):
-        raise TypeError("Must be a class!")
-
-    repr_func: Callable[..., str]
-
-    if is_dataclass(cls):
-        repr_func = repr_dataclass
-    elif issubclass(cls, NTuple):  # type: ignore[misc]
-        repr_func = repr_namedtuple
-    elif issubclass(cls, Mapping):
-        repr_func = repr_mapping
-    elif issubclass(cls, SupportsArray):
-        repr_func = repr_array
-    elif issubclass(cls, Sequence):
-        repr_func = repr_sequence
-    elif issubclass(cls, type):
-        repr_func = repr_shortform
-    else:
-        raise TypeError(f"Unsupported type {cls}.")
-
-    cls.__repr__ = partialmethod(repr_func, **kwds)  # pyright: ignore[reportAttributeAccessIssue]
-    return cls

@@ -142,7 +142,7 @@ from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
 from tsdm.types.variables import K as Key
 from tsdm.utils import LazyDict
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 Sample_co = TypeVar("Sample_co", covariant=True)
 r"""Covariant type variable for `Sample`."""

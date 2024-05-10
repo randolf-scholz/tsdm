@@ -73,7 +73,7 @@ from typing_extensions import Any, NamedTuple, deprecated
 from tsdm.data import is_partition
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.pprint import pprint_repr
+from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

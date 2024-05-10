@@ -30,12 +30,12 @@ from typing_extensions import (
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.protocols import SupportsKeysAndGetItem
 from tsdm.types.variables import K2, K, R_co, T, V
+from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import (
     get_function_args,
     get_return_typehint,
     is_positional_arg,
 )
-from tsdm.utils.pprint import pprint_repr
 
 
 @pprint_repr

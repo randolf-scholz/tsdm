@@ -75,7 +75,6 @@ from numpy.typing import NDArray
 from typing_extensions import (
     Any,
     ClassVar,
-    ParamSpec,
     Protocol,
     Self,
     SupportsIndex,
@@ -86,10 +85,17 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.types.variables import K, K_contra, T, T_co, T_contra, V, V_co, scalar_co
-
-P = ParamSpec("P")
-Scalar = TypeVar("Scalar")
+from tsdm.types.variables import (
+    K,
+    K_contra,
+    T,
+    T_co,
+    T_contra,
+    V,
+    V_co,
+    scalar_co,
+    scalar_var as Scalar,
+)
 
 
 # region misc protocols ----------------------------------------------------------------
@@ -830,7 +836,7 @@ class SequenceProtocol(Protocol[T_co]):
 
     # Mixin methods
     # TODO: implement mixin methods
-    def __reversed__(self) -> Iterator[T_co]: ...  # NOTE: intentionally excluded
+    # def __reversed__(self) -> Iterator[T_co]: ...  # NOTE: intentionally excluded
     def __iter__(self) -> Iterator[T_co]: ...
     def __contains__(self, value: object, /) -> bool: ...
     def index(self, value: Any, start: int = 0, stop: int = ..., /) -> int: ...
@@ -940,7 +946,7 @@ class Dataclass(Protocol):
     Similar to `DataClassInstance` from typeshed, but allows isinstance and issubclass.
     """
 
-    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]] = {}
     r"""The fields of the dataclass."""
 
     # @property
@@ -1007,6 +1013,19 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
         return NotImplemented
 
 
+@runtime_checkable
+class Slotted(Protocol):
+    r"""Protocol for objects that are slotted."""
+
+    __slots__: tuple[str, ...] = ()
+
+    @classmethod
+    def __subclasshook__(cls, other: type, /) -> bool:
+        r"""Cf https://github.com/python/cpython/issues/106363."""
+        slots = getattr(other, "__slots__", None)
+        return isinstance(slots, str | Iterable)
+
+
 @overload
 def is_dataclass(obj: type, /) -> TypeGuard[type[Dataclass]]: ...
 @overload
@@ -1027,12 +1046,6 @@ def is_namedtuple(obj: object, /) -> TypeGuard[NTuple | type[NTuple]]:
     if isinstance(obj, type):
         return issubclass(obj, NTuple)  # type: ignore[misc]
     return issubclass(type(obj), NTuple)  # type: ignore[misc]
-
-
-class Slotted(Protocol):
-    r"""Protocol for objects that are slotted."""
-
-    __slots__: tuple[str, ...]
 
 
 def is_slotted(obj: object, /) -> TypeGuard[Slotted]:
