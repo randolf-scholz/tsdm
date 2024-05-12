@@ -7,12 +7,13 @@ __all__ = [
     "assert_protocol",
     "check_shared_attrs",
     "is_builtin",
-    "is_builtin_type",
     "is_builtin_constant",
     "is_builtin_function",
-    "is_na_value",
+    "is_builtin_type",
     "is_dunder",
     "is_flattened",
+    "is_na_value",
+    "is_scalar",
     "is_zipfile",
 ]
 
@@ -27,9 +28,11 @@ import polars as pl
 import polars.testing as pl_testing
 import torch
 import torch.testing
+from pandas import NA, NaT
 from typing_extensions import Any, get_protocol_members, is_protocol
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
+from tsdm.types.aliases import PythonScalar
 from tsdm.types.variables import T_contra
 
 
@@ -118,7 +121,18 @@ def is_builtin(obj: object, /) -> bool:
 
 
 def is_na_value(obj: object, /) -> bool:
+    r"""Check if the object is a NA value."""
     return isinstance(obj, Hashable) and obj in NA_VALUES
+
+
+def is_scalar(obj: object, /) -> bool:
+    r"""Check if an object is a basic type."""
+    return (
+        is_builtin_constant(obj)
+        or isinstance(obj, PythonScalar)  # type: ignore[misc,arg-type]
+        or obj is NA
+        or obj is NaT
+    )
 
 
 def is_flattened(

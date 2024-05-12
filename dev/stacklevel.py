@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
-    test
-    Testing the warning stack level usage
-    :copyright: (c) 2012 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
+test
+Testing the warning stack level usage
+:copyright: (c) 2012 by Openlabs Technologies & Consulting (P) Limited
+:license: BSD, see LICENSE for more details.
 """
 
 import warnings

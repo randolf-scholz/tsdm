@@ -26,16 +26,16 @@ __all__ = [
     "ArrayKind",
     "NumericalArray",
     "MutableArray",
-    # Time-Types
     # stdlib
     "MappingProtocol",
     "MutableMappingProtocol",
+    "MutableSequenceProtocol",
     "SequenceProtocol",
+    "SetProtocol",
     "SupportsGetItem",
     "SupportsKeysAndGetItem",
     "SupportsKwargs",
     "SupportsLenAndGetItem",
-    "MutableSequenceProtocol",
     # other
     "WriteBuffer",
     "GenericIterable",
@@ -809,6 +809,34 @@ class SupportsKwargs(Protocol[V_co], metaclass=SupportsKwargsType):
 
     def keys(self) -> Iterable[str]: ...
     def __getitem__(self, key: str, /) -> V_co: ...
+
+
+@runtime_checkable
+class SetProtocol(Protocol[T_co]):
+    r"""Protocol version of `collections.abc.Set`."""
+
+    # abstract methods
+    @abstractmethod
+    def __contains__(self, value: object, /) -> bool: ...
+    @abstractmethod
+    def __iter__(self) -> Iterator[T_co]: ...
+    @abstractmethod
+    def __len__(self) -> int: ...
+
+    # mixin methods
+    # set arithmetic
+    def __and__(self, other: "SetProtocol", /) -> Self: ...
+    def __or__(self, other: "SetProtocol[T]", /) -> "SetProtocol[T | T_co]": ...
+    def __sub__(self, other: "SetProtocol", /) -> Self: ...
+    def __xor__(self, other: "SetProtocol[T]", /) -> "SetProtocol[T | T_co]": ...
+
+    # set comparison
+    def __le__(self, other: "SetProtocol", /) -> bool: ...
+    def __lt__(self, other: "SetProtocol", /) -> bool: ...
+    def __ge__(self, other: "SetProtocol", /) -> bool: ...
+    def __gt__(self, other: "SetProtocol", /) -> bool: ...
+    def __eq__(self, other: object, /) -> bool: ...
+    def isdisjoint(self, other: Iterable, /) -> bool: ...
 
 
 @runtime_checkable

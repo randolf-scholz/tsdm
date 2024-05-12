@@ -57,8 +57,8 @@ assert_type(df.loc[("cobra", "mark ii")], Series)
 assert_type(df.loc["cobra", "mark i"], Series)
 assert_type(df.loc[[("cobra", "mark ii")]], DataFrame)
 assert_type(df.loc[[("cobra", "mark ii"), "shield"]], int)
-assert_type(df.loc[("cobra", "mark i"):"viper"], DataFrame)
-assert_type(df.loc[("cobra", "mark i"):("viper", "mark ii")], DataFrame)
+assert_type(df.loc[("cobra", "mark i") : "viper"], DataFrame)
+assert_type(df.loc[("cobra", "mark i") : ("viper", "mark ii")], DataFrame)
 
 
 # Extra example
