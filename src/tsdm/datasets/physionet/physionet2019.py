@@ -311,7 +311,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "raw_metadata",
     ]
 
-    table_schemas = {# pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "HR"               : "float32[pyarrow]",
             "O2Sat"            : "float32[pyarrow]",

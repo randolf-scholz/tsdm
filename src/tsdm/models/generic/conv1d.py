@@ -1,16 +1,15 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Convolutional blocks for usage in a residual network."""
 
 __all__ = ["ConvBlock"]
 
 from collections import OrderedDict
 
 from torch import nn
-from typing_extensions import Any, Literal
+from typing_extensions import Any, Literal, TypeAlias
 
 from tsdm.utils.decorators import autojit
+
+PaddingMode: TypeAlias = Literal["zeros", "reflect", "replicate", "circular"]
 
 
 @autojit
@@ -52,9 +51,7 @@ class ConvBlock(nn.Sequential):
         dilation: int = 1,
         groups: int = 1,
         bias: bool = True,
-        padding_mode: Literal[
-            "zeros", "reflect", "replicate", "circular", "zeros"
-        ] = "replicate",
+        padding_mode: PaddingMode = "replicate",
         num_subblocks: int = 3,
         activation: Literal["ReLU", "leaky_relu", "Tanh", "Sigmoid"] = "ReLU",
     ) -> None:

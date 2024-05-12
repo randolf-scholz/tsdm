@@ -343,7 +343,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "raw_metadata",
     ]
 
-    table_schemas = {# pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "Albumin"     : "float32[pyarrow]",
             "ALP"         : "float32[pyarrow]",

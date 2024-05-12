@@ -76,7 +76,7 @@ class ExampleSequence(Sequence):
     ("obj", "expected"),
     [
         (1, "1"),
-        (3.14, "3.14"),
+        (1.25, "1.25"),
         (1.0 + 2.0j, "(1+2j)"),
         ("a", "'a'"),
         (None, "None"),
@@ -96,8 +96,8 @@ def test_pprint_object(obj: object, expected: str) -> None:
     ("tup", "expected"),
     [
         (
-            ExampleNamedTuple(1, "a", 3.14),
-            "ExampleNamedTuple<namedtuple>(\n\ta: 1,\n\tb: 'a',\n\tc: 3.14,\n)",
+            ExampleNamedTuple(1, "a", 1.25),
+            "ExampleNamedTuple<namedtuple>(\n\ta: 1,\n\tb: 'a',\n\tc: 1.25,\n)",
         ),
     ],
 )
@@ -112,8 +112,8 @@ def test_pprint_namedtuple(tup: NTuple, expected: str) -> None:
     ("dc", "expected"),
     [
         (
-            ExampleDataclass(1, "a", 3.14),
-            "ExampleDataclass<dataclass>(\n\ta: 1,\n\tb: 'a',\n\tc: 3.14,\n)",
+            ExampleDataclass(1, "a", 1.25),
+            "ExampleDataclass<dataclass>(\n\ta: 1,\n\tb: 'a',\n\tc: 1.25,\n)",
         ),
     ],
 )
@@ -132,8 +132,8 @@ def test_pprint_dataclass(dc: Dataclass, expected: str) -> None:
             "{\n\tfoo   : 0,\n\tfoobar: 1,\n}",
         ),
         (
-            ExampleMapping({"a": 1, "b": "a", "c": 3.14}),
-            "ExampleMapping<mapping>(\n\ta: 1,\n\tb: 'a',\n\tc: 3.14,\n)",
+            ExampleMapping({"a": 1, "b": "a", "c": 1.25}),
+            "ExampleMapping<mapping>(\n\ta: 1,\n\tb: 'a',\n\tc: 1.25,\n)",
         ),
     ],
 )
@@ -148,16 +148,16 @@ def test_pprint_mapping(mapping: Mapping, expected: str) -> None:
     ("seq", "expected"),
     [
         (
-            (1, "a", 3.14),
-            "(\n\t1,\n\t'a',\n\t3.14,\n)",
+            (1, "a", 1.25),
+            "(\n\t1,\n\t'a',\n\t1.25,\n)",
         ),
         (
-            [1, "a", 3.14],
-            "[\n\t1,\n\t'a',\n\t3.14,\n]",
+            [1, "a", 1.25],
+            "[\n\t1,\n\t'a',\n\t1.25,\n]",
         ),
         (
-            ExampleSequence([1, "a", 3.14]),
-            "ExampleSequence<sequence>(\n\t1,\n\t'a',\n\t3.14,\n)",
+            ExampleSequence([1, "a", 1.25]),
+            "ExampleSequence<sequence>(\n\t1,\n\t'a',\n\t1.25,\n)",
         ),
     ],
 )
@@ -199,12 +199,12 @@ def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
     ("obj", "expected"),
     [
         (
-            np.array(3.14),
-            "ndarray[3.14, float64]",
+            np.array(1.25),
+            "ndarray[1.25, float64]",
         ),
         (
-            torch.tensor(3.14),
-            "Tensor[3.140000104904175, torch.float32@cpu]",
+            torch.tensor(1.25),
+            "Tensor[1.25, torch.float32@cpu]",
         ),
         (
             np.array([1, 2, 3]),

@@ -37,6 +37,9 @@ __all__ = [
     "SupportsKwargs",
     "SupportsLenAndGetItem",
     # other
+    "BaseBuffer",
+    "Buffer",
+    "ReadBuffer",
     "WriteBuffer",
     "GenericIterable",
     "SupportsKwargsType",
@@ -90,18 +93,21 @@ from tsdm.types.variables import (
     K_contra,
     T,
     T_co,
-    T_contra,
     V,
     V_co,
     scalar_co,
     scalar_var as Scalar,
 )
 
+# region io protocols ------------------------------------------------------------------
+io = TypeVar("io", str, bytes)
+io_co = TypeVar("io_co", str, bytes, covariant=True)
+io_contra = TypeVar("io_contra", str, bytes, contravariant=True)
 
-# region misc protocols ----------------------------------------------------------------
+
 @runtime_checkable
-class WriteBuffer(Protocol[T_contra]):
-    r"""Protocol for objects that support writing."""
+class BaseBuffer(Protocol):
+    r"""Base class for ReadBuffer and WriteBuffer."""
 
     # REF: WriteBuffer from https://github.com/pandas-dev/pandas/blob/main/pandas/_typing.py
     # REF: SupportsWrite from https://github.com/python/typeshed/blob/main/stdlib/_typeshed/__init__.pyi
@@ -109,13 +115,35 @@ class WriteBuffer(Protocol[T_contra]):
     # REF: IO from https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
     @property
     def mode(self) -> str: ...
-    def seek(self, offset: int, whence: int = 0, /) -> int: ...
+    def seek(self, offset: int, whence: int = ..., /) -> int: ...
     def seekable(self) -> bool: ...
     def tell(self) -> int: ...
-    def write(self, s: T_contra, /) -> Any: ...
+
+
+@runtime_checkable
+class ReadBuffer(BaseBuffer, Protocol[io_co]):
+    r"""Protocol for objects that support reading."""
+
+    def read(self, size: int = ..., /) -> io_co: ...
+
+
+@runtime_checkable
+class WriteBuffer(BaseBuffer, Protocol[io_contra]):
+    r"""Protocol for objects that support writing."""
+
+    def write(self, content: io_contra, /) -> Any: ...
     def flush(self) -> Any: ...
 
 
+@runtime_checkable
+class Buffer(ReadBuffer[io], WriteBuffer[io], Protocol[io]):
+    r"""Protocol for objects that support reading and writing."""
+
+
+# endregion io protocols ---------------------------------------------------------------
+
+
+# region misc protocols ----------------------------------------------------------------
 @runtime_checkable
 class GenericIterable(Protocol[T_co]):
     r"""Does not work currently!"""

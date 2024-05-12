@@ -330,7 +330,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         "timeseries_description" : (8, 6),
     }  # fmt: skip
 
-    table_schemas = {# pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "PRCP" : "int16[pyarrow]",
             "SNOW" : "int16[pyarrow]",

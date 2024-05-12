@@ -257,7 +257,7 @@ class LazyDict(dict[K, V]):
     @classmethod
     def fromkeys(cls, iterable, value=None):  # pyright: ignore[reportInconsistentOverload, reportIncompatibleMethodOverride]
         r"""Create a new LazyDict from the keys."""
-        return cls({k: value for k in iterable})
+        return cls(super().fromkeys(iterable, value))
 
     @staticmethod
     def _make_lazy_function(key: K, value: LazySpec[V], /) -> LazyValue[V]:

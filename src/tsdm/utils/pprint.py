@@ -526,8 +526,10 @@ def repr_sequence(
     # precompute the item representations
     head_half = maxitems // 2
     tail_half = max(len(obj) - head_half, head_half)
-    head_items = [to_string(*x) for x in enumerate(obj[:head_half], start=0)]
-    tail_items = [to_string(*x) for x in enumerate(obj[tail_half:], start=tail_half)]
+    head_items = [to_string(i, v) for i, v in enumerate(obj[:head_half], start=0)]
+    tail_items = [
+        to_string(i, v) for i, v in enumerate(obj[tail_half:], start=tail_half)
+    ]
 
     # assemble the string
     string = f"{title}{identifier}{left}{br}"

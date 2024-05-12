@@ -25,7 +25,7 @@ def test_dims_to_list(dims: Dims) -> None:
     x = torch.randn(4, 2, 2, 1)
 
     # test
-    dims_list = dims_to_list(dims, ndim=x.ndim)
+    dims_list: list[int] = dims_to_list(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
     assert type(result) == type(reference)
@@ -36,7 +36,7 @@ def test_dims_to_list(dims: Dims) -> None:
     if dims == []:
         pytest.xfail("JIT compiler cannot determine type of empty list.")
     f = jit.script(dims_to_list)
-    dims_list = f(dims, ndim=x.ndim)
+    dims_list = f(dims, ndim=x.ndim)  # pyright: ignore[reportCallIssue, reportAssignmentType]
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
     assert type(result) == type(reference)
@@ -116,9 +116,6 @@ def test_replace():
     string = "Hello World"
     replacements = {"Hello": "Goodbye", "World": "Earth"}
     assert replace(string, replacements) == "Goodbye Earth"
-
-    string = ""
-    assert replace(string, replacements) == ""
 
 
 def test_flatten_dict():

@@ -164,7 +164,7 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "timeseries_description",
     ]  # pyright: ignore[reportAssignmentType]
 
-    table_schemas = {# pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "PM2.5" : "float[pyarrow]",
             "PM10"  : "float[pyarrow]",
