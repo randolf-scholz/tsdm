@@ -146,8 +146,8 @@ def test_dataclass_protocol() -> None:
 def test_slotted_protocol() -> None:
     r"""Test the Slotted protocol."""
     assert isinstance(MySlotted(1, 2), Slotted)
-    assert issubclass(MySlotted, Slotted)
-    assert issubclass(Slotted, Slotted)  # type: ignore[misc]
+    assert issubclass(MySlotted, Slotted)  # pyright: ignore[reportGeneralTypeIssues]
+    assert issubclass(Slotted, Slotted)  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def test_is_dataclass() -> None:
@@ -185,14 +185,14 @@ def test_not_namedtuple() -> None:
     assert isinstance(NotNamedTuple((1, 2)), tuple)
     assert issubclass(NotNamedTuple, tuple)
     assert not isinstance(NotNamedTuple((1, 2)), NTuple)
-    assert not issubclass(NotNamedTuple, NTuple)
+    assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]
 
 
 @pytest.mark.xfail(reason="https://github.com/python/cpython/issues/112319.")
 def test_not_slotted() -> None:
     r"""Test the Slotted protocol."""
     assert not isinstance(NotSlotted(1, 2), Slotted)
-    assert not issubclass(NotSlotted, Slotted)
+    assert not issubclass(NotSlotted, Slotted)  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def test_namedtuple_protocol() -> None:

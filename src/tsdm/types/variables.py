@@ -11,9 +11,6 @@ __all__ = [
     "scalar_co",
     "scalar_contra",
     # Builtin Type Variables
-    "class_var",
-    "class_co",
-    "class_contra",
     "dict_var",
     "dict_co",
     "dict_contra",
@@ -47,9 +44,6 @@ __all__ = [
     # Generic Type Variables
     "P",
     "P2",
-    "Cls",
-    "Cls_co",
-    "Cls_contra",
     "Fun",
     "Fun_co",
     "Fun_contra",
@@ -73,9 +67,6 @@ __all__ = [
     "ByteStringType",
     "ByteString_co",
     "ByteString_contra",
-    "CallableType",
-    "Callable_co",
-    "Callable_contra",
     "CollectionType",
     "Collection_co",
     "Collection_contra",
@@ -150,13 +141,6 @@ r"""Contravariant type variable for scalar types."""
 
 # Type variables of Built-in Types
 # region Builtins ----------------------------------------------------------------------
-class_var = TypeVar("class_var", bound=type)
-r"""Type Variable for `type`."""
-class_co = TypeVar("class_co", bound=type, covariant=True)
-r"""Type Variable for `type`."""
-class_contra = TypeVar("class_contra", bound=type, contravariant=True)
-r"""Type Variable for `type`."""
-
 dict_var = TypeVar("dict_var", bound=dict)
 r"""Type Variable for `dict`."""
 dict_co = TypeVar("dict_co", bound=dict, covariant=True)
@@ -269,13 +253,6 @@ r"""Fun(ction) type variable (covariant)."""
 Fun_contra = TypeVar("Fun_contra", bound=abc.Callable, contravariant=True)
 r"""Fun(ction) type variable (contravariant)."""
 
-Cls = TypeVar("Cls", bound=type)
-r"""Cls type variable (invariant)."""
-Cls_co = TypeVar("Cls_co", bound=type, covariant=True)
-r"""Cls type variable (covariant)."""
-Cls_contra = TypeVar("Cls_contra", bound=type, contravariant=True)
-r"""Cls type variable (contravariant)."""
-
 # outputs/returns are always covariant!
 R_co = TypeVar("R_co", covariant=True)
 r"""R(eturn) type variable (always covariant)."""
@@ -347,14 +324,6 @@ Sized_co = TypeVar("Sized_co", bound=abc.Sized, covariant=True)
 r"""Type variable for Mappings."""
 Sized_contra = TypeVar("Sized_contra", bound=abc.Sized, contravariant=True)
 r"""Type variable for Mappings."""
-
-
-CallableType = TypeVar("CallableType", bound=abc.Callable)
-r"""Type variable for Callables."""
-Callable_co = TypeVar("Callable_co", bound=abc.Callable, covariant=True)
-r"""Type variable for Callables."""
-Callable_contra = TypeVar("Callable_contra", bound=abc.Callable, contravariant=True)
-r"""Type variable for Callables."""
 
 
 CollectionType = TypeVar("CollectionType", bound=abc.Collection)

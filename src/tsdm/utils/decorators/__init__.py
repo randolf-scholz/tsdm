@@ -23,7 +23,6 @@ __all__ = [
     "return_namedtuple",
     "timefun",
     "trace",
-    "vectorize",
     "wrap_func",
     "wrap_method",
 ]
@@ -50,7 +49,6 @@ from tsdm.utils.decorators.func_decorators import (
     return_namedtuple,
     timefun,
     trace,
-    vectorize,
     wrap_func,
     wrap_method,
 )
@@ -62,7 +60,6 @@ FUNCTION_DECORATORS: dict[str, FunctionDecorator] = {
     "trace"            : trace,
     "wrap_func"        : wrap_func,
     "wrap_method"      : wrap_method,
-    "vectorize"        : vectorize,
 }  # fmt: skip
 r"""Dictionary of all available function decorators."""
 

@@ -158,4 +158,5 @@ repos:
     rev: v1.1.362
     hooks:
       - id: pyright
+        entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
         files: (^src/|^tests/)

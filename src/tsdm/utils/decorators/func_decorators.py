@@ -12,28 +12,20 @@ __all__ = [
     "trace",
     "wrap_func",
     "wrap_method",
-    "vectorize",
 ]
 
 import gc
 import logging
 from collections.abc import Callable, Sequence
 from functools import wraps
-from inspect import Parameter, signature
 from time import perf_counter_ns
 from types import GenericAlias
 
 from torch import jit
-from typing_extensions import (
-    Any,
-    Concatenate,
-    NamedTuple,
-    Optional,
-    Protocol,
-)
+from typing_extensions import Any, Concatenate, NamedTuple, Optional, Protocol
 
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import CallableType as Fun, CollectionType, P, R_co, T
+from tsdm.types.variables import Fun, P, R_co, T
 from tsdm.utils.decorators._decorators import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
 
@@ -310,42 +302,6 @@ def lazy_torch_jit(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     __wrapper.__original_fn = func  # type: ignore[attr-defined]
     __wrapper.__scripted = None  # type: ignore[attr-defined]
     __wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
-    return __wrapper
-
-
-def vectorize(
-    func: Callable[[T], R_co], /, *, kind: type[CollectionType]
-) -> Callable[[T | CollectionType], R_co | CollectionType]:
-    r"""Vectorize a function with a single, positional-only input.
-
-    The signature will change accordingly.
-
-    Examples:
-        >>> @vectorize(kind=list)
-        ... def f(x):
-        ...     return x + 1
-        >>> assert f(1) == 2
-        >>> assert f(1, 2) == [2, 3]
-    """
-    params = list(signature(func).parameters.values())
-
-    if not params:
-        raise ValueError(f"{func} has no parameters")
-    if params[0].kind not in {
-        Parameter.POSITIONAL_ONLY,
-        Parameter.POSITIONAL_OR_KEYWORD,
-    }:
-        raise ValueError(f"{func} must have a single positional parameter!")
-    for param in params[1:]:
-        if param.kind not in {Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD}:
-            raise ValueError(f"{func} must have a single positional parameter!")
-
-    @wraps(func)
-    def __wrapper(arg, *args):
-        if not args:
-            return func(arg)
-        return kind(func(x) for x in (arg, *args))  # type: ignore[call-arg]
-
     return __wrapper
 
 
