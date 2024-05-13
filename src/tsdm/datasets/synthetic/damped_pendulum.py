@@ -55,8 +55,8 @@ class DampedPendulum_Ansari2023(SingleTableDataset):
             gamma=0.25,
             theta0=np.pi,
             omega0=4.0,
-            observation_noise=univariate_normal(loc=0, scale=0.05),
-            parameter_noise=univariate_normal(loc=0, scale=1),
+            observation_noise_dist=univariate_normal(loc=0, scale=0.05),
+            initial_state_dist=univariate_normal(loc=0, scale=1),
         )
 
     def clean_table(self) -> DataFrame:

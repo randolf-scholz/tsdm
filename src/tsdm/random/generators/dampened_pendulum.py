@@ -6,7 +6,7 @@ References:
 
 __all__ = ["DampedPendulum", "DampedPendulumXY"]
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -109,16 +109,14 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     r"""Initial angle."""
     omega0: float = 4.0
     r"""Initial angular velocity."""
-
-    @property
-    def observation_noise_dist(self) -> RV:
-        r"""Noise distribution."""
-        return univariate_normal(loc=0, scale=0.05)
-
-    @property
-    def initial_state_dist(self) -> RV:
-        r"""Noise distribution."""
-        return univariate_normal(loc=0, scale=1)
+    observation_noise_dist: RV = field(
+        default_factory=lambda: univariate_normal(loc=0, scale=0.05)
+    )
+    r"""Noise distribution."""
+    initial_state_dist: RV = field(
+        default_factory=lambda: univariate_normal(loc=0, scale=1)
+    )
+    r"""Noise distribution."""
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""

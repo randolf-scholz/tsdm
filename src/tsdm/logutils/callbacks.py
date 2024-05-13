@@ -52,6 +52,7 @@ from typing_extensions import (
     Literal,
     Optional,
     Protocol,
+    Self,
     TypeGuard,
     TypeVar,
     final,
@@ -189,7 +190,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     @overload
     def __getitem__(self, index: int) -> Callback: ...
     @overload
-    def __getitem__(self, index: slice) -> MutableSequence[Callback]: ...
+    def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
         return self.callbacks[index]
 

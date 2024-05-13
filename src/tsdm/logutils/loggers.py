@@ -63,7 +63,7 @@ from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
-from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from typing_extensions import (
@@ -71,6 +71,7 @@ from typing_extensions import (
     ClassVar,
     Optional,
     Protocol,
+    TypeVar,
     runtime_checkable,
 )
 
@@ -90,27 +91,29 @@ from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
+CBS_co = TypeVar("CBS_co", covariant=True, bound=CallbackSequence)
+
 
 @runtime_checkable
-class Logger(Protocol):
+class Logger(Protocol[CBS_co]):
     r"""Generic Logger Protocol."""
 
     @property
     @abstractmethod
-    def callbacks(self) -> Mapping[str, CallbackSequence]:
+    def callbacks(self) -> Mapping[str, CBS_co]:
         r"""Callbacks to be called at the end of a batch/epoch."""
         ...
 
 
 @pprint_mapping
 @dataclass
-class BaseLogger(Mapping[str, CallbackSequence]):
+class BaseLogger(Mapping[str, CallbackList]):
     r"""Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
-    callbacks: dict[str, CallbackSequence] = field(
+    callbacks: dict[str, CallbackList] = field(
         default_factory=lambda: defaultdict(CallbackList)
     )
     r"""Callbacks to be called at the end of a batch/epoch."""
@@ -121,7 +124,7 @@ class BaseLogger(Mapping[str, CallbackSequence]):
     def __iter__(self) -> Iterator[str]:
         return iter(self.callbacks)
 
-    def __getitem__(self, key: str, /) -> CallbackSequence:
+    def __getitem__(self, key: str, /) -> CallbackList:
         return self.callbacks[key]
 
     def add_callback(self, key: str, callback: Callback) -> None:
@@ -169,7 +172,7 @@ class DefaultLogger(BaseLogger):
     r"""History of the training process."""
     hparam_dict: Optional[dict[str, Any]] = None
     r"""Hyperparameters used for the experiment."""
-    lr_scheduler: Optional[TorchLRScheduler] = None
+    lr_scheduler: Optional[LRScheduler] = None
     r"""Learning rate scheduler."""
     metrics: Optional[dict[str, Metric]] = None
     r"""Metrics used for evaluation."""
