@@ -8,7 +8,7 @@ import pytest
 
 from tsdm.data import MapDataset, PandasDataset
 from tsdm.testing import assert_protocol
-from tsdm.types.protocols import MappingProtocol
+from tsdm.types.protocols import Map
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def test_pandas_dataset(name: str) -> None:
 def test_pandas_mapping(name: str) -> None:
     r"""Test object."""
     dataset = DATASETS[name]
-    assert_protocol(dataset, MappingProtocol)
+    assert_protocol(dataset, Map)
 
 
 def test_map_dataset_mapping():

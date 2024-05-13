@@ -26,8 +26,9 @@ def test_random_sampler_dict() -> None:
         8: float,
         9: Ellipsis,
     }
-    sampler = RandomSampler(data, shuffle=True)
-    assert_type(sampler, RandomSampler[object])
+
+    sampler = RandomSampler(data, shuffle=True)  # type: ignore[var-annotated, arg-type]
+    assert_type(sampler, RandomSampler[object])  # type: ignore[assert-type]
 
     # check length
     assert len(sampler) == len(data) == 10
@@ -85,8 +86,8 @@ def test_map_data_c() -> None:
 
 def test_map_data_no_typehint() -> None:
     data = {10: "foo", 11: "bar"}
-    sampler = RandomSampler(data)
-    assert_type(sampler, RandomSampler[str])
+    sampler = RandomSampler(data)  # type: ignore[var-annotated, arg-type]
+    assert_type(sampler, RandomSampler[str])  # type: ignore[assert-type]
     # check that we can iterate over the index
     for val in sampler:
         assert isinstance(val, str)

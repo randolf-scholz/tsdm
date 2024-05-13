@@ -74,7 +74,7 @@ from tsdm.metrics import Metric
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.types.protocols import MutableSequenceProtocol
+from tsdm.types.protocols import MutSeq
 from tsdm.utils.decorators import pprint_repr, pprint_sequence
 from tsdm.utils.funcutils import get_mandatory_kwargs
 
@@ -104,7 +104,7 @@ class Callback(Protocol):
 
 
 @runtime_checkable
-class CallbackSequence(MutableSequenceProtocol[Callback], Callback, Protocol):
+class CallbackSequence(MutSeq[Callback], Callback, Protocol):
     r"""Protocol for sequences of callbacks.
 
     Helper Protocol, in practice, this should be the intersection

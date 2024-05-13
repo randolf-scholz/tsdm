@@ -55,7 +55,7 @@ from tsdm.data.datasets import (
     get_index,
     get_last_sample,
 )
-from tsdm.types.protocols import Seq
+from tsdm.types.protocols import WeakSeq
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
 from tsdm.types.variables import K2, K, T_co
 from tsdm.utils import timedelta, timestamp
@@ -187,7 +187,7 @@ class BaseSampler(Sampler[T_co]):
 
 
 @pprint_repr
-@dataclass  # (init=False)
+@dataclass
 class RandomSampler(BaseSampler[T_co]):
     r"""Sample randomly from the data source.
 
@@ -208,55 +208,6 @@ class RandomSampler(BaseSampler[T_co]):
 
     index: Index = field(init=False)
     size: int = field(init=False)
-
-    # region __new__ overloads ---------------------------------------------------------
-    # @overload
-    # def __new__(
-    #     cls,
-    #     data: PandasDataset[Any, T_co],
-    #     /,
-    #     *,
-    #     shuffle: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> Self: ...
-    # @overload
-    # def __new__(
-    #     cls,
-    #     data: MapDataset[Any, T_co],
-    #     /,
-    #     *,
-    #     shuffle: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> Self: ...
-    # @overload
-    # def __new__(
-    #     cls,
-    #     data: IndexableDataset[T_co],
-    #     /,
-    #     *,
-    #     shuffle: bool = ...,
-    #     rng: Generator = ...,
-    # ) -> Self: ...
-    # def __new__(
-    #     cls,
-    #     data: Dataset[T_co],
-    #     /,
-    #     *,
-    #     shuffle: bool = False,
-    #     rng: Generator = RNG,
-    # ) -> None:
-    #     return super().__new__(cls, shuffle=shuffle, rng=rng)
-
-    # endregion __new__ overloads ------------------------------------------------------
-    #
-    # def __init__(
-    #     self, data: Dataset[T_co], /, *, shuffle: bool = False, rng: Generator = RNG
-    # ) -> None:
-    #     r"""Initialize the sampler."""
-    #     super().__init__(shuffle=shuffle, rng=rng)
-    #     self.data = data
-    #     self.index = get_index(data)
-    #     self.size = len(self.index)
 
     def __post_init__(self):
         self.index = get_index(self.data)
@@ -413,7 +364,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: S,
-        horizons: Seq[str | Timedelta],
+        horizons: WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         shuffle: bool = ...,
         drop_last: bool = ...,
@@ -426,7 +377,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: B,
-        horizons: Seq[str | Timedelta],
+        horizons: WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         shuffle: bool = ...,
         drop_last: bool = ...,
@@ -439,7 +390,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: M,
-        horizons: Seq[str | Timedelta],
+        horizons: WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         shuffle: bool = ...,
         drop_last: bool = ...,
@@ -452,7 +403,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: W,
-        horizons: Seq[str | Timedelta],
+        horizons: WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         shuffle: bool = ...,
         drop_last: bool = ...,
@@ -517,7 +468,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: str,
-        horizons: Seq[str | Timedelta],
+        horizons: WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         shuffle: bool = ...,
         drop_last: bool = ...,
@@ -542,7 +493,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: Mode,
-        horizons: str | Timedelta | Seq[str | Timedelta],
+        horizons: str | Timedelta | WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         drop_last: bool = False,
         shuffle: bool = False,
@@ -558,7 +509,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: ModeVar,
-        horizons: str | Timedelta | Seq[str | Timedelta],
+        horizons: str | Timedelta | WeakSeq[str | Timedelta],
         stride: str | Timedelta,
         drop_last: bool = False,
         shuffle: bool = False,

@@ -19,7 +19,6 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Callable
 
 import numpy as np
 from numpy.random import Generator
@@ -38,8 +37,7 @@ from typing_extensions import (
 from tsdm.constants import RNG
 from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
-from tsdm.types.callback_protocols import NullMap, SelfMap
-from tsdm.types.variables import T_co
+from tsdm.types.variables import T, T_co
 
 
 @runtime_checkable
@@ -47,7 +45,7 @@ class ODE(Protocol[T_co]):
     r"""Represents a system of ordinary differential equations."""
 
     @abstractmethod
-    def __call__(self, t: ArrayLike, state: ArrayLike) -> T_co:
+    def __call__(self, /, t: ArrayLike, state: ArrayLike) -> T_co:
         r"""Evaluate the vector field at given time and state.
 
         .. signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
@@ -181,37 +179,35 @@ class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
     # endregion mixin methods ----------------------------------------------------------
 
 
-class IVP_GeneratorBase(IVP_Generator[T_co]):
+class IVP_GeneratorBase(IVP_Generator[T]):
     r"""Base class for IVP_Generators."""
 
     rng: Generator = RNG
     r"""the internal Random Number Generator."""
 
-    # @property
-    # @abstractmethod
-    # def system(self) -> ODE | Any:
-    #     r"""System of differential equations."""
-
-    system: Callable[[ArrayLike, ArrayLike], T_co]
-    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-
     @property
-    def ivp_solver(self) -> IVP_Solver[T_co]:
+    def ivp_solver(self) -> IVP_Solver[T]:
         r"""Initial value problem solver."""
-        return cast(IVP_Solver[T_co], solve_ivp)
+        return cast(IVP_Solver[T], solve_ivp)
+
+    def system(self, t: ArrayLike, state: ArrayLike) -> T:
+        r"""System of differential equations."""
+        raise NotImplementedError
+
+    system = NotImplemented  # noqa: F811
 
     # region implementation ------------------------------------------------------------
     @abstractmethod
-    def _get_initial_state_impl(self, *, size: Size = ()) -> T_co:
+    def _get_initial_state_impl(self, *, size: Size = ()) -> T:
         r"""Generate (multiple) initial state(s) y₀."""
         ...
 
     @abstractmethod
-    def _make_observations_impl(self, sol: Any, /) -> T_co:
+    def _make_observations_impl(self, sol: Any, /) -> T:
         r"""Create observations from the solution."""
         ...
 
-    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> T:
         r"""Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
@@ -237,7 +233,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
                 raise TypeError(f"Unsupported {type(random_state)=}")
 
     @final
-    def get_initial_state(self, size: Size = ()) -> T_co:
+    def get_initial_state(self, size: Size = ()) -> T:
         r"""Generate (multiple) initial state(s) y₀."""
         # get the initial state
         y0 = self._get_initial_state_impl(size=size)
@@ -248,7 +244,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         return y0
 
     @final
-    def make_observations(self, sol: Any, /) -> T_co:
+    def make_observations(self, sol: Any, /) -> T:
         r"""Create observations from the solution."""
         # get observations (add noise))
         obs = self._make_observations_impl(sol)
@@ -259,7 +255,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         return obs
 
     @final
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T:
         r"""Solve the initial value problem."""
         # solve the initial value problem
         sol = self._solve_ivp_impl(t, y0=y0)
@@ -273,35 +269,29 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
     # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
     #       constraints on the initial state, solution and observations.
 
-    @property
-    def project_initial_state(self) -> SelfMap[T_co]:
+    def project_initial_state(self, y0: T, /) -> T:
         r"""Project the initial state onto the constraint set."""
-        return lambda y0: y0
+        return y0
 
-    @property
-    def project_observations(self) -> SelfMap[T_co]:
+    def project_observations(self, obs: T, /) -> T:
         r"""Project the observations onto the constraint set."""
-        return lambda obs: obs
+        return obs
 
-    @property
-    def project_solution(self) -> SelfMap:
+    def project_solution(self, sol: Any, /) -> Any:
         r"""Project the solution onto the constraint set."""
-        return lambda sol: sol
+        return sol
 
-    @property
-    def validate_initial_state(self) -> NullMap[T_co]:
+    def validate_initial_state(self, y0: T, /) -> None:
         r"""Validate constraints on the initial state."""
-        return lambda y0: None
+        return None
 
-    @property
-    def validate_observations(self) -> NullMap[T_co]:
+    def validate_observations(self, obs: T, /) -> None:
         r"""Validate constraints on the parameters."""
-        return lambda obs: None
+        return None
 
-    @property
-    def validate_solution(self) -> NullMap:
+    def validate_solution(self, sol: Any, /) -> None:
         r"""Validate constraints on the parameters."""
-        return lambda sol: None
+        return None
 
     # endregion validation and projection ----------------------------------------------
 

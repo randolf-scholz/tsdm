@@ -11,7 +11,7 @@ __all__ = [
     "Hash",
     "Lookup",
     "ShapeLike",
-    "Seq",
+    "WeakSeq",
     # Mixins
     "SupportsArray",
     "SupportsDataframe",
@@ -27,10 +27,10 @@ __all__ = [
     "NumericalArray",
     "MutableArray",
     # stdlib
-    "MappingProtocol",
-    "MutableMappingProtocol",
-    "MutableSequenceProtocol",
-    "SequenceProtocol",
+    "Map",
+    "MutMap",
+    "MutSeq",
+    "Seq",
     "SetProtocol",
     "SupportsGetItem",
     "SupportsKeysAndGetItem",
@@ -151,45 +151,6 @@ class GenericIterable(Protocol[T_co]):
     # FIXME: https://github.com/python/cpython/issues/112319
     def __class_getitem__(cls, item: type) -> GenericAlias: ...
     def __iter__(self) -> Iterator[T_co]: ...
-
-
-@runtime_checkable
-class Seq(Protocol[T_co]):
-    r"""Alternative to `Sequence` without `__contains__`, `__reversed__`, `index` and `count`.
-
-    We remove these methods, as they are not present on certain vector data structures,
-    for example, `__reversed__` is not present on `pandas.Index`.
-
-    Examples:
-        - list
-        - tuple
-        - numpy.ndarray
-        - pandas.Index
-        - pandas.Series (with integer index)
-    """
-
-    @abstractmethod
-    def __len__(self) -> int: ...
-
-    @overload
-    @abstractmethod
-    def __getitem__(self, index: int, /) -> T_co: ...
-    @overload
-    @abstractmethod
-    def __getitem__(self, index: slice, /) -> "Seq[T_co]": ...
-
-    # Mixin methods
-    def __iter__(self) -> Iterator[T_co]:
-        for i in range(len(self)):
-            yield self[i]
-
-    def __contains__(self, value: object, /) -> bool:
-        # NOTE: We need __contains__ to disallow `str`.
-        return any(x == value or x is value for x in self)
-
-    # def __reversed__(self) -> Iterator[T_co]:
-    #     for i in reversed(range(len(self))):
-    #         yield self[i]
 
 
 @runtime_checkable
@@ -868,7 +829,41 @@ class SetProtocol(Protocol[T_co]):
 
 
 @runtime_checkable
-class SequenceProtocol(Protocol[T_co]):
+class WeakSeq(Protocol[T_co]):
+    r"""Alternative to `Sequence` without `__contains__`, `__reversed__`, `index` and `count`.
+
+    We remove these methods, as they are not present on certain vector data structures,
+    for example, `__reversed__` is not present on `pandas.Index`.
+
+    Examples:
+        - list
+        - tuple
+        - numpy.ndarray
+        - pandas.Index
+        - pandas.Series (with integer index)
+    """
+
+    @abstractmethod
+    def __len__(self) -> int: ...
+
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: int, /) -> T_co: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: slice, /) -> "WeakSeq[T_co]": ...
+
+    # Mixin methods
+    def __iter__(self) -> Iterator[T_co]:
+        for i in range(len(self)):
+            yield self[i]
+
+    def __contains__(self, value: object, /) -> bool:
+        return any(x == value or x is value for x in self)
+
+
+@runtime_checkable
+class Seq(Protocol[T_co]):
     r"""Protocol version of `collections.abc.Sequence`.
 
     Note:
@@ -888,19 +883,33 @@ class SequenceProtocol(Protocol[T_co]):
     def __getitem__(self, index: int, /) -> T_co: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> "SequenceProtocol[T_co]": ...
+    def __getitem__(self, index: slice, /) -> Self: ...
 
     # Mixin methods
-    # TODO: implement mixin methods
-    # def __reversed__(self) -> Iterator[T_co]: ...  # NOTE: intentionally excluded
-    def __iter__(self) -> Iterator[T_co]: ...
-    def __contains__(self, value: object, /) -> bool: ...
-    def index(self, value: Any, start: int = 0, stop: int = ..., /) -> int: ...
-    def count(self, value: Any, /) -> int: ...
+    # NOTE: intentionally excluded __reversed__
+    def __iter__(self) -> Iterator[T_co]:
+        for i in range(len(self)):
+            yield self[i]
+
+    def __contains__(self, value: object, /) -> bool:
+        return any(x == value or x is value for x in self)
+
+    @overload
+    def index(self, value: Any, start: int = ..., /) -> int: ...
+    @overload
+    def index(self, value: Any, start: int = ..., stop: int = ..., /) -> int: ...
+    def index(self, value: Any, start: int = 0, stop: None | int = None, /) -> int:
+        for i, x in enumerate(self[start:stop]):
+            if x == value or x is value:
+                return i
+        raise ValueError(f"{value!r} is not in list")
+
+    def count(self, value: Any, /) -> int:
+        return sum(x == value or x is value for x in self)
 
 
 @runtime_checkable
-class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
+class MutSeq(Seq[T], Protocol[T]):
     r"""Protocol version of `collections.abc.MutableSequence`."""
 
     @overload
@@ -908,7 +917,7 @@ class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
     def __getitem__(self, index: int, /) -> T: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> "MutableSequenceProtocol[T]": ...
+    def __getitem__(self, index: slice, /) -> Self: ...
     @overload
     @abstractmethod
     def __setitem__(self, index: int, value: T, /) -> None: ...
@@ -923,68 +932,101 @@ class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
     def __delitem__(self, index: slice, /) -> None: ...
     def insert(self, index: int, value: T, /) -> None: ...
 
-    # Mixin methods
-    # TODO: Implement mixin methods
-    def append(self, value: T, /) -> None: ...
-    def clear(self, /) -> None: ...
-    def extend(self, values: Iterable[T], /) -> None: ...
-    def reverse(self, /) -> None: ...
-    def pop(self, index: int = -1, /) -> T: ...
-    def remove(self, value: T, /) -> None: ...
-    def __iadd__(self, values: Iterable[T], /) -> Self: ...
+    # Mixin Methods
+    def __iadd__(self, values: Iterable[T], /) -> Self:
+        self.extend(values)
+        return self
+
+    def append(self, value: T, /) -> None:
+        self.insert(len(self), value)
+
+    def clear(self, /) -> None:
+        del self[:]
+
+    def extend(self, values: Iterable[T], /) -> None:
+        for idx, value in enumerate(values, start=len(self)):
+            self.insert(idx, value)
+
+    def reverse(self, /) -> None:
+        self[:] = self[::-1]
+
+    def pop(self, index: int = -1, /) -> T:
+        value = self[index]
+        del self[index]
+        return value
+
+    def remove(self, value: T, /) -> None:
+        del self[self.index(value)]
 
 
 @runtime_checkable
-class MappingProtocol(Collection[K], Protocol[K, V_co]):
+class Map(Collection[K], Protocol[K, V_co]):
     r"""Protocol version of `collections.abc.Mapping`."""
-
-    # FIXME: implement mixin methods
 
     @abstractmethod
     def __getitem__(self, __key: K, /) -> V_co: ...
 
-    # Mixin methods
+    # Mixin Methods
+    def keys(self) -> KeysView[K]:
+        return KeysView(self)  # type: ignore[arg-type]
+
+    def values(self) -> ValuesView[V_co]:
+        return ValuesView(self)  # type: ignore[arg-type]
+
+    def items(self) -> ItemsView[K, V_co]:
+        return ItemsView(self)  # type: ignore[arg-type]
+
     @overload
-    def get(self, __key: K) -> V_co | None: ...
+    def get(self, key: K, /) -> V_co | None: ...
     @overload
-    def get(self, __key: K, default: V_co | T) -> V_co | T: ...
-    def items(self) -> ItemsView[K, V_co]: ...
-    def keys(self) -> KeysView[K]: ...
-    def values(self) -> ValuesView[V_co]: ...
-    def __contains__(self, __key: object) -> bool: ...
-    def __eq__(self, __other: object) -> bool: ...
+    def get(self, key: K, /, default: V_co | T) -> V_co | T: ...
+    def get(self, key, /, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __eq__(self, other: object, /) -> bool:
+        if not isinstance(other, Map):
+            return NotImplemented
+        return dict(self.items()) == dict(other.items())
+
+    def __contains__(self, key: object, /) -> bool:
+        try:
+            self[key]  # type: ignore[index]
+        except KeyError:
+            return False
+        return True
 
 
 @runtime_checkable
-class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
+class MutMap(Map[K, V], Protocol[K, V]):
     r"""Protocol version of `collections.abc.MutableMapping`."""
 
+    @abstractmethod
+    def __setitem__(self, key: K, value: V, /) -> None: ...
+    @abstractmethod
+    def __delitem__(self, key: K, /) -> None: ...
+
     # FIXME: implement mixin methods
-
-    @abstractmethod
-    def __setitem__(self, __key: K, __value: V, /) -> None: ...
-    @abstractmethod
-    def __delitem__(self, __key: K, /) -> None: ...
-
-    # Mixin methods
     def clear(self) -> None: ...
     @overload
-    def pop(self, __key: K) -> V: ...
+    def pop(self, key: K, /) -> V: ...
     @overload
-    def pop(self, __key: K, default: V) -> V: ...
+    def pop(self, key: K, /, default: V) -> V: ...
     @overload
-    def pop(self, __key: K, default: T) -> V | T: ...
+    def pop(self, key: K, /, default: T) -> V | T: ...
     def popitem(self) -> tuple[K, V]: ...
     @overload
     def setdefault(
-        self: "MutableMappingProtocol[K, T | None]", __key: K, __default: None = ...
+        self: "MutMap[K, T | None]", key: K, /, default: None = ...
     ) -> T | None: ...
     @overload
-    def setdefault(self, __key: K, __default: V) -> V: ...
+    def setdefault(self, key: K, /, default: V) -> V: ...
     @overload
-    def update(self, __m: SupportsKeysAndGetItem[K, V], **kwargs: V) -> None: ...
+    def update(self, m: SupportsKeysAndGetItem[K, V], /, **kwargs: V) -> None: ...
     @overload
-    def update(self, __m: Iterable[tuple[K, V]], **kwargs: V) -> None: ...
+    def update(self, m: Iterable[tuple[K, V]], /, **kwargs: V) -> None: ...
     @overload
     def update(self, **kwargs: V) -> None: ...
 
@@ -1005,11 +1047,6 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]] = {}
     r"""The fields of the dataclass."""
 
-    # @property
-    # def __dataclass_fields__(self) -> dict[str, dataclasses.Field]:
-    #     r"""Return the fields of the dataclass."""
-    #     ...
-
     @classmethod
     def __subclasshook__(cls, other: type, /) -> bool:
         r"""Cf https://github.com/python/cpython/issues/106363."""
@@ -1025,26 +1062,22 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
         - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
     """
 
-    # NOTE: Problems is set tuple[str, ...]
+    # NOTE: Problems if denoted as  tuple[str, ...]
     _fields: Any  # FIXME: Should be tuple[*str] (not tuple[str, ...])
     r"""The fields of the namedtuple."""
     # FIXME: https://github.com/python/typing/issues/1216
     # FIXME: https://github.com/python/typing/issues/1273
 
-    # @property  # NOTE: @property won't work for classes
-    # def _fields(self) -> tuple[str, ...]:
-    #     r"""Return the fields of the namedtuple."""
-    #     ...
+    # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
 
     def _asdict(self) -> dict[str, Any]: ...
-    # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
-    def __len__(self) -> int: ...
     def __contains__(self, key: object, /) -> bool: ...
+    def __iter__(self) -> Iterator[T_co]: ...
+    def __len__(self) -> int: ...
     @overload
     def __getitem__(self, key: SupportsIndex, /) -> T_co: ...
     @overload
     def __getitem__(self, key: slice, /) -> tuple[T_co, ...]: ...
-    def __iter__(self) -> Iterator[T_co]: ...
 
     # def __lt__(self, __value: tuple[T_co, ...]) -> bool: ...
     # def __le__(self, __value: tuple[T_co, ...]) -> bool: ...

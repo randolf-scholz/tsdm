@@ -9,7 +9,7 @@ from numpy._typing import NDArray
 from typing_extensions import assert_type
 
 from tsdm.types.protocols import (
-    SequenceProtocol,
+    Seq,
     ShapeLike,
     SupportsKeysAndGetItem,
     SupportsKwargs,
@@ -68,23 +68,39 @@ def test_shapelike_protocol() -> None:
 
 def test_sequence_protocol() -> None:
     r"""Validate the SequenceProtocol class."""
+    # down-casting
+    d: Sequence[int] = [1, 2, 3]
+    _: Seq[int] = d
 
-    def foo(x: Sequence[T]) -> SequenceProtocol[T]:
+    def down_cast(x: Sequence[T]) -> Seq[T]:
         return x
 
-    # checking list
-    seq_list: SequenceProtocol[int] = [1, 2, 3]
-    assert isinstance(seq_list, Sequence)
-    assert isinstance(seq_list, SequenceProtocol)
+    assert_type(down_cast([1, 2, 3]), Seq[int])
 
-    # check tuple
-    seq_tup: SequenceProtocol[int] = (1, 2, 3)
+    # checking list
+    seq_list: Seq[int] = [1, 2, 3]
+    assert isinstance(seq_list, Sequence)
+    assert isinstance(seq_list, Seq)
+
+    # check inference 2
+    seq_tup: Seq[int] = (1, 2, 3)  # pyright: ignore[reportAssignmentType]
     assert isinstance(seq_tup, Sequence)
-    assert isinstance(seq_tup, SequenceProtocol)
+    assert isinstance(seq_tup, Seq)
 
     # check string
     seq_str: str = "foo"
     assert isinstance(seq_str, Sequence)
+
+
+def test_seq_inference() -> None:
+    r"""Test inference for seq-protocol."""
+
+    def as_seq(x: Seq[T]) -> Seq[T]:
+        return x
+
+    var_tuple: tuple[int, ...] = (1, 2, 3)
+    seq_tup = as_seq(var_tuple)  # pyright: ignore[reportArgumentType]
+    assert_type(seq_tup, Seq[int])  # pyright: ignore[reportAssertTypeFailure]
 
 
 def test_get_interscetion_indexable() -> None:

@@ -177,8 +177,8 @@ ignore = [
     "E202",  # Whitespace before ')'
     "E203",  # Whitespace before ':'
     "E221",  # Multiple spaces before operator
-    #    "E226",  # Missing whitespace around arithmetic operator
-    #    "E231",  # Missing whitespace after ','
+    # "E226",  # Missing whitespace around arithmetic operator
+    # "E231",  # Missing whitespace after ','
     "E241",  # Multiple spaces after comma
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
@@ -210,8 +210,6 @@ ignore = [
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
     "RUF013",  # PEP 484 prohibits implicit Optional # FIXME: https://github.com/astral-sh/ruff/issues/9334
     "RUF022",  # __all__ not sorted
-    #    "RUF023",  # __slots__ not sorted
-    #    "RUF025",  # use dict.fromkeys instead of dict comprehension
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
     # refurb

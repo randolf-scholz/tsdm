@@ -17,25 +17,25 @@ from functools import wraps
 
 from typing_extensions import Protocol, overload, override
 
-from tsdm.types.protocols import MappingProtocol
+from tsdm.types.protocols import Map
 from tsdm.types.variables import K, T, V_co
 
 
-class IterKeys(MappingProtocol[K, V_co], Protocol[K, V_co]):
+class IterKeys(Map[K, V_co], Protocol[K, V_co]):
     r"""Protocol for objects with __iter__ and items()."""
 
     @override
     def __iter__(self) -> Iterator[K]: ...
 
 
-class IterValues(MappingProtocol[K, V_co], Protocol[K, V_co]):
+class IterValues(Map[K, V_co], Protocol[K, V_co]):
     r"""Protocol for objects with __iter__ and items()."""
 
     @override
     def __iter__(self) -> Iterator[V_co]: ...  # type: ignore[override]
 
 
-class IterItems(MappingProtocol[K, V_co], Protocol[K, V_co]):
+class IterItems(Map[K, V_co], Protocol[K, V_co]):
     r"""Protocol for objects with __iter__ and items()."""
 
     @override
@@ -43,9 +43,9 @@ class IterItems(MappingProtocol[K, V_co], Protocol[K, V_co]):
 
 
 @overload
-def iter_keys(obj: type[MappingProtocol[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
+def iter_keys(obj: type[Map[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
 @overload
-def iter_keys(obj: MappingProtocol[K, V_co], /) -> IterKeys[K, V_co]: ...
+def iter_keys(obj: Map[K, V_co], /) -> IterKeys[K, V_co]: ...
 @overload
 def iter_keys(obj: T, /) -> T: ...
 def iter_keys(obj, /):
@@ -77,11 +77,9 @@ def iter_keys(obj, /):
 
 
 @overload
-def iter_values(
-    obj: type[MappingProtocol[K, V_co]], /
-) -> type[IterValues[K, V_co]]: ...
+def iter_values(obj: type[Map[K, V_co]], /) -> type[IterValues[K, V_co]]: ...
 @overload
-def iter_values(obj: MappingProtocol[K, V_co], /) -> IterValues[K, V_co]: ...
+def iter_values(obj: Map[K, V_co], /) -> IterValues[K, V_co]: ...
 @overload
 def iter_values(obj: T, /) -> T: ...
 def iter_values(obj, /):
@@ -113,9 +111,9 @@ def iter_values(obj, /):
 
 
 @overload
-def iter_items(obj: type[MappingProtocol[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
+def iter_items(obj: type[Map[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
 @overload
-def iter_items(obj: MappingProtocol[K, V_co], /) -> IterItems[K, V_co]: ...
+def iter_items(obj: Map[K, V_co], /) -> IterItems[K, V_co]: ...
 @overload
 def iter_items(obj: T, /) -> T: ...
 def iter_items(obj, /):

@@ -15,7 +15,7 @@ from typing_extensions import Any, Literal, TypeAlias, assert_type
 
 from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingSampler
-from tsdm.types.protocols import Seq
+from tsdm.types.protocols import WeakSeq
 from tsdm.types.time import DateTime
 from tsdm.utils import flatten_dict
 
@@ -977,7 +977,7 @@ def test_pandas_timestamps() -> None:
     r"""Test the SlidingWindowSampler."""
     timedeltas = Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
-    time: Seq[DateTime] = pd.concat([
+    time: WeakSeq[DateTime] = pd.concat([
         Series([tmin]),
         tmin + timedeltas.cumsum(),
     ]).reset_index(drop=True)

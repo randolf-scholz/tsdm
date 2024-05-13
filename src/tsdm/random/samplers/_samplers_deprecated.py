@@ -13,12 +13,12 @@ from typing_extensions import Any, Generic, Optional, cast, deprecated
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
-from tsdm.types.time import DTVar, TDVar
+from tsdm.types.time import TD, DateTime
 from tsdm.utils import timedelta, timestamp
 
 
 @deprecated("Use SlidingWindowSampler instead.")
-class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
+class IntervalSampler(BaseSampler[slice], Generic[TD]):
     r"""Return all intervals `[a, b]`.
 
     The intervals must satisfy:
@@ -31,19 +31,17 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     - `sₖ` is the stride corresponding to intervals of size `Δtₖ`.
     """
 
-    offset: TDVar
-    deltax: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
-    stride: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
+    offset: TD
+    deltax: TD | Lookup[int, TD] | Callable[[int], TD]
+    stride: TD | Lookup[int, TD] | Callable[[int], TD]
     intervals: DataFrame
     shuffle: bool = False
 
     @staticmethod
-    def _get_value(
-        obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int, /
-    ) -> TDVar:
+    def _get_value(obj: TD | Lookup[int, TD] | Callable[[int], TD], k: int, /) -> TD:
         match obj:
             case Callable() as func:  # type: ignore[misc]
-                return func(k)
+                return func(k)  # type: ignore[unreachable]
             case Lookup() as mapping:
                 return mapping[k]
             case _:
@@ -52,23 +50,24 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     def __init__(
         self,
         *,
-        xmin: TDVar,
-        xmax: TDVar,
-        deltax: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar],
-        stride: Optional[TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]] = None,
+        xmin: TD,
+        xmax: TD,
+        deltax: TD | Lookup[int, TD] | Callable[[int], TD],
+        stride: Optional[TD | Lookup[int, TD] | Callable[[int], TD]] = None,
         levels: Optional[Sequence[int]] = None,
-        offset: Optional[TDVar] = None,
+        offset: Optional[TD] = None,
         shuffle: bool = False,
     ) -> None:
         super().__init__(shuffle=shuffle)
         # set stride and offset
         zero = 0 * (xmax - xmin)
-        stride = zero if stride is None else stride
-        offset = xmin if offset is None else offset
-        delta_max = max(offset - xmin, xmax - offset)
+        self.stride = zero if stride is None else stride
+        self.offset = xmin if offset is None else offset
+        self.deltax = deltax
+        delta_max = max(self.offset - xmin, xmax - self.offset)
 
         # validate bounds
-        assert xmin <= offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
+        assert xmin <= self.offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
 
         # determine levels
 
@@ -78,7 +77,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             case None, Sequence() as sequence:
                 levels = [k for k, v in enumerate(sequence) if v <= delta_max]
             case None, Callable() as func:  # type: ignore[misc]
-                levels = []
+                levels = []  # type: ignore[unreachable]
                 for k in count():
                     dt = self._get_value(func, k)
                     if dt == zero:
@@ -96,13 +95,13 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         # validate levels
         assert all(self._get_value(deltax, k) <= delta_max for k in levels)
         # compute valid intervals
-        intervals: list[tuple[TDVar, TDVar, TDVar, TDVar]] = []
+        intervals: list[tuple[TD, TD, TD, TD]] = []
 
         # for each level, get all intervals
         for k in levels:
-            dt = self._get_value(deltax, k)
-            st = self._get_value(stride, k)
-            x0 = self._get_value(offset, k)
+            dt = self._get_value(self.deltax, k)
+            st = self._get_value(self.stride, k)
+            x0 = self._get_value(self.offset, k)
 
             # get valid interval bounds, probably there is an easier way to do it...
             stride_left: list[int] = compute_grid(xmin, xmax, st, offset=x0)  # type: ignore[misc]
@@ -114,14 +113,11 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             if not valid_strides:
                 break
 
-            intervals.extend([  # pyright: ignore[reportArgumentType]
+            intervals.extend([
                 (x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides
             ])
 
-        # set variables
-        self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
-        self.deltax = deltax
-        self.stride = stride  # pyright: ignore[reportAttributeAccessIssue]
+        # set intervals
         self.intervals = DataFrame(
             intervals,
             columns=["lower_bound", "upper_bound", "delta", "stride"],
@@ -153,17 +149,17 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
 
 @deprecated("Use SlidingWindowSampler instead.")
-class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
+class SequenceSampler(BaseSampler, Generic[TD]):
     r"""Samples sequences of fixed length."""
 
-    data: NDArray[DTVar]  # type: ignore[type-var]
-    seq_len: TDVar
+    data: NDArray[DateTime[TD]]  # type: ignore[type-var]
+    seq_len: TD
     r"""The length of the sequences."""
-    stride: TDVar
+    stride: TD
     r"""The stride at which to sample."""
-    xmax: DTVar
+    xmax: DateTime[TD]
     r"""The maximum value at which to stop sampling."""
-    xmin: DTVar
+    xmin: DateTime[TD]
     r"""The minimum value at which to start sampling."""
     return_mask: bool = False
     r"""Whether to return masks instead of indices."""
@@ -172,15 +168,15 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
     def __init__(
         self,
-        data_source: Iterable[DTVar] | SupportsLenAndGetItem[DTVar],
+        data_source: Iterable[DateTime[TD]] | SupportsLenAndGetItem[DateTime[TD]],
         /,
         *,
         return_mask: bool = False,
-        seq_len: str | TDVar,
+        seq_len: str | TD,
         shuffle: bool = False,
-        stride: str | TDVar,
-        tmin: Optional[DTVar] = None,
-        tmax: Optional[DTVar] = None,
+        stride: str | TD,
+        tmin: Optional[str | DateTime[TD]] = None,
+        tmax: Optional[str | DateTime[TD]] = None,
     ) -> None:
         super().__init__(shuffle=shuffle)
         self.data = np.asarray(data_source)
@@ -191,7 +187,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmin = timestamp(time_str)
             case _:
-                self.xmin = tmin  # pyright: ignore[reportAttributeAccessIssue]
+                self.xmin = tmin
 
         match tmax:
             case None:
@@ -199,14 +195,12 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmax = timestamp(time_str)
             case _:
-                self.xmax = tmax  # pyright: ignore[reportAttributeAccessIssue]
+                self.xmax = tmax
 
-        total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
-        self.stride = cast(
-            TDVar, timedelta(stride) if isinstance(stride, str) else stride
-        )
+        total_delta = self.xmax - self.xmin
+        self.stride = cast(TD, timedelta(stride) if isinstance(stride, str) else stride)
         self.seq_len = cast(
-            TDVar, timedelta(seq_len) if isinstance(seq_len, str) else seq_len
+            TD, timedelta(seq_len) if isinstance(seq_len, str) else seq_len
         )
 
         # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
@@ -222,16 +216,16 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             for x, y in self._iter_tuples()
         ])
 
-    def _iter_tuples(self) -> Iterator[tuple[DTVar, DTVar]]:
+    def _iter_tuples(self) -> Iterator[tuple[DateTime[TD], DateTime[TD]]]:
         x = self.xmin
-        y = cast(DTVar, x + self.seq_len)  # type: ignore[operator, call-overload, redundant-cast]
+        y = x + self.seq_len
         # allows nice handling of negative seq_len
         x, y = min(x, y), max(x, y)
         yield x, y
 
         for _ in range(len(self)):
-            x = x + self.stride  # type: ignore[assignment, operator, call-overload]
-            y = y + self.stride  # type: ignore[assignment, operator, call-overload]
+            x = x + self.stride
+            y = y + self.stride
             yield x, y
 
     def __len__(self) -> int:
