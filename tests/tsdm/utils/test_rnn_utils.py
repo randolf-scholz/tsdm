@@ -16,7 +16,7 @@ TESTCASES = [
     [torch.randn(abs(n - 3), 2, 3) for n in range(6)],
     [torch.randn(abs(n - 3), 2) for n in range(6)],
     # FIXME: https://github.com/pytorch/pytorch/issues/80605
-    [torch.randn(abs(n - 3)) for n in range(6)],
+    # [torch.randn(abs(n - 3)) for n in range(6)],
 ]
 
 

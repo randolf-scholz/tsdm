@@ -120,21 +120,24 @@ def test_numpy_data() -> None:
         assert isinstance(val, np.str_)
 
 
-PYTHON_STRINGS = ["foo", "bar", "baz", "qux", "quux", "quuz", "corge"]
+PYTHON_STRINGS = ["foo", "bar", "baz", "qux", "quux", "quuz", "corge", "grault"]
 MAPPED_STRINGS = {2 * k + 1: s for k, s in enumerate(PYTHON_STRINGS)}  # generic index
 STRING_DATA = {
-    "list": PYTHON_STRINGS,
-    "tuple": tuple(PYTHON_STRINGS),
-    "dict": MAPPED_STRINGS,
-    "numpy": np.array(PYTHON_STRINGS, dtype=np.str_),
-    "index": pd.Index(PYTHON_STRINGS, dtype="string"),
-    "series": pd.Series(MAPPED_STRINGS, dtype="string"),
-    "series-pyarrow": pd.Series(MAPPED_STRINGS, dtype="string[pyarrow]"),
-}
+    "list"          : PYTHON_STRINGS,
+    "tuple"         : tuple(PYTHON_STRINGS),
+    "dict"          : MAPPED_STRINGS,
+    "numpy"         : np.array(PYTHON_STRINGS, dtype=np.str_),
+    "index"         : pd.Index(PYTHON_STRINGS, dtype="string"),
+    "series"        : pd.Series(PYTHON_STRINGS, dtype="string"),
+    "series-indexed": pd.Series(MAPPED_STRINGS, dtype="string"),
+    "series-pyarrow": pd.Series(PYTHON_STRINGS, dtype="string[pyarrow]"),
+}  # fmt: skip
 
 
-@pytest.mark.parametrize("data", STRING_DATA.values(), ids=STRING_DATA)
-def test_string_data(data):
+@pytest.mark.flaky(reruns=2)  # 1 in 10⁹ chance of failure
+@pytest.mark.parametrize("name", STRING_DATA)
+def test_string_data(name: str) -> None:
+    data = STRING_DATA[name]
     sampler = RandomSampler(data, shuffle=True)
 
     assert len(sampler) == len(PYTHON_STRINGS)

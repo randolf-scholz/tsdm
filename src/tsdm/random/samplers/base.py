@@ -217,7 +217,7 @@ class RandomSampler(BaseSampler[T_co]):
         n = self.size
         index = self.index[self.rng.permutation(n)] if self.shuffle else self.index
         # avoids attribute lookup in the loop
-        data = self.data.iloc if isinstance(self.data, PandasDataset) else self.data
+        data = self.data.loc if isinstance(self.data, PandasDataset) else self.data
         for key in index:
             yield data[key]
 
