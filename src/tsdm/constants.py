@@ -1,18 +1,12 @@
 r"""Constants used throughout the package."""
 
 __all__ = [
-    # Constant Functions
-    "CONST_TRUE_FN",
-    "CONST_FALSE_FN",
-    "CONST_NONE_FN",
-    "CONSTANT_FUNCTIONS",
     # Constants
     "ATOL",
     "BOOLEAN_PAIRS",
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
     "EMPTY_MAP",
-    "EMPTY_PATH",
     "EPS",
     "EXAMPLE_BOOLS",
     "EXAMPLE_CATEGORIES",
@@ -29,73 +23,62 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
-from pathlib import Path
-from types import MappingProxyType
+from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
 
 import numpy as np
 import pandas
 import torch
-from typing_extensions import Any, Final, Literal, Never
+from numpy.random import Generator
+from typing_extensions import Any, Final, Never
 
-RNG = np.random.default_rng()
+# NOTE: Use frozenmap() if PEP 603 is accepted.
+EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
+r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
+RNG: Final[Generator] = np.random.default_rng()
 r"""Default random number generator."""
-ROOT_3 = np.sqrt(3)
+ROOT_3: Final[float] = float(np.sqrt(3))
 r"""Square root of 3."""
 ATOL: Final[float] = 1e-6
 r"""CONST: Default absolute precision."""
 RTOL: Final[float] = 1e-6
 r"""CONST: Default relative precision."""
 EPS: Final[dict[torch.dtype, float]] = {
-    torch.float16: 1e-3,
-    torch.float32: 1e-6,
-    torch.float64: 1e-15,
-    # complex floats
-    torch.complex32: 1e-3,
-    torch.complex64: 1e-6,
-    torch.complex128: 1e-15,
-    # other floats
-    torch.bfloat16: 1e-2,
-}
+    torch.bfloat16   : 1e-2,
+    torch.complex128 : 1e-15,
+    torch.complex32  : 1e-3,
+    torch.complex64  : 1e-6,
+    torch.float16    : 1e-3,
+    torch.float32    : 1e-6,
+    torch.float64    : 1e-15,
+}  # fmt: skip
 r"""CONST: Default epsilon for each dtype."""
 
-EMPTY_PATH: Final[Path] = Path()
-r"""Constant: Blank path."""
-
-TIME_UNITS: dict[str, np.timedelta64] = {
-    u: np.timedelta64(1, u)
-    for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
+TIME_UNITS: Final[dict[str, np.timedelta64]] = {
+    "Y": np.timedelta64(1, "Y"),
+    "M": np.timedelta64(1, "M"),
+    "W": np.timedelta64(1, "W"),
+    "D": np.timedelta64(1, "D"),
+    "h": np.timedelta64(1, "h"),
+    "m": np.timedelta64(1, "m"),
+    "s": np.timedelta64(1, "s"),
+    "us": np.timedelta64(1, "us"),
+    "ns": np.timedelta64(1, "ns"),
+    "ps": np.timedelta64(1, "ps"),
+    "fs": np.timedelta64(1, "fs"),
+    "as": np.timedelta64(1, "as"),
 }
 
-# NOTE: Use frozenmap() if PEP 603 is accepted.
-EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
-r"""Constant: Immutable Empty `Mapping`."""
-
-
-def CONST_TRUE_FN(*_: Any, **__: Any) -> Literal[True]:
-    r"""Constant True Function."""
-    return True
-
-
-def CONST_FALSE_FN(*_: Any, **__: Any) -> Literal[False]:
-    r"""Constant False Function."""
-    return False
-
-
-def CONST_NONE_FN(*_: Any, **__: Any) -> Literal[None]:
-    r"""Constant None Function."""
-    return None
-
-
-CONSTANT_FUNCTIONS = {
-    None: CONST_NONE_FN,
-    True: CONST_TRUE_FN,
-    False: CONST_FALSE_FN,
-}
-
-BUILTIN_CONSTANTS = frozenset({None, True, False, Ellipsis, NotImplemented})
+BUILTIN_CONSTANTS: Final[frozenset[object]] = frozenset({
+    None,
+    True,
+    False,
+    Ellipsis,
+    NotImplemented,
+})
 r"""Builtin constants https://docs.python.org/3/library/constants.html."""
+
 BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
-    type(None),
+    NoneType,
     bool,
     int,
     float,
@@ -111,38 +94,21 @@ BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
     slice,
     range,
     object,
-    type(Ellipsis),
-    type(NotImplemented),
+    EllipsisType,
+    NotImplementedType,
 })
 r"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
 
 
 NA_STRINGS: Final[frozenset[str]] = frozenset({
-    r"",
-    r"-",
-    r"n/a",
-    r"N/A",
-    r"<na>",
-    r"<NA>",
-    r"nan",
-    r"NaN",
-    r"NAN",
-    r"NaT",
-    r"none",
-    r"None",
-    r"NONE",
-})
+    "", "-",
+    "n/a", "N/A",
+    "<na>", "<NA>",
+    "nan", "NaN", "NAN",
+    "NaT",
+    "none", "None", "NONE",
+})  # fmt: skip
 r"""String that correspond to NA values."""
-
-NA_VALUES: Final[frozenset] = frozenset({
-    None,
-    float("nan"),
-    np.nan,
-    pandas.NA,
-    pandas.NaT,
-    np.datetime64("NaT"),
-})
-r"""Values that correspond to NaN."""
 
 NULL_VALUES: Final[frozenset[str]] = frozenset({
     "", "-", "--", "?", "??",
@@ -168,6 +134,16 @@ NULL_VALUES: Final[frozenset[str]] = frozenset({
 })  # fmt: skip
 r"""A list of common null value string represenations."""
 
+NA_VALUES: Final[frozenset[object]] = frozenset({
+    None,
+    float("nan"),
+    np.nan,
+    pandas.NA,
+    pandas.NaT,
+    np.datetime64("NaT"),
+})
+r"""Values that correspond to NaN."""
+
 BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {"f"     : False, "t"    : True},
     {"false" : False, "true" : True},
@@ -181,7 +157,7 @@ BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
 ]  # fmt: skip
 r"""Matched pairs of values that correspond to booleans."""
 
-PRECISION: Final[dict] = {
+PRECISION: Final[dict[int | type | torch.dtype, float]] = {
     16            : 2**-11,
     32            : 2**-24,
     64            : 2**-53,
@@ -200,13 +176,13 @@ r"""Maps precision to the corresponding precision factor."""
 EXAMPLE_BOOLS: Final[list[bool]] = [True, False]
 r"""List of example bool objects."""
 
-EXAMPLE_EMOJIS: Final[list[str]] = list(
-    "😀😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏"
-    "😐😑😒😓😔😕😖😗😘😙😚😛😜😝😞😟"
-    "😠😡😢😣😤😥😦😧😨😩😪😫😬😭😮😯"
-    "😰😱😲😳😴😵😶😷😸😹😺😻😼😽😾😿"
-    "🙀🙁🙂🙃🙄🙅🙆🙇🙈🙉🙊🙋🙌🙍🙎🙏"
-)
+EXAMPLE_EMOJIS: Final[list[str]] = [
+    "😀", "😁", "😂", "😃", "😄", "😅", "😆", "😇", "😈", "😉", "😊", "😋", "😌", "😍", "😎", "😏"
+    "😐", "😑", "😒", "😓", "😔", "😕", "😖", "😗", "😘", "😙", "😚", "😛", "😜", "😝", "😞", "😟"
+    "😠", "😡", "😢", "😣", "😤", "😥", "😦", "😧", "😨", "😩", "😪", "😫", "😬", "😭", "😮", "😯"
+    "😰", "😱", "😲", "😳", "😴", "😵", "😶", "😷", "😸", "😹", "😺", "😻", "😼", "😽", "😾", "😿"
+    "🙀", "🙁", "🙂", "🙃", "🙄", "🙅", "🙆", "🙇", "🙈", "🙉", "🙊", "🙋", "🙌", "🙍", "🙎", "🙏"
+]  # fmt: skip
 r"""List of example unicode objects."""
 
 EXAMPLE_STRINGS: Final[list[str]] = [
