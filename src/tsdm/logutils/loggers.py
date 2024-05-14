@@ -43,6 +43,7 @@ Examples:
         - the current predictions
         - the current targets
     - the current metrics
+    - the current metrics
 """
 
 __all__ = [

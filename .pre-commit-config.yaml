@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.18
+    rev: v0.2.24
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -117,8 +117,6 @@ repos:
       # script-based hooks
       - id: pyproject-validate-version
       - id: pyproject-update-deps
-      - id: pyproject-check-deps
-        args: ["--known-unused-deps", "tensorboard", "pydantic"]
       - id: python-check-clean-interface
         files: 'src/'
   # markdownlint

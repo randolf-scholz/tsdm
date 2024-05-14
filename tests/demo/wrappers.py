@@ -1,4 +1,4 @@
-r"""Ulities for wrapping objects and types, in particular for redirecting methods."""
+r"""Utilities for wrapping objects and types, in particular for redirecting methods."""
 
 __all__ = [
     # Protocols

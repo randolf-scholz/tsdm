@@ -2,7 +2,7 @@ r"""Test iteration wrapper functions."""
 
 import logging
 
-from tests.demo.wrappers import iter_items, iter_keys, iter_values
+from demo.wrappers import iter_items, iter_keys, iter_values
 
 __logger__ = logging.getLogger(__name__)
 
