@@ -67,6 +67,7 @@ TIME_UNITS: Final[dict[str, np.timedelta64]] = {
     "fs": np.timedelta64(1, "fs"),
     "as": np.timedelta64(1, "as"),
 }
+r"""Time units for `numpy.timedelta64`."""
 
 BUILTIN_CONSTANTS: Final[frozenset[object]] = frozenset({
     None,

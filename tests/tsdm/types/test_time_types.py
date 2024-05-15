@@ -28,7 +28,7 @@ DT_PYTHON: python_datetime = python_datetime.fromisoformat(ISO_DATE)
 DT_ARROW = pyarrow.scalar(DT_PYTHON, type=pyarrow.timestamp("ms"))
 DATETIMES: dict[str, DateTime] = {
     "float"       : DT_FLOAT,
-    "int"         : DT_INT,  # pyright: ignore[reportAssignmentType]
+    "int"         : DT_INT,
     "numpy"       : DT_NUMPY,
     "numpy_float" : DT_NUMPY_FLOAT,
     "numpy_int"   : DT_NUMPY_INT,
@@ -49,7 +49,7 @@ TD_PYTHON: python_timedelta = python_timedelta(days=1)
 TD_ARROW = pyarrow.scalar(10, type=pyarrow.duration("ms"))
 TIMEDELTAS: dict[str, TimeDelta] = {
     "float"       : TD_FLOAT,
-    "int"         : TD_INT,  # pyright: ignore[reportAssignmentType]
+    "int"         : TD_INT,
     "numpy"       : TD_NUMPY,
     "numpy_float" : TD_NUMPY_FLOAT,
     "numpy_int"   : TD_NUMPY_INT,
@@ -137,7 +137,7 @@ def test_joint_attrs_timedelta() -> None:
 
 def test_datetime_assign() -> None:
     dt_float: DateTime[float] = DT_FLOAT
-    dt_int: DateTime[int] = DT_INT  # pyright: ignore[reportAssignmentType]
+    dt_int: DateTime[int] = DT_INT
     dt_numpy: DateTime[np.timedelta64] = DT_NUMPY
     dt_numpy_float: DateTime[np.float64] = DT_NUMPY_FLOAT
     dt_numpy_int: DateTime[np.int64] = DT_NUMPY_INT
@@ -155,7 +155,7 @@ def test_datetime_assign() -> None:
 
 def test_timedelta_assign() -> None:
     td_float: TimeDelta = TD_FLOAT
-    td_int: TimeDelta = TD_INT  # pyright: ignore[reportAssignmentType]
+    td_int: TimeDelta = TD_INT
     td_numpy: TimeDelta = TD_NUMPY
     td_numpy_float: TimeDelta = TD_NUMPY_FLOAT
     td_numpy_int: TimeDelta = TD_NUMPY_INT
@@ -179,7 +179,7 @@ def test_dt_var() -> None:
         return x
 
     id_dt(DT_FLOAT)
-    id_dt(DT_INT)  # pyright: ignore[reportArgumentType]
+    id_dt(DT_INT)
     id_dt(DT_NUMPY)
     id_dt(DT_NUMPY_FLOAT)
     id_dt(DT_NUMPY_INT)
@@ -209,7 +209,7 @@ def test_td_var() -> None:
         return x
 
     id_td(TD_FLOAT)
-    id_td(TD_INT)  # pyright: ignore[reportArgumentType]
+    id_td(TD_INT)
     id_td(TD_NUMPY)
     id_td(TD_NUMPY_FLOAT)
     id_td(TD_NUMPY_INT)
