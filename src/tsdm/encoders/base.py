@@ -49,7 +49,6 @@ from typing_extensions import (
     Protocol,
     Self,
     TypeVar,
-    deprecated,
     overload,
     runtime_checkable,
 )
@@ -139,14 +138,11 @@ class ParametrizedEncoder(EncoderProtocol[U, V], Protocol):
 class SerializableEncoder(EncoderProtocol[U, V], Protocol):
     r"""Protocol for serializable encoders."""
 
-    @property
-    @abstractmethod
-    def is_serializable(self) -> bool: ...
-    @abstractmethod
-    def serialize(self, filepath: FilePath, /) -> None: ...
     @classmethod
     @abstractmethod
     def deserialize(cls, filepath: FilePath, /) -> Self: ...
+    @abstractmethod
+    def serialize(self, filepath: FilePath, /) -> None: ...
 
 
 class Encoder(Protocol[U, V]):
@@ -225,11 +221,6 @@ class Encoder(Protocol[U, V]):
     # endregion method aliases ---------------------------------------------------------
 
     # region magic methods -------------------------------------------------------------
-    @deprecated("use .encode(data) instead.")
-    def __call__(self, data: U, /) -> V:
-        r"""Apply the encoder."""
-        return self.encode(data)
-
     def __invert__(self) -> "Encoder[V, U]":
         r"""Return the inverse encoder (i.e. decoder).
 
@@ -243,8 +234,9 @@ class Encoder(Protocol[U, V]):
         r"""Chain the encoders (pure function composition).
 
         Example:
-            enc = self @ other
-            enc(x) == self(other(x))
+            >>> x = ...
+            >>> enc = other @ self
+            >>> enc(x) == other(self(x))
 
         Raises:
             TypeError if other is not an encoder.
@@ -254,10 +246,7 @@ class Encoder(Protocol[U, V]):
     def __rmatmul__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Chain the encoders (pure function composition).
 
-        Example:
-            >>> x = ...
-            >>> enc = other @ self
-            >>> enc(x) == other(self(x))
+        See `__matmul__` for more details.
         """
         return ChainedEncoder(other, self)
 
@@ -290,6 +279,13 @@ class Encoder(Protocol[U, V]):
         """
         return PipedEncoder(self, other)
 
+    def __rrshift__(self, other: "Encoder[T, U]", /) -> "Encoder[T, V]":
+        r"""Pipe the encoders (encoder composition).
+
+        See `__rshift__` for more details.
+        """
+        return PipedEncoder(other, self)
+
     def __or__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[U, X], tuple[V, Y]]":
         r"""Return product encoders.
 
@@ -302,9 +298,7 @@ class Encoder(Protocol[U, V]):
     def __ror__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[X, U], tuple[Y, V]]":
         r"""Return product encoders.
 
-        Example:
-            enc = other | self
-            enc((x, y)) == (other(x), self(y))
+        See `__or__` for more details.
         """
         return ParallelEncoder(other, self)
 
