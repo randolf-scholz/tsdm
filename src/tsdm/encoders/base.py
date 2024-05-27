@@ -1,4 +1,17 @@
-r"""Base Classes for Encoders."""
+r"""Base Classes for Encoders.
+
+Some special encoders that can be considered are:
+
+- inverse encoders: `~f(x) = f⁻¹(x)`
+- chaining encoders: `(f @ g)(x) = g(f(x))`
+- piping encoders: `(f >> g)(x) = f(g(x))`
+- parallel encoders: `(f | g)((x, y)) = (f(x), g(y))`
+- joint encoders: `(f & g)(x) = (f(x), g(x))`
+  - inversion requires an aggregation function: `(f & g)⁻¹(y) = agg(f⁻¹(y), g⁻¹(y))`
+  - in principle, one can use any element from the tuple.
+  - but higher numerical precision can be achieved by aggregation.
+  - default aggregation is to use a random element from the tuple.
+"""
 
 __all__ = [
     # ABCs & Protocols
@@ -11,33 +24,34 @@ __all__ = [
     "Transform",
     # Classes
     "ChainedEncoder",
-    "CloneEncoder",
     "DeepcopyEncoder",
     "DiagonalEncoder",
-    "DuplicateEncoder",
-    "FactorizedEncoder",
     "IdentityEncoder",
     "InverseEncoder",
-    "MappingEncoder",
+    "JointEncoder",
+    "MappedEncoders",
     "ParallelEncoder",
     "PipedEncoder",
     "TupleDecoder",
     "TupleEncoder",
     # Functions
     "chain_encoders",
-    "parallel_encoders",
     "duplicate_encoder",
     "invert_encoder",
+    "join_encoders",
+    "map_encoders",
+    "parallel_encoders",
     "pipe_encoders",
     "pow_encoder",
 ]
 
 import logging
 import pickle
+import random
 from abc import abstractmethod
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, asdict, dataclass
 from functools import wraps
 from inspect import getattr_static
 
@@ -53,7 +67,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.constants import EMPTY_MAP
+from tsdm import encoders as E
 from tsdm.types.aliases import FilePath
 from tsdm.types.variables import K, T
 from tsdm.utils.decorators import pprint_repr
@@ -148,40 +162,33 @@ class SerializableEncoder(EncoderProtocol[U, V], Protocol):
 class Encoder(Protocol[U, V]):
     r"""Protocol for Encoders with algebraic mixin methods."""
 
+    is_fitted: bool
+    r"""Whether the encoder has been fitted."""
+
     # region abstract methods ----------------------------------------------------------
+    @property
+    @abstractmethod
+    def params(self) -> dict[str, Any]: ...
+    @property
+    @abstractmethod
+    def requires_fit(self) -> bool: ...
     @abstractmethod
     def fit(self, data: U, /) -> None: ...
     @abstractmethod
     def encode(self, data: U, /) -> V: ...
     @abstractmethod
     def decode(self, data: V, /) -> U: ...
-    @property
-    @abstractmethod
-    def requires_fit(self) -> bool: ...
 
-    is_fitted: bool  # NOTE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
     # endregion abstract methods -------------------------------------------------------
-
-    # region mixin methods -------------------------------------------------------------
-    def simplify(self) -> "Encoder[U, V]":
-        r"""Simplify the encoder."""
-        return self
-
-    # region parameter methods ---------------------------------------------------------
-    @property
-    def params(self) -> dict[str, Any]: ...
 
     @property
     def required_params(self) -> frozenset[str]:
-        raise NotImplementedError
+        r"""The required parameters to initialize the encoder."""
+        return frozenset(self.params)
 
-    def set_params(self, mapping: Mapping[str, Any] = EMPTY_MAP, **kwargs: Any) -> None:
-        raise NotImplementedError
-
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
-        return self.params
-
-    # endregion parameter methods ------------------------------------------------------
+    def simplify(self) -> "Encoder[U, V]":
+        r"""Simplify the encoder."""
+        return self
 
     # region serialization methods -----------------------------------------------------
     def is_serializable(self) -> bool:
@@ -191,6 +198,9 @@ class Encoder(Protocol[U, V]):
 
     def serialize(self, filepath: FilePath, /) -> None:
         r"""Serialize the encoder to a file."""
+        if not self.is_serializable():
+            raise RuntimeError("Encoder is not serializable!")
+
         with open(filepath, "wb") as file:
             pickle.dump(self, file)
 
@@ -204,7 +214,7 @@ class Encoder(Protocol[U, V]):
 
     # endregion serialization methods --------------------------------------------------
 
-    # region method aliases ------------------------------------------------------------
+    # region scikit-learn compatibility ------------------------------------------------
     def fit_transform(self, data: U, /) -> V:
         r"""Fit the encoder to the data and apply the transformation."""
         self.fit(data)
@@ -218,7 +228,26 @@ class Encoder(Protocol[U, V]):
         r"""Alias for decode."""
         return self.decode(data)
 
-    # endregion method aliases ---------------------------------------------------------
+    def set_params(self, **kwargs: Any) -> None:
+        r"""Compatibility interface with scikit-learn."""
+        try:
+            self.__dict__.update(**kwargs)
+        except Exception as exc:
+            exc.add_note(f"failed to set parameters {kwargs}.")
+            raise
+
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
+        """Compatibility interface with scikit-learn.
+
+        Compatibility interface with scikit-learn.
+        Use the property `self.params` to access the parameters directly.
+
+        Uninitialized required parameters should be marked as `NotImplemented`.
+        Uninitialized optional parameters should be marked as `None`.
+        """
+        return self.params
+
+    # endregion scikit-learn compatibility ---------------------------------------------
 
     # region magic methods -------------------------------------------------------------
     def __invert__(self) -> "Encoder[V, U]":
@@ -236,19 +265,19 @@ class Encoder(Protocol[U, V]):
         Example:
             >>> x = ...
             >>> enc = other @ self
-            >>> enc(x) == other(self(x))
+            >>> enc.encode(x) == other.encode(self.encode(x))
 
         Raises:
             TypeError if other is not an encoder.
         """
-        return ChainedEncoder(self, other)
+        return ChainedEncoder((self, other))
 
     def __rmatmul__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Chain the encoders (pure function composition).
 
         See `__matmul__` for more details.
         """
-        return ChainedEncoder(other, self)
+        return ChainedEncoder((other, self))
 
     def __rshift__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Pipe the encoders (encoder composition).
@@ -277,14 +306,14 @@ class Encoder(Protocol[U, V]):
                           = ~B(~A(x))
                           = (~B >> ~A)(x)
         """
-        return PipedEncoder(self, other)
+        return PipedEncoder((self, other))
 
     def __rrshift__(self, other: "Encoder[T, U]", /) -> "Encoder[T, V]":
         r"""Pipe the encoders (encoder composition).
 
         See `__rshift__` for more details.
         """
-        return PipedEncoder(other, self)
+        return PipedEncoder((other, self))
 
     def __or__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[U, X], tuple[V, Y]]":
         r"""Return product encoders.
@@ -293,21 +322,16 @@ class Encoder(Protocol[U, V]):
             enc = self | other
             enc((x, y)) == (self(x), other(y))
         """
-        return ParallelEncoder(self, other)
+        return ParallelEncoder((self, other))
 
     def __ror__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[X, U], tuple[Y, V]]":
         r"""Return product encoders.
 
         See `__or__` for more details.
         """
-        return ParallelEncoder(other, self)
+        return ParallelEncoder((other, self))
 
     # endregion magic methods ----------------------------------------------------------
-    # endregion mixin methods ----------------------------------------------------------
-
-
-E = TypeVar("E", bound=Encoder)
-r"""Type alias for Encoder."""
 
 
 class BaseEncoder(Encoder[U, V]):
@@ -319,10 +343,14 @@ class BaseEncoder(Encoder[U, V]):
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""
 
-    # region abstract methods ----------------------------------------------------------
     @property
-    @abstractmethod
-    def params(self) -> dict[str, Any]: ...
+    def is_fitted(self) -> bool:
+        r"""Whether the encoder has been fitted."""
+        return (not self.requires_fit) or self._is_fitted
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool, /) -> None:
+        self._is_fitted = value
 
     @property
     def requires_fit(self) -> bool:
@@ -331,6 +359,11 @@ class BaseEncoder(Encoder[U, V]):
             val is NotImplemented or getattr(val, "requires_fit", False)
             for val in self.params.values()
         )
+
+    # region abstract methods ----------------------------------------------------------
+    @property
+    @abstractmethod
+    def params(self) -> dict[str, Any]: ...
 
     @abstractmethod
     def encode(self, data: U, /) -> V:
@@ -399,78 +432,87 @@ class BaseEncoder(Encoder[U, V]):
         cls.encode = encode_wrapper  # type: ignore[assignment]
         cls.decode = decode_wrapper  # type: ignore[assignment]
 
-    @property
-    def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
-        return (not self.requires_fit) or self._is_fitted
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool, /) -> None:
-        self._is_fitted = value
-
-    @property
-    def required_params(self) -> frozenset[str]:
-        r"""The required parameters of the encoder."""
-        return frozenset(self.params.keys())
-
-    def is_serializable(self) -> bool:
-        r"""Check if the encoder is serializable.
-
-        By default, an encoder can be serialized if all of its required parameters are initialized.
-        """
-        params = self.params
-        return any(params[k] is NotImplemented for k in self.required_params)
-
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
-        r"""Return the parameters of the encoder.
-
-        Compatibility interface with scikit-learn.
-        Use the property `self.params` to access the parameters directly.
-
-        Uninitialized required parameters are marked as `NotImplemented`.
-        Uninitialized optional parameters are marked as `None`.
-        """
-        return self.params
-
-    def set_params(
-        self, mapping: Mapping[str, Any] = EMPTY_MAP, /, **kwargs: Any
-    ) -> None:
-        r"""Set the parameters of the encoder."""
-        self.__dict__.update(mapping, **kwargs)
-
     # region chaining methods ----------------------------------------------------------
-    # def pow(self, power: int, /) -> "PipedEncoder":
-    #     r"""Return the chain of itself multiple times."""
-    #     return pow_encoder(self, power)
-    #
-    # def standardize(self) -> "ChainedEncoder[Self, StandardScaler]":
-    #     r"""Chain a standardizer."""
-    #     return self >> StandardScaler()
-    #
-    # def minmax_scale(self) -> "ChainedEncoder[Self, MinMaxScaler]":
-    #     r"""Chain a minmax scaling."""
-    #     return self >> MinMaxScaler()
-    #
-    # def normalize(self) -> "ChainedEncoder[Self, Normalizer]":
-    #     r"""Chain a normalization."""
-    #     return self >> Normalizer()
-    #
-    # def quantile_transform(self) -> "ChainedEncoder[Self, QuantileTransformer]":
-    #     r"""Chain a quantile transformation."""
-    #     return self >> QuantileTransformer()
+    def standardize(self) -> "PipedEncoder":
+        r"""Chain a standardizer."""
+        return self >> E.StandardScaler()
+
+    def minmax_scale(self) -> "PipedEncoder":
+        r"""Chain a minmax scaling."""
+        return self >> E.MinMaxScaler()
+
     # endregion chaining methods -------------------------------------------------------
 
 
+# region elementary encoders -----------------------------------------------------------
 class IdentityEncoder(BaseEncoder[Any, Any]):
     r"""Dummy class that performs identity function."""
 
     requires_fit: ClassVar[bool] = False
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
 
     def encode(self, data: T, /) -> T:
         return data
 
     def decode(self, data: T, /) -> T:
         return data
+
+
+class DeepcopyEncoder(BaseEncoder):
+    r"""Encoder that deepcopies the input."""
+
+    requires_fit: ClassVar[bool] = False
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
+
+    def encode(self, data: T, /) -> T:
+        return deepcopy(data)
+
+    def decode(self, data: T, /) -> T:
+        return deepcopy(data)
+
+
+class TupleEncoder(BaseEncoder):
+    r"""Wraps input into a tuple."""
+
+    requires_fit: ClassVar[bool] = False
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
+
+    def __invert__(self) -> "TupleDecoder":
+        return TupleDecoder()
+
+    def encode(self, data: T, /) -> tuple[T]:
+        return (data,)
+
+    def decode(self, data: tuple[T], /) -> T:
+        return data[0]
+
+
+class TupleDecoder(BaseEncoder):
+    r"""Unwraps input from a tuple."""
+
+    requires_fit: ClassVar[bool] = False
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
+
+    def __invert__(self) -> "TupleEncoder":
+        return TupleEncoder()
+
+    def encode(self, data: tuple[T], /) -> T:
+        return data[0]
+
+    def decode(self, data: T, /) -> tuple[T]:
+        return (data,)
 
 
 @dataclass
@@ -493,6 +535,10 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
 
     aggregate_fn: Optional[Callable[[tuple[T, ...]], T]] = None
 
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
+
     def encode(self, data: T, /) -> tuple[T, ...]:
         return (data,) * self.num
 
@@ -503,6 +549,7 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
             except TypeError as exc:
                 raise TypeError(
                     "Data not hashable, please provide an aggregate_fn."
+                    "For instance, `random.choice` can be used."
                 ) from exc
             if len(vals) != 1:
                 raise ValueError("Data not constant, please provide an aggregate_fn.")
@@ -511,54 +558,26 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
         return self.aggregate_fn(data)
 
 
-class TupleEncoder(BaseEncoder):
-    r"""Wraps input into a tuple."""
-
-    requires_fit: ClassVar[bool] = False
-
-    def __invert__(self) -> "TupleDecoder":
-        return TupleDecoder()
-
-    def encode(self, data: T, /) -> tuple[T]:
-        return (data,)
-
-    def decode(self, data: tuple[T], /) -> T:
-        return data[0]
+# endregion elementary encoders --------------------------------------------------------
 
 
-class TupleDecoder(BaseEncoder):
-    r"""Unwraps input from a tuple."""
-
-    requires_fit: ClassVar[bool] = False
-
-    def __invert__(self) -> "TupleEncoder":
-        return TupleEncoder()
-
-    def encode(self, data: tuple[T], /) -> T:
-        return data[0]
-
-    def decode(self, data: T, /) -> tuple[T]:
-        return (data,)
-
-
+@dataclass(frozen=True, slots=True, repr=False)
 class InverseEncoder(BaseEncoder[U, V]):
     r"""Applies an encoder in reverse."""
 
     encoder: Encoder[V, U]
     r"""The encoder to invert."""
 
-    def __init__(self, encoder: Encoder[V, U], /) -> None:
-        self.encoder = encoder
-
-    def __repr__(self) -> str:
-        return f"~{self.encoder}"
-
-    def fit(self, data: U, /) -> None:
-        raise NotImplementedError("Inverse encoders cannot be fitted.")
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     @property
     def requires_fit(self) -> bool:
         return self.encoder.requires_fit
+
+    def fit(self, data: U, /) -> None:
+        raise NotImplementedError("Inverse encoders cannot be fitted.")
 
     def encode(self, data: U, /) -> V:
         return self.encoder.decode(data)
@@ -569,6 +588,9 @@ class InverseEncoder(BaseEncoder[U, V]):
     def simplify(self) -> Self:
         cls = type(self)
         return cls(self.encoder.simplify())
+
+    def __repr__(self) -> str:
+        return f"~{self.encoder}"
 
 
 def invert_encoder(encoder: Encoder[U, V], /) -> Encoder[V, U]:
@@ -583,12 +605,29 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
     encoders: list[Encoder]
     r"""List of encoders."""
 
-    def __init__(self, *encoders: Encoder) -> None:
+    @property
+    def params(self) -> dict[str, Any]:
+        return {"encoders": self.encoders}
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders)
+
+    @property
+    def is_fitted(self) -> bool:
+        return all(e.is_fitted for e in self.encoders)
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        for encoder in self.encoders:
+            encoder.is_fitted = value
+
+    def __init__(self, encoders: Iterable[Encoder], /) -> None:
         self.encoders = list(encoders)
 
     def __invert__(self) -> Self:
         cls = type(self)
-        return cls(*(~e for e in reversed(self.encoders)))
+        return cls(~e for e in reversed(self.encoders))
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
@@ -604,22 +643,9 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
             case int(idx):
                 return self.encoders[idx]
             case slice() as slc:
-                return ChainedEncoder(*self.encoders[slc])
+                return ChainedEncoder(self.encoders[slc])
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
-
-    @property
-    def requires_fit(self) -> bool:
-        return any(e.requires_fit for e in self.encoders)
-
-    @property
-    def is_fitted(self) -> bool:
-        return all(e.is_fitted for e in self.encoders)
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
-        for encoder in self.encoders:
-            encoder.is_fitted = value
 
     def fit(self, data: Any, /) -> None:
         for encoder in reversed(self.encoders):
@@ -663,7 +689,7 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
             case [encoder]:
                 return encoder
             case _:
-                return type(self)(*encoders)
+                return type(self)(encoders)
 
 
 @overload
@@ -674,7 +700,7 @@ def chain_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
 def chain_encoders(*encoders: Encoder, simplify: bool = ...) -> ChainedEncoder: ...
 def chain_encoders(*encoders, simplify=True):
     r"""Chain encoders."""
-    encoder = ChainedEncoder(*encoders)
+    encoder = ChainedEncoder(encoders)
     return encoder.simplify() if simplify else encoder
 
 
@@ -685,12 +711,29 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
     encoders: list[Encoder]
     r"""List of encoders."""
 
-    def __init__(self, *encoders: Encoder) -> None:
+    @property
+    def params(self) -> dict[str, Any]:
+        return {"encoders": self.encoders}
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders)
+
+    @property
+    def is_fitted(self) -> bool:
+        return all(e.is_fitted for e in self.encoders)
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        for encoder in self.encoders:
+            encoder.is_fitted = value
+
+    def __init__(self, encoders: Iterable[Encoder], /) -> None:
         self.encoders = list(encoders)
 
     def __invert__(self) -> Self:
         cls = type(self)
-        return cls(*(~e for e in reversed(self.encoders)))
+        return cls(~e for e in reversed(self.encoders))
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
@@ -706,22 +749,9 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
             case int(idx):
                 return self.encoders[idx]
             case slice() as slc:
-                return PipedEncoder(*self.encoders[slc])
+                return PipedEncoder(self.encoders[slc])
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
-
-    @property
-    def requires_fit(self) -> bool:
-        return any(e.requires_fit for e in self.encoders)
-
-    @property
-    def is_fitted(self) -> bool:
-        return all(e.is_fitted for e in self.encoders)
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
-        for encoder in self.encoders:
-            encoder.is_fitted = value
 
     def fit(self, data: Any, /) -> None:
         for encoder in self.encoders:
@@ -765,7 +795,7 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
             case [encoder]:
                 return encoder
             case _:
-                return type(self)(*encoders)
+                return type(self)(encoders)
 
 
 @overload
@@ -775,8 +805,8 @@ def pipe_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
 @overload
 def pipe_encoders(*encoders: Encoder, simplify: bool = ...) -> PipedEncoder: ...
 def pipe_encoders(*encoders, simplify=True):
-    r"""Chain encoders."""
-    encoder = PipedEncoder(*encoders)
+    r"""Pipe encoders."""
+    encoder = PipedEncoder(encoders)
     return encoder.simplify() if simplify else encoder
 
 
@@ -810,7 +840,7 @@ def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
         return encoders[0]
     if n < 0:
         return pipe_encoders(*[~e for e in reversed(encoders)])
-    return PipedEncoder(*encoders)
+    return PipedEncoder(encoders)
 
 
 @pprint_repr(recursive=2)
@@ -823,8 +853,9 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[En
     encoders: list[Encoder]
     r"""The encoders."""
 
-    def __init__(self, *encoders: Encoder) -> None:
-        self.encoders = list(encoders)
+    @property
+    def params(self) -> dict[str, Any]:
+        return {"encoders": self.encoders}
 
     @property
     def requires_fit(self) -> bool:
@@ -838,6 +869,9 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[En
     def is_fitted(self, value: bool) -> None:
         for encoder in self.encoders:
             encoder.is_fitted = value
+
+    def __init__(self, encoders: Iterable[Encoder], /) -> None:
+        self.encoders = list(encoders)
 
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
@@ -853,7 +887,7 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[En
             case int(idx):
                 return self.encoders[idx]
             case slice() as slc:
-                return ParallelEncoder(*self.encoders[slc])
+                return ParallelEncoder(self.encoders[slc])
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
@@ -907,7 +941,7 @@ def parallel_encoders(*encoders, simplify=True):
 
     Applies multiple encoders in parallel on tuples of data.
     """
-    encoder = ParallelEncoder(*encoders)
+    encoder = ParallelEncoder(encoders)
     return encoder.simplify() if simplify else encoder
 
 
@@ -940,12 +974,12 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     if n == 1 and simplify:
         return encoders[0]
     if n < 0:
-        return parallel_encoders(*[~e for e in reversed(encoders)])
-    return parallel_encoders(*encoders)
+        return parallel_encoders([~e for e in reversed(encoders)])
+    return parallel_encoders(encoders)
 
 
 @pprint_repr(recursive=2)
-class FactorizedEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
+class JointEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
     r"""Factorized Encoder.
 
     Example:
@@ -959,10 +993,29 @@ class FactorizedEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
     encoders: list[Encoder[U, V]]
     aggregate_fn: Optional[Callable[[list[U]], U]] = None
 
+    @property
+    def params(self):
+        return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders)
+
+    @property
+    def is_fitted(self) -> bool:
+        return all(e.is_fitted for e in self.encoders)
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        for encoder in self.encoders:
+            encoder.is_fitted = value
+
     def __init__(
         self,
-        *encoders: Encoder[U, V],
-        aggregate_fn: Optional[Callable[[list[U]], U]] = None,
+        encoders: Iterable[Encoder[U, V]],
+        /,
+        *,
+        aggregate_fn: Callable[[list[U]], U] = random.choice,
     ) -> None:
         self.encoders = list(encoders)
         self.aggregate_fn = aggregate_fn
@@ -980,7 +1033,7 @@ class FactorizedEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
             case int(idx):
                 return self.encoders[idx]
             case slice() as slc:
-                return FactorizedEncoder(*self.encoders[slc])
+                return JointEncoder(self.encoders[slc])
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
@@ -1002,9 +1055,35 @@ class FactorizedEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
             return vals.pop()
         return self.aggregate_fn(decoded_vals)
 
+    def simplify(self) -> IdentityEncoder | Encoder[U, V] | Self:
+        r"""Simplify the joint encoder."""
+        # FIXME: https://github.com/python/mypy/issues/17134
+        if len(self) == 0:
+            return IdentityEncoder()
+        if len(self) == 1:
+            return self[0].simplify()
+        cls = type(self)
+        return cls(*(e.simplify() for e in self))
+
+
+@overload
+def join_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+@overload
+def join_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
+@overload
+def join_encoders(*encoders: Encoder, simplify: bool = ...) -> PipedEncoder: ...
+def join_encoders(
+    *encoders: Encoder[U, Any],
+    aggregate_fn: Callable[[list[U]], U] = random.choice,
+    simplify: bool = True,
+) -> JointEncoder[U, Any]:
+    r"""Join encoders."""
+    enc = JointEncoder(encoders, aggregate_fn=aggregate_fn)
+    return enc.simplify() if simplify else enc
+
 
 @pprint_repr(recursive=2)
-class MappingEncoder(
+class MappedEncoders(
     BaseEncoder[Mapping[K, Any], Mapping[K, Any]],
     Mapping[K, Encoder],
 ):
@@ -1014,8 +1093,21 @@ class MappingEncoder(
     r"""Mapping of keys to encoders."""
 
     @property
+    def params(self) -> dict[str, Any]:
+        return {"encoders": self.encoders}
+
+    @property
     def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self.encoders.values())
+
+    @property
+    def is_fitted(self) -> bool:
+        return all(e.is_fitted for e in self.encoders.values())
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        for encoder in self.encoders.values():
+            encoder.is_fitted = value
 
     def __init__(self, encoders: Mapping[K, Encoder], /) -> None:
         self.encoders = encoders
@@ -1045,7 +1137,7 @@ class MappingEncoder(
             key: encoder.decode(data[key]) for key, encoder in self.encoders.items()
         }
 
-    def simplify(self) -> IdentityEncoder | Self:
+    def simplify(self) -> IdentityEncoder | Encoder | Self:
         r"""Simplify the mapping encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
         # match self:
@@ -1059,69 +1151,15 @@ class MappingEncoder(
 
         if len(self.encoders) == 0:
             return IdentityEncoder()
+        if len(self.encoders) == 1:
+            return next(iter(self.encoders.values())).simplify()
         cls = type(self)
         return cls({k: e.simplify() for k, e in self.encoders.items()})
 
 
-class DeepcopyEncoder(BaseEncoder):
-    r"""Encoder that deepcopies the input."""
-
-    requires_fit: ClassVar[bool] = False
-
-    def encode(self, data: T, /) -> T:
-        return deepcopy(data)
-
-    def decode(self, data: T, /) -> T:
-        return deepcopy(data)
-
-
-class DuplicateEncoder(BaseEncoder[tuple[U, ...], tuple[V, ...]]):
-    r"""Duplicate encoder multiple times (references same object)."""
-
-    base_encoder: Encoder[U, V]
-
-    @property
-    def requires_fit(self) -> bool:
-        return self.encoder.requires_fit
-
-    def __init__(self, encoder: Encoder[U, V], n: int = 1) -> None:
-        self.base_encoder = encoder
-        self.n = n
-        self.encoder = ParallelEncoder(*(self.base_encoder for _ in range(n)))
-        self.is_fitted = self.encoder.is_fitted
-
-    def fit(self, data: tuple[U, ...], /) -> None:
-        return self.encoder.fit(data)
-
-    def encode(self, data: tuple[U, ...], /) -> tuple[V, ...]:
-        return self.encoder.encode(data)
-
-    def decode(self, data: tuple[V, ...], /) -> tuple[U, ...]:
-        return self.encoder.decode(data)
-
-
-class CloneEncoder(BaseEncoder[tuple[U, ...], tuple[V, ...]]):
-    r"""Clone encoder multiple times (distinct copies)."""
-
-    base_encoder: Encoder[U, V]
-    n: int
-    encoder: ParallelEncoder
-
-    @property
-    def requires_fit(self) -> bool:
-        return self.encoder.requires_fit
-
-    def __init__(self, encoder: Encoder[U, V], n: int = 1) -> None:
-        self.base_encoder = encoder
-        self.n = n
-        self.encoder = ParallelEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
-        self.is_fitted = self.encoder.is_fitted
-
-    def fit(self, data: tuple[U, ...], /) -> None:
-        return self.encoder.fit(data)
-
-    def encode(self, data: tuple[U, ...], /) -> tuple[V, ...]:
-        return self.encoder.encode(data)
-
-    def decode(self, data: tuple[V, ...], /) -> tuple[U, ...]:
-        return self.encoder.decode(data)
+def map_encoders(
+    encoders: Mapping[K, Encoder], /, *, simplify: bool = True
+) -> IdentityEncoder | Encoder | MappedEncoders[K]:
+    r"""Map encoders."""
+    encoder = MappedEncoders(encoders)
+    return encoder.simplify() if simplify else encoder

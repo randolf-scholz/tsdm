@@ -110,22 +110,23 @@ __all__ = [
     "BoundaryEncoder",
     "BoxCoxEncoder",
     "ChainedEncoder",  # Structural
-    "CloneEncoder",  # Structural
-    "DTypeEncoder",
     "DateTimeEncoder",
     "DeepcopyEncoder",  # Structural
-    "DuplicateEncoder",  # Structural
+    "DiagonalEncoder",  # Structural
+    "DTypeEncoder",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "IdentityEncoder",
+    "InverseEncoder",  # Structural
+    "JointEncoder",  # Structural
     "LinearScaler",
     "LogEncoder",
     "LogitBoxCoxEncoder",
     "LogitEncoder",
-    "MappingEncoder",
+    "MappedEncoders",
     "MinMaxScaler",
     "OldDateTimeEncoder",
     "ParallelEncoder",  # Structural
@@ -142,6 +143,8 @@ __all__ = [
     "TimeDeltaEncoder",
     "TripletDecoder",
     "TripletEncoder",
+    "TupleDecoder",  # Structural
+    "TupleEncoder",  # Structural
     "ValueEncoder",
 ]
 
@@ -150,17 +153,20 @@ from tsdm.encoders._deprecated import OldDateTimeEncoder, Time2Float
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
-    CloneEncoder,
     DeepcopyEncoder,
-    DuplicateEncoder,
+    DiagonalEncoder,
     Encoder,
     EncoderProtocol,
     IdentityEncoder,
+    InverseEncoder,
     InvertibleTransform,
-    MappingEncoder,
+    JointEncoder,
+    MappedEncoders,
     ParallelEncoder,
     PipedEncoder,
     Transform,
+    TupleDecoder,
+    TupleEncoder,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
@@ -198,16 +204,14 @@ ENCODERS: dict[str, type[Encoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,
     "BoxCoxEncoder"             : BoxCoxEncoder,
     "ChainedEncoder"            : ChainedEncoder,
-    "CloneEncoder"              : CloneEncoder,
     "CopyEncoder"               : DeepcopyEncoder,
     "DateTimeEncoder"           : OldDateTimeEncoder,
-    "DuplicateEncoder"          : DuplicateEncoder,
     "IdentityEncoder"           : IdentityEncoder,
     "LinearScaler"              : LinearScaler,
     "LogEncoder"                : LogEncoder,
     "LogitBoxCoxEncoder"        : LogitBoxCoxEncoder,
     "LogitEncoder"              : LogitEncoder,
-    "MappingEncoder"            : MappingEncoder,
+    "MappingEncoder"            : MappedEncoders,
     "MinMaxScaler"              : MinMaxScaler,
     "PeriodicEncoder"           : PeriodicEncoder,
     "PeriodicSocialTimeEncoder" : PeriodicSocialTimeEncoder,
