@@ -211,7 +211,7 @@ class PeriodicEncoder(BaseEncoder):
 class SocialTimeEncoder(BaseEncoder):
     r"""Social time encoding."""
 
-    requires_fit: ClassVar[bool] = True
+    requires_fit: Final[bool] = True
 
     level_codes = {
         "Y": "year",

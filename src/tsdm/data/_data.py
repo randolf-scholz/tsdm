@@ -8,6 +8,7 @@ __all__ = [
     "MultipleBoundaryInformation",
     "Schema",
     # Functions
+    "aggregate_set",
     "aggregate_nondestructive",
     "detect_outliers",
     "float_is_int",
@@ -486,3 +487,16 @@ def describe(
         },
         index=[s.name],
     )
+
+
+def aggregate_set(data: tuple[T, ...], /) -> T:
+    r"""Aggregate a set of values."""
+    try:
+        vals = set(data)
+    except TypeError as exc:
+        exc.add_note("Data not hashable, please provide an aggregate_fn.")
+        raise
+
+    if len(vals) != 1:
+        raise ValueError("Data not constant, please provide an aggregate_fn.")
+    return vals.pop()

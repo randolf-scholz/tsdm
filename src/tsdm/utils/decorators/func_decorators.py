@@ -2,8 +2,6 @@ r"""Function decorators for wrapping functions with additional functionality."""
 
 __all__ = [
     # ABCs & Protocols
-    "FunctionDecorator",
-    "FunctionDecoratorFactory",
     # Functions
     "debug",
     "lazy_torch_jit",
@@ -22,30 +20,14 @@ from time import perf_counter_ns
 from types import GenericAlias
 
 from torch import jit
-from typing_extensions import Any, Concatenate, NamedTuple, Optional, Protocol
+from typing_extensions import Concatenate, NamedTuple, Optional
 
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import Fun, P, R_co, T
-from tsdm.utils.decorators._decorators import DecoratorError, decorator
+from tsdm.types.variables import P, R_co, T
+from tsdm.utils.decorators.base import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
 
 __logger__ = logging.getLogger(__name__)
-
-
-class FunctionDecorator(Protocol[Fun]):
-    r"""Function Decorator Protocol that preserves type."""
-
-    def __call__(self, func: Fun, /) -> Fun:
-        r"""Decorate a function."""
-        ...
-
-
-class FunctionDecoratorFactory(Protocol[Fun]):
-    r"""Function Decorator Factory Protocol that preserves type."""
-
-    def __call__(self, *args: Any, **kwargs: Any) -> FunctionDecorator[Fun]:
-        r"""Decorate a function."""
-        ...
 
 
 def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:

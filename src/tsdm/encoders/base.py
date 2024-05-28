@@ -40,7 +40,7 @@ __all__ = [
     "invert_encoder",
     "join_encoders",
     "map_encoders",
-    "parallel_encoders",
+    "parallelize_encoders",
     "pipe_encoders",
     "pow_encoder",
 ]
@@ -59,10 +59,10 @@ from typing_extensions import (
     Any,
     ClassVar,
     Literal,
-    Optional,
     Protocol,
     Self,
     TypeVar,
+    cast,
     overload,
     runtime_checkable,
 )
@@ -162,10 +162,13 @@ class SerializableEncoder(EncoderProtocol[U, V], Protocol):
 class Encoder(Protocol[U, V]):
     r"""Protocol for Encoders with algebraic mixin methods."""
 
-    is_fitted: bool
-    r"""Whether the encoder has been fitted."""
-
     # region abstract methods ----------------------------------------------------------
+    @property
+    @abstractmethod
+    def is_fitted(self, /) -> bool: ...
+    @is_fitted.setter
+    @abstractmethod
+    def is_fitted(self, value: bool, /) -> None: ...
     @property
     @abstractmethod
     def params(self) -> dict[str, Any]: ...
@@ -433,11 +436,11 @@ class BaseEncoder(Encoder[U, V]):
         cls.decode = decode_wrapper  # type: ignore[assignment]
 
     # region chaining methods ----------------------------------------------------------
-    def standardize(self) -> "PipedEncoder":
+    def standardize(self) -> "Encoder[U, V]":
         r"""Chain a standardizer."""
         return self >> E.StandardScaler()
 
-    def minmax_scale(self) -> "PipedEncoder":
+    def minmax_scale(self) -> "Encoder[U, V]":
         r"""Chain a minmax scaling."""
         return self >> E.MinMaxScaler()
 
@@ -533,7 +536,7 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
 
     _: KW_ONLY
 
-    aggregate_fn: Optional[Callable[[tuple[T, ...]], T]] = None
+    aggregate_fn: Callable[[tuple[T, ...]], T] = random.choice
 
     @property
     def params(self) -> dict[str, Any]:
@@ -543,18 +546,6 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
         return (data,) * self.num
 
     def decode(self, data: tuple[T, ...], /) -> T:
-        if self.aggregate_fn is None:
-            try:
-                vals = set(data)
-            except TypeError as exc:
-                raise TypeError(
-                    "Data not hashable, please provide an aggregate_fn."
-                    "For instance, `random.choice` can be used."
-                ) from exc
-            if len(vals) != 1:
-                raise ValueError("Data not constant, please provide an aggregate_fn.")
-            return vals.pop()
-
         return self.aggregate_fn(data)
 
 
@@ -599,7 +590,7 @@ def invert_encoder(encoder: Encoder[U, V], /) -> Encoder[V, U]:
 
 
 @pprint_repr(recursive=2)
-class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
+class ChainedEncoder(BaseEncoder[U, V], Sequence[Encoder]):
     r"""Represents function composition of encoders."""
 
     encoders: list[Encoder]
@@ -625,8 +616,8 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
     def __init__(self, encoders: Iterable[Encoder], /) -> None:
         self.encoders = list(encoders)
 
-    def __invert__(self) -> Self:
-        cls = type(self)
+    def __invert__(self) -> "ChainedEncoder[V, U]":
+        cls: type[ChainedEncoder] = type(self)
         return cls(~e for e in reversed(self.encoders))
 
     def __len__(self) -> int:
@@ -647,7 +638,7 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: U, /) -> None:
         for encoder in reversed(self.encoders):
             try:
                 encoder.fit(data)
@@ -659,17 +650,17 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
                 raise
             data = encoder.encode(data)
 
-    def encode(self, data: Any, /) -> Any:
+    def encode(self, data: U, /) -> V:
         for encoder in reversed(self.encoders):
             data = encoder.encode(data)
-        return data
+        return cast(V, data)
 
-    def decode(self, data: Any, /) -> Any:
+    def decode(self, data: V, /) -> U:
         for encoder in self.encoders:
             data = encoder.decode(data)
-        return data
+        return cast(U, data)
 
-    def simplify(self) -> IdentityEncoder | Encoder | Self:
+    def simplify(self) -> IdentityEncoder | Encoder[U, V] | Self:
         r"""Simplify the chained encoder."""
         # simplify the nested encoders
         encoders: list[Encoder] = []
@@ -692,20 +683,22 @@ class ChainedEncoder(BaseEncoder, Sequence[Encoder]):
                 return type(self)(encoders)
 
 
+# fmt: off
 @overload
-def chain_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+def chain_encoders(*, simplify: Literal[True] = ...) -> IdentityEncoder: ...
 @overload
-def chain_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
+def chain_encoders(e: Encoder[U, V], /, *, simplify: Literal[True] = ...) -> Encoder[U, V]: ...
 @overload
-def chain_encoders(*encoders: Encoder, simplify: bool = ...) -> ChainedEncoder: ...
-def chain_encoders(*encoders, simplify=True):
+def chain_encoders(*es: Encoder, simplify: Literal[False] = ...) -> ChainedEncoder: ...
+# fmt: on
+def chain_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:
     r"""Chain encoders."""
     encoder = ChainedEncoder(encoders)
     return encoder.simplify() if simplify else encoder
 
 
 @pprint_repr(recursive=2)
-class PipedEncoder(BaseEncoder, Sequence[Encoder]):
+class PipedEncoder(BaseEncoder[U, V], Sequence[Encoder]):
     r"""Represents function composition of encoders."""
 
     encoders: list[Encoder]
@@ -731,8 +724,8 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
     def __init__(self, encoders: Iterable[Encoder], /) -> None:
         self.encoders = list(encoders)
 
-    def __invert__(self) -> Self:
-        cls = type(self)
+    def __invert__(self) -> "PipedEncoder[V, U]":
+        cls: type[PipedEncoder] = type(self)
         return cls(~e for e in reversed(self.encoders))
 
     def __len__(self) -> int:
@@ -753,7 +746,7 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: U, /) -> None:
         for encoder in self.encoders:
             try:
                 encoder.fit(data)
@@ -765,17 +758,17 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
                 raise
             data = encoder.encode(data)
 
-    def encode(self, data: Any, /) -> Any:
+    def encode(self, data: U, /) -> V:
         for encoder in self.encoders:
             data = encoder.encode(data)
-        return data
+        return cast(V, data)
 
-    def decode(self, data: Any, /) -> Any:
+    def decode(self, data: V, /) -> U:
         for encoder in reversed(self.encoders):
             data = encoder.decode(data)
-        return data
+        return cast(U, data)
 
-    def simplify(self) -> IdentityEncoder | Encoder | Self:
+    def simplify(self) -> IdentityEncoder | Encoder[U, V] | Self:
         r"""Simplify the chained encoder."""
         # simplify the nested encoders
         encoders = []
@@ -798,13 +791,15 @@ class PipedEncoder(BaseEncoder, Sequence[Encoder]):
                 return type(self)(encoders)
 
 
+# fmt: off
 @overload
-def pipe_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+def pipe_encoders(*, simplify: Literal[True] = ...) -> IdentityEncoder: ...
 @overload
-def pipe_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
+def pipe_encoders(e: Encoder[U, V], /, *, simplify: Literal[True] = ...) -> Encoder[U, V]: ...
 @overload
-def pipe_encoders(*encoders: Encoder, simplify: bool = ...) -> PipedEncoder: ...
-def pipe_encoders(*encoders, simplify=True):
+def pipe_encoders(*es: Encoder, simplify: Literal[False] = ...) -> PipedEncoder: ...
+# fmt: on
+def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:
     r"""Pipe encoders."""
     encoder = PipedEncoder(encoders)
     return encoder.simplify() if simplify else encoder
@@ -925,18 +920,18 @@ class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[En
             encoder = self.encoders[0].simplify()
             return TupleDecoder() >> encoder >> TupleEncoder()
         cls = type(self)
-        return cls(*(e.simplify() for e in self.encoders))
+        return cls(e.simplify() for e in self.encoders)
 
 
 @overload
-def parallel_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+def parallelize_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def parallel_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
+def parallelize_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
 @overload
-def parallel_encoders(
+def parallelize_encoders(
     e1: Encoder, e2: Encoder, /, *encoders: Encoder, simplify: bool = ...
 ) -> ParallelEncoder: ...
-def parallel_encoders(*encoders, simplify=True):
+def parallelize_encoders(*encoders, simplify=True):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -974,8 +969,8 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     if n == 1 and simplify:
         return encoders[0]
     if n < 0:
-        return parallel_encoders([~e for e in reversed(encoders)])
-    return parallel_encoders(encoders)
+        return parallelize_encoders(*(~e for e in reversed(encoders)))
+    return parallelize_encoders(*encoders)
 
 
 @pprint_repr(recursive=2)
@@ -991,7 +986,7 @@ class JointEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
     """
 
     encoders: list[Encoder[U, V]]
-    aggregate_fn: Optional[Callable[[list[U]], U]] = None
+    aggregate_fn: Callable[[list[U]], U] = random.choice
 
     @property
     def params(self):
@@ -1042,41 +1037,32 @@ class JointEncoder(BaseEncoder[U, tuple[V, ...]], Sequence[Encoder]):
 
     def decode(self, data: tuple[V, ...], /) -> U:
         decoded_vals = [e.decode(x) for e, x in zip(self.encoders, data, strict=True)]
-
-        if self.aggregate_fn is None:
-            try:
-                vals = set(decoded_vals)
-            except TypeError as exc:
-                raise TypeError(
-                    "Data not hashable, please provide an aggregate_fn."
-                ) from exc
-            if len(vals) != 1:
-                raise ValueError("Data not constant, please provide an aggregate_fn.")
-            return vals.pop()
         return self.aggregate_fn(decoded_vals)
 
-    def simplify(self) -> IdentityEncoder | Encoder[U, V] | Self:
+    def simplify(self) -> IdentityEncoder | Encoder[U, tuple[V, ...]] | Self:
         r"""Simplify the joint encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
         if len(self) == 0:
             return IdentityEncoder()
         if len(self) == 1:
-            return self[0].simplify()
+            return (self[0] >> TupleEncoder()).simplify()
         cls = type(self)
-        return cls(*(e.simplify() for e in self))
+        return cls(e.simplify() for e in self)
 
 
+# fmt: off
 @overload
-def join_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+def join_encoders(*, simplify: Literal[True] = ...) -> IdentityEncoder: ...
 @overload
-def join_encoders(e: Encoder, /, *, simplify: Literal[True]) -> Encoder: ...
+def join_encoders(e: Encoder[U, V], /, *, simplify: Literal[True] = ...) -> Encoder[U, tuple[V, ...]]: ...
 @overload
-def join_encoders(*encoders: Encoder, simplify: bool = ...) -> PipedEncoder: ...
+def join_encoders(*es: Encoder[U, V], simplify: Literal[False] = ...) -> JointEncoder[U, V]: ...
+# fmt: on
 def join_encoders(
-    *encoders: Encoder[U, Any],
+    *encoders: Encoder[U, V],
     aggregate_fn: Callable[[list[U]], U] = random.choice,
     simplify: bool = True,
-) -> JointEncoder[U, Any]:
+) -> Encoder[U, tuple[V, ...]]:
     r"""Join encoders."""
     enc = JointEncoder(encoders, aggregate_fn=aggregate_fn)
     return enc.simplify() if simplify else enc

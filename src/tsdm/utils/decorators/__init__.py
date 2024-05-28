@@ -5,12 +5,18 @@ __all__ = [
     "CLASS_DECORATORS",
     "CLASS_DECORATOR_FACTORIES",
     "FUNCTION_DECORATORS",
-    # Protocols
+    # Protocols & ABCs
     "ClassDecorator",
     "ClassDecoratorFactory",
+    "Decorator",
+    "DecoratorFactory",
     "FunctionDecorator",
     "FunctionDecoratorFactory",
+    "ParametrizedClassDecorator",
+    "ParametrizedDecorator",
+    "ParametrizedFunctionDecorator",
     # Functions
+    "attribute",
     "autojit",
     "debug",
     "decorator",
@@ -20,6 +26,7 @@ __all__ = [
     "pprint_namedtuple",
     "pprint_repr",
     "pprint_sequence",
+    "recurse_on_container",
     "return_namedtuple",
     "timefun",
     "trace",
@@ -28,12 +35,21 @@ __all__ = [
 ]
 
 
-from tsdm.utils.decorators._decorators import (
-    decorator,
-)
-from tsdm.utils.decorators.class_decorators import (
+from tsdm.utils.decorators.base import (
     ClassDecorator,
     ClassDecoratorFactory,
+    Decorator,
+    DecoratorFactory,
+    FunctionDecorator,
+    FunctionDecoratorFactory,
+    ParametrizedClassDecorator,
+    ParametrizedDecorator,
+    ParametrizedFunctionDecorator,
+    attribute,
+    decorator,
+    recurse_on_container,
+)
+from tsdm.utils.decorators.class_decorators import (
     autojit,
     implements,
     pprint_dataclass,
@@ -43,8 +59,6 @@ from tsdm.utils.decorators.class_decorators import (
     pprint_sequence,
 )
 from tsdm.utils.decorators.func_decorators import (
-    FunctionDecorator,
-    FunctionDecoratorFactory,
     debug,
     return_namedtuple,
     timefun,

@@ -2,8 +2,6 @@ r"""Function decorators for wrapping classes with additional functionality."""
 
 __all__ = [
     # ABCs & Protocols
-    "ClassDecorator",
-    "ClassDecoratorFactory",
     # Functions
     "autojit",
     "implements",
@@ -19,12 +17,12 @@ from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
 
 from torch import jit, nn
-from typing_extensions import Any, Protocol, TypeVar
+from typing_extensions import Any, TypeVar
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
 from tsdm.types.variables import T, torch_module_var
-from tsdm.utils.decorators._decorators import decorator
+from tsdm.utils.decorators.base import decorator
 from tsdm.utils.pprint import (
     repr_array,
     repr_dataclass,
@@ -40,22 +38,6 @@ Map = TypeVar("Map", bound=Mapping)
 Dtc = TypeVar("Dtc", bound=Dataclass)
 Ntp = TypeVar("Ntp", bound=NTuple)
 Set = TypeVar("Set", bound=AbstractSet)
-
-
-class ClassDecorator(Protocol[T]):
-    r"""Class Decorator Protocol that preserves type."""
-
-    def __call__(self, cls: type[T], /) -> type[T]:
-        r"""Decorate a class."""
-        ...
-
-
-class ClassDecoratorFactory(Protocol[T]):
-    r"""Class Decorator Factory Protocol that preserves type."""
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Callable[[type[T]], type[T]]:
-        r"""Create a class decorator."""
-        ...
 
 
 @decorator

@@ -33,9 +33,9 @@ import ast
 import inspect
 from collections.abc import Callable, Iterator, Sequence
 from functools import wraps
-from inspect import Parameter, getsource
+from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 
-from typing_extensions import Any, Optional, TypeAlias, overload
+from typing_extensions import Any, Optional, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
 from tsdm.types.variables import P, R_co
@@ -45,15 +45,14 @@ POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
 POSITIONAL_OR_KEYWORD = Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = Parameter.VAR_KEYWORD
 VAR_POSITIONAL = Parameter.VAR_POSITIONAL
-Kind: TypeAlias = inspect._ParameterKind  # pylint: disable=protected-access
 
-PARAMETER_KINDS = {
-    "positional": {POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL},
-    "positional_only": {POSITIONAL_ONLY, VAR_POSITIONAL},
-    "keyword": {POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD},
-    "keyword_only": {KEYWORD_ONLY, VAR_KEYWORD},
-    "variadic": {VAR_POSITIONAL, VAR_KEYWORD},
-}
+PARAMETER_KINDS: dict[str, set[ParameterKind]] = {
+    "positional"      : {POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL},
+    "positional_only" : {POSITIONAL_ONLY, VAR_POSITIONAL},
+    "keyword"         : {POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD},
+    "keyword_only"    : {KEYWORD_ONLY, VAR_KEYWORD},
+    "variadic"        : {VAR_POSITIONAL, VAR_KEYWORD},
+}  # fmt: skip
 
 
 def rpartial(
@@ -107,9 +106,9 @@ def dataclass_args_kwargs(
     return args, kwargs
 
 
-def get_parameter_kind(s: str | Kind, /) -> set[Kind]:
+def get_parameter_kind(s: str | ParameterKind, /) -> set[ParameterKind]:
     r"""Get parameter kind from string."""
-    if isinstance(s, Kind):
+    if isinstance(s, ParameterKind):
         return {s}
 
     match s.lower():
@@ -137,13 +136,13 @@ def get_function_args(
     /,
     *,
     mandatory: Optional[bool] = None,
-    kinds: Optional[str | Kind | list[Kind]] = None,
+    kinds: Optional[str | ParameterKind | list[ParameterKind]] = None,
 ) -> list[Parameter]:
     r"""Filter function parameters by kind and optionality."""
     match kinds:
         case None:
-            allowed_kinds = set(Kind)
-        case str() | Kind():
+            allowed_kinds = set(ParameterKind)
+        case str() | ParameterKind():
             allowed_kinds = get_parameter_kind(kinds)
         case Sequence():
             allowed_kinds = set().union(*map(get_parameter_kind, kinds))
