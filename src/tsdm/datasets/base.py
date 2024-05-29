@@ -18,7 +18,6 @@ import inspect
 import logging
 import os
 import shutil
-import subprocess
 import warnings
 import webbrowser
 from abc import abstractmethod
@@ -26,7 +25,6 @@ from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from os import PathLike
 from pathlib import Path
-from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import pandas
@@ -263,7 +261,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             path_or_buf: Path or buffer to write to.
             writer: Writer to use.
                 If None, the extension of the path is used to determine the writer.
-                Pass string like `'csv' to use the corresponding pandas writer.
+                Pass string like 'csv' to use the corresponding `pandas` writer.
             **writer_kwargs: Additional keyword arguments to pass to the writer.
         """
         match path_or_buf, writer:
@@ -361,34 +359,6 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         r"""Load the pre-processed dataset."""
         ...
 
-    def download_from_url(self, url: str, path: FilePath, /, **options: Any) -> None:
-        r"""Download files from a URL."""
-        parsed_url = urlparse(url)
-        path = Path(path)
-        target_directory = path.parent
-
-        match parsed_url.netloc:
-            case "www.kaggle.com":
-                # change options to kaggle cli options
-                opts = " ".join(f"--{k} {v}" for k, v in options.items())
-                kaggle_name = Path(parsed_url.path).name
-                subprocess.run(
-                    "kaggle competitions download"
-                    f" -p {target_directory} -c {kaggle_name} {opts}",
-                    shell=True,
-                    check=True,
-                )
-            case "github.com":
-                opts = " ".join(f"--{k} {v}" for k, v in options.items())
-                svn_url = url.replace("tree/main", "trunk")
-                subprocess.run(
-                    f"svn export --force {svn_url} {target_directory} {opts}",
-                    shell=True,
-                    check=True,
-                )
-            case _:  # default parsing, including for UCI dataset
-                remote.download(url, path, **options)
-
     def download_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file.
 
@@ -401,7 +371,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         url = self.SOURCE_URL + fname
         path = self.RAWDATA_DIR / fname
         self.LOGGER.debug("Downloading from %s", url)
-        self.download_from_url(url, path)
+        remote.download(url, path)
 
     def download(
         self,

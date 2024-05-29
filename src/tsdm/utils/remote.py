@@ -6,6 +6,8 @@ __all__ = [
     # Functions
     "download",
     "download_directory_to_zip",
+    "download_from_github",
+    "download_from_kaggle",
     "download_io",
     "import_from_url",
     "iter_content",
@@ -14,6 +16,7 @@ __all__ = [
 
 import logging
 import os
+import shutil
 import subprocess
 from collections.abc import Iterator, Mapping
 from html.parser import HTMLParser
@@ -216,6 +219,61 @@ def download_directory_to_zip(
                     download_io(href, file, session=session)
 
 
+def download_from_kaggle(url: str, fname: FilePath, /, **options: Any) -> None:
+    r"""Import a dataset from Kaggle."""
+    # check that kaggle is installed
+    if not shutil.which("kaggle"):
+        raise RuntimeError("Kaggle CLI is not installed!")
+
+    # check that the URL is a Kaggle URL
+    parsed_url = urlparse(url)
+    if not parsed_url.netloc == "www.kaggle.com":
+        raise ValueError(f"{url=} is not a Kaggle URL!")
+
+    # construct the path
+    path = Path(fname)
+    target_directory = path.parent
+    if not target_directory.exists():
+        target_directory.mkdir(parents=True, exist_ok=True)
+
+    # download the dataset
+    kaggle_name = Path(urlparse(url).path).name
+    kaggle_opts = " ".join(f"--{k} {v}" for k, v in options.items())
+    subprocess.run(
+        "kaggle competitions download"
+        f" -p {target_directory} -c {kaggle_name} {kaggle_opts}",
+        shell=True,
+        check=True,
+    )
+
+
+def download_from_github(url: str, fname: FilePath, /, **options: Any) -> None:
+    r"""Import a file from GitHub."""
+    # check that svn is installed
+    if not shutil.which("svn"):
+        raise RuntimeError("Subversion (svn) is not installed!")
+
+    # check that the URL is a GitHub URL
+    parsed_url = urlparse(url)
+    if not parsed_url.netloc == "github.com":
+        raise ValueError(f"{url=} is not a GitHub URL!")
+
+    # construct the path
+    path = Path(fname)
+    target_directory = path.parent
+    if not target_directory.exists():
+        target_directory.mkdir(parents=True, exist_ok=True)
+
+    # download the file
+    svn_url = url.replace("tree/main", "trunk")
+    svn_opts = " ".join(f"--{k} {v}" for k, v in options.items())
+    subprocess.run(
+        f"svn export --force {svn_url} {target_directory} {svn_opts}",
+        shell=True,
+        check=True,
+    )
+
+
 def download(
     url: str,
     fname: Optional[FilePath | IOBase] = None,
@@ -237,7 +295,7 @@ def download(
     This is essentially a wrapper around `requests.get` with a progress bar.
     """
     if isinstance(fname, IOBase):
-        download_io(
+        return download_io(
             url,
             fname,
             username=username,
@@ -246,18 +304,22 @@ def download(
             request_options=request_options,
             chunk_size=chunk_size,
         )
-        return
 
     # construct the path
     path = Path(url.split("/")[-1] if fname is None else fname)
-    if not path.parent.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
+    target_directory = path.parent
+    if not target_directory.exists():
+        target_directory.mkdir(parents=True, exist_ok=True)
 
     # check if the file already exists
     if skip_existing and path.exists():
+        # skip download, but validate the hash
         if hash_value is not None:
             validate_file_hash(
-                path, hash_value, hash_algorithm=hash_algorithm, hash_kwargs=hash_kwargs
+                path,
+                hash_value,
+                hash_algorithm=hash_algorithm,
+                hash_kwargs=hash_kwargs,
             )
         return
 
@@ -275,14 +337,16 @@ def download(
             )
     except Exception as exc:
         path.unlink()
-        raise RuntimeError(
-            f"Error {exc!r} occurred while downloading {fname}, deleting partial files."
-        ) from exc
+        exc.add_note(f"Error occurred while downloading {fname}, deleting files.")
+        raise
 
     # validate the file hash
     if hash_value is not None:
         validate_file_hash(
-            path, hash_value, hash_algorithm=hash_algorithm, hash_kwargs=hash_kwargs
+            path,
+            hash_value,
+            hash_algorithm=hash_algorithm,
+            hash_kwargs=hash_kwargs,
         )
 
 
