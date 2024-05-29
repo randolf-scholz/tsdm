@@ -1,23 +1,15 @@
 r"""Utility functions relating to function arguments and return values."""
 
 __all__ = [
-    # Constants
-    "KEYWORD_ONLY",
-    "PARAMETER_KINDS",
-    "POSITIONAL_ONLY",
-    "POSITIONAL_OR_KEYWORD",
-    "VAR_KEYWORD",
-    "VAR_POSITIONAL",
     # Functions
     "accepts_varkwargs",
     "dataclass_args_kwargs",
+    "get_exit_point_names",
     "get_function_args",
     "get_mandatory_argcount",
     "get_mandatory_kwargs",
     "get_parameter",
     "get_parameter_kind",
-    "get_exit_point_names",
-    "yield_exit_points",
     "get_return_typehint",
     "is_keyword_arg",
     "is_keyword_only_arg",
@@ -27,6 +19,7 @@ __all__ = [
     "is_variadic_arg",
     "prod_fn",
     "rpartial",
+    "yield_exit_points",
 ]
 
 import ast
@@ -37,22 +30,15 @@ from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 
 from typing_extensions import Any, Optional, overload
 
+from tsdm.constants import (
+    KEYWORD_ONLY,
+    POSITIONAL_ONLY,
+    POSITIONAL_OR_KEYWORD,
+    VAR_KEYWORD,
+    VAR_POSITIONAL,
+)
 from tsdm.types.protocols import Dataclass, is_dataclass
 from tsdm.types.variables import P, R_co
-
-KEYWORD_ONLY = Parameter.KEYWORD_ONLY
-POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
-POSITIONAL_OR_KEYWORD = Parameter.POSITIONAL_OR_KEYWORD
-VAR_KEYWORD = Parameter.VAR_KEYWORD
-VAR_POSITIONAL = Parameter.VAR_POSITIONAL
-
-PARAMETER_KINDS: dict[str, set[ParameterKind]] = {
-    "positional"      : {POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL},
-    "positional_only" : {POSITIONAL_ONLY, VAR_POSITIONAL},
-    "keyword"         : {POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD},
-    "keyword_only"    : {KEYWORD_ONLY, VAR_KEYWORD},
-    "variadic"        : {VAR_POSITIONAL, VAR_KEYWORD},
-}  # fmt: skip
 
 
 def rpartial(
@@ -231,8 +217,8 @@ def is_mandatory_arg(func: Callable, name: str, /) -> bool: ...
 def is_mandatory_arg(func_or_param, name=None, /):
     r"""Check if parameter is mandatory."""
     match func_or_param, name:
-        case Parameter() as param, None:
-            return param.default is Parameter.empty and param.kind not in {
+        case Parameter(kind=kind, default=default), None:
+            return default is Parameter.empty and kind not in {
                 VAR_POSITIONAL,
                 VAR_KEYWORD,
             }
@@ -250,8 +236,8 @@ def is_positional_arg(func: Callable, name: str, /) -> bool: ...
 def is_positional_arg(func_or_param, name=None, /):
     r"""Check if parameter is positional argument."""
     match func_or_param, name:
-        case Parameter() as param, None:
-            return param.kind in {
+        case Parameter(kind=kind), None:
+            return kind in {
                 POSITIONAL_ONLY,
                 POSITIONAL_OR_KEYWORD,
                 VAR_POSITIONAL,
@@ -270,8 +256,8 @@ def is_positional_only_arg(func: Callable, name: str, /) -> bool: ...
 def is_positional_only_arg(func_or_param, name=None, /):
     r"""Check if parameter is positional only argument."""
     match func_or_param, name:
-        case Parameter() as param, None:
-            return param.kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
+        case Parameter(kind=kind), None:
+            return kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
         case Callable() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[has-type]
             return is_positional_only_arg(param)
@@ -286,8 +272,12 @@ def is_keyword_arg(func: Callable, name: str, /) -> bool: ...
 def is_keyword_arg(func_or_param, name=None, /):
     r"""Check if parameter is keyword argument."""
     match func_or_param, name:
-        case Parameter() as param, None:
-            return param.kind in {KEYWORD_ONLY, POSITIONAL_OR_KEYWORD, VAR_KEYWORD}
+        case Parameter(kind=kind), None:
+            return kind in {
+                KEYWORD_ONLY,
+                POSITIONAL_OR_KEYWORD,
+                VAR_KEYWORD,
+            }
         case Callable() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[has-type]
             return is_keyword_arg(param)
@@ -300,10 +290,10 @@ def is_keyword_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_only_arg(func: Callable, name: str, /) -> bool: ...
 def is_keyword_only_arg(func_or_param, name=None, /):
-    r"""Check if parameter is keyword only argument."""
+    r"""Check if parameter is keyword-only argument."""
     match func_or_param, name:
-        case Parameter() as param, None:
-            return param.kind in {KEYWORD_ONLY, VAR_KEYWORD}
+        case Parameter(kind=kind), None:
+            return kind in {KEYWORD_ONLY, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[has-type]
             return is_keyword_only_arg(param)
@@ -318,8 +308,8 @@ def is_variadic_arg(func: Callable, name: str, /) -> bool: ...
 def is_variadic_arg(func_or_param, name=None, /):
     r"""Check if parameter is variadic argument."""
     match func_or_param, name:
-        case Parameter() as param, None:
-            return param.kind in {VAR_POSITIONAL, VAR_KEYWORD}
+        case Parameter(kind=kind), None:
+            return kind in {VAR_POSITIONAL, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[has-type]
             return is_variadic_arg(param)

@@ -44,9 +44,10 @@ __all__ = [
     # Generic Type Variables
     "P",
     "P2",
-    "Fun",
-    "Fun_co",
-    "Fun_contra",
+    "P3",
+    "F",
+    "F_co",
+    "F_contra",
     "K",
     "K2",
     "K2_co",
@@ -118,7 +119,7 @@ from types import GenericAlias, ModuleType
 from numpy import ndarray
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
-from typing_extensions import Any, ParamSpec, TypeVar
+from typing_extensions import Any, ParamSpec, TypeVar, TypeVarTuple
 
 # region Custom Type Variables ---------------------------------------------------------
 alias_var = TypeVar("alias_var", bound=GenericAlias)
@@ -217,6 +218,8 @@ r"""Contravariant type variable for `tuple`."""
 # region Generic Type Variables --------------------------------------------------------
 P = ParamSpec("P")
 P2 = ParamSpec("P2")
+P3 = ParamSpec("P3")
+Ts = TypeVarTuple("Ts")
 
 T = TypeVar("T", bound=Any)
 r"""T(ype) variable (invariant)."""
@@ -246,11 +249,11 @@ r"""K(ey) type variable bound to `Hashable` (covariant)."""
 K2_contra = TypeVar("K2_contra", bound=abc.Hashable, contravariant=True)
 r"""K(ey) type variable bound to `Hashable` (contravariant)."""
 
-Fun = TypeVar("Fun", bound=abc.Callable)
+F = TypeVar("F", bound=abc.Callable)
 r"""Fun(ction) type variable (invariant)."""
-Fun_co = TypeVar("Fun_co", bound=abc.Callable, covariant=True)
+F_co = TypeVar("F_co", bound=abc.Callable, covariant=True)
 r"""Fun(ction) type variable (covariant)."""
-Fun_contra = TypeVar("Fun_contra", bound=abc.Callable, contravariant=True)
+F_contra = TypeVar("F_contra", bound=abc.Callable, contravariant=True)
 r"""Fun(ction) type variable (contravariant)."""
 
 # outputs/returns are always covariant!

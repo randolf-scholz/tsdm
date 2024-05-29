@@ -9,9 +9,10 @@ class ClassDecorator(Protocol[T]):
 
 class ParametrizedClassDecorator(Protocol[T]):
     @overload
-    def __call__(self, /, **kwargs: Any) -> ClassDecorator[T]: ...
-    @overload
     def __call__(self, cls: type[T], /, **kwargs: Any) -> type[T]: ...
+    @overload
+    def __call__(self, /, **kwargs: Any) -> ClassDecorator[T]: ...
+
 
 def decorator(deco: ClassDecorator[T], /) -> ParametrizedClassDecorator[T]:
     @wraps(deco)

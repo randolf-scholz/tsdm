@@ -20,9 +20,15 @@ __all__ = [
     "RNG",
     "ROOT_3",
     "TIME_UNITS",
+    "KEYWORD_ONLY",
+    "POSITIONAL_ONLY",
+    "POSITIONAL_OR_KEYWORD",
+    "VAR_KEYWORD",
+    "VAR_POSITIONAL",
 ]
 
 from collections.abc import Mapping
+from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
 
 import numpy as np
@@ -99,6 +105,14 @@ BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
     NotImplementedType,
 })
 r"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
+
+# region Parameter constants------------------------------------------------------------
+KEYWORD_ONLY = Parameter.KEYWORD_ONLY
+POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
+POSITIONAL_OR_KEYWORD = Parameter.POSITIONAL_OR_KEYWORD
+VAR_KEYWORD = Parameter.VAR_KEYWORD
+VAR_POSITIONAL = Parameter.VAR_POSITIONAL
+# endregion Parameter constants---------------------------------------------------------
 
 
 NA_STRINGS: Final[frozenset[str]] = frozenset({

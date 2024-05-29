@@ -4,7 +4,7 @@ __all__ = [
     # ABCs & Protocols
     # Functions
     "debug",
-    "lazy_torch_jit",
+    "lazy_jit_torch",
     "return_namedtuple",
     "timefun",
     "trace",
@@ -30,6 +30,7 @@ from tsdm.utils.funcutils import get_exit_point_names
 __logger__ = logging.getLogger(__name__)
 
 
+# region without @decorator ------------------------------------------------------------
 def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     r"""Print the function signature and return value."""
 
@@ -44,6 +45,56 @@ def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
         return value
 
     return __wrapper
+
+
+def lazy_jit_torch(func: Callable[P, R_co], /) -> Callable[P, R_co]:
+    r"""Create decorator to lazily compile a function with `torch.jit.script`."""
+
+    @wraps(func)
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+        # script the original function if it hasn't been scripted yet
+        if __wrapper.__scripted is None:  # type: ignore[attr-defined]
+            __wrapper.__scripted = jit.script(__wrapper.__original_fn)  # type: ignore[attr-defined]
+        return __wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
+
+    __wrapper.__original_fn = func  # type: ignore[attr-defined]
+    __wrapper.__scripted = None  # type: ignore[attr-defined]
+    __wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
+    return __wrapper
+
+
+def trace(func: Callable[P, R_co], /) -> Callable[P, R_co]:
+    r"""Log entering and exiting of function."""
+    logger = logging.getLogger("trace")
+
+    @wraps(func)
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+        logger.info(
+            "%s",
+            "\n\t".join((
+                f"{func.__qualname__}: ENTERING",
+                f"args={tuple(type(arg).__name__ for arg in args)}",
+                f"kwargs={str({k: type(v).__name__ for k, v in kwargs.items()})}",
+            )),
+        )
+        try:
+            logger.info("%s: EXECUTING", func.__qualname__)
+            result = func(*args, **kwargs)
+        except Exception as exc:
+            logger.exception("Execution of %s failed!", func.__qualname__)
+            raise RuntimeError(
+                f"Function execution failed with Exception {exc}"
+            ) from exc
+        logger.info(
+            "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
+        )
+        logger.info("%s", "\n\t".join((f"{func.__qualname__}: EXITING",)))
+        return result
+
+    return __wrapper
+
+
+# endregion without @decorator ---------------------------------------------------------
 
 
 @decorator
@@ -81,37 +132,6 @@ def timefun(
             gc.enable()
 
         return (result, elapsed) if append else result
-
-    return __wrapper
-
-
-def trace(func: Callable[P, R_co], /) -> Callable[P, R_co]:
-    r"""Log entering and exiting of function."""
-    logger = logging.getLogger("trace")
-
-    @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-        logger.info(
-            "%s",
-            "\n\t".join((
-                f"{func.__qualname__}: ENTERING",
-                f"args={tuple(type(arg).__name__ for arg in args)}",
-                f"kwargs={str({k: type(v).__name__ for k, v in kwargs.items()})}",
-            )),
-        )
-        try:
-            logger.info("%s: EXECUTING", func.__qualname__)
-            result = func(*args, **kwargs)
-        except Exception as exc:
-            logger.exception("Execution of %s failed!", func.__qualname__)
-            raise RuntimeError(
-                f"Function execution failed with Exception {exc}"
-            ) from exc
-        logger.info(
-            "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
-        )
-        logger.info("%s", "\n\t".join((f"{func.__qualname__}: EXITING",)))
-        return result
 
     return __wrapper
 
@@ -271,30 +291,14 @@ def wrap_method(
     return __wrapper  # type: ignore[unreachable]
 
 
-def lazy_torch_jit(func: Callable[P, R_co], /) -> Callable[P, R_co]:
-    r"""Create decorator to lazily compile a function with `torch.jit.script`."""
-
-    @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
-        # script the original function if it hasn't been scripted yet
-        if __wrapper.__scripted is None:  # type: ignore[attr-defined]
-            __wrapper.__scripted = jit.script(__wrapper.__original_fn)  # type: ignore[attr-defined]
-        return __wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
-
-    __wrapper.__original_fn = func  # type: ignore[attr-defined]
-    __wrapper.__scripted = None  # type: ignore[attr-defined]
-    __wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
-    return __wrapper
-
-
 @decorator
 def return_namedtuple(
-    func: Callable[P, tuple],
+    func: Callable[P, tuple[T, ...]],
     /,
     *,
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
-) -> Callable[P, NTuple]:
+) -> Callable[P, NTuple[T]]:
     r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
