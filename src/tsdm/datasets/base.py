@@ -887,20 +887,20 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     @overload
     def load(
         self,
-        *,
-        force: bool = ...,
-        validate: bool = ...,
-        initializing: bool = ...,
-    ) -> dict[Key, T_co]: ...
-    @overload
-    def load(
-        self,
         key: Key,
         *,
         force: bool = ...,
         validate: bool = ...,
         initializing: bool = ...,
     ) -> T_co: ...
+    @overload
+    def load(
+        self,
+        *,
+        force: bool = ...,
+        validate: bool = ...,
+        initializing: bool = ...,
+    ) -> dict[Key, T_co]: ...
     @final
     def load(
         self,
