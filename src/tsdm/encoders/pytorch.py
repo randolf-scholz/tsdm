@@ -12,7 +12,7 @@ __all__ = [
 
 import torch
 from torch import Tensor, jit, nn
-from typing_extensions import ClassVar, Final
+from typing_extensions import Final
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.decorators import autojit
@@ -22,8 +22,6 @@ from tsdm.utils.decorators import autojit
 
 class TensorEncoder(BaseEncoder):
     r"""Encodes nested data as tensors."""
-
-    requires_fit: ClassVar[bool] = False
 
     def encode(self, data):
         match data:
@@ -168,8 +166,6 @@ class PositionalEncoding(nn.Module):
 class Time2VecEncoder(BaseEncoder):
     r"""Wraps Time2Vec encoder."""
 
-    requires_fit: ClassVar[bool] = False
-
     def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
         self.encoder = Time2Vec(num_dim=num_dim, activation=activation)
 
@@ -182,8 +178,6 @@ class Time2VecEncoder(BaseEncoder):
 
 class PositionalEncoder(BaseEncoder):
     r"""Wraps PositionalEncoder encoder."""
-
-    requires_fit: ClassVar[bool] = False
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
         self.encoder = PositionalEncoding(num_dim=num_dim, scale=scale)

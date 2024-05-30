@@ -47,7 +47,6 @@ __all__ = [
     "slice_size",
 ]
 
-from abc import abstractmethod
 from collections.abc import Iterable
 from dataclasses import KW_ONLY, dataclass, field
 from types import EllipsisType
@@ -60,11 +59,9 @@ from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import (
     Any,
-    ClassVar,
     Generic,
     Literal,
     NamedTuple,
-    NewType,
     Optional,
     Self,
     TypeAlias,
@@ -259,15 +256,6 @@ class NumericalEncoder(BaseEncoder[Arr, Arr]):
 
     backend: Backend[Arr]
     r"""The backend of the encoder."""
-
-    Parameters = NewType("Parameters", tuple)
-    r"""The type of the parameters of the encoder."""
-
-    @property
-    @abstractmethod
-    def params(self) -> Parameters:
-        r"""The parameters of the encoder."""
-        raise NotImplementedError
 
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
@@ -498,8 +486,6 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
             shapes that can be broadcasted to the shape of the data along these axes.
     """
 
-    requires_fit: ClassVar[bool] = False
-
     loc: Arr  # NDArray[np.number] | Tensor
     scale: Arr  # NDArray[np.number] | Tensor
     r"""The scaling factor."""
@@ -531,7 +517,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
             item: the slice, which is taken directly from the parameters.
                 If the parameters are scalars, then we return the same scaler.
                 E.g. taking slice encoder[:5] when loc and scale are scalars simply returns the same encoder.
-                However, encoder[5] will have to modify the axis, since now this new encoder will only operate
+                However, encoder[5] will have to modify the axis, since the new encoder will only operate
                 on the 5th-entry along the first axis.
 
         Examples:
@@ -927,8 +913,6 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
     Uses base 2 by default for lower numerical error and fast computation.
     """
 
-    requires_fit: ClassVar[bool] = True
-
     threshold: NDArray
     replacement: NDArray
 
@@ -955,7 +939,9 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
 class LogitEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Logit encoder."""
 
-    requires_fit: ClassVar[bool] = False
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         assert all((data > 0) & (data < 1))
@@ -965,10 +951,11 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
-class TensorSplitter(BaseEncoder):
-    r"""Split tensor along specified axis."""
+TensorType = TypeVar("TensorType", Tensor, NDArray)
 
-    requires_fit: ClassVar[bool] = False
+
+class TensorSplitter(BaseEncoder[TensorType, list[TensorType]]):
+    r"""Split tensor along specified axis."""
 
     lengths: list[int]
     numdims: list[int]
@@ -983,32 +970,24 @@ class TensorSplitter(BaseEncoder):
         self.axis = axis
         self.indices_or_sections = indices_or_sections
 
-    @overload
-    def encode(self, data: Tensor, /) -> list[Tensor]: ...
-    @overload
-    def encode(self, data: NDArray, /) -> list[NDArray]: ...
-    def encode(self, data, /):
+    def encode(self, data: TensorType, /) -> list[TensorType]:
         if isinstance(data, Tensor):
-            return torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
+            return list(
+                torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
+            )
         return np.array_split(data, self.indices_or_sections, dim=self.axis)  # type: ignore[call-overload]
 
-    @overload
-    def decode(self, data: list[Tensor], /) -> Tensor: ...
-    @overload
-    def decode(self, data: list[NDArray], /) -> NDArray: ...
-    def decode(self, data, /):
+    def decode(self, data: list[TensorType], /) -> TensorType:
         if isinstance(data[0], Tensor):
             return torch.cat(data, dim=self.axis)
         return np.concatenate(data, axis=self.axis)
 
 
-class TensorConcatenator(BaseEncoder):
+class TensorConcatenator(BaseEncoder[tuple[Tensor, ...], Tensor]):
     r"""Concatenate multiple tensors.
 
     Useful for concatenating encoders for multiple inputs.
     """
-
-    requires_fit: ClassVar[bool] = True
 
     lengths: list[int]
     numdims: list[int]

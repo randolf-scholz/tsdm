@@ -3,12 +3,11 @@ r"""Deprecated Encoders."""
 __all__ = ["Time2Float", "OldDateTimeEncoder"]
 
 from copy import deepcopy
-from typing import Any, ClassVar, Optional
 
 import numpy as np
 import pandas as pd
 from pandas import DatetimeIndex, Series
-from typing_extensions import Literal, deprecated
+from typing_extensions import Any, Literal, Optional, deprecated
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils import timedelta, timestamp
@@ -20,8 +19,6 @@ class Time2Float(BaseEncoder):
 
     By default, the data is mapped onto the unit interval $[0,1]$.
     """
-
-    requires_fit: ClassVar[bool] = True
 
     original_dtype: np.dtype
     offset: Any
@@ -94,8 +91,6 @@ class Time2Float(BaseEncoder):
 @deprecated("use DateTimeEncoder")
 class OldDateTimeEncoder(BaseEncoder):
     r"""Encode DateTime as Float."""
-
-    requires_fit: ClassVar[bool] = True
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""

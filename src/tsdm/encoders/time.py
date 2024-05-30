@@ -17,14 +17,9 @@ from typing import TypeVar
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-from pandas import DataFrame, DatetimeIndex, Index, Series
-from typing_extensions import (
-    ClassVar,
-    Final,
-    Optional,
-    Self,
-    cast,
-)
+from numpy.typing import NDArray
+from pandas import DataFrame, Index, Series
+from typing_extensions import Any, ClassVar, Final, Optional
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
@@ -35,7 +30,7 @@ from tsdm.utils import timedelta, timestamp
 PandasVec = TypeVar("PandasVec", Index, Series)
 
 
-class TimeDeltaEncoder(BaseEncoder):
+class TimeDeltaEncoder(BaseEncoder[PandasVec, PandasVec]):
     r"""Encode TimeDelta as Float."""
 
     unit: pd.Timedelta = NotImplemented
@@ -43,15 +38,15 @@ class TimeDeltaEncoder(BaseEncoder):
     original_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
 
+    @property
+    def params(self) -> dict[str, Any]:
+        return {
+            "unit": self.unit,
+            "original_dtype": self.original_dtype,
+        }
+
     def __init__(self, *, unit: str | TimeDelta = NotImplemented) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
-
-    @property
-    def requires_fit(self) -> bool:
-        return any((
-            self.unit is NotImplemented,
-            self.original_dtype is NotImplemented,
-        ))
 
     def fit(self, data: PandasVec, /) -> None:
         self.original_dtype = data.dtype
@@ -74,7 +69,7 @@ class TimeDeltaEncoder(BaseEncoder):
 
 
 @dataclass(init=False)
-class DateTimeEncoder(BaseEncoder):
+class DateTimeEncoder(BaseEncoder[PandasVec, PandasVec]):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
@@ -84,6 +79,14 @@ class DateTimeEncoder(BaseEncoder):
     original_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
 
+    @property
+    def params(self) -> dict[str, Any]:
+        return {
+            "unit": self.unit,
+            "offset": self.offset,
+            "original_dtype": self.original_dtype,
+        }
+
     def __init__(
         self,
         *,
@@ -92,14 +95,6 @@ class DateTimeEncoder(BaseEncoder):
     ) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
         self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
-
-    @property
-    def requires_fit(self) -> bool:
-        return any((
-            self.offset is NotImplemented,
-            self.unit is NotImplemented,
-            self.original_dtype is NotImplemented,
-        ))
 
     def fit(self, data: PandasVec, /) -> None:
         self.original_dtype = data.dtype
@@ -129,15 +124,13 @@ class DateTimeEncoder(BaseEncoder):
             )
 
 
-class PositionalEncoder(BaseEncoder):
+class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Positional encoding.
 
     .. math::
         x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
         x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
     """
-
-    requires_fit: ClassVar[bool] = False
 
     # Constants
     num_dim: Final[int]
@@ -146,8 +139,16 @@ class PositionalEncoder(BaseEncoder):
     # Buffers
     scale: Final[float]
     r"""Scale factor for positional encoding."""
-    scales: Final[np.ndarray]
+    scales: Final[NDArray]
     r"""Scale factors for positional encoding."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {
+            "num_dim": self.num_dim,
+            "scale": self.scale,
+            "scaled": self.scales,
+        }
 
     def __init__(self, num_dim: int, scale: float) -> None:
         self.num_dim = num_dim
@@ -155,7 +156,7 @@ class PositionalEncoder(BaseEncoder):
         self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
         assert self.scales[0] == 1.0, "Something went wrong."
 
-    def encode(self, data: np.ndarray, /) -> np.ndarray:
+    def encode(self, data: NDArray, /) -> NDArray:
         r""".. Signature: ``... -> (..., 2d)``.
 
         Note: we simply concatenate the sin and cosine terms without interleaving them.
@@ -163,20 +164,27 @@ class PositionalEncoder(BaseEncoder):
         z = np.einsum("..., d -> ...d", data, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
-    def decode(self, data: np.ndarray, /) -> np.ndarray:
+    def decode(self, data: NDArray, /) -> NDArray:
         r""".. signature:: ``(..., 2d) -> ...``."""
         return np.arcsin(data[..., 0])
 
 
-class PeriodicEncoder(BaseEncoder):
+class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
     r"""Encode periodic data as sin/cos waves."""
 
-    requires_fit: ClassVar[bool] = True
+    period: float = NotImplemented
+    freq: float = NotImplemented
+    dtype: DType = NotImplemented
+    colname: Hashable = NotImplemented
 
-    period: float
-    freq: float
-    dtype: DType
-    colname: Hashable
+    @property
+    def params(self) -> dict[str, Any]:
+        return {
+            "period": self.period,
+            "freq": self.freq,
+            "dtype": self.dtype,
+            "colname": self.colname,
+        }
 
     def __init__(self, period: Optional[float] = None) -> None:
         self._period = period
@@ -208,12 +216,10 @@ class PeriodicEncoder(BaseEncoder):
         return f"{self.__class__.__name__}({self._period})"
 
 
-class SocialTimeEncoder(BaseEncoder):
+class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
     r"""Social time encoding."""
 
-    requires_fit: Final[bool] = True
-
-    level_codes = {
+    LEVEL_CODES: ClassVar[dict[str, str]] = {
         "Y": "year",
         "M": "month",
         "W": "weekday",
@@ -224,6 +230,7 @@ class SocialTimeEncoder(BaseEncoder):
         "µ": "microsecond",
         "n": "nanosecond",
     }
+
     original_name: Hashable
     original_dtype: DType
     original_type: type
@@ -231,9 +238,20 @@ class SocialTimeEncoder(BaseEncoder):
     level_code: str
     levels: list[str]
 
+    @property
+    def params(self) -> dict[str, Any]:
+        return {
+            "level_code": self.level_code,
+            "levels": self.levels,
+            "original_name": self.original_name,
+            "original_dtype": self.original_dtype,
+            "original_type": self.original_type,
+            "rev_cols": self.rev_cols,
+        }
+
     def __init__(self, levels: str = "YMWDhms") -> None:
         self.level_code = levels
-        self.levels = [self.level_codes[k] for k in levels]
+        self.levels = [self.LEVEL_CODES[k] for k in levels]
 
     def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
@@ -244,11 +262,7 @@ class SocialTimeEncoder(BaseEncoder):
 
     def encode(self, x: Series, /) -> DataFrame:
         r"""Encode the data."""
-        if isinstance(x, DatetimeIndex):
-            res = {level: getattr(x, level) for level in self.levels}
-        else:
-            res = {level: getattr(x, level) for level in self.levels}
-        return DataFrame.from_dict(res)
+        return DataFrame.from_dict({level: getattr(x, level) for level in self.levels})
 
     def decode(self, x: DataFrame, /) -> Series:
         r"""Decode the data."""
@@ -264,22 +278,20 @@ class SocialTimeEncoder(BaseEncoder):
 class PeriodicSocialTimeEncoder(SocialTimeEncoder):
     r"""Combines SocialTimeEncoder with PeriodicEncoder using the right frequencies."""
 
-    requires_fit: ClassVar[bool] = True
-
     frequencies = {
-        "year": 1,
-        "month": 12,
-        "weekday": 7,
-        "day": 365,
-        "hour": 24,
-        "minute": 60,
-        "second": 60,
-        "microsecond": 1000,
-        "nanosecond": 1000,
-    }
+        "year"        : 1,
+        "month"       : 12,
+        "weekday"     : 7,
+        "day"         : 365,
+        "hour"        : 24,
+        "minute"      : 60,
+        "second"      : 60,
+        "microsecond" : 1000,
+        "nanosecond"  : 1000,
+    }  # fmt: skip
     r"""The frequencies of the used `PeriodicEncoder`."""
 
-    def __new__(cls, levels: str = "YMWDhms") -> Self:
+    def __new__(cls, levels: str = "YMWDhms") -> BaseEncoder[Series, DataFrame]:
         r"""Construct a new encoder object."""
         self = super().__new__(cls)
         self.__init__(levels)  # type: ignore[misc]
@@ -287,5 +299,4 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
             level: PeriodicEncoder(period=self.frequencies[level])
             for level in self.levels
         }
-        obj = FrameEncoder(column_encoders=column_encoders) @ self
-        return cast(Self, obj)
+        return self >> FrameEncoder(column_encoders=column_encoders)

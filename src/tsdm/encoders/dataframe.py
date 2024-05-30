@@ -31,7 +31,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
-from typing_extensions import Any, ClassVar, Optional, TypeVar, overload
+from typing_extensions import Any, Optional, TypeVar, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
@@ -55,8 +55,6 @@ class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
             If a column is not present, it will be ignored.
             If `...` (`Ellipsis`) is given, all remaining columns will be converted to the given dtype.
     """
-
-    requires_fit: ClassVar[bool] = True
 
     target_dtypes: dict[Any, PandasDTypeArg]
     fill_dtype: Optional[PandasDtype] = None
@@ -91,8 +89,6 @@ class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
 
 class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
     r"""Encode the data into a CSV file."""
-
-    requires_fit: ClassVar[bool] = True
 
     filename: Path
     r"""The filename of the CSV file."""
@@ -138,8 +134,6 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
 
     - [ ] Add support for groups of column-encoders
     """
-
-    requires_fit: ClassVar[bool] = True
 
     original_columns: list[K]
     original_dtypes: Series
@@ -391,8 +385,6 @@ class FrameIndexer(BaseEncoder):
     For compatibility, this is done by integer index.
     """
 
-    requires_fit: ClassVar[bool] = True
-
     index_columns: Index
     index_dtypes: Series
     index_indices: list[int]
@@ -452,8 +444,6 @@ class FrameSplitter(BaseEncoder, Mapping):
     | 1 | 2 | 0 | - | 5 | 4 |
     +---+---+---+---+---+---+
     """
-
-    requires_fit: ClassVar[bool] = True
 
     original_columns: Index
     original_dtypes: Series
@@ -596,8 +586,6 @@ class FrameSplitter(BaseEncoder, Mapping):
 class TripletEncoder(BaseEncoder):
     r"""Encode the data into triplets."""
 
-    requires_fit: ClassVar[bool] = True
-
     categories: pd.CategoricalDtype
     r"""The stored categories."""
     original_dtypes: Series
@@ -673,8 +661,6 @@ class TripletEncoder(BaseEncoder):
 
 class TripletDecoder(BaseEncoder):
     r"""Encode the data into triplets."""
-
-    requires_fit: ClassVar[bool] = True
 
     categories: pd.CategoricalDtype
     r"""The stored categories."""
@@ -780,8 +766,6 @@ class TripletDecoder(BaseEncoder):
 class TensorEncoder(BaseEncoder):
     r"""Converts objects to Tensor."""
 
-    requires_fit: ClassVar[bool] = True
-
     dtype: torch.dtype
     r"""The default dtype."""
     device: torch.device
@@ -838,8 +822,6 @@ class ValueEncoder(BaseEncoder):
 
     Remembers dtypes, index, columns
     """
-
-    requires_fit: ClassVar[bool] = True
 
     index_columns: Index
     index_dtypes: Series
@@ -912,8 +894,6 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
         >>> decoded = encoder.decode(encoded)
         >>> pd.testing.assert_frame_equal(df, decoded)
     """
-
-    requires_fit: ClassVar[bool] = True
 
     # Attributes
     original_index_columns: Index | list[str]
@@ -1060,8 +1040,6 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
 
 class FrameAsTuple(BaseEncoder):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
-
-    requires_fit: ClassVar[bool] = True
 
     # Attributes
     original_index_columns: Index
