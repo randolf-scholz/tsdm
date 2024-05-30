@@ -109,15 +109,15 @@ __all__ = [
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
+    "CSVEncoder",
     "ChainedEncoder",  # Structural
+    "DTypeEncoder",
     "DateTimeEncoder",
     "DeepcopyEncoder",  # Structural
     "DiagonalEncoder",  # Structural
-    "DTypeEncoder",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
-    "FrameIndexer",
     "FrameSplitter",
     "IdentityEncoder",
     "InverseEncoder",  # Structural
@@ -170,11 +170,11 @@ from tsdm.encoders.base import (
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
+    CSVEncoder,
     DTypeEncoder,
     FrameAsDict,
     FrameAsTuple,
     FrameEncoder,
-    FrameIndexer,
     FrameSplitter,
     TensorEncoder,
     TripletDecoder,

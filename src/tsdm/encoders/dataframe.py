@@ -1,4 +1,7 @@
-r"""Encoders for pandas DataFrames."""
+r"""Encoders for pandas DataFrames.
+
+Each of these encoders must encode DataFrames.
+"""
 
 __all__ = [
     # Classes
@@ -7,9 +10,7 @@ __all__ = [
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
-    "FrameIndexer",
     "FrameSplitter",
-    "TableEncoder",
     "TensorEncoder",
     "TripletDecoder",
     "TripletEncoder",
@@ -18,7 +19,7 @@ __all__ = [
 
 import warnings
 from collections import namedtuple
-from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Hashable, Iterable, Iterator, Mapping
 from pathlib import Path
 from types import EllipsisType
 
@@ -47,82 +48,6 @@ F = TypeVar("F", bound=Encoder)
 TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
 
 
-class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
-    r"""Converts dtypes of a DataFrame.
-
-    Args:
-        dtypes: A mapping from column names to dtypes.
-            If a column is not present, it will be ignored.
-            If `...` (`Ellipsis`) is given, all remaining columns will be converted to the given dtype.
-    """
-
-    target_dtypes: dict[Any, PandasDTypeArg]
-    fill_dtype: Optional[PandasDtype] = None
-    original_dtypes: Series
-
-    def __init__(
-        self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /
-    ) -> None:
-        match dtypes:
-            case Mapping() as mapping:
-                self.target_dtypes = dict(mapping)
-            case dtype:
-                self.target_dtypes = {Ellipsis: dtype}
-
-    def fit(self, data: DataFrame, /) -> None:
-        self.original_dtypes = data.dtypes.copy()
-
-        if Ellipsis in self.target_dtypes:
-            if Ellipsis in data.columns:
-                raise ValueError("Ellipsis is a reserved column name!")
-
-            self.fill_dtype = self.target_dtypes.pop(Ellipsis)
-            for col in set(data.columns) - set(self.target_dtypes):
-                self.target_dtypes[col] = self.fill_dtype
-
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        return data.astype(self.target_dtypes)
-
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        return data.astype(self.original_dtypes)
-
-
-class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
-    r"""Encode the data into a CSV file."""
-
-    filename: Path
-    r"""The filename of the CSV file."""
-    dtypes: Series
-    r"""The original dtypes."""
-    read_csv_kwargs: dict[str, Any]
-    r"""The kwargs for the read_csv function."""
-    to_csv_kwargs: dict[str, Any]
-    r"""The kwargs for the to_csv function."""
-
-    def __init__(
-        self,
-        filename: FilePath,
-        *,
-        to_csv_kwargs: Optional[dict[str, Any]] = None,
-        read_csv_kwargs: Optional[dict[str, Any]] = None,
-    ) -> None:
-        self.filename = Path(filename)
-        self.read_csv_kwargs = read_csv_kwargs or {}
-        self.to_csv_kwargs = to_csv_kwargs or {}
-
-    def fit(self, data: DataFrame, /) -> None:
-        self.dtypes = data.dtypes
-
-    def encode(self, data: DataFrame, /) -> Path:
-        data.to_csv(self.filename, **self.to_csv_kwargs)
-        return self.filename
-
-    def decode(self, str_or_path: Optional[FilePath] = None, /) -> DataFrame:
-        path = self.filename if str_or_path is None else Path(str_or_path)
-        frame = pd.read_csv(path, **self.read_csv_kwargs)
-        return DataFrame(frame).astype(self.dtypes)
-
-
 class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
@@ -143,6 +68,17 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     encoders: Mapping[K, Encoder]
     column_encoders: Mapping[K, Encoder]
     index_encoders: Mapping[K, Encoder]
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {
+            "column_encoders": self.column_encoders,
+            "index_encoders": self.index_encoders,
+            "original_columns": self.original_columns,
+            "original_dtypes": self.original_dtypes,
+            "original_index_columns": self.original_index_columns,
+            "original_value_columns": self.original_value_columns,
+        }
 
     def __init__(
         self,
@@ -206,222 +142,267 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
         return data
 
 
-class TableEncoder(BaseEncoder[TableVar, TableVar]):
-    r"""Encodes a table of data, by applying transformations to single columns or groups of columns.
+class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
+    r"""Converts wide DataFrame to a tall DataFrame.
 
-    Args:
-        encoders: A mapping from column names to encoders.
-            The special key `Ellipsis` (`...`) can be given once to indicate that all unnamed columns
-            should use the given Encoder. During fitting, it will be replaced by the remaining columns.
-        copy_unused (default=True): if true, columns that are not named in the encoder are copied to the output.
-
-    Assumptions:
-        - all transformations yield the same number of rows
-        - groups are disjoint.
-
-    Note:
-        This does not cover the case of encoding the index.
-
-    The resulting table is the concatenation of the encoded columns.
+    Requires that all columns share the same data type.
     """
 
-    encoders: dict[FrozenList[Hashable], Encoder]
-    decoders: dict[FrozenList[Hashable], Encoder]
-
-    validate_decoded: bool
-
-    original_columns: list[Hashable]
-    original_dtypes: dict
-
-    encoded_columns: list[Hashable]
-    encoded_dtypes: dict
-
-    @property
-    def requires_fit(self) -> bool:
-        return any(encoder.requires_fit for encoder in self.encoders.values())
-
-    def __len__(self) -> int:
-        return len(self.encoders)
-
-    def __iter__(self) -> Iterator[Hashable]:
-        return iter(self.encoders)
-
-    def __getitem__(self, key: Hashable, /) -> Encoder:
-        return self.encoders[key]
+    categories: pd.CategoricalDtype
+    r"""The stored categories."""
+    original_dtypes: Series
+    r"""The original dtypes."""
+    original_columns: Index
+    r"""The original columns."""
 
     def __init__(
         self,
-        encoders: (
-            Iterable[tuple[Sequence[Hashable], Encoder]]
-            | Mapping[Sequence[Hashable], Encoder]
-        ),
         *,
-        copy_unused: bool = False,
+        sparse: bool = False,
+        var_name: str = "variable",
+        value_name: str = "value",
     ) -> None:
-        match encoders:
-            case Mapping() as mapping:
-                self.encoders = {FrozenList(keys): enc for keys, enc in mapping.items()}
-            case Iterable() as iterable:
-                self.encoders = {FrozenList(keys): enc for keys, enc in iterable}
-            case _:
-                raise TypeError(f"Invalid {type(encoders)=}")
-
-        if self._has_ellipsis:
-            keys = list(self.encoders)
-            if copy_unused:
-                raise ValueError("Cannot copy unused columns when `...` is used.")
-            if keys.count(Ellipsis) > 1:
-                raise ValueError("Only one `...` is allowed.")
-            if keys.index(Ellipsis) != len(keys) - 1:
-                raise ValueError("`...` must be the last key.")
-
-        # check that the groups are disjoint
-        groups = [keys for keys in self.encoders if keys is not Ellipsis]
-        keys_disjoint = len(set().union(*groups)) == sum(map(len, groups))
-        if not keys_disjoint:
-            raise ValueError("Groups must be disjoint!")
-
-    @property
-    def _has_ellipsis(self) -> bool:
-        # NOTE: use property since this changes during fitting
-        return Ellipsis in self.encoders
-
-    def fit(self, data: TableVar, /) -> None:
-        # step 1, get columns
-        match data:
-            case DataFrame() as pandas_frame:
-                self.original_columns = list(pandas_frame.columns)
-                self.original_dtypes = pandas_frame.dtypes.to_dict()
-            case pl.DataFrame() as polars_frame:
-                self.original_columns = list(polars_frame.columns)
-                self.original_dtypes = dict(polars_frame.schema)
-            case pa.Table() as table:
-                self.original_columns = list(table.column_names)
-                self.original_dtypes = dict(table.schema.types)
-            case _:
-                raise NotImplementedError
-
-        # make copy
-        self.decoders = {}
-        self.encoded_dtypes = {}
-        self.encoded_columns = []
-
-        # NOTE: we do not use `set` to preserve order
-        remaining_columns = list(self.original_columns)
-        for group, encoder in self.encoders.items():
-            if group is Ellipsis:
-                continue
-            encoder.fit(data[group])
-            remaining_columns = [c for c in remaining_columns if c not in group]
-
-        if self._has_ellipsis:
-            assert remaining_columns, "no remaining columns!"
-            ellipsis_encoder = self.encoders.pop(Ellipsis)
-            ellipsis_group = FrozenList(remaining_columns)
-            ellipsis_encoder.fit(data[ellipsis_group])
-            self.encoders[ellipsis_group] = ellipsis_encoder
-
-        # region forward pass ----------------------------------------------------------
-        # encode and check the result
-        encoded_groups = []
-        for group, encoder in self.encoders.items():
-            encoded_group = encoder.encode(data[group])
-            encoded_group_cols = list(encoded_group.columns)
-            self.decoders[encoded_group_cols] = encoder
-            encoded_groups.append(encoded_group)
-
-        # combine the encoded groups
-        match data:
-            case DataFrame():
-                encoded = pd.concat(encoded_groups, axis="columns")
-                self.encoded_columns = list(encoded.columns)
-                self.encoded_dtypes = dict(encoded.dtypes)
-            case pl.DataFrame():
-                encoded = pl.concat(encoded_groups, how="horizontal")
-                self.encoded_columns = list(encoded.columns)
-                self.encoded_dtypes = dict(encoded.dtypes)
-            case pa.Table():
-                raise NotImplementedError
-            case _:
-                raise NotImplementedError
-        # endregion --------------------------------------------------------------------
-
-    def encode(self, data: TableVar, /) -> TableVar:
-        encoded_groups = []
-        for group, encoder in self.encoders.items():
-            encoded_groups.append(encoder.encode(data[group]))
-
-        # combine the encoded groups
-        match data:
-            case DataFrame():
-                return pd.concat(encoded_groups, axis="columns")
-            case pl.DataFrame():
-                return pl.concat(encoded_groups, how="horizontal")
-            case pa.Table():
-                raise NotImplementedError
-            case _:
-                raise NotImplementedError
-
-    def decode(self, data: TableVar, /) -> TableVar:
-        decoded_groups = []
-        for group, encoder in self.decoders.items():
-            decoded_groups.append(encoder.decode(data[group]))
-
-        # combine the decoded groups
-        match data:
-            case DataFrame():
-                return pd.concat(decoded_groups, axis="columns")
-            case pl.DataFrame():
-                return pl.concat(decoded_groups, how="horizontal")
-            case pa.Table():
-                raise NotImplementedError
-            case _:
-                raise NotImplementedError
-
-
-class FrameIndexer(BaseEncoder[DataFrame, DataFrame]):
-    r"""Change index of a `pandas.DataFrame`.
-
-    For compatibility, this is done by integer index.
-    """
-
-    index_columns: Index
-    index_dtypes: Series
-    index_indices: list[int]
-    reset: EllipsisType | Hashable | list[Hashable]
-
-    def __init__(self, *, reset: Optional[Hashable | list[Hashable]] = None) -> None:
-        match reset:
-            case None:
-                self.reset = []
-            case EllipsisType():
-                self.reset = Ellipsis
-            case str() | int() | tuple():
-                self.reset = [reset]
-            case Iterable() as iterable:
-                self.reset = list(iterable)
-            case _:
-                raise TypeError("levels must be None, str, int, tuple or Iterable")
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}(levels={self.reset})"
+        self.sparse = sparse
+        self.var_name = var_name
+        self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
-        index = data.index.to_frame()
-        self.index_columns = index.columns
-        self.index_dtypes = index.dtypes
-
-        num = len(self.reset if isinstance(self.reset, list) else index.columns)
-        self.index_indices = list(range(num))
+        self.categories = pd.CategoricalDtype(data.columns)
+        self.original_dtypes = data.dtypes
+        self.original_columns = data.columns
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        return data.reset_index(level=self.reset)
+        result = data.melt(
+            ignore_index=False,
+            var_name=self.var_name,
+            value_name=self.value_name,
+        ).dropna()
+
+        result[self.var_name] = result[self.var_name].astype(self.categories)
+
+        if self.sparse:
+            result = pd.get_dummies(
+                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
+            )
+
+        result = result.sort_index()
+        return result
 
     def decode(self, data: DataFrame, /) -> DataFrame:
-        data = DataFrame(data)
-        columns = data.columns[self.index_indices].to_list()
-        return data.set_index(columns)
+        if self.sparse:
+            df = data.iloc[:, 1:].stack()
+            df = df[df == 1]
+            df.index = df.index.rename(self.var_name, level=-1)
+            df = df.reset_index(level=-1)
+            df[self.value_name] = data["self.value_name"]
+        else:
+            df = data
+
+        df = df.pivot_table(
+            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
+            # simply use df.index.names instead then.
+            index=df.index,
+            columns=self.var_name,
+            values=self.value_name,
+            dropna=False,
+        )
+
+        if isinstance(data.index, MultiIndex):
+            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
+
+        # re-add missing columns
+        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
+
+        # Finalize result
+        result = df[self.categories.categories]  # fix column order
+        result = result.astype(self.original_dtypes)
+        result = result[self.original_columns]
+        result.columns = self.original_columns
+        return result
+
+
+class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
+    r"""Convert a tall DataFrame to a wide DataFrame."""
+
+    categories: pd.CategoricalDtype
+    r"""The stored categories."""
+    original_dtypes: Series
+    r"""The original dtypes."""
+    original_columns: Index
+    r"""The original columns."""
+    value_column: Hashable
+    r"""The name of the value column."""
+    channel_columns: Index
+    r"""The name of the channel column(s)."""
+
+    def __init__(
+        self,
+        *,
+        sparse: bool = False,
+        var_name: Optional[str] = None,
+        value_name: Optional[str] = None,
+    ) -> None:
+        self.sparse = sparse
+        self.var_name = var_name
+        self.value_name = value_name
+
+    def fit(self, data: DataFrame, /) -> None:
+        self.original_dtypes = data.dtypes
+        self.original_columns = data.columns
+
+        self.value_column = self.value_name or data.columns[0]
+        self.value_name = self.value_column
+        assert self.value_column in data.columns
+
+        remaining_cols = data.columns.drop(self.value_column)
+        if self.sparse and len(remaining_cols) <= 1:
+            raise ValueError("Sparse encoding requires at least two channel columns.")
+        if not self.sparse and len(remaining_cols) != 1:
+            raise ValueError("Dense encoding requires exactly one channel column.")
+
+        if self.sparse:
+            self.channel_columns = remaining_cols
+            categories = self.channel_columns
+            self.var_name = self.channel_columns.name or "variable"
+        else:
+            assert len(remaining_cols) == 1
+            self.channel_columns = remaining_cols.item()
+            categories = data[self.channel_columns].unique()
+            self.var_name = self.channel_columns
+
+        if pd.api.types.is_float_dtype(categories):
+            raise ValueError(
+                f"channel_ids found in {self.var_name!r} does no look like a"
+                " categorical!\n Please specify `value_name` and/or `var_name`!"
+            )
+
+        self.categories = pd.CategoricalDtype(np.sort(categories))
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        if self.sparse:
+            df = data.loc[:, self.channel_columns].stack()
+            df = df[df == 1]
+            df.index = df.index.rename(self.var_name, level=-1)
+            df = df.reset_index(level=-1)
+            df[self.value_name] = data[self.value_column]
+        else:
+            df = data
+
+        df = df.pivot_table(
+            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
+            # simply use df.index.names instead then.
+            index=df.index,
+            columns=self.var_name,
+            values=self.value_name,
+            dropna=False,
+        )
+
+        if isinstance(data.index, MultiIndex):
+            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
+
+        # re-add missing columns
+        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
+        df.columns.name = self.var_name
+
+        # Finalize result
+        result = df[self.categories.categories]  # fix column order
+        return result.sort_index()
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        result = data.melt(
+            ignore_index=False,
+            var_name=self.var_name,
+            value_name=self.value_name,
+        ).dropna()
+
+        if self.sparse:
+            result = pd.get_dummies(
+                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
+            )
+
+        result = result.astype(self.original_dtypes)
+        result = result.sort_index()
+        return result
+
+
+class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
+    r"""Encode the data into a CSV file."""
+
+    filename: Path
+    r"""The filename of the CSV file."""
+    dtypes: Series
+    r"""The original dtypes."""
+    read_csv_kwargs: dict[str, Any]
+    r"""The kwargs for the read_csv function."""
+    to_csv_kwargs: dict[str, Any]
+    r"""The kwargs for the to_csv function."""
+
+    def __init__(
+        self,
+        filename: FilePath,
+        *,
+        to_csv_kwargs: Optional[dict[str, Any]] = None,
+        read_csv_kwargs: Optional[dict[str, Any]] = None,
+    ) -> None:
+        self.filename = Path(filename)
+        self.read_csv_kwargs = read_csv_kwargs or {}
+        self.to_csv_kwargs = to_csv_kwargs or {}
+
+    def fit(self, data: DataFrame, /) -> None:
+        self.dtypes = data.dtypes
+
+    def encode(self, data: DataFrame, /) -> Path:
+        data.to_csv(self.filename, **self.to_csv_kwargs)
+        return self.filename
+
+    def decode(self, str_or_path: Optional[FilePath] = None, /) -> DataFrame:
+        path = self.filename if str_or_path is None else Path(str_or_path)
+        frame = pd.read_csv(path, **self.read_csv_kwargs)
+        return DataFrame(frame).astype(self.dtypes)
+
+
+class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
+    r"""Converts dtypes of a DataFrame.
+
+    Args:
+        dtypes: A mapping from column names to dtypes.
+            If a column is not present, it will be ignored.
+            If `...` (`Ellipsis`) is given, all remaining columns will be converted to the given dtype.
+    """
+
+    target_dtypes: dict[Any, PandasDTypeArg]
+    fill_dtype: Optional[PandasDtype] = None
+    original_dtypes: Series
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {"target_dtypes": self.target_dtypes}
+
+    def __init__(
+        self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /
+    ) -> None:
+        match dtypes:
+            case Mapping() as mapping:
+                self.target_dtypes = dict(mapping)
+            case dtype:
+                self.target_dtypes = {Ellipsis: dtype}
+
+    def fit(self, data: DataFrame, /) -> None:
+        self.original_dtypes = data.dtypes.copy()
+
+        if Ellipsis in self.target_dtypes:
+            if Ellipsis in data.columns:
+                raise ValueError("Ellipsis is a reserved column name!")
+
+            self.fill_dtype = self.target_dtypes.pop(Ellipsis)
+            for col in set(data.columns) - set(self.target_dtypes):
+                self.target_dtypes[col] = self.fill_dtype
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype(self.target_dtypes)
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype(self.original_dtypes)
 
 
 class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
@@ -581,186 +562,6 @@ class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
         if self.dropna:
             reconstructed = reconstructed.sort_index()
         return reconstructed
-
-
-class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
-    r"""Encode the data into triplets."""
-
-    categories: pd.CategoricalDtype
-    r"""The stored categories."""
-    original_dtypes: Series
-    r"""The original dtypes."""
-    original_columns: Index
-    r"""The original columns."""
-
-    def __init__(
-        self,
-        *,
-        sparse: bool = False,
-        var_name: str = "variable",
-        value_name: str = "value",
-    ) -> None:
-        self.sparse = sparse
-        self.var_name = var_name
-        self.value_name = value_name
-
-    def fit(self, data: DataFrame, /) -> None:
-        self.categories = pd.CategoricalDtype(data.columns)
-        self.original_dtypes = data.dtypes
-        self.original_columns = data.columns
-
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        result = data.melt(
-            ignore_index=False,
-            var_name=self.var_name,
-            value_name=self.value_name,
-        ).dropna()
-
-        result[self.var_name] = result[self.var_name].astype(self.categories)
-
-        if self.sparse:
-            result = pd.get_dummies(
-                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
-            )
-
-        result = result.sort_index()
-        return result
-
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        if self.sparse:
-            df = data.iloc[:, 1:].stack()
-            df = df[df == 1]
-            df.index = df.index.rename(self.var_name, level=-1)
-            df = df.reset_index(level=-1)
-            df[self.value_name] = data["self.value_name"]
-        else:
-            df = data
-
-        df = df.pivot_table(
-            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
-            # simply use df.index.names instead then.
-            index=df.index,
-            columns=self.var_name,
-            values=self.value_name,
-            dropna=False,
-        )
-
-        if isinstance(data.index, MultiIndex):
-            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
-
-        # re-add missing columns
-        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
-
-        # Finalize result
-        result = df[self.categories.categories]  # fix column order
-        result = result.astype(self.original_dtypes)
-        result = result[self.original_columns]
-        result.columns = self.original_columns
-        return result
-
-
-class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
-    r"""Encode the data into triplets."""
-
-    categories: pd.CategoricalDtype
-    r"""The stored categories."""
-    original_dtypes: Series
-    r"""The original dtypes."""
-    original_columns: Index
-    r"""The original columns."""
-    value_column: Hashable
-    r"""The name of the value column."""
-    channel_columns: Index
-    r"""The name of the channel column(s)."""
-
-    def __init__(
-        self,
-        *,
-        sparse: bool = False,
-        var_name: Optional[str] = None,
-        value_name: Optional[str] = None,
-    ) -> None:
-        self.sparse = sparse
-        self.var_name = var_name
-        self.value_name = value_name
-
-    def fit(self, data: DataFrame, /) -> None:
-        self.original_dtypes = data.dtypes
-        self.original_columns = data.columns
-
-        self.value_column = self.value_name or data.columns[0]
-        self.value_name = self.value_column
-        assert self.value_column in data.columns
-
-        remaining_cols = data.columns.drop(self.value_column)
-        if self.sparse and len(remaining_cols) <= 1:
-            raise ValueError("Sparse encoding requires at least two channel columns.")
-        if not self.sparse and len(remaining_cols) != 1:
-            raise ValueError("Dense encoding requires exactly one channel column.")
-
-        if self.sparse:
-            self.channel_columns = remaining_cols
-            categories = self.channel_columns
-            self.var_name = self.channel_columns.name or "variable"
-        else:
-            assert len(remaining_cols) == 1
-            self.channel_columns = remaining_cols.item()
-            categories = data[self.channel_columns].unique()
-            self.var_name = self.channel_columns
-
-        if pd.api.types.is_float_dtype(categories):
-            raise ValueError(
-                f"channel_ids found in {self.var_name!r} does no look like a"
-                " categorical!\n Please specify `value_name` and/or `var_name`!"
-            )
-
-        self.categories = pd.CategoricalDtype(np.sort(categories))
-
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        if self.sparse:
-            df = data.loc[:, self.channel_columns].stack()
-            df = df[df == 1]
-            df.index = df.index.rename(self.var_name, level=-1)
-            df = df.reset_index(level=-1)
-            df[self.value_name] = data[self.value_column]
-        else:
-            df = data
-
-        df = df.pivot_table(
-            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
-            # simply use df.index.names instead then.
-            index=df.index,
-            columns=self.var_name,
-            values=self.value_name,
-            dropna=False,
-        )
-
-        if isinstance(data.index, MultiIndex):
-            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
-
-        # re-add missing columns
-        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
-        df.columns.name = self.var_name
-
-        # Finalize result
-        result = df[self.categories.categories]  # fix column order
-        return result.sort_index()
-
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        result = data.melt(
-            ignore_index=False,
-            var_name=self.var_name,
-            value_name=self.value_name,
-        ).dropna()
-
-        if self.sparse:
-            result = pd.get_dummies(
-                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
-            )
-
-        result = result.astype(self.original_dtypes)
-        result = result.sort_index()
-        return result
 
 
 class TensorEncoder(BaseEncoder[PandasObject, Tensor]):
