@@ -48,7 +48,7 @@ __all__ = [
 ]
 
 from collections.abc import Iterable
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, asdict, dataclass, field
 from types import EllipsisType
 
 import numpy as np
@@ -59,9 +59,7 @@ from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import (
     Any,
-    Generic,
     Literal,
-    NamedTuple,
     Optional,
     Self,
     TypeAlias,
@@ -333,6 +331,10 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     lower_value: float = field(init=False, default=NotImplemented)
     upper_value: float = field(init=False, default=NotImplemented)
 
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
+
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
         r"""Create a BoundaryEncoder from a pandas Interval."""
@@ -351,10 +353,6 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
             upper_included=upper_included,
             **kwargs,
         )
-
-    @property
-    def requires_fit(self) -> bool:
-        return any(p is NotImplemented for p in self.params)
 
     @property
     def lower_mode(self) -> ClippingMode:
@@ -381,6 +379,31 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
             and self.upper_bound <= self.lower_bound
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
+
+    def lower_satisfied(self, x: Arr) -> Arr:
+        r"""Return a boolean mask for the lower boundary (true: value ok)."""
+        if self.lower_bound is None:
+            return self.backend.true_like(x)
+        if self.lower_included or self.lower_included is None:
+            return (x >= self.lower_bound) | self.backend.isnan(x)
+        return (x > self.lower_bound) | self.backend.isnan(x)
+
+    def upper_satisfied(self, x: Arr) -> Arr:
+        r"""Return a boolean mask for the upper boundary (true: value ok)."""
+        if self.upper_bound is None:
+            return self.backend.true_like(x)
+        if self.upper_included or self.upper_included is None:
+            return (x <= self.upper_bound) | self.backend.isnan(x)
+        return (x < self.upper_bound) | self.backend.isnan(x)
+
+    def encode(self, data: Arr, /) -> Arr:
+        # NOTE: frame.where(cond, other) replaces with other if condition is false!
+        data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
+        data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
+        return data
+
+    def decode(self, data: Arr, /) -> Arr:
+        return data
 
     def fit(self, data: Arr) -> None:
         # select the backend
@@ -415,64 +438,6 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
             case _:
                 raise NotImplementedError
 
-    def lower_satisfied(self, x: Arr) -> Arr:
-        r"""Return a boolean mask for the lower boundary (true: value ok)."""
-        if self.lower_bound is None:
-            return self.backend.true_like(x)
-        if self.lower_included or self.lower_included is None:
-            return (x >= self.lower_bound) | self.backend.isnan(x)
-        return (x > self.lower_bound) | self.backend.isnan(x)
-
-    def upper_satisfied(self, x: Arr) -> Arr:
-        r"""Return a boolean mask for the upper boundary (true: value ok)."""
-        if self.upper_bound is None:
-            return self.backend.true_like(x)
-        if self.upper_included or self.upper_included is None:
-            return (x <= self.upper_bound) | self.backend.isnan(x)
-        return (x < self.upper_bound) | self.backend.isnan(x)
-
-    def encode(self, data: Arr, /) -> Arr:
-        # NOTE: frame.where(cond, other) replaces with other if condition is false!
-        data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
-        data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
-        return data
-
-    def decode(self, data: Arr, /) -> Arr:
-        return data
-
-    # region parameters ----------------------------------------------------------------
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the BoundaryScalar."""
-
-        lower_bound: None | float | Arr2
-        upper_bound: None | float | Arr2
-
-        lower_value: float | Arr2
-        upper_value: float | Arr2
-
-        lower_included: bool
-        upper_included: bool
-
-        mode: ClippingMode | tuple[ClippingMode, ClippingMode]
-        axis: Axis = None
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the LinearScaler."""
-        return self.Parameters(
-            lower_bound=self.lower_bound,
-            lower_included=self.lower_included,
-            lower_value=self.lower_value,
-            upper_bound=self.upper_bound,
-            upper_included=self.upper_included,
-            upper_value=self.upper_value,
-            mode=self.mode,
-            axis=self.axis,
-        )
-
-    # endregion parameters -------------------------------------------------------------
-
 
 @pprint_repr
 @dataclass(init=False)
@@ -494,6 +459,10 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
     r"""Over which axis to perform the scaling."""
     backend: Backend[Arr]
     r"""The backend of the encoder."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
@@ -546,26 +515,6 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
     def decode(self, data: Arr, /) -> Arr:
         return (data - self.loc) / self.scale
 
-    # region parameters ----------------------------------------------------------------
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the LinearScaler."""
-
-        loc: Arr2
-        scale: Arr2
-        axis: Axis
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the LinearScaler."""
-        return self.Parameters(
-            loc=self.loc,
-            scale=self.scale,
-            axis=self.axis,
-        )
-
-    # endregion parameters -------------------------------------------------------------
-
 
 @dataclass(init=False)
 class StandardScaler(BaseEncoder[Arr, Arr]):
@@ -587,8 +536,8 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     r"""The backend of the encoder."""
 
     @property
-    def requires_fit(self) -> bool:
-        return (self.mean is NotImplemented) or (self.stdv is NotImplemented)
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
@@ -641,26 +590,6 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return data * self.stdv[broadcast] + self.mean[broadcast]
         return data * self.stdv + self.mean
-
-    # region parameters ----------------------------------------------------------------
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the StandardScalar."""
-
-        mean: Arr2
-        stdv: Arr2
-        axis: Axis
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the Standardizer."""
-        return self.Parameters(
-            mean=self.mean,
-            stdv=self.stdv,
-            axis=self.axis,
-        )
-
-    # endregion parameters -------------------------------------------------------------
 
 
 @dataclass(init=False)
@@ -721,9 +650,8 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     r"""The backend of the encoder."""
 
     @property
-    def requires_fit(self) -> bool:
-        r"""Whether the scaler requires fitting."""
-        return True
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
@@ -856,37 +784,12 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         return x
 
     # region parameters ----------------------------------------------------------------
-    @pprint_repr
-    class Parameters(NamedTuple, Generic[Arr2]):
-        r"""The parameters of the MinMaxScaler."""
-
-        xmin: Arr2
-        xmax: Arr2
-        ymin: Arr2
-        ymax: Arr2
-        axis: Axis
-
-    @property
-    def params(self) -> Parameters:
-        r"""Parameters of the MinMaxScaler."""
-        return self.Parameters(
-            xmin=self.xmin,
-            xmax=self.xmax,
-            ymin=self.ymin,
-            ymax=self.ymax,
-            axis=self.axis,
-        )
 
     def recompute_params(self):
         r"""Computes derived parameters from the base parameters."""
         self.xbar = (self.xmax + self.xmin) / 2
         self.ybar = (self.ymax + self.ymin) / 2
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-
-    @classmethod
-    def from_params(cls, params: Parameters) -> Self:
-        r"""Construct a MinMaxScaler from parameters."""
-        return cls(**params._asdict())
 
     def switch_backend(self, backend: str | Backend) -> None:
         r"""Switch the backend of the scaler."""
@@ -907,6 +810,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     # endregion parameters -------------------------------------------------------------
 
 
+@dataclass
 class LogEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Encode data on a logarithmic scale.
 
@@ -915,6 +819,10 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
 
     threshold: NDArray
     replacement: NDArray
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def fit(self, data: NDArray, /) -> None:
         assert np.all(data >= 0)
@@ -963,6 +871,10 @@ class TensorSplitter(BaseEncoder[TensorType, list[TensorType]]):
     maxdim: int
     indices_or_sections: int | list[int]
 
+    @property
+    def params(self) -> dict[str, Any]:
+        return {"indices_or_sections": self.indices_or_sections, "axis": self.axis}
+
     def __init__(
         self, *, indices_or_sections: int | list[int] = 1, axis: int = 0
     ) -> None:
@@ -993,6 +905,10 @@ class TensorConcatenator(BaseEncoder[tuple[Tensor, ...], Tensor]):
     numdims: list[int]
     axis: int
     maxdim: int
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {"axis": self.axis}
 
     def __init__(self, axis: int = 0) -> None:
         r"""Concatenate tensors along the specified axis."""

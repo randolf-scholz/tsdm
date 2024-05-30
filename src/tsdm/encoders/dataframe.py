@@ -31,7 +31,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
-from typing_extensions import Any, Optional, TypeVar, overload
+from typing_extensions import Any, Optional, TypeVar
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
@@ -113,7 +113,7 @@ class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
     def fit(self, data: DataFrame, /) -> None:
         self.dtypes = data.dtypes
 
-    def encode(self, data: DataFrame, /) -> FilePath:
+    def encode(self, data: DataFrame, /) -> Path:
         data.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
@@ -306,7 +306,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
         self.encoded_dtypes = {}
         self.encoded_columns = []
 
-        # NOTE: we do not use set to preserve order
+        # NOTE: we do not use `set` to preserve order
         remaining_columns = list(self.original_columns)
         for group, encoder in self.encoders.items():
             if group is Ellipsis:
@@ -379,7 +379,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
                 raise NotImplementedError
 
 
-class FrameIndexer(BaseEncoder):
+class FrameIndexer(BaseEncoder[DataFrame, DataFrame]):
     r"""Change index of a `pandas.DataFrame`.
 
     For compatibility, this is done by integer index.
@@ -424,7 +424,7 @@ class FrameIndexer(BaseEncoder):
         return data.set_index(columns)
 
 
-class FrameSplitter(BaseEncoder, Mapping):
+class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
     r"""Split DataFrame columns into multiple groups.
 
     The special value `...` (`Ellipsis`) can be used to indicate that all other columns belong to this group.
@@ -583,7 +583,7 @@ class FrameSplitter(BaseEncoder, Mapping):
         return reconstructed
 
 
-class TripletEncoder(BaseEncoder):
+class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
     r"""Encode the data into triplets."""
 
     categories: pd.CategoricalDtype
@@ -659,7 +659,7 @@ class TripletEncoder(BaseEncoder):
         return result
 
 
-class TripletDecoder(BaseEncoder):
+class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
     r"""Encode the data into triplets."""
 
     categories: pd.CategoricalDtype
@@ -763,8 +763,13 @@ class TripletDecoder(BaseEncoder):
         return result
 
 
-class TensorEncoder(BaseEncoder):
-    r"""Converts objects to Tensor."""
+class TensorEncoder(BaseEncoder[PandasObject, Tensor]):
+    r"""Converts object Tensor.
+
+    Note:
+        This method does not guarantee the same index, dtype or column names,
+        only the values are preserved.
+    """
 
     dtype: torch.dtype
     r"""The default dtype."""
@@ -792,32 +797,14 @@ class TensorEncoder(BaseEncoder):
     def fit(self, data: PandasObject, /) -> None:
         pass
 
-    @overload
-    def encode(self, data: PandasObject, /) -> Tensor: ...
-    @overload
-    def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]: ...
-    def encode(self, data, /):
-        match data:
-            case tuple() as tup:  # recursion
-                return tuple(self.encode(x) for x in tup)
-            case np.ndarray() as arr:
-                return torch.from_numpy(arr).to(device=self.device, dtype=self.dtype)
-            case Index() | Series() | DataFrame() as obj:
-                return torch.tensor(obj.values, device=self.device, dtype=self.dtype)
-            case _:
-                return torch.tensor(data, device=self.device, dtype=self.dtype)
+    def encode(self, data: PandasObject, /) -> Tensor:
+        return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
-    @overload
-    def decode(self, data: Tensor, /) -> PandasObject: ...
-    @overload
-    def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]: ...
-    def decode(self, data, /):
-        if isinstance(data, tuple):
-            return tuple(self.decode(x) for x in data)
+    def decode(self, data: Tensor, /) -> PandasObject:
         return data.cpu().numpy()
 
 
-class ValueEncoder(BaseEncoder):
+class ValueEncoder(BaseEncoder[DataFrame, NDArray]):
     r"""Encodes the value of a DataFrame.
 
     Remembers dtypes, index, columns
@@ -876,7 +863,7 @@ class ValueEncoder(BaseEncoder):
         return columns.set_index(MultiIndex.from_frame(index))
 
 
-class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
+class FrameAsDict(BaseEncoder[DataFrame, dict[str, Tensor]], Mapping[str, list[str]]):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
@@ -1017,7 +1004,7 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
             if set(cols).issubset(data.columns)
         }
 
-    def decode(self, data: dict[str, Tensor | None], /) -> DataFrame:
+    def decode(self, data: Mapping[str, Tensor | None], /) -> DataFrame:
         dfs = []
         for key, tensor in data.items():
             cols = self.groups[key]
@@ -1038,7 +1025,7 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
         return df
 
 
-class FrameAsTuple(BaseEncoder):
+class FrameAsTuple(BaseEncoder[DataFrame, tuple[Tensor, Tensor]]):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
 
     # Attributes
