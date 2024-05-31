@@ -26,7 +26,7 @@ __all__ = [
 
 import warnings
 from collections import namedtuple
-from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
@@ -150,7 +150,8 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
         return data
 
 
-@dataclass(init=False)
+@pprint_repr
+@dataclass(init=False, repr=False)
 class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
     r"""Converts wide DataFrame to a tall DataFrame.
 
@@ -164,13 +165,13 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
     r"""The name of the variable column."""
     value_name: str = "value"
     r"""The name of the value column."""
+    value_dtype: PandasDtype = NotImplemented
+    r"""The dtype of the variable column."""
 
-    categories: pd.CategoricalDtype = NotImplemented
-    r"""The stored categories."""
     original_schema: Series = NotImplemented
     r"""The original schema (column -> dtype)."""
-    var_dtype: PandasDtype = NotImplemented
-    r"""The dtype of the variable column."""
+    categories: pd.CategoricalDtype = NotImplemented
+    r"""The stored categories."""
 
     @property
     def params(self) -> dict[str, Any]:
@@ -195,10 +196,10 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
         if len(variable_dtypes := set(data.dtypes)) != 1:
             raise ValueError("All columns must have the same dtype!")
 
-        self.var_dtype = variable_dtypes.pop()
+        self.value_dtype = variable_dtypes.pop()
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        result = (
+        df = (
             data.melt(
                 ignore_index=False,
                 var_name=self.var_name,
@@ -207,25 +208,27 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
             .dropna(how="any")
             .astype({
                 self.var_name: self.categories,
-                self.value_name: self.var_dtype,
+                self.value_name: self.value_dtype,
             })
             .sort_index()
         )
 
         if self.sparse:
-            return pd.get_dummies(
-                result,
+            df = pd.get_dummies(
+                df,
                 columns=[self.var_name],
                 sparse=True,
                 prefix="",
                 prefix_sep="",
             )
+            # move value column to the end
+            return df[df.columns[1:].union(df.columns[:1])]
 
-        return result
+        return df
 
     def decode(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
-            df = data.iloc[:, 1:].stack()
+            df = data.iloc[:, :-1].stack()
             df = df[df == 1]
             df.index = df.index.rename(self.var_name, level=-1)
             df = df.reset_index(level=-1)
@@ -251,70 +254,65 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
         )
 
 
+@pprint_repr
+@dataclass(init=False, repr=False)
 class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
     r"""Convert a tall DataFrame to a wide DataFrame."""
 
-    categories: pd.CategoricalDtype
-    r"""The stored categories."""
-    original_dtypes: Series
-    r"""The original dtypes."""
-    original_columns: Index
-    r"""The original columns."""
-    value_column: Hashable
+    sparse: bool = False
+    r"""Whether to use a sparse representation."""
+    value_name: str = NotImplemented
     r"""The name of the value column."""
-    channel_columns: Index
-    r"""The name of the channel column(s)."""
+    var_name: str = NotImplemented
+    r"""The name of the variable column."""
+    value_dtype: PandasDtype = NotImplemented
+    r"""The dtype of the variable column."""
+
+    categories: pd.CategoricalDtype = NotImplemented
+    r"""The stored categories."""
+    original_schema: Series = NotImplemented
+    r"""The original dtypes."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
         *,
-        sparse: bool = False,
-        var_name: Optional[str] = None,
-        value_name: Optional[str] = None,
+        sparse: bool = NotImplemented,
+        value_name: str = NotImplemented,
+        var_name: str = NotImplemented,
+        categories: pd.CategoricalDtype | Sequence = NotImplemented,
     ) -> None:
         self.sparse = sparse
         self.var_name = var_name
         self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
-        self.original_dtypes = data.dtypes
-        self.original_columns = data.columns
+        if self.sparse is NotImplemented:
+            self.sparse = len(data.columns) > 2
+        if self.var_name is NotImplemented:
+            self.var_name = "variable" if self.sparse else data.columns[0]
+        if self.value_name is NotImplemented:
+            self.value_name = data.columns[-1]
 
-        self.value_column = self.value_name or data.columns[0]
-        self.value_name = self.value_column
-        assert self.value_column in data.columns
+        self.categories = (
+            pd.CategoricalDtype(data.columns[:-1])
+            if self.sparse
+            else pd.CategoricalDtype(data[self.var_name].unique())
+        )
 
-        remaining_cols = data.columns.drop(self.value_column)
-        if self.sparse and len(remaining_cols) <= 1:
-            raise ValueError("Sparse encoding requires at least two channel columns.")
-        if not self.sparse and len(remaining_cols) != 1:
-            raise ValueError("Dense encoding requires exactly one channel column.")
-
-        if self.sparse:
-            self.channel_columns = remaining_cols
-            categories = self.channel_columns
-            self.var_name = self.channel_columns.name or "variable"
-        else:
-            assert len(remaining_cols) == 1
-            self.channel_columns = remaining_cols.item()
-            categories = data[self.channel_columns].unique()
-            self.var_name = self.channel_columns
-
-        if pd.api.types.is_float_dtype(categories):
-            raise ValueError(
-                f"channel_ids found in {self.var_name!r} does no look like a"
-                " categorical!\n Please specify `value_name` and/or `var_name`!"
-            )
-
-        self.categories = pd.CategoricalDtype(np.sort(categories))
+        self.value_dtype = data[self.value_name].dtype
+        self.original_schema = data.dtypes
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
-            df = data.loc[:, self.channel_columns].stack()
+            df = data.iloc[:, :-1].stack()
             df = df[df == 1]
             df.index = df.index.rename(self.var_name, level=-1)
             df = df.reset_index(level=-1)
-            df[self.value_name] = data[self.value_column]
+            df[self.value_name] = data[self.value_name]
         else:
             df = data
 
@@ -339,20 +337,34 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
         return result.sort_index()
 
     def decode(self, data: DataFrame, /) -> DataFrame:
-        result = data.melt(
-            ignore_index=False,
-            var_name=self.var_name,
-            value_name=self.value_name,
-        ).dropna()
+        df = (
+            data.melt(
+                ignore_index=False,
+                var_name=self.var_name,
+                value_name=self.value_name,
+            )
+            .dropna(how="any")
+            .astype({
+                self.var_name: self.categories,
+                self.value_name: self.value_dtype,
+            })
+            .sort_index()
+        )
 
         if self.sparse:
-            result = pd.get_dummies(
-                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
+            df = pd.get_dummies(
+                df,
+                columns=[self.var_name],
+                sparse=True,
+                prefix="",
+                prefix_sep="",
             )
+            # move value column to the end
+            df = df[df.columns[1:].union(df.columns[:1])]
 
-        result = result.astype(self.original_dtypes)
-        result = result.sort_index()
-        return result
+        return df.reindex(columns=self.original_schema.index).astype(
+            self.original_schema
+        )
 
 
 @pprint_repr
@@ -401,7 +413,8 @@ class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
         return pd.read_csv(str_or_path, **self.csv_read_options)
 
 
-@dataclass(init=False)
+@pprint_repr
+@dataclass(init=False, repr=False)
 class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
     r"""Converts dtypes of a DataFrame.
 

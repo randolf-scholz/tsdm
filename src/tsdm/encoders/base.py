@@ -422,6 +422,13 @@ class BaseEncoder(Encoder[U, V]):
             r"""Fit the encoder to the data."""
             self.LOGGER.info("Fitting encoder to data.")
             original_fit(self, data)
+
+            # check if fitting was successful
+            if self.requires_fit:
+                raise AssertionError(
+                    "Fitting was not successful! "
+                    "Possibly the encoder is not implemented correctly."
+                )
             self.is_fitted = True
 
         @wraps(original_encode)
