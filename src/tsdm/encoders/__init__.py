@@ -111,7 +111,7 @@ __all__ = [
     "BoxCoxEncoder",
     "CSVEncoder",
     "ChainedEncoder",  # Structural
-    "DTypeEncoder",
+    "DTypeConverter",
     "DateTimeEncoder",
     "DeepcopyEncoder",  # Structural
     "DiagonalEncoder",  # Structural
@@ -171,7 +171,7 @@ from tsdm.encoders.base import (
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
     CSVEncoder,
-    DTypeEncoder,
+    DTypeConverter,
     FrameAsDict,
     FrameAsTuple,
     FrameEncoder,

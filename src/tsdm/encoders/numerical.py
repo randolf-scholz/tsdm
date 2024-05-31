@@ -328,8 +328,8 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
 
     # derived attributes
     backend: Backend[Arr] = field(init=False)
-    lower_value: float = field(init=False, default=NotImplemented)
-    upper_value: float = field(init=False, default=NotImplemented)
+    lower_value: float | Arr = field(init=False, default=NotImplemented)
+    upper_value: float | Arr = field(init=False, default=NotImplemented)
 
     @property
     def params(self) -> dict[str, Any]:

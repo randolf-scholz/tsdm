@@ -17,7 +17,7 @@ from typing_extensions import Any, Literal
 from tsdm.datasets import ETT
 from tsdm.encoders import (
     ChainedEncoder,
-    DTypeEncoder,
+    DTypeConverter,
     Encoder,
     FrameEncoder,
     MinMaxScaler,
@@ -139,7 +139,7 @@ class ETT_Zhou2021(OldBaseTask):
             FrameEncoder(
                 index_encoders={"date": MinMaxScaler() @ OldDateTimeEncoder()}
             ),
-            StandardScaler() @ DTypeEncoder(float),
+            StandardScaler() @ DTypeConverter(float),
         )
 
         # Fit the Preprocessors

@@ -1,12 +1,19 @@
 r"""Encoders for pandas DataFrames.
 
 Each of these encoders must encode DataFrames.
+We distinguish between 3 categories of encoders:
+
+1. **polymodal encoders**: Accepts dataframes with different schemas, such as different number of columns.
+2. **submodal encoders**: Each input dataframe must have a *compatible* schema as the dataframe used for fitting.
+    - The columns must be a subset of the columns used for fitting.
+    - The dtypes must be compatible.
+3. **equimodal encoders**: Each input dataframe must have the same schema as the dataframe used for fitting.
 """
 
 __all__ = [
     # Classes
     "CSVEncoder",
-    "DTypeEncoder",
+    "DTypeConverter",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
@@ -19,7 +26,8 @@ __all__ = [
 
 import warnings
 from collections import namedtuple
-from collections.abc import Hashable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
+from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
 
@@ -32,7 +40,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
-from typing_extensions import Any, Optional, TypeVar
+from typing_extensions import Any, ClassVar, Optional, TypeVar
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
@@ -41,7 +49,7 @@ from tsdm.types.dtypes import TORCH_DTYPES
 from tsdm.types.protocols import NTuple
 from tsdm.types.variables import K
 from tsdm.utils import pairwise_disjoint
-from tsdm.utils.pprint import repr_mapping
+from tsdm.utils.decorators import pprint_repr
 
 E = TypeVar("E", bound=Encoder)
 F = TypeVar("F", bound=Encoder)
@@ -142,18 +150,31 @@ class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
         return data
 
 
+@dataclass(init=False)
 class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
     r"""Converts wide DataFrame to a tall DataFrame.
 
     Requires that all columns share the same data type.
+    If sparse, then
     """
 
-    categories: pd.CategoricalDtype
+    sparse: bool = False
+    r"""Whether to use a sparse representation."""
+    var_name: str = "variable"
+    r"""The name of the variable column."""
+    value_name: str = "value"
+    r"""The name of the value column."""
+
+    categories: pd.CategoricalDtype = NotImplemented
     r"""The stored categories."""
-    original_dtypes: Series
-    r"""The original dtypes."""
-    original_columns: Index
-    r"""The original columns."""
+    original_schema: Series = NotImplemented
+    r"""The original schema (column -> dtype)."""
+    var_dtype: PandasDtype = NotImplemented
+    r"""The dtype of the variable column."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
@@ -167,25 +188,39 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
         self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
+        self.original_schema = data.dtypes
         self.categories = pd.CategoricalDtype(data.columns)
-        self.original_dtypes = data.dtypes
-        self.original_columns = data.columns
+
+        # check that all columns have the same dtype
+        if len(variable_dtypes := set(data.dtypes)) != 1:
+            raise ValueError("All columns must have the same dtype!")
+
+        self.var_dtype = variable_dtypes.pop()
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        result = data.melt(
-            ignore_index=False,
-            var_name=self.var_name,
-            value_name=self.value_name,
-        ).dropna()
-
-        result[self.var_name] = result[self.var_name].astype(self.categories)
+        result = (
+            data.melt(
+                ignore_index=False,
+                var_name=self.var_name,
+                value_name=self.value_name,
+            )
+            .dropna(how="any")
+            .astype({
+                self.var_name: self.categories,
+                self.value_name: self.var_dtype,
+            })
+            .sort_index()
+        )
 
         if self.sparse:
-            result = pd.get_dummies(
-                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
+            return pd.get_dummies(
+                result,
+                columns=[self.var_name],
+                sparse=True,
+                prefix="",
+                prefix_sep="",
             )
 
-        result = result.sort_index()
         return result
 
     def decode(self, data: DataFrame, /) -> DataFrame:
@@ -194,12 +229,12 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
             df = df[df == 1]
             df.index = df.index.rename(self.var_name, level=-1)
             df = df.reset_index(level=-1)
-            df[self.value_name] = data["self.value_name"]
+            df[self.value_name] = data[self.value_name]
         else:
             df = data
 
         df = df.pivot_table(
-            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
+            # FIXME: with https://github.com/pandas-dev/pandas/pull/45994
             # simply use df.index.names instead then.
             index=df.index,
             columns=self.var_name,
@@ -211,14 +246,9 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
             df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
 
         # re-add missing columns
-        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
-
-        # Finalize result
-        result = df[self.categories.categories]  # fix column order
-        result = result.astype(self.original_dtypes)
-        result = result[self.original_columns]
-        result.columns = self.original_columns
-        return result
+        return df.reindex(columns=self.original_schema.index).astype(
+            self.original_schema
+        )
 
 
 class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
@@ -325,67 +355,96 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
         return result
 
 
+@pprint_repr
+@dataclass(init=False, slots=True)
 class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
     r"""Encode the data into a CSV file."""
 
-    filename: Path
-    r"""The filename of the CSV file."""
-    dtypes: Series
-    r"""The original dtypes."""
-    read_csv_kwargs: dict[str, Any]
-    r"""The kwargs for the read_csv function."""
-    to_csv_kwargs: dict[str, Any]
-    r"""The kwargs for the to_csv function."""
+    DEFAULT_READ_OPTIONS: ClassVar[dict] = {}
+    DEFAULT_WRITE_OPTIONS: ClassVar[dict] = {"index": False}
+
+    path_generator: Callable[[DataFrame], Path]
+    r"""The generates the name for the CSV file."""
+
+    _: KW_ONLY
+
+    csv_read_options: dict[str, Any]
+    r"""The options for the read_csv function."""
+    csv_write_options: dict[str, Any]
+    r"""The options for the to_csv function."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
-        filename: FilePath,
+        filename_or_generator: FilePath | Callable[[DataFrame], Path],
         *,
-        to_csv_kwargs: Optional[dict[str, Any]] = None,
-        read_csv_kwargs: Optional[dict[str, Any]] = None,
+        csv_write_options: Mapping[str, Any] = EMPTY_MAP,
+        csv_read_options: Mapping[str, Any] = EMPTY_MAP,
     ) -> None:
-        self.filename = Path(filename)
-        self.read_csv_kwargs = read_csv_kwargs or {}
-        self.to_csv_kwargs = to_csv_kwargs or {}
-
-    def fit(self, data: DataFrame, /) -> None:
-        self.dtypes = data.dtypes
+        self.csv_read_options = self.DEFAULT_READ_OPTIONS | dict(csv_read_options)
+        self.csv_write_options = self.DEFAULT_WRITE_OPTIONS | dict(csv_write_options)
+        self.path_generator = (
+            filename_or_generator
+            if callable(filename_or_generator)
+            else lambda _: Path(filename_or_generator)
+        )
 
     def encode(self, data: DataFrame, /) -> Path:
-        data.to_csv(self.filename, **self.to_csv_kwargs)
-        return self.filename
+        path = self.path_generator(data)
+        data.to_csv(path, **self.csv_write_options)
+        return path
 
-    def decode(self, str_or_path: Optional[FilePath] = None, /) -> DataFrame:
-        path = self.filename if str_or_path is None else Path(str_or_path)
-        frame = pd.read_csv(path, **self.read_csv_kwargs)
-        return DataFrame(frame).astype(self.dtypes)
+    def decode(self, str_or_path: FilePath, /) -> DataFrame:
+        return pd.read_csv(str_or_path, **self.csv_read_options)
 
 
-class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
+@dataclass(init=False)
+class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
     r"""Converts dtypes of a DataFrame.
 
     Args:
         dtypes: A mapping from column names to dtypes.
             If a column is not present, it will be ignored.
             If `...` (`Ellipsis`) is given, all remaining columns will be converted to the given dtype.
+            When decoding, the original dtypes will be restored.
     """
 
-    target_dtypes: dict[Any, PandasDTypeArg]
+    original_dtypes: Series = NotImplemented
+    r"""The original dtypes."""
+    target_dtypes: dict[Any, PandasDTypeArg] = NotImplemented
+    r"""The target dtypes."""
     fill_dtype: Optional[PandasDtype] = None
-    original_dtypes: Series
+    r"""The dtype to fill missing columns with."""
 
     @property
     def params(self) -> dict[str, Any]:
-        return {"target_dtypes": self.target_dtypes}
+        return asdict(self)
 
     def __init__(
         self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /
     ) -> None:
+        super().__init__()
         match dtypes:
             case Mapping() as mapping:
                 self.target_dtypes = dict(mapping)
             case dtype:
                 self.target_dtypes = {Ellipsis: dtype}
+
+        if Ellipsis in self.target_dtypes:
+            self.fill_dtype = self.target_dtypes[Ellipsis]
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        if Ellipsis in self.target_dtypes:
+            return data.astype({
+                k: self.target_dtypes.get(k, self.fill_dtype) for k in data.columns
+            })
+        return data.astype({k: self.target_dtypes[k] for k in data.columns})
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype({k: self.original_dtypes[k] for k in data.columns})
 
     def fit(self, data: DataFrame, /) -> None:
         self.original_dtypes = data.dtypes.copy()
@@ -397,12 +456,6 @@ class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
             self.fill_dtype = self.target_dtypes.pop(Ellipsis)
             for col in set(data.columns) - set(self.target_dtypes):
                 self.target_dtypes[col] = self.fill_dtype
-
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        return data.astype(self.target_dtypes)
-
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        return data.astype(self.original_dtypes)
 
 
 class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
@@ -476,10 +529,6 @@ class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
 
         self.dropna = dropna
         self.fillna = fillna
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the object."""
-        return repr_mapping(self)
 
     def __len__(self) -> int:
         r"""Return the number of groups."""
