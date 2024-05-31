@@ -36,7 +36,8 @@ TEST_FRAME_A = DataFrame({
     "D": [1, 2, 3],
 })
 
-TRAIN_FRAME_SPARSE = DataFrame(
+# region train-frame simple index ------------------------------------------------------
+TRAIN_FRAME_WIDE = DataFrame(
     {
         "A": [1   , None, 3   ],
         "B": [4   , 5   , None],
@@ -47,7 +48,29 @@ TRAIN_FRAME_SPARSE = DataFrame(
     dtype=float,
 )  # fmt: skip
 
-TEST_FRAME_SPARSE = DataFrame(
+TRAIN_FRAME_TALL = DataFrame(
+    {
+        "variable": ["A", "B", "D", "B", "C", "A", "C"],
+        "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
+    },
+    index=Index([1, 1, 1, 3, 3, 7, 7], name="time"),
+).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])})
+
+TRAIN_FRAM_SPARSE = DataFrame(
+    {
+        "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
+        "A": [True, False, False, False, False, True, False],
+        "B": [False, True, False, True, False, False, False],
+        "C": [False, False, False, False, True, False, True],
+        "D": [False, False, True, False, False, False, False],
+    },
+    index=Index([1, 1, 1, 3, 3, 7, 7], name="time"),
+).astype(SPARSE_SCHEMA)
+# endregion train-frame simple index ---------------------------------------------------
+
+
+# region test-frame simple index -------------------------------------------------------
+TEST_FRAME_WIDE = DataFrame(
     {
         "A": [8   , None, 0   , None],
         "B": [5   , 2   , None, None],
@@ -58,7 +81,29 @@ TEST_FRAME_SPARSE = DataFrame(
     dtype=float,
 )  # fmt: skip
 
-TRAIN_FRAME_SPARSE_MULTIINDEX = DataFrame(
+TEST_FRAME_TALL = DataFrame(
+    {
+        "variable": ["A", "B", "B", "C", "A", "C", "C"],
+        "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
+    },
+    index=Index([0, 0, 2, 2, 7, 7, 9], name="time"),
+).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])})
+
+TEST_FRAME_SPARSE = DataFrame(
+    {
+        "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
+        "A": [True, False, False, False, True, False, False],
+        "B": [False, True, True, False, False, False, False],
+        "C": [False, False, False, True, False, True, True],
+        "D": [False, False, False, False, False, False, False],
+    },
+    index=Index([0, 0, 2, 2, 7, 7, 9], name="time"),
+).astype(SPARSE_SCHEMA)
+# endregion test-frame simple index ----------------------------------------------------
+
+
+# region train-frame multi-index -------------------------------------------------------
+TRAIN_MINDEX_WIDE = DataFrame(
     {
         "A": [1   , None, 3   ],
         "B": [4   , 5   , None],
@@ -69,7 +114,33 @@ TRAIN_FRAME_SPARSE_MULTIINDEX = DataFrame(
     dtype=float,
 )  # fmt: skip
 
-TEST_FRAME_SPARSE_MULTIINDEX = DataFrame(
+TRAIN_MINDEX_TALL = DataFrame(
+    {
+        "variable": ["A", "B", "D", "B", "C", "A", "C"],
+        "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
+    },
+    index=MultiIndex.from_tuples(
+        [(1.0, 1), (1.0, 1), (1.0, 1), (1.2, 2), (1.2, 2), (2.7, 1), (2.7, 1)],
+        names=["time", "id"],
+    ),
+).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])})
+
+TRAIN_MINDEX_SPARSE = DataFrame(
+    {
+        "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
+        "A": [True, False, False, False, False, True, False],
+        "B": [False, True, False, True, False, False, False],
+        "C": [False, False, False, False, True, False, True],
+        "D": [False, False, True, False, False, False, False],
+    },
+    index=MultiIndex.from_tuples(
+        [(1.0, 1), (1.0, 1), (1.0, 1), (1.2, 2), (1.2, 2), (2.7, 1), (2.7, 1)],
+        names=["time", "id"],
+    ),
+).astype(SPARSE_SCHEMA)
+# endregion train-frame multi-index ----------------------------------------------------
+
+TEST_MINDEX_WIDE = DataFrame(
     {
         "A": [8   , None, 0   , None],
         "B": [5   , 2   , None, None],
@@ -79,6 +150,32 @@ TEST_FRAME_SPARSE_MULTIINDEX = DataFrame(
     index=MultiIndex.from_tuples([(0.0, 1), (2.0, 2), (7.0, 1), (9.0, 1)],names=["time", "id"]),
     dtype=float,
 )  # fmt: skip
+
+TEST_MINDEX_TALL = DataFrame(
+    {
+        "variable": ["A", "B", "B", "C", "A", "C", "C"],
+        "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
+    },
+    index=MultiIndex.from_tuples(
+        [(0.0, 1), (0.0, 1), (2.0, 2), (2.0, 2), (7.0, 1), (7.0, 1), (9.0, 1)],
+        names=["time", "id"],
+    ),
+).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])})
+
+TEST_MINDEX_SPARSE = DataFrame(
+    {
+        "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
+        "A": [True, False, False, False, True, False, False],
+        "B": [False, True, True, False, False, False, False],
+        "C": [False, False, False, True, False, True, True],
+        "D": [False, False, False, False, False, False, False],
+    },
+    index=MultiIndex.from_tuples(
+        [(0.0, 1), (0.0, 1), (2.0, 2), (2.0, 2), (7.0, 1), (7.0, 1), (9.0, 1)],
+        names=["time", "id"],
+    ),
+).astype(SPARSE_SCHEMA)
+# endregion test-frame multi-index -----------------------------------------------------
 
 
 def test_csv_encoder():
@@ -121,132 +218,18 @@ def test_type_converter():
     assert_frame_equal(TEST_FRAME_A, decoded)
 
 
-TRIPLET_ENCODER_TEST_CASES = [
-    (
-        TRAIN_FRAME_SPARSE,
-        TRAIN_FRAME_SPARSE,
-        DataFrame(
-            {
-                "variable": ["A", "B", "D", "B", "C", "A", "C"],
-                "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
-            },
-            index=Index([1, 1, 1, 3, 3, 7, 7], name="time"),
-        ).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])}),
-        {},
-    ),
-    (
-        TRAIN_FRAME_SPARSE,
-        TEST_FRAME_SPARSE,
-        DataFrame(
-            {
-                "variable": ["A", "B", "B", "C", "A", "C", "C"],
-                "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
-            },
-            index=Index([0, 0, 2, 2, 7, 7, 9], name="time"),
-        ).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])}),
-        {},
-    ),
-    (
-        TRAIN_FRAME_SPARSE,
-        TRAIN_FRAME_SPARSE,
-        DataFrame(
-            {
-                "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
-                "A": [True, False, False, False, False, True, False],
-                "B": [False, True, False, True, False, False, False],
-                "C": [False, False, False, False, True, False, True],
-                "D": [False, False, True, False, False, False, False],
-            },
-            index=Index([1, 1, 1, 3, 3, 7, 7], name="time"),
-        ).astype(SPARSE_SCHEMA),
-        {"sparse": True},
-    ),
-    (
-        TRAIN_FRAME_SPARSE,
-        TEST_FRAME_SPARSE,
-        DataFrame(
-            {
-                "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
-                "A": [True, False, False, False, True, False, False],
-                "B": [False, True, True, False, False, False, False],
-                "C": [False, False, False, True, False, True, True],
-                "D": [False, False, False, False, False, False, False],
-            },
-            index=Index([0, 0, 2, 2, 7, 7, 9], name="time"),
-        ).astype(SPARSE_SCHEMA),
-        {"sparse": True},
-    ),
-    (
-        TRAIN_FRAME_SPARSE_MULTIINDEX,
-        TRAIN_FRAME_SPARSE_MULTIINDEX,
-        DataFrame(
-            {
-                "variable": ["A", "B", "D", "B", "C", "A", "C"],
-                "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
-            },
-            index=MultiIndex.from_tuples(
-                [(1.0, 1), (1.0, 1), (1.0, 1), (1.2, 2), (1.2, 2), (2.7, 1), (2.7, 1)],
-                names=["time", "id"],
-            ),
-        ).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])}),
-        {},
-    ),
-    (
-        TRAIN_FRAME_SPARSE_MULTIINDEX,
-        TEST_FRAME_SPARSE_MULTIINDEX,
-        DataFrame(
-            {
-                "variable": ["A", "B", "B", "C", "A", "C", "C"],
-                "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
-            },
-            index=MultiIndex.from_tuples(
-                [(0.0, 1), (0.0, 1), (2.0, 2), (2.0, 2), (7.0, 1), (7.0, 1), (9.0, 1)],
-                names=["time", "id"],
-            ),
-        ).astype({"variable": pd.CategoricalDtype(["A", "B", "C", "D"])}),
-        {},
-    ),
-    (
-        TRAIN_FRAME_SPARSE_MULTIINDEX,
-        TRAIN_FRAME_SPARSE_MULTIINDEX,
-        DataFrame(
-            {
-                "value": [1.0, 4.0, 1.0, 5.0, 8.0, 3.0, 9.0],
-                "A": [True, False, False, False, False, True, False],
-                "B": [False, True, False, True, False, False, False],
-                "C": [False, False, False, False, True, False, True],
-                "D": [False, False, True, False, False, False, False],
-            },
-            index=MultiIndex.from_tuples(
-                [(1.0, 1), (1.0, 1), (1.0, 1), (1.2, 2), (1.2, 2), (2.7, 1), (2.7, 1)],
-                names=["time", "id"],
-            ),
-        ).astype(SPARSE_SCHEMA),
-        {"sparse": True},
-    ),
-    (
-        TRAIN_FRAME_SPARSE_MULTIINDEX,
-        TEST_FRAME_SPARSE_MULTIINDEX,
-        DataFrame(
-            {
-                "value": [8.0, 5.0, 2.0, 3.0, 0.0, 1.0, 1.0],
-                "A": [True, False, False, False, True, False, False],
-                "B": [False, True, True, False, False, False, False],
-                "C": [False, False, False, True, False, True, True],
-                "D": [False, False, False, False, False, False, False],
-            },
-            index=MultiIndex.from_tuples(
-                [(0.0, 1), (0.0, 1), (2.0, 2), (2.0, 2), (7.0, 1), (7.0, 1), (9.0, 1)],
-                names=["time", "id"],
-            ),
-        ).astype(SPARSE_SCHEMA),
-        {"sparse": True},
-    ),
-]
-
-
 @pytest.mark.parametrize(
-    ("train_data", "test_data", "expected", "options"), TRIPLET_ENCODER_TEST_CASES
+    ("train_data", "test_data", "expected", "options"),
+    [
+        (TRAIN_FRAME_WIDE, TRAIN_FRAME_WIDE, TRAIN_FRAME_TALL, {}),
+        (TRAIN_FRAME_WIDE, TEST_FRAME_WIDE, TEST_FRAME_TALL, {}),
+        (TRAIN_FRAME_WIDE, TRAIN_FRAME_WIDE, TRAIN_FRAM_SPARSE, {"sparse": True}),
+        (TRAIN_FRAME_WIDE, TEST_FRAME_WIDE, TEST_FRAME_SPARSE, {"sparse": True}),
+        (TRAIN_MINDEX_WIDE, TRAIN_MINDEX_WIDE, TRAIN_MINDEX_TALL, {}),
+        (TRAIN_MINDEX_WIDE, TEST_MINDEX_WIDE, TEST_MINDEX_TALL, {}),
+        (TRAIN_MINDEX_WIDE, TRAIN_MINDEX_WIDE, TRAIN_MINDEX_SPARSE, {"sparse": True}),
+        (TRAIN_MINDEX_WIDE, TEST_MINDEX_WIDE, TEST_MINDEX_SPARSE, {"sparse": True}),
+    ],
 )
 def test_triplet_encoder(
     train_data: DataFrame,
