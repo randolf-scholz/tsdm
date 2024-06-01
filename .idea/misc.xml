@@ -4,7 +4,7 @@
     <option name="pathToExecutable" value="$USER_HOME$/.pyenv/shims/black" />
     <option name="sdkName" value="Poetry (tsdm)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (tsdm)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (tsdm)" project-jdk-type="Python SDK" />
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />
   </component>
