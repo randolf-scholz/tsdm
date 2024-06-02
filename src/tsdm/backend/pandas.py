@@ -35,7 +35,7 @@ from typing_extensions import Any, Literal, TypeAlias, TypeVar
 
 from tsdm.types.aliases import Axis, Scalar
 from tsdm.types.variables import T
-from tsdm.utils import joint_keys
+from tsdm.utils import get_joint_keys
 
 __logger__ = logging.getLogger(__name__)
 
@@ -216,7 +216,7 @@ def detect_outliers_dataframe(
     upper_inclusive: Mapping[Any, bool],
 ) -> DataFrame:
     r"""Detect outliers in a DataFrame, given boundary values."""
-    given_bounds = joint_keys(
+    given_bounds = get_joint_keys(
         lower_bound, upper_bound, lower_inclusive, upper_inclusive
     )
     if missing_bounds := set(df.columns) - given_bounds:
@@ -302,7 +302,7 @@ def remove_outliers_dataframe(
     __logger__.info("Removing outliers from DataFrame.")
     df = df.copy() if not inplace else df
 
-    given_bounds = joint_keys(
+    given_bounds = get_joint_keys(
         lower_bound, upper_bound, lower_inclusive, upper_inclusive
     )
 

@@ -8,14 +8,14 @@ __all__ = [
 
 from collections.abc import Hashable
 
-import pandas
+import pandas as pd
 from pandas import DataFrame, Series
 from typing_extensions import Optional
 
 
 def sparsity(df: DataFrame) -> tuple[float, float]:
     r"""Quantify sparsity in the data."""
-    mask = pandas.isna(df)
+    mask = pd.isna(df)
     col_wise = mask.mean(axis=0)
     total = mask.mean()
     return col_wise, total
@@ -49,13 +49,13 @@ def data_overview(
 
     overview = overview.astype(column_dtypes)
     for col, dtype in column_dtypes.items():
-        if pandas.api.types.is_float_dtype(dtype):
+        if pd.api.types.is_float_dtype(dtype):
             overview[col] = overview[col].round(digits)
 
     if index_col is not None:
         freq = {}
         for col in df.columns:
-            mask = pandas.notna(df[col].squeeze())
+            mask = pd.notna(df[col].squeeze())
             time = df.index.get_level_values(index_col)[mask]
             freq[col] = Series(time).diff().mean()
         overview["freq"] = Series(freq)

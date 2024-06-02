@@ -5,7 +5,7 @@ __all__ = ["MATPLOTLIB_CONFIG", "enable_latex_plotting"]
 import shutil
 import warnings
 
-import matplotlib
+import matplotlib as mpl
 
 MATPLOTLIB_CONFIG = {
     # "mathtext.fontset": "stix",
@@ -13,7 +13,7 @@ MATPLOTLIB_CONFIG = {
     # "svg.fonttype": "none",
     "text.usetex": True,
     "pgf.texsystem": r"lualatex",
-    "pgf.preamble": "\n".join([
+    "pgf.preamble": "\n".join((
         r"\usepackage{fontspec}",
         r"\usepackage[T1]{fontenc}",
         r"\usepackage[utf8x]{inputenc}",
@@ -21,12 +21,12 @@ MATPLOTLIB_CONFIG = {
         r"\usepackage{amsfonts}",
         r"\usepackage{amssymb}",
         r"\usepackage{unicode-math}",
-    ]),
-    "text.latex.preamble": "\n".join([
+    )),
+    "text.latex.preamble": "\n".join((
         r"\usepackage{amsmath}",
         r"\usepackage{amsfonts}",
         r"\usepackage{amssymb}",
-    ]),
+    )),
 }
 
 
@@ -34,8 +34,8 @@ def enable_latex_plotting() -> None:
     r"""Enable matplotlib to use LaTeX for rendering."""
     try:
         if shutil.which("lualatex") is not None:
-            matplotlib.rcParams.update(MATPLOTLIB_CONFIG)
-            matplotlib.use("pgf")
+            mpl.rcParams.update(MATPLOTLIB_CONFIG)
+            mpl.use("pgf")
         else:
             warnings.warn(
                 "lualatex not found. Using default matplotlib backend.", stacklevel=1

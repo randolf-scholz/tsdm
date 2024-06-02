@@ -17,7 +17,6 @@ import logging
 from collections.abc import Callable, Sequence
 from functools import wraps
 from time import perf_counter_ns
-from types import GenericAlias
 
 from torch import jit
 from typing_extensions import Concatenate, NamedTuple, Optional
@@ -301,9 +300,8 @@ def return_namedtuple(
 ) -> Callable[P, NTuple[T]]:
     r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
-
-    # noinspection PyUnresolvedReferences
-    return_type: GenericAlias = func.__annotations__.get("return", NotImplemented)
+    annotations = getattr(func, "__annotations__", {})
+    return_type = annotations.get("return", NotImplemented)
     if return_type is NotImplemented:
         raise DecoratorError(func, "No return type hint found.")
     if not issubclass(return_type.__origin__, tuple):

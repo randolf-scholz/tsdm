@@ -24,7 +24,7 @@ from math import nan as NAN
 from types import NotImplementedType
 
 import numpy as np
-import pandas
+import pandas as pd
 import torch
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
@@ -173,7 +173,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             case Series(index=MultiIndex()) as s:
                 ts = self.timeseries.loc[s]
             case Series() as s:
-                assert pandas.api.types.is_bool_dtype(s)
+                assert pd.api.types.is_bool_dtype(s)
                 # NOTE: loc[s] would not work here?!
                 ts = self.timeseries.loc[s[s].index]
             case _:
@@ -563,7 +563,8 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             case _:
                 raise TypeError(f"Invalid dataset type: {type(self.dataset)=}")
 
-        assert isinstance(tsd, TimeSeriesDataset)
+        if not isinstance(tsd, TimeSeriesDataset):
+            raise TypeError(f"Expected TimeSeriesDataset, got {type(tsd)=}")
 
         # NOTE: observation horizon and forecasting horizon might be given in different formats
         # (1) slices  (2) indices (3) boolean masks
@@ -713,24 +714,17 @@ class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
                 )
 
         # validate the slices
-        if self.input_slice.start is not None:
-            assert self.target_slice.start is not None
-            assert self.input_slice.start <= self.target_slice.start
-        if self.input_slice.stop is not None:
-            assert self.target_slice.start is not None
-            assert self.input_slice.stop <= self.target_slice.start
-        if self.target_slice.stop is not None:
-            assert self.input_slice.stop is not None
-            assert self.input_slice.stop <= self.target_slice.stop
+        self._validate_slices()
 
         # set the combined slice
         self.combined_slice = slice(self.input_slice.start, self.target_slice.stop)
 
         match self.observables, self.targets:
             case NotImplementedType(), NotImplementedType():
-                print(
+                warnings.warn(
                     "No observables/targets specified. Assuming autoregressive case:"
-                    " all columns are both inputs and targets."
+                    " all columns are both inputs and targets.",
+                    stacklevel=2,
                 )
                 self.observables = self.columns.copy()
                 self.targets = self.columns.copy()
@@ -768,6 +762,23 @@ class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
             )
         if not set(self.targets).issubset(self.columns):
             raise ValueError("Targets contain columns that are not in the data source.")
+
+    def _validate_slices(self) -> None:
+        if self.input_slice.start is not None:
+            if self.target_slice.start is None:
+                raise ValueError("Target slice must be specified, given input slice.")
+            if self.input_slice.start > self.target_slice.start:
+                raise ValueError("Input slice start must be before target slice start.")
+        if self.input_slice.stop is not None:
+            if self.target_slice.start is None:
+                raise ValueError("Target slice must be specified, given input slice.")
+            if self.input_slice.stop > self.target_slice.start:
+                raise ValueError("Input slice stop must be before target slice start.")
+        if self.target_slice.stop is not None:
+            if self.input_slice.stop is None:
+                raise ValueError("Input slice must be specified, given target slice.")
+            if self.input_slice.stop > self.target_slice.stop:
+                raise ValueError("Input slice stop must be before target slice stop.")
 
     def __len__(self) -> int:
         r"""Number of unique entries in the outer n-1 index levels."""

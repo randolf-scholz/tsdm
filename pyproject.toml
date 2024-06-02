@@ -151,20 +151,22 @@ select = [
     "E",     # pycodestyle
     "EXE",   # executable
     "F",     # pyflakes
+    "FBT",   # boolean-trap
     "I",     # import-order
-    "UP",    # pyupgrade
-    "PL",    # pylint
-    "PIE",   # pie
-    "PYI",   # pyi
-    "PT",    # pytest
+    "ICN",   # import-conventions
+    "ISC",   # implicit-str-concat
+    "FURB",  # refurb
     "NPY",   # numpy
     "PERF",  # performance related
-    "SIM",   # simplify
-    "FBT",   # boolean-trap
+    "PIE",   # pie
+    "PL",    # pylint
+    "PT",    # pytest
+    "PYI",   # pyi
     "RUF",   # ruff specific
-    "ISC",   # implicit-str-concat
+    "SIM",   # simplify
+    # "TCH",   # type-checking
     "TRY",   # tryceratops
-    "FURB",  # refurb
+    "UP",    # pyupgrade
 ]
 ignore = [
     # pydocstyle

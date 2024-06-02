@@ -5,10 +5,10 @@ from array import array as python_array
 from collections.abc import Collection
 from typing import Any
 
-import numpy
-import pandas
-import polars
-import pyarrow
+import numpy as np
+import pandas as pd
+import polars as pl
+import pyarrow as pa
 import pytest
 import torch
 from numpy.typing import NDArray
@@ -26,7 +26,7 @@ from tsdm.types.protocols import (
 )
 
 __logger__ = logging.getLogger(__name__)
-RNG = numpy.random.default_rng()
+RNG = np.random.default_rng()
 ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 
 _SERIES_DATA = ["a", "b", "c"]
@@ -37,14 +37,14 @@ _TABLE_DATA = {
     "strings": ["a", "b", "c", "d'"],
 }
 
-NP_ARRAY = numpy.array(_ARRAY_DATA)
-PA_ARRAY = pyarrow.array(_SERIES_DATA)
-PA_TABLE = pyarrow.table(_TABLE_DATA)
-PD_DATAFRAME = pandas.DataFrame(_TABLE_DATA)
-PD_INDEX = pandas.Index(_SERIES_DATA)
-PD_SERIES = pandas.Series(_SERIES_DATA)
-PL_DATAFRAME = polars.DataFrame(_TABLE_DATA)
-PL_SERIES = polars.Series(_SERIES_DATA)
+NP_ARRAY = np.array(_ARRAY_DATA)
+PA_ARRAY = pa.array(_SERIES_DATA)
+PA_TABLE = pa.table(_TABLE_DATA)
+PD_DATAFRAME = pd.DataFrame(_TABLE_DATA)
+PD_INDEX = pd.Index(_SERIES_DATA)
+PD_SERIES = pd.Series(_SERIES_DATA)
+PL_DATAFRAME = pl.DataFrame(_TABLE_DATA)
+PL_SERIES = pl.Series(_SERIES_DATA)
 PY_ARRAY = memoryview(python_array("i", [1, 2, 3]))
 TORCH_TENSOR = torch.tensor(_ARRAY_DATA)
 
@@ -135,7 +135,7 @@ def test_supports_array(name: str) -> None:
     obj = SUPPORTS_ARRAYS[name]
     assert isinstance(obj, SupportsArray)
     assert issubclass(obj.__class__, SupportsArray)
-    assert isinstance(obj.__array__(), numpy.ndarray)
+    assert isinstance(obj.__array__(), np.ndarray)
 
 
 @pytest.mark.parametrize("name", SERIES)
@@ -149,21 +149,21 @@ def test_series(name: str) -> None:
     # check methods
     attrs = set(SERIES_ATTRS)
 
-    assert isinstance(series.__array__(), numpy.ndarray)
+    assert isinstance(series.__array__(), np.ndarray)
     attrs.remove("__array__")
 
     assert isinstance(len(series), int)
     attrs.remove("__len__")
 
     for x in series:
-        assert isinstance(x, str | pyarrow.StringScalar)
+        assert isinstance(x, str | pa.StringScalar)
     attrs.remove("__iter__")
 
-    assert isinstance(series[0], str | pyarrow.StringScalar)
+    assert isinstance(series[0], str | pa.StringScalar)
     assert isinstance(series[0:2], cls)
     attrs.remove("__getitem__")
 
-    assert isinstance(series.unique(), cls | numpy.ndarray)
+    assert isinstance(series.unique(), cls | np.ndarray)
     attrs.remove("unique")
 
     series.value_counts()
@@ -186,7 +186,7 @@ def test_table(name: str) -> None:
     # check methods
     attrs = set(TABLE_ATTRS)
 
-    assert isinstance(table.__array__(), numpy.ndarray)
+    assert isinstance(table.__array__(), np.ndarray)
     attrs.remove("__array__")
 
     table.__dataframe__()
@@ -315,37 +315,37 @@ def test_table_manual() -> None:
         torch_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
 
-    numpy_ndarray: NDArray = numpy.array([1, 2, 3])
+    numpy_ndarray: NDArray = np.array([1, 2, 3])
     numpy_table: SupportsShape = numpy_ndarray
     assert isinstance(
         numpy_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(numpy_table))}"
 
-    pandas_frame: pandas.DataFrame = pandas.DataFrame(RNG.normal(size=(3, 3)))
+    pandas_frame: pd.DataFrame = pd.DataFrame(RNG.normal(size=(3, 3)))
     pandas_table: SupportsShape = pandas_frame
     assert isinstance(
         pandas_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_table))}"
 
-    pandas_series: pandas.Series = pandas.Series([1, 2, 3])
+    pandas_series: pd.Series = pd.Series([1, 2, 3])
     pandas_series_array: SupportsShape = pandas_series
     assert isinstance(
         pandas_series_array, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_series_array))}"
 
-    pandas_index: pandas.Index = pandas.Index([1, 2, 3])
+    pandas_index: pd.Index = pd.Index([1, 2, 3])
     pandas_index_array: SupportsShape = pandas_index
     assert isinstance(
         pandas_index_array, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_index_array))}"
 
-    pyarrow_frame: pyarrow.Table = pyarrow.Table.from_pandas(pandas_frame)
+    pyarrow_frame: pa.Table = pa.Table.from_pandas(pandas_frame)
     pyarrow_table: SupportsShape = pyarrow_frame
     assert isinstance(
         pyarrow_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_table))}"
 
-    pyarrow_series: pyarrow.Array = pyarrow.Array.from_pandas(pandas_series)
+    pyarrow_series: pa.Array = pa.Array.from_pandas(pandas_series)
     pyarrow_series_table: SupportsShape = pyarrow_series
     assert isinstance(
         pyarrow_table, SupportsShape

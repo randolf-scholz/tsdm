@@ -107,7 +107,7 @@ TRAIN_MINDEX_WIDE = DataFrame(
         "D": [1   , None, None],
     },
     columns=COLUMNS,
-    index=MultiIndex.from_tuples([(1.0, 1), (1.2, 2), (2.7, 1)],names=["time", "id"]),
+    index=MultiIndex.from_tuples([(1.0, 1), (1.2, 2), (2.7, 1)], names=["time", "id"]),
 ).astype(WIDE_SCHEMA)  # fmt: skip
 
 TRAIN_MINDEX_TALL = DataFrame(
@@ -144,7 +144,7 @@ TEST_MINDEX_WIDE = DataFrame(
         "D": [None, None, None, None],
     },
     columns=COLUMNS,
-    index=MultiIndex.from_tuples([(0.0, 1), (2.0, 2), (7.0, 1), (9.0, 1)],names=["time", "id"]),
+    index=MultiIndex.from_tuples([(0.0, 1), (2.0, 2), (7.0, 1), (9.0, 1)], names=["time", "id"]),
 ).astype(WIDE_SCHEMA)  # fmt: skip
 
 TEST_MINDEX_TALL = DataFrame(

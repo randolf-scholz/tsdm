@@ -10,7 +10,7 @@ __all__ = [
     "flatten_dict",
     "flatten_nested",
     "initialize_from_config",
-    "joint_keys",
+    "get_joint_keys",
     "last",
     "timedelta",
     "timestamp",
@@ -18,7 +18,6 @@ __all__ = [
     "pairwise_disjoint",
     "pairwise_disjoint_masks",
     "paths_exists",
-    "prepend_path",
     "repackage_zip",
     "replace",
     "round_relative",
@@ -27,13 +26,11 @@ __all__ = [
     "unflatten_dict",
 ]
 
-import os
 import shutil
 import warnings
 from collections import deque
 from collections.abc import (
     Callable,
-    Collection,
     Iterable,
     Mapping,
     Reversible,
@@ -52,7 +49,7 @@ from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from torch import nn
 from tqdm.autonotebook import tqdm
-from typing_extensions import Any, Literal, Optional, cast, overload
+from typing_extensions import Any, Optional, cast
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
@@ -408,52 +405,6 @@ def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
     return d
 
 
-@overload
-def prepend_path(
-    files: Mapping[K, FilePath], parent: Path, /, *, keep_none: bool = ...
-) -> dict[K, Path]: ...
-@overload
-def prepend_path(
-    files: list[FilePath], parent: Path, /, *, keep_none: bool = ...
-) -> list[Path]: ...
-@overload
-def prepend_path(
-    files: FilePath, parent: Path, /, *, keep_none: bool = ...
-) -> Path: ...
-@overload
-def prepend_path(
-    files: Nested[FilePath], parent: Path, /, *, keep_none: bool = ...
-) -> Nested[Path]: ...
-@overload
-def prepend_path(
-    files: Nested[Optional[FilePath]], parent: Path, /, *, keep_none: Literal[False]
-) -> Nested[Path]: ...
-@overload
-def prepend_path(
-    files: Nested[Optional[FilePath]], parent: Path, /, *, keep_none: Literal[True]
-) -> Nested[Optional[Path]]: ...
-def prepend_path(files, parent, /, *, keep_none=True):
-    r"""Prepends the given path to all files in nested iterable.
-
-    If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
-    """
-    # TODO: change it to apply_nested in python 3.10
-    match files:
-        case None:
-            return None if keep_none else parent
-        case str() | Path() | os.PathLike() as path:
-            return parent / Path(path)
-        case Mapping() as mapping:
-            return {
-                k: prepend_path(v, parent, keep_none=keep_none)
-                for k, v in mapping.items()
-            }
-        case Collection() as coll:
-            return [prepend_path(f, parent, keep_none=keep_none) for f in coll]
-        case _:
-            raise TypeError(f"Unsupported type: {type(files)}")
-
-
 def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
     r"""Check whether the files exist.
 
@@ -476,13 +427,23 @@ def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
 
 def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     r"""Initialize `nn.Module` from a config object."""
-    assert "__name__" in config, "__name__ not found in dict!"
-    assert "__module__" in config, "__module__ not found in dict!"
-    config = config.copy()
-    module = import_module(config.pop("__module__"))
-    cls = getattr(module, config.pop("__name__"))
+    conf = config.copy()
+    cls_name: str = conf.pop("__name__")
+    module_name: str = conf.pop("__module__")
     opts = {key: val for key, val in config.items() if not is_dunder("key")}
-    return cls(**opts)
+
+    # import module and class
+    module = import_module(module_name)
+    cls = getattr(module, cls_name)
+
+    # initialize class with options
+    try:
+        obj = cls(**opts)
+    except Exception as exc:
+        exc.add_note(f"Failed to initialize {cls_name} with {opts}.")
+        raise
+
+    return obj
 
 
 def repackage_zip(path: FilePath, /) -> None:
@@ -524,7 +485,7 @@ def repackage_zip(path: FilePath, /) -> None:
                 new_archive.writestr(new_name, old_archive.read(item))
 
 
-def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
+def get_joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
     r"""Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
     return set.intersection(*map(set, (d.keys() for d in mappings)))

@@ -35,7 +35,7 @@ from math import prod
 from types import FunctionType
 
 from pandas import DataFrame, MultiIndex
-from pyarrow import Array as pyarrow_array, Table as pyarrow_table
+from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 from typing_extensions import Any, Final, Optional, Protocol
 
 from tsdm.testing import (
@@ -888,10 +888,10 @@ def repr_array(
         case DataFrame(dtypes=dtypes) | MultiIndex(dtypes=dtypes):
             dtypes = [repr_dtype(dtype) for dtype in dtypes]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-        case pyarrow_table() as table:
+        case PyArrowTable() as table:
             dtypes = [repr_dtype(dtype) for dtype in table.schema.types]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-        case pyarrow_array(type=dtype):
+        case PyArrowArray(type=dtype):
             string += ", " + repr_dtype(dtype)
         case SupportsDtype(dtype=dtype):
             string += ", " + repr_dtype(dtype)

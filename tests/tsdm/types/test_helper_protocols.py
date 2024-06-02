@@ -2,10 +2,10 @@ r"""Test other protocols."""
 
 from collections.abc import Mapping, Sequence
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import torch
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 from typing_extensions import assert_type
 
 from tsdm.types.protocols import (
@@ -50,9 +50,9 @@ def test_shapelike_protocol() -> None:
     r"""Test the Shape protocol."""
     data = [1, 2, 3]
     torch_tensor: torch.Tensor = torch.tensor(data)
-    numpy_ndarray: NDArray = numpy.array(data)
-    pandas_series: pandas.Series = pandas.Series(data)
-    pandas_index: pandas.Index = pandas.Index(data)
+    numpy_ndarray: NDArray = np.array(data)
+    pandas_series: pd.Series = pd.Series(data)
+    pandas_index: pd.Index = pd.Index(data)
 
     x: ShapeLike = (1, 2, 3)
     y: ShapeLike = torch_tensor.shape
@@ -107,9 +107,9 @@ def test_get_interscetion_indexable() -> None:
     containers = [
         list,
         tuple,
-        pandas.Series,
-        pandas.Index,
-        numpy.ndarray,
+        pd.Series,
+        pd.Index,
+        np.ndarray,
         torch.Tensor,
     ]
     shared_attrs = set.intersection(*[set(dir(c)) for c in containers])

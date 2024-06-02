@@ -1,4 +1,4 @@
-from typing import Protocol, Self, overload, SupportsIndex, Literal
+from typing import Literal, Protocol, Self, SupportsIndex, overload
 
 
 class SupportsSlicing[T_co](Protocol):

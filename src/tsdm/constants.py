@@ -12,17 +12,17 @@ __all__ = [
     "EXAMPLE_CATEGORIES",
     "EXAMPLE_EMOJIS",
     "EXAMPLE_STRINGS",
+    "KEYWORD_ONLY",
     "NA_STRINGS",
     "NA_VALUES",
     "NULL_VALUES",
-    "PRECISION",
-    "RTOL",
-    "RNG",
-    "ROOT_3",
-    "TIME_UNITS",
-    "KEYWORD_ONLY",
     "POSITIONAL_ONLY",
     "POSITIONAL_OR_KEYWORD",
+    "PRECISION",
+    "RNG",
+    "ROOT_3",
+    "RTOL",
+    "TIME_UNITS",
     "VAR_KEYWORD",
     "VAR_POSITIONAL",
 ]
@@ -32,7 +32,7 @@ from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
 
 import numpy as np
-import pandas
+import pandas as pd
 import torch
 from numpy.random import Generator
 from typing_extensions import Any, Final, Never
@@ -153,8 +153,8 @@ NA_VALUES: Final[frozenset[object]] = frozenset({
     None,
     float("nan"),
     np.nan,
-    pandas.NA,
-    pandas.NaT,
+    pd.NA,
+    pd.NaT,
     np.datetime64("NaT"),
 })
 r"""Values that correspond to NaN."""

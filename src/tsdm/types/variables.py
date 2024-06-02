@@ -65,9 +65,6 @@ __all__ = [
     "V_co",
     "V_contra",
     # collections.abc Type Variables
-    "ByteStringType",
-    "ByteString_co",
-    "ByteString_contra",
     "CollectionType",
     "Collection_co",
     "Collection_contra",
@@ -357,16 +354,6 @@ MutableSequence_contra = TypeVar(
     "MutableSequence_contra", bound=abc.MutableSequence, contravariant=True
 )
 r"""Type variable for MutableSequences."""
-
-
-ByteStringType = TypeVar("ByteStringType", bound=abc.ByteString)
-r"""Type variable for ByteStrings."""
-ByteString_co = TypeVar("ByteString_co", bound=abc.ByteString, covariant=True)
-r"""Type variable for ByteStrings."""
-ByteString_contra = TypeVar(
-    "ByteString_contra", bound=abc.ByteString, contravariant=True
-)
-r"""Type variable for ByteStrings."""
 
 
 SetType = TypeVar("SetType", bound=abc.Set)

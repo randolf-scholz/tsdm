@@ -12,18 +12,18 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 
 from typing import TypeVar
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import pytest
 import torch
 
 from tsdm.backend.generic import false_like, true_like
 from tsdm.types.callback_protocols import SelfMap
 
-T = TypeVar("T", pandas.Series, numpy.ndarray, torch.Tensor)
+T = TypeVar("T", pd.Series, np.ndarray, torch.Tensor)
 
 DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
-TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
+TIME = np.array(DATA) * np.timedelta64(1, "s")
 
 
 @pytest.mark.parametrize("formula", [lambda z: z**0], ids=["x**0"])
@@ -31,8 +31,8 @@ TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA))),
-        (pandas.Series(DATA), pandas.Series(numpy.ones_like(DATA))),
-        (numpy.array(DATA), numpy.ones_like(DATA)),
+        (pd.Series(DATA), pd.Series(np.ones_like(DATA))),
+        (np.array(DATA), np.ones_like(DATA)),
     ],
     ids=["torch", "pandas", "numpy"],
 )
@@ -55,8 +55,8 @@ def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA))),
-        (pandas.Series(DATA), pandas.Series(numpy.zeros_like(DATA))),
-        (numpy.array(DATA), numpy.zeros_like(DATA)),
+        (pd.Series(DATA), pd.Series(np.zeros_like(DATA))),
+        (np.array(DATA), np.zeros_like(DATA)),
     ],
     ids=["torch", "pandas", "numpy"],
 )
@@ -85,10 +85,10 @@ def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA), dtype=torch.bool)),
-        (pandas.Series(DATA), pandas.Series(numpy.ones_like(DATA, dtype=bool))),
-        (numpy.array(DATA), numpy.ones_like(DATA, dtype=numpy.bool_)),
-        (pandas.Series(TIME), pandas.Series(numpy.ones_like(TIME, dtype=bool))),
-        (numpy.array(TIME), numpy.ones_like(TIME, dtype=numpy.bool_)),
+        (pd.Series(DATA), pd.Series(np.ones_like(DATA, dtype=bool))),
+        (np.array(DATA), np.ones_like(DATA, dtype=np.bool_)),
+        (pd.Series(TIME), pd.Series(np.ones_like(TIME, dtype=bool))),
+        (np.array(TIME), np.ones_like(TIME, dtype=np.bool_)),
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
@@ -115,10 +115,10 @@ def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ("data", "expected"),
     [
         (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA), dtype=torch.bool)),
-        (pandas.Series(DATA), pandas.Series(numpy.zeros_like(DATA, dtype=bool))),
-        (numpy.array(DATA), numpy.zeros_like(DATA, dtype=numpy.bool_)),
-        (pandas.Series(TIME), pandas.Series(numpy.zeros_like(TIME, dtype=bool))),
-        (numpy.array(TIME), numpy.zeros_like(TIME, dtype=numpy.bool_)),
+        (pd.Series(DATA), pd.Series(np.zeros_like(DATA, dtype=bool))),
+        (np.array(DATA), np.zeros_like(DATA, dtype=np.bool_)),
+        (pd.Series(TIME), pd.Series(np.zeros_like(TIME, dtype=bool))),
+        (np.array(TIME), np.zeros_like(TIME, dtype=np.bool_)),
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )

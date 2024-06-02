@@ -14,8 +14,8 @@ from collections.abc import Mapping
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import torch
 from numpy import ndarray
 from torch import Tensor
@@ -72,7 +72,7 @@ def gather_types(obj: object, /) -> set[BackendID]:
             types |= set().union(*map(gather_types, mapping.values()))
         case Tensor():
             types.add("torch")
-        case pandas.DataFrame() | pandas.Series() | pandas.Index():
+        case pd.DataFrame() | pd.Series() | pd.Index():
             types.add("pandas")
         case ndarray():
             types.add("numpy")
@@ -114,37 +114,37 @@ class Kernels:  # Q: how to make this more elegant?
     r"""A collection of kernels for numerical operations."""
 
     clip: Mapping[BackendID, ClipProto] = {
-        "numpy": numpy.clip,
+        "numpy": np.clip,
         "pandas": pandas_clip,
         "torch": torch.clip,
     }
 
     isnan: Mapping[BackendID, SelfMap] = {
-        "numpy": numpy.isnan,
-        "pandas": pandas.isna,
+        "numpy": np.isnan,
+        "pandas": pd.isna,
         "torch": torch.isnan,
     }
 
     nanmin: Mapping[BackendID, ContractionProto] = {
-        "numpy": numpy.nanmin,
+        "numpy": np.nanmin,
         "pandas": pandas_nanmin,
         "torch": torch_nanmin,
     }
 
     nanmax: Mapping[BackendID, ContractionProto] = {
-        "numpy": numpy.nanmax,
+        "numpy": np.nanmax,
         "pandas": pandas_nanmax,
         "torch": torch_nanmax,
     }
 
     nanmean: Mapping[BackendID, ContractionProto] = {
-        "numpy": numpy.nanmean,
+        "numpy": np.nanmean,
         "pandas": pandas_nanmean,
         "torch": torch.nanmean,  # type: ignore[dict-item]
     }
 
     nanstd: Mapping[BackendID, ContractionProto] = {
-        "numpy": numpy.nanstd,
+        "numpy": np.nanstd,
         "pandas": pandas_nanstd,
         "torch": torch_nanstd,
     }
@@ -168,13 +168,13 @@ class Kernels:  # Q: how to make this more elegant?
     }
 
     to_tensor: Mapping[BackendID, ToTensorProto] = {
-        "numpy": numpy.array,
-        "pandas": numpy.array,
+        "numpy": np.array,
+        "pandas": np.array,
         "torch": torch.tensor,
     }
 
     where: Mapping[BackendID, WhereProto] = {
-        "numpy": numpy.where,
+        "numpy": np.where,
         "pandas": pandas_where,
         "torch": torch.where,  # type: ignore[dict-item]
     }

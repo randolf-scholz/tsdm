@@ -150,10 +150,11 @@ def strip_whitespace(table, /, *cols):
             return strip_whitespace_table(table, *cols)
         case Array() as array:
             if cols:
-                raise ValueError("Cannot specify columns for an Array.")
+                raise AssertionError("Cannot specify columns for an Array.")
             return strip_whitespace_array(array)
         case Series() as series:
-            assert not cols
+            if cols:
+                raise AssertionError("Cannot specify columns for a Series.")
             return strip_whitespace_series(series)
         case DataFrame() as frame:
             return strip_whitespace_dataframe(frame, *cols)
@@ -216,7 +217,8 @@ def detect_outliers(
     }
 
     if description is not NotImplemented:
-        assert not any(val is not NotImplemented for val in options.values())
+        if any(val is not NotImplemented for val in options.values()):
+            raise AssertionError("Cannot specify both description and boundary values.")
         options = {key: description[key] for key in options}
 
     match obj:
@@ -295,7 +297,8 @@ def remove_outliers(
     }
 
     if description is not NotImplemented:
-        assert not any(val is not NotImplemented for val in options.values())
+        if any(val is not NotImplemented for val in options.values()):
+            raise AssertionError("Cannot specify both description and boundary values.")
         options = {key: description[key] for key in options}
 
     options |= {"drop": drop, "inplace": inplace}

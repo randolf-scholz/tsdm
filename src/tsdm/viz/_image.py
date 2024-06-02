@@ -45,14 +45,14 @@ def kernel_heatmap(
         kernel = kernel.cpu().numpy()
 
     colormap = colormaps[cmap] if isinstance(cmap, str) else cmap
-    RGBA: NDArray = colormap(kernel)  # type: ignore[assignment]
-    RGB = RGBA[..., :-1]
+    rgba: NDArray = colormap(kernel)  # type: ignore[assignment]
+    rgb = rgba[..., :-1]
 
     match fmt:
         case "HWC":
-            return RGB
+            return rgb
         case "CHW":
-            return np.rollaxis(RGB, -1)
+            return np.rollaxis(rgb, -1)
         case _:
             raise ValueError(f"Invalid format {fmt!r}")
 

@@ -15,7 +15,6 @@ ABCS: list[type] = [
     abc.Collection,
     abc.Sequence,
     abc.MutableSequence,
-    abc.ByteString,  # type: ignore[list-item]
     abc.Set,
     abc.MutableSet,
     abc.Mapping,

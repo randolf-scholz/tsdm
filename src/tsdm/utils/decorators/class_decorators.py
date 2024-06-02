@@ -136,8 +136,10 @@ def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
 
     are (roughly?) equivalent
     """
-    assert isinstance(base_class, type)
-    assert issubclass(base_class, nn.Module)
+    if not isinstance(base_class, type):
+        raise TypeError("Expected a class.")
+    if not issubclass(base_class, nn.Module):
+        raise TypeError("Expected a subclass of nn.Module.")
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
@@ -153,8 +155,11 @@ def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
                 return scripted
             return instance
 
-    assert isinstance(WrappedClass, type)
-    assert issubclass(WrappedClass, base_class)
+    if not isinstance(WrappedClass, type):
+        raise TypeError(f"Expected a class, got {WrappedClass}.")
+    if not issubclass(WrappedClass, base_class):
+        raise TypeError(f"Expected {WrappedClass} to be a subclass of {base_class}.")
+
     return WrappedClass
 
 

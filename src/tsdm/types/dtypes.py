@@ -72,9 +72,9 @@ __all__ = [
 from datetime import datetime, timedelta
 
 import numpy as np
-import pandas
-import polars
-import pyarrow
+import pandas as pd
+import polars as pl
+import pyarrow as pa
 import torch
 from pandas import ArrowDtype
 from pandas.api.extensions import ExtensionDtype
@@ -284,65 +284,65 @@ r"""Dictionary of all `numpy` data type typestrings."""
 
 # region pandas dtypes -----------------------------------------------------------------
 PANDAS_TYPESTRINGS: Final[dict[type[ExtensionDtype], str]] = {
-    pandas.BooleanDtype     : "boolean",
-    pandas.CategoricalDtype : "category",
-    pandas.DatetimeTZDtype  : "datetime64[ns, tz]",  # datetime64[ns, <tz>]
-    pandas.Float32Dtype     : "Float32",
-    pandas.Float64Dtype     : "Float64",
-    pandas.Int16Dtype       : "Int16",
-    pandas.Int32Dtype       : "Int32",
-    pandas.Int64Dtype       : "Int64",
-    pandas.Int8Dtype        : "Int8",
-    pandas.IntervalDtype    : "interval",  # e.g. to denote ranges of variables
-    pandas.PeriodDtype      : "period",  # period[<freq>]
-    pandas.SparseDtype      : "Sparse",
-    pandas.StringDtype      : "string",
-    pandas.UInt16Dtype      : "UInt16",
-    pandas.UInt32Dtype      : "UInt32",
-    pandas.UInt64Dtype      : "UInt64",
-    pandas.UInt8Dtype       : "UInt8",
+    pd.BooleanDtype     : "boolean",
+    pd.CategoricalDtype : "category",
+    pd.DatetimeTZDtype  : "datetime64[ns, tz]",  # datetime64[ns, <tz>]
+    pd.Float32Dtype     : "Float32",
+    pd.Float64Dtype     : "Float64",
+    pd.Int16Dtype       : "Int16",
+    pd.Int32Dtype       : "Int32",
+    pd.Int64Dtype       : "Int64",
+    pd.Int8Dtype        : "Int8",
+    pd.IntervalDtype    : "interval",  # e.g. to denote ranges of variables
+    pd.PeriodDtype      : "period",  # period[<freq>]
+    pd.SparseDtype      : "Sparse",
+    pd.StringDtype      : "string",
+    pd.UInt16Dtype      : "UInt16",
+    pd.UInt32Dtype      : "UInt32",
+    pd.UInt64Dtype      : "UInt64",
+    pd.UInt8Dtype       : "UInt8",
 }  # fmt: skip
 r"""Dictionary of all `pandas` data type typestrings."""
 
 PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
-    "datetime64[ns, tz]": pandas.DatetimeTZDtype,  # datetime64[ns, <tz>]
-    "boolean"  : pandas.BooleanDtype,
-    "category" : pandas.CategoricalDtype,
-    "Float32"  : pandas.Float32Dtype,
-    "Float64"  : pandas.Float64Dtype,
-    "Int16"    : pandas.Int16Dtype,
-    "Int32"    : pandas.Int32Dtype,
-    "Int64"    : pandas.Int64Dtype,
-    "Int8"     : pandas.Int8Dtype,
-    "interval" : pandas.IntervalDtype,  # e.g. to denote ranges of variables
-    "period"   : pandas.PeriodDtype,  # period[<freq>]
-    "Sparse"   : pandas.SparseDtype,
-    "string"   : pandas.StringDtype,
-    "UInt16"   : pandas.UInt16Dtype,
-    "UInt32"   : pandas.UInt32Dtype,
-    "UInt64"   : pandas.UInt64Dtype,
-    "UInt8"    : pandas.UInt8Dtype,
+    "datetime64[ns, tz]": pd.DatetimeTZDtype,  # datetime64[ns, <tz>]
+    "boolean"  : pd.BooleanDtype,
+    "category" : pd.CategoricalDtype,
+    "Float32"  : pd.Float32Dtype,
+    "Float64"  : pd.Float64Dtype,
+    "Int16"    : pd.Int16Dtype,
+    "Int32"    : pd.Int32Dtype,
+    "Int64"    : pd.Int64Dtype,
+    "Int8"     : pd.Int8Dtype,
+    "interval" : pd.IntervalDtype,  # e.g. to denote ranges of variables
+    "period"   : pd.PeriodDtype,  # period[<freq>]
+    "Sparse"   : pd.SparseDtype,
+    "string"   : pd.StringDtype,
+    "UInt16"   : pd.UInt16Dtype,
+    "UInt32"   : pd.UInt32Dtype,
+    "UInt64"   : pd.UInt64Dtype,
+    "UInt8"    : pd.UInt8Dtype,
 }  # fmt: skip
 r"""Dictionary of all `pandas` data types."""
 
 PANDAS_ARROW_DURATION_TYPES: set[ArrowDtype] = {
-    ArrowDtype(pyarrow.duration(unit)) for unit in ["s", "ms", "us", "ns"]
+    ArrowDtype(pa.duration(unit)) for unit in ["s", "ms", "us", "ns"]
 }
 r"""Set of all `pandas` arrow duration types."""
 
 PANDAS_ARROW_TIMESTAMP_TYPES: set[ArrowDtype] = {
-    ArrowDtype(pyarrow.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
+    ArrowDtype(pa.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
 }
 r"""Set of all `pandas` arrow timestamp types."""
 
 PANDAS_ARROW_DATE_TYPES: set[ArrowDtype] = {
-    ArrowDtype(pyarrow.date32()),
-    ArrowDtype(pyarrow.date64()),
+    ArrowDtype(pa.date32()),
+    ArrowDtype(pa.date64()),
 }
 r"""Set of all `pandas` arrow date types."""
 
 
-def map_pandas_arrowtime_numpy(df):
+def map_pandas_arrowtime_numpy(df: pd.DataFrame) -> pd.DataFrame:
     r"""Converts pyarrow date/timestamp/duration types to numpy equivalents.
 
     Rationale: pyarrow types are currently bugged and do not support all operations.
@@ -361,68 +361,68 @@ def map_pandas_arrowtime_numpy(df):
 
 
 # region polars dtypes -----------------------------------------------------------------
-PYARROW_DTYPES: Final[dict[str, pyarrow.DataType]] = {
+PYARROW_DTYPES: Final[dict[str, pa.DataType]] = {
     # numeric
-    "null"    : pyarrow.null(),
-    "bool"    : pyarrow.bool_(),
-    "int8"    : pyarrow.int8(),
-    "int16"   : pyarrow.int16(),
-    "int32"   : pyarrow.int32(),
-    "int64"   : pyarrow.int64(),
-    "uint8"   : pyarrow.uint8(),
-    "uint16"  : pyarrow.uint16(),
-    "uint32"  : pyarrow.uint32(),
-    "uint64"  : pyarrow.uint64(),
-    "float16" : pyarrow.float16(),
-    "float32" : pyarrow.float32(),
-    "float64" : pyarrow.float64(),
+    "null"    : pa.null(),
+    "bool"    : pa.bool_(),
+    "int8"    : pa.int8(),
+    "int16"   : pa.int16(),
+    "int32"   : pa.int32(),
+    "int64"   : pa.int64(),
+    "uint8"   : pa.uint8(),
+    "uint16"  : pa.uint16(),
+    "uint32"  : pa.uint32(),
+    "uint64"  : pa.uint64(),
+    "float16" : pa.float16(),
+    "float32" : pa.float32(),
+    "float64" : pa.float64(),
     # temporal
-    "date32"        : pyarrow.date32(),
-    "date64"        : pyarrow.date64(),
-    "time32"        : pyarrow.time32("s"),
-    "time64"        : pyarrow.time64("ns"),
-    "timestamp[ns]" : pyarrow.timestamp("ns"),
-    "timestamp[us]" : pyarrow.timestamp("us"),
-    "timestamp[ms]" : pyarrow.timestamp("ms"),
-    "timestamp[s]"  : pyarrow.timestamp("s"),
-    "duration[ns]"  : pyarrow.duration("ns"),
-    "duration[us]"  : pyarrow.duration("us"),
-    "duration[ms]"  : pyarrow.duration("ms"),
-    "duration[s]"   : pyarrow.duration("s"),
+    "date32"        : pa.date32(),
+    "date64"        : pa.date64(),
+    "time32"        : pa.time32("s"),
+    "time64"        : pa.time64("ns"),
+    "timestamp[ns]" : pa.timestamp("ns"),
+    "timestamp[us]" : pa.timestamp("us"),
+    "timestamp[ms]" : pa.timestamp("ms"),
+    "timestamp[s]"  : pa.timestamp("s"),
+    "duration[ns]"  : pa.duration("ns"),
+    "duration[us]"  : pa.duration("us"),
+    "duration[ms]"  : pa.duration("ms"),
+    "duration[s]"   : pa.duration("s"),
     # string/binary
-    "binary"       : pyarrow.binary(),
-    "large_string" : pyarrow.large_string(),
-    "string"       : pyarrow.string(),
+    "binary"       : pa.binary(),
+    "large_string" : pa.large_string(),
+    "string"       : pa.string(),
 }  # fmt: skip
 r"""Dictionary of all `pyarrow` data types."""
 # endregion polars dtypes --------------------------------------------------------------
 
 
 # region polars dtypes -----------------------------------------------------------------
-POLARS_DTYPES: Final[dict[str, polars.PolarsDataType]] = {
+POLARS_DTYPES: Final[dict[str, pl.PolarsDataType]] = {
     # numeric
-    "Float32"    : polars.Float32(),
-    "Float64"    : polars.Float64(),
-    "Int8"       : polars.Int8(),
-    "Int16"      : polars.Int16(),
-    "Int32"      : polars.Int32(),
-    "Int64"      : polars.Int64(),
-    "UInt8"      : polars.UInt8(),
-    "UInt16"     : polars.UInt16(),
-    "UInt32"     : polars.UInt32(),
-    "UInt64"     : polars.UInt64(),
+    "Float32"    : pl.Float32(),
+    "Float64"    : pl.Float64(),
+    "Int8"       : pl.Int8(),
+    "Int16"      : pl.Int16(),
+    "Int32"      : pl.Int32(),
+    "Int64"      : pl.Int64(),
+    "UInt8"      : pl.UInt8(),
+    "UInt16"     : pl.UInt16(),
+    "UInt32"     : pl.UInt32(),
+    "UInt64"     : pl.UInt64(),
     # temporal
-    "Date"       : polars.Date(),
-    "Datetime"   : polars.Datetime(),
-    "Duration"   : polars.Duration(),
-    "Time"       : polars.Time(),
+    "Date"       : pl.Date(),
+    "Datetime"   : pl.Datetime(),
+    "Duration"   : pl.Duration(),
+    "Time"       : pl.Time(),
     # other
-    "Binary"     : polars.Binary(),
-    "Boolean"    : polars.Boolean(),
-    "Categorical": polars.Categorical(),
-    "Null"       : polars.Null(),
-    "Object"     : polars.Object(),
-    "Utf8"       : polars.Utf8(),
+    "Binary"     : pl.Binary(),
+    "Boolean"    : pl.Boolean(),
+    "Categorical": pl.Categorical(),
+    "Null"       : pl.Null(),
+    "Object"     : pl.Object(),
+    "Utf8"       : pl.Utf8(),
 }  # fmt: skip
 r"""Dictionary of all elementary `polars` data types."""
 # endregion polars dtypes --------------------------------------------------------------
@@ -531,36 +531,36 @@ r"""Dictionary of all `python` data types."""
 
 
 # region dtype conversion --------------------------------------------------------------
-PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.PolarsDataType]] = {
-    pyarrow.null()          : polars.Null(),
-    pyarrow.bool_()         : polars.Boolean(),
-    pyarrow.int8()          : polars.Int8(),
-    pyarrow.int16()         : polars.Int16(),
-    pyarrow.int32()         : polars.Int32(),
-    pyarrow.int64()         : polars.Int64(),
-    pyarrow.uint8()         : polars.UInt8(),
-    pyarrow.uint16()        : polars.UInt16(),
-    pyarrow.uint32()        : polars.UInt32(),
-    pyarrow.uint64()        : polars.UInt64(),
-    pyarrow.float16()       : polars.Float32(),
-    pyarrow.float32()       : polars.Float32(),
-    pyarrow.float64()       : polars.Float64(),
-    pyarrow.date32()        : polars.Date(),
-    pyarrow.date64()        : polars.Date(),
-    pyarrow.time32("s")     : polars.Time(),
-    pyarrow.time64("ns")    : polars.Time(),
-    pyarrow.timestamp("ns") : polars.Datetime(),
-    pyarrow.timestamp("us") : polars.Datetime(),
-    pyarrow.timestamp("ms") : polars.Datetime(),
-    pyarrow.timestamp("s")  : polars.Datetime(),
-    pyarrow.duration("ns")  : polars.Duration(),
-    pyarrow.duration("us")  : polars.Duration(),
-    pyarrow.duration("ms")  : polars.Duration(),
-    pyarrow.duration("s")   : polars.Duration(),
-    pyarrow.binary()        : polars.Binary(),
-    pyarrow.large_string()  : polars.Utf8(),
-    pyarrow.string()        : polars.Utf8(),
-    pyarrow.dictionary(pyarrow.int32(), pyarrow.string())   : polars.Categorical(),
+PYARROW_TO_POLARS: Final[dict[pa.DataType, pl.PolarsDataType]] = {
+    pa.null()          : pl.Null(),
+    pa.bool_()         : pl.Boolean(),
+    pa.int8()          : pl.Int8(),
+    pa.int16()         : pl.Int16(),
+    pa.int32()         : pl.Int32(),
+    pa.int64()         : pl.Int64(),
+    pa.uint8()         : pl.UInt8(),
+    pa.uint16()        : pl.UInt16(),
+    pa.uint32()        : pl.UInt32(),
+    pa.uint64()        : pl.UInt64(),
+    pa.float16()       : pl.Float32(),
+    pa.float32()       : pl.Float32(),
+    pa.float64()       : pl.Float64(),
+    pa.date32()        : pl.Date(),
+    pa.date64()        : pl.Date(),
+    pa.time32("s")     : pl.Time(),
+    pa.time64("ns")    : pl.Time(),
+    pa.timestamp("ns") : pl.Datetime(),
+    pa.timestamp("us") : pl.Datetime(),
+    pa.timestamp("ms") : pl.Datetime(),
+    pa.timestamp("s")  : pl.Datetime(),
+    pa.duration("ns")  : pl.Duration(),
+    pa.duration("us")  : pl.Duration(),
+    pa.duration("ms")  : pl.Duration(),
+    pa.duration("s")   : pl.Duration(),
+    pa.binary()        : pl.Binary(),
+    pa.large_string()  : pl.Utf8(),
+    pa.string()        : pl.Utf8(),
+    pa.dictionary(pa.int32(), pa.string())   : pl.Categorical(),
 }  # fmt: skip
 r"""Dictionary of converting pyarrow to polars."""
 # endregion dtype conversion -----------------------------------------------------------

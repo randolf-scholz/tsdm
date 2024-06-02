@@ -2,11 +2,9 @@ r"""Tests for time related types."""
 
 from datetime import datetime as python_datetime, timedelta as python_timedelta
 
-import numpy
 import numpy as np
-import pandas
 import pandas as pd
-import pyarrow
+import pyarrow as pa
 import pytest
 from numpy.typing import NDArray
 from typing_extensions import assert_type, get_protocol_members
@@ -20,12 +18,12 @@ ISO_DATE = "2021-01-01"
 # region scalar datetimes --------------------------------------------------------------
 DT_FLOAT: float = 10.0
 DT_INT: int = 10
-DT_NUMPY: np.datetime64 = numpy.datetime64(ISO_DATE)
-DT_NUMPY_FLOAT: np.float64 = numpy.float64(DT_FLOAT)
-DT_NUMPY_INT: np.int64 = numpy.int64(DT_INT)
+DT_NUMPY: np.datetime64 = np.datetime64(ISO_DATE)
+DT_NUMPY_FLOAT: np.float64 = np.float64(DT_FLOAT)
+DT_NUMPY_INT: np.int64 = np.int64(DT_INT)
 DT_PANDAS: pd.Timestamp = timestamp(ISO_DATE)
 DT_PYTHON: python_datetime = python_datetime.fromisoformat(ISO_DATE)
-DT_ARROW = pyarrow.scalar(DT_PYTHON, type=pyarrow.timestamp("ms"))
+DT_ARROW = pa.scalar(DT_PYTHON, type=pa.timestamp("ms"))
 DATETIMES: dict[str, DateTime] = {
     "float"       : DT_FLOAT,
     "int"         : DT_INT,
@@ -41,12 +39,12 @@ DATETIMES: dict[str, DateTime] = {
 # region scalar timedeltas -------------------------------------------------------------
 TD_FLOAT: float = 10.0
 TD_INT: int = 10
-TD_NUMPY: np.timedelta64 = numpy.timedelta64(1, "D")
-TD_NUMPY_FLOAT: np.float64 = numpy.float64(10.0)
-TD_NUMPY_INT: np.int64 = numpy.int64(10)
+TD_NUMPY: np.timedelta64 = np.timedelta64(1, "D")
+TD_NUMPY_FLOAT: np.float64 = np.float64(10.0)
+TD_NUMPY_INT: np.int64 = np.int64(10)
 TD_PANDAS: pd.Timedelta = timedelta(days=1)
 TD_PYTHON: python_timedelta = python_timedelta(days=1)
-TD_ARROW = pyarrow.scalar(10, type=pyarrow.duration("ms"))
+TD_ARROW = pa.scalar(10, type=pa.duration("ms"))
 TIMEDELTAS: dict[str, TimeDelta] = {
     "float"       : TD_FLOAT,
     "int"         : TD_INT,
@@ -60,15 +58,15 @@ TIMEDELTAS: dict[str, TimeDelta] = {
 # endregion scalar timedeltas ----------------------------------------------------------
 
 # region array datetimes ---------------------------------------------------------------
-DT_NDARRAY: NDArray[np.datetime64] = numpy.array([DT_NUMPY])
-DT_NDARRAY_FLOAT: NDArray[np.float64] = numpy.array([DT_NUMPY_FLOAT])
-DT_NDARRAY_INT: NDArray[np.int64] = numpy.array([DT_NUMPY_INT])
+DT_NDARRAY: NDArray[np.datetime64] = np.array([DT_NUMPY])
+DT_NDARRAY_FLOAT: NDArray[np.float64] = np.array([DT_NUMPY_FLOAT])
+DT_NDARRAY_INT: NDArray[np.int64] = np.array([DT_NUMPY_INT])
 # endregion array datetimes ------------------------------------------------------------
 
 # region array timedeltas --------------------------------------------------------------
-TD_NDARRAY: NDArray[np.timedelta64] = numpy.array([TD_NUMPY])
-TD_NDARRAY_FLOAT: NDArray[np.float64] = numpy.array([TD_NUMPY_FLOAT])
-TD_NDARRAY_INT: NDArray[np.int64] = numpy.array([TD_NUMPY_INT])
+TD_NDARRAY: NDArray[np.timedelta64] = np.array([TD_NUMPY])
+TD_NDARRAY_FLOAT: NDArray[np.float64] = np.array([TD_NUMPY_FLOAT])
+TD_NDARRAY_INT: NDArray[np.int64] = np.array([TD_NUMPY_INT])
 # endregion array timedeltas -----------------------------------------------------------
 
 
@@ -141,7 +139,7 @@ def test_datetime_assign() -> None:
     dt_numpy: DateTime[np.timedelta64] = DT_NUMPY
     dt_numpy_float: DateTime[np.float64] = DT_NUMPY_FLOAT
     dt_numpy_int: DateTime[np.int64] = DT_NUMPY_INT
-    dt_pandas: DateTime[pandas.Timedelta] = DT_PANDAS
+    dt_pandas: DateTime[pd.Timedelta] = DT_PANDAS
     dt_python: DateTime[python_timedelta] = DT_PYTHON
 
     assert isinstance(dt_float, DateTime)
@@ -198,7 +196,7 @@ def test_dt_diff() -> None:
     assert_type(diff(DT_NUMPY), np.timedelta64)  # pyright: ignore[reportAssertTypeFailure, reportArgumentType]
     assert_type(diff(DT_NUMPY_FLOAT), np.float64)  # type: ignore[assert-type, misc]
     assert_type(diff(DT_NUMPY_INT), np.float32)  # type: ignore[assert-type, misc]
-    assert_type(diff(DT_PANDAS), pandas.Timedelta)
+    assert_type(diff(DT_PANDAS), pd.Timedelta)
     assert_type(diff(DT_PYTHON), python_timedelta)
 
 

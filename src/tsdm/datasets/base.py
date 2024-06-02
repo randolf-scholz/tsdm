@@ -27,7 +27,7 @@ from os import PathLike
 from pathlib import Path
 from zipfile import ZipFile
 
-import pandas
+import pandas as pd
 from pyarrow import Table as PyArrowTable, parquet
 from tqdm.autonotebook import tqdm
 from typing_extensions import (
@@ -313,8 +313,8 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         match loader:
             case Callable() as loader_impl:  # type: ignore[misc]
                 return loader_impl(target, **loader_kwargs)  # type: ignore[unreachable]
-            case str(extension) if hasattr(pandas, f"read_{extension}"):
-                loader_impl = getattr(pandas, f"read_{extension}")
+            case str(extension) if hasattr(pd, f"read_{extension}"):
+                loader_impl = getattr(pd, f"read_{extension}")
                 if extension in {"csv", "parquet", "feather"}:
                     loader_kwargs = {
                         "engine": "pyarrow",
