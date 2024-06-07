@@ -104,6 +104,7 @@ __all__ = [
     "BaseEncoder",
     "Encoder",
     "EncoderProtocol",
+    "EncoderList",
     "InvertibleTransform",
     "Transform",
     # Classes
@@ -115,8 +116,7 @@ __all__ = [
     "DateTimeEncoder",
     "DeepcopyEncoder",  # Structural
     "DiagonalEncoder",  # Structural
-    "FrameAsDict",
-    "FrameAsTuple",
+    "FrameAsTensorDict",
     "FrameEncoder",
     "FrameSplitter",
     "IdentityEncoder",
@@ -137,7 +137,7 @@ __all__ = [
     "SocialTimeEncoder",
     "StandardScaler",
     "TensorConcatenator",
-    "TensorEncoder",
+    "FrameAsTensor",
     "TensorSplitter",
     "Time2Float",
     "TimeDeltaEncoder",
@@ -145,7 +145,6 @@ __all__ = [
     "TripletEncoder",
     "TupleDecoder",  # Structural
     "TupleEncoder",  # Structural
-    "ValueEncoder",
 ]
 
 from tsdm.encoders import base, numerical, pytorch, time, transforms
@@ -156,6 +155,7 @@ from tsdm.encoders.base import (
     DeepcopyEncoder,
     DiagonalEncoder,
     Encoder,
+    EncoderList,
     EncoderProtocol,
     IdentityEncoder,
     InverseEncoder,
@@ -172,14 +172,12 @@ from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
     CSVEncoder,
     DTypeConverter,
-    FrameAsDict,
-    FrameAsTuple,
+    FrameAsTensor,
+    FrameAsTensorDict,
     FrameEncoder,
     FrameSplitter,
-    TensorEncoder,
     TripletDecoder,
     TripletEncoder,
-    ValueEncoder,
 )
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
@@ -206,7 +204,7 @@ ENCODERS: dict[str, type[Encoder]] = {
     "BoxCoxEncoder"             : BoxCoxEncoder,
     "ChainedEncoder"            : ChainedEncoder,
     "CopyEncoder"               : DeepcopyEncoder,
-    "DateTimeEncoder"           : OldDateTimeEncoder,
+    "DateTimeEncoder"           : DateTimeEncoder,
     "IdentityEncoder"           : IdentityEncoder,
     "LinearScaler"              : LinearScaler,
     "LogEncoder"                : LogEncoder,
@@ -220,7 +218,7 @@ ENCODERS: dict[str, type[Encoder]] = {
     "SocialTimeEncoder"         : SocialTimeEncoder,
     "StandardScaler"            : StandardScaler,
     "TensorConcatenator"        : TensorConcatenator,
-    "TensorEncoder"             : TensorEncoder,
+    "TensorEncoder"             : FrameAsTensor,
     "TensorSplitter"            : TensorSplitter,
     "Time2Float"                : Time2Float,
     "TimeDeltaEncoder"          : TimeDeltaEncoder,

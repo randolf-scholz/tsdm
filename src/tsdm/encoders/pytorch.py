@@ -6,45 +6,22 @@ __all__ = [
     "PositionalEncoding",
     # Encoders
     "PositionalEncoder",
-    "TensorEncoder",
+    "RecursiveTensorEncoder",
     "Time2VecEncoder",
 ]
 
+from dataclasses import KW_ONLY, asdict, dataclass, field
+
 import torch
+from numpy.typing import NDArray
 from torch import Tensor, jit, nn
-from typing_extensions import Final
+from typing_extensions import Any, Final
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.utils.decorators import autojit
+from tsdm.types.aliases import NestedBuiltin
+from tsdm.utils.decorators import autojit, pprint_repr
 
 # TODO: Add TensorEncoder
-
-
-class TensorEncoder(BaseEncoder):
-    r"""Encodes nested data as tensors."""
-
-    def encode(self, data):
-        match data:
-            case Tensor():
-                return data
-            case list():
-                return [self.encode(d) for d in data]
-            case tuple():
-                return tuple(self.encode(d) for d in data)
-            case dict():
-                return {k: self.encode(v) for k, v in data.items()}
-            case set():
-                return {self.encode(d) for d in data}
-            case frozenset():
-                return frozenset({self.encode(d) for d in data})
-            case _:
-                try:
-                    return torch.tensor(data)
-                except Exception as exc:
-                    raise TypeError(f"Cannot encode data of type {type(data)}") from exc
-
-    def decode(self, data):
-        return data.numpy()
 
 
 @autojit
@@ -55,7 +32,7 @@ class Time2Vec(nn.Module):
       - | Time2Vec: Learning a Vector Representation of Time
         | Seyed Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet
         | Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, Marcus Brubaker
-        | https: // arxiv.org / abs / 1907.05321
+        | https://arxiv.org/abs/1907.05321
     """
 
     # Constants
@@ -113,7 +90,6 @@ class PositionalEncoding(nn.Module):
 
     HP: dict = {
         "__name__": __qualname__,
-        "__doc__": __doc__,
         "__module__": __name__,
         "num_dim": int,
         "scale": float,
@@ -124,19 +100,23 @@ class PositionalEncoding(nn.Module):
     r"""Number of dimensions."""
     scale: Final[float]
     r"""Scale factor for positional encoding."""
-
     # Buffers
     scales: Tensor
     r"""Scale factors for positional encoding."""
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
         super().__init__()
-        assert num_dim % 2 == 0, "num_dim must be even"
-        self.num_dim = num_dim
+        self.num_dim = int(num_dim)
         self.scale = float(scale)
-        scales = self.scale ** (-2 * torch.arange(0, num_dim // 2) / (num_dim - 2))
-        assert scales[0] == 1.0, "Something went wrong."
-        self.register_buffer("scales", scales)
+        self.register_buffer(
+            "scales",
+            self.scale ** (-2 * torch.arange(0, num_dim // 2) / (num_dim - 2)),
+        )
+
+        if self.num_dim % 2 != 0:
+            raise ValueError("num_dim must be even")
+        if self.scales[0] != 1.0:
+            raise ValueError("Lowest scale must be 1.0")
 
     @jit.export
     def encode(self, t: Tensor) -> Tensor:
@@ -151,10 +131,7 @@ class PositionalEncoding(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r""".. signature:: ``... -> (..., 2d)``.
-
-        Note: we simply concatenate the sin and cosine terms without interleaving them.
-        """
+        r""".. signature:: ``... -> (..., 2d)``."""
         return self.encode(t)
 
     @jit.export
@@ -163,11 +140,78 @@ class PositionalEncoding(nn.Module):
         return self.decode(t)
 
 
-class Time2VecEncoder(BaseEncoder):
+class RecursiveTensorEncoder(
+    BaseEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]
+):
+    r"""Encodes nested data as tensors."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
+
+    def encode(self, data: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
+        match data:
+            case list() as l:
+                return [self.encode(d) for d in l]
+            case tuple() as tup:
+                return tuple(self.encode(d) for d in tup)
+            case dict() as d:
+                return {k: self.encode(v) for k, v in d.items()}
+            case set() as s:
+                return {self.encode(d) for d in s}
+            case frozenset() as fset:
+                return frozenset({self.encode(d) for d in fset})
+            case _:
+                try:
+                    return torch.tensor(data)
+                except Exception as exc:
+                    raise TypeError(f"Cannot encode data of type {type(data)}") from exc
+
+    def decode(self, data: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
+        match data:
+            case list() as l:
+                return [self.decode(d) for d in l]
+            case tuple() as tup:
+                return tuple(self.decode(d) for d in tup)
+            case dict() as d:
+                return {k: self.decode(v) for k, v in d.items()}
+            case set() as s:
+                return {self.decode(d) for d in s}
+            case frozenset() as fset:
+                return frozenset({self.decode(d) for d in fset})
+            case _:
+                try:
+                    return data.to_numpy()
+                except Exception as exc:
+                    raise TypeError(f"Cannot encode data of type {type(data)}") from exc
+
+
+@pprint_repr
+@dataclass
+class Time2VecEncoder(BaseEncoder[Tensor, Tensor]):
     r"""Wraps Time2Vec encoder."""
 
-    def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
-        self.encoder = Time2Vec(num_dim=num_dim, activation=activation)
+    # Constants
+    num_dim: int
+    r"""Number of dimensions of the time encoding."""
+    activation: str
+    r"""Activation function for the time encoding."""
+    # Parameters
+    freq: Tensor = field(init=False)
+    r"""Frequency of the time encoding."""
+    phase: Tensor = field(init=False)
+    r"""Phase of the time encoding."""
+    encoder: Time2Vec = field(init=False)
+    r"""The wrapped encoder."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def __post_init__(self):
+        self.encoder = Time2Vec(num_dim=self.num_dim, activation=self.activation)
+        self.freq = self.encoder.freq
+        self.phase = self.encoder.phase
 
     def encode(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)
@@ -176,11 +220,29 @@ class Time2VecEncoder(BaseEncoder):
         return self.encoder.decode(data)
 
 
-class PositionalEncoder(BaseEncoder):
+@pprint_repr
+@dataclass
+class PositionalEncoder(BaseEncoder[Tensor, Tensor]):
     r"""Wraps PositionalEncoder encoder."""
 
-    def __init__(self, *, num_dim: int, scale: float) -> None:
-        self.encoder = PositionalEncoding(num_dim=num_dim, scale=scale)
+    _: KW_ONLY
+    # Constants
+    num_dim: int
+    r"""Number of dimensions."""
+    scale: float
+    r"""Scale factor for positional encoding."""
+    scales: Tensor = field(init=False)
+    r"""Scale factors for positional encoding."""
+    encoder: PositionalEncoding = field(init=False)
+    r"""The wrapped encoder."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def __post_init__(self):
+        self.encoder = PositionalEncoding(num_dim=self.num_dim, scale=self.scale)
+        self.scales = self.encoder.scales
 
     def encode(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)

@@ -26,7 +26,7 @@ from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
     Encoder,
-    FrameAsDict,
+    FrameAsTensorDict,
     FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
@@ -243,7 +243,7 @@ class KiwiBenchmark(TimeSeriesTask):
                 raise ValueError(f"{kind=} unknown")
 
     def make_encoder(self, key: SplitID, /) -> Encoder:
-        encoder = FrameAsDict(
+        encoder = FrameAsTensorDict(
             groups={
                 "key": ["run_id", "experiment_id"],
                 "T": ["measurement_time"],

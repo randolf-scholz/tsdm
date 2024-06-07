@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
+from typing_extensions import get_protocol_members
 
 from tsdm.encoders.sklearn import (
     SKLEARN_ENCODERS,
@@ -83,5 +84,10 @@ def test_shared_attrs():
     shared_classes = set.intersection(
         *(set(cls.__mro__) for cls in SKLEARN_ENCODERS.values())
     )
-    print(shared_attrs)
-    print(shared_classes)
+
+    defined_attrs = get_protocol_members(SklearnEncoder)
+
+    assert defined_attrs <= shared_attrs
+    assert {
+        attr for attr in shared_attrs if not attr.startswith("_")
+    } <= defined_attrs | {"get_metadata_routing", "set_output"}

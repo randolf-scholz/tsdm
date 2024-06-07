@@ -16,7 +16,7 @@ from tsdm.encoders import (
     BoxCoxEncoder,
     DateTimeEncoder,
     Encoder,
-    FrameAsDict,
+    FrameAsTensorDict,
     FrameEncoder,
     IdentityEncoder,
     LogitBoxCoxEncoder,
@@ -79,7 +79,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
             index_encoders={"measurement_time": DateTimeEncoder() >> MinMaxScaler()},
         )
         >> StandardScaler(axis=-1)
-        >> FrameAsDict(
+        >> FrameAsTensorDict(
             groups={
                 "key": ["run_id", "experiment_id"],
                 "T": ["measurement_time"],

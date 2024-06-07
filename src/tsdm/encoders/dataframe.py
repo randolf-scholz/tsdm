@@ -14,14 +14,12 @@ __all__ = [
     # Classes
     "CSVEncoder",
     "DTypeConverter",
-    "FrameAsDict",
-    "FrameAsTuple",
+    "FrameAsTensorDict",
     "FrameEncoder",
     "FrameSplitter",
-    "TensorEncoder",
+    "FrameAsTensor",
     "TripletDecoder",
     "TripletEncoder",
-    "ValueEncoder",
 ]
 
 import warnings
@@ -472,24 +470,28 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
 
 
 class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
-    r"""Split DataFrame columns into multiple groups.
+    r"""Splits a DataFrame into multiple DataFrames column-wise.
 
-    The special value `...` (`Ellipsis`) can be used to indicate that all other columns belong to this group.
-    The index mapping `[0|1|2|3|4|5]` to `[2|0|1], [5|4]` corresponds to mapping
+    Note:
+        - The mapping must be one-to-one, that is each column must be assigned to exactly one group.
+        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
 
-    +---+---+---+---+---+---+
-    | 0 | 1 | 2 | 3 | 4 | 5 |
-    +===+===+===+===+===+===+
-    | 1 | 2 | 0 | - | 5 | 4 |
-    +---+---+---+---+---+---+
+    Example:
+        The index mapping `[0|1|2|3|4|5]` to `[2|0|1], [5|4]` corresponds to mapping
 
-    with inverse
+        +---+---+---+---+---+---+
+        | 0 | 1 | 2 | 3 | 4 | 5 |
+        +===+===+===+===+===+===+
+        | 1 | 2 | 0 | - | 5 | 4 |
+        +---+---+---+---+---+---+
 
-    +---+---+---+---+---+---+
-    | 0 | 1 | 2 | 3 | 4 | 5 |
-    +===+===+===+===+===+===+
-    | 1 | 2 | 0 | - | 5 | 4 |
-    +---+---+---+---+---+---+
+        with inverse
+
+        +---+---+---+---+---+---+
+        | 0 | 1 | 2 | 3 | 4 | 5 |
+        +===+===+===+===+===+===+
+        | 1 | 2 | 0 | - | 5 | 4 |
+        +---+---+---+---+---+---+
     """
 
     original_columns: Index
@@ -626,12 +628,12 @@ class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
         return reconstructed
 
 
-class TensorEncoder(BaseEncoder[PandasObject, Tensor]):
-    r"""Converts object Tensor.
+class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
+    r"""Converts a `DataFrame` to a `torch.Tensor`.
 
     Note:
-        This method does not guarantee the same index, dtype or column names,
-        only the values are preserved.
+        - This encoder requires that the DataFrame is canonically indexed. (i.e. `index = range(len(df))`)
+        - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
     dtype: torch.dtype
@@ -667,66 +669,9 @@ class TensorEncoder(BaseEncoder[PandasObject, Tensor]):
         return data.cpu().numpy()
 
 
-class ValueEncoder(BaseEncoder[DataFrame, NDArray]):
-    r"""Encodes the value of a DataFrame.
-
-    Remembers dtypes, index, columns
-    """
-
-    index_columns: Index
-    index_dtypes: Series
-    column_columns: Index
-    column_dtypes: Series
-    original_columns: Index
-    original_dtypes: Series
-    dtype: Optional[str] = None
-
-    def __init__(self, dtype: Optional[str] = None, /) -> None:
-        self.dtype = dtype
-
-    def fit(self, data: DataFrame, /) -> None:
-        index = data.index.to_frame()
-        self.index_columns = index.columns
-        self.index_dtypes = index.dtypes
-        self.column_columns = data.columns
-        self.column_dtypes = data.dtypes
-        self.original_columns = data.reset_index().columns
-        self.original_dtypes = data.dtypes
-
-        if self.original_dtypes.nunique() != 1 and self.dtype is None:
-            warnings.warn(
-                "Non-uniform dtype detected!"
-                "This may cause unexpected behavior."
-                "Please specify dtype.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
-    def encode(self, data: DataFrame, /) -> NDArray:
-        array = data.reset_index().values
-        return array.astype(self.dtype)
-
-    def decode(self, data: NDArray, /) -> DataFrame:
-        frame = DataFrame(data, columns=self.original_columns)
-
-        # Assemble the columns
-        columns = frame[self.column_columns]
-        columns.columns = self.column_columns
-        columns = columns.astype(self.column_dtypes)
-        columns = columns.squeeze(axis="columns")
-
-        # assemble the index
-        index = frame[self.index_columns]
-        index.columns = self.index_columns
-        index = index.astype(self.index_dtypes)
-        index = index.squeeze(axis="columns")
-
-        if isinstance(index, Series):
-            return columns.set_index(index)
-        return columns.set_index(MultiIndex.from_frame(index))
-
-
-class FrameAsDict(BaseEncoder[DataFrame, dict[str, Tensor]], Mapping[str, list[str]]):
+class FrameAsTensorDict(
+    BaseEncoder[DataFrame, dict[str, Tensor]], Mapping[str, list[str]]
+):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
@@ -735,9 +680,11 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, Tensor]], Mapping[str, list[s
     .. code-block:: pycon
 
         >>> from pandas import DataFrame
-        >>> from tsdm.encoders import FrameAsDict
+        >>> from tsdm.encoders import FrameAsTensorDict
         >>> df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-        >>> encoder = FrameAsDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
+        >>> encoder = FrameAsTensorDict(
+        ...     groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False
+        ... )
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)
         >>> assert isinstance(encoded, dict)
@@ -886,78 +833,3 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, Tensor]], Mapping[str, list[s
             cols = [col for col in self.original_index_columns if col in df.columns]
             df = df.set_index(cols)
         return df
-
-
-class FrameAsTuple(BaseEncoder[DataFrame, tuple[Tensor, Tensor]]):
-    r"""Encodes a DataFrame as a tuple of column and index tensor."""
-
-    # Attributes
-    original_index_columns: Index
-    original_index_dtypes: Series
-    original_values_columns: Index
-    original_values_dtypes: Series
-
-    # Parameters
-    column_dtype: Optional[torch.dtype] = None
-    index_dtype: Optional[torch.dtype] = None
-    device: Optional[str | torch.device] = None
-
-    def __init__(
-        self,
-        *,
-        column_dtype: Optional[torch.dtype] = torch.float32,
-        index_dtype: Optional[torch.dtype] = torch.float32,
-        device: Optional[str | torch.device] = None,
-    ) -> None:
-        self.column_dtype = column_dtype
-        self.index_dtype = index_dtype
-        self.device = device
-
-    def fit(self, data: DataFrame, /) -> None:
-        r"""Fit to the data."""
-        index = data.index.to_frame()
-        self.original_index_columns = index.columns
-        self.original_index_dtypes = index.dtypes
-        self.original_values_columns = data.columns
-        self.original_values_dtypes = data.dtypes
-
-        if self.original_values_dtypes.nunique() != 1:
-            raise ValueError("All columns must have the same dtype!")
-        if self.original_index_dtypes.nunique() != 1:
-            raise ValueError("All index columns must have the same dtype!")
-
-    def encode(self, data: DataFrame, /) -> tuple[Tensor, Tensor]:
-        r"""Encode a DataFrame."""
-        index = data.index.to_frame().to_numpy()
-        index_tensor = torch.tensor(index, dtype=self.index_dtype, device=self.device)
-        values = data.to_numpy()
-        values_tensor = torch.tensor(
-            values, dtype=self.column_dtype, device=self.device
-        )
-        return index_tensor.squeeze(), values_tensor.squeeze()
-
-    def decode(self, data: tuple[Tensor, Tensor], /) -> DataFrame:
-        r"""Combine index and column tensor to DataFrame."""
-        index_tensor, values_tensor = data
-        index_tensor = index_tensor.clone().detach().cpu()
-        values_tensor = values_tensor.clone().detach().cpu()
-
-        # Assemble the columns
-        columns = DataFrame(
-            values_tensor,
-            columns=self.original_values_columns,
-        )
-        columns = columns.astype(self.original_values_dtypes)
-        columns = columns.squeeze(axis="columns")
-
-        # assemble the index
-        index = DataFrame(
-            index_tensor,
-            columns=self.original_index_columns,
-        )
-        index = index.astype(self.original_index_dtypes)
-        index = index.squeeze(axis="columns")
-
-        if isinstance(index, Series):
-            return columns.set_index(index)
-        return columns.set_index(MultiIndex.from_frame(index))

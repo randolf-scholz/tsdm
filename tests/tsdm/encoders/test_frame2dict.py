@@ -2,7 +2,7 @@ r"""Test the standardizer encoder."""
 
 from pandas import DataFrame
 
-from tsdm.encoders import FrameAsDict
+from tsdm.encoders import FrameAsTensorDict
 
 
 def test_frame2tensordict() -> None:
@@ -13,7 +13,7 @@ def test_frame2tensordict() -> None:
         "C": [7, 8, 9],
         "D": [1, 2, 3],
     })
-    encoder = FrameAsDict(groups={"X": ["B"], "Y": ...})
+    encoder = FrameAsTensorDict(groups={"X": ["B"], "Y": ...})
     encoder.fit(df)
     encoded = encoder.encode(df)
     X = encoded["X"].numpy()

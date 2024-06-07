@@ -84,6 +84,8 @@ Scalar: TypeAlias = None | bool | int | float | complex | str
 r"""Type Hint for scalar objects."""
 ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
+TensorType = TypeVar("TensorType", Tensor, NDArray)
+r"""TypeVar for tensor-like objects."""
 
 PARAMETERS: TypeAlias = tuple[
     Scalar
@@ -859,9 +861,6 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
-TensorType = TypeVar("TensorType", Tensor, NDArray)
-
-
 class TensorSplitter(BaseEncoder[TensorType, list[TensorType]]):
     r"""Split tensor along specified axis."""
 
@@ -895,7 +894,7 @@ class TensorSplitter(BaseEncoder[TensorType, list[TensorType]]):
         return np.concatenate(data, axis=self.axis)
 
 
-class TensorConcatenator(BaseEncoder[tuple[Tensor, ...], Tensor]):
+class TensorConcatenator(BaseEncoder[list[Tensor], Tensor]):
     r"""Concatenate multiple tensors.
 
     Useful for concatenating encoders for multiple inputs.
@@ -914,7 +913,7 @@ class TensorConcatenator(BaseEncoder[tuple[Tensor, ...], Tensor]):
         r"""Concatenate tensors along the specified axis."""
         self.axis = axis
 
-    def fit(self, data: tuple[Tensor, ...], /) -> None:
+    def fit(self, data: list[Tensor], /) -> None:
         self.numdims = [d.ndim for d in data]
         self.maxdim = max(self.numdims)
         # pad dimensions if necessary
@@ -922,11 +921,11 @@ class TensorConcatenator(BaseEncoder[tuple[Tensor, ...], Tensor]):
         # store the lengths of the slices
         self.lengths = [x.shape[self.axis] for x in arrays]
 
-    def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
+    def encode(self, data: list[Tensor], /) -> Tensor:
         return torch.cat(
             [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
         )
 
-    def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
+    def decode(self, data: Tensor, /) -> list[Tensor]:
         result = torch.split(data, self.lengths, dim=self.axis)
-        return tuple(x.squeeze() for x in result)
+        return [x.squeeze() for x in result]

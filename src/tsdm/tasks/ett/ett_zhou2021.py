@@ -19,11 +19,11 @@ from tsdm.encoders import (
     ChainedEncoder,
     DTypeConverter,
     Encoder,
+    FrameAsTensor,
     FrameEncoder,
     MinMaxScaler,
     OldDateTimeEncoder,
     StandardScaler,
-    TensorEncoder,
 )
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
@@ -135,7 +135,7 @@ class ETT_Zhou2021(OldBaseTask):
         self.accumulation_function = nn.Identity()
 
         self.preprocessor = ChainedEncoder(
-            TensorEncoder(),
+            FrameAsTensor(),
             FrameEncoder(
                 index_encoders={"date": MinMaxScaler() @ OldDateTimeEncoder()}
             ),
