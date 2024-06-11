@@ -279,7 +279,6 @@
       <w>notna</w>
       <w>nrmse</w>
       <w>nrows</w>
-      <w>nullary</w>
       <w>numdims</w>
       <w>numel</w>
       <w>nunique</w>
@@ -435,6 +434,7 @@
       <w>tₘᵢₙ</w>
       <w>tₘₐₓ</w>
       <w>undoc</w>
+      <w>unhashable</w>
       <w>unindent</w>
       <w>univariate</w>
       <w>unpad</w>

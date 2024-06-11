@@ -158,9 +158,9 @@ class RecursiveTensorEncoder(
             case dict() as d:
                 return {k: self.encode(v) for k, v in d.items()}
             case set() as s:
-                return {self.encode(d) for d in s}
+                return {self.encode(d) for d in s}  # pyright: ignore[reportUnhashable]
             case frozenset() as fset:
-                return frozenset({self.encode(d) for d in fset})
+                return frozenset({self.encode(d) for d in fset})  # pyright: ignore[reportUnhashable]
             case _:
                 try:
                     return torch.tensor(data)
@@ -176,12 +176,12 @@ class RecursiveTensorEncoder(
             case dict() as d:
                 return {k: self.decode(v) for k, v in d.items()}
             case set() as s:
-                return {self.decode(d) for d in s}
+                return {self.decode(d) for d in s}  # pyright: ignore[reportUnhashable]
             case frozenset() as fset:
-                return frozenset({self.decode(d) for d in fset})
-            case _:
+                return frozenset({self.decode(d) for d in fset})  # pyright: ignore[reportUnhashable]
+            case _ as tensor:
                 try:
-                    return data.to_numpy()
+                    return tensor.numpy()
                 except Exception as exc:
                     raise TypeError(f"Cannot encode data of type {type(data)}") from exc
 

@@ -34,7 +34,6 @@ import pandas as pd
 import polars as pl
 import pyarrow as pa
 import torch
-from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor

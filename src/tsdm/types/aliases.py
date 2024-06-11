@@ -9,7 +9,6 @@ __all__ = [
     "Dims",
     "FilePath",
     "Kwargs",
-    "Map",
     "Nested",
     "PandasObject",
     "Shape",
@@ -75,8 +74,8 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 from typing_extensions import Any, TypeAlias
 
-from tsdm.types.protocols import Lookup, SupportsKwargs
-from tsdm.types.variables import K, K_contra, T, T_co, V, V_co
+from tsdm.types.protocols import SupportsKwargs
+from tsdm.types.variables import K, T, T_co, V
 
 # region Custom Type Aliases -----------------------------------------------------------
 Axis: TypeAlias = None | int | tuple[int, ...]
@@ -87,20 +86,12 @@ Size: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
 Shape: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
-
 Kwargs: TypeAlias = SupportsKwargs[T_co]
 r"""Type Alias for keyword arguments."""
-
-Map: TypeAlias = Lookup[K_contra, V_co] | Callable[[K_contra], V_co]
-r"""Type Alias for `Map`."""
 Nested: TypeAlias = T_co | Collection["Nested[T_co]"] | Mapping[Any, "Nested[T_co]"]
 r"""Type Alias for nested types (JSON-Like)."""
-
 FilePath: TypeAlias = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
 r"""Type Alias for path-like objects."""
-
-ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
-r"""Type Alias for container-like objects."""
 SplitID: TypeAlias = Hashable
 r"""Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
@@ -189,12 +180,24 @@ r"""Generic Type Alias for nested `set`."""
 NestedTuple: TypeAlias = tuple[V | "NestedTuple[V]", ...]
 r"""Generic Type Alias for nested `tuple`."""
 NestedBuiltin: TypeAlias = (
-    tuple[V | "NestedBuiltin[V]", ...]
+    V
+    | tuple[V, ...]
+    | tuple["NestedBuiltin[V]", ...]
+    | tuple[V | "NestedBuiltin[V]", ...]
+    | set[V]
+    | set["NestedBuiltin[V]"]
     | set[V | "NestedBuiltin[V]"]
+    | frozenset[V]
+    | frozenset["NestedBuiltin[V]"]
     | frozenset[V | "NestedBuiltin[V]"]
+    | list[V]
+    | list["NestedBuiltin[V]"]
     | list[V | "NestedBuiltin[V]"]
+    | dict[str, V]
+    | dict[str, "NestedBuiltin[V]"]
     | dict[str, V | "NestedBuiltin[V]"]
 )
+r"""Type Alias for nested builtins."""
 # endregion Nested Builtins ------------------------------------------------------------
 
 

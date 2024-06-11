@@ -1,6 +1,8 @@
 r"""Numerical functions with shared signatures for multiple backends."""
 
 __all__ = [
+    # CONSTANTS
+    "BACKENDS",
     # Classes
     "BackendID",
     "Kernels",
@@ -11,6 +13,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
 
@@ -19,7 +22,7 @@ import pandas as pd
 import torch
 from numpy import ndarray
 from torch import Tensor
-from typing_extensions import Generic, Literal, Self, TypeAlias, cast, get_args
+from typing_extensions import Generic, Literal, Self, TypeAlias
 
 from tsdm.backend.generic import (
     false_like as universal_false_like,
@@ -48,7 +51,9 @@ from tsdm.backend.torch import (
 )
 from tsdm.types.callback_protocols import (
     ApplyAlongAxes,
+    ArraySplitProto,
     ClipProto,
+    ConcatenateProto,
     ContractionProto,
     SelfMap,
     TensorLikeProto,
@@ -59,6 +64,8 @@ from tsdm.types.variables import T
 
 BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch"]
 r"""A type alias for the supported backends."""
+BACKENDS = ("arrow", "numpy", "pandas", "torch")
+r"""A tuple of the supported backends."""
 
 
 def gather_types(obj: object, /) -> set[BackendID]:
@@ -189,11 +196,23 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": torch_apply_along_axes,
     }
 
+    array_split: Mapping[BackendID, ArraySplitProto] = {
+        "numpy": np.array_split,
+        "torch": torch.tensor_split,  # type: ignore[dict-item]
+    }
 
+    concatenate: Mapping[BackendID, ConcatenateProto] = {
+        "numpy": np.concatenate,
+        "pandas": pd.concat,
+        "torch": torch.cat,  # type: ignore[dict-item]
+    }
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class Backend(Generic[T]):
     r"""Provides kernels for numerical operations."""
 
-    __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
+    # __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
 
     selected_backend: BackendID
 
@@ -202,6 +221,7 @@ class Backend(Generic[T]):
     isnan: SelfMap[T]
     where: WhereProto[T]
 
+    # nan-aggregations
     nanmax: ContractionProto[T]
     nanmean: ContractionProto[T]
     nanmin: ContractionProto[T]
@@ -215,15 +235,21 @@ class Backend(Generic[T]):
     strip_whitespace: SelfMap[T]
     apply_along_axes: ApplyAlongAxes[T]
 
+    array_split: ArraySplitProto[T]
+    concatenate: ConcatenateProto[T]
+
     def __init__(self, backend: str | Self) -> None:
         # set the selected backend
         if isinstance(backend, Backend):
             backend = backend.selected_backend
 
-        assert backend in get_args(BackendID)
-        self.selected_backend = cast(BackendID, backend)
+        if backend not in BACKENDS:
+            raise ValueError(f"Invalid backend: {backend}.")
+
+        # NOTE: Need to use object.__setattr__ for frozen dataclasses.
+        object.__setattr__(self, "selected_backend", backend)
 
         for attr in Kernels.__annotations__:
             implementations = getattr(Kernels, attr)
             impl = implementations.get(self.selected_backend, NotImplemented)
-            setattr(self, attr, impl)
+            object.__setattr__(self, attr, impl)

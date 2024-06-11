@@ -9,8 +9,10 @@ __all__ = [
     # callback-protocols
     "ApplyAlongAxes",
     "ClipProto",
+    "ConcatenateProto",
     "ContractionProto",
     "IsScalarProto",
+    "ArraySplitProto",
     "TensorLikeProto",
     "ToTensorProto",
     "WhereProto",
@@ -107,6 +109,18 @@ class ApplyAlongAxes(Protocol[T]):
     r"""Bound-Protocol for `apply_along_axes`-function."""
 
     def __call__(self, op: Callable[..., T], /, *tensors: T, axis: Axis) -> T: ...
+
+
+class ArraySplitProto(Protocol[T]):
+    r"""Bound-Protocol for `split_tensor`-function."""
+
+    def __call__(self, x: T, indices: int | list[int], /, *, axis: int) -> list[T]: ...
+
+
+class ConcatenateProto(Protocol[T]):
+    r"""Bound-Protocol for `concatenate`-function."""
+
+    def __call__(self, x: list[T], /, *, axis: int) -> T: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

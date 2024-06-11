@@ -78,16 +78,13 @@ def test_left_inverse(name: str) -> None:
 
 
 def test_shared_attrs():
+    defined_attrs = get_protocol_members(SklearnEncoder)
+    assert not any(attr.startswith("_") for attr in defined_attrs)
+
     shared_attrs = set.intersection(
         *(set(dir(cls)) for cls in SKLEARN_ENCODERS.values())
     )
-    shared_classes = set.intersection(
-        *(set(cls.__mro__) for cls in SKLEARN_ENCODERS.values())
-    )
+    filtered_attrs = {attr for attr in shared_attrs if not attr.startswith("_")}
 
-    defined_attrs = get_protocol_members(SklearnEncoder)
-
-    assert defined_attrs <= shared_attrs
-    assert {
-        attr for attr in shared_attrs if not attr.startswith("_")
-    } <= defined_attrs | {"get_metadata_routing", "set_output"}
+    assert defined_attrs <= filtered_attrs
+    assert filtered_attrs <= defined_attrs | {"get_metadata_routing", "set_output"}
