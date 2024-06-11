@@ -29,7 +29,8 @@ Goals
 
 __all__ = [
     # Protocols & ABCs
-    "NumericalEncoder",
+    "ArrayEncoder",
+    "ArrayDecoder",
     # Functions
     "get_broadcast",
     "get_reduced_axes",
@@ -53,9 +54,8 @@ from types import EllipsisType
 
 import numpy as np
 import pandas as pd
-import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from torch import Tensor
 from typing_extensions import (
     Any,
@@ -70,10 +70,12 @@ from typing_extensions import (
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axis, Nested, Size
-from tsdm.types.protocols import NTuple, NumericalArray
+from tsdm.types.aliases import Axis, Size
+from tsdm.types.protocols import NumericalArray
 from tsdm.utils.decorators import pprint_repr
 
+X = TypeVar("X")
+Y = TypeVar("Y")
 Arr = TypeVar("Arr", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
 Arr2 = TypeVar("Arr2", bound=NumericalArray)
@@ -251,11 +253,21 @@ def get_reduced_axes(item, axis):
             raise TypeError(f"Unknown type {type(item)}")
 
 
-class NumericalEncoder(BaseEncoder[Arr, Arr]):
-    r"""Represents a numerical encoder."""
+class ArrayEncoder(BaseEncoder[Arr, Y]):
+    r"""An encoder for Tensor-like data.
 
-    backend: Backend[Arr]
+    We want numerical encoders to be applicable to different backends.
+    Therefore, they should be equipped with a `backend`-object which
+    provides computational kernels for important tensor-operations beyond
+    elementary arithmetic.
+    """
+
+    backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
+
+    def fit(self, data: Arr, /) -> None:
+        r"""Fit the encoder to the data."""
+        self.backend = Backend(get_backend(data))
 
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
@@ -266,26 +278,29 @@ class NumericalEncoder(BaseEncoder[Arr, Arr]):
 
     def recast_parameters(self) -> None:
         r"""Recast the parameters to the current backend."""
-        # switch the backend of the parameters
-        self.cast_params(self.params)
         raise NotImplementedError
 
-    def cast_params(self, params: Nested) -> Nested[Arr]:
-        r"""Cast the parameters to the current backend."""
-        match params:
-            case NTuple() as ntup:
-                cls = type(ntup)
-                return cls(*(self.cast_params(p) for p in ntup))
-            case tuple() as tup:
-                return tuple(self.cast_params(p) for p in tup)
-            case list() as lst:
-                return [self.cast_params(p) for p in lst]
-            case dict() as dct:
-                return {k: self.cast_params(v) for k, v in dct.items()}
-            case Tensor() | np.ndarray() | Series() | DataFrame() as t:
-                return self.backend.to_tensor(t)
-            case _ as p:
-                return p
+
+class ArrayDecoder(BaseEncoder[X, Arr]):
+    r"""A decoder for Tensor-like data."""
+
+    backend: Backend[Arr] = NotImplemented
+    r"""The backend of the encoder."""
+
+    def fit(self, data: X, /) -> None:
+        r"""Fit the encoder to the data."""
+        self.backend = Backend(get_backend(data))
+
+    def switch_backend(self, backend: str) -> None:
+        r"""Switch the backend of the encoder."""
+        self.backend: Backend[Arr] = Backend(backend)
+
+        # recast the parameters
+        self.recast_parameters()
+
+    def recast_parameters(self) -> None:
+        r"""Recast the parameters to the current backend."""
+        raise NotImplementedError
 
 
 @pprint_repr
@@ -861,71 +876,51 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
-class TensorSplitter(BaseEncoder[TensorType, list[TensorType]]):
+@pprint_repr
+@dataclass
+class TensorSplitter(ArrayEncoder[Arr, list[Arr]]):
     r"""Split tensor along specified axis."""
 
-    lengths: list[int]
-    numdims: list[int]
-    axis: int
-    maxdim: int
-    indices_or_sections: int | list[int]
+    _: KW_ONLY
+    indices: int | list[int] = 1
+    axis: int = 0
 
     @property
     def params(self) -> dict[str, Any]:
-        return {"indices_or_sections": self.indices_or_sections, "axis": self.axis}
+        return asdict(self)
 
-    def __init__(
-        self, *, indices_or_sections: int | list[int] = 1, axis: int = 0
-    ) -> None:
-        r"""Concatenate tensors along the specified axis."""
-        self.axis = axis
-        self.indices_or_sections = indices_or_sections
+    def __invert__(self) -> "TensorConcatenator[Arr]":
+        return TensorConcatenator(axis=self.axis, indices=self.indices)
 
-    def encode(self, data: TensorType, /) -> list[TensorType]:
-        if isinstance(data, Tensor):
-            return list(
-                torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
-            )
-        return np.array_split(data, self.indices_or_sections, dim=self.axis)  # type: ignore[call-overload]
+    def encode(self, x: Arr, /) -> list[Arr]:
+        return self.backend.array_split(x, self.indices, axis=self.axis)
 
-    def decode(self, data: list[TensorType], /) -> TensorType:
-        if isinstance(data[0], Tensor):
-            return torch.cat(data, dim=self.axis)
-        return np.concatenate(data, axis=self.axis)
+    def decode(self, y: list[Arr], /) -> Arr:
+        return self.backend.concatenate(y, axis=self.axis)
 
 
-class TensorConcatenator(BaseEncoder[list[Tensor], Tensor]):
-    r"""Concatenate multiple tensors.
+@pprint_repr
+@dataclass
+class TensorConcatenator(ArrayDecoder[list[Arr], Arr]):
+    r"""Concatenate multiple tensors."""
 
-    Useful for concatenating encoders for multiple inputs.
-    """
-
-    lengths: list[int]
-    numdims: list[int]
-    axis: int
-    maxdim: int
+    _: KW_ONLY
+    indices: int | list[int] = NotImplemented
+    axis: int = 0
 
     @property
     def params(self) -> dict[str, Any]:
-        return {"axis": self.axis}
+        return asdict(self)
 
-    def __init__(self, axis: int = 0) -> None:
-        r"""Concatenate tensors along the specified axis."""
-        self.axis = axis
+    def __invert__(self) -> "TensorSplitter[Arr]":
+        return TensorSplitter(axis=self.axis, indices=self.indices)
 
-    def fit(self, data: list[Tensor], /) -> None:
-        self.numdims = [d.ndim for d in data]
-        self.maxdim = max(self.numdims)
-        # pad dimensions if necessary
-        arrays = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
-        # store the lengths of the slices
-        self.lengths = [x.shape[self.axis] for x in arrays]
+    def fit(self, x: list[Arr], /) -> None:
+        super().fit(x)
+        self.indices = [arr.shape[self.axis] for arr in x]
 
-    def encode(self, data: list[Tensor], /) -> Tensor:
-        return torch.cat(
-            [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
-        )
+    def encode(self, x: list[Arr], /) -> Arr:
+        return self.backend.concatenate(x, axis=self.axis)
 
-    def decode(self, data: Tensor, /) -> list[Tensor]:
-        result = torch.split(data, self.lengths, dim=self.axis)
-        return [x.squeeze() for x in result]
+    def decode(self, y: Arr, /) -> list[Arr]:
+        return self.backend.array_split(y, self.indices, axis=self.axis)

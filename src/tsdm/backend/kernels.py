@@ -70,19 +70,17 @@ r"""A tuple of the supported backends."""
 
 def gather_types(obj: object, /) -> set[BackendID]:
     r"""Gather the backend types of a set of objects."""
-    types: set[BackendID] = set()
-
     match obj:
         case tuple() | set() | frozenset() | list() as container:
-            types |= set().union(*map(gather_types, container))
+            return set().union(*map(gather_types, container))
         case dict() as mapping:
-            types |= set().union(*map(gather_types, mapping.values()))
+            return set().union(*map(gather_types, mapping.values()))
         case Tensor():
-            types.add("torch")
+            return {"torch"}
         case pd.DataFrame() | pd.Series() | pd.Index():
-            types.add("pandas")
+            return {"pandas"}
         case ndarray():
-            types.add("numpy")
+            return {"numpy"}
         case (
             None
             | bool()
@@ -92,16 +90,14 @@ def gather_types(obj: object, /) -> set[BackendID]:
             | str()
             | datetime()
             | timedelta()
+            | EllipsisType()
+            | NotImplementedType()
         ):
             # FIXME: https://github.com/python/cpython/issues/106246
             # use PythonScalar instead of Scalar when the above issue is fixed
-            pass
-        case EllipsisType() | NotImplementedType():
-            pass
+            return set()
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}.")
-
-    return types
 
 
 def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
