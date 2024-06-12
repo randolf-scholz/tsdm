@@ -14,16 +14,15 @@ __all__ = [
     # Classes
     "CSVEncoder",
     "DTypeConverter",
+    "FrameAsTensor",
     "FrameAsTensorDict",
     "FrameEncoder",
     "FrameSplitter",
-    "FrameAsTensor",
     "TripletDecoder",
     "TripletEncoder",
 ]
 
 import warnings
-from collections import namedtuple
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
@@ -627,6 +626,8 @@ class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
         return reconstructed
 
 
+@pprint_repr
+@dataclass
 class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
 
@@ -635,37 +636,29 @@ class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
         - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
-    dtype: torch.dtype
+    dtype: Optional[torch.dtype] = None
     r"""The default dtype."""
-    device: torch.device
+    device: Optional[torch.device] = None
     r"""The device the tensors are stored in."""
-    names: Optional[list[str]] = None
-    return_type: type = tuple
+    original_schema: Series = NotImplemented
+    r"""The original schema."""
 
-    def __init__(
-        self,
-        *,
-        names: Optional[list[str]] = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
-    ) -> None:
-        self.names = names
-        self.dtype = torch.float32 if dtype is None else dtype
-        self.device = torch.device("cpu") if device is None else device
-
-        if names is not None:
-            self.return_type = namedtuple("namedtuple", names)  # type: ignore[misc]  # noqa: PYI024
-
-        self.is_fitted = True
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def fit(self, data: PandasObject, /) -> None:
-        pass
+        if data.index != pd.RangeIndex(len(data)):
+            raise ValueError("DataFrame must be canonically indexed!")
+        self.original_schema = data.dtypes
 
     def encode(self, data: PandasObject, /) -> Tensor:
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
     def decode(self, data: Tensor, /) -> PandasObject:
-        return data.cpu().numpy()
+        array = data.cpu().numpy()
+        frame = DataFrame(array, columns=self.original_schema.index)
+        return frame.astype(self.original_schema)
 
 
 class FrameAsTensorDict(
@@ -692,8 +685,7 @@ class FrameAsTensorDict(
 
     # Attributes
     original_index_columns: Index | list[str]
-    original_columns: Index
-    original_dtypes: Series
+    original_schema: Series = NotImplemented
     inferred_dtypes: dict[str, torch.dtype | None]
     groups: dict[str, list[str]]
 

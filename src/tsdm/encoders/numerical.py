@@ -31,10 +31,6 @@ __all__ = [
     # Protocols & ABCs
     "ArrayEncoder",
     "ArrayDecoder",
-    # Functions
-    "get_broadcast",
-    "get_reduced_axes",
-    "invert_axis_selection",
     # Classes
     "BoundaryEncoder",
     "LinearScaler",
@@ -45,6 +41,9 @@ __all__ = [
     "TensorConcatenator",
     "TensorSplitter",
     # Functions
+    "get_broadcast",
+    "get_reduced_axes",
+    "invert_axis_selection",
     "slice_size",
 ]
 
