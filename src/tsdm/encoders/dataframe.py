@@ -12,10 +12,10 @@ __all__ = [
     # Classes
     "CSVEncoder",
     "DTypeConverter",
+    "FrameAsDict",
     "FrameAsTensor",
     "FrameAsTensorDict",
     "FrameEncoder",
-    "FrameSplitter",
     "TripletDecoder",
     "TripletEncoder",
     # Functions
@@ -23,10 +23,8 @@ __all__ = [
     "get_ellipsis_cols",
 ]
 
-import warnings
 from collections.abc import (
     Callable,
-    Hashable,
     Iterable,
     Iterator,
     Mapping,
@@ -36,22 +34,19 @@ from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
 
-import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 import torch
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 from typing_extensions import Any, ClassVar, Optional, TypeVar
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
-from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg, PandasObject
-from tsdm.types.protocols import NTuple
+from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg
 from tsdm.types.variables import K, T
-from tsdm.utils import pairwise_disjoint
 from tsdm.utils.decorators import pprint_repr
 
 E = TypeVar("E", bound=Encoder)
@@ -64,7 +59,7 @@ def get_ellipsis_cols(
 ) -> list[T]:
     r"""Determine the column name for the ellipsis."""
     original_columns: set[T] = set(df.columns)
-    columns = original_columns.copy()
+    selected_columns = original_columns.copy()
 
     for el in schema:
         match el:
@@ -72,28 +67,33 @@ def get_ellipsis_cols(
                 continue
             case list() as cols:
                 if original_columns.issuperset(cols):
-                    columns -= set(cols)
+                    selected_columns -= set(cols)
                     continue
                 raise ValueError(f"Columns {cols} are not present in the DataFrame!")
             case col:
                 if col in original_columns:
-                    columns.remove(col)
+                    selected_columns.remove(col)
                     continue
                 raise ValueError(f"Column {col} is not present in the DataFrame!")
 
-    return list(columns)
+    # NOTE: In order to get the columns in the original order,
+    #  we need to iterate over the original columns.
+    #  simply doing list(selected_columns) would yield the columns in a different order.
+    return [col for col in df.columns if col in selected_columns]
 
 
 def is_canonically_indexed(df: DataFrame, /) -> bool:
     r"""Check if the DataFrame has a canonical index."""
     match df.index:
-        case pd.RangeIndex(start=0, step=1, stop=stop) if stop == len(df):
+        case pd.RangeIndex(start=0, step=1, stop=stop) if stop == len(df):  # type: ignore[has-type]
             return True
     return False
 
 
 class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
+
+    Similar to `sklearn.compose.ColumnTransformer`.
 
     Per-column encoding is possible through the dictionary input.
     In this case, the positions of the columns in the encoded DataFrame should coincide with the
@@ -506,168 +506,9 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
                 self.target_dtypes[col] = self.fill_dtype
 
 
-class FrameSplitter(BaseEncoder[DataFrame, tuple[DataFrame, ...]], Mapping):
-    r"""Splits a DataFrame into multiple DataFrames column-wise.
-
-    Note:
-        - The mapping must be one-to-one, that is each column must be assigned to exactly one group.
-        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
-
-    Example:
-        The index mapping `[0|1|2|3|4|5]` to `[2|0|1], [5|4]` corresponds to mapping
-
-        +---+---+---+---+---+---+
-        | 0 | 1 | 2 | 3 | 4 | 5 |
-        +===+===+===+===+===+===+
-        | 1 | 2 | 0 | - | 5 | 4 |
-        +---+---+---+---+---+---+
-
-        with inverse
-
-        +---+---+---+---+---+---+
-        | 0 | 1 | 2 | 3 | 4 | 5 |
-        +===+===+===+===+===+===+
-        | 1 | 2 | 0 | - | 5 | 4 |
-        +---+---+---+---+---+---+
-    """
-
-    original_columns: Index
-    original_dtypes: Series
-
-    groups: dict[Any, EllipsisType | Hashable | list[Hashable]]
-    group_indices: dict[Any, list[int]]
-
-    has_ellipsis: bool = False
-    ellipsis_columns: Optional[list[Hashable]] = None
-    ellipsis: Optional[Hashable] = None
-
-    permutation: list[int]
-    inverse_permutation: list[int]
-    rtype: type = tuple
-
-    def __init__(
-        self,
-        groups: Iterable[Hashable] | Mapping[Any, Hashable],
-        /,
-        *,
-        dropna: bool = False,
-        fillna: bool = True,
-    ) -> None:
-        if isinstance(groups, NTuple):
-            self.rtype = type(groups)
-            groups = groups._asdict()
-        if not isinstance(groups, Mapping):
-            groups = dict(enumerate(groups))
-
-        self.groups = {}
-        for key, obj in groups.items():
-            match obj:
-                case EllipsisType():
-                    self.groups[key] = obj
-                    self.ellipsis = key
-                    self.has_ellipsis = True
-                case str() as name:
-                    self.groups[key] = [name]
-                case Iterable() as iterable:
-                    self.groups[key] = list(iterable)
-                case _:
-                    self.groups[key] = [obj]
-
-        column_sets: list[set[Hashable]] = [
-            set(cols) for cols in self.groups.values() if isinstance(cols, Iterable)
-        ]
-        self.fixed_columns = set().union(*column_sets)
-        assert pairwise_disjoint(column_sets)
-
-        self.dropna = dropna
-        self.fillna = fillna
-
-    def __len__(self) -> int:
-        r"""Return the number of groups."""
-        return len(self.groups)
-
-    def __iter__(self) -> Iterator:
-        r"""Iterate over the groups."""
-        return iter(self.groups)
-
-    def __getitem__(self, item: Any, /) -> Hashable | list[Hashable]:
-        r"""Return the group."""
-        return self.groups[item]
-
-    def fit(self, original: DataFrame, /) -> None:
-        data = DataFrame(original).copy()
-
-        self.original_dtypes = original.dtypes
-        self.original_columns = original.columns
-
-        if self.has_ellipsis:
-            self.ellipsis_columns = [
-                c for c in data.columns if c not in self.fixed_columns
-            ]
-        else:
-            unused_columns = (
-                set() if self.has_ellipsis else set(data.columns) - self.fixed_columns
-            )
-            data = data.drop(columns=unused_columns)
-
-        columns_index = data.columns.to_series().reset_index(drop=True)
-        reverse_index = Series(columns_index.index, index=columns_index)
-
-        # Compute the permutation
-        self.permutation = []
-        self.group_indices: dict[Any, list[int]] = {}
-        for group, columns in self.groups.items():
-            if columns is Ellipsis:
-                self.group_indices[group] = reverse_index[
-                    self.ellipsis_columns
-                ].to_list()
-            else:
-                self.group_indices[group] = reverse_index[columns].to_list()
-            self.permutation += self.group_indices[group]
-
-        # compute inverse permutation
-        self.inverse_permutation = np.argsort(self.permutation).tolist()
-        # self.inverse_permutation sorted(p.copy(), key=p.__getitem__)
-
-    def encode(self, original: DataFrame, /) -> tuple[DataFrame, ...]:
-        data = DataFrame(original).copy()
-
-        if not self.has_ellipsis and set(data.columns) > self.fixed_columns:
-            warnings.warn(
-                f"Unknown columns {set(data.columns) - self.fixed_columns}."
-                "If you want to encode unknown columns add a group `...` (`Ellipsis`).",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
-        encoded_frames = []
-        for columns in self.groups.values():
-            cols = self.ellipsis_columns if columns is Ellipsis else columns
-            encoded = data[cols]
-            if self.dropna:
-                encoded = encoded.dropna(axis="index", how="all")
-            encoded_frames.append(encoded)
-
-        return tuple(encoded_frames)
-
-    def decode(self, data: tuple[DataFrame, ...], /) -> DataFrame:
-        data = tuple(DataFrame(x) for x in data)
-        joined = pd.concat(data, axis="columns")
-
-        # bring columns in order
-        joined = joined.iloc[..., self.inverse_permutation]
-        reconstructed = DataFrame(columns=self.original_columns)
-        reconstructed[joined.columns] = joined
-        reconstructed = reconstructed.astype(self.original_dtypes)
-
-        if self.dropna:
-            reconstructed = reconstructed.sort_index()
-        return reconstructed
-
-
 @pprint_repr
 @dataclass
-class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
+class FrameAsTensor(BaseEncoder[DataFrame, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
 
     Note:
@@ -679,27 +520,92 @@ class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
     r"""The default dtype."""
     device: Optional[str | torch.device] = None
     r"""The device the tensors are stored in."""
-    original_schema: Series = NotImplemented
+    original_schema: dict[str, Any] = NotImplemented
     r"""The original schema."""
 
     @property
     def params(self) -> dict[str, Any]:
         return asdict(self)
 
-    def fit(self, data: PandasObject, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         if data.index != pd.RangeIndex(len(data)):
             raise ValueError("DataFrame must be canonically indexed!")
-        self.original_schema = data.dtypes
+        self.original_schema = data.dtypes.to_dict()
 
-    def encode(self, data: PandasObject, /) -> Tensor:
+    def encode(self, data: DataFrame, /) -> Tensor:
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)  # type: ignore[arg-type]
 
-    def decode(self, data: Tensor, /) -> PandasObject:
+    def decode(self, data: Tensor, /) -> DataFrame:
         array = data.detach().cpu().numpy()
-        frame = DataFrame(array, columns=self.original_schema.index)
+        frame = DataFrame(array, columns=self.original_schema)
         return frame.astype(self.original_schema)
 
 
+@pprint_repr
+@dataclass(init=False)
+class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
+    """Encodes a DataFrame as a dict of DataFrames.
+
+    Note:
+        - Each column must be assigned to exactly one group.
+        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
+    """
+
+    # Attributes (type hints represent post-fit attributes)
+    schema: dict[str, list[str] | EllipsisType]
+    r"""The schema for grouping the columns (group-name -> col-name(s))."""
+
+    # Fitted attributes
+    original_dtypes: dict[str, Any] = NotImplemented  # cols -> dtype
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def __init__(
+        self,
+        schema: Mapping[str, str | list[str] | EllipsisType],
+    ) -> None:
+        self.schema = {
+            k: v if isinstance(v, list | EllipsisType) else [v]
+            for k, v in schema.items()
+        }
+
+    def fit(self, data: DataFrame, /) -> None:
+        # get the original dtypes
+        self.original_dtypes = data.dtypes.to_dict()
+
+        # fill in the missing columns
+        if Ellipsis in self.schema.values():
+            ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
+            for group, cols in self.schema.items():
+                if cols is Ellipsis:
+                    self.schema[group] = ellipsis_cols
+
+        if missing_cols := set().union(*self.schema.values()) - set(data.columns):  # type: ignore[arg-type]
+            raise ValueError(f"Missing columns {missing_cols}!")
+        if extra_cols := set(data.columns) - set().union(*self.schema.values()):  # type: ignore[arg-type]
+            raise ValueError(f"Extra columns {extra_cols}!")
+
+    def encode(self, data: DataFrame, /) -> dict[str, DataFrame]:
+        r"""Encode a DataFrame as a dict of Tensors.
+
+        The encode method ensures treatment of missingness:
+        if columns in the dataframe are missing, the correponding tensor columns
+        will be filled with `NAN`-values if the datatype allows it.
+        """
+        return {key: data[cols] for key, cols in self.schema.items()}
+
+    def decode(self, data: Mapping[str, DataFrame], /) -> DataFrame:
+        # Assemble the DataFrame
+        return (
+            pd.concat(data.values(), axis="columns")
+            .astype(self.original_dtypes)  # restores dtypes
+            .reindex(columns=self.original_dtypes)  # restores column order
+        )
+
+
+@pprint_repr
 @dataclass(init=False)
 class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
     r"""Encodes a DataFrame as a dict of Tensors.
@@ -714,7 +620,7 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
         - Encoding the index is mandatory, except if the data is canonically indexed.
           (i.e. `index = RangeIndex(len(df))`)
         - This Encoder is basically equivalent to `FrameAsDict` followed by `MapEncoders` wrapping `FrameAsTensor`
-          for each group.
+          for each group, but it also encodes the index.
         - Missing columns are allowed (submodular), and will be filled with `NAN`-values if the datatype allows it.
 
     Example:
