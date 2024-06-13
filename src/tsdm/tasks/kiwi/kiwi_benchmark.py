@@ -244,7 +244,7 @@ class KiwiBenchmark(TimeSeriesTask):
 
     def make_encoder(self, key: SplitID, /) -> Encoder:
         encoder = FrameAsTensorDict(
-            groups={
+            schema={
                 "key": ["run_id", "experiment_id"],
                 "T": ["measurement_time"],
                 "X": ...,

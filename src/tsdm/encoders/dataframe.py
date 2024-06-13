@@ -4,9 +4,7 @@ Each of these encoders must encode DataFrames.
 We distinguish between 3 categories of encoders:
 
 1. **polymodal encoders**: Accepts dataframes with different schemas, such as different number of columns.
-2. **submodal encoders**: Each input dataframe must have a *compatible* schema as the dataframe used for fitting.
-    - The columns must be a subset of the columns used for fitting.
-    - The dtypes must be compatible.
+2. **submodal encoders**: input dataframes must be subschemas of the schema used for fitting.
 3. **equimodal encoders**: Each input dataframe must have the same schema as the dataframe used for fitting.
 """
 
@@ -20,10 +18,20 @@ __all__ = [
     "FrameSplitter",
     "TripletDecoder",
     "TripletEncoder",
+    # Functions
+    "is_canonically_indexed",
+    "get_ellipsis_cols",
 ]
 
 import warnings
-from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import (
+    Callable,
+    Hashable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
@@ -41,15 +49,47 @@ from typing_extensions import Any, ClassVar, Optional, TypeVar
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
 from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg, PandasObject
-from tsdm.types.dtypes import TORCH_DTYPES
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import K
+from tsdm.types.variables import K, T
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.decorators import pprint_repr
 
 E = TypeVar("E", bound=Encoder)
 F = TypeVar("F", bound=Encoder)
 TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
+
+
+def get_ellipsis_cols(
+    df: DataFrame, /, schema: Iterable[EllipsisType | T | list[T]]
+) -> list[T]:
+    r"""Determine the column name for the ellipsis."""
+    original_columns: set[T] = set(df.columns)
+    columns = original_columns.copy()
+
+    for el in schema:
+        match el:
+            case EllipsisType():
+                continue
+            case list() as cols:
+                if original_columns.issuperset(cols):
+                    columns -= set(cols)
+                    continue
+                raise ValueError(f"Columns {cols} are not present in the DataFrame!")
+            case col:
+                if col in original_columns:
+                    columns.remove(col)
+                    continue
+                raise ValueError(f"Column {col} is not present in the DataFrame!")
+
+    return list(columns)
+
+
+def is_canonically_indexed(df: DataFrame, /) -> bool:
+    r"""Check if the DataFrame has a canonical index."""
+    match df.index:
+        case pd.RangeIndex(start=0, step=1, stop=stop) if stop == len(df):
+            return True
+    return False
 
 
 class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
@@ -436,11 +476,10 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
         self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /
     ) -> None:
         super().__init__()
-        match dtypes:
-            case Mapping() as mapping:
-                self.target_dtypes = dict(mapping)
-            case dtype:
-                self.target_dtypes = {Ellipsis: dtype}
+
+        self.target_dtypes = (
+            dict(dtypes) if not isinstance(dtypes, Mapping) else {...: dtypes}
+        )
 
         if Ellipsis in self.target_dtypes:
             self.fill_dtype = self.target_dtypes[Ellipsis]
@@ -636,9 +675,9 @@ class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
         - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
-    dtype: Optional[torch.dtype] = None
+    dtype: Optional[str | torch.dtype] = None
     r"""The default dtype."""
-    device: Optional[torch.device] = None
+    device: Optional[str | torch.device] = None
     r"""The device the tensors are stored in."""
     original_schema: Series = NotImplemented
     r"""The original schema."""
@@ -653,29 +692,45 @@ class FrameAsTensor(BaseEncoder[PandasObject, Tensor]):
         self.original_schema = data.dtypes
 
     def encode(self, data: PandasObject, /) -> Tensor:
-        return torch.tensor(data.values, device=self.device, dtype=self.dtype)
+        return torch.tensor(data.values, device=self.device, dtype=self.dtype)  # type: ignore[arg-type]
 
     def decode(self, data: Tensor, /) -> PandasObject:
-        array = data.cpu().numpy()
+        array = data.detach().cpu().numpy()
         frame = DataFrame(array, columns=self.original_schema.index)
         return frame.astype(self.original_schema)
 
 
-class FrameAsTensorDict(
-    BaseEncoder[DataFrame, dict[str, Tensor]], Mapping[str, list[str]]
-):
+@dataclass(init=False)
+class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
-    One can specify groups of columns to be encoded as a single Tensor. They must share the same dtype.
+    One can specify groups of columns to be encoded as a single Tensor.
+    They must share the same dtype.
+
+    Note:
+        - Each column must be assigned to exactly one group.
+        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
+        - Encoding the index is mandatory, except if the data is canonically indexed.
+          (i.e. `index = RangeIndex(len(df))`)
+        - This Encoder is basically equivalent to `FrameAsDict` followed by `MapEncoders` wrapping `FrameAsTensor`
+          for each group.
+        - Missing columns are allowed (submodular), and will be filled with `NAN`-values if the datatype allows it.
 
     Example:
         >>> from pandas import DataFrame
         >>> from tsdm.encoders import FrameAsTensorDict
-        >>> df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-        >>> encoder = FrameAsTensorDict(
-        ...     groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False
-        ... )
+        >>> df = DataFrame({
+        ...     "ID": [10, 21, 33],
+        ...     "mask": [True, False, False],
+        ...     "x": [-2.1, 7.3, 3.5],
+        ...     "y": [0.1, 0.2, 0.3],
+        ... }).set_index("ID")
+        >>> encoder = FrameAsTensorDict({
+        ...     "index": "ID",
+        ...     "mask": "mask",
+        ...     "features": ["x", "y"],
+        ... })
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)
         >>> assert isinstance(encoded, dict)
@@ -683,106 +738,80 @@ class FrameAsTensorDict(
         >>> pd.testing.assert_frame_equal(df, decoded)
     """
 
-    # Attributes
-    original_index_columns: Index | list[str]
-    original_schema: Series = NotImplemented
-    inferred_dtypes: dict[str, torch.dtype | None]
-    groups: dict[str, list[str]]
+    # Attributes (type hints represent post-fit attributes)
+    schema: dict[str, list[str] | EllipsisType]
+    r"""The schema for grouping the columns (group-name -> col-name(s))."""
+    device: dict[str | EllipsisType, None | str | torch.device]
+    r"""The device for each group (group-name -> device)."""
+    dtypes: dict[str | EllipsisType, None | str | torch.dtype]
+    r"""The dtype for each group (group-name -> dtype)."""
 
-    # Parameters
-    column_dtype: Optional[torch.dtype] = None
-    device: Optional[str | torch.device] = None
-    dtypes: dict[str, None | str | torch.dtype]
-    encode_index: Optional[bool] = None
-    index_dtype: Optional[torch.dtype] = None
+    # Fitted attributes
+    index_cols: list[str] = NotImplemented
+    original_dtypes: dict[str, Any] = NotImplemented  # cols -> dtype
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
 
     def __init__(
         self,
+        schema: Mapping[str, str | list[str] | EllipsisType],
         *,
-        groups: dict[str, list[str] | EllipsisType],
-        dtypes: Optional[dict[str, str]] = None,
-        device: Optional[str | torch.device | Mapping[str, str | torch.dtype]] = None,
-        encode_index: Optional[bool] = None,
+        device: Optional[
+            str | torch.device | Mapping[str | EllipsisType, None | str | torch.device]
+        ] = None,
+        dtypes: Optional[
+            str | torch.dtype | Mapping[str | EllipsisType, None | str | torch.dtype]
+        ] = None,
     ) -> None:
-        self.groups = groups  # type: ignore[assignment]
-        self.dtypes = dtypes  # type: ignore[assignment]
-        self.device = device  # type: ignore[assignment]
-        self.encode_index = encode_index
-        self.inferred_dtypes = {}
-
-    def __len__(self) -> int:
-        return len(self.groups)
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.groups)
-
-    def __getitem__(self, key: str, /) -> list[str]:
-        return self.groups[key]
+        self.schema = {
+            k: v if isinstance(v, list | EllipsisType) else [v]
+            for k, v in schema.items()
+        }
+        self.dtypes = dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
+        self.device = dict(device) if isinstance(device, Mapping) else {...: device}
 
     def fit(self, data: DataFrame, /) -> None:
-        index = data.index.to_frame()
-        self.original_index_columns = index.columns.to_list()
-
-        # if None try to autodetect if index-columns are being used
-        if self.encode_index is None:
-            self.encode_index = bool(
-                set()
-                .union(*(v for v in self.groups.values() if v is not Ellipsis))
-                .intersection(self.original_index_columns)
-            )
-
-        if self.encode_index:
+        # check the index of the dataframe
+        self.index_cols = list(data.index.names)
+        if not is_canonically_indexed(data):
             data = data.reset_index()
 
-        if len(data.columns) != len(data.columns.unique()):
-            raise ValueError("Duplicate columns currently not supported!")
+        # get the original dtypes
+        self.original_dtypes = data.dtypes.to_dict()
 
-        self.original_dtypes = data.dtypes
-        self.original_columns = data.columns
+        # fill in the missing columns
+        if Ellipsis in self.schema.values():
+            ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
+            for group, cols in self.schema.items():
+                if cols is Ellipsis:
+                    self.schema[group] = ellipsis_cols
 
-        # Impute Ellipsis. Make sure that the order is preserved.
-        cols: set[str] = set(data.columns)
-        ellipsis_key: Optional[str] = None
-        for key in self.groups:
-            if self.groups[key] is Ellipsis:
-                ellipsis_key = key
-            else:
-                s = set(self.groups[key])
-                if not s.issubset(cols):
-                    if s.issubset(cols | set(self.original_index_columns)):
-                        raise ValueError(
-                            "Index columns are not allowed in groups. "
-                            "Please use encode_index=True."
-                        )
-                    raise ValueError(
-                        f"{s} is not a subset of {cols}! Maybe you have a typo?"
-                    )
-                cols -= s
-        if ellipsis_key is not None:
-            self.groups[ellipsis_key] = [col for col in data.columns if col in cols]
-            cols -= cols
+        # fill in the dtype for missing groups
+        if Ellipsis in self.dtypes:
+            dtype = self.dtypes.pop(Ellipsis)
+            for group in self.schema.keys() - self.dtypes.keys():
+                self.dtypes[group] = dtype
 
-        if cols:
+        # fill in the device for missing groups
+        if Ellipsis in self.device:
+            device = self.device.pop(Ellipsis)
+            for group in self.schema.keys() - self.device.keys():
+                self.device[group] = device
+
+        if self.dtypes.keys() & self.device.keys() != self.schema.keys():
             raise ValueError(
-                f"Columns {cols} are not assigned to a group! "
-                "Try setting encode_index=False to skip encoding the index."
+                "Schema, dtypes and device columns must share groups!"
+                f"\nSchema: {self.schema}"
+                f"\ndtypes: {self.dtypes}"
+                f"\ndevice: {self.device}"
             )
 
-        # data type validation
-        for key in self.groups:
-            if data[self.groups[key]].dtypes.nunique() != 1:
-                raise ValueError("All members of a group must have the same dtype!")
-
-        # dtype validation
-        if not isinstance(self.dtypes, Mapping):
-            self.dtypes = dict.fromkeys(self.groups, self.dtypes)  # type: ignore[unreachable]
-        for key in self.groups:
-            val = self.dtypes.get(key, None)
-            assert isinstance(val, None | str | torch.dtype)
-            self.dtypes[key] = val
-            self.inferred_dtypes[key] = (
-                TORCH_DTYPES[val] if isinstance(val, str) else val
-            )
+        if missing_cols := set().union(*self.schema.values()) - set(data.columns):  # type: ignore[arg-type]
+            raise ValueError(f"Missing columns {missing_cols}!")
+        if extra_cols := set(data.columns) - set().union(*self.schema.values()):  # type: ignore[arg-type]
+            raise ValueError(f"Extra columns {extra_cols}!")
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         r"""Encode a DataFrame as a dict of Tensors.
@@ -791,35 +820,32 @@ class FrameAsTensorDict(
         if columns in the dataframe are missing, the correponding tensor columns
         will be filled with `NAN`-values if the datatype allows it.
         """
-        if self.encode_index:
-            data = data.reset_index()
+        data = data.reset_index()
 
         return {
             key: torch.tensor(
-                data[cols].astype(self.dtypes[key]).to_numpy(),
-                device=self.device,
-                dtype=self.inferred_dtypes[key],
+                data[cols].to_numpy(),
+                device=self.device[key],
+                dtype=self.dtypes[key],  # type: ignore[arg-type]
             ).squeeze()
-            for key, cols in self.groups.items()
-            if set(cols).issubset(data.columns)
+            for key, cols in self.schema.items()
         }
 
-    def decode(self, data: Mapping[str, Tensor | None], /) -> DataFrame:
-        dfs = []
-        for key, tensor in data.items():
-            cols = self.groups[key]
-            dtypes = self.original_dtypes[cols]
-            df = DataFrame(
-                [] if tensor is None else tensor.clone().detach().cpu(),
-                columns=cols,
-            ).astype(dtypes)
-            dfs.append(df)
+    def decode(self, data: Mapping[str, Tensor], /) -> DataFrame:
+        # convert the tensors to dataframes
+        dfs = [
+            DataFrame(tensor.detach().cpu().numpy(), columns=self.schema[key])
+            for key, tensor in data.items()
+        ]
 
         # Assemble the DataFrame
-        df = pd.concat(dfs, axis="columns")
-        df = df.astype(self.original_dtypes[df.columns])
-        df = df[self.original_columns.intersection(df.columns)]
-        if self.encode_index and self.original_index_columns is not None:
-            cols = [col for col in self.original_index_columns if col in df.columns]
-            df = df.set_index(cols)
+        df = (
+            pd.concat(dfs, axis="columns")
+            .astype(self.original_dtypes)  # restores dtypes
+            .reindex(columns=self.original_dtypes)  # restores column order
+        )
+
+        if self.index_cols != [None]:
+            df = df.set_index(self.index_cols)
+
         return df

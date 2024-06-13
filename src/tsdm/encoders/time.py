@@ -27,10 +27,10 @@ from tsdm.types.aliases import DType, PandasDtype
 from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
-PandasVec = TypeVar("PandasVec", Index, Series)
+SeriesOrIndex = TypeVar("SeriesOrIndex", Index, Series)
 
 
-class TimeDeltaEncoder(BaseEncoder[PandasVec, PandasVec]):
+class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
     r"""Encode TimeDelta as Float."""
 
     unit: pd.Timedelta = NotImplemented
@@ -48,7 +48,7 @@ class TimeDeltaEncoder(BaseEncoder[PandasVec, PandasVec]):
     def __init__(self, *, unit: str | TimeDelta = NotImplemented) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
 
-    def fit(self, data: PandasVec, /) -> None:
+    def fit(self, data: SeriesOrIndex, /) -> None:
         self.original_dtype = data.dtype
 
         if self.unit is NotImplemented:
@@ -57,10 +57,10 @@ class TimeDeltaEncoder(BaseEncoder[PandasVec, PandasVec]):
             base_freq = np.gcd.reduce(data.dropna().astype(int))
             self.unit = Index([base_freq]).astype(self.original_dtype).item()
 
-    def encode(self, data: PandasVec, /) -> PandasVec:
+    def encode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
         return data / self.unit
 
-    def decode(self, data: PandasVec, /) -> PandasVec:
+    def decode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
         # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
         try:
             return (data * self.unit).astype(self.original_dtype)
@@ -69,7 +69,7 @@ class TimeDeltaEncoder(BaseEncoder[PandasVec, PandasVec]):
 
 
 @dataclass(init=False)
-class DateTimeEncoder(BaseEncoder[PandasVec, PandasVec]):
+class DateTimeEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
@@ -96,7 +96,7 @@ class DateTimeEncoder(BaseEncoder[PandasVec, PandasVec]):
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
         self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
 
-    def fit(self, data: PandasVec, /) -> None:
+    def fit(self, data: SeriesOrIndex, /) -> None:
         self.original_dtype = data.dtype
 
         if self.offset is NotImplemented:
@@ -108,10 +108,10 @@ class DateTimeEncoder(BaseEncoder[PandasVec, PandasVec]):
             base_freq = np.gcd.reduce(deltas.dropna().astype(int))
             self.unit = Index([base_freq]).astype(deltas.dtype).item()
 
-    def encode(self, data: PandasVec, /) -> PandasVec:
+    def encode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
         return (data - self.offset) / self.unit
 
-    def decode(self, data: PandasVec, /) -> PandasVec:
+    def decode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
         # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
         try:
             return (data * self.unit + self.offset).astype(self.original_dtype)

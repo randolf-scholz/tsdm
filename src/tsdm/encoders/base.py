@@ -41,7 +41,7 @@ __all__ = [
     "InverseEncoder",
     "JointEncoder",
     "JointDecoder",
-    "MappedEncoders",
+    "MapEncoders",
     "ParallelEncoder",
     "PipedEncoder",
     "TupleDecoder",
@@ -82,7 +82,7 @@ from typing_extensions import (
 )
 
 from tsdm import encoders as E
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, Nested
 from tsdm.types.variables import K, T
 from tsdm.utils.decorators import pprint_repr
 
@@ -364,10 +364,19 @@ class BaseEncoder(Encoder[X, Y]):
 
             # check if fitting was successful
             if self.requires_fit:
-                raise AssertionError(
-                    "Fitting was not successful! "
-                    "Possibly the encoder is not implemented correctly."
-                )
+                msg = "Fitting was not successful, the encoder still requires fitting!"
+
+                if bad_params := {
+                    key: val
+                    for key, val in self.params.items()
+                    if val is NotImplemented or getattr(val, "requires_fit", False)
+                }:
+                    msg += (
+                        f"\nThis is likely because the following parameters are not set correctly:"
+                        f"\n{bad_params}"
+                    )
+
+                raise AssertionError(msg)
             self.is_fitted = True
 
         @wraps(original_encode)
@@ -717,6 +726,65 @@ def invert_encoder(encoder: Encoder[X, Y], /, *, simplify: bool = True) -> Encod
     r"""Return the inverse encoder (i.e. decoder)."""
     decoder = InverseEncoder(encoder)
     return decoder.simplify() if simplify else decoder
+
+
+@dataclass
+class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
+    r"""Apply an encoder recursively to nested data structure.
+
+    Any instances of the leaf type will be encoded using the encoder.
+    Containers in the standard library will be recursed into
+    (applies to `list`, `tuple`, `dict`, `set` and `frozenset`).
+    Other types will be returned as-is.
+    """
+
+    encoder: Encoder[X, Y]
+    r"""The encoder to nest."""
+    leaf_type: type[X] = object
+    r"""The type of the leaf elements."""
+    output_leaf_type: type[Y] = object
+    r"""The type of the output elements."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def __invert__(self) -> "NestedEncoder[Y, X]":
+        return NestedEncoder(invert_encoder(self.encoder))
+
+    def encode(self, x: Nested[X], /) -> Nested[Y]:
+        match x:
+            case list() as lst:
+                return [self.encode(val) for val in lst]
+            case tuple() as tpl:
+                return tuple(self.encode(val) for val in tpl)
+            case dict() as dct:
+                return {key: self.encode(val) for key, val in dct.items()}
+            case set() as st:
+                return {self.encode(val) for val in st}
+            case frozenset() as fst:
+                return frozenset(self.encode(val) for val in fst)
+            case self.leaf_type() as leaf:
+                return self.encoder.encode(leaf)
+            case _:
+                return x
+
+    def decode(self, y: Nested[Y], /) -> Nested[X]:
+        match y:
+            case list() as lst:
+                return [self.decode(val) for val in lst]
+            case tuple() as tpl:
+                return tuple(self.decode(val) for val in tpl)
+            case dict() as dct:
+                return {key: self.decode(val) for key, val in dct.items()}
+            case set() as st:
+                return {self.decode(val) for val in st}
+            case frozenset() as fst:
+                return frozenset(self.decode(val) for val in fst)
+            case self.output_leaf_type() as leaf:
+                return self.encoder.decode(leaf)
+            case _:
+                return y
 
 
 # endregion unary encoders -------------------------------------------------------------
@@ -1244,7 +1312,7 @@ class JointDecoder(EncoderList[TupleIn, Y]):
 
 
 @pprint_repr(recursive=2)
-class MappedEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
+class MapEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
     r"""Creates an encoder that applies over a mapping."""
 
     encoders: Mapping[Any, Encoder]
@@ -1267,18 +1335,20 @@ class MappedEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
         for encoder in self.encoders.values():
             encoder.is_fitted = value
 
-    def __new__(cls, encoders: Mapping[K, Encoder[X, Y]]) -> "MappedEncoders[Mapping[K, X], Mapping[K, Y]]":  # fmt: skip
+    def __new__(
+        cls, encoders: Mapping[K, Encoder[X, Y]]
+    ) -> "MapEncoders[Mapping[K, X], Mapping[K, Y]]":
         return super().__new__(cls)  # type: ignore[arg-type]
 
     def __init__(
-        self: "MappedEncoders[Mapping[K, X], Mapping[K, Y]]",
+        self: "MapEncoders[Mapping[K, X], Mapping[K, Y]]",
         encoders: Mapping[K, Encoder[X, Y]],
     ) -> None:
         self.encoders = encoders
 
-    def __invert__(self) -> "MappedEncoders[MappingOut, MappingIn]":
+    def __invert__(self) -> "MapEncoders[MappingOut, MappingIn]":
         decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
-        cls: type[MappedEncoders] = type(self)
+        cls: type[MapEncoders] = type(self)
         return cls(decoders)  # type: ignore[return-value]
 
     def __getitem__(self, key: Any, /) -> Encoder:
@@ -1328,9 +1398,9 @@ class MappedEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
 
 def map_encoders(
     encoders: Mapping[K, Encoder[X, Y]], /, *, simplify: bool = True
-) -> IdentityEncoder | MappedEncoders[Mapping[K, X], Mapping[K, Y]]:
+) -> IdentityEncoder | MapEncoders[Mapping[K, X], Mapping[K, Y]]:
     r"""Map encoders."""
-    encoder = MappedEncoders(encoders)
+    encoder = MapEncoders(encoders)
     return encoder.simplify() if simplify else encoder
 
 

@@ -13,7 +13,7 @@ def test_frame2tensordict() -> None:
         "C": [7, 8, 9],
         "D": [1, 2, 3],
     })
-    encoder = FrameAsTensorDict(groups={"X": ["B"], "Y": ...})
+    encoder = FrameAsTensorDict(schema={"X": ["B"], "Y": ...})
     encoder.fit(df)
     encoded = encoder.encode(df)
     X = encoded["X"].numpy()
