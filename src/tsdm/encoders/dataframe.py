@@ -61,6 +61,9 @@ def get_ellipsis_cols(
     original_columns: set[T] = set(df.columns)
     selected_columns = original_columns.copy()
 
+    if Ellipsis in original_columns:
+        raise ValueError("Ellipsis is a reserved column name!")
+
     for el in schema:
         match el:
             case EllipsisType():
@@ -454,56 +457,42 @@ class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
 class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
     r"""Converts dtypes of a DataFrame.
 
-    Args:
-        dtypes: A mapping from column names to dtypes.
-            If a column is not present, it will be ignored.
-            If `...` (`Ellipsis`) is given, all remaining columns will be converted to the given dtype.
-            When decoding, the original dtypes will be restored.
+    Note:
+        - If a column is not present, it will be ignored.
+        - If `...` (`Ellipsis`) is given,
+          all unspecified columns will be converted to the given dtype.
+          (Ellipsis will be removed during `.fit()`)
     """
 
-    original_dtypes: Series = NotImplemented
-    r"""The original dtypes."""
     target_dtypes: dict[Any, PandasDTypeArg] = NotImplemented
     r"""The target dtypes."""
-    fill_dtype: Optional[PandasDtype] = None
-    r"""The dtype to fill missing columns with."""
+    original_dtypes: dict[str, Any] = NotImplemented
+    r"""The original dtypes."""
 
     @property
     def params(self) -> dict[str, Any]:
         return asdict(self)
 
-    def __init__(
-        self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /
-    ) -> None:
+    def __init__(self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg]) -> None:
         super().__init__()
-
         self.target_dtypes = (
-            dict(dtypes) if not isinstance(dtypes, Mapping) else {...: dtypes}
+            dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
         )
 
-        if Ellipsis in self.target_dtypes:
-            self.fill_dtype = self.target_dtypes[Ellipsis]
-
     def encode(self, data: DataFrame, /) -> DataFrame:
-        if Ellipsis in self.target_dtypes:
-            return data.astype({
-                k: self.target_dtypes.get(k, self.fill_dtype) for k in data.columns
-            })
         return data.astype({k: self.target_dtypes[k] for k in data.columns})
 
     def decode(self, data: DataFrame, /) -> DataFrame:
         return data.astype({k: self.original_dtypes[k] for k in data.columns})
 
     def fit(self, data: DataFrame, /) -> None:
-        self.original_dtypes = data.dtypes.copy()
+        self.original_dtypes = data.dtypes.to_dict()
 
         if Ellipsis in self.target_dtypes:
-            if Ellipsis in data.columns:
-                raise ValueError("Ellipsis is a reserved column name!")
-
-            self.fill_dtype = self.target_dtypes.pop(Ellipsis)
-            for col in set(data.columns) - set(self.target_dtypes):
-                self.target_dtypes[col] = self.fill_dtype
+            fill_dtype = self.target_dtypes.pop(Ellipsis)
+            ellipsis_cols: list = get_ellipsis_cols(data, self.target_dtypes)
+            for col in ellipsis_cols:
+                self.target_dtypes[col] = fill_dtype
 
 
 @pprint_repr
