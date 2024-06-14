@@ -34,7 +34,10 @@ from enum import Enum
 from math import prod
 from types import FunctionType
 
+import numpy as np
+import torch
 from pandas import DataFrame, MultiIndex
+from pandas.core.dtypes.base import ExtensionDtype
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 from typing_extensions import Any, Final, Optional, Protocol
 
@@ -169,6 +172,8 @@ def repr_shortform(
             return repr(builtin)
         case SupportsArray() as arr if arr.__array__().size <= 1:
             return repr(arr.__array__().item())
+        case np.dtype() | torch.dtype() | ExtensionDtype() as dtype:
+            return repr_dtype(dtype)
         case nan if is_na_value(nan):
             return repr(nan)
         case _:
@@ -215,6 +220,8 @@ def repr_object(
             return repr_sequence(sequence, **kwargs)
         case AbstractSet() as set_:
             return repr_set(set_, **kwargs)
+        case np.dtype() | torch.dtype() | ExtensionDtype() as dtype:
+            return repr_dtype(dtype)
         case _:
             # avoid recursion:
             if fallback is repr:
