@@ -527,12 +527,12 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         - `pandas.Series`
         - `pandas.DataFrame`
         - `torch.Tensor`
+        - `polars.Series`  (NOTE: missing ndim)
 
     Counter-Examples:
-        - `polars.Series`  (missing ndim)
-        - `polars.DataFrame`
-        - `pyarrow.Array`
-        - `pyarrow.Table`
+        - `polars.DataFrame`  (does not support basic arithmetic)
+        - `pyarrow.Array`  (does not support basic arithmetic)
+        - `pyarrow.Table`  (does not support basic arithmetic)
     """
 
     @property
@@ -541,10 +541,10 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         r"""Yield the shape of the array."""
         ...
 
-    @property
-    def ndim(self) -> int:
-        r"""Number of dimensions."""
-        return len(self.shape)
+    # @property
+    # def ndim(self) -> int:
+    #     r"""Number of dimensions."""
+    #     return len(self.shape)
 
     @abstractmethod
     def __array__(self) -> NDArray:

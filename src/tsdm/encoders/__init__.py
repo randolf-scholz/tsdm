@@ -145,6 +145,7 @@ __all__ = [
     "TripletEncoder",
     "TupleDecoder",
     "TupleEncoder",
+    "WrappedEncoder",
     # deprecated
     "OldDateTimeEncoder",
     "Time2Float",
@@ -172,6 +173,7 @@ from tsdm.encoders.base import (
     Transform,
     TupleDecoder,
     TupleEncoder,
+    WrappedEncoder,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
@@ -241,5 +243,6 @@ ENCODERS: dict[str, type[Encoder]] = {
     "TripletEncoder"            : TripletEncoder,
     "TupleDecoder"              : TupleDecoder,
     "TupleEncoder"              : TupleEncoder,
+    "WrappedEncoder"            : WrappedEncoder,
 }  # fmt: skip
 r"""Dictionary of all available encoders."""

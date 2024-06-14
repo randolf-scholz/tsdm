@@ -16,13 +16,14 @@ __all__ = [
     "TensorLikeProto",
     "ToTensorProto",
     "WhereProto",
+    "MakeScalarProto",
 ]
 
 from abc import abstractmethod
 from collections.abc import Callable
 
 from numpy.typing import ArrayLike
-from typing_extensions import Protocol, SupportsIndex, SupportsInt
+from typing_extensions import Any, Protocol, SupportsIndex, SupportsInt
 
 from tsdm.types.aliases import Axis, Scalar
 from tsdm.types.variables import T, T_co, T_contra
@@ -121,6 +122,12 @@ class ConcatenateProto(Protocol[T]):
     r"""Bound-Protocol for `concatenate`-function."""
 
     def __call__(self, x: list[T], /, *, axis: int) -> T: ...
+
+
+class MakeScalarProto(Protocol):
+    r"""Bound-Protocol for `make_scalar`-function."""
+
+    def __call__(self, value: Any, /, *, dtype: str | Any) -> Any: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

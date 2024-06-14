@@ -46,6 +46,7 @@ __all__ = [
     "PipedEncoder",
     "TupleDecoder",
     "TupleEncoder",
+    "WrappedEncoder",
     # Functions
     "chain_encoders",
     "duplicate_encoder",
@@ -726,6 +727,25 @@ def invert_encoder(encoder: Encoder[X, Y], /, *, simplify: bool = True) -> Encod
     r"""Return the inverse encoder (i.e. decoder)."""
     decoder = InverseEncoder(encoder)
     return decoder.simplify() if simplify else decoder
+
+
+@pprint_repr
+@dataclass
+class WrappedEncoder(BaseEncoder[X, Y]):
+    r"""Wraps an encoder."""
+
+    encoder: Encoder[X, Y]
+    r"""The encoder to wrap."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return asdict(self.encoder.params)
+
+    def encode(self, x: X, /) -> Y:
+        return self.encoder.encode(x)
+
+    def decode(self, y: Y, /) -> X:
+        return self.encoder.decode(y)
 
 
 @dataclass

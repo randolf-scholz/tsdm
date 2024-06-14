@@ -104,6 +104,7 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "pandas_index"     : PD_INDEX,
     "pandas_series"    : PD_SERIES,
     "torch_tensor"     : TORCH_TENSOR,
+    "polars_series"    : PL_SERIES,
 }  # fmt: skip
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {

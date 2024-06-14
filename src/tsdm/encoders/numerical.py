@@ -266,7 +266,7 @@ class ArrayEncoder(BaseEncoder[Arr, Y]):
 
     def fit(self, data: Arr, /) -> None:
         r"""Fit the encoder to the data."""
-        self.backend = Backend(get_backend(data))
+        self.backend = get_backend(data)
 
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
@@ -288,7 +288,7 @@ class ArrayDecoder(BaseEncoder[X, Arr]):
 
     def fit(self, data: X, /) -> None:
         r"""Fit the encoder to the data."""
-        self.backend = Backend(get_backend(data))
+        self.backend = get_backend(data)
 
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
@@ -423,8 +423,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
 
     def fit(self, data: Arr) -> None:
         # select the backend
-        selected_backend = get_backend(data)
-        self.backend: Backend[Arr] = Backend(selected_backend)
+        self.backend: Backend[Arr] = get_backend(data)
 
         # fit the parameters
         if self.lower_bound is NotImplemented:
@@ -522,8 +521,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
         return encoder
 
     def fit(self, data: Arr, /) -> None:
-        selected_backend = get_backend(data)
-        self.backend: Backend[Arr] = Backend(selected_backend)
+        self.backend: Backend[Arr] = get_backend(data)
 
     def encode(self, data: Arr, /) -> Arr:
         return data * self.scale + self.loc
@@ -583,8 +581,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
 
     def fit(self, data: Arr, /) -> None:
         # switch the backend
-        selected_backend = get_backend(data)
-        self.backend: Backend[Arr] = Backend(selected_backend)
+        self.backend: Backend[Arr] = get_backend(data)
 
         # universal fitting procedure
         axes = invert_axis_selection(self.axis, ndim=len(data.shape))

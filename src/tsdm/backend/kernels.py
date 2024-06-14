@@ -9,6 +9,7 @@ __all__ = [
     "Backend",
     # Functions
     "get_backend",
+    "get_backend_id",
     "gather_types",
 ]
 
@@ -19,10 +20,20 @@ from types import EllipsisType, NotImplementedType
 
 import numpy as np
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 import torch
 from numpy import ndarray
 from torch import Tensor
-from typing_extensions import Generic, Literal, Self, TypeAlias
+from typing_extensions import (
+    Final,
+    Generic,
+    Literal,
+    Self,
+    TypeAlias,
+    TypeVar,
+    overload,
+)
 
 from tsdm.backend.generic import (
     false_like as universal_false_like,
@@ -55,17 +66,22 @@ from tsdm.types.callback_protocols import (
     ClipProto,
     ConcatenateProto,
     ContractionProto,
+    MakeScalarProto,
     SelfMap,
     TensorLikeProto,
     ToTensorProto,
     WhereProto,
 )
+from tsdm.types.protocols import SupportsArray
 from tsdm.types.variables import T
 
-BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch"]
+BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch", "polars"]
 r"""A type alias for the supported backends."""
-BACKENDS = ("arrow", "numpy", "pandas", "torch")
+BACKENDS = ("arrow", "numpy", "pandas", "torch", "polars")
 r"""A tuple of the supported backends."""
+
+Array = TypeVar("Array", bound=SupportsArray)
+r"""TypeVar for tensor-like objects."""
 
 
 def gather_types(obj: object, /) -> set[BackendID]:
@@ -79,6 +95,10 @@ def gather_types(obj: object, /) -> set[BackendID]:
             return {"torch"}
         case pd.DataFrame() | pd.Series() | pd.Index():
             return {"pandas"}
+        case pl.Series() | pl.DataFrame():
+            return {"polars"}
+        case pa.Array() | pa.Table():
+            return {"arrow"}
         case ndarray():
             return {"numpy"}
         case (
@@ -100,7 +120,7 @@ def gather_types(obj: object, /) -> set[BackendID]:
             raise TypeError(f"Unsupported type: {type(obj)}.")
 
 
-def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
+def get_backend_id(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
     r"""Get the backend of a set of objects."""
     types: set[BackendID] = gather_types(obj)
 
@@ -203,6 +223,30 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": torch.cat,  # type: ignore[dict-item]
     }
 
+    dropna: Mapping[BackendID, SelfMap] = {
+        "arrow": lambda x: x.filter(x.is_valid()),
+        "numpy": lambda x: x[~np.isnan(x)],
+        "pandas": lambda x: x.dropna(),
+        "polars": lambda x: x.drop_nulls(),
+        "torch": lambda x: x[~torch.isnan(x)],
+    }
+
+    cast: Mapping[BackendID, SelfMap] = {
+        "arrow": lambda x, dtype: x.cast(dtype),
+        "numpy": lambda x, dtype: x.astype(dtype),
+        "pandas": lambda x, dtype: x.astype(dtype),
+        "polars": lambda x, dtype: x.cast(dtype),
+        "torch": lambda x, dtype: x.to(dtype),
+    }
+
+    make_scalar: Mapping[BackendID, MakeScalarProto] = {
+        "arrow": lambda value, dtype: pa.scalar(value, type=dtype),
+        "numpy": lambda value, dtype: np.array([value], dtype=dtype),
+        "pandas": lambda value, dtype: pd.Index([value]).astype(dtype).item(),
+        "polars": lambda value, dtype: pl.Series([value]).cast(dtype).item(),
+        "torch": lambda value, dtype: torch.tensor(value, dtype=dtype),
+    }
+
 
 @dataclass(frozen=True, slots=True, init=False)
 class Backend(Generic[T]):
@@ -210,7 +254,7 @@ class Backend(Generic[T]):
 
     # __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
 
-    selected_backend: BackendID
+    NAME: Final[BackendID]
 
     # KERNELS
     clip: ClipProto[T]
@@ -234,18 +278,31 @@ class Backend(Generic[T]):
     array_split: ArraySplitProto[T]
     concatenate: ConcatenateProto[T]
 
+    dropna: SelfMap[T]
+    cast: SelfMap[T]
+    make_scalar: MakeScalarProto
+
     def __init__(self, backend: str | Self) -> None:
         # set the selected backend
-        if isinstance(backend, Backend):
-            backend = backend.selected_backend
+        name = backend.NAME if isinstance(backend, Backend) else str(backend)
 
-        if backend not in BACKENDS:
-            raise ValueError(f"Invalid backend: {backend}.")
+        if name not in BACKENDS:
+            raise ValueError(f"Invalid backend: {name}.")
 
         # NOTE: Need to use object.__setattr__ for frozen dataclasses.
-        object.__setattr__(self, "selected_backend", backend)
+        object.__setattr__(self, "NAME", name)
 
         for attr in Kernels.__annotations__:
             implementations = getattr(Kernels, attr)
-            impl = implementations.get(self.selected_backend, NotImplemented)
+            impl = implementations.get(name, NotImplemented)
             object.__setattr__(self, attr, impl)
+
+
+@overload
+def get_backend(obj: Array, /, *, fallback: BackendID = ...) -> Backend[Array]: ...
+@overload
+def get_backend(obj: object, /, *, fallback: BackendID = ...) -> Backend: ...
+def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> Backend:
+    r"""Get the backend of a set of objects."""
+    backend_id = get_backend_id(obj, fallback=fallback)
+    return Backend(backend_id)

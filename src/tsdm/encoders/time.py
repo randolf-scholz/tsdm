@@ -10,26 +10,47 @@ __all__ = [
     "TimeDeltaEncoder",
 ]
 
-from collections.abc import Hashable
-from dataclasses import dataclass
-from typing import TypeVar
+from collections.abc import Hashable, Iterable, Mapping
+from dataclasses import KW_ONLY, asdict, dataclass, field
+from types import EllipsisType, MappingProxyType
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
-from typing_extensions import Any, ClassVar, Final, Optional
+from torch import Tensor
+from typing_extensions import (
+    Any,
+    ClassVar,
+    Final,
+    Literal,
+    Optional,
+    Self,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
-from tsdm.encoders.base import BaseEncoder
+from tsdm.backend import Backend, get_backend
+from tsdm.encoders.base import BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import DType, PandasDtype
+from tsdm.types.aliases import Axis, DType, PandasDtype, Size
+from tsdm.types.protocols import NumericalArray
 from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
+from tsdm.utils.decorators import pprint_repr
 
+X = TypeVar("X")
+Y = TypeVar("Y")
+Arr = TypeVar("Arr", bound=NumericalArray)
+r"""TypeVar for tensor-like objects."""
 SeriesOrIndex = TypeVar("SeriesOrIndex", Index, Series)
 
 
+@pprint_repr
+@dataclass(init=False, slots=True)
 class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
     r"""Encode TimeDelta as Float."""
 
@@ -52,10 +73,16 @@ class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
         self.original_dtype = data.dtype
 
         if self.unit is NotImplemented:
+            backend = get_backend(data)
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
-            base_freq = np.gcd.reduce(data.dropna().astype(int))
-            self.unit = Index([base_freq]).astype(self.original_dtype).item()
+            data = backend.dropna(data)
+            data_as_int = backend.cast(data, int)
+            array = np.array(data_as_int)
+            base_freq = int(np.gcd.reduce(array))
+
+            # convert base_freq back to time delta in the original dtype
+            self.unit = backend.make_scalar(base_freq, dtype=self.original_dtype)
 
     def encode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
         return data / self.unit
@@ -68,6 +95,7 @@ class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
             return data.astype(float).__mul__(self.unit).astype(self.original_dtype)
 
 
+@pprint_repr
 @dataclass(init=False)
 class DateTimeEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
     r"""Encode Datetime as Float."""
@@ -231,12 +259,12 @@ class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
         "n": "nanosecond",
     }
 
-    original_name: Hashable
-    original_dtype: DType
-    original_type: type
-    rev_cols: list[str]
     level_code: str
     levels: list[str]
+    original_dtype: DType
+    original_name: Hashable
+    original_type: type
+    rev_cols: list[str]
 
     @property
     def params(self) -> dict[str, Any]:
@@ -275,28 +303,33 @@ class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
         return f"SocialTimeEncoder({self.level_code!r})"
 
 
-class PeriodicSocialTimeEncoder(SocialTimeEncoder):
-    r"""Combines SocialTimeEncoder with PeriodicEncoder using the right frequencies."""
+@pprint_repr
+@dataclass(init=False)
+class PeriodicSocialTimeEncoder(WrappedEncoder[Series, DataFrame]):
+    r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""
 
-    frequencies = {
-        "year"        : 1,
-        "month"       : 12,
-        "weekday"     : 7,
-        "day"         : 365,
-        "hour"        : 24,
-        "minute"      : 60,
-        "second"      : 60,
-        "microsecond" : 1000,
-        "nanosecond"  : 1000,
-    }  # fmt: skip
+    levels: str
+    r"""The levels to encode."""
+    FREQUENCIES: dict[str, int]
     r"""The frequencies of the used `PeriodicEncoder`."""
 
-    def __new__(cls, levels: str = "YMWDhms") -> BaseEncoder[Series, DataFrame]:
-        r"""Construct a new encoder object."""
-        self = super().__new__(cls)
-        self.__init__(levels)  # type: ignore[misc]
-        column_encoders = {
-            level: PeriodicEncoder(period=self.frequencies[level])
-            for level in self.levels
-        }
-        return self >> FrameEncoder(column_encoders=column_encoders)
+    def __init__(
+        self,
+        *,
+        levels: str = "YMWDhms",
+        frequencies: Mapping[str, int] = MappingProxyType({
+            "year": 1,
+            "month": 12,
+            "weekday": 7,
+            "day": 365,
+            "hour": 24,
+            "minute": 60,
+            "second": 60,
+            "microsecond": 1000,
+            "nanosecond": 1000,
+        }),
+    ) -> None:
+        self.levels = levels
+        self.encoder = SocialTimeEncoder(levels) >> FrameEncoder({
+            level: PeriodicEncoder(period=frequencies[level]) for level in levels
+        })
