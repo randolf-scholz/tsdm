@@ -304,6 +304,3 @@ def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> 
     sol: OdeResult = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
     # NOTE: output shape: (d, n_timestamps), move time axis to the front
     return np.moveaxis(sol.y, -1, 0)
-
-
-assert issubclass(IVP_GeneratorBase, IVP_Generator)

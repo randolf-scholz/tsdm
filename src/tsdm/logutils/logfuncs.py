@@ -19,7 +19,7 @@ __all__ = [
 
 import inspect
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
 
 import torch
@@ -151,8 +151,8 @@ def log_kernel(
     """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     K = kernel
-    assert len(K.shape) == 2
-    assert K.shape[0] == K.shape[1]
+    if K.ndim != 2 or K.shape[0] != K.shape[1]:
+        raise ValueError("Kernel must be a square matrix!")
 
     log = writer.add_scalar
     ω = float("inf")
@@ -276,10 +276,7 @@ def log_metrics(
     step: int,
     writer: SummaryWriter,
     /,
-    metrics: (
-        Sequence[str | Metric | type[Metric]]
-        | Mapping[str, str | Metric | type[Metric]]
-    ),
+    metrics: Mapping[str, str | Metric | type[Metric]],
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
     targets: Optional[Tensor] = None,
@@ -298,8 +295,8 @@ def log_metrics(
     else:
         raise ValueError("Either `inputs` or `targets` and `predics` must be provided.")
 
-    assert len(targets) == len(predics)
-    assert isinstance(metrics, Mapping)
+    if len(targets) != len(predics):
+        raise ValueError("Targets and predictions must have the same length!")
 
     scalars = compute_metrics(metrics, targets=targets, predics=predics)
     log_values(

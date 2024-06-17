@@ -304,7 +304,9 @@ def logarithmic_norm(
     coldim = coldim % x.ndim
     dim = (rowdim, coldim)
     M, N = x.shape[rowdim], x.shape[coldim]
-    assert M == N, "Matrix must be square."
+
+    if M != N:
+        raise ValueError("Matrix must be square.")
 
     if p == 2:
         x = closest_symmetric(x, dim=dim)
@@ -486,7 +488,8 @@ def operator_norm(
         - Operator Norm: https://en.wikipedia.org/wiki/Operator_norm
     """
     rowdim, coldim = dim
-    assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
+    if x.shape[rowdim] != x.shape[coldim]:
+        raise ValueError("Matrix must be square.")
 
     # branchless version of c = (coldim / rowdim) ** (1 / p) if scaled else 1.0
     c = (coldim / rowdim) ** (float(scaled) / p)

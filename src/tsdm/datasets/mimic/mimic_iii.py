@@ -76,7 +76,8 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
     @cached_property
     def table_names(self) -> tuple[KEYS, ...]:
         names = tuple(self.filelist)
-        assert set(names) <= set(get_args(KEYS))
+        if unknown_names := set(names) - set(get_args(KEYS)):
+            raise ValueError(f"Unknown table names: {unknown_names!r}")
         return names
 
     @cached_property
@@ -86,7 +87,9 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
     @cached_property
     def filelist(self) -> dict[KEYS, str]:
         r"""Mapping between table_names and contents of the zip file."""
-        assert self.version_info >= (1, 4), "MIMIC-III v1.4+ is required."
+        if not self.version_info >= (1, 4):
+            raise ValueError("MIMIC-III v1.4+ is required.")
+
         return {
             key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"  # type: ignore[misc]
             for key in [

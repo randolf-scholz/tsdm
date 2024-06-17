@@ -28,7 +28,9 @@ def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
 
 def series_to_boolean(s: Series, uniques: Optional[Series] = None, /) -> Series:
     r"""Convert Series to nullable boolean."""
-    assert pd.api.types.is_string_dtype(s), "Series must be 'string' dtype!"
+    if not pd.api.types.is_string_dtype(s):
+        raise TypeError("Series must be 'string' dtype!")
+
     mask = pd.notna(s)
     values = get_uniques(s[mask]) if uniques is None else uniques
     mapping = next(
@@ -41,7 +43,9 @@ def series_to_boolean(s: Series, uniques: Optional[Series] = None, /) -> Series:
 
 def series_is_boolean(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
     r"""Test if 'string' series could possibly be boolean."""
-    assert pd.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
+    if not pd.api.types.is_string_dtype(series):
+        raise TypeError("Series must be 'string' dtype!")
+
     values = get_uniques(series) if uniques is None else uniques
 
     if len(values) == 0 or len(values) > 2:
@@ -53,7 +57,9 @@ def series_is_boolean(series: Series, /, *, uniques: Optional[Series] = None) ->
 
 def series_numeric_is_boolean(s: Series, uniques: Optional[Series] = None, /) -> bool:
     r"""Test if 'numeric' series could possibly be boolean."""
-    assert pd.api.types.is_numeric_dtype(s), "Series must be 'numeric' dtype!"
+    if not pd.api.types.is_numeric_dtype(s):
+        raise TypeError("Series must be 'numeric' dtype!")
+
     values = get_uniques(s) if uniques is None else uniques
     if len(values) == 0 or len(values) > 2:
         return False
@@ -62,7 +68,8 @@ def series_numeric_is_boolean(s: Series, uniques: Optional[Series] = None, /) ->
 
 def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
     r"""Check whether float encoded column holds only integers."""
-    assert pd.api.types.is_float_dtype(s), "Series must be 'float' dtype!"
+    if not pd.api.types.is_float_dtype(s):
+        raise TypeError("Series must be 'float' dtype!")
     values = get_uniques(s) if uniques is None else uniques
     return cast(bool, values.apply(float.is_integer).all())
 
@@ -71,6 +78,9 @@ def compare_dataframes(
     given: DataFrame, reference: DataFrame, *, rtol: float = 1e-5, atol: float = 1e-5
 ) -> None:
     r"""Compare two dataframes."""
-    assert given.shape == reference.shape, "Shapes must match!"
-    assert given.columns.equals(reference.columns), "Columns must match!"
-    assert given.index.equals(reference.index), "Indices must match!"
+    if given.shape != reference.shape:
+        raise AssertionError("Shapes must match!")
+    if not given.columns.equals(reference.columns):
+        raise AssertionError("Columns must match!")
+    if not given.index.equals(reference.index):
+        raise AssertionError("Indices must match!")

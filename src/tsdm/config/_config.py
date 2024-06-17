@@ -101,7 +101,9 @@ class Config(metaclass=ConfigMeta):
     @cached_property
     def CONFIG_FILE(self) -> dict:
         r"""Return dictionary containing basic configuration of TSDM."""
-        assert __package__ is not None
+        if __package__ is None:
+            raise ValueError(f"Unexpected package: {__package__=}")
+
         path = resources.files(__package__) / "config.toml"
         with path.open("rb") as file:
             return tomllib.load(file)
@@ -130,8 +132,7 @@ class Config(metaclass=ConfigMeta):
         return self._autojit
 
     @autojit.setter
-    def autojit(self, value: bool) -> None:
-        assert isinstance(value, bool)
+    def autojit(self, value: bool, /) -> None:
         self._autojit = bool(value)
         os.environ["TSDM_AUTOJIT"] = str(value)
 
@@ -149,14 +150,17 @@ class Project:
     @cached_property
     def ROOT_PACKAGE(self) -> ModuleType:
         r"""Get project root package."""
-        assert __package__ is not None
+        if __package__ is None:
+            raise ValueError(f"Unexpected package: {__package__=}")
         hierarchy = __package__.split(".")
         return import_module(hierarchy[0])
 
     @cached_property
     def ROOT_PATH(self) -> Path:
         r"""Return the root directory."""
-        assert len(self.ROOT_PACKAGE.__path__) == 1
+        if len(self.ROOT_PACKAGE.__path__) != 1:
+            raise ValueError(f"Unexpected path: {self.ROOT_PACKAGE.__path__=}")
+
         path = Path(self.ROOT_PACKAGE.__path__[0])
 
         if path.parent.stem != "src":

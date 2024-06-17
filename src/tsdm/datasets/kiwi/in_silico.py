@@ -99,7 +99,8 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
     def download_file(self, fname: str, /) -> None:
         r"""Download the dataset."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
-        assert __package__ is not None
+        if __package__ is None:
+            raise ValueError(f"Unexpected package: {__package__=}")
         with resources.path(__package__, fname) as path:
             shutil.copy(path, self.rawdata_paths[fname])
 

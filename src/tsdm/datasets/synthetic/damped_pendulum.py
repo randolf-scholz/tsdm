@@ -64,9 +64,10 @@ class DampedPendulum_Ansari2023(SingleTableDataset):
 
         # generate time range
         t_range = np.arange(self.t_min, self.t_max + self.step / 2, self.step)
-        assert t_range[0] == self.t_min
-        assert t_range[-1] == self.t_max
-        assert np.allclose(np.diff(t_range), self.step)
+        if t_range[0] != self.t_min or t_range[-1] != self.t_max:
+            raise ValueError(f"Invalid time range: {t_range[0]=}, {t_range[-1]=}")
+        if not np.allclose(np.diff(t_range), self.step):
+            raise ValueError(f"Invalid time step: {np.diff(t_range)=}")
 
         sequences: dict[int, DataFrame] = {}
         for k in trange(self.num_sequences, desc="generating sequences"):

@@ -43,7 +43,8 @@ class ResNetBlock(nn.Sequential):
 
         self.CFG = HP = deep_dict_update(self.HP, HP)
 
-        assert HP["input_size"] is not None, "input_size is required!"
+        if HP["input_size"] is None:
+            raise ValueError("input_size is required!")
 
         for layer in HP["subblocks"]:
             if layer["__name__"] == "Linear":
@@ -88,7 +89,8 @@ class ResNet(nn.ModuleList):
     ) -> Self:
         r"""Initialize from hyperparameters."""
         blocks: list[nn.Module] = [] if modules is None else list(modules)
-        assert len(blocks) ^ len(hparams), "Provide either blocks, or hyperparameters!"
+        if not (len(blocks) ^ len(hparams)):
+            raise ValueError("Provide either blocks, or hyperparameters!")
 
         if hparams:
             return cls.from_hyperparameters(**hparams)
@@ -100,7 +102,8 @@ class ResNet(nn.ModuleList):
     ) -> None:
         r"""Initialize from hyperparameters."""
         blocks: list[nn.Module] = [] if modules is None else list(modules)
-        assert len(blocks) ^ len(hparams), "Provide either blocks, or hyperparameters!"
+        if not (len(blocks) ^ len(hparams)):
+            raise ValueError("Provide either blocks, or hyperparameters!")
         if hparams:
             return
         super().__init__(blocks)

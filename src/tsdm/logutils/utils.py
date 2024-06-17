@@ -63,8 +63,7 @@ def eval_metric(
             return eval_metric(_metric, targets=targets, predics=predics)
         case type() as metric_type:
             metric_func = metric_type()
-            assert isinstance(metric_func, Metric)
-            return metric_func(targets, predics)
+            return eval_metric(metric_func, targets=targets, predics=predics)
         case Metric() as func:
             return func(targets, predics)
         case _:

@@ -254,7 +254,8 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         shuffled_dates = self.dates[self.randperm]
 
         time = pd.timedelta_range("0:00:00", "23:59:59", freq="10min", name="time")
-        assert len(time) == 144
+        if len(time) != 144:
+            raise ValueError("Expected 144 timestamps per day (10 minutes interval)!")
 
         with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
             with archive.open("stations_list") as file:
@@ -311,9 +312,8 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
                 trainlabels.index = train_dates
 
             # Check that the labels match with the actual weekdays
-            assert all(
-                trainlabels.index.day_name() == trainlabels.map(self.weekdays)
-            ), "Labels do not match with dates!"
+            if any(trainlabels.index.day_name() != trainlabels.map(self.weekdays)):
+                raise ValueError("Labels do not match with dates!")
 
             with archive.open("PEMS_testlabels") as file:
                 content = file.read().decode("utf8")
@@ -325,9 +325,8 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
                 testlabels.index = test_dates
 
             # Check that the labels match with the actual weekdays
-            assert all(
-                testlabels.index.day_name() == testlabels.map(self.weekdays)
-            ), "Labels do not match with dates!"
+            if any(testlabels.index.day_name() != testlabels.map(self.weekdays)):
+                raise ValueError("Labels do not match with dates!")
 
         labels = pd.concat([trainlabels, testlabels]).rename("labels")
 
@@ -358,7 +357,8 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
             randperm -= 1  # we use 0-based indexing
             invperm = randperm.copy().argsort()
             invperm.name = "invperm"
-            assert (randperm[invperm] == np.arange(len(randperm))).all()
+            if any(randperm[invperm] != np.arange(len(randperm))):
+                raise ValueError("Inverse permutation does not match!")
 
         DataFrame(randperm).to_parquet(self.dataset_paths["randperm"])
         DataFrame(invperm).to_parquet(self.dataset_paths["invperm"])

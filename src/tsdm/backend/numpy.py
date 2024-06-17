@@ -28,8 +28,10 @@ def numpy_apply_along_axes(
 
     It is assumed that all arrays have the same shape.
     """
-    assert len({a.shape for a in arrays}) <= 1, "all arrays must have the same shape"
-    assert len(arrays) >= 1, "at least one array is required"
+    if len(arrays) < 1:
+        raise ValueError("At least one array is required!")
+    if len({a.shape for a in arrays}) != 1:
+        raise ValueError("All arrays must have the same shape!")
 
     match axis:
         case None:

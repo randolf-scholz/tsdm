@@ -66,7 +66,8 @@ def float_gcd(x: ArrayLike) -> float:
     """
     x = np.asanyarray(x)
 
-    assert np.issubdtype(x.dtype, np.floating), "input is not float!"
+    if not np.issubdtype(x.dtype, np.floating):
+        raise TypeError("Input is not float!")
 
     mantissa_bits = {
         np.dtype("float16"): 11,
@@ -79,15 +80,19 @@ def float_gcd(x: ArrayLike) -> float:
     min_exponent = int(np.min(e))
     fac = mantissa_bits - min_exponent
     z = x * np.float_power(2, fac)  # <- use float_power to avoid overflow!
-    assert np.allclose(z, np.rint(z)), "something went wrong"
+
+    if not np.allclose(z, np.rint(z)):
+        raise ValueError("Numerical error accured during conversion!")
 
     gcd = np.gcd.reduce(np.rint(z).astype(int))
     gcd *= 2 ** (-fac)
 
     z = x / gcd
     z_int = np.rint(z).astype(int)
-    assert np.allclose(z, z_int), "Not a GCD!"
-    assert np.gcd.reduce(z_int) == 1, "something went wrong"
+
+    if not np.allclose(z, z_int) or np.gcd.reduce(z_int) != 1:
+        raise ValueError("Error check failed, computed GCD is not correct!")
+
     return cast(float, gcd)
 
 

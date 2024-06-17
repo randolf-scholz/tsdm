@@ -267,7 +267,8 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         match path_or_buf, writer:
             case [str() | PathLike() as filepath, _]:
                 path = Path(filepath)
-                assert path.suffix.startswith("."), "File must have a suffix!"
+                if not path.suffix.startswith("."):
+                    raise ValueError("File must have a suffix!")
                 writer = path.suffix[1:] if writer is None else writer
                 target = path
             case [target, str() | Callable()]:  # type: ignore[misc]
@@ -300,7 +301,8 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         match path_or_buf, loader:
             case [str() | PathLike() as filepath, _]:
                 path = Path(filepath)
-                assert path.suffix.startswith("."), "File must have a suffix!"
+                if not path.suffix.startswith("."):
+                    raise ValueError("File must have a suffix!")
                 loader = path.suffix[1:] if loader is None else loader
                 target = path
             case [target, str() | Callable()]:  # type: ignore[misc]
@@ -571,8 +573,12 @@ class SingleTableDataset(BaseDataset[T_co]):
             self.download(force=force, validate=validate)
 
         # Validate raw data.
-        if validate and self.rawdata_hashes is not NotImplemented:
-            assert self.rawdata_valid
+        if (
+            validate
+            and self.rawdata_hashes is not NotImplemented
+            and not self.rawdata_valid
+        ):
+            raise ValueError("Raw data files are not valid!")
 
         # Clean dataset.
         self.LOGGER.debug("Starting to clean dataset.")
@@ -808,8 +814,12 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
             self.download(force=force, validate=validate)
 
         # validate the raw data files
-        if validate_rawdata and self.rawdata_hashes is not NotImplemented:
-            assert self.rawdata_valid
+        if (
+            validate_rawdata
+            and self.rawdata_hashes is not NotImplemented
+            and not self.rawdata_valid
+        ):
+            raise ValueError("Raw data files are not valid!")
 
         # skip if cleaned files already exist
         if not force and self.dataset_files_exist(key=key):

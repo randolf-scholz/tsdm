@@ -60,8 +60,10 @@ def torch_apply_along_axes(
 
     It is assumed that all tensors have the same shape.
     """
-    assert len({t.shape for t in tensors}) <= 1, "all tensors must have the same shape"
-    assert len(tensors) >= 1, "at least one tensor is required"
+    if len(tensors) < 1:
+        raise ValueError("At least one tensor is required!")
+    if len({t.shape for t in tensors}) != 1:
+        raise ValueError("All tensors must have the same shape!")
 
     axes = () if axis is None else (axis,) if isinstance(axis, int) else tuple(axis)
 

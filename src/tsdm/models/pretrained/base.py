@@ -256,7 +256,8 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
     def autodetect_component_files(self) -> dict[str, str]:
         r"""Detect which components are available."""
-        assert self.rawdata_path.exists(), "Path does not exist!"
+        if not self.rawdata_path.exists():
+            raise FileNotFoundError("Path does not exist!")
 
         if is_zipfile(self.rawdata_path):
             with ZipFile(self.rawdata_path, "r") as zf:

@@ -412,14 +412,21 @@ class HParamCallback(BaseCallback):
 
     def __post_init__(self):
         r"""Validate the inputs."""
-        assert isinstance(self.history, DataFrame)
-        assert isinstance(self.history.columns, MultiIndex)
+        if not isinstance(self.history, DataFrame):
+            raise TypeError("histry must be a DataFrame!")
+        if not isinstance(self.history.columns, MultiIndex):
+            raise TypeError("history columns must be a MultiIndex!")
+
         splits = set(self.history.columns.levels[0])
         metrics = set(self.history.columns.levels[1])
-        assert set(self.history.columns) == set(
-            MultiIndex.from_product([splits, metrics])
-        )
-        assert splits == {"train", "valid", "test"}
+
+        if splits != {"train", "valid", "test"}:
+            raise ValueError("splits must be {'train', 'valid', 'test'}")
+
+        if set(self.history.columns) != set(MultiIndex.from_product([splits, metrics])):
+            raise ValueError(
+                f"history columns must be a MultiIndex with {splits=} and {metrics=}"
+            )
 
     def __call__(self, step: int, /, **_: Any) -> None:
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
@@ -519,10 +526,7 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     r"""Callback to log multiple metrics to tensorboard."""
 
-    metrics: (
-        Sequence[str | Metric | type[Metric]]
-        | Mapping[str, str | Metric | type[Metric]]
-    )
+    metrics: Mapping[str, str | Metric | type[Metric]]
 
     _: KW_ONLY
 

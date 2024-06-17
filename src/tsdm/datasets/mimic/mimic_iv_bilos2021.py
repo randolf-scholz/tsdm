@@ -90,7 +90,8 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
         for i, col in enumerate(ts):
             if i % 2 == 1:
                 continue
-            assert ts.columns[i + 1] == col.replace("Value", "Mask")
+            if ts.columns[i + 1] != col.replace("Value", "Mask"):
+                raise ValueError("Mask column not found.")
             ts[col] = np.where(ts.iloc[:, i + 1], ts[col], np.nan)
 
         # Drop mask columns.

@@ -233,7 +233,8 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
                 "valid": valid_idx,
                 "test": test_idx,
             }
-            assert is_partition(fold.values(), union=self.IDs)
+            if not is_partition(fold.values(), union=self.IDs):
+                raise ValueError("Invalid partitions!")
             folds.append(fold)
 
         return folds

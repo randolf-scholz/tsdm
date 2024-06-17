@@ -280,7 +280,9 @@ class KiwiBenchmark(TimeSeriesTask):
         stride = sampler_kwargs.pop("stride")
         early_stop = sampler_kwargs.pop("early_stop")
         shuffle = sampler_kwargs.pop("shuffle")
-        assert not sampler_kwargs, f"Unknown sampler_kwargs: {sampler_kwargs}"
+
+        if sampler_kwargs:
+            raise ValueError(f"Unknown sampler_kwargs: {sampler_kwargs}")
 
         subsamplers = {
             key: SlidingSampler(
@@ -303,7 +305,9 @@ class KiwiBenchmark(TimeSeriesTask):
         observables = generator_kwargs.pop("observables")
         targets = generator_kwargs.pop("targets")
         covariates = generator_kwargs.pop("covariates")
-        assert not generator_kwargs, f"Unknown generator_kwargs: {generator_kwargs}"
+
+        if generator_kwargs:
+            raise ValueError(f"Unknown generator_kwargs: {generator_kwargs}")
 
         return TimeSeriesSampleGenerator(
             self.splits[key],

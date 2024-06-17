@@ -55,7 +55,9 @@ def to_base(n: int, base: int, /) -> list[int]:
     References:
         - https://stackoverflow.com/a/28666223
     """
-    assert n >= 0, "n must be non-negative!"
+    if n < 0:
+        raise ValueError("n must be non-negative!")
+
     digits = []
     while n:
         n, d = divmod(n, base)

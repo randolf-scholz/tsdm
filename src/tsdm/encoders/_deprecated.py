@@ -33,14 +33,16 @@ class Time2Float(BaseEncoder):
         ds = data
         self.original_dtype = ds.dtype
         self.offset = deepcopy(ds[0])
-        assert (
-            ds.is_monotonic_increasing
-        ), "Time-Values must be monotonically increasing!"
+        if not ds.is_monotonic_increasing:
+            raise ValueError("Time-Values must be monotonically increasing!")
 
-        assert not (
+        if (
             pd.api.types.is_float_dtype(self.original_dtype)
             and self.normalization == "gcd"
-        ), f"{self.normalization=} illegal when original dtype is floating."
+        ):
+            raise ValueError(
+                f"{self.normalization=} illegal when original dtype is floating."
+            )
 
         if pd.api.types.is_datetime64_dtype(ds):
             ds = ds.view("datetime64[ns]")
@@ -121,7 +123,8 @@ class OldDateTimeEncoder(BaseEncoder):
                 raise TypeError(f"Incompatible {type(data)=}")
 
         offset = timestamp(Series(data).iloc[0])
-        assert offset is not pd.NaT
+        if offset is pd.NaT:
+            raise ValueError("Offset is NaT.")
         self.offset = offset
         self.name = None if data.name is None else str(data.name)
         self.original_dtype = data.dtype

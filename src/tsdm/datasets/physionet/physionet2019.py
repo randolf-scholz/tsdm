@@ -470,7 +470,8 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         md = table[list(self.table_schemas["metadata"])]
         self.LOGGER.info("Validating Metadata is constant.")
         for col in md.columns:
-            assert all(md[col].dropna().groupby("patient").nunique() == 1)
+            if any(md[col].dropna().groupby("patient").nunique() != 1):
+                raise ValueError(f"Column {col} is not constant for each patient.")
         md = md.groupby("patient").first()
 
         self.LOGGER.info("Removing outliers from metadata.")

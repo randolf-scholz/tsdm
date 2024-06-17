@@ -37,7 +37,9 @@ from tsdm.types.variables import T_contra
 
 
 def assert_arrays_equal(array: T_contra, reference: T_contra, /) -> None:
-    assert type(array) == type(reference)
+    r"""Assert that the arrays are equal."""
+    if type(array) != type(reference):
+        raise AssertionError(f"{type(array)=} != {type(reference)=}")
 
     match array:
         case pd.Series():
@@ -52,10 +54,13 @@ def assert_arrays_equal(array: T_contra, reference: T_contra, /) -> None:
             pl_testing.assert_series_equal(array, reference)
         case pl.DataFrame():
             pl_testing.assert_frame_equal(array, reference)
-        case torch.Tensor() as tensor:
-            assert torch.equal(tensor, reference)
+        case torch.Tensor():
+            torch.testing.assert_close(array, reference, rtol=0, atol=0)
         case Sequence() as seq:
-            assert all(a == b for a, b in zip(seq, reference, strict=True))
+            if len(array) != len(reference):
+                raise AssertionError(f"{len(array)=} != {len(reference)=}")
+            if any(a != b for a, b in zip(seq, reference, strict=True)):
+                raise AssertionError(f"{array=} != {reference=}")
         case _:
             raise TypeError(f"Unsupported {type(array)=}")
 
@@ -69,7 +74,8 @@ def assert_arrays_close(
     rtol: float = 1e-5,
 ) -> None:
     r"""Assert that the arrays are close within tolerance."""
-    assert type(array) == type(reference)
+    if type(array) != type(reference):
+        raise AssertionError(f"{type(array)=} != {type(reference)=}")
 
     match array:
         case pd.Series():
@@ -97,10 +103,13 @@ def assert_arrays_close(
         case torch.Tensor() as tensor:
             torch.testing.assert_close(tensor, reference, atol=atol, rtol=rtol)
         case Sequence() as seq:
-            assert all(
-                abs(a - b) <= atol + rtol * abs(b)
+            if len(array) != len(reference):
+                raise AssertionError(f"{len(array)=} != {len(reference)=}")
+            if any(
+                abs(a - b) > atol + rtol * abs(b)
                 for a, b in zip(seq, reference, strict=True)
-            )
+            ):
+                raise AssertionError(f"{array=} != {reference=}")
         case _:
             raise TypeError(f"Unsupported {type(array)=}")
 

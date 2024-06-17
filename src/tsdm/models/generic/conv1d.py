@@ -71,7 +71,9 @@ class ConvBlock(nn.Sequential):
 
         subblocks: OrderedDict[str, nn.Module] = OrderedDict()
 
-        assert hasattr(nn, activation)
+        if not hasattr(nn, activation):
+            raise ValueError(f"{activation=} not understood!")
+
         activation_class: type[nn.Module] = getattr(nn, activation)
 
         for k in range(num_subblocks):

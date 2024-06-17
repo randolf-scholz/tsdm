@@ -176,8 +176,11 @@ def force_cast(x, dtype=None, /, **dtypes):
     match x:
         case Array() as array:
             array = array.combine_chunks()  # deals with chunked arrays
-            assert dtype is not None
-            assert not dtypes
+            if dtype is None:
+                raise ValueError("Must specify dtype for Array input.")
+            if dtypes:
+                raise ValueError("Unexpected argument dtypes for Array input.")
+
             return (
                 pl.from_arrow(array)
                 .cast(PYARROW_TO_POLARS[dtype], strict=False)

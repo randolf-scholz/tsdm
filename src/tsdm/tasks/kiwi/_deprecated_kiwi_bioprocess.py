@@ -125,9 +125,13 @@ class Kiwi_BioProcessTask(OldBaseTask):
         ])
         observables.index = observables.apply(ts.columns.get_loc)
 
-        assert (
+        if (
             set(controls.values) | set(targets.values) | set(observables.values)
-        ) == set(ts.columns)
+            != set(ts.columns)
+        ):  # fmt: skip
+            raise ValueError(
+                "Invalid split of columns into controls, targets, observables."
+            )
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
@@ -170,7 +174,9 @@ class Kiwi_BioProcessTask(OldBaseTask):
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
         splits = {}
         for key in self.index:
-            assert key in self.index, f"Wrong {key=}. Only {self.index} work."
+            if key not in self.index:
+                raise KeyError(f"{key=} not in {self.index}!")
+
             split, data_part = key
 
             mask = self.folds[split] == data_part

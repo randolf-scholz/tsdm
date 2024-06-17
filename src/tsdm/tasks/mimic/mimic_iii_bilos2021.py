@@ -196,8 +196,9 @@ class MIMIC_III_Bilos2021(OldBaseTask):
     test_size = 0.15
 
     def __init__(self, *, normalize_time: bool = True) -> None:
-        assert self.train_size + self.test_size + self.valid_size == 1
         super().__init__()
+        if self.train_size + self.test_size + self.valid_size != 1:
+            raise ValueError("The train/valid/test split must sum to 1.")
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
 
@@ -241,7 +242,8 @@ class MIMIC_III_Bilos2021(OldBaseTask):
                 "valid": valid_idx,
                 "test": test_idx,
             }
-            assert is_partition(fold.values(), union=self.IDs)
+            if not is_partition(fold.values(), union=self.IDs):
+                raise ValueError("Invalid partitions!")
             folds.append(fold)
 
         return folds

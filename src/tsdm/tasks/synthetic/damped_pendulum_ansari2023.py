@@ -95,6 +95,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
                 "valid": valid_idx,
                 "test": test_idx,
             }
-            assert is_partition(fold.values(), union=self.dataset.metaindex)
+            if not is_partition(fold.values(), union=self.dataset.metaindex):
+                raise ValueError("Invalid partitions!")
             folds.append(fold)
         return folds_as_frame(folds, index=self.dataset.metaindex, sparse=True)

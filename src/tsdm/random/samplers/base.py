@@ -527,7 +527,9 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         self.mode = mode
         self.drop_last = drop_last
         self.stride = timedelta(stride) if isinstance(stride, str) else stride
-        assert self.stride > zero_td, "stride must be positive."
+
+        if self.stride <= zero_td:
+            raise ValueError("stride must be positive.")
         # endregion set basic attributes -----------------------------------------------
 
         # region set horizon(s) --------------------------------------------------------

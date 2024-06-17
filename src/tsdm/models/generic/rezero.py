@@ -46,7 +46,8 @@ class ResNetBlock(nn.Sequential):
 
         self.CFG = HP = deep_dict_update(self.HP, HP)
 
-        assert HP["input_size"] is not None, "input_size is required!"
+        if HP["input_size"] is None:
+            raise ValueError("input_size is required!")
 
         for layer in HP["subblocks"]:
             if layer["__name__"] == "Linear":
@@ -137,9 +138,10 @@ class ConcatEmbedding(nn.Module):
 
     def __init__(self, input_size: int, hidden_size: int) -> None:
         super().__init__()
-        assert (
-            input_size <= hidden_size
-        ), f"ConcatEmbedding requires {input_size=} < {hidden_size=}!"
+        if input_size > hidden_size:
+            raise ValueError(
+                f"ConcatEmbedding requires {input_size=} <= {hidden_size=}!"
+            )
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.pad_size = hidden_size - input_size

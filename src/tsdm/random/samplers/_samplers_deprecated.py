@@ -67,7 +67,8 @@ class IntervalSampler(BaseSampler[slice], Generic[TD]):
         delta_max = max(self.offset - xmin, xmax - self.offset)
 
         # validate bounds
-        assert xmin <= self.offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
+        if xmin > self.offset or self.offset > xmax:
+            raise ValueError("Offset must be within xmin/xmax bounds!")
 
         # determine levels
 
@@ -93,7 +94,9 @@ class IntervalSampler(BaseSampler[slice], Generic[TD]):
                 raise TypeError("levels not compatible.")
 
         # validate levels
-        assert all(self._get_value(deltax, k) <= delta_max for k in levels)
+        if any(self._get_value(deltax, k) > delta_max for k in levels):
+            raise ValueError("Invalid levels!")
+
         # compute valid intervals
         intervals: list[tuple[TD, TD, TD, TD]] = []
 

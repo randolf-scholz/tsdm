@@ -416,7 +416,9 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
                         dtype=self.rawdata_schema,
                         dtype_backend="pyarrow",
                     )
-                    assert record_id == int(df.iloc[0, -1]), "RecordID mismatch!"
+                    if record_id != int(df.iloc[0, -1]):
+                        raise ValueError("RecordID mismatch!")
+
                     df = df.iloc[1:]
 
                     # drop rows if Parameter is NaN
@@ -429,12 +431,14 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
                     # keep the first instance of each metadata item
                     md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
                     md_frame = df.loc[md_mask].drop(columns=["Time"])
-                    assert len(md_frame) <= 5, "Too many metadata items!"
+                    if len(md_frame) > 5:
+                        raise ValueError("Too many metadata items!")
 
                     ts_frame = df.loc[~md_mask]  # remaining items
-                    assert all(
+                    if not all(
                         ts_frame["Parameter"].isin(self.table_schemas["timeseries"])
-                    )
+                    ):
+                        raise ValueError("Unknown parameter in timeseries data!")
                     id_list.append(record_id)
                     md_list.append(md_frame)
                     ts_list.append(ts_frame)

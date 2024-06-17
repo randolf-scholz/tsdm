@@ -158,7 +158,8 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     @cached_property
     def table_names(self) -> tuple[KEYS, ...]:
         names = tuple(self.filelist)
-        assert set(names) <= set(get_args(KEYS))
+        if unknown_names := set(names) - set(get_args(KEYS)):
+            raise ValueError(f"Unknown table names: {unknown_names!r}")
         return names
 
     @cached_property
@@ -375,7 +376,8 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
                 table = strip_whitespace(table)
                 table = cast_columns(table, value="float64")
-                assert table["value"] == table["valuenum"]
+                if table["value"] != table["valuenum"]:
+                    raise AssertionError("value != valuenum")
                 table = table.drop_columns("valuenum")
             case "microbiologyevents":
                 pass
@@ -450,7 +452,8 @@ class MIMIC_IV(MIMIC_IV_RAW):
             case "chartevents":
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
                 table = cast_columns(table, value="float64")
-                assert table["value"] == table["valuenum"]
+                if table["value"] != table["valuenum"]:
+                    raise AssertionError("value != valuenum")
                 table = table.drop("valuenum")
             case "d_items":
                 pass

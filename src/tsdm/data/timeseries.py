@@ -173,7 +173,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             case Series(index=MultiIndex()) as s:
                 ts = self.timeseries.loc[s]
             case Series() as s:
-                assert pd.api.types.is_bool_dtype(s)
+                if not pd.api.types.is_bool_dtype(s):
+                    raise TypeError("Expected boolean mask.")
                 # NOTE: loc[s] would not work here?!
                 ts = self.timeseries.loc[s[s].index]
             case _:
@@ -619,7 +620,8 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         md = tsd.metadata
         md_targets: Optional[DataFrame] = None
         if self.metadata_targets is not None:
-            assert md is not None
+            if md is None:
+                raise ValueError("Metadata targets specified but no metadata found.")
             md_targets = md[self.metadata_targets].copy()
             md = md.drop(columns=self.metadata_targets)
 

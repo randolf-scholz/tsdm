@@ -238,7 +238,8 @@ class Encoder(Protocol[X, Y]):
         r"""Deserialize the encoder from a file."""
         with open(filepath, "rb") as file:
             obj = pickle.load(file)
-            assert isinstance(obj, cls)
+            if not isinstance(obj, cls):
+                raise TypeError(f"Deserialized object is not an instance of {cls}.")
             return obj
 
     # endregion serialization methods --------------------------------------------------

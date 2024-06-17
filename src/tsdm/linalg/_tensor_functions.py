@@ -218,9 +218,13 @@ def grad_norm(
 
     # Initializing s this way automatically gets the dtype and device correct
     x = tensors[0]
-    assert x.grad is not None
+    if x.grad is None:
+        raise ValueError("No gradients found for the first tensor.")
     s = tensor_norm(x.grad, p=p, scaled=scaled) ** q
+
+    # iteration 2...n
     for x in tensors[1:]:
-        assert x.grad is not None
+        if x.grad is None:
+            raise ValueError("No gradients found for the first tensor.")
         s += tensor_norm(x.grad, p=p, scaled=scaled) ** q
     return (s / (1 + int(scaled) * len(tensors))) ** (1 / q)

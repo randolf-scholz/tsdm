@@ -47,10 +47,14 @@ def folds_from_groups(
     This is useful when the data needs to be grouped, e.g. due to replicate experiments.
     Simply use `pandas.groupby` and pass the result to this function.
     """
-    assert splits, "No splits provided"
+    if not splits:
+        raise ValueError("No splits provided!")
+
     num_chunks = sum(splits.values())
     q, remainder = divmod(num_chunks, num_folds)
-    assert remainder == 0, "Sum of chunks must be a multiple of num_folds"
+
+    if remainder:
+        raise ValueError("Sum of chunks must be a multiple of num_folds!")
 
     unique_groups = groups.unique()
     generator = np.random.default_rng(seed)

@@ -185,5 +185,7 @@ class DampedPendulumXY(DampedPendulum):
 
     def validate_observations(self, values: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""
-        assert values.min() >= -self.length
-        assert values.max() <= +self.length
+        if values.min() < -self.length:
+            raise ValueError(f"Minimum value {values.min()} < -{self.length}")
+        if values.max() > +self.length:
+            raise ValueError(f"Maximum value {values.max()} > +{self.length}")

@@ -168,9 +168,11 @@ class KIWI_RUNS_TASK(OldBaseTask):
         ])
         observables.index = observables.apply(ts.columns.get_loc)
 
-        assert (
+        if (
             set(controls.values) | set(targets.values) | set(observables.values)
-        ) == set(ts.columns)
+            != set(ts.columns)
+        ):  # fmt: skip
+            raise ValueError("Invalid split into targets, controls, and observables.")
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
@@ -258,7 +260,8 @@ class KIWI_RUNS_TASK(OldBaseTask):
         r"""Return a subset of the data corresponding to the split."""
         splits = {}
         for key in self.index:
-            assert key in self.index, f"Wrong {key=}. Only {self.index} work."
+            if key not in self.index:
+                raise KeyError(f"{key=} not in {self.index}!")
             split, data_part = key
 
             mask = self.split_idx[split] == data_part

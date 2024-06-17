@@ -215,7 +215,6 @@ class MappingDataset(Mapping[K, DS]):
 
     def __init__(self, datasets: Mapping[K, DS], /) -> None:
         super().__init__()
-        assert isinstance(datasets, Mapping)
         self.index = list(datasets.keys())
         self.datasets = datasets
 

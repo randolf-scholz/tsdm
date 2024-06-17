@@ -350,7 +350,8 @@ class KiwiRuns(MultiTableDataset):
         units = {}
         mask = mu_sets["amount"].notna()
         mu_set_unit = list(mu_sets["unit"].loc[mask].unique())
-        assert len(mu_set_unit) == 1
+        if len(mu_set_unit) != 1:
+            raise ValueError("Multiple different units in μ-set!")
         units["IPTG"] = mu_set_unit[0]
         units["μ_set"] = "%"
 
@@ -429,20 +430,23 @@ class KiwiRuns(MultiTableDataset):
         timeseries = timeseries[timeseries.columns[mask]]
 
         # Validate units
-        assert all(timeseries.notna().sum(axis=1) <= 1), "multiple measurements!"
+        if any(timeseries.notna().sum(axis=1) > 1):
+            raise ValueError("Multiple measurements!")
 
         units = {}
         for col in timeseries.columns:
             mask = timeseries[col].notna()
             units[col] = list(timeseries_units.loc[mask].unique())
-            assert len(units[col]) == 1, f"Multiple different units in {col}!"
+            if len(units[col]) != 1:
+                raise ValueError(f"Multiple different units in {col}!")
 
         units = Series({k: v[0] for k, v in units.items()}, dtype="string[pyarrow]")
         units[["Acetate", "OD600", "DOT", "pH"]] = ["%", "%", "%", "pH"]
 
         # Check that data is non-trivial
         uniques_per_run_id = timeseries.groupby("run_id").nunique()
-        assert ((uniques_per_run_id > 1).sum() > 1).all()
+        if any((uniques_per_run_id > 1).sum() <= 1):
+            raise ValueError("Single value per run_id!")
 
         # Select Columns
         columns = [key for key, val in SELECTED_COLUMNS["timeseries"].items() if val]

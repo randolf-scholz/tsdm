@@ -838,7 +838,8 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
         return asdict(self)
 
     def fit(self, data: NDArray, /) -> None:
-        assert np.all(data >= 0)
+        if np.any(data < 0):
+            raise ValueError("Data must be non-negative.")
 
         mask = data == 0
         self.threshold = data[~mask].min()
@@ -865,7 +866,9 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return {}
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        assert all((data > 0) & (data < 1))
+        # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
+        if not np.all((data > 0) & (data < 1)):
+            raise ValueError("Data must be in the range (0, 1).")
         return np.log(data / (1 - data))
 
     def decode(self, data: DataFrame, /) -> DataFrame:

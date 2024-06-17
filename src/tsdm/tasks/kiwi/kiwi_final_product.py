@@ -52,7 +52,12 @@ def get_induction_time(s: Series) -> Timestamp | NAType:
     diff = inducer.diff()
     mask = pd.notna(diff) & (diff != 0.0)
     inductions = inducer[mask]
-    assert len(inductions) == 1, "Multiple Inductions occur!"
+
+    if len(inductions) == 0:
+        raise ValueError("No Induction occured!")
+    if len(inductions) > 1:
+        raise ValueError("Multiple Inductions occured!")
+
     return inductions.first_valid_index()
 
 
@@ -62,7 +67,8 @@ def get_final_product(s: Series, /, *, target: str) -> Timestamp:
     targets = s[target]
     mask = pd.notna(targets)
     targets = targets[mask]
-    assert len(targets) >= 1, f"not enough target observations {targets}"
+    if len(targets) < 1:
+        raise ValueError(f"not enough target observations {targets}")
     return targets.index[-1]
 
 
@@ -88,9 +94,11 @@ def get_time_table(
         if pd.isna(t_induction):
             KIWI_FINAL_PRODUCT.LOGGER.info("%s: no t_induction!", idx)
             t_max = get_final_product(slc.loc[slc.index < t_target], target=target)
-            assert t_max < t_target
+            if t_max >= t_target:
+                raise ValueError(f"Query time t_target occurs before t_max: {t_max=}")
         else:
-            assert t_induction < t_target, f"{t_induction=} after {t_target}!"
+            if t_induction >= t_target:
+                raise ValueError("Induction happened after target time!")
             t_max = t_induction
         df.loc[idx, "t_max"] = t_max
 
@@ -268,7 +276,8 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
     def splits(self) -> dict[KEYS, tuple[DataFrame, DataFrame]]:
         splits = {}
         for key in self.index:
-            assert key in self.index, f"Wrong {key=}. Only {self.index} work."
+            if key not in self.index:
+                raise ValueError(f"Wrong {key=}. Only {self.index} work.")
             split, data_part = key
 
             mask = self.split_idx[split] == data_part
