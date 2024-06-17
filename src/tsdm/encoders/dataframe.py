@@ -68,7 +68,7 @@ def get_ellipsis_cols(
         match el:
             case EllipsisType():
                 continue
-            case list() as cols:
+            case list(cols):
                 if original_columns.issuperset(cols):
                     selected_columns -= set(cols)
                     continue

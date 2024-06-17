@@ -184,9 +184,12 @@ def download_directory_to_zip(
 ) -> None:
     r"""Download a directory from a URL to a zip file."""
     path = Path(zip_filename)
-    assert path.suffix == ".zip", f"{path=} must have .zip suffix!"
     stem = f"{path.stem}/" if add_toplevel_dir else ""
     zip_options = {"mode": "w"} | dict(zip_options)
+
+    # validate the path
+    if path.suffix != ".zip":
+        raise ValueError(f"{path=} must have .zip suffix!")
 
     # Create a session
     with Session() as session:
@@ -318,7 +321,7 @@ def download(
             validate_file_hash(
                 path,
                 hash_value,
-                hash_algorithm=hash_algorithm,
+                hash_alg=hash_algorithm,
                 hash_kwargs=hash_kwargs,
             )
         return
@@ -345,7 +348,7 @@ def download(
         validate_file_hash(
             path,
             hash_value,
-            hash_algorithm=hash_algorithm,
+            hash_alg=hash_algorithm,
             hash_kwargs=hash_kwargs,
         )
 

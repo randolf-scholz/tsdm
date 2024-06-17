@@ -68,7 +68,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.8
+    rev: v0.4.9
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.25
+    rev: v0.2.27
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -97,6 +97,7 @@ repos:
       - id: python-no-builtin-eval
       - id: python-rename-axes-axis
       - id: python-system-exit
+      - id: python-match-case-builtins
       # ast-based hooks
       - id: python-check-dunder-all
         files: '^src/'

@@ -87,9 +87,9 @@ r"""TypeVar for tensor-like objects."""
 def gather_types(obj: object, /) -> set[BackendID]:
     r"""Gather the backend types of a set of objects."""
     match obj:
-        case tuple() | set() | frozenset() | list() as container:
+        case (tuple() | set() | frozenset() | list()) as container:
             return set().union(*map(gather_types, container))
-        case dict() as mapping:
+        case dict(mapping):
             return set().union(*map(gather_types, mapping.values()))
         case Tensor():
             return {"torch"}

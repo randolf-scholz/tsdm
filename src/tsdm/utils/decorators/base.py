@@ -304,16 +304,16 @@ def recurse_on_container(
         match x:
             case leaf_type():  # type: ignore[misc]
                 return func(x)  # type: ignore[unreachable]
-            case dict() as Dict:
-                return {k: recurse(v) for k, v in Dict.items()}
-            case list() as List:
-                return [recurse(obj) for obj in List]
-            case tuple() as Tuple:
-                return tuple(recurse(obj) for obj in Tuple)
-            case set() as Set:
-                return {recurse(obj) for obj in Set}  # pyright: ignore[reportUnhashable]
-            case frozenset() as FrozenSet:
-                return frozenset(recurse(obj) for obj in FrozenSet)
+            case dict(mapping):
+                return {k: recurse(v) for k, v in mapping.items()}
+            case list(seq):
+                return [recurse(obj) for obj in seq]
+            case tuple(seq):
+                return tuple(recurse(obj) for obj in seq)
+            case set(items):
+                return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
+            case frozenset(items):
+                return frozenset(recurse(obj) for obj in items)
             case _:
                 raise TypeError(f"Unsupported type: {type(x)}")
 

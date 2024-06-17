@@ -203,7 +203,7 @@ def validate_file_hash(
     *,
     logger: logging.Logger = __logger__,
     errors: Literal["warn", "raise", "ignore"] = "warn",
-    hash_algorithm: Optional[str] = None,
+    hash_alg: Optional[str] = None,
     hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     r"""Validate file(s), given reference hash value(s).
@@ -212,7 +212,7 @@ def validate_file_hash(
         file: The file to validate. If a mapping is given, every file in the mapping is validated.
         reference: The reference hash value, or a mapping from file names to
             (hash_algorithm, hash_value) pairs.
-        hash_algorithm: The hash algorithm to use, if no reference hash is given.
+        hash_alg: The hash algorithm to use, if no reference hash is given.
         logger: Optional logger to use.
         errors: How to handle errors. Can be "warn", "raise", or "ignore".
         hash_kwargs: Additional keyword arguments to pass to the hash function.
@@ -245,7 +245,7 @@ def validate_file_hash(
                 validate_file_hash(
                     value,
                     ref.get(key, None),
-                    hash_algorithm=hash_algorithm,
+                    hash_alg=hash_alg,
                     logger=logger,
                     errors=errors,
                     hash_kwargs=hash_kwargs,
@@ -256,7 +256,7 @@ def validate_file_hash(
                 validate_file_hash(
                     f,
                     reference,
-                    hash_algorithm=hash_algorithm,
+                    hash_alg=hash_alg,
                     logger=logger,
                     errors=errors,
                     hash_kwargs=hash_kwargs,
@@ -264,7 +264,8 @@ def validate_file_hash(
             return
 
     # Now, we know that file is a single file.
-    assert isinstance(file, str | Path)
+    if not isinstance(file, str | Path):
+        raise TypeError(f"Expected str or Path, got {type(file)} instead!")
     file = Path(file)
 
     if isinstance(reference, Mapping):
@@ -275,18 +276,16 @@ def validate_file_hash(
     # Determine the reference hash value.
     match reference:
         case None | NotImplementedType():
-            reference_alg, reference_hash = None, None
-        case str():
+            ref_alg, ref_hash = None, None
+        case str(name):
             # split hashes of the form "sha256:hash_value"
             # if no hash algorithm is given, check hash_algorithm
-            reference_alg, reference_hash = (
-                reference.rsplit(":", 1) if ":" in reference else (None, reference)
-            )
+            ref_alg, ref_hash = name.rsplit(":", 1) if ":" in name else (None, name)
         case _:
             raise ValueError(f"Invalid reference {reference=} hash!")
 
     # Determine the hash algorithm to use.
-    match reference_alg, hash_algorithm:
+    match ref_alg, hash_alg:
         case None, None:
             warnings.warn(
                 "No hash algorithm given for reference hash!"
@@ -294,29 +293,29 @@ def validate_file_hash(
                 UserWarning,
                 stacklevel=2,
             )
-            hash_algorithm = DEFAULT_HASH_METHOD
-        case str() as alg, _:
-            hash_algorithm = alg
-        case None, str() as alg:
-            hash_algorithm = alg
+            hash_alg = DEFAULT_HASH_METHOD
+        case str(name), _:
+            hash_alg = name
+        case None, str(name):
+            hash_alg = name
         case _:
             raise ValueError("Invalid hash algorithm given!")
 
     # Compute the hash
-    hash_value = hash_file(file, hash_algorithm=hash_algorithm, **hash_kwargs)
+    hash_value = hash_file(file, hash_algorithm=hash_alg, **hash_kwargs)
 
     # Finally, compare the hashes.
     if file.suffix == ".parquet":
         warnings.warn(
             f"{file!s} ✘✘ refusing to validate, since parquet is not binary stable!"
-            f" Hash {hash_algorithm!s}:{hash_value!s}",
+            f" Hash {hash_alg!s}:{hash_value!s}",
             UserWarning,
             stacklevel=2,
         )
-    elif reference_hash is None:
+    elif ref_hash is None:
         msg = (
             f"{file!s} ?? cannot be validated, since no reference hash is given!"
-            f" Hash {hash_algorithm!s}:{hash_value!s}"
+            f" Hash {hash_alg!s}:{hash_value!s}"
         )
         match errors:
             case "raise":
@@ -325,11 +324,11 @@ def validate_file_hash(
                 warnings.warn(msg, UserWarning, stacklevel=2)
             case "ignore":
                 logger.info(msg)
-    elif hash_value != reference_hash:
+    elif hash_value != ref_hash:
         msg = (
             f"{file!s} ✘✘ failed the validation!"
-            f" Hash {hash_algorithm!s}:{hash_value!s}"
-            f" does not match reference {reference_hash!r}."
+            f" Hash {hash_alg!s}:{hash_value!s}"
+            f" does not match reference {ref_hash!r}."
         )
         match errors:
             case "raise":
@@ -341,7 +340,7 @@ def validate_file_hash(
     else:
         logger.info(
             "%s ✔✔ successful validation! Hash %s:%s matches reference.",
-            *(file, hash_algorithm, hash_value),
+            *(file, hash_alg, hash_value),
         )
 
 
@@ -361,18 +360,16 @@ def validate_table_hash(
     # Determine the reference hash
     match reference:
         case None:
-            reference_alg, reference_hash = None, None
-        case str():
+            ref_alg, ref_hash = None, None
+        case str(name):
             # split hashes of the form "sha256:hash_value"
             # if no hash algorithm is given, check hash_algorithm
-            reference_alg, reference_hash = (
-                reference.rsplit(":", 1) if ":" in reference else (None, reference)
-            )
+            ref_alg, ref_hash = name.rsplit(":", 1) if ":" in name else (None, name)
         case _:
             raise ValueError(f"Invalid reference {reference=} hash!")
 
     # Determine the hash algorithm
-    match reference_alg, hash_algorithm:
+    match ref_alg, hash_algorithm:
         case None, None:
             # Try to determine the hash algorithm from the array type
             match table:
@@ -389,9 +386,9 @@ def validate_table_hash(
                 UserWarning,
                 stacklevel=2,
             )
-        case str() as alg, _:
+        case str(alg), _:
             hash_algorithm = alg
-        case None, str() as alg:
+        case None, str(alg):
             hash_algorithm = alg
         case _:
             raise ValueError("Invalid hash algorithm given!")
@@ -400,16 +397,16 @@ def validate_table_hash(
     hash_value = hash_array(table, hash_algorithm=hash_algorithm, **hash_kwargs)
 
     # Finally, compare the hashes.
-    if reference_hash is None:
+    if ref_hash is None:
         warnings.warn(
             f"No reference hash given for array-like object {name!r}."
             f"The {hash_algorithm!r}-hash is {hash_value!r}.",
             RuntimeWarning,
             stacklevel=2,
         )
-    elif hash_value != reference_hash:
+    elif hash_value != ref_hash:
         warnings.warn(
-            f"Array-Like object {name!r} failed to validate! {reference_alg!r}-hash-"
+            f"Array-Like object {name!r} failed to validate! {ref_alg!r}-hash-"
             f"value {hash_value!r} does not match reference {reference!r}."
             "Ignore this warning if the format is parquet.",
             RuntimeWarning,
@@ -440,7 +437,7 @@ def validate_object_hash(
             validate_file_hash(
                 obj,
                 reference,
-                hash_algorithm=hash_algorithm,
+                hash_alg=hash_algorithm,
                 logger=logger,
                 **hash_kwargs,
             )

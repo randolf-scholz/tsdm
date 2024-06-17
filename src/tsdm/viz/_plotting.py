@@ -247,9 +247,13 @@ def plot_spectrum(
     if not isinstance(kernel, Tensor):
         kernel = torch.tensor(kernel, dtype=torch.float32)
 
+    # validate kernel shape
+    if kernel.ndim != 2:
+        raise ValueError(f"Expected 2D kernel, got {kernel.ndim=}")
+    if kernel.shape[0] != kernel.shape[1]:
+        raise ValueError(f"Expected square kernel, got {kernel.shape=}")
+
     with plt.style.context(style):
-        assert len(kernel.shape) == 2
-        assert kernel.shape[0] == kernel.shape[1]
         eigs = eigvals(kernel).detach().cpu()
         fig, ax = plt.subplots(**figure_kwargs)  # type: ignore[arg-type]
         ax.set(**axis_kwargs)

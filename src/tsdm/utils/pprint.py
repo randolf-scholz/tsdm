@@ -164,7 +164,7 @@ def repr_shortform(
 ) -> str:
     r"""Return a shorthed string representation using an object's type."""
     match obj:
-        case str() as string:
+        case str(string):
             return string
         case type() as cls:
             return cls.__name__
@@ -917,7 +917,7 @@ def repr_dtype(dtype: str | type | DType | SupportsDtype, /) -> str:
     match dtype:
         case SupportsDtype(dtype=dtype):
             return repr_dtype(dtype)
-        case str() as string:
+        case str(string):
             return string
         case type() as cls if cls in TYPESTRINGS:
             return TYPESTRINGS[cls]

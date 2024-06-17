@@ -149,11 +149,11 @@ def get_deps_pyproject_section(config: dict[str, Any], /, *, section: str) -> se
         return NotImplemented
 
     match config:
-        case list() as lst:  # type: ignore[unreachable]
+        case list(lst):  # type: ignore[unreachable]
             # assume format `"package<comparator>version"`
             regex = re.compile(r"[a-zA-Z0-9_-]*")  # type: ignore[unreachable]
             return {re.search(regex, dep).group() for dep in lst}
-        case dict() as dct:  # poetry
+        case dict(dct):  # poetry
             # assume format `package = "<comparator>version"`
             return set(dct.keys()) - {"python"}
         case _:
@@ -175,7 +175,7 @@ def get_name_pyproject(fname: str | Path = "pyproject.toml", /) -> str:
         poetry_name = NotImplemented
 
     match project_name, poetry_name:
-        case str() as a, str() as b:
+        case str(a), str(b):
             if a != b:
                 raise ValueError(
                     "Found different project names in [project] and [tool.poetry]."
@@ -183,9 +183,9 @@ def get_name_pyproject(fname: str | Path = "pyproject.toml", /) -> str:
                     f"\n [tool.poetry] is missing: {b}."
                 )
             return a
-        case str() as a, _:
+        case str(a), _:
             return a
-        case _, str() as b:
+        case _, str(b):
             return b
         case _:
             raise ValueError("No project name found in [project] or [tool.poetry].")
@@ -218,7 +218,7 @@ def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
         dependencies["project.dependencies"],
         dependencies["tool.poetry.dependencies"],
     ):
-        case set() as a, set() as b:
+        case set(a), set(b):
             if (left := a - b) | (right := b - a):
                 raise ValueError(
                     "Found different dependencies in [project] and [tool.poetry]."
@@ -226,9 +226,9 @@ def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
                     f"\n [tool.poetry] is missing: {left}."
                 )
             project_dependencies = a
-        case set() as a, _:
+        case set(a), _:
             project_dependencies = a
-        case _, set() as b:
+        case _, set(b):
             project_dependencies = b
         case _:
             project_dependencies = set()
@@ -260,9 +260,9 @@ def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]
                 "Found both [project.optional-dependencies.test]"
                 " and [project.optional-dependencies.tests]."
             )
-        case set() as a, _:
+        case set(a), _:
             project_test_dependencies = a
-        case _, set() as b:
+        case _, set(b):
             project_test_dependencies = b
         case _:
             project_test_dependencies = NotImplemented
@@ -276,9 +276,9 @@ def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]
                 "Found both [tool.poetry.group.test.dependencies]"
                 " and [tool.poetry.group.tests.dependencies]."
             )
-        case set() as a, _:
+        case set(a), _:
             poetry_test_dependencies = a
-        case _, set() as b:
+        case _, set(b):
             poetry_test_dependencies = b
         case _:
             poetry_test_dependencies = NotImplemented
@@ -287,7 +287,7 @@ def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]
         project_test_dependencies,
         poetry_test_dependencies,
     ):
-        case set() as a, set() as b:
+        case set(a), set(b):
             if (left := a - b) | (right := b - a):
                 raise ValueError(
                     "Found different test dependencies in [project] and [tool.poetry]."
@@ -295,9 +295,9 @@ def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]
                     f"\n [tool.poetry] is missing: {left}."
                 )
             test_dependencies = a
-        case set() as a, _:
+        case set(a), _:
             test_dependencies = a
-        case _, set() as b:
+        case _, set(b):
             test_dependencies = b
         case _:
             test_dependencies = set()

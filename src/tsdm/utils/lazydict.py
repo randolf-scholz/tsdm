@@ -273,11 +273,11 @@ class LazyDict(dict[K, V]):
                         return LazyValue(func, args=(key,))  # set the key as input
                     case _:
                         raise TypeError(f"Function {func} requires {nargs} args.")
-            case Callable() as func, tuple() as args:  # type: ignore[misc]
+            case Callable() as func, tuple(args):  # type: ignore[misc]
                 return LazyValue(func, args=args)  # type: ignore[has-type]
-            case Callable() as func, dict() as kwargs:  # type: ignore[misc]
+            case Callable() as func, dict(kwargs):  # type: ignore[misc]
                 return LazyValue(func, kwargs=kwargs)  # type: ignore[has-type]
-            case Callable() as func, tuple() as args, dict() as kwargs:  # type: ignore[misc]
+            case Callable() as func, tuple(args), dict(kwargs):  # type: ignore[misc]
                 return LazyValue(func, args=args, kwargs=kwargs)  # type: ignore[has-type]
             case _:
                 warnings.warn(

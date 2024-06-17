@@ -774,16 +774,16 @@ class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
 
     def encode(self, x: Nested[X], /) -> Nested[Y]:
         match x:
-            case list() as lst:
-                return [self.encode(val) for val in lst]
-            case tuple() as tpl:
-                return tuple(self.encode(val) for val in tpl)
-            case dict() as dct:
-                return {key: self.encode(val) for key, val in dct.items()}
-            case set() as st:
-                return {self.encode(val) for val in st}
-            case frozenset() as fst:
-                return frozenset(self.encode(val) for val in fst)
+            case list(seq):
+                return [self.encode(val) for val in seq]
+            case tuple(tup):
+                return tuple(self.encode(val) for val in tup)
+            case dict(mapping):
+                return {key: self.encode(val) for key, val in mapping.items()}
+            case set(items):
+                return {self.encode(val) for val in items}
+            case frozenset(items):
+                return frozenset(self.encode(val) for val in items)
             case self.leaf_type() as leaf:
                 return self.encoder.encode(leaf)
             case _:
@@ -791,16 +791,16 @@ class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
 
     def decode(self, y: Nested[Y], /) -> Nested[X]:
         match y:
-            case list() as lst:
-                return [self.decode(val) for val in lst]
-            case tuple() as tpl:
-                return tuple(self.decode(val) for val in tpl)
-            case dict() as dct:
-                return {key: self.decode(val) for key, val in dct.items()}
-            case set() as st:
-                return {self.decode(val) for val in st}
-            case frozenset() as fst:
-                return frozenset(self.decode(val) for val in fst)
+            case list(seq):
+                return [self.decode(val) for val in seq]
+            case tuple(tup):
+                return tuple(self.decode(val) for val in tup)
+            case dict(mapping):
+                return {key: self.decode(val) for key, val in mapping.items()}
+            case set(items):
+                return {self.decode(val) for val in items}
+            case frozenset(items):
+                return frozenset(self.decode(val) for val in items)
             case self.output_leaf_type() as leaf:
                 return self.encoder.decode(leaf)
             case _:

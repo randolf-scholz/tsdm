@@ -43,7 +43,10 @@ def import_module(
     """
     module_name = module_name or module_path.parts[-1]
     module_init = module_path.joinpath("__init__.py")
-    assert module_init.exists(), f"Module {module_path} has no __init__ file !!!"
+
+    # validate that the module has an __init__ file.
+    if not module_init.exists():
+        raise FileNotFoundError(f"Module {module_path} has no __init__ file !")
 
     with add_to_path(module_path):
         spec = spec_from_file_location(module_name, str(module_init))
@@ -132,8 +135,8 @@ def query_choice(
     choices = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))
 
-    if default is not None:
-        assert default in choices
+    if default is not None and default not in choices:
+        raise ValueError(f"Default option {default!r} not in {choices=!r}")
 
     options = "\n".join(
         f"{k}. {v}" + " (default)" * (v == default) for k, v in enumerate(choices)

@@ -212,7 +212,7 @@ r"""Example sparse timedelta data for testing timedelta encoders."""
 
 @pytest.mark.parametrize("name", DT_TRAIN_ARRAYS)
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
-def test_datetime_encoder(name: str, sparse: bool) -> None:
+def test_datetime_encoder(*, name: str, sparse: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     match name:
         case "numpy":
@@ -243,7 +243,7 @@ def test_datetime_encoder(name: str, sparse: bool) -> None:
 
 @pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
-def test_timedelta_encoder(name: str, sparse: bool) -> None:
+def test_timedelta_encoder(*, name: str, sparse: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     match name:
         case "python" | "polars-series" | "pyarrow-array":

@@ -532,7 +532,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
 
         # region set horizon(s) --------------------------------------------------------
         match horizons:
-            case str() as string:
+            case str(string):
                 self.multi_horizon = False
                 self.horizons = np.array([timedelta(string)], dtype=td_type)
             case Iterable() as iterable:

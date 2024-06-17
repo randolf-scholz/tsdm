@@ -151,35 +151,35 @@ class RecursiveTensorEncoder(
 
     def encode(self, data: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
         match data:
-            case list() as l:
-                return [self.encode(d) for d in l]
-            case tuple() as tup:
+            case list(seq):
+                return [self.encode(d) for d in seq]
+            case tuple(tup):
                 return tuple(self.encode(d) for d in tup)
-            case dict() as d:
-                return {k: self.encode(v) for k, v in d.items()}
-            case set() as s:
-                return {self.encode(d) for d in s}  # pyright: ignore[reportUnhashable]
-            case frozenset() as fset:
-                return frozenset({self.encode(d) for d in fset})  # pyright: ignore[reportUnhashable]
-            case _:
+            case dict(mapping):
+                return {k: self.encode(v) for k, v in mapping.items()}
+            case set(items):
+                return {self.encode(d) for d in items}  # pyright: ignore[reportUnhashable]
+            case frozenset(items):
+                return frozenset({self.encode(d) for d in items})  # pyright: ignore[reportUnhashable]
+            case array:
                 try:
-                    return torch.tensor(data)
+                    return torch.tensor(array)
                 except Exception as exc:
                     raise TypeError(f"Cannot encode data of type {type(data)}") from exc
 
     def decode(self, data: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
         match data:
-            case list() as l:
-                return [self.decode(d) for d in l]
-            case tuple() as tup:
+            case list(seq):
+                return [self.decode(d) for d in seq]
+            case tuple(tup):
                 return tuple(self.decode(d) for d in tup)
-            case dict() as d:
-                return {k: self.decode(v) for k, v in d.items()}
-            case set() as s:
-                return {self.decode(d) for d in s}  # pyright: ignore[reportUnhashable]
-            case frozenset() as fset:
-                return frozenset({self.decode(d) for d in fset})  # pyright: ignore[reportUnhashable]
-            case _ as tensor:
+            case dict(mapping):
+                return {k: self.decode(v) for k, v in mapping.items()}
+            case set(items):
+                return {self.decode(d) for d in items}  # pyright: ignore[reportUnhashable]
+            case frozenset(items):
+                return frozenset({self.decode(d) for d in items})  # pyright: ignore[reportUnhashable]
+            case tensor:
                 try:
                     return tensor.numpy()
                 except Exception as exc:

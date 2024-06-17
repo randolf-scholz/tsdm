@@ -351,7 +351,6 @@ def unflatten_dict(
     for key, item in d.items():
         outer_key, *inner_keys = split_fn(key)
         if inner_keys:
-            assert isinstance(d, Mapping), "d must be a Mapping!"
             result.setdefault(outer_key, {})
             result[outer_key] |= unflatten_dict(
                 {join_fn(inner_keys): item},
@@ -413,7 +412,7 @@ def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
     match paths:
         case None:
             return True
-        case str() as string:
+        case str(string):
             return Path(string).exists()
         case Path() as path:
             return path.exists()

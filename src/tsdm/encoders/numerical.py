@@ -225,15 +225,15 @@ def get_reduced_axes(item, axis):
             return axis
         case None:
             raise NotImplementedError("Slicing with None not implemented.")
-        case list() as lst:
-            if len(lst) <= 1:
+        case list(seq):
+            if len(seq) <= 1:
                 return axis[1:]
             return axis
         case slice() as slc:
             if slice_size(slc) in {0, 1}:
                 return axis[1:]
             return axis
-        case tuple() as tup:
+        case tuple(tup):
             if sum(x is Ellipsis for x in tup) > 1:
                 raise ValueError("Only one Ellipsis is allowed.")
             if len(tup) == 0:

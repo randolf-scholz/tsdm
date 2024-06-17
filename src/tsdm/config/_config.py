@@ -47,14 +47,14 @@ def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
         https://stackoverflow.com/a/22058144
     """
     match dirs:
-        case str() as string:
-            path = parent.joinpath(string)
+        case str(name):
+            path = parent.joinpath(name)
             path.mkdir(parents=True, exist_ok=True)
-        case list() as lst:
-            for item in lst:
+        case list(seq):
+            for item in seq:
                 generate_folders(item, parent=parent)
-        case dict() as d:
-            for key, value in d.items():
+        case dict(mapping):
+            for key, value in mapping.items():
                 generate_folders(value, parent=parent.joinpath(key))
         case _:
             raise TypeError

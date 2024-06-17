@@ -184,7 +184,7 @@ class SequenceSampler(BaseSampler, Generic[TD]):
         match tmin:
             case None:
                 self.xmin = self.data[0]
-            case str() as time_str:
+            case str(time_str):
                 self.xmin = timestamp(time_str)
             case _:
                 self.xmin = tmin
@@ -192,7 +192,7 @@ class SequenceSampler(BaseSampler, Generic[TD]):
         match tmax:
             case None:
                 self.xmax = self.data[-1]
-            case str() as time_str:
+            case str(time_str):
                 self.xmax = timestamp(time_str)
             case _:
                 self.xmax = tmax

@@ -19,12 +19,12 @@ __all__ = [
     "is_variadic_arg",
     "prod_fn",
     "rpartial",
-    "yield_exit_points",
+    "yield_return_nodes",
 ]
 
 import ast
 import inspect
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 
@@ -172,27 +172,36 @@ def get_parameter(func: Callable, name: str, /) -> Parameter:
     return sig.parameters[name]
 
 
-def yield_exit_points(func: Callable, /) -> Iterator[ast.Return]:
+def yield_return_nodes(nodes: Iterable[ast.AST], /) -> Iterator[ast.Return]:
     r"""Collect all exit points of a function as ast nodes."""
-    tree = ast.parse(getsource(func))
-
-    for node in ast.walk(tree):
+    for node in nodes:
         match node:
             case ast.Return():
                 yield node
 
 
+def yield_names(nodes: Iterable[ast.AST], /) -> Iterator[str]:
+    r"""Yield variable names from ast nodes."""
+    for obj in nodes:
+        match obj:
+            case ast.Name(id=name):
+                yield name
+            case _:
+                raise TypeError(f"Expected ast.Name, got {type(obj)}.")
+
+
 def get_exit_point_names(func: Callable, /) -> set[tuple[str, ...]]:
     r"""Return the variable names used in exit nodes."""
-    names = set()
-    for exit_point in yield_exit_points(func):
-        assert isinstance(exit_point.value, ast.Tuple)
-        exit_point_names: list[str] = []
-        for obj in exit_point.value.elts:
-            assert isinstance(obj, ast.Name)
-            exit_point_names.append(obj.id)
+    tree = ast.parse(getsource(func))
+    iter_nodes = ast.walk(tree)
 
-        names.add(tuple(exit_point_names))
+    names: set[tuple[str, ...]] = set()
+    for exit_point in yield_return_nodes(iter_nodes):
+        match exit_point:
+            case ast.Return(value=ast.Tuple(elts=elts)):
+                names.add(tuple(yield_names(elts)))
+            case _:
+                raise TypeError("Return value must be a tuple.")
     return names
 
 

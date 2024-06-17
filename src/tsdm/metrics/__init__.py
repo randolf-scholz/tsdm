@@ -152,7 +152,7 @@ def get_metric(metric: object, /) -> Metric:
     match metric:
         case type() as cls:
             return get_metric(cls())
-        case str() as name:
+        case str(name):
             return get_metric(LOSSES[name])
         case Metric() as m:
             return m

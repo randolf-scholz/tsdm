@@ -10,33 +10,27 @@ __all__ = [
     "TimeDeltaEncoder",
 ]
 
-from collections.abc import Hashable, Iterable, Mapping
-from dataclasses import KW_ONLY, asdict, dataclass, field
-from types import EllipsisType, MappingProxyType
+from collections.abc import Hashable, Mapping
+from dataclasses import KW_ONLY, asdict, dataclass
+from types import MappingProxyType
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
-from torch import Tensor
 from typing_extensions import (
     Any,
     ClassVar,
     Final,
-    Literal,
     Optional,
-    Self,
-    TypeAlias,
     TypeVar,
-    cast,
-    overload,
 )
 
-from tsdm.backend import Backend, get_backend
+from tsdm.backend import get_backend
 from tsdm.encoders.base import BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import Axis, DType, PandasDtype, Size
+from tsdm.types.aliases import DType, PandasDtype
 from tsdm.types.protocols import NumericalArray
 from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
@@ -46,12 +40,11 @@ X = TypeVar("X")
 Y = TypeVar("Y")
 Arr = TypeVar("Arr", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
-SeriesOrIndex = TypeVar("SeriesOrIndex", Index, Series)
 
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
+class TimeDeltaEncoder(BaseEncoder[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
     unit: pd.Timedelta = NotImplemented
@@ -61,15 +54,12 @@ class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
 
     @property
     def params(self) -> dict[str, Any]:
-        return {
-            "unit": self.unit,
-            "original_dtype": self.original_dtype,
-        }
+        return asdict(self)
 
     def __init__(self, *, unit: str | TimeDelta = NotImplemented) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
 
-    def fit(self, data: SeriesOrIndex, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         self.original_dtype = data.dtype
 
         if self.unit is NotImplemented:
@@ -84,20 +74,21 @@ class TimeDeltaEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
             # convert base_freq back to time delta in the original dtype
             self.unit = backend.make_scalar(base_freq, dtype=self.original_dtype)
 
-    def encode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
-        return data / self.unit
+    def encode(self, x: Arr, /) -> Arr:
+        return x / self.unit
 
-    def decode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
+    def decode(self, y: Arr, /) -> Arr:
         # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
         try:
-            return (data * self.unit).astype(self.original_dtype)
+            return self.backend.cast(y * self.unit, self.original_dtype)
         except pa.lib.ArrowNotImplementedError:
-            return data.astype(float).__mul__(self.unit).astype(self.original_dtype)
+            y = self.backend.cast(y, float) * self.unit
+            return self.backend.cast(y, self.original_dtype)
 
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
+class DateTimeEncoder(BaseEncoder[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
@@ -109,11 +100,7 @@ class DateTimeEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
 
     @property
     def params(self) -> dict[str, Any]:
-        return {
-            "unit": self.unit,
-            "offset": self.offset,
-            "original_dtype": self.original_dtype,
-        }
+        return asdict(self)
 
     def __init__(
         self,
@@ -124,7 +111,7 @@ class DateTimeEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
         self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
 
-    def fit(self, data: SeriesOrIndex, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         self.original_dtype = data.dtype
 
         if self.offset is NotImplemented:
@@ -136,22 +123,20 @@ class DateTimeEncoder(BaseEncoder[SeriesOrIndex, SeriesOrIndex]):
             base_freq = np.gcd.reduce(deltas.dropna().astype(int))
             self.unit = Index([base_freq]).astype(deltas.dtype).item()
 
-    def encode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
-        return (data - self.offset) / self.unit
+    def encode(self, x: Arr, /) -> Arr:
+        return (x - self.offset) / self.unit
 
-    def decode(self, data: SeriesOrIndex, /) -> SeriesOrIndex:
+    def decode(self, y: Arr, /) -> Arr:
         # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
         try:
-            return (data * self.unit + self.offset).astype(self.original_dtype)
+            return self.backend.cast(y * self.unit + self.offset, self.original_dtype)
         except pa.lib.ArrowNotImplementedError:
-            return (
-                data.astype(float)
-                .__mul__(self.unit)
-                .__add__(self.offset)
-                .astype(self.original_dtype)
-            )
+            y = self.backend.cast(y, float) * self.unit + self.offset
+            return self.backend.cast(y, self.original_dtype)
 
 
+@pprint_repr
+@dataclass(init=False)
 class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Positional encoding.
 
@@ -172,29 +157,26 @@ class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
 
     @property
     def params(self) -> dict[str, Any]:
-        return {
-            "num_dim": self.num_dim,
-            "scale": self.scale,
-            "scaled": self.scales,
-        }
+        return asdict(self)
 
     def __init__(self, num_dim: int, scale: float) -> None:
         self.num_dim = num_dim
         self.scale = float(scale)
         self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
-        assert self.scales[0] == 1.0, "Something went wrong."
+        if self.scales[0] != 1.0:
+            raise ValueError("Initial scale must be 1.0")
 
-    def encode(self, data: NDArray, /) -> NDArray:
+    def encode(self, x: NDArray, /) -> NDArray:
         r""".. Signature: ``... -> (..., 2d)``.
 
         Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
-        z = np.einsum("..., d -> ...d", data, self.scales)
+        z = np.einsum("..., d -> ...d", x, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
-    def decode(self, data: NDArray, /) -> NDArray:
+    def decode(self, y: NDArray, /) -> NDArray:
         r""".. signature:: ``(..., 2d) -> ...``."""
-        return np.arcsin(data[..., 0])
+        return np.arcsin(y[..., 0])
 
 
 class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
@@ -227,21 +209,17 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
 
     def encode(self, x: Series) -> DataFrame:
         r"""Encode the data."""
-        x = self.freq * (x % self.period)  # ensure 0...N-1
+        z = self.freq * (x % self.period)  # ensure 0...N-1
         return DataFrame(
-            np.stack([np.cos(x), np.sin(x)]).T,
+            np.stack([np.cos(z), np.sin(z)]).T,
             columns=[f"cos_{self.colname}", f"sin_{self.colname}"],
         )
 
-    def decode(self, x: DataFrame) -> Series:
+    def decode(self, y: DataFrame) -> Series:
         r"""Decode the data."""
-        x = np.arctan2(x[f"sin_{self.colname}"], x[f"cos_{self.colname}"])
-        x = (x / self.freq) % self.period
-        return Series(x, dtype=self.dtype, name=self.colname)
-
-    def __repr__(self) -> str:
-        r"""Pretty-print."""
-        return f"{self.__class__.__name__}({self._period})"
+        z = np.arctan2(y[f"sin_{self.colname}"], y[f"cos_{self.colname}"])
+        z = (z / self.freq) % self.period
+        return Series(z, dtype=self.dtype, name=self.colname)
 
 
 class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
@@ -297,10 +275,6 @@ class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
         x = x[self.rev_cols]
         s = pd.to_datetime(x)
         return self.original_type(s, name=self.original_name, dtype=self.original_dtype)
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"SocialTimeEncoder({self.level_code!r})"
 
 
 @pprint_repr
