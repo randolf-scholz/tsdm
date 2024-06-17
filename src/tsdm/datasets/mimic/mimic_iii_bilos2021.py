@@ -132,4 +132,4 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, fname)
+        file.rename(fname)

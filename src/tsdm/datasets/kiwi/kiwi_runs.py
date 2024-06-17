@@ -300,7 +300,7 @@ class KiwiRuns(MultiTableDataset):
         r"""Clean metadata."""
         # load rawdata
         self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
-        with open(self.rawdata_paths["kiwi_experiments.pk"], "rb") as file:
+        with self.rawdata_paths["kiwi_experiments.pk"].open("rb") as file:
             data = pickle.load(file)
 
         # generate dataframe
@@ -396,7 +396,7 @@ class KiwiRuns(MultiTableDataset):
         r"""Clean timeseries data and save to disk."""
         # load rawdata
         self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
-        with open(self.rawdata_paths["kiwi_experiments.pk"], "rb") as file:
+        with self.rawdata_paths["kiwi_experiments.pk"].open("rb") as file:
             data = pickle.load(file)
 
         # Generate DataFrame
@@ -539,12 +539,3 @@ class KiwiRunsTSC(TimeSeriesCollection):
             metadata_description=ds.metadata_description,
             global_metadata_description=None,
         )
-
-
-# INFO:tsdm.datasets.kiwi_runs.KIWI_RUNS:Adding keys as attributes.
-# timeseries '7423431600366696406'
-# 'metadata.parquet' '2037390744336738142'
-#  'timeseries_description.parquet''4775909302393294764'
-# 'timeseries_description.parquet''-6386491732663357532'
-# 'metadata_description.parquet'  '4215379263850919231'
-# 'filehash='4215379263850919231''.

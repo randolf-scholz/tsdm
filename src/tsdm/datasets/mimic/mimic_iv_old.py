@@ -107,4 +107,4 @@ class MIMIC_IV(MultiTableDataset):
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, fname)
+        file.rename(fname)

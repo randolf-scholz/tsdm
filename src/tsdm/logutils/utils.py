@@ -111,7 +111,7 @@ def save_checkpoint(step: int, path: FilePath, *, objects: Mapping[str, Any]) ->
     path = Path(path) / f"{step}"
     path.mkdir(parents=True, exist_ok=True)
 
-    for name, obj in dict(objects).items():
+    for name, obj in objects.items():
         match obj:
             case None:
                 pass

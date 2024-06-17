@@ -16,6 +16,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.models.pretrained.base import PreTrainedBase
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
+from tsdm.types.aliases import FilePath
 from tsdm.utils.remote import download
 
 # FIXME: broken doctest
@@ -143,7 +144,7 @@ class LinODEnet(PreTrainedBase):
 
     @staticmethod
     def make_dataframes_from_pickle(
-        filename: str, /
+        file_or_path: FilePath, /
     ) -> tuple[DataFrame, DataFrame, DataFrame]:
         r"""Return DataFrames from pickle.
 
@@ -154,7 +155,7 @@ class LinODEnet(PreTrainedBase):
             KEYS = Literal["measurements_aggregated", "metadata", "setpoints"]
             dict[Any, dict[KEYS, DataFrame]]
         """
-        with open(filename, "rb") as file:
+        with open(file_or_path, "rb") as file:
             data = pickle.load(file)
 
         timeseries_dict = {

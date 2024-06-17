@@ -153,7 +153,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, fname)
+        file.rename(fname)
 
     def make_histograms(self) -> tuple[Figure, Axes]:
         r"""Make histograms of the timeseries."""

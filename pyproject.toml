@@ -153,16 +153,18 @@ select = [
     "EXE",   # executable
     "F",     # pyflakes
     "FBT",   # boolean-trap
+    "FURB",  # refurb
     "I",     # import-order
     "ICN",   # import-conventions
     "ISC",   # implicit-str-concat
-    "FURB",  # refurb
     "NPY",   # numpy
     "PERF",  # performance related
     "PIE",   # pie
     "PL",    # pylint
     "PT",    # pytest
+    # "PTH",   # path
     "PYI",   # pyi
+    # "RET",   # return
     "RUF",   # ruff specific
     "S101",  # use of assert
     "SIM",   # simplify
