@@ -180,7 +180,7 @@ def yield_return_nodes(nodes: Iterable[ast.AST], /) -> Iterator[ast.Return]:
                 yield node
 
 
-def yield_names(nodes: Iterable[ast.AST], /) -> Iterator[str]:
+def _yield_names(nodes: Iterable[ast.AST], /) -> Iterator[str]:
     r"""Yield variable names from ast nodes."""
     for obj in nodes:
         match obj:
@@ -199,7 +199,7 @@ def get_exit_point_names(func: Callable, /) -> set[tuple[str, ...]]:
     for exit_point in yield_return_nodes(iter_nodes):
         match exit_point:
             case ast.Return(value=ast.Tuple(elts=elts)):
-                names.add(tuple(yield_names(elts)))
+                names.add(tuple(_yield_names(elts)))
             case _:
                 raise TypeError("Return value must be a tuple.")
     return names

@@ -307,13 +307,12 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         # if directory
         if self.rawdata_path.is_dir():
             file_path = self.rawdata_path / file
-            options = (
-                {"encoding": "utf8"}
-                if file_path.suffix in {".yaml", ".json"}
-                else {"mode": "rb"}
-            )
-            with file_path.open(file_path, **options) as f:
-                return self.__load_component(f, component, extension)
+            if extension in {".yaml", ".json"}:
+                with file_path.open("r", encoding="utf8") as f:
+                    return self.__load_component(f, component, extension)
+            else:
+                with file_path.open("rb") as f:
+                    return self.__load_component(f, component, extension)
 
         # if zipfile
         if is_zipfile(self.rawdata_path):
