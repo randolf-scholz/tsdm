@@ -8,6 +8,7 @@ __all__ = [
     "WrappedValue",
     # callback-protocols
     "ApplyAlongAxes",
+    "CastProto",
     "ClipProto",
     "ConcatenateProto",
     "ContractionProto",
@@ -70,6 +71,12 @@ class WrappedValue(Protocol[T_co]):
 
 
 # region Callback-Protocols ------------------------------------------------------------
+class CastProto(Protocol[T]):
+    r"""Bound-Protocol for `cast`-function."""
+
+    def __call__(self, x: T, /, *, dtype: Any) -> T: ...
+
+
 class ClipProto(Protocol[T]):
     r"""Bound-Protocol for `clip`-function."""
 
@@ -124,10 +131,10 @@ class ConcatenateProto(Protocol[T]):
     def __call__(self, x: list[T], /, *, axis: int) -> T: ...
 
 
-class MakeScalarProto(Protocol):
+class MakeScalarProto(Protocol[T_co]):
     r"""Bound-Protocol for `make_scalar`-function."""
 
-    def __call__(self, value: Any, /, *, dtype: str | Any) -> Any: ...
+    def __call__(self, value: Any, /, *, dtype: Any) -> T_co: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

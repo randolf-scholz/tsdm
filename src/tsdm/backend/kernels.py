@@ -25,15 +25,7 @@ import pyarrow as pa
 import torch
 from numpy import ndarray
 from torch import Tensor
-from typing_extensions import (
-    Final,
-    Generic,
-    Literal,
-    Self,
-    TypeAlias,
-    TypeVar,
-    overload,
-)
+from typing_extensions import Generic, Literal, Self, TypeAlias, TypeVar, overload
 
 from tsdm.backend.generic import (
     false_like as universal_false_like,
@@ -63,6 +55,7 @@ from tsdm.backend.torch import (
 from tsdm.types.callback_protocols import (
     ApplyAlongAxes,
     ArraySplitProto,
+    CastProto,
     ClipProto,
     ConcatenateProto,
     ContractionProto,
@@ -231,7 +224,7 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": lambda x: x[~torch.isnan(x)],
     }
 
-    cast: Mapping[BackendID, SelfMap] = {
+    cast: Mapping[BackendID, CastProto] = {
         "arrow": lambda x, dtype: x.cast(dtype),
         "numpy": lambda x, dtype: x.astype(dtype),
         "pandas": lambda x, dtype: x.astype(dtype),
@@ -254,7 +247,7 @@ class Backend(Generic[T]):
 
     # __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
 
-    NAME: Final[BackendID]
+    NAME: BackendID
 
     # KERNELS
     clip: ClipProto[T]
