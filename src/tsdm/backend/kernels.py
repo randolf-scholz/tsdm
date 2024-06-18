@@ -273,7 +273,7 @@ class Backend(Generic[T]):
 
     dropna: SelfMap[T]
     cast: CastProto[T]
-    make_scalar: MakeScalarProto
+    scalar: MakeScalarProto
 
     def __init__(self, backend: str | Self) -> None:
         # set the selected backend

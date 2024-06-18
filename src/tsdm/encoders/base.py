@@ -25,6 +25,7 @@ Note on `BaseEncoder`:
 __all__ = [
     # ABCs & Protocols
     "BaseEncoder",
+    "BackendEncoder",
     "Encoder",
     "EncoderList",
     "EncoderProtocol",
@@ -84,6 +85,7 @@ from typing_extensions import (
 )
 
 from tsdm import encoders as E
+from tsdm.backend import Backend, get_backend
 from tsdm.types.aliases import FilePath, NestedBuiltin
 from tsdm.types.variables import K, T
 from tsdm.utils.decorators import pprint_repr
@@ -514,6 +516,25 @@ class BaseEncoder(Encoder[X, Y]):
         return self >> E.MinMaxScaler()
 
     # endregion chaining methods -------------------------------------------------------
+
+
+class BackendEncoder(BaseEncoder[X, Y]):
+    r"""Encoder equipped with a backend."""
+
+    backend: Backend[X] = NotImplemented
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+
+        original_fit = cls.fit
+
+        @wraps(original_fit)
+        def wrapped_fit(self: Self, x: X, /) -> None:
+            if self.backend is NotImplemented:
+                self.backend = get_backend(x)
+            original_fit(self, x)
+
+        cls.fit = wrapped_fit  # type: ignore[assignment]
 
 
 class EncoderList(BaseEncoder[X, Y], Sequence[Encoder]):

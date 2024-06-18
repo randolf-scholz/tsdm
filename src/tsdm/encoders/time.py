@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from collections.abc import Hashable, Mapping
-from dataclasses import KW_ONLY, asdict, dataclass
+from dataclasses import asdict, dataclass
 from types import MappingProxyType
 
 import numpy as np
@@ -19,32 +19,25 @@ import pandas as pd
 import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Final,
-    Optional,
-    TypeVar,
-)
+from typing_extensions import Any, ClassVar, Final, Optional, TypeVar
 
-from tsdm.backend import get_backend
-from tsdm.encoders.base import BaseEncoder, WrappedEncoder
+from tsdm.encoders.base import BackendEncoder, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasDtype
-from tsdm.types.protocols import NumericalArray
+from tsdm.types.protocols import NumericalTensor
 from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
 X = TypeVar("X")
 Y = TypeVar("Y")
-Arr = TypeVar("Arr", bound=NumericalArray)
+Arr = TypeVar("Arr", bound=NumericalTensor)
 r"""TypeVar for tensor-like objects."""
 
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder(BaseEncoder[Arr, Arr]):
+class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
     unit: pd.Timedelta = NotImplemented
@@ -63,16 +56,15 @@ class TimeDeltaEncoder(BaseEncoder[Arr, Arr]):
         self.original_dtype = data.dtype
 
         if self.unit is NotImplemented:
-            backend = get_backend(data)
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
-            data = backend.dropna(data)
-            data_as_int = backend.cast(data, int)
+            data = self.backend.dropna(data)
+            data_as_int = self.backend.cast(data, int)
             array = np.array(data_as_int)
             base_freq = int(np.gcd.reduce(array))
 
             # convert base_freq back to time delta in the original dtype
-            self.unit = backend.make_scalar(base_freq, dtype=self.original_dtype)
+            self.unit = self.backend.scalar(base_freq, dtype=self.original_dtype)
 
     def encode(self, x: Arr, /) -> Arr:
         return x / self.unit
@@ -88,7 +80,7 @@ class TimeDeltaEncoder(BaseEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder(BaseEncoder[Arr, Arr]):
+class DateTimeEncoder(BackendEncoder[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
@@ -120,7 +112,8 @@ class DateTimeEncoder(BaseEncoder[Arr, Arr]):
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             deltas = data - self.offset
             # This looks awkward but is robust.
-            base_freq = np.gcd.reduce(deltas.dropna().astype(int))
+            deltas = self.backend.dropna(deltas)
+            base_freq = np.gcd.reduce(self.backend.cast(deltas, int))
             self.unit = Index([base_freq]).astype(deltas.dtype).item()
 
     def encode(self, x: Arr, /) -> Arr:
