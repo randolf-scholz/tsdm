@@ -272,7 +272,7 @@ class Backend(Generic[T]):
     concatenate: ConcatenateProto[T]
 
     dropna: SelfMap[T]
-    cast: SelfMap[T]
+    cast: CastProto[T]
     make_scalar: MakeScalarProto
 
     def __init__(self, backend: str | Self) -> None:

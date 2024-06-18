@@ -74,7 +74,7 @@ class WrappedValue(Protocol[T_co]):
 class CastProto(Protocol[T]):
     r"""Bound-Protocol for `cast`-function."""
 
-    def __call__(self, x: T, /, *, dtype: Any) -> T: ...
+    def __call__(self, x: T, /, dtype: Any) -> T: ...
 
 
 class ClipProto(Protocol[T]):
