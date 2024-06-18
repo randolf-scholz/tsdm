@@ -35,13 +35,14 @@ __all__ = [
     # Classes
     "ChainedEncoder",
     "DeepcopyEncoder",
-    "DiagonalEncoder",
     "DiagonalDecoder",
+    "DiagonalEncoder",
     "IdentityEncoder",
     "InverseEncoder",
-    "JointEncoder",
     "JointDecoder",
+    "JointEncoder",
     "MapEncoders",
+    "NestedEncoder",
     "ParallelEncoder",
     "PipedEncoder",
     "TupleDecoder",
@@ -83,7 +84,7 @@ from typing_extensions import (
 )
 
 from tsdm import encoders as E
-from tsdm.types.aliases import FilePath, Nested
+from tsdm.types.aliases import FilePath, NestedBuiltin
 from tsdm.types.variables import K, T
 from tsdm.utils.decorators import pprint_repr
 
@@ -738,9 +739,14 @@ class WrappedEncoder(BaseEncoder[X, Y]):
     encoder: Encoder[X, Y]
     r"""The encoder to wrap."""
 
+    def __invert__(self) -> "WrappedEncoder[Y, X]":
+        # FIXME: https://github.com/microsoft/pyright/issues/8165
+        decoder = invert_encoder(self.encoder)
+        return WrappedEncoder(decoder)
+
     @property
     def params(self) -> dict[str, Any]:
-        return asdict(self.encoder.params)
+        return self.encoder.params
 
     def encode(self, x: X, /) -> Y:
         return self.encoder.encode(x)
@@ -749,21 +755,27 @@ class WrappedEncoder(BaseEncoder[X, Y]):
         return self.encoder.decode(y)
 
 
+@pprint_repr
 @dataclass
-class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
+class NestedEncoder(BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""Apply an encoder recursively to nested data structure.
 
     Any instances of the leaf type will be encoded using the encoder.
     Containers in the standard library will be recursed into
     (applies to `list`, `tuple`, `dict`, `set` and `frozenset`).
-    Other types will be returned as-is.
+    Other types will raise TypeError.
+
+    TODO: add support to pass other types as-is.
     """
 
     encoder: Encoder[X, Y]
-    r"""The encoder to nest."""
-    leaf_type: type[X] = object
+    r"""The encoder to apply nested."""
+
+    _: KW_ONLY
+
+    leaf_type: type[X] = object  # type: ignore[assignment]
     r"""The type of the leaf elements."""
-    output_leaf_type: type[Y] = object
+    output_leaf_type: type[Y] = object  # type: ignore[assignment]
     r"""The type of the output elements."""
 
     @property
@@ -771,9 +783,15 @@ class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
         return asdict(self)
 
     def __invert__(self) -> "NestedEncoder[Y, X]":
-        return NestedEncoder(invert_encoder(self.encoder))
+        # FIXME: https://github.com/microsoft/pyright/issues/8165
+        decoder = invert_encoder(self.encoder)
+        return NestedEncoder(
+            decoder,
+            leaf_type=self.output_leaf_type,
+            output_leaf_type=self.leaf_type,
+        )
 
-    def encode(self, x: Nested[X], /) -> Nested[Y]:
+    def encode(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
         match x:
             case list(seq):
                 return [self.encode(val) for val in seq]
@@ -782,15 +800,15 @@ class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
             case dict(mapping):
                 return {key: self.encode(val) for key, val in mapping.items()}
             case set(items):
-                return {self.encode(val) for val in items}
+                return {self.encode(val) for val in items}  # pyright: ignore[reportUnhashable]
             case frozenset(items):
                 return frozenset(self.encode(val) for val in items)
-            case self.leaf_type() as leaf:
+            case self.leaf_type() as leaf:  # pyright: ignore[reportGeneralTypeIssues]
                 return self.encoder.encode(leaf)
             case _:
-                return x
+                raise TypeError(f"Type {type(x)} not supported.")
 
-    def decode(self, y: Nested[Y], /) -> Nested[X]:
+    def decode(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
         match y:
             case list(seq):
                 return [self.decode(val) for val in seq]
@@ -799,13 +817,13 @@ class NestedEncoder(BaseEncoder[Nested[X], Nested[Y]]):
             case dict(mapping):
                 return {key: self.decode(val) for key, val in mapping.items()}
             case set(items):
-                return {self.decode(val) for val in items}
+                return {self.decode(val) for val in items}  # pyright: ignore[reportUnhashable]
             case frozenset(items):
                 return frozenset(self.decode(val) for val in items)
-            case self.output_leaf_type() as leaf:
+            case self.output_leaf_type() as leaf:  # pyright: ignore[reportGeneralTypeIssues]
                 return self.encoder.decode(leaf)
             case _:
-                return y
+                raise TypeError(f"Type {type(y)} not supported.")
 
 
 # endregion unary encoders -------------------------------------------------------------

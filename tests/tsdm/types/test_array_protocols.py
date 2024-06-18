@@ -61,7 +61,6 @@ TEST_OBJECTS = {
     "torch_tensor"     : TORCH_TENSOR,
 }  # fmt: skip
 
-
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
     "numpy_ndarray"    : NP_ARRAY,
     "pandas_dataframe" : PD_DATAFRAME,
