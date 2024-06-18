@@ -17,6 +17,7 @@ from tsdm.types.protocols import (
     ArrayKind,
     MutableArray,
     NumericalArray,
+    NumericalTensor,
     SeriesKind,
     SupportsArray,
     SupportsShape,
@@ -104,6 +105,15 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "torch_tensor"     : TORCH_TENSOR,
 }  # fmt: skip
 
+
+NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
+    "numpy_ndarray"    : NP_ARRAY,
+    "pandas_index"     : PD_INDEX,
+    "pandas_series"    : PD_SERIES,
+    "polars_series"    : PL_SERIES,
+    "torch_tensor"     : TORCH_TENSOR,
+}  # fmt: skip
+
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
     "numpy_ndarray"    : NP_ARRAY,
     "pandas_dataframe" : PD_DATAFRAME,
@@ -116,6 +126,7 @@ EXAMPLES: dict[type, dict[str, Any]] = {
     TableKind      : TABLES,
     ArrayKind      : ARRAYS,
     NumericalArray : NUMERICAL_ARRAYS,
+    NumericalTensor: NUMERICAL_TENSORS,
     MutableArray   : MUTABLE_ARRAYS,
 }  # fmt: skip
 
@@ -185,6 +196,7 @@ EXCLUDED_MEMBERS: dict[type, set[str]] = {
     SeriesKind     : {"diff", "to_numpy", "view"},
     TableKind      : {"columns", "join", "drop", "filter"},
     NumericalArray : {"round"},
+    NumericalTensor: {"round", "view"},
     MutableArray   : {
         "T",
         "clip", "cumprod", "cumsum", "dot",

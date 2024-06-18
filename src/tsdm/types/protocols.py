@@ -25,6 +25,7 @@ __all__ = [
     "TableKind",
     "ArrayKind",
     "NumericalArray",
+    "NumericalTensor",
     "MutableArray",
     # stdlib
     "Map",
@@ -47,15 +48,10 @@ __all__ = [
     "Dataclass",
     "NTuple",
     "Slotted",
+    # Functions
     "is_dataclass",
     "is_namedtuple",
     "is_slotted",
-    # Functions
-    # TypeVars
-    "ArrayType",
-    "TableType",
-    "NumericalArrayType",
-    "MutableArrayType",
 ]
 
 import dataclasses
@@ -322,55 +318,6 @@ class SupportsItem(Protocol[scalar_co]):
 
 
 @runtime_checkable
-class ArrayKind(Protocol[Scalar]):
-    r"""An n-dimensional array of a single homogeneous data type.
-
-    Examples:
-        - `numpy.ndarray`
-        - `pandas.Series`
-        - `polars.Series`
-        - `pyarrow.Array`
-        - `torch.Tensor`
-
-    Counter-Examples:
-        - `pandas.DataFrame` (different __getitem__)
-        - `polars.DataFrame`
-        - `pyarrow.Table`
-
-    References:
-        - https://docs.python.org/3/c-api/buffer.html
-        - https://numpy.org/doc/stable/reference/arrays.interface.html
-        - https://numpy.org/devdocs/user/basics.interoperability.html
-    """
-
-    # NOTE: This is a highly cut down version, to support the bare minimum.
-
-    @property
-    @abstractmethod
-    def shape(self) -> tuple[int, ...]:
-        r"""Yield the shape of the array."""
-        ...
-
-    def __array__(self) -> NDArray: ...
-    def __len__(self) -> int: ...
-    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
-
-    # comparisons
-    # equality ==
-    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
-    # inequality !=
-    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
-    # less than or equal <=
-    def __le__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than or equal >=
-    def __ge__(self, other: Self | Scalar, /) -> Self: ...
-    # less than <
-    def __lt__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than >
-    def __gt__(self, other: Self | Scalar, /) -> Self: ...
-
-
-@runtime_checkable
 class SeriesKind(Protocol[Scalar]):
     r"""A 1d-array of homogeneous data type.
 
@@ -421,7 +368,7 @@ class SeriesKind(Protocol[Scalar]):
         r"""Check if the series is equal to another series."""
         ...
 
-    # comparisons
+    # comparisons (element-wise)
     # equality ==
     def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
     # inequality !=
@@ -500,6 +447,55 @@ class TableKind(Protocol):
 
 
 @runtime_checkable
+class ArrayKind(Protocol[Scalar]):
+    r"""An n-dimensional array of a single homogeneous data type.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `polars.Series`
+        - `pyarrow.Array`
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `pandas.DataFrame` (different __getitem__)
+        - `polars.DataFrame`
+        - `pyarrow.Table`
+
+    References:
+        - https://docs.python.org/3/c-api/buffer.html
+        - https://numpy.org/doc/stable/reference/arrays.interface.html
+        - https://numpy.org/devdocs/user/basics.interoperability.html
+    """
+
+    # NOTE: This is a highly cut down version, to support the bare minimum.
+
+    @property
+    @abstractmethod
+    def shape(self) -> tuple[int, ...]:
+        r"""Yield the shape of the array."""
+        ...
+
+    def __array__(self) -> NDArray: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
+
+    # comparisons (element-wise)
+    # equality ==
+    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # inequality !=
+    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # less than or equal <=
+    def __le__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than or equal >=
+    def __ge__(self, other: Self | Scalar, /) -> Self: ...
+    # less than <
+    def __lt__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than >
+    def __gt__(self, other: Self | Scalar, /) -> Self: ...
+
+
+@runtime_checkable
 class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     r"""Subclass of `Array` that supports numerical operations.
 
@@ -507,7 +503,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         - `numpy.ndarray`
         - `pandas.Index`     (NOTE: missing `.device`)
         - `pandas.Series`    (NOTE: missing `.device`)
-        - `pandas.DataFrame` (NOTE: missing `.item()`, `.device`)
+        - `pandas.DataFrame` (NOTE: missing `.item()`, `.device`, `.dtype`)
         - `polars.Series`    (NOTE: missing `.ndim`, `.size`)
         - `torch.Tensor`
 
@@ -532,39 +528,6 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
 
     # NOTE: The following methods are excluded:
     #  - round(decimals: int) -> Self: (not applicable for most data types)
-
-    # if False:
-    #
-    #     @property
-    #     @abstractmethod
-    #     def dtype(self) -> Any:
-    #         r"""Yield the data type of the array."""
-    #         ...
-    #
-    #     @property
-    #     @abstractmethod
-    #     def size(self) -> int:
-    #         r"""Number of elements in the array.
-    #
-    #         Should be equal to `prod(self.shape)`
-    #         """
-    #         ...
-    #
-    #     @property
-    #     @abstractmethod
-    #     def ndim(self) -> int:
-    #         r"""Number of dimensions.
-    #
-    #         Should be equal to `len(self.shape)`.
-    #         """
-    #         ...
-    #
-    #     def item(self) -> Scalar:
-    #         r"""Return the scalar value the tensor if it only has a single element.
-    #
-    #         Otherwise, raises `ValueError`.
-    #         """
-    #         ...
 
     @property
     @abstractmethod
@@ -608,7 +571,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     # positive +
     def __pos__(self) -> Self: ...
 
-    # comparisons
+    # comparisons (element-wise)
     # equality ==
     def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
     # inequality !=
@@ -674,6 +637,40 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     # endregion arithmetic operations --------------------------------------------------
 
 
+class NumericalTensor(NumericalArray[Scalar], Protocol[Scalar]):
+    """Protocol for numerical tensors.
+
+    Compared to `NumericalArray`, `NumericalTensor` assumes a unique data type and requires:
+
+    - `.dtype` property
+    - `.item()` method to convert single element tensor to scalar.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Index`     (NOTE: missing `.device`)
+        - `pandas.Series`    (NOTE: missing `.device`)
+        - `polars.Series`    (NOTE: missing `.ndim`, `.size`)
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `pandas.DataFrame` (NOTE: missing `.item()`, `.dtype`)
+        - `polars.DataFrame`  (does not support basic arithmetic)
+        - `pyarrow.Array`  (does not support basic arithmetic)
+        - `pyarrow.Table`  (does not support basic arithmetic)
+    """
+
+    @property
+    @abstractmethod
+    def dtype(self) -> Any: ...
+
+    def item(self) -> Scalar:
+        r"""Return the scalar value the tensor if it only has a single element.
+
+        Otherwise, raises `ValueError`.
+        """
+        ...
+
+
 @runtime_checkable
 class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
     r"""Subclass of `Array` that supports inplace operations.
@@ -730,10 +727,6 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
     # def __irshift__(self, other: Self | Scalar, /) -> Self: ...
 
 
-ArrayType = TypeVar("ArrayType", bound=ArrayKind)
-TableType = TypeVar("TableType", bound=TableKind)
-NumericalArrayType = TypeVar("NumericalArrayType", bound=NumericalArray)
-MutableArrayType = TypeVar("MutableArrayType", bound=MutableArray)
 # endregion container protocols --------------------------------------------------------
 
 
