@@ -2,8 +2,6 @@ r"""Test the Array protocol."""
 
 import logging
 from array import array as python_array
-from collections.abc import Collection
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -12,7 +10,7 @@ import pyarrow as pa
 import pytest
 import torch
 from numpy.typing import NDArray
-from typing_extensions import get_protocol_members
+from typing_extensions import Any, get_protocol_members
 
 from tsdm.testing import assert_protocol
 from tsdm.types.protocols import (
@@ -88,11 +86,11 @@ TABLES: dict[str, TableKind] = {
 
 ARRAYS: dict[str, ArrayKind] = {
     "numpy_ndarray"    : NP_ARRAY,
+    "pandas_dataframe" : PD_DATAFRAME,
     "pandas_index"     : PD_INDEX,
     "pandas_series"    : PD_SERIES,
-    "pandas_dataframe" : PD_DATAFRAME,
-    "polars_series"    : PL_SERIES,
     "polars_dataframe" : PL_DATAFRAME,
+    "polars_series"    : PL_SERIES,
     "pyarrow_table"    : PA_TABLE,
     "torch_tensor"     : TORCH_TENSOR,
 }  # fmt: skip
@@ -102,8 +100,8 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "pandas_dataframe" : PD_DATAFRAME,
     "pandas_index"     : PD_INDEX,
     "pandas_series"    : PD_SERIES,
-    "torch_tensor"     : TORCH_TENSOR,
     "polars_series"    : PL_SERIES,
+    "torch_tensor"     : TORCH_TENSOR,
 }  # fmt: skip
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
@@ -121,12 +119,86 @@ EXAMPLES: dict[type, dict[str, Any]] = {
     MutableArray   : MUTABLE_ARRAYS,
 }  # fmt: skip
 
-# frozen sets of attributes
-TABLE_ATTRS = get_protocol_members(TableKind)
-SERIES_ATTRS = get_protocol_members(SeriesKind)
-ARRAY_ATTRS = get_protocol_members(ArrayKind)
-NUMERICAL_ARRAY_ATTRS = get_protocol_members(NumericalArray)
-MUTABLE_ARRAY_ATTRS = get_protocol_members(MutableArray)
+DUNDER_ARITHMETIC: frozenset[str] = frozenset({
+    # comparisons
+    "__eq__",
+    "__ge__",
+    "__gt__",
+    "__le__",
+    "__lt__",
+    "__ne__",
+    # unary ops
+    "__hash__",
+    "__invert__",
+    "__abs__",
+    "__pos__",
+    "__neg__",
+    # binary ops
+    "__add__",
+    "__and__",
+    "__divmod__",
+    "__floordiv__",
+    "__lshift__",
+    "__matmul__",
+    "__mod__",
+    "__mul__",
+    "__or__",
+    "__pow__",
+    "__sub__",
+    "__truediv__",
+    "__xor__",
+    # inplace ops
+    "__iadd__",
+    "__iand__",
+    "__ifloordiv__",
+    "__ilshift__",
+    "__imatmul__",
+    "__imod__",
+    "__imul__",
+    "__ior__",
+    "__ipow__",
+    "__irshift__",
+    "__isub__",
+    "__itruediv__",
+    "__ixor__",
+    # r-ops
+    "__radd__",
+    "__rand__",
+    "__rdivmod__",
+    "__rfloordiv__",
+    "__rlshift__",
+    "__rmatmul__",
+    "__rmod__",
+    "__rmul__",
+    "__ror__",
+    "__rpow__",
+    "__rrshift__",
+    "__rshift__",
+    "__rsub__",
+    "__rtruediv__",
+    "__rxor__",
+})
+r"""Dunder methods for arithmetic operations."""
+
+EXCLUDED_MEMBERS: dict[type, set[str]] = {
+    ArrayKind      : set(),
+    SeriesKind     : {"diff", "to_numpy", "view"},
+    TableKind      : {"columns", "join", "drop", "filter"},
+    NumericalArray : {"round"},
+    MutableArray   : {
+        "T",
+        "clip", "cumprod", "cumsum", "dot",
+        "mean", "ndim", "prod", "round",
+        "size", "squeeze", "std", "sum",
+        "swapaxes", "transpose", "var",
+    },
+}  # fmt: skip
+r"""Excluded members for each protocol."""
+
+
+def is_admissable(name: str) -> bool:
+    r"""Check if the name is admissable."""
+    return not name.startswith("_") or name in DUNDER_ARITHMETIC
 
 
 @pytest.mark.parametrize("name", SUPPORTS_ARRAYS)
@@ -143,11 +215,9 @@ def test_series(name: str) -> None:
     r"""Test the Series protocol."""
     series = SERIES[name]
     cls = series.__class__
-    assert isinstance(series, SeriesKind), SERIES_ATTRS - set(dir(series))
-    assert not isinstance(series, TableKind)
+    assert isinstance(series, SeriesKind)
 
-    # check methods
-    attrs = set(SERIES_ATTRS)
+    attrs = set(get_protocol_members(SeriesKind)) - DUNDER_ARITHMETIC
 
     assert isinstance(series.__array__(), np.ndarray)
     attrs.remove("__array__")
@@ -172,6 +242,9 @@ def test_series(name: str) -> None:
     assert isinstance(series.take([0, 0, 2]), cls)
     attrs.remove("take")
 
+    assert series.equals(series)
+    attrs.remove("equals")
+
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
 
@@ -180,11 +253,11 @@ def test_series(name: str) -> None:
 def test_table(name: str) -> None:
     r"""Test the Table protocol."""
     table = TABLES[name]
-    assert isinstance(table, TableKind), TABLE_ATTRS - set(dir(table))
-    assert not isinstance(table, SeriesKind)
+    assert isinstance(table, TableKind)
+    # assert not isinstance(table, SeriesKind)
 
     # check methods
-    attrs = set(TABLE_ATTRS)
+    attrs = set(get_protocol_members(TableKind)) - DUNDER_ARITHMETIC
 
     assert isinstance(table.__array__(), np.ndarray)
     attrs.remove("__array__")
@@ -195,12 +268,6 @@ def test_table(name: str) -> None:
     assert isinstance(len(table), int)
     attrs.remove("__len__")
 
-    assert isinstance(table.columns, Collection)
-    assert all(isinstance(col, str) for col in table.columns) or all(
-        isinstance(col, SeriesKind) for col in table.columns
-    )
-    attrs.remove("columns")
-
     assert isinstance(table.shape, tuple)
     assert len(table.shape) == 2
     assert isinstance(table.shape[0], int)
@@ -209,6 +276,16 @@ def test_table(name: str) -> None:
 
     assert isinstance(table["floats"], SeriesKind)
     attrs.remove("__getitem__")
+
+    assert table.equals(table)
+    attrs.remove("equals")
+
+    # drop columns
+    if hasattr(table, "drop"):
+        assert table.drop(columns=["integers", "floats"]).shape == (4, 1)  # pyright: ignore[reportAttributeAccessIssue]
+        assert table.drop(columns=["integers"]).shape == (4, 2)  # pyright: ignore[reportAttributeAccessIssue]
+        assert table.drop(columns="integers").shape == (4, 2)  # pyright: ignore[reportAttributeAccessIssue]
+        assert table.drop(columns=[]).shape == (4, 3)  # pyright: ignore[reportAttributeAccessIssue]
 
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
@@ -247,61 +324,20 @@ def test_all_protocols(proto: type, name: str) -> None:
             assert_protocol(obj, proto)
 
 
-def test_shared_attrs() -> None:
+@pytest.mark.parametrize("proto", EXAMPLES)
+def test_shared_attrs(proto: type) -> None:
     r"""Test which shared attributes exist that are not covered by protocols."""
     print("\nShared Attributes not covered by protocols:")
-    for proto, examples in EXAMPLES.items():
-        protocol_members = get_protocol_members(proto)
-        shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
-        superfluous_attrs = sorted(shared_attrs - protocol_members)
-        print(f"\n\t{proto.__name__!r}:\n\t{superfluous_attrs}")
-        missing_attrs = sorted(protocol_members - shared_attrs)
-        assert not missing_attrs, f"{proto}: not all examples have: {missing_attrs}!"
-
-
-def test_joint_attrs_series() -> None:
-    shared_attrs = set.intersection(*(set(dir(s)) for s in SERIES.values()))
-    series_members = get_protocol_members(SeriesKind)
-    superfluous_attrs = sorted(shared_attrs - series_members)
-    print(f"\nShared members not covered by SeriesKind:\n\t{superfluous_attrs}")
-    missing_attrs = sorted(series_members - shared_attrs)
-    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
-
-
-def test_joint_attrs_table() -> None:
-    shared_attrs = set.intersection(*(set(dir(t)) for t in TABLES.values()))
-    table_members = get_protocol_members(TableKind)
-    superfluous_attrs = sorted(shared_attrs - table_members)
-    print(f"\nShared members not covered by TableKind:\n\t{superfluous_attrs}")
-    missing_attrs = sorted(table_members - shared_attrs)
-    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
-
-
-def test_joint_attrs_array() -> None:
-    shared_attrs = set.intersection(*(set(dir(a)) for a in ARRAYS.values()))
-    array_members = get_protocol_members(ArrayKind)
-    superfluous_attrs = sorted(shared_attrs - array_members)
-    print(f"\nShared members not covered by ArrayKind:\n\t{superfluous_attrs}")
-    missing_attrs = sorted(array_members - shared_attrs)
-    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
-
-
-def test_joint_attrs_numerical_array() -> None:
-    shared_attrs = set.intersection(*(set(dir(a)) for a in NUMERICAL_ARRAYS.values()))
-    numerical_array_members = get_protocol_members(NumericalArray)
-    superfluous_attrs = sorted(shared_attrs - numerical_array_members)
-    print(f"\nShared members not covered by NumericalArray:\n\t{superfluous_attrs}")
-    missing_attrs = sorted(numerical_array_members - shared_attrs)
-    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
-
-
-def test_joint_attrs_mutable_array() -> None:
-    shared_attrs = set.intersection(*(set(dir(a)) for a in MUTABLE_ARRAYS.values()))
-    mutable_array_members = get_protocol_members(MutableArray)
-    superfluous_attrs = sorted(shared_attrs - mutable_array_members)
-    print(f"\nShared members not covered by MutableArray:\n\t{superfluous_attrs}")
-    missing_attrs = sorted(mutable_array_members - shared_attrs)
-    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
+    examples = EXAMPLES[proto]
+    protocol_members = get_protocol_members(proto)
+    shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
+    shared_attrs -= EXCLUDED_MEMBERS[proto]
+    if extra_attrs := sorted(protocol_members - shared_attrs):
+        raise AssertionError(f"\nMissing attributes: {extra_attrs}")
+    if missing_attrs := sorted(filter(is_admissable, shared_attrs - protocol_members)):
+        raise AssertionError(
+            f"\nShared members not covered by {proto}:\n\t{missing_attrs}"
+        )
 
 
 def test_table_manual() -> None:

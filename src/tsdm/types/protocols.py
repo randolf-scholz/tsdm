@@ -63,7 +63,6 @@ import typing
 from abc import abstractmethod
 from collections.abc import (
     Collection,
-    Hashable,
     ItemsView,
     Iterable,
     Iterator,
@@ -323,8 +322,57 @@ class SupportsItem(Protocol[scalar_co]):
 
 
 @runtime_checkable
-class SeriesKind(Protocol[scalar_co]):
-    r"""A 1d array of homogeneous data type.
+class ArrayKind(Protocol[Scalar]):
+    r"""An n-dimensional array of a single homogeneous data type.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `polars.Series`
+        - `pyarrow.Array`
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `pandas.DataFrame` (different __getitem__)
+        - `polars.DataFrame`
+        - `pyarrow.Table`
+
+    References:
+        - https://docs.python.org/3/c-api/buffer.html
+        - https://numpy.org/doc/stable/reference/arrays.interface.html
+        - https://numpy.org/devdocs/user/basics.interoperability.html
+    """
+
+    # NOTE: This is a highly cut down version, to support the bare minimum.
+
+    @property
+    @abstractmethod
+    def shape(self) -> tuple[int, ...]:
+        r"""Yield the shape of the array."""
+        ...
+
+    def __array__(self) -> NDArray: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
+
+    # comparisons
+    # equality ==
+    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # inequality !=
+    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # less than or equal <=
+    def __le__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than or equal >=
+    def __ge__(self, other: Self | Scalar, /) -> Self: ...
+    # less than <
+    def __lt__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than >
+    def __gt__(self, other: Self | Scalar, /) -> Self: ...
+
+
+@runtime_checkable
+class SeriesKind(Protocol[Scalar]):
+    r"""A 1d-array of homogeneous data type.
 
     Examples:
         - `pandas.Series`
@@ -337,50 +385,55 @@ class SeriesKind(Protocol[scalar_co]):
         - `polars.DataFrame`  lacks `value_counts`
         - `pyarrow.Table`  lacks `value_counts`
         - `torch.Tensor`  lacks `value_counts`
+
+    References:
+        - https://numpy.org/devdocs/user/basics.interoperability.html
     """
 
-    @abstractmethod
-    def __array__(self) -> NDArray:
-        r"""Return a numpy array (usually of type `object` since columns are heterogeneous).
+    # NOTE: The following methods differ between backends:
+    #  - diff: gives discrete differences for polars and pandas, but not for pyarrow
+    #  - view: allows casting dtype for pandas and pyarrow, but not polars
+    # NOTE: We do not include to_numpy(), as this is covered by __array__.
 
-        References:
-            - https://numpy.org/devdocs/user/basics.interoperability.html
-        """
-        ...
-
-    @abstractmethod
-    def __len__(self) -> int:
-        r"""Number of elements in the series."""
-        ...
-
-    @abstractmethod
-    def __iter__(self) -> Iterator[scalar_co]:
-        r"""Iterate over the elements of the series."""
-        ...
-
+    def __array__(self) -> NDArray: ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Scalar]: ...
     @overload
-    @abstractmethod
-    def __getitem__(self, key: int, /) -> scalar_co: ...
+    def __getitem__(self, key: int, /) -> Scalar: ...
     @overload
-    @abstractmethod
     def __getitem__(self, key: slice, /) -> Self: ...
 
-    @abstractmethod
     def unique(self) -> Self:
         r"""Return the unique elements of the series."""
         ...
 
     # NOTE: kind of inconsistent across backends
-    @abstractmethod
     def value_counts(self) -> Self | "SeriesKind" | "TableKind":
         r"""Return the number of occurences for each unique element of the series."""
         ...
 
     # NOTE: kind of inconsistent across backends
-    @abstractmethod
     def take(self, indices: Self | list[int] | NDArray, /) -> Self:
         r"""Select elements from the series by index."""
         ...
+
+    def equals(self, other: Self) -> bool:
+        r"""Check if the series is equal to another series."""
+        ...
+
+    # comparisons
+    # equality ==
+    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # inequality !=
+    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # less than or equal <=
+    def __le__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than or equal >=
+    def __ge__(self, other: Self | Scalar, /) -> Self: ...
+    # less than <
+    def __lt__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than >
+    def __gt__(self, other: Self | Scalar, /) -> Self: ...
 
 
 @runtime_checkable
@@ -404,117 +457,46 @@ class TableKind(Protocol):
         - `polars.Series`  lacks `__dataframe__`
         - `pyarrow.Array`  lacks `__dataframe__`
         - `torch.Tensor`  lacks `__dataframe__`
+
+    References:
+        - https://numpy.org/devdocs/user/basics.interoperability.html
+        - https://data-apis.org/dataframe-protocol/latest/index.html
     """
+
+    # NOTE: The following methods differ between backends:
+    #  - __iter__: yields columns for polars and pandas, but rows for pyarrow
+    #  - take: not supported by polars
+    #  - columns: pandas and polars return column names, pyarrow returns list of Arrays
+    #  - drop: polars currently doing signature change
+    #  - filter: pandas goes over columns, polars over rows
 
     @property
     def shape(self) -> tuple[int, int]:
         r"""Yield the shape of the table."""
         ...
 
-    def __array__(self) -> NDArray[np.object_]:
-        r"""Return a numpy array (usually of type `object` since columns are heterogeneous).
+    def __array__(self) -> NDArray[np.object_]: ...
+    def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, key: Any, /) -> "SeriesKind" | Self: ...
 
-        References:
-            - https://numpy.org/devdocs/user/basics.interoperability.html
-        """
+    def equals(self, other: Self, /) -> bool:
+        r"""Check if the table is equal to another table."""
         ...
 
-    def __dataframe__(self, *, allow_copy: bool = True) -> object:
-        r"""Return the dataframe interchange object implementing the interchange protocol.
-
-        References:
-            - https://data-apis.org/dataframe-protocol/latest/index.html
-        """
-        ...
-
-    def __len__(self) -> int:
-        r"""Number of rows."""
-        ...
-
-    def __getitem__(self, key: Any, /) -> "SeriesKind" | Self:
-        r"""Return the corresponding column."""
-        ...
-
-    # NOTE: take is excluded, cf. https://github.com/pola-rs/polars/issues/11911
-    # def take(self, indices: Any, /) -> Any:
-    #     r"""Return an element/slice of the table."""
-    #     ...
-
-    @property
-    def columns(self) -> Collection[Hashable] | Collection[SeriesKind]:
-        r"""Yield the columns or the column names."""
-        ...
-
-    # def __iter__(self) -> Iterator[str]:
-    #     r"""Iterate over the column or column names."""
-    #     ...
-
-
-@runtime_checkable
-class ArrayKind(Protocol[scalar_co]):
-    r"""An n-dimensional array of a single homogeneous data type.
-
-    Examples:
-        - `numpy.ndarray`
-        - `pandas.Series`
-        - `polars.Series`
-        - `pyarrow.Array`
-        - `tensorflow.Tensor`
-        - `torch.Tensor`
-        - `memoryview`
-
-    Counter-Examples:
-        - `pandas.DataFrame` (different __getitem__)
-        - `polars.DataFrame`
-        - `pyarrow.Table`
-
-    References:
-        - https://docs.python.org/3/c-api/buffer.html
-        - https://numpy.org/doc/stable/reference/arrays.interface.html
-    """
-
-    # NOTE: This is a highly cut down version, to support the bare minimum.
-
-    @property
-    @abstractmethod
-    def shape(self) -> tuple[int, ...]:
-        r"""Yield the shape of the array."""
-        ...
-
-    # @property
-    # @abstractmethod
-    # def ndim(self) -> int:
-    #     r"""Number of dimensions."""
-    #     ...
-
-    @abstractmethod
-    def __array__(self) -> NDArray:
-        r"""Return a numpy array.
-
-        References:
-            - https://numpy.org/devdocs/user/basics.interoperability.html
-        """
-        ...
-
-    @abstractmethod
-    def __len__(self) -> int:
-        r"""Number of elements along the first axis."""
-        ...
-
-    # @abstractmethod
-    # def __iter__(self) -> Iterator[Self]:
-    #     r"""Iterate over the first dimension."""
-    #     ...
-
-    @abstractmethod
-    def __getitem__(self, key: Any, /) -> Self | scalar_co:
-        r"""Return an element/slice of the table."""
-        ...
-
-    # @abstractmethod
-    # def take(self, indices: Any, /) -> Any:
-    #     r"""Return an element/slice of the table."""
-    #     ...
+    # comparisons (element-wise)
+    # equality ==
+    def __eq__(self, other: Self | object, /) -> Self: ...  # type: ignore[override]
+    # inequality !=
+    def __ne__(self, other: Self | object, /) -> Self: ...  # type: ignore[override]
+    # less than or equal <=
+    def __le__(self, other: Self | object, /) -> Self: ...
+    # greater than or equal >=
+    def __ge__(self, other: Self | object, /) -> Self: ...
+    # less than <
+    def __lt__(self, other: Self | object, /) -> Self: ...
+    # greater than >
+    def __gt__(self, other: Self | object, /) -> Self: ...
 
 
 @runtime_checkable
@@ -523,17 +505,66 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
 
     Examples:
         - `numpy.ndarray`
-        - `pandas.Index`
-        - `pandas.Series`
-        - `pandas.DataFrame`
+        - `pandas.Index`     (NOTE: missing `.device`)
+        - `pandas.Series`    (NOTE: missing `.device`)
+        - `pandas.DataFrame` (NOTE: missing `.item()`, `.device`)
+        - `polars.Series`    (NOTE: missing `.ndim`, `.size`)
         - `torch.Tensor`
-        - `polars.Series`  (NOTE: missing ndim)
+
+    Note:
+        - `pandas.DataFrame` is somewhat questionable, as it contains columns of different dtypes.
+           Also, it lacks the common method `.item()`, which can be used to extract a scalar value.
 
     Counter-Examples:
         - `polars.DataFrame`  (does not support basic arithmetic)
         - `pyarrow.Array`  (does not support basic arithmetic)
         - `pyarrow.Table`  (does not support basic arithmetic)
+
+    References:
+        - This a weak verison of the Array API:
+          https://data-apis.org/array-api/latest/API_specification/array_object.html
+        - https://data-apis.org/dataframe-api/draft/index.html
+        - https://numpy.org/devdocs/user/basics.interoperability.html
     """
+
+    # NOTE: We would like to add the following in the future:
+    #  dtype, size, ndim, item
+
+    # NOTE: The following methods are excluded:
+    #  - round(decimals: int) -> Self: (not applicable for most data types)
+
+    # if False:
+    #
+    #     @property
+    #     @abstractmethod
+    #     def dtype(self) -> Any:
+    #         r"""Yield the data type of the array."""
+    #         ...
+    #
+    #     @property
+    #     @abstractmethod
+    #     def size(self) -> int:
+    #         r"""Number of elements in the array.
+    #
+    #         Should be equal to `prod(self.shape)`
+    #         """
+    #         ...
+    #
+    #     @property
+    #     @abstractmethod
+    #     def ndim(self) -> int:
+    #         r"""Number of dimensions.
+    #
+    #         Should be equal to `len(self.shape)`.
+    #         """
+    #         ...
+    #
+    #     def item(self) -> Scalar:
+    #         r"""Return the scalar value the tensor if it only has a single element.
+    #
+    #         Otherwise, raises `ValueError`.
+    #         """
+    #         ...
 
     @property
     @abstractmethod
@@ -541,129 +572,101 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         r"""Yield the shape of the array."""
         ...
 
-    # @property
-    # def ndim(self) -> int:
-    #     r"""Number of dimensions."""
-    #     return len(self.shape)
+    def __array__(self) -> NDArray: ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Self]: ...
+    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
 
-    @abstractmethod
-    def __array__(self) -> NDArray:
-        r"""Return a numpy array.
-
-        References:
-            - https://numpy.org/devdocs/user/basics.interoperability.html
-        """
-        ...
-
-    @abstractmethod
-    def __len__(self) -> int:
-        r"""Number of elements along the first axis."""
-        return int(self.shape[0])
-
-    @abstractmethod
-    def __iter__(self) -> Iterator[Self]:
-        r"""Iterate over the first dimension."""
-        ...
-
-    @abstractmethod
-    def __getitem__(self, key: Any, /) -> Self | Scalar:
-        r"""Return an element/slice of the table."""
-        ...
-
-    @abstractmethod
     def all(self) -> Self | bool:
         r"""Return True if all elements are True."""
         ...
 
-    @abstractmethod
     def any(self) -> Self | bool:
         r"""Return True if any element is True."""
         ...
 
+    def min(self) -> Scalar:
+        r"""Return the minimum value."""
+        ...
+
+    def max(self) -> Scalar:
+        r"""Return the maximum value."""
+        ...
+
+    def take(self, indices: Any, /) -> Self:
+        r"""Select elements from the array by index."""
+        ...
+
     # region arithmetic operations -----------------------------------------------------
     # unary operations
-    # positive +
-    def __pos__(self) -> Self: ...
-
-    # negation -
-    def __neg__(self) -> Self: ...
-
-    # bitwise NOT ~
-    def __invert__(self) -> Self: ...
-
     # absolute value abs()
     def __abs__(self) -> Self: ...
+    # bitwise NOT ~
+    def __invert__(self) -> Self: ...
+    # negation -
+    def __neg__(self) -> Self: ...
+    # positive +
+    def __pos__(self) -> Self: ...
 
     # comparisons
     # equality ==
     def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
-
     # inequality !=
     def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
-
     # less than or equal <=
     def __le__(self, other: Self | Scalar, /) -> Self: ...
-
     # greater than or equal >=
     def __ge__(self, other: Self | Scalar, /) -> Self: ...
-
     # less than <
     def __lt__(self, other: Self | Scalar, /) -> Self: ...
-
     # greater than >
     def __gt__(self, other: Self | Scalar, /) -> Self: ...
-
-    # matrix multiplication @
-    # def __matmul__(self, other: Self, /) -> Self: ...
-    # def __rmatmul__(self, other: Self, /) -> Self: ...
 
     # arithmetic
     # addition +
     def __add__(self, other: Self | Scalar, /) -> Self: ...
     def __radd__(self, other: Self | Scalar, /) -> Self: ...
-
     # subtraction -
     def __sub__(self, other: Self | Scalar, /) -> Self: ...
     def __rsub__(self, other: Self | Scalar, /) -> Self: ...
-
     # multiplication *
     def __mul__(self, other: Self | Scalar, /) -> Self: ...
     def __rmul__(self, other: Self | Scalar, /) -> Self: ...
-
     # true division /
     def __truediv__(self, other: Self | Scalar, /) -> Self: ...
     def __rtruediv__(self, other: Self | Scalar, /) -> Self: ...
-
     # floor division //
     def __floordiv__(self, other: Self | Scalar, /) -> Self: ...
     def __rfloordiv__(self, other: Self | Scalar, /) -> Self: ...
-
     # power **
-    def __pow__(self, exponent: Self | Scalar, /) -> Self: ...
-    def __rpow__(self, base: Self | Scalar, /) -> Self: ...
-
+    # NOTE: polars does not support complex data types!
+    def __pow__(self, exponent: Self | float, /) -> Self: ...
+    def __rpow__(self, base: Self | float, /) -> Self: ...
     # modulo %
     def __mod__(self, other: Self | Scalar, /) -> Self: ...
     def __rmod__(self, other: Self | Scalar, /) -> Self: ...
 
+    # matrix multiplication @
+    # def __matmul__(self, other: Self, /) -> Self: ...
+    # def __rmatmul__(self, other: Self, /) -> Self: ...
+
     # boolean operations
+    # NOTE: polars type hints are missing scalar types
+    # FIXME: https://github.com/pola-rs/polars/issues/17048
     # AND &
-    def __and__(self, other: Self | Scalar, /) -> Self: ...
-    def __rand__(self, other: Self | Scalar, /) -> Self: ...
-
+    def __and__(self, other: Self, /) -> Self: ...
+    def __rand__(self, other: Self, /) -> Self: ...
     # OR |
-    def __or__(self, other: Self | Scalar, /) -> Self: ...
-    def __ror__(self, other: Self | Scalar, /) -> Self: ...
-
+    def __or__(self, other: Self, /) -> Self: ...
+    def __ror__(self, other: Self, /) -> Self: ...
     # XOR ^
-    def __xor__(self, other: Self | Scalar, /) -> Self: ...
-    def __rxor__(self, other: Self | Scalar, /) -> Self: ...
+    def __xor__(self, other: Self, /) -> Self: ...
+    def __rxor__(self, other: Self, /) -> Self: ...
 
     # bitwise operators
     # left shift <<
     # def __lshift__(self, other: Self | Scalar, /) -> Self: ...
     # def __rlshift__(self, other: Self | Scalar, /) -> Self: ...
-    #
     # right shift >>
     # def __rshift__(self, other: Self | Scalar, /) -> Self: ...
     # def __rrshift__(self, other: Self | Scalar, /) -> Self: ...
@@ -677,57 +680,52 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
 
     Examples:
         - `numpy.ndarray`
-        - `pandas.Series`
         - `pandas.DataFrame`
+        - `pandas.Series`
         - `torch.Tensor`
 
     Counter-Examples:
-        - `polars.DataFrame`
-        - `polars.Series`
-        - `pyarrow.Array`
-        - `pyarrow.Table`
+        - `pandas.Index`     (does not support inplace operations)
+        - `polars.DataFrame` (does not support inplace operations)
+        - `polars.Series`    (does not support inplace operations)
+        - `pyarrow.Array`    (does not support inplace operations)
+        - `pyarrow.Table`    (does not support inplace operations)
     """
 
-    # inplace matrix multiplication @=
-    # NOTE: __imatmul__ not supported since it potentially changes the shape of the array.
-    # def __imatmul__(self, other: Self, /) -> Self: ...
+    # NOTE: The following operations are excluded:
+    #  - __imatmul__: because it potentially changes the shape of the array.
+
+    # matrix multiplication @
+    def __matmul__(self, other: Self, /) -> Self: ...
+    def __rmatmul__(self, other: Self, /) -> Self: ...
 
     # inplace arithmetic operations
     # addition +=
     def __iadd__(self, other: Self | Scalar, /) -> Self: ...
-
     # floor division //=
     def __ifloordiv__(self, other: Self | Scalar, /) -> Self: ...
-
     # modulo %=
     def __imod__(self, other: Self | Scalar, /) -> Self: ...
-
     # multiplication *=
     def __imul__(self, other: Self | Scalar, /) -> Self: ...
-
     # power **=
-    def __ipow__(self, power: Self | Scalar, /) -> Self: ...
-
+    def __ipow__(self, power: Self | float, /) -> Self: ...
     # subtraction -=
     def __isub__(self, other: Self | Scalar, /) -> Self: ...
-
     # true division /=
     def __itruediv__(self, other: Self | Scalar, /) -> Self: ...
 
     # inplace boolean operations
     # AND &=
     def __iand__(self, other: Self | Scalar, /) -> Self: ...
-
     # OR |=
     def __ior__(self, other: Self | Scalar, /) -> Self: ...
-
     # XOR ^=
     def __ixor__(self, other: Self | Scalar, /) -> Self: ...
 
-    # inplace bitwise operations
+    # # inplace bitwise operations
     # # left shift =<<
     # def __ilshift__(self, other: Self | Scalar, /) -> Self: ...
-    #
     # # right shift =>>
     # def __irshift__(self, other: Self | Scalar, /) -> Self: ...
 

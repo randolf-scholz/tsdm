@@ -510,8 +510,8 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
               (), (1,), (1,1), (30,), (30,1), (1,40), (30,40).
         """
         # slice the parameters
-        loc = self.loc if self.loc.ndim == 0 else self.loc[item]
-        scale = self.scale if self.scale.ndim == 0 else self.scale[item]
+        loc = self.loc if len(self.loc.shape) == 0 else self.loc[item]
+        scale = self.scale if len(self.scale.shape) == 0 else self.scale[item]
         axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
@@ -569,8 +569,8 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the Standardizer."""
         # slice the parameters
-        mean = self.mean[item] if self.mean.ndim > 0 else self.mean
-        stdv = self.stdv[item] if self.stdv.ndim > 0 else self.stdv
+        mean = self.mean[item] if len(self.mean.shape) > 0 else self.mean
+        stdv = self.stdv[item] if len(self.stdv.shape) > 0 else self.stdv
         axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
@@ -701,10 +701,10 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the MinMaxScaler."""
         # slice the parameters
-        xmin = self.xmin[item] if self.xmin.ndim > 0 else self.xmin
-        xmax = self.xmax[item] if self.xmax.ndim > 0 else self.xmax
-        ymin = self.ymin[item] if self.ymin.ndim > 0 else self.ymin
-        ymax = self.ymax[item] if self.ymax.ndim > 0 else self.ymax
+        xmin = self.xmin[item] if len(self.xmin.shape) > 0 else self.xmin
+        xmax = self.xmax[item] if len(self.xmax.shape) > 0 else self.xmax
+        ymin = self.ymin[item] if len(self.ymin.shape) > 0 else self.ymin
+        ymax = self.ymax[item] if len(self.ymax.shape) > 0 else self.ymax
         axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
