@@ -684,16 +684,14 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
                     self.schema[group] = ellipsis_cols
 
         # fill in the dtype for missing groups
-        if Ellipsis in self.dtypes:
-            dtype = self.dtypes.pop(Ellipsis)
-            for group in self.schema.keys() - self.dtypes.keys():
-                self.dtypes[group] = dtype
+        dtype = None if Ellipsis not in self.dtypes else self.dtypes.pop(Ellipsis)
+        for group in self.schema.keys() - self.dtypes.keys():
+            self.dtypes[group] = dtype
 
         # fill in the device for missing groups
-        if Ellipsis in self.device:
-            device = self.device.pop(Ellipsis)
-            for group in self.schema.keys() - self.device.keys():
-                self.device[group] = device
+        device = None if Ellipsis not in self.device else self.device.pop(Ellipsis)
+        for group in self.schema.keys() - self.device.keys():
+            self.device[group] = device
 
         if self.dtypes.keys() & self.device.keys() != self.schema.keys():
             raise ValueError(

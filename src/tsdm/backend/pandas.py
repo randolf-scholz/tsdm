@@ -81,6 +81,16 @@ def pandas_infer_axes(
 def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
     r"""Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
+    # FIXME: https://github.com/pandas-dev/pandas/issues/59053
+    try:
+        lower = lower.item()
+    except Exception:
+        pass
+    try:
+        upper = upper.item()
+    except Exception:
+        pass
+
     return x.clip(lower, upper, axis=axis)
 
 

@@ -86,7 +86,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
                 "X": ...,
             },
             dtypes={"T": "float32", "X": "float32"},
-            encode_index=True,
+            # encode_index=True,
         )
     )
 

@@ -4,7 +4,7 @@ import logging
 
 from pandas import Series, date_range, testing
 
-from tsdm.encoders import OldDateTimeEncoder
+from tsdm.encoders import DateTimeEncoder as OldDateTimeEncoder
 
 __logger__ = logging.getLogger(__name__)
 
