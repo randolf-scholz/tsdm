@@ -144,12 +144,14 @@ class Kernels:  # Q: how to make this more elegant?
     nanmin: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmin,
         "pandas": pandas_nanmin,
+        "polars": lambda x, axis=None: x.nan_min(),
         "torch": torch_nanmin,
     }
 
     nanmax: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmax,
         "pandas": pandas_nanmax,
+        "polars": lambda x, axis=None: x.nan_min(),
         "torch": torch_nanmax,
     }
 
@@ -232,12 +234,12 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": lambda x, dtype: x.to(dtype),
     }
 
-    make_scalar: Mapping[BackendID, MakeScalarProto] = {
+    scalar: Mapping[BackendID, MakeScalarProto] = {
         "arrow": lambda value, dtype: pa.scalar(value, type=dtype),
-        "numpy": lambda value, dtype: np.array([value], dtype=dtype),
+        "numpy": lambda value, dtype: np.array([value], dtype=dtype).squeeze(),
         "pandas": lambda value, dtype: pd.Index([value]).astype(dtype).item(),
         "polars": lambda value, dtype: pl.Series([value]).cast(dtype).item(),
-        "torch": lambda value, dtype: torch.tensor(value, dtype=dtype),
+        "torch": lambda value, dtype: torch.tensor([value], dtype=dtype).squeeze(),
     }
 
 

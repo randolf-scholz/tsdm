@@ -134,7 +134,7 @@ class ConcatenateProto(Protocol[T]):
 class MakeScalarProto(Protocol[T_co]):
     r"""Bound-Protocol for `make_scalar`-function."""
 
-    def __call__(self, value: Any, /, *, dtype: Any) -> T_co: ...
+    def __call__(self, value: Any, /, dtype: Any) -> T_co: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

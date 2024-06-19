@@ -18,8 +18,8 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
-from typing_extensions import Any, ClassVar, Final, Optional, TypeVar
+from pandas import DataFrame, Series
+from typing_extensions import Any, ClassVar, Final, Optional, TypeVar, cast
 
 from tsdm.encoders.base import BackendEncoder, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
@@ -40,7 +40,7 @@ r"""TypeVar for tensor-like objects."""
 class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
-    unit: pd.Timedelta = NotImplemented
+    unit: TimeDelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
     original_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
@@ -59,21 +59,24 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
             data = self.backend.dropna(data)
-            data_as_int = self.backend.cast(data, int)
-            array = np.array(data_as_int)
-            base_freq = int(np.gcd.reduce(array))
+            diffs = np.array(self.backend.cast(data, int))
+            base_freq = int(np.gcd.reduce(diffs))
 
             # convert base_freq back to time delta in the original dtype
             self.unit = self.backend.scalar(base_freq, dtype=self.original_dtype)
 
     def encode(self, x: Arr, /) -> Arr:
-        return x / self.unit
+        try:
+            return x / self.unit
+        except TypeError:
+            # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
+            return self.backend.cast(x, float) / self.backend.scalar(self.unit, float)
 
     def decode(self, y: Arr, /) -> Arr:
-        # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
         try:
             return self.backend.cast(y * self.unit, self.original_dtype)
         except pa.lib.ArrowNotImplementedError:
+            # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             y = self.backend.cast(y, float) * self.unit
             return self.backend.cast(y, self.original_dtype)
 
@@ -85,7 +88,7 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
 
     offset: DateTime = NotImplemented
     r"""The starting point of the timeseries."""
-    unit: pd.Timedelta = NotImplemented
+    unit: TimeDelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
     original_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
@@ -107,23 +110,32 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
         self.original_dtype = data.dtype
 
         if self.offset is NotImplemented:
-            self.offset = data.min()
+            self.offset = cast(DateTime, self.backend.nanmin(data))
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             deltas = data - self.offset
             # This looks awkward but is robust.
             deltas = self.backend.dropna(deltas)
-            base_freq = np.gcd.reduce(self.backend.cast(deltas, int))
-            self.unit = Index([base_freq]).astype(deltas.dtype).item()
+            diffs = np.array(self.backend.cast(deltas, int))
+            base_freq = int(np.gcd.reduce(diffs))
+            self.unit = self.backend.scalar(base_freq, dtype=deltas.dtype)
 
     def encode(self, x: Arr, /) -> Arr:
-        return (x - self.offset) / self.unit
+        delta = x - self.offset
+
+        try:
+            return delta / self.unit
+        except TypeError:
+            # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
+            return self.backend.cast(delta, float) / self.backend.scalar(
+                self.unit, float
+            )
 
     def decode(self, y: Arr, /) -> Arr:
-        # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
         try:
             return self.backend.cast(y * self.unit + self.offset, self.original_dtype)
         except pa.lib.ArrowNotImplementedError:
+            # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             y = self.backend.cast(y, float) * self.unit + self.offset
             return self.backend.cast(y, self.original_dtype)
 
