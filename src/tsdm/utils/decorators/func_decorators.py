@@ -232,9 +232,8 @@ def wrap_method(
         case Callable() as pre, None, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
-            # Q: Why do we have to add pyright ignore in this one, but not the others?
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:  # pyright: ignore[reportRedeclaration]
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
                 pre(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 

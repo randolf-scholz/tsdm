@@ -88,7 +88,7 @@ linters = [
 ]
 typing = [
     "mypy>=1.10.0",
-    "pyright>=1.1.367",
+    "pyright>=1.1.368",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20240423",
@@ -124,7 +124,7 @@ experiment = [
     "notebook>=7.2.1",
     "openml>=0.14.2",
     "openpyxl>=3.1.4",
-    "psutil>=5.9.8",
+    "psutil>=6.0.0",
     "pygments>=2.18.0",
     "torchinfo>=1.8.0",
 ]
