@@ -2,18 +2,21 @@ r"""Implement `pandas`-backend for tsdm."""
 
 __all__ = [
     # Functions
-    "pandas_infer_axes",
-    "pandas_clip",
-    "pandas_false_like",
-    "pandas_like",
-    "pandas_nanmax",
-    "pandas_nanmean",
-    "pandas_nanmin",
-    "pandas_nanstd",
-    "pandas_strip_whitespace",
-    "pandas_true_like",
-    "pandas_null_like",
-    "pandas_where",
+    "cast",
+    "clip",
+    "copy_like",
+    "drop_null",
+    "false_like",
+    "infer_axes",
+    "nanmax",
+    "nanmean",
+    "nanmin",
+    "nanstd",
+    "null_like",
+    "scalar",
+    "strip_whitespace",
+    "true_like",
+    "where",
     # auxiliary functions
     "detect_outliers_series",
     "detect_outliers_dataframe",
@@ -27,6 +30,7 @@ __all__ = [
 import logging
 import operator
 from collections.abc import Mapping
+from contextlib import suppress
 from functools import reduce
 
 from numpy.typing import ArrayLike, NDArray
@@ -46,21 +50,34 @@ PANDAS_TYPE: TypeAlias = Index | Series | DataFrame
 r"""A type alias for pandas objects."""
 
 
-def pandas_false_like(x: P, /) -> P:
+def scalar(x: Any, /, dtype: Any) -> Any:
+    r"""Cast a scalar to a different dtype."""
+    return Index([x]).astype(dtype).item()
+
+
+def cast(x: P, /, dtype: Any) -> P:
+    r"""Cast a pandas object to a different dtype."""
+    return x.astype(dtype)
+
+
+def drop_null(x: P, /) -> P:
+    r"""Drop `NaN` values from a pandas object."""
+    return x.dropna()
+
+
+def false_like(x: P, /) -> P:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ m
 
 
-def pandas_true_like(x: P, /) -> P:
+def true_like(x: P, /) -> P:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ (~m)
 
 
-def pandas_infer_axes(
-    x: P, /, *, axis: Axis = None
-) -> Literal[None, "index", "columns"]:
+def infer_axes(x: P, /, *, axis: Axis = None) -> Literal[None, "index", "columns"]:
     r"""Convert axes specification to pandas-compatible axes specification.
 
     - Series: -1 → 0, -2 → Error
@@ -78,55 +95,51 @@ def pandas_infer_axes(
     return "columns" if axis % len(x.shape) else "index"
 
 
-def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
+def clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
     r"""Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
     # FIXME: https://github.com/pandas-dev/pandas/issues/59053
-    try:
-        lower = lower.item()
-    except Exception:
-        pass
-    try:
-        upper = upper.item()
-    except Exception:
-        pass
+    with suppress(Exception):
+        lower = lower.item()  # type: ignore[union-attr]
+    with suppress(Exception):
+        upper = upper.item()  # type: ignore[union-attr]
 
     return x.clip(lower, upper, axis=axis)
 
 
-def pandas_nanmax(x: P, /, *, axis: Axis = None) -> P:
+def nanmax(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmax`."""
-    return x.max(axis=pandas_infer_axes(x, axis=axis), skipna=True)
+    return x.max(axis=infer_axes(x, axis=axis), skipna=True)
 
 
-def pandas_nanmin(x: P, /, *, axis: Axis = None) -> P:
+def nanmin(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmin`."""
-    return x.min(axis=pandas_infer_axes(x, axis=axis), skipna=True)
+    return x.min(axis=infer_axes(x, axis=axis), skipna=True)
 
 
-def pandas_nanmean(x: P, /, *, axis: Axis = None) -> P:
+def nanmean(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmean`."""
-    return x.mean(axis=pandas_infer_axes(x, axis=axis), skipna=True)
+    return x.mean(axis=infer_axes(x, axis=axis), skipna=True)
 
 
-def pandas_nanstd(x: P, /, *, axis: Axis = None) -> P:
+def nanstd(x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanstd`."""
-    return x.std(axis=pandas_infer_axes(x, axis=axis), skipna=True, ddof=0)
+    return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
-def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
+def where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
     r"""Analogue to `numpy.where`."""
     if isinstance(a, PANDAS_TYPE):  # type: ignore[misc,arg-type]
         return a.where(cond, b)
-    return a if cond else pandas_like(b, a)  # scalar fallback
+    return a if cond else copy_like(b, a)  # scalar fallback
 
 
-def pandas_null_like(x: P, /) -> P:
+def null_like(x: P, /) -> P:
     r"""Returns a copy of the input filled with nulls."""
-    return pandas_where(pandas_true_like(x), x, NA)
+    return where(true_like(x), x, NA)
 
 
-def pandas_like(x: ArrayLike, ref: P, /) -> P:
+def copy_like(x: ArrayLike, ref: P, /) -> P:
     r"""Create a Series/DataFrame with the same modality as a reference."""
     match ref:
         case Index() as idx:
@@ -161,7 +174,7 @@ def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
     })
 
 
-def pandas_strip_whitespace(x: P, /) -> P:
+def strip_whitespace(x: P, /) -> P:
     r"""Strip whitespace from all string elements in a `pandas` object."""
     match x:
         case DataFrame() as df:
@@ -187,7 +200,7 @@ def detect_outliers_series(
     # detect lower-bound violations
     match lower_bound, lower_inclusive:
         case None, _:
-            mask_lower = pandas_false_like(s)
+            mask_lower = false_like(s)
         case _, True:
             mask_lower = (s < lower_bound).fillna(value=False)
         case _, False:
@@ -198,7 +211,7 @@ def detect_outliers_series(
     # detect upper-bound violations
     match upper_bound, upper_inclusive:
         case None, _:
-            mask_upper = pandas_false_like(s)
+            mask_upper = false_like(s)
         case _, True:
             mask_upper = (s > upper_bound).fillna(value=False)
         case _, False:
@@ -232,7 +245,7 @@ def detect_outliers_dataframe(
     if missing_bounds := set(df.columns) - given_bounds:
         raise ValueError(f"Columns {missing_bounds} do not have bounds!")
 
-    mask = pandas_false_like(df)
+    mask = false_like(df)
     for col in df.columns:
         mask[col] = detect_outliers_series(
             df[col],

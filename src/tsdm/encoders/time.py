@@ -58,7 +58,7 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
-            data = self.backend.dropna(data)
+            data = self.backend.drop_null(data)
             diffs = np.array(self.backend.cast(data, int))
             base_freq = int(np.gcd.reduce(diffs))
 
@@ -90,6 +90,8 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
     r"""The starting point of the timeseries."""
     unit: TimeDelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
+    round: bool = True
+    r"""Whether to round to unit when decoding."""
     original_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
 
@@ -115,7 +117,7 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             deltas = data - self.offset
             # This looks awkward but is robust.
-            deltas = self.backend.dropna(deltas)
+            deltas = self.backend.drop_null(deltas)
             diffs = np.array(self.backend.cast(deltas, int))
             base_freq = int(np.gcd.reduce(diffs))
             self.unit = self.backend.scalar(base_freq, dtype=deltas.dtype)
@@ -132,12 +134,15 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
             )
 
     def decode(self, y: Arr, /) -> Arr:
+        if self.round:
+            y = self.backend.cast(y, float).round()
+
         try:
             return self.backend.cast(y * self.unit + self.offset, self.original_dtype)
         except pa.lib.ArrowNotImplementedError:
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
-            y = self.backend.cast(y, float) * self.unit + self.offset
-            return self.backend.cast(y, self.original_dtype)
+            z = self.backend.cast(y, float) * self.unit + self.offset
+            return self.backend.cast(z, self.original_dtype)
 
 
 @pprint_repr

@@ -22,36 +22,13 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
-import torch
+import pyarrow.compute as pc
+import torch as pt
 from numpy import ndarray
 from torch import Tensor
 from typing_extensions import Generic, Literal, Self, TypeAlias, TypeVar, overload
 
-from tsdm.backend.generic import (
-    false_like as universal_false_like,
-    true_like as universal_true_like,
-)
-from tsdm.backend.numpy import numpy_apply_along_axes, numpy_like
-from tsdm.backend.pandas import (
-    pandas_clip,
-    pandas_false_like,
-    pandas_like,
-    pandas_nanmax,
-    pandas_nanmean,
-    pandas_nanmin,
-    pandas_nanstd,
-    pandas_strip_whitespace,
-    pandas_true_like,
-    pandas_where,
-)
-from tsdm.backend.pyarrow import arrow_strip_whitespace
-from tsdm.backend.torch import (
-    torch_apply_along_axes,
-    torch_like,
-    torch_nanmax,
-    torch_nanmin,
-    torch_nanstd,
-)
+from tsdm import backend
 from tsdm.types.callback_protocols import (
     ApplyAlongAxes,
     ArraySplitProto,
@@ -59,9 +36,10 @@ from tsdm.types.callback_protocols import (
     ClipProto,
     ConcatenateProto,
     ContractionProto,
-    MakeScalarProto,
+    CopyLikeProto,
+    FullLikeProto,
+    ScalarProto,
     SelfMap,
-    TensorLikeProto,
     ToTensorProto,
     WhereProto,
 )
@@ -131,115 +109,130 @@ class Kernels:  # Q: how to make this more elegant?
 
     clip: Mapping[BackendID, ClipProto] = {
         "numpy": np.clip,
-        "pandas": pandas_clip,
-        "torch": torch.clip,
+        "pandas": backend.pandas.clip,
+        "torch": pt.clip,
     }
 
-    isnan: Mapping[BackendID, SelfMap] = {
+    is_null: Mapping[BackendID, SelfMap] = {
+        "arrow": pc.is_null,
         "numpy": np.isnan,
         "pandas": pd.isna,
-        "torch": torch.isnan,
+        "polars": backend.polars.is_null,
+        "torch": pt.isnan,
     }
 
     nanmin: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmin,
-        "pandas": pandas_nanmin,
-        "polars": lambda x, axis=None: x.nan_min(),
-        "torch": torch_nanmin,
+        "pandas": backend.pandas.nanmin,
+        "polars": backend.polars.nanmin,
+        "torch": backend.torch.nanmin,
     }
 
     nanmax: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmax,
-        "pandas": pandas_nanmax,
-        "polars": lambda x, axis=None: x.nan_min(),
-        "torch": torch_nanmax,
+        "pandas": backend.pandas.nanmax,
+        "polars": backend.polars.nanmax,
+        "torch": backend.torch.nanmax,
     }
 
     nanmean: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmean,
-        "pandas": pandas_nanmean,
-        "torch": torch.nanmean,  # type: ignore[dict-item]
+        "pandas": backend.pandas.nanmean,
+        "torch": pt.nanmean,  # type: ignore[dict-item]
     }
 
     nanstd: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanstd,
-        "pandas": pandas_nanstd,
-        "torch": torch_nanstd,
+        "pandas": backend.pandas.nanstd,
+        "torch": backend.torch.nanstd,
     }
 
     false_like: Mapping[BackendID, SelfMap] = {
-        "numpy": universal_false_like,
-        "pandas": pandas_false_like,
-        "torch": universal_false_like,
+        "arrow": backend.pyarrow.false_like,
+        "numpy": backend.generic.false_like,
+        "pandas": backend.pandas.false_like,
+        "torch": backend.generic.false_like,
     }
 
     true_like: Mapping[BackendID, SelfMap] = {
-        "numpy": universal_true_like,
-        "pandas": pandas_true_like,
-        "torch": universal_true_like,
+        "arrow": backend.pyarrow.true_like,
+        "numpy": backend.generic.true_like,
+        "pandas": backend.pandas.true_like,
+        "torch": backend.generic.true_like,
     }
 
-    tensor_like: Mapping[BackendID, TensorLikeProto] = {
-        "numpy": numpy_like,
-        "pandas": pandas_like,
-        "torch": torch_like,
+    null_like: Mapping[BackendID, SelfMap] = {
+        "arrow": backend.pyarrow.null_like,
+        "pandas": backend.pandas.null_like,
+    }
+
+    full_like: Mapping[BackendID, FullLikeProto] = {
+        "arrow": backend.pyarrow.full_like,
+        "numpy": np.full_like,
+    }
+
+    copy_like: Mapping[BackendID, CopyLikeProto] = {
+        "numpy": backend.numpy.copy_like,
+        "pandas": backend.pandas.copy_like,
+        "torch": backend.torch.copy_like,
     }
 
     to_tensor: Mapping[BackendID, ToTensorProto] = {
         "numpy": np.array,
         "pandas": np.array,
-        "torch": torch.tensor,
+        "torch": pt.tensor,
     }
 
     where: Mapping[BackendID, WhereProto] = {
+        "arrow": backend.pyarrow.where,
         "numpy": np.where,
-        "pandas": pandas_where,
-        "torch": torch.where,  # type: ignore[dict-item]
+        "pandas": backend.pandas.where,
+        "torch": pt.where,  # type: ignore[dict-item]
     }
 
     strip_whitespace: Mapping[BackendID, SelfMap] = {
-        "pandas": pandas_strip_whitespace,
-        "arrow": arrow_strip_whitespace,
+        "pandas": backend.pandas.strip_whitespace,
+        "arrow": backend.pyarrow.strip_whitespace,
     }
 
     apply_along_axes: Mapping[BackendID, ApplyAlongAxes] = {
-        "numpy": numpy_apply_along_axes,
-        "torch": torch_apply_along_axes,
+        "numpy": backend.numpy.apply_along_axes,
+        "torch": backend.torch.apply_along_axes,
     }
 
     array_split: Mapping[BackendID, ArraySplitProto] = {
         "numpy": np.array_split,
-        "torch": torch.tensor_split,  # type: ignore[dict-item]
+        "torch": pt.tensor_split,  # type: ignore[dict-item]
     }
 
     concatenate: Mapping[BackendID, ConcatenateProto] = {
         "numpy": np.concatenate,
         "pandas": pd.concat,
-        "torch": torch.cat,  # type: ignore[dict-item]
+        "torch": pt.cat,  # type: ignore[dict-item]
     }
 
-    dropna: Mapping[BackendID, SelfMap] = {
-        "arrow": lambda x: x.filter(x.is_valid()),
-        "numpy": lambda x: x[~np.isnan(x)],
-        "pandas": lambda x: x.dropna(),
-        "polars": lambda x: x.drop_nulls(),
-        "torch": lambda x: x[~torch.isnan(x)],
+    drop_null: Mapping[BackendID, SelfMap] = {
+        "arrow": pc.drop_null,
+        "numpy": backend.numpy.drop_null,
+        "pandas": backend.pandas.drop_null,
+        "polars": backend.polars.drop_null,
+        "torch": backend.torch.drop_null,
     }
 
     cast: Mapping[BackendID, CastProto] = {
-        "arrow": lambda x, dtype: x.cast(dtype),
-        "numpy": lambda x, dtype: x.astype(dtype),
-        "pandas": lambda x, dtype: x.astype(dtype),
-        "polars": lambda x, dtype: x.cast(dtype),
-        "torch": lambda x, dtype: x.to(dtype),
+        "arrow": pc.cast,
+        "numpy": ndarray.astype,
+        "pandas": backend.pandas.cast,
+        "polars": backend.polars.cast,
+        "torch": Tensor.to,
     }
 
-    scalar: Mapping[BackendID, MakeScalarProto] = {
-        "arrow": lambda value, dtype: pa.scalar(value, type=dtype),
-        "numpy": lambda value, dtype: np.array([value], dtype=dtype).squeeze(),
-        "pandas": lambda value, dtype: pd.Index([value]).astype(dtype).item(),
-        "polars": lambda value, dtype: pl.Series([value]).cast(dtype).item(),
-        "torch": lambda value, dtype: torch.tensor([value], dtype=dtype).squeeze(),
+    scalar: Mapping[BackendID, ScalarProto] = {
+        "arrow": backend.pyarrow.scalar,
+        "numpy": backend.numpy.scalar,
+        "pandas": backend.pandas.scalar,
+        "polars": backend.polars.scalar,
+        "torch": backend.torch.scalar,
     }
 
 
@@ -253,7 +246,8 @@ class Backend(Generic[T]):
 
     # KERNELS
     clip: ClipProto[T]
-    isnan: SelfMap[T]
+    drop_null: SelfMap[T]
+    is_null: SelfMap[T]
     where: WhereProto[T]
 
     # nan-aggregations
@@ -262,20 +256,24 @@ class Backend(Generic[T]):
     nanmin: ContractionProto[T]
     nanstd: ContractionProto[T]
 
-    tensor_like: TensorLikeProto[T]
-    to_tensor: ToTensorProto[T]
-    true_like: SelfMap[T]
+    # array creation
+    copy_like: CopyLikeProto[T]
     false_like: SelfMap[T]
+    full_like: FullLikeProto[T]
+    null_like: SelfMap[T]
+    true_like: SelfMap[T]
 
+    # string operations
     strip_whitespace: SelfMap[T]
     apply_along_axes: ApplyAlongAxes[T]
 
+    # array construction
     array_split: ArraySplitProto[T]
     concatenate: ConcatenateProto[T]
 
-    dropna: SelfMap[T]
     cast: CastProto[T]
-    scalar: MakeScalarProto
+    scalar: ScalarProto
+    to_tensor: ToTensorProto[T]
 
     def __init__(self, backend: str | Self) -> None:
         # set the selected backend

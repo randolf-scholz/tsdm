@@ -3,7 +3,7 @@ r"""Utility functions."""
 __all__ = [
     # Classes
     # Functions
-    "axes_to_tuple",
+    "normalize_axes",
     "deep_dict_update",
     "deep_kval_update",
     "dims_to_list",
@@ -89,7 +89,7 @@ def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
     return ts
 
 
-def axes_to_tuple(axes: Axis, *, ndim: int) -> tuple[int, ...]:
+def normalize_axes(axes: str | Axis, *, ndim: int) -> tuple[int, ...]:
     r"""Convert axes to tuple.
 
     Note:
@@ -98,11 +98,25 @@ def axes_to_tuple(axes: Axis, *, ndim: int) -> tuple[int, ...]:
         - `ndarray.mean(axis=k)`    contracts over the k-th axis.
         - `ndarray.mean(axis=tuple(range(ndim)))` contracts over all axes, returns scalar.
     """
-    if axes is None:
-        return tuple(range(ndim))
-    if isinstance(axes, int):
-        return (axes,)
-    return tuple(axes)
+    match axes:
+        case None:
+            return tuple(range(ndim))
+        case int():
+            return (axes % ndim,)
+        case "cols" | "columns":
+            return (1,)
+        case "rows" | "index":
+            return (0,)
+        case "none":
+            return ()
+        case "all":
+            return tuple(range(ndim))
+        case str(name):
+            raise ValueError(f"Unknown axis name: {name}")
+        case Iterable() as iterable:
+            return tuple(ax % ndim for ax in iterable)
+        case _:
+            raise TypeError(f"Unknown type for axes: {type(axes)}")
 
 
 def dims_to_list(dims: Dims, *, ndim: int) -> list[int]:

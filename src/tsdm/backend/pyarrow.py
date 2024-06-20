@@ -6,25 +6,26 @@ __all__ = [
     "TEXT",
     "STRING_TYPES",
     # Functions
-    "is_string_array",
-    "arrow_strip_whitespace",
-    "arrow_false_like",
-    "arrow_true_like",
-    "arrow_null_like",
-    "arrow_full_like",
-    "arrow_where",
-    "force_cast",
-    "cast_columns",
+    "and_",
     "cast_column",
-    "unsafe_cast_columns",
-    "is_numeric",
+    "cast_columns",
     "compute_entropy",
+    "false_like",
     "filter_nulls",
+    "force_cast",
+    "full_like",
+    "is_numeric",
+    "is_string_array",
+    "null_like",
+    "or_",
+    "scalar",
     "set_nulls",
     "set_nulls_series",
+    "strip_whitespace",
     "table_info",
-    "and_",
-    "or_",
+    "true_like",
+    "unsafe_cast_columns",
+    "where",
     # auxiliary Functions
     "strip_whitespace_table",
     "strip_whitespace_array",
@@ -55,6 +56,10 @@ from tsdm.types.dtypes import PYARROW_TO_POLARS
 STR = pa.string()
 TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
+
+
+def scalar(x: object, /, dtype: DataType) -> Scalar:
+    return pa.scalar(x, type=dtype)
 
 
 def is_string_array(arr: Array, /) -> bool:
@@ -104,10 +109,10 @@ def strip_whitespace_array(arr: Array, /) -> Array:
 
 
 @overload
-def arrow_strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
+def strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
 @overload
-def arrow_strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
-def arrow_strip_whitespace(obj, /, *cols):
+def strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
+def strip_whitespace(obj, /, *cols):
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
         case Table() as table:
@@ -120,44 +125,44 @@ def arrow_strip_whitespace(obj, /, *cols):
             raise TypeError(f"Expected Array or Table, got {type(obj)}.")
 
 
-def arrow_false_like(arr: Array, /) -> BooleanArray:
+def false_like(arr: Array, /) -> BooleanArray:
     r"""Creates a `BooleanArray` of False values with the same length as arr."""
     m = arr.is_valid()
     return pc.xor(m, m)
 
 
-def arrow_true_like(arr: Array, /) -> BooleanArray:
+def true_like(arr: Array, /) -> BooleanArray:
     r"""Creates a `BooleanArray` of True values with the same length as arr."""
-    return pc.invert(arrow_false_like(arr))
+    return pc.invert(false_like(arr))
 
 
-def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
+def full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
     r"""Creates an `Array` of `fill_value` with the same length as arr."""
     if not isinstance(fill_value, Scalar):
         fill_value = pa.scalar(fill_value)
     if fill_value is NA:
         fill_value = fill_value.cast(arr.type)
     if fill_value.type == arr.type:
-        return pc.replace_with_mask(arr, arrow_false_like(arr), fill_value)
-    empty = arrow_null_like(arr).cast(fill_value.type)
-    return pc.replace_with_mask(empty, arrow_true_like(arr), fill_value)
+        return pc.replace_with_mask(arr, false_like(arr), fill_value)
+    empty = null_like(arr).cast(fill_value.type)
+    return pc.replace_with_mask(empty, true_like(arr), fill_value)
 
 
-def arrow_null_like(arr: Array, /) -> Array:
+def null_like(arr: Array, /) -> Array:
     r"""Creates an `Array` of null-values with the same length as arr."""
-    return arrow_full_like(arr, fill_value=NA)
+    return full_like(arr, fill_value=NA)
 
 
 @overload
-def arrow_where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
+def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
 @overload
-def arrow_where(  # type: ignore[misc]
+def where(  # type: ignore[misc]
     mask: BooleanArray | BooleanScalar,
     x: Array | Scalar,
     y: Array | Scalar = ...,
     /,
 ) -> Array: ...
-def arrow_where(mask, x, y=NA, /):
+def where(mask, x, y=NA, /):
     r"""Select elements from x or y depending on mask.
 
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).

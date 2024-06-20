@@ -1,11 +1,14 @@
 r"""Implementations for torch backend."""
 
 __all__ = [
-    "torch_nanmin",
-    "torch_nanmax",
-    "torch_nanstd",
-    "torch_like",
-    "torch_apply_along_axes",
+    # Functions
+    "apply_along_axes",
+    "copy_like",
+    "drop_null",
+    "nanmax",
+    "nanmin",
+    "nanstd",
+    "scalar",
 ]
 
 from collections.abc import Callable
@@ -14,11 +17,21 @@ import numpy as np
 import torch
 from numpy.typing import ArrayLike
 from torch import Tensor
+from typing_extensions import Any
 
 from tsdm.types.aliases import Axis
 
 
-def torch_nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
+def scalar(x: Any, /, dtype: Any) -> Any:
+    return torch.tensor(x, dtype=dtype).item()
+
+
+def drop_null(x: Tensor, /) -> Tensor:
+    r"""Drop `NaN` values from a tensor, flattening it."""
+    return x[~torch.isnan(x)].flatten()
+
+
+def nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanmin`."""
     return torch.amin(
         torch.where(torch.isnan(x), float("+inf"), x),
@@ -27,7 +40,7 @@ def torch_nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> 
     )
 
 
-def torch_nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
+def nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanmax`."""
     return torch.amax(
         torch.where(torch.isnan(x), float("-inf"), x),
@@ -36,7 +49,7 @@ def torch_nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> 
     )
 
 
-def torch_nanstd(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
+def nanstd(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanstd`."""
     r = x - torch.nanmean(x, dim=axis, keepdim=True)
     return torch.sqrt(
@@ -48,12 +61,12 @@ def torch_nanstd(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> 
     )
 
 
-def torch_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
+def copy_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
     r"""Return a tensor of the same dtype and other options as `ref`."""
     return torch.tensor(x, dtype=ref.dtype, device=ref.device)
 
 
-def torch_apply_along_axes(
+def apply_along_axes(
     op: Callable[..., Tensor], /, *tensors: Tensor, axis: Axis
 ) -> Tensor:
     r"""Apply a function to multiple tensors along axes.

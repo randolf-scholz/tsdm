@@ -63,7 +63,7 @@ __all__ = [
 import logging
 import pickle
 import random
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
@@ -518,7 +518,7 @@ class BaseEncoder(Encoder[X, Y]):
     # endregion chaining methods -------------------------------------------------------
 
 
-class BackendEncoder(BaseEncoder[X, Y]):
+class BackendEncoder(BaseEncoder[X, Y], ABC):
     r"""Encoder equipped with a backend."""
 
     backend: Backend[X] = NotImplemented

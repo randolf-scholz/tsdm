@@ -8,16 +8,17 @@ __all__ = [
     "WrappedValue",
     # callback-protocols
     "ApplyAlongAxes",
+    "ArraySplitProto",
     "CastProto",
     "ClipProto",
     "ConcatenateProto",
     "ContractionProto",
+    "FullLikeProto",
     "IsScalarProto",
-    "ArraySplitProto",
-    "TensorLikeProto",
+    "ScalarProto",
+    "CopyLikeProto",
     "ToTensorProto",
     "WhereProto",
-    "MakeScalarProto",
 ]
 
 from abc import abstractmethod
@@ -95,7 +96,7 @@ class IsScalarProto(Protocol[T_contra]):
     def __call__(self, x: T_contra, /) -> bool: ...
 
 
-class TensorLikeProto(Protocol[T]):
+class CopyLikeProto(Protocol[T]):
     r"""Bound-Protocol for `tensor_like`-function."""
 
     def __call__(self, x: ArrayLike, ref: T, /) -> T: ...
@@ -131,10 +132,16 @@ class ConcatenateProto(Protocol[T]):
     def __call__(self, x: list[T], /, *, axis: int) -> T: ...
 
 
-class MakeScalarProto(Protocol[T_co]):
+class ScalarProto(Protocol[T_co]):
     r"""Bound-Protocol for `make_scalar`-function."""
 
     def __call__(self, value: Any, /, dtype: Any) -> T_co: ...
+
+
+class FullLikeProto(Protocol[T]):
+    r"""Bound-Protocol for `full_like`-function."""
+
+    def __call__(self, x: T, /, *, fill_value: Any) -> T: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

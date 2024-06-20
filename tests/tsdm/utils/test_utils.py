@@ -7,10 +7,10 @@ from torch import jit
 
 from tsdm.types.aliases import Axis, Dims, Shape, Size
 from tsdm.utils import (
-    axes_to_tuple,
     dims_to_list,
     flatten_dict,
     last,
+    normalize_axes,
     pairwise_disjoint,
     replace,
     shape_to_tuple,
@@ -52,7 +52,7 @@ def test_axes_to_tuple(axis: Axis) -> None:
     rng = np.random.default_rng()
     x = rng.uniform(size=(4, 2, 2, 1))
 
-    axes_tuple = axes_to_tuple(axis, ndim=x.ndim)
+    axes_tuple = normalize_axes(axis, ndim=x.ndim)
     result = np.mean(x, axis=axes_tuple)
     reference = np.mean(x, axis=axis)
     assert type(result) == type(reference)

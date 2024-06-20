@@ -4,7 +4,7 @@ Each of these encoders must encode DataFrames.
 We distinguish between 3 categories of encoders:
 
 1. **polymodal encoders**: Accepts dataframes with different schemas, such as different number of columns.
-2. **submodal encoders**: input dataframes must be subschemas of the schema used for fitting.
+2. **submodal encoders**: Input dataframes must be subschemas of the schema used for fitting.
 3. **equimodal encoders**: Each input dataframe must have the same schema as the dataframe used for fitting.
 """
 
@@ -34,6 +34,7 @@ from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
 
+import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
@@ -714,28 +715,30 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
         will be filled with `NAN`-values if the datatype allows it.
         """
         data = data.reset_index()
-
         return {
-            key: torch.tensor(
-                data[cols].to_numpy(),
-                device=self.device[key],
-                dtype=self.dtypes[key],  # type: ignore[arg-type]
+            # FIXME: https://github.com/pandas-dev/pandas/issues/22791
+            group: torch.tensor(
+                np.stack([data[col].to_numpy() for col in cols], axis=-1),
+                device=self.device[group],
+                dtype=self.dtypes[group],  # type: ignore[arg-type]
             ).squeeze()
-            for key, cols in self.schema.items()
+            for group, cols in self.schema.items()
         }
 
     def decode(self, data: Mapping[str, Tensor], /) -> DataFrame:
         # convert the tensors to dataframes
         dfs = [
-            DataFrame(tensor.detach().cpu().numpy(), columns=self.schema[key])
-            for key, tensor in data.items()
+            DataFrame(tensor.detach().cpu().numpy(), columns=self.schema[group])
+            for group, tensor in data.items()
         ]
 
         # Assemble the DataFrame
         df = (
             pd.concat(dfs, axis="columns")
-            .astype(self.original_dtypes)  # restores dtypes
-            .reindex(columns=self.original_dtypes)  # restores column order
+            # restores column order / adds missing columns
+            .reindex(columns=self.original_dtypes)
+            # restore original dtypes
+            .astype(self.original_dtypes)
         )
 
         if self.index_cols != [None]:

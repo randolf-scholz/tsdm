@@ -1,24 +1,36 @@
 r"""Implements `numpy`-backend for tsdm."""
 
 __all__ = [
-    "numpy_like",
-    "numpy_apply_along_axes",
+    "scalar",
+    "drop_null",
+    "copy_like",
+    "apply_along_axes",
 ]
 
 from collections.abc import Callable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from typing_extensions import Any
 
 from tsdm.types.aliases import Axis
 
 
-def numpy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
+def scalar(x: Any, /, dtype: Any) -> Any:
+    return np.array(x).astype(dtype).item()
+
+
+def drop_null(x: NDArray, /) -> NDArray:
+    r"""Drop `NaN` values from an array, flattening it."""
+    return x[~np.isnan(x)].flatten()
+
+
+def copy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
     r"""Create an array of the same shape as `x`."""
     return np.array(x, dtype=ref.dtype, copy=False)
 
 
-def numpy_apply_along_axes(
+def apply_along_axes(
     op: Callable[..., NDArray],
     /,
     *arrays: NDArray,

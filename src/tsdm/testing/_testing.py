@@ -17,7 +17,7 @@ __all__ = [
     "is_zipfile",
 ]
 
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from inspect import isbuiltin as is_builtin_function
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
@@ -116,12 +116,18 @@ def assert_arrays_close(
 
 def is_builtin_type(obj: object, /) -> bool:
     r"""Check if the object is a builtin type."""
-    return isinstance(obj, type) and obj in BUILTIN_TYPES
+    try:
+        return obj in BUILTIN_TYPES
+    except TypeError:
+        return False
 
 
 def is_builtin_constant(obj: object, /) -> bool:
     r"""Check if the object is a builtin constant."""
-    return isinstance(obj, Hashable) and obj in BUILTIN_CONSTANTS
+    try:
+        return obj in BUILTIN_CONSTANTS
+    except TypeError:
+        return False
 
 
 def is_builtin(obj: object, /) -> bool:
@@ -131,7 +137,10 @@ def is_builtin(obj: object, /) -> bool:
 
 def is_na_value(obj: object, /) -> bool:
     r"""Check if the object is a NA value."""
-    return isinstance(obj, Hashable) and obj in NA_VALUES
+    try:
+        return obj in NA_VALUES
+    except TypeError:
+        return False
 
 
 def is_scalar(obj: object, /) -> bool:

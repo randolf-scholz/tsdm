@@ -4,7 +4,6 @@ import pickle
 
 import numpy as np
 import pandas as pd
-import pyarrow as pa
 import pytest
 import torch
 from pandas import DataFrame
@@ -24,26 +23,17 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.tasks import KiwiBenchmark
-from tsdm.utils import timedelta
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-# @pytest.mark.xfail(reason="https://github.com/pandas-dev/pandas/issues/56409")
-@pytest.mark.slow
-def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
-    r"""Test complicated combined encoder."""
-    torch.manual_seed(0)
-    np.random.seed(0)  # noqa: NPY002
+@pytest.fixture
+def encoder(scope="session"):
+    # initialize the task object
     task = KiwiBenchmark()
-    ts = task.dataset.timeseries.iloc[:20_000]  # use first 20_000 values only
     descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]
-    sampler = task.samplers[SplitID]
-    generator = task.generators[SplitID]
-    key = next(iter(sampler))
-    sample = generator[key]
-    inputs = sample.inputs.x
-    # Construct the encoder
+
+    # select encoding scheme
     column_encoders: dict[str, Encoder] = {}
     for col, scale, lower, upper in descr.itertuples():
         xmin = None if pd.isna(lower) else float(lower)
@@ -73,6 +63,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
             case _:
                 raise ValueError(f"{scale=} unknown")
 
+    # construct the encoder
     encoder = (
         FrameEncoder(
             column_encoders=column_encoders,
@@ -80,65 +71,93 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(
-            schema={
-                "key": ["run_id", "experiment_id"],
-                "T": ["measurement_time"],
-                "X": ...,
-            },
-            dtypes={"T": "float32", "X": "float32"},
-            # encode_index=True,
+            schema={"T": ["measurement_time"], "X": ...},
+            dtypes={"T": torch.float32, "X": torch.float32},
         )
     )
 
-    encoder.fit(ts)  # fit encoder to the whole dataset
+    # fit encoder to the whole dataset
+    ts = task.dataset.timeseries
+    train_data = ts.iloc[:20_000].reset_index(
+        level=["run_id", "experiment_id"], drop=True
+    )
+    encoder.fit(train_data)
 
-    # encode and decode
-    encoded = encoder.encode(ts)
+    return encoder
 
-    # check normalization
-    xhat = DataFrame(encoded["X"], dtype="float32")
-    assert np.allclose(xhat.mean().dropna(), 0.0, atol=atol)
-    assert np.allclose(xhat.std(ddof=0).dropna(), 1.0, atol=atol)
+
+@pytest.mark.slow
+def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
+    r"""Test complicated combined encoder."""
+    # initialize the task object
+    torch.manual_seed(0)
+    np.random.seed(0)  # noqa: NPY002
+    task = KiwiBenchmark()
+
+    # prepare train data
+    ts = task.dataset.timeseries.iloc[:20_000]
+    train_data = ts.reset_index(level=["run_id", "experiment_id"], drop=True)
+
+    # prepare test data
+    sampler = task.samplers[SplitID]
+    generator = task.generators[SplitID]
+    key = next(iter(sampler))
+    sample = generator[key]
+    test_data = sample.inputs.x
+
+    # fit encoder to the whole dataset
+    encoder.fit(train_data)
+
+    # encode and validate
+    train_encoded = encoder.encode(train_data)
+    assert isinstance(train_encoded, dict)
+    assert all(isinstance(value, torch.Tensor) for value in train_encoded.values())
+
+    # check NaN-pattern and standardization
+    xhat_train = DataFrame(train_encoded["X"], dtype="float32")
+    assert (xhat_train.isna() == train_data.isna()).all(), "NaN pattern mismatch"
+    assert np.allclose(xhat_train.mean().dropna(), 0.0, atol=atol)
+    assert np.allclose(xhat_train.std(ddof=0).dropna(), 1.0, atol=atol)
 
     # check that decode gives back original values
-    decoded = encoder.decode(encoded)
-    pd.testing.assert_frame_equal(decoded, ts, atol=atol, rtol=2**-12)
+    train_decoded = encoder.decode(train_encoded)
+    pd.testing.assert_frame_equal(train_decoded, train_data, atol=atol, rtol=2**-12)
 
     # apply encoder to a single slice
-    encoded = encoder.encode(inputs)
-    xhat = DataFrame(encoded["X"], dtype="float32")
-    assert (xhat.isna().values == inputs.isna().values).all(), "NaN pattern mismatch"
+    test_encoded = encoder.encode(test_data)
+    assert isinstance(test_encoded, dict)
+    assert all(isinstance(value, torch.Tensor) for value in test_encoded.values())
+
+    # check NaN-pattern and standardization
+    xhat_test = DataFrame(test_encoded["X"], dtype="float32")
+    assert (xhat_test.isna() == test_data.isna()).all(), "NaN pattern mismatch"
+    assert np.allclose(xhat_test.mean().dropna(), 0.0, atol=atol)
+    assert np.allclose(xhat_test.std(ddof=0).dropna(), 1.0, atol=atol)
 
     # check that decoded matches with original
-    decoded = encoder.decode(encoded)
-    pd.testing.assert_frame_equal(
-        decoded.reset_index(drop=True),
-        inputs.reset_index(drop=True),
-        atol=atol,
-        rtol=rtol,
-    )
+    test_decoded = encoder.decode(test_encoded)
+    pd.testing.assert_frame_equal(test_decoded, test_data, atol=atol, rtol=rtol)
 
-    # manually compare index (broken for pyarrow 14.0.1)
-    pa_version = tuple(map(int, pa.__version__.split(".")))
-    if pa_version >= (15, 0, 0):  # FIXME: https://github.com/apache/arrow/issues/39156
-        reference_index = inputs.index
-        decoded_index = decoded.index
-        freq = timedelta("1us")
-        assert decoded_index.notna().all()
-        assert decoded_index.shape == reference_index.shape
-        assert decoded_index.dtype == reference_index.dtype
-        assert (decoded_index - reference_index).notna().all()
-        r = abs(decoded_index - reference_index) / freq
-        assert r.notna().all()
-        q = abs(reference_index - reference_index[0]) / freq
-        assert q.notna().all()
-        assert (r <= (1e-3 * q + atol)).all()
+
+def test_bounds(encoder):
+    task = KiwiBenchmark()
+    descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]
+
+    nrows, ncols = task.dataset.timeseries.shape
 
     # check that decoding random values satisfies bounds
-    rng_data = torch.randn_like(encoded["X"])
-    encoded["X"] = 20 * rng_data  # large stdv. to ensure that bounds are violated
-    decoded = encoder.decode(encoded)
-    bounds = pd.concat([decoded.min(), decoded.max()], axis=1, keys=["lower", "upper"])
+    rng_data = {
+        "X": 20 * torch.randn(nrows, ncols, dtype=torch.float32),
+        "T": torch.randn(nrows, 1),
+    }
+    rng_decoded = encoder.decode(rng_data)
+
+    # validate bounds
+    bounds = pd.concat(
+        [rng_decoded.min(), rng_decoded.max()],
+        axis=1,
+        keys=["lower", "upper"],
+    )
     for col, lower, upper in bounds.itertuples():
         match scale := descr.loc[col, "kind"]:
             case "percent":
@@ -154,6 +173,8 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
             case _:
                 raise ValueError(f"{scale=} unknown")
 
+
+def test_serialization(encoder):
     # test_serialization
     with open(RESULT_DIR / "trained_encoder.pickle", "wb") as file:
         pickle.dump(encoder, file)

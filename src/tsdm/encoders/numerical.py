@@ -401,16 +401,16 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         if self.lower_bound is None:
             return self.backend.true_like(x)
         if self.lower_included or self.lower_included is None:
-            return (x >= self.lower_bound) | self.backend.isnan(x)
-        return (x > self.lower_bound) | self.backend.isnan(x)
+            return (x >= self.lower_bound) | self.backend.is_null(x)
+        return (x > self.lower_bound) | self.backend.is_null(x)
 
     def upper_satisfied(self, x: Arr) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)
         if self.upper_included or self.upper_included is None:
-            return (x <= self.upper_bound) | self.backend.isnan(x)
-        return (x < self.upper_bound) | self.backend.isnan(x)
+            return (x <= self.upper_bound) | self.backend.is_null(x)
+        return (x < self.upper_bound) | self.backend.is_null(x)
 
     def encode(self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!

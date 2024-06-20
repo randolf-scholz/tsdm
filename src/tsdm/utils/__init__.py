@@ -13,7 +13,7 @@ __all__ = [
     "LazyDict",
     "LazyValue",
     # utils
-    "axes_to_tuple",
+    "normalize_axes",
     "deep_dict_update",
     "deep_kval_update",
     "dims_to_list",
@@ -53,7 +53,6 @@ __all__ = [
 
 from tsdm.utils import contextmanagers, decorators, pprint, remote, system
 from tsdm.utils._utils import (
-    axes_to_tuple,
     deep_dict_update,
     deep_kval_update,
     dims_to_list,
@@ -62,6 +61,7 @@ from tsdm.utils._utils import (
     get_joint_keys,
     initialize_from_config,
     last,
+    normalize_axes,
     now,
     pairwise_disjoint,
     pairwise_disjoint_masks,

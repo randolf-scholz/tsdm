@@ -560,6 +560,10 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         r"""Select elements from the array by index."""
         ...
 
+    def round(self, *, decimals: int = 0) -> Self:
+        r"""Round the array to the given number of decimals."""
+        ...
+
     # region arithmetic operations -----------------------------------------------------
     # unary operations
     # absolute value abs()
