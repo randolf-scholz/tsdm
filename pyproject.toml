@@ -61,7 +61,7 @@ docs = [
     "nbsphinx>=0.9.4",
     "piccolo-theme>=0.23.0",
     "pydata-sphinx-theme>=0.15.3",
-    "sphinx-autoapi>=3.1.1",
+    "sphinx-autoapi>=3.1.2",
     "sphinx-automodapi>=0.17.0",
     "sphinx-autodoc2>=0.5.0",
     "sphinx-copybutton>=0.5.2",
@@ -83,7 +83,7 @@ tests = [
 ]
 linters = [
     "pylint>=3.2.3",
-    "ruff>=0.4.9",
+    "ruff>=0.4.10",
     "ruff-lsp>=0.0.53",
 ]
 typing = [
@@ -95,7 +95,7 @@ typing = [
     "types-jsonschema>=4.22.0.20240610",
     "types-pillow>=10.2.0.20240520",
     "types-protobuf>=5.26.0.20240422",
-    "types-psutil>=5.9.5.20240516",
+    "types-psutil>=6.0.0.20240621",
     "types-pygments>=2.18.0.20240506",
     "types-pytz>=2024.1.0.20240417",
     "types-pyyaml>=6.0.12.20240311",
@@ -109,11 +109,11 @@ typing = [
 ]
 devtools = [
     "devtools>=0.12.2",
-    "pip>=24.0",
+    "pip>=24.1",
     "pre-commit>=3.7.1",
     "pybadges>=3.0.1",
     "pygments>=2.18.0",
-    "setuptools>=70.0.0",
+    "setuptools>=70.1.0",
     "twine>=5.1.0",
     "wheel>=0.43.0",
 ]
