@@ -94,13 +94,13 @@ PARAMETERS: TypeAlias = tuple[
     | list[Scalar]
     | list[Arr]
     | list["PARAMETERS"]
-    | tuple[Scalar | Arr | "PARAMETERS", ...]
+    | tuple["Scalar | Arr | PARAMETERS", ...]
     | dict[str, Scalar]
     | dict[str, Arr]
     | dict[str, "PARAMETERS"],
     ...,
 ]
-r"""Type Hint for parameters tuple."""
+r"""Type Hint for parameters object (json-like)."""
 
 
 def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:

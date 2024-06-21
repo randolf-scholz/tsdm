@@ -40,7 +40,6 @@ __all__ = [
     "YAML",
     # Nested ABCs
     "NestedCollection",
-    "NestedGeneric",
     "NestedIterable",
     "NestedMapping",
     "NestedMutableMapping",
@@ -151,51 +150,47 @@ r"""Type Alias for maybe wrapped values."""
 
 
 # region Nested collections.abc --------------------------------------------------------
-NestedCollection: TypeAlias = Collection[V | "NestedCollection[V]"]
+NestedCollection: TypeAlias = Collection[V | "NestedCollection[V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `Collection`."""
-NestedIterable: TypeAlias = Iterable[V | "NestedIterable[V]"]
+NestedIterable: TypeAlias = Iterable[V | "NestedIterable[V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `Iterable`."""
-NestedMapping: TypeAlias = Mapping[K, V | "NestedMapping[K,V]"]
+NestedMapping: TypeAlias = Mapping[K, V | "NestedMapping[K,V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `Mapping`."""
-NestedMutableMapping: TypeAlias = MutableMapping[K, V | "NestedMutableMapping[K, V]"]
+NestedMutableMapping: TypeAlias = MutableMapping[K, V | "NestedMutableMapping[K, V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `MutableMapping`."""
-NestedSequence: TypeAlias = Sequence[V | "NestedSequence[V]"]
+NestedSequence: TypeAlias = Sequence[V | "NestedSequence[V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `Sequence`."""
-NestedGeneric: TypeAlias = (
-    Sequence[V | "NestedGeneric[V]"] | Mapping[str, V | "NestedGeneric[V]"]
-)
-r"""Generic Type Alias for nested `Sequence` or `Mapping`."""
 # endregion Nested collections.abc -----------------------------------------------------
 
 
 # region Nested Builtins ---------------------------------------------------------------
-NestedDict: TypeAlias = dict[K, V | "NestedDict[K, V]"]
+NestedDict: TypeAlias = dict[K, V | "NestedDict[K, V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `dict`."""
-NestedList: TypeAlias = list[V | "NestedList[V]"]
+NestedList: TypeAlias = list[V | "NestedList[V]"]  # noqa: TCH010
 r"""GenericType Alias for nested `list`."""
-NestedSet: TypeAlias = set[V | "NestedSet[V]"]
+NestedSet: TypeAlias = set[V | "NestedSet[V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `set`."""
-NestedFrozenSet: TypeAlias = frozenset[V | "NestedFrozenSet[V]"]
+NestedFrozenSet: TypeAlias = frozenset[V | "NestedFrozenSet[V]"]  # noqa: TCH010
 r"""Generic Type Alias for nested `set`."""
-NestedTuple: TypeAlias = tuple[V | "NestedTuple[V]", ...]
+NestedTuple: TypeAlias = tuple[V | "NestedTuple[V]", ...]  # noqa: TCH010
 r"""Generic Type Alias for nested `tuple`."""
 NestedBuiltin: TypeAlias = (
     V
     | tuple[V, ...]
     | tuple["NestedBuiltin[V]", ...]
-    | tuple[V | "NestedBuiltin[V]", ...]
+    | tuple["V | NestedBuiltin[V]", ...]
     | set[V]
     | set["NestedBuiltin[V]"]
-    | set[V | "NestedBuiltin[V]"]
+    | set["V | NestedBuiltin[V]"]
     | frozenset[V]
     | frozenset["NestedBuiltin[V]"]
-    | frozenset[V | "NestedBuiltin[V]"]
+    | frozenset["V | NestedBuiltin[V]"]
     | list[V]
     | list["NestedBuiltin[V]"]
-    | list[V | "NestedBuiltin[V]"]
+    | list["V | NestedBuiltin[V]"]
     | dict[str, V]
     | dict[str, "NestedBuiltin[V]"]
-    | dict[str, V | "NestedBuiltin[V]"]
+    | dict[str, "V | NestedBuiltin[V]"]
 )
 r"""Type Alias for nested builtins."""
 # endregion Nested Builtins ------------------------------------------------------------

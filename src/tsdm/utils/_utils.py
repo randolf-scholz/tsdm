@@ -26,6 +26,7 @@ __all__ = [
     "unflatten_dict",
 ]
 
+import logging
 import shutil
 import warnings
 from collections import deque
@@ -65,6 +66,8 @@ from tsdm.types.aliases import (
     Size,
 )
 from tsdm.types.variables import K2, HashableType, K, T
+
+__logger__ = logging.getLogger(__name__)
 
 
 @wraps(Timedelta)
@@ -481,7 +484,7 @@ def repackage_zip(path: FilePath, /) -> None:
         )
 
         if not requirements:
-            print(f"Skipping repackage_zip for {original_path}.")
+            __logger__.info(f"Skipping repackage_zip for {original_path}.")
             return
 
     # create a temporary directory

@@ -343,7 +343,6 @@ def log_model(
         for key, weight in variables.items():
             if not weight.numel():
                 continue
-            print(weight)
             writer.add_histogram(f"{identifier}:variables/{key}", weight, step)
 
         for key, grad in gradients.items():

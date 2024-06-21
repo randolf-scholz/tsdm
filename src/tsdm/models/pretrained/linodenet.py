@@ -76,12 +76,12 @@ class LinODEnet(PreTrainedBase):
         self, ts: DataFrame, /, *, ffill_controls: bool = True
     ) -> DataFrame:
         r"""Preprocess the time-series input."""
-        USED_COLUMNS = Index(self.encoder[-1].column_encoders)  # type: ignore[index]
+        encoder_cols = Index(self.encoder[-1].column_encoders)  # type: ignore[index]
 
         columns = ts.columns
-        used_columns = list(columns.intersection(USED_COLUMNS))
-        drop_columns = list(columns.difference(USED_COLUMNS))
-        miss_columns = list(USED_COLUMNS.difference(columns))
+        used_columns = list(columns.intersection(encoder_cols))
+        drop_columns = list(columns.difference(encoder_cols))
+        miss_columns = list(encoder_cols.difference(columns))
         control_cols = list(columns.intersection(self.CONTROLS))
 
         # drop unused columns
@@ -93,7 +93,7 @@ class LinODEnet(PreTrainedBase):
         ts.loc[:, miss_columns] = float("nan")
 
         # correctly order columns
-        ts = ts[list(USED_COLUMNS)].copy()
+        ts = ts[list(encoder_cols)].copy()
 
         # fixing timestamp_type
         ts = ts.reset_index("measurement_time")

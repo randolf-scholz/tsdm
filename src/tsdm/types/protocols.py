@@ -340,6 +340,7 @@ class SeriesKind(Protocol[Scalar]):
     # NOTE: The following methods differ between backends:
     #  - diff: gives discrete differences for polars and pandas, but not for pyarrow
     #  - view: allows casting dtype for pandas and pyarrow, but not polars
+    #  - value_counts: polars returns a DataFrame, pandas a Series, pyarrow a StructArray
     # NOTE: We do not include to_numpy(), as this is covered by __array__.
 
     def __array__(self) -> NDArray: ...
@@ -352,11 +353,6 @@ class SeriesKind(Protocol[Scalar]):
 
     def unique(self) -> Self:
         r"""Return the unique elements of the series."""
-        ...
-
-    # NOTE: kind of inconsistent across backends
-    def value_counts(self) -> Self | "SeriesKind" | "TableKind":
-        r"""Return the number of occurences for each unique element of the series."""
         ...
 
     # NOTE: kind of inconsistent across backends
@@ -425,7 +421,7 @@ class TableKind(Protocol):
     def __array__(self) -> NDArray[np.object_]: ...
     def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
     def __len__(self) -> int: ...
-    def __getitem__(self, key: Any, /) -> "SeriesKind" | Self: ...
+    def __getitem__(self, key: Any, /) -> "Self | SeriesKind": ...
 
     def equals(self, other: Self, /) -> bool:
         r"""Check if the table is equal to another table."""

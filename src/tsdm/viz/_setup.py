@@ -1,11 +1,34 @@
 r"""Plotting configuration."""
 
-__all__ = ["MATPLOTLIB_CONFIG", "enable_latex_plotting"]
+__all__ = [
+    # Constants
+    "MATPLOTLIB_CONFIG",
+    "PGF_PREAMBLE",
+    "LATEX_PREAMBLE",
+    # Functions
+    "enable_latex_plotting",
+]
 
 import shutil
 import warnings
 
 import matplotlib as mpl
+
+PGF_PREAMBLE = r"""
+\usepackage{fontspec}
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{unicode-math}
+"""
+
+LATEX_PREAMBLE = r"""
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+"""
 
 MATPLOTLIB_CONFIG = {
     # "mathtext.fontset": "stix",
@@ -13,20 +36,8 @@ MATPLOTLIB_CONFIG = {
     # "svg.fonttype": "none",
     "text.usetex": True,
     "pgf.texsystem": r"lualatex",
-    "pgf.preamble": "\n".join((
-        r"\usepackage{fontspec}",
-        r"\usepackage[T1]{fontenc}",
-        r"\usepackage[utf8x]{inputenc}",
-        r"\usepackage{amsmath}",
-        r"\usepackage{amsfonts}",
-        r"\usepackage{amssymb}",
-        r"\usepackage{unicode-math}",
-    )),
-    "text.latex.preamble": "\n".join((
-        r"\usepackage{amsmath}",
-        r"\usepackage{amsfonts}",
-        r"\usepackage{amssymb}",
-    )),
+    "pgf.preamble": PGF_PREAMBLE,
+    "text.latex.preamble": LATEX_PREAMBLE,
 }
 
 

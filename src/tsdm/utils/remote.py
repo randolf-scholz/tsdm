@@ -324,7 +324,7 @@ def download(
                 hash_alg=hash_algorithm,
                 hash_kwargs=hash_kwargs,
             )
-        return
+        return None
 
     # attempt to download the file
     try:

@@ -24,7 +24,6 @@ import numpy as np
 from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
 from scipy.integrate import solve_ivp as scipy_solve_ivp
-from scipy.optimize import OptimizeResult as OdeResult
 from typing_extensions import (
     Any,
     Optional,
@@ -283,15 +282,12 @@ class IVP_GeneratorBase(IVP_Generator[T]):
 
     def validate_initial_state(self, y0: T, /) -> None:
         r"""Validate constraints on the initial state."""
-        return None
 
     def validate_observations(self, obs: T, /) -> None:
         r"""Validate constraints on the parameters."""
-        return None
 
     def validate_solution(self, sol: Any, /) -> None:
         r"""Validate constraints on the parameters."""
-        return None
 
     # endregion validation and projection ----------------------------------------------
 
@@ -301,6 +297,6 @@ def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> 
     t_eval = np.asarray(t)
     t0 = t_eval.min()
     tf = t_eval.max()
-    sol: OdeResult = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
+    sol = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
     # NOTE: output shape: (d, n_timestamps), move time axis to the front
     return np.moveaxis(sol.y, -1, 0)

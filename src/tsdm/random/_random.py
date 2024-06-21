@@ -13,17 +13,17 @@ from pandas import date_range, timedelta_range
 from typing_extensions import Optional
 
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
-from tsdm.types.time import DTVar, TDVar
+from tsdm.types.time import DT, TD, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 
 def sample_timestamps(
-    start: str | DTVar = "today",
-    final: Optional[DTVar] = None,
+    start: str | DT = "today",
+    final: Optional[DT] = None,
     /,
     *,
     size: int,
-    freq: str | TDVar = "1s",
+    freq: str | TimeDelta = "1s",
     replace: bool = False,
     include_start: bool = True,
     include_final: bool = False,
@@ -70,12 +70,12 @@ def sample_timestamps(
 
 
 def sample_timedeltas(
-    low: str | TDVar = "0s",
-    high: str | TDVar = "1h",
+    low: str | TD = "0s",
+    high: str | TD = "1h",
     size: int = 1,
     /,
     *,
-    freq: str | TDVar = "1s",
+    freq: str | TD = "1s",
 ) -> NDArray:
     r"""Create randomly sampled timedeltas."""
     low_dt = timedelta(low)

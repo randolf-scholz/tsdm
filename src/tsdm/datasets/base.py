@@ -71,9 +71,8 @@ class Dataset(Protocol[T_co]):
     def info(cls) -> None:
         r"""Open dataset information in browser."""
         if cls.INFO_URL is NotImplemented:
-            print(cls.__doc__)
-        else:
-            webbrowser.open_new_tab(cls.INFO_URL)
+            raise NotImplementedError("No INFO_URL provided for this dataset!")
+        webbrowser.open_new_tab(cls.INFO_URL)
 
     @classmethod
     @abstractmethod

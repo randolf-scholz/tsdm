@@ -11,25 +11,8 @@ __all__ = [
     "DT",
     "DT_co",
     "DT_contra",
-    # Old types
-    "DTVar",
-    "TDVar",
-    "RealDTVar",
-    "RealTDVar",
-    "NumpyTDVar",
-    "NumpyDTVar",
 ]
 
-
-from datetime import datetime as py_dt, timedelta as py_td
-
-from numpy import (
-    datetime64 as np_dt,
-    floating as np_float,
-    integer as np_int,
-    timedelta64 as np_td,
-)
-from pandas import Timedelta as pd_td, Timestamp as pd_dt
 from typing_extensions import (
     Any,
     Protocol,
@@ -41,6 +24,12 @@ from typing_extensions import (
 )
 
 # region datetime and timedelta protocols ----------------------------------------------
+TD = TypeVar("TD", bound="TimeDelta")
+TD_co = TypeVar("TD_co", bound="TimeDelta", covariant=True)
+TD_contra = TypeVar("TD_contra", bound="TimeDelta", contravariant=True)
+DT = TypeVar("DT", bound="DateTime[Any]")
+DT_co = TypeVar("DT_co", bound="DateTime[Any]", covariant=True)
+DT_contra = TypeVar("DT_contra", bound="DateTime[Any]", contravariant=True)
 
 
 @runtime_checkable
@@ -101,11 +90,6 @@ class TimeDelta(Protocol):
     # def __rdivmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
 
 
-TD = TypeVar("TD", bound=TimeDelta)
-TD_co = TypeVar("TD_co", bound=TimeDelta, covariant=True)
-TD_contra = TypeVar("TD_contra", bound=TimeDelta, contravariant=True)
-
-
 @runtime_checkable
 class DateTime(Protocol[TD]):  # bind appropriate TimeDelta type
     r"""Datetime can be compared and subtracted."""
@@ -135,26 +119,3 @@ class DateTime(Protocol[TD]):  # bind appropriate TimeDelta type
 
 
 # endregion datetime and timedelta protocols -------------------------------------------
-
-
-DT = TypeVar("DT", bound=DateTime[Any])
-DT_co = TypeVar("DT_co", bound=DateTime[Any], covariant=True)
-DT_contra = TypeVar("DT_contra", bound=DateTime[Any], contravariant=True)
-
-# Time-Type-Variables
-DTVar = TypeVar("DTVar", int, float, np_int, np_float, np_dt, pd_dt)
-r"""TypeVar for `Timestamp` values."""
-TDVar = TypeVar("TDVar", int, float, np_int, np_float, np_td, pd_td)
-r"""TypeVar for `Timedelta` values."""
-
-# Real-Time-Type-Variables
-RealDTVar = TypeVar("RealDTVar", py_dt, np_dt, pd_dt)
-r"""TypeVar for `Timestamp` values."""
-RealTDVar = TypeVar("RealTDVar", py_td, np_td, pd_td)
-r"""TypeVar for `Timedelta` values."""
-
-# Numpy-Time-Type-Variables
-NumpyDTVar = TypeVar("NumpyDTVar", np_int, np_float, np_dt)
-r"""TypeVar for `Timestamp` values."""
-NumpyTDVar = TypeVar("NumpyTDVar", np_int, np_float, np_td)
-r"""TypeVar for `Timedelta` values."""

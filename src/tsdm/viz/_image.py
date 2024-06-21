@@ -86,6 +86,5 @@ def rasterize(
     with TemporaryFile(suffix=".png") as file:
         fig.savefig(file, dpi=dpi)
         im = Image.open(file)
-        arr = np.array(im)
 
-    return arr
+    return np.array(im)

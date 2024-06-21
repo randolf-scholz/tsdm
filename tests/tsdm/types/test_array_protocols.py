@@ -9,7 +9,6 @@ import polars as pl
 import pyarrow as pa
 import pytest
 import torch
-from numpy.typing import NDArray
 from typing_extensions import Any, get_protocol_members
 
 from tsdm.testing import assert_protocol
@@ -193,7 +192,7 @@ r"""Dunder methods for arithmetic operations."""
 
 EXCLUDED_MEMBERS: dict[type, set[str]] = {
     ArrayKind      : set(),
-    SeriesKind     : {"diff", "to_numpy", "view"},
+    SeriesKind     : {"diff", "to_numpy", "value_counts", "view"},
     TableKind      : {"columns", "join", "drop", "filter"},
     NumericalArray : set(),
     NumericalTensor: {"view"},
@@ -247,9 +246,6 @@ def test_series(name: str) -> None:
 
     assert isinstance(series.unique(), cls | np.ndarray)
     attrs.remove("unique")
-
-    series.value_counts()
-    attrs.remove("value_counts")
 
     assert isinstance(series.take([0, 0, 2]), cls)
     attrs.remove("take")
@@ -363,7 +359,7 @@ def test_table_manual() -> None:
         torch_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
 
-    numpy_ndarray: NDArray = np.array([1, 2, 3])
+    numpy_ndarray: np.ndarray = np.array([1, 2, 3])
     numpy_table: SupportsShape = numpy_ndarray
     assert isinstance(
         numpy_table, SupportsShape

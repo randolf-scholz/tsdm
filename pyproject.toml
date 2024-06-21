@@ -168,7 +168,7 @@ select = [
     "RUF",   # ruff specific
     "S101",  # use of assert
     "SIM",   # simplify
-    # "TCH",   # type-checking
+    "TCH",   # type-checking
     "TRY",   # tryceratops
     "UP",    # pyupgrade
 ]

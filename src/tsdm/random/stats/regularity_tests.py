@@ -176,5 +176,5 @@ def irregularity_coefficient(s: Series) -> float:
     and a regular time series with the same average frequency.
     """
     # TODO: implement correct function
-    print(s.index.to_series().diff().std())
+    # something along the lines of s.index.to_series().diff().std()
     raise NotImplementedError

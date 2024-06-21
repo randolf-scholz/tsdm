@@ -3,7 +3,6 @@ r"""Test compute_grid function."""
 import logging
 import math
 from datetime import datetime as py_dt, timedelta as py_td
-from typing import Generic
 
 import pandas as pd
 import pytest
@@ -14,10 +13,10 @@ from numpy import (
     timedelta64 as np_td,
 )
 from pandas import Timedelta as pd_td, Timestamp as pd_dt
-from typing_extensions import NamedTuple
+from typing_extensions import Generic, NamedTuple
 
 from tsdm.random.samplers import compute_grid
-from tsdm.types.time import DTVar, TDVar
+from tsdm.types.time import DT, TD, DateTime, TimeDelta
 from tsdm.utils import timedelta
 
 __logger__ = logging.getLogger(__name__)
@@ -50,76 +49,75 @@ def _validate_grid_results(tmin, tmax, tdelta, offset):
         raise AssertionError(f"Failed with {values=}") from E
 
 
-class GridTuple(NamedTuple, Generic[DTVar, TDVar]):
+class GridTuple(NamedTuple, Generic[DT, TD]):
     r"""Input tuple for `compute_grid`."""
 
-    tmin: DTVar
-    tmax: DTVar
-    timedelta: TDVar
-    offset: TDVar
+    tmin: DT
+    tmax: DT
+    offset: DT
+    timedelta: TD
 
 
-def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
+def _make_inputs(mode: str) -> GridTuple[DateTime, TimeDelta]:
     match mode:
         case "numpy":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                np_dt("2000-01-01"),
-                np_dt("2001-01-01"),
-                np_td(1, "h"),
-                np_dt("2000-01-15"),
+            return GridTuple(
+                tmin=np_dt("2000-01-01"),
+                tmax=np_dt("2001-01-01"),
+                offset=np_dt("2000-01-15"),
+                timedelta=np_td(1, "h"),
             )
         case "pandas":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                pd_dt("2000-01-01"),
-                pd_dt("2001-01-01"),
-                pd_td("1h"),
-                pd_dt("2000-01-15"),
+            return GridTuple(
+                tmin=pd_dt("2000-01-01"),
+                tmax=pd_dt("2001-01-01"),
+                offset=pd_dt("2000-01-15"),
+                timedelta=pd_td("1h"),
             )
         case "python":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                py_dt(2000, 1, 1),
-                py_dt(2001, 1, 1),
-                py_td(hours=1),
-                py_dt(2000, 1, 15),
+            return GridTuple(
+                tmin=py_dt(2000, 1, 1),
+                tmax=py_dt(2001, 1, 1),
+                offset=py_dt(2000, 1, 15),
+                timedelta=py_td(hours=1),
             )
         case "np_int":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                np_int(0),
-                np_int(100),
-                np_int(1),
-                np_int(1),
+            return GridTuple(
+                tmin=np_int(0),
+                tmax=np_int(100),
+                offset=np_int(1),
+                timedelta=np_int(1),  # type: ignore[arg-type]
             )
         case "np_float":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                np_float(0.0),
-                np_float(99.9),
-                np_float(0.6),
-                np_float(1.4),
+            return GridTuple(
+                tmin=np_float(0.0),
+                tmax=np_float(99.9),
+                offset=np_float(1.4),
+                timedelta=np_float(0.6),  # type: ignore[arg-type]
             )
         case "int":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                0,
-                100,
-                1,
-                1,
+            return GridTuple(
+                tmin=0,
+                tmax=100,
+                offset=1,
+                timedelta=1,
             )
         case "float":
             # noinspection PyArgumentList
-            the_tuple = GridTuple(
-                0.0,
-                99.9,
-                0.6,
-                1.4,
+            return GridTuple(
+                tmin=0.0,
+                tmax=99.9,
+                offset=0.6,
+                timedelta=1.4,
             )
         case _:
             raise ValueError(f"Unknown mode {mode=}")
-    return the_tuple
 
 
 def test_edge_case() -> None:
