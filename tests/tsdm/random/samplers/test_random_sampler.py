@@ -1,14 +1,14 @@
 r"""Test the RandomSampler."""
 
-from typing import assert_type
-
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.typing import NDArray
+from typing_extensions import TYPE_CHECKING, assert_type
 
-from tsdm.data import IndexableDataset, MapDataset
 from tsdm.random.samplers import RandomSampler
+
+if TYPE_CHECKING:
+    from tsdm.data import IndexableDataset, MapDataset
 
 
 @pytest.mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
@@ -112,7 +112,7 @@ def test_seq_data_no_hint() -> None:
 
 
 def test_numpy_data() -> None:
-    data: NDArray[np.str_] = np.array(["1", "2", "3"], dtype=np.str_)
+    data = np.array(["1", "2", "3"], dtype=np.str_)
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[np.str_])  # type: ignore[assert-type]
     # check that we can iterate over the index

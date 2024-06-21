@@ -5,7 +5,6 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 import pandas as pd
 import torch
-from numpy.typing import NDArray
 from typing_extensions import assert_type
 
 from tsdm.types.protocols import (
@@ -50,7 +49,7 @@ def test_shapelike_protocol() -> None:
     r"""Test the Shape protocol."""
     data = [1, 2, 3]
     torch_tensor: torch.Tensor = torch.tensor(data)
-    numpy_ndarray: NDArray = np.array(data)
+    numpy_ndarray: np.ndarray = np.array(data)
     pandas_series: pd.Series = pd.Series(data)
     pandas_index: pd.Index = pd.Index(data)
 

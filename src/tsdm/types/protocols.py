@@ -11,7 +11,7 @@ __all__ = [
     "Hash",
     "Lookup",
     "ShapeLike",
-    "WeakSeq",
+    "Array",
     # Mixins
     "SupportsArray",
     "SupportsDataframe",
@@ -821,8 +821,8 @@ class SetProtocol(Protocol[T_co]):
 
 
 @runtime_checkable
-class WeakSeq(Protocol[T_co]):
-    r"""Alternative to `Sequence` without `__contains__`, `__reversed__`, `index` and `count`.
+class Array(Protocol[T_co]):
+    r"""Alternative to `Sequence` without `__reversed__`, `index` and `count`.
 
     We remove these methods, as they are not present on certain vector data structures,
     for example, `__reversed__` is not present on `pandas.Index`.
@@ -843,7 +843,7 @@ class WeakSeq(Protocol[T_co]):
     def __getitem__(self, index: int, /) -> T_co: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> "WeakSeq[T_co]": ...
+    def __getitem__(self, index: slice, /) -> "Array[T_co]": ...
 
     # Mixin methods
     def __iter__(self) -> Iterator[T_co]:

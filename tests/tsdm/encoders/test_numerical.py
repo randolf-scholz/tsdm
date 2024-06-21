@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-from numpy.typing import NDArray
 from typing_extensions import Any, TypeAlias, TypeVar, assert_type
 
 from tsdm.constants import RNG
@@ -281,10 +280,10 @@ def test_get_broadcast(
     ):
         pytest.skip(f"{shape=} {axis=}")
 
-    arr: NDArray = RNG.normal(size=shape)
+    arr: np.ndarray = RNG.normal(size=shape)
 
     broadcast = get_broadcast(arr.shape, axis=axis)
-    m = np.mean(arr, axis=axis)
+    m: np.ndarray = np.mean(arr, axis=axis)
     m_ref = np.mean(arr, axis=axis, keepdims=True)
     assert m[broadcast].shape == m_ref.shape
 

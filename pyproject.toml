@@ -219,7 +219,7 @@ ignore = [
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
     # refurb
-     "FURB140", # reimplemented-starmap (less efficient than comprehension)
+    "FURB140", # reimplemented-starmap (less efficient than comprehension)
 ]
 
 [tool.ruff.lint.per-file-ignores]

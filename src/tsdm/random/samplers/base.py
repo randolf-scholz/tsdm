@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 
@@ -30,7 +30,7 @@ import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
-from pandas import Index, Series, Timedelta
+from pandas import Index, Series
 from typing_extensions import (
     Any,
     ClassVar,
@@ -55,7 +55,7 @@ from tsdm.data.datasets import (
     get_index,
     get_last_sample,
 )
-from tsdm.types.protocols import WeakSeq
+from tsdm.types.protocols import Array
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
 from tsdm.types.variables import K2, K, T_co
 from tsdm.utils import timedelta, timestamp
@@ -364,8 +364,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: S,
-        horizons: WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: Array[str | TD],
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -377,8 +377,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: B,
-        horizons: WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: Array[str | TD],
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -390,8 +390,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: M,
-        horizons: WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: Array[str | TD],
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -403,8 +403,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: W,
-        horizons: WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: Array[str | TD],
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -416,8 +416,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: S,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
+        horizons: str | TD,
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -429,8 +429,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: B,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
+        horizons: str | TD,
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -442,8 +442,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: M,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
+        horizons: str | TD,
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -455,8 +455,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: W,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
+        horizons: str | TD,
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -468,8 +468,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: str,
-        horizons: WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: Array[str | TD],
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -481,8 +481,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: str,
-        horizons: str | Timedelta,
-        stride: str | Timedelta,
+        horizons: str | TD,
+        stride: str | TD,
         shuffle: bool = ...,
         drop_last: bool = ...,
         rng: Generator = ...,
@@ -493,8 +493,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: Mode,
-        horizons: str | Timedelta | WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: str | TD | Array[str | TD],
+        stride: str | TD,
         drop_last: bool = False,
         shuffle: bool = False,
         rng: Generator = RNG,
@@ -509,8 +509,8 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: ModeVar,
-        horizons: str | Timedelta | WeakSeq[str | Timedelta],
-        stride: str | Timedelta,
+        horizons: str | TD | Sequence[str | TD],
+        stride: str | TD,
         drop_last: bool = False,
         shuffle: bool = False,
         rng: Generator = RNG,
