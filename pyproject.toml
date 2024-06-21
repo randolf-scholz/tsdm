@@ -149,7 +149,6 @@ select = [
     "B",     # bugbear
     "C4",    # comprehensions
     "D",     # pydocstyle
-    "DTZ",   # datetimetz
     "E",     # pycodestyle
     "EXE",   # executable
     "F",     # pyflakes
