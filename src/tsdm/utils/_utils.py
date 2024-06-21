@@ -14,7 +14,6 @@ __all__ = [
     "last",
     "timedelta",
     "timestamp",
-    "now",
     "pairwise_disjoint",
     "pairwise_disjoint_masks",
     "paths_exists",
@@ -37,7 +36,6 @@ from collections.abc import (
     Reversible,
     Sequence,
 )
-from datetime import datetime
 from functools import wraps
 from importlib import import_module
 from pathlib import Path
@@ -386,11 +384,6 @@ def round_relative(x: np.ndarray, /, *, decimals: int = 2) -> np.ndarray:
     digits = decimals - order
     rounded = np.rint(x * 10**digits)
     return np.true_divide(rounded, 10**digits)
-
-
-def now() -> str:
-    r"""Return current time in iso format."""
-    return datetime.now().isoformat(timespec="seconds")
 
 
 def deep_dict_update(d: dict, new_kvals: Mapping, /) -> dict:
