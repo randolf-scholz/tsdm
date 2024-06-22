@@ -11,6 +11,38 @@ from tsdm.encoders.time import TimeDeltaEncoder
 from tsdm.testing import assert_arrays_equal
 from tsdm.types.protocols import NumericalTensor
 
+
+def make_tdarray(data: list[timedelta | None], backend: str) -> NumericalTensor:
+    match backend:
+        case "numpy":
+            return np.array(data, dtype="timedelta64[ms]")
+        case "pandas-timedeltaindex":
+            return pd.TimedeltaIndex(data)
+        case "pandas-index-arrow":
+            return pd.Index(data).astype("duration[ms][pyarrow]")
+        case "pandas-index-numpy":
+            return pd.Index(data).astype("timedelta64[ms]")
+        case "pandas-series-arrow":
+            return pd.Series(data).astype("duration[ms][pyarrow]")
+        case "pandas-series-numpy":
+            return pd.Series(data).astype("timedelta64[ms]")
+        case "polars-series":
+            return pl.Series(data).cast(dtype=pl.Duration())
+        case _:
+            raise ValueError(f"Unsupported backend: {backend}.")
+
+
+BACKENDS = [
+    "numpy",
+    "pandas-index-arrow",
+    "pandas-index-numpy",
+    "pandas-series-arrow",
+    "pandas-series-numpy",
+    "pandas-timedeltaindex",
+    "polars-series",
+]
+r"""A list of supported backends for time encoders."""
+
 # region timedelta sample data ---------------------------------------------------------
 TD_TRAIN_DATA = [
     timedelta(seconds=0),
@@ -31,32 +63,7 @@ TD_TEST_DATA = [
 ]
 r"""Example timedelta test data with variable steps."""
 
-TD_TRAIN_ARRAYS: dict[str, NumericalTensor] = {
-    "numpy"                 : np.array(TD_TRAIN_DATA, dtype="timedelta64[s]"),
-    "pandas-index-arrow"    : pd.Index(TD_TRAIN_DATA).astype("duration[s][pyarrow]"),
-    "pandas-index-numpy"    : pd.Index(TD_TRAIN_DATA).astype("timedelta64[s]"),
-    "pandas-series-arrow"   : pd.Series(TD_TRAIN_DATA).astype("duration[s][pyarrow]"),
-    "pandas-series-numpy"   : pd.Series(TD_TRAIN_DATA).astype("timedelta64[s]"),
-    "pandas-timedeltaindex" : pd.TimedeltaIndex(TD_TRAIN_DATA),
-    "polars-series"         : pl.Series(TD_TRAIN_DATA).cast(dtype=pl.Duration()),
-}  # fmt: skip
-r"""Example data for training timedelta encoders."""
-
-TD_TEST_ARRAYS: dict[str, NumericalTensor] = {
-    "numpy"                 : np.array(TD_TEST_DATA, dtype="timedelta64[s]"),
-    "pandas-index-arrow"    : pd.Index(TD_TEST_DATA).astype("duration[s][pyarrow]"),
-    "pandas-index-numpy"    : pd.Index(TD_TEST_DATA).astype("timedelta64[s]"),
-    "pandas-series-arrow"   : pd.Series(TD_TEST_DATA).astype("duration[s][pyarrow]"),
-    "pandas-series-numpy"   : pd.Series(TD_TEST_DATA).astype("timedelta64[s]"),
-    "pandas-timedeltaindex" : pd.TimedeltaIndex(TD_TEST_DATA),
-    "polars-series"         : pl.Series(TD_TEST_DATA).cast(dtype=pl.Duration()),
-}  # fmt: skip
-r"""Example data for testing timedelta encoders."""
-# endregion timedelta sample data ------------------------------------------------------
-
-
-# region sparse timedelta sample data --------------------------------------------------
-TD_TRAIN_DATA_SPARSE = [
+TD_TRAIN_SPARSE = [
     None,
     timedelta(seconds=30),
     timedelta(seconds=60),
@@ -66,7 +73,7 @@ TD_TRAIN_DATA_SPARSE = [
 ]
 r"""Example sparse timedelta data with 30s steps."""
 
-TD_TEST_DATA_SPARSE = [
+TD_TEST_SPARSE = [
     timedelta(seconds=30),
     timedelta(seconds=37),
     timedelta(seconds=45),
@@ -75,28 +82,15 @@ TD_TEST_DATA_SPARSE = [
 ]
 r"""Example sparse timedelta test data with variable steps."""
 
-TD_TRAIN_ARRAYS_SPARSE: dict[str, NumericalTensor] = {
-    "numpy"                 : np.array(TD_TRAIN_DATA, dtype="timedelta64[s]"),
-    "pandas-index-arrow"    : pd.Index(TD_TRAIN_DATA).astype("duration[s][pyarrow]"),
-    "pandas-index-numpy"    : pd.Index(TD_TRAIN_DATA).astype("timedelta64[s]"),
-    "pandas-series-arrow"   : pd.Series(TD_TRAIN_DATA).astype("duration[s][pyarrow]"),
-    "pandas-series-numpy"   : pd.Series(TD_TRAIN_DATA).astype("timedelta64[s]"),
-    "pandas-timedeltaindex" : pd.TimedeltaIndex(TD_TRAIN_DATA),
-    "polars-series"         : pl.Series(TD_TRAIN_DATA).cast(dtype=pl.Duration()),
-}  # fmt: skip
+TD_TRAIN_ARRAYS = {key: make_tdarray(TD_TRAIN_DATA, key) for key in BACKENDS}
+r"""Example data for training timedelta encoders."""
+TD_TEST_ARRAYS = {key: make_tdarray(TD_TEST_DATA, key) for key in BACKENDS}
+r"""Example data for testing timedelta encoders."""
+TD_TRAIN_ARRAYS_SPARSE = {key: make_tdarray(TD_TRAIN_SPARSE, key) for key in BACKENDS}
 r"""Example sparse timedelta data for training timedelta encoders."""
-
-TD_TEST_ARRAYS_SPARSE: dict[str, NumericalTensor] = {
-    "numpy"                 : np.array(TD_TEST_DATA, dtype="timedelta64[s]"),
-    "pandas-index-arrow"    : pd.Index(TD_TEST_DATA).astype("duration[s][pyarrow]"),
-    "pandas-index-numpy"    : pd.Index(TD_TEST_DATA).astype("timedelta64[s]"),
-    "pandas-series-arrow"   : pd.Series(TD_TEST_DATA).astype("duration[s][pyarrow]"),
-    "pandas-series-numpy"   : pd.Series(TD_TEST_DATA).astype("timedelta64[s]"),
-    "pandas-timedeltaindex" : pd.TimedeltaIndex(TD_TEST_DATA),
-    "polars-series"         : pl.Series(TD_TEST_DATA).cast(dtype=pl.Duration()),
-}  # fmt: skip
+TD_TEST_ARRAYS_SPARSE = {key: make_tdarray(TD_TEST_SPARSE, key) for key in BACKENDS}
 r"""Example sparse timedelta data for testing timedelta encoders."""
-# endregion sparse timedelta sample data -----------------------------------------------
+# endregion timedelta sample data ------------------------------------------------------
 
 
 @pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)

@@ -111,16 +111,25 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
     def fit(self, data: Arr, /) -> None:
         self.original_dtype = data.dtype
 
-        if self.offset is NotImplemented:
-            self.offset = cast(DateTime, self.backend.nanmin(data))
+        # set the offset
+        offset = (
+            cast(DateTime, self.backend.nanmin(data))
+            if self.offset is NotImplemented
+            else self.offset
+        )
+        self.offset = self.backend.scalar(offset, dtype=self.original_dtype)
+
+        deltas = self.backend.drop_null(data - self.offset)
+
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
-            deltas = data - self.offset
             # This looks awkward but is robust.
             deltas = self.backend.drop_null(deltas)
             diffs = np.array(self.backend.cast(deltas, int))
-            base_freq = int(np.gcd.reduce(diffs))
-            self.unit = self.backend.scalar(base_freq, dtype=deltas.dtype)
+            unit = int(np.gcd.reduce(diffs))
+        else:
+            unit = self.unit
+        self.unit = self.backend.scalar(unit, dtype=deltas.dtype)
 
     def encode(self, x: Arr, /) -> Arr:
         delta = x - self.offset

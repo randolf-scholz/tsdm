@@ -17,7 +17,13 @@ from tsdm.types.aliases import Axis
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:
-    return np.array(x).astype(dtype).item()
+    r"""Construct a scalar (0d)-array of a given type."""
+    array = np.array(x).astype(dtype).squeeze()
+    if array.shape != ():
+        raise ValueError(f"Created scalar array has shape {array.shape}!")
+    # NOTE: we use flatten()[0] instead of item(),
+    #   because the latter returns a python scalar, which is not compatible at times.
+    return array
 
 
 def drop_null(x: NDArray, /) -> NDArray:
