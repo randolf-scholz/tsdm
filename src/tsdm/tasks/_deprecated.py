@@ -199,8 +199,6 @@ class OldBaseTask(Generic[K]):
         dataset (Dataset): The attached dataset
     """
 
-    __slots__ = ()
-
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
     train_batch_size: int = 32

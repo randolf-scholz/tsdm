@@ -107,8 +107,6 @@ class LazyDict(dict[K, V]):
     - tuple of the form tuple[Callable, tuple, dict]
     """
 
-    __slots__ = ()
-
     # fmt: off
     @overload
     def __new__(cls, /) -> "LazyDict": ...

@@ -104,6 +104,7 @@ __all__ = [
     # Classes
     "Batch",
     "Split",
+    "SplitID",
     "TimeSeriesTask",
     # Functions
     "infer_split_type",
@@ -147,10 +148,10 @@ from tsdm.utils.decorators import pprint_repr
 Sample_co = TypeVar("Sample_co", covariant=True)
 r"""Covariant type variable for `Sample`."""
 
-SplitID = TypeVar("SplitID", bound=Hashable)
+SplitID = NewType("SplitID", object)
 r"""Type of a split ID."""
 
-Batch = NewType("Batch", Any)
+Batch = NewType("Batch", object)
 r"""Type of a batch."""
 
 TRAIN: TypeAlias = Literal["train"]
@@ -240,8 +241,6 @@ class ForecastingTask(Protocol[Key, Sample_co]):
 
 class TTT(ForecastingTask[Key, Sample_co]):
     r"""WIP: TimeSeriesTask."""
-
-    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
@@ -476,7 +475,7 @@ class TTT(ForecastingTask[Key, Sample_co]):
 
 @pprint_repr
 @dataclass
-class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
+class TimeSeriesTask(Generic[Key, Sample_co]):
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -524,8 +523,6 @@ class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
             - `__iter__(self) -> Iterator[Any]`
             - `__len__(self) -> int`.
     """
-
-    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
