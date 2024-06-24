@@ -1,5 +1,7 @@
 r"""Test time encoders."""
 
+from collections.abc import Sequence
+
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -10,7 +12,7 @@ from tsdm.testing import assert_arrays_equal
 from tsdm.types.protocols import NumericalTensor
 
 
-def make_dtarray(data: list[str | None], backend: str) -> NumericalTensor:
+def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalTensor:
     match backend:
         case "numpy":
             return np.array(data, dtype="datetime64[ms]")
@@ -103,8 +105,14 @@ r"""Example data for testing datetime encoders."""
 
 @pytest.mark.parametrize("name", DT_TRAIN_ARRAYS)
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
-def test_datetime_encoder(*, name: str, sparse: bool) -> None:
+@pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
+def test_datetime_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
+    if rounding and sparse and name in {"pandas-index-arrow", "pandas-series-arrow"}:
+        pytest.xfail(
+            "Overflow error: https://github.com/pandas-dev/pandas/issues/59082."
+        )
+
     if sparse:
         train_data = DT_TRAIN_ARRAYS_SPARSE[name]
         test_data = DT_TEST_ARRAYS_SPARSE[name]
@@ -118,9 +126,15 @@ def test_datetime_encoder(*, name: str, sparse: bool) -> None:
     # evaluate on train data
     train_encoded = encoder.encode(train_data)
     train_decoded = encoder.decode(train_encoded)
-    assert_arrays_equal(train_data, train_decoded)
+    if rounding:
+        assert encoder.backend.nanmax(abs(train_data - train_decoded)) <= encoder.unit
+    else:
+        assert_arrays_equal(train_data, train_decoded)
 
     # evaluate on test data
     test_encoded = encoder.encode(test_data)
     test_decoded = encoder.decode(test_encoded)
-    assert_arrays_equal(test_data, test_decoded)
+    if rounding:
+        assert encoder.backend.nanmax(abs(test_decoded - test_decoded)) <= encoder.unit
+    else:
+        assert_arrays_equal(test_data, test_decoded)

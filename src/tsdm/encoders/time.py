@@ -42,18 +42,26 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
 
     unit: TimeDelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
-    original_dtype: PandasDtype = NotImplemented
+    timedelta_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
+    round: bool = True
+    r"""Whether to round to the next unit."""
 
     @property
     def params(self) -> dict[str, Any]:
         return asdict(self)
 
-    def __init__(self, *, unit: str | TimeDelta = NotImplemented) -> None:
+    def __init__(
+        self,
+        *,
+        unit: str | TimeDelta = NotImplemented,
+        rounding: bool = True,
+    ) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
+        self.round = rounding
 
     def fit(self, data: Arr, /) -> None:
-        self.original_dtype = data.dtype
+        self.timedelta_dtype = data.dtype
 
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
@@ -63,7 +71,7 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
             base_freq = int(np.gcd.reduce(diffs))
 
             # convert base_freq back to time delta in the original dtype
-            self.unit = self.backend.scalar(base_freq, dtype=self.original_dtype)
+            self.unit = self.backend.scalar(base_freq, dtype=self.timedelta_dtype)
 
     def encode(self, x: Arr, /) -> Arr:
         try:
@@ -73,13 +81,16 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
             return self.backend.cast(x, int) / self.backend.scalar(self.unit, int)
 
     def decode(self, y: Arr, /) -> Arr:
+        if self.round:
+            y = y.round()
+
         try:
-            return self.backend.cast(y * self.unit, self.original_dtype)
+            return self.backend.cast(y * self.unit, self.timedelta_dtype)
         except pa.lib.ArrowNotImplementedError:
             # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             y = self.backend.cast(y, float) * self.unit
-            return self.backend.cast(y, self.original_dtype)
+            return self.backend.cast(y, self.timedelta_dtype)
 
 
 @pprint_repr
@@ -91,8 +102,6 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
     r"""The starting point of the timeseries."""
     unit: TimeDelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
-    round: bool = True
-    r"""Whether to round to unit when decoding."""
     datetime_dtype: Any = NotImplemented
     r"""The original dtype of the Series."""
     timedelta_dtype: Any = NotImplemented
@@ -107,9 +116,11 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
         *,
         unit: str | TimeDelta = NotImplemented,
         offset: str | TimeDelta = NotImplemented,
+        rounding: bool = True,
     ) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
         self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
+        self.round = rounding
 
     def fit(self, data: Arr, /) -> None:
         # get the datetime dtype
@@ -132,7 +143,7 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
             # This looks awkward but is robust.
             deltas = self.backend.drop_null(deltas)
             diffs = np.array(self.backend.cast(deltas, int))
-            unit = int(np.gcd.reduce(diffs))
+            unit: TimeDelta = int(np.gcd.reduce(diffs))
         else:
             unit = self.unit
         self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)
@@ -148,7 +159,7 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
 
     def decode(self, y: Arr, /) -> Arr:
         if self.round:
-            y = self.backend.cast(y, float).round()
+            y = y.round()
 
         try:
             return self.backend.cast(y * self.unit + self.offset, self.datetime_dtype)

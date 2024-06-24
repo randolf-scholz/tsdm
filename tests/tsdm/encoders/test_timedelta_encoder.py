@@ -1,5 +1,6 @@
 r"""Test time encoders."""
 
+from collections.abc import Sequence
 from datetime import timedelta
 
 import numpy as np
@@ -12,7 +13,7 @@ from tsdm.testing import assert_arrays_equal
 from tsdm.types.protocols import NumericalTensor
 
 
-def make_tdarray(data: list[timedelta | None], backend: str) -> NumericalTensor:
+def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalTensor:
     match backend:
         case "numpy":
             return np.array(data, dtype="timedelta64[ms]")
@@ -95,7 +96,8 @@ r"""Example sparse timedelta data for testing timedelta encoders."""
 
 @pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
-def test_timedelta_encoder(*, name: str, sparse: bool) -> None:
+@pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
+def test_timedelta_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     if sparse:
         train_data = TD_TRAIN_ARRAYS_SPARSE[name]
@@ -104,15 +106,21 @@ def test_timedelta_encoder(*, name: str, sparse: bool) -> None:
         train_data = TD_TRAIN_ARRAYS[name]
         test_data = TD_TEST_ARRAYS[name]
 
-    encoder: TimeDeltaEncoder = TimeDeltaEncoder()
+    encoder: TimeDeltaEncoder = TimeDeltaEncoder(rounding=rounding)
     encoder.fit(train_data)
 
     # evaluate on train data
     encoded = encoder.encode(train_data)
     decoded = encoder.decode(encoded)
-    assert_arrays_equal(train_data, decoded)
+    if rounding:
+        assert encoder.backend.nanmax(abs(train_data - decoded)) <= encoder.unit
+    else:
+        assert_arrays_equal(train_data, decoded)
 
     # evaluate on test data
     encoded = encoder.encode(test_data)
     decoded = encoder.decode(encoded)
-    assert_arrays_equal(test_data, decoded)
+    if rounding:
+        assert encoder.backend.nanmax(abs(test_data - decoded)) <= encoder.unit
+    else:
+        assert_arrays_equal(test_data, decoded)

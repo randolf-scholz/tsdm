@@ -27,8 +27,8 @@ from tsdm.tasks import KiwiBenchmark
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-@pytest.fixture
-def encoder(scope="session"):
+@pytest.fixture(scope="session")
+def encoder() -> BaseEncoder:
     # initialize the task object
     task = KiwiBenchmark()
     descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]
@@ -67,7 +67,9 @@ def encoder(scope="session"):
     encoder = (
         FrameEncoder(
             column_encoders=column_encoders,
-            index_encoders={"measurement_time": DateTimeEncoder() >> MinMaxScaler()},
+            index_encoders={
+                "measurement_time": DateTimeEncoder(rounding=False) >> MinMaxScaler()
+            },
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(
@@ -88,11 +90,15 @@ def encoder(scope="session"):
 
 @pytest.mark.slow
 def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
-    r"""Test complicated combined encoder."""
+    r"""Test complicated combined encoder.
+
+    Note:
+        For some samples, we may get rounding errors in the index.
+    """
     # initialize the task object
     torch.manual_seed(0)
-    np.random.seed(0)  # noqa: NPY002
-    task = KiwiBenchmark()
+    rng = np.random.default_rng(1)
+    task = KiwiBenchmark(sampler_kwargs={"rng": rng})
 
     # prepare train data
     ts = task.dataset.timeseries.iloc[:20_000]
@@ -101,9 +107,14 @@ def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
     # prepare test data
     sampler = task.samplers[SplitID]
     generator = task.generators[SplitID]
+
+    # generate a single sample
     key = next(iter(sampler))
     sample = generator[key]
     test_data = sample.inputs.x
+
+    # check that sampling was deterministic
+    assert key[0] == (525, 17197)
 
     # fit encoder to the whole dataset
     encoder.fit(train_data)

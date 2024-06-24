@@ -15,7 +15,7 @@ from torch.nn.utils.rnn import pad_sequence
 from typing_extensions import Any, NamedTuple
 
 from tsdm import datasets
-from tsdm.constants import EMPTY_MAP
+from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.data import (
     TimeSeriesSampleGenerator,
     folds_as_frame,
@@ -141,7 +141,6 @@ class KiwiBenchmark(TimeSeriesTask):
         dataloader_kwargs: Mapping[str, Any] = EMPTY_MAP,
     ) -> None:
         r"""Initialize the KIWI task."""
-
         self.generator_kwargs |= generator_kwargs
         self.sampler_kwargs |= sampler_kwargs
         self.fold_kwargs |= fold_kwargs
@@ -268,6 +267,7 @@ class KiwiBenchmark(TimeSeriesTask):
         stride = sampler_kwargs.pop("stride")
         early_stop = sampler_kwargs.pop("early_stop")
         shuffle = sampler_kwargs.pop("shuffle")
+        rng = sampler_kwargs.pop("rng", RNG)
 
         if sampler_kwargs:
             raise ValueError(f"Unknown sampler_kwargs: {sampler_kwargs}")
@@ -279,12 +279,20 @@ class KiwiBenchmark(TimeSeriesTask):
                 stride=stride,
                 shuffle=shuffle,
                 mode="masks",
+                rng=rng,
             )
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(
-            split, subsamplers, early_stop=early_stop, shuffle=shuffle
+
+        sampler = HierarchicalSampler(
+            split,
+            subsamplers,
+            early_stop=early_stop,
+            shuffle=shuffle,
+            rng=rng,
         )
+
+        return sampler
 
     def make_generator(self, key: SplitID, /, **kwds: Any) -> TimeSeriesSampleGenerator:
         r"""Sample generator for the KIWI dataset."""
