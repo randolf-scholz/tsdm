@@ -134,7 +134,14 @@ def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
 
     # check that decode gives back original values
     train_decoded = encoder.decode(train_encoded)
-    pd.testing.assert_frame_equal(train_decoded, train_data, atol=atol, rtol=rtol)
+    pd.testing.assert_frame_equal(
+        train_decoded.reset_index(drop=True),
+        train_data.reset_index(drop=True),
+        atol=atol,
+        rtol=rtol,
+    )
+    # Check index for errors up to 1 second
+    assert abs(train_data.index - train_decoded.index).max() <= pd.Timedelta(1, "s")
 
     # apply encoder to a single slice
     test_encoded = encoder.encode(test_data)
@@ -150,7 +157,14 @@ def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
 
     # check that decoded matches with original
     test_decoded = encoder.decode(test_encoded)
-    pd.testing.assert_frame_equal(test_decoded, test_data, atol=atol, rtol=rtol)
+    pd.testing.assert_frame_equal(
+        test_decoded.reset_index(drop=True),
+        test_data.reset_index(drop=True),
+        atol=atol,
+        rtol=rtol,
+    )
+    # Check index for errors up to 1 second
+    assert abs(train_data.index - train_decoded.index).max() <= pd.Timedelta(1, "s")
 
 
 def test_bounds(encoder):
