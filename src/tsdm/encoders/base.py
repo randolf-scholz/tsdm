@@ -24,8 +24,8 @@ Note on `BaseEncoder`:
 
 __all__ = [
     # ABCs & Protocols
+    "BackendMixin",
     "BaseEncoder",
-    "BackendEncoder",
     "Encoder",
     "EncoderList",
     "EncoderProtocol",
@@ -33,6 +33,7 @@ __all__ = [
     "ParametrizedEncoder",
     "SerializableEncoder",
     "Transform",
+    "UniversalEncoder",
     # Classes
     "ChainedEncoder",
     "DeepcopyEncoder",
@@ -518,23 +519,33 @@ class BaseEncoder(Encoder[X, Y]):
     # endregion chaining methods -------------------------------------------------------
 
 
-class BackendEncoder(BaseEncoder[X, Y], ABC):
+class UniversalEncoder(BaseEncoder[Any, Any], ABC):
+    r"""Encoder that maps data to the same type, regardless of the input."""
+
+    @abstractmethod
+    def encode(self, x: T, /) -> T: ...
+    @abstractmethod
+    def decode(self, y: T, /) -> T: ...
+    def fit(self, data: Any, /) -> None: ...
+
+
+class BackendMixin:
     r"""Encoder equipped with a backend."""
 
-    backend: Backend[X] = NotImplemented
+    backend: Backend = NotImplemented
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls: type[Encoder[X, Y]]) -> None:
         super().__init_subclass__()
 
         original_fit = cls.fit
 
         @wraps(original_fit)
-        def wrapped_fit(self: Self, x: X, /) -> None:
+        def wrapped_fit(self, x, /):
             if self.backend is NotImplemented:
                 self.backend = get_backend(x)
             original_fit(self, x)
 
-        cls.fit = wrapped_fit  # type: ignore[assignment]
+        cls.fit = wrapped_fit
 
 
 class EncoderList(BaseEncoder[X, Y], Sequence[Encoder]):
@@ -595,11 +606,11 @@ class IdentityEncoder(BaseEncoder[Any, Any]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode(self, data: T, /) -> T:
-        return data
+    def encode(self, x: T, /) -> T:
+        return x
 
-    def decode(self, data: T, /) -> T:
-        return data
+    def decode(self, y: T, /) -> T:
+        return y
 
 
 class DeepcopyEncoder(BaseEncoder[Any, Any]):
@@ -609,11 +620,11 @@ class DeepcopyEncoder(BaseEncoder[Any, Any]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode(self, data: T, /) -> T:
-        return deepcopy(data)
+    def encode(self, x: T, /) -> T:
+        return deepcopy(x)
 
-    def decode(self, data: T, /) -> T:
-        return deepcopy(data)
+    def decode(self, y: T, /) -> T:
+        return deepcopy(y)
 
 
 class TupleEncoder(BaseEncoder[Any, Any]):
@@ -626,11 +637,11 @@ class TupleEncoder(BaseEncoder[Any, Any]):
     def __invert__(self) -> "TupleDecoder":
         return TupleDecoder()
 
-    def encode(self, data: T, /) -> tuple[T]:
-        return (data,)
+    def encode(self, x: T, /) -> tuple[T]:
+        return (x,)
 
-    def decode(self, data: tuple[T], /) -> T:
-        return data[0]
+    def decode(self, y: tuple[T], /) -> T:
+        return y[0]
 
 
 class TupleDecoder(BaseEncoder[Any, Any]):
@@ -643,11 +654,11 @@ class TupleDecoder(BaseEncoder[Any, Any]):
     def __invert__(self) -> "TupleEncoder":
         return TupleEncoder()
 
-    def encode(self, data: tuple[T], /) -> T:
-        return data[0]
+    def encode(self, y: tuple[T], /) -> T:
+        return y[0]
 
-    def decode(self, data: T, /) -> tuple[T]:
-        return (data,)
+    def decode(self, x: T, /) -> tuple[T]:
+        return (x,)
 
 
 @dataclass
@@ -675,11 +686,11 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
     def __invert__(self) -> "DiagonalDecoder":
         return DiagonalDecoder(num=self.num, aggregate_fn=self.aggregate_fn)
 
-    def encode(self, data: T, /) -> tuple[T, ...]:
-        return (data,) * self.num
+    def encode(self, x: T, /) -> tuple[T, ...]:
+        return (x,) * self.num
 
-    def decode(self, data: tuple[T, ...], /) -> T:
-        return self.aggregate_fn(data)
+    def decode(self, y: tuple[T, ...], /) -> T:
+        return self.aggregate_fn(y)
 
 
 @dataclass
@@ -707,11 +718,11 @@ class DiagonalDecoder(BaseEncoder[tuple[T, ...], T]):
     def __invert__(self) -> "DiagonalEncoder":
         return DiagonalEncoder(num=self.num, aggregate_fn=self.aggregate_fn)
 
-    def encode(self, data: tuple[T, ...], /) -> T:
-        return self.aggregate_fn(data)
+    def encode(self, y: tuple[T, ...], /) -> T:
+        return self.aggregate_fn(y)
 
-    def decode(self, data: T, /) -> tuple[T, ...]:
-        return (data,) * self.num
+    def decode(self, x: T, /) -> tuple[T, ...]:
+        return (x,) * self.num
 
 
 # endregion nullary encoders -----------------------------------------------------------
@@ -1122,8 +1133,8 @@ class ParallelEncoder(EncoderList[TupleIn, TupleOut]):
         cls: type[ParallelEncoder] = type(self)
         return cls(*(InverseEncoder(e) for e in self.encoders))  # type: ignore[return-value]
 
-    def fit(self, data: TupleIn, /) -> None:
-        for encoder, x in zip(self.encoders, data, strict=True):
+    def fit(self, xs: TupleIn, /) -> None:
+        for encoder, x in zip(self.encoders, xs, strict=True):
             encoder.fit(x)
 
     def encode(self, xs: TupleIn, /) -> TupleOut:

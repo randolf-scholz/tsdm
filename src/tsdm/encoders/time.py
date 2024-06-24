@@ -21,7 +21,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from typing_extensions import Any, ClassVar, Final, Optional, TypeVar, cast
 
-from tsdm.encoders.base import BackendEncoder, BaseEncoder, WrappedEncoder
+from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasDtype
 from tsdm.types.protocols import NumericalTensor
@@ -37,7 +37,7 @@ r"""TypeVar for tensor-like objects."""
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
+class TimeDeltaEncoder(BaseEncoder[Arr, Arr], BackendMixin):
     r"""Encode TimeDelta as Float."""
 
     unit: TimeDelta = NotImplemented
@@ -95,7 +95,7 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder(BackendEncoder[Arr, Arr]):
+class DateTimeEncoder(BaseEncoder[Arr, Arr], BackendMixin):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented

@@ -101,12 +101,16 @@ __all__ = [
     # Constants
     "ENCODERS",
     # ABCs & Protocols
+    "BackendMixin",
     "BaseEncoder",
     "Encoder",
-    "EncoderProtocol",
     "EncoderList",
+    "EncoderProtocol",
     "InvertibleTransform",
+    "ParametrizedEncoder",
+    "SerializableEncoder",
     "Transform",
+    "UniversalEncoder",
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
@@ -150,6 +154,7 @@ __all__ = [
 
 from tsdm.encoders import base, numerical, pytorch, time, transforms
 from tsdm.encoders.base import (
+    BackendMixin,
     BaseEncoder,
     ChainedEncoder,
     DeepcopyEncoder,
@@ -165,10 +170,13 @@ from tsdm.encoders.base import (
     JointEncoder,
     MapEncoders,
     ParallelEncoder,
+    ParametrizedEncoder,
     PipedEncoder,
+    SerializableEncoder,
     Transform,
     TupleDecoder,
     TupleEncoder,
+    UniversalEncoder,
     WrappedEncoder,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
