@@ -70,12 +70,13 @@ class TimeDeltaEncoder(BackendEncoder[Arr, Arr]):
             return x / self.unit
         except TypeError:
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
-            return self.backend.cast(x, float) / self.backend.scalar(self.unit, float)
+            return self.backend.cast(x, int) / self.backend.scalar(self.unit, int)
 
     def decode(self, y: Arr, /) -> Arr:
         try:
             return self.backend.cast(y * self.unit, self.original_dtype)
         except pa.lib.ArrowNotImplementedError:
+            # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             y = self.backend.cast(y, float) * self.unit
             return self.backend.cast(y, self.original_dtype)
@@ -92,8 +93,10 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
     r"""The base frequency to convert timedeltas to."""
     round: bool = True
     r"""Whether to round to unit when decoding."""
-    original_dtype: PandasDtype = NotImplemented
+    datetime_dtype: Any = NotImplemented
     r"""The original dtype of the Series."""
+    timedelta_dtype: Any = NotImplemented
+    r"""The dtype of the timedelta."""
 
     @property
     def params(self) -> dict[str, Any]:
@@ -109,7 +112,8 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
         self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
 
     def fit(self, data: Arr, /) -> None:
-        self.original_dtype = data.dtype
+        # get the datetime dtype
+        self.datetime_dtype = data.dtype
 
         # set the offset
         offset = (
@@ -117,9 +121,11 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
             if self.offset is NotImplemented
             else self.offset
         )
-        self.offset = self.backend.scalar(offset, dtype=self.original_dtype)
+        self.offset = self.backend.scalar(offset, dtype=self.datetime_dtype)
 
+        # get the timedelta dtype
         deltas = self.backend.drop_null(data - self.offset)
+        self.timedelta_dtype = deltas.dtype
 
         if self.unit is NotImplemented:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
@@ -129,7 +135,7 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
             unit = int(np.gcd.reduce(diffs))
         else:
             unit = self.unit
-        self.unit = self.backend.scalar(unit, dtype=deltas.dtype)
+        self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)
 
     def encode(self, x: Arr, /) -> Arr:
         delta = x - self.offset
@@ -138,20 +144,19 @@ class DateTimeEncoder(BackendEncoder[Arr, Arr]):
             return delta / self.unit
         except TypeError:
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
-            return self.backend.cast(delta, float) / self.backend.scalar(
-                self.unit, float
-            )
+            return self.backend.cast(delta, int) / self.backend.scalar(self.unit, int)
 
     def decode(self, y: Arr, /) -> Arr:
         if self.round:
             y = self.backend.cast(y, float).round()
 
         try:
-            return self.backend.cast(y * self.unit + self.offset, self.original_dtype)
+            return self.backend.cast(y * self.unit + self.offset, self.datetime_dtype)
         except pa.lib.ArrowNotImplementedError:
+            # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             z = self.backend.cast(y, float) * self.unit + self.offset
-            return self.backend.cast(z, self.original_dtype)
+            return self.backend.cast(z, self.datetime_dtype)
 
 
 @pprint_repr

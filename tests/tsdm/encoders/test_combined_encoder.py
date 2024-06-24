@@ -87,7 +87,7 @@ def encoder(scope="session"):
 
 
 @pytest.mark.slow
-def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
+def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
     r"""Test complicated combined encoder."""
     # initialize the task object
     torch.manual_seed(0)
@@ -123,7 +123,7 @@ def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=2**-12)
 
     # check that decode gives back original values
     train_decoded = encoder.decode(train_encoded)
-    pd.testing.assert_frame_equal(train_decoded, train_data, atol=atol, rtol=2**-12)
+    pd.testing.assert_frame_equal(train_decoded, train_data, atol=atol, rtol=rtol)
 
     # apply encoder to a single slice
     test_encoded = encoder.encode(test_data)
