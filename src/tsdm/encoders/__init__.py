@@ -146,13 +146,9 @@ __all__ = [
     "TupleDecoder",
     "TupleEncoder",
     "WrappedEncoder",
-    # deprecated
-    "OldDateTimeEncoder",
-    "Time2Float",
 ]
 
 from tsdm.encoders import base, numerical, pytorch, time, transforms
-from tsdm.encoders._deprecated import OldDateTimeEncoder, Time2Float
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,

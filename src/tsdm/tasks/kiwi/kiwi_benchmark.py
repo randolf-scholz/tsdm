@@ -7,14 +7,15 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
-from typing_extensions import Any, ClassVar, NamedTuple
+from typing_extensions import Any, NamedTuple
 
 from tsdm import datasets
+from tsdm.constants import EMPTY_MAP
 from tsdm.data import (
     TimeSeriesSampleGenerator,
     folds_as_frame,
@@ -25,12 +26,12 @@ from tsdm.data.timeseries import Sample
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
+    DateTimeEncoder,
     Encoder,
     FrameAsTensorDict,
     FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
-    OldDateTimeEncoder,
     StandardScaler,
 )
 from tsdm.metrics import TimeSeriesMSE
@@ -69,7 +70,7 @@ class KiwiBenchmark(TimeSeriesTask):
     stride: str = "15min"
     r"""The stride of the sliding window sampler."""
 
-    observables: ClassVar[list[str]] = [
+    observables: list[str] = [
         "Base",
         "DOT",
         "Glucose",
@@ -79,7 +80,19 @@ class KiwiBenchmark(TimeSeriesTask):
         "pH",
         "Temperature",
     ]
-    covariates: ClassVar[list[str]] = [
+    r"""The channels to observe."""
+    targets: list[str] = [
+        "Base",
+        "DOT",
+        "Glucose",
+        "OD600",
+        "Acetate",
+        "Fluo_GFP",
+        "pH",
+        "Temperature",
+    ]
+    r"""The channels to forecast."""
+    covariates: list[str] = [
         "Cumulated_feed_volume_glucose",
         "Cumulated_feed_volume_medium",
         "InducerConcentration",
@@ -87,18 +100,8 @@ class KiwiBenchmark(TimeSeriesTask):
         "Flow_Air",
         "Probe_Volume",
     ]
-    targets: ClassVar[list[str]] = [
-        "Base",
-        "DOT",
-        "Glucose",
-        "OD600",
-        "Acetate",
-        "Fluo_GFP",
-        "pH",
-        "Temperature",
-    ]
-
-    fold_kwargs: ClassVar[dict[str, Any]] = {
+    r"""The covariates, which are known in advance."""
+    fold_kwargs: dict[str, Any] = {
         "seed": 2022,
         "num_folds": 5,
         "train": 7,
@@ -106,8 +109,13 @@ class KiwiBenchmark(TimeSeriesTask):
         "test": 2,
     }
     r"""The configuration of the fold generator."""
-
-    sampler_kwargs: ClassVar[dict[str, Any]] = {
+    generator_kwargs: dict[str, Any] = {
+        "observables": observables,
+        "covariates": covariates,
+        "targets": targets,
+    }
+    r"""The configuration of the sample generator."""
+    sampler_kwargs: dict[str, Any] = {
         "observation_horizon": observation_horizon,
         "forecasting_horizon": forecasting_horizon,
         "stride": stride,
@@ -115,15 +123,11 @@ class KiwiBenchmark(TimeSeriesTask):
         "shuffle": False,
     }
     r"""The configuration of the sampler."""
-
-    generator_kwargs: ClassVar[dict[str, Any]] = {
-        "observables": observables,
-        "covariates": covariates,
-        "targets": targets,
+    dataloader_kwargs: dict[str, Any] = {
+        "batch_size": 32,
+        "num_workers": 0,
+        "pin_memory": True,
     }
-    r"""The configuration of the sample generator."""
-
-    dataloader_kwargs = {"batch_size": 32, "num_workers": 0, "pin_memory": True}
     r"""The configuration of the dataloader."""
 
     def __init__(
@@ -131,33 +135,17 @@ class KiwiBenchmark(TimeSeriesTask):
         *,
         observation_horizon: str = "2h",
         forecasting_horizon: str = "1h",
-        fold_kwargs: dict[str, Any] | None = None,
-        sampler_kwargs: dict[str, Any] | None = None,
-        generator_kwargs: dict[str, Any] | None = None,
-        dataloader_kwargs: dict[str, Any] | None = None,
+        fold_kwargs: Mapping[str, Any] = EMPTY_MAP,
+        sampler_kwargs: Mapping[str, Any] = EMPTY_MAP,
+        generator_kwargs: Mapping[str, Any] = EMPTY_MAP,
+        dataloader_kwargs: Mapping[str, Any] = EMPTY_MAP,
     ) -> None:
-        # FIXME: make it DRY
+        r"""Initialize the KIWI task."""
 
-        self.generator_kwargs = (
-            self.generator_kwargs | generator_kwargs
-            if generator_kwargs is not None
-            else self.generator_kwargs
-        )
-        self.sampler_kwargs = (
-            self.sampler_kwargs | sampler_kwargs
-            if sampler_kwargs is not None
-            else self.sampler_kwargs
-        )
-        self.fold_kwargs = (
-            self.fold_kwargs | fold_kwargs
-            if fold_kwargs is not None
-            else self.fold_kwargs
-        )
-        self.dataloader_kwargs = (
-            self.dataloader_kwargs | dataloader_kwargs
-            if dataloader_kwargs is not None
-            else self.dataloader_kwargs
-        )
+        self.generator_kwargs |= generator_kwargs
+        self.sampler_kwargs |= sampler_kwargs
+        self.fold_kwargs |= fold_kwargs
+        self.dataloader_kwargs |= dataloader_kwargs
 
         self.observables = self.generator_kwargs["observables"]
         self.covariates = self.generator_kwargs["covariates"]
@@ -256,7 +244,7 @@ class KiwiBenchmark(TimeSeriesTask):
                 for col in self.dataset.timeseries.columns
             },
             index_encoders={
-                "measurement_time": MinMaxScaler() @ OldDateTimeEncoder(),
+                "measurement_time": MinMaxScaler() @ DateTimeEncoder(),
             },
         )
 
