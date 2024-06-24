@@ -269,18 +269,24 @@ def test_linear_scaler(tensor_type: T) -> None:
     assert isinstance(encoder.params["mean"], float), f"{encoder.params}"
 
 
-@pytest.mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=str)
-@pytest.mark.parametrize("axis", [(1, -1), (-1,), -2, 0, None, ()], ids=str)
+@pytest.mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=lambda x: f"shape={x}")
+@pytest.mark.parametrize(
+    "axis",
+    [(1, -1), (-2,), (-1,), (0,), -2, -1, 0, None, ()],
+    ids=lambda x: f"axis={x}",
+)
 def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
     r"""Test the get_broadcast function."""
-    if (isinstance(axis, tuple) and any(abs(a) > len(shape) - 1 for a in axis)) or (
-        isinstance(axis, int) and abs(axis) > len(shape)
-    ):
-        pytest.skip(f"{shape=} {axis=}")
-
+    # initialize array
     arr: np.ndarray = RNG.normal(size=shape)
+
+    if (isinstance(axis, int) and abs(axis) > arr.ndim) or (
+        isinstance(axis, tuple)
+        and (len(axis) > arr.ndim or any(abs(a) > arr.ndim for a in axis))
+    ):
+        pytest.skip(f"Invalid shape axis combination: {shape=} {axis=}")
 
     broadcast = get_broadcast(arr.shape, axis=axis)
     m: np.ndarray = np.mean(arr, axis=axis)
