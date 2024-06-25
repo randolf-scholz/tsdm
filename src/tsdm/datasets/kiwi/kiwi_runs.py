@@ -194,7 +194,7 @@ TIMESERIES_DESCRIPTION = {
     "OD600"                         : ["%",      "percent",  pd.NA, 0,   100      , True, True],
     "Probe_Volume"                  : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
     "StirringSpeed"                 : ["U/min",  "absolute", pd.NA, 0,   np.inf   , True, True],
-    "Temperature"                   : ["°C",     "linear",   pd.NA, 20,  45       , True, True],
+    "Temperature"                   : ["℃",     "linear",   pd.NA, 20,  45       , True, True],
     "Volume"                        : ["mL",     "absolute", pd.NA, 0,   np.inf   , True, True],
     "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       , True, True],
 }  # fmt: skip

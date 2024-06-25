@@ -180,7 +180,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
         ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
         ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
-        ("Temp",             0,    None, True, True, "°C",      "Temperature"                                ),
+        ("Temp",             0,    None, True, True, "℃",      "Temperature"                                ),
         ("SBP",              0,    None, True, True, "mm Hg",   "Systolic BP"                                ),
         ("MAP",              0,    None, True, True, "mm Hg",   "Mean arterial pressure"                     ),
         ("DBP",              0,    None, True, True, "mm Hg",   "Diastolic BP"                               ),

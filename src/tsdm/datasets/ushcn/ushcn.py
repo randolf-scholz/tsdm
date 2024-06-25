@@ -12,6 +12,7 @@ __all__ = [
 import warnings
 
 import pandas as pd
+import pyarrow as pa
 from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 
@@ -29,11 +30,11 @@ KEY: TypeAlias = Literal[
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
-        ("PRCP", "float32[pyarrow]",    0, None,  True,  True, "10²in", "precipitation"      ),
-        ("SNOW", "float32[pyarrow]",    0, None,  True,  True, "10¹in", "snowfall"           ),
-        ("SNWD", "float32[pyarrow]",    0, None,  True,  True, "in"   , "snow depth"         ),
-        ("TMAX", "float32[pyarrow]", -100,  150, False, False, "°F"   , "maximum temperature"),
-        ("TMIN", "float32[pyarrow]", -100,  150, False, False, "°F"   , "minimum temperature"),
+        ("PRCP", "float32[pyarrow]",    0, None,  True,  True, "0.01 in", "precipitation"      ),
+        ("SNOW", "float32[pyarrow]",    0, None,  True,  True, "0.1 in" , "snowfall"           ),
+        ("SNWD", "float32[pyarrow]",    0, None,  True,  True, "in"     , "snow depth"         ),
+        ("TMAX", "float32[pyarrow]", -100,  150, False, False, "℉"     , "maximum temperature"),
+        ("TMIN", "float32[pyarrow]", -100,  150, False, False, "℉"     , "minimum temperature"),
     ],
     "schema": {
         "variable"        : "string[pyarrow]",
@@ -43,6 +44,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "lower_inclusive" : "bool[pyarrow]",
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
+        "description"     : "string[pyarrow]",
     },
     "index": ["variable"],
 }  # fmt: skip
@@ -434,7 +436,10 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         self.LOGGER.info("dropping all data with raised quality flags.")
         table = table.loc[table["QFLAG"].isna()]
 
+        # convert from tall to wide with columns PRCP, SNOW, SNWD, TMAX, TMIN
         self.LOGGER.info("Performing pivot operation.")
+        # FIXME: https://github.com/pandas-dev/pandas/issues/53051
+        table = table.astype({"ELEMENT": pd.ArrowDtype(pa.string())})
         ts = table.pivot(columns="ELEMENT", values="VALUE")
         ts.columns = ts.columns.astype("string[pyarrow]")
 
@@ -447,11 +452,14 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         return ts
 
     def _clean_raw_timeseries(self) -> DataFrame:
-        # FIXME: https://github.com/pola-rs/polars/issues/8312
+        # FIXME: https://github.com/pola-rs/polars/issues/3151
         # FIXME: https://github.com/apache/arrow/issues/33404
         warnings.warn(
-            "This can take a while to run. Consider using the Modin backend."
-            " Refactor if read_fwf becomes available in polars or pyarrow.",
+            "This can take a while to run, "
+            "refactor if read_fwf becomes available in polars or pyarrow."
+            "\nSee:"
+            "\n - https://github.com/pola-rs/polars/issues/3151"
+            "\n - https://github.com/apache/arrow/issues/33404",
             stacklevel=2,
         )
 
@@ -547,8 +555,11 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
 
         self.LOGGER.info("Creating time index...")
         date_cols = ["YEAR", "MONTH", "DAY"]
+        dates = pd.to_datetime(data[date_cols], errors="coerce").astype(
+            "date32[pyarrow]"
+        )
         data = (
-            data.assign(DATE=pd.to_datetime(data[date_cols], errors="coerce"))
+            data.assign(DATE=dates)
             .drop(columns=date_cols)
             .dropna(subset=["DATE", "VALUE"])
         )

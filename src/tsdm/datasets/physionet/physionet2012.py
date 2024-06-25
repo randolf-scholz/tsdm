@@ -100,7 +100,7 @@ These 37 variables may be observed once, more than once, or not at all in some c
 - RespRate [Respiration rate (bpm)]
 - SaO2 [O2 saturation in hemoglobin (%)]
 - SysABP [Invasive systolic arterial blood pressure (mmHg)]
-- Temp [Temperature (°C)]
+- Temp [Temperature (℃)]
 - TropI [Troponin-I (μg/L)]
 - TropT [Troponin-T (μg/L)]
 - Urine [Urine output (mL)]
@@ -205,7 +205,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
         ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
         ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
-        ("Temp"       , 0,    None, False, True, "°C",       "Temperature"                                   ),
+        ("Temp"       , 0,    None, False, True, "℃",       "Temperature"                                   ),
         ("TroponinI"  , 0,    None, False, True, "μg/L",     "Troponin-I"                                    ),
         ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
         ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),

@@ -18,7 +18,7 @@ timeseries_description = {
     "OD600"                         : ["%"      , "percent"  , "float32" , 0  , 100       , True , True],
     "Probe_Volume"                  : ["uL"     , "absolute" , "float32" , 0  , None      , True , True],
     "StirringSpeed"                 : ["U/min"  , "absolute" , "float32" , 0  , None      , True , True],
-    "Temperature"                   : ["°C"     , "linear"   , "float32" , 20 , 45        , True , True],
+    "Temperature"                   : ["℃"     , "linear"   , "float32" , 20 , 45        , True , True],
     "Volume"                        : ["mL"     , "absolute" , "float32" , 0  , None      , True , True],
     "pH"                            : ["pH"     , "linear"   , "float32" , 4  , 10        , True , True],
 }  # fmt: skip
