@@ -7,6 +7,7 @@ __all__ = [
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Any
 
 import tsdm
 from tsdm.datasets.mimic.mimic_iii import MIMIC_III
@@ -18,7 +19,7 @@ class MIMIC_III_Scholz2024(MIMIC_III):
 
     RAWDATA_DIR = MIMIC_III.RAWDATA_DIR
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the dataset."""
         super().__init__(*args, **kwargs)
 

@@ -23,13 +23,7 @@ __all__ = [
     "get_ellipsis_cols",
 ]
 
-from collections.abc import (
-    Callable,
-    Iterable,
-    Iterator,
-    Mapping,
-    Sequence,
-)
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
@@ -323,11 +317,16 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
         sparse: bool = NotImplemented,
         value_name: str = NotImplemented,
         var_name: str = NotImplemented,
-        categories: pd.CategoricalDtype | Sequence = NotImplemented,
+        categories: pd.CategoricalDtype | Iterable = NotImplemented,
     ) -> None:
         self.sparse = sparse
         self.var_name = var_name
         self.value_name = value_name
+        self.categories = (
+            pd.CategoricalDtype(categories)
+            if isinstance(categories, Iterable)
+            else categories
+        )
 
     def fit(self, data: DataFrame, /) -> None:
         if self.sparse is NotImplemented:
@@ -338,7 +337,9 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
             self.value_name = data.columns[-1]
 
         self.categories = (
-            pd.CategoricalDtype(data.columns[:-1])
+            self.categories
+            if self.categories is not NotImplemented
+            else pd.CategoricalDtype(data.columns[:-1])
             if self.sparse
             else pd.CategoricalDtype(data[self.var_name].unique())
         )

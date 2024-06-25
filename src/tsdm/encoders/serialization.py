@@ -11,6 +11,7 @@ Long Term Goals
 
 __all__ = ["serialize", "deserialize"]
 
+import pickle
 from pathlib import Path
 
 
@@ -37,7 +38,8 @@ def serialize(parameters: dict, *, path: Path) -> None:
 
         path: Path to zipfile.
     """
-    raise NotImplementedError
+    with path.open("wb") as f:
+        pickle.dump(parameters, f)
 
 
 def deserialize(path: Path) -> dict:
@@ -49,4 +51,5 @@ def deserialize(path: Path) -> dict:
     - if the file is a tensor, deserialize using the respective tensor library
       - use the filename as key to the dictionary
     """
-    raise NotImplementedError
+    with path.open("rb") as f:
+        return pickle.load(f)

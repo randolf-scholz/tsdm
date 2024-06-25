@@ -15,7 +15,7 @@ from tsdm.encoders.pytorch import (
 __logger__ = logging.getLogger(__name__)
 
 
-def test_PositionalEncoder() -> None:
+def test_positional_encoder() -> None:
     r"""Test the PositionalEncoder."""
     LOGGER = __logger__.getChild(PositionalEncoder.__name__)
     LOGGER.info("Testing.")
@@ -52,7 +52,7 @@ def test_PositionalEncoder() -> None:
     LOGGER.info("Finished Testing")
 
 
-def test_PositionalEncoder_Torch() -> None:
+def test_positional_encoder_torch() -> None:
     r"""Test the PositionalEncoder_Torch."""
     LOGGER = __logger__.getChild(PositionalEncoder_Torch.__name__)
     LOGGER.info("Testing.")
@@ -88,7 +88,7 @@ def test_PositionalEncoder_Torch() -> None:
     LOGGER.info("Finished Testing")
 
 
-def test_Time2Vec() -> None:
+def test_time2vec() -> None:
     r"""Test the Time2Vec encoder."""
     LOGGER = __logger__.getChild(Time2Vec.__name__)
     LOGGER.info("Testing.")

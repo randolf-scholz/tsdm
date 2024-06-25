@@ -1,4 +1,5 @@
 r"""Tests for `tsdm.utils.funcutils` module."""
+# ruff: noqa: ARG001
 
 from tsdm.utils.funcutils import (
     is_keyword_arg,

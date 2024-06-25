@@ -89,7 +89,7 @@ def encoder() -> BaseEncoder:
 
 
 @pytest.mark.slow
-def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
+def test_combined_encoder(encoder, split=(0, "train"), atol=1e-5, rtol=1e-3):
     r"""Test complicated combined encoder.
 
     Note:
@@ -105,8 +105,8 @@ def test_combined_encoder(encoder, SplitID=(0, "train"), atol=1e-5, rtol=1e-3):
     train_data = ts.reset_index(level=["run_id", "experiment_id"], drop=True)
 
     # prepare test data
-    sampler = task.samplers[SplitID]
-    generator = task.generators[SplitID]
+    sampler = task.samplers[split]
+    generator = task.generators[split]
 
     # generate a single sample
     key = next(iter(sampler))

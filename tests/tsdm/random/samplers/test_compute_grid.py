@@ -12,12 +12,11 @@ from numpy import (
     int32 as np_int,
     timedelta64 as np_td,
 )
-from pandas import Timedelta as pd_td, Timestamp as pd_dt
 from typing_extensions import Generic, NamedTuple
 
 from tsdm.random.samplers import compute_grid
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
-from tsdm.utils import timedelta
+from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]
@@ -154,8 +153,8 @@ def test_grid_extra() -> None:
     LOGGER.info("Testing on extra data")
 
     tmin = pd.Timestamp(0)
-    tmax = tmin + timedelta(2, "h")
-    td = timedelta("15m")
+    tmax = tmin + pd_td(2, "h")
+    td = pd_td("15m")
     offset = tmin + td
 
     _validate_grid_results(tmin, tmax, td, offset)

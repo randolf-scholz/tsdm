@@ -240,8 +240,6 @@ class Kernels:  # Q: how to make this more elegant?
 class Backend(Generic[T]):
     r"""Provides kernels for numerical operations."""
 
-    # __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
-
     NAME: BackendID
 
     # KERNELS

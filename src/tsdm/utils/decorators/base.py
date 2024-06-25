@@ -357,4 +357,4 @@ def _extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable
         - additional positional only args must have defaults values (LSP!)
         - additional positional only arguments are always added after positional-only arguments of the parent.
     """
-    raise NotImplementedError("Not yet implemented.")
+    raise NotImplementedError(f"Not yet implemented. {parent_func=}")

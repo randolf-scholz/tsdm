@@ -44,10 +44,11 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         sequences of length 15s each, respectively.
     """
 
-    num_folds = 5
-    train_size = 5000
-    valid_size = 1000
-    test_size = 1000
+    num_folds: int = 5
+    train_size: int = 5000
+    valid_size: int = 1000
+    test_size: int = 1000
+    missing_rate: float = 0.0
 
     observation_horizon: float = 10.0
     prediction_horizon: float = 5.0
@@ -61,8 +62,8 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     ) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
         timeseries = TimeSeriesCollection(timeseries=dataset.table)
-
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
+        self.missing_rate = float(missing_rate)
 
     def make_generator(self, key: SplitID, /) -> FixedSliceSampleGenerator:
         return FixedSliceSampleGenerator(

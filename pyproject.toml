@@ -143,9 +143,10 @@ output-format = "concise"
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
-
+#select=["ALL"]
 select = [
     "A",     # builtins
+    "ARG",   # unused-arguments
     "B",     # bugbear
     "C4",    # comprehensions
     "D",     # pydocstyle
@@ -174,23 +175,33 @@ select = [
     "UP",    # pyupgrade
 ]
 ignore = [
+    # annotations
+    "ANN",      # missing-annotations
+    # unused-arguments
+    "ARG003",   # Unused class method argument
+    # commas
+    "COM",      # comma
+    # copyright
+    "CPY",      # missing-copyright
     # pydocstyle
-    "D102",  # Missing docstring in public method
-    "D103",  # Missing docstring in public function
-    "D105",  # Missing docstring in magic method
-    "D107",  # Missing docstring in __init__
+    "D102",     # Missing docstring in public method
+    "D103",     # Missing docstring in public function
+    "D105",     # Missing docstring in magic method
+    "D107",     # Missing docstring in __init__
     # pycodestyle
-    "E201",  # Whitespace after '('
-    "E202",  # Whitespace before ')'
-    "E203",  # Whitespace before ':'
-    "E221",  # Multiple spaces before operator
-    # "E226",  # Missing whitespace around arithmetic operator
-    # "E231",  # Missing whitespace after ','
-    "E241",  # Multiple spaces after comma
-    "E271",  # Multiple spaces after keyword
-    "E272",  # Multiple spaces before keyword
+    "E201",     # Whitespace after '('
+    "E202",     # Whitespace before ')'
+    "E203",     # Whitespace before ':'
+    "E221",     # Multiple spaces before operator
+    # "E226",   # Missing whitespace around arithmetic operator
+    # "E231",   # Missing whitespace after ','
+    "E241",     # Multiple spaces after comma
+    "E271",     # Multiple spaces after keyword
+    "E272",     # Multiple spaces before keyword
+    # error-messages
+    "EM",       # error-messages
     # refurb
-    "FURB140", # reimplemented-starmap (less efficient than comprehension)
+    "FURB140",  # reimplemented-starmap (less efficient than comprehension)
     # naming
     "N801",     # class names should use CapWords convention
     "N806",     # variable in function should be lowercase
@@ -212,26 +223,29 @@ ignore = [
     "PLR0916",  # Too many boolean expressions
     "PLR0917",  # Too many positional arguments
     # PYI
-    "PYI019",  # Methods like ... should return typing.Self instead of custom TypeVar
+    "PYI019",   # Methods like ... should return typing.Self instead of custom TypeVar
     # RUFF
-    "RUF001",  # ambiguous-unicode-character-string
-    "RUF002",  # ambiguous-unicode-character-docstring
-    "RUF003",  # ambiguous-unicode-character-comment
-    "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
-    "RUF013",  # PEP 484 prohibits implicit Optional # FIXME: https://github.com/astral-sh/ruff/issues/9334
-    "RUF022",  # __all__ not sorted
+    "RUF001",   # ambiguous-unicode-character-string
+    "RUF002",   # ambiguous-unicode-character-docstring
+    "RUF003",   # ambiguous-unicode-character-comment
+    "RUF012",   # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
+    "RUF013",   # PEP 484 prohibits implicit Optional # FIXME: https://github.com/astral-sh/ruff/issues/9334
+    "RUF022",   # __all__ not sorted
+    # todo
+    "TD",       # todo
     # tryceratops
-    "TRY003",  # Avoid specifying long messages outside the exception class
+    "TRY003",   # Avoid specifying long messages outside the exception class
     # pyupgrade
-    "UP007",  # Use `X | Y` for type annotations
-    "UP035",  # deprecated-import
+    "UP007",    # Use `X | Y` for type annotations
+    "UP035",    # deprecated-import
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+"tests/*" = ["S101", "N803"]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
 "src/tsdm/models/*" = ["N803"]
+"src/tsdm/types/*" = ["ERA001"]
 
 [tool.ruff.lint.pylint]
 allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]

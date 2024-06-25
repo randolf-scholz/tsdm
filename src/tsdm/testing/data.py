@@ -74,9 +74,7 @@ def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
     return cast(bool, values.apply(float.is_integer).all())
 
 
-def compare_dataframes(
-    given: DataFrame, reference: DataFrame, *, rtol: float = 1e-5, atol: float = 1e-5
-) -> None:
+def compare_dataframes(given: DataFrame, reference: DataFrame) -> None:
     r"""Compare two dataframes."""
     if given.shape != reference.shape:
         raise AssertionError("Shapes must match!")

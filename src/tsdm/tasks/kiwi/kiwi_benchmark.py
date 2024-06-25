@@ -133,8 +133,8 @@ class KiwiBenchmark(TimeSeriesTask):
     def __init__(
         self,
         *,
-        observation_horizon: str = "2h",
-        forecasting_horizon: str = "1h",
+        # observation_horizon: str = "2h",
+        # forecasting_horizon: str = "1h",
         fold_kwargs: Mapping[str, Any] = EMPTY_MAP,
         sampler_kwargs: Mapping[str, Any] = EMPTY_MAP,
         generator_kwargs: Mapping[str, Any] = EMPTY_MAP,
@@ -312,7 +312,7 @@ class KiwiBenchmark(TimeSeriesTask):
             covariates=covariates,
         )
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
         r"""By default, weight channels inversely proportial to missing rate.
 
         This ensures the model fits on all channels instead of underfitting on sparse

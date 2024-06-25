@@ -172,7 +172,7 @@ class ParametrizedEncoder(EncoderProtocol[X, Y], Protocol):
         params = self.params
         return any(params[key] is NotImplemented for key in self.required_params)
 
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:  # noqa: ARG002
         r"""Alias for `self.params`."""
         return self.params
 
@@ -270,7 +270,7 @@ class Encoder(Protocol[X, Y]):
             exc.add_note(f"failed to set parameters {kwargs}.")
             raise
 
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]:
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:  # noqa: ARG002
         """Compatibility interface with scikit-learn.
 
         Compatibility interface with scikit-learn.

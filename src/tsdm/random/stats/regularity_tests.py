@@ -177,4 +177,4 @@ def irregularity_coefficient(s: Series) -> float:
     """
     # TODO: implement correct function
     # something along the lines of s.index.to_series().diff().std()
-    raise NotImplementedError
+    raise NotImplementedError(f"Not implemented yet! {s=}")

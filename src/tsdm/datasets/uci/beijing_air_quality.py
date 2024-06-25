@@ -154,8 +154,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "PRES"    : "float32[pyarrow]",
         "DEWP"    : "float32[pyarrow]",
         "RAIN"    : "float32[pyarrow]",
-        "wd"      : "string[pyarrow]",  # FIXME bug in pandas prevents using pyarrow here.
-        "station" : "string[pyarrow]",  # FIXME bug in pandas prevents using pyarrow here.
+        "wd"      : "string[pyarrow]",  # FIXME: bug in pandas prevents using pyarrow here.
+        "station" : "string[pyarrow]",  # FIXME: bug in pandas prevents using pyarrow here.
         "WSPM"    : "float32[pyarrow]",
     }  # fmt: skip
 
