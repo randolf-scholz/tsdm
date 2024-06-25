@@ -143,7 +143,6 @@ output-format = "concise"
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
-#select=["ALL"]
 select = [
     "A",     # builtins
     "ARG",   # unused-arguments
@@ -173,6 +172,7 @@ select = [
     "TCH",   # type-checking
     "TRY",   # tryceratops
     "UP",    # pyupgrade
+    "W",     # warnings
 ]
 ignore = [
     # annotations
@@ -200,6 +200,8 @@ ignore = [
     "E272",     # Multiple spaces before keyword
     # error-messages
     "EM",       # error-messages
+    # fixme
+    "FIX",      # fixme
     # refurb
     "FURB140",  # reimplemented-starmap (less efficient than comprehension)
     # naming

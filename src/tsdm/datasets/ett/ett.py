@@ -24,7 +24,7 @@ class ETT(MultiTableDataset[KEY, DataFrame]):
     +=============+===================+==================+===================+====================+=====================+=================+==================+==========================+
     | Description | The recorded date | High UseFul Load | High UseLess Load | Middle UseFul Load | Middle UseLess Load | Low UseFul Load | Low UseLess Load | Oil Temperature (target) |
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
-    """  # pylint: disable=line-too-long # noqa: E501
+    """  # noqa: E501, W505
 
     SOURCE_URL = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""

@@ -36,7 +36,7 @@ Attribute Information
 Data set were saved as txt using csv format, using semi colon (;).
 First column present date and time as a string with the following format 'yyyy-mm-dd hh:mm:ss'
 Other columns present float values with consumption in kW
-"""  # pylint: disable=line-too-long # noqa: E501
+"""  # noqa: E501, W505
 
 __all__ = ["Electricity"]
 
@@ -86,7 +86,7 @@ class Electricity(SingleTableDataset):
 
     Recommendation:
         At the given dates, replace zero with NaN.
-    """  # noqa: E501
+    """  # noqa: E501, W505
 
     SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""

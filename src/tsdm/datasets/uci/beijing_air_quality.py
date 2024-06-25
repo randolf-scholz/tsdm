@@ -64,7 +64,7 @@ Attribute Information
 +---------+-----------------------------------------+
 | station | name of the air-quality monitoring site |
 +---------+-----------------------------------------+
-"""  # pylint: disable=line-too-long # noqa: E501
+"""  # noqa: E501, W505
 
 __all__ = [
     # Constants
@@ -123,7 +123,7 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**          | Regression                | **Missing Values?**       | Yes    | **Number of Web Hits:** | 68746      |
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    """  # pylint: disable=line-too-long # noqa: E501
+    """  # noqa: E501, W505
 
     SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
     r"""HTTP address from where the dataset can be downloaded."""
