@@ -1,4 +1,5 @@
 r"""TSDM Configuration."""
+# ruff: noqa: N802
 
 __all__ = [
     # Classes

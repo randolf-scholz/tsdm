@@ -347,7 +347,7 @@ def table_info(table: Table, /) -> None:
     r"""Print information about a table."""
     size = table.nbytes / (1024 * 1024 * 1024)
     print(f"shape={table.shape}  {size=:.3f} GiB")
-    M = max(map(len, table.column_names)) + 1
+    max_keylen = max(map(len, table.column_names)) + 1
     for name, col in tqdm(zip(table.column_names, table.columns, strict=True)):
         num_total = len(col)
         num_null = pc.sum(pc.is_null(col)).as_py()
@@ -362,6 +362,6 @@ def table_info(table: Table, /) -> None:
         entropy = compute_entropy(value_counts)
         dtype = str(col.type)[:10]
         print(
-            f"{name:{M}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:8.3%})"
+            f"{name:{max_keylen}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:8.3%})"
             f"  {entropy=:8.3%}  {dtype=:s}"
         )

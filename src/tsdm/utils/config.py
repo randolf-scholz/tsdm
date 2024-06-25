@@ -58,30 +58,30 @@ class ConfigMetaclass(ABCMeta):
             namespace["__annotations__"] = {}
 
         config_type = super().__new__(cls, name, bases, namespace, **kwds)
-        FIELDS = set(namespace["__annotations__"])
+        fields = set(namespace["__annotations__"])
 
         # check forbidden fields
-        FORBIDDEN_FIELDS = cls._FORBIDDEN_FIELDS & FIELDS
-        if FORBIDDEN_FIELDS:
+        forbidden_fields = cls._FORBIDDEN_FIELDS & fields
+        if forbidden_fields:
             raise ValueError(
                 f"Fields {cls._FORBIDDEN_FIELDS!r} are not allowed! "
-                f"Found {FORBIDDEN_FIELDS!r}"
+                f"Found {forbidden_fields!r}"
             )
 
         # check for dunder fields
-        DUNDER_FIELDS = {key for key in FIELDS if is_dunder(key)}
-        if DUNDER_FIELDS:
-            raise ValueError(f"Dunder fields are not allowed!Found {DUNDER_FIELDS!r}.")
+        dunder_fields = {key for key in fields if is_dunder(key)}
+        if dunder_fields:
+            raise ValueError(f"Dunder fields are not allowed!Found {dunder_fields!r}.")
 
         # check all caps fields
-        ALLCAPS_FIELDS = {key for key in FIELDS if is_allcaps(key)}
-        if ALLCAPS_FIELDS:
-            raise ValueError(f"ALLCAPS fields are reserved!Found {ALLCAPS_FIELDS!r}.")
+        allcaps_fields = {key for key in fields if is_allcaps(key)}
+        if allcaps_fields:
+            raise ValueError(f"ALLCAPS fields are reserved!Found {allcaps_fields!r}.")
 
-        NAME = config_type.__qualname__.rsplit(".", maxsplit=1)[0]
+        actual_name = config_type.__qualname__.rsplit(".", maxsplit=1)[0]
         patched_fields = [
             ("_", KW_ONLY),
-            ("NAME", str, field(default=NAME)),
+            ("NAME", str, field(default=actual_name)),
             ("MODULE", str, field(default=namespace["__module__"])),
         ]
 

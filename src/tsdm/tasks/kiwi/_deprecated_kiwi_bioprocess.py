@@ -218,7 +218,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
             targets=self.targets.index,
         )
 
-        DS = MappingDataset({
+        mapped_ds = MappingDataset({
             idx: TimeSeriesDataset(
                 ts.loc[idx],
                 metadata=md.loc[idx],
@@ -234,9 +234,9 @@ class Kiwi_BioProcessTask(OldBaseTask):
                 stride=1,
                 shuffle=shuffle,
             )
-            for key, ds in DS.items()
+            for key, ds in mapped_ds.items()
         }
-        sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
+        sampler = HierarchicalSampler(mapped_ds, subsamplers, shuffle=shuffle)
 
         # construct the dataloader
         kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs

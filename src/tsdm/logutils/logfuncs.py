@@ -20,6 +20,7 @@ __all__ = [
 import inspect
 import json
 from collections.abc import Mapping
+from inspect import Parameter
 from pathlib import Path
 
 import torch
@@ -89,9 +90,9 @@ def is_logfunc(func: object, /) -> TypeGuard[LogFunction]:
 
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
-    P = inspect.Parameter
     return len(params) >= 6 and all(
-        p.kind in {P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD} for p in params[:3]
+        p.kind in {Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD}
+        for p in params[:3]
     )
 
 

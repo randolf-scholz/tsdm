@@ -300,7 +300,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
 
-        DS = MappingDataset({
+        mapped_ds = MappingDataset({
             idx: TimeSeriesDataset(
                 ts.loc[idx],
                 metadata=(md.loc[idx], self.final_value.loc[idx]),
@@ -310,7 +310,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
         # construct the sampler
         subsamplers = {}
-        for idx in DS:
+        for idx in mapped_ds:
             subsampler = IntervalSampler(
                 xmin=self.final_product_times.loc[idx, "t_min"],
                 xmax=self.final_product_times.loc[idx, "t_max"],
@@ -319,7 +319,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
                 shuffle=shuffle,
             )
             subsamplers[idx] = subsampler
-        sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
+        sampler = HierarchicalSampler(mapped_ds, subsamplers, shuffle=shuffle)
 
         # Construct the dataloader
         kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs

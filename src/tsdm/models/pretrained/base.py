@@ -74,7 +74,7 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for PreTrained."""
 
     def __init__(
-        self,
+        cls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -84,11 +84,11 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
         r"""When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
-        if not hasattr(self, "LOGGER"):
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
+        if not hasattr(cls, "LOGGER"):
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
-        if not hasattr(self, "RAWDATA_DIR"):
-            self.RAWDATA_DIR = CONFIG.MODELDIR / self.__name__
+        if not hasattr(cls, "RAWDATA_DIR"):
+            cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
 
 
 class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):

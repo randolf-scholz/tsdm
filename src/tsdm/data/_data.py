@@ -398,7 +398,7 @@ def describe(
         return pd.concat([describe(df[col]) for col in df])
 
     # crete a zero-scalar of the same type as the series
-    N = len(s)
+    num = len(s)
 
     # compute the special values
     max_value = s.max()
@@ -425,24 +425,24 @@ def describe(
         idx = s.first_valid_index()
         # NOTE: dropna is necessary for duplicate index
         _val = s.loc[idx].dropna().iloc[0] if idx is not None else 0
-        ZERO = _val - _val
-        neg_count = (s < ZERO).sum()
-        pos_count = (s > ZERO).sum()
-        zero_count = (s == ZERO).sum()
+        zero = _val - _val
+        neg_count = (s < zero).sum()
+        pos_count = (s > zero).sum()
+        zero_count = (s == zero).sum()
     except Exception:
         neg_count = pd.NA
         pos_count = pd.NA
         zero_count = pd.NA
 
     # compute the rates
-    max_rate = max_count / N
-    min_rate = min_count / N
-    mode_rate = mode_count / N
-    nan_rate = nan_count / N
-    neg_rate = neg_count / N
-    pos_rate = pos_count / N
-    unique_rate = unique_count / N
-    zero_rate = zero_count / N
+    max_rate = max_count / num
+    min_rate = min_count / num
+    mode_rate = mode_count / num
+    nan_rate = nan_count / num
+    neg_rate = neg_count / num
+    pos_rate = pos_count / num
+    unique_rate = unique_count / num
+    zero_rate = zero_count / num
 
     # stats
     try:

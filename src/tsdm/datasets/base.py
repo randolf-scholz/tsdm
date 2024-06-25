@@ -124,7 +124,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        self,
+        cls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -135,24 +135,24 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if "RAWDATA_DIR" not in namespace:
-            self.RAWDATA_DIR = (
+            cls.RAWDATA_DIR = (
                 Path("~/.tsdm/rawdata/")
                 if os.environ.get("GENERATING_DOCS", False)
                 else CONFIG.RAWDATADIR
-            ) / self.__name__
+            ) / cls.__name__
 
         if "DATASET_DIR" not in namespace:
-            self.DATASET_DIR = (
+            cls.DATASET_DIR = (
                 Path("~/.tsdm/datasets")
                 if os.environ.get("GENERATING_DOCS", False)
                 else CONFIG.DATASETDIR
-            ) / self.__name__
+            ) / cls.__name__
 
         # add post_init hook
-        self.__init__ = wrap_method(self.__init__, after=self.__post_init__)  # type: ignore[misc]
+        cls.__init__ = wrap_method(cls.__init__, after=cls.__post_init__)  # type: ignore[misc]
 
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):

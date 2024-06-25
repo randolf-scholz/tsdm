@@ -47,11 +47,10 @@ class MIMIC_III_Scholz2024(MIMIC_III):
             (metadata.ELAPSED_TIME >= "2d") & (metadata.ELAPSED_TIME <= "30d")
         ]
         # select patients with age between 15 and 100 years at admission.
-        YEAR = np.timedelta64(365, "D")
         metadata = metadata.assign(AGE=metadata.ADMITTIME - metadata.DOB)
-        metadata = metadata.loc[
-            (metadata.AGE >= 15 * YEAR) & (metadata.AGE <= 100 * YEAR)
-        ]
+        age = metadata.AGE
+        year = np.timedelta64(365, "D")
+        metadata = metadata.loc[(age >= 15 * year) & (age <= 100 * year)]
         # select patients with "chartevents" data.
         metadata = metadata.loc[metadata.HAS_CHARTEVENTS_DATA]
 

@@ -158,6 +158,7 @@ select = [
     "ICN",   # import-conventions
     "ISC",   # implicit-str-concat
     "NPY",   # numpy
+    "N",     # naming
     "PERF",  # performance related
     "PIE",   # pie
     "PL",    # pylint
@@ -188,9 +189,12 @@ ignore = [
     "E241",  # Multiple spaces after comma
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
-    # pyupgrade
-    "UP007",  # Use `X | Y` for type annotations
-    "UP035",  # deprecated-import
+    # refurb
+    "FURB140", # reimplemented-starmap (less efficient than comprehension)
+    # naming
+    "N801",     # class names should use CapWords convention
+    "N806",     # variable in function should be lowercase
+    "N812",     # lowercase imported as non lowercase
     # pylint
     "PLC2401",  # non-ascii-name
     "PLC2801",  # unnecessary-dunder-call
@@ -218,14 +222,16 @@ ignore = [
     "RUF022",  # __all__ not sorted
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
-    # refurb
-    "FURB140", # reimplemented-starmap (less efficient than comprehension)
+    # pyupgrade
+    "UP007",  # Use `X | Y` for type annotations
+    "UP035",  # deprecated-import
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
+"src/tsdm/models/*" = ["N803"]
 
 [tool.ruff.lint.pylint]
 allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]

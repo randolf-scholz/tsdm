@@ -141,7 +141,7 @@ from tsdm.data import (
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
-from tsdm.types.variables import K as Key
+from tsdm.types.variables import K
 from tsdm.utils import LazyDict
 from tsdm.utils.decorators import pprint_repr
 
@@ -210,7 +210,7 @@ class Split(Generic[Sample_co]):
 
 
 @runtime_checkable
-class ForecastingTask(Protocol[Key, Sample_co]):
+class ForecastingTask(Protocol[K, Sample_co]):
     r"""Protocol for tasks.
 
     A task should provide 3 things:
@@ -222,13 +222,13 @@ class ForecastingTask(Protocol[Key, Sample_co]):
 
     @property
     @abstractmethod
-    def samplers(self) -> Mapping[SPLIT, Sampler[Key]]:
+    def samplers(self) -> Mapping[SPLIT, Sampler[K]]:
         r"""Samplers for the different splits."""
         ...
 
     @property
     @abstractmethod
-    def generators(self) -> Mapping[SPLIT, MapDataset[Key, Sample_co]]:
+    def generators(self) -> Mapping[SPLIT, MapDataset[K, Sample_co]]:
         r"""Generators for the different splits."""
         ...
 
@@ -239,7 +239,7 @@ class ForecastingTask(Protocol[Key, Sample_co]):
         ...
 
 
-class TTT(ForecastingTask[Key, Sample_co]):
+class TTT(ForecastingTask[K, Sample_co]):
     r"""WIP: TimeSeriesTask."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -258,9 +258,9 @@ class TTT(ForecastingTask[Key, Sample_co]):
     # split specific attributes
     dataloaders: dict[SPLIT, DataLoader[Sample_co]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each split."""
-    generators: dict[SPLIT, MapDataset[Key, Sample_co]] = NotImplemented
+    generators: dict[SPLIT, MapDataset[K, Sample_co]] = NotImplemented
     r"""Dictionary holding `Generator` associated with each split."""
-    samplers: dict[SPLIT, Sampler[Key]] = NotImplemented
+    samplers: dict[SPLIT, Sampler[K]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each split."""
     splits: dict[SPLIT, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding dataset associated with each split."""
@@ -363,12 +363,12 @@ class TTT(ForecastingTask[Key, Sample_co]):
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> TorchDataset[Key, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample_co]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 
     @abstractmethod
-    def make_sampler(self, key: SplitID, /) -> Sampler[Key]:
+    def make_sampler(self, key: SplitID, /) -> Sampler[K]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 
@@ -475,7 +475,7 @@ class TTT(ForecastingTask[Key, Sample_co]):
 
 @pprint_repr
 @dataclass
-class TimeSeriesTask(Generic[Key, Sample_co]):
+class TimeSeriesTask(Generic[K, Sample_co]):
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -548,9 +548,9 @@ class TimeSeriesTask(Generic[Key, Sample_co]):
     # split specific attributes
     dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, MapDataset[Key, Sample_co]] = NotImplemented
+    generators: Mapping[SplitID, MapDataset[K, Sample_co]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    samplers: Mapping[SplitID, Sampler[Key]] = NotImplemented
+    samplers: Mapping[SplitID, Sampler[K]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
     splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
@@ -669,12 +669,12 @@ class TimeSeriesTask(Generic[Key, Sample_co]):
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> TorchDataset[Key, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample_co]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 
     @abstractmethod
-    def make_sampler(self, key: SplitID, /) -> Sampler[Key]:
+    def make_sampler(self, key: SplitID, /) -> Sampler[K]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 

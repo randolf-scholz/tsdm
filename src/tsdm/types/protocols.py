@@ -774,13 +774,13 @@ class SupportsLenAndGetItem(Protocol[V_co]):
 class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for `SupportsKwargs`."""
 
-    def __instancecheck__(self, other: object, /) -> bool:
+    def __instancecheck__(cls, other: object, /) -> bool:
         return isinstance(other, SupportsKeysAndGetItem) and all(
             isinstance(key, str)
             for key in other.keys()  # noqa: SIM118
         )
 
-    def __subclasscheck__(self, other: type, /) -> bool:
+    def __subclasscheck__(cls, other: type, /) -> bool:
         raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
 
 
