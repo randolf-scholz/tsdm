@@ -833,6 +833,8 @@ class Array(Protocol[T_co]):
         - numpy.ndarray
         - pandas.Index
         - pandas.Series (with integer index)
+    Counter-Example:
+        - str (__contains__ incompatible)
     """
 
     @abstractmethod
@@ -843,7 +845,7 @@ class Array(Protocol[T_co]):
     def __getitem__(self, index: int, /) -> T_co: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> "Array[T_co]": ...
+    def __getitem__(self, index: slice, /) -> Self: ...
 
     # Mixin methods
     def __iter__(self) -> Iterator[T_co]:

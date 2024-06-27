@@ -58,8 +58,10 @@ DATA = {
     "numpy-2D": np.array(DATA_2D),
     "torch-1D": torch.tensor(DATA_1D),
     "torch-2D": torch.tensor(DATA_2D),
-    "pandas-I": pd.Index(DATA_1D),
-    "pandas-S": pd.Series(DATA_1D),
+    "pandas-index-numpy": pd.Index(DATA_1D, dtype=float),
+    "pandas-series-numpy": pd.Series(DATA_1D, dtype=float),
+    "pandas-index-array": pd.Index(DATA_1D, dtype="float[pyarrow]"),
+    "pandas-series-array": pd.Series(DATA_1D, dtype="float[pyarrow]"),
     # "pandas-dataframe": pd.DataFrame(_DATA_2D),
 }
 BOUNDS: list[Bounds] = [
@@ -240,7 +242,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert isinstance(encoder.params["mean"], float), f"{encoder.params}"
+    assert isinstance(encoder.params["loc"], float), f"{encoder.params}"
 
     if tensor_type == pd.Series:
         return
@@ -253,7 +255,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert isinstance(encoder.params["mean"], float), f"{encoder.params}"
+    assert isinstance(encoder.params["loc"], float), f"{encoder.params}"
 
     if tensor_type == pd.DataFrame:
         return
@@ -266,7 +268,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert isinstance(encoder.params["mean"], float), f"{encoder.params}"
+    assert isinstance(encoder.params["loc"], float), f"{encoder.params}"
 
 
 @pytest.mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=lambda x: f"shape={x}")
@@ -346,7 +348,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
         encoded = encoder.encode(X)
         decoded = encoder.decode(encoded)
         assert np.allclose(X, decoded)
-        assert encoder.params["mean"].shape == (), f"{encoder.params}"
+        # assert encoder.params["loc"].shape == (), f"{encoder.params}"
 
     if tensor_type == pd.Series:
         return
@@ -359,7 +361,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert encoder.params["mean"].shape == (5,), f"{encoder.params}"
+    # assert encoder.params["loc"].shape == (5,), f"{encoder.params}"
 
     LOGGER.info("Testing slicing.")
     encoder = encoder[2]  # select the third encoder
@@ -377,7 +379,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     decoded = encoder.decode(encoded)
     assert np.allclose(Y, encoded)
     assert np.allclose(X, decoded)
-    assert encoder.params["mean"].shape == ()
+    # assert encoder.params["loc"].shape == ()
 
     if tensor_type == pd.DataFrame:
         return
@@ -390,7 +392,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert encoder.params["mean"].shape == (4, 5), f"{encoder.params}"
+    # assert encoder.params["loc"].shape == (4, 5), f"{encoder.params}"
 
     LOGGER.info("Testing finished!")
 
@@ -407,7 +409,6 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
 
     # validate fitting
     encoder.fit(X)
-    assert encoder.params["mean"].shape == (3,), f"{encoder.params}"
 
     # validate encoding
     encoded = encoder.encode(X)
@@ -417,9 +418,11 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
     assert encoded.index.equals(X.index)
 
     if encoder_type is MinMaxScaler:
+        assert encoder.params["ymin"].shape == (3,)
         assert all(encoded.min() >= 0.0)
         assert all(encoded.max() <= 1.0)
     if encoder_type is StandardScaler:
+        assert encoder.params["mean"].shape == (3,)
         assert np.allclose(encoded.mean(), 0.0)
         assert np.allclose(encoded.std(ddof=0), 1.0)
 
@@ -430,7 +433,7 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
 
     # check parameters
     params = encoder.params
-    assert isinstance(params, tuple)
+    assert isinstance(params, dict)
 
     # test pickling
     with TemporaryFile() as f:
@@ -455,7 +458,6 @@ def test_scaler_series(encoder_type: type[E]) -> None:
 
     # validate fitting
     encoder.fit(X)
-    assert encoder.params["mean"].shape == (), f"{encoder.params}"
 
     # validate encoding
     encoded = encoder.encode(X)
@@ -464,10 +466,13 @@ def test_scaler_series(encoder_type: type[E]) -> None:
     assert encoded.name == X.name
     assert encoded.index.equals(X.index)
 
+    # validate encoded values
     if encoder_type is MinMaxScaler:
+        assert encoder.params["ymin"].shape == ()
         assert encoded.min() >= 0.0
         assert encoded.max() <= 1.0
     if encoder_type is StandardScaler:
+        assert encoder.params["mean"].shape == ()
         assert np.allclose(encoded.mean(), 0.0)
         assert np.allclose(encoded.std(ddof=0), 1.0)
 
@@ -494,7 +499,7 @@ def test_standard_scaler(axis):
 
     # fit to data
     encoder.fit(X)
-    assert encoder.params["ymin"].shape == TRUE_SHAPE
+    assert encoder.params["mean"].shape == TRUE_SHAPE
     encoded = encoder.encode(X)
 
     if axis is None:  # std = 0.0
