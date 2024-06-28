@@ -83,8 +83,8 @@ tests = [
 ]
 linters = [
     "pylint>=3.2.4",
-    "ruff>=0.4.10",
-    "ruff-lsp>=0.0.53",
+    "ruff>=0.5.0",
+    "ruff-lsp>=0.0.54",
 ]
 typing = [
     "mypy>=1.10.1",
@@ -167,7 +167,7 @@ select = [
     "PYI",   # pyi
     # "RET",   # return
     "RUF",   # ruff specific
-    "S101",  # use of assert
+    "S101",  # use of `assert`
     "SIM",   # simplify
     "TCH",   # type-checking
     "TRY",   # tryceratops
@@ -207,7 +207,7 @@ ignore = [
     # naming
     "N801",     # class names should use CapWords convention
     "N806",     # variable in function should be lowercase
-    "N812",     # lowercase imported as non lowercase
+    "N812",     # lowercase imported as non-lowercase
     # pylint
     "PLC2401",  # non-ascii-name
     "PLC2801",  # unnecessary-dunder-call
