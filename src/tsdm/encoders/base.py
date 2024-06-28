@@ -423,9 +423,6 @@ class BaseEncoder(Encoder[X, Y]):
         Raises:
             TypeError if other is not an encoder.
         """
-        # reveal_type(other)
-        # reveal_type(self)
-        # reveal_type(ChainedEncoder(self, other))
         return ChainedEncoder(self, other)
 
     def __rmatmul__(self, other: Encoder[Y, Z], /) -> "ChainedEncoder[X, Z]":
