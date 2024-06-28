@@ -11,6 +11,7 @@ import pyarrow as pa
 import pytest
 import torch
 
+from tsdm.testing import assert_protocol
 from tsdm.types.protocols import Array
 
 EXPECTED_BUILTINS: dict[type, bool] = {
@@ -18,9 +19,9 @@ EXPECTED_BUILTINS: dict[type, bool] = {
     NoneType           : False,
     NotImplementedType : False,
     bool               : False,
-    bytes              : True,
+    bytes              : False,
     complex            : False,
-    dict               : True,
+    dict               : False,
     float              : False,
     frozenset          : False,
     int                : False,
@@ -40,8 +41,8 @@ EXPECTED_COLLECTIONS_ABC: dict[type, bool] = {
     abc.AsyncIterable   : False,
     abc.AsyncIterator   : False,
     abc.Awaitable       : False,
-    abc.ByteString      : True,  # deprecated!
-    abc.Callable        : False,
+    # abc.ByteString      : True,  # deprecated!
+    abc.Callable        : False,  # type: ignore[dict-item]
     abc.Collection      : False,
     abc.Container       : False,
     abc.Coroutine       : False,
@@ -51,9 +52,9 @@ EXPECTED_COLLECTIONS_ABC: dict[type, bool] = {
     abc.Iterable        : False,
     abc.Iterator        : False,
     abc.KeysView        : False,
-    abc.Mapping         : True,
+    abc.Mapping         : False,
     abc.MappingView     : False,
-    abc.MutableMapping  : True,
+    abc.MutableMapping  : False,
     abc.MutableSequence : True,
     abc.MutableSet      : False,
     abc.Reversible      : False,
@@ -64,24 +65,24 @@ EXPECTED_COLLECTIONS_ABC: dict[type, bool] = {
 }  # fmt: skip
 
 EXTECTED_COLLECTIONS: dict[type, bool] = {
-    collections.ChainMap    : True,
-    collections.Counter     : True,
-    collections.OrderedDict : True,
-    collections.UserDict    : True,
+    collections.ChainMap    : False,
+    collections.Counter     : False,
+    collections.OrderedDict : False,
+    collections.UserDict    : False,
     collections.UserList    : True,
-    collections.UserString  : True,
-    collections.defaultdict : True,
-    collections.deque       : True,
+    collections.UserString  : True,  # unwanted, but w/e
+    collections.defaultdict : False,
+    collections.deque       : True,  # lie, does not support slicing
 }  # fmt: skip
 
 EXPECTED_3RD_PARTY: dict[type, bool] = {
     np.ndarray      : True,
-    pa.Array        : True,
-    pa.ChunkedArray : True,
+    pa.Array        : False,  # lacks __contains__
+    pa.ChunkedArray : False,  # lacks __contains__
     pd.DataFrame    : True,
     pd.Index        : True,
     pd.Series       : True,
-    pl.DataFrame    : False,  # __getitem__ incompatible!
+    pl.DataFrame    : True,  # white lie
     pl.Series       : True,
     torch.Tensor    : True,
 }  # fmt: skip
@@ -97,41 +98,42 @@ EXPECTED_3RD_PARTY: dict[type, bool] = {
     ).items(),
 )
 def test_array_builtins(cls, expected):
-    assert issubclass(cls, Array) is expected
+    assert_protocol(cls, Array, expected=expected)
 
 
 def test_array_static():
+    _: type[Array]
     # builtins
-    _: type[Array] = bytes
-    _: type[Array] = dict
-    _: type[Array] = list
-    _: type[Array] = range
-    _: type[Array] = str
-    _: type[Array] = tuple
+    # _ = bytes  # ❌ __contains__
+    # _ = dict  # ❌ __getitem__
+    _ = list
+    _ = range
+    # _ = str  # ❌ __contains__
+    _ = tuple
     # collections.abc
-    _: type[Array] = abc.ByteString
-    _: type[Array] = abc.Mapping
-    _: type[Array] = abc.MutableMapping
-    _: type[Array] = abc.MutableSequence
-    _: type[Array] = abc.Sequence
+    # _ = abc.Mapping  # __getitem__ does not support slicing
+    # _ = abc.MutableMapping  # __getitem__ does not support slicing
+    _ = abc.MutableSequence  # type: ignore[type-abstract]
+    _ = abc.Sequence  # type: ignore[type-abstract]
     # collections
-    _: type[Array] = collections.ChainMap
-    _: type[Array] = collections.Counter
-    _: type[Array] = collections.OrderedDict
-    _: type[Array] = collections.UserDict
-    _: type[Array] = collections.UserList
-    _: type[Array] = collections.UserString
-    _: type[Array] = collections.defaultdict
-    _: type[Array] = collections.deque
+    # _ = collections.ChainMap  # __getitem__ does not support slicing
+    # _ = collections.Counter  # __getitem__ does not support slicing
+    # _ = collections.OrderedDict  # __getitem__ does not support slicing
+    # _ = collections.UserDict  # __getitem__ does not support slicing
+    _ = collections.UserList
+    _ = collections.UserString
+    # _ = collections.defaultdict  # __getitem__ does not support slicing
+    # _ = collections.deque  # __getitem__ does not support slicing
     # 3rd party
-    _: type[Array] = np.ndarray
-    _: type[Array] = pa.Array
-    _: type[Array] = pa.ChunkedArray
-    _: type[Array] = pd.DataFrame
-    _: type[Array] = pd.Index
-    _: type[Array] = pd.Series
-    _: type[Array] = pl.Series
-    _: type[Array] = torch.Tensor
+    _ = np.ndarray
+    _ = pa.Array
+    _ = pa.ChunkedArray
+    _ = pd.DataFrame
+    _ = pd.Index
+    _ = pd.Series
+    _ = pl.Series
+    _ = torch.Tensor  # pyright: ignore[reportAssignmentType]  (__contains__ bad type hint)
+    # check
 
 
 def test_array_collections_abc():

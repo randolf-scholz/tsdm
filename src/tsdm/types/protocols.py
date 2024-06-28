@@ -827,7 +827,7 @@ class SetProtocol(Protocol[T_co]):
 
 class _ArrayMeta(type(Protocol)):  # type: ignore[misc]
     def __subclasscheck__(cls, other: type) -> bool:
-        if issubclass(other, str | bytes):
+        if issubclass(other, str | bytes | Mapping):
             return False
         return super().__subclasscheck__(other)
 
@@ -839,6 +839,11 @@ class Array(Protocol[T_co], metaclass=_ArrayMeta):
     We remove these methods, as they are not present on certain vector data structures,
     for example, `__reversed__` is not present on `pandas.Index`.
 
+    Note:
+        This class uses special casing code that ensures `str`, `bytes` and `Mapping`
+        types are not considered as subtypes. Any class considered a subclass of `Mapping`
+        will fail `issubclass`, in particular also `dict`.
+
     Examples:
         - list
         - tuple
@@ -846,7 +851,8 @@ class Array(Protocol[T_co], metaclass=_ArrayMeta):
         - pandas.Index
         - pandas.Series (with integer index)
     Counter-Example:
-        - str (__contains__ incompatible)
+        - `str`/`bytes` (__contains__ incompatible)
+        - `dict`
     """
 
     @abstractmethod
