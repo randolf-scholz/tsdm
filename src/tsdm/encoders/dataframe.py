@@ -719,7 +719,7 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
         return {
             # FIXME: https://github.com/pandas-dev/pandas/issues/22791
             group: torch.tensor(
-                np.stack([data[col].to_numpy() for col in cols], axis=-1),
+                np.stack([data[col].to_numpy() for col in cols], axis=-1),  # type: ignore[union-attr]
                 device=self.device[group],
                 dtype=self.dtypes[group],  # type: ignore[arg-type]
             ).squeeze()
