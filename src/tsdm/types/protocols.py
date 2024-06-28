@@ -43,7 +43,7 @@ __all__ = [
     "ReadBuffer",
     "WriteBuffer",
     "GenericIterable",
-    "SupportsKwargsType",
+    "_SupportsKwargsMeta",
     # Factory classes
     "Dataclass",
     "NTuple",
@@ -513,7 +513,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         - `pyarrow.Table`  (does not support basic arithmetic)
 
     References:
-        - This a weak verison of the Array API:
+        - This is a weak version of the Array API:
           https://data-apis.org/array-api/latest/API_specification/array_object.html
         - https://data-apis.org/dataframe-api/draft/index.html
         - https://numpy.org/devdocs/user/basics.interoperability.html
@@ -556,6 +556,11 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         r"""Select elements from the array by index."""
         ...
 
+    # FIXME: https://github.com/python/typing/discussions/1782
+    @overload
+    def round(self) -> Self: ...
+    @overload
+    def round(self, *, decimals: int) -> Self: ...
     def round(self, *, decimals: int = 0) -> Self:
         r"""Round the array to the given number of decimals."""
         ...
@@ -771,7 +776,7 @@ class SupportsLenAndGetItem(Protocol[V_co]):
     def __getitem__(self, index: int, /) -> V_co: ...
 
 
-class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
+class _SupportsKwargsMeta(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for `SupportsKwargs`."""
 
     def __instancecheck__(cls, other: object, /) -> bool:
@@ -785,7 +790,7 @@ class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
 
 
 @runtime_checkable
-class SupportsKwargs(Protocol[V_co], metaclass=SupportsKwargsType):
+class SupportsKwargs(Protocol[V_co], metaclass=_SupportsKwargsMeta):
     r"""Protocol for objects that support `**kwargs`."""
 
     def keys(self) -> Iterable[str]: ...
@@ -820,8 +825,15 @@ class SetProtocol(Protocol[T_co]):
     def isdisjoint(self, other: Iterable, /) -> bool: ...
 
 
+class _ArrayMeta(type(Protocol)):  # type: ignore[misc]
+    def __subclasscheck__(cls, other: type) -> bool:
+        if issubclass(other, str | bytes):
+            return False
+        return super().__subclasscheck__(other)
+
+
 @runtime_checkable
-class Array(Protocol[T_co]):
+class Array(Protocol[T_co], metaclass=_ArrayMeta):
     r"""Alternative to `Sequence` without `__reversed__`, `index` and `count`.
 
     We remove these methods, as they are not present on certain vector data structures,
@@ -1089,11 +1101,8 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
     @classmethod
     def __subclasshook__(cls, other: type, /) -> bool:
         r"""Cf https://github.com/python/cpython/issues/106363."""
-        if (typing.NamedTuple in get_original_bases(other)) or (
-            typing_extensions.NamedTuple in get_original_bases(other)
-        ):
-            return True
-        return NotImplemented
+        bases = get_original_bases(other)
+        return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
 
 @runtime_checkable
