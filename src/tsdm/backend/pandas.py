@@ -56,7 +56,7 @@ def scalar(x: Any, /, dtype: Any) -> Any:
 
 
 def cast(x: P, /, dtype: Any) -> P:
-    r"""Cast a pandas object to a different dtype."""
+    r"""Cast a `pandas` object to a different dtype."""
     return x.astype(dtype)
 
 
