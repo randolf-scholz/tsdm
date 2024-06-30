@@ -13,6 +13,6 @@ df.to_parquet("demo.parquet")
 df = pd.read_parquet("demo.parquet", dtype_backend="pyarrow")
 print(df.dtypes)  # var is now dictionary[int32,string]
 print(df)
-x = df.pivot(columns="var", values="val")  # ✘ ArrowNotImplementedError
+x = df.pivot(columns=["var"], values=["val"])  # ✘ ArrowNotImplementedError
 print(x)
 print(x.dtypes)
