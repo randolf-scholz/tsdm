@@ -29,7 +29,6 @@ def test_positional_encoder() -> None:
     try:
         LOGGER.info("Initialization")
         encoder = PositionalEncoder(num_dim, scale)
-        encoder.fit(None)
     except Exception as E:
         LOGGER.exception("Initialization failed")
         raise RuntimeError from E

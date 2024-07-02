@@ -537,14 +537,14 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     axis: tuple[int, ...] determines the shape of the mean and stdv.
     """
 
-    mean: Arr
+    mean: float | Arr = 0.0
     r"""The mean value."""
-    stdv: Arr
+    stdv: float | Arr = 1.0
     r"""The standard-deviation."""
 
     _: KW_ONLY
 
-    axis: Axis
+    axis: Axis = ()
     r"""The axis to perform the scaling. If None, automatically select the axis."""
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
@@ -569,8 +569,21 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the Standardizer."""
         # slice the parameters
-        mean = self.mean[item] if len(self.mean.shape) > 0 else self.mean
-        stdv = self.stdv[item] if len(self.stdv.shape) > 0 else self.stdv
+        mean = (
+            self.mean
+            if isinstance(self.mean, float)
+            else self.mean[item]
+            if len(self.mean.shape) > 0
+            else self.mean
+        )
+        stdv = (
+            self.stdv
+            if isinstance(self.stdv, float)
+            else self.stdv[item]
+            if len(self.stdv.shape) > 0
+            else self.stdv
+        )
+
         axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
