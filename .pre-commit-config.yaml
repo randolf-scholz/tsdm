@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.28
+    rev: v0.2.33
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -118,6 +118,7 @@ repos:
       # script-based hooks
       - id: pyproject-validate-version
       - id: pyproject-update-deps
+      - id: pyproject-check-unmaintained
       - id: python-check-clean-interface
         files: 'src/'
   # markdownlint
@@ -152,6 +153,7 @@ repos:
         - "--hide-error-end"
         - "--no-pretty"
         - "--"
+      exclude: '/tasks/.*'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.369
@@ -159,3 +161,4 @@ repos:
       - id: pyright
         entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
         files: (^src/|^tests/)
+        exclude: '/tasks/.*'

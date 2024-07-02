@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 
@@ -509,7 +509,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         /,
         *,
         mode: ModeVar,
-        horizons: str | TD | Sequence[str | TD],
+        horizons: str | TD | Array[str | TD],
         stride: str | TD,
         drop_last: bool = False,
         shuffle: bool = False,

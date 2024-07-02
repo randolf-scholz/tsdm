@@ -355,11 +355,6 @@ class SeriesKind(Protocol[Scalar]):
         r"""Return the unique elements of the series."""
         ...
 
-    # NOTE: kind of inconsistent across backends
-    def take(self, indices: Self | list[int] | NDArray, /) -> Self:
-        r"""Select elements from the series by index."""
-        ...
-
     def equals(self, other: Self) -> bool:
         r"""Check if the series is equal to another series."""
         ...
@@ -552,10 +547,6 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         r"""Return the maximum value."""
         ...
 
-    def take(self, indices: Any, /) -> Self:
-        r"""Select elements from the array by index."""
-        ...
-
     # FIXME: https://github.com/python/typing/discussions/1782
     @overload
     def round(self) -> Self: ...
@@ -693,6 +684,10 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
         - `pyarrow.Array`    (does not support inplace operations)
         - `pyarrow.Table`    (does not support inplace operations)
     """
+
+    def take(self, indices: Any, /) -> Self:
+        r"""Select elements from the array by index."""
+        ...
 
     # NOTE: The following operations are excluded:
     #  - __imatmul__: because it potentially changes the shape of the array.
@@ -863,7 +858,8 @@ class Array(Protocol[T_co], metaclass=_ArrayMeta):
     def __getitem__(self, index: int, /) -> T_co: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> Self: ...
+    # NOTE: not "-> Self" to ensure compatibility with tuple.
+    def __getitem__(self, index: slice, /) -> "Array[T_co]": ...
 
     # Mixin methods
     def __iter__(self) -> Iterator[T_co]:

@@ -399,7 +399,7 @@ r"""Dictionary of all `pyarrow` data types."""
 
 
 # region polars dtypes -----------------------------------------------------------------
-POLARS_DTYPES: Final[dict[str, pl.PolarsDataType]] = {
+POLARS_DTYPES: Final[dict[str, pl.DataType]] = {
     # numeric
     "Float32"    : pl.Float32(),
     "Float64"    : pl.Float64(),
@@ -531,7 +531,7 @@ r"""Dictionary of all `python` data types."""
 
 
 # region dtype conversion --------------------------------------------------------------
-PYARROW_TO_POLARS: Final[dict[pa.DataType, pl.PolarsDataType]] = {
+PYARROW_TO_POLARS: Final[dict[pa.DataType, pl.DataType]] = {
     pa.null()          : pl.Null(),
     pa.bool_()         : pl.Boolean(),
     pa.int8()          : pl.Int8(),

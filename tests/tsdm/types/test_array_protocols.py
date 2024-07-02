@@ -104,6 +104,8 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "torch_tensor"     : TORCH_TENSOR,
 }  # fmt: skip
 
+x: NumericalArray = PL_SERIES
+
 
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "numpy_ndarray"    : NP_ARRAY,
@@ -246,9 +248,6 @@ def test_series(name: str) -> None:
 
     assert isinstance(series.unique(), cls | np.ndarray)
     attrs.remove("unique")
-
-    assert isinstance(series.take([0, 0, 2]), cls)
-    attrs.remove("take")
 
     assert series.equals(series)
     attrs.remove("equals")

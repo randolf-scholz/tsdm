@@ -10,6 +10,7 @@ import polars as pl
 import pyarrow as pa
 import pytest
 import torch
+from typing_extensions import cast
 
 from tsdm.testing import assert_protocol
 from tsdm.types.protocols import Array
@@ -134,6 +135,15 @@ def test_array_static():
     _ = pl.Series
     _ = torch.Tensor  # pyright: ignore[reportAssignmentType]  (__contains__ bad type hint)
     # check
+
+
+def test_instances_static():
+    _: Array[int]
+    _ = (1, 2)
+    _ = cast(tuple[int, int], (1, 2))
+    _ = cast(tuple[int, ...], (1, 2))
+    _ = [1, 2]
+    _ = range(2)
 
 
 def test_array_collections_abc():

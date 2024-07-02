@@ -426,16 +426,13 @@ class MIMIC_IV(MIMIC_IV_RAW):
             case "poe":
                 pass
             case "poe_detail":
-                table = (
-                    # NOTE: we use polars because pandas is too slow.
-                    pl.from_arrow(table)
-                    .pivot(  # type: ignore[union-attr]
-                        index=["poe_id", "poe_seq", "subject_id"],
-                        columns="field_name",
-                        values="field_value",
-                    )
-                    .to_arrow()
-                )
+                # NOTE: we use polars because pandas is too slow.
+                pl_frame: pl.DataFrame = pl.from_arrow(table)  # type: ignore[assignment]
+                table = pl_frame.pivot(
+                    "field_name",
+                    index=["poe_id", "poe_seq", "subject_id"],
+                    values="field_value",
+                ).to_arrow()
                 table = cast_columns(table, **UNSTACKED_SCHEMAS[key])
             case "prescriptions":
                 pass
