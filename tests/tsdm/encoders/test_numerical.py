@@ -152,10 +152,12 @@ def test_boundary_encoder(data: D) -> None:
     encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
     encoder.fit(data)
     encoded = encoder.encode(data)
+    assert type(encoded) == type(data)
     assert encoded.shape == data.shape
+    assert encoded.dtype == data.dtype
     assert ((encoded >= -1) & (encoded <= 1)).all()
-    assert (encoded == -1).sum() == (data <= -1).sum()
-    assert (encoded == +1).sum() == (data >= +1).sum()
+    assert ((encoded == -1) == (data <= -1)).all()
+    assert ((encoded == +1) == (data >= +1)).all()
 
     match data:
         case np.ndarray() as array:
@@ -179,14 +181,17 @@ def test_boundary_encoder(data: D) -> None:
         case _:
             raise TypeError(f"Unexpected type: {type(data)}")
 
-    # test numpy + mask
+    # test mode="mask" (fixed bounds)
     encoder = BoundaryEncoder(-1, +1, mode="mask")
     encoder.fit(data)
     encoded = encoder.encode(data)
-    assert (np.isnan(encoded) ^ ((encoded >= -1) & (encoded <= 1))).all()
-    assert np.isnan(encoded).sum() == ((data < -1).sum() + (data > +1).sum())
+    original_invalid = (data < -1) | (data > +1)
+    encoded_valid = (encoded >= -1) & (encoded <= 1)
+    encoded_missing = np.isnan(encoded)
+    assert (encoded_missing ^ encoded_valid).all()
+    assert (encoded_missing == original_invalid).all()
 
-    # test fitting with mask
+    # test mode="mask" (learned bounds)
     encoder = BoundaryEncoder(mode="mask")
     encoder.fit(data)
     encoded = encoder.encode(data)
@@ -208,21 +213,24 @@ def test_boundary_encoder(data: D) -> None:
     encoder.fit(data)
     encoded = encoder.encode(data)
     assert (encoded >= 0).all()
-    assert (encoded == 0).sum() == (data <= 0).sum()
+    assert ((encoded == 0) == (data <= 0)).all()
 
     # test half-open unbounded interval + mask
     encoder = BoundaryEncoder(0, None, mode="mask")
     encoder.fit(data)
     encoded = encoder.encode(data)
-    assert (np.isnan(encoded) ^ (encoded >= 0)).all()
-    assert np.isnan(encoded).sum() == (data < 0).sum()
+    encoded_missing = np.isnan(encoded)
+    assert (encoded_missing ^ (encoded >= 0)).all()
+    assert (encoded_missing == (data < 0)).all()
 
     # test half-open bounded interval + mask
     encoder = BoundaryEncoder(0, 1, mode="mask", lower_included=False)
     encoder.fit(data)
     encoded = encoder.encode(data)
-    assert (np.isnan(encoded) ^ (encoded > 0)).all()
-    assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
+    encoded_missing = np.isnan(encoded)
+    original_invalid = (data <= 0) | (data > 1)
+    assert (encoded_missing ^ (encoded > 0)).all()
+    assert (encoded_missing == original_invalid).all()
 
 
 @pytest.mark.parametrize(
