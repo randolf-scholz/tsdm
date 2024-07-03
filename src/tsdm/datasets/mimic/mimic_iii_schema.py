@@ -25,7 +25,7 @@ import pyarrow as pa
 from typing_extensions import Literal, TypeAlias
 
 ID_TYPE = pa.uint32()
-VALUE_TYPE = pa.float64()
+VALUE_TYPE = pa.float32()
 TIME_TYPE = pa.timestamp("ms")
 DATE_TYPE = pa.date32()
 BOOL_TYPE = pa.bool_()
@@ -157,7 +157,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "CHARTTIME"    : TIME_TYPE,
         "STORETIME"    : TIME_TYPE,
         "CGID"         : ID_TYPE,
-        "VALUE"        : DICT_TYPE,  # FIXME: CAST FLOAT32
+        "VALUE"        : STRING_TYPE,  # FIXME: CAST FLOAT32
         "VALUENUM"     : VALUE_TYPE,  # FIXME: FILTER NULLS
         "VALUEUOM"     : DICT_TYPE,
         "WARNING"      : BOOL_TYPE,

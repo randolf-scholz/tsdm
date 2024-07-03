@@ -71,7 +71,7 @@ import polars as pl
 import pyarrow as pa
 from pandas import DataFrame
 from pyarrow import Array, Table, csv
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing_extensions import get_args
 
 from tsdm.backend.pyarrow import (
@@ -247,10 +247,9 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
                 parse_options=csv.ParseOptions(
                     newlines_in_values=(key == "NOTEEVENTS"),
                 ),
-            ).combine_chunks()  # <- reduces size and avoids some bugs
-            # FIXME: https://github.com/apache/arrow/issues/37055
+            )
 
-        return table
+        return table.combine_chunks()  # <- reduces size and avoids some bugs
 
     def download_file(self, fname: str, /) -> None:
         if self.version_info not in {(1, 0), (2, 2)}:

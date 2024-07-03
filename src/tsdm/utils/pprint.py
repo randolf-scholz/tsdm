@@ -35,8 +35,10 @@ from math import prod
 from types import FunctionType
 
 import numpy as np
+import polars as pl
+import pyarrow as pa
 import torch
-from pandas import DataFrame, MultiIndex
+from pandas import ArrowDtype, DataFrame, MultiIndex
 from pandas.core.dtypes.base import ExtensionDtype
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 from typing_extensions import Any, Final, Optional, Protocol
@@ -859,6 +861,7 @@ def repr_array(
     /,
     *,
     title: Optional[str] = None,
+    maxitems: Optional[int] = MAXITEMS_INLINE,  # max number of dtypes to show
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
@@ -868,57 +871,76 @@ def repr_array(
     # set type
     cls: type = obj.__class__
 
-    # set title
-    title = (
-        str(title) if title is not None
-        else cls.__name__
-    )  # fmt: skip
+    # get the type-repr
+    type_repr = str(title) if title is not None else cls.__name__
 
-    # compute the shape.
+    # get the shape-repr
     shape: tuple[int, ...] = (
-        tuple(obj.shape) if isinstance(obj, SupportsShape)
+        tuple(obj.shape)
+        if isinstance(obj, SupportsShape)
         else tuple(obj.__array__().shape)
-    )  # fmt: skip
-
-    # construct the string
-    string = f"{title}["
-
-    # add the shape
-    string += (
-        repr(obj.item())
-        if isinstance(obj, SupportsItem) and prod(shape) <= 1
-        else str(shape)
     )
+    shape_repr = "" if len(shape) == 0 else f"<{', '.join(str(dim) for dim in shape)}>"
 
-    # add the dtype
+    # get the device-repr
+    match obj:
+        case SupportsDevice(device=device):
+            device_repr = f"@{device}"
+        case _:
+            device_repr = ""
+
+    # get the dtype-repr
     match obj:
         case DataFrame(dtypes=dtypes) | MultiIndex(dtypes=dtypes):
-            dtypes = [repr_dtype(dtype) for dtype in dtypes]
-            string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
+            vals = [repr_dtype(dtype) for dtype in dtypes]
         case PyArrowTable() as table:
-            dtypes = [repr_dtype(dtype) for dtype in table.schema.types]
-            string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
+            vals = [repr_dtype(dtype) for dtype in table.schema.types]
         case PyArrowArray(type=dtype):
-            string += ", " + repr_dtype(dtype)
+            vals = [repr_dtype(dtype)]
         case SupportsDtype(dtype=dtype):
-            string += ", " + repr_dtype(dtype)
+            vals = [repr_dtype(dtype)]
+        case pl.DataFrame(dtypes=dtypes):
+            vals = [repr_dtype(dtype) for dtype in dtypes]
+        case SupportsArray() as array:  # fallback
+            vals = [repr_dtype(array.__array__().dtype)]
+        case _:
+            raise TypeError(f"Unsupported object type {type(obj)}.")
 
-    # add the device
-    if isinstance(obj, SupportsDevice):
-        # FIXME: mypy thinks it's Never
-        string += f"@{obj.device}"  # type: ignore[attr-defined]
+    # truncate the dtype-repr
+    maxitems = MAXITEMS_INLINE if maxitems is None else int(maxitems)
+    if len(vals) > maxitems:
+        vals = vals[: maxitems // 2] + ["..."] + vals[-maxitems // 2 :]
+    dtype_repr = str(vals).replace("'", "")
 
-    string += "]"
-    return string
+    # determine the value-repr (show for scalars, otherwise hide)
+    match prod(shape), obj:
+        case 1, _:
+            value_repr = ""
+        case _, SupportsItem() as x:
+            value_repr = f"{x.item()!s}"
+        case _, SupportsArray() as array:
+            value_repr = f"{array.__array__().item()!s}"
+        case _:
+            raise TypeError(f"Unsupported object type {type(obj)}.")
+
+    return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
 
 
-def repr_dtype(dtype: str | type | DType | SupportsDtype, /) -> str:
+def repr_dtype(
+    dtype: str | type | DType | SupportsDtype | pa.DataType | pl.DataType, /
+) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
         case SupportsDtype(dtype=dtype):
             return repr_dtype(dtype)
         case str(string):
             return string
+        # These are too verbose.
+        case ArrowDtype() as wrapped_arrow_dtype:
+            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
+        # Some special casing for dictionary types.
+        case pa.DictionaryType(index_type=index_type, value_type=value_type):
+            return f"dict[{index_type!s},{value_type!s}]"  # type: ignore[has-type]
         case type() as cls if cls in TYPESTRINGS:
             return TYPESTRINGS[cls]
         case _:

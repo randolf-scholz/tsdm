@@ -156,7 +156,7 @@ import tarfile
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers

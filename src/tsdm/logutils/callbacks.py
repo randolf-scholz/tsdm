@@ -45,7 +45,7 @@ from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing_extensions import (
     Any,
     ClassVar,

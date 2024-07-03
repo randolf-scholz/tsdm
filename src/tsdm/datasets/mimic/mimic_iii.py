@@ -141,10 +141,9 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
                 parse_options=csv.ParseOptions(
                     newlines_in_values=(key == "NOTEEVENTS"),
                 ),
-            ).combine_chunks()  # <- reduces size and avoids some bugs
-            # FIXME: https://github.com/apache/arrow/issues/37055
+            )
 
-        return table
+        return table.combine_chunks()  # <- reduces size and avoids some bugs
 
     def download_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""

@@ -29,7 +29,7 @@ from zipfile import ZipFile
 
 import pandas as pd
 from pyarrow import Table as PyArrowTable, parquet
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing_extensions import (
     IO,
     Any,
@@ -48,10 +48,12 @@ from tsdm.testing.hash import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import FilePath
 from tsdm.types.variables import T_co, str_var as Key
 from tsdm.utils import paths_exists, remote
+from tsdm.utils.contextmanagers import timer
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.pprint import repr_array, repr_mapping
+from tsdm.utils.system import query_bool
 
 
 @runtime_checkable
@@ -71,8 +73,7 @@ class Dataset(Protocol[T_co]):
     def info(cls) -> None:
         r"""Open dataset information in browser."""
         if cls.INFO_URL is NotImplemented:
-            # FIXME: https://github.com/microsoft/pyright/issues/8245
-            raise RuntimeError("No INFO_URL provided for this dataset!")
+            raise NotImplementedError("No INFO_URL provided for this dataset!")
         webbrowser.open_new_tab(cls.INFO_URL)
 
     @classmethod
@@ -200,7 +201,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         *,
         initialize: bool = True,
         reset: bool = False,
-        verbose: bool = False,
+        verbose: bool = True,
         version: str = NotImplemented,
     ) -> None:
         r"""Initialize the dataset.
@@ -372,7 +373,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
 
         url = self.SOURCE_URL + fname
         path = self.RAWDATA_DIR / fname
-        self.LOGGER.debug("Downloading from %s", url)
+        self.LOGGER.debug("Downloading %s from %s", fname, url)
         remote.download(url, path)
 
     def download(
@@ -385,63 +386,79 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         r"""Download the dataset."""
         # Recurse if key is None.
         if key is None:
-            self.LOGGER.debug("Starting to download dataset.")
-            for _key in self.rawdata_paths:
+            for _key in (
+                pbar := tqdm(
+                    self.rawdata_paths,
+                    desc="Downloading files",
+                    disable=not self.verbose,
+                    leave=False,
+                )
+            ):
+                pbar.set_postfix(file=_key)
                 self.download(key=_key, force=force, validate=validate)
-            self.LOGGER.debug("Finished downloading dataset.")
             return
 
         # Check if the file already exists.
         if self.rawdata_files_exist(key) and not force:
-            self.LOGGER.debug("Dataset already exists. Skipping download.")
+            self.LOGGER.debug("Files already exist. Skipping download.")
             return
 
         # Download the file.
-        self.LOGGER.debug("Starting to download dataset <%s>", key)
-        self.download_file(key)
-        self.LOGGER.debug("Finished downloading dataset <%s>", key)
+        with timer() as t:
+            self.download_file(key)
+            self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
 
         # Validate the file.
         if validate and self.rawdata_hashes is not NotImplemented:
             validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes)
 
-    def remove_rawdata_files(self, *, ask_permission: bool = True) -> None:
+    def remove_rawdata_files(self, *, force: bool = False) -> None:
         r"""Recreate the rawdata directory."""
         if not self.RAWDATA_DIR.exists():
             raise FileNotFoundError(f"{self.RAWDATA_DIR} does not exist!")
 
-        if (
-            ask_permission
-            and input(f"Delete {self.RAWDATA_DIR}? [y/N] ").lower() == "y"
-        ):
+        if force or query_bool(f"Delete {self.RAWDATA_DIR}?", default=False):
+            try:  # remove the rawdata directory
+                shutil.rmtree(self.RAWDATA_DIR)
+            except Exception as exc:
+                raise RuntimeError(f"Failed to delete {self.RAWDATA_DIR}") from exc
+
+            # recreate the rawdata directory
+            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
             return
 
-        try:  # remove the rawdata directory
-            shutil.rmtree(self.RAWDATA_DIR)
-        except Exception as exc:
-            raise RuntimeError(f"Failed to delete {self.RAWDATA_DIR}") from exc
+        # else do nothing
+        self.LOGGER.debug("Rawdata files not deleted.")
 
-        # recreate the rawdata directory
-        self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-
-    def remove_dataset_files(self, *, ask_permission: bool = True) -> None:
+    def remove_dataset_files(self, *, force: bool = False) -> None:
         r"""Recreate the dataset directory."""
         if not self.DATASET_DIR.exists():
             raise FileNotFoundError(f"{self.DATASET_DIR} does not exist!")
 
-        if (
-            ask_permission
-            and input(f"Delete {self.DATASET_DIR}? [y/N] ").lower() == "y"
-        ):
+        if force or query_bool(f"Delete {self.DATASET_DIR}?", default=False):
+            try:  # remove the dataset directory
+                shutil.rmtree(self.DATASET_DIR)
+            except Exception as exc:
+                raise RuntimeError(f"Failed to delete {self.DATASET_DIR}") from exc
+
+            # recreate the dataset directory
+            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
             return
 
-        try:  # remove the dataset directory
-            shutil.rmtree(self.DATASET_DIR)
-        except Exception as exc:
-            raise RuntimeError(f"Failed to delete {self.DATASET_DIR}") from exc
+        # else do nothing
+        self.LOGGER.debug("Dataset files not deleted.")
 
-        # recreate the dataset directory
-        self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+    @classmethod
+    def reset(cls, *, force: bool = False) -> None:
+        r"""Reset the dataset."""
+        try:
+            self = cls(initialize=False)
+        except Exception as exc:
+            exc.add_note("Could not create instance of dataset!")
+            raise
+
+        self.remove_rawdata_files(force=force)
+        self.remove_dataset_files(force=force)
 
 
 class SingleTableDataset(BaseDataset[T_co]):
@@ -823,12 +840,11 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
 
         # skip if cleaned files already exist
         if not force and self.dataset_files_exist(key=key):
-            self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
+            self.LOGGER.debug("Table already cleaned, skipping <%s>", key)
             return
 
         # key=None: Recursively clean all tables
         if key is None:
-            self.LOGGER.debug("Starting to clean dataset.")
             for name in (
                 pbar := tqdm(
                     self.table_names,
@@ -841,16 +857,17 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
                 self.clean(
                     key=name, force=force, validate=validate, validate_rawdata=False
                 )
-            self.LOGGER.debug("Finished cleaning dataset.")
             return
 
         # Clean the selected table
-        self.LOGGER.debug("Starting to clean dataset <%s>", key)
-        df = self.clean_table(key=key)
+        with timer() as t:
+            df = self.clean_table(key=key)
+        self.LOGGER.debug("Cleaned table <%s> in %s", key, t.value)
+
         if df is not None:
-            self.LOGGER.debug("Serializing dataset <%s>", key)
-            self.serialize_table(df, self.dataset_paths[key])
-        self.LOGGER.debug("Finished cleaning dataset <%s>", key)
+            with timer() as t:
+                self.serialize_table(df, self.dataset_paths[key])
+            self.LOGGER.info("Serialized table <%s> in %s", key, t.value)
 
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
@@ -903,7 +920,6 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         """
         # key=None: Recursively load all tables.
         if key is None:
-            self.LOGGER.debug("Starting to load dataset.")
             for name in (
                 pbar := tqdm(
                     self.table_names,
@@ -914,7 +930,6 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
             ):
                 pbar.set_postfix(table=name)
                 self.load(key=name, force=force, validate=validate)
-            self.LOGGER.debug("Finished loading dataset.")
             return self.tables
 
         # Skip if already loaded.
@@ -930,9 +945,9 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
             validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
         # Load the table, make sure to use the cached version if it exists.
-        self.LOGGER.debug("Starting to load dataset <%s>", key)
-        table = self.load_table(key=key)
-        self.LOGGER.debug("Finished loading dataset <%s>", key)
+        with timer() as t:
+            table = self.load_table(key=key)
+        self.LOGGER.info("Loaded table <%s> in %s", key, t.value)
 
         # Validate the loaded table.
         if validate and self.table_hashes is not NotImplemented:

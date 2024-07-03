@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index
 from scipy.stats import norm as univariate_normal
-from tqdm.autonotebook import trange
+from tqdm.auto import trange
 from typing_extensions import final
 
 from tsdm.datasets.base import SingleTableDataset

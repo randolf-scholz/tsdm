@@ -47,7 +47,7 @@ from numpy.typing import NDArray
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from torch import nn
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing_extensions import Any, Optional, cast
 
 from tsdm.constants import EMPTY_MAP

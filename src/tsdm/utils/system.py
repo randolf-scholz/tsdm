@@ -26,7 +26,7 @@ from types import ModuleType
 
 from typing_extensions import Optional
 
-from tsdm.utils.contextmanagers import add_to_path
+from tsdm.utils.contextmanagers import system_path
 from tsdm.utils.pprint import repr_mapping
 
 __logger__: logging.Logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def import_module(
     if not module_init.exists():
         raise FileNotFoundError(f"Module {module_path} has no __init__ file !")
 
-    with add_to_path(module_path):
+    with system_path(module_path):
         spec = spec_from_file_location(module_name, str(module_init))
         the_module = module_from_spec(spec)  # type: ignore[arg-type]
         spec.loader.exec_module(the_module)  # type: ignore[union-attr]
@@ -100,15 +100,18 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
     return d
 
 
-def query_bool(question: str, /, *, default: Optional[bool] = True) -> bool:
+def query_bool(question: str, /, *, default: bool) -> bool:
     r"""Ask a yes/no question and returns answer as bool."""
     responses = {"y": True, "yes": True, "n": False, "no": False}
-    prompt = "([y]/n)" if default else "([n]/y)"
+    prompt = "([y]/n)" if default else "(y/[n])"
 
-    while True:
+    for k in range(3):
+        msg = (
+            f"Invalid response, Please enter either of {responses}" * (k > 0)
+            + f"{question} {prompt}:"
+        )
         try:
-            print(question)
-            choice = input(prompt).lower()
+            choice = input(msg).lower()
         except KeyboardInterrupt as exc:
             exc.add_note("Operation aborted.")
             raise
@@ -117,7 +120,8 @@ def query_bool(question: str, /, *, default: Optional[bool] = True) -> bool:
             return default
         if choice in responses:
             return responses[choice]
-        print("Please enter either of %s", responses)
+
+    raise RuntimeError("Too many invalid responses.")
 
 
 def query_choice(
@@ -178,7 +182,8 @@ def install_package(
     install_call = (installer, "install", package_name)
     if not package_available:
         if non_interactive or query_bool(
-            f"Package {package_name!r} not found. Do you want to install it?"
+            f"Package {package_name!r} not found. Do you want to install it?",
+            default=True,
         ):
             try:
                 subprocess.run(install_call + options, check=True)

@@ -360,7 +360,7 @@ def map_pandas_arrowtime_numpy(df: pd.DataFrame) -> pd.DataFrame:
 # endregion pandas dtypes --------------------------------------------------------------
 
 
-# region polars dtypes -----------------------------------------------------------------
+# region pyarrow dtypes ----------------------------------------------------------------
 PYARROW_DTYPES: Final[dict[str, pa.DataType]] = {
     # numeric
     "null"    : pa.null(),
@@ -395,7 +395,7 @@ PYARROW_DTYPES: Final[dict[str, pa.DataType]] = {
     "string"       : pa.string(),
 }  # fmt: skip
 r"""Dictionary of all `pyarrow` data types."""
-# endregion polars dtypes --------------------------------------------------------------
+# endregion pyarrow dtypes -------------------------------------------------------------
 
 
 # region polars dtypes -----------------------------------------------------------------

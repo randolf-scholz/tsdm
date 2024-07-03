@@ -28,7 +28,7 @@ from zipfile import ZipFile
 
 import requests
 from requests import Session
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from typing_extensions import IO, Any, Optional
 
 from tsdm.constants import EMPTY_MAP

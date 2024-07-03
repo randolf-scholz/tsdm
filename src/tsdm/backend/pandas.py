@@ -350,7 +350,7 @@ def remove_outliers_dataframe(
     # drop rows where all columns are outliers
     if drop:
         __logger__.info("Dropping rows where all columns are outliers.")
-        # FIXME: https://github.com/pandas-dev/pandas/issues/54389
+        # FIXME: https://github.com/pandas-dev/pandas/issues/56903
         m = reduce(operator.__and__, (s for _, s in mask.items()))
         df = df.loc[~m]
 
