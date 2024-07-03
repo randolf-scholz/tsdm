@@ -835,7 +835,8 @@ napoleon_custom_sections = [
     "Evaluation Protocol",
     "Paper",
     "Results",
-    ("Returns", "params_style"),  # https://github.com/sphinx-doc/sphinx/issues/9119
+    # Note: https://github.com/sphinx-doc/sphinx/issues/9119#issuecomment-823189637
+    ("Returns", "params_style"),
 ]
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 # endregion sphinx.ext.napoleon configuration ------------------------------------------
