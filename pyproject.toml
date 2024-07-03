@@ -143,6 +143,7 @@ output-format = "concise"
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
+
 select = [
     "A",     # builtins
     "ARG",   # unused-arguments

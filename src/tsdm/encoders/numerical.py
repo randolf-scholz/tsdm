@@ -569,16 +569,18 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
     def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the Standardizer."""
         # slice the parameters
+        # NOTE: need to test int | float because of typing issues.
+        # FIXME: https://github.com/python/typing/issues/1746
         mean = (
             self.mean
-            if isinstance(self.mean, float)
+            if isinstance(self.mean, int | float)
             else self.mean[item]
             if len(self.mean.shape) > 0
             else self.mean
         )
         stdv = (
             self.stdv
-            if isinstance(self.stdv, float)
+            if isinstance(self.stdv, int | float)
             else self.stdv[item]
             if len(self.stdv.shape) > 0
             else self.stdv

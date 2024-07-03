@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.33
+    rev: v0.2.36
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -121,6 +121,8 @@ repos:
       - id: pyproject-check-unmaintained
       - id: python-check-clean-interface
         files: 'src/'
+      # other hooks
+      - id: check-resolved-github-issues
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.41.0
@@ -156,7 +158,7 @@ repos:
       exclude: '/tasks/.*'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.369
+    rev: v1.1.370
     hooks:
       - id: pyright
         entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
