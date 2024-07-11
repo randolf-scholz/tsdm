@@ -25,8 +25,8 @@ from getpass import getpass
 
 import pandas as pd
 from matplotlib import pyplot as plt
-from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from numpy.typing import NDArray
 from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 
@@ -155,10 +155,16 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         file = self.RAWDATA_DIR / "index.html"
         file.rename(fname)
 
-    def make_histograms(self) -> tuple[Figure, Axes]:
+    # FIXME: https://github.com/numpy/numpy/issues/24738
+    def make_histograms(self) -> tuple[Figure, NDArray]:
         r"""Make histograms of the timeseries."""
         fig, axes = plt.subplots(
-            16, 6, figsize=(20, 32), constrained_layout=True, sharey=True
+            16,
+            6,
+            figsize=(20, 32),
+            constrained_layout=True,
+            sharey=True,
+            squeeze=False,
         )
 
         for col, ax in zip(self.timeseries, axes.flatten(), strict=True):

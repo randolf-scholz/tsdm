@@ -42,7 +42,9 @@ def test_lotka_volterra() -> None:
     y = LotkaVolterra().rvs(t)
 
     # generate plot
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
+    fig, axes = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
     axes[0].plot(t, y[..., 0], ".", label="prey")
     axes[0].plot(t, y[..., 1], ".", label="predator")
     axes[0].set_xlabel("time t")
@@ -61,10 +63,11 @@ def test_damped_pendulum() -> None:
     # sample from generator
     t = np.linspace(0, 10, 256)
     y = DampedPendulum().rvs(t)
-
     # generate plot
     colors = iter(plt.colormaps["tab10"].colors)  # type: ignore[attr-defined]
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
+    fig, axes = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
     axes[0].plot(t, y[..., 0], ".", label="θ", color=next(colors))
     axes[0].set_ylim(-max(abs(y[..., 0])), +max(abs(y[..., 0])))
     axes_0y = axes[0].twinx()
@@ -98,7 +101,9 @@ def test_damped_pendulum_xy() -> None:
     y = DampedPendulumXY().rvs(t)
 
     # generate plot
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
+    fig, axes = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
     axes[0].plot(t, y[..., 0], ".", label="x")
     axes[0].plot(t, y[..., 1], ".", label="y")
     axes[0].set_xlabel("time t")
@@ -120,7 +125,9 @@ def test_sir_model() -> None:
     y = SIR(alpha=0.1, beta=0.5).rvs(t)
 
     # generate plot
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
+    fig, axes = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
     axes[0].plot(t, y[..., 0], ".", label="S")
     axes[0].plot(t, y[..., 1], ".", label="I")
     axes[0].plot(t, y[..., 2], ".", label="R")

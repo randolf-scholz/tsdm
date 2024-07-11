@@ -127,7 +127,8 @@ def shared_grid_plot(
     xlabels: Optional[list[str]] = None,
     ylabels: Optional[list[str]] = None,
     subplots_kwargs: Mapping[str, Any] = EMPTY_MAP,
-) -> tuple[Figure, np.ndarray[Axes]]:  # type: ignore[type-arg]
+    # FIXME: https://github.com/numpy/numpy/issues/24738
+) -> tuple[Figure, NDArray]:
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
     References:
@@ -140,7 +141,7 @@ def shared_grid_plot(
 
     nrows, ncols = array.shape[:2]
 
-    subplots_kwargs = {
+    opts: dict[str, Any] = {
         "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
@@ -148,9 +149,7 @@ def shared_grid_plot(
         "tight_layout": True,
     } | dict(subplots_kwargs)
 
-    axes: NDArray[Axes]  # type: ignore[type-var]
-    fig: Figure
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)  # type: ignore[arg-type]
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, squeeze=False, **opts)
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):
@@ -226,7 +225,7 @@ def plot_spectrum(
         figure_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
         scatter_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
     """
-    axis_kwargs = {
+    axis_opts: dict[str, Any] = {
         "xlim": (-2.5, +2.5),
         "ylim": (-2.5, +2.5),
         "aspect": "equal",
@@ -234,13 +233,13 @@ def plot_spectrum(
         "xlabel": "real part",
     } | dict(axis_kwargs)
 
-    figure_kwargs = {
+    fig_opts: dict[str, Any] = {
         "figsize": (4, 4),
         "constrained_layout": True,
         "dpi": 256,  # default: 1024px×1024px
     } | dict(figure_kwargs)
 
-    scatter_kwargs = {
+    scatter_opts: dict[str, Any] = {
         "edgecolors": "none",
     } | dict(scatter_kwargs)
 
@@ -255,9 +254,9 @@ def plot_spectrum(
 
     with plt.style.context(style):
         eigs = eigvals(kernel).detach().cpu()
-        fig, ax = plt.subplots(**figure_kwargs)  # type: ignore[arg-type]
-        ax.set(**axis_kwargs)
-        ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
+        fig, ax = plt.subplots(**fig_opts)
+        ax.set(**axis_opts)
+        ax.scatter(eigs.real, eigs.imag, **scatter_opts)
 
     return fig
 

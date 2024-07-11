@@ -370,13 +370,13 @@ class EvaluationCallback(BaseCallback):
             predics_list.append(predic)
 
         targets = torch.nn.utils.rnn.pad_sequence(
-            chain.from_iterable(targets_list),  # type: ignore[arg-type]
+            chain.from_iterable(targets_list),
             batch_first=True,
             padding_value=torch.nan,
         ).squeeze()
 
         predics = torch.nn.utils.rnn.pad_sequence(
-            chain.from_iterable(predics_list),  # type: ignore[arg-type]
+            chain.from_iterable(predics_list),
             batch_first=True,
             padding_value=torch.nan,
         ).squeeze()

@@ -100,6 +100,7 @@ def unit_circle_lp_scaled():
         constrained_layout=True,
         sharex=True,
         sharey=True,
+        squeeze=False,
     )
 
     for k, p in enumerate(p_values):
