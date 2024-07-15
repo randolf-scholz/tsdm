@@ -477,7 +477,7 @@ def repackage_zip(path: FilePath, /) -> None:
         )
 
         if not requirements:
-            __logger__.info(f"Skipping repackage_zip for {original_path}.")
+            __logger__.info("Skipping repackage_zip for %s", original_path)
             return
 
     # create a temporary directory

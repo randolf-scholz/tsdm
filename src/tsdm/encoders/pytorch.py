@@ -21,8 +21,6 @@ from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import NestedBuiltin
 from tsdm.utils.decorators import autojit, pprint_repr
 
-# TODO: Add TensorEncoder
-
 
 @autojit
 class Time2Vec(nn.Module):

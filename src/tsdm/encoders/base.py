@@ -517,7 +517,7 @@ class BaseEncoder(Encoder[X, Y]):
 
 
 class UniversalEncoder(BaseEncoder[Any, Any], ABC):
-    r"""Encoder that maps data to the same type, regardless of the input."""
+    r"""Encoder class which maps data to the same type, regardless of the input."""
 
     @abstractmethod
     def encode(self, x: T, /) -> T: ...

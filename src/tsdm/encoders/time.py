@@ -234,7 +234,7 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
     def __init__(self, period: Optional[float] = None) -> None:
         self._period = period
 
-    def fit(self, x: Series) -> None:
+    def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
         self.dtype = x.dtype
         self.colname = x.name
@@ -242,7 +242,7 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
         self._period = self.period
         self.freq = 2 * np.pi / self.period
 
-    def encode(self, x: Series) -> DataFrame:
+    def encode(self, x: Series, /) -> DataFrame:
         r"""Encode the data."""
         z = self.freq * (x % self.period)  # ensure 0...N-1
         return DataFrame(
@@ -250,7 +250,7 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
             columns=[f"cos_{self.colname}", f"sin_{self.colname}"],
         )
 
-    def decode(self, y: DataFrame) -> Series:
+    def decode(self, y: DataFrame, /) -> Series:
         r"""Decode the data."""
         z = np.arctan2(y[f"sin_{self.colname}"], y[f"cos_{self.colname}"])
         z = (z / self.freq) % self.period

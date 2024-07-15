@@ -421,7 +421,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     def decode(self, data: Arr, /) -> Arr:
         return data
 
-    def fit(self, data: Arr) -> None:
+    def fit(self, data: Arr, /) -> None:
         # select the backend
         self.backend: Backend[Arr] = get_backend(data)
 
