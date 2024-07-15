@@ -504,7 +504,7 @@ class SingleTableDataset(BaseDataset[T_co]):
         if hasattr(self.table, "_repr_html_"):
             header = f"<pre>{html.escape(repr(self))}</pre>"
             # noinspection PyProtectedMember
-            html_repr = self.table._repr_html_()  # pylint: disable=protected-access
+            html_repr = self.table._repr_html_()
             return header + html_repr
         raise NotImplementedError
 

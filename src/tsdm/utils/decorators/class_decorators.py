@@ -142,7 +142,7 @@ def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
         raise TypeError("Expected a subclass of nn.Module.")
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
+    class WrappedClass(base_class):  # type: ignore[valid-type,misc]
         r"""A simple Wrapper."""
 
         def __new__(cls, *args: Any, **kwargs: Any) -> Self:
