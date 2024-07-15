@@ -17,7 +17,7 @@ from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
 
 from torch import jit, nn
-from typing_extensions import Any, TypeVar
+from typing_extensions import Any, Self, TypeVar
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
@@ -145,15 +145,15 @@ def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
     class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
-        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             # Note: If __new__() does not return an instance of cls,
-            # then the new instance's __init__() method will not be invoked.
-            instance: torch_module_var = base_class(*args, **kwargs)
+            #   then the new instance's __init__() method will not be invoked.
+            instance = base_class(*args, **kwargs)
 
             if CONFIG.autojit:
-                scripted: torch_module_var = jit.script(instance)
-                return scripted
-            return instance
+                scripted = jit.script(instance)
+                return scripted  # type: ignore[return-value]
+            return instance  # type: ignore[return-value]
 
     if not isinstance(WrappedClass, type):
         raise TypeError(f"Expected a class, got {WrappedClass}.")
