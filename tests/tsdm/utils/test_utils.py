@@ -36,7 +36,7 @@ def test_dims_to_list(dims: Dims) -> None:
     if dims == []:
         pytest.xfail("JIT compiler cannot determine type of empty list.")
     f = jit.script(dims_to_list)
-    dims_list = f(dims, ndim=x.ndim)  # pyright: ignore[reportCallIssue, reportAssignmentType]
+    dims_list = f(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
     assert type(result) is type(reference)

@@ -193,7 +193,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
         weights["normalized"] = weights["weight"] / weights["weight"].sum()
         weights.index.name = "col"
         w = torch.tensor(weights["weight"])
-        return jit.script(WRMSE(w))  # pyright: ignore[reportReturnType]
+        return jit.script(WRMSE(w))
 
     @cached_property
     def dataset(self) -> KiwiRuns:

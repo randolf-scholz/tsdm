@@ -16,9 +16,9 @@ from types import MappingProxyType
 
 import numpy as np
 import pandas as pd
-import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Series
+from pyarrow.lib import ArrowNotImplementedError
 from typing_extensions import Any, ClassVar, Final, Optional, TypeVar, cast
 
 from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
@@ -86,7 +86,7 @@ class TimeDeltaEncoder(BaseEncoder[Arr, Arr], BackendMixin):
 
         try:
             return self.backend.cast(y * self.unit, self.timedelta_dtype)
-        except pa.lib.ArrowNotImplementedError:
+        except ArrowNotImplementedError:
             # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             y = self.backend.cast(y, float) * self.unit
@@ -163,7 +163,7 @@ class DateTimeEncoder(BaseEncoder[Arr, Arr], BackendMixin):
 
         try:
             return self.backend.cast(y * self.unit + self.offset, self.datetime_dtype)
-        except pa.lib.ArrowNotImplementedError:
+        except ArrowNotImplementedError:
             # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             z = self.backend.cast(y, float) * self.unit + self.offset

@@ -162,6 +162,7 @@ repos:
     rev: v1.1.371
     hooks:
       - id: pyright
+        # REF: https://stackoverflow.com/a/20401674
         entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
         files: (^src/|^tests/)
         exclude: '/tasks/.*'

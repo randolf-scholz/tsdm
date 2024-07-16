@@ -69,6 +69,7 @@ from zipfile import ZipFile
 import pandas as pd
 import polars as pl
 import pyarrow as pa
+import pyarrow.compute as pc
 from pandas import DataFrame
 from pyarrow import Array, Table, csv
 from tqdm.auto import tqdm
@@ -387,7 +388,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 table = table.set_column(
                     table.column_names.index("result_value"),
                     "result_value",
-                    pa.compute.split_pattern(table["result_value"], "/"),
+                    pc.split_pattern(table["result_value"], "/"),
                 )
 
                 # convert to pandas. Now each column contains NaN or list of floats.a
