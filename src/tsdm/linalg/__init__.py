@@ -4,6 +4,7 @@ __all__ = [
     # Logical Operators
     "cumulative_and",
     "cumulative_or",
+    "cumulative_xor",
     # Matrix Functions
     "closest_diagonal",
     "closest_orthogonal",
@@ -38,6 +39,7 @@ __all__ = [
 from tsdm.linalg._logical_operators import (
     cumulative_and,
     cumulative_or,
+    cumulative_xor,
 )
 from tsdm.linalg._matrix_functions import (
     closest_diagonal,

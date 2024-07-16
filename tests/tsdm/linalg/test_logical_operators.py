@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch import Tensor
 
-from tsdm.linalg import cumulative_and, cumulative_or
+from tsdm.linalg import cumulative_and, cumulative_or, cumulative_xor
 
 DEVICES = ["cpu"] + ["cuda"] * torch.cuda.is_available()
 
@@ -31,6 +31,12 @@ DEVICES = ["cpu"] + ["cuda"] * torch.cuda.is_available()
             torch.tensor([[0, 1, 1], [0, 1, 0], [1, 0, 1]], dtype=torch.bool),
             1,
             torch.tensor([[0, 1, 1], [0, 1, 1], [1, 1, 1]], dtype=torch.bool),
+        ),
+        # edge cases: empty tensor
+        (
+            torch.tensor([], dtype=torch.bool),
+            0,
+            torch.tensor([], dtype=torch.bool),
         ),
     ],
 )
@@ -66,6 +72,12 @@ def test_cumulative_or(x: Tensor, dim: int, device: str, expected: Tensor) -> No
             1,
             torch.tensor([[0, 0, 0], [0, 0, 0], [1, 0, 0]], dtype=torch.bool),
         ),
+        # edge cases: empty tensor
+        (
+            torch.tensor([], dtype=torch.bool),
+            0,
+            torch.tensor([], dtype=torch.bool),
+        ),
     ],
 )
 @pytest.mark.parametrize("device", DEVICES)
@@ -74,4 +86,44 @@ def test_cumulative_and(x: Tensor, dim: int, device: str, expected: Tensor) -> N
     x = x.to(dev)
     expected = expected.to(dev)
     result = cumulative_and(x, dim)
+    assert torch.all(result == expected)
+
+
+@pytest.mark.parametrize(
+    ("x", "dim", "expected"),
+    [
+        (
+            torch.tensor([[1, 0, 1], [0, 1, 0], [1, 1, 1]], dtype=torch.bool),
+            0,
+            torch.tensor([[1, 0, 1], [1, 1, 1], [0, 0, 0]], dtype=torch.bool),
+        ),
+        (
+            torch.tensor([[1, 0, 1], [0, 1, 0], [1, 1, 1]], dtype=torch.bool),
+            1,
+            torch.tensor([[1, 1, 0], [0, 1, 1], [1, 0, 1]], dtype=torch.bool),
+        ),
+        (
+            torch.tensor([[0, 1, 1], [0, 1, 0], [1, 0, 1]], dtype=torch.bool),
+            0,
+            torch.tensor([[0, 1, 1], [0, 0, 1], [1, 0, 0]], dtype=torch.bool),
+        ),
+        (
+            torch.tensor([[0, 1, 1], [0, 1, 0], [1, 0, 1]], dtype=torch.bool),
+            1,
+            torch.tensor([[0, 1, 0], [0, 1, 1], [1, 1, 0]], dtype=torch.bool),
+        ),
+        # edge cases: empty tensor
+        (
+            torch.tensor([], dtype=torch.bool),
+            0,
+            torch.tensor([], dtype=torch.bool),
+        ),
+    ],
+)
+@pytest.mark.parametrize("device", DEVICES)
+def test_cumulative_xor(x: Tensor, dim: int, device: str, expected: Tensor) -> None:
+    dev = torch.device(device)
+    x = x.to(dev)
+    expected = expected.to(dev)
+    result = cumulative_xor(x, dim)
     assert torch.all(result == expected)
