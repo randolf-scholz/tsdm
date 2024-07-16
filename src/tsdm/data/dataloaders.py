@@ -26,7 +26,7 @@ from torch.nn.utils.rnn import (
 )
 from typing_extensions import Optional
 
-from tsdm.linalg import aggregate_and, cumulative_and
+from tsdm.linalg import cumulative_and
 
 
 def collate_packed(batch: list[Tensor], /) -> PackedSequence:
@@ -60,24 +60,36 @@ def unpad_sequence(
     *,
     batch_first: bool = False,
     lengths: Optional[Tensor] = None,
-    padding_value: float = 0.0,
+    padding_value: float = float("nan"),
 ) -> list[Tensor]:
     r"""Reverse operation of `torch.nn.utils.rnn.pad_sequence`."""
-    padded_seq = padded_seq.swapaxes(0, 1) if not batch_first else padded_seq
-    padding: Tensor = torch.tensor(
-        padding_value, dtype=padded_seq.dtype, device=padded_seq.device
-    )
+    # swap batch dimension if necessary
+    padded_seq = padded_seq if batch_first else padded_seq.swapaxes(0, 1)  # (B, T, ...)
 
-    if lengths is not None:
-        return [x[:n] for x, n in zip(padded_seq, lengths, strict=True)]
+    # autodetect lengths if not provided
+    if lengths is None:
+        # convert padding value to scalar tensor
+        padding: Tensor = torch.tensor(
+            padding_value, dtype=padded_seq.dtype, device=padded_seq.device
+        )
 
-    # infer lengths from mask
-    mask = torch.isnan(padded_seq) if torch.isnan(padding) else (padded_seq == padding)
+        # mask where tensor agrees with padding value
+        mask = (
+            torch.isnan(padded_seq) if torch.isnan(padding) else (padded_seq == padding)
+        )
 
-    # all features are masked
-    dims: list[int] = list(range(min(2, padded_seq.ndim), padded_seq.ndim))
-    agg = aggregate_and(mask, dim=dims)
-    # count, starting from the back, until the first observation occurs.
-    inferred_lengths = (~cumulative_and(agg.flip(dims=(1,)), dim=1)).sum(dim=1)
+        # select the feature dimensions
+        dims: list[int] = list(range(min(2, padded_seq.ndim), padded_seq.ndim))
 
-    return [x[:n] for x, n in zip(padded_seq, inferred_lengths, strict=True)]
+        # mask for completely missing timestamps and flip
+        masked_timestamps = torch.all(mask, dim=dims)  # (B, T)
+        # reverse along the time dimension
+        masked_timestamps = masked_timestamps.flip(dims=(1,))  # (B, T)
+        # cumulative aggregation of the mask
+        masked_timestamps = cumulative_and(masked_timestamps, dim=1)  # (B, T)
+
+        # count, starting from the back, until the first observation occurs.
+        lengths = (~masked_timestamps).sum(dim=1)  # (B,)
+
+    # FIXME: Why does pyright infer Unknown | Tensor | None?
+    return [x[:n] for x, n in zip(padded_seq, lengths, strict=True)]  # pyright: ignore[reportArgumentType]

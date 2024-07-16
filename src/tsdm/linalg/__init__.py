@@ -2,8 +2,6 @@ r"""Linear Algebra Subroutines."""
 
 __all__ = [
     # Logical Operators
-    "aggregate_and",
-    "aggregate_or",
     "cumulative_and",
     "cumulative_or",
     # Matrix Functions
@@ -38,8 +36,6 @@ __all__ = [
 ]
 
 from tsdm.linalg._logical_operators import (
-    aggregate_and,
-    aggregate_or,
     cumulative_and,
     cumulative_or,
 )
