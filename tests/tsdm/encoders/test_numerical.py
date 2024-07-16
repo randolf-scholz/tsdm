@@ -103,7 +103,7 @@ def test_boundary_encoder2(
 
     # compute the encoded data
     encoded = encoder.encode(data)
-    assert type(encoded) == type(data)
+    assert type(encoded) is type(data)
     assert encoded.shape == data.shape
     assert encoded.dtype == data.dtype
 
@@ -152,7 +152,7 @@ def test_boundary_encoder(data: D) -> None:
     encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
     encoder.fit(data)
     encoded = encoder.encode(data)
-    assert type(encoded) == type(data)
+    assert type(encoded) is type(data)
     assert encoded.shape == data.shape
     assert encoded.dtype == data.dtype
     assert ((encoded >= -1) & (encoded <= 1)).all()

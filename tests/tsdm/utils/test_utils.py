@@ -28,7 +28,7 @@ def test_dims_to_list(dims: Dims) -> None:
     dims_list: list[int] = dims_to_list(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
-    assert type(result) == type(reference)
+    assert type(result) is type(reference)
     assert result.shape == reference.shape
     assert (result == reference).all()
 
@@ -39,7 +39,7 @@ def test_dims_to_list(dims: Dims) -> None:
     dims_list = f(dims, ndim=x.ndim)  # pyright: ignore[reportCallIssue, reportAssignmentType]
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
-    assert type(result) == type(reference)
+    assert type(result) is type(reference)
     assert result.shape == reference.shape
     assert (result == reference).all()
 
@@ -55,7 +55,7 @@ def test_axes_to_tuple(axis: Axis) -> None:
     axes_tuple = normalize_axes(axis, ndim=x.ndim)
     result = np.mean(x, axis=axes_tuple)
     reference = np.mean(x, axis=axis)
-    assert type(result) == type(reference)
+    assert type(result) is type(reference)
     assert result.shape == reference.shape
     assert (result == reference).all()
 
@@ -66,7 +66,7 @@ def test_shape_to_tuple(shape: Shape) -> None:
     shape_tuple = shape_to_tuple(shape)
     result = np.ones(shape_tuple)
     reference = np.ones(shape)
-    assert type(result) == type(reference)
+    assert type(result) is type(reference)
     assert result.shape == reference.shape
     assert (result == reference).all()
 
@@ -79,7 +79,7 @@ def test_size_to_tuple(size: Size) -> None:
     result = rng.uniform(size=sizes_tuple)
     rng = np.random.default_rng(42)
     reference = rng.uniform(size=size)
-    assert type(result) == type(reference)
+    assert type(result) is type(reference)
     assert result.shape == reference.shape
     assert (result == reference).all()
 

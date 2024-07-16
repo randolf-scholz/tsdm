@@ -38,7 +38,7 @@ from tsdm.types.variables import T_contra
 
 def assert_arrays_equal(array: T_contra, reference: T_contra, /) -> None:
     r"""Assert that the arrays are equal."""
-    if type(array) != type(reference):
+    if type(array) is not type(reference):
         raise AssertionError(f"{type(array)=} != {type(reference)=}")
 
     match array:
@@ -74,7 +74,7 @@ def assert_arrays_close(
     rtol: float = 1e-5,
 ) -> None:
     r"""Assert that the arrays are close within tolerance."""
-    if type(array) != type(reference):
+    if type(array) is not type(reference):
         raise AssertionError(f"{type(array)=} != {type(reference)=}")
 
     match array:
