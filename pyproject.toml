@@ -34,7 +34,7 @@ dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.2.2",
     "pillow>=10.4.0",
-    "polars>=1.1.0",
+    "polars>=1.2.0",
     "pyarrow>=17.0.0",
     "pydantic>=2.8.2",
     "pyyaml>=6.0.1",
@@ -69,7 +69,7 @@ docs = [
     "sphinx-math-dollar>=1.2.1",
     "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
-    "sphinx>=7.4.4",
+    "sphinx>=7.4.5",
 ]
 tests = [
     "coverage>=7.6.0",
@@ -88,7 +88,7 @@ linters = [
 ]
 typing = [
     "mypy>=1.10.1",
-    "pyright>=1.1.371",
+    "pyright>=1.1.372",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20240711",
@@ -113,7 +113,7 @@ devtools = [
     "pre-commit>=3.7.1",
     "pybadges>=3.0.1",
     "pygments>=2.18.0",
-    "setuptools>=70.3.0",
+    "setuptools>=71.0.1",
     "twine>=5.1.1",
     "wheel>=0.43.0",
 ]
