@@ -18,9 +18,9 @@ class SIR(IVP_GeneratorBase[NDArray]):
     r"""SIR model from epidemiology.
 
     .. math::
-        \dot{S} &= -β⋅I⋅S       \\
-        \dot{I} &= β⋅I⋅S - α⋅I  \\
-        \dot{R} &= α⋅I          \\
+        \dot{S} &= -β⋅I⋅S        \\
+        \dot{I} &= +β⋅I⋅S - α⋅I  \\
+        \dot{R} &= α⋅I           \\
         S + I + R &= 1
 
     S: susceptible population (fraction)

@@ -146,11 +146,15 @@ def query_choice(
         f"{k}. {v}" + " (default)" * (v == default) for k, v in enumerate(choices)
     )
 
-    while True:
+    for k in range(3):
+        msg = (
+            f"{question}\n{options}\nYour choice (int or name):"
+            if k == 0
+            else f"Please enter either of {choices}"
+        )
+
         try:
-            print(question)
-            print(options)
-            choice = input("Your choice (int or name)")
+            choice = input(msg)
         except KeyboardInterrupt as exc:
             exc.add_note("Operation aborted.")
             raise
@@ -159,7 +163,8 @@ def query_choice(
             return choice
         if pick_by_number and choice.isdigit() and int(choice) in ids:
             return ids[int(choice)]
-        print("Please enter either of %s", choices)
+
+    raise RuntimeError("Too many invalid responses.")
 
 
 def install_package(

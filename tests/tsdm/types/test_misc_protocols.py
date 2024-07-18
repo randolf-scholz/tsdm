@@ -3,7 +3,7 @@ r"""Test other protocols."""
 from dataclasses import dataclass
 
 import pytest
-from typing_extensions import NamedTuple
+from typing_extensions import NamedTuple, Self
 
 from tsdm.types.protocols import (
     Dataclass,
@@ -41,17 +41,24 @@ class MyNamedTuple(NamedTuple):
     y: int
 
 
-class NotNamedTuple(tuple[int, int]):
+class NotNamedTuple(tuple[int, int]):  # noqa: SLOT001
     r"""Dummy class that's a `tuple`, but not a `NamedTuple`."""
 
     x: int
     y: int
 
+    def __new__(cls, x: int, y: int) -> Self:
+        return super().__new__(cls, (x, y))
+
+    def __init__(self, x: int, y: int) -> None:
+        self.x = x
+        self.y = y
+
 
 class MySlotted:
     r"""Dummy class with `__slots__`."""
 
-    __slots__ = ["x", "y"]
+    __slots__ = ("x", "y")
 
     def __init__(self, x: int, y: int) -> None:
         self.x = x
@@ -91,7 +98,7 @@ def test_ntuple_match() -> None:
 
 
 def test_ntuple_no_match() -> None:
-    match NotNamedTuple((1, 2)):
+    match NotNamedTuple(1, 2):
         case NTuple():
             raise AssertionError
         case _:
@@ -162,7 +169,7 @@ def test_is_namedtuple() -> None:
     r"""Test the is_namedtuple utility."""
     assert is_namedtuple(MyNamedTuple(1, 2))
     assert is_namedtuple(MyNamedTuple)
-    assert not is_namedtuple(NotNamedTuple((1, 2)))
+    assert not is_namedtuple(NotNamedTuple(1, 2))
     assert not is_namedtuple(NotNamedTuple)
 
 
@@ -182,9 +189,9 @@ def test_not_dataclass() -> None:
 
 def test_not_namedtuple() -> None:
     r"""Test the NTuple protocol."""
-    assert isinstance(NotNamedTuple((1, 2)), tuple)
+    assert isinstance(NotNamedTuple(1, 2), tuple)
     assert issubclass(NotNamedTuple, tuple)
-    assert not isinstance(NotNamedTuple((1, 2)), NTuple)
+    assert not isinstance(NotNamedTuple(1, 2), NTuple)
     assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]
 
 

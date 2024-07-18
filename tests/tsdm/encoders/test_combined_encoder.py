@@ -204,10 +204,12 @@ def test_bounds(encoder):
 
 def test_serialization(encoder):
     # test_serialization
-    with open(RESULT_DIR / "trained_encoder.pickle", "wb") as file:
+    path = RESULT_DIR / "trained_encoder.pickle"
+
+    with path.open("wb") as file:
         pickle.dump(encoder, file)
 
-    with open(RESULT_DIR / "trained_encoder.pickle", "rb") as file:
+    with path.open("rb") as file:
         loaded_encoder = pickle.load(file)
 
     assert isinstance(loaded_encoder, BaseEncoder)

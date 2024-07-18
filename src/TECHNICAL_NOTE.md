@@ -34,3 +34,13 @@ We consider several attributes of interest:
 - `type (cat[str])`: The type of the variable (arbitrary classification).
 - `description (str)`: A description of the variable
 - `scale (cat[str])`: The scale of the variable (applicable to real-valued variables)
+
+## Style Guide
+
+When to use `@property`:
+
+- Accessing the property should not have user-facing side-effects.
+- Accessing the property multiple times directly in a row should return the same value.
+  (i.e. `A.foo == A.foo` must always be true, however `x = A.foo; A.bar(); x == A.foo` may be false)
+- If it is computationally expensive to compute the property, caching should be used.
+  (i.e. Calling A.foo N times should cost less than N times the cost of computing A.foo once)

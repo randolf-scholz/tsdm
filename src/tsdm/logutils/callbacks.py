@@ -429,26 +429,29 @@ class HParamCallback(BaseCallback):
             )
 
     def __call__(self, step: int, /, **_: Any) -> None:
-        best_epochs = self.history.rolling(5, center=True).mean().idxmin()
-
-        scores: dict[str, dict[str, float]] = {
-            split: {
-                str(metric): float(self.history.loc[idx, (split, metric)])
-                for metric, idx in best_epochs["valid"].items()
-            }
-            for split in ("train", "valid", "test")
-        }
-
+        scores = self.scores
         metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
-        run_name = Path(self.writer.log_dir).absolute()
 
+        run_name = Path(self.writer.log_dir).absolute()
         with open(run_name / f"{step}.yaml", "w", encoding="utf8") as file:
             yaml.safe_dump(scores, file)
 
         self.writer.add_hparams(
             hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
         )
-        print(f"Scores {metric_dict=} achieved by {self.hparam_dict=}")
+
+    @property
+    def scores(self) -> dict[str, dict[str, float]]:
+        r"""Return the current scores."""
+        best_epochs = self.history.rolling(5, center=True).mean().idxmin()
+
+        return {
+            split: {
+                str(metric): float(self.history.loc[idx, (split, metric)])
+                for metric, idx in best_epochs["valid"].items()
+            }
+            for split in ("train", "valid", "test")
+        }
 
 
 @dataclass

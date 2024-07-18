@@ -171,6 +171,7 @@ select = [
     "RUF",   # ruff specific
     "S101",  # use of `assert`
     "SIM",   # simplify
+    "SLOT",  # slots
     "TCH",   # type-checking
     "TRY",   # tryceratops
     "UP",    # pyupgrade
@@ -210,6 +211,8 @@ ignore = [
     "N801",     # class names should use CapWords convention
     "N806",     # variable in function should be lowercase
     "N812",     # lowercase imported as non-lowercase
+    # pandas
+    "PD011",    # Use .to_numpy() instead of .values
     # pylint
     "PLC2401",  # non-ascii-name
     "PLC2801",  # unnecessary-dunder-call
@@ -245,7 +248,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "N803"]
+"tests/*" = ["S101", "N803", "T20"]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
 "src/tsdm/models/*" = ["N803"]

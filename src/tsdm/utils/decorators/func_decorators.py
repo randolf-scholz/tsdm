@@ -32,15 +32,16 @@ __logger__ = logging.getLogger(__name__)
 # region without @decorator ------------------------------------------------------------
 def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     r"""Print the function signature and return value."""
+    logger = logging.getLogger(f"debug@{func.__name__}")
 
     @wraps(func)
     def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
         args_repr = [f"{type(a)}" for a in args]
         kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
-        sign = ", ".join(args_repr + kwargs_repr)
-        print(f"Calling {func.__name__}({sign})")
+        passed_args = ", ".join(args_repr + kwargs_repr)
+        logger.info("Calling with arguments %s", passed_args)
         value = func(*args, **kwargs)
-        print(f"{func.__name__!r} returned {value!r}")
+        logger.info("Return value %s", value)
         return value
 
     return __wrapper

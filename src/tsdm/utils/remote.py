@@ -328,7 +328,7 @@ def download(
 
     # attempt to download the file
     try:
-        with open(path, "wb") as file:
+        with path.open("wb") as file:
             download_io(
                 url,
                 file,
