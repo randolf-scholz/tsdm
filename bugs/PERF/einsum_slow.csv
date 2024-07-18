@@ -1,1 +1,0 @@
-size,dtype,framework,"ijkl, ij -> kl","ijkl, ji -> kl","ijkl, ik -> jl","ijkl, ki -> jl","ijkl, il -> jk","ijkl, li -> jk","ijkl, jk -> il","ijkl, kj -> il","ijkl, jl -> ik","ijkl, lj -> ik","ijkl, kl -> ij","ijkl, lk -> ij"
