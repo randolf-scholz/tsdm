@@ -129,7 +129,7 @@ def nanstd(x: P, /, *, axis: Axis = None) -> P:
 
 def where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
     r"""Analogue to `numpy.where`."""
-    if isinstance(a, PANDAS_TYPE):  # type: ignore[misc,arg-type]
+    if isinstance(a, PANDAS_TYPE):
         return a.where(cond, b)
     return a if cond else copy_like(b, a)  # scalar fallback
 

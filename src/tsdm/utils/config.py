@@ -29,6 +29,9 @@ def is_dunder(s: str) -> bool:
 class ConfigMetaclass(ABCMeta):
     r"""Metaclass for `BaseConfig`."""
 
+    NAME: str
+    MODULE: str
+
     _FORBIDDEN_FIELDS = {
         "clear",       # Removes all the elements from the dictionary
         "copy",        # Returns a copy of the dictionary
@@ -78,17 +81,13 @@ class ConfigMetaclass(ABCMeta):
         if allcaps_fields:
             raise ValueError(f"ALLCAPS fields are reserved!Found {allcaps_fields!r}.")
 
+        # add manual fields
         actual_name = config_type.__qualname__.rsplit(".", maxsplit=1)[0]
-        patched_fields = [
-            ("_", KW_ONLY),
-            ("NAME", str, field(default=actual_name)),
-            ("MODULE", str, field(default=namespace["__module__"])),
-        ]
-
-        for key, hint, *value in patched_fields:
-            config_type.__annotations__[key] = hint
-            if value:
-                setattr(config_type, key, value[0])
+        config_type.__annotations__["_"] = KW_ONLY
+        config_type.__annotations__["NAME"] = str
+        config_type.__annotations__["MODULE"] = str
+        config_type.NAME = field(default=actual_name)
+        config_type.MODULE = field(default=namespace["__module__"])
 
         return dataclass(config_type, eq=False, frozen=True)  # type: ignore[call-overload]
 

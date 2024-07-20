@@ -492,7 +492,7 @@ class BaseEncoder(Encoder[X, Y]):
             enc(x) == (self(x), other(x))
         """
         # FIXME: mypy does not predict correct return type...
-        return JointEncoder(self, other)  # type: ignore[return-value]
+        return JointEncoder(self, other)
 
     def __rand__(self, other: Encoder[X, Y2], /) -> "JointEncoder[X, tuple[Y2, Y]]":
         r"""Return joint encoders.
@@ -500,7 +500,7 @@ class BaseEncoder(Encoder[X, Y]):
         See `__and__` for more details.
         """
         # FIXME: mypy does not predict correct return type...
-        return JointEncoder(other, self)  # type: ignore[return-value]
+        return JointEncoder(other, self)
 
     # endregion magic methods ----------------------------------------------------------
 
@@ -1272,7 +1272,7 @@ class JointEncoder(EncoderList[X, TupleOut]):
     def __invert__(self) -> "JointDecoder[TupleOut, X]":
         # Q: Why does pyright error here?
         decoders = (InverseEncoder(e) for e in self.encoders)
-        return JointDecoder(*decoders, aggregate_fn=self.aggregate_fn)  # pyright: ignore[reportReturnType]
+        return JointDecoder(*decoders, aggregate_fn=self.aggregate_fn)  # type: ignore[return-value]
 
     def encode(self, x: X, /) -> TupleOut:
         return tuple(e.encode(x) for e in self.encoders)  # type: ignore[return-value]
@@ -1367,7 +1367,7 @@ class JointDecoder(EncoderList[TupleIn, Y]):
 
     def __invert__(self) -> "JointEncoder[Y, TupleIn]":
         decoders = (InverseEncoder(e) for e in self.encoders)
-        return JointEncoder(*decoders, aggregate_fn=self.aggregate_fn)  # pyright: ignore[reportReturnType]
+        return JointEncoder(*decoders, aggregate_fn=self.aggregate_fn)  # type: ignore[return-value]
 
     def encode(self, xs: TupleIn, /) -> Y:
         encoded_vals = [e.encode(x) for e, x in zip(self.encoders, xs, strict=True)]
