@@ -10,23 +10,21 @@ __all__ = [
 ]
 
 from abc import abstractmethod
+from typing import Any, Protocol, runtime_checkable
 
 from sklearn import preprocessing as sk_preprocessing
-from typing_extensions import Any, Protocol, runtime_checkable
-
-from tsdm.types.variables import T2, T, T_co, T_contra
 
 
 @runtime_checkable
-class SklearnTransform(Protocol[T_contra, T_co]):
+class SklearnTransform[X, Y](Protocol):  # -X, +Y
     r"""Protocol for scikit-learn transformers."""
 
     @abstractmethod
-    def fit(self, data: T_contra, /) -> None: ...
+    def fit(self, data: X, /) -> None: ...
     @abstractmethod
-    def transform(self, data: T_contra, /) -> T_co: ...
+    def transform(self, x: X, /) -> Y: ...
     @abstractmethod
-    def fit_transform(self, data: T_contra, /) -> T_co: ...
+    def fit_transform(self, x: X, /) -> Y: ...
     @abstractmethod
     def get_params(self, *, deep: bool = True) -> dict[str, Any]: ...
     @abstractmethod
@@ -34,11 +32,11 @@ class SklearnTransform(Protocol[T_contra, T_co]):
 
 
 @runtime_checkable
-class SklearnEncoder(SklearnTransform[T, T2], Protocol):
+class SklearnEncoder[X, Y](SklearnTransform[X, Y], Protocol):
     r"""Protocol for scikit-learn encoders."""
 
     @abstractmethod
-    def inverse_transform(self, data: T2, /) -> T: ...
+    def inverse_transform(self, y: Y, /) -> X: ...
 
 
 SKLEARN_TRANSFORMS: dict[str, type[SklearnTransform]] = {

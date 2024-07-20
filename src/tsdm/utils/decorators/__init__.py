@@ -26,6 +26,7 @@ __all__ = [
     "pprint_namedtuple",
     "pprint_repr",
     "pprint_sequence",
+    "pprint_set",
     "recurse_on_container",
     "return_namedtuple",
     "timefun",
@@ -57,6 +58,7 @@ from tsdm.utils.decorators.class_decorators import (
     pprint_namedtuple,
     pprint_repr,
     pprint_sequence,
+    pprint_set,
 )
 from tsdm.utils.decorators.func_decorators import (
     debug,
@@ -78,12 +80,13 @@ FUNCTION_DECORATORS: dict[str, FunctionDecorator] = {
 r"""Dictionary of all available function decorators."""
 
 CLASS_DECORATORS: dict[str, ClassDecorator] = {
-    "autojit"          : autojit,
+    "autojit"          : autojit,  # pyright: ignore[reportAssignmentType]
     "pprint_dataclass" : pprint_dataclass,
     "pprint_mapping"   : pprint_mapping,
     "pprint_repr"      : pprint_repr,
     "pprint_sequence"  : pprint_sequence,
-    "pprint_namedtuple": pprint_sequence,
+    "pprint_namedtuple": pprint_namedtuple,
+    "pprint_set"       : pprint_set,
 }  # fmt: skip
 r"""Dictionary of all available class decorators."""
 

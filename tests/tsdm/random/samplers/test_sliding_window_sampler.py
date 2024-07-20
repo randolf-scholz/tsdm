@@ -5,13 +5,13 @@ r"""Test Sliding Window Sampler."""
 import datetime
 import logging
 from collections.abc import Iterator
+from typing import Any, Literal, assert_type
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.typing import NDArray
 from pandas import Series
-from typing_extensions import Any, Literal, TypeAlias, assert_type
 
 from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingSampler
@@ -21,13 +21,13 @@ from tsdm.utils import flatten_dict
 __logger__ = logging.getLogger(__name__)
 T = True
 F = False
-S: TypeAlias = Literal["slices"]  # slice
-M: TypeAlias = Literal["masks"]  # bool
-B: TypeAlias = Literal["bounds"]  # tuple
-W: TypeAlias = Literal["windows"]  # windows (list)
-U: TypeAlias = str  # unknown (not statically known)
-ONE: TypeAlias = Literal["one"]
-MULTI: TypeAlias = Literal["multi"]
+type S = Literal["slices"]  # slice
+type M = Literal["masks"]  # bool
+type B = Literal["bounds"]  # tuple
+type W = Literal["windows"]  # windows (list)
+type U = str  # unknown (not statically known)
+type ONE = Literal["one"]
+type MULTI = Literal["multi"]
 
 DISCRETE_DATA = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # region expected results discrete data ------------------------------------------------

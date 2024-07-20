@@ -27,29 +27,22 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from types import EllipsisType
+from typing import Any, ClassVar, Optional
 
 import numpy as np
 import pandas as pd
-import polars as pl
-import pyarrow as pa
 import torch
 from pandas import DataFrame, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
-from typing_extensions import Any, ClassVar, Optional, TypeVar
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
 from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg
-from tsdm.types.variables import K, T
 from tsdm.utils.decorators import pprint_repr
 
-E = TypeVar("E", bound=Encoder)
-F = TypeVar("F", bound=Encoder)
-TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
 
-
-def get_ellipsis_cols(
+def get_ellipsis_cols[T](
     df: DataFrame, /, schema: Iterable[EllipsisType | T | list[T]]
 ) -> list[T]:
     r"""Determine the column name for the ellipsis."""
@@ -88,7 +81,7 @@ def is_canonically_indexed(df: DataFrame, /) -> bool:
     return False
 
 
-class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
+class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Similar to `sklearn.compose.ColumnTransformer`.

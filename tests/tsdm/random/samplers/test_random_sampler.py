@@ -1,9 +1,10 @@
 r"""Test the RandomSampler."""
 
+from typing import TYPE_CHECKING, assert_type
+
 import numpy as np
 import pandas as pd
 import pytest
-from typing_extensions import TYPE_CHECKING, assert_type
 
 from tsdm.random.samplers import RandomSampler
 

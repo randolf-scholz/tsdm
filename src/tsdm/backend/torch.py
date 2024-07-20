@@ -12,12 +12,12 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
 from torch import Tensor
-from typing_extensions import Any
 
 from tsdm.types.aliases import Axis
 

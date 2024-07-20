@@ -6,7 +6,7 @@
 # region project configuration ---------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.9"
+version = "0.6.0"
 authors = [{name="Randolf Scholz", email="randolf.scholz@gmail.com"}]
 description = "Time-Series Datasets and Models"
 
@@ -20,17 +20,18 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: GPU :: NVIDIA CUDA :: 12.1",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
-    "Operating System :: POSIX :: Linux",
 ]
 
 # dependencies
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "matplotlib>=3.9.1",
-    "numpy>=2.0.0",
+    "numpy>=2.0.1",
     "pandas>=2.2.2",
     "pillow>=10.4.0",
     "polars>=1.2.1",
@@ -61,28 +62,28 @@ docs = [
     "nbsphinx>=0.9.4",
     "piccolo-theme>=0.23.0",
     "pydata-sphinx-theme>=0.15.4",
-    "sphinx-autoapi>=3.1.2",
+    "sphinx-autoapi>=3.2.0",
     "sphinx-automodapi>=0.17.0",
     "sphinx-autodoc2>=0.5.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
     "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
-    "sphinx>=7.4.6",
+    "sphinx>=7.4.7",
 ]
 tests = [
     "coverage>=7.6.0",
-    "hypothesis[numpy,pandas,pytest]>=6.108.2",
+    "hypothesis[numpy,pandas,pytest]>=6.108.3",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=5.0.0",
     "pytest-repeat>=0.9.3",
     "pytest-rerunfailures>=14.0",
     "pytest-xdist>=3.6.1",
-    "pytest>=8.2.2",
+    "pytest>=8.3.1",
 ]
 linters = [
-    "pylint>=3.2.5",
-    "ruff>=0.5.3",
+    "pylint>=3.2.6",
+    "ruff>=0.5.4",
     "ruff-lsp>=0.0.54",
 ]
 typing = [
@@ -99,7 +100,7 @@ typing = [
     "types-pytz>=2024.1.0.20240417",
     "types-pyyaml>=6.0.12.20240311",
     "types-requests>=2.32.0.20240712",
-    "types-setuptools>=70.3.0.20240710",
+    "types-setuptools>=71.0.0.20240722",
     "types-six>=1.16.21.20240513",
     "types-tabulate>=0.9.0.20240106",
     "types-tqdm>=4.66.0.20240417",
@@ -112,7 +113,7 @@ devtools = [
     "pre-commit>=3.7.1",
     "pybadges>=3.0.1",
     "pygments>=2.18.0",
-    "setuptools>=71.0.4",
+    "setuptools>=71.1.0",
     "twine>=5.1.1",
     "wheel>=0.43.0",
 ]
@@ -228,8 +229,6 @@ ignore = [
     "PLR0915",  # Too many statements
     "PLR0916",  # Too many boolean expressions
     "PLR0917",  # Too many positional arguments
-    # PYI
-    "PYI019",   # Methods like ... should return typing.Self instead of custom TypeVar
     # RUFF
     "RUF001",   # ambiguous-unicode-character-string
     "RUF002",   # ambiguous-unicode-character-docstring
@@ -243,7 +242,6 @@ ignore = [
     "TRY003",   # Avoid specifying long messages outside the exception class
     # pyupgrade
     "UP007",    # Use `X | Y` for type annotations
-    "UP035",    # deprecated-import
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -332,11 +330,11 @@ generated-members = ["numpy.*", "torch.*"]
 
 # region mypy configuration ------------------------------------------------------------
 [tool.mypy]
+# platform = "linux"
+# platform configuration
+enable_incomplete_feature = "NewGenericSyntax"
 files = ["src/", "tests/"]
 plugins = ["numpy.typing.mypy_plugin"]
-enable_incomplete_feature = "NewGenericSyntax"
-# platform configuration
-# platform = "linux"
 python_version = "3.12"
 
 disable_error_code = [

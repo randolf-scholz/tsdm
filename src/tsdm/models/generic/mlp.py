@@ -1,16 +1,13 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Multi-Layer Perceptron model."""
 
 __all__ = [
     # Classes
     "MLP",
 ]
 
+from typing import Optional
 
 from torch import nn
-from typing_extensions import Optional
 
 from tsdm.utils.decorators import autojit
 

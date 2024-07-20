@@ -23,8 +23,7 @@ import subprocess
 from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
-
-from typing_extensions import Optional
+from typing import Optional
 
 from tsdm.utils.contextmanagers import system_path
 from tsdm.utils.pprint import repr_mapping

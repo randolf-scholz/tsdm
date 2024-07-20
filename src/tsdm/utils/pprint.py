@@ -33,6 +33,7 @@ from dataclasses import is_dataclass
 from enum import Enum
 from math import prod
 from types import FunctionType
+from typing import Any, Final, Optional, Protocol
 
 import numpy as np
 import polars as pl
@@ -41,7 +42,6 @@ import torch
 from pandas import ArrowDtype, DataFrame, MultiIndex
 from pandas.core.dtypes.base import ExtensionDtype
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
-from typing_extensions import Any, Final, Optional, Protocol
 
 from tsdm.testing import (
     is_builtin,
@@ -868,6 +868,8 @@ def repr_array(
     if not isinstance(obj, SupportsArray):
         raise TypeError("Object does not support `__array__` dunder.")
 
+    maxitems = MAXITEMS_INLINE if maxitems is None else int(maxitems)
+
     # set type
     cls: type = obj.__class__
 
@@ -875,12 +877,18 @@ def repr_array(
     type_repr = str(title) if title is not None else cls.__name__
 
     # get the shape-repr
+    # if multidimensional: <dim1, dim2, ...>
+    # if plain scalar: none
     shape: tuple[int, ...] = (
         tuple(obj.shape)
         if isinstance(obj, SupportsShape)
         else tuple(obj.__array__().shape)
     )
-    shape_repr = "" if len(shape) == 0 else f"<{', '.join(str(dim) for dim in shape)}>"
+    match len(shape):
+        case 0:
+            shape_repr = ""
+        case _:
+            shape_repr = f"<{','.join(str(dim) for dim in shape)}>"
 
     # get the device-repr
     match obj:
@@ -890,40 +898,58 @@ def repr_array(
             device_repr = ""
 
     # get the dtype-repr
+    # Table-like: [dtype1, dtype2, ...]
+    # Tensor-like:
     match obj:
+        # DataFrame-like
         case DataFrame(dtypes=dtypes) | MultiIndex(dtypes=dtypes):
             vals = [repr_dtype(dtype) for dtype in dtypes]
         case PyArrowTable() as table:
             vals = [repr_dtype(dtype) for dtype in table.schema.types]
+        case pl.DataFrame(dtypes=dtypes):
+            vals = [repr_dtype(dtype) for dtype in dtypes]
+        case SupportsDataframe() as supports_frame:
+            frame: DataFrame = supports_frame.__dataframe__()
+            vals = [repr_dtype(dtype) for dtype in frame.dtypes]
+        # Tensor-like
         case PyArrowArray(type=dtype):
             vals = [repr_dtype(dtype)]
         case SupportsDtype(dtype=dtype):
             vals = [repr_dtype(dtype)]
-        case pl.DataFrame(dtypes=dtypes):
-            vals = [repr_dtype(dtype) for dtype in dtypes]
         case SupportsArray() as array:  # fallback
             vals = [repr_dtype(array.__array__().dtype)]
         case _:
             raise TypeError(f"Unsupported object type {type(obj)}.")
 
     # truncate the dtype-repr
-    maxitems = MAXITEMS_INLINE if maxitems is None else int(maxitems)
     if len(vals) > maxitems:
         vals = vals[: maxitems // 2] + ["..."] + vals[-maxitems // 2 :]
-    dtype_repr = str(vals).replace("'", "")
+
+    match vals, prod(shape):
+        case _, 0 | 1:
+            # skip for scalar
+            dtype_repr = ""
+        case _:
+            dtype_repr = str(vals).replace("'", "")
 
     # determine the value-repr (show for scalars, otherwise hide)
     match prod(shape), obj:
+        case 1, SupportsItem() as x:
+            value_repr = f"({x.item()!s})"
+        case 1, SupportsArray() as array:
+            value_repr = f"({array.__array__().item()!s})"
         case 1, _:
-            value_repr = ""
-        case _, SupportsItem() as x:
-            value_repr = f"{x.item()!s}"
-        case _, SupportsArray() as array:
-            value_repr = f"{array.__array__().item()!s}"
-        case _:
             raise TypeError(f"Unsupported object type {type(obj)}.")
+        case _:
+            value_repr = ""
+        # case _:
+        #     raise TypeError(f"Unsupported object type {type(obj)}.")
 
-    return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
+    # Tensor<shape>dtype@device
+    # Table<shape>[dtype1, dtype1, ...]@device
+    # Scalar<shape>(value)@device
+    # PlainScalar(value)@device
+    return f"{type_repr}{shape_repr}{dtype_repr}{device_repr}{value_repr}"
 
 
 def repr_dtype(

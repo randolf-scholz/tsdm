@@ -1,16 +1,13 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""ResNet model."""
 
 __all__ = ["ResNet", "ResNetBlock"]
 
 
 from collections import OrderedDict
 from collections.abc import Iterable
+from typing import Any, Final, Optional, Self
 
 from torch import Tensor, jit, nn
-from typing_extensions import Any, Final, Optional, Self, TypeVar
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.utils import deep_dict_update, initialize_from_config
@@ -69,9 +66,6 @@ class ResNetBlock(nn.Sequential):
         super().__init__(subblocks)
 
 
-ResNetType = TypeVar("ResNetType", bound="ResNet")
-
-
 @autojit
 class ResNet(nn.ModuleList):
     r"""A ResNet model."""
@@ -110,12 +104,12 @@ class ResNet(nn.ModuleList):
 
     @classmethod
     def from_hyperparameters(
-        cls: type[ResNetType],
+        cls,
         *,
         input_size: int,
         num_blocks: int = 5,
         block_cfg: dict = NotImplemented,
-    ) -> ResNetType:
+    ) -> Self:
         r"""Create a ResNet model from hyperparameters."""
         block_cfg = ResNetBlock.HP if block_cfg is NotImplemented else block_cfg
 

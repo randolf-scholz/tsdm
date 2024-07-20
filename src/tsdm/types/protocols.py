@@ -66,39 +66,23 @@ from collections.abc import (
     Mapping,
     ValuesView,
 )
-from types import GenericAlias
-
-import numpy as np
-import typing_extensions
-from numpy.typing import NDArray
-from typing_extensions import (
+from types import GenericAlias, get_original_bases
+from typing import (
     Any,
     ClassVar,
     Protocol,
     Self,
     SupportsIndex,
     TypeGuard,
-    TypeVar,
-    get_original_bases,
     overload,
     runtime_checkable,
 )
 
-from tsdm.types.variables import (
-    K,
-    K_contra,
-    T,
-    T_co,
-    V,
-    V_co,
-    scalar_co,
-    scalar_var as Scalar,
-)
+import numpy as np
+import typing_extensions
+from numpy.typing import NDArray
 
 # region io protocols ------------------------------------------------------------------
-io = TypeVar("io", str, bytes)
-io_co = TypeVar("io_co", str, bytes, covariant=True)
-io_contra = TypeVar("io_contra", str, bytes, contravariant=True)
 
 
 @runtime_checkable
@@ -117,22 +101,22 @@ class BaseBuffer(Protocol):
 
 
 @runtime_checkable
-class ReadBuffer(BaseBuffer, Protocol[io_co]):
+class ReadBuffer[io: (str, bytes)](BaseBuffer, Protocol):
     r"""Protocol for objects that support reading."""
 
-    def read(self, size: int = ..., /) -> io_co: ...
+    def read(self, size: int = ..., /) -> io: ...
 
 
 @runtime_checkable
-class WriteBuffer(BaseBuffer, Protocol[io_contra]):
+class WriteBuffer[io: (str, bytes)](BaseBuffer, Protocol):
     r"""Protocol for objects that support writing."""
 
-    def write(self, content: io_contra, /) -> object: ...
+    def write(self, content: io, /) -> object: ...
     def flush(self) -> object: ...
 
 
 @runtime_checkable
-class Buffer(ReadBuffer[io], WriteBuffer[io], Protocol[io]):
+class Buffer[io: (str, bytes)](ReadBuffer[io], WriteBuffer[io], Protocol):
     r"""Protocol for objects that support reading and writing."""
 
 
@@ -141,26 +125,26 @@ class Buffer(ReadBuffer[io], WriteBuffer[io], Protocol[io]):
 
 # region misc protocols ----------------------------------------------------------------
 @runtime_checkable
-class GenericIterable(Protocol[T_co]):
+class GenericIterable[T](Protocol):  # +T
     r"""Does not work currently!"""
 
     # FIXME: https://github.com/python/cpython/issues/112319
     def __class_getitem__(cls, item: type) -> GenericAlias: ...
-    def __iter__(self) -> Iterator[T_co]: ...
+    def __iter__(self) -> Iterator[T]: ...
 
 
 @runtime_checkable
-class Lookup(Protocol[K_contra, V_co]):
+class Lookup[K, V](Protocol):  # -K, +V
     r"""Mapping/Sequence like generic that is contravariant in Keys."""
 
     @abstractmethod
-    def __contains__(self, key: K_contra, /) -> bool:
+    def __contains__(self, key: K, /) -> bool:
         # Here, any Hashable input is accepted.
         r"""Return True if the map contains the given key."""
         ...
 
     @abstractmethod
-    def __getitem__(self, key: K_contra, /) -> V_co:
+    def __getitem__(self, key: K, /) -> V:
         r"""Return the value associated with the given key."""
         ...
 
@@ -299,17 +283,17 @@ class SupportsDataframe(Protocol):
     """
 
     @abstractmethod
-    def __dataframe__(self) -> object:
+    def __dataframe__(self) -> Any:
         r"""Return the dataframe of the tensor."""
         ...
 
 
 @runtime_checkable
-class SupportsItem(Protocol[scalar_co]):
+class SupportsItem[T](Protocol):  # +T
     r"""Protocol for objects that support `.item()`."""
 
     @abstractmethod
-    def item(self) -> scalar_co:
+    def item(self) -> T:
         r"""Return the scalar value the tensor if it only has a single element.
 
         If the tensor has more than one element, raise an error.
@@ -318,7 +302,7 @@ class SupportsItem(Protocol[scalar_co]):
 
 
 @runtime_checkable
-class SeriesKind(Protocol[Scalar]):
+class SeriesKind[Scalar](Protocol):
     r"""A 1d-array of homogeneous data type.
 
     Examples:
@@ -438,7 +422,7 @@ class TableKind(Protocol):
 
 
 @runtime_checkable
-class ArrayKind(Protocol[Scalar]):
+class ArrayKind[Scalar](Protocol):
     r"""An n-dimensional array of a single homogeneous data type.
 
     Examples:
@@ -487,7 +471,7 @@ class ArrayKind(Protocol[Scalar]):
 
 
 @runtime_checkable
-class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
+class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
     r"""Subclass of `Array` that supports numerical operations.
 
     Examples:
@@ -631,7 +615,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     # endregion arithmetic operations --------------------------------------------------
 
 
-class NumericalTensor(NumericalArray[Scalar], Protocol[Scalar]):
+class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     """Protocol for numerical tensors.
 
     Compared to `NumericalArray`, `NumericalTensor` assumes a unique data type and requires:
@@ -666,7 +650,7 @@ class NumericalTensor(NumericalArray[Scalar], Protocol[Scalar]):
 
 
 @runtime_checkable
-class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
+class MutableArray[Scalar](NumericalArray[Scalar], Protocol):
     r"""Subclass of `Array` that supports inplace operations.
 
     Examples:
@@ -747,26 +731,26 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
 
 
 @runtime_checkable
-class SupportsGetItem(Protocol[K_contra, V_co]):
+class SupportsGetItem[K, V](Protocol):  # -K, +V
     r"""Protocol for objects that support `__getitem__`."""
 
-    def __getitem__(self, key: K_contra, /) -> V_co: ...
+    def __getitem__(self, key: K, /) -> V: ...
 
 
 @runtime_checkable
-class SupportsKeysAndGetItem(Protocol[K, V_co]):
+class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
     r"""Protocol for objects that support `__getitem__` and `keys`."""
 
     def keys(self) -> Iterable[K]: ...
-    def __getitem__(self, key: K, /) -> V_co: ...
+    def __getitem__(self, key: K, /) -> V: ...
 
 
 @runtime_checkable
-class SupportsLenAndGetItem(Protocol[V_co]):
+class SupportsLenAndGetItem[V](Protocol):  # +V
     r"""Protocol for objects that support integer based `__getitem__` and `__len__`."""
 
     def __len__(self) -> int: ...
-    def __getitem__(self, index: int, /) -> V_co: ...
+    def __getitem__(self, index: int, /) -> V: ...
 
 
 class _SupportsKwargsMeta(type(Protocol)):  # type: ignore[misc]
@@ -783,31 +767,31 @@ class _SupportsKwargsMeta(type(Protocol)):  # type: ignore[misc]
 
 
 @runtime_checkable
-class SupportsKwargs(Protocol[V_co], metaclass=_SupportsKwargsMeta):
+class SupportsKwargs[V](Protocol, metaclass=_SupportsKwargsMeta):  # +V
     r"""Protocol for objects that support `**kwargs`."""
 
     def keys(self) -> Iterable[str]: ...
-    def __getitem__(self, key: str, /) -> V_co: ...
+    def __getitem__(self, key: str, /) -> V: ...
 
 
 @runtime_checkable
-class SetProtocol(Protocol[T_co]):
+class SetProtocol[V](Protocol):  # +V
     r"""Protocol version of `collections.abc.Set`."""
 
     # abstract methods
     @abstractmethod
     def __contains__(self, value: object, /) -> bool: ...
     @abstractmethod
-    def __iter__(self) -> Iterator[T_co]: ...
+    def __iter__(self) -> Iterator[V]: ...
     @abstractmethod
     def __len__(self) -> int: ...
 
     # mixin methods
     # set arithmetic
     def __and__(self, other: "SetProtocol", /) -> Self: ...
-    def __or__(self, other: "SetProtocol[T]", /) -> "SetProtocol[T | T_co]": ...
+    def __or__[T](self, other: "SetProtocol[T]", /) -> "SetProtocol[T | V]": ...
     def __sub__(self, other: "SetProtocol", /) -> Self: ...
-    def __xor__(self, other: "SetProtocol[T]", /) -> "SetProtocol[T | T_co]": ...
+    def __xor__[T](self, other: "SetProtocol[T]", /) -> "SetProtocol[T | V]": ...
 
     # set comparison
     def __le__(self, other: "SetProtocol", /) -> bool: ...
@@ -826,7 +810,7 @@ class _ArrayMeta(type(Protocol)):  # type: ignore[misc]
 
 
 @runtime_checkable
-class Array(Protocol[T_co], metaclass=_ArrayMeta):
+class Array[T](Protocol, metaclass=_ArrayMeta):  # +T
     r"""Alternative to `Sequence` without `__reversed__`, `index` and `count`.
 
     We remove these methods, as they are not present on certain vector data structures,
@@ -853,14 +837,14 @@ class Array(Protocol[T_co], metaclass=_ArrayMeta):
 
     @overload
     @abstractmethod
-    def __getitem__(self, index: int, /) -> T_co: ...
+    def __getitem__(self, index: int, /) -> T: ...
     @overload
     @abstractmethod
     # NOTE: not "-> Self" to ensure compatibility with tuple.
-    def __getitem__(self, index: slice, /) -> "Array[T_co]": ...
+    def __getitem__(self, index: slice, /) -> "Array[T]": ...
 
     # Mixin methods
-    def __iter__(self) -> Iterator[T_co]:
+    def __iter__(self) -> Iterator[T]:
         for i in range(len(self)):
             yield self[i]
 
@@ -869,7 +853,7 @@ class Array(Protocol[T_co], metaclass=_ArrayMeta):
 
 
 @runtime_checkable
-class Seq(Protocol[T_co]):
+class Seq[T](Protocol):  # +T
     r"""Protocol version of `collections.abc.Sequence`.
 
     Note:
@@ -886,14 +870,14 @@ class Seq(Protocol[T_co]):
     def __len__(self) -> int: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: int, /) -> T_co: ...
+    def __getitem__(self, index: int, /) -> T: ...
     @overload
     @abstractmethod
     def __getitem__(self, index: slice, /) -> Self: ...
 
     # Mixin methods
     # NOTE: intentionally excluded __reversed__
-    def __iter__(self) -> Iterator[T_co]:
+    def __iter__(self) -> Iterator[T]:
         for i in range(len(self)):
             yield self[i]
 
@@ -915,7 +899,7 @@ class Seq(Protocol[T_co]):
 
 
 @runtime_checkable
-class MutSeq(Seq[T], Protocol[T]):
+class MutSeq[T](Seq[T], Protocol):
     r"""Protocol version of `collections.abc.MutableSequence`."""
 
     @overload
@@ -966,26 +950,26 @@ class MutSeq(Seq[T], Protocol[T]):
 
 
 @runtime_checkable
-class Map(Collection[K], Protocol[K, V_co]):
+class Map[K, V](Collection[K], Protocol):  # K, +V
     r"""Protocol version of `collections.abc.Mapping`."""
 
     @abstractmethod
-    def __getitem__(self, __key: K, /) -> V_co: ...
+    def __getitem__(self, __key: K, /) -> V: ...
 
     # Mixin Methods
     def keys(self) -> KeysView[K]:
         return KeysView(self)  # type: ignore[arg-type]
 
-    def values(self) -> ValuesView[V_co]:
+    def values(self) -> ValuesView[V]:
         return ValuesView(self)  # type: ignore[arg-type]
 
-    def items(self) -> ItemsView[K, V_co]:
+    def items(self) -> ItemsView[K, V]:
         return ItemsView(self)  # type: ignore[arg-type]
 
     @overload
-    def get(self, key: K, /) -> V_co | None: ...
+    def get(self, key: K, /) -> V | None: ...
     @overload
-    def get(self, key: K, /, default: V_co | T) -> V_co | T: ...
+    def get[T](self, key: K, /, default: V | T) -> V | T: ...
     def get(self, key, /, default=None):
         try:
             return self[key]
@@ -1006,7 +990,7 @@ class Map(Collection[K], Protocol[K, V_co]):
 
 
 @runtime_checkable
-class MutMap(Map[K, V], Protocol[K, V]):
+class MutMap[K, V](Map[K, V], Protocol):
     r"""Protocol version of `collections.abc.MutableMapping`."""
 
     @abstractmethod
@@ -1021,10 +1005,10 @@ class MutMap(Map[K, V], Protocol[K, V]):
     @overload
     def pop(self, key: K, /, default: V) -> V: ...
     @overload
-    def pop(self, key: K, /, default: T) -> V | T: ...
+    def pop[T](self, key: K, /, default: T) -> V | T: ...
     def popitem(self) -> tuple[K, V]: ...
     @overload
-    def setdefault(
+    def setdefault[T](
         self: "MutMap[K, T | None]", key: K, /, default: None = ...
     ) -> T | None: ...
     @overload
@@ -1060,8 +1044,8 @@ class Dataclass(Protocol):
         return isinstance(fields, dict)
 
 
-@runtime_checkable
-class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
+@runtime_checkable  # FIXME: Use TypeVarTuple
+class NTuple[T](Protocol):  # +T
     r"""Protocol for anonymous namedtuple.
 
     References:
@@ -1076,25 +1060,25 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
 
     # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
 
-    def _asdict(self) -> Mapping[str, T_co]: ...
+    def _asdict(self) -> Mapping[str, T]: ...
     def __contains__(self, key: object, /) -> bool: ...
-    def __iter__(self) -> Iterator[T_co]: ...
+    def __iter__(self) -> Iterator[T]: ...
     def __len__(self) -> int: ...
     @overload
-    def __getitem__(self, key: SupportsIndex, /) -> T_co: ...
+    def __getitem__(self, key: SupportsIndex, /) -> T: ...
     @overload
-    def __getitem__(self, key: slice, /) -> tuple[T_co, ...]: ...
+    def __getitem__(self, key: slice, /) -> tuple[T, ...]: ...
 
-    # def __lt__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # def __le__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # def __gt__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # def __ge__(self, __value: tuple[T_co, ...]) -> bool: ...
+    # def __lt__(self, __value: tuple[T, ...]) -> bool: ...
+    # def __le__(self, __value: tuple[T, ...]) -> bool: ...
+    # def __gt__(self, __value: tuple[T, ...]) -> bool: ...
+    # def __ge__(self, __value: tuple[T, ...]) -> bool: ...
     # @overload
-    # def __add__(self, __value: tuple[T_co, ...]) -> tuple[T_co, ...]: ...
+    # def __add__(self, __value: tuple[T, ...]) -> tuple[T, ...]: ...
     # @overload
-    # def __add__(self, __value: tuple[T, ...]) -> tuple[T_co | T, ...]: ...
-    # def __mul__(self, __value: SupportsIndex) -> tuple[T_co, ...]: ...
-    # def __rmul__(self, __value: SupportsIndex) -> tuple[T_co, ...]: ...
+    # def __add__[T2](self, __value: tuple[T2, ...]) -> tuple[T | T2, ...]: ...
+    # def __mul__(self, __value: SupportsIndex) -> tuple[T, ...]: ...
+    # def __rmul__(self, __value: SupportsIndex) -> tuple[T, ...]: ...
     # def count(self, __value: Any) -> int: ...
     # def index(self, __value: Any, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
 

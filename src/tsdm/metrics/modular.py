@@ -17,9 +17,10 @@ __all__ = [
     "WLP",
 ]
 
+from typing import Final
+
 import torch
 from torch import Tensor, jit
-from typing_extensions import Final
 
 from tsdm.metrics.base import BaseMetric, WeightedMetric
 from tsdm.types.aliases import Axis

@@ -16,6 +16,7 @@ __all__ = [
 import warnings
 from collections.abc import Callable
 from dataclasses import KW_ONLY, asdict, dataclass
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -24,16 +25,13 @@ from numpy.typing import NDArray
 from pandas import Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
-from typing_extensions import Any, Literal, TypeAlias
 
 from tsdm.constants import ROOT_3
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.decorators import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
-METHOD: TypeAlias = Literal[
-    None, "minimum", "quartile", "match-normal", "match-uniform"
-]
+type METHOD = Literal[None, "minimum", "quartile", "match-normal", "match-uniform"]
 METHODS: list[METHOD] = [None, "minimum", "quartile", "match-normal", "match-uniform"]
 # endregion Constants ------------------------------------------------------------------
 

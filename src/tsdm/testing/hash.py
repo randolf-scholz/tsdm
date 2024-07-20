@@ -29,13 +29,13 @@ from collections import Counter
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from pathlib import Path
 from types import NotImplementedType
+from typing import Any, Final, Literal, Optional
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
-from typing_extensions import Any, Literal, Optional
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import FilePath
@@ -43,7 +43,7 @@ from tsdm.types.protocols import SupportsShape
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 
-DEFAULT_HASH_METHOD = "sha256"
+DEFAULT_HASH_METHOD: Final[str] = "sha256"
 r"""The default hash method to use."""
 
 

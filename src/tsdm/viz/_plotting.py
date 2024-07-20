@@ -9,6 +9,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Mapping
+from typing import Any, Literal, Optional
 
 import numpy as np
 import torch
@@ -20,11 +21,10 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
-from typing_extensions import Any, Literal, Optional, TypeAlias
 
 from tsdm.constants import EMPTY_MAP
 
-Location: TypeAlias = Literal[
+type Location = Literal[
     "upper right",
     "upper left",
     "lower left",

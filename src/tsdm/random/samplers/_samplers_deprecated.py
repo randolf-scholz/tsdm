@@ -4,21 +4,22 @@ __all__ = ["IntervalSampler", "SequenceSampler"]
 
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from itertools import count
+from typing import Any, Optional, cast
 
 import numpy as np
 from numpy._typing import NDArray
 from pandas import DataFrame
-from typing_extensions import Any, Generic, Optional, cast, deprecated
+from typing_extensions import deprecated
 
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
-from tsdm.types.time import TD, DateTime
+from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 
 @deprecated("Use SlidingWindowSampler instead.")
-class IntervalSampler(BaseSampler[slice], Generic[TD]):
+class IntervalSampler[TD: TimeDelta](BaseSampler[slice]):
     r"""Return all intervals `[a, b]`.
 
     The intervals must satisfy:
@@ -152,7 +153,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TD]):
 
 
 @deprecated("Use SlidingWindowSampler instead.")
-class SequenceSampler(BaseSampler, Generic[TD]):
+class SequenceSampler[TD: TimeDelta](BaseSampler):
     r"""Samples sequences of fixed length."""
 
     data: NDArray[DateTime[TD]]  # type: ignore[type-var]

@@ -21,8 +21,9 @@ __all__ = [
     "TEXT_TYPE",
 ]
 
+from typing import Literal
+
 import pyarrow as pa
-from typing_extensions import Literal, TypeAlias
 
 ID_TYPE = pa.uint32()
 VALUE_TYPE = pa.float32()
@@ -65,7 +66,7 @@ NULL_VALUES = [
     "___",
 ]
 
-KEYS: TypeAlias = Literal[
+type KEYS = Literal[
     "ADMISSIONS",
     "CALLOUT",
     "CAREGIVERS",

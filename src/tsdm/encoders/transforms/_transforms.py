@@ -18,21 +18,19 @@ __all__ = [
 
 import warnings
 from abc import abstractmethod
+from typing import Protocol, runtime_checkable
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
-from typing_extensions import Protocol, runtime_checkable
-
-from tsdm.types.variables import T2_contra, T_co
 
 
 @runtime_checkable
-class Transform(Protocol[T2_contra, T_co]):
+class Transform[X, Y](Protocol):  # -X, +Y
     r"""Protocol for encoders."""
 
     @abstractmethod
-    def __call__(self, x: T2_contra, /) -> T_co:
+    def __call__(self, x: X, /) -> Y:
         r"""Apply the transformation."""
         ...
 

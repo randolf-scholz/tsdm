@@ -31,6 +31,7 @@ import warnings
 from collections import deque
 from collections.abc import (
     Callable,
+    Hashable,
     Iterable,
     Mapping,
     Reversible,
@@ -40,6 +41,7 @@ from functools import wraps
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Optional, cast
 from zipfile import ZipFile
 
 import numpy as np
@@ -48,10 +50,9 @@ from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from torch import nn
 from tqdm.auto import tqdm
-from typing_extensions import Any, Optional, cast
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.testing._testing import is_dunder, is_zipfile
+from tsdm.testing import is_dunder, is_zipfile
 from tsdm.types.aliases import (
     Axis,
     Dims,
@@ -63,7 +64,6 @@ from tsdm.types.aliases import (
     Shape,
     Size,
 )
-from tsdm.types.variables import K2, HashableType, K, T
 
 __logger__ = logging.getLogger(__name__)
 
@@ -162,7 +162,7 @@ def shape_to_tuple(shape: Shape) -> tuple[int, ...]:
     return tuple(shape)
 
 
-def last(iterable: Iterable[T], /) -> T:
+def last[T](iterable: Iterable[T], /) -> T:
     r"""Return the last element of an `Iterable`.
 
     Raises:
@@ -227,9 +227,7 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]], /) -> bool:
     return all(sum(masks) == 1)  # type: ignore[arg-type]
 
 
-def flatten_nested(
-    nested: Any, /, *, leaf_type: type[HashableType]
-) -> set[HashableType]:
+def flatten_nested[H: Hashable](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
     r"""Flatten nested iterables of a given kind."""
     match nested:
         case None:
@@ -248,7 +246,7 @@ def flatten_nested(
             raise TypeError(f"{type(nested)=} not understood")
 
 
-def flatten_dict(
+def flatten_dict[K, K2](
     d: NestedMapping[K, Any],
     /,
     *,
@@ -330,7 +328,7 @@ def flatten_dict(
     return result
 
 
-def unflatten_dict(
+def unflatten_dict[K, K2](
     d: Mapping[K2, Any],
     /,
     *,
@@ -494,13 +492,13 @@ def repackage_zip(path: FilePath, /) -> None:
                 new_archive.writestr(new_name, old_archive.read(item))
 
 
-def get_joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
+def get_joint_keys[T](*mappings: Mapping[T, Any]) -> set[T]:
     r"""Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
     return set.intersection(*map(set, (d.keys() for d in mappings)))
 
 
-def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
+def unpack_maybewrapped[T](x: MaybeWrapped[T], /, *, step: int) -> T:
     r"""Unpack wrapped values."""
     if callable(x):
         try:
@@ -511,7 +509,7 @@ def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
     return x
 
 
-def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
+def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[V]]:
     r"""Fast way to 'transpose' a list of dictionaries.
 
     Assumptions:
@@ -527,12 +525,13 @@ def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
         ...     {"name": "Charlie", "age": 35},
         ... ]
         >>> transpose_list_of_dicts(list_of_dicts)
-        {'name': ('Alice', 'Bob', 'Charlie'), 'age': (30, 25, 35)}
+        {'name': ['Alice', 'Bob', 'Charlie'], 'age': [30, 25, 35]}
     """
+    keys = next(iter(lst)).keys()
     return dict(
         zip(
-            next(iter(lst)),
-            zip(*(d.values() for d in lst), strict=True),
+            keys,
+            map(list, zip(*(d.values() for d in lst), strict=True)),
             strict=True,
         )
     )

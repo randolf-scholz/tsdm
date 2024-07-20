@@ -47,20 +47,20 @@ __all__ = ["Traffic"]
 import warnings
 from functools import cached_property
 from io import StringIO
+from typing import Any, Literal
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from typing_extensions import Any, Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils import replace
 
-KEY: TypeAlias = Literal["timeseries", "labels", "randperm", "invperm"]
+type Key = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
-class Traffic(MultiTableDataset[KEY, DataFrame]):
+class Traffic(MultiTableDataset[Key, DataFrame]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -173,7 +173,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
         return dates
 
-    def clean_table(self, key: KEY) -> DataFrame:
+    def clean_table(self, key: Key) -> DataFrame:
         match key:
             case "timeseries":
                 return self._clean_timeseries()

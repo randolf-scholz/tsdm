@@ -22,6 +22,7 @@ from collections.abc import Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from types import NotImplementedType
+from typing import Any, NamedTuple, Optional, Self, overload
 
 import numpy as np
 import pandas as pd
@@ -30,7 +31,6 @@ from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
-from typing_extensions import Any, NamedTuple, Optional, Self, overload
 
 from tsdm.utils.decorators import pprint_repr
 

@@ -9,15 +9,15 @@ __all__ = [
     "scalar",
 ]
 
+from typing import Any, overload
+
 from polars import DataFrame, Series
-from typing_extensions import Any, TypeVar
 
 from tsdm.types.aliases import Axis
 
-PL = TypeVar("PL", DataFrame, Series)
-
 
 def scalar(x: Any, /, dtype: Any) -> Any:
+    r"""Return a scalar of a given dtype."""
     return Series([x]).cast(dtype).item()
 
 
@@ -35,12 +35,20 @@ def nanmax(x: Series, /, axis: Axis = None) -> Any:
     return x.max()
 
 
-def cast(x: PL, /, dtype: Any) -> PL:
+@overload
+def cast(s: Series, /, dtype: Any) -> Series: ...
+@overload
+def cast(df: DataFrame, /, dtype: Any) -> DataFrame: ...
+def cast(x, /, dtype):
     r"""Cast a polars object to a different dtype."""
     return x.cast(dtype)
 
 
-def drop_null(x: PL, /) -> PL:
+@overload
+def drop_null(x: Series, /) -> Series: ...
+@overload
+def drop_null(x: DataFrame, /) -> DataFrame: ...
+def drop_null(x, /):
     r"""Drop `NaN` values from a polars object."""
     return x.drop_nulls()
 

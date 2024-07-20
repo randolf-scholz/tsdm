@@ -73,16 +73,16 @@ __all__ = [
     "BeijingAirQuality",
 ]
 
+from typing import Literal
 from zipfile import ZipFile
 
 import pandas as pd
 from pandas import DataFrame
-from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal["timeseries", "timeseries_description"]
+type Key = Literal["timeseries", "timeseries_description"]
 
 
 TIMESERIES_DESCRIPTION: InlineTable = {
@@ -113,7 +113,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
 }  # fmt: skip
 
 
-class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
+class BeijingAirQuality(MultiTableDataset[Key, DataFrame]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -221,7 +221,7 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
 
         return ts
 
-    def clean_table(self, key: KEY) -> DataFrame:
+    def clean_table(self, key: Key) -> DataFrame:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
         match key:
             case "timeseries":

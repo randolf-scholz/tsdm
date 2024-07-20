@@ -50,22 +50,12 @@ __all__ = [
 from collections.abc import Iterable
 from dataclasses import KW_ONLY, asdict, dataclass, field
 from types import EllipsisType
+from typing import Any, Literal, Optional, Self, cast, overload
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
-from torch import Tensor
-from typing_extensions import (
-    Any,
-    Literal,
-    Optional,
-    Self,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-)
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
@@ -73,22 +63,13 @@ from tsdm.types.aliases import Axis, Size
 from tsdm.types.protocols import NumericalArray
 from tsdm.utils.decorators import pprint_repr
 
-X = TypeVar("X")
-Y = TypeVar("Y")
-Arr = TypeVar("Arr", bound=NumericalArray)
-r"""TypeVar for tensor-like objects."""
-Arr2 = TypeVar("Arr2", bound=NumericalArray)
-r"""TypeVar for tensor-like objects."""
-Index: TypeAlias = None | int | list[int] | slice | EllipsisType
+type Index = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
-Scalar: TypeAlias = None | bool | int | float | complex | str
+type Scalar = None | bool | int | float | complex | str
 r"""Type Hint for scalar objects."""
-ClippingMode: TypeAlias = Literal["mask", "clip"]
+type ClippingMode = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
-TensorType = TypeVar("TensorType", Tensor, NDArray)
-r"""TypeVar for tensor-like objects."""
-
-PARAMETERS: TypeAlias = tuple[
+type PARAMETERS[Arr: NumericalArray] = tuple[
     Scalar
     | Arr
     | list[Scalar]
@@ -252,7 +233,7 @@ def get_reduced_axes(item, axis):
             raise TypeError(f"Unknown type {type(item)}")
 
 
-class ArrayEncoder(BaseEncoder[Arr, Y]):
+class ArrayEncoder[Arr: NumericalArray, Y](BaseEncoder[Arr, Y]):
     r"""An encoder for Tensor-like data.
 
     We want numerical encoders to be applicable to different backends.
@@ -280,7 +261,7 @@ class ArrayEncoder(BaseEncoder[Arr, Y]):
         raise NotImplementedError
 
 
-class ArrayDecoder(BaseEncoder[X, Arr]):
+class ArrayDecoder[X, Arr: NumericalArray](BaseEncoder[X, Arr]):
     r"""A decoder for Tensor-like data."""
 
     backend: Backend[Arr] = NotImplemented
@@ -304,7 +285,7 @@ class ArrayDecoder(BaseEncoder[X, Arr]):
 
 @pprint_repr
 @dataclass
-class BoundaryEncoder(BaseEncoder[Arr, Arr]):
+class BoundaryEncoder[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -456,7 +437,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class LinearScaler(BaseEncoder[Arr, Arr]):
+class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 
     Args:
@@ -531,7 +512,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
 
 
 @dataclass(init=False)
-class StandardScaler(BaseEncoder[Arr, Arr]):
+class StandardScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     r"""Transforms data linearly x ↦ (x-μ)/σ.
 
     axis: tuple[int, ...] determines the shape of the mean and stdv.
@@ -621,7 +602,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
 
 
 @dataclass(init=False)
-class MinMaxScaler(BaseEncoder[Arr, Arr]):
+class MinMaxScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
 
     If x_min and/or x_max are provided at initialization, they are marked as
@@ -892,7 +873,7 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
 
 @pprint_repr
 @dataclass
-class TensorSplitter(ArrayEncoder[Arr, list[Arr]]):
+class TensorSplitter[Arr: NumericalArray](ArrayEncoder[Arr, list[Arr]]):
     r"""Split tensor along specified axis."""
 
     _: KW_ONLY
@@ -915,7 +896,7 @@ class TensorSplitter(ArrayEncoder[Arr, list[Arr]]):
 
 @pprint_repr
 @dataclass
-class TensorConcatenator(ArrayDecoder[list[Arr], Arr]):
+class TensorConcatenator[Arr: NumericalArray](ArrayDecoder[list[Arr], Arr]):
     r"""Concatenate multiple tensors."""
 
     _: KW_ONLY

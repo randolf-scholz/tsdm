@@ -7,6 +7,7 @@ __all__ = [
 ]
 
 from tempfile import TemporaryFile
+from typing import Literal
 
 import numpy as np
 import torch
@@ -15,7 +16,6 @@ from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from PIL import Image
 from torch import Tensor
-from typing_extensions import Literal
 
 
 @torch.no_grad()

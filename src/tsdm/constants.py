@@ -30,12 +30,12 @@ __all__ = [
 from collections.abc import Mapping
 from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
+from typing import Any, Final, Never
 
 import numpy as np
 import pandas as pd
 import torch
 from numpy.random import Generator
-from typing_extensions import Any, Final, Never
 
 # NOTE: Use frozenmap() if PEP 603 is accepted.
 EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})

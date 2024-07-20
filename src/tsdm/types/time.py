@@ -4,32 +4,11 @@ __all__ = [
     # protocol
     "TimeDelta",
     "DateTime",
-    # new types
-    "TD",
-    "TD_co",
-    "TD_contra",
-    "DT",
-    "DT_co",
-    "DT_contra",
 ]
 
-from typing_extensions import (
-    Any,
-    Protocol,
-    Self,
-    SupportsFloat,
-    SupportsInt,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import Protocol, Self, SupportsFloat, SupportsInt, runtime_checkable
 
 # region datetime and timedelta protocols ----------------------------------------------
-TD = TypeVar("TD", bound="TimeDelta")
-TD_co = TypeVar("TD_co", bound="TimeDelta", covariant=True)
-TD_contra = TypeVar("TD_contra", bound="TimeDelta", contravariant=True)
-DT = TypeVar("DT", bound="DateTime[Any]")
-DT_co = TypeVar("DT_co", bound="DateTime[Any]", covariant=True)
-DT_contra = TypeVar("DT_contra", bound="DateTime[Any]", contravariant=True)
 
 
 @runtime_checkable
@@ -91,7 +70,7 @@ class TimeDelta(Protocol):
 
 
 @runtime_checkable
-class DateTime(Protocol[TD]):  # bind appropriate TimeDelta type
+class DateTime[TD: TimeDelta](Protocol):  # bind appropriate TimeDelta type
     r"""Datetime can be compared and subtracted."""
 
     def __le__(self, other: Self, /) -> bool: ...

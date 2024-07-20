@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Deep set models."""
 
 __all__ = [
     # Classes
@@ -9,9 +6,10 @@ __all__ = [
     "DeepSetReZero",
 ]
 
+from typing import Optional
+
 import torch
 from torch import Tensor, nn
-from typing_extensions import Optional
 
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP

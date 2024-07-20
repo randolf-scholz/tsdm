@@ -8,10 +8,7 @@ __all__ = [
 
 from abc import ABCMeta
 from collections.abc import Callable
-
-from typing_extensions import Any, Optional, TypeVar, cast
-
-R = TypeVar("R")
+from typing import Any, Optional, cast
 
 
 class DummyAttribute:
@@ -20,7 +17,7 @@ class DummyAttribute:
     __is_abstract_attribute__ = True
 
 
-def abstractattribute(obj: Optional[Callable[[Any], R]] = None) -> R:
+def abstractattribute[R](obj: Optional[Callable[[Any], R]] = None) -> R:
     r"""Decorate method as abstract attribute."""
     attr = DummyAttribute() if obj is None else obj
     try:

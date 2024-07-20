@@ -22,22 +22,11 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Reversible
 from dataclasses import KW_ONLY, dataclass
+from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checkable
 
 from pandas import DataFrame, Index, MultiIndex
-from typing_extensions import (
-    Any,
-    Optional,
-    Protocol,
-    Self,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-    runtime_checkable,
-)
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
-from tsdm.types.variables import K, K_contra, T, V_co
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.pprint import repr_array
 
@@ -45,20 +34,17 @@ from tsdm.utils.pprint import repr_array
 
 
 @runtime_checkable
-class TorchDataset(Protocol[K_contra, V_co]):
+class TorchDataset[K, V](Protocol):  # -K, +V
     r"""Protocol version of `torch.utils.data.Dataset`."""
 
     @abstractmethod
-    def __getitem__(self, key: K_contra, /) -> V_co:
+    def __getitem__(self, key: K, /) -> V:
         r"""Map key to sample."""
         ...
 
 
-DS = TypeVar("DS", bound=TorchDataset)
-
-
 @runtime_checkable
-class PandasDataset(Protocol[K, V_co]):
+class PandasDataset[K, V](Protocol):  # K, +V
     r"""Protocol version of `pandas.DataFrame`/`Series`.
 
     Note that in particular, `__getitem__` is not present, as it returns columns,
@@ -78,29 +64,29 @@ class PandasDataset(Protocol[K, V_co]):
 
     @property
     @abstractmethod
-    def loc(self) -> SupportsGetItem[K, V_co]:
+    def loc(self) -> SupportsGetItem[K, V]:
         r"""Access a group of rows and columns by label(s) or a boolean array."""
         ...
 
     @property
     @abstractmethod
-    def iloc(self) -> SupportsGetItem[int, V_co]:
+    def iloc(self) -> SupportsGetItem[int, V]:
         r"""Purely integer location-based indexing for selection by position."""
         ...
 
 
 @runtime_checkable
-class IterableDataset(Protocol[V_co]):
+class IterableDataset[V](Protocol):  # +V
     r"""Protocol version of `torch.utils.data.IterableDataset`."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[V_co]:
+    def __iter__(self) -> Iterator[V]:
         r"""Iterate over the dataset."""
         ...
 
 
 @runtime_checkable
-class IndexableDataset(Protocol[V_co]):
+class IndexableDataset[V](Protocol):  # +V
     r"""Protocol version of `torch.utils.data.IterableDataset` with len and getitem.
 
     Note:
@@ -120,18 +106,18 @@ class IndexableDataset(Protocol[V_co]):
         ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[V_co]:
+    def __iter__(self) -> Iterator[V]:
         r"""Iterate over the dataset."""
         ...
 
     @abstractmethod
-    def __getitem__(self, index: int, /) -> V_co:
+    def __getitem__(self, index: int, /) -> V:
         r"""Lookup value for integer index."""
         ...
 
 
 @runtime_checkable
-class MapDataset(Protocol[K, V_co]):
+class MapDataset[K, V](Protocol):  # +V
     r"""Protocol version of `torch.utils.data.Dataset` with a `keys()` method.
 
     Note:
@@ -147,7 +133,7 @@ class MapDataset(Protocol[K, V_co]):
         ...
 
     @abstractmethod
-    def __getitem__(self, key: K, /) -> V_co:
+    def __getitem__(self, key: K, /) -> V:
         r"""Map key to sample."""
         ...
 
@@ -157,21 +143,19 @@ class MapDataset(Protocol[K, V_co]):
         ...
 
 
-TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
+type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
 r"""Type alias for a "tabular" dataset."""
 
-SequentialDataset: TypeAlias = IndexableDataset[V_co] | PandasDataset[Any, V_co]
+type SequentialDataset[V] = IndexableDataset[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a sequential dataset."""
 
-Dataset: TypeAlias = (
-    IndexableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
-)
+type Dataset[V] = SequentialDataset[V] | MapDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 
 
 @dataclass
-class DataFrame2Dataset(MapDataset[K, DataFrame]):
+class DataFrame2Dataset[K](MapDataset[K, DataFrame]):
     r"""Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting ``.loc``.
 
     It is assumed that the DataFrame has a MultiIndex.
@@ -201,7 +185,7 @@ class DataFrame2Dataset(MapDataset[K, DataFrame]):
 
 
 @pprint_repr
-class MappingDataset(Mapping[K, DS]):
+class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
     ``ds[key]`` returns the dataset for the given key.
@@ -261,7 +245,7 @@ class MappingDataset(Mapping[K, DS]):
         return cls({idx: df.loc[idx] for idx in index})
 
 
-def get_index(dataset: Dataset[T], /) -> Index:
+def get_index(dataset: Dataset, /) -> Index:
     r"""Return an index object for the dataset.
 
     We support the following data types:
@@ -281,7 +265,7 @@ def get_index(dataset: Dataset[T], /) -> Index:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
 
 
-def get_first_sample(dataset: Dataset[T], /) -> T:
+def get_first_sample[T](dataset: Dataset[T], /) -> T:
     r"""Return the first element of the dataset."""
     match dataset:
         case PandasDataset() as pandas_dataset:
@@ -294,7 +278,7 @@ def get_first_sample(dataset: Dataset[T], /) -> T:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
 
 
-def get_last_sample(dataset: Dataset[T], /) -> T:
+def get_last_sample[T](dataset: Dataset[T], /) -> T:
     r"""Return the last element of the dataset."""
     match dataset:
         case PandasDataset() as pandas_dataset:

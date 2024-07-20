@@ -15,14 +15,14 @@ import os
 import subprocess
 from functools import cached_property
 from pathlib import Path
+from typing import Any, ClassVar, Optional, Protocol
 from urllib.parse import urlparse
 
 from torch import Tensor, nn
-from typing_extensions import Any, ClassVar, Optional, Protocol, TypeAlias
 
 from tsdm.config import CONFIG
 
-Model: TypeAlias = nn.Module
+type Model = nn.Module
 r"""Type hint for models."""
 
 

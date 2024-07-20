@@ -8,10 +8,9 @@ __all__ = [
     "MultipleBoundaryInformation",
     "Schema",
     # Functions
-    "aggregate_set",
     "aggregate_nondestructive",
     "detect_outliers",
-    "float_is_int",
+    "is_integer_series",
     "get_integer_cols",
     "make_dataframe",
     "remove_outliers",
@@ -20,21 +19,12 @@ __all__ = [
 
 import logging
 from collections.abc import Mapping, Sequence
+from typing import Any, NamedTuple, NotRequired, Optional, Required, TypedDict, overload
 
 import pandas as pd
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Series
 from pyarrow import Array, Table
 from scipy import stats
-from typing_extensions import (
-    Any,
-    Generic,
-    NamedTuple,
-    NotRequired,
-    Optional,
-    Required,
-    TypedDict,
-    overload,
-)
 
 from tsdm.backend.pandas import (
     detect_outliers_dataframe,
@@ -45,7 +35,6 @@ from tsdm.backend.pandas import (
     strip_whitespace_series,
 )
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
-from tsdm.types.variables import T, pandas_var, tuple_co
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 
@@ -61,10 +50,10 @@ class Schema(NamedTuple):
     r"""Data types of the columns."""
 
 
-class InlineTable(TypedDict, Generic[tuple_co]):
+class InlineTable[Tup: tuple](TypedDict):
     r"""A table of data in a dictionary."""
 
-    data: Required[Sequence[tuple_co]]
+    data: Required[Sequence[Tup]]
     columns: NotRequired[list[str]]
     dtypes: NotRequired[list[str | type]]
     schema: NotRequired[Mapping[str, Any]]
@@ -135,11 +124,11 @@ def make_dataframe(
 
 
 @overload
-def strip_whitespace(table: Array, /) -> Array: ...
+def strip_whitespace(array: Array, /) -> Array: ...
 @overload
 def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
 @overload
-def strip_whitespace(frame: Series, /) -> Series: ...  # type: ignore[misc]
+def strip_whitespace(series: Series, /) -> Series: ...  # type: ignore[misc]
 @overload
 def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[misc]
 def strip_whitespace(table, /, *cols):
@@ -261,7 +250,7 @@ def remove_outliers(
     inplace: bool = ...,
 ) -> DataFrame: ...
 @overload
-def remove_outliers(
+def remove_outliers[T](
     df: DataFrame,
     /,
     *,
@@ -311,10 +300,10 @@ def remove_outliers(
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
 
-def float_is_int(series: Series, /) -> bool:
-    r"""Check if all float values are integers."""
-    mask = pd.notna(series)
-    return series[mask].apply(float.is_integer).all()
+def is_integer_series(s: Series, /) -> bool:
+    r"""Check if all float values are integral."""
+    mask = pd.notna(s)
+    return s[mask].apply(float.is_integer).all()
 
 
 def get_integer_cols(table: DataFrame, /) -> set[str]:
@@ -324,13 +313,13 @@ def get_integer_cols(table: DataFrame, /) -> set[str]:
         if pd.api.types.is_integer_dtype(table[col]):
             __logger__.debug("Integer column                       : %s", col)
             cols.add(col)
-        elif pd.api.types.is_float_dtype(table[col]) and float_is_int(table[col]):
+        elif pd.api.types.is_float_dtype(table[col]) and is_integer_series(table[col]):
             __logger__.debug("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
 
 
-def aggregate_nondestructive(df: pandas_var, /) -> pandas_var:
+def aggregate_nondestructive(df: DataFrame, /) -> DataFrame:
     r"""Aggregate multiple simulataneous measurements in a non-destructive way.
 
     Given a `DataFrame` of size $m×k$, this will construct a new DataFrame of size $m'×k$,
@@ -357,9 +346,6 @@ def aggregate_nondestructive(df: pandas_var, /) -> pandas_var:
         2020-12-09 09:48:38  0.116585  <NA>  <NA>    1112.5  4.578233  0.445           200  <NA>
         2020-12-09 09:48:38  0.114842  <NA>  <NA>     912.5  4.554859  0.485          <NA>  <NA>
     """
-    if isinstance(df, Index | Series):
-        return df
-
     mask = df.notna()
     nitems = mask.sum()
     nrows = nitems.max()
@@ -477,8 +463,8 @@ def describe(
     )
 
 
-def aggregate_set(data: tuple[T, ...], /) -> T:
-    r"""Aggregate a set of values."""
+def aggregate_set[T](data: tuple[T, ...], /) -> T:
+    r"""Coerces multiple values if they are identical."""
     try:
         vals = set(data)
     except TypeError as exc:

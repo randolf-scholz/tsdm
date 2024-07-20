@@ -2,11 +2,12 @@ r"""Test tsdm.utils.pprint."""
 
 from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
+from typing import Any, NamedTuple
 
 import numpy as np
+import pandas as pd
 import pytest
 import torch
-from typing_extensions import Any, NamedTuple
 
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
 from tsdm.utils.pprint import (
@@ -198,30 +199,19 @@ def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
-        (
-            np.array(1.25),
-            "ndarray[1.25, float64]",
-        ),
-        (
-            torch.tensor(1.25),
-            "Tensor[1.25, torch.float32@cpu]",
-        ),
-        (
-            np.array([1, 2, 3]),
-            "ndarray[(3,), int64]",
-        ),
-        (
-            torch.tensor([1, 2, 3]),
-            "Tensor[(3,), torch.int64@cpu]",
-        ),
-        (
-            np.array([[1.4, 2.3], [3.2, 4.1]]),
-            "ndarray[(2, 2), float64]",
-        ),
-        (
-            torch.tensor([[1.4, 2.3], [3.2, 4.1]]),
-            "Tensor[(2, 2), torch.float32@cpu]",
-        ),
+        (np.array(1.25), "ndarray@cpu(1.25)"),
+        (torch.tensor(1.25), "Tensor@cpu(1.25)"),
+        (np.array([]), "ndarray<0>@cpu"),
+        (np.array([[]]), "ndarray<1,0>@cpu"),
+        (np.empty((0, 0)), "ndarray<0,0>@cpu"),
+        (np.array([1.25]), "ndarray<1>@cpu(1.25)"),
+        (np.array([[1.25]]), "ndarray<1,1>@cpu(1.25)"),
+        (np.array([1, 2, 3]), "ndarray<3>[int64]@cpu"),
+        (np.array([[1.4, 2.3], [3.2, 4.1]]), "ndarray<2,2>[float64]@cpu"),
+        (torch.tensor([1, 2, 3]), "Tensor<3>[torch.int64]@cpu"),
+        (torch.tensor([[1.4, 2.3], [3.2, 4.1]]), "Tensor<2,2>[torch.float32]@cpu"),
+        (pd.DataFrame([[0, "foo", 1.25]]), "DataFrame<1,3>[int64, object, float64]"),
+        (pd.Series([1, 2, 3]), "Series<3>[int64]"),
     ],
 )
 def test_pprint_array(obj: SupportsArray, expected: str) -> None:

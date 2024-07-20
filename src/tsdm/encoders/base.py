@@ -70,16 +70,12 @@ from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
 from functools import wraps
 from inspect import getattr_static
-
-from typing_extensions import (
+from typing import (
     Any,
     ClassVar,
     Literal,
     Protocol,
     Self,
-    TypeAlias,
-    TypeVar,
-    TypeVarTuple,
     cast,
     overload,
     runtime_checkable,
@@ -88,41 +84,24 @@ from typing_extensions import (
 from tsdm import encoders as E
 from tsdm.backend import Backend, get_backend
 from tsdm.types.aliases import FilePath, NestedBuiltin
-from tsdm.types.variables import K, T
 from tsdm.utils.decorators import pprint_repr
 
-X_contra = TypeVar("X_contra", contravariant=True)
-Y_co = TypeVar("Y_co", covariant=True)
-W = TypeVar("W")
-X = TypeVar("X")
-Y = TypeVar("Y")
-X1 = TypeVar("X1")
-Y1 = TypeVar("Y1")
-X2 = TypeVar("X2")
-Y2 = TypeVar("Y2")
-Z = TypeVar("Z")
-Xs = TypeVarTuple("Xs")
-Ys = TypeVarTuple("Ys")
-TupleIn = TypeVar("TupleIn", bound=tuple)
-TupleOut = TypeVar("TupleOut", bound=tuple)
-MappingIn = TypeVar("MappingIn", bound=Mapping)
-MappingOut = TypeVar("MappingOut", bound=Mapping)
-Agg: TypeAlias = Callable[[list[T]], T]
+type Agg[T] = Callable[[list[T]], T]
 
 
 # region protocol classes --------------------------------------------------------------
 @runtime_checkable
-class Transform(Protocol[X_contra, Y_co]):
+class Transform[X, Y](Protocol):  # -X, +Y
     r"""Protocol for transformers."""
 
     @abstractmethod
-    def fit(self, x: X_contra, /) -> None: ...
+    def fit(self, x: X, /) -> None: ...
     @abstractmethod
-    def transform(self, x: X_contra, /) -> Y_co: ...
+    def transform(self, x: X, /) -> Y: ...
 
 
 @runtime_checkable
-class InvertibleTransform(Transform[X, Y], Protocol):
+class InvertibleTransform[X, Y](Transform[X, Y], Protocol):
     r"""Protocol for invertible transformers."""
 
     @abstractmethod
@@ -130,7 +109,7 @@ class InvertibleTransform(Transform[X, Y], Protocol):
 
 
 @runtime_checkable
-class EncoderProtocol(Protocol[X, Y]):
+class EncoderProtocol[X, Y](Protocol):
     r"""Minimal Protocol for Encoders.
 
     This protocol should be used in applications that only use encoders, but do not need to
@@ -145,7 +124,7 @@ class EncoderProtocol(Protocol[X, Y]):
     def decode(self, y: Y, /) -> X: ...
 
 
-class ParametrizedEncoder(EncoderProtocol[X, Y], Protocol):
+class ParametrizedEncoder[X, Y](EncoderProtocol[X, Y], Protocol):
     r"""Protocol for encoders with parameters."""
 
     @property
@@ -179,7 +158,7 @@ class ParametrizedEncoder(EncoderProtocol[X, Y], Protocol):
     # endregion mixin methods ---------------------------------------------------------
 
 
-class SerializableEncoder(EncoderProtocol[X, Y], Protocol):
+class SerializableEncoder[X, Y](EncoderProtocol[X, Y], Protocol):
     r"""Protocol for serializable encoders."""
 
     @classmethod
@@ -189,7 +168,7 @@ class SerializableEncoder(EncoderProtocol[X, Y], Protocol):
     def serialize(self, filepath: FilePath, /) -> None: ...
 
 
-class Encoder(Protocol[X, Y]):
+class Encoder[X, Y](Protocol):
     r"""Protocol for Encoders with algebraic mixin methods."""
 
     # region abstract methods ----------------------------------------------------------
@@ -294,7 +273,7 @@ class Encoder(Protocol[X, Y]):
 
 
 # region base classes ------------------------------------------------------------------
-class BaseEncoder(Encoder[X, Y]):
+class BaseEncoder[X, Y](Encoder[X, Y]):
     r"""Base class for encoders implemented within this package."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -413,7 +392,7 @@ class BaseEncoder(Encoder[X, Y]):
         """
         return InverseEncoder(self)
 
-    def __matmul__(self, other: Encoder[T, X], /) -> "ChainedEncoder[T, Y]":
+    def __matmul__[T](self, other: Encoder[T, X], /) -> "ChainedEncoder[T, Y]":
         r"""Chain the encoders (pure function composition).
 
         Example:
@@ -425,14 +404,14 @@ class BaseEncoder(Encoder[X, Y]):
         """
         return ChainedEncoder(self, other)
 
-    def __rmatmul__(self, other: Encoder[Y, Z], /) -> "ChainedEncoder[X, Z]":
+    def __rmatmul__[Z](self, other: Encoder[Y, Z], /) -> "ChainedEncoder[X, Z]":
         r"""Chain the encoders (pure function composition).
 
         See `__matmul__` for more details.
         """
         return ChainedEncoder(other, self)
 
-    def __rshift__(self, other: Encoder[Y, Z], /) -> "PipedEncoder[X, Z]":
+    def __rshift__[Z](self, other: Encoder[Y, Z], /) -> "PipedEncoder[X, Z]":
         r"""Pipe the encoders (encoder composition).
 
         Note that the order is reversed compared to the `@`-operator.
@@ -461,14 +440,14 @@ class BaseEncoder(Encoder[X, Y]):
         """
         return PipedEncoder(self, other)
 
-    def __rrshift__(self, other: Encoder[T, X], /) -> "PipedEncoder[T, Y]":
+    def __rrshift__[T](self, other: Encoder[T, X], /) -> "PipedEncoder[T, Y]":
         r"""Pipe the encoders (encoder composition).
 
         See `__rshift__` for more details.
         """
         return PipedEncoder(other, self)
 
-    def __or__(self, other: Encoder[X2, Y2], /) -> "ParallelEncoder[tuple[X, X2], tuple[Y, Y2]]":  # fmt: skip
+    def __or__[X2, Y2](self, other: Encoder[X2, Y2], /) -> "ParallelEncoder[tuple[X, X2], tuple[Y, Y2]]":  # fmt: skip
         r"""Return product encoders.
 
         Example:
@@ -477,14 +456,14 @@ class BaseEncoder(Encoder[X, Y]):
         """
         return ParallelEncoder(self, other)
 
-    def __ror__(self, other: Encoder[X2, Y2], /) -> "ParallelEncoder[tuple[X2, X], tuple[Y2, Y]]":  # fmt: skip
+    def __ror__[X2, Y2](self, other: Encoder[X2, Y2], /) -> "ParallelEncoder[tuple[X2, X], tuple[Y2, Y]]":  # fmt: skip
         r"""Return product encoders.
 
         See `__or__` for more details.
         """
         return ParallelEncoder(other, self)
 
-    def __and__(self, other: Encoder[X, Y2], /) -> "JointEncoder[X, tuple[Y, Y2]]":
+    def __and__[Y2](self, other: Encoder[X, Y2], /) -> "JointEncoder[X, tuple[Y, Y2]]":
         r"""Return joint encoders.
 
         Example:
@@ -494,7 +473,7 @@ class BaseEncoder(Encoder[X, Y]):
         # FIXME: mypy does not predict correct return type...
         return JointEncoder(self, other)
 
-    def __rand__(self, other: Encoder[X, Y2], /) -> "JointEncoder[X, tuple[Y2, Y]]":
+    def __rand__[Y2](self, other: Encoder[X, Y2], /) -> "JointEncoder[X, tuple[Y2, Y]]":
         r"""Return joint encoders.
 
         See `__and__` for more details.
@@ -520,9 +499,9 @@ class UniversalEncoder(BaseEncoder[Any, Any], ABC):
     r"""Encoder class which maps data to the same type, regardless of the input."""
 
     @abstractmethod
-    def encode(self, x: T, /) -> T: ...
+    def encode[T](self, x: T, /) -> T: ...
     @abstractmethod
-    def decode(self, y: T, /) -> T: ...
+    def decode[T](self, y: T, /) -> T: ...
     def fit(self, data: Any, /) -> None: ...
 
 
@@ -531,7 +510,7 @@ class BackendMixin:
 
     backend: Backend = NotImplemented
 
-    def __init_subclass__(cls: type[Encoder[X, Y]]) -> None:
+    def __init_subclass__(cls: type[Encoder]) -> None:
         super().__init_subclass__()
 
         original_fit = cls.fit
@@ -545,7 +524,7 @@ class BackendMixin:
         cls.fit = wrapped_fit
 
 
-class EncoderList(BaseEncoder[X, Y], Sequence[Encoder]):
+class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder], ABC):
     r"""List of encoders."""
 
     encoders: list[Encoder]
@@ -603,10 +582,10 @@ class IdentityEncoder(BaseEncoder[Any, Any]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode(self, x: T, /) -> T:
+    def encode[T](self, x: T, /) -> T:
         return x
 
-    def decode(self, y: T, /) -> T:
+    def decode[T](self, y: T, /) -> T:
         return y
 
 
@@ -617,10 +596,10 @@ class DeepcopyEncoder(BaseEncoder[Any, Any]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode(self, x: T, /) -> T:
+    def encode[T](self, x: T, /) -> T:
         return deepcopy(x)
 
-    def decode(self, y: T, /) -> T:
+    def decode[T](self, y: T, /) -> T:
         return deepcopy(y)
 
 
@@ -634,10 +613,10 @@ class TupleEncoder(BaseEncoder[Any, Any]):
     def __invert__(self) -> "TupleDecoder":
         return TupleDecoder()
 
-    def encode(self, x: T, /) -> tuple[T]:
+    def encode[T](self, x: T, /) -> tuple[T]:
         return (x,)
 
-    def decode(self, y: tuple[T], /) -> T:
+    def decode[T](self, y: tuple[T], /) -> T:
         return y[0]
 
 
@@ -651,15 +630,15 @@ class TupleDecoder(BaseEncoder[Any, Any]):
     def __invert__(self) -> "TupleEncoder":
         return TupleEncoder()
 
-    def encode(self, y: tuple[T], /) -> T:
+    def encode[T](self, y: tuple[T], /) -> T:
         return y[0]
 
-    def decode(self, x: T, /) -> tuple[T]:
+    def decode[T](self, x: T, /) -> tuple[T]:
         return (x,)
 
 
 @dataclass
-class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
+class DiagonalEncoder[T](BaseEncoder[T, tuple[T, ...]]):
     r"""Encodes the input into a tuple of itself.
 
     .. math:: f(x) = (x, x, …, x)
@@ -691,7 +670,7 @@ class DiagonalEncoder(BaseEncoder[T, tuple[T, ...]]):
 
 
 @dataclass
-class DiagonalDecoder(BaseEncoder[tuple[T, ...], T]):
+class DiagonalDecoder[T](BaseEncoder[tuple[T, ...], T]):
     r"""Encodes the input into a tuple of itself.
 
     .. math:: f(x) = (x, x, …, x)
@@ -727,7 +706,7 @@ class DiagonalDecoder(BaseEncoder[tuple[T, ...], T]):
 
 # region unary encoders ----------------------------------------------------------------
 @dataclass(frozen=True, slots=True, repr=False)
-class InverseEncoder(BaseEncoder[Y, X]):
+class InverseEncoder[X, Y](BaseEncoder[Y, X]):
     r"""Applies an encoder in reverse."""
 
     encoder: Encoder[X, Y]
@@ -754,7 +733,7 @@ class InverseEncoder(BaseEncoder[Y, X]):
         return f"~{self.encoder}"
 
 
-def invert_encoder(encoder: Encoder[X, Y], /, *, simplify: bool = True) -> Encoder[Y, X]:  # fmt: skip
+def invert_encoder[X, Y](encoder: Encoder[X, Y], /, *, simplify: bool = True) -> Encoder[Y, X]:  # fmt: skip
     r"""Return the inverse encoder (i.e. decoder)."""
     decoder = InverseEncoder(encoder)
     return decoder.simplify() if simplify else decoder
@@ -762,7 +741,7 @@ def invert_encoder(encoder: Encoder[X, Y], /, *, simplify: bool = True) -> Encod
 
 @pprint_repr
 @dataclass
-class WrappedEncoder(BaseEncoder[X, Y]):
+class WrappedEncoder[X, Y](BaseEncoder[X, Y]):
     r"""Wraps an encoder."""
 
     encoder: Encoder[X, Y]
@@ -786,7 +765,7 @@ class WrappedEncoder(BaseEncoder[X, Y]):
 
 @pprint_repr
 @dataclass
-class NestedEncoder(BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
+class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""Apply an encoder recursively to nested data structure.
 
     Any instances of the leaf type will be encoded using the encoder.
@@ -860,7 +839,7 @@ class NestedEncoder(BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
 
 # region variadic encoders -------------------------------------------------------------
 @pprint_repr(recursive=2)
-class ChainedEncoder(EncoderList[X, Y]):
+class ChainedEncoder[X, Y](EncoderList[X, Y]):
     r"""Represents function composition of encoders."""
 
     # fmt: off
@@ -869,7 +848,7 @@ class ChainedEncoder(EncoderList[X, Y]):
     @overload  # n=1
     def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> Self: ...
     @overload  # n=2
-    def __new__(cls, *encoders: *tuple[Encoder[Z, Y], Encoder[X, Z]]) -> Self: ...
+    def __new__[Z](cls, *encoders: *tuple[Encoder[Z, Y], Encoder[X, Z]]) -> Self: ...
     @overload  # n>2
     def __new__(cls, *encoders: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]]) -> Self: ...
     # fmt: on
@@ -955,11 +934,11 @@ class ChainedEncoder(EncoderList[X, Y]):
 @overload  # n=0, simplify: bool
 def chain_encoders(*, simplify: bool = ...) -> Encoder[Any, Any]: ...
 @overload  # n=1, simplify: bool
-def chain_encoders(e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
+def chain_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
 @overload  # n=2, simplify: bool
-def chain_encoders(e1: Encoder[Y, Z], e2: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Z]: ...
+def chain_encoders[X, Y, Z](e1: Encoder[Y, Z], e2: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Z]: ...
 @overload  # n>2, simplify: bool
-def chain_encoders(*es: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]], simplify: bool = ...) -> Encoder[X, Y]: ...
+def chain_encoders[X, Y](*es: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]], simplify: bool = ...) -> Encoder[X, Y]: ...
 # fmt: on
 def chain_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type: ignore[misc]
     r"""Chain encoders."""
@@ -968,7 +947,7 @@ def chain_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # typ
 
 
 @pprint_repr(recursive=2)
-class PipedEncoder(EncoderList[X, Y]):
+class PipedEncoder[X, Y](EncoderList[X, Y]):
     r"""Represents function composition of encoders."""
 
     # fmt: off
@@ -977,7 +956,7 @@ class PipedEncoder(EncoderList[X, Y]):
     @overload  # n=1
     def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> Self: ...
     @overload  # n=2
-    def __new__(cls, *encoders: *tuple[Encoder[X, Z], Encoder[Z, Y]]) -> Self: ...
+    def __new__[Z](cls, *encoders: *tuple[Encoder[X, Z], Encoder[Z, Y]]) -> Self: ...
     @overload  # n>2
     def __new__(cls, *encoders: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]]) -> Self: ...
     # fmt: on
@@ -1073,11 +1052,11 @@ class PipedEncoder(EncoderList[X, Y]):
 @overload  # n=0
 def pipe_encoders(*, simplify: bool = ...) -> Encoder[Any, Any]: ...
 @overload  # n=1
-def pipe_encoders(e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
+def pipe_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
 @overload  # n=2
-def pipe_encoders(e1: Encoder[X, Y], e2: Encoder[Y, Z], /, *, simplify: bool = ...) -> Encoder[X, Z]: ...
+def pipe_encoders[X, Y, Z](e1: Encoder[X, Y], e2: Encoder[Y, Z], /, *, simplify: bool = ...) -> Encoder[X, Z]: ...
 @overload  # n>2
-def pipe_encoders(*es: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]], simplify: bool = ...) -> Encoder[X, Y]: ...
+def pipe_encoders[X, Y](*es: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]], simplify: bool = ...) -> Encoder[X, Y]: ...
 # fmt: on
 def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type: ignore[misc]
     r"""Pipe encoders."""
@@ -1087,13 +1066,13 @@ def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type
 
 # fmt: off
 @overload  # n=-1
-def pow_encoder(e: Encoder[X, Y], n: Literal[-1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[Y, X]: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[-1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[Y, X]: ...
 @overload  # n=0
 def pow_encoder(e: Encoder, n: Literal[0], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> IdentityEncoder: ...
 @overload  # n=1
-def pow_encoder(e: Encoder[X, Y], n: Literal[1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[X, Y]: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[X, Y]: ...
 @overload  # n>1
-def pow_encoder(e: Encoder[T, T], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> PipedEncoder[T, T]: ...
+def pow_encoder[T](e: Encoder[T, T], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> PipedEncoder[T, T]: ...
 # fmt: on
 def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Apply encoder n times."""
@@ -1113,7 +1092,7 @@ def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
 
 # FIXME: We could have better type hints with HKTs
 @pprint_repr(recursive=2)
-class ParallelEncoder(EncoderList[TupleIn, TupleOut]):
+class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, TupleOut]):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -1123,11 +1102,11 @@ class ParallelEncoder(EncoderList[TupleIn, TupleOut]):
     @overload  # n=0
     def __new__(cls, *encoders: *tuple[()]) -> "ParallelEncoder[Any, Any]": ...
     @overload  # n=1
-    def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> "ParallelEncoder[tuple[X], tuple[Y]]": ...
+    def __new__[X, Y](cls, *encoders: *tuple[Encoder[X, Y]]) -> "ParallelEncoder[tuple[X], tuple[Y]]": ...
     @overload  # n=2
-    def __new__(cls, *encoders: *tuple[Encoder[X1, Y1], Encoder[X2, Y2]]) -> "ParallelEncoder[tuple[X1, X2], tuple[Y1, Y2]]": ...
+    def __new__[X1, Y1, X2, Y2](cls, *encoders: *tuple[Encoder[X1, Y1], Encoder[X2, Y2]]) -> "ParallelEncoder[tuple[X1, X2], tuple[Y1, Y2]]": ...
     @overload  # n>2
-    def __new__(cls, *encoders: Encoder[X, Y]) -> "ParallelEncoder[tuple[X, ...], tuple[Y, ...]]": ...
+    def __new__[X, Y](cls, *encoders: Encoder[X, Y]) -> "ParallelEncoder[tuple[X, ...], tuple[Y, ...]]": ...
     # fmt: on
     # NOTE: We need to ignore inconsistent overload errors because `Self` cannot be generic.
     def __new__(cls, *encoders):  # pyright: ignore[reportInconsistentOverload]
@@ -1177,11 +1156,11 @@ class ParallelEncoder(EncoderList[TupleIn, TupleOut]):
 @overload  # n=0
 def parallelize_encoders(*, simplify: bool = ...) -> Encoder[Any, Any]: ...
 @overload  # n=1
-def parallelize_encoders(e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
+def parallelize_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
 @overload  # n=2
-def parallelize_encoders(e1: Encoder[X1, Y1], e2: Encoder[X2, Y2], /, *, simplify: bool = ...) -> Encoder[tuple[X1, X2], tuple[Y1, Y2]]: ...
+def parallelize_encoders[X1, Y1, X2, Y2](e1: Encoder[X1, Y1], e2: Encoder[X2, Y2], /, *, simplify: bool = ...) -> Encoder[tuple[X1, X2], tuple[Y1, Y2]]: ...
 @overload  # n>2
-def parallelize_encoders(*encoders: Encoder[X, Y], simplify: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
+def parallelize_encoders[X, Y](*encoders: Encoder[X, Y], simplify: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
 @overload  # fallback
 def parallelize_encoders(*encoders: Encoder, simplify: bool = ...) -> Encoder: ...
 # fmt: on
@@ -1219,7 +1198,7 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
 
 
 @pprint_repr(recursive=2)
-class JointEncoder(EncoderList[X, TupleOut]):
+class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     r"""Factorized Encoder.
 
     Example:
@@ -1241,11 +1220,11 @@ class JointEncoder(EncoderList[X, TupleOut]):
     @overload  # n=0
     def __new__(cls, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[()]]": ...
     @overload  # n=1
-    def __new__(cls, e: Encoder[X, Y], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y]]": ...
+    def __new__[Y](cls, e: Encoder[X, Y], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y]]": ...
     @overload  # n=2
-    def __new__(cls, e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y1, Y2]]": ...
+    def __new__[Y1, Y2](cls, e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y1, Y2]]": ...
     @overload  # n>2
-    def __new__(cls, *es: Encoder[X, Y], aggregate_fn: Agg[X] = ...) -> "JointEncoder[X, tuple[Y, ...]]": ...
+    def __new__[Y](cls, *es: Encoder[X, Y], aggregate_fn: Agg[X] = ...) -> "JointEncoder[X, tuple[Y, ...]]": ...
     # fmt: on
     # NOTE: We need to ignore inconsistent overload errors because `Self` cannot be generic.
     def __new__(  # type: ignore[misc]
@@ -1257,13 +1236,13 @@ class JointEncoder(EncoderList[X, TupleOut]):
     # NOTE: Need to use different variable names than the class-scoped parameters!
     # fmt: off
     @overload  # n=0
-    def __init__(self: "JointEncoder[T, tuple[()]]", *, aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[T](self: "JointEncoder[T, tuple[()]]", *, aggregate_fn: Agg[T] = ...) -> None: ...
     @overload  # n=1
-    def __init__(self: "JointEncoder[T, tuple[Y]]", e: Encoder[T, Y], /, *, aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[T, Y](self: "JointEncoder[T, tuple[Y]]", e: Encoder[T, Y], /, *, aggregate_fn: Agg[T] = ...) -> None: ...
     @overload  # n=2
-    def __init__(self: "JointEncoder[T, tuple[Y1, Y2]]", e1: Encoder[T, Y1], e2: Encoder[T, Y2], /, *, aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[T, Y1, Y2](self: "JointEncoder[T, tuple[Y1, Y2]]", e1: Encoder[T, Y1], e2: Encoder[T, Y2], /, *, aggregate_fn: Agg[T] = ...) -> None: ...
     @overload  # n>2
-    def __init__(self: "JointEncoder[T, tuple[Y, ...]]", *es: Encoder[T, Y], aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[T, Y](self: "JointEncoder[T, tuple[Y, ...]]", *es: Encoder[T, Y], aggregate_fn: Agg[T] = ...) -> None: ...
     # fmt: on
     def __init__(self, *encoders: Encoder, aggregate_fn: Agg = random.choice) -> None:
         super().__init__(*encoders)
@@ -1296,13 +1275,13 @@ class JointEncoder(EncoderList[X, TupleOut]):
 @overload  # n=0
 def join_encoders(*, aggregate_fn: Agg = ..., simplify: bool = ...) -> Encoder[Any, Any]: ...
 @overload  # n=1
-def join_encoders(e: Encoder[X, Y], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y]]: ...
+def join_encoders[X, Y](e: Encoder[X, Y], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y]]: ...
 @overload  # n=2
-def join_encoders(e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y1, Y2]]: ...
+def join_encoders[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y1, Y2]]: ...
 @overload  # n>2
-def join_encoders(*es: Encoder[X, Y], aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y, ...]]: ...
+def join_encoders[X, Y](*es: Encoder[X, Y], aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y, ...]]: ...
 # fmt: on
-def join_encoders(  # type: ignore[misc]
+def join_encoders[X, Y](  # type: ignore[misc]
     *encoders: Encoder[X, Y],
     aggregate_fn: Agg[X] = random.choice,
     simplify: bool = True,
@@ -1313,7 +1292,7 @@ def join_encoders(  # type: ignore[misc]
 
 
 @pprint_repr(recursive=2)
-class JointDecoder(EncoderList[TupleIn, Y]):
+class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     r"""Factorized Encoder.
 
     Example:
@@ -1335,11 +1314,11 @@ class JointDecoder(EncoderList[TupleIn, Y]):
     @overload  # n=0
     def __new__(cls, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[()], Y]": ...
     @overload  # n=1
-    def __new__(cls, e: Encoder[X, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X], Y]": ...
+    def __new__[X](cls, e: Encoder[X, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X], Y]": ...
     @overload  # n=2
-    def __new__(cls, e1: Encoder[X1, Y], e2: Encoder[X2, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X1, X2], Y]": ...
+    def __new__[X1, X2](cls, e1: Encoder[X1, Y], e2: Encoder[X2, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X1, X2], Y]": ...
     @overload  # n>2
-    def __new__(cls, *es: Encoder[X, Y], aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X, ...], Y]": ...
+    def __new__[X](cls, *es: Encoder[X, Y], aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X, ...], Y]": ...
     # fmt: on
     # NOTE: We need to ignore inconsistent overload errors because `Self` cannot be generic.
     def __new__(  # type: ignore[misc]
@@ -1353,13 +1332,13 @@ class JointDecoder(EncoderList[TupleIn, Y]):
     # NOTE: Need to use different variable names than the class-scoped parameters!
     # fmt: off
     @overload  # n=0
-    def __init__(self: "JointDecoder[tuple[()], T]", *, aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[Z](self: "JointDecoder[tuple[()], Z]", *, aggregate_fn: Agg[Z] = ...) -> None: ...
     @overload  # n=1
-    def __init__(self: "JointDecoder[tuple[X], T]", e: Encoder[X, T], /, *, aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[X, Z](self: "JointDecoder[tuple[X], Z]", e: Encoder[X, Z], /, *, aggregate_fn: Agg[Z] = ...) -> None: ...
     @overload  # n=2
-    def __init__(self: "JointDecoder[tuple[X1, X2], T]", e1: Encoder[X1, T], e2: Encoder[X2, T], /, *, aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[X1, X2, Z](self: "JointDecoder[tuple[X1, X2], Z]", e1: Encoder[X1, Z], e2: Encoder[X2, Z], /, *, aggregate_fn: Agg[Z] = ...) -> None: ...
     @overload  # n>2
-    def __init__(self: "JointDecoder[tuple[X, ...], T]", *es: Encoder[X, T], aggregate_fn: Agg[T] = ...) -> None: ...
+    def __init__[X, Z](self: "JointDecoder[tuple[X, ...], Z]", *es: Encoder[X, Z], aggregate_fn: Agg[Z] = ...) -> None: ...
     # fmt: on
     def __init__(self, *encoders: Encoder, aggregate_fn: Agg = random.choice) -> None:
         super().__init__(*encoders)
@@ -1388,7 +1367,10 @@ class JointDecoder(EncoderList[TupleIn, Y]):
 
 
 @pprint_repr(recursive=2)
-class MapEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
+class MapEncoders[
+    MappingIn: Mapping,
+    MappingOut: Mapping,
+](BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
     r"""Creates an encoder that applies over a mapping."""
 
     encoders: Mapping[Any, Encoder]
@@ -1411,12 +1393,12 @@ class MapEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
         for encoder in self.encoders.values():
             encoder.is_fitted = value
 
-    def __new__(
+    def __new__[K, X, Y](
         cls, encoders: Mapping[K, Encoder[X, Y]]
     ) -> "MapEncoders[Mapping[K, X], Mapping[K, Y]]":
         return super().__new__(cls)  # type: ignore[arg-type]
 
-    def __init__(
+    def __init__[K, X, Y](
         self: "MapEncoders[Mapping[K, X], Mapping[K, Y]]",
         encoders: Mapping[K, Encoder[X, Y]],
     ) -> None:
@@ -1472,7 +1454,7 @@ class MapEncoders(BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
         return cls({k: e.simplify() for k, e in self.encoders.items()})
 
 
-def map_encoders(
+def map_encoders[K, X, Y](
     encoders: Mapping[K, Encoder[X, Y]], /, *, simplify: bool = True
 ) -> IdentityEncoder | MapEncoders[Mapping[K, X], Mapping[K, Y]]:
     r"""Map encoders."""

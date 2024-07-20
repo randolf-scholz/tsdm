@@ -3,6 +3,7 @@ r"""Test sequence like protocol."""
 import collections
 from collections import abc
 from types import EllipsisType, NoneType, NotImplementedType
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,6 @@ import polars as pl
 import pyarrow as pa
 import pytest
 import torch
-from typing_extensions import cast
 
 from tsdm.testing import assert_protocol
 from tsdm.types.protocols import Array

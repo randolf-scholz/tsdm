@@ -1,24 +1,20 @@
 r"""Base classes for activations."""
 
 __all__ = [
+    # types
+    "GenericActivation",
     # ABCs & Protocols
     "Activation",
-    "GenericActivation",
     "ActivationABC",
 ]
 
 from abc import abstractmethod
 from collections.abc import Callable
+from typing import Concatenate, Protocol, runtime_checkable
 
 from torch import Tensor, nn
-from typing_extensions import (
-    Concatenate,
-    Protocol,
-    TypeAlias,
-    runtime_checkable,
-)
 
-GenericActivation: TypeAlias = Callable[Concatenate[Tensor, ...], Tensor]
+type GenericActivation = Callable[Concatenate[Tensor, ...], Tensor]
 r"""Type alias for generic activation functions (may require additional args!)."""
 
 

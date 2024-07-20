@@ -11,9 +11,10 @@ __all__ = [
 ]
 
 
+from typing import Optional, cast
+
 import pandas as pd
 from pandas import DataFrame, Series
-from typing_extensions import Optional, cast
 
 from tsdm.constants import BOOLEAN_PAIRS
 

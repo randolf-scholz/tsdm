@@ -2,9 +2,9 @@ r"""Test LazyDict."""
 
 import logging
 from collections.abc import Callable, MutableMapping
+from typing import Any, assert_type
 
 import pytest
-from typing_extensions import Any, assert_type
 
 from tsdm.utils import LazyDict, LazyValue
 

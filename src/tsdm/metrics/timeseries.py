@@ -25,10 +25,10 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable
+from typing import Final, Optional, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn
-from typing_extensions import Final, Optional, Protocol, runtime_checkable
 
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.types.aliases import Axis

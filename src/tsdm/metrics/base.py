@@ -9,10 +9,10 @@ __all__ = [
 ]
 
 from abc import abstractmethod
+from typing import Final, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, nn
-from typing_extensions import Final, Protocol, runtime_checkable
 
 from tsdm.types.aliases import Axis
 

@@ -1,6 +1,7 @@
 r"""Implements `numpy`-backend for tsdm."""
 
 __all__ = [
+    # Functions
     "scalar",
     "drop_null",
     "copy_like",
@@ -8,10 +9,10 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import Any
 
 from tsdm.types.aliases import Axis
 

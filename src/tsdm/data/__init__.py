@@ -33,7 +33,7 @@ __all__ = [
     # data
     "aggregate_nondestructive",
     "detect_outliers",
-    "float_is_int",
+    "is_integer_series",
     "get_integer_cols",
     "make_dataframe",
     "remove_outliers",
@@ -44,8 +44,8 @@ from tsdm.data._data import (
     InlineTable,
     aggregate_nondestructive,
     detect_outliers,
-    float_is_int,
     get_integer_cols,
+    is_integer_series,
     make_dataframe,
     remove_outliers,
     strip_whitespace,

@@ -13,13 +13,13 @@ __all__ = [
 import pickle
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
+from typing import Any, NamedTuple, TypedDict
 
 import torch
 import yaml
 from torch import Tensor, jit, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from typing_extensions import Any, NamedTuple, TypedDict
 
 from tsdm.metrics import LOSSES, Metric
 from tsdm.types.aliases import FilePath

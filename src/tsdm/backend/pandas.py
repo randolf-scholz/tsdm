@@ -32,13 +32,12 @@ import operator
 from collections.abc import Mapping
 from contextlib import suppress
 from functools import reduce
+from typing import Any, Literal, TypeVar
 
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, Series
-from typing_extensions import Any, Literal, TypeAlias, TypeVar
 
 from tsdm.types.aliases import Axis, Scalar
-from tsdm.types.variables import T
 from tsdm.utils import get_joint_keys
 
 __logger__ = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ __logger__ = logging.getLogger(__name__)
 P = TypeVar("P", Index, Series, DataFrame)
 r"""A type variable for pandas objects."""
 
-PANDAS_TYPE: TypeAlias = Index | Series | DataFrame
+type PANDAS_TYPE = Index | Series | DataFrame
 r"""A type alias for pandas objects."""
 
 
@@ -129,7 +128,7 @@ def nanstd(x: P, /, *, axis: Axis = None) -> P:
 
 def where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
     r"""Analogue to `numpy.where`."""
-    if isinstance(a, PANDAS_TYPE):
+    if isinstance(a, Index | Series | DataFrame):
         return a.where(cond, b)
     return a if cond else copy_like(b, a)  # scalar fallback
 
@@ -315,10 +314,10 @@ def remove_outliers_dataframe(
     *,
     drop: bool = True,
     inplace: bool = False,
-    lower_bound: Mapping[T, float | None],
-    upper_bound: Mapping[T, float | None],
-    lower_inclusive: Mapping[T, bool],
-    upper_inclusive: Mapping[T, bool],
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool],
+    upper_inclusive: Mapping[Any, bool],
     erroron_extra_bounds: bool = False,
 ) -> DataFrame:
     r"""Remove outliers from a DataFrame, given boundary values."""

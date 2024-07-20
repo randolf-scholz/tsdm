@@ -11,11 +11,11 @@ __all__ = [
 ]
 
 from dataclasses import KW_ONLY, asdict, dataclass, field
+from typing import Any, Final
 
 import torch
 from numpy.typing import NDArray
 from torch import Tensor, jit, nn
-from typing_extensions import Any, Final
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import NestedBuiltin

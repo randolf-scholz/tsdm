@@ -7,11 +7,11 @@ References:
 __all__ = ["LotkaVolterra"]
 
 from dataclasses import KW_ONLY, dataclass
+from typing import ClassVar
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
-from typing_extensions import ClassVar
 
 from tsdm.random.distributions import RV
 from tsdm.random.generators.base import IVP_GeneratorBase

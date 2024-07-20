@@ -23,13 +23,13 @@ from html.parser import HTMLParser
 from http import HTTPStatus
 from io import IOBase
 from pathlib import Path
+from typing import IO, Any, Optional
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
 from requests import Session
 from tqdm.auto import tqdm
-from typing_extensions import IO, Any, Optional
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing.hash import validate_file_hash

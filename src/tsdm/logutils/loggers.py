@@ -59,6 +59,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
+from typing import Any, ClassVar, Optional, Protocol, runtime_checkable
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -67,14 +68,6 @@ from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Optional,
-    Protocol,
-    TypeVar,
-    runtime_checkable,
-)
 
 from tsdm.logutils.callbacks import (
     Callback,
@@ -92,16 +85,14 @@ from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
-CBS_co = TypeVar("CBS_co", covariant=True, bound=CallbackSequence)
-
 
 @runtime_checkable
-class Logger(Protocol[CBS_co]):
+class Logger[CBS: CallbackSequence](Protocol):  # +CBS
     r"""Generic Logger Protocol."""
 
     @property
     @abstractmethod
-    def callbacks(self) -> Mapping[str, CBS_co]:
+    def callbacks(self) -> Mapping[str, CBS]:
         r"""Callbacks to be called at the end of a batch/epoch."""
         ...
 

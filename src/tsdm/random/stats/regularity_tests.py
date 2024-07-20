@@ -12,12 +12,12 @@ __all__ = [
 ]
 
 import warnings
+from typing import cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
-from typing_extensions import cast
 
 
 def approx_float_gcd(

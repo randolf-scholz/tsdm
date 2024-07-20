@@ -3,10 +3,10 @@ r"""Implementation of the SIR model from epidemiology."""
 __all__ = ["SIR"]
 
 from dataclasses import KW_ONLY, dataclass
+from typing import ClassVar
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import ClassVar
 
 from tsdm.random.distributions import Dirichlet
 from tsdm.random.generators.base import IVP_GeneratorBase

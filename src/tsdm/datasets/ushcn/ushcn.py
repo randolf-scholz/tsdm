@@ -10,16 +10,16 @@ __all__ = [
 ]
 
 import warnings
+from typing import Literal
 
 import pandas as pd
 import pyarrow as pa
 from pandas import DataFrame
-from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal[
+type Key = Literal[
     "timeseries",
     "timeseries_description",
     "metadata",
@@ -133,7 +133,7 @@ STATE_CODES: InlineTable = {
 }
 
 
-class USHCN(MultiTableDataset[KEY, DataFrame]):
+class USHCN(MultiTableDataset[Key, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -371,7 +371,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         },
     }  # fmt: skip
 
-    def clean_table(self, key: KEY = "timeseries") -> DataFrame:
+    def clean_table(self, key: Key = "timeseries") -> DataFrame:
         match key:
             case "timeseries":
                 return self._clean_timeseries()

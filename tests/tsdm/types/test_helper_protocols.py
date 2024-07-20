@@ -1,19 +1,13 @@
 r"""Test other protocols."""
 
 from collections.abc import Mapping, Sequence
+from typing import assert_type
 
 import numpy as np
 import pandas as pd
 import torch
-from typing_extensions import assert_type
 
-from tsdm.types.protocols import (
-    Seq,
-    ShapeLike,
-    SupportsKeysAndGetItem,
-    SupportsKwargs,
-)
-from tsdm.types.variables import K, T, V
+from tsdm.types.protocols import Seq, ShapeLike, SupportsKeysAndGetItem, SupportsKwargs
 
 
 def test_supportskwargs() -> None:
@@ -71,7 +65,7 @@ def test_sequence_protocol() -> None:
     d: Sequence[int] = [1, 2, 3]
     _: Seq[int] = d
 
-    def down_cast(x: Sequence[T]) -> Seq[T]:
+    def down_cast[T](x: Sequence[T]) -> Seq[T]:
         return x
 
     assert_type(down_cast([1, 2, 3]), Seq[int])
@@ -94,7 +88,7 @@ def test_sequence_protocol() -> None:
 def test_seq_inference() -> None:
     r"""Test inference for seq-protocol."""
 
-    def as_seq(x: Seq[T]) -> Seq[T]:
+    def as_seq[T](x: Seq[T]) -> Seq[T]:
         return x
 
     var_tuple: tuple[int, ...] = (1, 2, 3)
@@ -137,7 +131,7 @@ def test_get_interscetion_indexable() -> None:
 def test_supportskeysgetitem() -> None:
     r"""Test the SupportsKeysAndGetItem protocol."""
 
-    def foo(x: Mapping[K, V]) -> SupportsKeysAndGetItem[K, V]:
+    def foo[K, V](x: Mapping[K, V]) -> SupportsKeysAndGetItem[K, V]:
         return x
 
     assert_type(foo({"a": 1}), SupportsKeysAndGetItem[str, int])

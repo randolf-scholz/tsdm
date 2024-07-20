@@ -116,21 +116,11 @@ from abc import abstractmethod
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
+from typing import Any, ClassVar, Literal, NewType, Protocol, runtime_checkable
 
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    NewType,
-    Protocol,
-    TypeAlias,
-    TypeVar,
-    runtime_checkable,
-)
 
 from tsdm.data import (
     MapDataset,
@@ -141,12 +131,8 @@ from tsdm.data import (
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
-from tsdm.types.variables import K
 from tsdm.utils import LazyDict
 from tsdm.utils.decorators import pprint_repr
-
-Sample_co = TypeVar("Sample_co", covariant=True)
-r"""Covariant type variable for `Sample`."""
 
 SplitID = NewType("SplitID", object)
 r"""Type of a split ID."""
@@ -154,12 +140,12 @@ r"""Type of a split ID."""
 Batch = NewType("Batch", object)
 r"""Type of a batch."""
 
-TRAIN: TypeAlias = Literal["train"]
-VALID: TypeAlias = Literal["valid"]
-TEST: TypeAlias = Literal["test"]
-INFERENCE: TypeAlias = Literal["infer"]
-UNKNOWN: TypeAlias = Literal["unknown"]
-SPLIT: TypeAlias = TRAIN | VALID | TEST
+type TRAIN = Literal["train"]
+type VALID = Literal["valid"]
+type TEST = Literal["test"]
+type INFERENCE = Literal["infer"]
+type UNKNOWN = Literal["unknown"]
+type SPLIT = TRAIN | VALID | TEST
 
 
 def infer_split_type(self, key: str | Iterable) -> TRAIN | INFERENCE | UNKNOWN:
@@ -185,7 +171,7 @@ def infer_split_type(self, key: str | Iterable) -> TRAIN | INFERENCE | UNKNOWN:
 
 
 @dataclass
-class Split(Generic[Sample_co]):
+class Split[Sample]:  # +Sample
     r"""Represents a split of a dataset."""
 
     name: Hashable = NotImplemented
@@ -193,9 +179,9 @@ class Split(Generic[Sample_co]):
     fold: Series = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
 
-    collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
+    collate_fn: Callable[[list[Sample]], Batch] = NotImplemented
     r"""Collate function used to create batches from samples."""
-    dataloader: DataLoader[Sample_co] = NotImplemented
+    dataloader: DataLoader[Sample] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Encoder = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
@@ -210,7 +196,7 @@ class Split(Generic[Sample_co]):
 
 
 @runtime_checkable
-class ForecastingTask(Protocol[K, Sample_co]):
+class ForecastingTask[K, Sample](Protocol):  # K, +Sample
     r"""Protocol for tasks.
 
     A task should provide 3 things:
@@ -228,7 +214,7 @@ class ForecastingTask(Protocol[K, Sample_co]):
 
     @property
     @abstractmethod
-    def generators(self) -> Mapping[SPLIT, MapDataset[K, Sample_co]]:
+    def generators(self) -> Mapping[SPLIT, MapDataset[K, Sample]]:
         r"""Generators for the different splits."""
         ...
 
@@ -239,7 +225,7 @@ class ForecastingTask(Protocol[K, Sample_co]):
         ...
 
 
-class TTT(ForecastingTask[K, Sample_co]):
+class TTT[K, Sample](ForecastingTask[K, Sample]):  # K, +Sample
     r"""WIP: TimeSeriesTask."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -256,9 +242,9 @@ class TTT(ForecastingTask[K, Sample_co]):
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
 
     # split specific attributes
-    dataloaders: dict[SPLIT, DataLoader[Sample_co]] = NotImplemented
+    dataloaders: dict[SPLIT, DataLoader[Sample]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each split."""
-    generators: dict[SPLIT, MapDataset[K, Sample_co]] = NotImplemented
+    generators: dict[SPLIT, MapDataset[K, Sample]] = NotImplemented
     r"""Dictionary holding `Generator` associated with each split."""
     samplers: dict[SPLIT, Sampler[K]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each split."""
@@ -268,7 +254,7 @@ class TTT(ForecastingTask[K, Sample_co]):
     # fold specific attributes
     encoder: Encoder = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
+    collate_fn: Callable[[list[Sample]], Batch] = NotImplemented
     r"""Collate function used to create batches from samples."""
     test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Metric used for evaluation."""
@@ -326,7 +312,7 @@ class TTT(ForecastingTask[K, Sample_co]):
 
     default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Default test metric."""
-    default_collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
+    default_collate_fn: Callable[[list[Sample]], Batch] = NotImplemented
     r"""Default collate function."""
 
     def make_dataloader(self, key: SPLIT, /, **dataloader_kwargs: Any) -> DataLoader:
@@ -363,7 +349,7 @@ class TTT(ForecastingTask[K, Sample_co]):
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 
@@ -475,7 +461,7 @@ class TTT(ForecastingTask[K, Sample_co]):
 
 @pprint_repr
 @dataclass
-class TimeSeriesTask(Generic[K, Sample_co]):
+class TimeSeriesTask[K, Sample]:  # K, +Sample
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -540,15 +526,15 @@ class TimeSeriesTask(Generic[K, Sample_co]):
     # fold specific attributes
     encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fns: Mapping[SplitID, Callable[[list[Sample_co]], Batch]] = NotImplemented
+    collate_fns: Mapping[SplitID, Callable[[list[Sample]], Batch]] = NotImplemented
     r"""Collate function used to create batches from samples."""
     test_metrics: Mapping[SplitID, Callable[[Tensor, Tensor], Tensor]] = NotImplemented
     r"""Metric used for evaluation."""
 
     # split specific attributes
-    dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
+    dataloaders: Mapping[SplitID, DataLoader[Sample]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, MapDataset[K, Sample_co]] = NotImplemented
+    generators: Mapping[SplitID, MapDataset[K, Sample]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     samplers: Mapping[SplitID, Sampler[K]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -557,7 +543,7 @@ class TimeSeriesTask(Generic[K, Sample_co]):
 
     default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Default test metric."""
-    default_collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
+    default_collate_fn: Callable[[list[Sample]], Batch] = NotImplemented
     r"""Default collate function."""
 
     train_patterns: Sequence[str] = ("train", "training")
@@ -624,7 +610,7 @@ class TimeSeriesTask(Generic[K, Sample_co]):
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample_co]], Batch]:  # noqa: ARG002
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # noqa: ARG002
         r"""Return the collate function which combines samples into a batch.
 
         Note:
@@ -668,7 +654,7 @@ class TimeSeriesTask(Generic[K, Sample_co]):
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 

@@ -27,8 +27,7 @@ import inspect
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
-
-from typing_extensions import Any, Optional, overload
+from typing import Any, Optional, overload
 
 from tsdm.constants import (
     KEYWORD_ONLY,
@@ -38,12 +37,11 @@ from tsdm.constants import (
     VAR_POSITIONAL,
 )
 from tsdm.types.protocols import Dataclass, is_dataclass
-from tsdm.types.variables import P, R_co
 
 
-def rpartial(
-    func: Callable[P, R_co], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Callable[..., R_co]:
+def rpartial[**P, R](  # +R
+    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Callable[..., R]:
     r"""Apply positional arguments from the right.
 
     References:
@@ -52,7 +50,7 @@ def rpartial(
     """
 
     @wraps(func)
-    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R_co:
+    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
         # FIXME: https://github.com/python/typeshed/issues/8703
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 

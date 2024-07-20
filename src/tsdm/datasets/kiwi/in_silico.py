@@ -10,11 +10,11 @@ __all__ = [
 
 import shutil
 from importlib import resources
+from typing import Literal
 from zipfile import ZipFile
 
 import pandas as pd
 from pandas import DataFrame
-from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.data.timeseries import TimeSeriesCollection
@@ -42,10 +42,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     "index": "variable",
 }  # fmt: skip
 
-KEY: TypeAlias = Literal[
-    "timeseries",
-    "timeseries_description",
-]
+type KEY = Literal["timeseries", "timeseries_description"]
 
 
 class InSilico(MultiTableDataset[KEY, DataFrame]):

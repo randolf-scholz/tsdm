@@ -2,7 +2,7 @@ r"""Custom processed version of the MIMIC-IV dataset."""
 
 __all__ = ["MIMIC_IV_Scholz2024"]
 
-from typing_extensions import Any
+from typing import Any
 
 from tsdm.datasets.mimic.mimic_iv import MIMIC_IV
 

@@ -14,40 +14,38 @@ __all__ = [
 
 from collections.abc import Iterator, Mapping
 from functools import wraps
-
-from typing_extensions import Protocol, overload, override
+from typing import Protocol, overload, override
 
 from tsdm.types.protocols import Map
-from tsdm.types.variables import K, T, V_co
 
 
-class IterKeys(Map[K, V_co], Protocol[K, V_co]):
+class IterKeys[K, V](Map[K, V], Protocol):  # K, +V
     r"""Protocol for objects with __iter__ and items()."""
 
     @override
     def __iter__(self) -> Iterator[K]: ...
 
 
-class IterValues(Map[K, V_co], Protocol[K, V_co]):
+class IterValues[K, V](Map[K, V], Protocol):  # K, +V
     r"""Protocol for objects with __iter__ and items()."""
 
     @override
-    def __iter__(self) -> Iterator[V_co]: ...  # type: ignore[override]
+    def __iter__(self) -> Iterator[V]: ...  # type: ignore[override]
 
 
-class IterItems(Map[K, V_co], Protocol[K, V_co]):
+class IterItems[K, V](Map[K, V], Protocol):  # K, +V
     r"""Protocol for objects with __iter__ and items()."""
 
     @override
-    def __iter__(self) -> Iterator[tuple[K, V_co]]: ...  # type: ignore[override]
+    def __iter__(self) -> Iterator[tuple[K, V]]: ...  # type: ignore[override]
 
 
 @overload
-def iter_keys(obj: type[Map[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
+def iter_keys[K, V](obj: type[Map[K, V]], /) -> type[IterKeys[K, V]]: ...
 @overload
-def iter_keys(obj: Map[K, V_co], /) -> IterKeys[K, V_co]: ...
+def iter_keys[K, V](obj: Map[K, V], /) -> IterKeys[K, V]: ...
 @overload
-def iter_keys(obj: T, /) -> T: ...
+def iter_keys[T](obj: T, /) -> T: ...
 def iter_keys(obj, /):
     r"""Redirects __iter__ to keys()."""
     base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
@@ -77,11 +75,11 @@ def iter_keys(obj, /):
 
 
 @overload
-def iter_values(obj: type[Map[K, V_co]], /) -> type[IterValues[K, V_co]]: ...
+def iter_values[K, V](obj: type[Map[K, V]], /) -> type[IterValues[K, V]]: ...
 @overload
-def iter_values(obj: Map[K, V_co], /) -> IterValues[K, V_co]: ...
+def iter_values[K, V](obj: Map[K, V], /) -> IterValues[K, V]: ...
 @overload
-def iter_values(obj: T, /) -> T: ...
+def iter_values[T](obj: T, /) -> T: ...
 def iter_values(obj, /):
     r"""Redirects __iter__ to values()."""
     base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
@@ -111,11 +109,11 @@ def iter_values(obj, /):
 
 
 @overload
-def iter_items(obj: type[Map[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
+def iter_items[K, V](obj: type[Map[K, V]], /) -> type[IterItems[K, V]]: ...
 @overload
-def iter_items(obj: Map[K, V_co], /) -> IterItems[K, V_co]: ...
+def iter_items[K, V](obj: Map[K, V], /) -> IterItems[K, V]: ...
 @overload
-def iter_items(obj: T, /) -> T: ...
+def iter_items[T](obj: T, /) -> T: ...
 def iter_items(obj, /):
     r"""Redirects __iter__ to items()."""
     base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)

@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""General purpose models."""
 
 __all__ = [
     # Classes

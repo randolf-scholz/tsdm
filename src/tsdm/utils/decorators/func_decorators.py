@@ -14,15 +14,14 @@ __all__ = [
 
 import gc
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable as Fn, Sequence
 from functools import wraps
 from time import perf_counter_ns
+from typing import Concatenate, NamedTuple, Optional
 
 from torch import jit
-from typing_extensions import Concatenate, NamedTuple, Optional
 
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import P, R_co, T
 from tsdm.utils.decorators.base import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
 
@@ -30,12 +29,12 @@ __logger__ = logging.getLogger(__name__)
 
 
 # region without @decorator ------------------------------------------------------------
-def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
+def debug[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
     r"""Print the function signature and return value."""
     logger = logging.getLogger(f"debug@{func.__name__}")
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         args_repr = [f"{type(a)}" for a in args]
         kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
         passed_args = ", ".join(args_repr + kwargs_repr)
@@ -47,11 +46,11 @@ def debug(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     return __wrapper
 
 
-def lazy_jit_torch(func: Callable[P, R_co], /) -> Callable[P, R_co]:
+def lazy_jit_torch[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
     r"""Create decorator to lazily compile a function with `torch.jit.script`."""
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         # script the original function if it hasn't been scripted yet
         if __wrapper.__scripted is None:  # type: ignore[attr-defined]
             __wrapper.__scripted = jit.script(__wrapper.__original_fn)  # type: ignore[attr-defined]
@@ -63,12 +62,12 @@ def lazy_jit_torch(func: Callable[P, R_co], /) -> Callable[P, R_co]:
     return __wrapper
 
 
-def trace(func: Callable[P, R_co], /) -> Callable[P, R_co]:
+def trace[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
     r"""Log entering and exiting of function."""
     logger = logging.getLogger("trace")
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         logger.info(
             "%s",
             "\n\t".join((
@@ -98,9 +97,9 @@ def trace(func: Callable[P, R_co], /) -> Callable[P, R_co]:
 
 
 @decorator
-def timefun(
-    func: Callable[P, R_co], /, *, append: bool = False, loglevel: int = logging.WARNING
-) -> Callable[P, R_co | tuple[R_co, float]]:
+def timefun[**P, R](  # +R
+    func: Fn[P, R], /, *, append: bool = False, loglevel: int = logging.WARNING
+) -> Fn[P, R | tuple[R, float]]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default, appends the execution time (in seconds) to the function call.
@@ -114,7 +113,7 @@ def timefun(
     timefun_logger = logging.getLogger("timefun")
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co | tuple[R_co, float]:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R | tuple[R, float]:
         gc.collect()
         gc.disable()
         try:
@@ -137,14 +136,14 @@ def timefun(
 
 
 @decorator
-def wrap_func(
-    func: Callable[P, R_co],
+def wrap_func[**P, R](  # +R
+    func: Fn[P, R],
     /,
     *,
-    before: Optional[Callable[..., None]] = None,
-    after: Optional[Callable[..., None]] = None,
+    before: Optional[Fn[..., None]] = None,
+    after: Optional[Fn[..., None]] = None,
     pass_args: bool = False,
-) -> Callable[P, R_co]:
+) -> Fn[P, R]:
     r"""Wrap a function with pre- and post-hooks."""
     logger = __logger__.getChild(func.__name__)
 
@@ -153,55 +152,55 @@ def wrap_func(
             logger.debug("No hooks to add, returning as-is.")
             return func
 
-        case Callable() as pre, None, True:  # type: ignore[misc]
+        case Fn() as pre, None, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 pre(*args, **kwargs)
                 return func(*args, **kwargs)
 
-        case None, Callable() as post, True:  # type: ignore[misc]
+        case None, Fn() as post, True:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(*args, **kwargs)
                 post(*args, **kwargs)
                 return result
 
-        case Callable() as pre, Callable() as post, True:  # type: ignore[misc]
+        case Fn() as pre, Fn() as post, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 pre(*args, **kwargs)
                 result = func(*args, **kwargs)
                 post(*args, **kwargs)
                 return result
 
-        case Callable() as pre, None, False:  # type: ignore[misc]
+        case Fn() as pre, None, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 pre()
                 return func(*args, **kwargs)
 
-        case None, Callable() as post, False:  # type: ignore[misc]
+        case None, Fn() as post, False:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(*args, **kwargs)
                 post()
                 return result
 
-        case Callable() as pre, Callable() as post, False:  # type: ignore[misc]
+        case Fn() as pre, Fn() as post, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 pre()
                 result = func(*args, **kwargs)
                 post()
@@ -214,14 +213,14 @@ def wrap_func(
 
 
 @decorator
-def wrap_method(
-    func: Callable[Concatenate[T, P], R_co],
+def wrap_method[**P, T, R](  # T, +R
+    func: Fn[Concatenate[T, P], R],
     /,
     *,
-    before: Optional[Callable[Concatenate[T, ...], None]] = None,
-    after: Optional[Callable[Concatenate[T, ...], None]] = None,
+    before: Optional[Fn[Concatenate[T, ...], None]] = None,
+    after: Optional[Fn[Concatenate[T, ...], None]] = None,
     pass_args: bool = False,
-) -> Callable[Concatenate[T, P], R_co]:
+) -> Fn[Concatenate[T, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
     logger = __logger__.getChild(func.__name__)
 
@@ -230,55 +229,55 @@ def wrap_method(
             logger.debug("No hooks to add, returning as-is.")
             return func
 
-        case Callable() as pre, None, True:  # type: ignore[misc]
+        case Fn() as pre, None, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
-        case None, Callable() as post, True:  # type: ignore[misc]
+        case None, Fn() as post, True:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 post(self, *args, **kwargs)
                 return result
 
-        case Callable() as pre, Callable() as post, True:  # type: ignore[misc]
+        case Fn() as pre, Fn() as post, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
                 post(self, *args, **kwargs)
                 return result
 
-        case Callable() as pre, None, False:  # type: ignore[misc]
+        case Fn() as pre, None, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self)
                 return func(self, *args, **kwargs)
 
-        case None, Callable() as post, False:  # type: ignore[misc]
+        case None, Fn() as post, False:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 post(self)
                 return result
 
-        case Callable() as pre, Callable() as post, False:  # type: ignore[misc]
+        case Fn() as pre, Fn() as post, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R_co:
+            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self)
                 result = func(self, *args, **kwargs)
                 post(self)
@@ -291,13 +290,13 @@ def wrap_method(
 
 
 @decorator
-def return_namedtuple(
-    func: Callable[P, tuple[T, ...]],
+def return_namedtuple[**P, T](
+    func: Fn[P, tuple[T, ...]],
     /,
     *,
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
-) -> Callable[P, NTuple[T]]:
+) -> Fn[P, NTuple[T]]:
     r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
     annotations = getattr(func, "__annotations__", {})

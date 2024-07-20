@@ -8,13 +8,13 @@ __all__ = [
 
 
 from functools import cached_property
+from typing import Any, Literal, NamedTuple
 
 import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
-from typing_extensions import Any, Literal, NamedTuple
 
 from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import Electricity

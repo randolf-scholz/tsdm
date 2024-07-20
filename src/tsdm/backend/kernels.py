@@ -17,6 +17,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
+from typing import Literal, Self, overload
 
 import numpy as np
 import pandas as pd
@@ -26,9 +27,8 @@ import pyarrow.compute as pc
 import torch as pt
 from numpy import ndarray
 from torch import Tensor
-from typing_extensions import Generic, Literal, Self, TypeAlias, TypeVar, overload
 
-from tsdm import backend
+from tsdm import backend as B
 from tsdm.types.callback_protocols import (
     ApplyAlongAxes,
     ArraySplitProto,
@@ -44,15 +44,11 @@ from tsdm.types.callback_protocols import (
     WhereProto,
 )
 from tsdm.types.protocols import SupportsArray
-from tsdm.types.variables import T
 
-BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch", "polars"]
+type BackendID = Literal["arrow", "numpy", "pandas", "torch", "polars"]
 r"""A type alias for the supported backends."""
 BACKENDS = ("arrow", "numpy", "pandas", "torch", "polars")
 r"""A tuple of the supported backends."""
-
-Array = TypeVar("Array", bound=SupportsArray)
-r"""TypeVar for tensor-like objects."""
 
 
 def gather_types(obj: object, /) -> set[BackendID]:
@@ -109,7 +105,7 @@ class Kernels:  # Q: how to make this more elegant?
 
     clip: Mapping[BackendID, ClipProto] = {
         "numpy": np.clip,
-        "pandas": backend.pandas.clip,
+        "pandas": B.pandas.clip,
         "torch": pt.clip,
     }
 
@@ -117,64 +113,64 @@ class Kernels:  # Q: how to make this more elegant?
         "arrow": pc.is_null,
         "numpy": np.isnan,
         "pandas": pd.isna,
-        "polars": backend.polars.is_null,
+        "polars": B.polars.is_null,
         "torch": pt.isnan,
     }
 
     nanmin: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmin,
-        "pandas": backend.pandas.nanmin,
-        "polars": backend.polars.nanmin,
-        "torch": backend.torch.nanmin,
+        "pandas": B.pandas.nanmin,
+        "polars": B.polars.nanmin,
+        "torch": B.torch.nanmin,
     }
 
     nanmax: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmax,
-        "pandas": backend.pandas.nanmax,
-        "polars": backend.polars.nanmax,
-        "torch": backend.torch.nanmax,
+        "pandas": B.pandas.nanmax,
+        "polars": B.polars.nanmax,
+        "torch": B.torch.nanmax,
     }
 
     nanmean: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmean,
-        "pandas": backend.pandas.nanmean,
+        "pandas": B.pandas.nanmean,
         "torch": pt.nanmean,  # type: ignore[dict-item]
     }
 
     nanstd: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanstd,
-        "pandas": backend.pandas.nanstd,
-        "torch": backend.torch.nanstd,
+        "pandas": B.pandas.nanstd,
+        "torch": B.torch.nanstd,
     }
 
     false_like: Mapping[BackendID, SelfMap] = {
-        "arrow": backend.pyarrow.false_like,
-        "numpy": backend.generic.false_like,
-        "pandas": backend.pandas.false_like,
-        "torch": backend.generic.false_like,
+        "arrow": B.pyarrow.false_like,
+        "numpy": B.generic.false_like,
+        "pandas": B.pandas.false_like,
+        "torch": B.generic.false_like,
     }
 
     true_like: Mapping[BackendID, SelfMap] = {
-        "arrow": backend.pyarrow.true_like,
-        "numpy": backend.generic.true_like,
-        "pandas": backend.pandas.true_like,
-        "torch": backend.generic.true_like,
+        "arrow": B.pyarrow.true_like,
+        "numpy": B.generic.true_like,
+        "pandas": B.pandas.true_like,
+        "torch": B.generic.true_like,
     }
 
     null_like: Mapping[BackendID, SelfMap] = {
-        "arrow": backend.pyarrow.null_like,
-        "pandas": backend.pandas.null_like,
+        "arrow": B.pyarrow.null_like,
+        "pandas": B.pandas.null_like,
     }
 
     full_like: Mapping[BackendID, FullLikeProto] = {
-        "arrow": backend.pyarrow.full_like,
+        "arrow": B.pyarrow.full_like,
         "numpy": np.full_like,
     }
 
     copy_like: Mapping[BackendID, CopyLikeProto] = {
-        "numpy": backend.numpy.copy_like,
-        "pandas": backend.pandas.copy_like,
-        "torch": backend.torch.copy_like,
+        "numpy": B.numpy.copy_like,
+        "pandas": B.pandas.copy_like,
+        "torch": B.torch.copy_like,
     }
 
     to_tensor: Mapping[BackendID, ToTensorProto] = {
@@ -184,20 +180,20 @@ class Kernels:  # Q: how to make this more elegant?
     }
 
     where: Mapping[BackendID, WhereProto] = {
-        "arrow": backend.pyarrow.where,
+        "arrow": B.pyarrow.where,
         "numpy": np.where,
-        "pandas": backend.pandas.where,
+        "pandas": B.pandas.where,
         "torch": pt.where,  # type: ignore[dict-item]
     }
 
     strip_whitespace: Mapping[BackendID, SelfMap] = {
-        "pandas": backend.pandas.strip_whitespace,
-        "arrow": backend.pyarrow.strip_whitespace,
+        "pandas": B.pandas.strip_whitespace,
+        "arrow": B.pyarrow.strip_whitespace,
     }
 
     apply_along_axes: Mapping[BackendID, ApplyAlongAxes] = {
-        "numpy": backend.numpy.apply_along_axes,
-        "torch": backend.torch.apply_along_axes,
+        "numpy": B.numpy.apply_along_axes,
+        "torch": B.torch.apply_along_axes,
     }
 
     array_split: Mapping[BackendID, ArraySplitProto] = {
@@ -213,31 +209,31 @@ class Kernels:  # Q: how to make this more elegant?
 
     drop_null: Mapping[BackendID, SelfMap] = {
         "arrow": pc.drop_null,
-        "numpy": backend.numpy.drop_null,
-        "pandas": backend.pandas.drop_null,
-        "polars": backend.polars.drop_null,
-        "torch": backend.torch.drop_null,
+        "numpy": B.numpy.drop_null,
+        "pandas": B.pandas.drop_null,
+        "polars": B.polars.drop_null,
+        "torch": B.torch.drop_null,
     }
 
     cast: Mapping[BackendID, CastProto] = {
         "arrow": pc.cast,
         "numpy": ndarray.astype,
-        "pandas": backend.pandas.cast,
-        "polars": backend.polars.cast,
+        "pandas": B.pandas.cast,
+        "polars": B.polars.cast,
         "torch": Tensor.to,
     }
 
     scalar: Mapping[BackendID, ScalarProto] = {
-        "arrow": backend.pyarrow.scalar,
-        "numpy": backend.numpy.scalar,
-        "pandas": backend.pandas.scalar,
-        "polars": backend.polars.scalar,
-        "torch": backend.torch.scalar,
+        "arrow": B.pyarrow.scalar,
+        "numpy": B.numpy.scalar,
+        "pandas": B.pandas.scalar,
+        "polars": B.polars.scalar,
+        "torch": B.torch.scalar,
     }
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class Backend(Generic[T]):
+class Backend[T]:
     r"""Provides kernels for numerical operations."""
 
     NAME: BackendID
@@ -290,7 +286,9 @@ class Backend(Generic[T]):
 
 
 @overload
-def get_backend(obj: Array, /, *, fallback: BackendID = ...) -> Backend[Array]: ...
+def get_backend[Arr: SupportsArray](
+    obj: Arr, /, *, fallback: BackendID = ...
+) -> Backend[Arr]: ...
 @overload
 def get_backend(obj: object, /, *, fallback: BackendID = ...) -> Backend: ...
 def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> Backend:

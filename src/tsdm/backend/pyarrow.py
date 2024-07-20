@@ -32,6 +32,7 @@ __all__ = [
 ]
 
 from collections.abc import Sequence
+from typing import Literal, overload
 
 import pandas as pd
 import polars as pl
@@ -49,7 +50,6 @@ from pyarrow import (
     Table,
 )
 from tqdm import tqdm
-from typing_extensions import Literal, overload
 
 from tsdm.types.dtypes import PYARROW_TO_POLARS
 

@@ -13,7 +13,6 @@ __all__ = [
     "SingleTableDataset",
 ]
 
-import html
 import inspect
 import logging
 import os
@@ -25,12 +24,7 @@ from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from os import PathLike
 from pathlib import Path
-from zipfile import ZipFile
-
-import pandas as pd
-from pyarrow import Table as PyArrowTable, parquet
-from tqdm.auto import tqdm
-from typing_extensions import (
+from typing import (
     IO,
     Any,
     ClassVar,
@@ -42,22 +36,26 @@ from typing_extensions import (
     overload,
     runtime_checkable,
 )
+from zipfile import ZipFile
+
+import pandas as pd
+from pyarrow import Table as PyArrowTable, parquet
+from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
 from tsdm.testing.hash import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import FilePath
-from tsdm.types.variables import T_co, str_var as Key
 from tsdm.utils import paths_exists, remote
 from tsdm.utils.contextmanagers import timer
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict, LazyValue
-from tsdm.utils.pprint import repr_array, repr_mapping
+from tsdm.utils.pprint import repr_mapping
 from tsdm.utils.system import query_bool
 
 
 @runtime_checkable
-class Dataset(Protocol[T_co]):
+class Dataset[T](Protocol):  # +T
     r"""Protocol for Dataset."""
 
     SOURCE_URL: ClassVar[str] = NotImplemented
@@ -117,7 +115,7 @@ class Dataset(Protocol[T_co]):
         ...
 
     @abstractmethod
-    def load(self) -> T_co:
+    def load(self) -> T:
         r"""Load the dataset."""
         ...
 
@@ -157,7 +155,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         cls.__init__ = wrap_method(cls.__init__, after=cls.__post_init__)  # type: ignore[misc]
 
 
-class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
+class BaseDataset[T](Dataset[T], metaclass=BaseDatasetMetaClass):  # +T
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -358,7 +356,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         ...
 
     @abstractmethod
-    def load(self, *, initializing: bool = False) -> T_co:
+    def load(self, *, initializing: bool = False) -> T:
         r"""Load the pre-processed dataset."""
         ...
 
@@ -461,7 +459,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         self.remove_dataset_files(force=force)
 
 
-class SingleTableDataset(BaseDataset[T_co]):
+class SingleTableDataset[T](BaseDataset[T]):  # +T
     r"""Dataset class that consists of a singular DataFrame."""
 
     RAWDATA_DIR: ClassVar[Path]
@@ -469,7 +467,7 @@ class SingleTableDataset(BaseDataset[T_co]):
     DATASET_DIR: ClassVar[Path]
     r"""Path to pre-processed data directory."""
 
-    _table: T_co = NotImplemented
+    _table: T = NotImplemented
     r"""INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -483,7 +481,7 @@ class SingleTableDataset(BaseDataset[T_co]):
     r"""Shape of the in-memory cleaned dataset table(s)."""
 
     @classmethod
-    def from_table(cls, table: T_co, /) -> Self:  # type: ignore[misc]
+    def from_table(cls, table: T, /) -> Self:
         r"""Create a dataset from a table."""
         obj = cls(initialize=False)
         obj._table = table
@@ -495,21 +493,8 @@ class SingleTableDataset(BaseDataset[T_co]):
         table = cls.deserialize_table(path)
         return cls.from_table(table)
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(table: {repr_array(self.table)})"
-
-    def _repr_html_(self) -> str:
-        if self._table is NotImplemented:
-            return f"<pre>{html.escape(repr(self))}</pre>"
-        if hasattr(self.table, "_repr_html_"):
-            header = f"<pre>{html.escape(repr(self))}</pre>"
-            # noinspection PyProtectedMember
-            html_repr = self.table._repr_html_()
-            return header + html_repr
-        raise NotImplementedError
-
     @property
-    def table(self) -> T_co:
+    def table(self) -> T:
         r"""Store cached version of dataset."""
         if self._table is NotImplemented:
             self._table = self.load(initializing=True)
@@ -530,14 +515,14 @@ class SingleTableDataset(BaseDataset[T_co]):
         return paths_exists(self.dataset_path)
 
     @abstractmethod
-    def clean_table(self) -> T_co | None:
+    def clean_table(self) -> T | None:
         r"""Generate the cleaned dataset table.
 
         If a table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
 
-    def load_table(self) -> T_co:
+    def load_table(self) -> T:
         r"""Load the dataset.
 
         By default, `deserialize_table` is used to load the table from disk.
@@ -552,7 +537,7 @@ class SingleTableDataset(BaseDataset[T_co]):
         initializing: bool = False,
         force: bool = True,
         validate: bool = True,
-    ) -> T_co:
+    ) -> T:
         r"""Load the selected DATASET_OBJECT."""
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_file_exists():
@@ -614,7 +599,9 @@ class SingleTableDataset(BaseDataset[T_co]):
         self.serialize_table(self.table, path)
 
 
-class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
+class MultiTableDataset[Key: str, T](
+    BaseDataset[Mapping[Key, T]], Mapping[Key, T]
+):  # Key, +T
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
@@ -625,7 +612,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     DATASET_DIR: ClassVar[Path]
     r"""Path to pre-processed data directory."""
 
-    _tables: dict[Key, T_co] = NotImplemented
+    _tables: dict[Key, T] = NotImplemented
     r"""INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -639,7 +626,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     r"""Shapes of the in-memory cleaned dataset table(s)."""
 
     @classmethod
-    def from_tables(cls, tables: Mapping[Key, T_co], /) -> Self:
+    def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
         r"""Create a dataset from a table."""
         obj = cls(initialize=False)
         obj._tables = dict(tables)
@@ -650,15 +637,15 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     def deserialize(cls, path_or_buf: FilePath, /) -> Self: ...
     @classmethod
     @overload
-    def deserialize(cls, path_or_buf: FilePath, /, *, key: Key) -> T_co: ...
+    def deserialize(cls, path_or_buf: FilePath, /, *, key: Key) -> T: ...
     @classmethod
     def deserialize(
         cls, path_or_buf: FilePath, /, *, key: Optional[Key] = None
-    ) -> Self | T_co:
+    ) -> Self | T:
         r"""Deserialize the dataset."""
         if key is None:
             # assume ZipFile
-            tables: dict[Key, T_co] = {}
+            tables: dict[Key, T] = {}
             with ZipFile(path_or_buf) as archive:
                 for fname in archive.namelist():
                     with archive.open(fname) as file:
@@ -741,7 +728,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         r"""Return the number of samples in the dataset."""
         return len(self.tables)
 
-    def __getitem__(self, key: Key, /) -> T_co:
+    def __getitem__(self, key: Key, /) -> T:
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
@@ -767,7 +754,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
     # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @property
-    def tables(self) -> dict[Key, T_co]:
+    def tables(self) -> dict[Key, T]:
         r"""Store cached version of dataset."""
         if self._tables is NotImplemented:
             # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
@@ -800,7 +787,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
-    def clean_table(self, key: Key) -> T_co | None:
+    def clean_table(self, key: Key) -> T | None:
         r"""Create the cleaned table for the given key.
 
         If a table is returned, the `self.serialize` method is used to write it to disk.
@@ -873,7 +860,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
-    def load_table(self, *, key: Key) -> T_co:
+    def load_table(self, *, key: Key) -> T:
         r"""Load the selected DATASET_OBJECT.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -889,7 +876,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         force: bool = ...,
         validate: bool = ...,
         initializing: bool = ...,
-    ) -> T_co: ...
+    ) -> T: ...
     @overload
     def load(
         self,
@@ -897,7 +884,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         force: bool = ...,
         validate: bool = ...,
         initializing: bool = ...,
-    ) -> dict[Key, T_co]: ...
+    ) -> dict[Key, T]: ...
     @final
     def load(
         self,
@@ -906,7 +893,7 @@ class MultiTableDataset(BaseDataset[Mapping[Key, T_co]], Mapping[Key, T_co]):
         force: bool = False,
         validate: bool = True,
         initializing: bool = False,
-    ) -> T_co | dict[Key, T_co]:
+    ) -> T | dict[Key, T]:
         r"""Load the selected DATASET_OBJECT.
 
         Args:

@@ -24,6 +24,16 @@ from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
+from typing import (
+    Any,
+    ClassVar,
+    Literal,
+    Optional,
+    Protocol,
+    cast,
+    overload,
+    runtime_checkable,
+)
 
 import numpy as np
 import pandas as pd
@@ -31,19 +41,6 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import Index, Series
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    Optional,
-    Protocol,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-    runtime_checkable,
-)
 
 from tsdm.constants import RNG
 from tsdm.data.datasets import (
@@ -56,14 +53,13 @@ from tsdm.data.datasets import (
     get_last_sample,
 )
 from tsdm.types.protocols import Array
-from tsdm.types.time import DT, TD, DateTime, TimeDelta
-from tsdm.types.variables import K2, K, T_co
+from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
 
 # region helper functions --------------------------------------------------------------
-def compute_grid(
+def compute_grid[TD: TimeDelta](
     tmin: str | DateTime[TD],
     tmax: str | DateTime[TD],
     step: str | TD,
@@ -128,7 +124,7 @@ def compute_grid(
 
 
 @runtime_checkable
-class Sampler(Protocol[T_co]):
+class Sampler[T](Protocol):  # +T
     r"""Protocol for `Sampler` classes.
 
     Plug-in replacement for `torch.utils.data.Sampler`.
@@ -141,7 +137,7 @@ class Sampler(Protocol[T_co]):
         ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[T_co]:
+    def __iter__(self) -> Iterator[T]:
         r"""Return an iterator over the indices of the data source."""
         ...
 
@@ -165,7 +161,7 @@ class Sampler(Protocol[T_co]):
 
 
 @dataclass
-class BaseSampler(Sampler[T_co]):
+class BaseSampler[T](Sampler[T]):  # +T
     r"""Abstract Base Class for all Samplers."""
 
     _: KW_ONLY
@@ -181,14 +177,14 @@ class BaseSampler(Sampler[T_co]):
         ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[T_co]:
+    def __iter__(self) -> Iterator[T]:
         r"""Return an iterator over the indices of the data source."""
         ...
 
 
 @pprint_repr
 @dataclass
-class RandomSampler(BaseSampler[T_co]):
+class RandomSampler[T](BaseSampler[T]):  # +T
     r"""Sample randomly from the data source.
 
     Note:
@@ -197,7 +193,7 @@ class RandomSampler(BaseSampler[T_co]):
         For Iterable-style datasets, the sampler will return random values of the iterable.
     """
 
-    data: Dataset[T_co]
+    data: Dataset[T]
 
     _: KW_ONLY
 
@@ -213,7 +209,7 @@ class RandomSampler(BaseSampler[T_co]):
         self.index = get_index(self.data)
         self.size = len(self.index)
 
-    def __iter__(self) -> Iterator[T_co]:
+    def __iter__(self) -> Iterator[T]:
         n = self.size
         index = self.index[self.rng.permutation(n)] if self.shuffle else self.index
         # avoids attribute lookup in the loop
@@ -227,7 +223,7 @@ class RandomSampler(BaseSampler[T_co]):
 
 @pprint_repr
 @dataclass
-class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
+class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Draw samples from a hierarchical data source."""
 
     data: MapDataset[K, Dataset[K2]]
@@ -289,22 +285,25 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             yield key, next(activate_iterators[key])
 
 
-S: TypeAlias = Literal["slices"]  # slice
-M: TypeAlias = Literal["masks"]  # bool
-B: TypeAlias = Literal["bounds"]  # tuple
-W: TypeAlias = Literal["windows"]  # windows
-U: TypeAlias = str  # unknown (not statically known)
-Mode: TypeAlias = S | B | M | W | U
-ModeVar = TypeVar("ModeVar", S, B, M, W, U)
-
-ONE: TypeAlias = Literal["one"]
-MULTI: TypeAlias = Literal["multi"]
-Horizon: TypeAlias = ONE | MULTI
-HorizonVar = TypeVar("HorizonVar", ONE, MULTI)
+# mode types
+type S = Literal["slices"]  # slice
+type M = Literal["masks"]  # bool
+type B = Literal["bounds"]  # tuple
+type W = Literal["windows"]  # windows
+type U = str  # unknown (not statically known)
+type Mode = S | B | M | W | U
+# horizon types
+type ONE = Literal["one"]
+type MULTI = Literal["multi"]
+type Horizon = ONE | MULTI
 
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
-class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
+class SlidingSampler[
+    DT: DateTime,
+    ModeVar: (S, B, M, W, U),
+    HorizonVar: (ONE, MULTI),
+](BaseSampler):
     r"""Sampler that generates a single sliding window over an interval.
 
     Note:
@@ -358,7 +357,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
 
     # region __new__ overloads ---------------------------------------------------------
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -371,7 +370,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, S, MULTI]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -384,7 +383,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, B, MULTI]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -397,7 +396,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, M, MULTI]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -410,7 +409,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, W, MULTI]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -423,7 +422,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, S, ONE]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -436,7 +435,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, B, ONE]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -449,7 +448,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, M, ONE]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -462,7 +461,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, W, ONE]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -475,7 +474,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, U, MULTI]": ...
     @overload
-    def __new__(
+    def __new__[TD: TimeDelta](
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -487,7 +486,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
         drop_last: bool = ...,
         rng: Generator = ...,
     ) -> "SlidingSampler[DT, U, ONE]": ...
-    def __new__(  # type: ignore[misc]
+    def __new__[TD: TimeDelta](  # type: ignore[misc]
         cls,
         data_source: SequentialDataset[DT],
         /,
@@ -503,7 +502,7 @@ class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
 
     # endregion __new__ overloads --------------------------------------------------------
 
-    def __init__(
+    def __init__[TD: TimeDelta](
         self,
         data_source: SequentialDataset[DT],
         /,

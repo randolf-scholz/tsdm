@@ -8,11 +8,11 @@ __all__ = [
 
 
 from collections.abc import Callable, Mapping
+from typing import Any, NamedTuple
 
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
-from typing_extensions import Any, NamedTuple
 
 from tsdm import datasets
 from tsdm.constants import EMPTY_MAP, RNG

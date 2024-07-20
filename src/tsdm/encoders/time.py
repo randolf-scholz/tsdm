@@ -13,13 +13,13 @@ __all__ = [
 from collections.abc import Hashable, Mapping
 from dataclasses import asdict, dataclass
 from types import MappingProxyType
+from typing import Any, ClassVar, Final, Optional, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from pyarrow.lib import ArrowNotImplementedError
-from typing_extensions import Any, ClassVar, Final, Optional, TypeVar, cast
 
 from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
@@ -29,15 +29,10 @@ from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
-X = TypeVar("X")
-Y = TypeVar("Y")
-Arr = TypeVar("Arr", bound=NumericalTensor)
-r"""TypeVar for tensor-like objects."""
-
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder(BaseEncoder[Arr, Arr], BackendMixin):
+class TimeDeltaEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin):
     r"""Encode TimeDelta as Float."""
 
     unit: TimeDelta = NotImplemented
@@ -95,7 +90,7 @@ class TimeDeltaEncoder(BaseEncoder[Arr, Arr], BackendMixin):
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder(BaseEncoder[Arr, Arr], BackendMixin):
+class DateTimeEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented

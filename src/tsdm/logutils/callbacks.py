@@ -37,6 +37,18 @@ from collections.abc import (
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 from pathlib import Path
+from typing import (
+    Any,
+    ClassVar,
+    Literal,
+    Optional,
+    Protocol,
+    Self,
+    TypeGuard,
+    final,
+    overload,
+    runtime_checkable,
+)
 
 import torch
 import yaml
@@ -46,19 +58,6 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Literal,
-    Optional,
-    Protocol,
-    Self,
-    TypeGuard,
-    TypeVar,
-    final,
-    overload,
-    runtime_checkable,
-)
 
 from tsdm.logutils.logfuncs import (
     log_config,
@@ -111,9 +110,6 @@ class CallbackSequence(MutSeq[Callback], Callback, Protocol):
     Helper Protocol, in practice, this should be the intersection
     of `MutableSequence[Callback]` and `Callback`.
     """
-
-
-CB = TypeVar("CB", bound=Callback)
 
 
 def is_callback(obj: object, /) -> TypeGuard[Callback]:

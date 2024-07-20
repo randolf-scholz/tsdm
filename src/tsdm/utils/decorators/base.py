@@ -2,6 +2,7 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
+    "BareClassDecorator",
     "ClassDecorator",
     "ClassDecoratorFactory",
     "Decorator",
@@ -19,25 +20,21 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable as Fn
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
-
-from typing_extensions import Any, Optional, ParamSpec, Protocol, Self, cast, overload
+from typing import Any, Optional, Protocol, Self, cast, overload
 
 from tsdm.types.aliases import Nested
-from tsdm.types.variables import F_co, F_contra, P, R_co, T
 from tsdm.utils.funcutils import rpartial
-
-D = ParamSpec("D")
 
 
 @dataclass
 class DecoratorError(Exception):
     r"""Raise Error related to decorator construction."""
 
-    decorated: Callable
+    decorated: Fn
     r"""The decorator."""
     message: str = ""
     r"""Default message to print."""
@@ -64,106 +61,87 @@ class DecoratorError(Exception):
         return super().__str__() + "\n" + "\n".join(default_message)
 
 
-class ClassDecorator(Protocol[P]):
+class BareClassDecorator[Cls: type](Protocol):
+    r"""Bare Decorator Protocol that preserves type."""
+
+    # fmt: off
+    def __call__(self, cls: Cls, /) -> Cls: ...
+    # fmt: on
+
+
+class ClassDecorator[Cls: type, **P](Protocol):
     r"""Class Decorator Protocol that preserves type."""
 
     # fmt: off
-    def __call__(self, cls: type[T], /, *args: P.args, **kwargs: P.kwargs) -> type[T]: ...
+    def __call__(self, cls: Cls, /, *args: P.args, **kwargs: P.kwargs) -> Cls: ...
     # fmt: on
 
 
-class ClassDecoratorFactory(Protocol[P]):
+class ClassDecoratorFactory[Cls: type, **P](Protocol):
     r"""Class Decorator Factory Protocol that preserves type."""
 
     # fmt: off
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> ClassDecorator[P]: ...
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[Cls]: ...
     # fmt: on
 
 
-class ParametrizedClassDecorator(Protocol[P]):
+class ParametrizedClassDecorator[Cls: type, **P](Protocol):
     r"""Parametrized Class Decorator Protocol that preserves type."""
 
     # fmt: off
-    @overload
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> ClassDecorator[P]: ...
-    @overload
-    def __call__(self, cls: type[T], /, *args: P.args, **kwargs: P.kwargs) -> type[T]: ...
+    @overload  # @decorator
+    def __call__(self, cls: Cls, /, *args: P.args, **kwargs: P.kwargs) -> Cls: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[Cls]: ...
     # fmt: on
 
 
-# class FunctionDecorator(Protocol[D, P, T_contra, P2, T2_co]):
-#     r"""Function Decorator Protocol that preserves type."""
-#
-#     # fmt: off
-#     def __call__(self, func: Callable[P, T_contra], /, *args: D.args, **kwargs: D.kwargs) -> Callable[P2, T2_co]: ...
-#     # fmt: on
-#
-#
-# class FunctionDecoratorFactory(Protocol[D, P, T_contra, P2, T2_co]):
-#     r"""Function Decorator Factory Protocol that preserves type."""
-#
-#     # fmt: off
-#     def __call__(self, /, *args: D.args, **kwargs: D.kwargs) -> FunctionDecorator[D, P, T_contra, P2, T2_co]: ...
-#     # fmt: on
-#
-#
-# class ParametrizedFunctionDecorator(Protocol[D, P, T_contra, P2, T2_co]):
-#     r"""Parametrized Function Decorator Protocol that preserves type."""
-#
-#     # fmt: off
-#     @overload
-#     def __call__(self, /, *args: D.args, **kwargs: D.kwargs) -> FunctionDecorator[D, P, T_contra, P2, T2_co]: ...
-#     @overload
-#     def __call__(self, func: Callable[P, T_contra], /, *args: D.args, **kwargs: D.kwargs) -> Callable[P2, T2_co]: ...
-#     # fmt: on
-
-
-class FunctionDecorator(Protocol[P, F_contra, F_co]):
+class FunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):  # -F_in, +F_out
     r"""Function Decorator Protocol that preserves type."""
 
     # fmt: off
-    def __call__(self, func: F_contra, /, *args: P.args, **kwargs: P.kwargs) -> F_co: ...
+    def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
     # fmt: on
 
 
-class FunctionDecoratorFactory(Protocol[P, F_contra, F_co]):
+class FunctionDecoratorFactory[F_in: Fn, F_out: Fn, **P](Protocol):
     r"""Function Decorator Factory Protocol that preserves type."""
 
     # fmt: off
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[P, F_contra, F_co]: ...
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[F_in, F_out, P]: ...
     # fmt: on
 
 
-class ParametrizedFunctionDecorator(Protocol[P, F_contra, F_co]):
+class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
     r"""Parametrized Function Decorator Protocol that preserves type."""
 
     # fmt: off
-    @overload
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[P, F_contra, F_co]: ...
-    @overload
-    def __call__(self, func: F_contra, /, *args: P.args, **kwargs: P.kwargs) -> F_co: ...
+    @overload  # @decorator
+    def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[F_in, F_out, P]: ...
     # fmt: on
 
 
-class Decorator(Protocol[P]):
+class Decorator[T, **P](Protocol):
     r"""Protocol for decorators."""
 
     def __call__(self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
 
 
-class DecoratorFactory(Protocol[P]):
+class DecoratorFactory[T, **P](Protocol):
     r"""Protocol for parametrized decorators."""
 
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator: ...
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator[T, P]: ...
 
 
-class ParametrizedDecorator(Protocol[P]):
+class ParametrizedDecorator[T, **P](Protocol):
     r"""Protocol for parametrized decorators."""
 
-    @overload
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator: ...
-    @overload
+    @overload  # @decorator
     def __call__(self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator[T, P]: ...
 
 
 # class ParametrizedDecorator(Protocol[T, P]):
@@ -181,14 +159,17 @@ __SENTINEL = cast(Any, object())
 r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 
 
-# fmt: off
 # FIXME: too complicated!
+# REF: Code sample in [pyright playground](https://pyright-play.net/?enableExperimentalFeatures=true&code=GYJw9gtgBALgngBwJYDsDmUkQWEMoAK4MYAxmADYA0UYAbgKYgVgCGAJjawM7dMwB9eAgY0QDRqwpDEDAFChIUchQoNSMJGBTcAdKwBGpTNlz4AygwCOAVwYpS8uaQo9uUAEKtxAYVe8AEXVcVhIQAG0-bgAuWFkAXQAKIjASFQBKaLkoHKh2BmAoAQFSKWkBRL4KYBoXGKgomgB6dKgAWgA%2BBop63T65Z393Pzcg8hBQ3Eie2OFRKAAqBYIklLTKTOzc-MLi0tViyoZq2pnu7maaBe80eoJ9EFurhYBrAHcbu913z9bO89ifV0AxcbkI3lYEAYMBASAAXgx2CNAsEJmFpvU5s8VsliGQNllclAAMTKVgoKAGBhk1SIqAMJAwAAWTCgPCgAAF8uREksfo9uK1cGz3FzgsCiRz6EwWBwtjkdkUSmVDlUalAmldPrF7p9nvzbjrvh8BX8ul5fEMxiF0VF4oD%2BpLpcw2Ox5XkCkr9uUjidlGdGhqtQKjXrFq8TYbCMbfu0ulEHcC5IruTapgAVbFJVOxZHca1oqZzcLp%2BI0FbNM3giZQmHwxF5guTCLF0vl%2B1QIEDMXjZvJz0IBCwlCCACCJdmsnClls9kc8SSdVimY1VfTsXEMBsIApdW7qcLIH7hUHw8EHmnsRndgcDEXZ2L5jLq7jcRE047m%2B3u56A3EkmkOZElPVAx3SOR-wYKQZBEYCh1AgQPHAuQORAkcBFHQYwQAMTAMBEmvOcGEyTt%2BlQ%2BD0I8LDeE8bwCOsG9HBIrsIIkKDANkRJcLAVpSUfBiiPCABVFAXhQMA3hQBdWIAmCGESC1eLfBhwgteI5Dcfg5K4vCaGLbj4nAzS8G0i09KnNTwKAA)
+# fmt: off
 @overload  # class-decorator
-def decorator(deco: ClassDecorator[P], /) -> ParametrizedClassDecorator[P]: ...
+def decorator[T, **P](deco: ClassDecorator[type[T], P], /) -> ParametrizedClassDecorator[type[T], P]: ...
 @overload  # function-decorator
-def decorator(deco: FunctionDecorator[P, F_contra, F_co], /) -> ParametrizedFunctionDecorator[P, F_contra, F_co]: ...
+def decorator[F_in: Fn, F_out: Fn, **P](
+    deco: FunctionDecorator[F_in, F_out, P], /
+) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
+# fmt: on
 def decorator(deco, /):  # pyright: ignore[reportInconsistentOverload]
-    # fmt: on
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -263,35 +244,33 @@ def decorator(deco, /):  # pyright: ignore[reportInconsistentOverload]
     return __parametrized_decorator
 
 
-def attribute(func: Callable[[T], R_co], /) -> R_co:
+def attribute[T, R](func: Fn[[T], R], /) -> R:  # T, +R
     r"""Create a decorator that converts method to attribute."""
 
     @wraps(func, updated=())
     class __attribute:
         __slots__ = ("func", "payload")
         sentinel = object()
-        func: Callable[[T], R_co]
-        payload: R_co
+        func: Fn[[T], R]
+        payload: R
 
-        def __init__(self, function: Callable) -> None:
+        def __init__(self, function: Fn) -> None:
             self.func = function
             self.payload = cast(Any, self.sentinel)
 
-        def __get__(
-            self, obj: T | None, obj_type: Optional[type] = None
-        ) -> Self | R_co:
+        def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
             if obj is None:
                 return self
             if self.payload is self.sentinel:
                 self.payload = self.func(obj)
             return self.payload
 
-    return cast(R_co, __attribute(func))
+    return cast(R, __attribute(func))
 
 
-def recurse_on_container(
-    func: Callable[[T], R_co], /, *, leaf_type: type[T]
-) -> Callable[[Nested[T]], Nested[R_co]]:
+def recurse_on_container[T, R](  # T, +R
+    func: Fn[[T], R], /, *, leaf_type: type[T]
+) -> Fn[[Nested[T]], Nested[R]]:
     r"""Apply function to a nested iterables of a given kind.
 
     Args:
@@ -300,7 +279,7 @@ def recurse_on_container(
     """
 
     @wraps(func)
-    def recurse(x: Nested[T]) -> Nested[R_co]:
+    def recurse(x: Nested[T]) -> Nested[R]:
         match x:
             case leaf_type():  # type: ignore[misc]
                 return func(x)  # type: ignore[unreachable]
@@ -320,7 +299,7 @@ def recurse_on_container(
     return recurse
 
 
-def _extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:
+def _extends[**P](parent_func: Fn[P, None], /) -> Fn[[Fn], Fn]:
     r"""Decorator to extend a parent function.
 
     For example, when one wants to extend the __init__ of a parent class

@@ -1,7 +1,6 @@
 r"""Function decorators for wrapping classes with additional functionality."""
 
 __all__ = [
-    # ABCs & Protocols
     # Functions
     "autojit",
     "implements",
@@ -15,13 +14,12 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
+from typing import Any, Self
 
 from torch import jit, nn
-from typing_extensions import Any, Self, TypeVar
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
-from tsdm.types.variables import T, torch_module_var
 from tsdm.utils.decorators.base import decorator
 from tsdm.utils.pprint import (
     repr_array,
@@ -33,15 +31,9 @@ from tsdm.utils.pprint import (
     repr_shortform,
 )
 
-Seq = TypeVar("Seq", bound=Sequence)
-Map = TypeVar("Map", bound=Mapping)
-Dtc = TypeVar("Dtc", bound=Dataclass)
-Ntp = TypeVar("Ntp", bound=NTuple)
-Set = TypeVar("Set", bound=AbstractSet)
 
-
-@decorator
-def pprint_sequence(cls: type[Seq], /, **kwds: Any) -> type[Seq]:
+# @decorator
+def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -50,7 +42,7 @@ def pprint_sequence(cls: type[Seq], /, **kwds: Any) -> type[Seq]:
 
 
 @decorator
-def pprint_mapping(cls: type[Map], /, **kwds: Any) -> type[Map]:
+def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -59,7 +51,7 @@ def pprint_mapping(cls: type[Map], /, **kwds: Any) -> type[Map]:
 
 
 @decorator
-def pprint_dataclass(cls: type[Dtc], /, **kwds: Any) -> type[Dtc]:
+def pprint_dataclass[Dtc: type[Dataclass]](cls: Dtc, /, **kwds: Any) -> Dtc:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Dataclass):  # type: ignore[misc]
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -68,7 +60,7 @@ def pprint_dataclass(cls: type[Dtc], /, **kwds: Any) -> type[Dtc]:
 
 
 @decorator
-def pprint_namedtuple(cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
+def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, NTuple):  # type: ignore[misc]
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
@@ -77,7 +69,7 @@ def pprint_namedtuple(cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
 
 
 @decorator
-def pprint_set(cls: type[Set], /, **kwds: Any) -> type[Set]:
+def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
@@ -86,7 +78,7 @@ def pprint_set(cls: type[Set], /, **kwds: Any) -> type[Set]:
 
 
 @decorator
-def pprint_repr(cls: type[T], /, **kwds: Any) -> type[T]:
+def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not isinstance(cls, type):
         raise TypeError("Must be a class!")
@@ -103,16 +95,18 @@ def pprint_repr(cls: type[T], /, **kwds: Any) -> type[T]:
         repr_func = repr_array
     elif issubclass(cls, Sequence):
         repr_func = repr_sequence
+    elif issubclass(cls, AbstractSet):
+        repr_func = repr_set
     elif issubclass(cls, type):
         repr_func = repr_shortform
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]
+    cls.__repr__ = partialmethod(repr_func, **kwds)
     return cls  # pyright: ignore[reportReturnType]
 
 
-def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
+def autojit[M: nn.Module](base_class: type[M], /) -> type[M]:
     r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
 
     Makes it so that
@@ -163,7 +157,7 @@ def autojit(base_class: type[torch_module_var], /) -> type[torch_module_var]:
     return WrappedClass
 
 
-def implements(*protocols: type) -> Callable[[type[T]], type[T]]:
+def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:
     r"""Check if class implements a set of protocols."""
 
     def __wrapper(cls: type[T], /) -> type[T]:

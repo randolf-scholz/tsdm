@@ -1,9 +1,9 @@
 r"""Test other protocols."""
 
 from dataclasses import dataclass
+from typing import NamedTuple, Self
 
 import pytest
-from typing_extensions import NamedTuple, Self
 
 from tsdm.types.protocols import (
     Dataclass,

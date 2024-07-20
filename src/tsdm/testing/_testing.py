@@ -20,6 +20,7 @@ __all__ = [
 from collections.abc import Mapping, Sequence
 from inspect import isbuiltin as is_builtin_function
 from pathlib import Path
+from typing import Any
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -29,14 +30,13 @@ import polars.testing as pl_testing
 import torch
 import torch.testing
 from pandas import NA, NaT
-from typing_extensions import Any, get_protocol_members, is_protocol
+from typing_extensions import get_protocol_members, is_protocol
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
 from tsdm.types.aliases import PythonScalar
-from tsdm.types.variables import T_contra
 
 
-def assert_arrays_equal(array: T_contra, reference: T_contra, /) -> None:
+def assert_arrays_equal[T: Any](array: T, reference: T, /) -> None:
     r"""Assert that the arrays are equal."""
     if type(array) is not type(reference):
         raise AssertionError(f"{type(array)=} != {type(reference)=}")
@@ -65,9 +65,9 @@ def assert_arrays_equal(array: T_contra, reference: T_contra, /) -> None:
             raise TypeError(f"Unsupported {type(array)=}")
 
 
-def assert_arrays_close(
-    array: T_contra,
-    reference: T_contra,
+def assert_arrays_close[T: Any](
+    array: T,
+    reference: T,
     /,
     *,
     atol: float = 1e-8,

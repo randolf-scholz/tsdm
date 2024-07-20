@@ -4,12 +4,12 @@ import logging
 import pickle
 from collections.abc import Callable
 from tempfile import TemporaryFile
+from typing import Any, TypeVar, assert_type
 
 import numpy as np
 import pandas as pd
 import pytest
 import torch
-from typing_extensions import Any, TypeAlias, TypeVar, assert_type
 
 from tsdm.constants import RNG
 from tsdm.encoders.numerical import (
@@ -32,7 +32,7 @@ T = TypeVar(
 )
 D = TypeVar("D", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
 E = TypeVar("E", StandardScaler, MinMaxScaler)
-Bounds: TypeAlias = tuple[float | None, float | None]
+type Bounds = tuple[float | None, float | None]
 
 
 DATA_1D = [

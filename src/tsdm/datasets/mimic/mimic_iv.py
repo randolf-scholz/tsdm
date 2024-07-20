@@ -64,6 +64,7 @@ __all__ = [
 import gzip
 from functools import cached_property
 from getpass import getpass
+from typing import get_args
 from zipfile import ZipFile
 
 import pandas as pd
@@ -73,7 +74,6 @@ import pyarrow.compute as pc
 from pandas import DataFrame
 from pyarrow import Array, Table, csv
 from tqdm.auto import tqdm
-from typing_extensions import get_args
 
 from tsdm.backend.pyarrow import (
     cast_columns,

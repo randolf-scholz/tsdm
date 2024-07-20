@@ -5,9 +5,10 @@ __all__ = [
     "MIMIC_III_Scholz2024",
 ]
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing_extensions import Any
 
 import tsdm
 from tsdm.datasets.mimic.mimic_iii import MIMIC_III

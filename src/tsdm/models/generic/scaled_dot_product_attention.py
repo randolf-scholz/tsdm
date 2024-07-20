@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Scaled dot-product attention module."""
 
 __all__ = [
     # Classes
@@ -9,10 +6,10 @@ __all__ = [
 ]
 
 from math import sqrt
+from typing import Optional
 
 import torch
 from torch import Tensor, nn
-from typing_extensions import Optional
 
 from tsdm.utils.decorators import autojit
 

@@ -22,8 +22,7 @@ from importlib.util import find_spec
 from pathlib import Path
 from time import perf_counter_ns
 from types import FrameType, ModuleType, TracebackType
-
-from typing_extensions import ClassVar, Literal, Never, Optional, Self
+from typing import ClassVar, Literal, Never, Optional, Self
 
 
 class ray_cluster(ContextDecorator):

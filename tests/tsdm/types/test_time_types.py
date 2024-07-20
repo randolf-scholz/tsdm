@@ -1,15 +1,16 @@
 r"""Tests for time related types."""
 
 from datetime import datetime as python_datetime, timedelta as python_timedelta
+from typing import assert_type
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pytest
 from numpy.typing import NDArray
-from typing_extensions import assert_type, get_protocol_members
+from typing_extensions import get_protocol_members
 
-from tsdm.types.time import DT, TD, DateTime, TimeDelta
+from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 ISO_DATE = "2021-01-01"
@@ -173,7 +174,7 @@ def test_dt_var() -> None:
     r"""Type-Checking DT_VAR."""
     # TODO: submit issue to pyright
 
-    def id_dt(x: DT, /) -> DT:
+    def id_dt[DT: DateTime](x: DT, /) -> DT:
         return x
 
     id_dt(DT_FLOAT)
@@ -188,7 +189,7 @@ def test_dt_var() -> None:
 def test_dt_diff() -> None:
     r"""Test inference capabilities of type checkers."""
 
-    def diff(x: DateTime[TD]) -> TD:
+    def diff[TD: TimeDelta](x: DateTime[TD]) -> TD:
         return x - x
 
     assert_type(diff(DT_FLOAT), float)
@@ -203,7 +204,7 @@ def test_dt_diff() -> None:
 def test_td_var() -> None:
     r"""Type-Checking TD_VAR."""
 
-    def id_td(x: TD, /) -> TD:
+    def id_td[TD: TimeDelta](x: TD, /) -> TD:
         return x
 
     id_td(TD_FLOAT)

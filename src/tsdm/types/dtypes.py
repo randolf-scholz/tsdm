@@ -19,7 +19,6 @@ Numerical Type Hierarchy:
 """
 
 __all__ = [
-    # TypeVars and TypeAliases
     # DTYPES
     "NUMPY_DTYPES",
     "TORCH_DTYPES",
@@ -70,6 +69,7 @@ __all__ = [
 ]
 
 from datetime import datetime, timedelta
+from typing import Final
 
 import numpy as np
 import pandas as pd
@@ -78,7 +78,6 @@ import pyarrow as pa
 import torch
 from pandas import ArrowDtype
 from pandas.api.extensions import ExtensionDtype
-from typing_extensions import Final
 
 # region numpy typecodes ---------------------------------------------------------------
 NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {

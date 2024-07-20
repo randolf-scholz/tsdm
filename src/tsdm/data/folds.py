@@ -10,10 +10,10 @@ __all__ = [
 ]
 
 from collections.abc import Collection, Hashable, Iterable, Mapping, Sequence
+from typing import Optional
 
 import numpy as np
 from pandas import DataFrame, Index, MultiIndex, Series
-from typing_extensions import Optional
 
 
 def is_partition(

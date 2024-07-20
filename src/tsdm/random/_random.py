@@ -7,17 +7,18 @@ __all__ = [
     "sample_timedeltas",
 ]
 
+from typing import Optional
+
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import date_range, timedelta_range
-from typing_extensions import Optional
 
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
-from tsdm.types.time import DT, TD, TimeDelta
+from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 
-def sample_timestamps(
+def sample_timestamps[DT: DateTime[TimeDelta]](
     start: str | DT = "today",
     final: Optional[DT] = None,
     /,
@@ -69,7 +70,7 @@ def sample_timestamps(
     return timestamps.astype(f"datetime64[{base_unit}]")
 
 
-def sample_timedeltas(
+def sample_timedeltas[TD: TimeDelta](
     low: str | TD = "0s",
     high: str | TD = "1h",
     size: int = 1,

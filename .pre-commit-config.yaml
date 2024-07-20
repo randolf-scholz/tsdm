@@ -1,7 +1,7 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/|bugs/)'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
-  python: python3.11
+  python: python3.12
   node: "20.10.0"
 repos:
   # https://pre-commit.com/hooks.html
@@ -68,7 +68,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.3
+    rev: v0.5.4
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.2.38
+    rev: v0.3.0
     hooks:
       # pygrep hooks
       - id: check-separator-length

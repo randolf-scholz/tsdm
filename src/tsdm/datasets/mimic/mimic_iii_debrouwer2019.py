@@ -22,20 +22,20 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 import os
 import subprocess
 from getpass import getpass
+from typing import Literal
 
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from pandas import DataFrame
-from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal["timeseries", "metadata"]
+type Key = Literal["timeseries", "metadata"]
 
 
-class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
+class MIMIC_III_DeBrouwer2019(MultiTableDataset[Key, DataFrame]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -94,7 +94,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     timeseries: DataFrame
     metadata: DataFrame
 
-    def clean_table(self, key: KEY) -> DataFrame:
+    def clean_table(self, key: Key) -> DataFrame:
         if key == "metadata":
             return self.timeseries.describe().T.astype("float32")
 

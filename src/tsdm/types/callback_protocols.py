@@ -23,25 +23,24 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable
+from typing import Any, Protocol, SupportsIndex, SupportsInt
 
 from numpy.typing import ArrayLike
-from typing_extensions import Any, Protocol, SupportsIndex, SupportsInt
 
 from tsdm.types.aliases import Axis, Scalar
-from tsdm.types.variables import T, T_co, T_contra
 
 
 # region generic callback-protocols ----------------------------------------------------
-class NullMap(Protocol[T_contra]):
+class NullMap[T](Protocol):  # -T
     r"""A generic protocol for functions without args that always returns None."""
 
     @abstractmethod
-    def __call__(self, x: T_contra, /) -> None:
+    def __call__(self, x: T, /) -> None:
         r"""Returns `None`."""
         ...
 
 
-class SelfMap(Protocol[T]):
+class SelfMap[T](Protocol):  # T
     r"""A generic protocol for endofunctions."""
 
     @abstractmethod
@@ -50,20 +49,20 @@ class SelfMap(Protocol[T]):
         ...
 
 
-class IntMap(Protocol[T_co]):
+class IntMap[T](Protocol):  # +T
     r"""A generic protocol for indexed values."""
 
     @abstractmethod
-    def __call__(self, index: SupportsInt | SupportsIndex, /) -> T_co:
+    def __call__(self, index: SupportsInt | SupportsIndex, /) -> T:
         r"""Returns the value at the given integer."""
         ...
 
 
-class WrappedValue(Protocol[T_co]):
+class WrappedValue[T](Protocol):  # +T
     r"""A generic protocol for wrapped values."""
 
     @abstractmethod
-    def __call__(self) -> T_co:
+    def __call__(self) -> T:
         r"""Returns the wrapped value."""
         ...
 
@@ -72,73 +71,73 @@ class WrappedValue(Protocol[T_co]):
 
 
 # region Callback-Protocols ------------------------------------------------------------
-class CastProto(Protocol[T]):
+class CastProto[T](Protocol):  # T
     r"""Bound-Protocol for `cast`-function."""
 
     def __call__(self, x: T, /, dtype: Any) -> T: ...
 
 
-class ClipProto(Protocol[T]):
+class ClipProto[T](Protocol):  # T
     r"""Bound-Protocol for `clip`-function."""
 
     def __call__(self, x: T, lower: T | None, upper: T | None, /) -> T: ...
 
 
-class ContractionProto(Protocol[T]):
+class ContractionProto[T](Protocol):  # T
     r"""Bound Protocol for contractions (support `axes` keyword argument)."""
 
     def __call__(self, x: T, /, *, axis: Axis = None) -> T: ...
 
 
-class IsScalarProto(Protocol[T_contra]):
+class IsScalarProto[T](Protocol):  # -T
     r"""Bound-Protocol for `is_scalar`-function."""
 
-    def __call__(self, x: T_contra, /) -> bool: ...
+    def __call__(self, x: T, /) -> bool: ...
 
 
-class CopyLikeProto(Protocol[T]):
+class CopyLikeProto[T](Protocol):  # T
     r"""Bound-Protocol for `tensor_like`-function."""
 
     def __call__(self, x: ArrayLike, ref: T, /) -> T: ...
 
 
-class ToTensorProto(Protocol[T_co]):
+class ToTensorProto[T](Protocol):  # +T
     r"""Callback-Protocol for `to_tensor`-function."""
 
-    def __call__(self, x: ArrayLike, /) -> T_co: ...
+    def __call__(self, x: ArrayLike, /) -> T: ...
 
 
-class WhereProto(Protocol[T]):
+class WhereProto[T](Protocol):  # T
     r"""Bound-Protocol for `where`-function."""
 
     def __call__(self, cond: T, x: T, y: Scalar | T, /) -> T: ...
 
 
-class ApplyAlongAxes(Protocol[T]):
+class ApplyAlongAxes[T](Protocol):  # T
     r"""Bound-Protocol for `apply_along_axes`-function."""
 
     def __call__(self, op: Callable[..., T], /, *tensors: T, axis: Axis) -> T: ...
 
 
-class ArraySplitProto(Protocol[T]):
+class ArraySplitProto[T](Protocol):  # T
     r"""Bound-Protocol for `split_tensor`-function."""
 
     def __call__(self, x: T, indices: int | list[int], /, *, axis: int) -> list[T]: ...
 
 
-class ConcatenateProto(Protocol[T]):
+class ConcatenateProto[T](Protocol):  # T
     r"""Bound-Protocol for `concatenate`-function."""
 
     def __call__(self, x: list[T], /, *, axis: int) -> T: ...
 
 
-class ScalarProto(Protocol[T_co]):
+class ScalarProto[T](Protocol):  # +T
     r"""Bound-Protocol for `make_scalar`-function."""
 
-    def __call__(self, value: Any, /, dtype: Any) -> T_co: ...
+    def __call__(self, value: Any, /, dtype: Any) -> T: ...
 
 
-class FullLikeProto(Protocol[T]):
+class FullLikeProto[T](Protocol):  # T
     r"""Bound-Protocol for `full_like`-function."""
 
     def __call__(self, x: T, /, *, fill_value: Any) -> T: ...

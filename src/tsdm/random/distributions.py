@@ -10,31 +10,30 @@ __all__ = [
 ]
 
 from abc import abstractmethod
+from typing import Optional, Protocol, runtime_checkable
 
 import numpy as np
 from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import Optional, Protocol, runtime_checkable
 
 from tsdm.constants import RNG
 from tsdm.types.aliases import Size
-from tsdm.types.variables import T_co
 
 
 @runtime_checkable
-class RV(Protocol[T_co]):
+class RV[T](Protocol):  # +T
     r"""Protocol for random variable."""
 
     @abstractmethod
     def rvs(
         self, size: Size = (), *, random_state: Optional[int | Generator] = None
-    ) -> T_co:
+    ) -> T:
         r"""Random variates of the given type."""
         ...
 
 
 @runtime_checkable
-class TimeSeriesRV(Protocol[T_co]):
+class TimeSeriesRV[T](Protocol):  # +T
     r"""Protocol for time series random variable $p(x∣t)$."""
 
     @abstractmethod
@@ -44,13 +43,13 @@ class TimeSeriesRV(Protocol[T_co]):
         size: Size = (),
         *,
         random_state: Optional[int | Generator] = None,
-    ) -> T_co:
+    ) -> T:
         r"""Generate random time series."""
         ...
 
 
 @runtime_checkable
-class Distribution(RV[T_co], Protocol[T_co]):
+class Distribution[T](RV[T], Protocol):  # +T
     r"""Protocol for distributions.
 
     We follow the design of `scipy.stats.rv_continuous` and `scipy.stats.rv_discrete`.
@@ -58,56 +57,56 @@ class Distribution(RV[T_co], Protocol[T_co]):
 
     def stats(
         self, *, loc: ArrayLike = 0, scale: ArrayLike = 1, moments: str = "mvsk"
-    ) -> tuple[T_co, ...]:
+    ) -> tuple[T, ...]:
         r"""Some statistics of the given RV."""
         raise NotImplementedError
 
-    def entropy(self, /) -> T_co:
+    def entropy(self, /) -> T:
         r"""Differential entropy of the RV."""
         raise NotImplementedError
 
-    def moment(self, order: int) -> T_co:
+    def moment(self, order: int) -> T:
         r"""Non-central moment of order n."""
         raise NotImplementedError
 
-    def pdf(self, x: ArrayLike, /) -> T_co:
+    def pdf(self, x: ArrayLike, /) -> T:
         r"""Probability density function at x of the given RV."""
         raise NotImplementedError
 
-    def cdf(self, x: ArrayLike, /) -> T_co:
+    def cdf(self, x: ArrayLike, /) -> T:
         r"""Cumulative distribution function of the given RV."""
         raise NotImplementedError
 
-    def ppf(self, q: ArrayLike, /) -> T_co:
+    def ppf(self, q: ArrayLike, /) -> T:
         r"""Percent point function (inverse of `cdf`) at q of the given RV."""
         raise NotImplementedError
 
-    def sf(self, x: ArrayLike, /) -> T_co:
+    def sf(self, x: ArrayLike, /) -> T:
         r"""Survival function (1 - `cdf`) at x of the given RV."""
         raise NotImplementedError
 
-    def isf(self, q: ArrayLike, /) -> T_co:
+    def isf(self, q: ArrayLike, /) -> T:
         r"""Inverse survival function at q of the given RV."""
         raise NotImplementedError
 
-    def logpdf(self, x: ArrayLike, /) -> T_co:
+    def logpdf(self, x: ArrayLike, /) -> T:
         r"""Log of the probability density function at x of the given RV."""
         try:
-            return self.pdf(x).log()
+            return self.pdf(x).log()  # type: ignore[attr-defined]
         except AttributeError as exc:
             raise NotImplementedError from exc
 
-    def logcdf(self, x: ArrayLike, /) -> T_co:
+    def logcdf(self, x: ArrayLike, /) -> T:
         r"""Log of the cumulative distribution function at x of the given RV."""
         try:
-            return self.cdf(x).log()
+            return self.cdf(x).log()  # type: ignore[attr-defined]
         except AttributeError as exc:
             raise NotImplementedError from exc
 
-    def logsf(self, x: ArrayLike, /) -> T_co:
+    def logsf(self, x: ArrayLike, /) -> T:
         r"""Log of the survival function of the given RV."""
         try:
-            return self.sf(x).log()
+            return self.sf(x).log()  # type: ignore[attr-defined]
         except AttributeError as exc:
             raise NotImplementedError from exc
 

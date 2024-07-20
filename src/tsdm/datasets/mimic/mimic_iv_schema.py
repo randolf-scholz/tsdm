@@ -52,8 +52,9 @@ __all__ = [
     "INT8_TYPE",
 ]
 
+from typing import Literal
+
 import pyarrow as pa
-from typing_extensions import Literal, TypeAlias
 
 ID_TYPE = pa.uint32()
 VALUE_TYPE = pa.float64()
@@ -101,7 +102,7 @@ NULL_VALUES = [
 ]
 
 
-KEYS: TypeAlias = Literal[
+type KEYS = Literal[
     # "CHANGELOG",
     # "LICENSE",
     # "SHA256SUMS",

@@ -11,6 +11,7 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
+from typing import Any, ClassVar, Literal, Optional
 
 from pandas import DataFrame
 from torch import Tensor
@@ -19,15 +20,13 @@ from torch.utils.data import (
     Dataset as TorchDataset,
     Sampler as TorchSampler,
 )
-from typing_extensions import Any, ClassVar, Generic, Literal, Optional
 
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
-from tsdm.types.variables import K
 from tsdm.utils import LazyDict
 
 
-class BaseTask(Generic[K]):
+class BaseTask[K]:
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -183,7 +182,7 @@ class BaseTask(Generic[K]):
         return LazyDict.fromkeys(self, self.make_dataloader)
 
 
-class OldBaseTask(Generic[K]):
+class OldBaseTask[K]:
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).

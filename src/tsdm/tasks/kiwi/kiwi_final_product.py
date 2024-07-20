@@ -13,6 +13,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
+from typing import Any, Literal, NamedTuple, Optional
 
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
@@ -20,7 +21,7 @@ from pandas.api.typing import NAType
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit, nn
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import Any, Literal, NamedTuple, Optional, TypeAlias, deprecated
+from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset
 from tsdm.data.timeseries import TimeSeriesDataset
@@ -112,7 +113,7 @@ def get_time_table(
 class KIWI_FINAL_PRODUCT(OldBaseTask):
     r"""Forecast the final biomass or product."""
 
-    KEYS: TypeAlias = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
+    type KEYS = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
     r"""Type Hint for Keys."""
     index: list[KEYS] = list(product((0, 1, 2, 3, 4), ("train", "test")))
     r"""Available index."""

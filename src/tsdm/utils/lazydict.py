@@ -15,21 +15,10 @@ __all__ = [
 import warnings
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-
-from typing_extensions import (
-    Any,
-    Generic,
-    Never,
-    Optional,
-    Self,
-    TypeAlias,
-    cast,
-    overload,
-)
+from typing import Any, Never, Optional, Self, cast, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.protocols import SupportsKeysAndGetItem
-from tsdm.types.variables import K2, K, R_co, T, V
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import (
     get_function_args,
@@ -40,17 +29,17 @@ from tsdm.utils.funcutils import (
 
 @pprint_repr
 @dataclass(slots=True, init=False)  # use slots since many instances might be created.
-class LazyValue(Generic[R_co]):
+class LazyValue[R]:  # +R
     r"""A placeholder for uninitialized values."""
 
-    func: Callable[..., R_co]
+    func: Callable[..., R]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
     type_hint: str
 
     def __init__(
         self,
-        func: Callable[..., R_co],
+        func: Callable[..., R],
         /,
         *,
         args: Iterable[Any] = (),
@@ -64,7 +53,7 @@ class LazyValue(Generic[R_co]):
             get_return_typehint(self.func) if type_hint is None else type_hint
         )
 
-    def __call__(self) -> R_co:
+    def __call__(self) -> R:
         r"""Execute the function and return the result."""
         return self.func(*self.args, **self.kwargs)
 
@@ -73,7 +62,7 @@ class LazyValue(Generic[R_co]):
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
-LazySpec: TypeAlias = (
+type LazySpec[V] = (
     LazyValue[V]                            # lazy value
     | Callable[[], V]                       # no args
     | Callable[[Any], V]                    # single arg
@@ -86,7 +75,7 @@ r"""A type alias for the possible values of a `LazyDict`."""
 
 
 @pprint_repr
-class LazyDict(dict[K, V]):
+class LazyDict[K, V](dict[K, V]):
     r"""A Lazy Dictionary implementation.
 
     Note:
@@ -121,7 +110,7 @@ class LazyDict(dict[K, V]):
     @overload
     def __new__(cls, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]) -> "LazyDict[K | str, V]": ...
     # fmt: on
-    def __new__(  # type: ignore[misc]
+    def __new__(  # pyright: ignore[reportInconsistentOverload]
         cls,
         map_or_iterable: Mapping[K, LazySpec[V]]
         | Iterable[tuple[K, LazySpec[V]]] = EMPTY_MAP,
@@ -167,7 +156,7 @@ class LazyDict(dict[K, V]):
     @overload
     def get_lazy(self, key: K, /, *, default: V) -> V | LazyValue[V]: ...
     @overload
-    def get_lazy(self, key: K, /, *, default: T) -> V | LazyValue[V] | T: ...
+    def get_lazy[T](self, key: K, /, *, default: T) -> V | LazyValue[V] | T: ...
     def get_lazy(self, key, /, *, default=None):
         r"""Get the lazy value of the key."""
         return super().get(key, default)
@@ -177,12 +166,12 @@ class LazyDict(dict[K, V]):
         lazy_value = self._make_lazy_function(key, value)
         super().__setitem__(key, lazy_value)  # type: ignore[assignment]
 
-    def __or__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":  # pyright: ignore[reportIncompatibleMethodOverride]
-        new = self.copy()
+    def __or__[K2, T](self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":  # pyright: ignore[reportIncompatibleMethodOverride]
+        new = cast(LazyDict[K | K2, V | T], self.copy())
         new.update(other)  # type: ignore[arg-type]
-        return new  # type: ignore[return-value]
+        return new
 
-    def __ror__(self, other: Mapping[K2, T], /) -> Never:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __ror__[K2, T](self, other: Mapping[K2, T], /) -> Never:
         raise NotImplementedError(
             "Using __ror__ with a non-LazyDict is not supported,"
             " since it would causes all values to be evaluated.",
@@ -208,7 +197,7 @@ class LazyDict(dict[K, V]):
     @overload
     def get(self, key: K, default: V, /) -> V: ...
     @overload
-    def get(self, key: K, default: T, /) -> V | T: ...
+    def get[T](self, key: K, default: T, /) -> V | T: ...
     def get(self, key, default=None, /):
         r"""Get the value of the key."""
         try:
@@ -223,7 +212,7 @@ class LazyDict(dict[K, V]):
     @overload
     def pop(self, key: K, default: V, /) -> V: ...
     @overload
-    def pop(self, key: K, default: T, /) -> V | T: ...
+    def pop[T](self, key: K, default: T, /) -> V | T: ...
     def pop(self, key, default=__NOTGIVEN, /):
         r"""Pop the value of the key."""
         value = (

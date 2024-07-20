@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Set function for time series."""
 
 __all__ = [
     # CLASSES
@@ -9,9 +6,10 @@ __all__ = [
     "GroupedSetFuncTS",
 ]
 
+from typing import Optional
+
 import torch
 from torch import Tensor, jit, nn
-from typing_extensions import Optional
 
 from tsdm.encoders.pytorch import PositionalEncoding, Time2Vec
 from tsdm.models.generic import (

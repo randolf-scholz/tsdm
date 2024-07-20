@@ -10,9 +10,10 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
+from typing import final
+
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-from typing_extensions import final
 
 from tsdm import datasets
 from tsdm.data import folds_as_frame, is_partition

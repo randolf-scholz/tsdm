@@ -3,13 +3,13 @@ r"""Convolutional blocks for usage in a residual network."""
 __all__ = ["ConvBlock"]
 
 from collections import OrderedDict
+from typing import Any, Literal
 
 from torch import nn
-from typing_extensions import Any, Literal, TypeAlias
 
 from tsdm.utils.decorators import autojit
 
-PaddingMode: TypeAlias = Literal["zeros", "reflect", "replicate", "circular"]
+type PaddingMode = Literal["zeros", "reflect", "replicate", "circular"]
 
 
 @autojit

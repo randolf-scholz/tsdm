@@ -8,6 +8,7 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
+from typing import Any, Literal, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,6 @@ import torch
 from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
-from typing_extensions import Any, Literal, NamedTuple, Optional
 
 from tsdm.datasets import Electricity
 from tsdm.encoders import Encoder, StandardScaler

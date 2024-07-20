@@ -3,6 +3,7 @@ r"""Test compute_grid function."""
 import logging
 import math
 from datetime import datetime as py_dt, timedelta as py_td
+from typing import NamedTuple
 
 import pandas as pd
 import pytest
@@ -12,10 +13,9 @@ from numpy import (
     int32 as np_int,
     timedelta64 as np_td,
 )
-from typing_extensions import Generic, NamedTuple
 
 from tsdm.random.samplers import compute_grid
-from tsdm.types.time import DT, TD, DateTime, TimeDelta
+from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def _validate_grid_results(tmin, tmax, tdelta, offset):
         raise AssertionError(f"Failed with {values=}") from E
 
 
-class GridTuple(NamedTuple, Generic[DT, TD]):
+class GridTuple[DT: DateTime, TD: TimeDelta](NamedTuple):
     r"""Input tuple for `compute_grid`."""
 
     tmin: DT

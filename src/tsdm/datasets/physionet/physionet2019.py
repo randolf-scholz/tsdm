@@ -165,13 +165,13 @@ __all__ = [
     "PhysioNet2019",
 ]
 
+from typing import Literal
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from tqdm.auto import tqdm
-from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
@@ -253,7 +253,7 @@ METADATA_DESCRIPTION: InlineTable = {
     "index": ["variable"],
 }  # fmt: skip
 
-KEY: TypeAlias = Literal[
+type Key = Literal[
     "timeseries",
     "timeseries_description",
     "metadata",
@@ -263,7 +263,7 @@ KEY: TypeAlias = Literal[
 ]
 
 
-class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
+class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
     r"""Physionet Challenge 2019.
 
     Each training data file provides a table with measurements over time. Each column of the table
@@ -490,7 +490,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
 
-    def clean_table(self, key: KEY) -> DataFrame | None:
+    def clean_table(self, key: Key) -> DataFrame | None:
         match key:
             case "timeseries_description":
                 return make_dataframe(**TIMESERIES_DESCRIPTION)

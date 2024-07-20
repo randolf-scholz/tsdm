@@ -5,12 +5,13 @@ r"""Electricity Transformer Dataset (ETDataset).
 
 __all__ = ["ETT"]
 
+from typing import Literal
+
 from pandas import DataFrame, read_csv
-from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+type KEY = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
 class ETT(MultiTableDataset[KEY, DataFrame]):

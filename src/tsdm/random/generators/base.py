@@ -19,32 +19,24 @@ __all__ = [
 ]
 
 from abc import abstractmethod
+from typing import Any, Optional, Protocol, cast, final, runtime_checkable
 
 import numpy as np
 from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
 from scipy.integrate import solve_ivp as scipy_solve_ivp
-from typing_extensions import (
-    Any,
-    Optional,
-    Protocol,
-    cast,
-    final,
-    runtime_checkable,
-)
 
 from tsdm.constants import RNG
 from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
-from tsdm.types.variables import T, T_co
 
 
 @runtime_checkable
-class ODE(Protocol[T_co]):
+class ODE[T](Protocol):  # +T
     r"""Represents a system of ordinary differential equations."""
 
     @abstractmethod
-    def __call__(self, /, t: ArrayLike, state: ArrayLike) -> T_co:
+    def __call__(self, /, t: ArrayLike, state: ArrayLike) -> T:
         r"""Evaluate the vector field at given time and state.
 
         .. signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
@@ -65,7 +57,7 @@ class ODE(Protocol[T_co]):
 
 
 @runtime_checkable
-class IVP_Solver(Protocol[T_co]):
+class IVP_Solver[T](Protocol):  # +T
     r"""Protocol for initial value problem solvers.
 
     This is designed to be compatible with several solvers from different libraries:
@@ -88,7 +80,7 @@ class IVP_Solver(Protocol[T_co]):
     """
 
     @abstractmethod
-    def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+    def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T:
         r"""Solve the initial value problem.
 
         .. signature:: ``[(N,), (..., *D) -> (..., N, *D)``
@@ -105,7 +97,7 @@ class IVP_Solver(Protocol[T_co]):
 
 
 @runtime_checkable
-class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
+class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
     r"""Protocol for Generators that solve Initial Value Problems (IVP).
 
     Needs to implement the following things:
@@ -131,12 +123,12 @@ class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
 
     # region abstract methods ----------------------------------------------------------
     @abstractmethod
-    def get_initial_state(self, size: Size = ()) -> T_co:
+    def get_initial_state(self, size: Size = ()) -> T:
         r"""Generate (multiple) initial state(s) y₀."""
         ...
 
     @abstractmethod
-    def make_observations(self, sol: Any, /) -> T_co:
+    def make_observations(self, sol: Any, /) -> T:
         r"""Create observations from the solution."""
         ...
 
@@ -159,7 +151,7 @@ class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
         size: Size = (),
         *,
         random_state: Optional[int | Generator] = None,
-    ) -> T_co:
+    ) -> T:
         r"""Random variates of the given type."""
         # set the random state
         self.set_rng(random_state)
@@ -170,7 +162,7 @@ class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
         # solve the initial value problem
         sol = self.solve_ivp(t, y0=y0)
 
-        # get observations (add noise))
+        # get observations (add noise)
         obs = self.make_observations(sol)
 
         return obs
@@ -178,7 +170,7 @@ class IVP_Generator(TimeSeriesRV[T_co], Protocol[T_co]):
     # endregion mixin methods ----------------------------------------------------------
 
 
-class IVP_GeneratorBase(IVP_Generator[T]):
+class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
     r"""Base class for IVP_Generators."""
 
     rng: Generator = RNG
@@ -245,7 +237,7 @@ class IVP_GeneratorBase(IVP_Generator[T]):
     @final
     def make_observations(self, sol: Any, /) -> T:
         r"""Create observations from the solution."""
-        # get observations (add noise))
+        # get observations (add noise)
         obs = self._make_observations_impl(sol)
         # project onto the constraint set
         obs = self.project_observations(obs)
