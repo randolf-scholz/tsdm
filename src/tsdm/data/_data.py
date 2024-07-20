@@ -16,7 +16,6 @@ __all__ = [
     "make_dataframe",
     "remove_outliers",
     "strip_whitespace",
-    "vlookup_uniques",
 ]
 
 import logging
@@ -329,20 +328,6 @@ def get_integer_cols(table: DataFrame, /) -> set[str]:
             __logger__.debug("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
-
-
-def contains_no_information(df: DataFrame, /) -> Series:
-    r"""Check if a DataFrame contains no information."""
-    return df.nunique() <= 1
-
-
-def vlookup_uniques(df: DataFrame, /, *, lookup_values: Series) -> dict[str, list]:
-    r"""Vlookup unique values for each column in a dataframe."""
-    uniques: dict[str, list] = {}
-    for col in df.columns:
-        mask = df[col].notna()
-        uniques[col] = list(lookup_values.loc[mask].unique())
-    return uniques
 
 
 def aggregate_nondestructive(df: pandas_var, /) -> pandas_var:

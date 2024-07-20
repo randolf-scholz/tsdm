@@ -38,7 +38,6 @@ __all__ = [
     "make_dataframe",
     "remove_outliers",
     "strip_whitespace",
-    "vlookup_uniques",
 ]
 
 from tsdm.data._data import (
@@ -50,7 +49,6 @@ from tsdm.data._data import (
     make_dataframe,
     remove_outliers,
     strip_whitespace,
-    vlookup_uniques,
 )
 from tsdm.data.dataloaders import (
     collate_packed,
