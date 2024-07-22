@@ -27,6 +27,7 @@ __all__ = [
     "BackendMixin",
     "BaseEncoder",
     "Encoder",
+    "EncoderDict",
     "EncoderList",
     "EncoderProtocol",
     "InvertibleTransform",
@@ -43,7 +44,7 @@ __all__ = [
     "InverseEncoder",
     "JointDecoder",
     "JointEncoder",
-    "MapEncoders",
+    "MappedEncoder",
     "NestedEncoder",
     "ParallelEncoder",
     "PipedEncoder",
@@ -84,7 +85,8 @@ from typing import (
 from tsdm import encoders as E
 from tsdm.backend import Backend, get_backend
 from tsdm.types.aliases import FilePath, NestedBuiltin
-from tsdm.utils.decorators import pprint_repr
+from tsdm.types.protocols import Dataclass
+from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
 
 type Agg[T] = Callable[[list[T]], T]
 
@@ -283,6 +285,12 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     r"""Whether the encoder has been fitted."""
 
     @property
+    def params(self) -> dict[str, Any]:
+        if isinstance(self, Dataclass):
+            return asdict(self)
+        raise NotImplementedError("Method `params` must be implemented.")
+
+    @property
     def requires_fit(self) -> bool:
         r"""Check if the encoder requires fitting."""
         return any(
@@ -300,9 +308,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         self._is_fitted = value
 
     # region abstract methods ----------------------------------------------------------
-    @property
-    @abstractmethod
-    def params(self) -> dict[str, Any]: ...
 
     @abstractmethod
     def encode(self, x: X, /) -> Y:
@@ -330,6 +335,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         """
         super().__init_subclass__()  # <-- This is important! Otherwise, weird things happen.
 
+        # validate that the methods are implemented
         for meth in ("fit", "encode", "decode"):
             static_meth = getattr_static(cls, meth, None)
             if static_meth is None:
@@ -337,6 +343,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
             if isinstance(static_meth, staticmethod | classmethod):
                 raise TypeError(f"Method {meth} can't be static/class method.")
 
+        # wrap the methods
         original_fit = cls.fit
         original_encode = cls.encode
         original_decode = cls.decode
@@ -524,8 +531,9 @@ class BackendMixin:
         cls.fit = wrapped_fit
 
 
-class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder], ABC):
-    r"""List of encoders."""
+@pprint_sequence(recursive=2)
+class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
+    r"""Wraps List of encoders."""
 
     encoders: list[Encoder]
     r"""List of encoders."""
@@ -569,6 +577,63 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder], ABC):
                 return cls(*self.encoders[slc])
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
+
+    def simplify(self) -> Self:
+        r"""Simplify the encoder."""
+        cls = type(self)
+        return cls(*(e.simplify() for e in self))
+
+
+@pprint_mapping(recursive=2)
+@dataclass(init=False)
+class EncoderDict[X, Y](BaseEncoder[X, Y], Mapping[Any, Encoder]):
+    r"""Wraps dictionary of encoders."""
+
+    encoders: dict[Any, Encoder]
+    r"""Mapping of keys to encoders."""
+
+    def __init__(self, encoders: Mapping[Any, Encoder]) -> None:
+        self.encoders = dict(encoders)
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders.values())
+
+    @property
+    def is_fitted(self) -> bool:
+        return all(e.is_fitted for e in self.encoders.values())
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        for encoder in self.encoders.values():
+            encoder.is_fitted = value
+
+    def __len__(self) -> int:
+        return len(self.encoders)
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self.encoders)
+
+    def __getitem__(self, key: Any, /) -> Encoder:
+        r"""Get the encoder for the given key."""
+        return self.encoders[key]
+
+    def simplify(self) -> "IdentityEncoder | Self":
+        r"""Simplify the mapping encoder."""
+        # FIXME: https://github.com/python/mypy/issues/17134
+        # match self:
+        #     case []:
+        #         return IdentityEncoder()
+        #     case [encoder]:
+        #         return encoder.simplify()
+        #     case _:
+        #         cls = type(self)
+        #         return cls(*(e.simplify() for e in self))
+
+        if len(self.encoders) == 0:
+            return IdentityEncoder()
+        cls: type[Self] = type(self)
+        return cls({k: e.simplify() for k, e in self.encoders.items()})
 
 
 # endregion base classes ---------------------------------------------------------------
@@ -655,10 +720,6 @@ class DiagonalEncoder[T](BaseEncoder[T, tuple[T, ...]]):
 
     aggregate_fn: Callable[[tuple[T, ...]], T] = random.choice
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __invert__(self) -> "DiagonalDecoder":
         return DiagonalDecoder(num=self.num, aggregate_fn=self.aggregate_fn)
 
@@ -687,10 +748,6 @@ class DiagonalDecoder[T](BaseEncoder[tuple[T, ...], T]):
 
     aggregate_fn: Callable[[tuple[T, ...]], T] = random.choice
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __invert__(self) -> "DiagonalEncoder":
         return DiagonalEncoder(num=self.num, aggregate_fn=self.aggregate_fn)
 
@@ -711,10 +768,6 @@ class InverseEncoder[X, Y](BaseEncoder[Y, X]):
 
     encoder: Encoder[X, Y]
     r"""The encoder to invert."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def fit(self, y: Y, /) -> None:
         raise NotImplementedError("Inverse encoders cannot be fitted.")
@@ -785,10 +838,6 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""The type of the leaf elements."""
     output_leaf_type: type[Y] = object  # type: ignore[assignment]
     r"""The type of the output elements."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __invert__(self) -> "NestedEncoder[Y, X]":
         # FIXME: https://github.com/microsoft/pyright/issues/8165
@@ -1366,58 +1415,30 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
         return cls(*(e.simplify() for e in self))
 
 
-@pprint_repr(recursive=2)
-class MapEncoders[
+class MappedEncoder[
     MappingIn: Mapping,
     MappingOut: Mapping,
-](BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
-    r"""Creates an encoder that applies over a mapping."""
+](EncoderDict[MappingIn, MappingOut]):
+    r"""Maps encoders to keys."""
 
-    encoders: Mapping[Any, Encoder]
-    r"""Mapping of keys to encoders."""
+    encoders: dict[Any, Encoder]
+    r"""The encoders to map to keys."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return {"encoders": self.encoders}
-
-    @property
-    def requires_fit(self) -> bool:
-        return any(e.requires_fit for e in self.encoders.values())
-
-    @property
-    def is_fitted(self) -> bool:
-        return all(e.is_fitted for e in self.encoders.values())
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
-        for encoder in self.encoders.values():
-            encoder.is_fitted = value
-
-    def __new__[K, X, Y](
-        cls, encoders: Mapping[K, Encoder[X, Y]]
-    ) -> "MapEncoders[Mapping[K, X], Mapping[K, Y]]":
+    def __new__[T, X, Y](
+        cls, encoders: Mapping[T, Encoder[X, Y]]
+    ) -> "MappedEncoder[Mapping[T, X], Mapping[T, Y]]":
         return super().__new__(cls)  # type: ignore[arg-type]
 
-    def __init__[K, X, Y](
-        self: "MapEncoders[Mapping[K, X], Mapping[K, Y]]",
-        encoders: Mapping[K, Encoder[X, Y]],
+    def __init__[T, X, Y](
+        self: "MappedEncoder[Mapping[T, X], Mapping[T, Y]]",
+        encoders: Mapping[T, Encoder[X, Y]],
     ) -> None:
-        self.encoders = encoders
+        super().__init__(encoders)
 
-    def __invert__(self) -> "MapEncoders[MappingOut, MappingIn]":
+    def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn]":
+        cls = type(self)
         decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
-        cls: type[MapEncoders] = type(self)
         return cls(decoders)  # type: ignore[return-value]
-
-    def __getitem__(self, key: Any, /) -> Encoder:
-        r"""Get the encoder for the given key."""
-        return self.encoders[key]
-
-    def __len__(self) -> int:
-        return len(self.encoders)
-
-    def __iter__(self) -> Iterator[Any]:
-        return iter(self.encoders)
 
     def fit(self, xmap: MappingIn, /) -> None:
         if missing_keys := self.encoders.keys() - xmap.keys():
@@ -1436,30 +1457,101 @@ class MapEncoders[
         xmap = {k: self.encoders[k].decode(y) for k, y in ymap.items()}
         return cast(MappingIn, xmap)
 
-    def simplify(self) -> IdentityEncoder | Self:
-        r"""Simplify the mapping encoder."""
-        # FIXME: https://github.com/python/mypy/issues/17134
-        # match self:
-        #     case []:
-        #         return IdentityEncoder()
-        #     case [encoder]:
-        #         return encoder.simplify()
-        #     case _:
-        #         cls = type(self)
-        #         return cls(*(e.simplify() for e in self))
-
-        if len(self.encoders) == 0:
-            return IdentityEncoder()
-        cls: type[Self] = type(self)
-        return cls({k: e.simplify() for k, e in self.encoders.items()})
-
 
 def map_encoders[K, X, Y](
     encoders: Mapping[K, Encoder[X, Y]], /, *, simplify: bool = True
-) -> IdentityEncoder | MapEncoders[Mapping[K, X], Mapping[K, Y]]:
+) -> IdentityEncoder | MappedEncoder[Mapping[K, X], Mapping[K, Y]]:
     r"""Map encoders."""
-    encoder = MapEncoders(encoders)
+    encoder = MappedEncoder(encoders)
     return encoder.simplify() if simplify else encoder
+
+
+# @pprint_repr(recursive=2)
+# class MapEncoders[
+#     MappingIn: Mapping,
+#     MappingOut: Mapping,
+# ](BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
+#     r"""Creates an encoder that applies over a mapping."""
+#
+#     encoders: Mapping[Any, Encoder]
+#     r"""Mapping of keys to encoders."""
+#
+#     @property
+#     def params(self) -> dict[str, Any]:
+#         return {"encoders": self.encoders}
+#
+#     @property
+#     def requires_fit(self) -> bool:
+#         return any(e.requires_fit for e in self.encoders.values())
+#
+#     @property
+#     def is_fitted(self) -> bool:
+#         return all(e.is_fitted for e in self.encoders.values())
+#
+#     @is_fitted.setter
+#     def is_fitted(self, value: bool) -> None:
+#         for encoder in self.encoders.values():
+#             encoder.is_fitted = value
+#
+#     def __new__[K, X, Y](
+#         cls, encoders: Mapping[K, Encoder[X, Y]]
+#     ) -> "MapEncoders[Mapping[K, X], Mapping[K, Y]]":
+#         return super().__new__(cls)  # type: ignore[arg-type]
+#
+#     def __init__[K, X, Y](
+#         self: "MapEncoders[Mapping[K, X], Mapping[K, Y]]",
+#         encoders: Mapping[K, Encoder[X, Y]],
+#     ) -> None:
+#         self.encoders = encoders
+#
+#     def __invert__(self) -> "MapEncoders[MappingOut, MappingIn]":
+#         decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
+#         cls: type[MapEncoders] = type(self)
+#         return cls(decoders)  # type: ignore[return-value]
+#
+#     def __getitem__(self, key: Any, /) -> Encoder:
+#         r"""Get the encoder for the given key."""
+#         return self.encoders[key]
+#
+#     def __len__(self) -> int:
+#         return len(self.encoders)
+#
+#     def __iter__(self) -> Iterator[Any]:
+#         return iter(self.encoders)
+#
+#     def fit(self, xmap: MappingIn, /) -> None:
+#         if missing_keys := self.encoders.keys() - xmap.keys():
+#             raise ValueError(f"No data to fit encoders {missing_keys}.")
+#         if extra_keys := xmap.keys() - self.encoders.keys():
+#             raise ValueError(f"Extra data with no matching encoder {extra_keys}.")
+#
+#         for k, x in xmap.items():
+#             self.encoders[k].fit(x)
+#
+#     def encode(self, xmap: MappingIn, /) -> MappingOut:
+#         ymap = {k: self.encoders[k].encode(x) for k, x in xmap.items()}
+#         return cast(MappingOut, ymap)
+#
+#     def decode(self, ymap: MappingOut, /) -> MappingIn:
+#         xmap = {k: self.encoders[k].decode(y) for k, y in ymap.items()}
+#         return cast(MappingIn, xmap)
+#
+#     def simplify(self) -> IdentityEncoder | Self:
+#         r"""Simplify the mapping encoder."""
+#         # FIXME: https://github.com/python/mypy/issues/17134
+#         # match self:
+#         #     case []:
+#         #         return IdentityEncoder()
+#         #     case [encoder]:
+#         #         return encoder.simplify()
+#         #     case _:
+#         #         cls = type(self)
+#         #         return cls(*(e.simplify() for e in self))
+#
+#         if len(self.encoders) == 0:
+#             return IdentityEncoder()
+#         cls: type[Self] = type(self)
+#         return cls({k: e.simplify() for k, e in self.encoders.items()})
 
 
 # endregion variadic encoders ----------------------------------------------------------

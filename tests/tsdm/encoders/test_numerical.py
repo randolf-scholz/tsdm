@@ -4,7 +4,7 @@ import logging
 import pickle
 from collections.abc import Callable
 from tempfile import TemporaryFile
-from typing import Any, TypeVar, assert_type
+from typing import Any, assert_type
 
 import numpy as np
 import pandas as pd
@@ -21,20 +21,20 @@ from tsdm.encoders.numerical import (
     get_broadcast,
     get_reduced_axes,
 )
+from tsdm.types.aliases import Axis
 
 __logger__ = logging.getLogger(__name__)
-T = TypeVar(
-    "T",
-    Callable[..., pd.Series],
-    Callable[..., pd.DataFrame],
-    Callable[..., np.ndarray],
-    Callable[..., torch.Tensor],
-)
-D = TypeVar("D", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
-E = TypeVar("E", StandardScaler, MinMaxScaler)
-type Bounds = tuple[float | None, float | None]
 
 
+type Bounds = tuple[None | float, None | float]
+BOUNDS: list[Bounds] = [
+    (-1, +1),
+    (0, 1),
+    (0, float("inf")),
+    (0, None),
+    (0, float("nan")),
+    (0, pd.NA),
+]
 DATA_1D = [
     float("-inf"),
     -1.1,
@@ -52,7 +52,6 @@ DATA_2D = [
     [ 0.0,  0.3,  0.5,  1.0],
     [ 1.5,  2.0,  2.5,  3.0],
 ]  # fmt: skip
-
 DATA = {
     "numpy-1D": np.array(DATA_1D),
     "numpy-2D": np.array(DATA_2D),
@@ -64,14 +63,6 @@ DATA = {
     "pandas-series-array": pd.Series(DATA_1D, dtype="float[pyarrow]"),
     # "pandas-dataframe": pd.DataFrame(_DATA_2D),
 }
-BOUNDS: list[Bounds] = [
-    (-1, +1),
-    (0, 1),
-    (0, float("inf")),
-    (0, None),
-    (0, float("nan")),
-    (0, pd.NA),
-]
 
 
 @pytest.mark.parametrize("upper_included", [True, False])
@@ -79,7 +70,7 @@ BOUNDS: list[Bounds] = [
 @pytest.mark.parametrize("bounds", BOUNDS, ids=str)
 @pytest.mark.parametrize("mode", ["clip", "mask"])
 @pytest.mark.parametrize("data", DATA.values(), ids=DATA)
-def test_boundary_encoder2(
+def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)](
     *,
     data: D,
     mode: ClippingMode,
@@ -108,29 +99,34 @@ def test_boundary_encoder2(
     assert encoded.dtype == data.dtype
 
     lb, ub = encoder.lower_bound, encoder.upper_bound
+    lb_given: bool = pd.notna(lb)
+    ub_given: bool = pd.notna(ub)
+    lower_mask: np.ndarray | D
+    upper_mask: np.ndarray | D
+
     nan_data = np.isnan(data)
     nan_encoded = np.isnan(encoded)
 
-    match pd.isna(lb), mode, lower_included:
-        case True, _, _:
+    match lb_given, mode, lower_included:
+        case False, _, _:
             lower_mask = np.zeros_like(data, dtype=bool)
-        case False, "clip", _:
+        case True, "clip", _:
             lower_mask = data <= lb
-        case False, "mask", True:
+        case True, "mask", True:
             lower_mask = data < lb
-        case False, "mask", False:
+        case True, "mask", False:
             lower_mask = data <= lb
         case _:
             raise ValueError(f"Unexpected combination: {lb=} {mode=} {lower_included=}")
 
-    match pd.isna(ub), mode, upper_included:
-        case True, _, _:
+    match ub_given, mode, upper_included:
+        case False, _, _:
             upper_mask = np.zeros_like(data, dtype=bool)
-        case False, "clip", _:
+        case True, "clip", _:
             upper_mask = data >= ub
-        case False, "mask", True:
+        case True, "mask", True:
             upper_mask = data > ub
-        case False, "mask", False:
+        case True, "mask", False:
             upper_mask = data >= ub
         case _:
             raise ValueError(f"Unexpected combination: {ub=} {mode=} {upper_included=}")
@@ -147,7 +143,11 @@ def test_boundary_encoder2(
 
 
 @pytest.mark.parametrize("data", DATA.values(), ids=DATA)
-def test_boundary_encoder(data: D) -> None:
+def test_boundary_encoder[
+    D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor),
+](
+    data: D,
+) -> None:
     r"""Test the boundary encoder."""
     encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
     encoder.fit(data)
@@ -236,7 +236,14 @@ def test_boundary_encoder(data: D) -> None:
 @pytest.mark.parametrize(
     "tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor]
 )
-def test_linear_scaler(tensor_type: T) -> None:
+def test_linear_scaler[
+    T: (
+        Callable[..., pd.Series],
+        Callable[..., pd.DataFrame],
+        Callable[..., np.ndarray],
+        Callable[..., torch.Tensor],
+    )
+](tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(LinearScaler.__name__)
     encoder_type = LinearScaler
@@ -285,9 +292,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     [(1, -1), (-2,), (-1,), (0,), -2, -1, 0, None, ()],
     ids=lambda x: f"axis={x}",
 )
-def test_get_broadcast(
-    shape: tuple[int, ...], axis: None | int | tuple[int, ...]
-) -> None:
+def test_get_broadcast(shape: tuple[int, ...], axis: Axis) -> None:
     r"""Test the get_broadcast function."""
     # initialize array
     arr: np.ndarray = RNG.normal(size=shape)
@@ -342,7 +347,15 @@ def test_reduce_axes() -> None:
 @pytest.mark.parametrize(
     "tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor]
 )
-def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
+def test_scaler[
+    T: (
+        Callable[..., pd.Series],
+        Callable[..., pd.DataFrame],
+        Callable[..., np.ndarray],
+        Callable[..., torch.Tensor],
+    ),
+    E: (StandardScaler, MinMaxScaler),
+](encoder_type: type[E], tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing.")
@@ -406,7 +419,9 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
 
 
 @pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
-def test_scaler_dataframe(encoder_type: type[E]) -> None:
+def test_scaler_dataframe[
+    E: (StandardScaler, MinMaxScaler),
+](encoder_type: type[E]) -> None:
     r"""Check whether the scaler-encoders work as expected on DataFrame."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
@@ -456,7 +471,11 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
 
 
 @pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
-def test_scaler_series(encoder_type: type[E]) -> None:
+def test_scaler_series[
+    E: (MinMaxScaler, StandardScaler),
+](
+    encoder_type: type[E],
+) -> None:
     r"""Check whether the scaler-encoders work as expected on Series."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.Series.")
@@ -491,14 +510,15 @@ def test_scaler_series(encoder_type: type[E]) -> None:
 
 
 @pytest.mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
-def test_standard_scaler(axis):
+def test_standard_scaler(axis: Axis) -> None:
     r"""Test the MinMaxScaler."""
-    TRUE_SHAPE = {
+    TRUE_SHAPES: dict[Axis, tuple[int, ...]] = {
         (): (),
         (-2, -1): (4, 5),
         -1: (5,),
         None: (2, 3, 4, 5),
-    }[axis]
+    }
+    expected = TRUE_SHAPES[axis]
 
     # initialize
     X = RNG.normal(size=(2, 3, 4, 5))
@@ -507,7 +527,8 @@ def test_standard_scaler(axis):
 
     # fit to data
     encoder.fit(X)
-    assert encoder.params["mean"].shape == TRUE_SHAPE
+    result = encoder.params["mean"].shape
+    assert result == expected
     encoded = encoder.encode(X)
 
     if axis is None:  # std = 0.0
@@ -520,21 +541,23 @@ def test_standard_scaler(axis):
 
 
 @pytest.mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
-def test_minmax_scaler(axis):
+def test_minmax_scaler(axis: Axis) -> None:
     r"""Test the MinMaxScaler."""
-    TRUE_SHAPE = {
+    TRUE_SHAPES: dict[Axis, tuple[int, ...]] = {
         None: (2, 3, 4, 5),
         (-2, -1): (4, 5),
         -1: (5,),
         (): (),
-    }[axis]
+    }
+    expected = TRUE_SHAPES[axis]
 
     X = RNG.normal(size=(2, 3, 4, 5))
     encoder = MinMaxScaler(axis=axis)
     assert_type(encoder, MinMaxScaler[Any])
 
     encoder.fit(X)
-    assert encoder.params["ymin"].shape == TRUE_SHAPE
+    result = encoder.params["ymin"].shape
+    assert result == expected
     encoded = encoder.encode(X)
     assert encoded.min() >= 0.0
     assert encoded.max() <= 1.0

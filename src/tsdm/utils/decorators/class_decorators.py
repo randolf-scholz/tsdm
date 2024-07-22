@@ -32,8 +32,9 @@ from tsdm.utils.pprint import (
 )
 
 
-# @decorator
-def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
+@decorator
+def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
+    # def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -42,7 +43,8 @@ def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
 
 
 @decorator
-def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
+def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
+    # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -51,25 +53,8 @@ def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
 
 
 @decorator
-def pprint_dataclass[Dtc: type[Dataclass]](cls: Dtc, /, **kwds: Any) -> Dtc:
-    r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, Dataclass):  # type: ignore[misc]
-        raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore[assignment]
-    return cls
-
-
-@decorator
-def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
-    r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, NTuple):  # type: ignore[misc]
-        raise TypeError(f"Expected NamedTuple type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore[assignment]
-    return cls
-
-
-@decorator
-def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
+def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
+    # def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
@@ -78,7 +63,28 @@ def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
 
 
 @decorator
-def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
+def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]:
+    # def pprint_dataclass[Dtc: type[Dataclass]](cls: Dtc, /, **kwds: Any) -> Dtc:
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, Dataclass):  # type: ignore[misc]
+        raise TypeError(f"Expected Sequence type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore[assignment]
+    return cls
+
+
+@decorator
+def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
+    # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, NTuple):  # type: ignore[misc]
+        raise TypeError(f"Expected NamedTuple type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore[assignment]
+    return cls
+
+
+@decorator
+def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
+    # def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not isinstance(cls, type):
         raise TypeError("Must be a class!")

@@ -15,8 +15,8 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable
-from dataclasses import KW_ONLY, asdict, dataclass
-from typing import Any, Literal
+from dataclasses import KW_ONLY, dataclass
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -261,10 +261,6 @@ class BoxCoxEncoder(BaseEncoder):
     offset: float = NotImplemented
     verbose: bool = False
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __post_init__(self):
         if self.method not in METHODS:
             raise ValueError(f"{self.method=} unknown. Available: {METHODS}")
@@ -357,10 +353,6 @@ class LogitBoxCoxEncoder(BaseEncoder):
     verbose: bool = False
     offset: float = NotImplemented
     bounds: tuple[float, float] = (0.0, 1.0)
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __post_init__(self) -> None:
         if self.method not in METHODS:

@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from dataclasses import KW_ONLY, asdict, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from pathlib import Path
 from types import EllipsisType
 from typing import Any, ClassVar, Optional
@@ -39,7 +39,7 @@ from torch import Tensor
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
 from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg
-from tsdm.utils.decorators import pprint_repr
+from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 
 def get_ellipsis_cols[T](
@@ -81,6 +81,8 @@ def is_canonically_indexed(df: DataFrame, /) -> bool:
     return False
 
 
+@pprint_mapping
+@dataclass
 class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
@@ -95,44 +97,22 @@ class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     - [ ] Add support for groups of column-encoders
     """
 
-    original_columns: list[K]
-    original_dtypes: Series
-    original_index_columns: list[K]
-    original_value_columns: list[K]
-
     encoders: Mapping[K, Encoder]
-    column_encoders: Mapping[K, Encoder]
-    index_encoders: Mapping[K, Encoder]
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return {
-            "column_encoders": self.column_encoders,
-            "index_encoders": self.index_encoders,
-            "original_columns": self.original_columns,
-            "original_dtypes": self.original_dtypes,
-            "original_index_columns": self.original_index_columns,
-            "original_value_columns": self.original_value_columns,
-        }
+    # fitted attributes
+    original_columns: list[K] = field(init=False)
+    original_dtypes: Series = field(init=False)
+    original_index_columns: list[K] = field(init=False)
+    original_value_columns: list[K] = field(init=False)
 
-    def __init__(
-        self,
-        column_encoders: Mapping[K, Encoder] = EMPTY_MAP,
-        *,
-        index_encoders: Mapping[K, Encoder] = EMPTY_MAP,
-    ) -> None:
-        self.index_encoders = index_encoders
-        self.column_encoders = column_encoders
-        self.encoders = {**column_encoders, **index_encoders}
-
-    def __getitem__(self, key: K, /) -> Encoder:
-        return self.encoders[key]
+    def __len__(self) -> int:
+        return len(self.encoders)
 
     def __iter__(self) -> Iterator[K]:
         return iter(self.encoders)
 
-    def __len__(self) -> int:
-        return len(self.encoders)
+    def __getitem__(self, key: K, /) -> Encoder:
+        return self.encoders[key]
 
     def fit(self, data: DataFrame, /) -> None:
         data = data.copy(deep=True)
@@ -199,10 +179,6 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
     r"""The original schema (column -> dtype)."""
     categories: pd.CategoricalDtype = NotImplemented
     r"""The stored categories."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -299,10 +275,6 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
     r"""The stored categories."""
     original_schema: Series = NotImplemented
     r"""The original dtypes."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -419,10 +391,6 @@ class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
     csv_write_options: dict[str, Any]
     r"""The options for the to_csv function."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __init__(
         self,
         filename_or_generator: FilePath | Callable[[DataFrame], Path],
@@ -464,10 +432,6 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
     original_dtypes: dict[str, Any] = NotImplemented
     r"""The original dtypes."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __init__(self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg]) -> None:
         super().__init__()
         self.target_dtypes = (
@@ -507,10 +471,6 @@ class FrameAsTensor(BaseEncoder[DataFrame, Tensor]):
     original_schema: dict[str, Any] = NotImplemented
     r"""The original schema."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def fit(self, data: DataFrame, /) -> None:
         if data.index != pd.RangeIndex(len(data)):
             raise ValueError("DataFrame must be canonically indexed!")
@@ -541,10 +501,6 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
 
     # Fitted attributes
     original_dtypes: dict[str, Any] = NotImplemented  # cols -> dtype
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -639,10 +595,6 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
     # Fitted attributes
     index_cols: list[str] = NotImplemented
     original_dtypes: dict[str, Any] = NotImplemented  # cols -> dtype
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,

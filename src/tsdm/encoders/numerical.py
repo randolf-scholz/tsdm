@@ -48,7 +48,7 @@ __all__ = [
 ]
 
 from collections.abc import Iterable
-from dataclasses import KW_ONLY, asdict, dataclass, field
+from dataclasses import KW_ONLY, dataclass, field
 from types import EllipsisType
 from typing import Any, Literal, Optional, Self, cast, overload
 
@@ -328,10 +328,6 @@ class BoundaryEncoder[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     lower_value: float | Arr = field(init=False, default=NotImplemented)
     upper_value: float | Arr = field(init=False, default=NotImplemented)
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
         r"""Create a BoundaryEncoder from a pandas Interval."""
@@ -456,10 +452,6 @@ class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     backend: Backend[Arr]
     r"""The backend of the encoder."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __init__(
         self,
         loc: float | Arr = 0.0,
@@ -529,10 +521,6 @@ class StandardScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     r"""The axis to perform the scaling. If None, automatically select the axis."""
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -657,10 +645,6 @@ class MinMaxScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -829,10 +813,6 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
     threshold: NDArray
     replacement: NDArray
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def fit(self, data: NDArray, /) -> None:
         if np.any(data < 0):
             raise ValueError("Data must be non-negative.")
@@ -880,10 +860,6 @@ class TensorSplitter[Arr: NumericalArray](ArrayEncoder[Arr, list[Arr]]):
     indices: int | list[int] = 1
     axis: int = 0
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __invert__(self) -> "TensorConcatenator[Arr]":
         return TensorConcatenator(axis=self.axis, indices=self.indices)
 
@@ -902,10 +878,6 @@ class TensorConcatenator[Arr: NumericalArray](ArrayDecoder[list[Arr], Arr]):
     _: KW_ONLY
     indices: int | list[int] = NotImplemented
     axis: int = 0
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __invert__(self) -> "TensorSplitter[Arr]":
         return TensorSplitter(axis=self.axis, indices=self.indices)

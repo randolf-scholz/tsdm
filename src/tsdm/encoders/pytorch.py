@@ -10,7 +10,7 @@ __all__ = [
     "Time2VecEncoder",
 ]
 
-from dataclasses import KW_ONLY, asdict, dataclass, field
+from dataclasses import KW_ONLY, dataclass, field
 from typing import Any, Final
 
 import torch
@@ -202,10 +202,6 @@ class Time2VecEncoder(BaseEncoder[Tensor, Tensor]):
     encoder: Time2Vec = field(init=False)
     r"""The wrapped encoder."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __post_init__(self):
         self.encoder = Time2Vec(num_dim=self.num_dim, activation=self.activation)
         self.freq = self.encoder.freq
@@ -233,10 +229,6 @@ class PositionalEncoder(BaseEncoder[Tensor, Tensor]):
     r"""Scale factors for positional encoding."""
     encoder: PositionalEncoding = field(init=False)
     r"""The wrapped encoder."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __post_init__(self):
         self.encoder = PositionalEncoding(num_dim=self.num_dim, scale=self.scale)

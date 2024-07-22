@@ -11,9 +11,9 @@ __all__ = [
 ]
 
 from collections.abc import Hashable, Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any, ClassVar, Final, Optional, cast
+from typing import Any, ClassVar, Final, cast
 
 import numpy as np
 import pandas as pd
@@ -41,10 +41,6 @@ class TimeDeltaEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin
     r"""The original dtype of the Series."""
     round: bool = True
     r"""Whether to round to the next unit."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -101,10 +97,6 @@ class DateTimeEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin)
     r"""The original dtype of the Series."""
     timedelta_dtype: Any = NotImplemented
     r"""The dtype of the timedelta."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
 
     def __init__(
         self,
@@ -185,10 +177,6 @@ class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
     scales: Final[NDArray]
     r"""Scale factors for positional encoding."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return asdict(self)
-
     def __init__(self, num_dim: int, scale: float) -> None:
         self.num_dim = num_dim
         self.scale = float(scale)
@@ -209,53 +197,54 @@ class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
         return np.arcsin(y[..., 0])
 
 
+@pprint_repr
+@dataclass
 class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
     r"""Encode periodic data as sin/cos waves."""
 
     period: float = NotImplemented
-    freq: float = NotImplemented
-    dtype: DType = NotImplemented
-    colname: Hashable = NotImplemented
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return {
-            "period": self.period,
-            "freq": self.freq,
-            "dtype": self.dtype,
-            "colname": self.colname,
-        }
+    # fitted fields
+    freq: float = field(init=False)
+    original_dtype: DType = field(init=False)
+    original_name: Hashable = field(init=False)
 
-    def __init__(self, period: Optional[float] = None) -> None:
-        self._period = period
+    def __post_init__(self):
+        # fitted fields
+        self.freq = NotImplemented
+        self.dtype = NotImplemented
+        self.colname = NotImplemented
 
     def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
-        self.dtype = x.dtype
-        self.colname = x.name
-        self.period = x.max() + 1 if self._period is None else self._period
-        self._period = self.period
+        self.original_dtype = x.dtype
+        self.original_name = x.name
+
+        if self.period is NotImplemented:
+            self.period = x.max() + 1
+
         self.freq = 2 * np.pi / self.period
 
     def encode(self, x: Series, /) -> DataFrame:
         r"""Encode the data."""
         z = self.freq * (x % self.period)  # ensure 0...N-1
-        return DataFrame(
-            np.stack([np.cos(z), np.sin(z)]).T,
-            columns=[f"cos_{self.colname}", f"sin_{self.colname}"],
-        )
+        columns = [f"cos_{self.original_name}", f"sin_{self.original_name}"]
+        return DataFrame(np.stack([np.cos(z), np.sin(z)]).T, columns=columns)
 
     def decode(self, y: DataFrame, /) -> Series:
         r"""Decode the data."""
-        z = np.arctan2(y[f"sin_{self.colname}"], y[f"cos_{self.colname}"])
+        columns = [f"cos_{self.original_name}", f"sin_{self.original_name}"]
+        z = np.arctan2(y[columns[1]], y[columns[0]])
         z = (z / self.freq) % self.period
-        return Series(z, dtype=self.dtype, name=self.colname)
+        return Series(z, dtype=self.original_dtype, name=self.original_name)
 
 
+@pprint_repr
+@dataclass
 class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
     r"""Social time encoding."""
 
-    LEVEL_CODES: ClassVar[dict[str, str]] = {
+    LEVEL_CODES: ClassVar[Mapping[str, str]] = {
         "Y": "year",
         "M": "month",
         "W": "weekday",
@@ -267,27 +256,24 @@ class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
         "n": "nanosecond",
     }
 
-    level_code: str
-    levels: list[str]
-    original_dtype: DType
-    original_name: Hashable
-    original_type: type
-    rev_cols: list[str]
+    level_codes: str = "YMWDhms"
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return {
-            "level_code": self.level_code,
-            "levels": self.levels,
-            "original_name": self.original_name,
-            "original_dtype": self.original_dtype,
-            "original_type": self.original_type,
-            "rev_cols": self.rev_cols,
-        }
+    # computed attributes
+    levels: list[str] = field(init=False)
+    # fitted attributes
+    original_dtype: DType = field(init=False)
+    original_name: Hashable = field(init=False)
+    original_type: type = field(init=False)
+    rev_cols: list[str] = field(init=False)
 
-    def __init__(self, levels: str = "YMWDhms") -> None:
-        self.level_code = levels
-        self.levels = [self.LEVEL_CODES[k] for k in levels]
+    def __post_init__(self) -> None:
+        # computed attributes
+        self.levels = [self.LEVEL_CODES[k] for k in self.level_codes]
+        # fitted attributes
+        self.original_dtype = NotImplemented
+        self.original_name = NotImplemented
+        self.original_type = NotImplemented
+        self.rev_cols = NotImplemented
 
     def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
@@ -312,26 +298,27 @@ class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
 class PeriodicSocialTimeEncoder(WrappedEncoder[Series, DataFrame]):
     r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""
 
+    DEFAULT_FREQUENCIES: ClassVar[Mapping[str, int]] = MappingProxyType({
+        "year"        : 1,
+        "month"       : 12,
+        "weekday"     : 7,
+        "day"         : 365,
+        "hour"        : 24,
+        "minute"      : 60,
+        "second"      : 60,
+        "microsecond" : 1000,
+        "nanosecond"  : 1000,
+    })  # fmt: skip
+    r"""The frequencies of the used `PeriodicEncoder`."""
+
     levels: str
     r"""The levels to encode."""
-    FREQUENCIES: dict[str, int]
-    r"""The frequencies of the used `PeriodicEncoder`."""
 
     def __init__(
         self,
         *,
         levels: str = "YMWDhms",
-        frequencies: Mapping[str, int] = MappingProxyType({
-            "year": 1,
-            "month": 12,
-            "weekday": 7,
-            "day": 365,
-            "hour": 24,
-            "minute": 60,
-            "second": 60,
-            "microsecond": 1000,
-            "nanosecond": 1000,
-        }),
+        frequencies: Mapping[str, int] = DEFAULT_FREQUENCIES,
     ) -> None:
         self.levels = levels
         self.encoder = SocialTimeEncoder(levels) >> FrameEncoder({
