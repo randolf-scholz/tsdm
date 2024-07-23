@@ -66,10 +66,8 @@ def encoder() -> BaseEncoder:
     # construct the encoder
     encoder = (
         FrameEncoder(
-            column_encoders=column_encoders,
-            index_encoders={
-                "measurement_time": DateTimeEncoder(rounding=False) >> MinMaxScaler()
-            },
+            column_encoders,
+            measurement_time=DateTimeEncoder(rounding=False) >> MinMaxScaler(),
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(

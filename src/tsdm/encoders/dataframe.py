@@ -23,7 +23,7 @@ __all__ = [
     "get_ellipsis_cols",
 ]
 
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from pathlib import Path
 from types import EllipsisType
@@ -37,7 +37,7 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.encoders.base import BaseEncoder, Encoder
+from tsdm.encoders.base import BaseEncoder, Encoder, EncoderDict
 from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
@@ -82,8 +82,8 @@ def is_canonically_indexed(df: DataFrame, /) -> bool:
 
 
 @pprint_mapping
-@dataclass
-class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
+@dataclass(init=False)
+class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Similar to `sklearn.compose.ColumnTransformer`.
@@ -97,32 +97,20 @@ class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     - [ ] Add support for groups of column-encoders
     """
 
-    encoders: Mapping[K, Encoder]
+    encoders: dict[K, Encoder]
+    r"""The encoders for each group."""
 
     # fitted attributes
-    original_columns: list[K] = field(init=False)
-    original_dtypes: Series = field(init=False)
-    original_index_columns: list[K] = field(init=False)
-    original_value_columns: list[K] = field(init=False)
-
-    def __len__(self) -> int:
-        return len(self.encoders)
-
-    def __iter__(self) -> Iterator[K]:
-        return iter(self.encoders)
-
-    def __getitem__(self, key: K, /) -> Encoder:
-        return self.encoders[key]
+    original_index: list[K] = field(init=False)
+    original_schema: Series = field(init=False)
 
     def fit(self, data: DataFrame, /) -> None:
         data = data.copy(deep=True)
         index = data.index.to_frame()
-        self.original_value_columns = FrozenList(data.columns)
-        self.original_index_columns = FrozenList(index.columns)
+        self.original_index = FrozenList(index.columns)
 
         data = data.reset_index()
-        self.original_dtypes = data.dtypes
-        self.original_columns = FrozenList(data.columns)
+        self.original_schema = data.dtypes
 
         # fit the encoders one by one
         for group, encoder in self.encoders.items():
@@ -140,7 +128,7 @@ class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
         for group, encoder in self.encoders.items():
             data[group] = encoder.encode(data[group])
 
-        index_columns = data.columns.intersection(self.original_index_columns)
+        index_columns = data.columns.intersection(self.original_index)
         data = data.set_index(index_columns.tolist())
         return data
 
@@ -151,8 +139,8 @@ class FrameEncoder[K](BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
             data[group] = encoder.decode(data[group])
 
         # Restore index order + dtypes
-        data = data.astype(self.original_dtypes[data.columns])
-        index_columns = data.columns.intersection(self.original_index_columns)
+        data = data.astype(self.original_schema[data.columns])
+        index_columns = data.columns.intersection(self.original_index)
         data = data.set_index(index_columns.tolist())
         return data
 
@@ -429,7 +417,7 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
 
     target_dtypes: dict[Any, PandasDTypeArg] = NotImplemented
     r"""The target dtypes."""
-    original_dtypes: dict[str, Any] = NotImplemented
+    original_schema: dict[str, Any] = NotImplemented
     r"""The original dtypes."""
 
     def __init__(self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg]) -> None:
@@ -438,20 +426,20 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
             dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
         )
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        return data.astype({k: self.target_dtypes[k] for k in data.columns})
-
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        return data.astype({k: self.original_dtypes[k] for k in data.columns})
-
     def fit(self, data: DataFrame, /) -> None:
-        self.original_dtypes = data.dtypes.to_dict()
+        self.original_schema = data.dtypes.to_dict()
 
         if Ellipsis in self.target_dtypes:
             fill_dtype = self.target_dtypes.pop(Ellipsis)
             ellipsis_cols: list = get_ellipsis_cols(data, self.target_dtypes)
             for col in ellipsis_cols:
                 self.target_dtypes[col] = fill_dtype
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype({k: self.target_dtypes[k] for k in data.columns})
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype({k: self.original_schema[k] for k in data.columns})
 
 
 @pprint_repr
@@ -500,7 +488,7 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
     r"""The schema for grouping the columns (group-name -> col-name(s))."""
 
     # Fitted attributes
-    original_dtypes: dict[str, Any] = NotImplemented  # cols -> dtype
+    original_schema: dict[str, Any] = NotImplemented  # cols -> dtype
 
     def __init__(
         self,
@@ -513,7 +501,7 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
 
     def fit(self, data: DataFrame, /) -> None:
         # get the original dtypes
-        self.original_dtypes = data.dtypes.to_dict()
+        self.original_schema = data.dtypes.to_dict()
 
         # fill in the missing columns
         if Ellipsis in self.schema.values():
@@ -540,8 +528,8 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
         # Assemble the DataFrame
         return (
             pd.concat(data.values(), axis="columns")
-            .astype(self.original_dtypes)  # restores dtypes
-            .reindex(columns=self.original_dtypes)  # restores column order
+            .astype(self.original_schema)  # restores dtypes
+            .reindex(columns=self.original_schema)  # restores column order
         )
 
 
@@ -593,8 +581,8 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
     r"""The dtype for each group (group-name -> dtype)."""
 
     # Fitted attributes
-    index_cols: list[str] = NotImplemented
-    original_dtypes: dict[str, Any] = NotImplemented  # cols -> dtype
+    original_index: list[str] = NotImplemented
+    original_schema: dict[str, Any] = NotImplemented  # cols -> dtype
 
     def __init__(
         self,
@@ -616,12 +604,12 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
 
     def fit(self, data: DataFrame, /) -> None:
         # check the index of the dataframe
-        self.index_cols = list(data.index.names)
+        self.original_index = list(data.index.names)
         if not is_canonically_indexed(data):
             data = data.reset_index()
 
         # get the original dtypes
-        self.original_dtypes = data.dtypes.to_dict()
+        self.original_schema = data.dtypes.to_dict()
 
         # fill in the missing columns
         if Ellipsis in self.schema.values():
@@ -682,12 +670,12 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
         df = (
             pd.concat(dfs, axis="columns")
             # restores column order / adds missing columns
-            .reindex(columns=self.original_dtypes)
+            .reindex(columns=self.original_schema)
             # restore original dtypes
-            .astype(self.original_dtypes)
+            .astype(self.original_schema)
         )
 
-        if self.index_cols != [None]:
-            df = df.set_index(self.index_cols)
+        if self.original_index != [None]:
+            df = df.set_index(self.original_index)
 
         return df

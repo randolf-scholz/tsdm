@@ -84,8 +84,9 @@ from typing import (
 
 from tsdm import encoders as E
 from tsdm.backend import Backend, get_backend
+from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import FilePath, NestedBuiltin
-from tsdm.types.protocols import Dataclass
+from tsdm.types.protocols import Dataclass, SupportsKeysAndGetItem
 from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
 
 type Agg[T] = Callable[[list[T]], T]
@@ -512,25 +513,6 @@ class UniversalEncoder(BaseEncoder[Any, Any], ABC):
     def fit(self, data: Any, /) -> None: ...
 
 
-class BackendMixin:
-    r"""Encoder equipped with a backend."""
-
-    backend: Backend = NotImplemented
-
-    def __init_subclass__(cls: type[Encoder]) -> None:
-        super().__init_subclass__()
-
-        original_fit = cls.fit
-
-        @wraps(original_fit)
-        def wrapped_fit(self, x, /):
-            if self.backend is NotImplemented:
-                self.backend = get_backend(x)
-            original_fit(self, x)
-
-        cls.fit = wrapped_fit
-
-
 @pprint_sequence(recursive=2)
 class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
     r"""Wraps List of encoders."""
@@ -578,7 +560,7 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
-    def simplify(self) -> Self:
+    def simplify(self) -> "Encoder[X, Y]":
         r"""Simplify the encoder."""
         cls = type(self)
         return cls(*(e.simplify() for e in self))
@@ -586,14 +568,32 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
 
 @pprint_mapping(recursive=2)
 @dataclass(init=False)
-class EncoderDict[X, Y](BaseEncoder[X, Y], Mapping[Any, Encoder]):
+class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
     r"""Wraps dictionary of encoders."""
 
-    encoders: dict[Any, Encoder]
+    encoders: dict[K, Encoder]
     r"""Mapping of keys to encoders."""
 
-    def __init__(self, encoders: Mapping[Any, Encoder]) -> None:
-        self.encoders = dict(encoders)
+    @overload
+    def __init__(
+        self,
+        enc_map: SupportsKeysAndGetItem[K, Encoder],
+        /,
+    ) -> None: ...
+    @overload
+    def __init__[U, V](
+        self: "EncoderDict[U, V, str]",
+        enc_map: SupportsKeysAndGetItem[str, Encoder] = ...,
+        /,
+        **encoders: Encoder,
+    ) -> None: ...
+    def __init__(
+        self,
+        enc_map: SupportsKeysAndGetItem[Any, Encoder] = EMPTY_MAP,
+        /,
+        **encoders: Encoder,
+    ) -> None:
+        self.encoders = dict(enc_map, **encoders)
 
     @property
     def requires_fit(self) -> bool:
@@ -632,8 +632,27 @@ class EncoderDict[X, Y](BaseEncoder[X, Y], Mapping[Any, Encoder]):
 
         if len(self.encoders) == 0:
             return IdentityEncoder()
-        cls: type[Self] = type(self)
+        cls = type(self)
         return cls({k: e.simplify() for k, e in self.encoders.items()})
+
+
+class BackendMixin:
+    r"""Encoder equipped with a backend."""
+
+    backend: Backend = NotImplemented
+
+    def __init_subclass__(cls: type[Encoder]) -> None:
+        super().__init_subclass__()
+
+        original_fit = cls.fit
+
+        @wraps(original_fit)
+        def wrapped_fit(self, x, /):
+            if self.backend is NotImplemented:
+                self.backend = get_backend(x)
+            original_fit(self, x)
+
+        cls.fit = wrapped_fit
 
 
 # endregion base classes ---------------------------------------------------------------
@@ -842,7 +861,8 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     def __invert__(self) -> "NestedEncoder[Y, X]":
         # FIXME: https://github.com/microsoft/pyright/issues/8165
         decoder = invert_encoder(self.encoder)
-        return NestedEncoder(
+        cls: type[NestedEncoder] = type(self)
+        return cls(
             decoder,
             leaf_type=self.output_leaf_type,
             output_leaf_type=self.leaf_type,
@@ -1418,27 +1438,28 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
 class MappedEncoder[
     MappingIn: Mapping,
     MappingOut: Mapping,
-](EncoderDict[MappingIn, MappingOut]):
+    K,
+](EncoderDict[MappingIn, MappingOut, K]):
     r"""Maps encoders to keys."""
 
-    encoders: dict[Any, Encoder]
+    encoders: dict[K, Encoder]
     r"""The encoders to map to keys."""
 
     def __new__[T, X, Y](
         cls, encoders: Mapping[T, Encoder[X, Y]]
-    ) -> "MappedEncoder[Mapping[T, X], Mapping[T, Y]]":
+    ) -> "MappedEncoder[Mapping[T, X], Mapping[T, Y], T]":
         return super().__new__(cls)  # type: ignore[arg-type]
 
     def __init__[T, X, Y](
-        self: "MappedEncoder[Mapping[T, X], Mapping[T, Y]]",
+        self: "MappedEncoder[Mapping[T, X], Mapping[T, Y], T]",
         encoders: Mapping[T, Encoder[X, Y]],
     ) -> None:
         super().__init__(encoders)
 
-    def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn]":
-        cls = type(self)
+    def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn, K]":
+        # cls: type[MappedEncoder] = type(self)
         decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
-        return cls(decoders)  # type: ignore[return-value]
+        return MappedEncoder(decoders)  # type: ignore[return-value]
 
     def fit(self, xmap: MappingIn, /) -> None:
         if missing_keys := self.encoders.keys() - xmap.keys():
@@ -1460,7 +1481,7 @@ class MappedEncoder[
 
 def map_encoders[K, X, Y](
     encoders: Mapping[K, Encoder[X, Y]], /, *, simplify: bool = True
-) -> IdentityEncoder | MappedEncoder[Mapping[K, X], Mapping[K, Y]]:
+) -> IdentityEncoder | MappedEncoder[Mapping[K, X], Mapping[K, Y], K]:
     r"""Map encoders."""
     encoder = MappedEncoder(encoders)
     return encoder.simplify() if simplify else encoder

@@ -121,7 +121,7 @@ type TorchScalar = bool | int | float | str
 r"""Type Alias for scalars allowed by torchscript."""
 type TimeScalar = datetime | timedelta
 r"""Type Alias for time scalars."""
-type PythonScalar = NumericalScalar | StringScalar | TimeScalar
+type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
 r"""Type Alias for Python scalars."""
 # endregion Scalar Type Aliases --------------------------------------------------------
 

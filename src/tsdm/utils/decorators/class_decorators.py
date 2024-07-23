@@ -108,7 +108,7 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = partialmethod(repr_func, **kwds)
+    cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]
     return cls  # pyright: ignore[reportReturnType]
 
 

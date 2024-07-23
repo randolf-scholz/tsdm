@@ -182,7 +182,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         super().__init__()
         self.preprocessor = FrameEncoder(
             {self.dataset.columns: StandardScaler()},
-            index_encoders={"time_stamp": MinMaxScaler()},
+            time_stamp=MinMaxScaler(),
         )
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["hadm_id"].unique()

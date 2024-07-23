@@ -16,7 +16,6 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import ETT
 from tsdm.encoders import (
-    ChainedEncoder,
     DateTimeEncoder,
     DTypeConverter,
     Encoder,
@@ -134,10 +133,11 @@ class ETT_Zhou2021(OldBaseTask):
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()
 
-        self.preprocessor = ChainedEncoder(
-            FrameAsTensor(),
-            FrameEncoder(index_encoders={"date": MinMaxScaler() @ DateTimeEncoder()}),
-            StandardScaler() @ DTypeConverter(float),
+        self.preprocessor = (
+            DTypeConverter(float)
+            >> StandardScaler()
+            >> FrameEncoder(date=DateTimeEncoder() >> MinMaxScaler())
+            >> FrameAsTensor()
         )
 
         # Fit the Preprocessors

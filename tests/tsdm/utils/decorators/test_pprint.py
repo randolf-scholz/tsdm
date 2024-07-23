@@ -51,7 +51,7 @@ TestSet<set>(
 )"""
 
 
-def test_pprint_namedtuple():
+def test_pprint_namedtuple() -> None:
     r"""Test pprint_namedtuple."""
 
     @pprint_namedtuple
@@ -71,7 +71,9 @@ def test_pprint_namedtuple():
     assert result == EXPECTED_NAMEDTUPLE
 
 
-def test_pprint_repr_namedtuple():
+def test_pprint_repr_namedtuple() -> None:
+    r"""Test pprint_namedtuple."""
+
     @pprint_repr
     class TestNamedTuple(NamedTuple):
         r"""Test NamedTuple."""
@@ -89,7 +91,7 @@ def test_pprint_repr_namedtuple():
     assert result == EXPECTED_NAMEDTUPLE
 
 
-def test_pprint_dataclass():
+def test_pprint_dataclass() -> None:
     r"""Test pprint_dataclass."""
 
     @pprint_dataclass
@@ -110,7 +112,9 @@ def test_pprint_dataclass():
     assert result == EXPECTED_DATACLASS
 
 
-def test_pprint_repr_dataclass():
+def test_pprint_repr_dataclass() -> None:
+    r"""Test pprint_dataclass."""
+
     @pprint_repr
     @dataclass
     class TestDataclass:
@@ -129,7 +133,7 @@ def test_pprint_repr_dataclass():
     assert result == EXPECTED_DATACLASS
 
 
-def test_pprint_sequence():
+def test_pprint_sequence() -> None:
     r"""Test pprint_sequence."""
 
     @pprint_sequence
@@ -162,7 +166,9 @@ def test_pprint_sequence():
     assert result == EXPECTED_SEQUENCE
 
 
-def test_pprint_repr_sequence():
+def test_pprint_repr_sequence() -> None:
+    r"""Test pprint_sequence."""
+
     @pprint_repr
     class TestSequence(Sequence[int]):
         r"""Test Sequence."""
@@ -193,7 +199,7 @@ def test_pprint_repr_sequence():
     assert result == EXPECTED_SEQUENCE
 
 
-def test_pprint_mapping():
+def test_pprint_mapping() -> None:
     r"""Test pprint_mapping."""
 
     @pprint_mapping
@@ -218,7 +224,9 @@ def test_pprint_mapping():
     assert result == EXPECTED_MAPPING
 
 
-def test_pprint_repr_mapping():
+def test_pprint_repr_mapping() -> None:
+    r"""Test pprint_mapping."""
+
     @pprint_repr
     class TestMapping(Mapping[str, int]):
         r"""Test Mapping."""
@@ -241,7 +249,7 @@ def test_pprint_repr_mapping():
     assert result == EXPECTED_MAPPING
 
 
-def test_pprint_set():
+def test_pprint_set() -> None:
     r"""Test pprint_set."""
 
     @pprint_set
@@ -265,7 +273,9 @@ def test_pprint_set():
     assert result == EXPECTED_SET
 
 
-def test_pprint_repr_set():
+def test_pprint_repr_set() -> None:
+    r"""Test pprint_set."""
+
     @pprint_repr
     class TestSet(AbstractSet[int]):
         r"""Test Set."""

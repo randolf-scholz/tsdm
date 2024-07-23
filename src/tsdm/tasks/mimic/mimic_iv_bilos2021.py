@@ -226,7 +226,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
 
         # we additionally min-max scale time axis
         ts = ds.table
-        self.preprocessor = FrameEncoder(index_encoders={"time_stamp": MinMaxScaler()})
+        self.preprocessor = FrameEncoder(time_stamp=MinMaxScaler())
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]

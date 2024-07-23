@@ -147,7 +147,7 @@ def is_scalar(obj: object, /) -> bool:
     r"""Check if an object is a basic type."""
     return (
         is_builtin_constant(obj)
-        or isinstance(obj, PythonScalar)  # type: ignore[misc,arg-type]
+        or isinstance(obj, PythonScalar.__value__)
         or obj is NA
         or obj is NaT
     )

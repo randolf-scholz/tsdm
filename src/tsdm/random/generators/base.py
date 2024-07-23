@@ -10,16 +10,21 @@ contains generators for synthetic dataset. By design, each generator consists of
 
 __all__ = [
     # ABCs & Protocols
+    "FrozenIVPSolver",
     "IVP_Generator",
-    "IVP_GeneratorBase",
     "IVP_Solver",
     "ODE",
+    # Classes
+    "ScipyIVPSolver",
+    "IVP_GeneratorBase",
     # Functions
     "solve_ivp",
 ]
 
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, cast, final, runtime_checkable
+from collections.abc import Callable
+from dataclasses import KW_ONLY, asdict, dataclass
+from typing import Any, Literal, Optional, Protocol, final, runtime_checkable
 
 import numpy as np
 from numpy.random import Generator
@@ -29,6 +34,7 @@ from scipy.integrate import solve_ivp as scipy_solve_ivp
 from tsdm.constants import RNG
 from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
+from tsdm.utils.decorators import pprint_repr
 
 
 @runtime_checkable
@@ -83,7 +89,7 @@ class IVP_Solver[T](Protocol):  # +T
     def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T:
         r"""Solve the initial value problem.
 
-        .. signature:: ``[(N,), (..., *D) -> (..., N, *D)``
+        .. signature:: ``[(N,), (..., *D)] -> (..., N, *D)``
 
         Args:
             system: Some object that represents the dynamics of the systems.
@@ -94,6 +100,54 @@ class IVP_Solver[T](Protocol):  # +T
             array-like object y[t_i] containing the solution of the initial value problem.
         """
         ...
+
+
+class FrozenIVPSolver[T](Protocol):
+    r"""Frozen version of the IVP_Solver Protocol."""
+
+    def __call__(self, t: T, /, *, y0: T) -> T:
+        r"""Solve the initial value problem."""
+        ...
+
+
+@pprint_repr
+@dataclass(frozen=True)
+class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
+    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+
+    system: ODE
+
+    _: KW_ONLY
+
+    jac: Optional[Callable[[NDArray, NDArray], NDArray]] = None
+    method: Literal["RK45", "RK23", "DOP853", "Radau", "BDF"] | str = "RK45"
+    dense_output: bool = False
+    vectorized: bool = False
+    first_step: Optional[float] = None
+    max_step: Optional[float] = None
+    min_step: Optional[float] = None
+    rtol: float = 1e-3
+    atol: float = 1e-6
+
+    def __call__(self, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
+        r"""Solve the initial value problem."""
+        t_eval = np.asarray(t)
+        t_span = (t_eval.min(), t_eval.max())
+        options = asdict(self)
+        system = options.pop("system")
+        options |= kwargs
+        sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **options)
+        # NOTE: output shape: (d, n_timestamps), move time axis to the front
+        return np.moveaxis(sol.y, -1, 0)
+
+
+def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
+    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    t_eval = np.asarray(t)
+    t_span = (t_eval.min(), t_eval.max())
+    sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **kwargs)
+    # NOTE: output shape: (d, n_timestamps), move time axis to the front
+    return np.moveaxis(sol.y, -1, 0)
 
 
 @runtime_checkable
@@ -179,7 +233,7 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
     @property
     def ivp_solver(self) -> IVP_Solver[T]:
         r"""Initial value problem solver."""
-        return cast(IVP_Solver[T], solve_ivp)
+        return solve_ivp
 
     def system(self, t: ArrayLike, state: ArrayLike) -> T:
         r"""System of differential equations."""
@@ -282,13 +336,3 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
         r"""Validate constraints on the parameters."""
 
     # endregion validation and projection ----------------------------------------------
-
-
-def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
-    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
-    t_eval = np.asarray(t)
-    t0 = t_eval.min()
-    tf = t_eval.max()
-    sol = scipy_solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
-    # NOTE: output shape: (d, n_timestamps), move time axis to the front
-    return np.moveaxis(sol.y, -1, 0)

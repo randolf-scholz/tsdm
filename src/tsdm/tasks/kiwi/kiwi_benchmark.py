@@ -230,21 +230,19 @@ class KiwiBenchmark(TimeSeriesTask):
                 raise ValueError(f"{kind=} unknown")
 
     def make_encoder(self, key: SplitID, /) -> Encoder:
-        encoder = FrameAsTensorDict(
+        encoder = FrameEncoder(
+            {
+                col: self.get_columns_encoder(col)
+                for col in self.dataset.timeseries.columns
+            },
+            measurement_time=DateTimeEncoder() >> MinMaxScaler(),
+        ) >> FrameAsTensorDict(
             schema={
                 "key": ["run_id", "experiment_id"],
                 "T": ["measurement_time"],
                 "X": ...,
             },
             dtypes={"T": "float32", "X": "float32"},
-        ) @ FrameEncoder(
-            column_encoders={
-                col: self.get_columns_encoder(col)
-                for col in self.dataset.timeseries.columns
-            },
-            index_encoders={
-                "measurement_time": MinMaxScaler() @ DateTimeEncoder(),
-            },
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
