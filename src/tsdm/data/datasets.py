@@ -214,7 +214,7 @@ class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
     def __getitem__(self, key: K, /) -> DS: ...
     @overload
     def __getitem__(self, key: tuple[K, Any], /) -> Any: ...
-    def __getitem__(self, key: K | tuple[K, Any], /) -> DS | Any:
+    def __getitem__(self, key: K | tuple[K, Any], /) -> Any:
         r"""Get the dataset for the given key.
 
         If the key is a tuple, try to divert to the nested dataset.

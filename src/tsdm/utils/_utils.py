@@ -453,9 +453,9 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     return obj
 
 
-def repackage_zip(path: FilePath, /) -> None:
+def repackage_zip(filepath: FilePath, /) -> None:
     r"""Remove the leading directory from a zip file."""
-    original_path = Path(path)
+    original_path = Path(filepath)
 
     if not is_zipfile(original_path):
         warnings.warn(f"{original_path} is not a zip file.", stacklevel=2)
@@ -484,7 +484,7 @@ def repackage_zip(path: FilePath, /) -> None:
         temp_path = Path(temp_dir) / original_path.name
         shutil.move(original_path, temp_path)
         # create a new zipfile with the modified contents:
-        with ZipFile(temp_path) as old_archive, ZipFile(path, "w") as new_archive:
+        with ZipFile(temp_path) as old_archive, ZipFile(filepath, "w") as new_archive:
             contents = old_archive.namelist()
             top = contents[0]
             for item in tqdm(contents[1:], desc="Repackaging zip file"):

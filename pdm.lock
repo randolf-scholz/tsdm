@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:c71c7fc4713695561d83640311bec54121b273bbf65a2a6d2ccdb114378760d6"
+content_hash = "sha256:cb55716dc285f28a1b7f16098fa561a53d737ee4daa71c973069d8f00bf54615"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -717,7 +717,7 @@ files = [
 
 [[package]]
 name = "hypothesis"
-version = "6.108.3"
+version = "6.108.4"
 requires_python = ">=3.8"
 summary = "A library for property-based testing"
 groups = ["tests"]
@@ -727,26 +727,26 @@ dependencies = [
     "sortedcontainers<3.0.0,>=2.1.0",
 ]
 files = [
-    {file = "hypothesis-6.108.3-py3-none-any.whl", hash = "sha256:fcc6864881d6ceab6924d77d81e3ed43fb820452293e4e07a2c81e0a95a65185"},
-    {file = "hypothesis-6.108.3.tar.gz", hash = "sha256:095f2b049fba33f7920889e513b675dbf112bb740bc8d1ea433fdf7fd23cf37e"},
+    {file = "hypothesis-6.108.4-py3-none-any.whl", hash = "sha256:901b1883b51207c4c3ecbae506bc8b65d66569f9bc34e023df7d8a821eb495c1"},
+    {file = "hypothesis-6.108.4.tar.gz", hash = "sha256:bab99a308ea39be53882f1d89ab77db48e0c03b5c37fbedd2f59f9b656ada301"},
 ]
 
 [[package]]
 name = "hypothesis"
-version = "6.108.3"
+version = "6.108.4"
 extras = ["numpy", "pandas", "pytest"]
 requires_python = ">=3.8"
 summary = "A library for property-based testing"
 groups = ["tests"]
 dependencies = [
-    "hypothesis==6.108.3",
+    "hypothesis==6.108.4",
     "numpy>=1.17.3",
     "pandas>=1.1",
     "pytest>=4.6",
 ]
 files = [
-    {file = "hypothesis-6.108.3-py3-none-any.whl", hash = "sha256:fcc6864881d6ceab6924d77d81e3ed43fb820452293e4e07a2c81e0a95a65185"},
-    {file = "hypothesis-6.108.3.tar.gz", hash = "sha256:095f2b049fba33f7920889e513b675dbf112bb740bc8d1ea433fdf7fd23cf37e"},
+    {file = "hypothesis-6.108.4-py3-none-any.whl", hash = "sha256:901b1883b51207c4c3ecbae506bc8b65d66569f9bc34e023df7d8a821eb495c1"},
+    {file = "hypothesis-6.108.4.tar.gz", hash = "sha256:bab99a308ea39be53882f1d89ab77db48e0c03b5c37fbedd2f59f9b656ada301"},
 ]
 
 [[package]]
@@ -784,7 +784,7 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "8.0.0"
+version = "8.1.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
 groups = ["devtools", "tests"]
@@ -793,8 +793,8 @@ dependencies = [
     "zipp>=0.5",
 ]
 files = [
-    {file = "importlib_metadata-8.0.0-py3-none-any.whl", hash = "sha256:15584cf2b1bf449d98ff8a6ff1abef57bf20f3ac6454f431736cd3e660921b2f"},
-    {file = "importlib_metadata-8.0.0.tar.gz", hash = "sha256:188bd24e4c346d3f0a933f275c2fec67050326a856b9a359881d7c2a697e8812"},
+    {file = "importlib_metadata-8.1.0-py3-none-any.whl", hash = "sha256:3cd29f739ed65973840b068e3132135ce954c254d48b5b640484467ef7ab3c8c"},
+    {file = "importlib_metadata-8.1.0.tar.gz", hash = "sha256:fcdcb1d5ead7bdf3dd32657bb94ebe9d2aabfe89a19782ddc32da5041d6ebfb4"},
 ]
 
 [[package]]
@@ -3109,7 +3109,7 @@ files = [
 
 [[package]]
 name = "sphinx-autoapi"
-version = "3.2.0"
+version = "3.2.1"
 requires_python = ">=3.8"
 summary = "Sphinx API documentation generator"
 groups = ["docs"]
@@ -3121,8 +3121,8 @@ dependencies = [
     "sphinx>=6.1.0",
 ]
 files = [
-    {file = "sphinx_autoapi-3.2.0-py2.py3-none-any.whl", hash = "sha256:da67902137adc3541e55817d73a827ad51c41b2e68d6c298b9f7c26d3e23e744"},
-    {file = "sphinx_autoapi-3.2.0.tar.gz", hash = "sha256:f80580ff50ec7a8640dc9d0c3c40eaacd3a715bb72c7ab780e4e504c1d0759fb"},
+    {file = "sphinx_autoapi-3.2.1-py2.py3-none-any.whl", hash = "sha256:72fe556abc579528a46494f4fcbeaeaaf3e0b031f6514f7b496f6c36754c5430"},
+    {file = "sphinx_autoapi-3.2.1.tar.gz", hash = "sha256:1f9d56b3a98d5653d1fad5644abeed2c042cec304a126ef72c236dae4af16b90"},
 ]
 
 [[package]]
@@ -3659,13 +3659,13 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "71.0.0.20240722"
+version = "71.1.0.20240723"
 requires_python = ">=3.8"
 summary = "Typing stubs for setuptools"
 groups = ["typing"]
 files = [
-    {file = "types-setuptools-71.0.0.20240722.tar.gz", hash = "sha256:8f1fd5281945ed8f5a896f05dd50bc31917d6e2487ff9508f4bac522d13ad395"},
-    {file = "types_setuptools-71.0.0.20240722-py3-none-any.whl", hash = "sha256:04a383bd1a2dcdb6a85397516ce2d7b46617d89f1d758f686d0d9069943d9811"},
+    {file = "types-setuptools-71.1.0.20240723.tar.gz", hash = "sha256:8a9349038c7e22d88e6c5d9c6705b347b22930424114a452c1712899e85131ff"},
+    {file = "types_setuptools-71.1.0.20240723-py3-none-any.whl", hash = "sha256:ac9fc263f59d1e02bca49cb7270a12c47ab80b3b911fb4d92f1fecf978bfe88a"},
 ]
 
 [[package]]

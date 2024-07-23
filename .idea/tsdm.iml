@@ -14,7 +14,6 @@
       <excludeFolder url="file://$MODULE_DIR$/reports" />
       <excludeFolder url="file://$MODULE_DIR$/tsdm.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
-      <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
       <excludeFolder url="file://$MODULE_DIR$/docs/autoapi" />
       <excludeFolder url="file://$MODULE_DIR$/manifest/__tex__" />
       <excludeFolder url="file://$MODULE_DIR$/dev/.ipynb_checkpoints" />
@@ -72,6 +71,7 @@
       <excludeFolder url="file://$MODULE_DIR$/tests/results" />
       <excludeFolder url="file://$MODULE_DIR$/.hypothesis" />
       <excludeFolder url="file://$MODULE_DIR$/.vscode" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/_build_autoapi" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (tsdm)" jdkType="Python SDK" />

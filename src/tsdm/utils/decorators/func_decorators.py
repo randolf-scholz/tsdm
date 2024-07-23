@@ -98,8 +98,8 @@ def trace[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
 
 @decorator
 def timefun[**P, R](  # +R
-    func: Fn[P, R], /, *, append: bool = False, loglevel: int = logging.WARNING
-) -> Fn[P, R | tuple[R, float]]:
+    func: Fn[P, R], /, *, loglevel: int = logging.WARNING
+) -> Fn[P, tuple[R, float]]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default, appends the execution time (in seconds) to the function call.
@@ -113,7 +113,7 @@ def timefun[**P, R](  # +R
     timefun_logger = logging.getLogger("timefun")
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R | tuple[R, float]:
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R, float]:
         gc.collect()
         gc.disable()
         try:
@@ -130,7 +130,7 @@ def timefun[**P, R](  # +R
         finally:
             gc.enable()
 
-        return (result, elapsed) if append else result
+        return result, elapsed
 
     return __wrapper
 

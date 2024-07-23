@@ -3,7 +3,10 @@
    :maxdepth: 2
    :name: mastertoc
 
-   API <apidoc/modules>
+   APIDOC <apidoc/modules>
+   AUTOAPI <autoapi/index>
+   AUTODOC2 <apidocs/index>
+
    CHANGELOG <content/CHANGELOG>
    CONTRIBUTING <content/CONTRIBUTING>
    ISSUES <content/ISSUES>

@@ -1,32 +1,38 @@
 {% if obj.display %}
-.. py:{{ obj.type }}:: {{ obj.name }}
-   {%+ if obj.value is not none or obj.annotation is not none -%}
-   :annotation:
-        {%- if obj.annotation %} :{{ obj.annotation }}
-        {%- endif %}
-        {%- if obj.value is not none %} = {%
-            if obj.value is string and obj.value.splitlines()|count > 1 -%}
-                Multiline-String
+   {% if is_own_page %}
+{{ obj.id }}
+{{ "=" * obj.id | length }}
 
-    .. raw:: html
+   {% endif %}
+.. py:{{ obj.type }}:: {% if is_own_page %}{{ obj.id }}{% else %}{{ obj.name }}{% endif %}
+   {% if obj.annotation is not none %}
 
-        <details><summary>Show Value</summary>
+   :type: {% if obj.annotation %} {{ obj.annotation }}{% endif %}
+   {% endif %}
+   {% if obj.value is not none %}
 
-    .. code-block:: text
-        :linenos:
+      {% if obj.value.splitlines()|count > 1 %}
+   :value: Multiline-String
 
-        {{ obj.value|indent(width=8) }}
+   .. raw:: html
 
-    .. raw:: html
+      <details><summary>Show Value</summary>
 
-        </details>
+   .. code-block:: python
 
-            {%- else -%}
-                {{ obj.value|string|truncate(100) }}
-            {%- endif %}
-        {%- endif %}
-    {% endif %}
+      {{ obj.value|indent(width=6,blank=true) }}
 
+   .. raw:: html
 
-   {{ obj.docstring|prepare_docstring|indent(3) }}
+      </details>
+
+      {% else %}
+   :value: {{ obj.value|truncate(100) }}
+      {% endif %}
+   {% endif %}
+
+   {% if obj.docstring %}
+
+   {{ obj.docstring|indent(3) }}
+   {% endif %}
 {% endif %}

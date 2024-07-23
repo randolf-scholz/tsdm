@@ -71,13 +71,17 @@ extensions = [
     "signatures",
     "details",
     # 3rd party extensions
-    # "autoapi.extension",
     "myst_parser",
     "sphinx_copybutton",
     "sphinx_math_dollar",
     "sphinx_togglebutton",
+    # "sphinx_automodapi.automodapi",
+    # "sphinx_automodapi.smart_resolver",
     # "sphinx_autodoc_typehints",
+    "autoapi.extension",
+    # "autodoc2",
 ]
+
 # Add any Sphinx extension module names here, as strings. They can be extensions coming with Sphinx
 # (named 'sphinx.ext.*') or your custom ones.
 
@@ -121,9 +125,6 @@ keep_warnings = False
 # If true, keep warnings as “system message” paragraphs in the built documents. Regardless of this setting,
 # warnings are always written to the standard error stream when sphinx-build is run. The default is False.
 
-suppress_warnings = []
-# A list of warning types to suppress arbitrary warning messages.
-
 needs_sphinx = "6.1"
 # If set to a major.minor version string like '1.1',
 # Sphinx will compare it with its version and refuse to build if it is too old. Default is no requirement.
@@ -157,6 +158,9 @@ add_module_names = False
 show_authors = True
 # A boolean that decides whether codeauthor and sectionauthor directives produce any output in the built files.
 
+python_display_short_literal_types = True
+# This value controls how Literal types are displayed.
+
 python_use_unqualified_type_names = True
 # If true, suppress the module name of the python reference if it can be resolved. The default is False
 # endregion General Configuration ------------------------------------------------------
@@ -172,9 +176,9 @@ html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
 html_theme_options = {
-    # faster builds?  https://stackoverflow.com/a/52175461/9318372
+    # faster builds?  https://stackoverflow.com/a/52175461
     "collapse_navigation": False,
-    "navigation_depth": 4,
+    "navigation_depth": 2,
     #
     "header_links_before_dropdown": 7,
     "icon_links": [
@@ -342,20 +346,8 @@ html_sidebars = {}
 # endregion HTML Configuration ---------------------------------------------------------
 
 
-# region MyST Configuration ------------------------------------------------------------
-
-myst_enable_extensions = [
-    "colon_fence",
-    "dollarmath",
-    "html_admonition",
-    "html_image",
-]
-
-# endregion MyST Configuration ---------------------------------------------------------
-
-
 # region sphinx-autoapi configuration --------------------------------------------------
-# https://github.com/readthedocs/sphinx-autoapi
+# REF: https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
 
 autoapi_dirs = [f"../{MODULE_DIR}"]
 # Paths (relative or absolute) to the source code that you wish to generate your API documentation from.
@@ -379,15 +371,15 @@ autoapi_generate_api_docs = True
 # Whether to generate API documentation. If this is False, documentation should be generated though the Directives.
 # Default: True
 
-# autoapi_options = [
-#     # "members",
-#     # "special-members",
-#     "imported-members",
-#     # "undoc-members",
-#     # "private-members",
-#     # "show-inheritance",
-#     # "show-module-summary",
-# ]
+autoapi_options = [
+    "members",
+    # "undoc-members",
+    # "private-members",
+    "show-inheritance",
+    "show-module-summary",
+    "special-members",
+    "imported-members",
+]
 # Options for display of the generated documentation.
 # Default: [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
 # 'special-members', 'imported-members', ]
@@ -402,18 +394,10 @@ autoapi_root = "autoapi"
 # This can be used to place the generated documentation anywhere in your documentation hierarchy.
 # Default: "autoapi"
 
-autoapi_add_toctree_entry = False
+autoapi_add_toctree_entry = True
 # Whether to insert the generated documentation into the TOC tree. If this is False, the default AutoAPI index page
 # is not generated, and you will need to include the generated documentation in a TOC tree entry yourself.
 # Default: True
-
-autoapi_member_order = "groupwise"
-# The order to document members. This option can have the following values:
-# alphabetical: Order members by their name, case sensitively.
-# bysource: Order members by the order that they were defined in the source code.
-# groupwise: Order members by their type then alphabetically, ordering the types as follows:
-# Submodules and subpackages, Attributes, Exceptions, Classes, Functions, and Methods.
-# Default: bysource
 
 autoapi_python_class_content = "both"
 # Which docstring to insert into the content of a class.
@@ -421,7 +405,15 @@ autoapi_python_class_content = "both"
 # the class defines a __new__ with a docstring, the __new__ docstring is used instead of the __init__ docstring.
 # Default: "class"
 
-autoapi_python_use_implicit_namespaces = True
+autoapi_member_order = "bysource"
+# The order to document members. This option can have the following values:
+# alphabetical: Order members by their name, case sensitively.
+# bysource: Order members by the order that they were defined in the source code.
+# groupwise: Order members by their type then alphabetically, ordering the types as follows:
+# Submodules and subpackages, Attributes, Exceptions, Classes, Functions, and Methods.
+# Default: bysource
+
+autoapi_python_use_implicit_namespaces = False
 # This changes the package detection behaviour to be compatible with PEP 420,
 # but directories in autoapi_dirs are no longer searched recursively for packages. Instead, when this is True,
 # autoapi_dirs should point directly to the directories of implicit namespaces and the directories of packages.
@@ -438,6 +430,10 @@ autoapi_keep_files = True
 # Keeping files will also allow AutoAPI to use incremental builds. Providing none of the source files have changed,
 # AutoAPI will skip parsing the source code and regenerating the API documentation.
 # Default: False
+
+autoapi_own_page_level = "function"
+# This configuration value specifies the level at which objects are rendered on a single page.
+# Valid levels, in descending order of hierarchy, are as follows:
 # endregion sphinx-autoapi configuration -----------------------------------------------
 
 
@@ -457,7 +453,7 @@ autoclass_content = "class"
 # If the class has no __init__ method or if the __init__ method’s docstring is empty,
 # but the class has a __new__ method’s docstring, it is used instead.
 
-autodoc_class_signature = "separated"
+autodoc_class_signature = "mixed"
 # This value selects how the signature will be displayed for the class defined by autoclass directive.
 # The possible values are: (default="mixed")
 # "mixed"
@@ -470,7 +466,7 @@ autodoc_member_order = "groupwise"
 # by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
 # Note that for source order, the module must be a Python module with the source code available.
 
-autodoc_default_flags = []
+# autodoc_default_flags = []
 # This value is a list of autodoc directive flags that should be automatically applied to all autodoc directives.
 # The supported flags are 'members', 'undoc-members', 'private-members', 'special-members', 'inherited-members',
 # 'show-inheritance', 'ignore-module-all' and 'exclude-members'.
@@ -478,21 +474,21 @@ autodoc_default_flags = []
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
 #
-autodoc_default_options = {
-    # "ignore-module-all": True,
-    # 'members': 'var1, var2',
-    # 'member-order': 'groupwise',
-    # 'special-members': '__init__',
-    "undoc-members": False,
-    # "imported-members": False,
-    # 'exclude-members': '__weakref__'
-}
+# autodoc_default_options = {
+#     # "ignore-module-all": True,
+#     # 'members': 'var1, var2',
+#     # 'member-order': 'groupwise',
+#     # 'special-members': '__init__',
+#     # "undoc-members": False,
+#     # "imported-members": False,
+#     # 'exclude-members': '__weakref__'
+# }
 # Setting None or True to the value is equivalent to giving only the option name to the directives.
 # The supported options are 'members', 'member-order', 'undoc-members', 'private-members', 'special-members',
 # 'inherited-members', 'show-inheritance', 'ignore-module-all', 'imported-members', 'exclude-members' and
 # 'class-doc-from'.
 
-autodoc_docstring_signature = True
+autodoc_docstring_signature = False
 # Functions imported from C modules cannot be introspected, and therefore the signature for such functions cannot be
 # automatically determined. However, it is an often-used convention to put the signature into the first line of the
 # function’s docstring.
@@ -507,7 +503,7 @@ autodoc_mock_imports = []
 # This is useful when some external dependencies are not met at build time and break the building process.
 # You may only specify the root package of the dependencies themselves and omit the submodules:
 
-autodoc_typehints = "both"
+autodoc_typehints = "signature"
 # This value controls how to represent typehints. The setting takes the following values:
 # 'signature' – Show typehints in the signature (default)
 # 'description' – Show typehints as content of the function or method The typehints of overloaded
@@ -517,7 +513,7 @@ autodoc_typehints = "both"
 # Overloaded functions or methods will not have typehints included in the description
 # because it is impossible to accurately represent all possible overloads as a list of parameters.
 
-autodoc_typehints_description_target = "documented"
+autodoc_typehints_description_target = "all"
 # This value controls whether the types of undocumented parameters and return values are
 # documented when autodoc_typehints is set to description. The default value is "all", meaning that
 # the types are documented for all parameters and return values, whether they are documented or not.
@@ -585,26 +581,18 @@ autodoc_warningiserror = True
 autodoc_inherit_docstrings = True
 # This value controls the docstrings inheritance. If set to True the docstring for classes or methods,
 # if not explicitly set, is inherited from parents. The default is True.
+
+suppress_warnings = [
+    # FiXME: https://github.com/sphinx-doc/sphinx/issues/4961
+    # Deals with "WARNING: more than one target found for cross-reference"
+    "ref.python",
+    "label.python",
+]
 # endregion sphinx.ext.autodoc configuration -------------------------------------------
-
-
-# region sphinx.ext.autosectionlabel configuration -------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/extensions/autosectionlabel.html
-
-autosectionlabel_prefix_document = True
-# True to prefix each section label with the name of the document it is in, followed by a colon.
-# For example, index:Introduction for a section called Introduction that appears in document index.rst.
-# Useful for avoiding ambiguity when the same section heading appears in different documents.
-autosectionlabel_maxdepth = None
-# If set, autosectionlabel chooses the sections for labeling by its depth.
-# For example, when set 1 to autosectionlabel_maxdepth, labels are generated only for top level sections,
-# and deeper sections are not labeled. It defaults to None (disabled).
-# endregion sphinx.ext.autosectionlabel configuration ----------------------------------
 
 
 # region sphinx.ext.autosummary configuration ------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
-
 autosummary_context = {}
 # A dictionary of values to pass into the template engine’s context for autosummary stubs files.
 
@@ -636,15 +624,29 @@ autosummary_filename_map = {}
 # endregion sphinx.ext.autosummary configuration ---------------------------------------
 
 
+# region sphinx.ext.autosectionlabel configuration -------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/autosectionlabel.html
+autosectionlabel_prefix_document = True
+# True to prefix each section label with the name of the document it is in, followed by a colon.
+# For example, index:Introduction for a section called Introduction that appears in document index.rst.
+# Useful for avoiding ambiguity when the same section heading appears in different documents.
+autosectionlabel_maxdepth = None
+# If set, autosectionlabel chooses the sections for labeling by its depth.
+# For example, when set 1 to autosectionlabel_maxdepth, labels are generated only for top level sections,
+# and deeper sections are not labeled. It defaults to None (disabled).
+# endregion sphinx.ext.autosectionlabel configuration ----------------------------------
+
+
 # region sphinx.ext.intersphinx configuration ------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html
 
 intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
-    # "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "python": ("https://docs.python.org/3.10/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "polars": ("https://docs.pola.rs/api/python/stable/", None),
+    "pyarrow": ("https://arrow.apache.org/docs/", None),
+    "python": ("https://docs.python.org/3/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
@@ -726,7 +728,7 @@ napoleon_google_docstring = True
 # False to disable support for Google style docstrings.
 # Defaults to True.
 
-napoleon_numpy_docstring = True
+napoleon_numpy_docstring = False
 # True to parse NumPy style docstrings.
 # False to disable support for NumPy style docstrings.
 # Defaults to True.
@@ -880,5 +882,17 @@ from sphinx.util.docutils import register_node  # noqa: E402
 
 register_node(pending_xref_condition)
 # endregion sphinx_math_dollar configuration -------------------------------------------
+
+
+# region MyST Configuration ------------------------------------------------------------
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+    "html_admonition",
+    "html_image",
+]
+
+# endregion MyST Configuration ---------------------------------------------------------
+
 
 # -- end of configuration --------------------------------------------------------------

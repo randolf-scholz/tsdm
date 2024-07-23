@@ -145,10 +145,11 @@ type VALID = Literal["valid"]
 type TEST = Literal["test"]
 type INFERENCE = Literal["infer"]
 type UNKNOWN = Literal["unknown"]
-type SPLIT = TRAIN | VALID | TEST
+type SPLIT = Literal["train", "valid", "test"]
+type SPLIT_TYPE = Literal["train", "infer", "unknown"]
 
 
-def infer_split_type(self, key: str | Iterable) -> TRAIN | INFERENCE | UNKNOWN:
+def infer_split_type(self, key: str | Iterable) -> SPLIT_TYPE:
     r"""Return the type of split."""
     match key:
         case str(name):

@@ -68,9 +68,10 @@ def to_base(n: int, base: int, /) -> list[int]:
 def to_alphanumeric(n: int) -> str:
     r"""Convert integer to alphanumeric code.
 
-    NOTE: We assume n is an int64. We first convert it to uint64, then to base 36.
-    NOTE: doubling the alphabet size generally reduces the length of the code by
-    a factor of 1 + 1/log₂B, where B is the alphabet size.
+    Note:
+        We assume n is an int64. We first convert it to uint64, then to base 36.
+        Doubling the alphabet size generally reduces the length of the code by
+        a factor of $1 + 1/log₂B$, where $B$ is the alphabet size.
     """
     # int64  range: [-2⁶³, 2⁶³-1] = [-9,223,372,036,854,775,808, +9,223,372,036,854,775,807]
     # uint64 range: [0,    2⁶⁴-1] = [0, 18446744073709551615]
@@ -163,7 +164,7 @@ def hash_pyarrow(array: pa.Array, /) -> int:
 
 
 def hash_file(
-    file: FilePath,
+    filepath: FilePath,
     *,
     block_size: int = 65536,
     hash_algorithm: str = "sha256",
@@ -173,7 +174,7 @@ def hash_file(
     algorithms = vars(hashlib)
     hash_value = algorithms[hash_algorithm](**kwargs)
 
-    with open(file, "rb") as file_handle:
+    with open(filepath, "rb") as file_handle:
         for byte_block in iter(lambda: file_handle.read(block_size), b""):
             hash_value.update(byte_block)
 
@@ -210,7 +211,7 @@ def validate_file_hash(
 ) -> None:
     r"""Validate file(s), given reference hash value(s).
 
-    Arguments:
+    Args:
         file: The file to validate. If a mapping is given, every file in the mapping is validated.
         reference: The reference hash value, or a mapping from file names to
             (hash_algorithm, hash_value) pairs.

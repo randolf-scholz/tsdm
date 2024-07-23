@@ -452,19 +452,18 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
     There are different modus operandi for creating samples from a TimeSeriesCollection.
 
-    Format Specification
-    ~~~~~~~~~~~~~~~~~~~~
-    - column-sparse
-    - separate x and u and y
-    - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
-        - inputs = (t, s, m)
-        - targets = (s', m')
-    - dense: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
-        - inputs = (t, x, u, m_x)
-        - targets = (y, m_y)
-    - sparse: Here, the data is split into groups sparse tensors. ALl NAN-only rows are dropped.
-        - inputs = (t_y, (t_x, x), (t_u, u), m_x)
-        - targets = (y, m_y)
+    Note:
+        - column-sparse
+        - separate x and u and y
+        - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
+            - inputs = (t, s, m)
+            - targets = (s', m')
+        - dense: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
+            - inputs = (t, x, u, m_x)
+            - targets = (y, m_y)
+        - sparse: Here, the data is split into groups sparse tensors. ALl NAN-only rows are dropped.
+            - inputs = (t_y, (t_x, x), (t_u, u), m_x)
+            - targets = (y, m_y)
 
     This class is used inside DataLoader.
 

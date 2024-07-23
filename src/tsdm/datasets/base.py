@@ -76,12 +76,12 @@ class Dataset[T](Protocol):  # +T
 
     @classmethod
     @abstractmethod
-    def deserialize(cls, path: FilePath, /) -> Self:
+    def deserialize(cls, filepath: FilePath, /) -> Self:
         r"""Deserialize the dataset (from cleaned format)."""
         ...
 
     @abstractmethod
-    def serialize(self, path: FilePath, /) -> None:
+    def serialize(self, filepath: FilePath, /) -> None:
         r"""Serialize the (cleaned) dataset to a specific path."""
         ...
 
@@ -488,9 +488,9 @@ class SingleTableDataset[T](BaseDataset[T]):  # +T
         return obj
 
     @classmethod
-    def deserialize(cls, path: FilePath, /) -> Self:
+    def deserialize(cls, filepath: FilePath, /) -> Self:
         r"""Deserialize the dataset."""
-        table = cls.deserialize_table(path)
+        table = cls.deserialize_table(filepath)
         return cls.from_table(table)
 
     @property
@@ -515,7 +515,7 @@ class SingleTableDataset[T](BaseDataset[T]):  # +T
         return paths_exists(self.dataset_path)
 
     @abstractmethod
-    def clean_table(self) -> T | None:
+    def clean_table(self) -> Optional[T]:
         r"""Generate the cleaned dataset table.
 
         If a table is returned, the `self.serialize` method is used to write it to disk.
@@ -594,9 +594,9 @@ class SingleTableDataset[T](BaseDataset[T]):  # +T
         if validate and self.dataset_hash is not NotImplemented:
             validate_file_hash(self.dataset_path, self.dataset_hash)
 
-    def serialize(self, path: FilePath, /) -> None:
+    def serialize(self, filepath: FilePath, /) -> None:
         r"""Serialize the dataset."""
-        self.serialize_table(self.table, path)
+        self.serialize_table(self.table, filepath)
 
 
 class MultiTableDataset[Key: str, T](
@@ -634,19 +634,17 @@ class MultiTableDataset[Key: str, T](
 
     @classmethod
     @overload
-    def deserialize(cls, path_or_buf: FilePath, /) -> Self: ...
+    def deserialize(cls, filepath: FilePath, /) -> Self: ...
     @classmethod
     @overload
-    def deserialize(cls, path_or_buf: FilePath, /, *, key: Key) -> T: ...
+    def deserialize(cls, filepath: FilePath, /, *, key: Key) -> T: ...
     @classmethod
-    def deserialize(
-        cls, path_or_buf: FilePath, /, *, key: Optional[Key] = None
-    ) -> Self | T:
+    def deserialize(cls, filepath, /, *, key=None):
         r"""Deserialize the dataset."""
         if key is None:
             # assume ZipFile
             tables: dict[Key, T] = {}
-            with ZipFile(path_or_buf) as archive:
+            with ZipFile(filepath) as archive:
                 for fname in archive.namelist():
                     with archive.open(fname) as file:
                         name = cast(Key, Path(fname).stem)
@@ -663,7 +661,7 @@ class MultiTableDataset[Key: str, T](
         Args:
             filepath: Where to save the dataset.
             key: If None, serialize the whole dataset (as a zip file).
-                 otherwise, save the selected table.
+                Otherwise, save the selected table.
         """
         path = Path(filepath)
         if key is None:
@@ -787,7 +785,7 @@ class MultiTableDataset[Key: str, T](
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
-    def clean_table(self, key: Key) -> T | None:
+    def clean_table(self, key: Key) -> Optional[T]:
         r"""Create the cleaned table for the given key.
 
         If a table is returned, the `self.serialize` method is used to write it to disk.

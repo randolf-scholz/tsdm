@@ -282,53 +282,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
-    _is_fitted: bool = False
-    r"""Whether the encoder has been fitted."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        if isinstance(self, Dataclass):
-            return asdict(self)
-        raise NotImplementedError("Method `params` must be implemented.")
-
-    @property
-    def requires_fit(self) -> bool:
-        r"""Check if the encoder requires fitting."""
-        return any(
-            val is NotImplemented or getattr(val, "requires_fit", False)
-            for val in self.params.values()
-        )
-
-    @property
-    def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
-        return (not self.requires_fit) or self._is_fitted
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool, /) -> None:
-        self._is_fitted = value
-
-    # region abstract methods ----------------------------------------------------------
-
-    @abstractmethod
-    def encode(self, x: X, /) -> Y:
-        r"""Encode the data by transformation."""
-        ...
-
-    @abstractmethod
-    def decode(self, y: Y, /) -> X:
-        r"""Decode the data by inverse transformation."""
-        ...
-
-    def fit(self, x: X, /) -> None:
-        r"""Implement as necessary."""
-
-    def simplify(self) -> "Encoder[X, Y]":
-        r"""Simplify the encoder."""
-        return self
-
-    # endregion abstract methods -------------------------------------------------------
-
     def __init_subclass__(cls) -> None:
         r"""Initialize the subclass.
 
@@ -390,13 +343,60 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         cls.encode = encode_wrapper  # type: ignore[assignment]
         cls.decode = decode_wrapper  # type: ignore[assignment]
 
+    _is_fitted: bool = False
+    r"""Whether the encoder has been fitted."""
+
+    @property
+    def params(self) -> dict[str, Any]:
+        if isinstance(self, Dataclass):
+            return asdict(self)
+        raise NotImplementedError("Method `params` must be implemented.")
+
+    @property
+    def requires_fit(self) -> bool:
+        r"""Check if the encoder requires fitting."""
+        return any(
+            val is NotImplemented or getattr(val, "requires_fit", False)
+            for val in self.params.values()
+        )
+
+    @property
+    def is_fitted(self) -> bool:
+        r"""Whether the encoder has been fitted."""
+        return (not self.requires_fit) or self._is_fitted
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool, /) -> None:
+        self._is_fitted = value
+
+    # region abstract methods ----------------------------------------------------------
+
+    @abstractmethod
+    def encode(self, x: X, /) -> Y:
+        r"""Encode the data by transformation."""
+        ...
+
+    @abstractmethod
+    def decode(self, y: Y, /) -> X:
+        r"""Decode the data by inverse transformation."""
+        ...
+
+    def fit(self, x: X, /) -> None:
+        r"""Implement as necessary."""
+
+    def simplify(self) -> "Encoder[X, Y]":
+        r"""Simplify the encoder."""
+        return self
+
+    # endregion abstract methods -------------------------------------------------------
+
     # region magic methods -------------------------------------------------------------
     def __invert__(self) -> "BaseEncoder[Y, X]":
         r"""Return the inverse encoder (i.e. decoder).
 
         Example:
-            enc = ~self
-            enc(y) == self.decode(y)
+            >>> enc = ~self
+            >>> enc.encode(y) == self.decode(y)
         """
         return InverseEncoder(self)
 
@@ -406,9 +406,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         Example:
             >>> enc = self @ other
             >>> enc.encode(0) == self.encode(other.encode(0))
-
-        Raises:
-            TypeError if other is not an encoder.
         """
         return ChainedEncoder(self, other)
 
@@ -459,8 +456,8 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         r"""Return product encoders.
 
         Example:
-            enc = self | other
-            enc((x, y)) == (self(x), other(y))
+            >>> enc = self | other
+            >>> enc((x, y)) == (self(x), other(y))
         """
         return ParallelEncoder(self, other)
 
@@ -475,8 +472,8 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         r"""Return joint encoders.
 
         Example:
-            enc = self & other
-            enc(x) == (self(x), other(x))
+            >>> enc = self & other
+            >>> enc(x) == (self(x), other(x))
         """
         # FIXME: mypy does not predict correct return type...
         return JointEncoder(self, other)
@@ -639,8 +636,6 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
 class BackendMixin:
     r"""Encoder equipped with a backend."""
 
-    backend: Backend = NotImplemented
-
     def __init_subclass__(cls: type[Encoder]) -> None:
         super().__init_subclass__()
 
@@ -653,6 +648,8 @@ class BackendMixin:
             original_fit(self, x)
 
         cls.fit = wrapped_fit
+
+    backend: Backend = NotImplemented
 
 
 # endregion base classes ---------------------------------------------------------------
@@ -843,7 +840,7 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     Any instances of the leaf type will be encoded using the encoder.
     Containers in the standard library will be recursed into
     (applies to `list`, `tuple`, `dict`, `set` and `frozenset`).
-    Other types will raise TypeError.
+    Other types will raise `TypeError`.
 
     TODO: add support to pass other types as-is.
     """
@@ -1271,8 +1268,8 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     r"""Factorized Encoder.
 
     Example:
-        enc = FactorizedEncoder(e1, e2, e3)
-        enc(x) == (e1(x), e2(x), e3(x))
+        >>> enc = FactorizedEncoder(e1, e2, e3)
+        >>> enc(x) == (e1(x), e2(x), e3(x))
 
     Note:
         This is essentially equivalent to chaining `DiagonalEncoder >> ParallelEncoder`.
@@ -1365,8 +1362,8 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     r"""Factorized Encoder.
 
     Example:
-        enc = FactorizedEncoder(e1, e2, e3)
-        enc(x) == (e1(x), e2(x), e3(x))
+        >>> enc = FactorizedEncoder(e1, e2, e3)
+        >>> enc(x) == (e1(x), e2(x), e3(x))
 
     Note:
         This is essentially equivalent to chaining `DiagonalEncoder >> ParallelEncoder`.

@@ -70,6 +70,7 @@ from types import GenericAlias, get_original_bases
 from typing import (
     Any,
     ClassVar,
+    Optional,
     Protocol,
     Self,
     SupportsIndex,
@@ -967,7 +968,7 @@ class Map[K, V](Collection[K], Protocol):  # K, +V
         return ItemsView(self)  # type: ignore[arg-type]
 
     @overload
-    def get(self, key: K, /) -> V | None: ...
+    def get(self, key: K, /) -> Optional[V]: ...
     @overload
     def get[T](self, key: K, /, default: V | T) -> V | T: ...
     def get(self, key, /, default=None):

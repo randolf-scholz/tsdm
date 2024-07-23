@@ -152,7 +152,7 @@ __all__ = [
 ]
 
 import tarfile
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -496,7 +496,7 @@ class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
 
-    def clean_table(self, key: Key) -> None | DataFrame:
+    def clean_table(self, key: Key) -> Optional[DataFrame]:
         match key:
             case "timeseries_description":
                 return make_dataframe(**TIMESERIES_DESCRIPTION)

@@ -8,7 +8,6 @@ __all__ = [
     "check_shared_attrs",
     "is_builtin",
     "is_builtin_constant",
-    "is_builtin_function",
     "is_builtin_type",
     "is_dunder",
     "is_flattened",
@@ -18,7 +17,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, Sequence
-from inspect import isbuiltin as is_builtin_function
+from inspect import isbuiltin
 from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile, ZipFile
@@ -132,7 +131,7 @@ def is_builtin_constant(obj: object, /) -> bool:
 
 def is_builtin(obj: object, /) -> bool:
     r"""Check if the object is a builtin constant."""
-    return is_builtin_function(obj) or is_builtin_constant(obj) or is_builtin_type(obj)
+    return isbuiltin(obj) or is_builtin_constant(obj) or is_builtin_type(obj)
 
 
 def is_na_value(obj: object, /) -> bool:

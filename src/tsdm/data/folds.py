@@ -36,7 +36,7 @@ def folds_from_groups(
 ) -> Sequence[Mapping[str, Series]]:
     r"""Create folds from a Series of groups.
 
-    Arguments:
+    Args:
         groups: Series of group labels.
         num_folds: Number of folds to create.
         seed: Seed for the random number generator.
@@ -90,8 +90,8 @@ def folds_as_frame(
 
     Args:
         folds: a list of dictionaries, where each dictionary holds the split information,
-               e.g. is a dictionary like {train: train_indices, test: test_indices}
-               or   is a dictionary like {train: train_mask,    test: test_mask}
+            e.g. is a dictionary like {train: train_indices, test: test_indices}
+            or   is a dictionary like {train: train_mask,    test: test_mask}
         sparse: If True, return a sparse table.
         index: The index of the time-series collection. Attempts to infer the index if not given.
 

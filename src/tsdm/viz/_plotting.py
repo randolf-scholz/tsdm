@@ -218,7 +218,7 @@ def plot_spectrum(
 ) -> Figure:
     r"""Create a scatter-plot of complex matrix eigenvalues.
 
-    Arguments:
+    Args:
         kernel: Tensor
         style: Which matplotlib style to use.
         axis_kwargs: Keyword-Arguments to pass to `Axes.set`

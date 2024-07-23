@@ -287,18 +287,22 @@ def attribute[T, R](func: Fn[[T], R], /) -> R:  # T, +R
     @wraps(func, updated=())
     class __attribute:
         __slots__ = ("func", "payload")
-        sentinel = object()
+        __SENTINEL = object()
         func: Fn[[T], R]
         payload: R
 
         def __init__(self, function: Fn) -> None:
             self.func = function
-            self.payload = cast(Any, self.sentinel)
+            self.payload = cast(Any, self.__SENTINEL)
 
-        def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
+        @overload
+        def __get__(self, obj: None, obj_type: Optional[type] = ...) -> Self: ...
+        @overload
+        def __get__(self, obj: T, obj_type: Optional[type] = ...) -> R: ...
+        def __get__(self, obj, obj_type=None):
             if obj is None:
                 return self
-            if self.payload is self.sentinel:
+            if self.payload is self.__SENTINEL:
                 self.payload = self.func(obj)
             return self.payload
 
@@ -334,43 +338,3 @@ def recurse_on_container[T, R](  # T, +R
                 raise TypeError(f"Unsupported type: {type(x)}")
 
     return recurse
-
-
-def _extends[**P](parent_func: Fn[P, None], /) -> Fn[[Fn], Fn]:
-    r"""Decorator to extend a parent function.
-
-    For example, when one wants to extend the __init__ of a parent class
-    with an extra argument.
-
-    This will synthesize a new function that combines the extra arguments with
-    the ones of the parent function. The new arguments passed to the synthesized
-    function are available within the function body.
-
-    Example:
-        class Parent:
-            def foo(self, a, b, /, *, key):
-                ...
-
-        class Child(Parent):
-            @extends(Parent.foo)
-            def foo(self, c, *parent_args, *, bar, **parent_kwargs):
-                super().foo(*parent_args, **parent_kwargs)
-                ...
-
-    the synthesized function will roughly look like this:
-
-        def __synthetic__init__(self, a, b, c, /, *, foo, bar):
-            parent_args = (a, b)
-            parent_kwargs = dict(key=key)
-            func_args = (c,)
-            func_kwargs = dict(bar=bar)
-            wrapped_func(*parent_args, *func_args, **parent_kwargs, **func_kwargs)
-
-    Note:
-        - neither parent nor child func may have varargs.
-        - The child func may reuse keyword arguments from the parent func and give them different keywords.
-          - if keyword args are reused, they won't be included in parent_kwargs.
-        - additional positional only args must have defaults values (LSP!)
-        - additional positional only arguments are always added after positional-only arguments of the parent.
-    """
-    raise NotImplementedError(f"Not yet implemented. {parent_func=}")

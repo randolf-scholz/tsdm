@@ -13,7 +13,6 @@ from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, ClassVar, Literal, Optional
 
-from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import (
     DataLoader,
@@ -21,7 +20,6 @@ from torch.utils.data import (
     Sampler as TorchSampler,
 )
 
-from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
 from tsdm.utils import LazyDict
 
@@ -35,9 +33,6 @@ class BaseTask[K]:
     `(inputs, targets)`. The model will be trained on the inputs, and the targets
     will be used to evaluate the model.
     That is, the model must product an output of the same shape and data type of the targets.
-
-    Attributes:
-        dataset (Dataset): The attached dataset
     """
 
     # ABCs should have slots https://stackoverflow.com/a/62628857
@@ -88,7 +83,7 @@ class BaseTask[K]:
 
     @property
     @abstractmethod
-    def dataset(self) -> Dataset | DataFrame:
+    def dataset(self) -> Any:
         r"""Return the cached dataset associated with the task."""
 
     def split_type(self, key: K | Sequence[K]) -> Literal["train", "infer", "unknown"]:
@@ -228,7 +223,7 @@ class OldBaseTask[K]:
 
     @property
     @abstractmethod
-    def dataset(self) -> Dataset | DataFrame:
+    def dataset(self) -> Any:
         r"""Return the cached dataset associated with the task."""
         ...
 

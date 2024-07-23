@@ -165,7 +165,7 @@ __all__ = [
     "PhysioNet2019",
 ]
 
-from typing import Literal
+from typing import Literal, Optional
 from zipfile import ZipFile
 
 import numpy as np
@@ -490,7 +490,7 @@ class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
 
-    def clean_table(self, key: Key) -> DataFrame | None:
+    def clean_table(self, key: Key) -> Optional[DataFrame]:
         match key:
             case "timeseries_description":
                 return make_dataframe(**TIMESERIES_DESCRIPTION)
