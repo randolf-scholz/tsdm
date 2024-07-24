@@ -28,25 +28,25 @@ help:
 
 	# remove previous build
 	rm -rf _build
-	rm -rf _autosummary
 	rm -rf api
 	rm -rf apidoc
 	rm -rf apidocs
 	rm -rf autoapi
+	rm -rf autosummary
 
 	# make a copy of the current source
 	mkdir -p _build/backup
-	rsync -a --exclude='_build' . _build/backup
+	rsync -a --include='/_static/' --include='/_templates/' --exclude='/_*/' . _build/backup
 
-    # 	sphinx-apidoc           \
-    # 	    --separate          \
-    # 	    --ext-autodoc       \
-    # 	    --ext-coverage      \
-    # 	    --ext-doctest       \
-    # 	    --ext-intersphinx   \
-    # 	    --ext-mathjax       \
-    # 	    --ext-todo          \
-    # 	    --ext-viewcode      \
-    # 	    -o apidoc/          \
-    # 	    ../src/tsdm
+#	sphinx-apidoc           \
+#		--separate          \
+#		--ext-autodoc       \
+#		--ext-coverage      \
+#		--ext-doctest       \
+#		--ext-intersphinx   \
+#		--ext-mathjax       \
+#		--ext-todo          \
+#		--ext-viewcode      \
+#		-o apidoc/          \
+#		../src/tsdm
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

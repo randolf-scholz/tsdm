@@ -1,0 +1,35 @@
+# Notes on Documentation
+
+There are many different packages for sphinx to automatically build documentation
+
+- autodoc
+- autodoc2
+- autoapi
+- automodapi
+- autoapisummary
+- autosummary + recursion <https://github.com/JamesALeedham/Sphinx-Autosummary-Recursion/tree/master>
+- autopackagesummary
+
+Some comparison of features we want:
+
+- single page per class / function
+- nicely formatted signatures
+  - abbreviated typehints
+  - PEP 695 style typehints
+- links to properly formatted source code
+
+TODOS:
+
+- links to source code missing?!
+
+FINDINGS:
+
+- `autosummary` doesn't work well.
+  - methods are missing
+  - links to source code missing
+  - ...
+  - it is decently fast though
+  - probably some template customization required.
+- `autoapi` is nice for creating separate pages per class/function/method
+  - very slow compile times though...
+  - hyperlinks missing

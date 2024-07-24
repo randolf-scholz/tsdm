@@ -6,6 +6,7 @@
    APIDOC <apidoc/modules>
    AUTOAPI <autoapi/index>
    AUTODOC2 <apidocs/index>
+   AUTOSUMMARY <autosummary/tsdm>
 
    CHANGELOG <content/CHANGELOG>
    CONTRIBUTING <content/CONTRIBUTING>

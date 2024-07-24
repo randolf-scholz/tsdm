@@ -16,8 +16,9 @@ import sys
 from importlib import metadata
 
 os.environ["GENERATING_DOCS"] = "true"
-sys.path.insert(0, os.path.abspath("."))
-sys.path.append(os.path.abspath("./_ext"))
+sys.path.insert(0, os.path.abspath("../src"))  # Source code dir relative to this file
+# sys.path.insert(0, os.path.abspath("."))
+sys.path.append(os.path.abspath("./extensions"))
 
 AUTHOR = "Randolf Scholz"
 MODULE = "tsdm"
@@ -68,8 +69,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     # 1st party extensions
-    "signatures",
     "details",
+    "signatures",
     # 3rd party extensions
     "myst_parser",
     "sphinx_copybutton",
@@ -81,6 +82,9 @@ extensions = [
     "autoapi.extension",
     # "autodoc2",
 ]
+# autodoc2_packages = [f"../{MODULE_DIR}"]
+# autodoc2_module_all_regexes = [f"../{MODULE_DIR}/..*"]
+# autodoc2_class_docstring = "both"
 
 # Add any Sphinx extension module names here, as strings. They can be extensions coming with Sphinx
 # (named 'sphinx.ext.*') or your custom ones.
@@ -171,7 +175,7 @@ python_use_unqualified_type_names = True
 
 # extensions.append("sphinx_typo3_theme")
 
-# piccolo_theme, karma_sphinx_theme, sphinx_rtd_theme, pydata_sphinx_theme, sphinx_typo3_theme
+# pydata_sphinx_theme, piccolo_theme, karma_sphinx_theme, sphinx_rtd_theme, sphinx_typo3_theme
 html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
@@ -399,7 +403,7 @@ autoapi_add_toctree_entry = True
 # is not generated, and you will need to include the generated documentation in a TOC tree entry yourself.
 # Default: True
 
-autoapi_python_class_content = "both"
+autoapi_python_class_content = "class"
 # Which docstring to insert into the content of a class.
 # If the class does not have an __init__ or the __init__ docstring is empty and
 # the class defines a __new__ with a docstring, the __new__ docstring is used instead of the __init__ docstring.
@@ -736,7 +740,7 @@ napoleon_numpy_docstring = False
 napoleon_include_init_with_doc = True
 # True to list __init___ docstrings separately from the class docstring.
 # False to fall back to Sphinx’s default behavior,
-# which considers the __init___ docstring as part of the class documentation.
+# which considers the __init__ docstring as part of the class documentation.
 # Defaults to False.
 
 napoleon_include_private_with_doc = False
