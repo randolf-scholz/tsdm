@@ -14,6 +14,7 @@
             <path value="file://$PROJECT_DIR$/templates" />
             <path value="file://$PROJECT_DIR$/dev/_ext" />
             <path value="file://$PROJECT_DIR$/docs/content" />
+            <path value="file://$PROJECT_DIR$/docs/extensions" />
           </resourceRoots>
         </entryData>
       </entry>
