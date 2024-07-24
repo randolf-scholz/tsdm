@@ -25,7 +25,7 @@ docs/autoapi/
 docs/_autosummary
 docs/_build
 !docs/_static/
-!docs/_ext/
+!docs/extensions/
 !docs/_templates/
 reports/
 tests/**/results/
