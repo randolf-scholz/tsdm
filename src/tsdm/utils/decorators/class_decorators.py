@@ -109,7 +109,7 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
         raise TypeError(f"Unsupported type {cls}.")
 
     cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]
-    return cls  # pyright: ignore[reportReturnType]
+    return cls
 
 
 def autojit[M: nn.Module](base_class: type[M], /) -> type[M]:

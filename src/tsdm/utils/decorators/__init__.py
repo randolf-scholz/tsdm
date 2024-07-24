@@ -80,7 +80,7 @@ FUNCTION_DECORATORS: dict[str, FunctionDecorator] = {
 r"""Dictionary of all available function decorators."""
 
 CLASS_DECORATORS: dict[str, ClassDecorator] = {
-    "autojit"          : autojit,  # pyright: ignore[reportAssignmentType]
+    "autojit"          : autojit,
     "pprint_dataclass" : pprint_dataclass,
     "pprint_mapping"   : pprint_mapping,
     "pprint_repr"      : pprint_repr,
