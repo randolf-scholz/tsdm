@@ -236,7 +236,7 @@ class SupportsDtype(Protocol):
 
     @property
     @abstractmethod
-    def dtype(self) -> str | np.dtype | type:
+    def dtype(self) -> Any:
         r"""Yield the data type of the array."""
         ...
 

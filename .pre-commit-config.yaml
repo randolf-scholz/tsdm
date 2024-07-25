@@ -86,7 +86,7 @@ repos:
         files: ^dev/
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.3.0
+    rev: v0.3.4
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -100,9 +100,9 @@ repos:
       - id: python-match-case-builtins
       # ast-based hooks
       - id: python-check-dunder-all
-        files: '^src/'
+        files: '(^src/|^tests/)'
       - id: python-check-typing
-        args: ["--check-no-return-union"]
+        files: '^src/|tests/'
       - id: python-direct-imports
       - id: python-no-mixed-args
         files: '^src/'
