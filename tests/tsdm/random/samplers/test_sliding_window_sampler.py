@@ -21,13 +21,22 @@ from tsdm.utils import flatten_dict
 __logger__ = logging.getLogger(__name__)
 T = True
 F = False
-type S = Literal["slices"]  # slice
-type M = Literal["masks"]  # bool
-type B = Literal["bounds"]  # tuple
-type W = Literal["windows"]  # windows (list)
-type U = str  # unknown (not statically known)
+# type S = Literal["slices"]  # slice
+# type M = Literal["masks"]  # bool
+# type B = Literal["bounds"]  # tuple
+# type W = Literal["windows"]  # windows (list)
+# type U = str  # unknown (not statically known)
+MODES = SlidingSampler._MODES
+type B = Literal[MODES.B]
+type M = Literal[MODES.M]
+type S = Literal[MODES.S]
+type W = Literal[MODES.W]
+type U = MODES
+
+
 type ONE = Literal["one"]
 type MULTI = Literal["multi"]
+pass
 
 DISCRETE_DATA = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # region expected results discrete data ------------------------------------------------
@@ -821,7 +830,7 @@ DATETIME_DATA = {
 }
 
 
-@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("mode", SlidingSampler._MODES)
 @pytest.mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
 def test_datetime_data(mode: str, data: Any) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
@@ -876,9 +885,9 @@ INTEGER_DATA: dict[str, Any] = {
 }
 
 
-@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("mode", SlidingSampler._MODES)
 @pytest.mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
-def test_integer_data(mode: str, data: Any) -> None:
+def test_integer_data(mode: SlidingSampler.Mode, data: Any) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingSampler(
         data,
@@ -928,7 +937,7 @@ FLOAT_DATA = {
 }
 
 
-@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("mode", SlidingSampler._MODES)
 @pytest.mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
 def test_float_data(mode: str, data: Any) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""

@@ -67,8 +67,7 @@ type Index = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
 type Scalar = None | bool | int | float | complex | str
 r"""Type Hint for scalar objects."""
-type ClippingMode = Literal["mask", "clip"]
-r"""Type Hint for clipping mode."""
+
 type PARAMETERS[Arr: NumericalArray] = tuple[
     Scalar
     | Arr
@@ -312,6 +311,9 @@ class BoundaryEncoder[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         - `BoundaryEncoder(0, 1, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to 1.
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
+
+    type ClippingMode = Literal["mask", "clip"]
+    r"""Type Hint for clipping mode."""
 
     lower_bound: None | float | Arr = NotImplemented
     upper_bound: None | float | Arr = NotImplemented

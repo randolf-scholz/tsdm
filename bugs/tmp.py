@@ -1,18 +1,30 @@
-from dataclasses import dataclass
-from typing import Generic, TypeVar
-
-T = TypeVar("T")
-
-
-@dataclass
-class A(Generic[T]):
-    x: None | T = None
-
-    def fit(self: "A[int]") -> int:
-        return self.x
+import json
+from enum import StrEnum
+from typing import Literal, assert_type
 
 
-a = A()
-reveal_type(a)
-a.fit()
-reveal_type(a)
+class MODE(StrEnum):
+    A = "a"
+    B = "b"
+    C = "c"
+
+
+with open("data.json", "w") as f:
+    json.dump({"mode": MODE.A}, f)
+
+
+reveal_type(MODE.A)
+
+
+class Foo[T: MODE]:
+    mode: Literal[MODE.A, MODE.B, MODE.C] = MODE.A
+
+    def __init__(self, value: T | str) -> None:
+        mode = MODE(value)
+        reveal_type(mode)
+        self.mode = mode
+
+
+foo = Foo(MODE.A)
+reveal_type(foo.mode)
+assert_type(foo.mode, Literal[MODE.A])

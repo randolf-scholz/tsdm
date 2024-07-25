@@ -79,11 +79,11 @@ tests = [
     "pytest-repeat>=0.9.3",
     "pytest-rerunfailures>=14.0",
     "pytest-xdist>=3.6.1",
-    "pytest>=8.3.1",
+    "pytest>=8.3.2",
 ]
 linters = [
     "pylint>=3.2.6",
-    "ruff>=0.5.4",
+    "ruff>=0.5.5",
     "ruff-lsp>=0.0.54",
 ]
 typing = [

@@ -23,11 +23,14 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
+from enum import StrEnum
 from itertools import chain
 from typing import (
     Any,
     ClassVar,
+    Final,
     Literal,
+    NamedTuple,
     Optional,
     Protocol,
     cast,
@@ -286,22 +289,37 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
 
 
 # mode types
-type S = Literal["slices"]  # slice
-type M = Literal["masks"]  # bool
-type B = Literal["bounds"]  # tuple
-type W = Literal["windows"]  # windows
-type U = str  # unknown (not statically known)
-type Mode = S | B | M | W | U
+# type S = Literal["slices"]  # slice
+# type M = Literal["masks"]  # bool
+# type B = Literal["bounds"]  # tuple
+# type W = Literal["windows"]  # windows
+# type U = str  # unknown (not statically known)
+
 # horizon types
 type ONE = Literal["one"]
 type MULTI = Literal["multi"]
-type Horizon = ONE | MULTI
+
+
+class MODES(StrEnum):
+    r"""Valid modes for the sampler."""
+
+    B = "bounds"
+    M = "masks"
+    S = "slices"
+    W = "windows"
+
+
+type B = Literal[MODES.B]
+type M = Literal[MODES.M]
+type S = Literal[MODES.S]
+type W = Literal[MODES.W]
+type U = MODES
 
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
 class SlidingSampler[
     DT: DateTime,
-    ModeVar: (S, B, M, W, U),
+    ModeVar: MODES,
     HorizonVar: (ONE, MULTI),
 ](BaseSampler):
     r"""Sampler that generates a single sliding window over an interval.
@@ -338,13 +356,18 @@ class SlidingSampler[
     `TimeDelta` objects. In this case, lists of the above objects are returned.
     """
 
-    MODES: ClassVar[tuple[B, S, M, W]] = ("bounds", "slices", "masks", "windows")
+    _MODES: ClassVar[type[MODES]] = MODES
+    r"""Valid modes for the sampler."""
+    type Mode = Literal["slices", "masks", "bounds", "windows"]
+    r"""Type hint for the mode."""
+    type Horizon = Literal["one", "multi"]
+    r"""Type hint for the horizon."""
 
     data: NDArray[DT]  # type: ignore[type-var]
 
     horizons: TimeDelta | NDArray[TimeDelta]  # type: ignore[type-var]
     stride: TimeDelta
-    mode: ModeVar
+    mode: MODES
     multi_horizon: bool
     shuffle: bool
     drop_last: bool
@@ -362,7 +385,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: S,
+        mode: Literal["slices", S],
         horizons: Array[str | TD],
         stride: str | TD,
         shuffle: bool = ...,
@@ -375,7 +398,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: B,
+        mode: Literal["bounds", B],
         horizons: Array[str | TD],
         stride: str | TD,
         shuffle: bool = ...,
@@ -388,7 +411,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: M,
+        mode: Literal["masks", M],
         horizons: Array[str | TD],
         stride: str | TD,
         shuffle: bool = ...,
@@ -401,7 +424,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: W,
+        mode: Literal["windows", W],
         horizons: Array[str | TD],
         stride: str | TD,
         shuffle: bool = ...,
@@ -414,7 +437,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: S,
+        mode: Literal["slices", S],
         horizons: str | TD,
         stride: str | TD,
         shuffle: bool = ...,
@@ -427,7 +450,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: B,
+        mode: Literal["bounds", B],
         horizons: str | TD,
         stride: str | TD,
         shuffle: bool = ...,
@@ -440,7 +463,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: M,
+        mode: Literal["masks", M],
         horizons: str | TD,
         stride: str | TD,
         shuffle: bool = ...,
@@ -453,7 +476,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: W,
+        mode: Literal["windows", W],
         horizons: str | TD,
         stride: str | TD,
         shuffle: bool = ...,
@@ -491,7 +514,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: Mode,
+        mode: Mode | str,
         horizons: str | TD | Array[str | TD],
         stride: str | TD,
         drop_last: bool = False,
@@ -507,7 +530,7 @@ class SlidingSampler[
         data_source: SequentialDataset[DT],
         /,
         *,
-        mode: ModeVar,
+        mode: Mode | ModeVar | str,
         horizons: str | TD | Array[str | TD],
         stride: str | TD,
         drop_last: bool = False,
@@ -523,7 +546,7 @@ class SlidingSampler[
         dt_type: type[DT] = type(self.tmin)
         td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)
-        self.mode = mode
+        self.mode = MODES(mode)
         self.drop_last = drop_last
         self.stride = timedelta(stride) if isinstance(stride, str) else stride
 

@@ -3,7 +3,9 @@ r"""Electricity Transformer Dataset (ETDataset).
 **Source:** https://github.com/zhouhaoyi/ETDataset
 """
 
-__all__ = ["ETT"]
+__all__ = [
+    "ETT",
+]
 
 from typing import Literal
 
@@ -11,10 +13,8 @@ from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import MultiTableDataset
 
-type KEY = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
-
-class ETT(MultiTableDataset[KEY, DataFrame]):
+class ETT(MultiTableDataset[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"], DataFrame]):
     r"""ETT dataset.
 
     This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data
@@ -26,6 +26,9 @@ class ETT(MultiTableDataset[KEY, DataFrame]):
     | Description | The recorded date | High UseFul Load | High UseLess Load | Middle UseFul Load | Middle UseLess Load | Low UseFul Load | Low UseLess Load | Oil Temperature (target) |
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     """  # noqa: E501, W505
+
+    type Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+    r"""Type of the dataset keys."""
 
     SOURCE_URL = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
@@ -53,7 +56,7 @@ class ETT(MultiTableDataset[KEY, DataFrame]):
         "ETTm2": (69680, 7),
     }
 
-    def clean_table(self, key: KEY) -> DataFrame:
+    def clean_table(self, key: Key) -> DataFrame:
         df = read_csv(
             self.rawdata_paths[f"{key}.csv"],
             parse_dates=[0],
