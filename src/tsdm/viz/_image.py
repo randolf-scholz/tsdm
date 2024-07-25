@@ -45,7 +45,7 @@ def kernel_heatmap(
         kernel = kernel.cpu().numpy()
 
     colormap = colormaps[cmap] if isinstance(cmap, str) else cmap
-    rgba: NDArray = colormap(kernel)  # type: ignore[assignment]
+    rgba: NDArray = colormap(kernel)
     rgb = rgba[..., :-1]
 
     match fmt:

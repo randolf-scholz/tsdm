@@ -65,7 +65,7 @@ __all__ = [
 import logging
 import pickle
 import random
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
@@ -272,6 +272,16 @@ class Encoder[X, Y](Protocol):
     # endregion magic methods ----------------------------------------------------------
 
 
+class UniversalEncoder(Encoder[Any, Any], Protocol):
+    r"""Encoder class which maps data to the same type, regardless of the input."""
+
+    @abstractmethod
+    def encode[T](self, x: T, /) -> T: ...
+    @abstractmethod
+    def decode[T](self, y: T, /) -> T: ...
+    def fit(self, data: Any, /) -> None: ...
+
+
 # endregion protocol classes -----------------------------------------------------------
 
 
@@ -384,7 +394,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     def fit(self, x: X, /) -> None:
         r"""Implement as necessary."""
 
-    def simplify(self) -> "Encoder[X, Y]":
+    def simplify(self) -> "BaseEncoder[X, Y]":
         r"""Simplify the encoder."""
         return self
 
@@ -429,19 +439,20 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
             >>> assert enc.decode(y) == enc1.decode(enc2.decode(y))
 
         Note:
-            - `>>` is associative: `(A >> B) >> C = A >> (B >> C)`
+            `>>` is associative: `(A >> B) >> C = A >> (B >> C)`
 
-              .. math::
-                 ((A >> B) >> C)(x) = C((A >> B)(x)) = C(B(A(x)))  \\
-                 (A >> (B >> C))(x) = (B >> C)(A(x)) = C(B(A(x)))
+            .. math::
+                ((A ≫ B) ≫ C)(x) = C((A ≫ B)(x)) = C(B(A(x)))  \\
+                (A ≫ (B ≫ C))(x) = (B ≫ C)(A(x)) = C(B(A(x)))
 
-            .. details:: inverse law: `~(A >> B) == ~B >> ~A`
+            .. details:: inverse law: $~(A >> B) == ~B >> ~A$
 
-                      ~(A >> B)(x)
-                          = (A >> B).decode(x)
-                          = B.decode(A.decode(x))
-                          = ~B(~A(x))
-                          = (~B >> ~A)(x)
+                .. math::
+                    &∼(A >> B).encode(x) \\
+                        &= (A >> B).decode(x) \\
+                        &= B.decode(A.decode(x)) \\
+                        &= ∼B.encode(∼~A.encode(x)) \\
+                        &= (∼B >> ∼A).encode(x)
         """
         return PipedEncoder(self, other)
 
@@ -500,16 +511,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     # endregion chaining methods -------------------------------------------------------
 
 
-class UniversalEncoder(BaseEncoder[Any, Any], ABC):
-    r"""Encoder class which maps data to the same type, regardless of the input."""
-
-    @abstractmethod
-    def encode[T](self, x: T, /) -> T: ...
-    @abstractmethod
-    def decode[T](self, y: T, /) -> T: ...
-    def fit(self, data: Any, /) -> None: ...
-
-
 @pprint_sequence(recursive=2)
 class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
     r"""Wraps List of encoders."""
@@ -557,7 +558,7 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
-    def simplify(self) -> "Encoder[X, Y]":
+    def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the encoder."""
         cls = type(self)
         return cls(*(e.simplify() for e in self))
@@ -615,7 +616,7 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
         r"""Get the encoder for the given key."""
         return self.encoders[key]
 
-    def simplify(self) -> "IdentityEncoder | Self":
+    def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the mapping encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
         # match self:
@@ -794,7 +795,7 @@ class InverseEncoder[X, Y](BaseEncoder[Y, X]):
     def decode(self, x: X, /) -> Y:
         return self.encoder.encode(x)
 
-    def simplify(self) -> Self:
+    def simplify(self) -> BaseEncoder[Y, X]:
         cls = type(self)
         return cls(self.encoder.simplify())
 
@@ -817,9 +818,9 @@ class WrappedEncoder[X, Y](BaseEncoder[X, Y]):
     r"""The encoder to wrap."""
 
     def __invert__(self) -> "WrappedEncoder[Y, X]":
-        # FIXME: https://github.com/microsoft/pyright/issues/8165
+        cls: type[WrappedEncoder] = type(self)
         decoder = invert_encoder(self.encoder)
-        return WrappedEncoder(decoder)
+        return cls(decoder)
 
     @property
     def params(self) -> dict[str, Any]:
@@ -856,11 +857,9 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""The type of the output elements."""
 
     def __invert__(self) -> "NestedEncoder[Y, X]":
-        # FIXME: https://github.com/microsoft/pyright/issues/8165
-        decoder = invert_encoder(self.encoder)
         cls: type[NestedEncoder] = type(self)
         return cls(
-            decoder,
+            invert_encoder(self.encoder),
             leaf_type=self.output_leaf_type,
             output_leaf_type=self.leaf_type,
         )
@@ -949,7 +948,7 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
             y = encoder.decode(y)
         return cast(X, y)
 
-    def simplify(self) -> IdentityEncoder | Encoder[X, Y] | Self:
+    def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the chained encoder."""
         # simplify the nested encoders
         encoders: list[Encoder] = []
@@ -966,8 +965,11 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
         match encoders:
             case []:
                 return IdentityEncoder()
-            case [encoder]:
+            case [BaseEncoder() as encoder]:
                 return encoder
+            case [encoder]:
+                # if it only satisfies the Encoder protocol, wrap it
+                return WrappedEncoder(encoder)
             case _:
                 cls = type(self)
                 return cls(*encoders)
@@ -998,7 +1000,7 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
 # ) -> Encoder[X, Y]: ...
 # simplify: bool = ...
 @overload  # n=0, simplify: bool
-def chain_encoders(*, simplify: bool = ...) -> Encoder[Any, Any]: ...
+def chain_encoders(*, simplify: bool = ...) -> Encoder: ...
 @overload  # n=1, simplify: bool
 def chain_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
 @overload  # n=2, simplify: bool
@@ -1015,6 +1017,8 @@ def chain_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # typ
 @pprint_repr(recursive=2)
 class PipedEncoder[X, Y](EncoderList[X, Y]):
     r"""Represents function composition of encoders."""
+
+    encoders: list[Encoder]
 
     # fmt: off
     @overload  # n=0
@@ -1057,38 +1061,40 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
             y = encoder.decode(y)
         return cast(X, y)
 
-    def simplify(self) -> IdentityEncoder | Encoder[X, Y] | Self:
+    def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the chained encoder."""
-        # recursively simplify the nested encoders
-        encoders = [e.simplify() for e in self]
+        encoders: list[Encoder] = []
 
-        # reduction 1: combine nested pipes/chains `e >> (f >> g) = (e >> f) >> g`.
-        es = []
-        for encoder in encoders:
+        # recursively simplify the nested encoders
+        for encoder in (e.simplify() for e in self):
+            # reduction 1: combine nested pipes/chains `e >> (f >> g) = (e >> f) >> g`.
             match encoder:
                 case PipedEncoder(encoders=nested):
-                    es.extend(nested)
+                    encoders.extend(nested)
                 case ChainedEncoder(encoders=nested):
-                    es.extend(reversed(nested))
+                    encoders.extend(reversed(nested))
                 case _:
-                    es.append(encoder)
+                    encoders.append(encoder)
 
         # reduction 2: remove identity encoders `e >> id = e`.
-        es = [e for e in es if not isinstance(e, IdentityEncoder)]
+        encoders = [e for e in encoders if not isinstance(e, IdentityEncoder)]
 
         # reduction 3: remove inverse pairs `(e >> ~e) = id`.
 
         # reduction 4: remove idempotent encoders `e >> e = e`.
 
         # simplify self
-        match es:
+        match encoders:
             case []:
                 return IdentityEncoder()
-            case [encoder]:
+            case [BaseEncoder() as encoder]:
                 return encoder
+            case [encoder]:
+                # wrap the encoder if it only satisfies the Encoder protocol
+                return WrappedEncoder(encoder)
             case _:
                 cls = type(self)
-                return cls(*es)
+                return cls(*encoders)
 
 
 # fmt: off
@@ -1116,7 +1122,7 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
 # ) -> Encoder[X, Y]: ...
 # simplify: bool = ...
 @overload  # n=0
-def pipe_encoders(*, simplify: bool = ...) -> Encoder[Any, Any]: ...
+def pipe_encoders(*, simplify: bool = ...) -> Encoder: ...
 @overload  # n=1
 def pipe_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
 @overload  # n=2
@@ -1197,7 +1203,7 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
             encoder.decode(x) for encoder, x in zip(self.encoders, ys, strict=True)
         )
 
-    def simplify(self) -> IdentityEncoder | Encoder | Self:
+    def simplify(self) -> BaseEncoder[TupleIn, TupleOut]:
         r"""Simplify the product encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
         # match self:
@@ -1208,14 +1214,14 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
         #     case _:
         #         cls = type(self)
         #         return cls(*(e.simplify() for e in self))
+        encoders: list[Encoder] = [e.simplify() for e in self.encoders]
 
-        if len(self.encoders) == 0:
+        if len(encoders) == 0:
             return IdentityEncoder()
-        if len(self.encoders) == 1:
-            encoder = self.encoders[0].simplify()
-            return TupleDecoder() >> encoder >> TupleEncoder()
+        if len(encoders) == 1:
+            return (TupleDecoder() >> encoders[0] >> TupleEncoder()).simplify()
         cls = type(self)
-        return cls(*(e.simplify() for e in self.encoders))
+        return cls(*encoders)
 
 
 # fmt: off
@@ -1268,7 +1274,7 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     r"""Factorized Encoder.
 
     Example:
-        >>> enc = FactorizedEncoder(e1, e2, e3)
+        >>> enc = JointEncoder(e1, e2, e3)
         >>> enc(x) == (e1(x), e2(x), e3(x))
 
     Note:
@@ -1326,15 +1332,16 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
         decoded_vals = [e.decode(y) for e, y in zip(self.encoders, ys, strict=True)]
         return self.aggregate_fn(decoded_vals)
 
-    def simplify(self) -> IdentityEncoder | Encoder[X, TupleOut] | Self:
+    def simplify(self) -> BaseEncoder[X, TupleOut]:
         r"""Simplify the joint encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
-        if len(self) == 0:
+        encoders: list[Encoder] = [e.simplify() for e in self.encoders]
+        if len(encoders) == 0:
             return IdentityEncoder()
-        if len(self) == 1:
-            return (self[0] >> TupleEncoder()).simplify()
+        if len(encoders) == 1:
+            return (encoders[0] >> TupleEncoder()).simplify()
         cls = type(self)
-        return cls(*(e.simplify() for e in self))
+        return cls(*encoders)
 
 
 # fmt: off
@@ -1421,15 +1428,16 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     def decode(self, y: Y, /) -> TupleIn:
         return tuple(e.decode(y) for e in self.encoders)  # type: ignore[return-value]
 
-    def simplify(self) -> IdentityEncoder | Encoder[TupleIn, Y] | Self:
+    def simplify(self) -> BaseEncoder[TupleIn, Y]:
         r"""Simplify the joint encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
-        if len(self) == 0:
+        encoders: list[Encoder] = [e.simplify() for e in self.encoders]
+        if len(encoders) == 0:
             return IdentityEncoder()
-        if len(self) == 1:
-            return (self[0] >> TupleEncoder()).simplify()
+        if len(encoders) == 1:
+            return (encoders[0] >> TupleEncoder()).simplify()
         cls = type(self)
-        return cls(*(e.simplify() for e in self))
+        return cls(*encoders)
 
 
 class MappedEncoder[
@@ -1477,99 +1485,14 @@ class MappedEncoder[
 
 
 def map_encoders[K, X, Y](
-    encoders: Mapping[K, Encoder[X, Y]], /, *, simplify: bool = True
-) -> IdentityEncoder | MappedEncoder[Mapping[K, X], Mapping[K, Y], K]:
+    encoders: Mapping[K, Encoder[X, Y]],
+    /,
+    *,
+    simplify: bool = False,
+) -> "Encoder[Mapping[K, X], Mapping[K, Y]]":
     r"""Map encoders."""
     encoder = MappedEncoder(encoders)
     return encoder.simplify() if simplify else encoder
-
-
-# @pprint_repr(recursive=2)
-# class MapEncoders[
-#     MappingIn: Mapping,
-#     MappingOut: Mapping,
-# ](BaseEncoder[MappingIn, MappingOut], Mapping[Any, Encoder]):
-#     r"""Creates an encoder that applies over a mapping."""
-#
-#     encoders: Mapping[Any, Encoder]
-#     r"""Mapping of keys to encoders."""
-#
-#     @property
-#     def params(self) -> dict[str, Any]:
-#         return {"encoders": self.encoders}
-#
-#     @property
-#     def requires_fit(self) -> bool:
-#         return any(e.requires_fit for e in self.encoders.values())
-#
-#     @property
-#     def is_fitted(self) -> bool:
-#         return all(e.is_fitted for e in self.encoders.values())
-#
-#     @is_fitted.setter
-#     def is_fitted(self, value: bool) -> None:
-#         for encoder in self.encoders.values():
-#             encoder.is_fitted = value
-#
-#     def __new__[K, X, Y](
-#         cls, encoders: Mapping[K, Encoder[X, Y]]
-#     ) -> "MapEncoders[Mapping[K, X], Mapping[K, Y]]":
-#         return super().__new__(cls)  # type: ignore[arg-type]
-#
-#     def __init__[K, X, Y](
-#         self: "MapEncoders[Mapping[K, X], Mapping[K, Y]]",
-#         encoders: Mapping[K, Encoder[X, Y]],
-#     ) -> None:
-#         self.encoders = encoders
-#
-#     def __invert__(self) -> "MapEncoders[MappingOut, MappingIn]":
-#         decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
-#         cls: type[MapEncoders] = type(self)
-#         return cls(decoders)  # type: ignore[return-value]
-#
-#     def __getitem__(self, key: Any, /) -> Encoder:
-#         r"""Get the encoder for the given key."""
-#         return self.encoders[key]
-#
-#     def __len__(self) -> int:
-#         return len(self.encoders)
-#
-#     def __iter__(self) -> Iterator[Any]:
-#         return iter(self.encoders)
-#
-#     def fit(self, xmap: MappingIn, /) -> None:
-#         if missing_keys := self.encoders.keys() - xmap.keys():
-#             raise ValueError(f"No data to fit encoders {missing_keys}.")
-#         if extra_keys := xmap.keys() - self.encoders.keys():
-#             raise ValueError(f"Extra data with no matching encoder {extra_keys}.")
-#
-#         for k, x in xmap.items():
-#             self.encoders[k].fit(x)
-#
-#     def encode(self, xmap: MappingIn, /) -> MappingOut:
-#         ymap = {k: self.encoders[k].encode(x) for k, x in xmap.items()}
-#         return cast(MappingOut, ymap)
-#
-#     def decode(self, ymap: MappingOut, /) -> MappingIn:
-#         xmap = {k: self.encoders[k].decode(y) for k, y in ymap.items()}
-#         return cast(MappingIn, xmap)
-#
-#     def simplify(self) -> IdentityEncoder | Self:
-#         r"""Simplify the mapping encoder."""
-#         # FIXME: https://github.com/python/mypy/issues/17134
-#         # match self:
-#         #     case []:
-#         #         return IdentityEncoder()
-#         #     case [encoder]:
-#         #         return encoder.simplify()
-#         #     case _:
-#         #         cls = type(self)
-#         #         return cls(*(e.simplify() for e in self))
-#
-#         if len(self.encoders) == 0:
-#             return IdentityEncoder()
-#         cls: type[Self] = type(self)
-#         return cls({k: e.simplify() for k, e in self.encoders.items()})
 
 
 # endregion variadic encoders ----------------------------------------------------------
