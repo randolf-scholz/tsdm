@@ -1,10 +1,14 @@
 r"""Test synthetic generators."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 from tsdm.config import PROJECT
 from tsdm.random.generators import (
@@ -54,14 +58,18 @@ def test_lotka_volterra() -> None:
     y = LotkaVolterra().rvs(t)
 
     # generate plot
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
-    axes[0].plot(t, y[..., 0], ".", label="prey")
-    axes[0].plot(t, y[..., 1], ".", label="predator")
-    axes[0].set_xlabel("time t")
-    axes[0].set_title("Time Series Plot")
-    axes[0].legend()
-    axes[1].plot(y[:, 0], y[:, 1], ".")
-    axes[1].set_title("Phase plot")
+    ax0: Axes
+    ax1: Axes
+    fig, [[ax0, ax1]] = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
+    ax0.plot(t, y[..., 0], ".", label="prey")
+    ax0.plot(t, y[..., 1], ".", label="predator")
+    ax0.set_xlabel("time t")
+    ax0.set_title("Time Series Plot")
+    ax0.legend()
+    ax1.plot(y[:, 0], y[:, 1], ".")
+    ax1.set_title("Phase plot")
     fig.suptitle(f"Lotka-Volterra Model (generated {datetime.now()})")
 
     # save plot
@@ -77,19 +85,26 @@ def test_damped_pendulum() -> None:
 
     # generate plot
     colors = iter(plt.colormaps["tab10"].colors)  # type: ignore[attr-defined]
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
-    axes[0].plot(t, y[..., 0], ".", label="θ", color=next(colors))
-    axes[0].set_ylim(-max(abs(y[..., 0])), +max(abs(y[..., 0])))
-    axes_0y = axes[0].twinx()
-    axes_0y.plot(t, y[..., 1], ".", label="ω", color=next(colors))
-    axes_0y.set_ylim(-max(abs(y[..., 1])), +max(abs(y[..., 1])))
-    axes[0].set_ylabel("angle $θ$")
-    axes_0y.set_ylabel("angular velocity $ω$")
-    axes[0].set_xlabel("time t")
-    axes[0].set_title("Time Series Plot")
-    axes[0].legend()
-    axes[1].plot(y[:, 0], y[:, 1], ".", color=next(colors))
-    axes[1].set_title("Phase plot")
+    ax0: Axes
+    ax1: Axes
+    fig, [[ax0, ax1]] = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
+
+    ax0y: Axes = ax0.twinx()  # type: ignore[assignment]
+    ax0y.plot(t, y[..., 1], ".", label="ω", color=next(colors))
+    ax0y.set_ylim(-max(abs(y[..., 1])), +max(abs(y[..., 1])))
+    ax0y.set_ylabel("angular velocity $ω$")
+
+    ax0.plot(t, y[..., 0], ".", label="θ", color=next(colors))
+    ax0.set_ylim(-max(abs(y[..., 0])), +max(abs(y[..., 0])))
+    ax0.set_ylabel("angle $θ$")
+    ax0.set_xlabel("time t")
+    ax0.set_title("Time Series Plot")
+    ax0.legend()
+
+    ax1.plot(y[:, 0], y[:, 1], ".", color=next(colors))
+    ax1.set_title("Phase plot")
     fig.suptitle(f"Dampled Pendulum (generated {datetime.now()})")
 
     # save plot
@@ -104,15 +119,19 @@ def test_damped_pendulum_xy() -> None:
     y = DampedPendulumXY().rvs(t)
 
     # generate plot
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
-    axes[0].plot(t, y[..., 0], ".", label="x")
-    axes[0].plot(t, y[..., 1], ".", label="y")
-    axes[0].set_xlabel("time t")
-    axes[0].set_title("Time Series Plot")
-    axes[0].legend()
-    axes[1].plot(y[:, 0], y[:, 1], ".")
-    axes[1].set_title("Phase plot")
-    axes[1].set_aspect("equal", "box")
+    ax0: Axes
+    ax1: Axes
+    fig, [[ax0, ax1]] = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
+    ax0.plot(t, y[..., 0], ".", label="x")
+    ax0.plot(t, y[..., 1], ".", label="y")
+    ax0.set_xlabel("time t")
+    ax0.set_title("Time Series Plot")
+    ax0.legend()
+    ax1.plot(y[:, 0], y[:, 1], ".")
+    ax1.set_title("Phase plot")
+    ax1.set_aspect("equal", "box")
     fig.suptitle(f"Dampled Pendulum XY (generated {datetime.now()})")
 
     # save plot
@@ -127,17 +146,21 @@ def test_sir_model() -> None:
     y = SIR(alpha=0.1, beta=0.5).rvs(t)
 
     # generate plot
-    fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
-    axes[0].plot(t, y[..., 0], ".", label="S")
-    axes[0].plot(t, y[..., 1], ".", label="I")
-    axes[0].plot(t, y[..., 2], ".", label="R")
-    axes[0].set_xlabel("time t")
-    axes[0].set_title("Time Series Plot")
-    axes[0].legend()
-    axes[1].set_xlabel("Infected")
-    axes[1].set_ylabel("Recovered")
-    axes[1].plot(y[:, 1], y[:, 2], ".")
-    axes[1].set_title("Phase plot")
+    ax0: Axes
+    ax1: Axes
+    fig, [[ax0, ax1]] = plt.subplots(
+        ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
+    )
+    ax0.plot(t, y[..., 0], ".", label="S")
+    ax0.plot(t, y[..., 1], ".", label="I")
+    ax0.plot(t, y[..., 2], ".", label="R")
+    ax0.set_xlabel("time t")
+    ax0.set_title("Time Series Plot")
+    ax0.legend()
+    ax1.set_xlabel("Infected")
+    ax1.set_ylabel("Recovered")
+    ax1.plot(y[:, 1], y[:, 2], ".")
+    ax1.set_title("Phase plot")
     fig.suptitle(f"SIR Model (generated {datetime.now()})")
 
     # save plot
