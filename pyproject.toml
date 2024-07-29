@@ -229,6 +229,8 @@ ignore = [
     "PLR0915",  # Too many statements
     "PLR0916",  # Too many boolean expressions
     "PLR0917",  # Too many positional arguments
+    # flake8-pyi
+    "PYI051",   # redundant-literal-union
     # RUFF
     "RUF001",   # ambiguous-unicode-character-string
     "RUF002",   # ambiguous-unicode-character-docstring

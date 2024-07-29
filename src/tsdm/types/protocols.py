@@ -20,6 +20,11 @@ __all__ = [
     "SupportsItem",
     "SupportsNdim",
     "SupportsShape",
+    # Scalars
+    "BaseScalar",
+    "BooleanScalar",
+    "OrderedScalar",
+    "AdditiveScalar",
     # Arrays
     "SeriesKind",
     "TableKind",
@@ -190,6 +195,75 @@ class Hash(Protocol):
 
 
 # region container protocols -----------------------------------------------------------
+@runtime_checkable
+class BaseScalar(Protocol):
+    r"""Protocol for scalars."""
+
+    def __eq__(self, other: Self, /) -> "BooleanScalar": ...  # type: ignore[override]
+    def __ne__(self, other: Self, /) -> "BooleanScalar": ...  # type: ignore[override]
+
+
+@runtime_checkable
+class OrderedScalar(BaseScalar, Protocol):
+    r"""Protocol for ordered scalars.
+
+    Examples:
+        - `bool`, `int`, `float`, `datetime`, `timedelta`
+
+    Counter-Examples:
+        - `complex` (not ordered)
+    """
+
+    def __ge__(self, other: Self, /) -> "BooleanScalar": ...
+    def __gt__(self, other: Self, /) -> "BooleanScalar": ...
+    def __le__(self, other: Self, /) -> "BooleanScalar": ...
+    def __lt__(self, other: Self, /) -> "BooleanScalar": ...
+
+
+@runtime_checkable
+class BooleanScalar(OrderedScalar, Protocol):
+    r"""Protocol for boolean scalars."""
+
+    # unary operations
+    def __bool__(self) -> bool: ...
+
+    # NOTE: __invert__ is not included, as ~True = -2, which is not a boolean.
+    # def __invert__(self) -> Self: ...
+
+    # binary operations
+    def __and__(self, other: Self, /) -> Self: ...
+    def __or__(self, other: Self, /) -> Self: ...
+    def __xor__(self, other: Self, /) -> Self: ...
+    def __ror__(self, other: Self, /) -> Self: ...
+    def __rand__(self, other: Self, /) -> Self: ...
+    def __rxor__(self, other: Self, /) -> Self: ...
+
+
+@runtime_checkable
+class AdditiveScalar(BaseScalar, Protocol):
+    r"""Protocol for scalars that support addition and subtraction.
+
+    Examples:
+        - `int`, `float`, `complex`, `timedelta`
+
+    Counter-Examples:
+        - `bool` (does not support __pos__ and __neg__)
+        - `datetime.datetime` (does not support self-addition)
+    """
+
+    # unary operations
+    # NOTE: __abs__ disabled due to complex numbers
+    # def __abs__(self) -> Self: ...
+    def __neg__(self) -> Self: ...
+    def __pos__(self) -> Self: ...
+
+    # binary operations
+    def __add__(self, other: Self, /) -> Self: ...
+    def __radd__(self, other: Self, /) -> Self: ...
+    def __sub__(self, other: Self, /) -> Self: ...
+    def __rsub__(self, other: Self, /) -> Self: ...
+
+
 @runtime_checkable
 class ShapeLike(Protocol):
     r"""Protocol for shapes, very similar to tuple, but without `__contains__`.

@@ -7,6 +7,7 @@ Note:
 __all__ = [
     # CONSTANTS
     "RNG",
+    "MODES",
     # ABCs & Protocols
     "BaseSampler",
     "Sampler",
@@ -26,11 +27,10 @@ from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
 from itertools import chain
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
-    Final,
     Literal,
-    NamedTuple,
     Optional,
     Protocol,
     cast,
@@ -378,150 +378,158 @@ class SlidingSampler[
     tmax: DT
     cumulative_horizons: NDArray[TimeDelta]  # type: ignore[type-var,unused-ignore]
 
-    # region __new__ overloads ---------------------------------------------------------
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["slices", S],
-        horizons: Array[str | TD],
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, S, MULTI]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["bounds", B],
-        horizons: Array[str | TD],
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, B, MULTI]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["masks", M],
-        horizons: Array[str | TD],
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, M, MULTI]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["windows", W],
-        horizons: Array[str | TD],
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, W, MULTI]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["slices", S],
-        horizons: str | TD,
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, S, ONE]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["bounds", B],
-        horizons: str | TD,
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, B, ONE]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["masks", M],
-        horizons: str | TD,
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, M, ONE]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Literal["windows", W],
-        horizons: str | TD,
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, W, ONE]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: str,
-        horizons: Array[str | TD],
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, U, MULTI]": ...
-    @overload
-    def __new__[TD: TimeDelta](
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: str,
-        horizons: str | TD,
-        stride: str | TD,
-        shuffle: bool = ...,
-        drop_last: bool = ...,
-        rng: Generator = ...,
-    ) -> "SlidingSampler[DT, U, ONE]": ...
-    def __new__[TD: TimeDelta](  # type: ignore[misc]
-        cls,
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        mode: Mode | str,
-        horizons: str | TD | Array[str | TD],
-        stride: str | TD,
-        drop_last: bool = False,
-        shuffle: bool = False,
-        rng: Generator = RNG,
-    ) -> "SlidingSampler[DT, ModeVar, HorizonVar]":
-        return super().__new__(cls)
+    # __new__ definition
+    # TODO: simplify in the future when
+    #   1. PEP 696 is implemented
+    #   2. enums are considered subtypes of literals.
+    if TYPE_CHECKING:
+        # multi-horizon
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["slices", S],
+            horizons: Array[str | TD],
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, S, MULTI]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["bounds", B],
+            horizons: Array[str | TD],
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, B, MULTI]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["masks", M],
+            horizons: Array[str | TD],
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, M, MULTI]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["windows", W],
+            horizons: Array[str | TD],
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, W, MULTI]": ...
+        # single horizon
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["slices", S],
+            horizons: str | TD,
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, S, ONE]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["bounds", B],
+            horizons: str | TD,
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, B, ONE]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["masks", M],
+            horizons: str | TD,
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, M, ONE]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["windows", W],
+            horizons: str | TD,
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, W, ONE]": ...
+        # unknown mode
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: MODES | Mode | str,
+            horizons: Array[str | TD],
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, U, MULTI]": ...
+        @overload
+        def __new__[TD: TimeDelta](
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: MODES | Mode | str,
+            horizons: str | TD,
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, U, ONE]": ...
+        # implementation
+        def __new__[TD: TimeDelta](  # type: ignore[misc]
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: MODES | Mode | str,
+            horizons: str | TD | Array[str | TD],
+            stride: str | TD,
+            drop_last: bool = False,
+            shuffle: bool = False,
+            rng: Generator = RNG,
+        ) -> "SlidingSampler[DT, ModeVar, HorizonVar]":
+            return super().__new__(cls)
 
     # endregion __new__ overloads --------------------------------------------------------
 

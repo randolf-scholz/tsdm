@@ -36,7 +36,6 @@ type U = MODES
 
 type ONE = Literal["one"]
 type MULTI = Literal["multi"]
-pass
 
 DISCRETE_DATA = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # region expected results discrete data ------------------------------------------------

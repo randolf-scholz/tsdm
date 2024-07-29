@@ -14,7 +14,6 @@ import torch
 from tsdm.constants import RNG
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
-    ClippingMode,
     LinearScaler,
     MinMaxScaler,
     StandardScaler,
@@ -73,7 +72,7 @@ DATA = {
 def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)](
     *,
     data: D,
-    mode: ClippingMode,
+    mode: BoundaryEncoder.ClippingMode,
     bounds: Bounds,
     lower_included: bool,
     upper_included: bool,
@@ -86,7 +85,6 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
         mode=mode,
         lower_included=lower_included,
         upper_included=upper_included,
-        axis=-1,
     )
 
     # fit the encoder
@@ -149,7 +147,7 @@ def test_boundary_encoder[
     data: D,
 ) -> None:
     r"""Test the boundary encoder."""
-    encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
+    encoder = BoundaryEncoder(-1, +1, mode="clip")
     encoder.fit(data)
     encoded = encoder.encode(data)
     assert type(encoded) is type(data)
