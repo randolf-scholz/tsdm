@@ -639,7 +639,9 @@ class MultiTableDataset[Key: str, T](
     @overload
     def deserialize(cls, filepath: FilePath, /, *, key: Key) -> T: ...
     @classmethod
-    def deserialize(cls, filepath, /, *, key=None):
+    def deserialize(
+        cls, filepath: FilePath, /, *, key: Optional[Key] = None
+    ) -> Self | T:
         r"""Deserialize the dataset."""
         if key is None:
             # assume ZipFile

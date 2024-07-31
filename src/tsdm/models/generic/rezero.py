@@ -82,7 +82,7 @@ class ReZero(nn.Sequential):
     def __init__(self, *blocks: nn.Module, weights: Optional[Tensor] = None) -> None:
         super().__init__(*blocks)
         w = torch.zeros(len(blocks)) if weights is None else weights
-        self.register_parameter("weights", nn.Parameter(w.to(torch.float)))  # pyright: ignore[reportArgumentType]
+        self.register_parameter("weights", nn.Parameter(w.to(torch.float)))
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:  # pyright: ignore[reportIncompatibleMethodOverride]

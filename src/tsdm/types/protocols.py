@@ -79,7 +79,6 @@ from typing import (
     Protocol,
     Self,
     SupportsIndex,
-    TypeGuard,
     overload,
     runtime_checkable,
 )
@@ -87,6 +86,7 @@ from typing import (
 import numpy as np
 import typing_extensions
 from numpy.typing import NDArray
+from typing_extensions import TypeIs
 
 # region io protocols ------------------------------------------------------------------
 
@@ -1178,10 +1178,10 @@ class Slotted(Protocol):
 
 
 @overload
-def is_dataclass(obj: type, /) -> TypeGuard[type[Dataclass]]: ...
+def is_dataclass(obj: type, /) -> TypeIs[type[Dataclass]]: ...
 @overload
-def is_dataclass(obj: object, /) -> TypeGuard[Dataclass]: ...
-def is_dataclass(obj: object, /) -> TypeGuard[Dataclass | type[Dataclass]]:
+def is_dataclass(obj: object, /) -> TypeIs[Dataclass]: ...
+def is_dataclass(obj: object, /) -> TypeIs[Dataclass] | TypeIs[type[Dataclass]]:
     r"""Check if the object is a dataclass."""
     if isinstance(obj, type):
         return issubclass(obj, Dataclass)  # type: ignore[misc]
@@ -1189,17 +1189,17 @@ def is_dataclass(obj: object, /) -> TypeGuard[Dataclass | type[Dataclass]]:
 
 
 @overload
-def is_namedtuple(obj: type, /) -> TypeGuard[type[NTuple]]: ...
+def is_namedtuple(obj: type, /) -> TypeIs[type[NTuple]]: ...
 @overload
-def is_namedtuple(obj: object, /) -> TypeGuard[NTuple]: ...
-def is_namedtuple(obj: object, /) -> TypeGuard[NTuple | type[NTuple]]:
+def is_namedtuple(obj: object, /) -> TypeIs[NTuple]: ...
+def is_namedtuple(obj: object, /) -> TypeIs[NTuple] | TypeIs[type[NTuple]]:
     r"""Check if the object is a namedtuple."""
     if isinstance(obj, type):
         return issubclass(obj, NTuple)  # type: ignore[misc]
     return issubclass(type(obj), NTuple)  # type: ignore[misc]
 
 
-def is_slotted(obj: object, /) -> TypeGuard[Slotted]:
+def is_slotted(obj: object, /) -> TypeIs[Slotted]:
     r"""Check if the object is slotted."""
     return hasattr(obj, "__slots__")
 

@@ -11,6 +11,7 @@ __all__ = [
     "Shape",
     "Size",
     "SplitID",
+    "PandasNullable",
     # Dtype Aliases
     "NumpyDtype",
     "NumpyDtypeArg",
@@ -18,7 +19,7 @@ __all__ = [
     "PandasDTypeArg",
     "DType",
     # Scalar Type Aliases
-    "Scalar",
+    "BuiltinScalar",
     "StringScalar",
     "NumericalScalar",
     "TorchScalar",
@@ -69,6 +70,7 @@ from typing import Any
 import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex, Series
+from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.protocols import SupportsKwargs
@@ -107,11 +109,13 @@ type DTypeArg = str | type
 r"""Type Alias for dtype arguments."""
 type PandasObject = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
+type PandasNullable[T] = T | NAType
+r"""Type Alias for nullable types."""
 # endregion Dtype Aliases --------------------------------------------------------------
 
 
 # region Scalar Type Aliases -----------------------------------------------------------
-type Scalar = bool | int | float | complex | str | bytes
+type BuiltinScalar = bool | int | float | complex | str | bytes
 r"""Type Alias for scalars."""
 type StringScalar = str | bytes
 r"""Type Alias for string scalars."""
@@ -174,19 +178,19 @@ type NestedBuiltin[T] = (
     T
     | tuple[T, ...]
     | tuple["NestedBuiltin[T]", ...]
-    | tuple["T | NestedBuiltin[T]", ...]
+    | tuple[T | "NestedBuiltin[T]", ...]
     | set[T]
     | set["NestedBuiltin[T]"]
-    | set["T | NestedBuiltin[T]"]
+    | set[T | "NestedBuiltin[T]"]
     | frozenset[T]
     | frozenset["NestedBuiltin[T]"]
-    | frozenset["T | NestedBuiltin[T]"]
+    | frozenset[T | "NestedBuiltin[T]"]
     | list[T]
     | list["NestedBuiltin[T]"]
-    | list["T | NestedBuiltin[T]"]
+    | list[T | "NestedBuiltin[T]"]
     | dict[str, T]
     | dict[str, "NestedBuiltin[T]"]
-    | dict[str, "T | NestedBuiltin[T]"]
+    | dict[str, T | "NestedBuiltin[T]"]
 )
 r"""Type Alias for nested builtins."""
 # endregion Nested Builtins ------------------------------------------------------------

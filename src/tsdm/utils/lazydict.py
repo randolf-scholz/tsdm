@@ -15,7 +15,7 @@ __all__ = [
 import warnings
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Never, Optional, Self, cast, overload
+from typing import TYPE_CHECKING, Any, Never, Optional, Self, cast, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.protocols import SupportsKeysAndGetItem
@@ -62,14 +62,15 @@ class LazyValue[R]:  # +R
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
+type MaybeLazy[V] = V | LazyValue[V]
 type LazySpec[V] = (
-    LazyValue[V]                            # lazy value
+    V                                       # direct value
+    | LazyValue[V]                          # lazy value
     | Callable[[], V]                       # no args
     | Callable[[Any], V]                    # single arg
     | tuple[Callable[..., V], tuple]        # args
     | tuple[Callable[..., V], dict]         # kwargs
     | tuple[Callable[..., V], tuple, dict]  # args, kwargs
-    | V                                     # direct value
 )  # fmt: skip
 r"""A type alias for the possible values of a `LazyDict`."""
 
@@ -97,28 +98,34 @@ class LazyDict[K, V](dict[K, V]):
     """
 
     # fmt: off
+    @classmethod  # type: ignore[override]
     @overload
-    def __new__(cls, /) -> "LazyDict": ...
+    def fromkeys(cls, iterable: Iterable[K], value: None = ..., /) -> "LazyDict[K, Any]": ...
+    @classmethod
     @overload
-    def __new__(cls, /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
-    @overload
-    def __new__(cls, mapping: Mapping[K, LazySpec[V]], /) -> "LazyDict[K, V]": ...
-    @overload
-    def __new__(cls, mapping: Mapping[K, LazySpec[V]], /, **kwargs: LazySpec[V]) -> "LazyDict[K | str, V]": ...
-    @overload
-    def __new__(cls, iterable: Iterable[tuple[K, LazySpec[V]]], /) -> "LazyDict[K, V]": ...
-    @overload
-    def __new__(cls, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]) -> "LazyDict[K | str, V]": ...
+    def fromkeys(cls, iterable: Iterable[K], value: LazySpec[V], /) -> "LazyDict[K, V]": ...
     # fmt: on
-    def __new__(  # pyright: ignore[reportInconsistentOverload]
-        cls,
-        map_or_iterable: Mapping[K, LazySpec[V]]
-        | Iterable[tuple[K, LazySpec[V]]] = EMPTY_MAP,
-        /,
-        **kwargs: LazySpec[V],
-    ) -> Self:
-        r"""Create a new instance of the class."""
-        return super().__new__(cls)
+    @classmethod
+    def fromkeys(cls, iterable: Iterable[K], value: Optional[LazySpec[V]] = None, /) -> "LazyDict[K, V]":  # fmt: skip
+        r"""Create a new LazyDict from the keys."""
+        d = super().fromkeys(iterable, value)
+        return cls(d)
+
+    if TYPE_CHECKING:
+        # fmt: off
+        @overload
+        def __new__(cls, /) -> "LazyDict": ...
+        @overload  # mapping only
+        def __new__(cls, mapping: Mapping[K, LazySpec[V]], /) -> "LazyDict[K, V]": ...
+        @overload  # iterable only
+        def __new__(cls, iterable: Iterable[tuple[K, LazySpec[V]]], /) -> "LazyDict[K, V]": ...
+        @overload  # kwargs only
+        def __new__(cls, /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
+        @overload  # mapping and kwargs
+        def __new__(cls, mapping: Mapping[str, LazySpec[V]], /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
+        @overload  # iterable and kwargs
+        def __new__(cls, iterable: Iterable[tuple[str, LazySpec[V]]], /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
+        # fmt: on
 
     def __init__(
         self,
@@ -151,22 +158,7 @@ class LazyDict[K, V](dict[K, V]):
             return new_value
         return value
 
-    @overload
-    def get_lazy(self, key: K, /) -> V | LazyValue[V] | None: ...
-    @overload
-    def get_lazy(self, key: K, /, *, default: V) -> V | LazyValue[V]: ...
-    @overload
-    def get_lazy[T](self, key: K, /, *, default: T) -> V | LazyValue[V] | T: ...
-    def get_lazy(self, key, /, *, default=None):
-        r"""Get the lazy value of the key."""
-        return super().get(key, default)
-
-    def set_lazy(self, key: K, value: LazySpec[V], /) -> None:
-        r"""Set the value directly."""
-        lazy_value = self._make_lazy_function(key, value)
-        super().__setitem__(key, lazy_value)  # type: ignore[assignment]
-
-    def __or__[K2, T](self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __or__[K2, T](self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
         new = cast(LazyDict[K | K2, V | T], self.copy())
         new.update(other)  # type: ignore[arg-type]
         return new
@@ -205,6 +197,21 @@ class LazyDict[K, V](dict[K, V]):
         except KeyError:
             return default
 
+    @overload
+    def get_lazy(self, key: K, /) -> Optional[MaybeLazy[V]]: ...
+    @overload
+    def get_lazy(self, key: K, default: V, /) -> MaybeLazy[V]: ...
+    @overload
+    def get_lazy[T](self, key: K, default: T, /) -> MaybeLazy[V] | T: ...
+    def get_lazy(self, key, default=None, /):
+        r"""Get the value for the key lazily."""
+        return super().get(key, default)
+
+    def set_lazy(self, key: K, value: LazySpec[V], /) -> None:
+        r"""Set the value directly."""
+        lazy_value = self._make_lazy_function(key, value)
+        super().__setitem__(key, lazy_value)  # type: ignore[assignment]
+
     __NOTGIVEN = object()
 
     @overload
@@ -230,21 +237,6 @@ class LazyDict[K, V](dict[K, V]):
         if isinstance(value, LazyValue):
             return key, cast(V, value())
         return key, value
-
-    @classmethod  # type: ignore[override]
-    @overload
-    def fromkeys(
-        cls, iterable: Iterable[K], value: None = ..., /
-    ) -> "LazyDict[K, Any | None]": ...
-    @classmethod
-    @overload
-    def fromkeys(
-        cls, iterable: Iterable[K], value: LazySpec[V], /
-    ) -> "LazyDict[K, V]": ...
-    @classmethod
-    def fromkeys(cls, iterable, value=None):  # pyright: ignore[reportInconsistentOverload, reportIncompatibleMethodOverride]
-        r"""Create a new LazyDict from the keys."""
-        return cls(super().fromkeys(iterable, value))
 
     @staticmethod
     def _make_lazy_function(key: K, value: LazySpec[V], /) -> LazyValue[V]:

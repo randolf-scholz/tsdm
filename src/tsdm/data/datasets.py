@@ -20,7 +20,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping, Reversible
+from collections.abc import Iterator, KeysView, Mapping
 from dataclasses import KW_ONLY, dataclass
 from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checkable
 
@@ -138,7 +138,10 @@ class MapDataset[K, V](Protocol):  # +V
         ...
 
     @abstractmethod
-    def keys(self) -> Reversible[K] | IndexableDataset[K]:
+    # NOTE: We want keys to support __reverse__, which requires either
+    #   - SupportsLenAndGetItem -> Use IndexableDataset instead
+    #   - Reversible -> Use KeysView instead
+    def keys(self) -> KeysView[K] | IndexableDataset[K]:
         r"""Iterate over the keys."""
         ...
 

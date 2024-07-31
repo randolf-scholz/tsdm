@@ -27,7 +27,7 @@ from typing import Any, Protocol, SupportsIndex, SupportsInt
 
 from numpy.typing import ArrayLike
 
-from tsdm.types.aliases import Axis, Scalar
+from tsdm.types.aliases import Axis, BuiltinScalar
 
 
 # region generic callback-protocols ----------------------------------------------------
@@ -110,7 +110,7 @@ class ToTensorProto[T](Protocol):  # +T
 class WhereProto[T](Protocol):  # T
     r"""Bound-Protocol for `where`-function."""
 
-    def __call__(self, cond: T, x: T, y: Scalar | T, /) -> T: ...
+    def __call__(self, cond: T, x: T, y: BuiltinScalar | T, /) -> T: ...
 
 
 class ApplyAlongAxes[T](Protocol):  # T

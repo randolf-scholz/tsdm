@@ -34,7 +34,7 @@ dependencies = [
     "numpy>=2.0.1",
     "pandas>=2.2.2",
     "pillow>=10.4.0",
-    "polars>=1.2.1",
+    "polars>=1.3.0",
     "pyarrow>=17.0.0",
     "pydantic>=2.8.2",
     "pyyaml>=6.0.1",
@@ -73,7 +73,7 @@ docs = [
 ]
 tests = [
     "coverage>=7.6.0",
-    "hypothesis[numpy,pandas,pytest]>=6.108.4",
+    "hypothesis[numpy,pandas,pytest]>=6.108.5",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=5.0.0",
     "pytest-repeat>=0.9.3",
@@ -87,8 +87,8 @@ linters = [
     "ruff-lsp>=0.0.54",
 ]
 typing = [
-    "mypy>=1.11.0",
-    "pyright>=1.1.373",
+    "mypy>=1.11.1",
+    "pyright>=1.1.374",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20240724",
@@ -100,7 +100,7 @@ typing = [
     "types-pytz>=2024.1.0.20240417",
     "types-pyyaml>=6.0.12.20240724",
     "types-requests>=2.32.0.20240712",
-    "types-setuptools>=71.1.0.20240724",
+    "types-setuptools>=71.1.0.20240726",
     "types-six>=1.16.21.20240513",
     "types-tabulate>=0.9.0.20240106",
     "types-tqdm>=4.66.0.20240417",
@@ -109,11 +109,11 @@ typing = [
 ]
 devtools = [
     "devtools>=0.12.2",
-    "pip>=24.1.2",
-    "pre-commit>=3.7.1",
+    "pip>=24.2",
+    "pre-commit>=3.8.0",
     "pybadges>=3.0.1",
     "pygments>=2.18.0",
-    "setuptools>=71.1.0",
+    "setuptools>=72.1.0",
     "twine>=5.1.1",
     "wheel>=0.43.0",
 ]
@@ -343,6 +343,7 @@ disable_error_code = [
     "func-returns-value",  # REF: https://github.com/python/mypy/issues/6549
     "overload-overlap",  # REF: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
     "method-assign",  # REF: https://github.com/python/mypy/issues/2427#issuecomment-1419206807
+    "no-overload-impl", # REF: https://github.com/python/mypy/issues/17618
 ]
 
 # warnings
@@ -424,10 +425,12 @@ useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 #reportIncompatibleVariableOverride = false  # FIXME: temporary
 #reportMissingImports = false
 #reportMissingTypeStubs = false
-reportOverlappingOverload = false
+reportPrivateImportUsage = false  # FIXME: temporary
+reportOverlappingOverload = true
+reportNoOverloadImplementation = false  # REF: https://github.com/microsoft/pyright/issues/8619
 #reportPrivateImportUsage = false
 #reportSelfClsParameterName = false
-reportUnnecessaryTypeIgnoreComment = false  # highlight any unnecessary # type: ignore
+reportUnnecessaryTypeIgnoreComment = false  # highlight any unnecessary "# type: ignore" comments
 #reportUnsupportedDunderAll = false
 # endregion pyright Configuration ------------------------------------------------------
 

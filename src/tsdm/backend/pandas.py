@@ -37,7 +37,7 @@ from typing import Any, Literal, TypeVar
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, Series
 
-from tsdm.types.aliases import Axis, Scalar
+from tsdm.types.aliases import Axis, BuiltinScalar
 from tsdm.utils import get_joint_keys
 
 __logger__ = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ def nanstd(x: P, /, *, axis: Axis = None) -> P:
     return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
-def where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
+def where(cond: NDArray, a: P, b: BuiltinScalar | NDArray, /) -> P:
     r"""Analogue to `numpy.where`."""
     if isinstance(a, Index | Series | DataFrame):
         return a.where(cond, b)

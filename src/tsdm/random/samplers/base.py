@@ -516,21 +516,6 @@ class SlidingSampler[
             drop_last: bool = ...,
             rng: Generator = ...,
         ) -> "SlidingSampler[DT, U, ONE]": ...
-        # implementation
-        def __new__[TD: TimeDelta](  # type: ignore[misc]
-            cls,
-            data_source: SequentialDataset[DT],
-            /,
-            *,
-            mode: MODES | Mode | str,
-            horizons: str | TD | Array[str | TD],
-            stride: str | TD,
-            drop_last: bool = False,
-            shuffle: bool = False,
-            rng: Generator = RNG,
-        ) -> "SlidingSampler[DT, ModeVar, HorizonVar]":
-            return super().__new__(cls)
-
     # endregion __new__ overloads --------------------------------------------------------
 
     def __init__[TD: TimeDelta](

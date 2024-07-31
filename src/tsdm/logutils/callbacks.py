@@ -44,7 +44,6 @@ from typing import (
     Optional,
     Protocol,
     Self,
-    TypeGuard,
     final,
     overload,
     runtime_checkable,
@@ -58,6 +57,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
+from typing_extensions import TypeIs
 
 from tsdm.logutils.logfuncs import (
     log_config,
@@ -112,7 +112,7 @@ class CallbackSequence(MutSeq[Callback], Callback, Protocol):
     """
 
 
-def is_callback(obj: object, /) -> TypeGuard[Callback]:
+def is_callback(obj: object, /) -> TypeIs[Callback]:
     r"""Check if the function is a callback."""
     if not callable(obj):
         return False

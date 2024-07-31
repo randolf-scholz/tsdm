@@ -22,7 +22,7 @@ import json
 from collections.abc import Mapping
 from inspect import Parameter
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, TypeGuard, runtime_checkable
+from typing import Any, Literal, Optional, Protocol, runtime_checkable
 
 import torch
 import yaml
@@ -33,6 +33,7 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
+from typing_extensions import TypeIs
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.linalg import (
@@ -76,7 +77,7 @@ class LogFunction(Protocol):
         ...
 
 
-def is_logfunc(func: object, /) -> TypeGuard[LogFunction]:
+def is_logfunc(func: object, /) -> TypeIs[LogFunction]:
     r"""Check if the function is a callback."""
     if not callable(func):
         return False

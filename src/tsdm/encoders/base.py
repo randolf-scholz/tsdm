@@ -72,6 +72,7 @@ from dataclasses import KW_ONLY, asdict, dataclass
 from functools import wraps
 from inspect import getattr_static
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
@@ -907,19 +908,17 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
 class ChainedEncoder[X, Y](EncoderList[X, Y]):
     r"""Represents function composition of encoders."""
 
-    # fmt: off
-    @overload  # n=0
-    def __new__(cls, *encoders: *tuple[()]) -> Self: ...
-    @overload  # n=1
-    def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> Self: ...
-    @overload  # n=2
-    def __new__[Z](cls, *encoders: *tuple[Encoder[Z, Y], Encoder[X, Z]]) -> Self: ...
-    @overload  # n>2
-    def __new__(cls, *encoders: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]]) -> Self: ...
-    # fmt: on
-    def __new__(cls, *encoders):
-        r"""Create a new chained encoder."""
-        return super().__new__(cls)
+    if TYPE_CHECKING:
+        # fmt: off
+        @overload  # n=0
+        def __new__(cls, *encoders: *tuple[()]) -> Self: ...
+        @overload  # n=1
+        def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> Self: ...
+        @overload  # n=2
+        def __new__[Z](cls, *encoders: *tuple[Encoder[Z, Y], Encoder[X, Z]]) -> Self: ...
+        @overload  # n>2
+        def __new__(cls, *encoders: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]]) -> Self: ...
+        # fmt: on
 
     def __invert__(self) -> "ChainedEncoder[Y, X]":
         cls: type[ChainedEncoder] = type(self)
@@ -1020,19 +1019,17 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
 
     encoders: list[Encoder]
 
-    # fmt: off
-    @overload  # n=0
-    def __new__(cls, *encoders: *tuple[()]) -> Self: ...
-    @overload  # n=1
-    def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> Self: ...
-    @overload  # n=2
-    def __new__[Z](cls, *encoders: *tuple[Encoder[X, Z], Encoder[Z, Y]]) -> Self: ...
-    @overload  # n>2
-    def __new__(cls, *encoders: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]]) -> Self: ...
-    # fmt: on
-    def __new__(cls, *encoders):
-        r"""Create a new chained encoder."""
-        return super().__new__(cls)
+    if TYPE_CHECKING:
+        # fmt: off
+        @overload  # n=0
+        def __new__(cls, *encoders: *tuple[()]) -> Self: ...
+        @overload  # n=1
+        def __new__(cls, *encoders: *tuple[Encoder[X, Y]]) -> Self: ...
+        @overload  # n=2
+        def __new__[Z](cls, *encoders: *tuple[Encoder[X, Z], Encoder[Z, Y]]) -> Self: ...
+        @overload  # n>2
+        def __new__(cls, *encoders: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]]) -> Self: ...
+        # fmt: on
 
     def __invert__(self) -> "PipedEncoder[Y, X]":
         cls: type[PipedEncoder] = type(self)
@@ -1170,20 +1167,17 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
     Applies multiple encoders in parallel on tuples of data.
     """
 
-    # fmt: off
-    @overload  # n=0
-    def __new__(cls, *encoders: *tuple[()]) -> "ParallelEncoder[Any, Any]": ...
-    @overload  # n=1
-    def __new__[X, Y](cls, *encoders: *tuple[Encoder[X, Y]]) -> "ParallelEncoder[tuple[X], tuple[Y]]": ...
-    @overload  # n=2
-    def __new__[X1, Y1, X2, Y2](cls, *encoders: *tuple[Encoder[X1, Y1], Encoder[X2, Y2]]) -> "ParallelEncoder[tuple[X1, X2], tuple[Y1, Y2]]": ...
-    @overload  # n>2
-    def __new__[X, Y](cls, *encoders: Encoder[X, Y]) -> "ParallelEncoder[tuple[X, ...], tuple[Y, ...]]": ...
-    # fmt: on
-    # NOTE: We need to ignore inconsistent overload errors because `Self` cannot be generic.
-    def __new__(cls, *encoders):  # pyright: ignore[reportInconsistentOverload]
-        r"""Create a new chained encoder."""
-        return super().__new__(cls)
+    if TYPE_CHECKING:
+        # fmt: off
+        @overload  # n=0
+        def __new__(cls, *encoders: *tuple[()]) -> "ParallelEncoder[tuple[()], tuple[()]]": ...
+        @overload  # n=1
+        def __new__[X, Y](cls, *encoders: *tuple[Encoder[X, Y]]) -> "ParallelEncoder[tuple[X], tuple[Y]]": ...
+        @overload  # n=2
+        def __new__[X1, Y1, X2, Y2](cls, *encoders: *tuple[Encoder[X1, Y1], Encoder[X2, Y2]]) -> "ParallelEncoder[tuple[X1, X2], tuple[Y1, Y2]]": ...
+        @overload  # n>2
+        def __new__[X, Y](cls, *encoders: Encoder[X, Y]) -> "ParallelEncoder[tuple[X, ...], tuple[Y, ...]]": ...
+        # fmt: on
 
     def __invert__(self) -> "ParallelEncoder[TupleOut, TupleIn]":
         cls: type[ParallelEncoder] = type(self)
@@ -1220,23 +1214,23 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
             return IdentityEncoder()
         if len(encoders) == 1:
             return (TupleDecoder() >> encoders[0] >> TupleEncoder()).simplify()
-        cls = type(self)
+        cls: type[ParallelEncoder] = type(self)
         return cls(*encoders)
 
 
 # fmt: off
-@overload  # n=0
-def parallelize_encoders(*, simplify: bool = ...) -> Encoder[Any, Any]: ...
+@overload  # n=0li
+def parallelize_encoders(*, simplify: bool = ...) -> Encoder[tuple[()], tuple[()]]: ...
 @overload  # n=1
 def parallelize_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
 @overload  # n=2
 def parallelize_encoders[X1, Y1, X2, Y2](e1: Encoder[X1, Y1], e2: Encoder[X2, Y2], /, *, simplify: bool = ...) -> Encoder[tuple[X1, X2], tuple[Y1, Y2]]: ...
-@overload  # n>2
+@overload  # n>2 (FIXME: https://github.com/python/typing/issues/1216)
 def parallelize_encoders[X, Y](*encoders: Encoder[X, Y], simplify: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
 @overload  # fallback
-def parallelize_encoders(*encoders: Encoder, simplify: bool = ...) -> Encoder: ...
+def parallelize_encoders(*encoders: Encoder, simplify: bool = ...) -> Encoder[tuple, tuple]: ...
 # fmt: on
-def parallelize_encoders(*encoders, simplify=True):
+def parallelize_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder[tuple, tuple]:  # fmt: skip
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -1288,22 +1282,17 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     def params(self):
         return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
 
-    # fmt: off
-    @overload  # n=0
-    def __new__(cls, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[()]]": ...
-    @overload  # n=1
-    def __new__[Y](cls, e: Encoder[X, Y], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y]]": ...
-    @overload  # n=2
-    def __new__[Y1, Y2](cls, e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y1, Y2]]": ...
-    @overload  # n>2
-    def __new__[Y](cls, *es: Encoder[X, Y], aggregate_fn: Agg[X] = ...) -> "JointEncoder[X, tuple[Y, ...]]": ...
-    # fmt: on
-    # NOTE: We need to ignore inconsistent overload errors because `Self` cannot be generic.
-    def __new__(  # type: ignore[misc]
-        cls, *encoders: Encoder[X, Any], aggregate_fn: Agg[X] = random.choice
-    ) -> Self:
-        r"""Create a new chained encoder."""
-        return super().__new__(cls)
+    if TYPE_CHECKING:
+        # fmt: off
+        @overload  # n=0
+        def __new__(cls, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[()]]": ...
+        @overload  # n=1
+        def __new__[Y](cls, e: Encoder[X, Y], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y]]": ...
+        @overload  # n=2
+        def __new__[Y1, Y2](cls, e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn:  Agg[X] = ...) -> "JointEncoder[X, tuple[Y1, Y2]]": ...
+        @overload  # n>2
+        def __new__[Y](cls, *es: Encoder[X, Y], aggregate_fn: Agg[X] = ...) -> "JointEncoder[X, tuple[Y, ...]]": ...
+        # fmt: on
 
     # NOTE: Need to use different variable names than the class-scoped parameters!
     # fmt: off
@@ -1383,24 +1372,17 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     def params(self):
         return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
 
-    # fmt: off
-    @overload  # n=0
-    def __new__(cls, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[()], Y]": ...
-    @overload  # n=1
-    def __new__[X](cls, e: Encoder[X, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X], Y]": ...
-    @overload  # n=2
-    def __new__[X1, X2](cls, e1: Encoder[X1, Y], e2: Encoder[X2, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X1, X2], Y]": ...
-    @overload  # n>2
-    def __new__[X](cls, *es: Encoder[X, Y], aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X, ...], Y]": ...
-    # fmt: on
-    # NOTE: We need to ignore inconsistent overload errors because `Self` cannot be generic.
-    def __new__(  # type: ignore[misc]
-        cls,
-        *encoders: Encoder[Any, Y],
-        aggregate_fn: Agg[Y] = random.choice,
-    ) -> Self:
-        r"""Create a new chained encoder."""
-        return super().__new__(cls)
+    if TYPE_CHECKING:
+        # fmt: off
+        @overload  # n=0
+        def __new__(cls, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[()], Y]": ...
+        @overload  # n=1
+        def __new__[X](cls, e: Encoder[X, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X], Y]": ...
+        @overload  # n=2
+        def __new__[X1, X2](cls, e1: Encoder[X1, Y], e2: Encoder[X2, Y], /, *, aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X1, X2], Y]": ...
+        @overload  # n>2
+        def __new__[X](cls, *es: Encoder[X, Y], aggregate_fn: Agg[Y] = ...) -> "JointDecoder[tuple[X, ...], Y]": ...
+        # fmt: on
 
     # NOTE: Need to use different variable names than the class-scoped parameters!
     # fmt: off
@@ -1450,10 +1432,11 @@ class MappedEncoder[
     encoders: dict[K, Encoder]
     r"""The encoders to map to keys."""
 
-    def __new__[T, X, Y](
-        cls, encoders: Mapping[T, Encoder[X, Y]]
-    ) -> "MappedEncoder[Mapping[T, X], Mapping[T, Y], T]":
-        return super().__new__(cls)  # type: ignore[arg-type]
+    if TYPE_CHECKING:
+
+        def __new__[T, X, Y](
+            cls, encoders: Mapping[T, Encoder[X, Y]]
+        ) -> "MappedEncoder[Mapping[T, X], Mapping[T, Y], T]": ...
 
     def __init__[T, X, Y](
         self: "MappedEncoder[Mapping[T, X], Mapping[T, Y], T]",
