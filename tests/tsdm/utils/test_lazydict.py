@@ -85,11 +85,29 @@ def test_ior() -> None:
 
 
 def test_fromkeys() -> None:
-    r"""Test the fromkeys method of LazyDict."""
+    r"""Test the `fromkeys` method of `LazyDict`."""
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.fromkeys)
 
     ld = LazyDict.fromkeys([1, 2, 3], 0)
+
+    assert isinstance(ld, LazyDict)
+    assert isinstance(ld, dict)
+    assert isinstance(ld, MutableMapping)
+
+    for value in ld.values():
+        assert isinstance(value, int)
+
+    for key in ld:
+        assert isinstance(ld[key], int)
+
+
+def test_from_func() -> None:
+    r"""Test the `from_func` method of `LazyDict`."""
+    LOGGER = __logger__.getChild(LazyDict.__name__)
+    LOGGER.info("Testing %s", LazyDict.fromkeys)
+
+    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)
@@ -107,7 +125,7 @@ def test_copy() -> None:
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.copy)
 
-    ldA = LazyDict.fromkeys([1, 2, 3], 0)
+    ldA = LazyDict.fromkeys([1, 2, 3], LazyValue(lambda: 0))
     ldB = ldA.copy()
     assert isinstance(ldB, LazyDict)
 
@@ -137,6 +155,7 @@ def test_init_type_inference() -> None:
     d2: dict[int, Callable[[], int]] = {0: lambda: 0}
     ld2 = LazyDict(d2)  # type: ignore[arg-type, var-annotated]
     assert_type(ld2, LazyDict[int, int])  # type: ignore[assert-type]
+    assert all(isinstance(value, LazyValue) for value in ld2.values())
 
     # without type hints
     d3 = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}

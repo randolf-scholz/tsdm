@@ -172,7 +172,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
                 repackage_zip(self.rawdata_path)
 
         self.component_files = self.autodetect_component_files()
-        self.components = LazyDict.fromkeys(self.component_files, self.get_component)
+        self.components = LazyDict.from_func(self.component_files, self.get_component)
         self.device = device
 
     def __repr__(self) -> str:

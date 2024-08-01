@@ -165,10 +165,11 @@ repos:
     hooks:
       - id: pyright
         # REF: https://stackoverflow.com/a/20401674
+#        entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
         entry: |
           sh -c '\
             result=$(script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)");
-            count=$(echo "$result" | wc -l);
+            count=$(echo -n "$result" | wc -l);
             if [ "$count" -ne 0 ]; then \
               echo "$result"; \
               echo "\033[1;31mFound ${count} errors\033[0m"; \

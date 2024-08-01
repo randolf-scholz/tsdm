@@ -49,7 +49,7 @@ from tsdm.utils import paths_exists, remote
 from tsdm.utils.contextmanagers import timer
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.funcutils import get_return_typehint
-from tsdm.utils.lazydict import LazyDict, LazyValue
+from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.pprint import repr_mapping
 from tsdm.utils.system import query_bool
 
@@ -758,15 +758,12 @@ class MultiTableDataset[Key: str, T](
         r"""Store cached version of dataset."""
         if self._tables is NotImplemented:
             # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
-            self._tables = LazyDict({
-                key: LazyValue(
-                    self.load,
-                    args=(key,),
-                    kwargs={"initializing": True},
-                    type_hint=get_return_typehint(self.clean_table),
-                )
-                for key in self.table_names
-            })
+            self._tables = LazyDict.from_func(
+                self.table_names,
+                self.load,
+                kwargs={"initializing": True},
+                type_hint=get_return_typehint(self.clean_table),
+            )
 
         return self._tables
 
