@@ -2,7 +2,7 @@ r"""Test LazyDict."""
 
 import logging
 from collections.abc import Callable, MutableMapping
-from typing import Any, assert_type
+from typing import assert_type
 
 import pytest
 
@@ -34,8 +34,8 @@ def test_lazydict_init() -> None:
         return a + b + c + sum(args) + d + e + sum(kwargs.values())
 
     example_dict = {
-        0: no_input,
-        1: single_input,
+        0: (no_input,),
+        1: (single_input, (1,)),
         # 2: (no_input,),
         # 3: (single_input,),
         4: (positional_only, (1, 1, 1, 1)),
@@ -102,12 +102,19 @@ def test_fromkeys() -> None:
         assert isinstance(ld[key], int)
 
 
+def test_get() -> None:
+    r"""Test the `get` method of `LazyDict`."""
+    # get should return non-lazy values
+    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)  # type: ignore[misc]
+    assert ld.get(1) == 0
+
+
 def test_from_func() -> None:
     r"""Test the `from_func` method of `LazyDict`."""
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.fromkeys)
 
-    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)
+    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)  # type: ignore[misc]
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)
@@ -152,12 +159,16 @@ def test_init_type_inference() -> None:
     ld1 = LazyDict(d1)
     assert_type(ld1, LazyDict[int, int])
 
-    d2: dict[int, Callable[[], int]] = {0: lambda: 0}
-    ld2 = LazyDict(d2)  # type: ignore[arg-type, var-annotated]
+    d2: dict[int, Callable[[], int]] = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}
+    ld2 = LazyDict(d2)
     assert_type(ld2, LazyDict[int, int])  # type: ignore[assert-type]
-    assert all(isinstance(value, LazyValue) for value in ld2.values())
+    # assert all(isinstance(value, LazyValue) for value in ld2.values())
+    # assert isinstance(ld2[0], int)
 
     # without type hints
+    # FIXME: https://github.com/microsoft/pyright/issues/8638
     d3 = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}
-    ld3 = LazyDict(d3)  # type: ignore[arg-type, var-annotated]
-    assert_type(ld3, LazyDict[int, Any])
+    ld3 = LazyDict(d3)
+    assert_type(ld3, LazyDict[int, Callable[[], int]])  # pyright: ignore[reportAssertTypeFailure]
+    assert all(isinstance(value, LazyValue) for value in ld3.values())
+    assert isinstance(ld3[0], int)
