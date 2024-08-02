@@ -105,6 +105,8 @@ def test_pprint_dataclass() -> None:
 
     # ensure decorator works statically
     assert_type(TestDataclass, type[TestDataclass])
+    cls = pprint_dataclass(TestDataclass)
+    assert_type(cls, type[TestDataclass])
 
     # runtime check
     obj = TestDataclass(1, "a", 1.25)
@@ -295,3 +297,70 @@ def test_pprint_repr_set() -> None:
     obj = TestSet()
     result = repr(obj)
     assert result == EXPECTED_SET
+
+
+def test_pprint_sequence_static() -> None:
+    reveal_type(pprint_sequence)
+
+    class Foo(Sequence): ...
+
+    @pprint_sequence
+    class Bar(Sequence): ...
+
+    @pprint_sequence(linebreaks=True)
+    class Baz(Sequence): ...
+
+    FooBar = pprint_sequence(Foo)
+    FooBaz = pprint_sequence(linebreaks=True)(Foo)
+
+    # self-consistency
+    assert_type(FooBar, type[Foo])
+    assert_type(FooBaz, type[Foo])
+    assert_type(Bar, type[Bar])
+    assert_type(Baz, type[Baz])
+    assert type(FooBar) is type(Foo)
+    assert type(FooBaz) is type(Foo)
+
+
+def test_pprint_mapping_static() -> None:
+    reveal_type(pprint_mapping)
+
+    class Foo(Mapping): ...
+
+    @pprint_mapping
+    class Bar(Mapping): ...
+
+    @pprint_mapping(linebreaks=True)
+    class Baz(Mapping): ...
+
+    FooBar = pprint_mapping(Foo)
+    FooBaz = pprint_mapping(linebreaks=True)(Foo)
+    # self-consistency
+    assert_type(FooBar, type[Foo])
+    assert_type(FooBaz, type[Foo])
+    assert_type(Bar, type[Bar])
+    assert_type(Baz, type[Baz])
+    assert type(FooBar) is type(Foo)
+    assert type(FooBaz) is type(Foo)
+
+
+def test_pprint_set_static() -> None:
+    reveal_type(pprint_set)
+
+    class Foo(AbstractSet): ...
+
+    @pprint_set
+    class Bar(AbstractSet): ...
+
+    @pprint_set(linebreaks=True)
+    class Baz(AbstractSet): ...
+
+    FooBar = pprint_set(Foo)
+    FooBaz = pprint_set(linebreaks=True)(Foo)
+    # self-consistency
+    assert_type(FooBar, type[Foo])
+    assert_type(FooBaz, type[Foo])
+    assert_type(Bar, type[Bar])
+    assert_type(Baz, type[Baz])
+    assert type(FooBar) is type(Foo)
+    assert type(FooBaz) is type(Foo)

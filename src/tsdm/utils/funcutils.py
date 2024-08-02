@@ -36,7 +36,7 @@ from tsdm.constants import (
     VAR_KEYWORD,
     VAR_POSITIONAL,
 )
-from tsdm.types.protocols import Dataclass, is_dataclass
+from tsdm.types.protocols import Dataclass, issubclass_dataclass
 
 
 def rpartial[**P, R](  # +R
@@ -73,7 +73,7 @@ def dataclass_args_kwargs(
     forbidden_keys: set[str] = set()
     if ignore_parent_fields:
         for parent in obj.__class__.__mro__[1:]:
-            if is_dataclass(parent):
+            if issubclass_dataclass(parent):
                 forbidden_keys.update(parent.__dataclass_fields__)
 
     args = tuple(

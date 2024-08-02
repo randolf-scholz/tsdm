@@ -341,7 +341,7 @@ python_version = "3.12"
 
 disable_error_code = [
     "func-returns-value",  # REF: https://github.com/python/mypy/issues/6549
-    "overload-overlap",  # REF: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
+#    "overload-overlap",  # REF: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
     "method-assign",  # REF: https://github.com/python/mypy/issues/2427#issuecomment-1419206807
     "no-overload-impl", # REF: https://github.com/python/mypy/issues/17618
 ]

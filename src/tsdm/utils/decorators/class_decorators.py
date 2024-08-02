@@ -14,13 +14,13 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
-from typing import Any, Self
+from typing import Any, Self, cast
 
 from torch import jit, nn
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
-from tsdm.utils.decorators.base import decorator
+from tsdm.utils.decorators.base import ParametrizedClassDecorator, decorator
 from tsdm.utils.pprint import (
     repr_array,
     repr_dataclass,
@@ -62,7 +62,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     return cls
 
 
-@decorator
+# @decorator
 def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]:
     # def pprint_dataclass[Dtc: type[Dataclass]](cls: Dtc, /, **kwds: Any) -> Dtc:
     r"""Add appropriate __repr__ to class."""
@@ -173,3 +173,11 @@ def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:
         return cls
 
     return __wrapper
+
+
+reveal_type(pprint_sequence)
+reveal_type(pprint_mapping)
+# reveal_type(pprint_set)
+# reveal_type(pprint_dataclass)
+# reveal_type(pprint_namedtuple)
+# reveal_type(pprint_repr)

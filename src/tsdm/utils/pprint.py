@@ -714,7 +714,7 @@ def repr_dataclass(
     - recursive=`False`:  ``Name<dataclass>(item1, item2, ...)``
     - recursive=`True`: ``Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)``
     """
-    if not is_dataclass(obj) or not isinstance(obj, Dataclass):
+    if not isinstance(obj, Dataclass):
         raise TypeError(f"Expected Dataclass, got {type(obj)}.")
 
     # set type & wrapped

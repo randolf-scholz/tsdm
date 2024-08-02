@@ -55,6 +55,10 @@ __all__ = [
     "Slotted",
     # Functions
     "is_dataclass",
+    "isinstance_dataclass",
+    "issubclass_dataclass",
+    "isinstance_namedtuple",
+    "issubclass_namedtuple",
     "is_namedtuple",
     "is_slotted",
 ]
@@ -1177,6 +1181,14 @@ class Slotted(Protocol):
         return isinstance(slots, str | Iterable)
 
 
+def issubclass_dataclass(cls: type, /) -> TypeIs[type[Dataclass]]:
+    return issubclass(cls, Dataclass)  # type: ignore[misc]
+
+
+def isinstance_dataclass(obj: object, /) -> TypeIs[Dataclass]:
+    return issubclass(type(obj), Dataclass)  # type: ignore[misc]
+
+
 @overload
 def is_dataclass(obj: type, /) -> TypeIs[type[Dataclass]]: ...
 @overload
@@ -1186,6 +1198,14 @@ def is_dataclass(obj: object, /) -> TypeIs[Dataclass] | TypeIs[type[Dataclass]]:
     if isinstance(obj, type):
         return issubclass(obj, Dataclass)  # type: ignore[misc]
     return issubclass(type(obj), Dataclass)  # type: ignore[misc]
+
+
+def issubclass_namedtuple(cls: type, /) -> TypeIs[type[NTuple]]:
+    return issubclass(cls, NTuple)  # type: ignore[misc]
+
+
+def isinstance_namedtuple(obj: object, /) -> TypeIs[NTuple]:
+    return issubclass(type(obj), NTuple)  # type: ignore[misc]
 
 
 @overload
