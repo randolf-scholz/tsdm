@@ -29,7 +29,6 @@ __all__ = [
 
 import logging
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
-from dataclasses import is_dataclass
 from enum import Enum
 from math import prod
 from types import FunctionType

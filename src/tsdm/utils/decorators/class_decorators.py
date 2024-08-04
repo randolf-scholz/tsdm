@@ -14,13 +14,16 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
-from typing import Any, Self, cast
+from typing import Any, Self, TypeVar
 
 from torch import jit, nn
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
-from tsdm.utils.decorators.base import ParametrizedClassDecorator, decorator
+from tsdm.utils.decorators.base import (
+    ParametrizedClassDecorator,
+    decorator,
+)
 from tsdm.utils.pprint import (
     repr_array,
     repr_dataclass,
@@ -30,6 +33,22 @@ from tsdm.utils.pprint import (
     repr_set,
     repr_shortform,
 )
+
+# region workaround mypy bug -----------------------------------------------------------
+# FIXME: https://github.com/python/mypy/issues/17191
+SeqType = TypeVar("SeqType", bound=type[Sequence])  # pyright: ignore
+MapType = TypeVar("MapType", bound=type[Mapping])  # pyright: ignore
+SetType = TypeVar("SetType", bound=type[AbstractSet])  # pyright: ignore
+DtcType = TypeVar("DtcType", bound=type[Dataclass])  # pyright: ignore
+NtpType = TypeVar("NtpType", bound=type[NTuple])  # pyright: ignore
+ClsType = TypeVar("ClsType", bound=type)  # pyright: ignore
+pprint_sequence: ParametrizedClassDecorator[SeqType, SeqType, Any]  # pyright: ignore
+pprint_mapping: ParametrizedClassDecorator[MapType, MapType, Any]  # pyright: ignore
+pprint_set: ParametrizedClassDecorator[SetType, SetType, Any]  # pyright: ignore
+pprint_dataclass: ParametrizedClassDecorator[DtcType, DtcType, Any]  # pyright: ignore
+pprint_namedtuple: ParametrizedClassDecorator[NtpType, NtpType, Any]  # pyright: ignore
+pprint_repr: ParametrizedClassDecorator[ClsType, ClsType, Any]  # pyright: ignore
+# endregion workaround mypy bug --------------------------------------------------------
 
 
 @decorator
@@ -43,8 +62,8 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
 
 
 @decorator
-def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
-    # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
+# def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
+def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -173,11 +192,3 @@ def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:
         return cls
 
     return __wrapper
-
-
-reveal_type(pprint_sequence)
-reveal_type(pprint_mapping)
-# reveal_type(pprint_set)
-# reveal_type(pprint_dataclass)
-# reveal_type(pprint_namedtuple)
-# reveal_type(pprint_repr)

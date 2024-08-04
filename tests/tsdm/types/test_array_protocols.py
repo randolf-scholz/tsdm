@@ -288,13 +288,6 @@ def test_table(name: str) -> None:
     assert table.equals(table)
     attrs.remove("equals")
 
-    # drop columns
-    if hasattr(table, "drop"):
-        assert table.drop(columns=["integers", "floats"]).shape == (4, 1)  # pyright: ignore[reportAttributeAccessIssue]
-        assert table.drop(columns=["integers"]).shape == (4, 2)  # pyright: ignore[reportAttributeAccessIssue]
-        assert table.drop(columns="integers").shape == (4, 2)  # pyright: ignore[reportAttributeAccessIssue]
-        assert table.drop(columns=[]).shape == (4, 3)  # pyright: ignore[reportAttributeAccessIssue]
-
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
 

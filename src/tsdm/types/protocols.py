@@ -835,13 +835,13 @@ class SupportsLenAndGetItem[V](Protocol):  # +V
 class _SupportsKwargsMeta(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for `SupportsKwargs`."""
 
-    def __instancecheck__(cls, other: object, /) -> bool:
+    def __instancecheck__(cls, other: object, /) -> TypeIs["SupportsKwargs"]:
         return isinstance(other, SupportsKeysAndGetItem) and all(
             isinstance(key, str)
             for key in other.keys()  # noqa: SIM118
         )
 
-    def __subclasscheck__(cls, other: type, /) -> bool:
+    def __subclasscheck__(cls, other: type, /) -> TypeIs[type["SupportsKwargs"]]:
         raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
 
 
@@ -882,7 +882,7 @@ class SetProtocol[V](Protocol):  # +V
 
 
 class _ArrayMeta(type(Protocol)):  # type: ignore[misc]
-    def __subclasscheck__(cls, other: type) -> bool:
+    def __subclasscheck__(cls, other: type) -> TypeIs[type["Array"]]:
         if issubclass(other, str | bytes | Mapping):
             return False
         return super().__subclasscheck__(other)
@@ -1117,7 +1117,7 @@ class Dataclass(Protocol):
     r"""The fields of the dataclass."""
 
     @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
+    def __subclasshook__(cls, other: type, /) -> TypeIs[type["Dataclass"]]:
         r"""Cf https://github.com/python/cpython/issues/106363."""
         fields = getattr(other, "__dataclass_fields__", None)
         return isinstance(fields, dict)
@@ -1162,7 +1162,7 @@ class NTuple[T](Protocol):  # +T
     # def index(self, __value: Any, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
 
     @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
+    def __subclasshook__(cls, other: type, /) -> TypeIs[type["NTuple"]]:
         r"""Cf https://github.com/python/cpython/issues/106363."""
         bases = get_original_bases(other)
         return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
@@ -1175,7 +1175,7 @@ class Slotted(Protocol):
     __slots__: tuple[str, ...] = ()
 
     @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
+    def __subclasshook__(cls, other: type, /) -> TypeIs[type["Slotted"]]:
         r"""Cf https://github.com/python/cpython/issues/106363."""
         slots = getattr(other, "__slots__", None)
         return isinstance(slots, str | Iterable)

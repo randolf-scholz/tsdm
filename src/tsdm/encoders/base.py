@@ -554,15 +554,13 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
             case int(idx):
                 return self.encoders[idx]
             case slice() as slc:
-                cls = type(self)
-                return cls(*self.encoders[slc])
+                return self.__class__(*self.encoders[slc])
             case _:
                 raise TypeError(f"Type {type(index)} not supported.")
 
     def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the encoder."""
-        cls = type(self)
-        return cls(*(e.simplify() for e in self))
+        return self.__class__(*(e.simplify() for e in self))
 
 
 @pprint_mapping(recursive=2)
@@ -631,8 +629,7 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
 
         if len(self.encoders) == 0:
             return IdentityEncoder()
-        cls = type(self)
-        return cls({k: e.simplify() for k, e in self.encoders.items()})
+        return self.__class__({k: e.simplify() for k, e in self.encoders.items()})
 
 
 class BackendMixin:
@@ -797,8 +794,7 @@ class InverseEncoder[X, Y](BaseEncoder[Y, X]):
         return self.encoder.encode(x)
 
     def simplify(self) -> BaseEncoder[Y, X]:
-        cls = type(self)
-        return cls(self.encoder.simplify())
+        return self.__class__(self.encoder.simplify())
 
     def __repr__(self) -> str:
         return f"~{self.encoder}"
@@ -819,9 +815,9 @@ class WrappedEncoder[X, Y](BaseEncoder[X, Y]):
     r"""The encoder to wrap."""
 
     def __invert__(self) -> "WrappedEncoder[Y, X]":
+        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[WrappedEncoder] = type(self)
-        decoder = invert_encoder(self.encoder)
-        return cls(decoder)
+        return cls(invert_encoder(self.encoder))
 
     @property
     def params(self) -> dict[str, Any]:
@@ -858,6 +854,7 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""The type of the output elements."""
 
     def __invert__(self) -> "NestedEncoder[Y, X]":
+        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[NestedEncoder] = type(self)
         return cls(
             invert_encoder(self.encoder),
@@ -921,6 +918,7 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
         # fmt: on
 
     def __invert__(self) -> "ChainedEncoder[Y, X]":
+        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[ChainedEncoder] = type(self)
         return cls(*(InverseEncoder(e) for e in reversed(self.encoders)))
 
@@ -970,8 +968,7 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
                 # if it only satisfies the Encoder protocol, wrap it
                 return WrappedEncoder(encoder)
             case _:
-                cls = type(self)
-                return cls(*encoders)
+                return self.__class__(*encoders)
 
 
 # fmt: off
@@ -1032,6 +1029,7 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
         # fmt: on
 
     def __invert__(self) -> "PipedEncoder[Y, X]":
+        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[PipedEncoder] = type(self)
         return cls(*(InverseEncoder(e) for e in reversed(self.encoders)))
 
@@ -1090,8 +1088,7 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
                 # wrap the encoder if it only satisfies the Encoder protocol
                 return WrappedEncoder(encoder)
             case _:
-                cls = type(self)
-                return cls(*encoders)
+                return self.__class__(*encoders)
 
 
 # fmt: off
@@ -1135,13 +1132,13 @@ def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type
 
 # fmt: off
 @overload  # n=-1
-def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[-1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[Y, X]: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[-1], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[Y, X]: ...
 @overload  # n=0
-def pow_encoder(e: Encoder, n: Literal[0], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> IdentityEncoder: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[0], /, *, simplify: bool = ..., copy: bool = ...) -> UniversalEncoder: ...
 @overload  # n=1
 def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[X, Y]: ...
 @overload  # n>1
-def pow_encoder[T](e: Encoder[T, T], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> PipedEncoder[T, T]: ...
+def pow_encoder[T](e: Encoder[T, T], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[T, T]: ...
 # fmt: on
 def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Apply encoder n times."""
@@ -1159,7 +1156,8 @@ def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     return PipedEncoder(*encoders)
 
 
-# FIXME: We could have better type hints with HKTs
+# FIXME: https://github.com/python/typing/issues/548
+#  We could have better type hints with HKTs
 @pprint_repr(recursive=2)
 class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, TupleOut]):
     r"""Product-Type for Encoders.
@@ -1169,8 +1167,10 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
 
     if TYPE_CHECKING:
         # fmt: off
-        @overload  # n=0
-        def __new__(cls, *encoders: *tuple[()]) -> "ParallelEncoder[tuple[()], tuple[()]]": ...
+        # FIXME: https://github.com/microsoft/pyright/issues/8645
+        #   Need to disable nullary overload due to this bug.
+        # @overload  # n=0
+        # def __new__(cls, *encoders: *tuple[()]) -> "ParallelEncoder[tuple[()], tuple[()]]": ...
         @overload  # n=1
         def __new__[X, Y](cls, *encoders: *tuple[Encoder[X, Y]]) -> "ParallelEncoder[tuple[X], tuple[Y]]": ...
         @overload  # n=2
@@ -1206,21 +1206,21 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
         #     case [encoder]:
         #         return encoder.simplify()
         #     case _:
-        #         cls = type(self)
-        #         return cls(*(e.simplify() for e in self))
+        #         return self.__class__(*(e.simplify() for e in self))
         encoders: list[Encoder] = [e.simplify() for e in self.encoders]
 
         if len(encoders) == 0:
             return IdentityEncoder()
         if len(encoders) == 1:
             return (TupleDecoder() >> encoders[0] >> TupleEncoder()).simplify()
-        cls: type[ParallelEncoder] = type(self)
-        return cls(*encoders)
+        return self.__class__(*encoders)
 
 
 # fmt: off
-@overload  # n=0li
-def parallelize_encoders(*, simplify: bool = ...) -> Encoder[tuple[()], tuple[()]]: ...
+# FIXME: https://github.com/microsoft/pyright/issues/8645
+#   Need to disable nullary overload due to this bug.
+# @overload  # n=0
+# def parallelize_encoders(*, simplify: bool = ...) -> Encoder[tuple[()], tuple[()]]: ...
 @overload  # n=1
 def parallelize_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
 @overload  # n=2
@@ -1241,25 +1241,34 @@ def parallelize_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder[t
 
 # fmt: off
 @overload  # n=0
-def duplicate_encoder(e: Encoder, n: Literal[0], /, *, simplify: Literal[True], copy: bool = ...) -> IdentityEncoder: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[0], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[()], tuple[()]]: ...
 @overload  # n=1
-def duplicate_encoder(e: Encoder, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...) -> Encoder: ...
-@overload  # n>1
-def duplicate_encoder(e: Encoder, n: int, /, *, simplify: bool = ..., copy: bool = ...) -> ParallelEncoder: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
+@overload  # n=2
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[2], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, X], tuple[Y, Y]]: ...
+@overload  # n=3
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[3], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, X, X], tuple[Y, Y, Y]]: ...
+@overload  # n=4
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[4], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, X, X, X], tuple[Y, Y, Y, Y]]: ...
+@overload  # n variable
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
 # fmt: on
-def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
-    r"""Duplicate an encoder."""
+def duplicate_encoder[X, Y](
+    encoder: Encoder[X, Y], n: int, /, *, simplify: bool = True, copy: bool = True
+) -> Encoder[tuple[X, ...], tuple[Y, ...]]:
+    r"""Create copies of an Encoder in parallel.
+
+    Args:
+        encoder: The encoder to duplicate.
+        n: The number of copies. Must be non-negative.
+        simplify: Whether to simplify the encoder.
+        copy: Whether to deepcopy the encoder.
+    """
+    if n < 0:
+        raise ValueError(f"n must be non-negative, got {n}")
+
     encoder = encoder.simplify() if simplify else encoder
     encoders = [deepcopy(encoder) if copy else encoder for _ in range(n)]
-
-    if n == -1 and simplify:
-        return ~encoders[0]
-    if n == 0 and simplify:
-        return IdentityEncoder()
-    if n == 1 and simplify:
-        return encoders[0]
-    if n < 0:
-        return parallelize_encoders(*(~e for e in reversed(encoders)))
     return parallelize_encoders(*encoders)
 
 
@@ -1329,8 +1338,7 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
             return IdentityEncoder()
         if len(encoders) == 1:
             return (encoders[0] >> TupleEncoder()).simplify()
-        cls = type(self)
-        return cls(*encoders)
+        return self.__class__(*encoders)
 
 
 # fmt: off
@@ -1418,8 +1426,7 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
             return IdentityEncoder()
         if len(encoders) == 1:
             return (encoders[0] >> TupleEncoder()).simplify()
-        cls = type(self)
-        return cls(*encoders)
+        return self.__class__(*encoders)
 
 
 class MappedEncoder[
@@ -1445,9 +1452,10 @@ class MappedEncoder[
         super().__init__(encoders)
 
     def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn, K]":
-        # cls: type[MappedEncoder] = type(self)
+        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
+        cls: type[MappedEncoder] = type(self)
         decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
-        return MappedEncoder(decoders)  # type: ignore[return-value]
+        return cls(decoders)  # type: ignore[return-value]
 
     def fit(self, xmap: MappingIn, /) -> None:
         if missing_keys := self.encoders.keys() - xmap.keys():

@@ -19,6 +19,7 @@ def test_write_types():
         shared_attrs &= set(dir(file))
 
     # remove dunder methods
-    shared_attrs -= set(dir(object))
+    excluded = set(dir(object)) | {"__module__", "__doc__"}
+    shared_attrs -= excluded
     protocol_members = get_protocol_members(WriteBuffer)
     assert shared_attrs == protocol_members

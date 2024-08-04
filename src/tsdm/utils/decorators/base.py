@@ -2,6 +2,8 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
+    "BareDecorator",
+    "BareFunctionDecorator",
     "BareClassDecorator",
     "ClassDecorator",
     "ClassDecoratorFactory",
@@ -136,50 +138,92 @@ class DecoratorError(Exception):
 
 
 # region Protocol[T] -------------------------------------------------------------------
-class BareClassDecorator[T](Protocol):
-    r"""Bare Decorator Protocol that preserves type."""
-
-    # fmt: off
-    def __call__(self, cls: T, /) -> T: ...
-    # fmt: on
-
-
-class ClassDecorator[T, **P](Protocol):
-    r"""Class Decorator Protocol that preserves type."""
-
-    # fmt: off
-    def __call__(self, cls: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
-    # fmt: on
-
-
-class ClassDecoratorFactory[T, **P](Protocol):
-    r"""Class Decorator Factory Protocol that preserves type."""
-
-    # fmt: off
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[T]: ...
-    # fmt: on
-
-
-class ParametrizedClassDecorator[T, **P](Protocol):
-    r"""Parametrized Class Decorator Protocol that preserves type."""
-
-    # fmt: off
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[T]: ...
-    @overload  # @decorator
-    def __call__(self, cls: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
-    # fmt: on
+# class BareClassDecorator[T](Protocol):
+#     r"""Bare Decorator Protocol that preserves type."""
+#
+#     # fmt: off
+#     def __call__(self, cls: T, /) -> T: ...
+#     # fmt: on
+#
+#
+# class ClassDecorator[T, **P](Protocol):
+#     r"""Class Decorator Protocol that preserves type."""
+#
+#     # fmt: off
+#     def __call__(self, cls: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+#     # fmt: on
+#
+#
+# class ClassDecoratorFactory[T, **P](Protocol):
+#     r"""Class Decorator Factory Protocol that preserves type."""
+#
+#     # fmt: off
+#     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[T]: ...
+#     # fmt: on
+#
+#
+# class ParametrizedClassDecorator[T, **P](Protocol):
+#     r"""Parametrized Class Decorator Protocol that preserves type."""
+#
+#     # fmt: off
+#     @overload  # @decorator(*args, **kwargs)
+#     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[T]: ...
+#     @overload  # @decorator
+#     def __call__(self, cls: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+#     # fmt: on
 
 
 # endregion Protocol[T] ----------------------------------------------------------------
 
 
+# region ClassDecorator ----------------------------------------------------------------
+class BareClassDecorator[Cls_in: type, Cls_out: type](Protocol):
+    r"""Bare Function Decorator Protocol that preserves type."""
+
+    def __call__(self, cls: Cls_in, /) -> Cls_out: ...
+
+
+class ClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):  # -F_in, +F_out
+    r"""Function Decorator Protocol that preserves type."""
+
+    def __call__(
+        self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs
+    ) -> Cls_out: ...
+
+
+class ClassDecoratorFactory[Cls_in: type, Cls_out: type, **P](Protocol):
+    r"""Function Decorator Factory Protocol that preserves type."""
+
+    # fmt: off
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> ClassDecorator[Cls_in, Cls_out, P]: ...
+    # fmt: on
+
+
+class ParametrizedClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):
+    r"""Parametrized Function Decorator Protocol that preserves type."""
+
+    # fmt: off
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareClassDecorator[Cls_in, Cls_out]: ...
+    @overload  # @decorator
+    def __call__(self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs) -> Cls_out: ...
+    # fmt: on
+
+
+# endregion ClassDecorator -------------------------------------------------------------
+
+
+# region FunctionDecorator -------------------------------------------------------------
+class BareFunctionDecorator[F_in: Fn, F_out: Fn](Protocol):
+    r"""Bare Function Decorator Protocol that preserves type."""
+
+    def __call__(self, fn: F_in, /) -> F_out: ...
+
+
 class FunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):  # -F_in, +F_out
     r"""Function Decorator Protocol that preserves type."""
 
-    # fmt: off
     def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
-    # fmt: on
 
 
 class FunctionDecoratorFactory[F_in: Fn, F_out: Fn, **P](Protocol):
@@ -197,8 +241,18 @@ class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
     @overload  # @decorator
     def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[F_in, F_out, P]: ...
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareFunctionDecorator[F_in, F_out]: ...
     # fmt: on
+
+
+# endregion FunctionDecorator ----------------------------------------------------------
+
+
+# region general decorators ------------------------------------------------------------
+class BareDecorator[T_in, T_out](Protocol):
+    r"""Protocol for decorators."""
+
+    def __call__(self, obj: T_in, /) -> T_out: ...
 
 
 class Decorator[T_in, T_out, **P](Protocol):
@@ -219,12 +273,14 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     r"""Protocol for parametrized decorators."""
 
     # fmt: off
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> BareDecorator[T_in, T_out]: ...
     @overload  # @decorator
     def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator[T_in, T_out, P]: ...
     # fmt: on
 
+
+# endregion general decorators ---------------------------------------------------------
 
 # class ParametrizedDecorator(Protocol[T, P]):
 #     r"""Protocol for parametrized decorators."""
@@ -265,12 +321,12 @@ r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 
 # |                     |                      |                 | pyright | mypy |
 # |---------------------|----------------------|-----------------|---------|------|
-# | protocol[T]         | decorator[Cls: type] | pprint[Cls]     |        |     |
-# |                     |                      | pprint[type[T]] |        |     |
-# |                     | decorator[type[T]]   | pprint[Cls]     |        |     |
-# |                     |                      | pprint[type[T]] |        |     |
-# |                     | decorator[T]         | pprint[Cls]     |        |     |
-# |                     |                      | pprint[type[T]] |        |     |
+# | protocol[T]         | decorator[Cls: type] | pprint[Cls]     | Y       | N    |
+# |                     |                      | pprint[type[T]] | Y       | N    |
+# |                     | decorator[type[T]]   | pprint[Cls]     | Y       | N    |
+# |                     |                      | pprint[type[T]] | O       | A    |
+# |                     | decorator[T]         | pprint[Cls]     | Y       | N    |
+# |                     |                      | pprint[type[T]] | Y       | N    |
 
 
 # FIXME: too complicated!
@@ -281,7 +337,9 @@ r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 # def decorator[T, **P](deco: ClassDecorator[type[T], P], /) -> ParametrizedClassDecorator[type[T], P]: ...
 # def decorator[T, **P](deco: ClassDecorator[T, P], /) -> ParametrizedClassDecorator[T, P]: ...
 @overload  # class decoration
-def decorator[Cls_in: type, Cls_out: type, **P](deco: Decorator[Cls_in, Cls_out, P], /) -> ParametrizedDecorator[Cls_in, Cls_out, P]: ...
+def decorator[Cls_in: type, Cls_out: type, **P](
+        deco: ClassDecorator[Cls_in, Cls_out, P], /
+) -> ParametrizedClassDecorator[Cls_in, Cls_out, P]: ...
 # def decorator[T_in, T_out, **P](deco: Decorator[type[T_in], type[T_out], P], /) -> ParametrizedDecorator[type[T_in], type[T_out], P]: ...
 # def decorator[T_in, T_out, **P](deco: Decorator[T_in, T_out, P], /) -> ParametrizedDecorator[T_in, T_out, P]: ...
 @overload  # function-decorator

@@ -159,20 +159,20 @@ class LazyDict[K, V](dict[K, V]):
         })
 
     if TYPE_CHECKING:
-        # fmt: off
+
         @overload
         def __new__(cls, /) -> "LazyDict": ...
         @overload  # mapping only
-        def __new__(cls, items: Mapping[K, LazySpec[V]], /) -> "LazyDict[K, V]": ...
-        @overload  # iterable only
-        def __new__(cls, items: Iterable[tuple[K, LazySpec[V]]], /) -> "LazyDict[K, V]": ...
-        @overload  # kwargs only
-        def __new__(cls, /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
+        def __new__(
+            cls, items: Mapping[K, LazySpec[V]] | Iterable[tuple[K, LazySpec[V]]], /
+        ) -> "LazyDict[K, V]": ...
         @overload  # mapping and kwargs
-        def __new__(cls, items: Mapping[str, LazySpec[V]], /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
-        @overload  # iterable and kwargs
-        def __new__(cls, items: Iterable[tuple[str, LazySpec[V]]], /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
-        # fmt: on
+        def __new__(
+            cls,
+            items: Mapping[str, LazySpec[V]] | Iterable[tuple[str, LazySpec[V]]] = ...,
+            /,
+            **kwargs: LazySpec[V],
+        ) -> "LazyDict[str, V]": ...
 
     def __init__(
         self,
