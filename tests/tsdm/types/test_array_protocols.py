@@ -28,55 +28,81 @@ __logger__ = logging.getLogger(__name__)
 RNG = np.random.default_rng()
 ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 
-_SERIES_DATA = ["a", "b", "c"]
-_ARRAY_DATA = [[1, 2, 3], [4, 5, 6]]
+_STRING_LIST = ["a", "b", "c"]
+_INT_LIST = [1, 2, 3]
+_INT_MATRIX = [[1, 2, 3], [4, 5, 6]]
 _TABLE_DATA = {
     "integers": [1, 2, 3, 4],
     "floats": [1.1, 2.2, 3.3, 4.4],
     "strings": ["a", "b", "c", "d'"],
 }
 
-NP_ARRAY = np.array(_ARRAY_DATA)
-PA_ARRAY = pa.array(_SERIES_DATA)
+# tensorial (single dtype)
+NP_ARRAY_1D = np.array(_INT_LIST)
+NP_ARRAY_2D = np.array(_INT_MATRIX)
+PA_ARRAY_INT = pa.array(_INT_LIST)
+PA_ARRAY_STR = pa.array(_STRING_LIST)
+PD_INDEX_STR = pd.Index(_STRING_LIST)
+PD_INDEX_INT = pd.Index(_INT_LIST)
+PD_SERIES_INT = pd.Series(_INT_LIST)
+PD_SERIES_STR = pd.Series(_STRING_LIST)
+PL_SERIES_INT = pl.Series(_INT_LIST)
+PL_SERIES_STR = pl.Series(_STRING_LIST)
+PT_TENSOR_1D = torch.tensor(_INT_LIST)
+PT_TENSOR_2D = torch.tensor(_INT_MATRIX)
+PY_ARRAY = memoryview(python_array("i", [1, 2, 3]))
+
+# tabular (mixed dtype)
 PA_TABLE = pa.table(_TABLE_DATA)
 PD_DATAFRAME = pd.DataFrame(_TABLE_DATA)
-PD_INDEX = pd.Index(_SERIES_DATA)
-PD_SERIES = pd.Series(_SERIES_DATA)
 PL_DATAFRAME = pl.DataFrame(_TABLE_DATA)
-PL_SERIES = pl.Series(_SERIES_DATA)
-PY_ARRAY = memoryview(python_array("i", [1, 2, 3]))
-TORCH_TENSOR = torch.tensor(_ARRAY_DATA)
 
 TEST_OBJECTS = {
-    "python_array"     : PY_ARRAY,
-    "numpy_ndarray"    : NP_ARRAY,
-    "pandas_index"     : PD_INDEX,
-    "pandas_series"    : PD_SERIES,
-    "pandas_dataframe" : PD_DATAFRAME,
-    "polars_series"    : PL_SERIES,
-    "polars_dataframe" : PL_DATAFRAME,
-    "pyarrow_array"    : PA_ARRAY,
-    "pyarrow_table"    : PA_TABLE,
-    "torch_tensor"     : TORCH_TENSOR,
+    "python_array"      : PY_ARRAY,
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "pandas_dataframe"  : PD_DATAFRAME,
+    "polars_series_str" : PL_SERIES_STR,
+    "polars_series_int" : PL_SERIES_INT,
+    "polars_dataframe"  : PL_DATAFRAME,
+    "pyarrow_array_str" : PA_ARRAY_STR,
+    "pyarrow_array_int" : PA_ARRAY_INT,
+    "pyarrow_table"     : PA_TABLE,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
 
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
-    "numpy_ndarray"    : NP_ARRAY,
-    "pandas_dataframe" : PD_DATAFRAME,
-    "pandas_index"     : PD_INDEX,
-    "pandas_series"    : PD_SERIES,
-    "polars_dataframe" : PL_DATAFRAME,
-    "polars_series"    : PL_SERIES,
-    "pyarrow_array"    : PA_ARRAY,
-    "pyarrow_table"    : PA_TABLE,
-    "torch_tensor"     : TORCH_TENSOR,
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_dataframe"  : PD_DATAFRAME,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "polars_dataframe"  : PL_DATAFRAME,
+    "polars_series_str" : PL_SERIES_STR,
+    "polars_series_int" : PL_SERIES_INT,
+    "pyarrow_array_str" : PA_ARRAY_STR,
+    "pyarrow_array_int" : PA_ARRAY_INT,
+    "pyarrow_table"     : PA_TABLE,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
 
 SERIES: dict[str, SeriesKind[str]] = {
-    "pandas_index"  : PD_INDEX,
-    "pandas_series" : PD_SERIES,
-    "polars_series" : PL_SERIES,
-    "pyarrow_array" : PA_ARRAY,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "polars_series_str" : PL_SERIES_STR,
+    "polars_series_int" : PL_SERIES_INT,
+    "pyarrow_array_str" : PA_ARRAY_STR,
+    "pyarrow_array_int" : PA_ARRAY_INT,
 }  # fmt: skip
 
 TABLES: dict[str, TableKind] = {
@@ -86,41 +112,55 @@ TABLES: dict[str, TableKind] = {
 }  # fmt: skip
 
 ARRAYS: dict[str, ArrayKind] = {
-    "numpy_ndarray"    : NP_ARRAY,
-    "pandas_dataframe" : PD_DATAFRAME,
-    "pandas_index"     : PD_INDEX,
-    "pandas_series"    : PD_SERIES,
-    "polars_dataframe" : PL_DATAFRAME,
-    "polars_series"    : PL_SERIES,
-    "pyarrow_table"    : PA_TABLE,
-    "torch_tensor"     : TORCH_TENSOR,
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_dataframe"  : PD_DATAFRAME,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "polars_dataframe"  : PL_DATAFRAME,
+    "polars_series_str" : PL_SERIES_STR,
+    "pyarrow_table"     : PA_TABLE,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
 
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
-    "numpy_ndarray"    : NP_ARRAY,
-    "pandas_dataframe" : PD_DATAFRAME,
-    "pandas_index"     : PD_INDEX,
-    "pandas_series"    : PD_SERIES,
-    "polars_series"    : PL_SERIES,
-    "torch_tensor"     : TORCH_TENSOR,
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_dataframe"  : PD_DATAFRAME,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "polars_series_str" : PL_SERIES_STR,
+    "polars_series_int" : PL_SERIES_INT,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
 
-x: NumericalArray = PL_SERIES
-
-
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
-    "numpy_ndarray"    : NP_ARRAY,
-    "pandas_index"     : PD_INDEX,
-    "pandas_series"    : PD_SERIES,
-    "polars_series"    : PL_SERIES,
-    "torch_tensor"     : TORCH_TENSOR,
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "polars_series_str" : PL_SERIES_STR,
+    "polars_series_int" : PL_SERIES_INT,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
-    "numpy_ndarray"    : NP_ARRAY,
-    "pandas_dataframe" : PD_DATAFRAME,
-    "pandas_series"    : PD_SERIES,
-    "torch_tensor"     : TORCH_TENSOR,
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_dataframe"  : PD_DATAFRAME,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
 
 EXAMPLES: dict[type, dict[str, Any]] = {
@@ -304,6 +344,32 @@ def test_numerical_array(name: str) -> None:
     r"""Test the NumericalArray protocol."""
     numerical_array = NUMERICAL_ARRAYS[name]
     assert_protocol(numerical_array, NumericalArray)
+
+
+@pytest.mark.parametrize("name", NUMERICAL_TENSORS)
+def test_numerical_tensor_getitem(name: str) -> None:
+    numerical_array = NUMERICAL_TENSORS[name]
+    ndim = len(numerical_array.shape)
+
+    cls = type(numerical_array)
+
+    # list[int]
+    assert isinstance(numerical_array[[0, 1]], cls)
+    # slice
+    assert isinstance(numerical_array[:-1], cls)
+    # tuple[slice]
+    # assert isinstance(numerical_array[:,], cls)
+
+    if ndim == 1:
+        # int
+        assert isinstance(numerical_array[0], int | cls)
+    elif ndim == 2:
+        # int
+        assert isinstance(numerical_array[0], cls)
+        # tuple[int, int]
+        assert isinstance(numerical_array[0, 0], int | cls)
+        # tuple[slice, slice]
+        assert isinstance(numerical_array[0:1, 0:1], cls)
 
 
 @pytest.mark.parametrize("name", MUTABLE_ARRAYS)

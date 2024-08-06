@@ -82,6 +82,8 @@ def test_pprint_repr_namedtuple() -> None:
         b: str
         c: float
 
+    reveal_type(TestNamedTuple)
+
     # ensure decorator works statically
     assert_type(TestNamedTuple, type[TestNamedTuple])
 
@@ -109,7 +111,7 @@ def test_pprint_dataclass() -> None:
     assert_type(cls, type[TestDataclass])
 
     # runtime check
-    obj = TestDataclass(1, "a", 1.25)
+    obj = TestDataclass(a=1, b="a", c=1.25)
     result = repr(obj)
     assert result == EXPECTED_DATACLASS
 
@@ -300,8 +302,6 @@ def test_pprint_repr_set() -> None:
 
 
 def test_pprint_sequence_static() -> None:
-    reveal_type(pprint_sequence)
-
     class Foo(Sequence): ...
 
     @pprint_sequence
@@ -323,8 +323,6 @@ def test_pprint_sequence_static() -> None:
 
 
 def test_pprint_mapping_static() -> None:
-    reveal_type(pprint_mapping)
-
     class Foo(Mapping): ...
 
     @pprint_mapping
@@ -345,8 +343,6 @@ def test_pprint_mapping_static() -> None:
 
 
 def test_pprint_set_static() -> None:
-    reveal_type(pprint_set)
-
     class Foo(AbstractSet): ...
 
     @pprint_set

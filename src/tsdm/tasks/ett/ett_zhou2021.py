@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable
 from functools import cached_property
 from typing import Any, Literal
 
@@ -87,7 +87,7 @@ class ETT_Zhou2021(OldBaseTask):
 
     KeyType = Literal["train", "test", "valid", "joint", "trial", "whole"]
     r"""Type Hint for index."""
-    index: Sequence[KeyType] = ["train", "test", "valid", "joint", "trial"]
+    index: list[KeyType] = ["train", "test", "valid", "joint", "trial"]
     r"""Available index."""
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
@@ -153,7 +153,7 @@ class ETT_Zhou2021(OldBaseTask):
         return nn.MSELoss()
 
     @cached_property
-    def splits(self) -> Mapping[KeyType, DataFrame]:
+    def splits(self) -> dict[KeyType, DataFrame]:
         _splits: dict[Any, DataFrame] = {
             "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore[misc]
             "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore[misc]

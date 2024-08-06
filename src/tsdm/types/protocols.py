@@ -532,7 +532,8 @@ class ArrayKind[Scalar](Protocol):
 
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
-    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
+
+    # def __getitem__(self, key: Any, /) -> Self | Scalar: ...
 
     # comparisons (element-wise)
     # equality ==
@@ -562,8 +563,8 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
         - `torch.Tensor`
 
     Note:
-        - `pandas.DataFrame` is somewhat questionable, as it contains columns of different dtypes.
-           Also, it lacks the common method `.item()`, which can be used to extract a scalar value.
+        - We exclude the `__getitem__` method, as it works semantically different in
+          `pandas.DataFrame` as in tensorial formats.
 
     Counter-Examples:
         - `polars.DataFrame`  (does not support basic arithmetic)
@@ -592,13 +593,22 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[Self]: ...
-    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
 
-    def all(self) -> Self | bool:
+    # @overload  # depending on Tensor Rank, can return Scalar or Tensor
+    # def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
+    # @overload
+    # def __getitem__(
+    #     self, key: Self | slice | list[int] | tuple[int | slice, ...], /
+    # ) -> Self: ...
+
+    # @overload  # fallback overload
+    # def __getitem__(self, key: Any, /) -> Scalar | Self: ...
+
+    def all(self) -> Self | BooleanScalar:
         r"""Return True if all elements are True."""
         ...
 
-    def any(self) -> Self | bool:
+    def any(self) -> Self | BooleanScalar:
         r"""Return True if any element is True."""
         ...
 
@@ -715,6 +725,13 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
         - `pyarrow.Array`  (does not support basic arithmetic)
         - `pyarrow.Table`  (does not support basic arithmetic)
     """
+
+    # fmt: off
+    @overload  # depending on Tensor Rank, can return Scalar or Tensor
+    def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
+    @overload
+    def __getitem__(self, key: Self | slice | list[int] | tuple[int | slice, ...], /) -> Self: ...
+    # fmt: on
 
     @property
     @abstractmethod
@@ -1113,11 +1130,11 @@ class Dataclass(Protocol):
     Similar to `DataClassInstance` from typeshed, but allows isinstance and issubclass.
     """
 
-    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]] = {}
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
     r"""The fields of the dataclass."""
 
     @classmethod
-    def __subclasshook__(cls, other: type, /) -> TypeIs[type["Dataclass"]]:
+    def __subclasshook__(cls, other: type, /) -> bool:
         r"""Cf https://github.com/python/cpython/issues/106363."""
         fields = getattr(other, "__dataclass_fields__", None)
         return isinstance(fields, dict)
@@ -1131,11 +1148,12 @@ class NTuple[T](Protocol):  # +T
         - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
     """
 
-    # NOTE: Problems if denoted as  tuple[str, ...]
-    _fields: Any  # FIXME: Should be tuple[*str] (not tuple[str, ...])
+    # FIXME: Problems if denoted as  tuple[str, ...]
+    #    Should be tuple[*(str for T in Ts)] (not tuple[str, ...])
+    #   see: https://github.com/python/typing/issues/1216
+    #   see: https://github.com/python/typing/issues/1273
+    _fields: tuple
     r"""The fields of the namedtuple."""
-    # FIXME: https://github.com/python/typing/issues/1216
-    # FIXME: https://github.com/python/typing/issues/1273
 
     # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
 
@@ -1162,7 +1180,7 @@ class NTuple[T](Protocol):  # +T
     # def index(self, __value: Any, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
 
     @classmethod
-    def __subclasshook__(cls, other: type, /) -> TypeIs[type["NTuple"]]:
+    def __subclasshook__(cls, other: type, /) -> bool:
         r"""Cf https://github.com/python/cpython/issues/106363."""
         bases = get_original_bases(other)
         return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
@@ -1175,7 +1193,7 @@ class Slotted(Protocol):
     __slots__: tuple[str, ...] = ()
 
     @classmethod
-    def __subclasshook__(cls, other: type, /) -> TypeIs[type["Slotted"]]:
+    def __subclasshook__(cls, other: type, /) -> bool:
         r"""Cf https://github.com/python/cpython/issues/106363."""
         slots = getattr(other, "__slots__", None)
         return isinstance(slots, str | Iterable)

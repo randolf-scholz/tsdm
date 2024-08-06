@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable
 from functools import cached_property
 from typing import Any, Literal, NamedTuple, Optional
 
@@ -153,7 +153,7 @@ class ElectricityLim2021(OldBaseTask):
         return ds[mask]
 
     @cached_property
-    def index(self) -> Sequence[KeyType]:
+    def index(self) -> list[KeyType]:
         r"""List of entity identifiers."""
         return ["train", "test", "valid", "joint", "whole"]
 
@@ -178,7 +178,7 @@ class ElectricityLim2021(OldBaseTask):
         }
 
     @cached_property
-    def splits(self) -> Mapping[KeyType, Any]:
+    def splits(self) -> dict[KeyType, Any]:
         r"""Return cached splits of the dataset."""
         # We intentionally use these masks instead of the simpler
         # ds[lower:upper], in order to get the boundary inclusion right.

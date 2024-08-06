@@ -626,9 +626,6 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
         #     case _:
         #         cls = type(self)
         #         return cls(*(e.simplify() for e in self))
-
-        if len(self.encoders) == 0:
-            return IdentityEncoder()
         return self.__class__({k: e.simplify() for k, e in self.encoders.items()})
 
 
@@ -1338,7 +1335,7 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
             return IdentityEncoder()
         if len(encoders) == 1:
             return (encoders[0] >> TupleEncoder()).simplify()
-        return self.__class__(*encoders)
+        return self.__class__(*encoders)  # type: ignore[return-value]
 
 
 # fmt: off

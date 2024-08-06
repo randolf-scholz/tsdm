@@ -13,7 +13,6 @@ __all__ = [
     "gather_types",
 ]
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
@@ -103,13 +102,13 @@ def get_backend_id(obj: object, /, *, fallback: BackendID = "numpy") -> BackendI
 class Kernels:  # Q: how to make this more elegant?
     r"""A collection of kernels for numerical operations."""
 
-    clip: Mapping[BackendID, ClipProto] = {
+    clip: dict[BackendID, ClipProto] = {
         "numpy": np.clip,
         "pandas": B.pandas.clip,
         "torch": pt.clip,
     }
 
-    is_null: Mapping[BackendID, SelfMap] = {
+    is_null: dict[BackendID, SelfMap] = {
         "arrow": pc.is_null,
         "numpy": np.isnan,
         "pandas": pd.isna,
@@ -117,97 +116,97 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": pt.isnan,
     }
 
-    nanmin: Mapping[BackendID, ContractionProto] = {
+    nanmin: dict[BackendID, ContractionProto] = {
         "numpy": np.nanmin,
         "pandas": B.pandas.nanmin,
         "polars": B.polars.nanmin,
         "torch": B.torch.nanmin,
     }
 
-    nanmax: Mapping[BackendID, ContractionProto] = {
+    nanmax: dict[BackendID, ContractionProto] = {
         "numpy": np.nanmax,
         "pandas": B.pandas.nanmax,
         "polars": B.polars.nanmax,
         "torch": B.torch.nanmax,
     }
 
-    nanmean: Mapping[BackendID, ContractionProto] = {
+    nanmean: dict[BackendID, ContractionProto] = {
         "numpy": np.nanmean,
         "pandas": B.pandas.nanmean,
         "torch": pt.nanmean,  # type: ignore[dict-item]
     }
 
-    nanstd: Mapping[BackendID, ContractionProto] = {
+    nanstd: dict[BackendID, ContractionProto] = {
         "numpy": np.nanstd,
         "pandas": B.pandas.nanstd,
         "torch": B.torch.nanstd,
     }
 
-    false_like: Mapping[BackendID, SelfMap] = {
+    false_like: dict[BackendID, SelfMap] = {
         "arrow": B.pyarrow.false_like,
         "numpy": B.generic.false_like,
         "pandas": B.pandas.false_like,
         "torch": B.generic.false_like,
     }
 
-    true_like: Mapping[BackendID, SelfMap] = {
+    true_like: dict[BackendID, SelfMap] = {
         "arrow": B.pyarrow.true_like,
         "numpy": B.generic.true_like,
         "pandas": B.pandas.true_like,
         "torch": B.generic.true_like,
     }
 
-    null_like: Mapping[BackendID, SelfMap] = {
+    null_like: dict[BackendID, SelfMap] = {
         "arrow": B.pyarrow.null_like,
         "pandas": B.pandas.null_like,
     }
 
-    full_like: Mapping[BackendID, FullLikeProto] = {
+    full_like: dict[BackendID, FullLikeProto] = {
         "arrow": B.pyarrow.full_like,
         "numpy": np.full_like,
     }
 
-    copy_like: Mapping[BackendID, CopyLikeProto] = {
+    copy_like: dict[BackendID, CopyLikeProto] = {
         "numpy": B.numpy.copy_like,
         "pandas": B.pandas.copy_like,
         "torch": B.torch.copy_like,
     }
 
-    to_tensor: Mapping[BackendID, ToTensorProto] = {
+    to_tensor: dict[BackendID, ToTensorProto] = {
         "numpy": np.array,
         "pandas": np.array,
         "torch": pt.tensor,
     }
 
-    where: Mapping[BackendID, WhereProto] = {
+    where: dict[BackendID, WhereProto] = {
         "arrow": B.pyarrow.where,
         "numpy": np.where,
         "pandas": B.pandas.where,
         "torch": pt.where,  # type: ignore[dict-item]
     }
 
-    strip_whitespace: Mapping[BackendID, SelfMap] = {
+    strip_whitespace: dict[BackendID, SelfMap] = {
         "pandas": B.pandas.strip_whitespace,
         "arrow": B.pyarrow.strip_whitespace,
     }
 
-    apply_along_axes: Mapping[BackendID, ApplyAlongAxes] = {
+    apply_along_axes: dict[BackendID, ApplyAlongAxes] = {
         "numpy": B.numpy.apply_along_axes,
         "torch": B.torch.apply_along_axes,
     }
 
-    array_split: Mapping[BackendID, ArraySplitProto] = {
+    array_split: dict[BackendID, ArraySplitProto] = {
         "numpy": np.array_split,
         "torch": pt.tensor_split,  # type: ignore[dict-item]
     }
 
-    concatenate: Mapping[BackendID, ConcatenateProto] = {
+    concatenate: dict[BackendID, ConcatenateProto] = {
         "numpy": np.concatenate,
         "pandas": pd.concat,
         "torch": pt.cat,  # type: ignore[dict-item]
     }
 
-    drop_null: Mapping[BackendID, SelfMap] = {
+    drop_null: dict[BackendID, SelfMap] = {
         "arrow": pc.drop_null,
         "numpy": B.numpy.drop_null,
         "pandas": B.pandas.drop_null,
@@ -215,7 +214,7 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": B.torch.drop_null,
     }
 
-    cast: Mapping[BackendID, CastProto] = {
+    cast: dict[BackendID, CastProto] = {
         "arrow": pc.cast,
         "numpy": ndarray.astype,
         "pandas": B.pandas.cast,
@@ -223,7 +222,7 @@ class Kernels:  # Q: how to make this more elegant?
         "torch": Tensor.to,
     }
 
-    scalar: Mapping[BackendID, ScalarProto] = {
+    scalar: dict[BackendID, ScalarProto] = {
         "arrow": B.pyarrow.scalar,
         "numpy": B.numpy.scalar,
         "pandas": B.pandas.scalar,

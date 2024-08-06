@@ -30,14 +30,15 @@ import torch
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import Dataset as TorchDataset
 
+# from torch.utils.data import Dataset as TorchDataset
+from tsdm.data.datasets import TorchDataset
 from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
 @dataclass
-class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
+class TimeSeriesDataset(TorchDataset[Any, Series]):  # Q: Should this be a Mapping?
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -82,11 +83,13 @@ class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
         r"""Return the number of timestamps."""
         return len(self.timeindex)
 
+    # fmt: off
     @overload
-    def __getitem__(self, key: Index | slice | list[Hashable]) -> DataFrame: ...
+    def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> DataFrame: ...
     @overload
-    def __getitem__(self, key: Hashable) -> Series: ...
-    def __getitem__(self, key):
+    def __getitem__(self, key: Hashable, /) -> Series: ...  # pyright: ignore[reportOverlappingOverload]
+    # fmt: on
+    def __getitem__(self, key: object, /) -> Series | DataFrame:
         r"""Get item from timeseries."""
         # we might get an index object, or a slice, or boolean mask...
         return self.timeseries.loc[key]
@@ -162,10 +165,12 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         r"""Iterate over the timeseries in the collection."""
         return iter(self.metaindex)
 
+    # fmt: off
     @overload
-    def __getitem__(self, key: slice | Series, /) -> Self: ...
+    def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> Self: ...  # pyright: ignore[reportOverlappingOverload]
     @overload
-    def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
+    def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...  # pyright: ignore[reportOverlappingOverload]
+    # fmt: on
     def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
@@ -444,7 +449,7 @@ def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
 
 @pprint_repr
 @dataclass
-class TimeSeriesSampleGenerator(TorchDataset[Sample]):
+class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
     r"""Creates sample from a TimeSeriesCollection.
 
     This class is responsible for creating samples from a TimeSeriesCollection.
@@ -672,7 +677,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
 @pprint_repr
 @dataclass
-class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
+class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
     r"""Utility class for generating samples from a fixed slice of a time series.
 
     Assumptions:

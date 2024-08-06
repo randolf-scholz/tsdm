@@ -21,6 +21,7 @@ from tsdm.encoders.numerical import (
     get_reduced_axes,
 )
 from tsdm.types.aliases import Axis
+from tsdm.types.protocols import NumericalTensor, OrderedScalar
 
 __logger__ = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ DATA_2D = [
     [ 0.0,  0.3,  0.5,  1.0],
     [ 1.5,  2.0,  2.5,  3.0],
 ]  # fmt: skip
-DATA = {
+DATA: dict[str, NumericalTensor[OrderedScalar]] = {
     "numpy-1D": np.array(DATA_1D),
     "numpy-2D": np.array(DATA_2D),
     "torch-1D": torch.tensor(DATA_1D),
@@ -140,13 +141,10 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
             raise ValueError(f"Unexpected mode: {mode=}")
 
 
-@pytest.mark.parametrize("data", DATA.values(), ids=DATA)
-def test_boundary_encoder[
-    D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor),
-](
-    data: D,
-) -> None:
+@pytest.mark.parametrize("name", DATA)
+def test_boundary_encoder(name: str) -> None:
     r"""Test the boundary encoder."""
+    data = DATA[name]
     encoder = BoundaryEncoder(-1, +1, mode="clip")
     encoder.fit(data)
     encoded = encoder.encode(data)
@@ -157,7 +155,7 @@ def test_boundary_encoder[
     assert ((encoded == -1) == (data <= -1)).all()
     assert ((encoded == +1) == (data >= +1)).all()
 
-    match data:
+    match encoded:
         case np.ndarray() as array:
             assert isinstance(encoded, np.ndarray)
             assert encoded.dtype == array.dtype
@@ -204,7 +202,7 @@ def test_boundary_encoder[
     xmin, xmax = data.min(), data.max()
     mask = (data2 >= xmin) & (data2 <= xmax)
     assert (encoded2[mask] == data2[mask]).all()
-    assert (np.isnan(encoded2[~mask])).all()
+    assert np.isnan(encoded2[~mask]).all()
 
     # test half-open interval + clip
     encoder = BoundaryEncoder(0, None, mode="clip")

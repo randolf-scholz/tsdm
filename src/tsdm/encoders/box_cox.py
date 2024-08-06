@@ -272,13 +272,13 @@ class BoxCoxEncoder(BaseEncoder):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode(self, data: Series, /) -> Series:
+    def encode[T: (NDArray, Series)](self, data: T, /) -> T:
         return np.log(data + self.offset)
 
-    def decode(self, data: Series, /) -> Series:
+    def decode[T: (NDArray, Series)](self, data: T, /) -> T:
         return np.maximum(np.exp(data) - self.offset, 0)
 
-    def fit(self, data: Series, /) -> None:
+    def fit(self, data: NDArray | Series, /) -> None:
         if not all(pd.isna(data) | (data >= 0)):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
@@ -365,15 +365,15 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode(self, data: Series, /) -> Series:
+    def encode[T: (NDArray, Series)](self, data: T, /) -> T:
         return np.log(data + self.offset) - np.log((1 - data) + self.offset)
 
-    def decode(self, data: Series, /) -> Series:
+    def decode[T: (NDArray, Series)](self, data: T, /) -> T:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
         return np.clip(r, 0, 1)
 
-    def fit(self, data: Series, /) -> None:
+    def fit(self, data: NDArray | Series, /) -> None:
         if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 

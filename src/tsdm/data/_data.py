@@ -222,15 +222,6 @@ def detect_outliers(
 @overload
 def remove_outliers(
     s: Series,
-    description: BoundaryInformation,
-    /,
-    *,
-    drop: bool = ...,
-    inplace: bool = ...,
-) -> Series: ...
-@overload
-def remove_outliers(
-    s: Series,
     /,
     *,
     lower_bound: float | None,
@@ -241,23 +232,23 @@ def remove_outliers(
     inplace: bool = ...,
 ) -> Series: ...
 @overload
-def remove_outliers(
-    df: DataFrame,
+def remove_outliers[T: (Series, DataFrame)](
+    df: T,
     description: BoundaryInformation | DataFrame,
     /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
-) -> DataFrame: ...
+) -> T: ...
 @overload
-def remove_outliers[T](
+def remove_outliers[Key](
     df: DataFrame,
     /,
     *,
-    lower_bound: Mapping[T, float | None],
-    upper_bound: Mapping[T, float | None],
-    lower_inclusive: Mapping[T, bool],
-    upper_inclusive: Mapping[T, bool],
+    lower_bound: Mapping[Key, float | None],
+    upper_bound: Mapping[Key, float | None],
+    lower_inclusive: Mapping[Key, bool],
+    upper_inclusive: Mapping[Key, bool],
     drop: bool = ...,
     inplace: bool = ...,
 ) -> DataFrame: ...

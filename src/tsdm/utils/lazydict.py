@@ -48,8 +48,8 @@ class LazyValue[V]:  # +V
     r"""A placeholder for uninitialized values."""
 
     func: Callable[..., V]
-    args: Iterable[Any]
-    kwargs: Mapping[str, Any]
+    args: tuple[Any, ...]
+    kwargs: dict[str, Any]
     type_hint: str
 
     @staticmethod
@@ -84,8 +84,8 @@ class LazyValue[V]:  # +V
         type_hint: Optional[str] = None,
     ) -> None:
         self.func = func
-        self.args = args
-        self.kwargs = kwargs
+        self.args = tuple(args)
+        self.kwargs = dict(kwargs)
         self.type_hint = (
             get_return_typehint(self.func) if type_hint is None else type_hint
         )

@@ -14,16 +14,13 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
-from typing import Any, Self, TypeVar
+from typing import Any, Self
 
 from torch import jit, nn
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
-from tsdm.utils.decorators.base import (
-    ParametrizedClassDecorator,
-    decorator,
-)
+from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
 from tsdm.utils.pprint import (
     repr_array,
     repr_dataclass,
@@ -36,18 +33,12 @@ from tsdm.utils.pprint import (
 
 # region workaround mypy bug -----------------------------------------------------------
 # FIXME: https://github.com/python/mypy/issues/17191
-SeqType = TypeVar("SeqType", bound=type[Sequence])  # pyright: ignore
-MapType = TypeVar("MapType", bound=type[Mapping])  # pyright: ignore
-SetType = TypeVar("SetType", bound=type[AbstractSet])  # pyright: ignore
-DtcType = TypeVar("DtcType", bound=type[Dataclass])  # pyright: ignore
-NtpType = TypeVar("NtpType", bound=type[NTuple])  # pyright: ignore
-ClsType = TypeVar("ClsType", bound=type)  # pyright: ignore
-pprint_sequence: ParametrizedClassDecorator[SeqType, SeqType, Any]  # pyright: ignore
-pprint_mapping: ParametrizedClassDecorator[MapType, MapType, Any]  # pyright: ignore
-pprint_set: ParametrizedClassDecorator[SetType, SetType, Any]  # pyright: ignore
-pprint_dataclass: ParametrizedClassDecorator[DtcType, DtcType, Any]  # pyright: ignore
-pprint_namedtuple: ParametrizedClassDecorator[NtpType, NtpType, Any]  # pyright: ignore
-pprint_repr: ParametrizedClassDecorator[ClsType, ClsType, Any]  # pyright: ignore
+pprint_sequence: PolymorphicClassDecorator[Any]  # pyright: ignore
+pprint_mapping: PolymorphicClassDecorator[Any]  # pyright: ignore
+pprint_set: PolymorphicClassDecorator[Any]  # pyright: ignore
+pprint_dataclass: PolymorphicClassDecorator[Any]  # pyright: ignore
+pprint_namedtuple: PolymorphicClassDecorator[Any]  # pyright: ignore
+pprint_repr: PolymorphicClassDecorator[Any]  # pyright: ignore
 # endregion workaround mypy bug --------------------------------------------------------
 
 
@@ -81,7 +72,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     return cls
 
 
-# @decorator
+@decorator
 def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]:
     # def pprint_dataclass[Dtc: type[Dataclass]](cls: Dtc, /, **kwds: Any) -> Dtc:
     r"""Add appropriate __repr__ to class."""

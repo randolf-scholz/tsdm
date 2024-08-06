@@ -428,6 +428,7 @@ useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 reportPrivateImportUsage = false  # FIXME: temporary
 reportOverlappingOverload = true
 reportNoOverloadImplementation = false  # REF: https://github.com/microsoft/pyright/issues/8619
+reportUntypedClassDecorator = true
 #reportPrivateImportUsage = false
 #reportSelfClsParameterName = false
 reportUnnecessaryTypeIgnoreComment = false  # highlight any unnecessary "# type: ignore" comments
