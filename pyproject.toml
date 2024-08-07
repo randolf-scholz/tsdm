@@ -30,14 +30,14 @@ classifiers = [
 # dependencies
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "matplotlib>=3.9.1",
+    "matplotlib>=3.9.1.post1",
     "numpy>=2.0.1",
     "pandas>=2.2.2",
     "pillow>=10.4.0",
     "polars>=1.4.1",
     "pyarrow>=17.0.0",
     "pydantic>=2.8.2",
-    "pyyaml>=6.0.1",
+    "pyyaml>=6.0.2",
     "requests>=2.32.3",
     "scikit-learn>=1.5.1",
     "scipy>=1.14.0",
@@ -58,7 +58,7 @@ repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple
 [tool.pdm.dev-dependencies]
 docs = [
     "docutils>=0.21.2",
-    "myst-parser>=3.0.1",
+    "myst-parser>=4.0.0",
     "nbsphinx>=0.9.4",
     "piccolo-theme>=0.23.0",
     "pydata-sphinx-theme>=0.15.4",
@@ -69,11 +69,11 @@ docs = [
     "sphinx-math-dollar>=1.2.1",
     "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
-    "sphinx>=7.4.7",
+    "sphinx>=8.0.2",
 ]
 tests = [
     "coverage>=7.6.1",
-    "hypothesis[numpy,pandas,pytest]>=6.108.7",
+    "hypothesis[numpy,pandas,pytest]>=6.109.0",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=5.0.0",
     "pytest-repeat>=0.9.3",
@@ -88,7 +88,7 @@ linters = [
 ]
 typing = [
     "mypy>=1.11.1",
-    "pyright>=1.1.374",
+    "pyright>=1.1.375",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20240724",
@@ -100,7 +100,7 @@ typing = [
     "types-pytz>=2024.1.0.20240417",
     "types-pyyaml>=6.0.12.20240724",
     "types-requests>=2.32.0.20240712",
-    "types-setuptools>=71.1.0.20240726",
+    "types-setuptools>=71.1.0.20240806",
     "types-six>=1.16.21.20240513",
     "types-tabulate>=0.9.0.20240106",
     "types-tqdm>=4.66.0.20240417",
