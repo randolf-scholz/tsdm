@@ -18,7 +18,7 @@ from tsdm.encoders.numerical import (
     MinMaxScaler,
     StandardScaler,
     get_broadcast,
-    get_reduced_axes,
+    reduce_axes,
 )
 from tsdm.types.aliases import Axis
 from tsdm.types.protocols import NumericalTensor, OrderedScalar
@@ -321,22 +321,28 @@ def test_get_broadcast(shape: tuple[int, ...], axis: Axis) -> None:
     assert m[broadcast].shape == m_ref.shape
 
 
-def test_reduce_axes() -> None:
-    r"""Test the get_reduced_axes function."""
-    axis: tuple[int, ...] = (-2, -1)
-    assert get_reduced_axes(..., axis) == axis
-    assert get_reduced_axes(0, axis) == (-1,)
-    assert get_reduced_axes([1], axis) == (-1,)
-    assert get_reduced_axes([1, 2], axis) == axis
-    assert get_reduced_axes(slice(None), axis) == axis
-    assert get_reduced_axes((), axis) == axis
-    assert get_reduced_axes((1,), axis) == (-1,)
-    assert get_reduced_axes((slice(None), 1), (-2, -1)) == (-2,)
-
-    axis = (-4, -3, -2, -1)
-    assert get_reduced_axes((..., 1, slice(None)), axis) == (-4, -3, -1)
-    assert get_reduced_axes((1, ..., 1), axis) == (-3, -2)
-    assert get_reduced_axes((1, ...), axis) == (-3, -2, -1)
+@pytest.mark.parametrize(
+    ("axis", "selection", "expected"),
+    [
+        ((-2, -1)        , ...                   , (-2, -1)     ),
+        ((-2, -1)        , 0                     , (-1,)        ),
+        ((-2, -1)        , [1]                   , (-1,)        ),
+        ((-2, -1)        , [1, 2]                , (-2, -1)     ),
+        ((-2, -1)        , slice(None)           , (-2, -1)     ),
+        ((-2, -1)        , ()                    , (-2, -1)     ),
+        ((-2, -1)        , (1,)                  , (-1,)        ),
+        ((-2, -1)        , (slice(None), 1)      , (-2,)        ),
+        ((-4, -3, -2, -1), (..., 1, slice(None)) , (-4, -3, -1) ),
+        ((-4, -3, -2, -1), (1, ..., 1)           , (-3, -2)     ),
+        ((-4, -3, -2, -1), (1, ...)              , (-3, -2, -1) ),
+    ],
+    ids=str,
+)  # fmt: skip
+def test_reduce_axes(
+    axis: tuple[int, ...], selection: Any, expected: tuple[int, ...]
+) -> None:
+    r"""Test the `reduced_axes` function."""
+    assert reduce_axes(axis, selection) == expected
 
 
 @pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])

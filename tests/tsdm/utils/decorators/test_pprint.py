@@ -82,8 +82,6 @@ def test_pprint_repr_namedtuple() -> None:
         b: str
         c: float
 
-    reveal_type(TestNamedTuple)
-
     # ensure decorator works statically
     assert_type(TestNamedTuple, type[TestNamedTuple])
 

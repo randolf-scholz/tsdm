@@ -727,10 +727,10 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     """
 
     # fmt: off
-    @overload  # depending on Tensor Rank, can return Scalar or Tensor
-    def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
     @overload
     def __getitem__(self, key: Self | slice | list[int] | tuple[int | slice, ...], /) -> Self: ...
+    @overload  # depending on Tensor Rank, can return Scalar or Tensor
+    def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
     # fmt: on
 
     @property

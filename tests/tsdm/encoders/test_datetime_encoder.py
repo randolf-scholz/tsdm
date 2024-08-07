@@ -109,9 +109,7 @@ r"""Example data for testing datetime encoders."""
 def test_datetime_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     if rounding and sparse and name in {"pandas-index-arrow", "pandas-series-arrow"}:
-        pytest.xfail(
-            "Overflow error: https://github.com/pandas-dev/pandas/issues/59082."
-        )
+        pytest.xfail("Overflow error: https://github.com/apache/arrow/issues/43031.")
 
     if sparse:
         train_data = DT_TRAIN_ARRAYS_SPARSE[name]

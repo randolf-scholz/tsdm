@@ -44,7 +44,7 @@ __all__ = [
     "TensorSplitter",
     # Functions
     "get_broadcast",
-    "get_reduced_axes",
+    "reduce_axes",
     "invert_axis_selection",
     "slice_size",
 ]
@@ -62,28 +62,9 @@ from pandas import DataFrame
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axis, Size
+from tsdm.types.aliases import Axis, Indexer
 from tsdm.types.protocols import NumericalArray, OrderedScalar
 from tsdm.utils.decorators import pprint_repr
-
-type Index = None | int | list[int] | slice | EllipsisType
-r"""Type Hint for single indexer."""
-type Scalar = None | bool | int | float | complex | str
-r"""Type Hint for scalar objects."""
-
-type PARAMETERS[Arr: NumericalArray] = tuple[
-    Scalar
-    | Arr
-    | list[Scalar]
-    | list[Arr]
-    | list["PARAMETERS"]
-    | tuple["Scalar | Arr | PARAMETERS", ...]
-    | dict[str, Scalar]
-    | dict[str, Arr]
-    | dict[str, "PARAMETERS"],
-    ...,
-]
-r"""Type Hint for parameters object (json-like)."""
 
 
 def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:
@@ -184,12 +165,10 @@ def slice_size(slc: slice, /) -> Optional[int]:
 
 
 @overload
-def get_reduced_axes(item: Index | tuple[Index, ...], axis: None) -> None: ...
+def reduce_axes(axis: None, selection: Indexer) -> None: ...
 @overload
-def get_reduced_axes(
-    item: Index | tuple[Index, ...], axis: Size
-) -> tuple[int, ...]: ...
-def get_reduced_axes(item, axis):
+def reduce_axes(axis: int | tuple[int, ...], selection: Indexer) -> tuple[int, ...]: ...
+def reduce_axes(axis: Axis, selection: Indexer) -> tuple[int, ...]:
     r"""Determine if a slice would remove some axes."""
     match axis:
         case None:
@@ -201,13 +180,13 @@ def get_reduced_axes(item, axis):
         case _:
             axis = tuple(axis)
 
-    match item:
+    match selection:
+        case None:
+            raise NotImplementedError("Slicing with None not implemented.")
         case int():
             return axis[1:]
         case EllipsisType():
             return axis
-        case None:
-            raise NotImplementedError("Slicing with None not implemented.")
         case list(seq):
             if len(seq) <= 1:
                 return axis[1:]
@@ -224,15 +203,15 @@ def get_reduced_axes(item, axis):
             if Ellipsis in tup:
                 idx = tup.index(Ellipsis)
                 return (
-                    get_reduced_axes(tup[:idx], axis[:idx])
-                    + get_reduced_axes(tup[idx], axis[idx : idx + len(tup) - 1])
-                    + get_reduced_axes(tup[idx + 1 :], axis[idx + len(tup) - 1 :])
+                    reduce_axes(axis[:idx], tup[:idx])
+                    + reduce_axes(axis[idx : idx + len(tup) - 1], tup[idx])
+                    + reduce_axes(axis[idx + len(tup) - 1 :], tup[idx + 1 :])
                 )
-            return get_reduced_axes(item[0], axis[:1]) + get_reduced_axes(
-                item[1:], axis[1:]
+            return reduce_axes(axis[:1], selection[0]) + reduce_axes(
+                axis[1:], selection[1:]
             )
         case _:
-            raise TypeError(f"Unknown type {type(item)}")
+            raise TypeError(f"Unknown type {type(selection)}")
 
 
 class ArrayEncoder[Arr: NumericalArray, Y](BaseEncoder[Arr, Y]):
@@ -523,11 +502,10 @@ class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         # slice the parameters
         loc = self.loc if len(self.loc.shape) == 0 else self.loc[item]
         scale = self.scale if len(self.scale.shape) == 0 else self.scale[item]
-        axis = get_reduced_axes(item, self.axis)
+        axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
-        cls = type(self)
-        encoder = cls(loc, scale, axis=axis)
+        encoder = self.__class__(loc, scale, axis=axis)
         encoder._is_fitted = self._is_fitted
         return encoder
 
@@ -593,7 +571,7 @@ class StandardScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
             else self.stdv
         )
 
-        axis = get_reduced_axes(item, self.axis)
+        axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
         cls = type(self)
@@ -723,7 +701,7 @@ class MinMaxScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         xmax = self.xmax[item] if len(self.xmax.shape) > 0 else self.xmax
         ymin = self.ymin[item] if len(self.ymin.shape) > 0 else self.ymin
         ymax = self.ymax[item] if len(self.ymax.shape) > 0 else self.ymax
-        axis = get_reduced_axes(item, self.axis)
+        axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
         cls: type[Self] = type(self)

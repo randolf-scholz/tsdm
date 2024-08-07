@@ -5,13 +5,14 @@ __all__ = [
     "Axis",
     "Dims",
     "FilePath",
+    "Indexer",
     "Kwargs",
     "Nested",
+    "PandasNullable",
     "PandasObject",
     "Shape",
     "Size",
     "SplitID",
-    "PandasNullable",
     # Dtype Aliases
     "NumpyDtype",
     "NumpyDtypeArg",
@@ -65,6 +66,7 @@ from collections.abc import (
 )
 from datetime import datetime, timedelta
 from pathlib import Path
+from types import EllipsisType
 from typing import Any
 
 import numpy as np
@@ -84,6 +86,16 @@ type Size = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
 type Shape = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
+type Indexer = (
+    None
+    | int
+    | list[int]
+    | slice
+    | EllipsisType
+    # or a tuple of one of the above
+    | tuple[None | int | list[int] | slice | EllipsisType, ...]
+)
+r"""Type hint for `__getitem__` argument for tensors."""
 type Kwargs[T] = SupportsKwargs[T]
 r"""Type Alias for keyword arguments."""
 type Nested[T] = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]  # +T

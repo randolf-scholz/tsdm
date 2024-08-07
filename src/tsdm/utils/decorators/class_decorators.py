@@ -14,7 +14,7 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
-from typing import Any, Self
+from typing import Any, Self, overload
 
 from torch import jit, nn
 
@@ -53,8 +53,8 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
 
 
 @decorator
-# def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
-def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
+def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
+    # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -72,9 +72,16 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     return cls
 
 
+# NOTE: @overload needed to make pyright happy, see:
+#   https://github.com/microsoft/pyright/issues/8681#issuecomment-2271979444
+@overload
 @decorator
-def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]:
-    # def pprint_dataclass[Dtc: type[Dataclass]](cls: Dtc, /, **kwds: Any) -> Dtc:
+def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
+@overload
+@decorator
+def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]: ...
+@decorator
+def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Dataclass):  # type: ignore[misc]
         raise TypeError(f"Expected Sequence type, got {cls}.")
