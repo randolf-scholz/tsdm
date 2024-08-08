@@ -143,26 +143,17 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
 }  # fmt: skip
 
 NUMERICAL_SERIES: dict[str, NumericalSeries] = {
-    "numpy_ndarray_1d": NP_ARRAY_1D,
-    "numpy_ndarray_2d": NP_ARRAY_2D,
-    "pandas_index_int": PD_INDEX_INT,
-    "pandas_index_str": PD_INDEX_STR,
-    "pandas_series_int": PD_SERIES_INT,
-    "pandas_series_str": PD_SERIES_STR,
-    "polars_series_int": PL_SERIES_INT,
-    "polars_series_str": PL_SERIES_STR,
-    "torch_tensor_1d": PT_TENSOR_1D,
-    "torch_tensor_2d": PT_TENSOR_2D,
-}
-
-numpy_ndarray_1d: NumericalTensor = NP_ARRAY_1D
-numpy_ndarray_2d: NumericalTensor = NP_ARRAY_2D
-pandas_index_int: NumericalTensor = PD_INDEX_INT
-pandas_index_str: NumericalTensor = PD_INDEX_STR
-pandas_series_int: NumericalTensor = PD_SERIES_INT
-pandas_series_str: NumericalTensor = PD_SERIES_STR
-torch_tensor_1d: NumericalTensor = PT_TENSOR_1D
-torch_tensor_2d: NumericalTensor = PT_TENSOR_2D
+    "numpy_ndarray_1d"  : NP_ARRAY_1D,
+    "numpy_ndarray_2d"  : NP_ARRAY_2D,
+    "pandas_index_int"  : PD_INDEX_INT,
+    "pandas_index_str"  : PD_INDEX_STR,
+    "pandas_series_int" : PD_SERIES_INT,
+    "pandas_series_str" : PD_SERIES_STR,
+    "polars_series_int" : PL_SERIES_INT,
+    "polars_series_str" : PL_SERIES_STR,
+    "torch_tensor_1d"   : PT_TENSOR_1D,
+    "torch_tensor_2d"   : PT_TENSOR_2D,
+}  # fmt: skip
 
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "numpy_ndarray_1d"  : NP_ARRAY_1D,
@@ -186,13 +177,13 @@ MUTABLE_ARRAYS: dict[str, MutableArray] = {
 }  # fmt: skip
 
 EXAMPLES: dict[type, dict[str, Any]] = {
-    SeriesKind     : SERIES,
-    TableKind      : TABLES,
-    ArrayKind      : ARRAYS,
-    NumericalArray : NUMERICAL_ARRAYS,
-    NumericalSeries: NUMERICAL_SERIES,
-    NumericalTensor: NUMERICAL_TENSORS,
-    MutableArray   : MUTABLE_ARRAYS,
+    SeriesKind      : SERIES,
+    TableKind       : TABLES,
+    ArrayKind       : ARRAYS,
+    NumericalArray  : NUMERICAL_ARRAYS,
+    NumericalSeries : NUMERICAL_SERIES,
+    NumericalTensor : NUMERICAL_TENSORS,
+    MutableArray    : MUTABLE_ARRAYS,
 }  # fmt: skip
 
 DUNDER_ARITHMETIC: frozenset[str] = frozenset({
@@ -264,15 +255,10 @@ EXCLUDED_MEMBERS: dict[type, set[str]] = {
     NumericalSeries : set(),
     NumericalTensor : {
         "T", "transpose",
-        "__iadd__",
-        "argsort",
-        "nbytes",
-        "repeat",
-        "size",
-        "take",
-        "view",
+        "__iadd__", "argsort", "nbytes", "repeat",
+        "size", "take", "view",
     },
-    MutableArray: {
+    MutableArray    : {
         "T", "transpose",
         "clip", "cumprod", "cumsum", "dot",
         "mean", "ndim", "prod",
