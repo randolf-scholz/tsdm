@@ -65,7 +65,7 @@ __all__ = [
 import logging
 import pickle
 import random
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
@@ -565,7 +565,7 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
 
 @pprint_mapping(recursive=2)
 @dataclass(init=False)
-class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
+class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder], ABC):
     r"""Wraps dictionary of encoders."""
 
     encoders: dict[K, Encoder]
@@ -594,15 +594,15 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
 
     @property
     def requires_fit(self) -> bool:
-        return any(e.requires_fit for e in self.encoders.values())
+        return any(e.requires_fit for e in self.values())
 
     @property
     def is_fitted(self) -> bool:
-        return all(e.is_fitted for e in self.encoders.values())
+        return all(e.is_fitted for e in self.values())
 
     @is_fitted.setter
     def is_fitted(self, value: bool) -> None:
-        for encoder in self.encoders.values():
+        for encoder in self.values():
             encoder.is_fitted = value
 
     def __len__(self) -> int:
@@ -617,16 +617,7 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder]):
 
     def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the mapping encoder."""
-        # FIXME: https://github.com/python/mypy/issues/17134
-        # match self:
-        #     case []:
-        #         return IdentityEncoder()
-        #     case [encoder]:
-        #         return encoder.simplify()
-        #     case _:
-        #         cls = type(self)
-        #         return cls(*(e.simplify() for e in self))
-        return self.__class__({k: e.simplify() for k, e in self.encoders.items()})
+        return self.__class__({k: e.simplify() for k, e in self.items()})  # type: ignore[abstract]
 
 
 class BackendMixin:
@@ -826,6 +817,11 @@ class WrappedEncoder[X, Y](BaseEncoder[X, Y]):
     def decode(self, y: Y, /) -> X:
         return self.encoder.decode(y)
 
+    def simplify(self) -> BaseEncoder[X, Y]:
+        if isinstance(self.encoder, BaseEncoder):
+            return self.encoder.simplify()
+        return self
+
 
 @pprint_repr
 @dataclass
@@ -924,7 +920,7 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
             try:
                 encoder.fit(x)
             except Exception as exc:
-                index = self.encoders.index(encoder)
+                index = self.index(encoder)
                 typ = type(self).__name__
                 enc = type(encoder).__name__
                 exc.add_note(f"{typ}[{index}]: Failed to fit {enc!r}.")
@@ -959,13 +955,10 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
         match encoders:
             case []:
                 return IdentityEncoder()
-            case [BaseEncoder() as encoder]:
-                return encoder
             case [encoder]:
-                # if it only satisfies the Encoder protocol, wrap it
-                return WrappedEncoder(encoder)
+                return WrappedEncoder(encoder).simplify()
             case _:
-                return self.__class__(*encoders)
+                return self.__class__(*(e.simplify() for e in encoders))
 
 
 # fmt: off
@@ -1035,7 +1028,7 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
             try:
                 encoder.fit(x)
             except Exception as exc:
-                index = self.encoders.index(encoder)
+                index = self.index(encoder)
                 typ = type(self).__name__
                 enc = type(encoder).__name__
                 exc.add_note(f"{typ}[{index}]: Failed to fit {enc!r}.")
@@ -1079,13 +1072,10 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
         match encoders:
             case []:
                 return IdentityEncoder()
-            case [BaseEncoder() as encoder]:
-                return encoder
             case [encoder]:
-                # wrap the encoder if it only satisfies the Encoder protocol
-                return WrappedEncoder(encoder)
+                return WrappedEncoder(encoder).simplify()
             case _:
-                return self.__class__(*encoders)
+                return self.__class__(*(e.simplify() for e in encoders))
 
 
 # fmt: off
@@ -1195,20 +1185,14 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
     def simplify(self) -> BaseEncoder[TupleIn, TupleOut]:
         r"""Simplify the product encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
-        # match self:
-        #     case []:
-        #         return IdentityEncoder()
-        #     case [encoder]:
-        #         return encoder.simplify()
-        #     case _:
-        #         return self.__class__(*(e.simplify() for e in self))
-        encoders: list[Encoder] = [e.simplify() for e in self.encoders]
-
-        if len(encoders) == 0:
-            return IdentityEncoder()
-        if len(encoders) == 1:
-            return (TupleDecoder() >> encoders[0] >> TupleEncoder()).simplify()
-        return self.__class__(*encoders)
+        #   Cannot annotate return type as Self!
+        match self:
+            case []:
+                return IdentityEncoder()
+            case [encoder]:
+                return WrappedEncoder(encoder).simplify()
+            case _:
+                return self.__class__(*(e.simplify() for e in self))  # type: ignore[return-value]
 
 
 # fmt: off
@@ -1326,12 +1310,14 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     def simplify(self) -> BaseEncoder[X, TupleOut]:
         r"""Simplify the joint encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
-        encoders: list[Encoder] = [e.simplify() for e in self.encoders]
-        if len(encoders) == 0:
-            return IdentityEncoder()
-        if len(encoders) == 1:
-            return (encoders[0] >> TupleEncoder()).simplify()
-        return self.__class__(*encoders)  # type: ignore[return-value]
+        #   Cannot annotate return type as Self!
+        match self:
+            case []:
+                return IdentityEncoder()
+            case [encoder]:
+                return (encoder >> TupleEncoder()).simplify()
+            case _:
+                return self.__class__(*(e.simplify() for e in self))  # type: ignore[return-value]
 
 
 # fmt: off
@@ -1414,12 +1400,14 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     def simplify(self) -> BaseEncoder[TupleIn, Y]:
         r"""Simplify the joint encoder."""
         # FIXME: https://github.com/python/mypy/issues/17134
-        encoders: list[Encoder] = [e.simplify() for e in self.encoders]
-        if len(encoders) == 0:
-            return IdentityEncoder()
-        if len(encoders) == 1:
-            return (encoders[0] >> TupleEncoder()).simplify()
-        return self.__class__(*encoders)
+        #   Cannot annotate return type as Self!
+        match self:
+            case []:
+                return IdentityEncoder()
+            case [encoder]:
+                return (encoder >> TupleEncoder()).simplify()
+            case _:
+                return self.__class__(*(e.simplify() for e in self))  # type: ignore[return-value]
 
 
 class MappedEncoder[
@@ -1447,13 +1435,13 @@ class MappedEncoder[
     def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn, K]":
         # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[MappedEncoder] = type(self)
-        decoders = {k: InverseEncoder(e) for k, e in self.encoders.items()}
-        return cls(decoders)  # type: ignore[return-value]
+        decoders = {k: InverseEncoder(e) for k, e in self.items()}
+        return cls(decoders)  # type: ignore[arg-type,return-value]
 
     def fit(self, xmap: MappingIn, /) -> None:
-        if missing_keys := self.encoders.keys() - xmap.keys():
+        if missing_keys := self.keys() - xmap.keys():
             raise ValueError(f"No data to fit encoders {missing_keys}.")
-        if extra_keys := xmap.keys() - self.encoders.keys():
+        if extra_keys := xmap.keys() - self.keys():
             raise ValueError(f"Extra data with no matching encoder {extra_keys}.")
 
         for k, x in xmap.items():

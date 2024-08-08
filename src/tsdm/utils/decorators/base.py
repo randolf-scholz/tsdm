@@ -242,6 +242,12 @@ class PolymorphicFunctionDecorator[**P](Protocol):
 class Decorator[T_in, T_out, **P](Protocol):
     r"""Protocol for decorators."""
 
+    # shared attributes with classes `type` and `function`
+    __name__: str
+    __module__: str
+    __qualname__: str
+    __annotations__: dict[str, Any]
+
     def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
 
 
@@ -255,6 +261,12 @@ class DecoratorFactory[T_in, T_out, **P](Protocol):
 
 class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     r"""Protocol for parametrized decorators."""
+
+    # shared attributes with classes `type` and `function`
+    __name__: str
+    __module__: str
+    __qualname__: str
+    __annotations__: dict[str, Any]
 
     # fmt: off
     @overload  # @decorator
@@ -326,23 +338,34 @@ r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 
 # FIXME: https://github.com/python/mypy/issues/17191
 #   Somehow broken in mypy...
-# fmt: off
 # @overload  # class-decorator
-# def decorator[Cls: type, **P](deco: ClassDecorator[Cls, P], /) -> ParametrizedClassDecorator[Cls, P]: ...
-# def decorator[T, **P](deco: ClassDecorator[type[T], P], /) -> ParametrizedClassDecorator[type[T], P]: ...
-# def decorator[T, **P](deco: ClassDecorator[T, P], /) -> ParametrizedClassDecorator[T, P]: ...
-@overload  # class decoration
+# def decorator[Cls: type, **P](
+#     deco: ClassDecorator[Cls, P], /
+# ) -> ParametrizedClassDecorator[Cls, P]: ...
+# def decorator[T, **P](
+#     deco: ClassDecorator[type[T], P], /
+# ) -> ParametrizedClassDecorator[type[T], P]: ...
+# def decorator[T, **P](
+#     deco: ClassDecorator[T, P], /
+# ) -> ParametrizedClassDecorator[T, P]: ...
+# @overload  # class decoration
 # def decorator[Cls_in: type, Cls_out: type, **P](
-#         deco: ClassDecorator[Cls_in, Cls_out, P], /
+#     deco: ClassDecorator[Cls_in, Cls_out, P], /
 # ) -> ParametrizedClassDecorator[Cls_in, Cls_out, P]: ...
-# def decorator[T_in, T_out, **P](deco: Decorator[type[T_in], type[T_out], P], /) -> ParametrizedDecorator[type[T_in], type[T_out], P]: ...
-def decorator[T_in, T_out, **P](deco: Decorator[T_in, T_out, P], /) -> ParametrizedDecorator[T_in, T_out, P]: ...
-@overload  # function-decorator
-def decorator[F_in: Fn, F_out: Fn, **P](
-    deco: FunctionDecorator[F_in, F_out, P], /
-) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
-# fmt: on
-def decorator(deco, /):  # pyright: ignore[reportInconsistentOverload]
+# def decorator[T_in, T_out, **P](
+#     deco: Decorator[type[T_in], type[T_out], P], /
+# ) -> ParametrizedDecorator[type[T_in], type[T_out], P]: ...
+# def decorator[T_in, T_out, **P](
+#     deco: Decorator[T_in, T_out, P], /
+# ) -> ParametrizedDecorator[T_in, T_out, P]: ...
+# @overload  # function-decorator
+# def decorator[F_in: Fn, F_out: Fn, **P](
+#     deco: FunctionDecorator[F_in, F_out, P], /
+# ) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
+# def decorator(deco, /):  # pyright: ignore[reportInconsistentOverload]
+def decorator[T_in, T_out, **P](
+    deco: Decorator[T_in, T_out, P], /
+) -> ParametrizedDecorator[T_in, T_out, P]:
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -414,7 +437,7 @@ def decorator(deco, /):  # pyright: ignore[reportInconsistentOverload]
         logger.debug("@decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
-    return __parametrized_decorator
+    return __parametrized_decorator  # pyright: ignore[reportReturnType]
 
 
 def attribute[T, R](func: Fn[[T], R], /) -> R:  # T, +R

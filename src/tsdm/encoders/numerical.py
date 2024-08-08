@@ -233,7 +233,7 @@ def reduce_param[T: Array](param: float | T, selection: Any) -> float | T:
     that satisfies the selection.
     """
     match param:
-        case int(scalar) | float(scalar):
+        case (int() | float()) as scalar:
             # NOTE: need to test int | float because of typing issues.
             # FIXME: https://github.com/python/typing/issues/1746
             return scalar
