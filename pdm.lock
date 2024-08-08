@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:cc968d79873c9f0f20e552c720e19bc5913be85e566d435672e0ca57adcb9e38"
+content_hash = "sha256:cae6b8c83991d3517ef138344e873a2022e8236b3f53c90881be7824a3613973"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -2169,7 +2169,7 @@ name = "ptyprocess"
 version = "0.7.0"
 summary = "Run a subprocess in a pseudo terminal"
 groups = ["experiment"]
-marker = "(sys_platform != \"win32\" and sys_platform != \"emscripten\") and python_full_version == \"3.12.4\" or os_name != \"nt\" and python_full_version == \"3.12.4\""
+marker = "(sys_platform != \"win32\" and sys_platform != \"emscripten\" or os_name != \"nt\") and python_full_version == \"3.12.4\""
 files = [
     {file = "ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35"},
     {file = "ptyprocess-0.7.0.tar.gz", hash = "sha256:5c5d0a3b48ceee0b48485e0c26037c0acd7d29765ca3fbb5cb3831d347423220"},
