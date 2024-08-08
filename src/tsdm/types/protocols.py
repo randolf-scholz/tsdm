@@ -30,6 +30,7 @@ __all__ = [
     "TableKind",
     "ArrayKind",
     "NumericalArray",
+    "NumericalSeries",
     "NumericalTensor",
     "MutableArray",
     # stdlib
@@ -91,6 +92,8 @@ import numpy as np
 import typing_extensions
 from numpy.typing import NDArray
 from typing_extensions import TypeIs
+
+from tsdm.types.aliases import MultiIndexer
 
 # region io protocols ------------------------------------------------------------------
 
@@ -381,20 +384,67 @@ class SupportsItem[T](Protocol):  # +T
 
 
 @runtime_checkable
+class ArrayKind[Scalar](Protocol):
+    r"""An n-dimensional array of a single homogeneous data type.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.DataFrame`
+        - `pandas.Series`
+        - `polars.DataFrame`
+        - `polars.Series`
+        - `pyarrow.Array`
+        - `pyarrow.Table`
+        - `torch.Tensor`
+
+    References:
+        - https://docs.python.org/3/c-api/buffer.html
+        - https://numpy.org/doc/stable/reference/arrays.interface.html
+        - https://numpy.org/devdocs/user/basics.interoperability.html
+    """
+
+    # NOTE: This is a highly cut down version, to support the bare minimum.
+
+    @property
+    @abstractmethod
+    def shape(self) -> tuple[int, ...]:
+        r"""Yield the shape of the array."""
+        ...
+
+    def __array__(self) -> NDArray: ...
+    def __len__(self) -> int: ...
+
+    # comparisons (element-wise)
+    # equality ==
+    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # inequality !=
+    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    # less than or equal <=
+    def __le__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than or equal >=
+    def __ge__(self, other: Self | Scalar, /) -> Self: ...
+    # less than <
+    def __lt__(self, other: Self | Scalar, /) -> Self: ...
+    # greater than >
+    def __gt__(self, other: Self | Scalar, /) -> Self: ...
+
+
+@runtime_checkable
 class SeriesKind[Scalar](Protocol):
     r"""A 1d-array of homogeneous data type.
 
     Examples:
+        - `pandas.Index`
         - `pandas.Series`
         - `polars.Series`
         - `pyarrow.Array`
 
     Counter-Examples:
-        - `numpy.ndarray`  lacks `value_counts`
-        - `pandas.DataFrame`  lacks `value_counts`
-        - `polars.DataFrame`  lacks `value_counts`
-        - `pyarrow.Table`  lacks `value_counts`
-        - `torch.Tensor`  lacks `value_counts`
+        - `numpy.ndarray`     lacks `equals`
+        - `pandas.DataFrame`  lacks `equals`
+        - `polars.DataFrame`  lacks `equals`
+        - `pyarrow.Table`     lacks `equals`
+        - `torch.Tensor`      lacks `equals`
 
     References:
         - https://numpy.org/devdocs/user/basics.interoperability.html
@@ -402,7 +452,6 @@ class SeriesKind[Scalar](Protocol):
 
     # NOTE: The following methods differ between backends:
     #  - diff: gives discrete differences for polars and pandas, but not for pyarrow
-    #  - view: allows casting dtype for pandas and pyarrow, but not polars
     #  - value_counts: polars returns a DataFrame, pandas a Series, pyarrow a StructArray
     # NOTE: We do not include to_numpy(), as this is covered by __array__.
 
@@ -420,6 +469,10 @@ class SeriesKind[Scalar](Protocol):
 
     def equals(self, other: Self) -> bool:
         r"""Check if the series is equal to another series."""
+        ...
+
+    def value_counts(self) -> SupportsArray:
+        r"""For each unique value holds the number of counts."""
         ...
 
     # comparisons (element-wise)
@@ -479,7 +532,7 @@ class TableKind(Protocol):
     def __array__(self) -> NDArray[np.object_]: ...
     def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
     def __len__(self) -> int: ...
-    def __getitem__(self, key: Any, /) -> "Self | SeriesKind": ...
+    def __getitem__(self, key: Any, /) -> Self | SeriesKind: ...
 
     def equals(self, other: Self, /) -> bool:
         r"""Check if the table is equal to another table."""
@@ -501,58 +554,12 @@ class TableKind(Protocol):
 
 
 @runtime_checkable
-class ArrayKind[Scalar](Protocol):
-    r"""An n-dimensional array of a single homogeneous data type.
-
-    Examples:
-        - `numpy.ndarray`
-        - `pandas.Series`
-        - `polars.Series`
-        - `pyarrow.Array`
-        - `torch.Tensor`
-
-    Counter-Examples:
-        - `pandas.DataFrame` (different __getitem__)
-        - `polars.DataFrame`
-        - `pyarrow.Table`
-
-    References:
-        - https://docs.python.org/3/c-api/buffer.html
-        - https://numpy.org/doc/stable/reference/arrays.interface.html
-        - https://numpy.org/devdocs/user/basics.interoperability.html
-    """
-
-    # NOTE: This is a highly cut down version, to support the bare minimum.
-
-    @property
-    @abstractmethod
-    def shape(self) -> tuple[int, ...]:
-        r"""Yield the shape of the array."""
-        ...
-
-    def __array__(self) -> NDArray: ...
-    def __len__(self) -> int: ...
-
-    # def __getitem__(self, key: Any, /) -> Self | Scalar: ...
-
-    # comparisons (element-wise)
-    # equality ==
-    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
-    # inequality !=
-    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
-    # less than or equal <=
-    def __le__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than or equal >=
-    def __ge__(self, other: Self | Scalar, /) -> Self: ...
-    # less than <
-    def __lt__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than >
-    def __gt__(self, other: Self | Scalar, /) -> Self: ...
-
-
-@runtime_checkable
 class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
-    r"""Subclass of `Array` that supports numerical operations.
+    r"""Subclass of `ArrayKind` that supports numerical operations.
+
+    Note:
+        We exclude the `__getitem__` method, as it works semantically different
+        in table data types like `DataFrame` as in tensorial data types.
 
     Examples:
         - `numpy.ndarray`
@@ -561,10 +568,6 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
         - `pandas.DataFrame` (NOTE: missing `.item()`, `.device`, `.dtype`)
         - `polars.Series`    (NOTE: missing `.ndim`, `.size`)
         - `torch.Tensor`
-
-    Note:
-        - We exclude the `__getitem__` method, as it works semantically different in
-          `pandas.DataFrame` as in tensorial formats.
 
     Counter-Examples:
         - `polars.DataFrame`  (does not support basic arithmetic)
@@ -578,12 +581,6 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
         - https://numpy.org/devdocs/user/basics.interoperability.html
     """
 
-    # NOTE: We would like to add the following in the future:
-    #  dtype, size, ndim, item
-
-    # NOTE: The following methods are excluded:
-    #  - round(decimals: int) -> Self: (not applicable for most data types)
-
     @property
     @abstractmethod
     def shape(self) -> tuple[int, ...]:
@@ -592,7 +589,8 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
 
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
-    def __iter__(self) -> Iterator[Self]: ...
+
+    # def __iter__(self) -> Iterator[Self]: ...
 
     # @overload  # depending on Tensor Rank, can return Scalar or Tensor
     # def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
@@ -704,44 +702,91 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
     # endregion arithmetic operations --------------------------------------------------
 
 
-class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
-    """Protocol for numerical tensors.
+class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
+    r"""Protocol for numerical series.
 
-    Compared to `NumericalArray`, `NumericalTensor` assumes a unique data type and requires:
+    Series are per definition one dimensional, and have a unique data type.
+    Notably, this differs with respect to `NumericalTensor` by not supporting tuple-indexing.
+    Moreover, its Iterator and `__getitem__(int)` are guaranteed to return scalars.
 
-    - `.dtype` property
-    - `.item()` method to convert single element tensor to scalar.
+    Note:
+        Multidimensional Tensors are by definition Series of Tensors.
+        For instance, a 3-dimensional numpy array is a `NumericalSeries[NDArray]`.
 
     Examples:
         - `numpy.ndarray`
-        - `pandas.Index`     (NOTE: missing `.device`)
-        - `pandas.Series`    (NOTE: missing `.device`)
-        - `polars.Series`    (NOTE: missing `.ndim`, `.size`)
+        - `pandas.Index`
+        - `pandas.Series`
+        - `polars.Series`
         - `torch.Tensor`
-
-    Counter-Examples:
-        - `pandas.DataFrame` (NOTE: missing `.item()`, `.dtype`)
-        - `polars.DataFrame`  (does not support basic arithmetic)
-        - `pyarrow.Array`  (does not support basic arithmetic)
-        - `pyarrow.Table`  (does not support basic arithmetic)
     """
 
-    # fmt: off
-    @overload
-    def __getitem__(self, key: Self | slice | list[int] | tuple[int | slice, ...], /) -> Self: ...
-    @overload  # depending on Tensor Rank, can return Scalar or Tensor
-    def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
-    # fmt: on
-
     @property
-    @abstractmethod
     def dtype(self) -> Any: ...
+
+    def __iter__(self) -> Iterator[Scalar]: ...
+
+    # fmt: off
+    @overload  # depending on Tensor Rank, can return Scalar or Tensor
+    def __getitem__(self, key: int, /) -> Scalar: ...
+    @overload
+    def __getitem__(self, key: slice | range | list[int], /) -> Self: ...
+    # fmt: on
 
     def item(self) -> Scalar:
         r"""Return the scalar value the tensor if it only has a single element.
 
         Otherwise, raises `ValueError`.
         """
+        ...
+
+
+class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
+    r"""Protocol for numerical tensors.
+
+    Compared to `NumericalSeries`, tensors *can* have multiple dimensions, and
+    must support more Indexing operations, In particular `...` (Ellipsis), and
+    tuples of ints and/or slices.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Index`
+        - `pandas.Series`
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `polars.Series`    (cannot be indexed with Ellipsis and tuple)
+    """
+
+    @property
+    def dtype(self) -> Any: ...
+    @property
+    def ndim(self) -> int: ...
+
+    # fmt: off
+    @overload  # depending on Tensor Rank, can return Scalar or Tensor
+    def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...  # type: ignore[overload-overlap]
+    @overload
+    def __getitem__(self, key: MultiIndexer, /) -> Self: ...
+    # fmt: on
+
+    def item(self) -> Scalar:
+        r"""Return the scalar value the tensor if it only has a single element.
+
+        Otherwise, raises `ValueError`.
+        """
+        ...
+
+    def argmin(self) -> int | Self:
+        r"""Return the index of the minimum value."""
+        ...
+
+    def argmax(self) -> int | Self:
+        r"""Return the index of the maximum value."""
+        ...
+
+    def ravel(self) -> Self:
+        r"""Return a flattened version of the tensor."""
         ...
 
 

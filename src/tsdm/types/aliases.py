@@ -6,13 +6,14 @@ __all__ = [
     "Dims",
     "FilePath",
     "Indexer",
-    "Kwargs",
     "Nested",
     "PandasNullable",
     "PandasObject",
     "Shape",
     "Size",
     "SplitID",
+    "SingleIndexer",
+    "MultiIndexer",
     # Dtype Aliases
     "NumpyDtype",
     "NumpyDtypeArg",
@@ -75,8 +76,6 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
 
-from tsdm.types.protocols import SupportsKwargs
-
 # region Custom Type Aliases -----------------------------------------------------------
 type Axis = None | int | tuple[int, ...]
 r"""Type Alias for axestype ."""
@@ -86,18 +85,20 @@ type Size = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
 type Shape = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
-type Indexer = (
+type SingleIndexer = int | tuple[int, ...]
+r"""Type hint for indexer that possibly selects a single element."""
+type MultiIndexer = (
     None
-    | int
-    | list[int]
     | slice
+    | range
+    | list[int]
     | EllipsisType
     # or a tuple of one of the above
-    | tuple[None | int | list[int] | slice | EllipsisType, ...]
+    | tuple[None | int | slice | range | list[int] | EllipsisType, ...]
 )
+r"""Indexer that always returns a sub-tensor."""
+type Indexer = SingleIndexer | MultiIndexer
 r"""Type hint for `__getitem__` argument for tensors."""
-type Kwargs[T] = SupportsKwargs[T]
-r"""Type Alias for keyword arguments."""
 type Nested[T] = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]  # +T
 r"""Type Alias for nested types (JSON-Like)."""
 type FilePath = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
@@ -105,6 +106,7 @@ r"""Type Alias for path-like objects."""
 type SplitID = Hashable
 r"""Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
+
 
 # region Dtype Aliases -----------------------------------------------------------------
 type NumpyDtype = np.dtype

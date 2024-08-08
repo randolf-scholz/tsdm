@@ -168,13 +168,18 @@ def slice_size(slc: slice, /) -> Optional[int]:
 def reduce_axes(axis: None, selection: Indexer) -> None: ...
 @overload
 def reduce_axes(axis: int | tuple[int, ...], selection: Indexer) -> tuple[int, ...]: ...
-def reduce_axes(axis: Axis, selection: Indexer) -> tuple[int, ...]:
-    r"""Determine if a slice would remove some axes."""
+def reduce_axes(axis: Axis, selection: Indexer) -> Axis:
+    r"""Returns axis selection corresponding to given tensor indexing.
+
+    Assuming some universal operator `op` acts in tensor `T`, that is `op(T, axis=axis)`,
+    then the return of this method allows to apply `op(T[selection], axis=reduced_axis)`.
+    """
+    # convert to tuple
     match axis:
         case None:
             return None
         case []:
-            return ()  # type: ignore[unreachable]
+            return ()
         case int(a):
             axis = (a,)
         case _:
@@ -188,13 +193,14 @@ def reduce_axes(axis: Axis, selection: Indexer) -> tuple[int, ...]:
         case EllipsisType():
             return axis
         case list(seq):
-            if len(seq) <= 1:
-                return axis[1:]
-            return axis
+            drop = len(seq) <= 1
+            return axis[drop:]
         case slice() as slc:
-            if slice_size(slc) in {0, 1}:
-                return axis[1:]
-            return axis
+            drop = slice_size(slc) in {0, 1}
+            return axis[drop:]
+        case range(start=start, stop=stop):
+            drop = stop - start in {0, 1}
+            return axis[drop:]
         case tuple(tup):
             if sum(x is Ellipsis for x in tup) > 1:
                 raise ValueError("Only one Ellipsis is allowed.")
@@ -207,9 +213,8 @@ def reduce_axes(axis: Axis, selection: Indexer) -> tuple[int, ...]:
                     + reduce_axes(axis[idx : idx + len(tup) - 1], tup[idx])
                     + reduce_axes(axis[idx + len(tup) - 1 :], tup[idx + 1 :])
                 )
-            return reduce_axes(axis[:1], selection[0]) + reduce_axes(
-                axis[1:], selection[1:]
-            )
+            # recurse on the first element
+            return reduce_axes(axis[:1], tup[0]) + reduce_axes(axis[1:], tup[1:])
         case _:
             raise TypeError(f"Unknown type {type(selection)}")
 

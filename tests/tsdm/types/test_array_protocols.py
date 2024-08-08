@@ -17,6 +17,7 @@ from tsdm.types.protocols import (
     ArrayKind,
     MutableArray,
     NumericalArray,
+    NumericalSeries,
     NumericalTensor,
     SeriesKind,
     SupportsArray,
@@ -30,7 +31,7 @@ ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 
 _STRING_LIST = ["a", "b", "c"]
 _INT_LIST = [1, 2, 3]
-_INT_MATRIX = [[1, 2, 3], [4, 5, 6]]
+_INT_MATRIX = [[1, 2], [3, 4], [5, 6], [7, 8]]
 _TABLE_DATA = {
     "integers": [1, 2, 3, 4],
     "floats": [1.1, 2.2, 3.3, 4.4],
@@ -99,10 +100,10 @@ SERIES: dict[str, SeriesKind[str]] = {
     "pandas_index_str"  : PD_INDEX_STR,
     "pandas_series_int" : PD_SERIES_INT,
     "pandas_series_str" : PD_SERIES_STR,
-    "polars_series_str" : PL_SERIES_STR,
     "polars_series_int" : PL_SERIES_INT,
-    "pyarrow_array_str" : PA_ARRAY_STR,
+    "polars_series_str" : PL_SERIES_STR,
     "pyarrow_array_int" : PA_ARRAY_INT,
+    "pyarrow_array_str" : PA_ARRAY_STR,
 }  # fmt: skip
 
 TABLES: dict[str, TableKind] = {
@@ -120,6 +121,7 @@ ARRAYS: dict[str, ArrayKind] = {
     "pandas_series_int" : PD_SERIES_INT,
     "pandas_series_str" : PD_SERIES_STR,
     "polars_dataframe"  : PL_DATAFRAME,
+    "polars_series_int" : PL_SERIES_INT,
     "polars_series_str" : PL_SERIES_STR,
     "pyarrow_table"     : PA_TABLE,
     "torch_tensor_1d"   : PT_TENSOR_1D,
@@ -134,11 +136,33 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "pandas_index_str"  : PD_INDEX_STR,
     "pandas_series_int" : PD_SERIES_INT,
     "pandas_series_str" : PD_SERIES_STR,
-    "polars_series_str" : PL_SERIES_STR,
     "polars_series_int" : PL_SERIES_INT,
+    "polars_series_str" : PL_SERIES_STR,
     "torch_tensor_1d"   : PT_TENSOR_1D,
     "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
+
+NUMERICAL_SERIES: dict[str, NumericalSeries] = {
+    "numpy_ndarray_1d": NP_ARRAY_1D,
+    "numpy_ndarray_2d": NP_ARRAY_2D,
+    "pandas_index_int": PD_INDEX_INT,
+    "pandas_index_str": PD_INDEX_STR,
+    "pandas_series_int": PD_SERIES_INT,
+    "pandas_series_str": PD_SERIES_STR,
+    "polars_series_int": PL_SERIES_INT,
+    "polars_series_str": PL_SERIES_STR,
+    "torch_tensor_1d": PT_TENSOR_1D,
+    "torch_tensor_2d": PT_TENSOR_2D,
+}
+
+numpy_ndarray_1d: NumericalTensor = NP_ARRAY_1D
+numpy_ndarray_2d: NumericalTensor = NP_ARRAY_2D
+pandas_index_int: NumericalTensor = PD_INDEX_INT
+pandas_index_str: NumericalTensor = PD_INDEX_STR
+pandas_series_int: NumericalTensor = PD_SERIES_INT
+pandas_series_str: NumericalTensor = PD_SERIES_STR
+torch_tensor_1d: NumericalTensor = PT_TENSOR_1D
+torch_tensor_2d: NumericalTensor = PT_TENSOR_2D
 
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "numpy_ndarray_1d"  : NP_ARRAY_1D,
@@ -147,8 +171,6 @@ NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "pandas_index_str"  : PD_INDEX_STR,
     "pandas_series_int" : PD_SERIES_INT,
     "pandas_series_str" : PD_SERIES_STR,
-    "polars_series_str" : PL_SERIES_STR,
-    "polars_series_int" : PL_SERIES_INT,
     "torch_tensor_1d"   : PT_TENSOR_1D,
     "torch_tensor_2d"   : PT_TENSOR_2D,
 }  # fmt: skip
@@ -168,6 +190,7 @@ EXAMPLES: dict[type, dict[str, Any]] = {
     TableKind      : TABLES,
     ArrayKind      : ARRAYS,
     NumericalArray : NUMERICAL_ARRAYS,
+    NumericalSeries: NUMERICAL_SERIES,
     NumericalTensor: NUMERICAL_TENSORS,
     MutableArray   : MUTABLE_ARRAYS,
 }  # fmt: skip
@@ -234,17 +257,27 @@ DUNDER_ARITHMETIC: frozenset[str] = frozenset({
 r"""Dunder methods for arithmetic operations."""
 
 EXCLUDED_MEMBERS: dict[type, set[str]] = {
-    ArrayKind      : set(),
-    SeriesKind     : {"diff", "to_numpy", "value_counts", "view"},
-    TableKind      : {"columns", "join", "drop", "filter"},
-    NumericalArray : set(),
-    NumericalTensor: {"view"},
-    MutableArray   : {
-        "T",
+    ArrayKind       : set(),
+    SeriesKind      : {"diff", "to_numpy"},
+    TableKind       : {"columns", "join", "drop", "filter"},
+    NumericalArray  : set(),
+    NumericalSeries : set(),
+    NumericalTensor : {
+        "T", "transpose",
+        "__iadd__",
+        "argsort",
+        "nbytes",
+        "repeat",
+        "size",
+        "take",
+        "view",
+    },
+    MutableArray: {
+        "T", "transpose",
         "clip", "cumprod", "cumsum", "dot",
         "mean", "ndim", "prod",
         "size", "squeeze", "std", "sum",
-        "swapaxes", "transpose", "var",
+        "swapaxes", "var",
     },
 }  # fmt: skip
 r"""Excluded members for each protocol."""
@@ -252,7 +285,7 @@ r"""Excluded members for each protocol."""
 
 def is_admissable(name: str) -> bool:
     r"""Check if the name is admissable."""
-    return not name.startswith("_") or name in DUNDER_ARITHMETIC
+    return name in DUNDER_ARITHMETIC or not name.startswith("_")
 
 
 @pytest.mark.parametrize("name", SUPPORTS_ARRAYS)
@@ -269,6 +302,8 @@ def test_series(name: str) -> None:
     r"""Test the Series protocol."""
     series = SERIES[name]
     cls = series.__class__
+    scalar_type = int | str | np.generic | pa.Scalar
+
     assert isinstance(series, SeriesKind)
 
     attrs = set(get_protocol_members(SeriesKind)) - DUNDER_ARITHMETIC
@@ -280,10 +315,10 @@ def test_series(name: str) -> None:
     attrs.remove("__len__")
 
     for x in series:
-        assert isinstance(x, str | pa.StringScalar)
+        assert isinstance(x, scalar_type)
     attrs.remove("__iter__")
 
-    assert isinstance(series[0], str | pa.StringScalar)
+    assert isinstance(series[0], scalar_type)
     assert isinstance(series[0:2], cls)
     attrs.remove("__getitem__")
 
@@ -292,6 +327,10 @@ def test_series(name: str) -> None:
 
     assert series.equals(series)
     attrs.remove("equals")
+
+    value_counts = series.value_counts()
+    assert isinstance(value_counts, SupportsArray)
+    attrs.remove("value_counts")
 
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
@@ -348,28 +387,43 @@ def test_numerical_array(name: str) -> None:
 
 @pytest.mark.parametrize("name", NUMERICAL_TENSORS)
 def test_numerical_tensor_getitem(name: str) -> None:
-    numerical_array = NUMERICAL_TENSORS[name]
-    ndim = len(numerical_array.shape)
+    tensor = NUMERICAL_TENSORS[name]
+    cls = type(tensor)
+    scalar_type = type(tensor.ravel()[0])
 
-    cls = type(numerical_array)
+    # ensure length, otherwise other checks can fail.
+    assert len(tensor) >= 3
 
-    # list[int]
-    assert isinstance(numerical_array[[0, 1]], cls)
+    # int
+    assert isinstance(tensor[0], scalar_type | cls)
     # slice
-    assert isinstance(numerical_array[:-1], cls)
-    # tuple[slice]
-    # assert isinstance(numerical_array[:,], cls)
+    assert isinstance(tensor[:-1], cls)
+    # range
+    assert isinstance(tensor[range(2)], cls)
+    # list[int]
+    assert isinstance(tensor[[0, 1]], cls)
+    # Ellipsis
+    assert isinstance(tensor[...], cls)
 
-    if ndim == 1:
-        # int
-        assert isinstance(numerical_array[0], int | cls)
-    elif ndim == 2:
-        # int
-        assert isinstance(numerical_array[0], cls)
+    if len(tensor.shape) > 1:
         # tuple[int, int]
-        assert isinstance(numerical_array[0, 0], int | cls)
+        assert isinstance(tensor[0, 0], scalar_type | cls)
         # tuple[slice, slice]
-        assert isinstance(numerical_array[0:1, 0:1], cls)
+        assert isinstance(tensor[0:1, 0:1], cls)
+        # tuple[range, range]
+        assert isinstance(tensor[range(1), range(1)], cls)
+        # tuple[list[int], list[int]]
+        assert isinstance(tensor[[0, 1], [0]], cls)
+        # tuple[int, Ellipsis]
+        assert isinstance(tensor[0, ...], cls)
+        # tuple[Ellipsis, int]
+        assert isinstance(tensor[..., 0], cls)
+        # tuple[Ellipsis, slice]
+        assert isinstance(tensor[..., 0:1], cls)
+        # tuple[Ellipsis, range]
+        assert isinstance(tensor[..., range(1)], cls)
+        # tuple[Ellipsis, list[int]]
+        assert isinstance(tensor[..., [0, 1]], cls)
 
 
 @pytest.mark.parametrize("name", MUTABLE_ARRAYS)
@@ -398,7 +452,12 @@ def test_shared_attrs(proto: type) -> None:
     examples = EXAMPLES[proto]
     protocol_members = get_protocol_members(proto)
     shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
+
+    excluded_attrs = EXCLUDED_MEMBERS[proto]
+    unneeded_exclusions = excluded_attrs - shared_attrs
+    assert not unneeded_exclusions, f"Unnecessary Exclusions: {unneeded_exclusions}"
     shared_attrs -= EXCLUDED_MEMBERS[proto]
+
     if extra_attrs := sorted(protocol_members - shared_attrs):
         raise AssertionError(f"\nMissing attributes: {extra_attrs}")
     if missing_attrs := sorted(filter(is_admissable, shared_attrs - protocol_members)):

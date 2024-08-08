@@ -14,7 +14,7 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from functools import partialmethod, wraps
-from typing import Any, Self, overload
+from typing import Any, Self
 
 from torch import jit, nn
 
@@ -72,21 +72,16 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     return cls
 
 
-# NOTE: @overload needed to make pyright happy, see:
+# NOTE: Less specific than needed due to
 #   https://github.com/microsoft/pyright/issues/8681#issuecomment-2271979444
-@overload
-@decorator
-def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
-@overload
-@decorator
-def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]: ...
 @decorator
 def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
+    # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Dataclass):  # type: ignore[misc]
         raise TypeError(f"Expected Sequence type, got {cls}.")
     cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore[assignment]
-    return cls
+    return cls  # type: ignore[return-value]
 
 
 @decorator
