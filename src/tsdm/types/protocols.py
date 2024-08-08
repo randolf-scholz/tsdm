@@ -406,10 +406,7 @@ class ArrayKind[Scalar](Protocol):
     # NOTE: This is a highly cut down version, to support the bare minimum.
 
     @property
-    @abstractmethod
-    def shape(self) -> tuple[int, ...]:
-        r"""Yield the shape of the array."""
-        ...
+    def shape(self) -> tuple[int, ...]: ...
 
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
@@ -525,14 +522,16 @@ class TableKind(Protocol):
     #  - filter: pandas goes over columns, polars over rows
 
     @property
-    def shape(self) -> tuple[int, int]:
-        r"""Yield the shape of the table."""
-        ...
+    def shape(self) -> tuple[int, int]: ...
 
     def __array__(self) -> NDArray[np.object_]: ...
     def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
     def __len__(self) -> int: ...
-    def __getitem__(self, key: Any, /) -> Self | SeriesKind: ...
+
+    @overload
+    def __getitem__(self, key: str, /) -> SeriesKind: ...
+    @overload
+    def __getitem__(self, key: slice, /) -> Self: ...
 
     def equals(self, other: Self, /) -> bool:
         r"""Check if the table is equal to another table."""
@@ -557,16 +556,12 @@ class TableKind(Protocol):
 class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
     r"""Subclass of `ArrayKind` that supports numerical operations.
 
-    Note:
-        We exclude the `__getitem__` method, as it works semantically different
-        in table data types like `DataFrame` as in tensorial data types.
-
     Examples:
         - `numpy.ndarray`
-        - `pandas.Index`     (NOTE: missing `.device`)
-        - `pandas.Series`    (NOTE: missing `.device`)
-        - `pandas.DataFrame` (NOTE: missing `.item()`, `.device`, `.dtype`)
-        - `polars.Series`    (NOTE: missing `.ndim`, `.size`)
+        - `pandas.Index`
+        - `pandas.Series`
+        - `pandas.DataFrame`
+        - `polars.Series`
         - `torch.Tensor`
 
     Counter-Examples:
@@ -582,25 +577,13 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):
     """
 
     @property
-    @abstractmethod
-    def shape(self) -> tuple[int, ...]:
-        r"""Yield the shape of the array."""
-        ...
+    def shape(self) -> tuple[int, ...]: ...
 
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
 
-    # def __iter__(self) -> Iterator[Self]: ...
-
-    # @overload  # depending on Tensor Rank, can return Scalar or Tensor
-    # def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...
-    # @overload
-    # def __getitem__(
-    #     self, key: Self | slice | list[int] | tuple[int | slice, ...], /
-    # ) -> Self: ...
-
-    # @overload  # fallback overload
-    # def __getitem__(self, key: Any, /) -> Scalar | Self: ...
+    # NOTE: This is weakly typed since it returns different things on different objects.
+    def __getitem__(self, key: Any, /) -> "Self | NumericalSeries | Scalar": ...
 
     def all(self) -> Self | BooleanScalar:
         r"""Return True if all elements are True."""
@@ -719,6 +702,10 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
         - `pandas.Series`
         - `polars.Series`
         - `torch.Tensor`
+
+    Counter-Examples:
+        - `pandas.DataFrame`
+        - `polars.DataFrame`
     """
 
     @property
@@ -741,7 +728,7 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
         ...
 
 
-class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
+class NumericalTensor[Scalar](NumericalSeries[Scalar], Protocol):
     r"""Protocol for numerical tensors.
 
     Compared to `NumericalSeries`, tensors *can* have multiple dimensions, and
@@ -767,7 +754,7 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     @overload  # depending on Tensor Rank, can return Scalar or Tensor
     def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...  # type: ignore[overload-overlap]
     @overload
-    def __getitem__(self, key: MultiIndexer, /) -> Self: ...
+    def __getitem__(self, key: Self | MultiIndexer, /) -> Self: ...
     # fmt: on
 
     def item(self) -> Scalar:

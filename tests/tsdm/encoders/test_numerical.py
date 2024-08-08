@@ -52,7 +52,7 @@ DATA_2D = [
     [ 0.0,  0.3,  0.5,  1.0],
     [ 1.5,  2.0,  2.5,  3.0],
 ]  # fmt: skip
-DATA: dict[str, NumericalTensor[OrderedScalar]] = {
+TENSORS: dict[str, NumericalTensor[OrderedScalar]] = {
     "numpy-1D": np.array(DATA_1D),
     "numpy-2D": np.array(DATA_2D),
     "torch-1D": torch.tensor(DATA_1D),
@@ -69,7 +69,7 @@ DATA: dict[str, NumericalTensor[OrderedScalar]] = {
 @pytest.mark.parametrize("lower_included", [True, False])
 @pytest.mark.parametrize("bounds", BOUNDS, ids=str)
 @pytest.mark.parametrize("mode", ["clip", "mask"])
-@pytest.mark.parametrize("data", DATA.values(), ids=DATA)
+@pytest.mark.parametrize("data", TENSORS.values(), ids=TENSORS)
 def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)](
     *,
     data: D,
@@ -141,10 +141,10 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
             raise ValueError(f"Unexpected mode: {mode=}")
 
 
-@pytest.mark.parametrize("name", DATA)
+@pytest.mark.parametrize("name", TENSORS)
 def test_boundary_encoder(name: str) -> None:
     r"""Test the boundary encoder."""
-    data = DATA[name]
+    data = TENSORS[name]
     encoder = BoundaryEncoder(-1, +1, mode="clip")
     encoder.fit(data)
     encoded = encoder.encode(data)

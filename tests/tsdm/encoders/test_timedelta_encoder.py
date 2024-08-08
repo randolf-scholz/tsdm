@@ -10,10 +10,10 @@ import pytest
 
 from tsdm.encoders.time import TimeDeltaEncoder
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.protocols import NumericalTensor
+from tsdm.types.protocols import NumericalSeries
 
 
-def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalTensor:
+def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSeries:
     match backend:
         case "numpy":
             return np.array(data, dtype="timedelta64[ms]")

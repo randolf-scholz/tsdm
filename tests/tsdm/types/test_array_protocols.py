@@ -33,9 +33,9 @@ _STRING_LIST = ["a", "b", "c"]
 _INT_LIST = [1, 2, 3]
 _INT_MATRIX = [[1, 2], [3, 4], [5, 6], [7, 8]]
 _TABLE_DATA = {
-    "integers": [1, 2, 3, 4],
-    "floats": [1.1, 2.2, 3.3, 4.4],
-    "strings": ["a", "b", "c", "d'"],
+    "int_col": [1, 2, 3, 4],
+    "float_col": [1.1, 2.2, 3.3, 4.4],
+    "string_col": ["a", "b", "c", "d'"],
 }
 
 # tensorial (single dtype)
@@ -347,8 +347,8 @@ def test_table(name: str) -> None:
     assert isinstance(table.shape[1], int)
     attrs.remove("shape")
 
-    assert isinstance(table["floats"], SeriesKind)
-    attrs.remove("__getitem__")
+    assert isinstance(table["float_col"], SeriesKind)
+    assert isinstance(table[:], TableKind)
 
     assert table.equals(table)
     attrs.remove("equals")

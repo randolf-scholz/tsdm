@@ -6,14 +6,15 @@ __all__ = [
     "Dims",
     "FilePath",
     "Indexer",
+    "Label",
+    "MultiIndexer",
     "Nested",
     "PandasNullable",
     "PandasObject",
     "Shape",
+    "SingleIndexer",
     "Size",
     "SplitID",
-    "SingleIndexer",
-    "MultiIndexer",
     # Dtype Aliases
     "NumpyDtype",
     "NumpyDtypeArg",
@@ -85,20 +86,6 @@ type Size = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
 type Shape = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
-type SingleIndexer = int | tuple[int, ...]
-r"""Type hint for indexer that possibly selects a single element."""
-type MultiIndexer = (
-    None
-    | slice
-    | range
-    | list[int]
-    | EllipsisType
-    # or a tuple of one of the above
-    | tuple[None | int | slice | range | list[int] | EllipsisType, ...]
-)
-r"""Indexer that always returns a sub-tensor."""
-type Indexer = SingleIndexer | MultiIndexer
-r"""Type hint for `__getitem__` argument for tensors."""
 type Nested[T] = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]  # +T
 r"""Type Alias for nested types (JSON-Like)."""
 type FilePath = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
@@ -106,6 +93,28 @@ r"""Type Alias for path-like objects."""
 type SplitID = Hashable
 r"""Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
+
+# region aliases for indexing ----------------------------------------------------------
+type SingleIndexer = int | tuple[int, ...]
+r"""Type hint for indexer that possibly selects a single element."""
+type MultiIndexer = (
+    (None | slice | range | list[int] | EllipsisType)
+    # or tuple of the above
+    | tuple[None | int | slice | range | list[int] | EllipsisType, ...]
+)
+
+r"""Indexer that always returns a sub-tensor."""
+type Indexer = SingleIndexer | MultiIndexer
+r"""Type hint for `__getitem__` argument for tensors."""
+type Label = (
+    (None | str | int | slice | range | list[int] | list[str] | EllipsisType)
+    # or tuple of the above
+    | tuple[
+        None | str | int | slice | range | list[int] | list[str] | EllipsisType, ...
+    ]
+)
+r"""Integer or string label/index."""
+# endregion aliases for indexing -------------------------------------------------------
 
 
 # region Dtype Aliases -----------------------------------------------------------------

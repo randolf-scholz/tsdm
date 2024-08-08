@@ -44,8 +44,9 @@ __all__ = [
     "TensorSplitter",
     # Functions
     "get_broadcast",
-    "reduce_axes",
     "invert_axis_selection",
+    "reduce_axes",
+    "reduce_param",
     "slice_size",
 ]
 
@@ -63,7 +64,7 @@ from pandas import DataFrame
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
-from tsdm.types.protocols import NumericalArray, OrderedScalar
+from tsdm.types.protocols import NumericalArray as Array, OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -167,8 +168,10 @@ def slice_size(slc: slice, /) -> Optional[int]:
 @overload
 def reduce_axes(axis: None, selection: Indexer) -> None: ...
 @overload
-def reduce_axes(axis: int | tuple[int, ...], selection: Indexer) -> tuple[int, ...]: ...
-def reduce_axes(axis: Axis, selection: Indexer) -> Axis:
+def reduce_axes(
+    axis: int | tuple[int, ...], selection: str | list[str] | Indexer
+) -> tuple[int, ...]: ...
+def reduce_axes(axis: Axis, selection: str | list[str] | Indexer) -> Axis:
     r"""Returns axis selection corresponding to given tensor indexing.
 
     Assuming some universal operator `op` acts in tensor `T`, that is `op(T, axis=axis)`,
@@ -188,7 +191,7 @@ def reduce_axes(axis: Axis, selection: Indexer) -> Axis:
     match selection:
         case None:
             raise NotImplementedError("Slicing with None not implemented.")
-        case int():
+        case int() | str():
             return axis[1:]
         case EllipsisType():
             return axis
@@ -219,7 +222,29 @@ def reduce_axes(axis: Axis, selection: Indexer) -> Axis:
             raise TypeError(f"Unknown type {type(selection)}")
 
 
-class ArrayEncoder[Arr: NumericalArray, Y](BaseEncoder[Arr, Y]):
+@overload
+def reduce_param(param: float, selection: Any) -> float: ...
+@overload
+def reduce_param[T: Array](param: T, selection: Any) -> T: ...
+def reduce_param[T: Array](param: float | T, selection: Any) -> float | T:
+    r"""Perform a reduction on a parameter.
+
+    For example, given tensor T, axis and selection, then this returns the slice of the tensor
+    that satisfies the selection.
+    """
+    match param:
+        case int(scalar) | float(scalar):
+            # NOTE: need to test int | float because of typing issues.
+            # FIXME: https://github.com/python/typing/issues/1746
+            return scalar
+        case scalar if len(scalar.shape) == 0:
+            return scalar
+        case tensor:
+            sliced = tensor[selection]
+            return sliced
+
+
+class ArrayEncoder[Arr: Array, Y](BaseEncoder[Arr, Y]):
     r"""An encoder for Tensor-like data.
 
     We want numerical encoders to be applicable to different backends.
@@ -247,7 +272,7 @@ class ArrayEncoder[Arr: NumericalArray, Y](BaseEncoder[Arr, Y]):
         raise NotImplementedError
 
 
-class ArrayDecoder[X, Arr: NumericalArray](BaseEncoder[X, Arr]):
+class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
     r"""A decoder for Tensor-like data."""
 
     backend: Backend[Arr] = NotImplemented
@@ -278,9 +303,7 @@ class CLIPPING(StrEnum):
 
 @pprint_repr
 @dataclass
-class BoundaryEncoder[S: OrderedScalar](
-    BaseEncoder[NumericalArray[S], NumericalArray[S]]
-):
+class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -395,7 +418,7 @@ class BoundaryEncoder[S: OrderedScalar](
             **kwargs,
         )
 
-    def lower_satisfied[Arr: NumericalArray](self, x: Arr) -> Arr:
+    def lower_satisfied[Arr: Array](self, x: Arr) -> Arr:
         r"""Return a boolean mask for the lower boundary (true: value ok)."""
         if self.lower_bound is None:
             return self.backend.true_like(x)
@@ -403,7 +426,7 @@ class BoundaryEncoder[S: OrderedScalar](
             return (x >= self.lower_bound) | self.backend.is_null(x)
         return (x > self.lower_bound) | self.backend.is_null(x)
 
-    def upper_satisfied[Arr: NumericalArray](self, x: Arr) -> Arr:
+    def upper_satisfied[Arr: Array](self, x: Arr) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)
@@ -411,7 +434,7 @@ class BoundaryEncoder[S: OrderedScalar](
             return (x <= self.upper_bound) | self.backend.is_null(x)
         return (x < self.upper_bound) | self.backend.is_null(x)
 
-    def fit(self, data: NumericalArray, /) -> None:
+    def fit(self, data: Array, /) -> None:
         # select the backend
         self.backend: Backend = get_backend(data)
 
@@ -443,19 +466,19 @@ class BoundaryEncoder[S: OrderedScalar](
             case _:
                 raise NotImplementedError
 
-    def encode[Arr: NumericalArray](self, data: Arr, /) -> Arr:
+    def encode[Arr: Array](self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode[Arr: NumericalArray](self, data: Arr, /) -> Arr:
+    def decode[Arr: Array](self, data: Arr, /) -> Arr:
         return data
 
 
 @pprint_repr
 @dataclass(init=False)
-class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
+class LinearScaler[Arr: Array](BaseEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 
     Args:
@@ -489,7 +512,7 @@ class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         if axis is not None:
             raise NotImplementedError("Axis not implemented yet.")
 
-    def __getitem__(self, item: int | slice | tuple[int | slice, ...], /) -> Self:
+    def __getitem__(self, item: Any, /) -> Self:
         r"""Return a slice of the LinearScaler.
 
         Args:
@@ -504,13 +527,12 @@ class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
               loc/scale must be broadcastable to (30, 40), i.e. allowed shapes are
               (), (1,), (1,1), (30,), (30,1), (1,40), (30,40).
         """
-        # slice the parameters
-        loc = self.loc if len(self.loc.shape) == 0 else self.loc[item]
-        scale = self.scale if len(self.scale.shape) == 0 else self.scale[item]
         axis = reduce_axes(self.axis, item)
+        loc = reduce_param(self.loc, item)
+        scale = reduce_param(self.scale, item)
 
         # initialize the new encoder
-        encoder = self.__class__(loc, scale, axis=axis)
+        encoder = self.__class__(loc=loc, scale=scale, axis=axis)
         encoder._is_fitted = self._is_fitted
         return encoder
 
@@ -524,8 +546,9 @@ class LinearScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         return (data - self.loc) / self.scale
 
 
+@pprint_repr
 @dataclass(init=False)
-class StandardScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
+class StandardScaler[Arr: Array](BaseEncoder[Arr, Arr]):
     r"""Transforms data linearly x ↦ (x-μ)/σ.
 
     axis: tuple[int, ...] determines the shape of the mean and stdv.
@@ -558,24 +581,8 @@ class StandardScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
 
     def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the Standardizer."""
-        # slice the parameters
-        # NOTE: need to test int | float because of typing issues.
-        # FIXME: https://github.com/python/typing/issues/1746
-        mean = (
-            self.mean
-            if isinstance(self.mean, int | float)
-            else self.mean[item]
-            if len(self.mean.shape) > 0
-            else self.mean
-        )
-        stdv = (
-            self.stdv
-            if isinstance(self.stdv, int | float)
-            else self.stdv[item]
-            if len(self.stdv.shape) > 0
-            else self.stdv
-        )
-
+        mean = reduce_param(self.mean, item)
+        stdv = reduce_param(self.stdv, item)
         axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
@@ -610,8 +617,9 @@ class StandardScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         return data * self.stdv + self.mean
 
 
+@pprint_repr
 @dataclass(init=False)
-class MinMaxScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
+class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
     r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
 
     If x_min and/or x_max are provided at initialization, they are marked as
@@ -699,13 +707,12 @@ class MinMaxScaler[Arr: NumericalArray](BaseEncoder[Arr, Arr]):
         # set initial backend
         self.switch_backend(get_backend(self.params))
 
-    def __getitem__(self, item: int | slice | list[int], /) -> Self:
+    def __getitem__(self, item: Any, /) -> Self:
         r"""Return a slice of the MinMaxScaler."""
-        # slice the parameters
-        xmin = self.xmin[item] if len(self.xmin.shape) > 0 else self.xmin
-        xmax = self.xmax[item] if len(self.xmax.shape) > 0 else self.xmax
-        ymin = self.ymin[item] if len(self.ymin.shape) > 0 else self.ymin
-        ymax = self.ymax[item] if len(self.ymax.shape) > 0 else self.ymax
+        xmin = reduce_param(self.xmin, item)
+        xmax = reduce_param(self.xmax, item)
+        ymin = reduce_param(self.ymin, item)
+        ymax = reduce_param(self.ymax, item)
         axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
@@ -874,7 +881,7 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
 
 @pprint_repr
 @dataclass
-class TensorSplitter[Arr: NumericalArray](ArrayEncoder[Arr, list[Arr]]):
+class TensorSplitter[Arr: Array](ArrayEncoder[Arr, list[Arr]]):
     r"""Split tensor along specified axis."""
 
     _: KW_ONLY
@@ -893,7 +900,7 @@ class TensorSplitter[Arr: NumericalArray](ArrayEncoder[Arr, list[Arr]]):
 
 @pprint_repr
 @dataclass
-class TensorConcatenator[Arr: NumericalArray](ArrayDecoder[list[Arr], Arr]):
+class TensorConcatenator[Arr: Array](ArrayDecoder[list[Arr], Arr]):
     r"""Concatenate multiple tensors."""
 
     _: KW_ONLY

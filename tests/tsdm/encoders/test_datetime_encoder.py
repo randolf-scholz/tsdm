@@ -9,10 +9,10 @@ import pytest
 
 from tsdm.encoders.time import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.protocols import NumericalTensor
+from tsdm.types.protocols import NumericalSeries
 
 
-def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalTensor:
+def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:
     match backend:
         case "numpy":
             return np.array(data, dtype="datetime64[ms]")
