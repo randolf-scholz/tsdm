@@ -162,7 +162,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         final_vecs = {}
         for idx in md.index:
             t_target = self.final_product_times.loc[idx, "target_time"]
-            final_vecs[(*idx, t_target)] = ts.loc[idx].loc[t_target]
+            final_vecs[*idx, t_target] = ts.loc[idx].loc[t_target]
 
         final_value = DataFrame.from_dict(final_vecs, orient="index", dtype="float32")
         final_value.index = final_value.index.set_names(ts.index.names)

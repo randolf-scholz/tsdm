@@ -3,7 +3,7 @@ r"""Utilities for testing and validation."""
 __all__ = [
     # Submodules
     "data",
-    "hash",
+    "hashutils",
     # Functions
     "assert_arrays_close",
     "assert_arrays_equal",
@@ -22,7 +22,7 @@ __all__ = [
     "series_numeric_is_boolean",
 ]
 
-from tsdm.testing import data, hash
+from tsdm.testing import data, hashutils
 from tsdm.testing._testing import (
     assert_arrays_close,
     assert_arrays_equal,

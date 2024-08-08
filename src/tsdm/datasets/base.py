@@ -43,7 +43,7 @@ from pyarrow import Table as PyArrowTable, parquet
 from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
-from tsdm.testing.hash import validate_file_hash, validate_table_hash
+from tsdm.testing.hashutils import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import FilePath
 from tsdm.utils import paths_exists, remote
 from tsdm.utils.contextmanagers import timer

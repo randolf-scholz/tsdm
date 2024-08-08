@@ -32,7 +32,7 @@ from requests import Session
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.testing.hash import validate_file_hash
+from tsdm.testing.hashutils import validate_file_hash
 from tsdm.types.aliases import FilePath
 
 
