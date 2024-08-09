@@ -55,7 +55,6 @@ from tsdm.constants import EMPTY_MAP
 from tsdm.testing import is_dunder, is_zipfile
 from tsdm.types.aliases import (
     Axis,
-    Dims,
     FilePath,
     MaybeWrapped,
     Nested,
@@ -120,7 +119,8 @@ def normalize_axes(axes: str | Axis, *, ndim: int) -> tuple[int, ...]:
             raise TypeError(f"Unknown type for axes: {type(axes)}")
 
 
-def dims_to_list(dims: Dims, *, ndim: int) -> list[int]:
+# NOTE: For torchscript compatibility we cannot use python 3.12 type alias.
+def dims_to_list(dims: None | int | list[int], *, ndim: int) -> list[int]:
     r"""Convert dimensions to list.
 
     Note:
