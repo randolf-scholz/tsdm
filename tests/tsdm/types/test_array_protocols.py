@@ -353,6 +353,9 @@ def test_table(name: str) -> None:
     assert table.equals(table)
     attrs.remove("equals")
 
+    assert isinstance(table["int_col"], SeriesKind)
+    attrs.remove("__getitem__")
+
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
 
