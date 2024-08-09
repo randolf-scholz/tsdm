@@ -19,7 +19,7 @@ from tsdm.types.aliases import Size
 
 
 @dataclass
-class LotkaVolterra(IVP_GeneratorBase[NDArray]):
+class LotkaVolterra(IVP_GeneratorBase):
     r"""Lotka-Volterra Equations Simulation.
 
     The Lotka–Volterra equations, also known as the predator–prey equations, are a pair of

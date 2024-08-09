@@ -29,7 +29,7 @@ from typing import Any, Literal, Optional, Protocol, final, runtime_checkable
 import numpy as np
 from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
-from scipy.integrate import solve_ivp as scipy_solve_ivp
+from scipy.integrate import solve_ivp as scipy_solver
 
 from tsdm.constants import RNG
 from tsdm.random.distributions import TimeSeriesRV
@@ -136,7 +136,7 @@ class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
         options = asdict(self)
         system = options.pop("system")
         options |= kwargs
-        sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **options)
+        sol = scipy_solver(system, t_span=t_span, y0=y0, t_eval=t_eval, **options)
         # NOTE: output shape: (d, n_timestamps), move time axis to the front
         return np.moveaxis(sol.y, -1, 0)
 
@@ -145,7 +145,7 @@ def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> 
     r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
     t_eval = np.asarray(t)
     t_span = (t_eval.min(), t_eval.max())
-    sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **kwargs)
+    sol = scipy_solver(system, t_span=t_span, y0=y0, t_eval=t_eval, **kwargs)
     # NOTE: output shape: (d, n_timestamps), move time axis to the front
     return np.moveaxis(sol.y, -1, 0)
 
@@ -224,18 +224,18 @@ class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
     # endregion mixin methods ----------------------------------------------------------
 
 
-class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
-    r"""Base class for IVP_Generators."""
+class IVP_GeneratorBase(IVP_Generator[NDArray]):
+    r"""Base class for IVP_Generators based on numpy."""
 
     rng: Generator = RNG
     r"""the internal Random Number Generator."""
 
     @property
-    def ivp_solver(self) -> IVP_Solver[T]:
+    def ivp_solver(self) -> IVP_Solver[NDArray]:
         r"""Initial value problem solver."""
         return solve_ivp
 
-    def system(self, t: ArrayLike, state: ArrayLike) -> T:
+    def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""System of differential equations."""
         raise NotImplementedError
 
@@ -243,20 +243,20 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
 
     # region implementation ------------------------------------------------------------
     @abstractmethod
-    def _get_initial_state_impl(self, *, size: Size = ()) -> T:
+    def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
         ...
 
     @abstractmethod
-    def _make_observations_impl(self, sol: Any, /) -> T:
+    def _make_observations_impl(self, sol: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         ...
 
-    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> T:
+    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> NDArray:
         r"""Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
-        if self.ivp_solver is scipy_solve_ivp:
+        if self.ivp_solver is scipy_solver:
             raise ValueError(
                 "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
                 " since it requires separate bounds [t0,tf] and evaluation points"
@@ -278,7 +278,7 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
                 raise TypeError(f"Unsupported {type(random_state)=}")
 
     @final
-    def get_initial_state(self, size: Size = ()) -> T:
+    def get_initial_state(self, size: Size = ()) -> NDArray:
         r"""Generate (multiple) initial state(s) y₀."""
         # get the initial state
         y0 = self._get_initial_state_impl(size=size)
@@ -289,7 +289,7 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
         return y0
 
     @final
-    def make_observations(self, sol: Any, /) -> T:
+    def make_observations(self, sol: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         # get observations (add noise)
         obs = self._make_observations_impl(sol)
@@ -300,7 +300,7 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
         return obs
 
     @final
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T:
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> NDArray:
         r"""Solve the initial value problem."""
         # solve the initial value problem
         sol = self._solve_ivp_impl(t, y0=y0)
@@ -314,25 +314,25 @@ class IVP_GeneratorBase[T: ArrayLike](IVP_Generator[T]):
     # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
     #       constraints on the initial state, solution and observations.
 
-    def project_initial_state(self, y0: T, /) -> T:
+    def project_initial_state(self, y0: NDArray, /) -> NDArray:
         r"""Project the initial state onto the constraint set."""
         return y0
 
-    def project_observations(self, obs: T, /) -> T:
+    def project_observations(self, obs: NDArray, /) -> NDArray:
         r"""Project the observations onto the constraint set."""
         return obs
 
-    def project_solution(self, sol: Any, /) -> Any:
+    def project_solution(self, sol: NDArray, /) -> NDArray:
         r"""Project the solution onto the constraint set."""
         return sol
 
-    def validate_initial_state(self, y0: T, /) -> None:
+    def validate_initial_state(self, y0: NDArray, /) -> None:
         r"""Validate constraints on the initial state."""
 
-    def validate_observations(self, obs: T, /) -> None:
+    def validate_observations(self, obs: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""
 
-    def validate_solution(self, sol: Any, /) -> None:
+    def validate_solution(self, sol: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""
 
     # endregion validation and projection ----------------------------------------------

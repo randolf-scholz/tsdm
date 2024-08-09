@@ -11,7 +11,7 @@ from tsdm.random.generators.base import IVP_GeneratorBase
 
 
 @dataclass
-class DuffingOszillator(IVP_GeneratorBase[NDArray]):
+class DuffingOszillator(IVP_GeneratorBase):
     r"""Duffing Oszillator Simulation.
 
     References:

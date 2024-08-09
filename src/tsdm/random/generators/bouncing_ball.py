@@ -23,7 +23,7 @@ from tsdm.types.aliases import Size
 
 
 @dataclass
-class BouncingBall(IVP_GeneratorBase[NDArray]):
+class BouncingBall(IVP_GeneratorBase):
     r"""Bouncing Ball Simulation.
 
     NOTE: This simulation differs from the reference in two regards:

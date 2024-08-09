@@ -14,7 +14,7 @@ from tsdm.types.aliases import Size
 
 
 @dataclass
-class SIR(IVP_GeneratorBase[NDArray]):
+class SIR(IVP_GeneratorBase):
     r"""SIR model from epidemiology.
 
     .. math::

@@ -14,7 +14,7 @@ from tsdm.types.aliases import Size
 
 
 @dataclass
-class Helix(IVP_GeneratorBase[NDArray]):
+class Helix(IVP_GeneratorBase):
     r"""Helix Motion Simulation.
 
     The particle moves at constant speed in the given direction, and follows a circular path

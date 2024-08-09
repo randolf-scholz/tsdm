@@ -18,7 +18,7 @@ from tsdm.types.aliases import Size
 
 
 @dataclass
-class DampedPendulum(IVP_GeneratorBase[NDArray]):
+class DampedPendulum(IVP_GeneratorBase):
     r"""Dampened Pendulum Simulation.
 
     The dampended pendulum is an autonomous system with two degrees of freedom.
