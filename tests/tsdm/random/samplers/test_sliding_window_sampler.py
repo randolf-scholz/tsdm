@@ -1332,7 +1332,7 @@ def test_unknown_single() -> None:
     r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
-    mode: str = "..."
+    mode = "slices" * 1  # *1 tricks type checker into not using literal
 
     sampler = SlidingSampler(
         DISCRETE_DATA,
@@ -1350,7 +1350,7 @@ def test_unknown_multi() -> None:
     r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = (3, 1)
-    mode: str = "..."
+    mode = "mask" * 1  # *1 tricks type checker into not using literal
 
     sampler = SlidingSampler(
         DISCRETE_DATA,
