@@ -1,5 +1,7 @@
 r"""Utilities for backends.
 
+TODO: Consider using the python Array API for the backend interface.
+
 Supports pandas / numpy / torch.
 """
 
