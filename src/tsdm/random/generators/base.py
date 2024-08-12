@@ -24,6 +24,7 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import KW_ONLY, asdict, dataclass
+from enum import StrEnum
 from typing import Any, Literal, Optional, Protocol, final, runtime_checkable
 
 import numpy as np
@@ -115,12 +116,23 @@ class FrozenIVPSolver[T](Protocol):
 class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
     r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
 
+    class METHODS(StrEnum):
+        r"""Methods for solving the initial value problem."""
+
+        RK45 = "RK45"
+        RK23 = "RK23"
+        DOP853 = "DOP853"
+        Radau = "Radau"
+        BDF = "BDF"
+
+    type METHOD = Literal["RK45", "RK23", "DOP853", "Radau", "BDF"]
+
     system: ODE
 
     _: KW_ONLY
 
     jac: Optional[Callable[[NDArray, NDArray], NDArray]] = None
-    method: Literal["RK45", "RK23", "DOP853", "Radau", "BDF"] | str = "RK45"
+    method: METHOD = "RK45"
     dense_output: bool = False
     vectorized: bool = False
     first_step: Optional[float] = None
