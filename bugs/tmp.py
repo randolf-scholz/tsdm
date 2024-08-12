@@ -1,47 +1,38 @@
-from collections.abc import Sequence
-from typing import Protocol, Self, overload
+def deco(cls):
+    print("decorating", cls)
+    return cls
 
 
-class Encoder(Protocol):
-    def __call__(self, u, /): ...
+class Meta(type):
+    def __call__(cls, *args, **kwargs):
+        print("Meta.__call__")
+        return super().__call__(*args, **kwargs)
 
-    def simplify(self) -> "Encoder":
-        return self
+
+class Base:
+    def __new__(cls, *args, **kwargs):
+        print("Base.__new__")
+        return super().__new__(cls)
+
+    def __init__(self, *args, **kwargs):
+        print("Base.__init__")
+
+    def __init_subclass__(cls, **kwargs):
+        print("Base.__init_subclass__")
 
 
-class Chain(Encoder, Sequence[Encoder]):
-    encoders: list[Encoder]
+@deco
+class A(Base):
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls)
+        print("A.__new__")
+        return obj
 
-    def __init__(self, *encoders: Encoder):
-        self.encoders = list(encoders)
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        print("A.__init__")
 
-    def __len__(self) -> int:
-        return len(self.encoders)
 
-    @overload
-    def __getitem__(self, index: int) -> Encoder: ...
+print("finalized class")
 
-    @overload
-    def __getitem__(self, index: slice) -> Self: ...
-
-    def __getitem__(self, index, /):
-        return self.encoders[index]
-
-    def __call__(self, x):
-        for encoder in self.encoders:
-            x = encoder(x)
-        return x
-
-    def simplify(self) -> Encoder:
-        match self:
-            case [encoder]:
-                return encoder.simplify()
-            case _:
-                cls = type(self)
-                return cls(*(e.simplify() for e in self.encoders))
-
-        # The equivalent code below works...
-        # if len(self)==1:
-        #     return self.encoders[0].simplify()
-        # cls = type(self)
-        # return cls(*(e.simplify() for e in self.encoders))
+A()

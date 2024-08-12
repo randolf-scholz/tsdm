@@ -300,7 +300,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         """
         super().__init_subclass__()  # <-- This is important! Otherwise, weird things happen.
 
-        # validate that the methods are implemented
+        # region wrap fit/encode/decode methods ----------------------------------------
         for meth in ("fit", "encode", "decode"):
             static_meth = getattr_static(cls, meth, None)
             if static_meth is None:
@@ -353,6 +353,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         cls.fit = fit_wrapper  # type: ignore[assignment]
         cls.encode = encode_wrapper  # type: ignore[assignment]
         cls.decode = decode_wrapper  # type: ignore[assignment]
+        # endregion wrap fit/encode/decode methods -------------------------------------
 
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""

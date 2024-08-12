@@ -211,7 +211,7 @@ from tsdm.encoders.time import (
     TimeDeltaEncoder,
 )
 
-ENCODERS: dict[str, type[Encoder]] = {
+ENCODERS: dict[str, type[BaseEncoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,
     "BoxCoxEncoder"             : BoxCoxEncoder,
     "CSVEncoder"                : CSVEncoder,
