@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:800ed434e2ed581498e2b09ea4b659e6041d2f59ccf45e509c57c85b2e697d1e"
+content_hash = "sha256:61407d717cd284e05ae93cd98850eb53d848ecff380d7d3c3f6cb40dca9d16fc"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -648,7 +648,7 @@ files = [
 
 [[package]]
 name = "hypothesis"
-version = "6.110.1"
+version = "6.111.0"
 requires_python = ">=3.8"
 summary = "A library for property-based testing"
 groups = ["tests"]
@@ -659,27 +659,27 @@ dependencies = [
     "sortedcontainers<3.0.0,>=2.1.0",
 ]
 files = [
-    {file = "hypothesis-6.110.1-py3-none-any.whl", hash = "sha256:4b54a4ed3385c53b247b99e7b3c9630e7b665ef3cfdb2c557dd1c0b34d090481"},
-    {file = "hypothesis-6.110.1.tar.gz", hash = "sha256:a138bfaea11aba6daadf8effd9065251a6fec1549f25b7d72ac9881a413f76b0"},
+    {file = "hypothesis-6.111.0-py3-none-any.whl", hash = "sha256:7a51f678da3719a04a3ef61cd241384dd93b49f35d7cce22833745c66ac1d507"},
+    {file = "hypothesis-6.111.0.tar.gz", hash = "sha256:04d0703621d9fdd61c079a4dda07babbe7ebf6d34eee6ad9484a2af0ee721801"},
 ]
 
 [[package]]
 name = "hypothesis"
-version = "6.110.1"
+version = "6.111.0"
 extras = ["numpy", "pandas", "pytest"]
 requires_python = ">=3.8"
 summary = "A library for property-based testing"
 groups = ["tests"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
-    "hypothesis==6.110.1",
+    "hypothesis==6.111.0",
     "numpy>=1.17.3",
     "pandas>=1.1",
     "pytest>=4.6",
 ]
 files = [
-    {file = "hypothesis-6.110.1-py3-none-any.whl", hash = "sha256:4b54a4ed3385c53b247b99e7b3c9630e7b665ef3cfdb2c557dd1c0b34d090481"},
-    {file = "hypothesis-6.110.1.tar.gz", hash = "sha256:a138bfaea11aba6daadf8effd9065251a6fec1549f25b7d72ac9881a413f76b0"},
+    {file = "hypothesis-6.111.0-py3-none-any.whl", hash = "sha256:7a51f678da3719a04a3ef61cd241384dd93b49f35d7cce22833745c66ac1d507"},
+    {file = "hypothesis-6.111.0.tar.gz", hash = "sha256:04d0703621d9fdd61c079a4dda07babbe7ebf6d34eee6ad9484a2af0ee721801"},
 ]
 
 [[package]]
@@ -3126,7 +3126,7 @@ files = [
 
 [[package]]
 name = "sympy"
-version = "1.13.1"
+version = "1.13.2"
 requires_python = ">=3.8"
 summary = "Computer algebra system (CAS) in Python"
 groups = ["default"]
@@ -3135,8 +3135,8 @@ dependencies = [
     "mpmath<1.4,>=1.1.0",
 ]
 files = [
-    {file = "sympy-1.13.1-py3-none-any.whl", hash = "sha256:db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8"},
-    {file = "sympy-1.13.1.tar.gz", hash = "sha256:9cebf7e04ff162015ce31c9c6c9144daa34a93bd082f54fd8f12deca4f47515f"},
+    {file = "sympy-1.13.2-py3-none-any.whl", hash = "sha256:c51d75517712f1aed280d4ce58506a4a88d635d6b5dd48b39102a7ae1f3fcfe9"},
+    {file = "sympy-1.13.2.tar.gz", hash = "sha256:401449d84d07be9d0c7a46a64bd54fe097667d5e7181bfe67ec777be9e01cb13"},
 ]
 
 [[package]]
@@ -3645,14 +3645,14 @@ files = [
 
 [[package]]
 name = "webcolors"
-version = "24.6.0"
+version = "24.8.0"
 requires_python = ">=3.8"
 summary = "A library for working with the color formats defined by HTML and CSS."
 groups = ["experiment"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "webcolors-24.6.0-py3-none-any.whl", hash = "sha256:8cf5bc7e28defd1d48b9e83d5fc30741328305a8195c29a8e668fa45586568a1"},
-    {file = "webcolors-24.6.0.tar.gz", hash = "sha256:1d160d1de46b3e81e58d0a280d0c78b467dc80f47294b91b1ad8029d2cedb55b"},
+    {file = "webcolors-24.8.0-py3-none-any.whl", hash = "sha256:fc4c3b59358ada164552084a8ebee637c221e4059267d0f8325b3b560f6c7f0a"},
+    {file = "webcolors-24.8.0.tar.gz", hash = "sha256:08b07af286a01bcd30d583a7acadf629583d1f79bfef27dd2c2c5c263817277d"},
 ]
 
 [[package]]
@@ -3731,12 +3731,12 @@ files = [
 
 [[package]]
 name = "zipp"
-version = "3.19.2"
+version = "3.20.0"
 requires_python = ">=3.8"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 groups = ["devtools", "tests"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "zipp-3.19.2-py3-none-any.whl", hash = "sha256:f091755f667055f2d02b32c53771a7a6c8b47e1fdbc4b72a8b9072b3eef8015c"},
-    {file = "zipp-3.19.2.tar.gz", hash = "sha256:bf1dcf6450f873a13e952a29504887c89e6de7506209e5b1bcc3460135d4de19"},
+    {file = "zipp-3.20.0-py3-none-any.whl", hash = "sha256:58da6168be89f0be59beb194da1250516fdaa062ccebd30127ac65d30045e10d"},
+    {file = "zipp-3.20.0.tar.gz", hash = "sha256:0145e43d89664cfe1a2e533adc75adafed82fe2da404b4bbb6b026c0157bdb31"},
 ]
