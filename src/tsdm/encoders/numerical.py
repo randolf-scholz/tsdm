@@ -46,8 +46,6 @@ There are multiple ways to handle this:
 """
 
 __all__ = [
-    # types
-    "CLIPPING",
     # Protocols & ABCs
     "ArrayEncoder",
     "ArrayDecoder",
@@ -72,7 +70,7 @@ from collections.abc import Iterable
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
 from types import EllipsisType
-from typing import Any, ClassVar, Literal, Optional, Self, cast, overload
+from typing import Any, Literal, Optional, Self, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -312,13 +310,6 @@ class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
         raise NotImplementedError
 
 
-class CLIPPING(StrEnum):
-    r"""Type Hint for clipping mode."""
-
-    mask = "mask"
-    clip = "clip"
-
-
 @pprint_repr
 @dataclass
 class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
@@ -332,7 +323,6 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
         mode: one of ``'mask'`` or ``'clip'``, or a tuple of two of them for lower and upper.
             - If `mode='mask'`, then values outside the boundary will be replaced by `NA`.
             - If `mode='clip'`, then values outside the boundary will be clipped to it.
-        axis: the axis along which to perform the operation.
 
     Note:
         requires_fit: whether the data should determine the lower/upper bounds/values.
@@ -348,7 +338,11 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
-    _CLIPPING: ClassVar[type[CLIPPING]] = CLIPPING
+    class CLIPPING(StrEnum):
+        r"""Type Hint for clipping mode."""
+
+        mask = "mask"
+        clip = "clip"
 
     type ClippingMode = Literal["mask", "clip"]
     r"""Type Hint for clipping mode."""
@@ -398,12 +392,15 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
             self.upper_bound = None if upper_is_nan else upper_bound
 
         match mode:
-            case (CLIPPING() | str()) as value:
-                self.lower_mode = CLIPPING(value)
-                self.upper_mode = CLIPPING(value)
-            case [(CLIPPING() | str()) as lower, (CLIPPING() | str()) as upper]:
-                self.lower_mode = CLIPPING(lower)
-                self.upper_mode = CLIPPING(upper)
+            case (self.CLIPPING() | str()) as value:
+                self.lower_mode = self.CLIPPING(value)
+                self.upper_mode = self.CLIPPING(value)
+            case [
+                (self.CLIPPING() | str()) as lower,
+                (self.CLIPPING() | str()) as upper,
+            ]:
+                self.lower_mode = self.CLIPPING(lower)
+                self.upper_mode = self.CLIPPING(upper)
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
 
@@ -466,9 +463,9 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
         match self.lower_bound, self.lower_mode:
             case None, _:
                 self.lower_value = self.backend.to_tensor(float("-inf"))
-            case _, CLIPPING.mask:
+            case _, self.CLIPPING.mask:
                 self.lower_value = self.backend.to_tensor(float("nan"))
-            case _, CLIPPING.clip:
+            case _, self.CLIPPING.clip:
                 self.lower_value = self.lower_bound  # type: ignore[assignment]
             case _:
                 raise NotImplementedError
@@ -477,9 +474,9 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
         match self.upper_bound, self.upper_mode:
             case None, _:
                 self.upper_value = self.backend.to_tensor(float("+inf"))
-            case _, CLIPPING.mask:
+            case _, self.CLIPPING.mask:
                 self.upper_value = self.backend.to_tensor(float("nan"))
-            case _, CLIPPING.clip:
+            case _, self.CLIPPING.clip:
                 self.upper_value = self.upper_bound  # type: ignore[assignment]
             case _:
                 raise NotImplementedError
