@@ -22,6 +22,7 @@ from tsdm.types.protocols import (
     SeriesKind,
     SupportsArray,
     SupportsArrayUfunc,
+    SupportsDtype,
     SupportsShape,
     TableKind,
 )
@@ -106,6 +107,19 @@ SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
     "pyarrow_array_str"   : PA_ARRAY_STR,
     "pyarrow_table_float" : PA_TABLE_FLOAT,
     "pyarrow_table_mixed" : PA_TABLE_MIXED,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
+}  # fmt: skip
+
+SUPPORTS_DTYPE: dict[str, SupportsDtype] = {
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "polars_series_int"   : PL_SERIES_INT,
+    "polars_series_str"   : PL_SERIES_STR,
     "torch_tensor_1d"     : PT_TENSOR_1D,
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
@@ -314,6 +328,12 @@ def test_supports_array(name: str) -> None:
 
     assert issubclass(obj.__class__, SupportsArray)
     assert isinstance(obj.__array__(), np.ndarray)
+
+
+@pytest.mark.parametrize("name", SUPPORTS_DTYPE)
+def test_supports_dtype(name: str) -> None:
+    obj = SUPPORTS_ARRAYS[name]
+    assert_protocol(obj, SupportsDtype)
 
 
 @pytest.mark.parametrize("name", SUPPORTS_ARRAYS_UFUNC)

@@ -315,7 +315,19 @@ class SupportsDevice(Protocol):
 
 @runtime_checkable
 class SupportsDtype(Protocol):
-    r"""We just test for dtype, since e.g. tf.Tensor does not have ndim."""
+    r"""We just test for dtype, since e.g. tf.Tensor does not have ndim.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `polars.Series`
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `pandas.DataFrame`
+        - `polars.DataFrame`
+        - `pyarrow.Array`
+    """
 
     @property
     @abstractmethod

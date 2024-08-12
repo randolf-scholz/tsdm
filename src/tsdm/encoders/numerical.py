@@ -594,7 +594,7 @@ class StandardScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         self.mean_learnable = mean is NotImplemented
         self.stdv_learnable = stdv is NotImplemented
 
-    def __getitem__(self, item: int | slice | list[int], /) -> Self:
+    def __getitem__(self, item: Any, /) -> Self:
         r"""Return a slice of the Standardizer."""
         mean = reduce_param(self.mean, item)
         stdv = reduce_param(self.stdv, item)
