@@ -235,7 +235,7 @@ def construct_wasserstein_loss_logit_normal(
 
 
 @pprint_repr
-@dataclass
+@dataclass(init=False)
 class BoxCoxEncoder(BaseEncoder):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
@@ -266,16 +266,31 @@ class BoxCoxEncoder(BaseEncoder):
     ]
 
     _: KW_ONLY
-
-    method: METHOD = "match-uniform"
-    initial_value: float = 1.0
     bounds: tuple[float, float] = (0.0, 1.0)
+    initial_value: float = 1.0
+    method: METHODS = METHODS.match_uniform
     offset: float = NotImplemented
     verbose: bool = False
 
-    def __post_init__(self):
-        if self.method not in self.METHODS:
-            raise ValueError(f"{self.method=} unknown. Available: {self.METHODS}")
+    # FIXME: simplify if a converter option is added to the dataclass.field
+    def __init__(
+        self,
+        *,
+        bounds: tuple[float, float] = (0.0, 1.0),
+        initial_value: float = 1.0,
+        method: METHOD | METHODS = "match-uniform",
+        offset: float = NotImplemented,
+        verbose: bool = False,
+    ) -> None:
+        if method not in self.METHODS:
+            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHODS)}")
+
+        self.bounds = bounds
+        self.inital_value = initial_value
+        self.method = self.METHODS(method)
+        self.offset = offset
+        self.verbose = verbose
+
         if self.method == self.METHODS.fixed:
             self.offset = self.initial_value
             self.check_bounds()
@@ -372,16 +387,31 @@ class LogitBoxCoxEncoder(BaseEncoder):
     ]
 
     _: KW_ONLY
-
-    method: METHOD = "match-uniform"
-    initial_value: float = 0.01
-    verbose: bool = False
-    offset: float = NotImplemented
     bounds: tuple[float, float] = (0.0, 1.0)
+    initial_value: float = 0.01
+    method: METHODS = METHODS.match_uniform
+    offset: float = NotImplemented
+    verbose: bool = False
 
-    def __post_init__(self) -> None:
-        if self.method not in self.METHODS:
-            raise ValueError(f"{self.method=} unknown. Available: {self.METHODS}")
+    # FIXME: simplify if a converter option is added to the dataclass.field
+    def __init__(
+        self,
+        *,
+        bounds: tuple[float, float] = (0.0, 1.0),
+        initial_value: float = 1.0,
+        method: METHOD | METHODS = "match-uniform",
+        offset: float = NotImplemented,
+        verbose: bool = False,
+    ) -> None:
+        if method not in self.METHODS:
+            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHODS)}")
+
+        self.bounds = bounds
+        self.inital_value = initial_value
+        self.method = self.METHODS(method)
+        self.offset = offset
+        self.verbose = verbose
+
         if self.method == self.METHODS.fixed:
             self.offset = self.initial_value
             self.check_bounds()

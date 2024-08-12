@@ -7,7 +7,7 @@ from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 
 
 @pytest.mark.parametrize("method", BoxCoxEncoder.METHODS)
-def test_box_cox_encoder(method):
+def test_box_cox_encoder(method: BoxCoxEncoder.METHODS) -> None:
     r"""Test BoxCoxEncoder."""
     data = np.linspace(0, 1000, 1000)
     encoder = BoxCoxEncoder(method=method)
@@ -22,7 +22,7 @@ def test_box_cox_encoder(method):
 
 
 @pytest.mark.parametrize("method", LogitBoxCoxEncoder.METHODS)
-def test_logit_box_cox_encoder(method):
+def test_logit_box_cox_encoder(method: LogitBoxCoxEncoder.METHODS) -> None:
     r"""Test LogitBoxCoxEncoder."""
     data = np.linspace(0, 1, 1000)
     encoder = LogitBoxCoxEncoder(method=method)
@@ -36,4 +36,3 @@ def test_logit_box_cox_encoder(method):
     assert np.allclose(decoded.max(), 1.0)
     assert all(decoded >= 0.0)
     assert np.allclose(decoded.min(), 0.0)
-    # not sure why doesn't quite reach 0.0
