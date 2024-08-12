@@ -14,6 +14,7 @@ __all__ = [
     "Array",
     # Mixins
     "SupportsArray",
+    "SupportsArrayUfunc",
     "SupportsDataframe",
     "SupportsDevice",
     "SupportsDtype",
@@ -80,6 +81,7 @@ from types import GenericAlias, get_original_bases
 from typing import (
     Any,
     ClassVar,
+    Literal,
     Optional,
     Protocol,
     Self,
@@ -354,6 +356,40 @@ class SupportsArray(Protocol):
     @abstractmethod
     def __array__(self) -> NDArray[np.object_]:
         r"""Return the array of the tensor."""
+        ...
+
+
+@runtime_checkable
+class SupportsArrayUfunc(SupportsArray, Protocol):
+    r"""Protocol for objects that support `__array_ufunc__`.
+
+    Notably, numpy functions like `numpy.exp` can be directly applied to such objects.
+    The main example are `pandas.Series` and `pandas.DataFrame`.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `pandas.DataFrame`
+        - `polars.Series`
+
+    Counter-Examples:
+        - `polars.DataFrame`
+        - `pyarrow.Array`
+        - `pyarrow.Table`
+        - `torch.Tensor`
+
+    References:
+        - https://numpy.org/doc/stable/reference/ufuncs.html
+    """
+
+    def __array_ufunc__(
+        self,
+        ufunc: np.ufunc,
+        method: Literal["__call__", "reduce", "reduceat", "accumulate", "outer", "at"],
+        *inputs: Any,
+        **kwargs: Any,
+    ) -> Self:
+        r"""Return the array resulting from applying the ufunc."""
         ...
 
 

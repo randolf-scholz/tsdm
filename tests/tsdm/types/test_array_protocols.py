@@ -21,6 +21,7 @@ from tsdm.types.protocols import (
     NumericalTensor,
     SeriesKind,
     SupportsArray,
+    SupportsArrayUfunc,
     SupportsShape,
     TableKind,
 )
@@ -32,10 +33,14 @@ ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 _STRING_LIST = ["a", "b", "c"]
 _INT_LIST = [1, 2, 3]
 _INT_MATRIX = [[1, 2], [3, 4], [5, 6], [7, 8]]
-_TABLE_DATA = {
-    "int_col": [1, 2, 3, 4],
-    "float_col": [1.1, 2.2, 3.3, 4.4],
-    "string_col": ["a", "b", "c", "d'"],
+_TABLE_DATA_FLOAT = {
+    "x": [1.1, 2.2, 3.3, 4.4],
+    "y": [5.5, 6.6, 7.7, 8.8],
+}
+_TABLE_DATA_MIXED = {
+    "label": ["a", "b", "c", "d"],
+    "x": [1.1, 2.2, 3.3, 4.4],
+    "y": [5.5, 6.6, 7.7, 8.8],
 }
 
 # tensorial (single dtype)
@@ -54,45 +59,64 @@ PT_TENSOR_2D = torch.tensor(_INT_MATRIX)
 PY_ARRAY = memoryview(python_array("i", [1, 2, 3]))
 
 # tabular (mixed dtype)
-PA_TABLE = pa.table(_TABLE_DATA)
-PD_DATAFRAME = pd.DataFrame(_TABLE_DATA)
-PL_DATAFRAME = pl.DataFrame(_TABLE_DATA)
+PA_TABLE_MIXED = pa.table(_TABLE_DATA_MIXED)
+PD_TABLE_MIXED = pd.DataFrame(_TABLE_DATA_MIXED)
+PL_TABLE_MIXED = pl.DataFrame(_TABLE_DATA_MIXED)
+PA_TABLE_FLOAT = pa.table(_TABLE_DATA_FLOAT)
+PD_TABLE_FLOAT = pd.DataFrame(_TABLE_DATA_FLOAT)
+PL_TABLE_FLOAT = pl.DataFrame(_TABLE_DATA_FLOAT)
+
 
 TEST_OBJECTS = {
-    "python_array"      : PY_ARRAY,
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_index_int"  : PD_INDEX_INT,
-    "pandas_index_str"  : PD_INDEX_STR,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "pandas_dataframe"  : PD_DATAFRAME,
-    "polars_series_str" : PL_SERIES_STR,
-    "polars_series_int" : PL_SERIES_INT,
-    "polars_dataframe"  : PL_DATAFRAME,
-    "pyarrow_array_str" : PA_ARRAY_STR,
-    "pyarrow_array_int" : PA_ARRAY_INT,
-    "pyarrow_table"     : PA_TABLE,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "pandas_table_mixed"  : PD_TABLE_MIXED,
+    "polars_series_int"   : PL_SERIES_INT,
+    "polars_series_str"   : PL_SERIES_STR,
+    "polars_table_float"  : PL_TABLE_FLOAT,
+    "polars_table_mixed"  : PL_TABLE_MIXED,
+    "pyarrow_array_int"   : PA_ARRAY_INT,
+    "pyarrow_array_str"   : PA_ARRAY_STR,
+    "pyarrow_table_float" : PA_TABLE_FLOAT,
+    "pyarrow_table_mixed" : PA_TABLE_MIXED,
+    "python_array"        : PY_ARRAY,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_dataframe"  : PD_DATAFRAME,
-    "pandas_index_int"  : PD_INDEX_INT,
-    "pandas_index_str"  : PD_INDEX_STR,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "polars_dataframe"  : PL_DATAFRAME,
-    "polars_series_str" : PL_SERIES_STR,
-    "polars_series_int" : PL_SERIES_INT,
-    "pyarrow_array_str" : PA_ARRAY_STR,
-    "pyarrow_array_int" : PA_ARRAY_INT,
-    "pyarrow_table"     : PA_TABLE,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "pandas_table_mixed"  : PD_TABLE_MIXED,
+    "polars_series_int"   : PL_SERIES_INT,
+    "polars_series_str"   : PL_SERIES_STR,
+    "polars_table_float"  : PL_TABLE_FLOAT,
+    "polars_table_mixed"  : PL_TABLE_MIXED,
+    "pyarrow_array_int"   : PA_ARRAY_INT,
+    "pyarrow_array_str"   : PA_ARRAY_STR,
+    "pyarrow_table_float" : PA_TABLE_FLOAT,
+    "pyarrow_table_mixed" : PA_TABLE_MIXED,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
+}  # fmt: skip
+
+SUPPORTS_ARRAYS_UFUNC: dict[str, SupportsArrayUfunc] = {
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "polars_series_int"   : PL_SERIES_INT,
 }  # fmt: skip
 
 SERIES: dict[str, SeriesKind[str]] = {
@@ -107,39 +131,46 @@ SERIES: dict[str, SeriesKind[str]] = {
 }  # fmt: skip
 
 TABLES: dict[str, TableKind] = {
-    "pandas_dataframe" : PD_DATAFRAME,
-    "polars_dataframe" : PL_DATAFRAME,
-    "pyarrow_table"    : PA_TABLE,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "pandas_table_mixed"  : PD_TABLE_MIXED,
+    "polars_table_float"  : PL_TABLE_FLOAT,
+    "polars_table_mixed"  : PL_TABLE_MIXED,
+    "pyarrow_table_float" : PA_TABLE_FLOAT,
+    "pyarrow_table_mixed" : PA_TABLE_MIXED,
 }  # fmt: skip
 
 ARRAYS: dict[str, ArrayKind] = {
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_dataframe"  : PD_DATAFRAME,
-    "pandas_index_int"  : PD_INDEX_INT,
-    "pandas_index_str"  : PD_INDEX_STR,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "polars_dataframe"  : PL_DATAFRAME,
-    "polars_series_int" : PL_SERIES_INT,
-    "polars_series_str" : PL_SERIES_STR,
-    "pyarrow_table"     : PA_TABLE,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "pandas_table_mixed"  : PD_TABLE_MIXED,
+    "polars_series_int"   : PL_SERIES_INT,
+    "polars_series_str"   : PL_SERIES_STR,
+    "polars_table_float"  : PL_TABLE_FLOAT,
+    "polars_table_mixed"  : PL_TABLE_MIXED,
+    "pyarrow_table_float" : PA_TABLE_FLOAT,
+    "pyarrow_table_mixed" : PA_TABLE_MIXED,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_dataframe"  : PD_DATAFRAME,
-    "pandas_index_int"  : PD_INDEX_INT,
-    "pandas_index_str"  : PD_INDEX_STR,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "polars_series_int" : PL_SERIES_INT,
-    "polars_series_str" : PL_SERIES_STR,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "pandas_table_mixed"  : PD_TABLE_MIXED,
+    "polars_series_int"   : PL_SERIES_INT,
+    "polars_series_str"   : PL_SERIES_STR,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
 NUMERICAL_SERIES: dict[str, NumericalSeries] = {
@@ -167,13 +198,14 @@ NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
 }  # fmt: skip
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_dataframe"  : PD_DATAFRAME,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"   : NP_ARRAY_1D,
+    "numpy_ndarray_2d"   : NP_ARRAY_2D,
+    "pandas_series_int"  : PD_SERIES_INT,
+    "pandas_series_str"  : PD_SERIES_STR,
+    "pandas_table_float" : PD_TABLE_FLOAT,
+    "pandas_table_mixed" : PD_TABLE_MIXED,
+    "torch_tensor_1d"    : PT_TENSOR_1D,
+    "torch_tensor_2d"    : PT_TENSOR_2D,
 }  # fmt: skip
 
 EXAMPLES: dict[type, dict[str, Any]] = {
@@ -278,9 +310,22 @@ def is_admissable(name: str) -> bool:
 def test_supports_array(name: str) -> None:
     r"""Test the SupportsArray protocol."""
     obj = SUPPORTS_ARRAYS[name]
-    assert isinstance(obj, SupportsArray)
+    assert_protocol(obj, SupportsArray)
+
     assert issubclass(obj.__class__, SupportsArray)
     assert isinstance(obj.__array__(), np.ndarray)
+
+
+@pytest.mark.parametrize("name", SUPPORTS_ARRAYS_UFUNC)
+def test_supports_array_ufunc(name: str) -> None:
+    r"""Test the SupportsArray protocol."""
+    obj = SUPPORTS_ARRAYS_UFUNC[name]
+    assert_protocol(obj, SupportsArrayUfunc)
+    assert issubclass(obj.__class__, SupportsArrayUfunc)
+
+    # test ufunc
+    result = np.exp(obj)
+    assert isinstance(result, type(obj))
 
 
 @pytest.mark.parametrize("name", SERIES)
@@ -347,13 +392,11 @@ def test_table(name: str) -> None:
     assert isinstance(table.shape[1], int)
     attrs.remove("shape")
 
-    assert isinstance(table["float_col"], SeriesKind)
-    assert isinstance(table[:], TableKind)
-
     assert table.equals(table)
     attrs.remove("equals")
 
-    assert isinstance(table["int_col"], SeriesKind)
+    assert isinstance(table["x"], SeriesKind)
+    assert isinstance(table[:], TableKind)
     attrs.remove("__getitem__")
 
     # check that all attributes are tested
