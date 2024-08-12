@@ -1350,7 +1350,7 @@ def test_unknown_multi() -> None:
     r"""Test the SlidingWindowSampler."""
     stride = 2
     horizons = (3, 1)
-    mode = "mask" * 1  # *1 tricks type checker into not using literal
+    mode = "masks" * 1  # *1 tricks type checker into not using literal
 
     sampler = SlidingSampler(
         DISCRETE_DATA,
