@@ -544,6 +544,10 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
         r"""Return number of chained encoders."""
         return len(self.encoders)
 
+    def __iter__(self) -> Iterator[Encoder]:
+        r"""Iterate over the encoders."""
+        return iter(self.encoders)
+
     @overload
     def __getitem__(self, index: int) -> Encoder: ...
     @overload
@@ -896,7 +900,11 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
 # region variadic encoders -------------------------------------------------------------
 @pprint_repr(recursive=2)
 class ChainedEncoder[X, Y](EncoderList[X, Y]):
-    r"""Represents function composition of encoders."""
+    r"""Represents function composition of encoders.
+
+    >>> enc = e1 @ e2
+    >>> enc(x) == e2(e1(x))
+    """
 
     if TYPE_CHECKING:
         # fmt: off
@@ -913,10 +921,10 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
     def __invert__(self) -> "ChainedEncoder[Y, X]":
         # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[ChainedEncoder] = type(self)
-        return cls(*(InverseEncoder(e) for e in reversed(self.encoders)))
+        return cls(*(InverseEncoder(e) for e in reversed(self)))
 
     def fit(self, x: X, /) -> None:
-        for encoder in reversed(self.encoders):
+        for encoder in reversed(self):
             try:
                 encoder.fit(x)
             except Exception as exc:
@@ -929,12 +937,12 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
                 x = encoder.encode(x)
 
     def encode(self, x: X, /) -> Y:
-        for encoder in reversed(self.encoders):
+        for encoder in reversed(self):
             x = encoder.encode(x)
         return cast(Y, x)
 
     def decode(self, y: Y, /) -> X:
-        for encoder in self.encoders:
+        for encoder in self:
             y = encoder.decode(y)
         return cast(X, y)
 
@@ -979,7 +987,11 @@ def chain_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # typ
 
 @pprint_repr(recursive=2)
 class PipedEncoder[X, Y](EncoderList[X, Y]):
-    r"""Represents function composition of encoders."""
+    r"""Represents function composition of encoders.
+
+    >>> enc = e1 >> e2
+    >>> enc(x) == e2(e1(x))
+    """
 
     encoders: list[Encoder]
 
@@ -998,10 +1010,10 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
     def __invert__(self) -> "PipedEncoder[Y, X]":
         # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
         cls: type[PipedEncoder] = type(self)
-        return cls(*(InverseEncoder(e) for e in reversed(self.encoders)))
+        return cls(*(InverseEncoder(e) for e in reversed(self)))
 
     def fit(self, x: X, /) -> None:
-        for encoder in self.encoders:
+        for encoder in self:
             try:
                 encoder.fit(x)
             except Exception as exc:
@@ -1014,12 +1026,12 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
                 x = encoder.encode(x)
 
     def encode(self, x: X, /) -> Y:
-        for encoder in self.encoders:
+        for encoder in self:
             x = encoder.encode(x)
         return cast(Y, x)
 
     def decode(self, y: Y, /) -> X:
-        for encoder in reversed(self.encoders):
+        for encoder in reversed(self):
             y = encoder.decode(y)
         return cast(X, y)
 
@@ -1104,6 +1116,9 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
+
+    >>> enc = ParallelEncoder(e1, e2)
+    >>> enc((x1, x2)) == (e1(x1), e2(x2))
     """
 
     if TYPE_CHECKING:
@@ -1120,7 +1135,7 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
 
     def __invert__(self) -> "ParallelEncoder[TupleOut, TupleIn]":
         cls: type[ParallelEncoder] = type(self)
-        return cls(*(InverseEncoder(e) for e in self.encoders))  # type: ignore[return-value]
+        return cls(*(InverseEncoder(e) for e in self))  # type: ignore[return-value]
 
     def fit(self, xs: TupleIn, /) -> None:
         for encoder, x in zip(self.encoders, xs, strict=True):
@@ -1128,12 +1143,12 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
 
     def encode(self, xs: TupleIn, /) -> TupleOut:
         return tuple(  # type: ignore[return-value]
-            encoder.encode(x) for encoder, x in zip(self.encoders, xs, strict=True)
+            encoder.encode(x) for encoder, x in zip(self, xs, strict=True)
         )
 
     def decode(self, ys: TupleOut, /) -> TupleIn:
         return tuple(  # type: ignore[return-value]
-            encoder.decode(x) for encoder, x in zip(self.encoders, ys, strict=True)
+            encoder.decode(x) for encoder, x in zip(self, ys, strict=True)
         )
 
     def simplify(self) -> BaseEncoder[TupleIn, TupleOut]:
@@ -1182,7 +1197,7 @@ def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[3], /, *, simplify: boo
 @overload  # n variable
 def duplicate_encoder[X, Y](e: Encoder[X, Y], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
 # fmt: on
-def duplicate_encoder[X, Y](
+def duplicate_encoder[X, Y](  # type: ignore[misc]
     encoder: Encoder[X, Y], n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> Encoder[tuple[X, ...], tuple[Y, ...]]:
     r"""Create copies of an Encoder in parallel.
@@ -1249,14 +1264,14 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
 
     def __invert__(self) -> "JointDecoder[TupleOut, X]":
         # Q: Why does pyright error here?
-        decoders = (InverseEncoder(e) for e in self.encoders)
+        decoders = (InverseEncoder(e) for e in self)
         return JointDecoder(*decoders, aggregate_fn=self.aggregate_fn)  # type: ignore[return-value]
 
     def encode(self, x: X, /) -> TupleOut:
-        return tuple(e.encode(x) for e in self.encoders)  # type: ignore[return-value]
+        return tuple(e.encode(x) for e in self)  # type: ignore[return-value]
 
     def decode(self, ys: TupleOut, /) -> X:
-        decoded_vals = [e.decode(y) for e, y in zip(self.encoders, ys, strict=True)]
+        decoded_vals = [e.decode(y) for e, y in zip(self, ys, strict=True)]
         return self.aggregate_fn(decoded_vals)
 
     def simplify(self) -> BaseEncoder[X, TupleOut]:
@@ -1297,8 +1312,8 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     r"""Factorized Encoder.
 
     Example:
-        >>> enc = FactorizedEncoder(e1, e2, e3)
-        >>> enc(x) == (e1(x), e2(x), e3(x))
+        >>> enc = JointDecoder(e1, e2, e3)
+        >>> enc((x1, x2, x3)) == aggregate_fn(e1(x1), e2(x2), e3(x3))
 
     Note:
         This is essentially equivalent to chaining `DiagonalEncoder >> ParallelEncoder`.
@@ -1339,15 +1354,15 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
         self.aggregate_fn = aggregate_fn
 
     def __invert__(self) -> "JointEncoder[Y, TupleIn]":
-        decoders = (InverseEncoder(e) for e in self.encoders)
+        decoders = (InverseEncoder(e) for e in self)
         return JointEncoder(*decoders, aggregate_fn=self.aggregate_fn)  # type: ignore[return-value]
 
     def encode(self, xs: TupleIn, /) -> Y:
-        encoded_vals = [e.encode(x) for e, x in zip(self.encoders, xs, strict=True)]
+        encoded_vals = [e.encode(x) for e, x in zip(self, xs, strict=True)]
         return self.aggregate_fn(encoded_vals)
 
     def decode(self, y: Y, /) -> TupleIn:
-        return tuple(e.decode(y) for e in self.encoders)  # type: ignore[return-value]
+        return tuple(e.decode(y) for e in self)  # type: ignore[return-value]
 
     def simplify(self) -> BaseEncoder[TupleIn, Y]:
         r"""Simplify the joint encoder."""
@@ -1367,7 +1382,11 @@ class MappedEncoder[
     MappingOut: Mapping,
     K,
 ](EncoderDict[MappingIn, MappingOut, K]):
-    r"""Maps encoders to keys."""
+    r"""Maps encoders to keys.
+
+    >>> enc = MappedEncoder({"a": e1, "b": e2})
+    >>> enc({"a": x1, "b": x2}) == {"a": e1(x1), "b": e2(x2)}
+    """
 
     encoders: dict[K, Encoder]
     r"""The encoders to map to keys."""
