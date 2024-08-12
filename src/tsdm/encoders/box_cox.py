@@ -1,8 +1,6 @@
 r"""Box-Cox encoder."""
 
 __all__ = [
-    # Constants
-    "METHODS",
     # Classes
     "BoxCoxEncoder",
     "LogitBoxCoxEncoder",
@@ -16,7 +14,8 @@ __all__ = [
 import warnings
 from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
-from typing import Literal
+from enum import StrEnum
+from typing import Literal, assert_never
 
 import numpy as np
 import pandas as pd
@@ -31,8 +30,8 @@ from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.decorators import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
-type METHOD = Literal[None, "minimum", "quartile", "match-normal", "match-uniform"]
-METHODS: list[METHOD] = [None, "minimum", "quartile", "match-normal", "match-uniform"]
+
+
 # endregion Constants ------------------------------------------------------------------
 
 
@@ -253,6 +252,19 @@ class BoxCoxEncoder(BaseEncoder):
         - a mean-0, variance-1 normal distribution
     """
 
+    class METHODS(StrEnum):
+        r"""Methods to fit the Box-Cox parameter."""
+
+        fixed = "fixed"
+        minimum = "minimum"
+        quartile = "quartile"
+        match_normal = "match-normal"
+        match_uniform = "match-uniform"
+
+    type METHOD = Literal[
+        "fixed", "minimum", "quartile", "match-normal", "match-uniform"
+    ]
+
     _: KW_ONLY
 
     method: METHOD = "match-uniform"
@@ -262,9 +274,9 @@ class BoxCoxEncoder(BaseEncoder):
     verbose: bool = False
 
     def __post_init__(self):
-        if self.method not in METHODS:
-            raise ValueError(f"{self.method=} unknown. Available: {METHODS}")
-        if self.method is None:
+        if self.method not in self.METHODS:
+            raise ValueError(f"{self.method=} unknown. Available: {self.METHODS}")
+        if self.method == self.METHODS.fixed:
             self.offset = self.initial_value
             self.check_bounds()
 
@@ -290,14 +302,14 @@ class BoxCoxEncoder(BaseEncoder):
                 stacklevel=2,
             )
 
-        match self.method:
-            case None:
+        match self.METHODS(self.method):
+            case self.METHODS.fixed:
                 offset = self.initial_value
-            case "minimum":
+            case self.METHODS.minimum:
                 offset = data[data > 0].min() / 2
-            case "quartile":
+            case self.METHODS.quartile:
                 offset = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
-            case "match-uniform":
+            case self.METHODS.match_uniform:
                 fun = construct_wasserstein_loss_boxcox_uniform(data)
                 x0 = np.array(self.initial_value)
                 sol = minimize(
@@ -308,7 +320,7 @@ class BoxCoxEncoder(BaseEncoder):
                     options={"disp": self.verbose},
                 )
                 offset = sol.x.squeeze()
-            case "match-normal":
+            case self.METHODS.match_normal:
                 fun = construct_wasserstein_loss_boxcox_normal(data)
                 x0 = np.array(self.initial_value)
                 sol = minimize(
@@ -319,8 +331,8 @@ class BoxCoxEncoder(BaseEncoder):
                     options={"disp": self.verbose},
                 )
                 offset = sol.x.squeeze()
-            case _:
-                raise ValueError(f"Unknown method {self.method}")
+            case other:
+                assert_never(other)
 
         self.offset = float(np.array(offset).item())
         self.check_bounds()
@@ -346,6 +358,19 @@ class LogitBoxCoxEncoder(BaseEncoder):
         - a mean-0, variance-1 normal distribution
     """
 
+    class METHODS(StrEnum):
+        r"""Methods to fit the Box-Cox parameter."""
+
+        fixed = "fixed"
+        minimum = "minimum"
+        quartile = "quartile"
+        match_normal = "match-normal"
+        match_uniform = "match-uniform"
+
+    type METHOD = Literal[
+        "fixed", "minimum", "quartile", "match-normal", "match-uniform"
+    ]
+
     _: KW_ONLY
 
     method: METHOD = "match-uniform"
@@ -355,9 +380,9 @@ class LogitBoxCoxEncoder(BaseEncoder):
     bounds: tuple[float, float] = (0.0, 1.0)
 
     def __post_init__(self) -> None:
-        if self.method not in METHODS:
-            raise ValueError(f"{self.method=} unknown. Available: {METHODS}")
-        if self.method is None:
+        if self.method not in self.METHODS:
+            raise ValueError(f"{self.method=} unknown. Available: {self.METHODS}")
+        if self.method == self.METHODS.fixed:
             self.offset = self.initial_value
             self.check_bounds()
 
@@ -385,20 +410,20 @@ class LogitBoxCoxEncoder(BaseEncoder):
                 stacklevel=2,
             )
 
-        match self.method:
-            case None:
+        match self.METHODS(self.method):
+            case self.METHODS.fixed:
                 offset = self.initial_value
-            case "minimum":
+            case self.METHODS.minimum:
                 lower = data[data > 0].min() / 2
                 upper = (1 - data[data < 1].max()) / 2
                 offset = (lower + upper) / 2
-            case "quartile":
+            case self.METHODS.quartile:
                 lower = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
                 upper = (
                     (1 - np.quantile(data, 0.75)) / (1 - np.quantile(data, 0.25))
                 ) ** 2
                 offset = (lower + upper) / 2
-            case "match-uniform":
+            case self.METHODS.match_uniform:
                 fun = construct_wasserstein_loss_logit_uniform(data)
                 x0 = np.array(self.initial_value)
                 sol = minimize(
@@ -409,7 +434,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
                     options={"disp": False},
                 )
                 offset = sol.x.squeeze()
-            case "match-normal":
+            case self.METHODS.match_normal:
                 fun = construct_wasserstein_loss_logit_normal(data)
                 x0 = np.array(self.initial_value)
                 sol = minimize(
@@ -420,8 +445,8 @@ class LogitBoxCoxEncoder(BaseEncoder):
                     options={"disp": False},
                 )
                 offset = sol.x.squeeze()
-            case _:
-                raise ValueError(f"Unknown method {self.method}")
+            case other:
+                assert_never(other)
 
         self.offset = float(np.array(offset).item())
         self.check_bounds()
