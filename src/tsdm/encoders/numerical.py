@@ -683,9 +683,9 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
     _: KW_ONLY
 
-    axis: Axis
+    axis: Axis = ()
     r"""Over which axis to perform the scaling."""
-    safe_computation: bool
+    safe_computation: bool = True
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
@@ -698,11 +698,12 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         xmin: None | float | Arr = None,
         xmax: None | float | Arr = None,
         axis: Axis = (),
+        safe_computation: bool = True,
     ) -> None:
-        self.safe_computation = True
-        self.ymin = cast(Arr, ymin)
-        self.ymax = cast(Arr, ymax)
         self.axis = axis
+        self.safe_computation = safe_computation
+        self.ymax = cast(Arr, ymax)
+        self.ymin = cast(Arr, ymin)
 
         self.xmin_learnable = xmin is None
         self.xmax_learnable = xmax is None
@@ -745,9 +746,8 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         if not (self.xmin_learnable or self.xmax_learnable):
             return
 
-        # universal fitting procedure
+        # invert axes selection
         axes = invert_axis_selection(self.axis, ndim=len(data.shape))
-
         if self.xmin_learnable:
             self.xmin = self.backend.nanmin(data, axis=axes)
         if self.xmax_learnable:
@@ -757,7 +757,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         self.ymin = self.ymin + 0.0 * self.xmin
         self.ymax = self.ymax + 0.0 * self.xmax
 
-        # update the average variables
+        # compute the midpoints
         self.xbar = (self.xmax + self.xmin) / 2
         self.ybar = (self.ymax + self.ymin) / 2
 
@@ -769,54 +769,52 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
     def encode(self, x: Arr, /) -> Arr:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
-        # TODO: consider adding broadcasting
+        y = (x - self.xbar) * self.scale + self.ybar
+        if self.safe_computation:
+            return self.project_encoding(x, y)
+        return y
 
-        # unpacking for easier readability
+    def project_encoding(self, x: Arr, y: Arr, /) -> Arr:
+        r"""Ensures that the encoded values are within the bounds.
+
+        .. math::
+            x < xₘᵢₙ &⟹ y < yₘᵢₙ  \\
+            x > xₘₐₓ &⟹ y > yₘₐₓ  \\
+            x∈[xₘᵢₙ, xₘₐₓ] &⟹ y∈[yₘᵢₙ, yₘₐₓ]
+        """
         xmin = self.xmin
         xmax = self.xmax
         ymin = self.ymin
         ymax = self.ymax
-        xbar = self.xbar
-        ybar = self.ybar
-        scale = self.scale
-
-        y = (x - xbar) * scale + ybar
-
-        if self.safe_computation:
-            # NOTE: ensures the conditions
-            #   x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
-            y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
-            y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
-            y = self.backend.where(
-                (x >= xmin) & (x <= xmax), self.backend.clip(y, ymin, ymax), y
-            )
-
+        backend = self.backend
+        y = backend.where(x < xmin, backend.clip(y, None, ymin), y)
+        y = backend.where(x > xmax, backend.clip(y, ymax, None), y)
+        y = backend.where((x >= xmin) & (x <= xmax), backend.clip(y, ymin, ymax), y)
         return y
 
     def decode(self, y: Arr, /) -> Arr:
         r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
-        # TODO: consider adding broadcasting
+        x = (y - self.ybar) / self.scale + self.xbar
+        if self.safe_computation:
+            return self.project_decoding(y, x)
+        return x
 
-        # unpacking for easier readability
+    def project_decoding(self, y: Arr, x: Arr, /) -> Arr:
+        r"""Projects the decoded values to the bounds.
+
+        .. math::
+            y < yₘᵢₙ &⟹ x < xₘᵢₙ  \\
+            y > yₘₐₓ &⟹ x > xₘₐₓ  \\
+            y∈[yₘᵢₙ, yₘₐₓ] &⟹ x∈[xₘᵢₙ, xₘₐₓ]
+        """
         xmin = self.xmin
         xmax = self.xmax
         ymin = self.ymin
         ymax = self.ymax
-        xbar = self.xbar
-        ybar = self.ybar
-        scale = self.scale
-
-        x = (y - ybar) / scale + xbar
-
-        if self.safe_computation:
-            # NOTE: ensures the conditions
-            #   y < yₘᵢₙ ⟹ x < xₘᵢₙ  ∧  y > yₘₐₓ ⟹ x > xₘₐₓ  ∧  y∈[yₘᵢₙ, yₘₐₓ] ⟹ x∈[xₘᵢₙ, xₘₐₓ]
-            x = self.backend.where(y < ymin, self.backend.clip(x, None, xmin), x)
-            x = self.backend.where(y > ymax, self.backend.clip(x, xmax, None), x)
-            x = self.backend.where(
-                (y >= ymin) & (y <= ymax), self.backend.clip(x, xmin, xmax), x
-            )
-
+        backend = self.backend
+        x = backend.where(y < ymin, backend.clip(x, None, xmin), x)
+        x = backend.where(y > ymax, backend.clip(x, xmax, None), x)
+        x = backend.where((y >= ymin) & (y <= ymax), backend.clip(x, xmin, xmax), x)
         return x
 
     # region parameters ----------------------------------------------------------------
