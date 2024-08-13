@@ -1264,7 +1264,7 @@ class NTuple[T](Protocol):  # +T
         return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
 
-class _SlottedMeta(type(Protocol)):
+class _SlottedMeta(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for `Slotted`.
 
     FIXME: https://github.com/python/cpython/issues/112319

@@ -91,7 +91,7 @@ def test_damped_pendulum() -> None:
         ncols=2, figsize=(12, 6), constrained_layout=True, squeeze=False
     )
 
-    ax0y: Axes = ax0.twinx()  # type: ignore[assignment]
+    ax0y: Axes = ax0.twinx()
     ax0y.plot(t, y[..., 1], ".", label="ω", color=next(colors))
     ax0y.set_ylim(-max(abs(y[..., 1])), +max(abs(y[..., 1])))
     ax0y.set_ylabel("angular velocity $ω$")
