@@ -3,8 +3,6 @@ r"""Test other protocols."""
 from dataclasses import dataclass
 from typing import NamedTuple, Self
 
-import pytest
-
 from tsdm.types.protocols import (
     Dataclass,
     NTuple,
@@ -113,7 +111,6 @@ def test_slotted_match() -> None:
             raise AssertionError
 
 
-@pytest.mark.xfail(reason="https://github.com/python/cpython/issues/112319.")
 def test_slotted_no_match() -> None:
     match NotSlotted(1, 2):
         case Slotted():
@@ -195,7 +192,7 @@ def test_not_namedtuple() -> None:
     assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]
 
 
-@pytest.mark.xfail(reason="https://github.com/python/cpython/issues/112319.")
+# @pytest.mark.xfail(reason="https://github.com/python/cpython/issues/112319.")
 def test_not_slotted() -> None:
     r"""Test the Slotted protocol."""
     assert not isinstance(NotSlotted(1, 2), Slotted)

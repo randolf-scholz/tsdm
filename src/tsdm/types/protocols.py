@@ -1264,17 +1264,27 @@ class NTuple[T](Protocol):  # +T
         return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
 
+class _SlottedMeta(type(Protocol)):
+    r"""Metaclass for `Slotted`.
+
+    FIXME: https://github.com/python/cpython/issues/112319
+    This issue will make the need for metaclass obsolete.
+    """
+
+    def __instancecheck__(self, instance: object) -> TypeIs["Slotted"]:
+        slots = getattr(instance, "__slots__", None)
+        return isinstance(slots, str | Iterable)
+
+    def __subclasscheck__(cls, other: type, /) -> TypeIs[type["Slotted"]]:
+        slots = getattr(other, "__slots__", None)
+        return isinstance(slots, str | Iterable)
+
+
 @runtime_checkable
-class Slotted(Protocol):
+class Slotted(Protocol, metaclass=_SlottedMeta):
     r"""Protocol for objects that are slotted."""
 
     __slots__: tuple[str, ...] = ()
-
-    @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
-        r"""Cf https://github.com/python/cpython/issues/106363."""
-        slots = getattr(other, "__slots__", None)
-        return isinstance(slots, str | Iterable)
 
 
 def issubclass_dataclass(cls: type, /) -> TypeIs[type[Dataclass]]:
