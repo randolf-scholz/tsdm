@@ -104,7 +104,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K]):
     original_index: list[K] = field(init=False)
     original_schema: Series = field(init=False)
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         data = data.copy(deep=True)
         index = data.index.to_frame()
         self.original_index = FrozenList(index.columns)
@@ -122,7 +122,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K]):
                 exc.add_note(f"{typ}[{group}]: Failed to fit {enc}.")
                 raise
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
 
         for group, encoder in self.encoders.items():
@@ -132,7 +132,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K]):
         data = data.set_index(index_columns.tolist())
         return data
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
 
         for group, encoder in self.encoders.items():
@@ -179,7 +179,7 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
         self.var_name = var_name
         self.value_name = value_name
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         self.original_schema = data.dtypes
         self.categories = pd.CategoricalDtype(data.columns)
 
@@ -189,7 +189,7 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
 
         self.value_dtype = variable_dtypes.pop()
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
         df = (
             data.melt(
                 ignore_index=False,
@@ -217,7 +217,7 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
 
         return df
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
             df = data.iloc[:, :-1].stack()
             df = df[df == 1]
@@ -281,7 +281,7 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
             else categories
         )
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         if self.sparse is NotImplemented:
             self.sparse = len(data.columns) > 2
         if self.var_name is NotImplemented:
@@ -300,7 +300,7 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
         self.value_dtype = data[self.value_name].dtype
         self.original_schema = data.dtypes
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
             df = data.iloc[:, :-1].stack()
             df = df[df == 1]
@@ -330,7 +330,7 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
         result = df[self.categories.categories]  # fix column order
         return result.sort_index()
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
         df = (
             data.melt(
                 ignore_index=False,
@@ -394,12 +394,12 @@ class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
             else lambda _: Path(filename_or_generator)
         )
 
-    def encode(self, data: DataFrame, /) -> Path:
+    def _encode_impl(self, data: DataFrame, /) -> Path:
         path = self.path_generator(data)
         data.to_csv(path, **self.csv_write_options)
         return path
 
-    def decode(self, str_or_path: FilePath, /) -> DataFrame:
+    def _decode_impl(self, str_or_path: FilePath, /) -> DataFrame:
         return pd.read_csv(str_or_path, **self.csv_read_options)
 
 
@@ -426,7 +426,7 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
             dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
         )
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         self.original_schema = data.dtypes.to_dict()
 
         if Ellipsis in self.target_dtypes:
@@ -435,10 +435,10 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
             for col in ellipsis_cols:
                 self.target_dtypes[col] = fill_dtype
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
         return data.astype({k: self.target_dtypes[k] for k in data.columns})
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
         return data.astype({k: self.original_schema[k] for k in data.columns})
 
 
@@ -459,15 +459,15 @@ class FrameAsTensor(BaseEncoder[DataFrame, Tensor]):
     original_schema: dict[str, Any] = NotImplemented
     r"""The original schema."""
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         if data.index != pd.RangeIndex(len(data)):
             raise ValueError("DataFrame must be canonically indexed!")
         self.original_schema = data.dtypes.to_dict()
 
-    def encode(self, data: DataFrame, /) -> Tensor:
+    def _encode_impl(self, data: DataFrame, /) -> Tensor:
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)  # type: ignore[arg-type]
 
-    def decode(self, data: Tensor, /) -> DataFrame:
+    def _decode_impl(self, data: Tensor, /) -> DataFrame:
         array = data.detach().cpu().numpy()
         frame = DataFrame(array, columns=self.original_schema)
         return frame.astype(self.original_schema)
@@ -499,7 +499,7 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
             for k, v in schema.items()
         }
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         # get the original dtypes
         self.original_schema = data.dtypes.to_dict()
 
@@ -515,7 +515,7 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
         if extra_cols := set(data.columns) - set().union(*self.schema.values()):  # type: ignore[arg-type]
             raise ValueError(f"Extra columns {extra_cols}!")
 
-    def encode(self, data: DataFrame, /) -> dict[str, DataFrame]:
+    def _encode_impl(self, data: DataFrame, /) -> dict[str, DataFrame]:
         r"""Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
@@ -524,7 +524,7 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
         """
         return {key: data[cols] for key, cols in self.schema.items()}
 
-    def decode(self, data: Mapping[str, DataFrame], /) -> DataFrame:
+    def _decode_impl(self, data: Mapping[str, DataFrame], /) -> DataFrame:
         # Assemble the DataFrame
         return (
             pd.concat(data.values(), axis="columns")
@@ -602,7 +602,7 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
         self.dtypes = dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
         self.device = dict(device) if isinstance(device, Mapping) else {...: device}
 
-    def fit(self, data: DataFrame, /) -> None:
+    def _fit_impl(self, data: DataFrame, /) -> None:
         # check the index of the dataframe
         self.original_index = list(data.index.names)
         if not is_canonically_indexed(data):
@@ -641,7 +641,7 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
         if extra_cols := set(data.columns) - set().union(*self.schema.values()):  # type: ignore[arg-type]
             raise ValueError(f"Extra columns {extra_cols}!")
 
-    def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
+    def _encode_impl(self, data: DataFrame, /) -> dict[str, Tensor]:
         r"""Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
@@ -659,7 +659,7 @@ class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
             for group, cols in self.schema.items()
         }
 
-    def decode(self, data: Mapping[str, Tensor], /) -> DataFrame:
+    def _decode_impl(self, data: Mapping[str, Tensor], /) -> DataFrame:
         # convert the tensors to dataframes
         dfs = [
             DataFrame(tensor.detach().cpu().numpy(), columns=self.schema[group])

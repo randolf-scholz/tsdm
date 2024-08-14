@@ -51,7 +51,7 @@ class TimeDeltaEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
         self.round = rounding
 
-    def fit(self, data: Arr, /) -> None:
+    def _fit_impl(self, data: Arr, /) -> None:
         self.timedelta_dtype = data.dtype
 
         if self.unit is NotImplemented:
@@ -64,14 +64,14 @@ class TimeDeltaEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin
             # convert base_freq back to time delta in the original dtype
             self.unit = self.backend.scalar(base_freq, dtype=self.timedelta_dtype)
 
-    def encode(self, x: Arr, /) -> Arr:
+    def _encode_impl(self, x: Arr, /) -> Arr:
         try:
             return x / self.unit
         except TypeError:
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
             return self.backend.cast(x, int) / self.backend.scalar(self.unit, int)
 
-    def decode(self, y: Arr, /) -> Arr:
+    def _decode_impl(self, y: Arr, /) -> Arr:
         if self.round:
             y = y.round()
 
@@ -109,7 +109,7 @@ class DateTimeEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin)
         self.offset = NotImplemented if offset is NotImplemented else timestamp(offset)
         self.round = rounding
 
-    def fit(self, data: Arr, /) -> None:
+    def _fit_impl(self, data: Arr, /) -> None:
         # get the datetime dtype
         self.datetime_dtype = data.dtype
 
@@ -135,7 +135,7 @@ class DateTimeEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin)
             unit = self.unit
         self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)
 
-    def encode(self, x: Arr, /) -> Arr:
+    def _encode_impl(self, x: Arr, /) -> Arr:
         delta = x - self.offset
 
         try:
@@ -144,7 +144,7 @@ class DateTimeEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin)
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
             return self.backend.cast(delta, int) / self.backend.scalar(self.unit, int)
 
-    def decode(self, y: Arr, /) -> Arr:
+    def _decode_impl(self, y: Arr, /) -> Arr:
         if self.round:
             y = y.round()
 
@@ -184,7 +184,7 @@ class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
         if self.scales[0] != 1.0:
             raise ValueError("Initial scale must be 1.0")
 
-    def encode(self, x: NDArray, /) -> NDArray:
+    def _encode_impl(self, x: NDArray, /) -> NDArray:
         r""".. Signature: ``... -> (..., 2d)``.
 
         Note: we simply concatenate the sin and cosine terms without interleaving them.
@@ -192,7 +192,7 @@ class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
         z = np.einsum("..., d -> ...d", x, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
-    def decode(self, y: NDArray, /) -> NDArray:
+    def _decode_impl(self, y: NDArray, /) -> NDArray:
         r""".. signature:: ``(..., 2d) -> ...``."""
         return np.arcsin(y[..., 0])
 
@@ -215,7 +215,7 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
         self.dtype = NotImplemented
         self.colname = NotImplemented
 
-    def fit(self, x: Series, /) -> None:
+    def _fit_impl(self, x: Series, /) -> None:
         r"""Fit the encoder."""
         self.original_dtype = x.dtype
         self.original_name = x.name
@@ -225,13 +225,13 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
 
         self.freq = 2 * np.pi / self.period
 
-    def encode(self, x: Series, /) -> DataFrame:
+    def _encode_impl(self, x: Series, /) -> DataFrame:
         r"""Encode the data."""
         z = self.freq * (x % self.period)  # ensure 0...N-1
         columns = [f"cos_{self.original_name}", f"sin_{self.original_name}"]
         return DataFrame(np.stack([np.cos(z), np.sin(z)]).T, columns=columns)
 
-    def decode(self, y: DataFrame, /) -> Series:
+    def _decode_impl(self, y: DataFrame, /) -> Series:
         r"""Decode the data."""
         columns = [f"cos_{self.original_name}", f"sin_{self.original_name}"]
         z = np.arctan2(y[columns[1]], y[columns[0]])
@@ -275,18 +275,18 @@ class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
         self.original_type = NotImplemented
         self.rev_cols = NotImplemented
 
-    def fit(self, x: Series, /) -> None:
+    def _fit_impl(self, x: Series, /) -> None:
         r"""Fit the encoder."""
         self.original_type = type(x)
         self.original_name = x.name
         self.original_dtype = x.dtype
         self.rev_cols = [level for level in self.levels if level != "weekday"]
 
-    def encode(self, x: Series, /) -> DataFrame:
+    def _encode_impl(self, x: Series, /) -> DataFrame:
         r"""Encode the data."""
         return DataFrame.from_dict({level: getattr(x, level) for level in self.levels})
 
-    def decode(self, x: DataFrame, /) -> Series:
+    def _decode_impl(self, x: DataFrame, /) -> Series:
         r"""Decode the data."""
         x = x[self.rev_cols]
         s = pd.to_datetime(x)

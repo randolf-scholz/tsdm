@@ -18,15 +18,14 @@ from enum import StrEnum
 from typing import Literal, assert_never
 
 import numpy as np
-import pandas as pd
 from numpy import pi as PI
 from numpy.typing import NDArray
-from pandas import Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import ROOT_3
 from tsdm.encoders.base import BaseEncoder
+from tsdm.types.protocols import NumpyCompatSeries
 from tsdm.utils.decorators import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
@@ -293,21 +292,27 @@ class BoxCoxEncoder(BaseEncoder):
 
         if self.method == self.METHODS.fixed:
             self.offset = self.initial_value
-            self.check_bounds()
+            self.validate_params()
 
-    def check_bounds(self) -> None:
+    def validate_params(self) -> None:
+        super().validate_params()
+
+        if not np.isfinite(self.offset):
+            raise ValueError(f"{self.offset=} must be finite")
+        if not np.isfinite(self.bounds[0]):
+            raise ValueError(f"{self.bounds[0]=} must be finite")
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode[T: (NDArray, Series)](self, data: T, /) -> T:
+    def _encode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
         return np.log(data + self.offset)
 
-    def decode[T: (NDArray, Series)](self, data: T, /) -> T:
+    def _decode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
         return np.maximum(np.exp(data) - self.offset, 0)
 
-    def fit(self, data: NDArray | Series, /) -> None:
-        if not all(pd.isna(data) | (data >= 0)):
-            raise ValueError("Data must be in [0, 1] or NaN.")
+    def _fit_impl(self, data: NumpyCompatSeries, /) -> None:
+        if not all((data >= 0) | np.isnan(data)):
+            raise ValueError("Data must be in [0, ∞) or NaN.")
 
         if data.dtype != np.float64:
             warnings.warn(
@@ -323,7 +328,7 @@ class BoxCoxEncoder(BaseEncoder):
             case self.METHODS.minimum:
                 offset = data[data > 0].min() / 2
             case self.METHODS.quartile:
-                offset = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
+                offset = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
             case self.METHODS.match_uniform:
                 fun = construct_wasserstein_loss_boxcox_uniform(data)
                 x0 = np.array(self.initial_value)
@@ -350,7 +355,6 @@ class BoxCoxEncoder(BaseEncoder):
                 assert_never(other)
 
         self.offset = float(np.array(offset).item())
-        self.check_bounds()
 
 
 @pprint_repr
@@ -420,15 +424,15 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode[T: (NDArray, Series)](self, data: T, /) -> T:
+    def _encode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
         return np.log(data + self.offset) - np.log((1 - data) + self.offset)
 
-    def decode[T: (NDArray, Series)](self, data: T, /) -> T:
+    def _decode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
         return np.clip(r, 0, 1)
 
-    def fit(self, data: NDArray | Series, /) -> None:
+    def _fit_impl(self, data: NumpyCompatSeries, /) -> None:
         if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 

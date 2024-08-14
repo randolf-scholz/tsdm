@@ -147,7 +147,7 @@ class RecursiveTensorEncoder(
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode(self, data: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
+    def _encode_impl(self, data: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
         match data:
             case list(seq):
                 return [self.encode(d) for d in seq]
@@ -165,7 +165,7 @@ class RecursiveTensorEncoder(
                 except Exception as exc:
                     raise TypeError(f"Cannot encode data of type {type(data)}") from exc
 
-    def decode(self, data: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
+    def _decode_impl(self, data: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
         match data:
             case list(seq):
                 return [self.decode(d) for d in seq]
@@ -207,10 +207,10 @@ class Time2VecEncoder(BaseEncoder[Tensor, Tensor]):
         self.freq = self.encoder.freq
         self.phase = self.encoder.phase
 
-    def encode(self, data: Tensor, /) -> Tensor:
+    def _encode_impl(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)
 
-    def decode(self, data: Tensor, /) -> Tensor:
+    def _decode_impl(self, data: Tensor, /) -> Tensor:
         return self.encoder.decode(data)
 
 
@@ -234,8 +234,8 @@ class PositionalEncoder(BaseEncoder[Tensor, Tensor]):
         self.encoder = PositionalEncoding(num_dim=self.num_dim, scale=self.scale)
         self.scales = self.encoder.scales
 
-    def encode(self, data: Tensor, /) -> Tensor:
+    def _encode_impl(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)
 
-    def decode(self, data: Tensor, /) -> Tensor:
+    def _decode_impl(self, data: Tensor, /) -> Tensor:
         return self.encoder.decode(data)

@@ -70,7 +70,6 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
 from functools import wraps
-from inspect import getattr_static
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -79,6 +78,7 @@ from typing import (
     Protocol,
     Self,
     cast,
+    final,
     overload,
     runtime_checkable,
 )
@@ -293,71 +293,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
-    def __init_subclass__(cls) -> None:
-        r"""Initialize the subclass.
-
-        The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
-        """
-        super().__init_subclass__()  # <-- This is important! Otherwise, weird things happen.
-
-        # region wrap fit/encode/decode methods ----------------------------------------
-        for meth in ("fit", "encode", "decode"):
-            static_meth = getattr_static(cls, meth, None)
-            if static_meth is None:
-                raise NotImplementedError(f"Missing method {meth}.")
-            if isinstance(static_meth, staticmethod | classmethod):
-                raise TypeError(f"Method {meth} can't be static/class method.")
-
-        # wrap the methods
-        original_fit = cls.fit
-        original_encode = cls.encode
-        original_decode = cls.decode
-
-        @wraps(original_fit)
-        def fit_wrapper(self: Self, x: X, /) -> None:
-            r"""Fit the encoder to the data."""
-            self.LOGGER.info("Fitting encoder to data.")
-            original_fit(self, x)
-
-            # check if fitting was successful
-            if self.requires_fit:
-                msg = "Fitting was not successful, the encoder still requires fitting!"
-
-                if bad_params := {
-                    key: val
-                    for key, val in self.params.items()
-                    if val is NotImplemented or getattr(val, "requires_fit", False)
-                }:
-                    msg += (
-                        f"\nThis is likely because the following parameters are not set correctly:"
-                        f"\n{bad_params}"
-                    )
-
-                raise AssertionError(msg)
-            self.is_fitted = True
-
-        @wraps(original_encode)
-        def encode_wrapper(self: Self, x: X, /) -> Y:
-            r"""Encode the data."""
-            if self.requires_fit and not self.is_fitted:
-                raise RuntimeError("Encoder has not been fitted!")
-            return original_encode(self, x)
-
-        @wraps(original_decode)
-        def decode_wrapper(self: Self, y: Y, /) -> X:
-            r"""Decode the data."""
-            if self.requires_fit and not self.is_fitted:
-                raise RuntimeError("Encoder has not been fitted!")
-            return original_decode(self, y)
-
-        cls.fit = fit_wrapper  # type: ignore[assignment]
-        cls.encode = encode_wrapper  # type: ignore[assignment]
-        cls.decode = decode_wrapper  # type: ignore[assignment]
-        # endregion wrap fit/encode/decode methods -------------------------------------
-
-    _is_fitted: bool = False
-    r"""Whether the encoder has been fitted."""
-
     @property
     def params(self) -> dict[str, Any]:
         if isinstance(self, Dataclass):
@@ -381,19 +316,45 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     def is_fitted(self, value: bool, /) -> None:
         self._is_fitted = value
 
+    _is_fitted: bool = False
+    r"""Whether the encoder has been fitted."""
+
     # region abstract methods ----------------------------------------------------------
 
-    @abstractmethod
+    @final
+    def fit(self, x: X, /) -> None:
+        r"""Fit the encoder to the data."""
+        self.LOGGER.info("Fitting encoder to data.")
+        self._fit_impl(x)
+        self.validate_params()
+        self.is_fitted = True
+
+    @final
     def encode(self, x: X, /) -> Y:
+        r"""Encode the data."""
+        if self.requires_fit and not self.is_fitted:
+            raise RuntimeError("Encoder has not been fitted!")
+        return self._encode_impl(x)
+
+    @final
+    def decode(self, y: Y, /) -> X:
+        r"""Decode the data."""
+        if self.requires_fit and not self.is_fitted:
+            raise RuntimeError("Encoder has not been fitted!")
+        return self._decode_impl(y)
+
+    @abstractmethod
+    def _encode_impl(self, x: X, /) -> Y:
         r"""Encode the data by transformation."""
         ...
 
     @abstractmethod
-    def decode(self, y: Y, /) -> X:
+    def _decode_impl(self, y: Y, /) -> X:
         r"""Decode the data by inverse transformation."""
         ...
 
-    def fit(self, x: X, /) -> None:
+    # @abstractmethod
+    def _fit_impl(self, x: X, /) -> None:
         r"""Implement as necessary."""
 
     def simplify(self) -> "BaseEncoder[X, Y]":
@@ -401,6 +362,31 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         return self
 
     # endregion abstract methods -------------------------------------------------------
+
+    # region optional methods ----------------------------------------------------------
+    def validate_params(self) -> None:
+        r"""Validate the encoder parameters.
+
+        Automatically called after fitting the encoder.
+        By default, this checks if any parameter is `NotImplemented`.
+        """
+        # check if fitting was successful
+        if self.requires_fit:
+            msg = "Fitting was not successful, the encoder still requires fitting!"
+
+            if bad_params := {
+                key: val
+                for key, val in self.params.items()
+                if val is NotImplemented or getattr(val, "requires_fit", False)
+            }:
+                msg += (
+                    f"\nThis is likely because the following parameters are not set correctly:"
+                    f"\n{bad_params}"
+                )
+
+            raise AssertionError(msg)
+
+    # endregion optional methods -------------------------------------------------------
 
     # region magic methods -------------------------------------------------------------
     def __invert__(self) -> "BaseEncoder[Y, X]":
@@ -655,10 +641,10 @@ class IdentityEncoder(BaseEncoder[Any, Any]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode[T](self, x: T, /) -> T:
+    def _encode_impl[T](self, x: T, /) -> T:
         return x
 
-    def decode[T](self, y: T, /) -> T:
+    def _decode_impl[T](self, y: T, /) -> T:
         return y
 
 
@@ -669,10 +655,10 @@ class DeepcopyEncoder(BaseEncoder[Any, Any]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode[T](self, x: T, /) -> T:
+    def _encode_impl[T](self, x: T, /) -> T:
         return deepcopy(x)
 
-    def decode[T](self, y: T, /) -> T:
+    def _decode_impl[T](self, y: T, /) -> T:
         return deepcopy(y)
 
 
@@ -686,10 +672,10 @@ class TupleEncoder(BaseEncoder[Any, Any]):
     def __invert__(self) -> "TupleDecoder":
         return TupleDecoder()
 
-    def encode[T](self, x: T, /) -> tuple[T]:
+    def _encode_impl[T](self, x: T, /) -> tuple[T]:
         return (x,)
 
-    def decode[T](self, y: tuple[T], /) -> T:
+    def _decode_impl[T](self, y: tuple[T], /) -> T:
         return y[0]
 
 
@@ -703,10 +689,10 @@ class TupleDecoder(BaseEncoder[Any, Any]):
     def __invert__(self) -> "TupleEncoder":
         return TupleEncoder()
 
-    def encode[T](self, y: tuple[T], /) -> T:
+    def _encode_impl[T](self, y: tuple[T], /) -> T:
         return y[0]
 
-    def decode[T](self, x: T, /) -> tuple[T]:
+    def _decode_impl[T](self, x: T, /) -> tuple[T]:
         return (x,)
 
 
@@ -731,10 +717,10 @@ class DiagonalEncoder[T](BaseEncoder[T, tuple[T, ...]]):
     def __invert__(self) -> "DiagonalDecoder":
         return DiagonalDecoder(num=self.num, aggregate_fn=self.aggregate_fn)
 
-    def encode(self, x: T, /) -> tuple[T, ...]:
+    def _encode_impl(self, x: T, /) -> tuple[T, ...]:
         return (x,) * self.num
 
-    def decode(self, y: tuple[T, ...], /) -> T:
+    def _decode_impl(self, y: tuple[T, ...], /) -> T:
         return self.aggregate_fn(y)
 
 
@@ -759,10 +745,10 @@ class DiagonalDecoder[T](BaseEncoder[tuple[T, ...], T]):
     def __invert__(self) -> "DiagonalEncoder":
         return DiagonalEncoder(num=self.num, aggregate_fn=self.aggregate_fn)
 
-    def encode(self, y: tuple[T, ...], /) -> T:
+    def _encode_impl(self, y: tuple[T, ...], /) -> T:
         return self.aggregate_fn(y)
 
-    def decode(self, x: T, /) -> tuple[T, ...]:
+    def _decode_impl(self, x: T, /) -> tuple[T, ...]:
         return (x,) * self.num
 
 
@@ -777,13 +763,13 @@ class InverseEncoder[X, Y](BaseEncoder[Y, X]):
     encoder: Encoder[X, Y]
     r"""The encoder to invert."""
 
-    def fit(self, y: Y, /) -> None:
+    def _fit_impl(self, y: Y, /) -> None:
         raise NotImplementedError("Inverse encoders cannot be fitted.")
 
-    def encode(self, y: Y, /) -> X:
+    def _encode_impl(self, y: Y, /) -> X:
         return self.encoder.decode(y)
 
-    def decode(self, x: X, /) -> Y:
+    def _decode_impl(self, x: X, /) -> Y:
         return self.encoder.encode(x)
 
     def simplify(self) -> BaseEncoder[Y, X]:
@@ -816,10 +802,10 @@ class WrappedEncoder[X, Y](BaseEncoder[X, Y]):
     def params(self) -> dict[str, Any]:
         return self.encoder.params
 
-    def encode(self, x: X, /) -> Y:
+    def _encode_impl(self, x: X, /) -> Y:
         return self.encoder.encode(x)
 
-    def decode(self, y: Y, /) -> X:
+    def _decode_impl(self, y: Y, /) -> X:
         return self.encoder.decode(y)
 
     def simplify(self) -> BaseEncoder[X, Y]:
@@ -860,7 +846,7 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
             output_leaf_type=self.leaf_type,
         )
 
-    def encode(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
+    def _encode_impl(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
         match x:
             case list(seq):
                 return [self.encode(val) for val in seq]
@@ -877,7 +863,7 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
             case _:
                 raise TypeError(f"Type {type(x)} not supported.")
 
-    def decode(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
+    def _decode_impl(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
         match y:
             case list(seq):
                 return [self.decode(val) for val in seq]
@@ -924,7 +910,7 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
         cls: type[ChainedEncoder] = type(self)
         return cls(*(InverseEncoder(e) for e in reversed(self)))
 
-    def fit(self, x: X, /) -> None:
+    def _fit_impl(self, x: X, /) -> None:
         for encoder in reversed(self):
             try:
                 encoder.fit(x)
@@ -937,12 +923,12 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
             else:
                 x = encoder.encode(x)
 
-    def encode(self, x: X, /) -> Y:
+    def _encode_impl(self, x: X, /) -> Y:
         for encoder in reversed(self):
             x = encoder.encode(x)
         return cast(Y, x)
 
-    def decode(self, y: Y, /) -> X:
+    def _decode_impl(self, y: Y, /) -> X:
         for encoder in self:
             y = encoder.decode(y)
         return cast(X, y)
@@ -1013,7 +999,7 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
         cls: type[PipedEncoder] = type(self)
         return cls(*(InverseEncoder(e) for e in reversed(self)))
 
-    def fit(self, x: X, /) -> None:
+    def _fit_impl(self, x: X, /) -> None:
         for encoder in self:
             try:
                 encoder.fit(x)
@@ -1026,12 +1012,12 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
             else:
                 x = encoder.encode(x)
 
-    def encode(self, x: X, /) -> Y:
+    def _encode_impl(self, x: X, /) -> Y:
         for encoder in self:
             x = encoder.encode(x)
         return cast(Y, x)
 
-    def decode(self, y: Y, /) -> X:
+    def _decode_impl(self, y: Y, /) -> X:
         for encoder in reversed(self):
             y = encoder.decode(y)
         return cast(X, y)
@@ -1138,16 +1124,16 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
         cls: type[ParallelEncoder] = type(self)
         return cls(*(InverseEncoder(e) for e in self))  # type: ignore[return-value]
 
-    def fit(self, xs: TupleIn, /) -> None:
+    def _fit_impl(self, xs: TupleIn, /) -> None:
         for encoder, x in zip(self.encoders, xs, strict=True):
             encoder.fit(x)
 
-    def encode(self, xs: TupleIn, /) -> TupleOut:
+    def _encode_impl(self, xs: TupleIn, /) -> TupleOut:
         return tuple(  # type: ignore[return-value]
             encoder.encode(x) for encoder, x in zip(self, xs, strict=True)
         )
 
-    def decode(self, ys: TupleOut, /) -> TupleIn:
+    def _decode_impl(self, ys: TupleOut, /) -> TupleIn:
         return tuple(  # type: ignore[return-value]
             encoder.decode(x) for encoder, x in zip(self, ys, strict=True)
         )
@@ -1268,10 +1254,10 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
         decoders = (InverseEncoder(e) for e in self)
         return JointDecoder(*decoders, aggregate_fn=self.aggregate_fn)  # type: ignore[return-value]
 
-    def encode(self, x: X, /) -> TupleOut:
+    def _encode_impl(self, x: X, /) -> TupleOut:
         return tuple(e.encode(x) for e in self)  # type: ignore[return-value]
 
-    def decode(self, ys: TupleOut, /) -> X:
+    def _decode_impl(self, ys: TupleOut, /) -> X:
         decoded_vals = [e.decode(y) for e, y in zip(self, ys, strict=True)]
         return self.aggregate_fn(decoded_vals)
 
@@ -1358,11 +1344,11 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
         decoders = (InverseEncoder(e) for e in self)
         return JointEncoder(*decoders, aggregate_fn=self.aggregate_fn)  # type: ignore[return-value]
 
-    def encode(self, xs: TupleIn, /) -> Y:
+    def _encode_impl(self, xs: TupleIn, /) -> Y:
         encoded_vals = [e.encode(x) for e, x in zip(self, xs, strict=True)]
         return self.aggregate_fn(encoded_vals)
 
-    def decode(self, y: Y, /) -> TupleIn:
+    def _decode_impl(self, y: Y, /) -> TupleIn:
         return tuple(e.decode(y) for e in self)  # type: ignore[return-value]
 
     def simplify(self) -> BaseEncoder[TupleIn, Y]:
@@ -1410,7 +1396,7 @@ class MappedEncoder[
         decoders = {k: InverseEncoder(e) for k, e in self.items()}
         return cls(decoders)  # type: ignore[arg-type,return-value]
 
-    def fit(self, xmap: MappingIn, /) -> None:
+    def _fit_impl(self, xmap: MappingIn, /) -> None:
         if missing_keys := self.keys() - xmap.keys():
             raise ValueError(f"No data to fit encoders {missing_keys}.")
         if extra_keys := xmap.keys() - self.keys():
@@ -1419,11 +1405,11 @@ class MappedEncoder[
         for k, x in xmap.items():
             self.encoders[k].fit(x)
 
-    def encode(self, xmap: MappingIn, /) -> MappingOut:
+    def _encode_impl(self, xmap: MappingIn, /) -> MappingOut:
         ymap = {k: self.encoders[k].encode(x) for k, x in xmap.items()}
         return cast(MappingOut, ymap)
 
-    def decode(self, ymap: MappingOut, /) -> MappingIn:
+    def _decode_impl(self, ymap: MappingOut, /) -> MappingIn:
         xmap = {k: self.encoders[k].decode(y) for k, y in ymap.items()}
         return cast(MappingIn, xmap)
 

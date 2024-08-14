@@ -27,13 +27,14 @@ __all__ = [
     "OrderedScalar",
     "AdditiveScalar",
     # Arrays
-    "SeriesKind",
-    "TableKind",
     "ArrayKind",
+    "MutableArray",
     "NumericalArray",
     "NumericalSeries",
     "NumericalTensor",
-    "MutableArray",
+    "NumpyCompatSeries",
+    "SeriesKind",
+    "TableKind",
     # stdlib
     "Map",
     "MutMap",
@@ -381,6 +382,7 @@ class SupportsArrayUfunc(SupportsArray, Protocol):
 
     Examples:
         - `numpy.ndarray`
+        - `pandas.Index`
         - `pandas.Series`
         - `pandas.DataFrame`
         - `polars.Series`
@@ -766,7 +768,7 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
     @overload  # depending on Tensor Rank, can return Scalar or Tensor
     def __getitem__(self, key: int, /) -> Scalar: ...
     @overload
-    def __getitem__(self, key: slice | range | list[int], /) -> Self: ...
+    def __getitem__(self, key: slice | range | list[int] | Self, /) -> Self: ...
     # fmt: on
 
     def item(self) -> Scalar:
@@ -775,6 +777,17 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
         Otherwise, raises `ValueError`.
         """
         ...
+
+
+class NumpyCompatSeries[Scalar](NumericalSeries[Scalar], SupportsArrayUfunc, Protocol):
+    """Protocol for numerical series that are compatible with numpy ufuncs.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Index`
+        - `pandas.Series`
+        - `polars.Series`
+    """
 
 
 class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):

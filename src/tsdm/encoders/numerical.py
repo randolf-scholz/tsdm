@@ -272,7 +272,7 @@ class ArrayEncoder[Arr: Array, Y](BaseEncoder[Arr, Y]):
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
 
-    def fit(self, data: Arr, /) -> None:
+    def _fit_impl(self, data: Arr, /) -> None:
         r"""Fit the encoder to the data."""
         self.backend = get_backend(data)
 
@@ -294,7 +294,7 @@ class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
     backend: Backend[Arr] = NotImplemented
     r"""The backend of the encoder."""
 
-    def fit(self, data: X, /) -> None:
+    def _fit_impl(self, data: X, /) -> None:
         r"""Fit the encoder to the data."""
         self.backend = get_backend(data)
 
@@ -449,7 +449,7 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
             return (x <= self.upper_bound) | self.backend.is_null(x)
         return (x < self.upper_bound) | self.backend.is_null(x)
 
-    def fit(self, data: Array, /) -> None:
+    def _fit_impl(self, data: Array, /) -> None:
         # select the backend
         self.backend: Backend = get_backend(data)
 
@@ -481,13 +481,13 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
             case _:
                 raise NotImplementedError
 
-    def encode[Arr: Array](self, data: Arr, /) -> Arr:
+    def _encode_impl[Arr: Array](self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode[Arr: Array](self, data: Arr, /) -> Arr:
+    def _decode_impl[Arr: Array](self, data: Arr, /) -> Arr:
         return data
 
 
@@ -551,13 +551,13 @@ class LinearScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         encoder._is_fitted = self._is_fitted
         return encoder
 
-    def fit(self, data: Arr, /) -> None:
+    def _fit_impl(self, data: Arr, /) -> None:
         self.backend: Backend[Arr] = get_backend(data)
 
-    def encode(self, data: Arr, /) -> Arr:
+    def _encode_impl(self, data: Arr, /) -> Arr:
         return data * self.scale + self.loc
 
-    def decode(self, data: Arr, /) -> Arr:
+    def _decode_impl(self, data: Arr, /) -> Arr:
         return (data - self.loc) / self.scale
 
 
@@ -606,7 +606,7 @@ class StandardScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         encoder._is_fitted = self._is_fitted
         return encoder
 
-    def fit(self, data: Arr, /) -> None:
+    def _fit_impl(self, data: Arr, /) -> None:
         # switch the backend
         self.backend: Backend[Arr] = get_backend(data)
 
@@ -619,13 +619,13 @@ class StandardScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         if self.stdv_learnable:
             self.stdv = self.backend.nanstd(data, axis=axes)
 
-    def encode(self, data: Arr, /) -> Arr:
+    def _encode_impl(self, data: Arr, /) -> Arr:
         # TODO: consider adding broadcasting
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return (data - self.mean[broadcast]) / self.stdv[broadcast]
         return (data - self.mean) / self.stdv
 
-    def decode(self, data: Arr, /) -> Arr:
+    def _decode_impl(self, data: Arr, /) -> Arr:
         # TODO: consider adding broadcasting
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return data * self.stdv[broadcast] + self.mean[broadcast]
@@ -738,7 +738,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         encoder._is_fitted = self._is_fitted
         return encoder
 
-    def fit(self, data: Arr, /) -> None:
+    def _fit_impl(self, data: Arr, /) -> None:
         # switch the backend
         self.switch_backend(get_backend(data))
 
@@ -767,7 +767,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         scale = dy / dx
         self.scale = self.backend.where(dx != 0, scale, scale**0)
 
-    def encode(self, x: Arr, /) -> Arr:
+    def _encode_impl(self, x: Arr, /) -> Arr:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
         y = (x - self.xbar) * self.scale + self.ybar
         if self.safe_computation:
@@ -792,7 +792,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         y = backend.where((x >= xmin) & (x <= xmax), backend.clip(y, ymin, ymax), y)
         return y
 
-    def decode(self, y: Arr, /) -> Arr:
+    def _decode_impl(self, y: Arr, /) -> Arr:
         r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
         x = (y - self.ybar) / self.scale + self.xbar
         if self.safe_computation:
@@ -854,7 +854,7 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
     threshold: NDArray
     replacement: NDArray
 
-    def fit(self, data: NDArray, /) -> None:
+    def _fit_impl(self, data: NDArray, /) -> None:
         if np.any(data < 0):
             raise ValueError("Data must be non-negative.")
 
@@ -862,13 +862,13 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
         self.threshold = data[~mask].min()
         self.replacement = np.log2(self.threshold / 2)
 
-    def encode(self, data: NDArray, /) -> NDArray:
+    def _encode_impl(self, data: NDArray, /) -> NDArray:
         result = data.copy()
         mask = data <= 0
         result[:] = np.where(mask, self.replacement, np.log2(data))
         return result
 
-    def decode(self, data: NDArray, /) -> NDArray:
+    def _decode_impl(self, data: NDArray, /) -> NDArray:
         result = 2**data
         mask = result < self.threshold
         result[:] = np.where(mask, 0, result)
@@ -882,13 +882,13 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
     def params(self) -> dict[str, Any]:
         return {}
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
         # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
         if not np.all((data > 0) & (data < 1)):
             raise ValueError("Data must be in the range (0, 1).")
         return np.log(data / (1 - data))
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
@@ -904,10 +904,10 @@ class TensorSplitter[Arr: Array](ArrayEncoder[Arr, list[Arr]]):
     def __invert__(self) -> "TensorConcatenator[Arr]":
         return TensorConcatenator(axis=self.axis, indices=self.indices)
 
-    def encode(self, x: Arr, /) -> list[Arr]:
+    def _encode_impl(self, x: Arr, /) -> list[Arr]:
         return self.backend.array_split(x, self.indices, axis=self.axis)
 
-    def decode(self, y: list[Arr], /) -> Arr:
+    def _decode_impl(self, y: list[Arr], /) -> Arr:
         return self.backend.concatenate(y, axis=self.axis)
 
 
@@ -923,12 +923,12 @@ class TensorConcatenator[Arr: Array](ArrayDecoder[list[Arr], Arr]):
     def __invert__(self) -> "TensorSplitter[Arr]":
         return TensorSplitter(axis=self.axis, indices=self.indices)
 
-    def fit(self, x: list[Arr], /) -> None:
+    def _fit_impl(self, x: list[Arr], /) -> None:
         super().fit(x)
         self.indices = [arr.shape[self.axis] for arr in x]
 
-    def encode(self, x: list[Arr], /) -> Arr:
+    def _encode_impl(self, x: list[Arr], /) -> Arr:
         return self.backend.concatenate(x, axis=self.axis)
 
-    def decode(self, y: Arr, /) -> list[Arr]:
+    def _decode_impl(self, y: Arr, /) -> list[Arr]:
         return self.backend.array_split(y, self.indices, axis=self.axis)
