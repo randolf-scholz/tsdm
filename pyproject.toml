@@ -59,7 +59,7 @@ repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple
 docs = [
     "docutils>=0.21.2",
     "myst-parser>=4.0.0",
-    "nbsphinx>=0.9.4",
+    "nbsphinx>=0.9.5",
     "piccolo-theme>=0.23.0",
     "pydata-sphinx-theme>=0.15.4",
     "sphinx-autoapi>=3.2.1",
@@ -113,7 +113,7 @@ devtools = [
     "pre-commit>=3.8.0",
     "pybadges>=3.0.1",
     "pygments>=2.18.0",
-    "setuptools>=72.1.0",
+    "setuptools>=72.2.0",
     "twine>=5.1.1",
     "wheel>=0.44.0",
 ]

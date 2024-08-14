@@ -1,0 +1,156 @@
+exclude = []
+source_roots = [
+    "src",
+]
+
+[[modules]]
+path = "tsdm.backend"
+depends_on = [
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.config"
+depends_on = []
+
+[[modules]]
+path = "tsdm.constants"
+depends_on = []
+
+[[modules]]
+path = "tsdm.data"
+depends_on = [
+    { path = "tsdm.backend" },
+    { path = "tsdm.linalg" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.datasets"
+depends_on = [
+    { path = "tsdm.backend" },
+    { path = "tsdm.config" },
+    { path = "tsdm.data" },
+    { path = "tsdm.random" },
+    { path = "tsdm.testing" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.encoders"
+depends_on = [
+    { path = "tsdm.backend" },
+    { path = "tsdm.constants" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.linalg"
+depends_on = []
+
+[[modules]]
+path = "tsdm.logutils"
+depends_on = [
+    { path = "tsdm.constants" },
+    { path = "tsdm.linalg" },
+    { path = "tsdm.metrics" },
+    { path = "tsdm.models" },
+    { path = "tsdm.optimizers" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+    { path = "tsdm.viz" },
+]
+
+[[modules]]
+path = "tsdm.metrics"
+depends_on = [
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.models"
+depends_on = [
+    { path = "tsdm.config" },
+    { path = "tsdm.encoders" },
+    { path = "tsdm.optimizers" },
+    { path = "tsdm.testing" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.optimizers"
+depends_on = []
+
+[[modules]]
+path = "tsdm.random"
+depends_on = [
+    { path = "tsdm.constants" },
+    { path = "tsdm.data" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.tasks"
+depends_on = [
+    { path = "tsdm.constants" },
+    { path = "tsdm.data" },
+    { path = "tsdm.datasets" },
+    { path = "tsdm.encoders" },
+    { path = "tsdm.metrics" },
+    { path = "tsdm.random" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+]
+
+[[modules]]
+path = "tsdm.testing"
+depends_on = [
+    { path = "tsdm.constants" },
+    { path = "tsdm.types" },
+]
+
+[[modules]]
+path = "tsdm.types"
+depends_on = []
+
+[[modules]]
+path = "tsdm.utils"
+depends_on = [
+    { path = "tsdm.config" },
+    { path = "tsdm.constants" },
+    { path = "tsdm.testing" },
+    { path = "tsdm.types" },
+]
+
+[[modules]]
+path = "tsdm.viz"
+depends_on = [
+    { path = "tsdm.constants" },
+]
+
+[[modules]]
+path = "<root>"
+depends_on = [
+    { path = "tsdm.backend" },
+    { path = "tsdm.config" },
+    { path = "tsdm.data" },
+    { path = "tsdm.datasets" },
+    { path = "tsdm.encoders" },
+    { path = "tsdm.linalg" },
+    { path = "tsdm.logutils" },
+    { path = "tsdm.metrics" },
+    { path = "tsdm.models" },
+    { path = "tsdm.optimizers" },
+    { path = "tsdm.random" },
+    { path = "tsdm.tasks" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+    { path = "tsdm.viz" },
+]

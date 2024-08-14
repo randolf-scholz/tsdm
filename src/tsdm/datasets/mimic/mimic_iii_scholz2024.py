@@ -10,7 +10,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-import tsdm
 from tsdm.datasets.mimic.mimic_iii import MIMIC_III
 from tsdm.types.dtypes import map_pandas_arrowtime_numpy
 
@@ -24,7 +23,7 @@ class MIMIC_III_Scholz2024(MIMIC_III):
         r"""Initialize the dataset."""
         super().__init__(*args, **kwargs)
 
-        ds = tsdm.datasets.MIMIC_III()
+        ds = MIMIC_III()
 
         # map dtypes in all tables.
         # NOTE: necessary since duration times are bugged in pyarrow 14.

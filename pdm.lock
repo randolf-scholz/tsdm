@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:ad2f091a4b91d03e29dbc9e452e6bedaf41b2f78eefd53e0e84f4c3714a21524"
+content_hash = "sha256:67f2235926e6302eaaf0efc3d0eb90e3757c699978e463082b11d728ac730ed4"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -1628,7 +1628,7 @@ files = [
 
 [[package]]
 name = "nbsphinx"
-version = "0.9.4"
+version = "0.9.5"
 requires_python = ">=3.6"
 summary = "Jupyter Notebook Tools for Sphinx"
 groups = ["docs"]
@@ -1642,8 +1642,8 @@ dependencies = [
     "traitlets>=5",
 ]
 files = [
-    {file = "nbsphinx-0.9.4-py3-none-any.whl", hash = "sha256:22cb1d974a8300e8118ca71aea1f649553743c0c5830a54129dcd446e6a8ba17"},
-    {file = "nbsphinx-0.9.4.tar.gz", hash = "sha256:042a60806fc23d519bc5bef59d95570713913fe442fda759d53e3aaf62104794"},
+    {file = "nbsphinx-0.9.5-py3-none-any.whl", hash = "sha256:d82f71084425db1f48e72515f15c25b4de8652ceaab513ee462ac05f1b8eae0a"},
+    {file = "nbsphinx-0.9.5.tar.gz", hash = "sha256:736916e7b0dab28fc904f4a9ae3b53a9a50c29fccc6329c052fcc7485abcf2b7"},
 ]
 
 [[package]]
@@ -2828,14 +2828,14 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "72.1.0"
+version = "72.2.0"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 groups = ["default", "devtools", "docs", "experiment"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "setuptools-72.1.0-py3-none-any.whl", hash = "sha256:5a03e1860cf56bb6ef48ce186b0e557fdba433237481a9a625176c2831be15d1"},
-    {file = "setuptools-72.1.0.tar.gz", hash = "sha256:8d243eff56d095e5817f796ede6ae32941278f542e0f941867cc05ae52b162ec"},
+    {file = "setuptools-72.2.0-py3-none-any.whl", hash = "sha256:f11dd94b7bae3a156a95ec151f24e4637fb4fa19c878e4d191bfb8b2d82728c4"},
+    {file = "setuptools-72.2.0.tar.gz", hash = "sha256:80aacbf633704e9c8bfa1d99fa5dd4dc59573efcf9e4042c13d3bcef91ac2ef9"},
 ]
 
 [[package]]
@@ -2886,14 +2886,14 @@ files = [
 
 [[package]]
 name = "soupsieve"
-version = "2.5"
+version = "2.6"
 requires_python = ">=3.8"
 summary = "A modern CSS selector implementation for Beautiful Soup."
 groups = ["docs", "experiment"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "soupsieve-2.5-py3-none-any.whl", hash = "sha256:eaa337ff55a1579b6549dc679565eac1e3d000563bcb1c8ab0d0fefbc0c2cdc7"},
-    {file = "soupsieve-2.5.tar.gz", hash = "sha256:5663d5a7b3bfaeee0bc4372e7fc48f9cff4940b3eec54a6451cc5299f1097690"},
+    {file = "soupsieve-2.6-py3-none-any.whl", hash = "sha256:e72c4ff06e4fb6e4b5a9f0f55fe6e81514581fca1515028625d0f299c602ccc9"},
+    {file = "soupsieve-2.6.tar.gz", hash = "sha256:e2e68417777af359ec65daac1057404a3c8a5455bb8abc36f1a9866ab1a51abb"},
 ]
 
 [[package]]
@@ -3219,14 +3219,14 @@ files = [
 
 [[package]]
 name = "tomlkit"
-version = "0.13.0"
+version = "0.13.2"
 requires_python = ">=3.8"
 summary = "Style preserving TOML library"
 groups = ["linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "tomlkit-0.13.0-py3-none-any.whl", hash = "sha256:7075d3042d03b80f603482d69bf0c8f345c2b30e41699fd8883227f89972b264"},
-    {file = "tomlkit-0.13.0.tar.gz", hash = "sha256:08ad192699734149f5b97b45f1f18dad7eb1b6d16bc72ad0c2335772650d7b72"},
+    {file = "tomlkit-0.13.2-py3-none-any.whl", hash = "sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde"},
+    {file = "tomlkit-0.13.2.tar.gz", hash = "sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79"},
 ]
 
 [[package]]

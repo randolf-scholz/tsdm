@@ -142,6 +142,11 @@ repos:
     hooks:
     - id: shellcheck
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
+  # tach
+  - repo: https://github.com/gauge-sh/tach-pre-commit
+    rev: v0.10.0 # change this to the latest tag!
+    hooks:
+      - id: tach
   # mypy
   - repo: local
     hooks:
