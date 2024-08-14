@@ -361,9 +361,12 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
         )
 
 
+from pathlib import PurePath
+
+
 @pprint_repr
 @dataclass(init=False, slots=True)
-class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
+class CSVEncoder(BaseEncoder[DataFrame, Path]):
     r"""Encode the data into a CSV file."""
 
     DEFAULT_READ_OPTIONS: ClassVar[dict] = {}
@@ -399,7 +402,7 @@ class CSVEncoder(BaseEncoder[DataFrame, FilePath]):
         data.to_csv(path, **self.csv_write_options)
         return path
 
-    def _decode_impl(self, str_or_path: FilePath, /) -> DataFrame:
+    def _decode_impl(self, str_or_path: PurePath, /) -> DataFrame:
         return pd.read_csv(str_or_path, **self.csv_read_options)
 
 

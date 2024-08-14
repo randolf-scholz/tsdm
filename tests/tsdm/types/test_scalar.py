@@ -11,6 +11,8 @@ from typing_extensions import get_protocol_members
 from tsdm.types.protocols import AdditiveScalar, BooleanScalar, OrderedScalar
 
 BASE_SCALARS: dict[type, object] = {
+    pd.NA: pd.NA,
+    None: None,
     bool: True,
     int: 1,
     float: 1.0,
@@ -33,7 +35,10 @@ ORDERED_SCALAR_TYPES: dict[str, OrderedScalar] = {
     "np_timedelta" : np.timedelta64(1, "D"),
     "pd_timedelta" : pd.Timedelta("1D"),
     "pd_timestamp" : pd.Timestamp("2021-01-01"),
+    "py_string"    : "1",
+    "py_bytes"     : b"1",
     "py_bool"      : True,
+    "py_list"      : [1],
     "py_datetime"  : dt.datetime(2021, 1, 1),
     "py_float"     : 1.0,
     "py_int"       : 1,
@@ -120,7 +125,7 @@ def test_shared_interface_bool() -> None:
 
     superfluous = interface - shared_attrs
     assert not superfluous, f"{superfluous=}"
-    # assert not (missing := shared_attrs - interface), f"{missing=}"
+    # assert not (missing := sorted(shared_attrs - interface)), f"{missing=}"
 
 
 def test_shared_interface_ordered() -> None:
@@ -131,7 +136,7 @@ def test_shared_interface_ordered() -> None:
 
     superfluous = interface - shared_attrs
     assert not superfluous, f"{superfluous=}"
-    # assert not (missing := shared_attrs - interface), f"{missing=}"
+    # assert not (missing := sorted(shared_attrs - interface)), f"{missing=}"
 
 
 def test_shared_interface_additive() -> None:

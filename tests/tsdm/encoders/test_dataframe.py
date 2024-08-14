@@ -23,7 +23,7 @@ def test_csv_encoder():
     assert not encoder.requires_fit
 
     # encode frame
-    path = encoder.encode(TEST_FRAME_A)
+    path = encoder._encode_impl(TEST_FRAME_A)
     assert path.exists()
 
     # compare decoded frame with original

@@ -57,10 +57,10 @@ TENSORS: dict[str, NumericalTensor[OrderedScalar]] = {
     "numpy-2D": np.array(DATA_2D),
     "torch-1D": torch.tensor(DATA_1D),
     "torch-2D": torch.tensor(DATA_2D),
-    "pandas-index-numpy": pd.Index(DATA_1D, dtype=float),
-    "pandas-series-numpy": pd.Series(DATA_1D, dtype=float),
-    "pandas-index-array": pd.Index(DATA_1D, dtype="float[pyarrow]"),
-    "pandas-series-array": pd.Series(DATA_1D, dtype="float[pyarrow]"),
+    "pandas[numpy]-index": pd.Index(DATA_1D, dtype=float),
+    "pandas[numpy]-series": pd.Series(DATA_1D, dtype=float),
+    "pandas[arrow]-index": pd.Index(DATA_1D, dtype="float[pyarrow]"),
+    "pandas[arrow]-series": pd.Series(DATA_1D, dtype="float[pyarrow]"),
     # "pandas-dataframe": pd.DataFrame(_DATA_2D),
 }
 
@@ -148,6 +148,7 @@ def test_boundary_encoder(name: str) -> None:
     encoder = BoundaryEncoder(-1, +1, mode="clip")
     encoder.fit(data)
     encoded = encoder.encode(data)
+    assert isinstance(encoded, type(data))
     assert type(encoded) is type(data)
     assert encoded.shape == data.shape
     assert encoded.dtype == data.dtype
@@ -157,21 +158,16 @@ def test_boundary_encoder(name: str) -> None:
 
     match encoded:
         case np.ndarray() as array:
-            assert isinstance(encoded, np.ndarray)
             assert encoded.dtype == array.dtype
         case torch.Tensor() as tensor:
-            assert isinstance(encoded, torch.Tensor)
             assert encoded.device == tensor.device
             assert encoded.dtype == tensor.dtype
         case pd.Index() as index:
-            assert isinstance(encoded, pd.Index)
             assert encoded.name == index.name
         case pd.Series() as series:
-            assert isinstance(encoded, pd.Series)
             assert encoded.name == series.name
             assert encoded.index.equals(series.index)
         case pd.DataFrame() as df:
-            assert isinstance(encoded, pd.DataFrame)
             assert encoded.columns.equals(df.columns)
             assert encoded.index.equals(df.index)
         case _:
