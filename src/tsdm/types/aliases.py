@@ -98,9 +98,9 @@ r"""Type Alias for split identifiers."""
 type SingleIndexer = int | tuple[int, ...]
 r"""Type hint for indexer that possibly selects a single element."""
 type MultiIndexer = (
-    (None | slice | range | list[int] | EllipsisType)
+    (None | slice | range | list[int] | list[bool] | EllipsisType)
     # or tuple of the above
-    | tuple[None | int | slice | range | list[int] | EllipsisType, ...]
+    | tuple[None | int | slice | range | list[int] | list[bool] | EllipsisType, ...]
 )
 
 r"""Indexer that always returns a sub-tensor."""

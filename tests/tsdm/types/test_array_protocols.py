@@ -31,12 +31,13 @@ __logger__ = logging.getLogger(__name__)
 RNG = np.random.default_rng()
 ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 
-_STRING_LIST = ["a", "b", "c"]
-_INT_LIST = [1, 2, 3]
-_INT_MATRIX = [[1, 2], [3, 4], [5, 6], [7, 8]]
+_STRING_LIST = ["a", "b", "c", "d"]
+_INT_LIST = [1, 2, 3, 4]
+_INT_MATRIX = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]]
 _TABLE_DATA_FLOAT = {
     "x": [1.1, 2.2, 3.3, 4.4],
     "y": [5.5, 6.6, 7.7, 8.8],
+    "z": [9.9, 0.0, 1.1, 2.2],
 }
 _TABLE_DATA_MIXED = {
     "label": ["a", "b", "c", "d"],
@@ -444,7 +445,7 @@ def test_numerical_tensor_getitem(name: str) -> None:
     scalar_type = type(tensor.ravel()[0])
 
     # ensure length, otherwise other checks can fail.
-    assert len(tensor) >= 3
+    assert len(tensor) == 4
 
     # int
     assert isinstance(tensor[0], scalar_type | cls)
@@ -454,14 +455,19 @@ def test_numerical_tensor_getitem(name: str) -> None:
     assert isinstance(tensor[range(2)], cls)
     # list[int]
     assert isinstance(tensor[[0, 1]], cls)
+    # list[bool]
+    assert isinstance(tensor[[True, False, True, False]], cls)
     # Ellipsis
     assert isinstance(tensor[...], cls)
 
     if len(tensor.shape) > 1:
+        assert tensor.shape[1] == 3
         # tuple[int, int]
         assert isinstance(tensor[0, 0], scalar_type | cls)
         # tuple[slice, slice]
         assert isinstance(tensor[0:1, 0:1], cls)
+        # tuple[slice, list[bool]]
+        assert isinstance(tensor[:, [True, False, True]], cls)
         # tuple[range, range]
         assert isinstance(tensor[range(1), range(1)], cls)
         # tuple[list[int], list[int]]

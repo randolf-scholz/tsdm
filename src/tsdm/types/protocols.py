@@ -776,7 +776,7 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
         ...
 
 
-class NumericalTensor[Scalar](NumericalSeries[Scalar], Protocol):
+class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     r"""Protocol for numerical tensors.
 
     Compared to `NumericalSeries`, tensors *can* have multiple dimensions, and
@@ -791,6 +791,7 @@ class NumericalTensor[Scalar](NumericalSeries[Scalar], Protocol):
 
     Counter-Examples:
         - `polars.Series`    (cannot be indexed with Ellipsis and tuple)
+        - `polars.DataFrame` (cannot be indexed with Ellipsis and tuple)
     """
 
     @property
