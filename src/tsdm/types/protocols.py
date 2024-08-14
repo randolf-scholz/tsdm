@@ -81,6 +81,7 @@ from types import GenericAlias, get_original_bases
 from typing import (
     Any,
     ClassVar,
+    Final,
     Literal,
     Optional,
     Protocol,
@@ -1233,7 +1234,9 @@ class NTuple[T](Protocol):  # +T
     #    Should be tuple[*(str for T in Ts)] (not tuple[str, ...])
     #   see: https://github.com/python/typing/issues/1216
     #   see: https://github.com/python/typing/issues/1273
-    _fields: tuple
+
+    # NOTE: Added Final to silence pyright v1.1.376 complaints.
+    _fields: Final[tuple]  # type: ignore[misc]
     r"""The fields of the namedtuple."""
 
     def _asdict(self) -> Mapping[str, T]: ...

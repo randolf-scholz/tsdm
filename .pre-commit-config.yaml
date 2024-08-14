@@ -166,7 +166,7 @@ repos:
       exclude: '/tasks/.*'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.375
+    rev: v1.1.376
     hooks:
       - id: pyright
         # REF: https://stackoverflow.com/a/20401674

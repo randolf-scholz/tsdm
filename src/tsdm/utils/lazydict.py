@@ -181,10 +181,11 @@ class LazyDict[K, V](dict[K, V]):
             super().__setitem__(key, unwrapped_value)
         return unwrapped_value
 
-    # @overload
-    # def __or__(self, other: Mapping[K, V], /) -> Self: ...
-    # @overload
-    # def __or__[K2, V2](self, other: Mapping[K2, V2], /) -> "LazyDict[K | K2, V | V2]": ...
+    # NOTE: Overloaded operator methods can't have wider argument types in overrides [mypy 1.11]
+    @overload
+    def __or__(self, other: dict[K, V], /) -> Self: ...
+    @overload
+    def __or__[K2, V2](self, other: dict[K2, V2], /) -> "LazyDict[K | K2, V | V2]": ...
     def __or__[K2, V2](self, other: Mapping[K2, V2], /) -> "LazyDict[K | K2, V | V2]":
         new = cast(LazyDict[K | K2, V | V2], self.copy())
         new.update(other)  # type: ignore[arg-type]

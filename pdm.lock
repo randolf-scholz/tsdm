@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:67f2235926e6302eaaf0efc3d0eb90e3757c699978e463082b11d728ac730ed4"
+content_hash = "sha256:1ed052b1be21fc662fc1d609df5f06af3265e4c97985cf2ee62ddf0099349e39"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -2401,7 +2401,7 @@ files = [
 
 [[package]]
 name = "pyright"
-version = "1.1.375"
+version = "1.1.376"
 requires_python = ">=3.7"
 summary = "Command line wrapper for pyright"
 groups = ["typing"]
@@ -2411,8 +2411,8 @@ dependencies = [
     "typing-extensions>=3.7; python_version < \"3.8\"",
 ]
 files = [
-    {file = "pyright-1.1.375-py3-none-any.whl", hash = "sha256:4c5e27eddeaee8b41cc3120736a1dda6ae120edf8523bb2446b6073a52f286e3"},
-    {file = "pyright-1.1.375.tar.gz", hash = "sha256:7765557b0d6782b2fadabff455da2014476404c9e9214f49977a4e49dec19a0f"},
+    {file = "pyright-1.1.376-py3-none-any.whl", hash = "sha256:0f2473b12c15c46b3207f0eec224c3cea2bdc07cd45dd4a037687cbbca0fbeff"},
+    {file = "pyright-1.1.376.tar.gz", hash = "sha256:bffd63b197cd0810395bb3245c06b01f95a85ddf6bfa0e5644ed69c841e954dd"},
 ]
 
 [[package]]
