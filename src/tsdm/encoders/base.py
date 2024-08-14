@@ -69,7 +69,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
-from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -611,23 +610,16 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder], ABC):
         return self.__class__({k: e.simplify() for k, e in self.items()})  # type: ignore[abstract]
 
 
-class BackendMixin:
+class BackendMixin[X, Y](BaseEncoder[X, Y]):
     r"""Encoder equipped with a backend."""
 
-    def __init_subclass__(cls: type[Encoder]) -> None:
-        super().__init_subclass__()
-
-        original_fit = cls.fit
-
-        @wraps(original_fit)
-        def wrapped_fit(self, x, /):
-            if self.backend is NotImplemented:
-                self.backend = get_backend(x)
-            original_fit(self, x)
-
-        cls.fit = wrapped_fit
-
     backend: Backend = NotImplemented
+
+    # noinspection PyFinal
+    @final  # type: ignore[misc]
+    def fit(self, x: X, /) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        self.backend = get_backend(x)
+        super().fit(x)
 
 
 # endregion base classes ---------------------------------------------------------------

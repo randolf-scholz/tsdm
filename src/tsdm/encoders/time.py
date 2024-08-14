@@ -32,7 +32,7 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin):
+class TimeDeltaEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
     unit: TimeDelta = NotImplemented
@@ -86,7 +86,7 @@ class TimeDeltaEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder[Arr: NumericalTensor](BaseEncoder[Arr, Arr], BackendMixin):
+class DateTimeEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
