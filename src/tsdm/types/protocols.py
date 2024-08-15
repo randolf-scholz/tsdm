@@ -1312,7 +1312,7 @@ class _SlottedMeta(type(Protocol)):  # type: ignore[misc]
     This issue will make the need for metaclass obsolete.
     """
 
-    def __instancecheck__(self, instance: object) -> TypeIs["Slotted"]:
+    def __instancecheck__(cls, instance: object) -> TypeIs["Slotted"]:
         slots = getattr(instance, "__slots__", None)
         return isinstance(slots, str | Iterable)
 

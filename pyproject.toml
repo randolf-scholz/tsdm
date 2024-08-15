@@ -34,14 +34,14 @@ dependencies = [
     "numpy>=2.0.1",
     "pandas>=2.2.2",
     "pillow>=10.4.0",
-    "polars>=1.4.1",
+    "polars>=1.5.0",
     "pyarrow>=17.0.0",
     "pydantic>=2.8.2",
     "pyyaml>=6.0.2",
     "requests>=2.32.3",
     "scikit-learn>=1.5.1",
     "scipy>=1.14.0",
-    "tensorboard>=2.17.0",
+    "tensorboard>=2.17.1",
     "torch>=2.4.0",
     "tqdm>=4.66.5",
     "typing-extensions>=4.12.2",
@@ -83,8 +83,8 @@ tests = [
 ]
 linters = [
     "pylint>=3.2.6",
-    "ruff>=0.5.7",
-    "ruff-lsp>=0.0.54",
+    "ruff>=0.6.0",
+    "tach>=0.10.0",
 ]
 typing = [
     "mypy>=1.11.1",
@@ -255,7 +255,7 @@ ignore = [
 "src/tsdm/types/*" = ["ERA001"]
 
 [tool.ruff.lint.pylint]
-allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]
+allow-dunder-method-names = ["__array__", "__array_ufunc__", "__dataframe__", "_repr_html_", "__pre_init__"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

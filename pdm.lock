@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:1ed052b1be21fc662fc1d609df5f06af3265e4c97985cf2ee62ddf0099349e39"
+content_hash = "sha256:8de8fed8bc9989d236c305c032b4a03694157e1c049e99d51cb94c3418d453a5"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -57,7 +57,7 @@ name = "annotated-types"
 version = "0.7.0"
 requires_python = ">=3.8"
 summary = "Reusable constraint types to use with typing.Annotated"
-groups = ["default"]
+groups = ["default", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "typing-extensions>=4.0.0; python_version < \"3.9\"",
@@ -182,7 +182,7 @@ name = "attrs"
 version = "24.2.0"
 requires_python = ">=3.7"
 summary = "Classes Without Boilerplate"
-groups = ["docs", "experiment", "linters", "tests", "typing"]
+groups = ["docs", "experiment", "tests", "typing"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "importlib-metadata; python_version < \"3.8\"",
@@ -236,23 +236,6 @@ dependencies = [
 files = [
     {file = "bleach-6.1.0-py3-none-any.whl", hash = "sha256:3225f354cfc436b9789c66c4ee030194bee0568fbf9cbdad3bc8b5c26c5f12b6"},
     {file = "bleach-6.1.0.tar.gz", hash = "sha256:0a31f1837963c41d46bbf1331b8778e1308ea0791db03cc4e7357b97cf42a8fe"},
-]
-
-[[package]]
-name = "cattrs"
-version = "23.2.3"
-requires_python = ">=3.8"
-summary = "Composable complex class support for attrs and dataclasses."
-groups = ["linters"]
-marker = "python_full_version == \"3.12.4\""
-dependencies = [
-    "attrs>=23.1.0",
-    "exceptiongroup>=1.1.1; python_version < \"3.11\"",
-    "typing-extensions!=4.6.3,>=4.1.0; python_version < \"3.11\"",
-]
-files = [
-    {file = "cattrs-23.2.3-py3-none-any.whl", hash = "sha256:0341994d94971052e9ee70662542699a3162ea1e0c62f7ce1b4a57f563685108"},
-    {file = "cattrs-23.2.3.tar.gz", hash = "sha256:a934090d95abaa9e911dac357e3a8699e0b4b14f8529bcc7d2b1ad9d51672b9f"},
 ]
 
 [[package]]
@@ -582,6 +565,37 @@ marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "fsspec-2024.6.1-py3-none-any.whl", hash = "sha256:3cb443f8bcd2efb31295a5b9fdb02aee81d8452c80d28f97a6d0959e6cee101e"},
     {file = "fsspec-2024.6.1.tar.gz", hash = "sha256:fad7d7e209dd4c1208e3bbfda706620e0da5142bebbd9c384afb95b07e798e49"},
+]
+
+[[package]]
+name = "gitdb"
+version = "4.0.11"
+requires_python = ">=3.7"
+summary = "Git Object Database"
+groups = ["linters"]
+marker = "python_full_version == \"3.12.4\""
+dependencies = [
+    "smmap<6,>=3.0.1",
+]
+files = [
+    {file = "gitdb-4.0.11-py3-none-any.whl", hash = "sha256:81a3407ddd2ee8df444cbacea00e2d038e40150acfa3001696fe0dcf1d3adfa4"},
+    {file = "gitdb-4.0.11.tar.gz", hash = "sha256:bf5421126136d6d0af55bc1e7c1af1c397a34f5b7bd79e776cd3e89785c2b04b"},
+]
+
+[[package]]
+name = "gitpython"
+version = "3.1.43"
+requires_python = ">=3.7"
+summary = "GitPython is a Python library used to interact with Git repositories"
+groups = ["linters"]
+marker = "python_full_version == \"3.12.4\""
+dependencies = [
+    "gitdb<5,>=4.0.1",
+    "typing-extensions>=3.7.4.3; python_version < \"3.8\"",
+]
+files = [
+    {file = "GitPython-3.1.43-py3-none-any.whl", hash = "sha256:eec7ec56b92aad751f9912a73404bc02ba212a23adb2c7098ee668417051a1ff"},
+    {file = "GitPython-3.1.43.tar.gz", hash = "sha256:35f314a9f878467f5453cc1fee295c3e18e52f1b99f10f6cf5b1682e968a9e7c"},
 ]
 
 [[package]]
@@ -1322,22 +1336,6 @@ files = [
 ]
 
 [[package]]
-name = "lsprotocol"
-version = "2023.0.1"
-requires_python = ">=3.7"
-summary = "Python implementation of the Language Server Protocol."
-groups = ["linters"]
-marker = "python_full_version == \"3.12.4\""
-dependencies = [
-    "attrs>=21.3.0",
-    "cattrs!=23.2.1",
-]
-files = [
-    {file = "lsprotocol-2023.0.1-py3-none-any.whl", hash = "sha256:c75223c9e4af2f24272b14c6375787438279369236cd568f596d4951052a60f2"},
-    {file = "lsprotocol-2023.0.1.tar.gz", hash = "sha256:cc5c15130d2403c18b734304339e51242d3018a05c4f7d0f198ad6e0cd21861d"},
-]
-
-[[package]]
 name = "markdown"
 version = "3.6"
 requires_python = ">=3.8"
@@ -1357,7 +1355,7 @@ name = "markdown-it-py"
 version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Python port of markdown-it. Markdown parsing, done right!"
-groups = ["devtools", "docs"]
+groups = ["devtools", "docs", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "mdurl~=0.1",
@@ -1450,7 +1448,7 @@ name = "mdurl"
 version = "0.1.2"
 requires_python = ">=3.7"
 summary = "Markdown URL utilities"
-groups = ["devtools", "docs"]
+groups = ["devtools", "docs", "linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
@@ -1663,7 +1661,7 @@ name = "networkx"
 version = "3.3"
 requires_python = ">=3.10"
 summary = "Python package for creating and manipulating graphs and networks"
-groups = ["default"]
+groups = ["default", "linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "networkx-3.3-py3-none-any.whl", hash = "sha256:28575580c6ebdaf4505b22c6256a2b9de86b316dc63ba9e93abde3d78dfdbcf2"},
@@ -1940,7 +1938,7 @@ name = "packaging"
 version = "24.1"
 requires_python = ">=3.8"
 summary = "Core utilities for Python packages"
-groups = ["default", "docs", "experiment", "linters", "tests"]
+groups = ["default", "docs", "experiment", "tests"]
 marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
@@ -2083,14 +2081,14 @@ files = [
 
 [[package]]
 name = "polars"
-version = "1.4.1"
+version = "1.5.0"
 requires_python = ">=3.8"
 summary = "Blazingly fast DataFrame library"
 groups = ["default"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "polars-1.4.1-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7cf834a328e292c31c06eb606496becb6d8a795e927c826e26e2af27087950f1"},
-    {file = "polars-1.4.1.tar.gz", hash = "sha256:ed8009aff8cf91f94db5a38d947185603ad5bee48a28b764cf5a52048c7c4756"},
+    {file = "polars-1.5.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:63a242b1cce7bf2502bb68e269b01b593068c798b47025fb17ac5b89603e9d8f"},
+    {file = "polars-1.5.0.tar.gz", hash = "sha256:22f767d28d76e54ff15aa38fd58c6ff9e510f22f5e20bb72e6428d70a17ba56a"},
 ]
 
 [[package]]
@@ -2129,7 +2127,7 @@ name = "prompt-toolkit"
 version = "3.0.47"
 requires_python = ">=3.7.0"
 summary = "Library for building powerful interactive command lines in Python"
-groups = ["experiment"]
+groups = ["experiment", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "wcwidth",
@@ -2141,15 +2139,15 @@ files = [
 
 [[package]]
 name = "protobuf"
-version = "4.25.4"
+version = "5.27.3"
 requires_python = ">=3.8"
 summary = ""
 groups = ["default"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "protobuf-4.25.4-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:3319e073562e2515c6ddc643eb92ce20809f5d8f10fead3332f71c63be6a7040"},
-    {file = "protobuf-4.25.4-py3-none-any.whl", hash = "sha256:bfbebc1c8e4793cfd58589acfb8a1026be0003e852b9da7db5a4285bde996978"},
-    {file = "protobuf-4.25.4.tar.gz", hash = "sha256:0dc4a62cc4052a036ee2204d26fe4d835c62827c855c8a03f29fe6da146b380d"},
+    {file = "protobuf-5.27.3-cp38-abi3-manylinux2014_x86_64.whl", hash = "sha256:a55c48f2a2092d8e213bd143474df33a6ae751b781dd1d1f4d953c128a415b25"},
+    {file = "protobuf-5.27.3-py3-none-any.whl", hash = "sha256:8572c6533e544ebf6899c360e91d6bcbbee2549251643d32c52cf8a5de295ba5"},
+    {file = "protobuf-5.27.3.tar.gz", hash = "sha256:82460903e640f2b7e34ee81a947fdaad89de796d324bcbc38ff5430bcdead82c"},
 ]
 
 [[package]]
@@ -2258,7 +2256,7 @@ name = "pydantic"
 version = "2.8.2"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
-groups = ["default"]
+groups = ["default", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "annotated-types>=0.4.0",
@@ -2276,7 +2274,7 @@ name = "pydantic-core"
 version = "2.20.1"
 requires_python = ">=3.8"
 summary = "Core functionality for Pydantic validation and serialization"
-groups = ["default"]
+groups = ["default", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
@@ -2309,6 +2307,21 @@ files = [
 ]
 
 [[package]]
+name = "pydot"
+version = "2.0.0"
+requires_python = ">=3.7"
+summary = "Python interface to Graphviz's Dot"
+groups = ["linters"]
+marker = "python_full_version == \"3.12.4\""
+dependencies = [
+    "pyparsing>=3",
+]
+files = [
+    {file = "pydot-2.0.0-py3-none-any.whl", hash = "sha256:408a47913ea7bd5d2d34b274144880c1310c4aee901f353cf21fe2e526a4ea28"},
+    {file = "pydot-2.0.0.tar.gz", hash = "sha256:60246af215123fa062f21cd791be67dda23a6f280df09f68919e637a1e4f3235"},
+]
+
+[[package]]
 name = "pygal"
 version = "3.0.5"
 requires_python = ">=3.8"
@@ -2335,27 +2348,11 @@ files = [
 ]
 
 [[package]]
-name = "pygls"
-version = "1.3.1"
-requires_python = ">=3.8"
-summary = "A pythonic generic language server (pronounced like 'pie glass')"
-groups = ["linters"]
-marker = "python_full_version == \"3.12.4\""
-dependencies = [
-    "cattrs>=23.1.2",
-    "lsprotocol==2023.0.1",
-]
-files = [
-    {file = "pygls-1.3.1-py3-none-any.whl", hash = "sha256:6e00f11efc56321bdeb6eac04f6d86131f654c7d49124344a9ebb968da3dd91e"},
-    {file = "pygls-1.3.1.tar.gz", hash = "sha256:140edceefa0da0e9b3c533547c892a42a7d2fd9217ae848c330c53d266a55018"},
-]
-
-[[package]]
 name = "pygments"
 version = "2.18.0"
 requires_python = ">=3.8"
 summary = "Pygments is a syntax highlighting package written in Python."
-groups = ["devtools", "docs", "experiment"]
+groups = ["devtools", "docs", "experiment", "linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "pygments-2.18.0-py3-none-any.whl", hash = "sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a"},
@@ -2392,7 +2389,7 @@ name = "pyparsing"
 version = "3.1.2"
 requires_python = ">=3.6.8"
 summary = "pyparsing module - Classes and methods to define and execute parsing grammars"
-groups = ["default", "experiment"]
+groups = ["default", "experiment", "linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "pyparsing-3.1.2-py3-none-any.whl", hash = "sha256:f9db75911801ed778fe61bb643079ff86601aca99fcae6345aa67292038fb742"},
@@ -2577,7 +2574,7 @@ name = "pyyaml"
 version = "6.0.2"
 requires_python = ">=3.8"
 summary = "YAML parser and emitter for Python"
-groups = ["default", "devtools", "docs", "experiment"]
+groups = ["default", "devtools", "docs", "experiment", "linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:80bab7bfc629882493af4aa31a4cfa43a4c57c83813253626916b8c7ada83476"},
@@ -2710,7 +2707,7 @@ name = "rich"
 version = "13.7.1"
 requires_python = ">=3.7.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
-groups = ["devtools"]
+groups = ["devtools", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "markdown-it-py>=2.2.0",
@@ -2736,33 +2733,14 @@ files = [
 
 [[package]]
 name = "ruff"
-version = "0.5.7"
+version = "0.6.0"
 requires_python = ">=3.7"
 summary = "An extremely fast Python linter and code formatter, written in Rust."
 groups = ["linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "ruff-0.5.7-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8d796327eed8e168164346b769dd9a27a70e0298d667b4ecee6877ce8095ec8e"},
-    {file = "ruff-0.5.7.tar.gz", hash = "sha256:8dfc0a458797f5d9fb622dd0efc52d796f23f0a1493a9527f4e49a550ae9a7e5"},
-]
-
-[[package]]
-name = "ruff-lsp"
-version = "0.0.54"
-requires_python = ">=3.7"
-summary = "A Language Server Protocol implementation for Ruff."
-groups = ["linters"]
-marker = "python_full_version == \"3.12.4\""
-dependencies = [
-    "lsprotocol>=2023.0.0",
-    "packaging>=23.1",
-    "pygls>=1.1.0",
-    "ruff>=0.0.274",
-    "typing-extensions",
-]
-files = [
-    {file = "ruff_lsp-0.0.54-py3-none-any.whl", hash = "sha256:1cc7d2f1cb69cbea1dfeba0f2d7dd5832bc68b0b052c7166530bcce63aa75f57"},
-    {file = "ruff_lsp-0.0.54.tar.gz", hash = "sha256:33e1d4dd20ca481fc6a811afcfdd451798c22fc39f2104df23c2855e322a0582"},
+    {file = "ruff-0.6.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f1749a0aef3ec41ed91a0e2127a6ae97d2e2853af16dbd4f3c00d7a3af726c5"},
+    {file = "ruff-0.6.0.tar.gz", hash = "sha256:272a81830f68f9bd19d49eaf7fa01a5545c5a2e86f32a9935bb0e4bb9a1db5b8"},
 ]
 
 [[package]]
@@ -2848,6 +2826,18 @@ marker = "python_full_version == \"3.12.4\""
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
+name = "smmap"
+version = "5.0.1"
+requires_python = ">=3.7"
+summary = "A pure Python implementation of a sliding window memory map manager"
+groups = ["linters"]
+marker = "python_full_version == \"3.12.4\""
+files = [
+    {file = "smmap-5.0.1-py3-none-any.whl", hash = "sha256:e6d8668fa5f93e706934a62d7b4db19c8d9eb8cf2adbb75ef1b675aa332b69da"},
+    {file = "smmap-5.0.1.tar.gz", hash = "sha256:dceeb6c0028fdb6734471eb07c0cd2aae706ccaecab45965ee83f11c8d3b1f62"},
 ]
 
 [[package]]
@@ -3140,8 +3130,34 @@ files = [
 ]
 
 [[package]]
+name = "tach"
+version = "0.10.0"
+requires_python = ">=3.7"
+summary = "A Python tool to maintain a modular package architecture."
+groups = ["linters"]
+marker = "python_full_version == \"3.12.4\""
+dependencies = [
+    "eval-type-backport>=0.2.0; python_version < \"3.10\" and python_version > \"3.7\"",
+    "gitpython~=3.1",
+    "importlib-metadata>=6.5; python_version == \"3.7\"",
+    "networkx<4.0,>=2.6; python_version == \"3.7\"",
+    "networkx~=3.0; python_version > \"3.7\"",
+    "prompt-toolkit~=3.0",
+    "pydantic~=2.0",
+    "pydot~=2.0",
+    "pyyaml~=6.0",
+    "rich~=13.0",
+    "stdlib-list>=0.10.0; python_version < \"3.10\"",
+    "tomli-w~=1.0",
+]
+files = [
+    {file = "tach-0.10.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:db991e046ca149f6c8d14a709d108390e8a3b2a326bf1a57ccee45aacf2fba3a"},
+    {file = "tach-0.10.0.tar.gz", hash = "sha256:42523a088812290c3daeeff92c6126ad3160805cc8d00143da88df411f5db2c0"},
+]
+
+[[package]]
 name = "tensorboard"
-version = "2.17.0"
+version = "2.17.1"
 requires_python = ">=3.9"
 summary = "TensorBoard lets you watch Tensors Flow"
 groups = ["default"]
@@ -3151,14 +3167,15 @@ dependencies = [
     "grpcio>=1.48.2",
     "markdown>=2.6.8",
     "numpy>=1.12.0",
-    "protobuf!=4.24.0,<5.0.0,>=3.19.6",
+    "packaging",
+    "protobuf!=4.24.0,>=3.19.6",
     "setuptools>=41.0.0",
     "six>1.9",
     "tensorboard-data-server<0.8.0,>=0.7.0",
     "werkzeug>=1.0.1",
 ]
 files = [
-    {file = "tensorboard-2.17.0-py3-none-any.whl", hash = "sha256:859a499a9b1fb68a058858964486627100b71fcb21646861c61d31846a6478fb"},
+    {file = "tensorboard-2.17.1-py3-none-any.whl", hash = "sha256:253701a224000eeca01eee6f7e978aea7b408f60b91eb0babdb04e78947b773e"},
 ]
 
 [[package]]
@@ -3215,6 +3232,18 @@ dependencies = [
 files = [
     {file = "tinycss2-1.3.0-py3-none-any.whl", hash = "sha256:54a8dbdffb334d536851be0226030e9505965bb2f30f21a4a82c55fb2a80fae7"},
     {file = "tinycss2-1.3.0.tar.gz", hash = "sha256:152f9acabd296a8375fbca5b84c961ff95971fcfc32e79550c8df8e29118c54d"},
+]
+
+[[package]]
+name = "tomli-w"
+version = "1.0.0"
+requires_python = ">=3.7"
+summary = "A lil' TOML writer"
+groups = ["linters"]
+marker = "python_full_version == \"3.12.4\""
+files = [
+    {file = "tomli_w-1.0.0-py3-none-any.whl", hash = "sha256:9f2a07e8be30a0729e533ec968016807069991ae2fd921a78d42f429ae5f4463"},
+    {file = "tomli_w-1.0.0.tar.gz", hash = "sha256:f463434305e0336248cac9c2dc8076b707d8a12d019dd349f5c1e382dd1ae1b9"},
 ]
 
 [[package]]
@@ -3633,7 +3662,7 @@ files = [
 name = "wcwidth"
 version = "0.2.13"
 summary = "Measures the displayed width of unicode strings in a terminal"
-groups = ["experiment"]
+groups = ["experiment", "linters"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
     "backports-functools-lru-cache>=1.2.1; python_version < \"3.2\"",
