@@ -290,7 +290,7 @@ class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
 
 @pprint_repr
 @dataclass
-class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
+class BoundaryEncoder[S: OrderedScalar, Arr: Array](BaseEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -411,7 +411,7 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
             **kwargs,
         )
 
-    def lower_satisfied[Arr: Array](self, x: Arr) -> Arr:
+    def lower_satisfied(self, x: Arr) -> Arr:
         r"""Return a boolean mask for the lower boundary (true: value ok)."""
         if self.lower_bound is None:
             return self.backend.true_like(x)
@@ -419,7 +419,7 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
             return (x >= self.lower_bound) | self.backend.is_null(x)
         return (x > self.lower_bound) | self.backend.is_null(x)
 
-    def upper_satisfied[Arr: Array](self, x: Arr) -> Arr:
+    def upper_satisfied(self, x: Arr) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)
@@ -459,13 +459,13 @@ class BoundaryEncoder[S: OrderedScalar](BaseEncoder[Array[S], Array[S]]):
             case _:
                 raise NotImplementedError
 
-    def _encode_impl[Arr: Array](self, data: Arr, /) -> Arr:
+    def _encode_impl(self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def _decode_impl[Arr: Array](self, data: Arr, /) -> Arr:
+    def _decode_impl(self, data: Arr, /) -> Arr:
         return data
 
 

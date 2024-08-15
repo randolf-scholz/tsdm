@@ -26,8 +26,7 @@ from tsdm.types.protocols import NumericalTensor, OrderedScalar
 __logger__ = logging.getLogger(__name__)
 
 
-type Bounds = tuple[None | float, None | float]
-BOUNDS: list[Bounds] = [
+BOUNDS: list[tuple[float | None, float | None]] = [
     (-1, +1),
     (0, 1),
     (0, float("inf")),
@@ -63,6 +62,7 @@ TENSORS: dict[str, NumericalTensor[OrderedScalar]] = {
     "pandas[arrow]-series": pd.Series(DATA_1D, dtype="float[pyarrow]"),
     # "pandas-dataframe": pd.DataFrame(_DATA_2D),
 }
+r"""Example data for testing."""
 
 
 @pytest.mark.parametrize("upper_included", [True, False])
@@ -74,7 +74,7 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
     *,
     data: D,
     mode: BoundaryEncoder.ClippingMode,
-    bounds: Bounds,
+    bounds: tuple[float | None, float | None],
     lower_included: bool,
     upper_included: bool,
 ) -> None:
