@@ -668,11 +668,11 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
         r"""Return True if any element is True."""
         ...
 
-    def min(self) -> OrderedScalar:
+    def min(self) -> Self | Scalar:
         r"""Return the minimum value."""
         ...
 
-    def max(self) -> Self | OrderedScalar:
+    def max(self) -> Self | Scalar:
         r"""Return the maximum value."""
         ...
 

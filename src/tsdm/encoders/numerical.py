@@ -10,10 +10,6 @@ Numerical Encoders should be able to be applied with different backends such as
 
 To ensure performance during encoding/decoding, the backend should be fixed.
 
-Note:
-    Golden Rule for implementation: init/fit can be slow, but transform should be fast.
-    Use specialization/dispatch to ensure fast transforms.
-
 Goals
 =====
 - numerical encoders should allow for different backends: numpy, pandas, torch, etc.
@@ -25,24 +21,6 @@ Goals
 - switching between backends should be easy and fast
     - switching between backends probably not considered a "fit" operation
     - fitting changes the encoder parameter values, switching backends changes their types.
-
-
-Remark
-======
-Typing Encoders can be challenging, because not all types might be defined at
-the time of instantiation. Often, the type of the encoder is only known after
-fitting it to some data.
-
-There are multiple ways to handle this:
-
-1. Make fit return the encoder with the correct type.
-   - Note that this would be a breaking change, since for instance sklearn encoders
-     return `None` after fitting.
-2. Add Manual `__new__` overloads that fall back to an upper bound type.
-   - in the future, we can use the default type (PEP 696)
-3. Use a polymorphic instead of a generic type.
-   For example, we can have `StandardScalar(Encoder[NumericalArray, NumericalArray])`
-   and then set `def encoder[Arr: NumericalArray](x: Arr) -> Arr: ...`
 """
 
 __all__ = [

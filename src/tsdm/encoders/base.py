@@ -15,10 +15,45 @@ Some special encoders that can be considered are:
 
 
 Note on `BaseEncoder`:
-
 - will wrap the `fit`, `encode`, and `decode` methods.
     - if the encoder requires fitting, encode/decode will raise an error if not fitted.
     - if the encoder does not require fitting,
+
+Note:
+    Golden Rule for implementation: init/fit can be slow, but transform should be fast.
+    Use specialization/dispatch to ensure fast transforms.
+
+Remark
+======
+Typing Encoders can be challenging, because not all types might be defined at
+the time of instantiation. Often, the type of the encoder is only known after
+fitting it to some data.
+
+There are multiple ways to handle this:
+
+1. Make fit return the encoder with the correct type.
+   - Note that this would be a breaking change, since for instance sklearn encoders
+     return `None` after fitting.
+2. Add Manual `__new__` overloads that fall back to an upper bound type.
+   - in the future, we can use the default type (PEP 696)
+3. Use a polymorphic instead of a generic type.
+   For example, we can have `StandardScalar(Encoder[NumericalArray, NumericalArray])`
+   and then set `def encoder[Arr: NumericalArray](x: Arr) -> Arr: ...`
+
+The use of polymorphic encoders also has effects on the chaining of encoders.
+What is [T → T] >> [DataFrame → DataFrame]?
+
+1. Should it be allowed?
+2. If so, what is the type?
+
+The only sensible answer to (2) is that it should be [DataFrame → DataFrame].
+However it might be difficult for a type-checker to infer this correctly.
+In principle, this would require some form of higher kinded types, then we could write an overload
+of the form `(self: Poly[X], other: [X, Y]) -> Encoder[X, Y]: ...`.
+Here, `Poly[T]` is a protocol describing a polymorphic encoder, with `X` being the upper bound.
+That is, the encode signature is `Poly[T].encode[T: X](x: X) -> X: ...`.
+
+Polymorphic encoders might be problematic for this very reason, and possibly should be avoided.
 """
 # ruff: noqa: E501
 

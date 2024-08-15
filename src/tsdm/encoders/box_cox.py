@@ -20,12 +20,12 @@ from typing import Literal, assert_never
 import numpy as np
 from numpy import pi as PI
 from numpy.typing import NDArray
+from pandas import Index, Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import ROOT_3
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.protocols import NumpyCompatSeries
 from tsdm.utils.decorators import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
@@ -235,7 +235,7 @@ def construct_wasserstein_loss_logit_normal(
 
 @pprint_repr
 @dataclass(init=False)
-class BoxCoxEncoder(BaseEncoder):
+class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
@@ -304,13 +304,13 @@ class BoxCoxEncoder(BaseEncoder):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def _encode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
-        return np.log(data + self.offset)
+    def _encode_impl(self, data: NPC, /) -> NPC:
+        return np.log(data + self.offset)  # pyright: ignore[reportReturnType]
 
-    def _decode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
-        return np.maximum(np.exp(data) - self.offset, 0)
+    def _decode_impl(self, data: NPC, /) -> NPC:
+        return np.maximum(np.exp(data) - self.offset, 0)  # pyright: ignore[reportReturnType]
 
-    def _fit_impl(self, data: NumpyCompatSeries, /) -> None:
+    def _fit_impl(self, data: NPC, /) -> None:
         if not all((data >= 0) | np.isnan(data)):
             raise ValueError("Data must be in [0, ∞) or NaN.")
 
@@ -359,7 +359,7 @@ class BoxCoxEncoder(BaseEncoder):
 
 @pprint_repr
 @dataclass
-class LogitBoxCoxEncoder(BaseEncoder):
+class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
     r"""Encode data from the interval [0,1] with a logit transform.
 
     An offset c is added/subtracted to avoid log(0) and division by zero.
@@ -424,15 +424,15 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def _encode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
-        return np.log(data + self.offset) - np.log((1 - data) + self.offset)
+    def _encode_impl(self, data: NPC, /) -> NPC:
+        return np.log((data + self.offset) / (1 - (data - self.offset)))  # pyright: ignore[reportReturnType]
 
-    def _decode_impl[T: NumpyCompatSeries](self, data: T, /) -> T:
+    def _decode_impl(self, data: NPC, /) -> NPC:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
-        return np.clip(r, 0, 1)
+        return np.clip(r, 0, 1)  # pyright: ignore[reportReturnType]
 
-    def _fit_impl(self, data: NumpyCompatSeries, /) -> None:
+    def _fit_impl(self, data: NPC, /) -> None:
         if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
@@ -452,9 +452,9 @@ class LogitBoxCoxEncoder(BaseEncoder):
                 upper = (1 - data[data < 1].max()) / 2
                 offset = (lower + upper) / 2
             case self.METHODS.quartile:
-                lower = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
+                lower = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
                 upper = (
-                    (1 - np.quantile(data, 0.75)) / (1 - np.quantile(data, 0.25))
+                    (1 - np.nanquantile(data, 0.75)) / (1 - np.nanquantile(data, 0.25))
                 ) ** 2
                 offset = (lower + upper) / 2
             case self.METHODS.match_uniform:

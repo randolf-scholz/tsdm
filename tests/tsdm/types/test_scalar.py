@@ -10,22 +10,22 @@ from typing_extensions import get_protocol_members
 
 from tsdm.types.protocols import AdditiveScalar, BooleanScalar, OrderedScalar
 
-BASE_SCALARS: dict[type, object] = {
-    pd.NA: pd.NA,
-    None: None,
-    bool: True,
-    int: 1,
-    float: 1.0,
-    complex: 1 + 1j,
-    dt.datetime: dt.datetime(2021, 1, 1),
-    dt.timedelta: dt.timedelta(days=1),
-}
+BASE_SCALARS: dict[object, object] = {
+    None         : None,
+    bool         : True,
+    int          : 1,
+    float        : 1.0,
+    complex      : 1 + 1j,
+    dt.datetime  : dt.datetime(2021, 1, 1),
+    dt.timedelta : dt.timedelta(days=1),
+    pd.NA        : pd.NA,
+}  # fmt: skip
 
 BOOL_SCALAR_TYPES: dict[str, BooleanScalar] = {
-    "np_bool": np.bool_([True]),
-    "py_bool": True,
-    "pt_bool": pt.tensor([True]),
-}
+    "np_bool" : np.bool_([True]),
+    "py_bool" : True,
+    "pt_bool" : pt.tensor([True]),
+}  # fmt: skip
 
 ORDERED_SCALAR_TYPES: dict[str, OrderedScalar] = {
     "np_bool"      : np.bool_([True]),
