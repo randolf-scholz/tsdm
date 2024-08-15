@@ -48,17 +48,18 @@ from collections.abc import Iterable
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
 from types import EllipsisType
-from typing import Any, Literal, Optional, Self, cast, overload
+from typing import Any, Generic, Literal, Optional, Self, cast, overload
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
+from typing_extensions import TypeVar
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
-from tsdm.types.protocols import NumericalArray as Array, OrderedScalar
+from tsdm.types.protocols import NumericalArray as Array, NumericalSeries, OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -288,9 +289,14 @@ class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
         raise NotImplementedError
 
 
+# FIXME: Use PEP695 syntax after upgrading to Python 3.13
+S = TypeVar("S", bound=OrderedScalar)
+Arr = TypeVar("Arr", bound=NumericalSeries, default=NumericalSeries[S])
+
+
 @pprint_repr
 @dataclass
-class BoundaryEncoder[S: OrderedScalar, Arr: Array](BaseEncoder[Arr, Arr]):
+class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
     r"""Clip or mask values outside a given range.
 
     Args:

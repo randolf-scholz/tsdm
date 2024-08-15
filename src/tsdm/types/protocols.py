@@ -211,8 +211,8 @@ class Hash(Protocol):
 class BaseScalar(Protocol):
     r"""Protocol for scalars."""
 
-    def __eq__(self, other: Self, /) -> "BooleanScalar": ...  # type: ignore[override]
-    def __ne__(self, other: Self, /) -> "BooleanScalar": ...  # type: ignore[override]
+    def __eq__(self, other: object, /) -> "BooleanScalar": ...  # type: ignore[override]
+    def __ne__(self, other: object, /) -> "BooleanScalar": ...  # type: ignore[override]
 
 
 @runtime_checkable
@@ -321,11 +321,12 @@ class ShapeLike(Protocol):
 
     # binary operations
     # NOTE: Not returning Self, because that's how tuple works.
-    def __add__(self, other: Self | tuple, /) -> "ShapeLike": ...
     def __eq__(self, other: object, /) -> bool: ...
     def __ne__(self, other: object, /) -> bool: ...
     def __lt__(self, other: Self | tuple, /) -> bool: ...
     def __le__(self, other: Self | tuple, /) -> bool: ...
+    # arithmetic
+    def __add__(self, other: Self | tuple, /) -> "ShapeLike": ...
 
 
 @runtime_checkable
@@ -488,9 +489,9 @@ class ArrayKind[Scalar](Protocol):
 
     # comparisons (element-wise)
     # equality ==
-    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # inequality !=
-    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # less than or equal <=
     def __le__(self, other: Self | Scalar, /) -> Self: ...
     # greater than or equal >=
@@ -549,9 +550,9 @@ class SeriesKind[Scalar](Protocol):
 
     # comparisons (element-wise)
     # equality ==
-    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # inequality !=
-    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # less than or equal <=
     def __le__(self, other: Self | Scalar, /) -> Self: ...
     # greater than or equal >=
@@ -614,9 +615,9 @@ class TableKind(Protocol):
 
     # comparisons (element-wise)
     # equality ==
-    def __eq__(self, other: Self | object, /) -> Self: ...  # type: ignore[override]
+    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # inequality !=
-    def __ne__(self, other: Self | object, /) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # less than or equal <=
     def __le__(self, other: Self | object, /) -> Self: ...
     # greater than or equal >=
@@ -698,9 +699,9 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
 
     # comparisons (element-wise)
     # equality ==
-    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # inequality !=
-    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
     # less than or equal <=
     def __le__(self, other: Self | Scalar, /) -> Self: ...
     # greater than or equal >=
@@ -1014,6 +1015,7 @@ class SetProtocol[V](Protocol):  # +V
     def __ge__(self, other: "SetProtocol", /) -> bool: ...
     def __gt__(self, other: "SetProtocol", /) -> bool: ...
     def __eq__(self, other: object, /) -> bool: ...
+    def __ne__(self, other: object, /) -> bool: ...
     def isdisjoint(self, other: Iterable, /) -> bool: ...
 
 
