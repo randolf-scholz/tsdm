@@ -39,10 +39,6 @@ class InSilicoTask(TimeSeriesTask):
         self.forecasting_horizon = forecasting_horizon
         super().__init__(dataset)
 
-    @staticmethod
-    def default_test_metric(*, targets, predictions):
-        raise NotImplementedError("No default test metric implemented.")
-
     def make_sampler(self, key: SplitID, /) -> Sampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {

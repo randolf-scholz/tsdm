@@ -97,7 +97,7 @@ class MIMIC_III_DeBrouwer2019(TimeSeriesCollection):
 
     def __init__(self) -> None:
         ds = _MIMIC_III_DeBrouwer2019()
-        super().__init__(timeseries=ds.table)
+        super().__init__(timeseries=ds.timeseries)
 
 
 class ETTh1(TimeSeriesCollection):
@@ -145,7 +145,7 @@ class Traffic(TimeSeriesCollection):
 
     def __init__(self) -> None:
         ds = _Traffic()
-        super().__init__(timeseries=ds.table)
+        super().__init__(timeseries=ds.timeseries)
 
 
 class DampedPendulum_Ansari2023(TimeSeriesCollection):

@@ -43,7 +43,7 @@ class LinkParser(HTMLParser):
         super().__init__()
         self.links: list[str] = []
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag == "a":
             for name, value in attrs:
                 if name == "href" and value is not None:

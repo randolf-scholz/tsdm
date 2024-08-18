@@ -44,6 +44,7 @@ from typing import (
     Optional,
     Protocol,
     Self,
+    SupportsIndex,
     final,
     overload,
     runtime_checkable,
@@ -187,21 +188,23 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     def __getitem__(self, index: int) -> Callback: ...
     @overload
     def __getitem__(self, index: slice) -> Self: ...
-    def __getitem__(self, index):
-        return self.callbacks[index]
+    def __getitem__(self, index: int | slice) -> Callback | Self:
+        if isinstance(index, SupportsIndex):
+            return self.callbacks[index]
+        return self.__class__(self.callbacks[index])
 
     @overload
     def __setitem__(self, index: int, value: Callback) -> None: ...
     @overload
     def __setitem__(self, index: slice, value: Iterable[Callback]) -> None: ...
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: int | slice, value: Any) -> None:
         self.callbacks[index] = value
 
     @overload
     def __delitem__(self, index: int) -> None: ...
     @overload
     def __delitem__(self, index: slice) -> None: ...
-    def __delitem__(self, index):
+    def __delitem__(self, index: int | slice) -> None:
         del self.callbacks[index]
 
     def __call__(self, step: int, /, **state_dict: Any) -> None:
@@ -406,7 +409,7 @@ class HParamCallback(BaseCallback):
     r"""The history of the metrics, must have columns for train, valid, and test."""
     writer: SummaryWriter
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         r"""Validate the inputs."""
         if not isinstance(self.history, DataFrame):
             raise TypeError("histry must be a DataFrame!")

@@ -1,10 +1,10 @@
 r"""Generic kernels that work for a variety of backends."""
 
 __all__ = [
+    # Functions
     "false_like",
     "is_scalar",
     "is_singleton",
-    "to_scalar",
     "true_like",
 ]
 
@@ -37,8 +37,3 @@ def is_singleton(x: SupportsShape, /) -> bool:
 def is_scalar(x: object, /) -> bool:
     r"""Determines whether an object is a scalar."""
     return isinstance(x, bool | float | int | pa.Scalar | str)
-
-
-def to_scalar():
-    r"""Convert a singleton to a scalar."""
-    raise NotImplementedError

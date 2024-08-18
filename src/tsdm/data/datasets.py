@@ -168,7 +168,7 @@ class DataFrame2Dataset[K](MapDataset[K, DataFrame]):
 
     _: KW_ONLY
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.index = self.data.index.copy().droplevel(-1).unique()
 
     def __len__(self) -> int:

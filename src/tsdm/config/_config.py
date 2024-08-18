@@ -108,7 +108,7 @@ class Config(metaclass=ConfigMeta):
         with path.open("rb") as file:
             return tomllib.load(file)
 
-    def __init__(self):
+    def __init__(self) -> None:
         r"""Initialize the configuration."""
         # TODO: Should be initialized by an init/toml file.
         os.environ["TSDM_AUTOJIT"] = "True"
@@ -208,10 +208,10 @@ class Project:
 
             TEST_RESULTS_PATH = self.TEST_RESULTS_PATH
 
-            def __setitem__(self, key, value, /):
+            def __setitem__(self, key: str | Path, value: Path, /) -> None:
                 raise RuntimeError("ResultsDir is read-only!")
 
-            def __getitem__(self, key):
+            def __getitem__(self, key: str | Path, /) -> None:
                 if key not in self:
                     path = self.TEST_RESULTS_PATH / Path(key).stem
                     path.mkdir(parents=True, exist_ok=True)

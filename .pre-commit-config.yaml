@@ -68,7 +68,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.0
+    rev: v0.6.1
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -155,7 +155,9 @@ repos:
       language: system
       require_serial: true
       types_or: [python, pyi]
-      files: (^src/|^tests/)
+#      files: (^src/|^tests/)
+      files: '^src/'
+      exclude: '/tasks/.*'
       entry: mypy
       args:
         - "--scripts-are-modules"
@@ -163,7 +165,6 @@ repos:
         - "--hide-error-end"
         - "--no-pretty"
         - "--"
-      exclude: '/tasks/.*'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.376

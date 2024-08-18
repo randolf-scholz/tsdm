@@ -112,7 +112,7 @@ def strip_whitespace_array(arr: Array, /) -> Array:
 def strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
 @overload
 def strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
-def strip_whitespace(obj, /, *cols):
+def strip_whitespace[T](obj: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
         case Table() as table:
@@ -157,12 +157,11 @@ def null_like(arr: Array, /) -> Array:
 def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
 @overload
 def where(  # type: ignore[misc]
-    mask: BooleanArray | BooleanScalar,
-    x: Array | Scalar,
-    y: Array | Scalar = ...,
-    /,
+    mask: BooleanArray | BooleanScalar, x: Array | Scalar, y: Array | Scalar = ..., /
 ) -> Array: ...
-def where(mask, x, y=NA, /):
+def where[T](
+    mask: BooleanScalar | BooleanArray, x: T | Scalar, y: T | Scalar = NA, /
+) -> T:
     r"""Select elements from x or y depending on mask.
 
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).
@@ -170,13 +169,15 @@ def where(mask, x, y=NA, /):
     return pc.replace_with_mask(x, mask, y)
 
 
+# @overload
+# def force_cast(x: Array, dtype: DataType, /) -> Array: ...
 @overload
-def force_cast(x: Table, dtype: DataType, /) -> Table: ...
-@overload
-def force_cast(x: Array, dtype: DataType, /) -> Array: ...  # type: ignore[misc]
+def force_cast[T: Array | Table](x: T, dtype: DataType, /) -> T: ...
 @overload
 def force_cast(x: Table, /, **dtypes: DataType) -> Table: ...
-def force_cast(x, dtype=None, /, **dtypes):
+def force_cast(
+    x: Array | Table, dtype: DataType = None, /, **dtypes: DataType
+) -> Array | Table:
     r"""Cast an array or table to the given data type, replacing non-castable elements with null."""
     match x:
         case Array() as array:

@@ -121,8 +121,8 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
         res.update(other)
         return self.__class__(**res)
 
-    def __setitem__(self, key, value, /):
+    def __setitem__(self, key: str, value: object, /) -> None:
         self.__dict__[key] = value
 
-    def __delitem__(self, key, /):
+    def __delitem__(self, key: str, /) -> None:
         del self.__dict__[key]

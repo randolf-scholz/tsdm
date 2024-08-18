@@ -533,6 +533,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     # endregion chaining methods -------------------------------------------------------
 
 
+# FIXME: Use dataclass?
 @pprint_sequence(recursive=2)
 class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
     r"""Wraps List of encoders."""
@@ -573,7 +574,7 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
     def __getitem__(self, index: int) -> Encoder: ...
     @overload
     def __getitem__(self, index: slice) -> Self: ...
-    def __getitem__(self, index):
+    def __getitem__(self, index: int | slice) -> Encoder | Self:
         r"""Get the encoder at the given index."""
         match index:
             case int(idx):
@@ -806,9 +807,9 @@ class InverseEncoder[X, Y](BaseEncoder[Y, X]):
         return f"~{self.encoder}"
 
 
-def invert_encoder[X, Y](encoder: Encoder[X, Y], /, *, simplify: bool = True) -> Encoder[Y, X]:  # fmt: skip
+def invert_encoder[X, Y](encoder: Encoder[X, Y], /, *, simplify: bool = True) -> BaseEncoder[Y, X]:  # fmt: skip
     r"""Return the inverse encoder (i.e. decoder)."""
-    decoder = InverseEncoder(encoder)
+    decoder = ~encoder if isinstance(encoder, BaseEncoder) else InverseEncoder(encoder)
     return decoder.simplify() if simplify else decoder
 
 
@@ -985,15 +986,15 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
 
 # fmt: off
 @overload  # n=0
-def chain_encoders(*, simplify: bool = ...) -> Encoder: ...
+def chain_encoders(*, simplify: bool = ...) -> BaseEncoder: ...
 @overload  # n=1
-def chain_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
+def chain_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> BaseEncoder[X, Y]: ...
 @overload  # n=2
-def chain_encoders[X, Y, Z](e1: Encoder[Y, Z], e2: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Z]: ...
+def chain_encoders[X, Y, Z](e1: Encoder[Y, Z], e2: Encoder[X, Y], /, *, simplify: bool = ...) -> BaseEncoder[X, Z]: ...
 @overload  # n>2
-def chain_encoders[X, Y](*es: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]], simplify: bool = ...) -> Encoder[X, Y]: ...
+def chain_encoders[X, Y](*es: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]], simplify: bool = ...) -> BaseEncoder[X, Y]: ...
 # fmt: on
-def chain_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type: ignore[misc]
+def chain_encoders(*encoders: Encoder, simplify: bool = True) -> BaseEncoder:  # type: ignore[misc]
     r"""Chain encoders."""
     encoder = ChainedEncoder(*encoders)
     return encoder.simplify() if simplify else encoder
@@ -1083,15 +1084,17 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
 
 # fmt: off
 @overload  # n=0
-def pipe_encoders(*, simplify: bool = ...) -> UniversalEncoder: ...
+def pipe_encoders(*, simplify: bool = ...) -> BaseEncoder: ...
 @overload  # n=1
-def pipe_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[X, Y]: ...
+def pipe_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> BaseEncoder[X, Y]: ...
 @overload  # n=2
-def pipe_encoders[X, Y, Z](e1: Encoder[X, Y], e2: Encoder[Y, Z], /, *, simplify: bool = ...) -> Encoder[X, Z]: ...
+def pipe_encoders[X, Y, Z](e1: Encoder[X, Y], e2: Encoder[Y, Z], /, *, simplify: bool = ...) -> BaseEncoder[X, Z]: ...
 @overload  # n>2
-def pipe_encoders[X, Y](*es: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]], simplify: bool = ...) -> Encoder[X, Y]: ...
+def pipe_encoders[X, Y](*es: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]], simplify: bool = ...) -> BaseEncoder[X, Y]: ...
+@overload  # fallback
+def pipe_encoders(*encoders: Encoder, simplify: bool = ...) -> BaseEncoder: ...
 # fmt: on
-def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type: ignore[misc]
+def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> BaseEncoder:  # type: ignore[misc]
     r"""Pipe encoders."""
     encoder = PipedEncoder(*encoders)
     return encoder.simplify() if simplify else encoder
@@ -1099,27 +1102,29 @@ def pipe_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder:  # type
 
 # fmt: off
 @overload  # n=-1
-def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[-1], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[Y, X]: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[-1], /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[Y, X]: ...
 @overload  # n=0
-def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[0], /, *, simplify: bool = ..., copy: bool = ...) -> UniversalEncoder: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[0], /, *, simplify: bool = ..., copy: bool = ...) -> IdentityEncoder: ...
 @overload  # n=1
-def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> Encoder[X, Y]: ...
+def pow_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: Literal[True] = ..., copy: bool = ...) -> BaseEncoder[X, Y]: ...
 @overload  # n>1
-def pow_encoder[T](e: Encoder[T, T], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[T, T]: ...
+def pow_encoder[T](e: Encoder[T, T], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[T, T]: ...
 # fmt: on
-def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
+def pow_encoder(
+    encoder: Encoder, n: int, /, *, simplify: bool = True, copy: bool = True
+) -> BaseEncoder:
     r"""Apply encoder n times."""
     encoder = encoder.simplify() if simplify else encoder
     encoders = [(deepcopy(encoder) if copy else encoder) for _ in range(n)]
 
     if n == -1 and simplify:
-        return ~encoders[0]
+        return invert_encoder(encoders[0])
     if n == 0 and simplify:
         return IdentityEncoder()
     if n == 1 and simplify:
-        return encoders[0]
+        return WrappedEncoder(encoders[0]).simplify()
     if n < 0:
-        return pipe_encoders(*[~e for e in reversed(encoders)])
+        return pipe_encoders(*map(invert_encoder, reversed(encoders)))
     return PipedEncoder(*encoders)
 
 
@@ -1180,17 +1185,17 @@ class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, Tupl
 
 # fmt: off
 @overload  # n=0
-def parallelize_encoders(*, simplify: bool = ...) -> Encoder[tuple[()], tuple[()]]: ...
+def parallelize_encoders(*, simplify: bool = ...) -> BaseEncoder[tuple[()], tuple[()]]: ...
 @overload  # n=1
-def parallelize_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
+def parallelize_encoders[X, Y](e: Encoder[X, Y], /, *, simplify: bool = ...) -> BaseEncoder[tuple[X], tuple[Y]]: ...
 @overload  # n=2
-def parallelize_encoders[X1, Y1, X2, Y2](e1: Encoder[X1, Y1], e2: Encoder[X2, Y2], /, *, simplify: bool = ...) -> Encoder[tuple[X1, X2], tuple[Y1, Y2]]: ...
+def parallelize_encoders[X1, Y1, X2, Y2](e1: Encoder[X1, Y1], e2: Encoder[X2, Y2], /, *, simplify: bool = ...) -> BaseEncoder[tuple[X1, X2], tuple[Y1, Y2]]: ...
 @overload  # n>2 (FIXME: https://github.com/python/typing/issues/1216)
-def parallelize_encoders[X, Y](*encoders: Encoder[X, Y], simplify: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
+def parallelize_encoders[X, Y](*encoders: Encoder[X, Y], simplify: bool = ...) -> BaseEncoder[tuple[X, ...], tuple[Y, ...]]: ...
 @overload  # fallback
-def parallelize_encoders(*encoders: Encoder, simplify: bool = ...) -> Encoder[tuple, tuple]: ...
+def parallelize_encoders(*encoders: Encoder, simplify: bool = ...) -> BaseEncoder[tuple, tuple]: ...
 # fmt: on
-def parallelize_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder[tuple, tuple]:  # fmt: skip
+def parallelize_encoders(*encoders: Encoder, simplify: bool = True) -> BaseEncoder[tuple, tuple]:  # fmt: skip
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -1201,19 +1206,19 @@ def parallelize_encoders(*encoders: Encoder, simplify: bool = True) -> Encoder[t
 
 # fmt: off
 @overload  # n=0
-def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[0], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[()], tuple[()]]: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[0], /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[tuple[()], tuple[()]]: ...
 @overload  # n=1
-def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X], tuple[Y]]: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[1], /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[tuple[X], tuple[Y]]: ...
 @overload  # n=2
-def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[2], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, X], tuple[Y, Y]]: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[2], /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[tuple[X, X], tuple[Y, Y]]: ...
 @overload  # n=3
-def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[3], /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, X, X], tuple[Y, Y, Y]]: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: Literal[3], /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[tuple[X, X, X], tuple[Y, Y, Y]]: ...
 @overload  # n variable
-def duplicate_encoder[X, Y](e: Encoder[X, Y], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> Encoder[tuple[X, ...], tuple[Y, ...]]: ...
+def duplicate_encoder[X, Y](e: Encoder[X, Y], n: int, /, *, simplify: bool = ..., copy: bool = ...) -> BaseEncoder[tuple[X, ...], tuple[Y, ...]]: ...
 # fmt: on
 def duplicate_encoder[X, Y](  # type: ignore[misc]
     encoder: Encoder[X, Y], n: int, /, *, simplify: bool = True, copy: bool = True
-) -> Encoder[tuple[X, ...], tuple[Y, ...]]:
+) -> BaseEncoder[tuple[X, ...], tuple[Y, ...]]:
     r"""Create copies of an Encoder in parallel.
 
     Args:
@@ -1245,8 +1250,9 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     encoders: list[Encoder[X, Any]]
     aggregate_fn: Agg[X] = random.choice
 
+    # FIXME: use dataclass?
     @property
-    def params(self):
+    def params(self) -> dict[str, Any]:
         return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
 
     if TYPE_CHECKING:
@@ -1303,19 +1309,19 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
 
 # fmt: off
 @overload  # n=0
-def join_encoders(*, aggregate_fn: Agg = ..., simplify: bool = ...) -> Encoder[Any, Any]: ...
+def join_encoders(*, aggregate_fn: Agg = ..., simplify: bool = ...) -> BaseEncoder[Any, Any]: ...
 @overload  # n=1
-def join_encoders[X, Y](e: Encoder[X, Y], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y]]: ...
+def join_encoders[X, Y](e: Encoder[X, Y], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> BaseEncoder[X, tuple[Y]]: ...
 @overload  # n=2
-def join_encoders[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y1, Y2]]: ...
+def join_encoders[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> BaseEncoder[X, tuple[Y1, Y2]]: ...
 @overload  # n>2
-def join_encoders[X, Y](*es: Encoder[X, Y], aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> Encoder[X, tuple[Y, ...]]: ...
+def join_encoders[X, Y](*es: Encoder[X, Y], aggregate_fn: Agg[X] = ..., simplify: bool = ...) -> BaseEncoder[X, tuple[Y, ...]]: ...
 # fmt: on
 def join_encoders[X, Y](  # type: ignore[misc]
     *encoders: Encoder[X, Y],
     aggregate_fn: Agg[X] = random.choice,
     simplify: bool = True,
-) -> Encoder[X, tuple[Y, ...]]:
+) -> BaseEncoder[X, tuple[Y, ...]]:
     r"""Join encoders."""
     encoder = JointEncoder(*encoders, aggregate_fn=aggregate_fn)
     return encoder.simplify() if simplify else encoder
@@ -1337,7 +1343,7 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
     aggregate_fn: Agg[Y] = random.choice
 
     @property
-    def params(self):
+    def params(self) -> dict[str, Any]:
         return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
 
     if TYPE_CHECKING:
@@ -1446,7 +1452,7 @@ def map_encoders[K, X, Y](
     /,
     *,
     simplify: bool = False,
-) -> "Encoder[Mapping[K, X], Mapping[K, Y]]":
+) -> "BaseEncoder[Mapping[K, X], Mapping[K, Y]]":
     r"""Map encoders."""
     encoder = MappedEncoder(encoders)
     return encoder.simplify() if simplify else encoder

@@ -215,12 +215,12 @@ class LazyDict[K, V](dict[K, V]):
     # NOTE: need to overwrite since dict.get does not call __getitem__.
     #   Also, dict.get has different overloads than Mapping.get.
     @overload  # type: ignore[override]
-    def get(self, key: K, /) -> Optional[V]: ...
+    def get(self, key: K, /) -> V | None: ...
     @overload
     def get(self, key: K, default: V, /) -> V: ...
     @overload
     def get[T](self, key: K, default: T, /) -> V | T: ...
-    def get(self, key, default=None, /):
+    def get[T](self, key: K, default: Optional[T | V] = None, /) -> V | T | None:
         r"""Get the value of the key."""
         try:
             return self[key]
@@ -233,7 +233,9 @@ class LazyDict[K, V](dict[K, V]):
     def get_lazy(self, key: K, default: V, /) -> MaybeLazy[V]: ...
     @overload
     def get_lazy[T](self, key: K, default: T, /) -> MaybeLazy[V] | T: ...
-    def get_lazy(self, key, default=None, /):
+    def get_lazy[T](
+        self, key: K, default: Optional[T | V] = None, /
+    ) -> MaybeLazy[V] | T | None:
         r"""Get the value for the key lazily."""
         return super().get(key, default)
 

@@ -170,7 +170,7 @@ class timeout(ContextDecorator, AbstractContextManager):
 
     suppress: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._exception = TimeoutError("Execution timed out.")
 
     def _timeout_handler(self, signum: int, frame: None | FrameType) -> Never:  # noqa: ARG002

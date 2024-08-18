@@ -106,8 +106,6 @@ __all__ = [
     "Split",
     "SplitID",
     "TimeSeriesTask",
-    # Functions
-    "infer_split_type",
 ]
 
 import logging
@@ -147,28 +145,6 @@ type INFERENCE = Literal["infer"]
 type UNKNOWN = Literal["unknown"]
 type SPLIT = Literal["train", "valid", "test"]
 type SPLIT_TYPE = Literal["train", "infer", "unknown"]
-
-
-def infer_split_type(self, key: str | Iterable) -> SPLIT_TYPE:
-    r"""Return the type of split."""
-    match key:
-        case str(name):
-            if name.lower() in self.train_patterns:
-                return "train"
-            if name.lower() in self.infer_patterns:
-                return "infer"
-            return "unknown"
-        case Iterable() as names:
-            patterns = {self.split_type(k) for k in names}
-            if patterns <= {"train", "unknown"}:
-                return "train"
-            if patterns <= {"infer", "unknown"}:
-                return "infer"
-            if patterns == {"unknown"}:
-                return "unknown"
-            raise ValueError(f"{key=} contains both train and infer splits.")
-        case _:
-            return "unknown"
 
 
 @dataclass
@@ -458,6 +434,27 @@ class TTT[K, Sample](ForecastingTask[K, Sample]):  # K, +Sample
                 raise TypeError(
                     f"Expected Index or MultiIndex, got {type(split_index)=}"
                 )
+
+    def infer_split_type(self, key: str | Iterable) -> SPLIT_TYPE:
+        r"""Return the type of split."""
+        match key:
+            case str(name):
+                if name.lower() in self.train_patterns:
+                    return "train"
+                if name.lower() in self.infer_patterns:
+                    return "infer"
+                return "unknown"
+            case Iterable() as names:
+                patterns = {self.split_type(k) for k in names}
+                if patterns <= {"train", "unknown"}:
+                    return "train"
+                if patterns <= {"infer", "unknown"}:
+                    return "infer"
+                if patterns == {"unknown"}:
+                    return "unknown"
+                raise ValueError(f"{key=} contains both train and infer splits.")
+            case _:
+                return "unknown"
 
 
 @pprint_repr

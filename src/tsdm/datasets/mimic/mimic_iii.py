@@ -37,6 +37,7 @@ from tsdm.datasets.mimic.mimic_iii_schema import (
     SCHEMAS,
     TRUE_VALUES,
 )
+from tsdm.utils import remote
 
 
 class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
@@ -153,7 +154,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
                 " does not provide legacy versions of the MIMIC-III dataset."
             )
 
-        self.download_from_url(
+        remote.download(
             self.SOURCE_URL + f"{self.__version__}/",
             self.rawdata_paths[fname],
             username=input("MIMIC-III username: "),

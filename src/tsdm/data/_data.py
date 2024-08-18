@@ -131,7 +131,7 @@ def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
 def strip_whitespace(series: Series, /) -> Series: ...  # type: ignore[misc]
 @overload
 def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[misc]
-def strip_whitespace(table, /, *cols):
+def strip_whitespace[T](table: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string columns in a table or frame."""
     match table:
         case Table() as table:
@@ -174,28 +174,26 @@ def detect_outliers(
     /,
 ) -> DataFrame: ...
 @overload
-def detect_outliers(
+def detect_outliers[Key](
     obj: DataFrame,
     /,
     *,
-    lower_bound: Mapping[Any, float | None],
-    upper_bound: Mapping[Any, float | None],
-    lower_inclusive: Mapping[Any, bool],
-    upper_inclusive: Mapping[Any, bool],
+    lower_bound: Mapping[Key, float | None],
+    upper_bound: Mapping[Key, float | None],
+    lower_inclusive: Mapping[Key, bool],
+    upper_inclusive: Mapping[Key, bool],
 ) -> DataFrame: ...
-
-
 # endregion overloads ------------------------------------------------------------------
-def detect_outliers(
-    obj,
-    description=NotImplemented,
+def detect_outliers[T: Series | DataFrame](
+    obj: T,
+    description: Mapping = NotImplemented,
     /,
     *,
-    lower_bound=NotImplemented,
-    upper_bound=NotImplemented,
-    lower_inclusive=NotImplemented,
-    upper_inclusive=NotImplemented,
-):
+    lower_bound: float | None | Mapping[Any, float | None] = NotImplemented,
+    upper_bound: float | None | Mapping[Any, float | None] = NotImplemented,
+    lower_inclusive: bool | Mapping[Any, bool] = NotImplemented,
+    upper_inclusive: bool | Mapping[Any, bool] = NotImplemented,
+) -> T:
     r"""Detect outliers in a Series or DataFrame, given boundary values."""
     options = {
         "lower_bound": lower_bound,
@@ -232,7 +230,7 @@ def remove_outliers(
     inplace: bool = ...,
 ) -> Series: ...
 @overload
-def remove_outliers[T: (Series, DataFrame)](
+def remove_outliers[T: Series | DataFrame](
     df: T,
     description: BoundaryInformation | DataFrame,
     /,
@@ -252,21 +250,19 @@ def remove_outliers[Key](
     drop: bool = ...,
     inplace: bool = ...,
 ) -> DataFrame: ...
-
-
 # endregion overloads ------------------------------------------------------------------
-def remove_outliers(
-    obj,
-    description=NotImplemented,
+def remove_outliers[T: Series | DataFrame](
+    obj: T,
+    description: Mapping = NotImplemented,
     /,
     *,
-    lower_bound=NotImplemented,
-    upper_bound=NotImplemented,
-    lower_inclusive=NotImplemented,
-    upper_inclusive=NotImplemented,
-    drop=True,
-    inplace=False,
-):
+    lower_bound: float | None | Mapping[Any, float | None] = NotImplemented,
+    upper_bound: float | None | Mapping[Any, float | None] = NotImplemented,
+    lower_inclusive: bool | Mapping[Any, bool] = NotImplemented,
+    upper_inclusive: bool | Mapping[Any, bool] = NotImplemented,
+    drop: bool = True,
+    inplace: bool = False,
+) -> T:
     r"""Remove outliers from a DataFrame, given boundary values."""
     options = {
         "lower_bound": lower_bound,

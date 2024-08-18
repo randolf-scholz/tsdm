@@ -171,7 +171,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     @overload
     def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
-    def __getitem__(self, key, /):
+    def __getitem__(self, key: object, /) -> TimeSeriesDataset | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
         match key:
@@ -216,7 +216,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 md_desc = self.metadata_description
 
         if isinstance(ts.index, MultiIndex):
-            return TimeSeriesCollection(
+            return self.__class__(
                 name=self.name,
                 timeseries=ts,
                 metadata=md,

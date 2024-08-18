@@ -221,16 +221,16 @@ def get_return_typehint(func: Callable, /) -> Any:
 def is_mandatory_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_mandatory_arg(func: Callable, name: str, /) -> bool: ...
-def is_mandatory_arg(func_or_param, name=None, /):
+def is_mandatory_arg(arg: Callable | Parameter, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is mandatory."""
-    match func_or_param, name:
+    match arg, name:
         case Parameter(kind=kind, default=default), None:
             return default is Parameter.empty and kind not in {
                 VAR_POSITIONAL,
                 VAR_KEYWORD,
             }
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)  # type: ignore[has-type]
+            param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_mandatory_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -240,9 +240,9 @@ def is_mandatory_arg(func_or_param, name=None, /):
 def is_positional_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_arg(func: Callable, name: str, /) -> bool: ...
-def is_positional_arg(func_or_param, name=None, /):
+def is_positional_arg(arg: Callable | Parameter, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is positional argument."""
-    match func_or_param, name:
+    match arg, name:
         case Parameter(kind=kind), None:
             return kind in {
                 POSITIONAL_ONLY,
@@ -250,7 +250,7 @@ def is_positional_arg(func_or_param, name=None, /):
                 VAR_POSITIONAL,
             }
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)  # type: ignore[has-type]
+            param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_positional_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -260,13 +260,15 @@ def is_positional_arg(func_or_param, name=None, /):
 def is_positional_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_only_arg(func: Callable, name: str, /) -> bool: ...
-def is_positional_only_arg(func_or_param, name=None, /):
+def is_positional_only_arg(
+    arg: Parameter | Callable, name: Optional[str] = None, /
+) -> bool:
     r"""Check if parameter is positional only argument."""
-    match func_or_param, name:
+    match arg, name:
         case Parameter(kind=kind), None:
             return kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)  # type: ignore[has-type]
+            param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_positional_only_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -276,9 +278,9 @@ def is_positional_only_arg(func_or_param, name=None, /):
 def is_keyword_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_arg(func: Callable, name: str, /) -> bool: ...
-def is_keyword_arg(func_or_param, name=None, /):
+def is_keyword_arg(arg: Parameter | Callable, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is keyword argument."""
-    match func_or_param, name:
+    match arg, name:
         case Parameter(kind=kind), None:
             return kind in {
                 KEYWORD_ONLY,
@@ -286,7 +288,7 @@ def is_keyword_arg(func_or_param, name=None, /):
                 VAR_KEYWORD,
             }
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)  # type: ignore[has-type]
+            param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_keyword_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -296,13 +298,15 @@ def is_keyword_arg(func_or_param, name=None, /):
 def is_keyword_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_only_arg(func: Callable, name: str, /) -> bool: ...
-def is_keyword_only_arg(func_or_param, name=None, /):
+def is_keyword_only_arg(
+    arg: Parameter | Callable, name: Optional[str] = None, /
+) -> bool:
     r"""Check if parameter is keyword-only argument."""
-    match func_or_param, name:
+    match arg, name:
         case Parameter(kind=kind), None:
             return kind in {KEYWORD_ONLY, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)  # type: ignore[has-type]
+            param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_keyword_only_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -312,25 +316,25 @@ def is_keyword_only_arg(func_or_param, name=None, /):
 def is_variadic_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_variadic_arg(func: Callable, name: str, /) -> bool: ...
-def is_variadic_arg(func_or_param, name=None, /):
+def is_variadic_arg(arg: Parameter | Callable, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is variadic argument."""
-    match func_or_param, name:
+    match arg, name:
         case Parameter(kind=kind), None:
             return kind in {VAR_POSITIONAL, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)  # type: ignore[has-type]
+            param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_variadic_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
 
 
-def prod_fn(*funcs: Callable) -> Callable:
+def prod_fn(*funcs: Callable[[Any], Any]) -> Callable[[tuple], tuple]:
     r"""Cartesian Product of Functions.
 
     It is assumed every function takes a single positional argument.
     """
 
-    def __prod_fn(args, /):
+    def __prod_fn(args: tuple, /) -> tuple:
         r"""Argument is a tuple with the input for each function."""
         return tuple(f(arg) for f, arg in zip(funcs, args, strict=True))
 

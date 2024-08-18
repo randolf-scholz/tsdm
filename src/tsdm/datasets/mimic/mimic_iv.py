@@ -91,7 +91,7 @@ from tsdm.datasets.mimic.mimic_iv_schema import (
     TRUE_VALUES,
     UNSTACKED_SCHEMAS,
 )
-from tsdm.utils.remote import download_directory_to_zip
+from tsdm.utils import remote
 
 BAD_NAN_COLUMNS = {
     "admissions"         : ["admit_provider_id"],
@@ -255,7 +255,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     def download_file(self, fname: str, /) -> None:
         if self.version_info not in {(1, 0), (2, 2)}:
             # zip file is not directly downloadable for other versions.
-            download_directory_to_zip(
+            remote.download_directory_to_zip(
                 f"{self.CONTENT_URL}/{self.__version__}/",
                 self.rawdata_paths[fname],
                 username=input("MIMIC-IV username: "),
@@ -263,7 +263,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
                 headers={"User-Agent": "Wget/1.21.2"},
             )
         else:
-            self.download_from_url(
+            remote.download(
                 f"{self.SOURCE_URL}/{self.__version__}/",
                 self.rawdata_paths[fname],
                 username=input("MIMIC-IV username: "),

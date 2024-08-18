@@ -39,7 +39,7 @@ def nanmax(x: Series, /, axis: Axis = None) -> Any:
 def cast(s: Series, /, dtype: Any) -> Series: ...
 @overload
 def cast(df: DataFrame, /, dtype: Any) -> DataFrame: ...
-def cast(x, /, dtype):
+def cast[T: (Series, DataFrame)](x: T, /, dtype: Any) -> T:
     r"""Cast a polars object to a different dtype."""
     return x.cast(dtype)
 
@@ -48,7 +48,7 @@ def cast(x, /, dtype):
 def drop_null(x: Series, /) -> Series: ...
 @overload
 def drop_null(x: DataFrame, /) -> DataFrame: ...
-def drop_null(x, /):
+def drop_null[T: (Series, DataFrame)](x: T, /) -> T:
     r"""Drop `NaN` values from a polars object."""
     return x.drop_nulls()
 

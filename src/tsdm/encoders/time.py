@@ -209,7 +209,7 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
     original_dtype: DType = field(init=False)
     original_name: Hashable = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # fitted fields
         self.freq = NotImplemented
         self.dtype = NotImplemented

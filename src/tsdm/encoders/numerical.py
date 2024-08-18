@@ -803,7 +803,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
     # region parameters ----------------------------------------------------------------
 
-    def recompute_params(self):
+    def recompute_params(self) -> None:
         r"""Computes derived parameters from the base parameters."""
         self.xbar = (self.xmax + self.xmin) / 2
         self.ybar = (self.ymax + self.ymin) / 2

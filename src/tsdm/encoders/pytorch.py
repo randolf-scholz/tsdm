@@ -202,7 +202,7 @@ class Time2VecEncoder(BaseEncoder[Tensor, Tensor]):
     encoder: Time2Vec = field(init=False)
     r"""The wrapped encoder."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.encoder = Time2Vec(num_dim=self.num_dim, activation=self.activation)
         self.freq = self.encoder.freq
         self.phase = self.encoder.phase
@@ -230,7 +230,7 @@ class PositionalEncoder(BaseEncoder[Tensor, Tensor]):
     encoder: PositionalEncoding = field(init=False)
     r"""The wrapped encoder."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.encoder = PositionalEncoding(num_dim=self.num_dim, scale=self.scale)
         self.scales = self.encoder.scales
 

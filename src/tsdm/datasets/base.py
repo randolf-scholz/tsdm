@@ -682,7 +682,7 @@ class MultiTableDataset[Key: str, T](
         raise NotImplementedError
 
     @cached_property
-    def _key_attributes(self) -> bool:
+    def _enable_key_attributes(self) -> bool:
         r"""Whether to add table names as attributes."""
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
             warnings.warn(
@@ -714,13 +714,17 @@ class MultiTableDataset[Key: str, T](
         return True
 
     def __dir__(self) -> list[str]:
-        if self._key_attributes:
+        if self._enable_key_attributes:
             return list(super().__dir__()) + list(self.table_names)
         return list(super().__dir__())
 
-    def __getattr__(self, key):
+    # @overload
+    # def __getattr__(self, key: Key, /) -> T: ...
+    # @overload
+    # def __getattr__(self, key: str, /) -> Any: ...
+    def __getattr__(self, key: Key, /) -> T:
         r"""Get attribute."""
-        if self._key_attributes and key in self.table_names:
+        if self._enable_key_attributes and key in self.table_names:
             return self.tables[key]
         return self.__getattribute__(key)
 

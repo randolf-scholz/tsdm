@@ -114,7 +114,7 @@ class Distribution[T](RV[T], Protocol):  # +T
 class Dirichlet:
     r"""Vectorized version of `scipy.stats.dirichlet`."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         r"""Initialize the Dirichlet distribution."""
         raise NotImplementedError
 

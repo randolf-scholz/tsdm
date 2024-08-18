@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:8de8fed8bc9989d236c305c032b4a03694157e1c049e99d51cb94c3418d453a5"
+content_hash = "sha256:b721b48929dabc9e07f686faa9ad972b435683b3add00e5ecfaff9abf29a2cbd"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -600,14 +600,14 @@ files = [
 
 [[package]]
 name = "grpcio"
-version = "1.65.4"
+version = "1.65.5"
 requires_python = ">=3.8"
 summary = "HTTP/2-based RPC framework"
 groups = ["default"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "grpcio-1.65.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:74c34fc7562bdd169b77966068434a93040bfca990e235f7a67cdf26e1bd5c63"},
-    {file = "grpcio-1.65.4.tar.gz", hash = "sha256:2a4f476209acffec056360d3e647ae0e14ae13dcf3dfb130c227ae1c594cbe39"},
+    {file = "grpcio-1.65.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c97962720489ef31b5ad8a916e22bc31bba3664e063fb9f6702dce056d4aa61b"},
+    {file = "grpcio-1.65.5.tar.gz", hash = "sha256:ec6f219fb5d677a522b0deaf43cea6697b16f338cb68d009e30930c4aa0d2209"},
 ]
 
 [[package]]
@@ -662,7 +662,7 @@ files = [
 
 [[package]]
 name = "hypothesis"
-version = "6.111.0"
+version = "6.111.1"
 requires_python = ">=3.8"
 summary = "A library for property-based testing"
 groups = ["tests"]
@@ -673,27 +673,27 @@ dependencies = [
     "sortedcontainers<3.0.0,>=2.1.0",
 ]
 files = [
-    {file = "hypothesis-6.111.0-py3-none-any.whl", hash = "sha256:7a51f678da3719a04a3ef61cd241384dd93b49f35d7cce22833745c66ac1d507"},
-    {file = "hypothesis-6.111.0.tar.gz", hash = "sha256:04d0703621d9fdd61c079a4dda07babbe7ebf6d34eee6ad9484a2af0ee721801"},
+    {file = "hypothesis-6.111.1-py3-none-any.whl", hash = "sha256:9422adbac4b2104f6cf92dc6604b5c9df975efc08ffc7145ecc39bc617243835"},
+    {file = "hypothesis-6.111.1.tar.gz", hash = "sha256:6ab6185a858fa692bf125c0d0a936134edc318bee01c05e407c71c9ead0b61c5"},
 ]
 
 [[package]]
 name = "hypothesis"
-version = "6.111.0"
+version = "6.111.1"
 extras = ["numpy", "pandas", "pytest"]
 requires_python = ">=3.8"
 summary = "A library for property-based testing"
 groups = ["tests"]
 marker = "python_full_version == \"3.12.4\""
 dependencies = [
-    "hypothesis==6.111.0",
+    "hypothesis==6.111.1",
     "numpy>=1.17.3",
     "pandas>=1.1",
     "pytest>=4.6",
 ]
 files = [
-    {file = "hypothesis-6.111.0-py3-none-any.whl", hash = "sha256:7a51f678da3719a04a3ef61cd241384dd93b49f35d7cce22833745c66ac1d507"},
-    {file = "hypothesis-6.111.0.tar.gz", hash = "sha256:04d0703621d9fdd61c079a4dda07babbe7ebf6d34eee6ad9484a2af0ee721801"},
+    {file = "hypothesis-6.111.1-py3-none-any.whl", hash = "sha256:9422adbac4b2104f6cf92dc6604b5c9df975efc08ffc7145ecc39bc617243835"},
+    {file = "hypothesis-6.111.1.tar.gz", hash = "sha256:6ab6185a858fa692bf125c0d0a936134edc318bee01c05e407c71c9ead0b61c5"},
 ]
 
 [[package]]
@@ -1337,7 +1337,7 @@ files = [
 
 [[package]]
 name = "markdown"
-version = "3.6"
+version = "3.7"
 requires_python = ">=3.8"
 summary = "Python implementation of John Gruber's Markdown."
 groups = ["default"]
@@ -1346,8 +1346,8 @@ dependencies = [
     "importlib-metadata>=4.4; python_version < \"3.10\"",
 ]
 files = [
-    {file = "Markdown-3.6-py3-none-any.whl", hash = "sha256:48f276f4d8cfb8ce6527c8f79e2ee29708508bf4d40aa410fbc3b4ee832c850f"},
-    {file = "Markdown-3.6.tar.gz", hash = "sha256:ed4f41f6daecbeeb96e576ce414c41d2d876daa9a16cb35fa8ed8c2ddfad0224"},
+    {file = "Markdown-3.7-py3-none-any.whl", hash = "sha256:7eb6df5690b81a1d7942992c97fad2938e956e79df20cbc6186e9c3a77b1c803"},
+    {file = "markdown-3.7.tar.gz", hash = "sha256:2ae2471477cfd02dbbf038d5d9bc226d40def84b4fe2986e49b59b6b472bbed2"},
 ]
 
 [[package]]
@@ -1457,7 +1457,8 @@ files = [
 
 [[package]]
 name = "minio"
-version = "7.2.7"
+version = "7.2.8"
+requires_python = ">3.8"
 summary = "MinIO Python SDK for Amazon S3 Compatible Cloud Storage"
 groups = ["experiment"]
 marker = "python_full_version == \"3.12.4\""
@@ -1469,8 +1470,8 @@ dependencies = [
     "urllib3",
 ]
 files = [
-    {file = "minio-7.2.7-py3-none-any.whl", hash = "sha256:59d1f255d852fe7104018db75b3bebbd987e538690e680f7c5de835e422de837"},
-    {file = "minio-7.2.7.tar.gz", hash = "sha256:473d5d53d79f340f3cd632054d0c82d2f93177ce1af2eac34a235bea55708d98"},
+    {file = "minio-7.2.8-py3-none-any.whl", hash = "sha256:aa3b485788b63b12406a5798465d12a57e4be2ac2a58a8380959b6b748e64ddd"},
+    {file = "minio-7.2.8.tar.gz", hash = "sha256:f8af2dafc22ebe1aef3ac181b8e217037011c430aa6da276ed627e55aaf7c815"},
 ]
 
 [[package]]
@@ -2733,14 +2734,14 @@ files = [
 
 [[package]]
 name = "ruff"
-version = "0.6.0"
+version = "0.6.1"
 requires_python = ">=3.7"
 summary = "An extremely fast Python linter and code formatter, written in Rust."
 groups = ["linters"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "ruff-0.6.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f1749a0aef3ec41ed91a0e2127a6ae97d2e2853af16dbd4f3c00d7a3af726c5"},
-    {file = "ruff-0.6.0.tar.gz", hash = "sha256:272a81830f68f9bd19d49eaf7fa01a5545c5a2e86f32a9935bb0e4bb9a1db5b8"},
+    {file = "ruff-0.6.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d812615525a34ecfc07fd93f906ef5b93656be01dfae9a819e31caa6cfe758a1"},
+    {file = "ruff-0.6.1.tar.gz", hash = "sha256:af3ffd8c6563acb8848d33cd19a69b9bfe943667f0419ca083f8ebe4224a3436"},
 ]
 
 [[package]]

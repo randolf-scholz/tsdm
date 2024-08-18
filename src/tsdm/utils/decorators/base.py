@@ -289,21 +289,6 @@ class PolymorphicDecorator[**P](Protocol):
 
 # endregion general decorators ---------------------------------------------------------
 
-# class ParametrizedDecorator(Protocol[T, P]):
-#     r"""Protocol for parametrized decorators."""
-#
-#     @overload
-#     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator[T]: ...
-#     @overload
-#     def __call__(self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
-
-
-# NOTE: Type hinting is severely limited because HKTs are not supported.
-#   The lack of an explicit FunctionType is a problem.
-__SENTINEL = cast(Any, object())
-r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
-
-
 # |                     |                      |                 | pyright | mypy |
 # |---------------------|----------------------|-----------------|---------|------|
 # | protocol[Cls: type] | decorator[Cls: type] | pprint[Cls]     | Y       | N    |
@@ -335,9 +320,10 @@ r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 # |                     | decorator[T]         | pprint[Cls]     | Y       | N    |
 # |                     |                      | pprint[type[T]] | Y       | N    |
 
-
 # FIXME: https://github.com/python/mypy/issues/17191
 #   Somehow broken in mypy...
+# NOTE: Type hinting is severely limited because HKTs are not supported.
+#   The lack of an explicit FunctionType is a problem.
 # @overload  # class-decorator
 # def decorator[Cls: type, **P](
 #     deco: ClassDecorator[Cls, P], /
@@ -362,7 +348,12 @@ r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 # def decorator[F_in: Fn, F_out: Fn, **P](
 #     deco: FunctionDecorator[F_in, F_out, P], /
 # ) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
-# def decorator(deco, /):  # pyright: ignore[reportInconsistentOverload]
+# def decorator(deco, /):
+
+__SENTINEL = cast(Any, object())
+r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
+
+
 def decorator[T_in, T_out, **P](
     deco: Decorator[T_in, T_out, P], /
 ) -> ParametrizedDecorator[T_in, T_out, P]:
@@ -423,8 +414,15 @@ def decorator[T_in, T_out, **P](
                     "@decorator does not support VAR_POSITIONAL arguments!",
                 )
 
+    # FIXME: Instead of inner function, return instance of ParametrizedDecorator
+    @overload
+    def _deco(obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
+    @overload
+    def _deco(*args: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
     @wraps(deco)
-    def __parametrized_decorator(obj=__SENTINEL, /, *args, **kwargs):
+    def _deco(
+        obj: T_in = __SENTINEL, /, *args: P.args, **kwargs: P.kwargs
+    ) -> T_out | Fn[[T_in], T_out]:
         if obj is __SENTINEL:
             logger.debug(
                 "@decorator used in BRACKET mode.\n"
@@ -437,7 +435,7 @@ def decorator[T_in, T_out, **P](
         logger.debug("@decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
-    return __parametrized_decorator  # pyright: ignore[reportReturnType]
+    return _deco
 
 
 def attribute[T, R](func: Fn[[T], R], /) -> R:  # T, +R
@@ -455,10 +453,10 @@ def attribute[T, R](func: Fn[[T], R], /) -> R:  # T, +R
             self.payload = cast(Any, self.__SENTINEL)
 
         @overload
-        def __get__(self, obj: None, obj_type: Optional[type] = ...) -> Self: ...
+        def __get__(self, obj: None, obj_type: Optional[type] = ..., /) -> Self: ...
         @overload
-        def __get__(self, obj: T, obj_type: Optional[type] = ...) -> R: ...
-        def __get__(self, obj, obj_type=None):
+        def __get__(self, obj: T, obj_type: Optional[type] = ..., /) -> R: ...
+        def __get__(self, obj: None | T, obj_type: Optional[type] = None) -> Self | R:
             if obj is None:
                 return self
             if self.payload is self.__SENTINEL:

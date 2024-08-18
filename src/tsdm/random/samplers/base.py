@@ -206,7 +206,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
     index: Index = field(init=False)
     size: int = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.index = get_index(self.data)
         self.size = len(self.index)
 
@@ -601,7 +601,7 @@ class SlidingSampler[
     def __iter__(self: "SlidingSampler[DT, U, ONE]", /) -> Iterator: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
-    def __iter__(self, /):  # pyright: ignore[reportInconsistentOverload]
+    def __iter__(self, /) -> Iterator:
         r"""Iterate through.
 
         For each k, we return either:
