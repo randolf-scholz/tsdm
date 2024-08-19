@@ -10,6 +10,7 @@ import pytest
 from numpy.typing import NDArray
 from typing_extensions import get_protocol_members
 
+from tsdm.types.protocols import BooleanScalar
 from tsdm.types.time import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
@@ -99,12 +100,21 @@ def test_datetime_protocol(name: str) -> None:
     dt_value = DATETIMES[name]
     assert isinstance(dt_value, DateTime)
     assert issubclass(type(dt_value), DateTime)
+
+    # test __sub__
     zero = dt_value - dt_value
     assert isinstance(zero, TimeDelta)
     assert issubclass(type(zero), TimeDelta)
+
+    # test __add__
     dt_new = dt_value + zero
     assert isinstance(dt_new, DateTime)
     assert issubclass(type(dt_new), DateTime)
+
+    # test __ge__
+    result = dt_value >= dt_value
+    assert result
+    assert isinstance(result, BooleanScalar)
 
 
 @pytest.mark.parametrize("name", TIMEDELTAS)
@@ -113,9 +123,22 @@ def test_timedelta_protocol(name: str) -> None:
     td_value = TIMEDELTAS[name]
     assert isinstance(td_value, TimeDelta)
     assert issubclass(type(td_value), TimeDelta)
+
+    # test __add__
+    td_new = td_value + td_value
+    assert isinstance(td_new, TimeDelta)
+    assert issubclass(type(td_new), TimeDelta)
+
+    # test __sub__
     zero = td_value - td_value
     assert isinstance(zero, TimeDelta)
     assert issubclass(type(zero), TimeDelta)
+
+    # test __ge__
+    result = td_value >= td_value
+    assert result
+    assert isinstance(result, BooleanScalar)
+    assert issubclass(type(result), BooleanScalar)
 
 
 def test_joint_attrs_datetime() -> None:

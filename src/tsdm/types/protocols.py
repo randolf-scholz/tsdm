@@ -211,6 +211,9 @@ class Hash(Protocol):
 class BaseScalar(Protocol):
     r"""Protocol for scalars."""
 
+    # NOTE: We need to include __hash__ here, otherwise there are problems
+
+    def __hash__(self) -> int: ...
     def __eq__(self, other: object, /) -> "BooleanScalar": ...  # type: ignore[override]
     def __ne__(self, other: object, /) -> "BooleanScalar": ...  # type: ignore[override]
 

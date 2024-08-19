@@ -22,13 +22,13 @@ BASE_SCALARS: dict[object, object] = {
 }  # fmt: skip
 
 BOOLEAN_SCALAR_TYPES: dict[str, BooleanScalar] = {
-    "np_bool" : np.bool_([True]),
+    "np_bool" : np.True_,
     "py_bool" : True,
     "pt_bool" : pt.tensor([True]),
 }  # fmt: skip
 
 ORDERED_SCALAR_TYPES: dict[str, OrderedScalar] = {
-    "np_bool"      : np.bool_([True]),
+    "np_bool"      : np.True_,
     "np_datetime"  : np.datetime64("2021-01-01"),
     "np_float"     : np.float64(1.0),
     "np_int"       : np.int64(1),
@@ -38,7 +38,7 @@ ORDERED_SCALAR_TYPES: dict[str, OrderedScalar] = {
     "py_string"    : "1",
     "py_bytes"     : b"1",
     "py_bool"      : True,
-    "py_list"      : [1],
+    "py_tuple"     : (1,),
     "py_datetime"  : dt.datetime(2021, 1, 1),
     "py_float"     : 1.0,
     "py_int"       : 1,
@@ -68,6 +68,7 @@ ADDITIVE_SCALAR_TYPES: dict[str, AdditiveScalar] = {
 def test_boolean_scalar(name: str) -> None:
     value = BOOLEAN_SCALAR_TYPES[name]
     assert isinstance(value, BooleanScalar)
+    assert issubclass(value.__class__, BooleanScalar)
 
     # test __bool__
     assert bool(value) == value
