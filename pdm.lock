@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:b721b48929dabc9e07f686faa9ad972b435683b3add00e5ecfaff9abf29a2cbd"
+content_hash = "sha256:53110c973ede578e5ba8ed8db46d60bf587230622f5b96509d536e44a364f448"
 
 [[metadata.targets]]
 requires_python = "==3.12.4"
@@ -1728,14 +1728,14 @@ files = [
 
 [[package]]
 name = "numpy"
-version = "2.0.1"
-requires_python = ">=3.9"
+version = "2.1.0"
+requires_python = ">=3.10"
 summary = "Fundamental package for array computing in Python"
 groups = ["default", "experiment", "tests"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "numpy-2.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6790654cb13eab303d8402354fabd47472b24635700f631f041bd0b65e37298a"},
-    {file = "numpy-2.0.1.tar.gz", hash = "sha256:485b87235796410c3519a699cfe1faab097e509e90ebb05dcd098db2ae87e7b3"},
+    {file = "numpy-2.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:24003ba8ff22ea29a8c306e61d316ac74111cebf942afbf692df65509a05f111"},
+    {file = "numpy-2.1.0.tar.gz", hash = "sha256:7dc90da0081f7e1da49ec4e398ede6a8e9cc4f5ebe5f9e06b443ed889ee9aaa2"},
 ]
 
 [[package]]
@@ -2584,7 +2584,7 @@ files = [
 
 [[package]]
 name = "pyzmq"
-version = "26.1.0"
+version = "26.1.1"
 requires_python = ">=3.7"
 summary = "Python bindings for 0MQ"
 groups = ["docs", "experiment"]
@@ -2593,9 +2593,9 @@ dependencies = [
     "cffi; implementation_name == \"pypy\"",
 ]
 files = [
-    {file = "pyzmq-26.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:90d4feb2e83dfe9ace6374a847e98ee9d1246ebadcc0cb765482e272c34e5820"},
-    {file = "pyzmq-26.1.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:d4fafc2eb5d83f4647331267808c7e0c5722c25a729a614dc2b90479cafa78bd"},
-    {file = "pyzmq-26.1.0.tar.gz", hash = "sha256:6c5aeea71f018ebd3b9115c7cb13863dd850e98ca6b9258509de1246461a7e7f"},
+    {file = "pyzmq-26.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:741bdb4d96efe8192616abdc3671931d51a8bcd38c71da2d53fb3127149265d1"},
+    {file = "pyzmq-26.1.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:76154943e4c4054b2591792eb3484ef1dd23d59805759f9cebd2f010aa30ee8c"},
+    {file = "pyzmq-26.1.1.tar.gz", hash = "sha256:a7db05d8b7cd1a8c6610e9e9aa55d525baae7a44a43e18bc3260eb3f92de96c6"},
 ]
 
 [[package]]
@@ -3536,14 +3536,14 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "71.1.0.20240813"
+version = "71.1.0.20240818"
 requires_python = ">=3.8"
 summary = "Typing stubs for setuptools"
 groups = ["typing"]
 marker = "python_full_version == \"3.12.4\""
 files = [
-    {file = "types-setuptools-71.1.0.20240813.tar.gz", hash = "sha256:94ff4f0af18c7c24ac88932bcb0f5655fb7187a001b7c61e53a1bfdaf9877b54"},
-    {file = "types_setuptools-71.1.0.20240813-py3-none-any.whl", hash = "sha256:d9d9ba2936f5d3b47b59ae9bf65942a60063ac1d6bbee180a8a79fbb43f22ce5"},
+    {file = "types-setuptools-71.1.0.20240818.tar.gz", hash = "sha256:f62eaffaa39774462c65fbb49368c4dc1d91a90a28371cb14e1af090ff0e41e3"},
+    {file = "types_setuptools-71.1.0.20240818-py3-none-any.whl", hash = "sha256:c4f95302f88369ac0ac46c67ddbfc70c6c4dbbb184d9fed356244217a2934025"},
 ]
 
 [[package]]
