@@ -35,7 +35,7 @@ def test_attribute() -> None:
     assert isinstance(attr, attribute)
     assert attr.payload is attr.DELETED
     with pytest.raises(AttributeError):
-        assert obj.bar is attr.DELETED
+        assert obj.bar is not object()
 
     # test __set__
     obj.bar = 24
