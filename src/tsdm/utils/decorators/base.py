@@ -23,10 +23,10 @@ __all__ = [
 
 import logging
 from collections.abc import Callable as Fn
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 from inspect import Parameter, signature
-from typing import Any, Optional, Protocol, Self, cast, overload
+from typing import Any, ClassVar, Optional, Protocol, Self, cast, overload
 
 from tsdm.types.aliases import Nested
 from tsdm.utils.funcutils import rpartial
@@ -269,10 +269,10 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     __annotations__: dict[str, Any]
 
     # fmt: off
-    @overload  # @decorator
-    def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
     @overload  # @decorator(*args, **kwargs)
     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
+    @overload  # @decorator / decorator(obj, *args, **kwargs)
+    def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
     # fmt: on
 
 
@@ -350,13 +350,11 @@ class PolymorphicDecorator[**P](Protocol):
 # ) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
 # def decorator(deco, /):
 
-__SENTINEL = cast(Any, object())
+_OBJ = cast(Any, object())
 r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 
 
-def decorator[T_in, T_out, **P](
-    deco: Decorator[T_in, T_out, P], /
-) -> ParametrizedDecorator[T_in, T_out, P]:
+def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X, Y, P]:
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -415,15 +413,13 @@ def decorator[T_in, T_out, **P](
                 )
 
     # FIXME: Instead of inner function, return instance of ParametrizedDecorator
-    @overload
-    def _deco(obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
-    @overload
-    def _deco(*args: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
-    @wraps(deco)
-    def _deco(
-        obj: T_in = __SENTINEL, /, *args: P.args, **kwargs: P.kwargs
-    ) -> T_out | Fn[[T_in], T_out]:
-        if obj is __SENTINEL:
+    @overload  # @decorator(*args, **kwargs)
+    def _deco(*args: P.args, **kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore[overload-overlap]
+    @overload  # @decorator / decorator(obj, *args, **kwargs)
+    def _deco(obj: X, /, *args: P.args, **kwargs: P.kwargs) -> Y: ...
+    @wraps(deco)  # type: ignore[misc]
+    def _deco(obj: X = _OBJ, /, *args: P.args, **kwargs: P.kwargs) -> Y | Fn[[X], Y]:
+        if obj is _OBJ:
             logger.debug(
                 "@decorator used in BRACKET mode.\n"
                 "Creating decorator with fixed arguments \n\targs=%s, \n\tkwargs=%s",
@@ -438,32 +434,45 @@ def decorator[T_in, T_out, **P](
     return _deco
 
 
-def attribute[T, R](func: Fn[[T], R], /) -> R:  # T, +R
+class _AttrMeta(type):
+    r"""Metaclass for attribute decorators."""
+
+    def __call__[T, R](cls, func: Fn[[T], R], /) -> R:
+        r"""Create a decorator that converts method to attribute."""
+        _attr = super().__call__(func)
+        wrapper = wraps(func, updated=())
+        attr = cast(R, wrapper(_attr))
+        return attr
+
+
+@dataclass
+class attribute[T, R](metaclass=_AttrMeta):
     r"""Create a decorator that converts method to attribute."""
 
-    @wraps(func, updated=())
-    class __attribute:
-        __slots__ = ("func", "payload")
-        __SENTINEL = object()
-        func: Fn[[T], R]
-        payload: R
+    SENTINEL: ClassVar[Any] = object()
+    DELETED: ClassVar[Any] = object()
 
-        def __init__(self, function: Fn) -> None:
-            self.func = function
-            self.payload = cast(Any, self.__SENTINEL)
+    func: Fn[[T], R]
+    payload: R = field(default=SENTINEL, init=False)
 
-        @overload
-        def __get__(self, obj: None, obj_type: Optional[type] = ..., /) -> Self: ...
-        @overload
-        def __get__(self, obj: T, obj_type: Optional[type] = ..., /) -> R: ...
-        def __get__(self, obj: None | T, obj_type: Optional[type] = None) -> Self | R:
-            if obj is None:
-                return self
-            if self.payload is self.__SENTINEL:
-                self.payload = self.func(obj)
-            return self.payload
+    @overload
+    def __get__(self, obj: None, obj_type: Optional[type] = ..., /) -> Self: ...
+    @overload
+    def __get__(self, obj: T, obj_type: Optional[type] = ..., /) -> R: ...
+    def __get__(self, obj: None | T, obj_type: Optional[type] = None) -> Self | R:
+        if obj is None:
+            return self
+        if self.payload is self.DELETED:
+            raise AttributeError("Attribute has been deleted.")
+        if self.payload is self.SENTINEL:
+            self.payload = self.func(obj)
+        return self.payload
 
-    return cast(R, __attribute(func))
+    def __set__(self, obj: T, value: R, /) -> None:
+        self.payload = value
+
+    def __delete__(self, obj: T, /) -> None:
+        self.payload = self.DELETED
 
 
 def recurse_on_container[T, R](  # T, +R
