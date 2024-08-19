@@ -21,7 +21,7 @@ BASE_SCALARS: dict[object, object] = {
     pd.NA        : pd.NA,
 }  # fmt: skip
 
-BOOL_SCALAR_TYPES: dict[str, BooleanScalar] = {
+BOOLEAN_SCALAR_TYPES: dict[str, BooleanScalar] = {
     "np_bool" : np.bool_([True]),
     "py_bool" : True,
     "pt_bool" : pt.tensor([True]),
@@ -64,9 +64,10 @@ ADDITIVE_SCALAR_TYPES: dict[str, AdditiveScalar] = {
 }  # fmt: skip
 
 
-@pytest.mark.parametrize("name", BOOL_SCALAR_TYPES)
-def test_boolean_interface(name: str) -> None:
-    value = BOOL_SCALAR_TYPES[name]
+@pytest.mark.parametrize("name", BOOLEAN_SCALAR_TYPES)
+def test_boolean_scalar(name: str) -> None:
+    value = BOOLEAN_SCALAR_TYPES[name]
+    assert isinstance(value, BooleanScalar)
 
     # test __bool__
     assert bool(value) == value
@@ -83,8 +84,9 @@ def test_boolean_interface(name: str) -> None:
 
 
 @pytest.mark.parametrize("name", ORDERED_SCALAR_TYPES)
-def test_protocol_interface(name: str) -> None:
+def test_ordered_scalar(name: str) -> None:
     value = ORDERED_SCALAR_TYPES[name]
+    assert isinstance(value, OrderedScalar)
 
     # test ==
     assert value == value
@@ -107,8 +109,9 @@ def test_protocol_interface(name: str) -> None:
 
 
 @pytest.mark.parametrize("name", ADDITIVE_SCALAR_TYPES)
-def test_additive_interface(name: str) -> None:
+def test_additive_scalar(name: str) -> None:
     value = ADDITIVE_SCALAR_TYPES[name]
+    assert isinstance(value, AdditiveScalar)
     cls = value.__class__
 
     # test __add__
@@ -117,9 +120,9 @@ def test_additive_interface(name: str) -> None:
     assert isinstance(value - value, cls)
 
 
-def test_shared_interface_bool() -> None:
+def test_shared_interface_boolean_scalar() -> None:
     shared_attrs = set.intersection(
-        *(set(dir(obj)) for obj in BOOL_SCALAR_TYPES.values())
+        *(set(dir(obj)) for obj in BOOLEAN_SCALAR_TYPES.values())
     )
     interface = get_protocol_members(BooleanScalar)
 
@@ -128,7 +131,7 @@ def test_shared_interface_bool() -> None:
     # assert not (missing := sorted(shared_attrs - interface)), f"{missing=}"
 
 
-def test_shared_interface_ordered() -> None:
+def test_shared_interface_ordered_scalar() -> None:
     shared_attrs = set.intersection(
         *(set(dir(obj)) for obj in ORDERED_SCALAR_TYPES.values())
     )
@@ -139,7 +142,7 @@ def test_shared_interface_ordered() -> None:
     # assert not (missing := sorted(shared_attrs - interface)), f"{missing=}"
 
 
-def test_shared_interface_additive() -> None:
+def test_shared_interface_additive_scalar() -> None:
     shared_attrs = set.intersection(
         *(set(dir(obj)) for obj in ADDITIVE_SCALAR_TYPES.values())
     )

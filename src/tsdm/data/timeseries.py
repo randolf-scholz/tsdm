@@ -593,7 +593,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
 
         # NOTE: Using numpy since isin is broken for pyarrow timestamps.
         joint_horizon_mask = np.isin(tsd.timeindex, joint_horizon_index)
-        ts = tsd[joint_horizon_mask]
+        ts = tsd[joint_horizon_mask].timeseries
         ts_observed_mask = np.isin(ts.index, ts_observed.index)
         ts_forecast_mask = np.isin(ts.index, ts_forecast.index)
 

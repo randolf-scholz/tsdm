@@ -94,9 +94,7 @@ def test_timedelta_protocol_itself() -> None:
 
 
 @pytest.mark.parametrize("name", DATETIMES)
-def test_datetime_protocol(
-    name: str,
-) -> None:
+def test_datetime_protocol(name: str) -> None:
     r"""Test the datetime protocol."""
     dt_value = DATETIMES[name]
     assert isinstance(dt_value, DateTime)
