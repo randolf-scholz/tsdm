@@ -25,7 +25,7 @@ from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset
 from tsdm.data.timeseries import TimeSeries
-from tsdm.datasets import KiwiRuns
+from tsdm.datasets import KiwiBenchmark
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils import timedelta
@@ -169,7 +169,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         self.final_value = final_value[self.target]
         self.final_value = self.final_value.reset_index(-1)
         self.final_value = self.final_value.rename(
-            columns={"measurement_time": "target_time"}
+            columns={"elapsed_time": "target_time"}
         )
 
         self.metadata = self.metadata.join(self.final_value)
@@ -210,9 +210,9 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         observables.index = observables.apply(ts.columns.get_loc)
 
     @cached_property
-    def dataset(self) -> KiwiRuns:
+    def dataset(self) -> KiwiBenchmark:
         # Drop runs that don't work for this task.
-        dataset = KiwiRuns()
+        dataset = KiwiBenchmark()
         dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
         dataset.metadata = dataset.metadata.drop([355, 445, 482])
         return dataset
@@ -284,7 +284,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
             mask = self.split_idx[split] == data_part
             idx = self.split_idx[split][mask].index
             timeseries = self.timeseries.reset_index(level=2).loc[idx]
-            timeseries = timeseries.set_index("measurement_time", append=True)
+            timeseries = timeseries.set_index("elapsed_time", append=True)
             metadata = self.metadata.loc[idx]
             splits[key] = timeseries, metadata
         return splits

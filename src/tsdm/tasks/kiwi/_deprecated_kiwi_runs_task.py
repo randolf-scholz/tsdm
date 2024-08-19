@@ -268,7 +268,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
             mask = self.split_idx[split] == data_part
             idx = self.split_idx[split][mask].index
             timeseries = self.timeseries.reset_index(level=2).loc[idx]
-            timeseries = timeseries.set_index("measurement_time", append=True)
+            timeseries = timeseries.set_index("elapsed_time", append=True)
             metadata = self.metadata.loc[idx]
             splits[key] = (timeseries, metadata)
         return splits

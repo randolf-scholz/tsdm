@@ -403,7 +403,7 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         # Download the file.
         with timer() as t:
             self.download_file(key)
-            self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
+        self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
 
         # Validate the file.
         if validate and self.rawdata_hashes is not NotImplemented:

@@ -235,11 +235,11 @@ class KiwiBenchmark(TimeSeriesTask):
                 col: self.get_columns_encoder(col)
                 for col in self.dataset.timeseries.columns
             },
-            measurement_time=DateTimeEncoder() >> MinMaxScaler(),
+            elapsed_time=DateTimeEncoder() >> MinMaxScaler(),
         ) >> FrameAsTensorDict(
             schema={
                 "key": ["run_id", "experiment_id"],
-                "T": ["measurement_time"],
+                "T": ["elapsed_time"],
                 "X": ...,
             },
             dtypes={"T": "float32", "X": "float32"},

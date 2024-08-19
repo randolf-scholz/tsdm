@@ -315,7 +315,7 @@ def aggregate_nondestructive(df: DataFrame, /) -> DataFrame:
     For example::
 
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
-        measurement_time
+        elapsed_time
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>  4.578233   <NA>          <NA>  <NA>
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>      <NA>  0.445          <NA>  <NA>
         2020-12-09 09:48:38  0.116585  <NA>  <NA>      <NA>      <NA>   <NA>          <NA>  <NA>
@@ -329,7 +329,7 @@ def aggregate_nondestructive(df: DataFrame, /) -> DataFrame:
     becomes::
 
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
-        measurement_time
+        elapsed_time
         2020-12-09 09:48:38  0.116585  <NA>  <NA>    1112.5  4.578233  0.445           200  <NA>
         2020-12-09 09:48:38  0.114842  <NA>  <NA>     912.5  4.554859  0.485          <NA>  <NA>
     """

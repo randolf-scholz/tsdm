@@ -106,12 +106,9 @@ class timer(ContextDecorator):
     r"""Start time of the timer."""
     end_time: int
     r"""End time of the timer."""
-    elapsed_time: int
-    r"""Elapsed time of the timer in nano-seconds."""
-    elapsed_seconds: float
-    r"""Elapsed time of the timer in seconds."""
 
     def __enter__(self) -> Self:
+        r"""Disable garbage collection and start the timer."""
         # flush pending writes
         sys.stdout.flush()
         sys.stderr.flush()
@@ -129,14 +126,25 @@ class timer(ContextDecorator):
         exc_tb: TracebackType | None,
         /,
     ) -> Literal[False]:
-        # stop timer
+        r"""Stop the timer and re-enable garbage collection."""
         self.end_time = perf_counter_ns()
-        self.elapsed_time = self.end_time - self.start_time
-        self.elapsed_seconds = self.elapsed_time / 1_000_000_000
-        # re-enable garbage collection
         gc.enable()
         gc.collect()
         return False
+
+    @property
+    def elapsed_time(self) -> int:
+        r"""Elapsed time in nanoseconds."""
+        if start_time := getattr(self, "start_time", None) is None:
+            raise RuntimeError("Timer has not been started!")
+        if end_time := getattr(self, "end_time", None) is None:
+            raise RuntimeError("Timer is still running!")
+        return end_time - start_time
+
+    @property
+    def elapsed_seconds(self) -> float:
+        r"""Elapsed time in seconds."""
+        return self.elapsed_time / 1_000_000_000
 
     @property
     def value(self) -> str:

@@ -183,7 +183,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
             mask = self.folds[split] == data_part
             idx = self.folds[split][mask].index
             timeseries = self.timeseries.reset_index(level=2).loc[idx]
-            timeseries = timeseries.set_index("measurement_time", append=True)
+            timeseries = timeseries.set_index("elapsed_time", append=True)
             metadata = self.metadata.loc[idx]
             splits[key] = (timeseries, metadata)
         return splits

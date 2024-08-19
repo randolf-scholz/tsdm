@@ -67,11 +67,11 @@ def encoder() -> BaseEncoder:
     encoder = (
         FrameEncoder(
             column_encoders,
-            measurement_time=DateTimeEncoder(rounding=False) >> MinMaxScaler(),
+            elapsed_time=DateTimeEncoder(rounding=False) >> MinMaxScaler(),
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(
-            schema={"T": ["measurement_time"], "X": ...},
+            schema={"T": ["elapsed_time"], "X": ...},
             dtypes={"T": torch.float32, "X": torch.float32},
         )
     )

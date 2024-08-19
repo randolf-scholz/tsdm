@@ -96,11 +96,11 @@ class LinODEnet(PreTrainedBase):
         ts = ts[list(encoder_cols)].copy()
 
         # fixing timestamp_type
-        ts = ts.reset_index("measurement_time")
-        if ts["measurement_time"].dtype != "timdedelta64":
+        ts = ts.reset_index("elapsed_time")
+        if ts["elapsed_time"].dtype != "timdedelta64":
             print(">>> Converting float (seconds) to timedelta64")
-            ts["measurement_time"] = ts["measurement_time"] * np.timedelta64(1, "s")
-        ts = ts.set_index(["measurement_time"], append=True)
+            ts["elapsed_time"] = ts["elapsed_time"] * np.timedelta64(1, "s")
+        ts = ts.set_index(["elapsed_time"], append=True)
 
         # ffill controls
         if ffill_controls:

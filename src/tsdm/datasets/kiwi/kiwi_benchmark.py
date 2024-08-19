@@ -10,12 +10,14 @@ from tsdm.datasets.base import MultiTableDataset
 class KiwiBenchmark(MultiTableDataset):
     r"""KIWI Benchmark Dataset."""
 
-    SOURCE_URL = r"https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW/download/"
+    __version__ = "1.0"
+
+    SOURCE_URL = (
+        r"https://tubcloud.tu-berlin.de/s/3CyRJMSqj5feQo2/download?path=%2F&files="
+    )
     INFO_URL = r"https://kiwi-biolab.de/"
     HOME_URL = r"https://kiwi-biolab.de/"
     GITHUB_URL = r"https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/kiwi-dataset"
-
-    __version__ = "1.0"
 
     rawdata_files = ["kiwi-benchmark.zip"]
     rawdata_hashes = {
