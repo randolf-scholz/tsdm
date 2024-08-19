@@ -16,7 +16,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.data.timeseries import TimeSeriesDataset
+from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
@@ -109,7 +109,7 @@ class ElectricityLim2021(TimeSeriesTask):
     preprocessor: BaseEncoder
 
     # FIXME: need a different base class for this task!
-    dataset: TimeSeriesDataset  # type: ignore[assignment]
+    dataset: TimeSeries  # type: ignore[assignment]
 
     def __init__(self) -> None:
         ds = Electricity().table

@@ -11,14 +11,14 @@ __all__ = [
     # Functions
     "collate_timeseries",
     # Classes
+    "TimeSeries",
     "TimeSeriesCollection",
-    "TimeSeriesDataset",
     "TimeSeriesSampleGenerator",
     "FixedSliceSampleGenerator",
 ]
 
 import warnings
-from collections.abc import Hashable, Iterator, Mapping, Sequence
+from collections.abc import Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from types import NotImplementedType
@@ -38,42 +38,42 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass
-class TimeSeriesDataset(TorchDataset[Any, Series]):  # Q: Should this be a Mapping?
+class TimeSeries(Collection):  # Q: Should this be a Mapping?
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
-    More specifically, it is a tuple (TS, M) where TS is a time series and M is metadata.
+    More specifically, it is a tuple (TS, M) where TS is a time series and M is the metadata.
 
     For a given time-index, the time series data is a vector of measurements.
     """
 
+    # Main Attributes
     timeseries: DataFrame
     r"""The time series data."""
-
     _: KW_ONLY
-
-    # Main Attributes
-    metadata: Optional[DataFrame] = None
+    static_covariates: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
     timeindex: Index = NotImplemented
     r"""The time-index of the dataset."""
+
+    # Metadata
+    timeindex_metadata: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    timeseries_metadata: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    static_covariates_metadata: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+    # Other
     name: str = NotImplemented
     r"""The name of the dataset."""
-
-    # Space Descriptors
-    index_description: Optional[DataFrame] = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
-    timeseries_description: Optional[DataFrame] = None
-    r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_description: Optional[DataFrame] = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
         if self.name is NotImplemented:
             self.name = self.__class__.__name__
         if self.timeindex is NotImplemented:
-            self.timeindex = self.timeseries.index.copy().unqiue()
+            self.timeindex = self.timeseries.index.copy().unique()
 
     def __iter__(self) -> Iterator[Series]:
         r"""Iterate over the timestamps."""
@@ -83,58 +83,58 @@ class TimeSeriesDataset(TorchDataset[Any, Series]):  # Q: Should this be a Mappi
         r"""Return the number of timestamps."""
         return len(self.timeindex)
 
-    # fmt: off
-    @overload
-    def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> DataFrame: ...
-    @overload
-    def __getitem__(self, key: Hashable, /) -> Series: ...  # pyright: ignore[reportOverlappingOverload]
-    # fmt: on
-    def __getitem__(self, key: object, /) -> Series | DataFrame:
-        r"""Get item from timeseries."""
-        # we might get an index object, or a slice, or boolean mask...
-        return self.timeseries.loc[key]
+    def __contains__(self, key: Hashable, /) -> bool:
+        r"""Check if the key is in the timeindex."""
+        return key in self.timeindex
+
+    def __getitem__(self, key: Any, /) -> "TimeSeries":
+        r"""Return the subset of the timeseries at index `key`."""
+        return TimeSeries(
+            name=self.name,
+            static_covariates=self.static_covariates,
+            static_covariates_metadata=self.static_covariates_metadata,
+            timeindex=self.timeindex[key],
+            timeindex_metadata=self.timeindex_metadata,
+            timeseries=self.timeseries.loc[key],
+            timeseries_metadata=self.timeseries_metadata,
+        )
 
 
 @pprint_repr
 @dataclass
-class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
-    r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
+class TimeSeriesCollection(Mapping[Any, TimeSeries]):
+    r"""Class for **equimodal** TimeSeriesCollections.
 
-    A TimeSeriesCollection is a tuple (I, D, G) consiting of
-
-    - index $I$
-    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) ∣ i ∈ I }$
-    - global variables $G∈𝓖$
+    A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
+    `Equimodal` means that all time series share the same schema (i.e. subset of variables).
     """
 
-    timeseries: DataFrame
-    r"""The time series data."""
-
-    _: KW_ONLY
-
     # Main attributes
-    metadata: Optional[DataFrame] = None
-    r"""The metadata of the dataset."""
+    timeseries: DataFrame
+    r"""The collection of time series data."""
+    _: KW_ONLY
+    static_covariates: Optional[DataFrame] = None
+    r"""The static covariates associated with each timeseries."""
+    constants: Optional[DataFrame] = None
+    r"""Additional data that is independent of the metaindex."""
     timeindex: MultiIndex = NotImplemented
     r"""The time-index of the collection."""
     metaindex: Index = NotImplemented
     r"""The index of the collection."""
-    global_metadata: Optional[DataFrame] = None
-    r"""Metaindex-independent data."""
 
-    # Space descriptors
-    timeseries_description: Optional[DataFrame] = None
+    # Metadata
+    timeseries_metadata: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_description: Optional[DataFrame] = None
+    static_covariates_metadata: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    timeindex_description: Optional[DataFrame] = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
-    metaindex_description: Optional[DataFrame] = None
-    r"""Data associated with each index such as measurement device, unit, etc."""
-    global_metadata_description: Optional[DataFrame] = None
+    constants_metadata: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+    timeindex_metadata: Optional[DataFrame] = None
+    r"""Data associated with each time index such as measurement device, unit,  etc."""
+    metaindex_metadata: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
-    # other
+    # Other
     name: str = NotImplemented
     r"""The name of the collection."""
 
@@ -150,8 +150,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             self.timeindex = self.timeseries.index.copy()
 
         if self.metaindex is NotImplemented:
-            if self.metadata is not None:
-                self.metaindex = self.metadata.index.copy().unique()
+            if self.static_covariates is not None:
+                self.metaindex = self.static_covariates.index.copy().unique()
             elif isinstance(self.timeseries.index, MultiIndex):
                 self.metaindex = self.timeseries.index.copy().droplevel(-1).unique()
             else:
@@ -169,9 +169,9 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     @overload
     def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> Self: ...  # pyright: ignore[reportOverlappingOverload]
     @overload
-    def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...  # pyright: ignore[reportOverlappingOverload]
+    def __getitem__(self, key: object, /) -> TimeSeries: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
-    def __getitem__(self, key: object, /) -> TimeSeriesDataset | Self:
+    def __getitem__(self, key: object, /) -> TimeSeries | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
         match key:
@@ -186,56 +186,58 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 ts = self.timeseries.loc[key]
 
         # make sure metadata is always DataFrame.
-        match self.metadata:
+        match self.static_covariates:
             case DataFrame() as df:
                 md = df.loc[key]
                 if isinstance(md, Series):
                     md = df.loc[[key]]
             case _:
-                md = self.metadata
+                md = self.static_covariates
 
         # slice the timeindex-descriptions
-        match self.timeindex_description:
+        match self.timeindex_metadata:
             case DataFrame() as desc if desc.index.equals(self.metaindex):
                 tidx_desc = desc.loc[key]
             case _:
-                tidx_desc = self.timeindex_description
+                tidx_desc = self.timeindex_metadata
 
         # slice the ts-descriptions
-        match self.timeseries_description:
+        match self.timeseries_metadata:
             case DataFrame() as desc if desc.index.equals(self.metaindex):
                 ts_desc = desc.loc[key]
             case _:
-                ts_desc = self.timeseries_description
+                ts_desc = self.timeseries_metadata
 
         # slice the metadata-descriptions
-        match self.metadata_description:
+        match self.static_covariates_metadata:
             case DataFrame() as desc if desc.index.equals(self.metaindex):
                 md_desc = desc.loc[key]
             case _:
-                md_desc = self.metadata_description
+                md_desc = self.static_covariates_metadata
 
         if isinstance(ts.index, MultiIndex):
-            return self.__class__(
+            return TimeSeriesCollection(
+                constants=self.constants,
+                constants_metadata=self.constants_metadata,
+                metaindex=md.index,
+                metaindex_metadata=self.metaindex_metadata,
                 name=self.name,
+                static_covariates=md,
+                static_covariates_metadata=md_desc,
+                timeindex=ts.index,
+                timeindex_metadata=tidx_desc,
                 timeseries=ts,
-                metadata=md,
-                timeindex_description=tidx_desc,
-                timeseries_description=ts_desc,
-                metadata_description=md_desc,
-                global_metadata=self.global_metadata,
-                global_metadata_description=self.global_metadata_description,
-                metaindex_description=self.metaindex_description,
+                timeseries_metadata=ts_desc,
             )
 
-        return TimeSeriesDataset(
+        return TimeSeries(
             name=self.name,
+            static_covariates=md,
+            static_covariates_metadata=md_desc,
             timeindex=ts.index,
+            timeindex_metadata=tidx_desc,
             timeseries=ts,
-            metadata=md,
-            index_description=tidx_desc,
-            timeseries_description=ts_desc,
-            metadata_description=md_desc,
+            timeseries_metadata=ts_desc,
         )
 
 
@@ -502,7 +504,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
     or dicts as containers.
     """
 
-    dataset: TimeSeriesDataset | TimeSeriesCollection
+    dataset: TimeSeries | TimeSeriesCollection
     r"""The dataset to sample from."""
 
     _: KW_ONLY
@@ -531,10 +533,10 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         if self.covariates is NotImplemented:
             self.covariates = []
         if self.metadata_observables is NotImplemented:
-            if self.dataset.metadata is None:
+            if self.dataset.static_covariates is None:
                 self.metadata_observables = None
             else:
-                self.metadata_observables = self.dataset.metadata.columns
+                self.metadata_observables = self.dataset.static_covariates.columns
         self.validate()
 
     def __getitem__(self, key: Hashable) -> Sample:
@@ -556,19 +558,19 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         r"""Create a sample from a TimeSeriesCollection."""
         # extract key
         match self.dataset, key:
-            case TimeSeriesDataset() as tsd, [observation_horizon, forecasting_horizon]:
+            case TimeSeries() as tsd, [observation_horizon, forecasting_horizon]:
                 pass
             case TimeSeriesCollection() as tsc, [
                 outer_key,
                 [observation_horizon, forecasting_horizon],
             ]:
                 tsd = tsc[outer_key]  # type: ignore[assignment]
-            case TimeSeriesDataset() | TimeSeriesCollection(), _:
+            case TimeSeries() | TimeSeriesCollection(), _:
                 raise ValueError(f"Invalid key: {key!r}")
             case _:
                 raise TypeError(f"Invalid dataset type: {type(self.dataset)=}")
 
-        if not isinstance(tsd, TimeSeriesDataset):
+        if not isinstance(tsd, TimeSeries):
             raise TypeError(f"Expected TimeSeriesDataset, got {type(tsd)=}")
 
         # NOTE: observation horizon and forecasting horizon might be given in different formats
@@ -621,7 +623,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         t_target = y.index.to_series().copy()
 
         # metadata
-        md = tsd.metadata
+        md = tsd.static_covariates
         md_targets: Optional[DataFrame] = None
         if self.metadata_targets is not None:
             if md is None:
@@ -642,7 +644,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
     def validate(self) -> None:
         r"""Validate that chosen columns are present."""
         ts = self.dataset.timeseries
-        md = self.dataset.metadata
+        md = self.dataset.static_covariates
         observables = set(self.observables)
         targets = set(self.targets)
         covariates = set() if self.covariates is None else set(self.covariates)

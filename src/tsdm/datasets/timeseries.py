@@ -42,9 +42,9 @@ class USHCN(TimeSeriesCollection):
         ds = _USHCN()
         super().__init__(
             timeseries=ds.timeseries,
-            metadata=ds.metadata,
-            timeseries_description=ds.timeseries_description,
-            metadata_description=ds.metadata_description,
+            static_covariates=ds.static_covariates,
+            timeseries_metadata=ds.timeseries_metadata,
+            static_covariates_metadata=ds.static_covariates_metadata,
         )
 
 
@@ -65,9 +65,9 @@ class PhysioNet2012(TimeSeriesCollection):
         ds = _PhysioNet2012()
         super().__init__(
             timeseries=ds.timeseries,
-            metadata=ds.metadata,
-            timeseries_description=ds.timeseries_description,
-            metadata_description=ds.metadata_description,
+            static_covariates=ds.static_covariates,
+            timeseries_metadata=ds.timeseries_metadata,
+            static_covariates_metadata=ds.static_covariates_metadata,
         )
 
 
@@ -78,9 +78,9 @@ class PhysioNet2019(TimeSeriesCollection):
         ds = _PhysioNet2019()
         super().__init__(
             timeseries=ds.timeseries,
-            metadata=ds.metadata,
-            timeseries_description=ds.timeseries_description,
-            metadata_description=ds.metadata_description,
+            static_covariates=ds.static_covariates,
+            timeseries_metadata=ds.timeseries_metadata,
+            static_covariates_metadata=ds.static_covariates_metadata,
         )
 
 

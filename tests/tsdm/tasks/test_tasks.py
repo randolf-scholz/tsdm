@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from tsdm.data import TimeSeriesSampleGenerator
-from tsdm.data.timeseries import Sample, TimeSeriesCollection, TimeSeriesDataset
+from tsdm.data.timeseries import Sample, TimeSeries, TimeSeriesCollection
 from tsdm.datasets import InSilico
 from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks import (
@@ -87,7 +87,7 @@ def test_time_series_sample_generator() -> None:
     outer_key = key[0]
     inner_key = key[1]
     TSD = TSC[outer_key]  # selecting individual time series.
-    assert isinstance(TSD, TimeSeriesDataset)
+    assert isinstance(TSD, TimeSeries)
 
     generator = TimeSeriesSampleGenerator(
         TSD,

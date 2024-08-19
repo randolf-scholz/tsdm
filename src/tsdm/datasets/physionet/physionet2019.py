@@ -159,8 +159,8 @@ HR 	Heart rate (beats per minute)
 
 __all__ = [
     # Constants
-    "TIMESERIES_DESCRIPTION",
-    "METADATA_DESCRIPTION",
+    "TIMESERIES_METADATA",
+    "STATIC_COVARIATES_METADATA",
     # Classes
     "PhysioNet2019",
 ]
@@ -176,7 +176,7 @@ from tqdm.auto import tqdm
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
 
-TIMESERIES_DESCRIPTION: InlineTable = {
+TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
         ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
@@ -232,7 +232,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     "index": ["variable"],
 }  # fmt: skip
 
-METADATA_DESCRIPTION: InlineTable = {
+STATIC_COVARIATES_METADATA: InlineTable = {
     "data": [
         # Demographics (columns 35-40)
         ("Age"        ,    0,  100, False, True  , "years", "Years (100 for patients 90 or above)"      ),
@@ -255,9 +255,9 @@ METADATA_DESCRIPTION: InlineTable = {
 
 type Key = Literal[
     "timeseries",
-    "timeseries_description",
-    "metadata",
-    "metadata_description",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
     "raw_timeseries",
     "raw_metadata",
 ]
@@ -304,9 +304,9 @@ class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
 
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
-        "timeseries_description",
-        "metadata",
-        "metadata_description",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
         "raw_timeseries",
         "raw_metadata",
     ]
@@ -349,15 +349,15 @@ class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
             "Platelets"        : "float32[pyarrow]",
             "SepsisLabel"      : "boolean[pyarrow]",
         },
-        "metadata": {
+        "static_covariates": {
             "Age"         : "float32[pyarrow]",
             "Gender"      : "string[pyarrow]",
             "Unit1"       : "bool[pyarrow]",
             "Unit2"       : "bool[pyarrow]",
             "HospAdmTime" : "timedelta64[ns]",
         },
-        "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
-        "metadata_description": METADATA_DESCRIPTION["schema"],
+        "timeseries_metadata": TIMESERIES_METADATA["schema"],
+        "static_covariates_metadata": STATIC_COVARIATES_METADATA["schema"],
     }  # fmt: skip
 
     rawdata_schema = {
@@ -464,26 +464,26 @@ class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_description)
+        ts = remove_outliers(ts, self.timeseries_metadata)
 
-        self.LOGGER.info("Creating Metadata Table.")
-        md = table[list(self.table_schemas["metadata"])]
-        self.LOGGER.info("Validating Metadata is constant.")
+        self.LOGGER.info("Creating Static_Covariates Table.")
+        md = table[list(self.table_schemas["static_covariates"])]
+        self.LOGGER.info("Validating Static_Covariates is constant.")
         for col in md.columns:
             if any(md[col].dropna().groupby("patient").nunique() != 1):
                 raise ValueError(f"Column {col} is not constant for each patient.")
         md = md.groupby("patient").first()
 
-        self.LOGGER.info("Removing outliers from metadata.")
-        md = remove_outliers(md, self.metadata_description)
+        self.LOGGER.info("Removing outliers from static_covariates.")
+        md = remove_outliers(md, self.static_covariates_metadata)
 
-        self.LOGGER.info("Finalizing metadata table.")
+        self.LOGGER.info("Finalizing static_covariates table.")
         md = (
             md.assign(
                 HospAdmTime=md["HospAdmTime"].astype("float32") * np.timedelta64(1, "h")
             )
             .assign(Gender=md["Gender"].map({False: "female", True: "male"}))
-            .astype(self.table_schemas["metadata"])
+            .astype(self.table_schemas["static_covariates"])
             .sort_index()
         )
 
@@ -492,19 +492,21 @@ class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
 
     def clean_table(self, key: Key) -> Optional[DataFrame]:
         match key:
-            case "timeseries_description":
-                return make_dataframe(**TIMESERIES_DESCRIPTION)
-            case "metadata_description":
-                return make_dataframe(**METADATA_DESCRIPTION)
+            case "timeseries_metadata":
+                return make_dataframe(**TIMESERIES_METADATA)
+            case "static_covariates_metadata":
+                return make_dataframe(**STATIC_COVARIATES_METADATA)
             case "timeseries":
                 self.LOGGER.info("Removing outliers from timeseries.")
-                ts = remove_outliers(self.raw_timeseries, self.timeseries_description)
+                ts = remove_outliers(self.raw_timeseries, self.timeseries_metadata)
                 self.LOGGER.info("Dropping completely missing rows.")
                 ts = ts.dropna(how="all", axis="index")
                 return ts
-            case "metadata":
-                self.LOGGER.info("Removing outliers from metadata.")
-                return remove_outliers(self.raw_metadata, self.metadata_description)
+            case "static_covariates":
+                self.LOGGER.info("Removing outliers from static_covariates.")
+                return remove_outliers(
+                    self.raw_metadata, self.static_covariates_metadata
+                )
             case "raw_timeseries" | "raw_metadata":
                 return self._clean_all_rawdatasets()
             case _:

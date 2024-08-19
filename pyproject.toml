@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
+    "Operating System :: POSIX :: Linux",
 ]
 
 # dependencies
@@ -255,7 +256,7 @@ ignore = [
 "src/tsdm/types/*" = ["ERA001"]
 
 [tool.ruff.lint.pylint]
-allow-dunder-method-names = ["__array__", "__array_ufunc__", "__dataframe__", "_repr_html_", "__pre_init__"]
+allow-dunder-method-names = ["__array__", "__array_ufunc__", "__dataframe__", "_repr_html_"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

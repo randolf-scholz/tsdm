@@ -68,7 +68,7 @@ Attribute Information
 
 __all__ = [
     # Constants
-    "TIMESERIES_DESCRIPTION",
+    "TIMESERIES_METADATA",
     # Classes
     "BeijingAirQuality",
 ]
@@ -82,10 +82,10 @@ from pandas import DataFrame
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
 
-type Key = Literal["timeseries", "timeseries_description"]
+type Key = Literal["timeseries", "timeseries_metadata"]
 
 
-TIMESERIES_DESCRIPTION: InlineTable = {
+TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("PM2.5",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
         ("PM10" ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
@@ -161,7 +161,7 @@ class BeijingAirQuality(MultiTableDataset[Key, DataFrame]):
 
     table_names = [
         "timeseries",
-        "timeseries_description",
+        "timeseries_metadata",
     ]  # pyright: ignore[reportAssignmentType]
 
     table_schemas = {  # pyright: ignore[reportAssignmentType]
@@ -179,7 +179,7 @@ class BeijingAirQuality(MultiTableDataset[Key, DataFrame]):
             "wd"    : "string[pyarrow]",
             "WSPM"  : "float[pyarrow]",
         },
-        "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
+        "timeseries_metadata": TIMESERIES_METADATA["schema"],
     }  # fmt: skip
 
     def _clean_timeseries(self) -> DataFrame:
@@ -214,7 +214,7 @@ class BeijingAirQuality(MultiTableDataset[Key, DataFrame]):
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_description)
+        ts = remove_outliers(ts, self.timeseries_metadata)
 
         self.LOGGER.info("Dropping completely missing rows.")
         ts = ts.dropna(how="all", axis="index")
@@ -226,7 +226,7 @@ class BeijingAirQuality(MultiTableDataset[Key, DataFrame]):
         match key:
             case "timeseries":
                 return self._clean_timeseries()
-            case "timeseries_description":
-                return make_dataframe(**TIMESERIES_DESCRIPTION)
+            case "timeseries_metadata":
+                return make_dataframe(**TIMESERIES_METADATA)
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")

@@ -29,9 +29,9 @@ class KiwiBenchmark(MultiTableDataset):
     }
     table_names = [
         "timeseries",
-        "metadata",
-        "timeseries_description",
-        "metadata_description",
+        "static_covariates",
+        "timeseries_metadata",
+        "static_covariates_metadata",
     ]
 
     def clean_table(self, key: str) -> None:
@@ -43,15 +43,15 @@ class KiwiBenchmarkTSC(TimeSeriesCollection):
     r"""The KIWI dataset wrapped as TimeSeriesCollection."""
 
     timeseries: DataFrame
-    metadata: DataFrame
-    timeseries_description: DataFrame
-    metadata_description: DataFrame
+    static_covariates: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates_metadata: DataFrame
 
     def __init__(self) -> None:
         ds = KiwiBenchmark()
         super().__init__(
             timeseries=ds.timeseries,
-            metadata=ds.metadata,
-            timeseries_description=ds.timeseries_description,
-            metadata_description=ds.metadata_description,
+            static_covariates=ds.static_covariates,
+            timeseries_metadata=ds.timeseries_metadata,
+            static_covariates_metadata=ds.static_covariates_metadata,
         )

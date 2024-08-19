@@ -7,7 +7,6 @@ r"""Base Classes for dataset."""
 __all__ = [
     # ABCs & Protocols
     "BaseDataset",
-    "BaseDatasetMetaClass",
     "Dataset",
     "MultiTableDataset",
     "SingleTableDataset",
@@ -120,7 +119,7 @@ class Dataset[T](Protocol):  # +T
         ...
 
 
-class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
+class _DatasetMeta(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
@@ -155,7 +154,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         cls.__init__ = wrap_method(cls.__init__, after=cls.__post_init__)  # type: ignore[misc]
 
 
-class BaseDataset[T](Dataset[T], metaclass=BaseDatasetMetaClass):  # +T
+class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -718,11 +717,7 @@ class MultiTableDataset[Key: str, T](
             return list(super().__dir__()) + list(self.table_names)
         return list(super().__dir__())
 
-    # @overload
-    # def __getattr__(self, key: Key, /) -> T: ...
-    # @overload
-    # def __getattr__(self, key: str, /) -> Any: ...
-    def __getattr__(self, key: Key, /) -> T:
+    def __getattr__(self, key: Key, /) -> T:  # type: ignore[misc]
         r"""Get attribute."""
         if self._enable_key_attributes and key in self.table_names:
             return self.tables[key]

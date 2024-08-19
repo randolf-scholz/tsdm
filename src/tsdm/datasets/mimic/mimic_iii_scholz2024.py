@@ -33,30 +33,39 @@ class MIMIC_III_Scholz2024(MIMIC_III):
         # Preprocessing
         admissions = ds.ADMISSIONS
         patients = ds.PATIENTS
-        metadata = pd.merge(admissions, patients, on="SUBJECT_ID")
-        metadata = metadata.assign(ELAPSED_TIME=metadata.DISCHTIME - metadata.ADMITTIME)
+        static_covariates = pd.merge(admissions, patients, on="SUBJECT_ID")
+        static_covariates = static_covariates.assign(
+            ELAPSED_TIME=static_covariates.DISCHTIME - static_covariates.ADMITTIME
+        )
         # select patients with unique ID
-        counts = metadata["SUBJECT_ID"].value_counts()
+        counts = static_covariates["SUBJECT_ID"].value_counts()
         unique_patients = counts[counts == 1].index
-        metadata = metadata.loc[
-            metadata["SUBJECT_ID"].isin(unique_patients)
+        static_covariates = static_covariates.loc[
+            static_covariates["SUBJECT_ID"].isin(unique_patients)
         ].reset_index(drop=True)
         # select patients with 2-30 days of data.
         # NOTE: Code by GRU-ODE-Bayes used `ELAPSED_TIME.dt.day > 2` but this is incorrect,
         #  because it will select patients with at least 72 hours of data.
-        metadata = metadata.loc[
-            (metadata.ELAPSED_TIME >= "2d") & (metadata.ELAPSED_TIME <= "30d")
+        static_covariates = static_covariates.loc[
+            (static_covariates.ELAPSED_TIME >= "2d")
+            & (static_covariates.ELAPSED_TIME <= "30d")
         ]
         # select patients with age between 15 and 100 years at admission.
-        metadata = metadata.assign(AGE=metadata.ADMITTIME - metadata.DOB)
-        age = metadata.AGE
+        static_covariates = static_covariates.assign(
+            AGE=static_covariates.ADMITTIME - static_covariates.DOB
+        )
+        age = static_covariates.AGE
         year = np.timedelta64(365, "D")
-        metadata = metadata.loc[(age >= 15 * year) & (age <= 100 * year)]
+        static_covariates = static_covariates.loc[
+            (age >= 15 * year) & (age <= 100 * year)
+        ]
         # select patients with "chartevents" data.
-        metadata = metadata.loc[metadata.HAS_CHARTEVENTS_DATA]
+        static_covariates = static_covariates.loc[
+            static_covariates.HAS_CHARTEVENTS_DATA
+        ]
 
         # select relevant columns.
-        metadata = metadata[
+        static_covariates = static_covariates[
             [
                 "SUBJECT_ID",
                 "HADM_ID",

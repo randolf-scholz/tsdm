@@ -7,8 +7,8 @@ __all__ = [
     # Constants
     "COLUMN_DTYPES",
     "SELECTED_COLUMNS",
-    "TIMESERIES_DESCRIPTION",
-    "METADATA_DESCRIPTION",
+    "TIMESERIES_METADATA",
+    "STATIC_COVARIATES_METADATA",
     # Classes
     "KiwiRuns",
     "KiwiRunsTSC",
@@ -25,7 +25,7 @@ from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.base import MultiTableDataset
 
 COLUMN_DTYPES = {
-    "metadata": {
+    "static_covariates": {
         # "experiment_id"        : "Int32",
         "bioreactor_id"          : "Int32",
         "container_number"       : "Int32",
@@ -90,21 +90,21 @@ COLUMN_DTYPES = {
         "Volume"                          : "Float32",
         "Acid"                            : "Int32",
     },
-    "metadata_description" : {
+    "static_covariates_metadata" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
         "dtype" : "string[pyarrow]",
         "lower" : "Float32",
         "upper" : "Float32",
     },
-    "timeseries_description" : {
+    "timeseries_metadata" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
         "dtype" : "string[pyarrow]",
         "lower" : "Float32",
         "upper" : "Float32",
     },
-    "timeindex_description": {
+    "timeindex_metadata": {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
         "dtype" : "string[pyarrow]",
@@ -116,7 +116,7 @@ COLUMN_DTYPES = {
 }  # fmt: skip
 
 SELECTED_COLUMNS = {
-    "metadata" : {
+    "static_covariates" : {
         # "experiment_id"          : True,
         "bioreactor_id"          : True,
         "container_number"       : True,
@@ -180,7 +180,7 @@ SELECTED_COLUMNS = {
 }  # fmt: skip
 
 # Timeseries Features
-TIMESERIES_DESCRIPTION = {
+TIMESERIES_METADATA = {
     # Name                          : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      , True, True],
     "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
@@ -199,7 +199,7 @@ TIMESERIES_DESCRIPTION = {
     "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       , True, True],
 }  # fmt: skip
 
-METADATA_DESCRIPTION = {
+STATIC_COVARIATES_METADATA = {
     # Name                   : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
     "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
@@ -222,10 +222,10 @@ class KiwiRuns(MultiTableDataset):
     The cleaned data will consist of 3 parts:
 
     - timeseries
-    - metadata
-    - timeseries_description
-    - timeseries_description
-    - metadata_description
+    - static_covariates
+    - timeseries_metadata
+    - timeseries_metadata
+    - static_covariates_metadata
 
     Rawdata Format:
 
@@ -236,7 +236,7 @@ class KiwiRuns(MultiTableDataset):
             dict[
                 int,  # experiment_id
                 dict[
-                    "metadata",
+                    "static_covariates",
                     :DataFrame,  # static
                     "setpoints":DataFrame,  # static
                     "measurements_reactor",
@@ -255,18 +255,18 @@ class KiwiRuns(MultiTableDataset):
 
     table_names = [
         "timeseries",
-        "metadata",
-        "timeseries_description",
-        "metadata_description",
-        "timeindex_description",
+        "static_covariates",
+        "timeseries_metadata",
+        "static_covariates_metadata",
+        "timeindex_metadata",
     ]
 
     table_hashes = {
         "timeseries"             : "pandas:BUOOC5Z2OKCIW",
-        "metadata"               : "pandas:PRI8003H72CW",
-        "timeseries_description" : "pandas:WHK7T51NT1HS",
-        "metadata_description"   : "pandas:6A8LIT5JTX99",
-        "timeindex_description"  : "pandas:BAKJST6Y68SAM",
+        "static_covariates"               : "pandas:PRI8003H72CW",
+        "timeseries_metadata" : "pandas:WHK7T51NT1HS",
+        "static_covariates_metadata"   : "pandas:6A8LIT5JTX99",
+        "timeindex_metadata"  : "pandas:BAKJST6Y68SAM",
     }  # fmt: skip
 
     rawdata_files = ["kiwi_experiments.pk"]
@@ -275,29 +275,29 @@ class KiwiRuns(MultiTableDataset):
     }
 
     timeseries: DataFrame
-    metadata: DataFrame
-    timeindex_description: DataFrame
-    timeseries_description: DataFrame
-    metadata_description: DataFrame
-    metaindex_description = None
+    static_covariates: DataFrame
+    timeindex_metadata: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates_metadata: DataFrame
+    metaindex_metadata = None
 
     @property
     def index(self) -> Index:
         r"""Return the index of the dataset."""
-        return self.metadata.index
+        return self.static_covariates.index
 
     def clean_table(self, key: str) -> None:
-        if key in {"timeseries", "timeseries_description"}:
+        if key in {"timeseries", "timeseries_metadata"}:
             self.clean_timeseries()
         if key in {
-            "metadata",
-            "metadata_description",
-            "timeindex_description",
+            "static_covariates",
+            "static_covariates_metadata",
+            "timeindex_metadata",
         }:
             self.clean_metadata()
 
     def clean_metadata(self) -> None:
-        r"""Clean metadata."""
+        r"""Clean static_covariates."""
         # load rawdata
         self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
         with self.rawdata_paths["kiwi_experiments.pk"].open("rb") as file:
@@ -305,48 +305,50 @@ class KiwiRuns(MultiTableDataset):
 
         # generate dataframe
         metadata_dict = {
-            (outer_key, inner_key): tables["metadata"]
+            (outer_key, inner_key): tables["static_covariates"]
             for outer_key, experiment in data.items()
             for inner_key, tables in experiment.items()
         }
-        metadata = pd.concat(metadata_dict, names=["run_id", "experiment_id"])
-        metadata = metadata.reset_index(-1, drop=True)
-        metadata = metadata.drop(columns=["run_id", "experiment_id"])
+        static_covariates = pd.concat(metadata_dict, names=["run_id", "experiment_id"])
+        static_covariates = static_covariates.reset_index(-1, drop=True)
+        static_covariates = static_covariates.drop(columns=["run_id", "experiment_id"])
 
         # generate μ-set columns
-        mu_sets = metadata["description_x"].str.split(" ", expand=True)
+        mu_sets = static_covariates["description_x"].str.split(" ", expand=True)
         mu_sets = mu_sets.astype("string[pyarrow]")
         mu_sets.columns = ["name", "percent", "amount", "unit", "chemical"]
         mu_sets["percent"] = mu_sets["percent"].str.split("%", expand=True)[0]
-        metadata["μ_set"] = mu_sets["percent"]
-        metadata["IPTG"] = mu_sets["amount"]
+        static_covariates["μ_set"] = mu_sets["percent"]
+        static_covariates["IPTG"] = mu_sets["amount"]
 
         # fix datatypes
-        metadata = metadata.astype(COLUMN_DTYPES["metadata"])
+        static_covariates = static_covariates.astype(COLUMN_DTYPES["static_covariates"])
 
-        # timeseries_description
-        timeindex_description = metadata[["start_time", "end_time"]].copy()
-        timeindex_description["lower"] = (
-            timeindex_description["start_time"] - timeindex_description["start_time"]
+        # timeseries_metadata
+        timeindex_metadata = static_covariates[["start_time", "end_time"]].copy()
+        timeindex_metadata["lower"] = (
+            timeindex_metadata["start_time"] - timeindex_metadata["start_time"]
         )
-        timeindex_description["upper"] = (
-            timeindex_description["end_time"] - timeindex_description["start_time"]
+        timeindex_metadata["upper"] = (
+            timeindex_metadata["end_time"] - timeindex_metadata["start_time"]
         )
-        timeindex_description["unit"] = "s"  # time is rounded to seconds
-        timeindex_description["dtype"] = "datetime64[ns]"
-        timeindex_description["scale"] = "linear"
-        timeindex_description = timeindex_description[
+        timeindex_metadata["unit"] = "s"  # time is rounded to seconds
+        timeindex_metadata["dtype"] = "datetime64[ns]"
+        timeindex_metadata["scale"] = "linear"
+        timeindex_metadata = timeindex_metadata[
             ["unit", "scale", "dtype", "lower", "upper", "start_time", "end_time"]
         ]
-        timeindex_description = timeindex_description.astype(
-            COLUMN_DTYPES["timeindex_description"]
+        timeindex_metadata = timeindex_metadata.astype(
+            COLUMN_DTYPES["timeindex_metadata"]
         )
 
         # select columns
-        columns = [key for key, val in SELECTED_COLUMNS["metadata"].items() if val]
-        metadata = metadata[columns]
+        columns = [
+            key for key, val in SELECTED_COLUMNS["static_covariates"].items() if val
+        ]
+        static_covariates = static_covariates[columns]
 
-        # Metadata Features
+        # Static_Covariates Features
         units = {}
         mask = mu_sets["amount"].notna()
         mu_set_unit = list(mu_sets["unit"].loc[mask].unique())
@@ -355,41 +357,43 @@ class KiwiRuns(MultiTableDataset):
         units["IPTG"] = mu_set_unit[0]
         units["μ_set"] = "%"
 
-        metadata_description = DataFrame.from_dict(
-            METADATA_DESCRIPTION,
+        static_covariates_metadata = DataFrame.from_dict(
+            STATIC_COVARIATES_METADATA,
             orient="index",
-            columns=COLUMN_DTYPES["metadata_description"],
+            columns=COLUMN_DTYPES["static_covariates_metadata"],
         )
-        metadata_description["dtype"] = metadata.dtypes.astype("string[pyarrow]")
-        metadata_description = metadata_description[
+        static_covariates_metadata["dtype"] = static_covariates.dtypes.astype(
+            "string[pyarrow]"
+        )
+        static_covariates_metadata = static_covariates_metadata[
             ["unit", "scale", "dtype", "lower", "upper"]
         ]
-        metadata_description = metadata_description.astype(
-            COLUMN_DTYPES["metadata_description"]
+        static_covariates_metadata = static_covariates_metadata.astype(
+            COLUMN_DTYPES["static_covariates_metadata"]
         )
 
         # Remove values out of bounds
-        for col in metadata.columns:
-            lower: Series = metadata_description.loc[col, "lower"]
-            upper: Series = metadata_description.loc[col, "upper"]
-            value = metadata[col]
+        for col in static_covariates.columns:
+            lower: Series = static_covariates_metadata.loc[col, "lower"]
+            upper: Series = static_covariates_metadata.loc[col, "upper"]
+            value = static_covariates[col]
             mask = (lower > value) | (value > upper)
             if mask.any():
                 print(
                     f"Removing {mask.mean():8.3%} of data that does not match"
                     f" {col} bounds"
                 )
-                metadata.loc[mask, col] = pd.NA
-        metadata = metadata.dropna(how="all")
+                static_covariates.loc[mask, col] = pd.NA
+        static_covariates = static_covariates.dropna(how="all")
 
         # Serialize tables
-        self.LOGGER.info("Serializing metadata tables.")
+        self.LOGGER.info("Serializing static_covariates tables.")
         self.serialize_table(
-            timeindex_description, self.dataset_paths["timeindex_description"]
+            timeindex_metadata, self.dataset_paths["timeindex_metadata"]
         )
-        self.serialize_table(metadata, self.dataset_paths["metadata"])
+        self.serialize_table(static_covariates, self.dataset_paths["static_covariates"])
         self.serialize_table(
-            metadata_description, self.dataset_paths["metadata_description"]
+            static_covariates_metadata, self.dataset_paths["static_covariates_metadata"]
         )
 
     def clean_timeseries(self) -> None:
@@ -452,21 +456,21 @@ class KiwiRuns(MultiTableDataset):
         columns = [key for key, val in SELECTED_COLUMNS["timeseries"].items() if val]
         timeseries = timeseries[columns]
 
-        timeseries_description = DataFrame.from_dict(
-            TIMESERIES_DESCRIPTION,
+        timeseries_metadata = DataFrame.from_dict(
+            TIMESERIES_METADATA,
             orient="index",
-            columns=COLUMN_DTYPES["timeseries_description"],
+            columns=COLUMN_DTYPES["timeseries_metadata"],
         )
-        timeseries_description["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
-        timeseries_description = timeseries_description.astype(
-            COLUMN_DTYPES["timeseries_description"]
+        timeseries_metadata["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
+        timeseries_metadata = timeseries_metadata.astype(
+            COLUMN_DTYPES["timeseries_metadata"]
         )
-        timeseries_description = timeseries_description.loc[timeseries.columns]
+        timeseries_metadata = timeseries_metadata.loc[timeseries.columns]
 
         # Remove values out of bounds
         for col in timeseries.columns:
-            lower: Series = timeseries_description.loc[col, "lower"]
-            upper: Series = timeseries_description.loc[col, "upper"]
+            lower: Series = timeseries_metadata.loc[col, "lower"]
+            upper: Series = timeseries_metadata.loc[col, "upper"]
             value = timeseries[col]
             mask = (lower > value) | (value > upper)
             if mask.any():
@@ -478,7 +482,7 @@ class KiwiRuns(MultiTableDataset):
 
         # Remove data outside of time bounds
         ts = timeseries.reset_index("measurement_time")
-        ts = ts.join(self.timeindex_description[["start_time", "end_time"]])
+        ts = ts.join(self.timeindex_metadata[["start_time", "end_time"]])
         time = ts["measurement_time"]
         mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
         print(f"Removing {(~mask).mean():8.3%} of data that does not match tmin/tmax")
@@ -507,7 +511,7 @@ class KiwiRuns(MultiTableDataset):
         self.LOGGER.info("Serializing tiemseries tables.")
         self.serialize_table(timeseries, self.dataset_paths["timeseries"])
         self.serialize_table(
-            timeseries_description, self.dataset_paths["timeseries_description"]
+            timeseries_metadata, self.dataset_paths["timeseries_metadata"]
         )
 
 
@@ -517,25 +521,25 @@ class KiwiRunsTSC(TimeSeriesCollection):
 
     metaindex: MultiIndex
     timeseries: DataFrame
-    metadata: DataFrame
-    global_metadata: None
-    metaindex_description: DataFrame
-    timeindex_description: DataFrame
-    timeseries_description: DataFrame
-    metadata_description: DataFrame
-    global_metadata_description: None
+    static_covariates: DataFrame
+    constants: None
+    metaindex_metadata: DataFrame
+    timeindex_metadata: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates_metadata: DataFrame
+    constants_metadata: None
 
     def __init__(self) -> None:
         ds = KiwiRuns()
 
         super().__init__(
+            constants=None,
+            constants_metadata=None,
             metaindex=ds.index,
+            metaindex_metadata=ds.metaindex_metadata,
+            static_covariates=ds.static_covariates,
+            static_covariates_metadata=ds.static_covariates_metadata,
+            timeindex_metadata=ds.timeindex_metadata,
             timeseries=ds.timeseries,
-            metadata=ds.metadata,
-            global_metadata=None,
-            metaindex_description=ds.metaindex_description,
-            timeindex_description=ds.timeindex_description,
-            timeseries_description=ds.timeseries_description,
-            metadata_description=ds.metadata_description,
-            global_metadata_description=None,
+            timeseries_metadata=ds.timeseries_metadata,
         )

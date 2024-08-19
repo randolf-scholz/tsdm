@@ -145,8 +145,8 @@ Given these definitions and constraints,
 
 __all__ = [
     # Constants
-    "TIMESERIES_DESCRIPTION",
-    "METADATA_DESCRIPTION",
+    "TIMESERIES_METADATA",
+    "STATIC_COVARIATES_METADATA",
     # Classes
     "PhysioNet2012",
 ]
@@ -164,14 +164,14 @@ from tsdm.datasets.base import MultiTableDataset
 
 type Key = Literal[
     "timeseries",
-    "timeseries_description",
-    "metadata",
-    "metadata_description",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
     "raw_timeseries",
     "raw_metadata",
 ]
 
-TIMESERIES_DESCRIPTION: InlineTable = {
+TIMESERIES_METADATA: InlineTable = {
     "data": [
         # variable, lower, upper, lower_included, upper_included, unit, description
         ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
@@ -224,7 +224,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     "index": ["name"],
 }  # fmt: skip
 
-METADATA_DESCRIPTION: InlineTable = {
+STATIC_COVARIATES_METADATA: InlineTable = {
     "data": [
         ("Age"    , "uint8[pyarrow]"  , 0   , 100 , True, True, "years"   , None                           ),
         ("Gender" , "int8[pyarrow]"   , None, None, True, True, "category", "0: female, 1: male, -1: other"),
@@ -336,9 +336,9 @@ class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
 
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
-        "metadata",
-        "timeseries_description",
-        "metadata_description",
+        "static_covariates",
+        "timeseries_metadata",
+        "static_covariates_metadata",
         "raw_timeseries",
         "raw_metadata",
     ]
@@ -383,15 +383,15 @@ class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
             "WBC"         : "float32[pyarrow]",
             "Weight"      : "float32[pyarrow]",
         },
-        "metadata": {
+        "static_covariates": {
             "Age"     : "uint8[pyarrow]",
             "Gender"  : "int8[pyarrow]",
             "Height"  : "float32[pyarrow]",
             "ICUType" : "uint8[pyarrow]",
             "Weight"  : "float32[pyarrow]",
         },
-        "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
-        "metadata_description": METADATA_DESCRIPTION["schema"],
+        "timeseries_metadata": TIMESERIES_METADATA["schema"],
+        "static_covariates_metadata": STATIC_COVARIATES_METADATA["schema"],
     }  # fmt: skip
 
     def _clean_single_rawdataset(self, fname: str) -> tuple[DataFrame, DataFrame]:
@@ -424,15 +424,15 @@ class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
                     # drop rows if Parameter is NaN
                     df = df.dropna(subset=["Parameter"])
 
-                    # select metadata items
+                    # select static_covariates items
                     md_mask = (df["Time"] == "00:00") & df["Parameter"].isin(
-                        self.table_schemas["metadata"]
+                        self.table_schemas["static_covariates"]
                     )
-                    # keep the first instance of each metadata item
+                    # keep the first instance of each static_covariates item
                     md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
                     md_frame = df.loc[md_mask].drop(columns=["Time"])
                     if len(md_frame) > 5:
-                        raise ValueError("Too many metadata items!")
+                        raise ValueError("Too many static_covariates items!")
 
                     ts_frame = df.loc[~md_mask]  # remaining items
                     if not all(
@@ -445,14 +445,14 @@ class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
 
         record_ids = pd.Series(id_list, name="RecordID")
 
-        self.LOGGER.info("%s: Combining metadata.", fname)
+        self.LOGGER.info("%s: Combining static_covariates.", fname)
         md = pd.concat(md_list, axis=0, keys=record_ids).reset_index(
             level=-1, drop=True
         )
 
-        self.LOGGER.info("%s: Performing pivot on metadata.", fname)
+        self.LOGGER.info("%s: Performing pivot on static_covariates.", fname)
         md = md.pivot(columns="Parameter", values="Value").astype(
-            self.table_schemas["metadata"]
+            self.table_schemas["static_covariates"]
         )
 
         self.LOGGER.info("%s: Combining timeseries data.", fname)
@@ -498,19 +498,21 @@ class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
 
     def clean_table(self, key: Key) -> Optional[DataFrame]:
         match key:
-            case "timeseries_description":
-                return make_dataframe(**TIMESERIES_DESCRIPTION)
-            case "metadata_description":
-                return make_dataframe(**METADATA_DESCRIPTION)
+            case "timeseries_metadata":
+                return make_dataframe(**TIMESERIES_METADATA)
+            case "static_covariates_metadata":
+                return make_dataframe(**STATIC_COVARIATES_METADATA)
             case "timeseries":
                 self.LOGGER.info("Removing outliers from timeseries.")
-                ts = remove_outliers(self.raw_timeseries, self.timeseries_description)
+                ts = remove_outliers(self.raw_timeseries, self.timeseries_metadata)
                 self.LOGGER.info("Dropping completely missing rows.")
                 ts = ts.dropna(how="all", axis="index")
                 return ts
-            case "metadata":
-                self.LOGGER.info("Removing outliers from metadata.")
-                return remove_outliers(self.raw_metadata, self.metadata_description)
+            case "static_covariates":
+                self.LOGGER.info("Removing outliers from static_covariates.")
+                return remove_outliers(
+                    self.raw_metadata, self.static_covariates_metadata
+                )
             case "raw_timeseries" | "raw_metadata":
                 return self._clean_all_rawdatasets()
             case _:

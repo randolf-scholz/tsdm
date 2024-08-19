@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader, Dataset
 from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset, folds_as_frame, folds_from_groups
-from tsdm.data.timeseries import TimeSeriesDataset
+from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiRuns
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
@@ -220,7 +220,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
         )
 
         mapped_ds = MappingDataset({
-            idx: TimeSeriesDataset(
+            idx: TimeSeries(
                 ts.loc[idx],
                 metadata=md.loc[idx],
             )

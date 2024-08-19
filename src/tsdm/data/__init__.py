@@ -26,7 +26,7 @@ __all__ = [
     "unpack_sequence",
     # timeseries
     "TimeSeriesCollection",
-    "TimeSeriesDataset",
+    "TimeSeries",
     "TimeSeriesSampleGenerator",
     # Functions
     # data - arrow
@@ -73,7 +73,7 @@ from tsdm.data.folds import (
     is_partition,
 )
 from tsdm.data.timeseries import (
+    TimeSeries,
     TimeSeriesCollection,
-    TimeSeriesDataset,
     TimeSeriesSampleGenerator,
 )

@@ -2,7 +2,7 @@ r"""In silico experiments."""
 
 __all__ = [
     # Constants
-    "TIMESERIES_DESCRIPTION",
+    "TIMESERIES_METADATA",
     # Classes
     "InSilico",
     "InSilicoTSC",
@@ -20,7 +20,7 @@ from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.base import MultiTableDataset
 
-TIMESERIES_DESCRIPTION: InlineTable = {
+TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("Biomass"  , 0, None, True, True, "g/L", None),
         ("Substrate", 0, None, True, True, "g/L", None),
@@ -42,7 +42,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     "index": "variable",
 }  # fmt: skip
 
-type KEY = Literal["timeseries", "timeseries_description"]
+type KEY = Literal["timeseries", "timeseries_metadata"]
 
 
 class InSilico(MultiTableDataset[KEY, DataFrame]):
@@ -63,7 +63,7 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
     rawdata_hashes = {
         "in_silico.zip": "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba",
     }
-    table_names = ["timeseries", "timeseries_description"]  # pyright: ignore[reportAssignmentType]
+    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
     table_shapes = {"timeseries": (5206, 7)}  # pyright: ignore[reportAssignmentType]
 
     def _timeseries(self) -> DataFrame:
@@ -83,14 +83,14 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
             .sort_index()
             .astype("float32[pyarrow]")
         )
-        ts = remove_outliers(ts, self.timeseries_description)
+        ts = remove_outliers(ts, self.timeseries_metadata)
         return ts
 
     def clean_table(self, key: KEY) -> DataFrame:
         if key == "timeseries":
             return self._timeseries()
-        if key == "timeseries_description":
-            return make_dataframe(**TIMESERIES_DESCRIPTION)
+        if key == "timeseries_metadata":
+            return make_dataframe(**TIMESERIES_METADATA)
         raise KeyError(f"Unknown table {key}.")
 
     def download_file(self, fname: str, /) -> None:
@@ -109,5 +109,5 @@ class InSilicoTSC(TimeSeriesCollection):
         ds = InSilico()
         super().__init__(
             timeseries=ds.timeseries,
-            timeseries_description=ds.timeseries_description,
+            timeseries_metadata=ds.timeseries_metadata,
         )

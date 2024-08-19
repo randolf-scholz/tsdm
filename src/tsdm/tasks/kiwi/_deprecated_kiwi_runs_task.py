@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader, Dataset
 from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset, TimeSeriesSampleGenerator
-from tsdm.data.timeseries import TimeSeriesDataset
+from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiRuns, KiwiRunsTSC
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
@@ -306,8 +306,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
         )
 
         mapped_ds = MappingDataset({
-            idx: TimeSeriesDataset(ts.loc[idx], metadata=md.loc[idx])
-            for idx in md.index
+            idx: TimeSeries(ts.loc[idx], metadata=md.loc[idx]) for idx in md.index
         })
 
         # construct the sampler

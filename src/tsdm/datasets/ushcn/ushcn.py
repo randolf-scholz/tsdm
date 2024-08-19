@@ -2,9 +2,9 @@ r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
 __all__ = [
     # Constants
-    "METADATA_DESCRIPTION",
+    "STATIC_COVARIATES_METADATA",
     "STATE_CODES",
-    "TIMESERIES_DESCRIPTION",
+    "TIMESERIES_METADATA",
     # Classes
     "USHCN",
 ]
@@ -21,14 +21,14 @@ from tsdm.datasets.base import MultiTableDataset
 
 type Key = Literal[
     "timeseries",
-    "timeseries_description",
-    "metadata",
-    "metadata_description",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
     "state_codes",
     "raw_timeseries",
 ]
 
-TIMESERIES_DESCRIPTION: InlineTable = {
+TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("PRCP", "float32[pyarrow]",    0, None,  True,  True, "0.01 in", "precipitation"      ),
         ("SNOW", "float32[pyarrow]",    0, None,  True,  True, "0.1 in" , "snowfall"           ),
@@ -49,7 +49,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     "index": ["variable"],
 }  # fmt: skip
 
-METADATA_DESCRIPTION: InlineTable = {
+STATIC_COVARIATES_METADATA: InlineTable = {
     "data": [
         ("LATITUDE"   , "float32[pyarrow]",  -90,    90, True, True,  "°" , "latitude"   ),
         ("LONGITUDE"  , "float32[pyarrow]", -180,   180, True, True,  "°" , "longitude"  ),
@@ -280,9 +280,9 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
 
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
-        "timeseries_description",
-        "metadata",
-        "metadata_description",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
         # extra tables
         "raw_timeseries",
         "state_codes",
@@ -310,7 +310,7 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
             "QFLAG"   : "string[pyarrow]",
             "SFLAG"   : "string[pyarrow]",
         },
-        "metadata": {
+        "static_covariates": {
             "COOP_ID"     : "int32[pyarrow]",
             "LATITUDE"    : "float32[pyarrow]",
             "LONGITUDE"   : "float32[pyarrow]",
@@ -326,10 +326,10 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
 
     table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries"             : (204771562, 5),
-        "metadata"               : (1218, 9),
+        "static_covariates"               : (1218, 9),
         "state_codes"            : (48, 3),
-        "metadata_description"   : (9, 6),
-        "timeseries_description" : (8, 6),
+        "static_covariates_metadata"   : (9, 6),
+        "timeseries_metadata" : (8, 6),
     }  # fmt: skip
 
     table_schemas = {  # pyright: ignore[reportAssignmentType]
@@ -340,7 +340,7 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
             "TMAX" : "int16[pyarrow]",
             "TMIN" : "int16[pyarrow]",
         },
-        "metadata": {
+        "static_covariates": {
             "LATITUDE"    : "float[pyarrow]",
             "LONGITUDE"   : "float[pyarrow]",
             "ELEVATION"   : "float[pyarrow]",
@@ -351,7 +351,7 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
             "COMPONENT_3" : "int32[pyarrow]",
             "UTC_OFFSET"  : "int8[pyarrow]",
         },
-        "timeseries_description": {
+        "timeseries_metadata": {
             "variable"       : "string[pyarrow]",
             "lower"          : "float32[pyarrow]",
             "upper"          : "float32[pyarrow]",
@@ -360,7 +360,7 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
             "unit"           : "string[pyarrow]",
             "description"    : "string[pyarrow]",
         },
-        "metadata_description": {
+        "static_covariates_metadata": {
             "variable"       : "string[pyarrow]",
             "lower"          : "float32[pyarrow]",
             "upper"          : "float32[pyarrow]",
@@ -377,14 +377,14 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
                 return self._clean_timeseries()
             case "raw_timeseries":
                 return self._clean_raw_timeseries()
-            case "metadata":
+            case "static_covariates":
                 return self._clean_metadata()
             case "state_codes":
                 return make_dataframe(**STATE_CODES)
-            case "timeseries_description":
-                return make_dataframe(**TIMESERIES_DESCRIPTION)
-            case "metadata_description":
-                return make_dataframe(**METADATA_DESCRIPTION)
+            case "timeseries_metadata":
+                return make_dataframe(**TIMESERIES_METADATA)
+            case "static_covariates_metadata":
+                return make_dataframe(**STATIC_COVARIATES_METADATA)
             case _:
                 raise KeyError(f"Unknown key: {key}")
 
@@ -412,22 +412,24 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
             "COMPONENT_3": ["------"],
         }
 
-        metadata = pd.read_fwf(
+        static_covariates = pd.read_fwf(
             self.rawdata_paths["ushcn-stations.txt"],
             colspecs=stations_cspecs,
-            dtype=self.rawdata_schemas["metadata"],
+            dtype=self.rawdata_schemas["static_covariates"],
             names=stations_colspecs,
             na_values=na_values,
             dtype_backend="pyarrow",
         ).set_index("COOP_ID")
 
-        self.LOGGER.info("Removing outliers from metadata.")
-        metadata = remove_outliers(metadata, self.metadata_description)
+        self.LOGGER.info("Removing outliers from static_covariates.")
+        static_covariates = remove_outliers(
+            static_covariates, self.static_covariates_metadata
+        )
 
         self.LOGGER.info("Dropping completely missing rows.")
-        metadata = metadata.dropna(how="all", axis="index")
+        static_covariates = static_covariates.dropna(how="all", axis="index")
 
-        return metadata
+        return static_covariates
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
@@ -444,7 +446,7 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
         ts.columns = ts.columns.astype("string[pyarrow]")
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_description)
+        ts = remove_outliers(ts, self.timeseries_metadata)
 
         self.LOGGER.info("Dropping completely missing rows.")
         ts = ts.dropna(how="all", axis="index")

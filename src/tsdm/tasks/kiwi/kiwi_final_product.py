@@ -24,7 +24,7 @@ from torch.utils.data import DataLoader, Dataset
 from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset
-from tsdm.data.timeseries import TimeSeriesDataset
+from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
@@ -177,7 +177,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
         # Construct the dataset object
         self.DS = MappingDataset({
-            key: TimeSeriesDataset(
+            key: TimeSeries(
                 self.timeseries.loc[key],
                 metadata=self.metadata.loc[key],
             )
@@ -302,7 +302,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         dataset = _Dataset(ts, md, self.observables)
 
         mapped_ds = MappingDataset({
-            idx: TimeSeriesDataset(
+            idx: TimeSeries(
                 ts.loc[idx],
                 metadata=(md.loc[idx], self.final_value.loc[idx]),
             )

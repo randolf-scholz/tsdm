@@ -2,9 +2,9 @@ r"""Schema for the KIWI-dataset."""
 
 # NOTE: THis should only contain static data
 
-__all__ = ["timeseries_description", "metadata_description"]
+__all__ = ["timeseries_metadata", "static_covariates_metadata"]
 
-timeseries_description = {
+timeseries_metadata = {
     # Name                          : [Unit,     Type,  Dtype, Lower, Upper, Lower included, Upper included]
     "Acetate"                       : ["g/L"    , "absolute" , "float32" , 0  , None         , True , True],
     "Base"                          : ["uL"     , "absolute" , "float32" , 0  , None      , True , True],
@@ -23,7 +23,7 @@ timeseries_description = {
     "pH"                            : ["pH"     , "linear"   , "float32" , 4  , 10        , True , True],
 }  # fmt: skip
 
-metadata_description = {
+static_covariates_metadata = {
     # Name                   : [Unit,  Type,   Dtype, Lower, Upper, Lower included, Upper included]
     "Feed_concentration_glc" : ["g/L", "absolute", None, None, None, True, True],
     "IPTG"                   : ["mM",  "absolute", None, 0,    None, True, True],

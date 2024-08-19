@@ -71,7 +71,7 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
     }
     table_shapes = {
         "timeseries": (552327, 96),
-        "metadata": (96, 3),
+        "static_covariates": (96, 3),
     }
 
     def clean_table(self) -> DataFrame:
