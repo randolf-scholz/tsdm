@@ -14,7 +14,6 @@ from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm import datasets
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.data import (
     TimeSeriesSampleGenerator,
@@ -23,6 +22,7 @@ from tsdm.data import (
     folds_from_groups,
 )
 from tsdm.data.timeseries import Sample
+from tsdm.datasets import timeseries as tsd
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -60,7 +60,7 @@ class KiwiBenchmark(TimeSeriesTask):
     The task is to forecast the observables inside the forecasting horizon.
     """
 
-    dataset: datasets.KiwiBenchmarkTSC
+    dataset: tsd.KiwiBenchmark
 
     # sampler kwargs
     observation_horizon: str = "2h"
@@ -153,7 +153,7 @@ class KiwiBenchmark(TimeSeriesTask):
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
-        dataset = datasets.KiwiBenchmarkTSC()
+        dataset = tsd.KiwiBenchmark()
         dataset.timeseries = dataset.timeseries.astype("float32")
 
         super().__init__(dataset=dataset)
@@ -161,7 +161,7 @@ class KiwiBenchmark(TimeSeriesTask):
     def make_folds(self, /, **kwargs: Any) -> DataFrame:
         r"""Group by RunID and color which indicates replicates."""
         fold_kwargs = self.fold_kwargs | kwargs
-        md = self.dataset.metadata
+        md = self.dataset.static_covariates
         groups = md.groupby(["run_id", "color"], sort=False).ngroup()
         folds = folds_from_groups(groups, **fold_kwargs)
         df = folds_as_frame(folds)
@@ -207,7 +207,7 @@ class KiwiBenchmark(TimeSeriesTask):
         return collate_fn
 
     def get_columns_encoder(self, variable: str, /) -> Encoder:
-        descr = self.dataset.timeseries_description
+        descr = self.dataset.timeseries_metadata
         kind, lower, upper = descr.loc[variable, ["kind", "lower_bound", "upper_bound"]]
 
         match kind:

@@ -31,7 +31,7 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 def encoder() -> BaseEncoder:
     # initialize the task object
     task = KiwiBenchmark()
-    descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]
+    descr = task.dataset.timeseries_metadata[["kind", "lower_bound", "upper_bound"]]
 
     # select encoding scheme
     column_encoders: dict[str, Encoder] = {}
@@ -167,7 +167,7 @@ def test_combined_encoder(encoder, split=(0, "train"), atol=1e-5, rtol=1e-3):
 
 def test_bounds(encoder):
     task = KiwiBenchmark()
-    descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]
+    descr = task.dataset.timeseries_metadata[["kind", "lower_bound", "upper_bound"]]
 
     nrows, ncols = task.dataset.timeseries.shape
 

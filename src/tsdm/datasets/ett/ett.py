@@ -3,9 +3,7 @@ r"""Electricity Transformer Dataset (ETDataset).
 **Source:** https://github.com/zhouhaoyi/ETDataset
 """
 
-__all__ = [
-    "ETT",
-]
+__all__ = ["ETT"]
 
 from typing import Literal
 

@@ -1,15 +1,9 @@
 r"""The KIWI Benchmark Dataset."""
 
-__all__ = [
-    "KiwiBenchmarkTSC",
-    "KiwiBenchmark",
-]
+__all__ = ["KiwiBenchmark"]
 
 from zipfile import ZipFile
 
-from pandas import DataFrame
-
-from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.base import MultiTableDataset
 
 
@@ -35,23 +29,12 @@ class KiwiBenchmark(MultiTableDataset):
     ]
 
     def clean_table(self, key: str) -> None:
-        with ZipFile(self.rawdata_paths["kiwi-benchmark.zip"], "r") as archive:
-            archive.extract(f"{key}.parquet", self.DATASET_DIR)
+        path = self.rawdata_paths["kiwi-benchmark.zip"]
+        file = f"{key}.parquet"
 
-
-class KiwiBenchmarkTSC(TimeSeriesCollection):
-    r"""The KIWI dataset wrapped as TimeSeriesCollection."""
-
-    timeseries: DataFrame
-    static_covariates: DataFrame
-    timeseries_metadata: DataFrame
-    static_covariates_metadata: DataFrame
-
-    def __init__(self) -> None:
-        ds = KiwiBenchmark()
-        super().__init__(
-            timeseries=ds.timeseries,
-            static_covariates=ds.static_covariates,
-            timeseries_metadata=ds.timeseries_metadata,
-            static_covariates_metadata=ds.static_covariates_metadata,
-        )
+        with ZipFile(path, "r") as archive:
+            try:
+                archive.extract(file, self.DATASET_DIR)
+            except KeyError as exc:
+                exc.add_note(f"Failed to extract table {key} from {path}")
+                raise

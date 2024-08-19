@@ -7,6 +7,8 @@ __all__ = [
     "ETTm1",
     "ETTm2",
     "Electricity",
+    "InSilico",
+    "KiwiBenchmark",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV_Bilos2021",
     "PhysioNet2012",
@@ -18,6 +20,8 @@ __all__ = [
 
 from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.ett import ETT
+from tsdm.datasets.kiwi.in_silico import InSilico as _InSilico
+from tsdm.datasets.kiwi.kiwi_benchmark import KiwiBenchmark as _KiwiBenchmark
 from tsdm.datasets.mimic.mimic_iii_debrouwer2019 import (
     MIMIC_III_DeBrouwer2019 as _MIMIC_III_DeBrouwer2019,
 )
@@ -33,6 +37,30 @@ from tsdm.datasets.ushcn.ushcn import USHCN as _USHCN
 from tsdm.datasets.ushcn.ushcn_debrouwer2019 import (
     USHCN_DeBrouwer2019 as _USHCN_DeBrouwer2019,
 )
+
+
+class InSilico(TimeSeriesCollection):
+    r"""The in silico dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = _InSilico()
+        super().__init__(
+            timeseries=ds.timeseries,
+            timeseries_metadata=ds.timeseries_metadata,
+        )
+
+
+class KiwiBenchmark(TimeSeriesCollection):
+    r"""The KIWI dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = _KiwiBenchmark()
+        super().__init__(
+            timeseries=ds.timeseries,
+            static_covariates=ds.static_covariates,
+            timeseries_metadata=ds.timeseries_metadata,
+            static_covariates_metadata=ds.static_covariates_metadata,
+        )
 
 
 class USHCN(TimeSeriesCollection):

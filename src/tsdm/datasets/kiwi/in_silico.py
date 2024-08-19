@@ -5,7 +5,6 @@ __all__ = [
     "TIMESERIES_METADATA",
     # Classes
     "InSilico",
-    "InSilicoTSC",
 ]
 
 import shutil
@@ -17,7 +16,6 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
-from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.base import MultiTableDataset
 
 TIMESERIES_METADATA: InlineTable = {
@@ -100,14 +98,3 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
             raise ValueError(f"Unexpected package: {__package__=}")
         with resources.path(__package__, fname) as path:
             shutil.copy(path, self.rawdata_paths[fname])
-
-
-class InSilicoTSC(TimeSeriesCollection):
-    r"""The in silico dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = InSilico()
-        super().__init__(
-            timeseries=ds.timeseries,
-            timeseries_metadata=ds.timeseries_metadata,
-        )

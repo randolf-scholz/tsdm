@@ -6,14 +6,8 @@ References:
 
 __all__ = [
     "InSilico",
-    "InSilicoTSC",
     "KiwiBenchmark",
-    "KiwiBenchmarkTSC",
-    # OLD Datasets
-    "KiwiRuns",
-    "KiwiRunsTSC",
 ]
 
-from tsdm.datasets.kiwi.in_silico import InSilico, InSilicoTSC
-from tsdm.datasets.kiwi.kiwi_benchmark import KiwiBenchmark, KiwiBenchmarkTSC
-from tsdm.datasets.kiwi.kiwi_runs import KiwiRuns, KiwiRunsTSC
+from tsdm.datasets.kiwi.in_silico import InSilico
+from tsdm.datasets.kiwi.kiwi_benchmark import KiwiBenchmark

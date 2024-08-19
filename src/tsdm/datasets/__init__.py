@@ -53,13 +53,6 @@ __all__ = [
     "Traffic",
     "USHCN",
     "USHCN_DeBrouwer2019",
-    # Timeseries
-    "InSilicoTSC",
-    "KiwiBenchmarkTSC",
-    # Deprecated Datasets
-    "KiwiRuns",
-    # Deprecated Timeseries
-    "KiwiRunsTSC",
 ]
 
 from tsdm.datasets import (
@@ -81,11 +74,7 @@ from tsdm.datasets.base import (
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.kiwi import (
     InSilico,
-    InSilicoTSC,
     KiwiBenchmark,
-    KiwiBenchmarkTSC,
-    KiwiRuns,
-    KiwiRunsTSC,
 )
 from tsdm.datasets.mimic import (
     MIMIC_III,
@@ -112,10 +101,11 @@ DATASETS: dict[str, type[Dataset]] = {
     "MIMIC_III_Bilos2021"       : MIMIC_III_Bilos2021,
     "MIMIC_III_DeBrouwer2019"   : MIMIC_III_DeBrouwer2019,
     "MIMIC_III_RAW"             : MIMIC_III_RAW,
-    "MIMIC_IV"                  : MIMIC_IV_RAW,
+    "MIMIC_IV"                  : MIMIC_IV,
     "MIMIC_IV_Bilos2021"        : MIMIC_IV_Bilos2021,
-    "Physionet2012"             : PhysioNet2012,
-    "Physionet2019"             : PhysioNet2019,
+    "MIMIC_IV_RAW"              : MIMIC_IV_RAW,
+    "PhysioNet2012"             : PhysioNet2012,
+    "PhysioNet2019"             : PhysioNet2019,
     "Traffic"                   : Traffic,
     "USHCN"                     : USHCN,
     "USHCN_DeBrouwer2019"       : USHCN_DeBrouwer2019,

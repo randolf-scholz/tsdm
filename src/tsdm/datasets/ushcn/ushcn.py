@@ -325,11 +325,11 @@ class USHCN(MultiTableDataset[Key, DataFrame]):
     }  # fmt: skip
 
     table_shapes = {  # pyright: ignore[reportAssignmentType]
-        "timeseries"             : (204771562, 5),
-        "static_covariates"               : (1218, 9),
-        "state_codes"            : (48, 3),
-        "static_covariates_metadata"   : (9, 6),
-        "timeseries_metadata" : (8, 6),
+        "state_codes"                : (48, 3),
+        "static_covariates"          : (1218, 9),
+        "static_covariates_metadata" : (9, 6),
+        "timeseries"                 : (204771562, 5),
+        "timeseries_metadata"        : (8, 6),
     }  # fmt: skip
 
     table_schemas = {  # pyright: ignore[reportAssignmentType]

@@ -14,7 +14,7 @@ from tsdm.data import (
     folds_from_groups,
 )
 from tsdm.data.timeseries import TimeSeriesCollection
-from tsdm.datasets import InSilicoTSC
+from tsdm.datasets.timeseries import InSilico
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.types.aliases import SplitID
@@ -33,7 +33,7 @@ class InSilicoTask(TimeSeriesTask):
         observation_horizon: str = "2h",
         forecasting_horizon: str = "1h",
     ) -> None:
-        ds = InSilicoTSC()
+        ds = InSilico()
         dataset = TimeSeriesCollection(ds.timeseries)
         self.observation_horizon = observation_horizon
         self.forecasting_horizon = forecasting_horizon

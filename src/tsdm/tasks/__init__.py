@@ -67,14 +67,15 @@ __all__ = [
 ]
 
 from tsdm.tasks import base, kiwi, mimic, synthetic, uci, ushcn
-from tsdm.tasks._deprecated import OldBaseTask
+
+# from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.tasks.base import ForecastingTask, TimeSeriesTask
 from tsdm.tasks.ett.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi import (
-    KIWI_FINAL_PRODUCT,
-    KIWI_RUNS_GENERATOR,
+    # KIWI_FINAL_PRODUCT,
+    # KIWI_RUNS_GENERATOR,
     InSilicoTask,
-    Kiwi_BioProcessTask,
+    # Kiwi_BioProcessTask,
     KiwiBenchmark,
 )
 from tsdm.tasks.mimic import (
@@ -101,13 +102,13 @@ TASKS: dict[str, type[ForecastingTask]] = {
 }  # fmt: skip
 r"""Dictionary of all available tasks."""
 
-OLD_TASKS: dict[str, type[OldBaseTask]] = {
-    "ETT_Zhou2021"            : ETT_Zhou2021,
-    "KIWI_FINAL_PRODUCT"      : KIWI_FINAL_PRODUCT,
-    "Kiwi_BioProcessTask"     : Kiwi_BioProcessTask,
-    "MIMIC_III_Bilos2021"     : MIMIC_III_Bilos2021,
-    "MIMIC_III_DeBrouwer2019" : MIMIC_III_DeBrouwer2019,
-    "MIMIC_IV_Bilos2021"      : MIMIC_IV_Bilos2021,
-    "USHCN_DeBrouwer2019"     : USHCN_DeBrouwer2019,
-}  # fmt: skip
-r"""Dictionary of all available tasks."""
+# OLD_TASKS: dict[str, type[OldBaseTask]] = {
+#     "ETT_Zhou2021"            : ETT_Zhou2021,
+#     "KIWI_FINAL_PRODUCT"      : KIWI_FINAL_PRODUCT,
+#     "Kiwi_BioProcessTask"     : Kiwi_BioProcessTask,
+#     "MIMIC_III_Bilos2021"     : MIMIC_III_Bilos2021,
+#     "MIMIC_III_DeBrouwer2019" : MIMIC_III_DeBrouwer2019,
+#     "MIMIC_IV_Bilos2021"      : MIMIC_IV_Bilos2021,
+#     "USHCN_DeBrouwer2019"     : USHCN_DeBrouwer2019,
+# }  # fmt: skip
+# r"""Dictionary of all available tasks."""
