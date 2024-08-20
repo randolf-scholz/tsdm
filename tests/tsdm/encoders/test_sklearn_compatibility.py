@@ -1,5 +1,5 @@
 r"""Test compatibility with sklearn encoders."""
-# mypy: ignore-errors
+# mypy: disable-error-code="no-untyped-def"
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.utils.estimator_checks import parametrize_with_checks
