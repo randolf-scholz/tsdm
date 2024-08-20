@@ -29,17 +29,21 @@ TABLES = {
 }
 
 
-def test_one_to_one():
+def test_one_to_one() -> None:
     r"""Test an encoder that transforms a single column to a single column."""
+    raise NotImplementedError
 
 
-def test_one_to_many():
+def test_one_to_many() -> None:
     r"""Test an encoder that transforms a single column to multiple columns."""
+    raise NotImplementedError
 
 
-def test_many_to_many():
+def test_many_to_many() -> None:
     r"""Test an encoder that transforms multiple columns to multiple columns."""
+    raise NotImplementedError
 
 
-def test_many_to_one():
+def test_many_to_one() -> None:
     r"""Test an encoder that transforms multiple columns to a single column."""
+    raise NotImplementedError

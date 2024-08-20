@@ -371,7 +371,7 @@ def import_from_url(
         )
     elif parsed_url.netloc == "github.com":
         subprocess.run(
-            f"svn export --force {url.replace('tree/main', 'trunk')} {path!s}",
+            f"svn export --force {url.replace("tree/main", "trunk")} {path!s}",
             shell=True,
             check=True,
         )

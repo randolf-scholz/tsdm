@@ -12,7 +12,7 @@ WRITE_TYPES = {"pandas": WriteBuffer, "typing": IO}
 READ_TYPES = {"pandas": ReadBuffer, "io": IOBase, "typing": IO}
 
 
-def test_write_types():
+def test_write_types() -> None:
     shared_attrs = set.intersection(*(set(dir(s)) for s in WRITE_TYPES.values()))
 
     with TemporaryFile("w", encoding="utf8") as file:

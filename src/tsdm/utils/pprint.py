@@ -887,7 +887,7 @@ def repr_array(
         case 0:
             shape_repr = ""
         case _:
-            shape_repr = f"<{','.join(str(dim) for dim in shape)}>"
+            shape_repr = f"<{",".join(str(dim) for dim in shape)}>"
 
     # get the device-repr
     match obj:

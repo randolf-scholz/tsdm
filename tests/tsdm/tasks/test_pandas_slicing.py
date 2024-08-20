@@ -19,7 +19,7 @@ def test_multiindex_slicing_0level() -> None:
         _ = df.loc[mask]
 
 
-def test_multiindex_slicing_1level():
+def test_multiindex_slicing_1level() -> None:
     r"""Slice a MultiIndex with a Boolean Series with MultiIndex with 1 level => works!."""
     index = pd.MultiIndex.from_product(
         [["A", "B", "C"], ["x", "y"]], names=["outer", "inner"]
@@ -31,7 +31,7 @@ def test_multiindex_slicing_1level():
     _ = df.loc[mask]
 
 
-def test_multiindex_slicing_2levels():
+def test_multiindex_slicing_2levels() -> None:
     r"""Slice a MultiIndex with a Boolean Series with MultiIndex with multiple levels => works!."""
     index = pd.MultiIndex.from_product(
         [["A", "B", "C"], ["x", "y"], [0, 1, 2]], names=["outer", "inner", "step"]

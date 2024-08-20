@@ -139,7 +139,7 @@ experiment = [
 src = ["src/", "tests/"]
 indent-width = 4
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 output-format = "concise"
 
 [tool.ruff.lint]

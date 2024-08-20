@@ -102,7 +102,7 @@ def log_config(
     postfix: str = "",
 ) -> None:
     r"""Log config to tensorboard."""
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path /= f"{identifier}-{step}.{fmt}"
 
@@ -144,7 +144,7 @@ def log_kernel(
     Set option to true to log every epoch.
     Set option to an integer to log whenever ``i % log_interval == 0``.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
     K = kernel
     if K.ndim != 2 or K.shape[0] != K.shape[1]:
         raise ValueError("Kernel must be a square matrix!")
@@ -261,7 +261,7 @@ def log_lr_scheduler(
     postfix: str = "",
 ) -> None:
     r"""Log learning rate scheduler."""
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
     cls_name = lr_scheduler.__class__.__name__
     lr = lr_scheduler.get_last_lr()
     writer.add_scalar(f"{identifier}:{cls_name}/lr", lr, step)
@@ -319,7 +319,7 @@ def log_model(
     postfix: str = "",
 ) -> None:
     r"""Log model data."""
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
 
     variables: dict[str, Tensor] = dict(model.named_parameters())
     gradients: dict[str, Tensor] = {
@@ -360,7 +360,7 @@ def log_optimizer(
     postfix: str = "",
 ) -> None:
     r"""Log optimizer data under ``prefix:optimizer:postfix/``."""
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
 
     # NOTE: optimizer.state is of kind
     #  dict[tensor, {step: Tensor, exp_avg: Tensor, exp_avg_sq: Tensor}}]
@@ -410,7 +410,7 @@ def log_values(
     postfix: str = "",
 ) -> None:
     r"""Log multiple metrics at once."""
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
     for _id, scalar in scalars.items():
         writer.add_scalar(f"{identifier}:{_id}/{key}", scalar, step)
 
@@ -429,9 +429,9 @@ def log_table(
 ) -> None:
     r"""Log multiple metrics at once."""
     options = {} if options is None else options
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path /= f"{identifier + '-' * bool(identifier)}{step}"
+    path /= f"{identifier + "-" * bool(identifier)}{step}"
 
     match filetype:
         case "parquet":
@@ -470,7 +470,7 @@ def log_plot(
         postfix: The postfix of the plot.
         rasterization_options: Options to pass to `tsdm.viz.rasterize`.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
 
     # generate the figure
     fig = unpack_maybewrapped(plot, step=step)

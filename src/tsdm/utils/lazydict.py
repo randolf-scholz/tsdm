@@ -68,7 +68,7 @@ class LazyValue[V]:  # +V
             case tuple(tup):
                 raise TypeError(
                     "Expected tuple of function, args and kwargs."
-                    f" Got tuple[{', '.join(type(arg).__name__ for arg in tup)}].",
+                    f" Got tuple[{", ".join(type(arg).__name__ for arg in tup)}].",
                 )
             case Callable() as func:  # type: ignore[misc]
                 return cls(func)  # type: ignore[unreachable]

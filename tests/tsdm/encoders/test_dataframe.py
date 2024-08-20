@@ -17,7 +17,7 @@ TEST_FRAME_A = DataFrame({
 })
 
 
-def test_csv_encoder():
+def test_csv_encoder() -> None:
     # initialize encoder
     encoder = CSVEncoder(RESULTS_DIR / "test.csv")
     assert not encoder.requires_fit
@@ -31,7 +31,7 @@ def test_csv_encoder():
     assert_frame_equal(TEST_FRAME_A, result)
 
 
-def test_type_converter():
+def test_type_converter() -> None:
     # initialize encoder
     encoder = DTypeConverter({
         "A": "duration[ns][pyarrow]",

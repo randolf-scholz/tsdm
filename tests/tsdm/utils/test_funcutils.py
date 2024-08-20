@@ -11,19 +11,17 @@ from tsdm.utils.funcutils import (
 )
 
 
-def foo(a, /): ...
-def bar(a): ...
-def baz(*a): ...
-def qux(*, a): ...
-def quux(**a): ...
+def foo(a, /): ...  # type: ignore[no-untyped-def]
+def bar(a): ...  # type: ignore[no-untyped-def]
+def baz(*a): ...  # type: ignore[no-untyped-def]
+def qux(*, a): ...  # type: ignore[no-untyped-def]
+def quux(**a): ...  # type: ignore[no-untyped-def]
+def foo2(a=None, /): ...  # type: ignore[no-untyped-def]
+def bar2(a=None): ...  # type: ignore[no-untyped-def]
+def qux2(*, a=None): ...  # type: ignore[no-untyped-def]
 
 
-def foo2(a=None, /): ...
-def bar2(a=None): ...
-def qux2(*, a=None): ...
-
-
-def test_is_mandatory_arg():
+def test_is_mandatory_arg() -> None:
     assert is_mandatory_arg(foo, "a") is True
     assert is_mandatory_arg(bar, "a") is True
     assert is_mandatory_arg(baz, "a") is False
@@ -35,7 +33,7 @@ def test_is_mandatory_arg():
     assert is_mandatory_arg(qux2, "a") is False
 
 
-def test_is_positional_arg():
+def test_is_positional_arg() -> None:
     assert is_positional_arg(foo, "a") is True
     assert is_positional_arg(bar, "a") is True
     assert is_positional_arg(baz, "a") is True
@@ -47,7 +45,7 @@ def test_is_positional_arg():
     assert is_positional_arg(qux2, "a") is False
 
 
-def test_is_positional_only_arg():
+def test_is_positional_only_arg() -> None:
     assert is_positional_only_arg(foo, "a") is True
     assert is_positional_only_arg(bar, "a") is False
     assert is_positional_only_arg(baz, "a") is True
@@ -59,7 +57,7 @@ def test_is_positional_only_arg():
     assert is_positional_only_arg(qux2, "a") is False
 
 
-def test_is_keyword_arg():
+def test_is_keyword_arg() -> None:
     assert is_keyword_arg(foo, "a") is False
     assert is_keyword_arg(bar, "a") is True
     assert is_keyword_arg(baz, "a") is False
@@ -71,7 +69,7 @@ def test_is_keyword_arg():
     assert is_keyword_arg(qux2, "a") is True
 
 
-def test_is_keyword_only_arg():
+def test_is_keyword_only_arg() -> None:
     assert is_keyword_only_arg(foo, "a") is False
     assert is_keyword_only_arg(bar, "a") is False
     assert is_keyword_only_arg(baz, "a") is False
@@ -83,7 +81,7 @@ def test_is_keyword_only_arg():
     assert is_keyword_only_arg(qux2, "a") is True
 
 
-def test_is_variadic_arg():
+def test_is_variadic_arg() -> None:
     assert is_variadic_arg(foo, "a") is False
     assert is_variadic_arg(bar, "a") is False
     assert is_variadic_arg(baz, "a") is True

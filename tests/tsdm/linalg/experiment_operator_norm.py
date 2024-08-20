@@ -3,6 +3,7 @@ r"""Experiments with the scaled Lᴾ norm."""
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colormaps
+from numpy.typing import ArrayLike, NDArray
 
 from tsdm.config import PROJECT
 from tsdm.constants import RNG
@@ -10,7 +11,7 @@ from tsdm.constants import RNG
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-def f(x, p):
+def f(x: ArrayLike, p: ArrayLike) -> NDArray:
     r"""Normal Lᴾ norm.
 
     .. signature:: ``[(..., n), (m,)] -> (..., m)``
@@ -21,7 +22,7 @@ def f(x, p):
     return np.sum(np.power.outer(np.abs(x), p), axis=-2) ** (1 / p)
 
 
-def g(x, p):
+def g(x: ArrayLike, p: ArrayLike) -> NDArray:
     r"""Scaled Lᴾ norm.
 
     .. signature:: ``[(..., n), (m,)] -> (..., m)``
@@ -32,17 +33,18 @@ def g(x, p):
     return np.mean(np.power.outer(np.abs(x), p), axis=-2) ** (1 / p)
 
 
-def max_norm(x, p):
+def max_norm(x: ArrayLike, p: ArrayLike) -> NDArray:
     r"""Maximum norm."""
     return np.max(np.abs(x)) * np.ones_like(p)
 
 
-def gmean(x):
+def gmean(x: ArrayLike) -> np.floating:
     r"""Geometric mean."""
-    return np.prod(np.abs(x)) ** (1 / len(x))
+    z = np.asarray(x)
+    return np.prod(np.abs(z)) ** (1 / len(z))
 
 
-def exp_scaled_norm():
+def exp_scaled_norm() -> None:
     r"""Plot the scaled Lᴾ norm for different values of p."""
     N = 7
     x = RNG.normal(size=N)
@@ -63,7 +65,7 @@ def exp_scaled_norm():
     fig.show()
 
 
-def unit_circle_lp_scaled():
+def unit_circle_lp_scaled() -> None:
     r"""Plot the unit circle of the scaled Lₚ norm.
 
     To do this, we use polar coordinates. Then we have:

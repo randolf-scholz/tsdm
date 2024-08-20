@@ -8,7 +8,7 @@ import pandas as pd
 from tsdm.datasets import InSilico
 
 
-def test_serialize():
+def test_serialize() -> None:
     ds = InSilico()
 
     with TemporaryDirectory() as tmpdir:

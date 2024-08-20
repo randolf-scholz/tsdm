@@ -3,7 +3,7 @@ r"""Test performance of match statements with union types."""
 from random import choice
 
 
-def if_else(x):
+def if_else(x: object) -> None:
     if x is None:
         return
     if isinstance(x, bool):
@@ -17,7 +17,7 @@ def if_else(x):
     raise TypeError
 
 
-def matchit(x):
+def matchit(x: object) -> None:
     match x:
         case None:
             return
@@ -45,7 +45,7 @@ for _ in range(100_000):  # 34.2 ms ± 392 µs per loop
 
 
 # %% Union
-def if_else_union(x):
+def if_else_union(x: object) -> None:
     if isinstance(x, bool | int | float):
         return
     if isinstance(x, str | bytes):
@@ -53,7 +53,7 @@ def if_else_union(x):
     raise TypeError
 
 
-def if_else_tuple(x):
+def if_else_tuple(x: object) -> None:
     if isinstance(x, (bool, int, float)):  # noqa: UP038
         return
     if isinstance(x, (str, bytes)):  # noqa: UP038
@@ -61,7 +61,7 @@ def if_else_tuple(x):
     raise TypeError
 
 
-def matchit_union(x):
+def matchit_union(x: object) -> None:
     match x:
         case bool() | int() | float():
             return

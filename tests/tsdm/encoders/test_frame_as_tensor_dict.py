@@ -15,7 +15,7 @@ TEST_FRAME = DataFrame({
 })
 
 
-@pytest.mark.parametrize("data", [TEST_FRAME, TEST_FRAME.set_index("ID")])
+@pytest.mark.parametrize("df", [TEST_FRAME, TEST_FRAME.set_index("ID")])
 @pytest.mark.parametrize(
     "schema",
     [
@@ -24,17 +24,17 @@ TEST_FRAME = DataFrame({
         {"key": ["ID"], "M": ["Mask"], "Position": ...},
     ],
 )
-def test_frame_as_tensor_dict(data, schema):
+def test_frame_as_tensor_dict(df: DataFrame, schema: dict) -> None:
     r"""Test `FrameAsTensorDict` encoder."""
     encoder = FrameAsTensorDict(schema)
 
     # test fit
-    encoder.fit(data)
+    encoder.fit(df)
     assert encoder.is_fitted
     assert encoder.dtypes == {"key": None, "M": None, "Position": None}
 
     # test encode
-    encoded = encoder.encode(data)
+    encoded = encoder.encode(df)
     assert isinstance(encoded, dict)
     assert encoded.keys() == {"key", "M", "Position"}
     assert encoded["key"].shape == (4,)
@@ -46,7 +46,7 @@ def test_frame_as_tensor_dict(data, schema):
 
     # test decode
     decoded = encoder.decode(encoded)
-    assert_frame_equal(data, decoded)
+    assert_frame_equal(df, decoded)
 
 
 def test_frame2tensordict() -> None:

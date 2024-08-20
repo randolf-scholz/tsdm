@@ -98,11 +98,11 @@ EXPECTED_3RD_PARTY: dict[type, bool] = {
         | EXPECTED_3RD_PARTY
     ).items(),
 )
-def test_array_builtins(cls, expected):
+def test_array_builtins(*, cls: type, expected: bool) -> None:
     assert_protocol(cls, Array, expected=expected)
 
 
-def test_array_static():
+def test_array_static() -> None:
     _: type[Array]
     # builtins
     # _ = bytes  # ❌ __contains__
@@ -137,7 +137,7 @@ def test_array_static():
     # check
 
 
-def test_instances_static():
+def test_instances_static() -> None:
     _: Array[int]
     _ = (1, 2)
     _ = cast(tuple[int, int], (1, 2))
@@ -146,7 +146,7 @@ def test_instances_static():
     _ = range(2)
 
 
-def test_array_collections_abc():
+def test_array_collections_abc() -> None:
     for name in dir(collections):
         if name.startswith("_"):
             continue

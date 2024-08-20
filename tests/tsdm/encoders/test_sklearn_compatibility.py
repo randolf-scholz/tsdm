@@ -1,4 +1,5 @@
 r"""Test compatibility with sklearn encoders."""
+# mypy: ignore-errors
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.utils.estimator_checks import parametrize_with_checks

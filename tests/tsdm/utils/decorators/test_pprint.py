@@ -154,9 +154,9 @@ def test_pprint_sequence() -> None:
         def __getitem__(self, index: int) -> int: ...
         @overload
         def __getitem__(self, index: slice) -> Self: ...
-        def __getitem__(self, index):
+        def __getitem__(self, index: int | slice) -> int | Self:
             if isinstance(index, slice):
-                return TestSequence(self.items[index])
+                return self.__class__(self.items[index])
             return self.items[index]
 
     # ensure decorator works statically
@@ -187,9 +187,9 @@ def test_pprint_repr_sequence() -> None:
         def __getitem__(self, index: int) -> int: ...
         @overload
         def __getitem__(self, index: slice) -> Self: ...
-        def __getitem__(self, index):
+        def __getitem__(self, index: int | slice) -> int | Self:
             if isinstance(index, slice):
-                return TestSequence(self.items[index])
+                return self.__class__(self.items[index])
             return self.items[index]
 
     # ensure decorator works statically

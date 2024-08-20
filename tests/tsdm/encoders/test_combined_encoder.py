@@ -23,6 +23,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.tasks import KiwiBenchmark
+from tsdm.tasks.base import SplitID
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -87,7 +88,12 @@ def encoder() -> BaseEncoder:
 
 
 @pytest.mark.slow
-def test_combined_encoder(encoder, split=(0, "train"), atol=1e-5, rtol=1e-3):
+def test_combined_encoder(
+    encoder: Encoder,
+    split: SplitID = (0, "train"),
+    atol: float = 1e-5,
+    rtol: float = 1e-3,
+) -> None:
     r"""Test complicated combined encoder.
 
     Note:
@@ -165,7 +171,7 @@ def test_combined_encoder(encoder, split=(0, "train"), atol=1e-5, rtol=1e-3):
     assert abs(train_data.index - train_decoded.index).max() <= pd.Timedelta(1, "s")
 
 
-def test_bounds(encoder):
+def test_bounds(encoder: Encoder) -> None:
     task = KiwiBenchmark()
     descr = task.dataset.timeseries_metadata[["kind", "lower_bound", "upper_bound"]]
 
@@ -200,7 +206,7 @@ def test_bounds(encoder):
                 raise ValueError(f"{scale=} unknown")
 
 
-def test_serialization(encoder):
+def test_serialization(encoder: Encoder) -> None:
     # test_serialization
     path = RESULT_DIR / "trained_encoder.pickle"
 

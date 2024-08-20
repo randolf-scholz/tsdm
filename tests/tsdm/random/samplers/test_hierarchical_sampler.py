@@ -5,6 +5,7 @@ from collections.abc import Iterable, Iterator
 from string import ascii_letters
 
 import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from tsdm.random.samplers import HierarchicalSampler, RandomSampler
 
@@ -38,7 +39,7 @@ def test_hierarchical_sampler() -> None:
 
 
 @pytest.fixture
-def benchmark_data():
+def benchmark_data() -> dict[str, list[int]]:
     # for each letter in the alphabet, list of random digits of size range(100, 1000)
     data = {
         letter: [random.randint(0, 9) for _ in range(random.randint(100, 1000))]
@@ -48,23 +49,25 @@ def benchmark_data():
 
 
 @pytest.mark.benchmark
-def test_benchmark_hierarchical_sampler(benchmark, benchmark_data):
+def test_benchmark_hierarchical_sampler(
+    benchmark: BenchmarkFixture, benchmark_data: dict[str, list[int]]
+) -> None:
     sampler = HierarchicalSampler(benchmark_data, shuffle=True)
     benchmark(exhaust_iterable, sampler)
 
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize("method", ["iter_with_iter", "iter_with_yield"])
-def test_iter_speed(benchmark, method):
+def test_iter_speed(benchmark: BenchmarkFixture, method: str) -> None:
     class Foo:
-        def __init__(self):
+        def __init__(self) -> None:
             self.data = list(range(100))
 
         def __iter__(self) -> Iterator[int]:
             return iter(self.data)
 
     class Bar:
-        def __init__(self):
+        def __init__(self) -> None:
             self.data = list(range(100))
 
         def __iter__(self) -> Iterator[int]:

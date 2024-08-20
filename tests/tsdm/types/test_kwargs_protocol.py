@@ -5,7 +5,7 @@ import pytest
 from tsdm.types.protocols import SupportsKwargs
 
 
-def test_supports_kwargs():
+def test_supports_kwargs() -> None:
     d_int = {0: 1, 1: 2}
     with pytest.raises(NotImplementedError):
         issubclass(d_int, SupportsKwargs)  # type: ignore[arg-type]

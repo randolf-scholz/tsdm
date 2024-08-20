@@ -22,19 +22,19 @@ def test_lazydict_init() -> None:
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing.")
 
-    def no_input():
+    def no_input():  # type: ignore[no-untyped-def]
         return 0
 
-    def single_input(x):
+    def single_input(x):  # type: ignore[no-untyped-def]
         return x
 
-    def positional_only(a, /, b, c=1, *args):
+    def positional_only(a, /, b, c=1, *args):  # type: ignore[no-untyped-def]
         return a + b + c + sum(args)
 
-    def keyword_only(*, d, e=2, **kwargs):
+    def keyword_only(*, d, e=2, **kwargs):  # type: ignore[no-untyped-def]
         return d + e + sum(kwargs.values())
 
-    def generic(a, /, b, c=1, *args, d, e=2, **kwargs):
+    def generic(a, /, b, c=1, *args, d, e=2, **kwargs):  # type: ignore[no-untyped-def]
         return a + b + c + sum(args) + d + e + sum(kwargs.values())
 
     example_dict = {

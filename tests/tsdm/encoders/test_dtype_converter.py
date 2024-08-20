@@ -9,7 +9,7 @@ from tsdm.encoders.dataframe import DTypeConverter
 
 
 @pytest.fixture
-def frame():
+def df() -> pd.DataFrame:
     return pd.DataFrame({
         "A": pd.to_timedelta(["1 days", "2 days", "3 days"]),
         "B": [1, 2, 3],
@@ -24,19 +24,19 @@ def frame():
 
 
 # TODO: consider trying hypothesis
-def test_dtype_converter(frame):
+def test_dtype_converter(df: pd.DataFrame) -> None:
     encoder = DTypeConverter({
         "A": "duration[ns][pyarrow]",
         "B": "Int64",
         ...: "Float64",
     })
-    assert frame.dtypes[0] == np.dtype("timedelta64[ns]")
-    encoder.fit(frame)
-    encoded = encoder.encode(frame)
+    assert df.dtypes[0] == np.dtype("timedelta64[ns]")
+    encoder.fit(df)
+    encoded = encoder.encode(df)
     assert encoded.dtypes[0] == "duration[ns][pyarrow]"
     assert encoded.dtypes[1] == "Int64"
     assert encoded.dtypes[2] == "Float64"
     assert encoded.dtypes[3] == "Float64"
-    assert frame.dtypes[0] == np.dtype("timedelta64[ns]")
+    assert df.dtypes[0] == np.dtype("timedelta64[ns]")
     decoded = encoder.decode(encoded)
-    assert_frame_equal(frame, decoded)
+    assert_frame_equal(df, decoded)

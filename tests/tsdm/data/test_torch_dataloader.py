@@ -1,5 +1,7 @@
 r"""Test that Dataloader works for non-Dataset objects."""
 
+from collections.abc import Iterator
+
 from torch.utils.data import DataLoader
 
 
@@ -9,10 +11,10 @@ def test_dataloader() -> None:
             return -item
 
     class Sampler:
-        def __iter__(self):
+        def __iter__(self) -> Iterator[int]:
             return iter(range(10))
 
-        def __len__(self):
+        def __len__(self) -> int:
             return 10
 
     dataset = Dataset()

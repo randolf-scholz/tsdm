@@ -1,7 +1,7 @@
 r"""Test dataset protocols."""
 
 import logging
-from collections.abc import Mapping
+from collections.abc import KeysView, Mapping
 
 import pandas as pd
 import pytest
@@ -43,7 +43,7 @@ def test_pandas_mapping(name: str) -> None:
     assert_protocol(dataset, Map)
 
 
-def test_map_dataset_mapping():
+def test_map_dataset_mapping() -> None:
     data: Mapping[str, int] = {"a": 1, "b": 2, "c": 3}
     assert isinstance(data, Mapping)
     assert isinstance(data, MapDataset)
@@ -52,16 +52,16 @@ def test_map_dataset_mapping():
     assert isinstance(dataset, MapDataset)
 
     class BareMapDataset:
-        def __init__(self):
+        def __init__(self) -> None:
             self.data = {"a": 1, "b": 2, "c": 3}
 
-        def __len__(self):
+        def __len__(self) -> int:
             return len(self.data)
 
-        def keys(self):
+        def keys(self) -> KeysView[str]:
             return self.data.keys()
 
-        def __getitem__(self, key):
+        def __getitem__(self, key: str) -> int:
             return self.data[key]
 
     dataset2 = BareMapDataset()

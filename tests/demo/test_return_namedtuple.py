@@ -28,14 +28,14 @@ def get_exit_point_names(func: Callable) -> list[tuple[str, ...]]:
     return var_names
 
 
-def decorator(deco):
+def decorator[Fn: Callable](deco: Fn) -> Fn:
     r"""Decorator Factory."""
 
     @wraps(deco)
-    def __decorator(__func__=None, **kwargs):
+    def __decorator(__func__=None, *args, **kwargs):  # type: ignore[no-untyped-def]
         if __func__ is None:
-            return partial(deco, **kwargs)
-        return deco(__func__, **kwargs)
+            return partial(deco, *args, **kwargs)
+        return deco(__func__, *args, **kwargs)
 
     return __decorator
 
@@ -85,7 +85,7 @@ def return_namedtuple(
     return _wrapper
 
 
-def test_namedtuple_decorator():
+def test_namedtuple_decorator() -> None:
     @return_namedtuple
     def foo(x: int, y: int) -> tuple[int, int]:
         q, r = divmod(x, y)

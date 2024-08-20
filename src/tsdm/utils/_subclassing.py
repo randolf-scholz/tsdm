@@ -56,6 +56,6 @@ class PatchedABCMeta(ABCMeta):
         if abstract_attributes:
             raise NotImplementedError(
                 f"Can't instantiate abstract class {cls.__name__} with"
-                f" abstract attributes: f{', '.join(abstract_attributes)}"
+                f" abstract attributes: f{", ".join(abstract_attributes)}"
             )
         return instance

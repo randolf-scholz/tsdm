@@ -8,7 +8,7 @@ from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
 
 
-def test_insilico_task(SplitID=(0, "train")):
+def test_insilico_task(SplitID: tuple[int, str] = (0, "train")) -> None:
     r"""Test the TimeSeriesDatasetTask."""
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)

@@ -16,7 +16,7 @@ class Sample(NamedTuple):
     targets: Tensor
 
 
-def test_jit_namedtuple():
+def test_jit_namedtuple() -> None:
     r"""Test torch.jit compatibliity with namedtuple."""
 
     class Foo(nn.Module):

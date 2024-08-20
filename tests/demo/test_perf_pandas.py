@@ -12,26 +12,26 @@ df_numpy = pd.DataFrame(data, dtype=bool)
 df_arrow = df_numpy.astype("bool[pyarrow]")
 
 
-def test_numpy_columns():
+def test_numpy_columns() -> None:
     for _ in range(1000):
         df_numpy.all(axis="columns")
 
 
-def test_numpy_rows():
+def test_numpy_rows() -> None:
     for _ in range(1000):
         df_numpy.all(axis="index")
 
 
-def test_arrow_columns():
+def test_arrow_columns() -> None:
     for _ in range(1000):
         df_arrow.all(axis="columns")
 
 
-def test_arrow_rows():
+def test_arrow_rows() -> None:
     for _ in range(1000):
         df_arrow.all(axis="index")
 
 
-def test_arrow_rows_manual():
+def test_arrow_rows_manual() -> None:
     for _ in range(1000):
         reduce(operator.__and__, (s for _, s in df_arrow.items()))

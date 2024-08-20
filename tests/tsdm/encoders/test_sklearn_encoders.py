@@ -77,7 +77,7 @@ def test_left_inverse(name: str) -> None:
     assert (x == x_hat).all() or np.allclose(x, x_hat)
 
 
-def test_shared_attrs():
+def test_shared_attrs() -> None:
     defined_attrs = get_protocol_members(SklearnEncoder)
     assert not any(attr.startswith("_") for attr in defined_attrs)
 

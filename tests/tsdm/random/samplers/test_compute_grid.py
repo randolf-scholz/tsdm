@@ -21,7 +21,10 @@ from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 __logger__ = logging.getLogger(__name__)
 
 
-def validate_grid_results(*, tmin, tmax, tdelta, offset):
+# FIXME: Use PEP 696 with python 3.13
+def validate_grid_results[TD: TimeDelta](
+    *, tmin: DateTime[TD], tmax: DateTime[TD], tdelta: TD, offset: DateTime[TD]
+) -> None:
     result = compute_grid(tmin, tmax, tdelta, offset=offset)
     kmin, kmax = result[0], result[-1]
 
