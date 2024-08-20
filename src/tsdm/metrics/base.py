@@ -50,7 +50,7 @@ class BaseMetric(nn.Module, Metric):
         *,
         axis: int | tuple[int, ...] = -1,
         normalize: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         self.normalize = normalize
         self.axis = (axis,) if isinstance(axis, int) else tuple(axis)

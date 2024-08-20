@@ -84,9 +84,9 @@ def test_time_loss_normalization(
     print(shape, time_axes, channel_axes)
     loss_func = TimeSeriesMSE(
         time_axis=time_axes,
-        channel_axis=channel_axes,
+        axis=channel_axes,
         normalize_time=True,
-        normalize_channels=False,
+        normalize=False,
     )
 
     result = loss_func(targets, predictions)

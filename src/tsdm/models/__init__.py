@@ -23,6 +23,7 @@ __all__ = [
     "SetFuncTS",
     "GroupedSetFuncTS",
 ]
+
 from tsdm.models import activations, generic, pretrained
 from tsdm.models.base import (
     BaseModel,
@@ -33,8 +34,7 @@ from tsdm.models.base import (
 from tsdm.models.ode_rnn import ODE_RNN
 from tsdm.models.set_function_for_timeseries import GroupedSetFuncTS, SetFuncTS
 
-MODELS: dict[str, type[Model]] = {
+MODELS: dict[str, type[BaseModel]] = {
     "ODE_RNN": ODE_RNN,
-    "SetFuncTS": SetFuncTS,
 }
 r"""Dictionary of all available models."""

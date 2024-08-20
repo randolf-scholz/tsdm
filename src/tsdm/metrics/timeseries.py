@@ -30,6 +30,7 @@ from typing import Final, Optional, Protocol, runtime_checkable
 import torch
 from torch import Tensor, jit, nn
 
+from tsdm.metrics.base import BaseMetric
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.types.aliases import Axis
 from tsdm.utils.decorators import autojit
@@ -56,7 +57,7 @@ class TimeSeriesLoss(Protocol):
         ...
 
 
-class TimeSeriesBaseLoss(nn.Module):
+class TimeSeriesBaseLoss(BaseMetric):
     r"""Base class for a time-series function.
 
     Because the loss is computed over a sequence of variable length, the default is to normalize
@@ -86,19 +87,17 @@ class TimeSeriesBaseLoss(nn.Module):
         /,
         *,
         time_axis: int | tuple[int, ...] = -2,
-        channel_axis: int | tuple[int, ...] = -1,
+        axis: int | tuple[int, ...] = -1,
         normalize_time: bool = True,
-        normalize_channels: bool = False,
-    ):
-        super().__init__()
+        normalize: bool = False,
+    ) -> None:
+        super().__init__(axis=axis, normalize=normalize)
         self.normalize_time = bool(normalize_time)
-        self.normalize_channels = bool(normalize_channels)
+        self.normalize_channels = bool(normalize)
         self.time_axis = (
             (time_axis,) if isinstance(time_axis, int) else tuple(time_axis)
         )
-        self.channel_axis = (
-            (channel_axis,) if isinstance(channel_axis, int) else tuple(channel_axis)
-        )
+        self.channel_axis = (axis,) if isinstance(axis, int) else tuple(axis)
         self.combined_axis = self.time_axis + self.channel_axis
 
         if not set(self.time_axis).isdisjoint(self.channel_axis):
@@ -145,8 +144,8 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
         /,
         *,
         time_axis: Axis = None,
-        channel_axis: Axis = None,
-        normalize_channels: bool = False,
+        axis: Axis = None,
+        normalize: bool = False,
         normalize_time: bool = True,
         learnable: bool = False,
     ) -> None:
@@ -156,14 +155,12 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
             raise ValueError(
                 "Weights must be non-negative and at least one must be positive."
             )
-        channel_axis = (
-            tuple(range(-w.ndim, 0)) if channel_axis is None else channel_axis
-        )
+        axis = tuple(range(-w.ndim, 0)) if axis is None else axis
         time_axis = (-w.ndim - 1,) if time_axis is None else time_axis
         super().__init__(
             time_axis=time_axis,
-            channel_axis=channel_axis,
-            normalize_channels=normalize_channels,
+            axis=axis,
+            normalize=normalize,
             normalize_time=normalize_time,
         )
 

@@ -26,7 +26,7 @@ from typing_extensions import deprecated
 from tsdm.data import MappingDataset
 from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiBenchmark
-from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
+from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils import timedelta
 from tsdm.utils.decorators import pprint_repr
@@ -312,7 +312,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         # construct the sampler
         subsamplers = {}
         for idx in mapped_ds:
-            subsampler = IntervalSampler(
+            subsampler = SlidingSampler(
                 xmin=self.final_product_times.loc[idx, "t_min"],
                 xmax=self.final_product_times.loc[idx, "t_max"],
                 deltax=lambda k: k * self.delta_t,

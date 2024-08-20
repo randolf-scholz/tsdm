@@ -60,6 +60,7 @@ __all__ = [
     "TORCH_LOSSES_FUNCTIONAL",
     "TORCH_SPECIAL_LOSSES",
     "TORCH_SPECIAL_LOSSES_FUNCTIONAL",
+    "TIMESERIES_LOSSES",
     # ABCs & Protocols
     "Metric",
     "BaseMetric",
@@ -86,8 +87,6 @@ __all__ = [
     "q_quantile",
     "q_quantile_loss",
     "rmse",
-    # utils
-    "get_metric",
 ]
 
 
@@ -123,7 +122,7 @@ FUNCTIONAL_LOSSES: dict[str, Metric] = {
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
 
-MODULAR_LOSSES: dict[str, type[Metric]] = {
+MODULAR_LOSSES: dict[str, type[BaseMetric]] = {
     "MAE"             : MAE,
     "MSE"             : MSE,
     "ND"              : ND,
@@ -139,22 +138,18 @@ MODULAR_LOSSES: dict[str, type[Metric]] = {
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
+TIMESERIES_LOSSES: dict[str, type[TimeSeriesBaseLoss]] = {
+    "ND"              : ND,
+    "NRMSE"           : NRMSE,
+    "Q_Quantile"      : Q_Quantile,
+    "Q_Quantile_Loss" : Q_Quantile_Loss,
+    "TimeSeriesMSE"   : TimeSeriesMSE,
+    "TimeSeriesWMSE"  : TimeSeriesWMSE,
+}  # fmt: skip
+r"""Dictionary of all available time-series losses."""
 
 LOSSES: dict[str, Metric | type[Metric]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
 }  # fmt: skip
 r"""Dictionary of all available losses."""
-
-
-def get_metric(metric: object, /) -> Metric:
-    r"""Get the metric from the given object."""
-    match metric:
-        case type() as cls:
-            return get_metric(cls())
-        case str(name):
-            return get_metric(LOSSES[name])
-        case Metric() as m:
-            return m
-        case _:
-            raise TypeError(f"Invalid metric: {metric!r}")

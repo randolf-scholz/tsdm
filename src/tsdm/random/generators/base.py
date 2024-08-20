@@ -15,8 +15,8 @@ __all__ = [
     "IVP_Solver",
     "ODE",
     # Classes
-    "ScipyIVPSolver",
     "IVP_GeneratorBase",
+    "ScipyIVPSolver",
     # Functions
     "solve_ivp",
 ]

@@ -36,6 +36,6 @@ SAMPLERS: dict[str, type[Sampler]] = {
     "IntervalSampler"      : IntervalSampler,
     "RandomSampler"        : RandomSampler,
     "SequenceSampler"      : SequenceSampler,
-    "SlidingWindowSampler" : SlidingSampler,
+    "SlidingSampler"       : SlidingSampler,
 }  # fmt: skip
 r"""Dictionary of all available samplers."""

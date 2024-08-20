@@ -12,6 +12,10 @@ __all__ = [
     # ABCs & Protocols
     "IVP_Generator",
     "IVP_Solver",
+    "ODE",
+    "FrozenIVPSolver",
+    "ScipyIVPSolver",
+    "IVP_GeneratorBase",
     # Classes
     "BouncingBall",
     "DampedPendulum",
@@ -23,8 +27,12 @@ __all__ = [
 ]
 
 from tsdm.random.generators.base import (
+    ODE,
+    FrozenIVPSolver,
     IVP_Generator,
+    IVP_GeneratorBase,
     IVP_Solver,
+    ScipyIVPSolver,
     solve_ivp,
 )
 from tsdm.random.generators.bouncing_ball import BouncingBall
