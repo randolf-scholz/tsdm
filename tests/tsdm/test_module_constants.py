@@ -5,6 +5,7 @@ from inspect import isabstract
 from types import ModuleType
 from typing import NamedTuple
 
+import pytest
 from typing_extensions import is_protocol
 
 import tsdm
@@ -30,7 +31,14 @@ from tsdm.metrics import (
     TimeSeriesLoss,
 )
 from tsdm.models import MODELS, BaseModel, ForecastingModel
-from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS, LRScheduler, Optimizer
+from tsdm.optimizers import (
+    LR_SCHEDULERS,
+    OPTIMIZERS,
+    LRScheduler,
+    Optimizer,
+    TorchLRScheduler,
+    TorchOptimizer,
+)
 from tsdm.random.generators import GENERATORS, IVP_Generator, IVP_GeneratorBase
 from tsdm.random.samplers import SAMPLERS, BaseSampler, Sampler
 from tsdm.utils.decorators import (
@@ -56,11 +64,11 @@ CASES: dict[str, Case] = {
     "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS            ),
     "generators"     : Case(tsdm.random.generators , IVP_Generator     , IVP_GeneratorBase  , GENERATORS          ),
     "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
-    "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , LRScheduler        , LR_SCHEDULERS       ),
+    "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
     "metrics     "   : Case(tsdm.metrics           , Metric            , BaseMetric         , MODULAR_LOSSES      ),
     "metrics_time"   : Case(tsdm.metrics           , TimeSeriesLoss    , TimeSeriesBaseLoss , TIMESERIES_LOSSES   ),
     "models"         : Case(tsdm.models            , ForecastingModel  , BaseModel          , MODELS              ),
-    "optimizers"     : Case(tsdm.optimizers        , Optimizer         , Optimizer          , OPTIMIZERS          ),
+    "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
     "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS            ),
     "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS            ),
     "decorators_cls" : Case(tsdm.utils.decorators  , ClassDecorator    , None               , CLASS_DECORATORS    ),
@@ -70,7 +78,7 @@ CASES: dict[str, Case] = {
 r"""Dictionary of all available cases."""
 
 
-def pytest_generate_tests(metafunc):
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     # REF: https://stackoverflow.com/q/40818146
     # FIXME: https://github.com/pytest-dev/pytest/issues/349
     # FIXME: https://github.com/pytest-dev/pytest/issues/4050
@@ -116,7 +124,7 @@ def test_issubclass(case_name: str, item_name: str) -> None:
     obj = case.elements[item_name]
 
     if case.base_class is not None:
-        assert issubclass(obj, case.base_class)  # pyright: ignore[reportArgumentType]
+        assert issubclass(obj, case.base_class)  # type: ignore[arg-type]
 
 
 def test_dict_complete(case_name: str) -> None:
@@ -126,19 +134,19 @@ def test_dict_complete(case_name: str) -> None:
     match case.base_class:
         case None:  # skip for function-dicts
             return
-        case cls:
-            names: set[str] = {
-                name
-                for name, obj in vars(case.module).items()
+        case base_class:
+            missing: dict[str, type] = {
+                name: cls
+                for name, cls in vars(case.module).items()
                 if (
-                    not is_protocol(obj)
-                    and not isabstract(obj)
-                    and isinstance(obj, type)
-                    and issubclass(obj, cls)
+                    not is_protocol(cls)
+                    and not isabstract(cls)
+                    and isinstance(cls, type)
+                    and issubclass(cls, base_class)
+                    and cls is not base_class
                 )
+                and cls not in case.elements.values()
             }
-            excluded = {cls.__name__}
-            typ = cls.__name__
 
-    if missing := names - (case.elements.keys() | excluded):
-        raise AssertionError(f"Missing {typ}: {missing}")
+    if missing:
+        raise AssertionError(f"Missing {case.protocol.__name__}: {sorted(missing)}")

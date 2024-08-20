@@ -7,13 +7,17 @@ __all__ = [
     # ABCs & Protocols
     "LRScheduler",
     "Optimizer",
+    "TorchLRScheduler",
+    "TorchOptimizer",
 ]
 
 from torch import optim
-from torch.optim import Optimizer, lr_scheduler
-from torch.optim.lr_scheduler import LRScheduler
+from torch.optim import Optimizer as TorchOptimizer, lr_scheduler
+from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 
-OPTIMIZERS: dict[str, type[Optimizer]] = {
+from tsdm.optimizers.base import LRScheduler, Optimizer
+
+OPTIMIZERS: dict[str, type[TorchOptimizer]] = {
     "ASGD"       : optim.ASGD,
     "Adadelta"   : optim.Adadelta,
     "Adagrad"    : optim.Adagrad,
@@ -28,8 +32,7 @@ OPTIMIZERS: dict[str, type[Optimizer]] = {
 }  # fmt: skip
 r"""Dictionary of all available optimizers."""
 
-
-LR_SCHEDULERS: dict[str, type[LRScheduler]] = {
+LR_SCHEDULERS: dict[str, type[TorchLRScheduler]] = {
     "CosineAnnealingLR"           : lr_scheduler.CosineAnnealingLR,
     "CosineAnnealingWarmRestarts" : lr_scheduler.CosineAnnealingWarmRestarts,
     "CyclicLR"                    : lr_scheduler.CyclicLR,
