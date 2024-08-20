@@ -65,25 +65,25 @@ repos:
     rev: v0.3.1
     hooks:
       - id: absolufy-imports
-        files: (^src/|^tests/)
+        files: '^src/|^tests/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.1
     hooks:
       - id: ruff
-        files: (^src/|^tests/)
+        files: '^src/|^tests/'
       - id: ruff
         name: ruff-isort
-        files: (^src/|^tests/)
+        files: '^src/|^tests/'
         args: ["--select", "I", "--fix"]
       - id: ruff-format
-        files: (^src/|^tests/)
+        files: '^src/|^tests/'
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.4
     hooks:
       - id: nbstripout-fast
-        files: ^dev/
+        files: '^dev/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.3.5.9
@@ -155,8 +155,7 @@ repos:
       language: system
       require_serial: true
       types_or: [python, pyi]
-#      files: (^src/|^tests/)
-      files: '^src/'
+      files: '^src/|^tests/'
       exclude: '/tasks/.*'
       entry: mypy
       args:
@@ -182,5 +181,5 @@ repos:
                   exit 1;
               fi
           ' --
-        files: (^src/|^tests/)
+        files: '^src/|^tests/'
         exclude: '/tasks/.*'
