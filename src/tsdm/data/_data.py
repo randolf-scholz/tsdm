@@ -67,7 +67,6 @@ class BoundaryInformation(TypedDict):
     upper_bound: float | None
     lower_inclusive: bool
     upper_inclusive: bool
-    dtype: NotRequired[str]
 
 
 class MultipleBoundaryInformation(TypedDict):
@@ -152,14 +151,14 @@ def strip_whitespace[T](table: T, /, *cols: str) -> T:
 
 # region overloads ---------------------------------------------------------------------
 @overload
-def detect_outliers(
-    obj: Series,
-    description: Mapping[str, None | float | bool],
-    /,
-) -> Series: ...
+def detect_outliers(s: Series, limits: BoundaryInformation, /) -> Series: ...
 @overload
 def detect_outliers(
-    obj: Series,
+    df: DataFrame, limits: DataFrame | Mapping[str, BoundaryInformation], /
+) -> DataFrame: ...
+@overload
+def detect_outliers(
+    s: Series,
     /,
     *,
     lower_bound: float | None,
@@ -168,14 +167,8 @@ def detect_outliers(
     upper_inclusive: bool,
 ) -> Series: ...
 @overload
-def detect_outliers(
-    obj: DataFrame,
-    description: Mapping[str, Mapping[Any, None | float | bool]],
-    /,
-) -> DataFrame: ...
-@overload
 def detect_outliers[Key](
-    obj: DataFrame,
+    df: DataFrame,
     /,
     *,
     lower_bound: Mapping[Key, float | None],
@@ -186,7 +179,7 @@ def detect_outliers[Key](
 # endregion overloads ------------------------------------------------------------------
 def detect_outliers[T: Series | DataFrame](
     obj: T,
-    description: Mapping = NotImplemented,
+    limits: Any = NotImplemented,
     /,
     *,
     lower_bound: float | None | Mapping[Any, float | None] = NotImplemented,
@@ -195,28 +188,54 @@ def detect_outliers[T: Series | DataFrame](
     upper_inclusive: bool | Mapping[Any, bool] = NotImplemented,
 ) -> T:
     r"""Detect outliers in a Series or DataFrame, given boundary values."""
-    options = {
+    lims = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
+    undef = {key: (lims[key] is NotImplemented) for key in lims}
 
-    if description is not NotImplemented:
-        if any(val is not NotImplemented for val in options.values()):
-            raise AssertionError("Cannot specify both description and boundary values.")
-        options = {key: description[key] for key in options}
+    # check that either limits or kwargs are provided
+    if limits is NotImplemented:
+        if any(undef.values()):
+            raise AssertionError(f"Missing boundary values: {undef}")
+        opts = lims
+    elif not all(undef.values()):
+        raise AssertionError(
+            "Limits specified both as positional and keyword arguments."
+        )
+    else:
+        opts = {key: limits[key] for key in lims}
 
     match obj:
         case Series() as s:
-            return detect_outliers_series(s, **options)
+            return detect_outliers_series(s, **opts)  # type: ignore[arg-type]
         case DataFrame() as df:
-            return detect_outliers_dataframe(df, **options)
+            return detect_outliers_dataframe(df, **opts)  # type: ignore[arg-type]
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
 
 
 # region overloads ---------------------------------------------------------------------
+@overload
+def remove_outliers(
+    s: Series,
+    limits: BoundaryInformation,
+    /,
+    *,
+    drop: bool = ...,
+    inplace: bool = ...,
+) -> Series: ...
+@overload
+def remove_outliers(
+    df: DataFrame,
+    limits: DataFrame | Mapping[str, BoundaryInformation],
+    /,
+    *,
+    drop: bool = ...,
+    inplace: bool = ...,
+) -> DataFrame: ...
 @overload
 def remove_outliers(
     s: Series,
@@ -229,15 +248,6 @@ def remove_outliers(
     drop: bool = ...,
     inplace: bool = ...,
 ) -> Series: ...
-@overload
-def remove_outliers[T: Series | DataFrame](
-    df: T,
-    description: BoundaryInformation | DataFrame,
-    /,
-    *,
-    drop: bool = ...,
-    inplace: bool = ...,
-) -> T: ...
 @overload
 def remove_outliers[Key](
     df: DataFrame,
@@ -253,7 +263,7 @@ def remove_outliers[Key](
 # endregion overloads ------------------------------------------------------------------
 def remove_outliers[T: Series | DataFrame](
     obj: T,
-    description: Mapping = NotImplemented,
+    limits: Any = NotImplemented,
     /,
     *,
     lower_bound: float | None | Mapping[Any, float | None] = NotImplemented,
@@ -264,25 +274,33 @@ def remove_outliers[T: Series | DataFrame](
     inplace: bool = False,
 ) -> T:
     r"""Remove outliers from a DataFrame, given boundary values."""
-    options = {
+    lims = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
+    undef = {key: (lims[key] is NotImplemented) for key in lims}
 
-    if description is not NotImplemented:
-        if any(val is not NotImplemented for val in options.values()):
-            raise AssertionError("Cannot specify both description and boundary values.")
-        options = {key: description[key] for key in options}
+    # check that either limits or kwargs are provided
+    if limits is NotImplemented:
+        if any(undef.values()):
+            raise AssertionError(f"Missing boundary values: {undef}")
+        opts = lims
+    elif not all(undef.values()):
+        raise AssertionError(
+            "Limits specified both as positional and keyword arguments."
+        )
+    else:
+        opts = {key: limits[key] for key in lims}
 
-    options |= {"drop": drop, "inplace": inplace}
+    opts = {"drop": drop, "inplace": inplace} | opts
 
     match obj:
         case Series() as s:
-            return remove_outliers_series(s, **options)
+            return remove_outliers_series(s, **opts)  # type: ignore[arg-type]
         case DataFrame() as df:
-            return remove_outliers_dataframe(df, **options)
+            return remove_outliers_dataframe(df, **opts)  # type: ignore[arg-type]
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
