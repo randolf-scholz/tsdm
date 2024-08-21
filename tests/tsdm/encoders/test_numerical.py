@@ -21,7 +21,8 @@ from tsdm.encoders.numerical import (
     reduce_axes,
 )
 from tsdm.types.aliases import Axis
-from tsdm.types.protocols import NumericalTensor, OrderedScalar
+from tsdm.types.protocols import NumericalTensor
+from tsdm.types.scalars import OrderedScalar
 
 __logger__ = logging.getLogger(__name__)
 

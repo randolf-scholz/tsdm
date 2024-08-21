@@ -54,7 +54,7 @@ from tsdm.data.datasets import (
     get_last_sample,
 )
 from tsdm.types.protocols import Array
-from tsdm.types.time import DateTime, TimeDelta
+from tsdm.types.scalars import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 

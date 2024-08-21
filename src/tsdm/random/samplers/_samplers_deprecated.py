@@ -14,7 +14,7 @@ from typing_extensions import deprecated
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
-from tsdm.types.time import DateTime, TimeDelta
+from tsdm.types.scalars import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 

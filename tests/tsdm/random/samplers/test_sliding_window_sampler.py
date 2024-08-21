@@ -15,7 +15,7 @@ from pandas import Series
 
 from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingSampler
-from tsdm.types.time import DateTime
+from tsdm.types.scalars import DateTime
 from tsdm.utils import flatten_dict
 
 __logger__ = logging.getLogger(__name__)

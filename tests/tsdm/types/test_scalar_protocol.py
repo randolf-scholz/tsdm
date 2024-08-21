@@ -1,4 +1,4 @@
-r"""Tests scalar types."""
+r"""Tests for `tsdm.types.scalars`."""
 
 import datetime as dt
 
@@ -8,7 +8,7 @@ import pytest
 import torch as pt
 from typing_extensions import get_protocol_members
 
-from tsdm.types.protocols import AdditiveScalar, BooleanScalar, OrderedScalar
+from tsdm.types.scalars import AdditiveScalar, BooleanScalar, OrderedScalar
 
 BASE_SCALARS: dict[object, object] = {
     None         : None,
@@ -61,6 +61,13 @@ ADDITIVE_SCALAR_TYPES: dict[str, AdditiveScalar] = {
     "py_float"     : 1.0,
     "py_int"       : 1,
     "py_timedelta" : dt.timedelta(days=1),
+}  # fmt: skip
+
+STRING_SCALARS = {
+    "py_string" : "1",
+    "py_bytes"  : b"1",
+    "np_string" : np.str_("1"),
+    "np_bytes"  : np.bytes_(b"1"),
 }  # fmt: skip
 
 

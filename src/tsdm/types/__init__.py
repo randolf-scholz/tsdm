@@ -6,7 +6,7 @@ __all__ = [
     "callback_protocols",
     "dtypes",
     "protocols",
-    "time",
+    "scalars",
 ]
 
-from tsdm.types import aliases, callback_protocols, dtypes, protocols, time
+from tsdm.types import aliases, callback_protocols, dtypes, protocols, scalars

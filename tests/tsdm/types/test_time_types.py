@@ -10,8 +10,7 @@ import pytest
 from numpy.typing import NDArray
 from typing_extensions import get_protocol_members
 
-from tsdm.types.protocols import BooleanScalar
-from tsdm.types.time import DateTime, TimeDelta
+from tsdm.types.scalars import BooleanScalar, DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 ISO_DATE = "2021-01-01"

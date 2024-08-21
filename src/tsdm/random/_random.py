@@ -14,7 +14,7 @@ from numpy.typing import DTypeLike, NDArray
 from pandas import date_range, timedelta_range
 
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
-from tsdm.types.time import DateTime, TimeDelta
+from tsdm.types.scalars import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 

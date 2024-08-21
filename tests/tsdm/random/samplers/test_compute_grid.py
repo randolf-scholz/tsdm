@@ -15,7 +15,7 @@ from numpy import (
 )
 
 from tsdm.random.samplers import compute_grid
-from tsdm.types.time import DateTime, TimeDelta
+from tsdm.types.scalars import DateTime, TimeDelta
 from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)

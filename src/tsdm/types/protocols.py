@@ -22,11 +22,6 @@ __all__ = [
     "SupportsNdim",
     "SupportsShape",
     # Scalars
-    "BaseScalar",
-    "BooleanScalar",
-    "OrderedScalar",
-    "AdditiveScalar",
-    "FloatingScalar",
     # Arrays
     "ArrayKind",
     "MutableArray",
@@ -99,6 +94,7 @@ from numpy.typing import NDArray
 from typing_extensions import TypeIs
 
 from tsdm.types.aliases import MultiIndexer
+from tsdm.types.scalars import BaseScalar, BooleanScalar
 
 # region io protocols ------------------------------------------------------------------
 
@@ -207,101 +203,6 @@ class Hash(Protocol):
 
 
 # region container protocols -----------------------------------------------------------
-@runtime_checkable
-class BaseScalar(Protocol):
-    r"""Protocol for scalars."""
-
-    # NOTE: We need to include __hash__ here, otherwise there are problems
-
-    def __hash__(self) -> int: ...
-    def __eq__(self, other: object, /) -> "BooleanScalar": ...  # type: ignore[override]
-    def __ne__(self, other: object, /) -> "BooleanScalar": ...  # type: ignore[override]
-
-
-@runtime_checkable
-class OrderedScalar(BaseScalar, Protocol):
-    r"""Protocol for ordered scalars.
-
-    Examples:
-        - `bool`, `int`, `float`, `datetime`, `timedelta`
-
-    Counter-Examples:
-        - `complex` (not ordered)
-    """
-
-    def __ge__(self, other: Self, /) -> "BooleanScalar": ...
-    def __gt__(self, other: Self, /) -> "BooleanScalar": ...
-    def __le__(self, other: Self, /) -> "BooleanScalar": ...
-    def __lt__(self, other: Self, /) -> "BooleanScalar": ...
-
-
-@runtime_checkable
-class BooleanScalar(OrderedScalar, Protocol):
-    r"""Protocol for boolean scalars."""
-
-    # unary operations
-    # NOTE: __invert__ is not included, as ~True = -2, which is not a boolean.
-    # def __invert__(self) -> Self: ...
-    def __bool__(self) -> bool: ...
-
-    # binary operations
-    # and `&`
-    def __and__(self, other: Self, /) -> Self: ...
-    def __rand__(self, other: Self, /) -> Self: ...
-    # or `|`
-    def __or__(self, other: Self, /) -> Self: ...
-    def __ror__(self, other: Self, /) -> Self: ...
-    # xor `^`
-    def __xor__(self, other: Self, /) -> Self: ...
-    def __rxor__(self, other: Self, /) -> Self: ...
-
-
-@runtime_checkable
-class FloatingScalar(OrderedScalar, Protocol):
-    r"""Protocol for floating point scalars."""
-
-    # unary operations
-    def __abs__(self) -> Self: ...
-    def __neg__(self) -> Self: ...
-    def __pos__(self) -> Self: ...
-    def __float__(self) -> float: ...
-
-    # binary operations
-    def __add__(self, other: Self, /) -> Self: ...
-    def __radd__(self, other: Self, /) -> Self: ...
-    def __sub__(self, other: Self, /) -> Self: ...
-    def __rsub__(self, other: Self, /) -> Self: ...
-    def __mul__(self, other: Self, /) -> Self: ...
-    def __rmul__(self, other: Self, /) -> Self: ...
-    def __truediv__(self, other: Self, /) -> Self: ...
-    def __rtruediv__(self, other: Self, /) -> Self: ...
-    def __pow__(self, exponent: Self | float, /) -> Self: ...
-    def __rpow__(self, base: Self | float, /) -> Self: ...
-
-
-@runtime_checkable
-class AdditiveScalar(BaseScalar, Protocol):
-    r"""Protocol for scalars that support addition and subtraction.
-
-    Examples:
-        - `int`, `float`, `complex`, `timedelta`
-
-    Counter-Examples:
-        - `bool` (does not support __pos__ and __neg__)
-        - `datetime.datetime` (does not support self-addition)
-    """
-
-    # unary operations
-    # NOTE: __abs__ disabled due to complex numbers
-    # def __abs__(self) -> Self: ...
-    def __neg__(self) -> Self: ...
-    def __pos__(self) -> Self: ...
-
-    # binary operations
-    def __add__(self, other: Self, /) -> Self: ...
-    def __radd__(self, other: Self, /) -> Self: ...
-    def __sub__(self, other: Self, /) -> Self: ...
-    def __rsub__(self, other: Self, /) -> Self: ...
 
 
 @runtime_checkable
