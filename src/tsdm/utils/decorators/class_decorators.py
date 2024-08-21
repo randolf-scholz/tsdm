@@ -33,16 +33,16 @@ from tsdm.utils.pprint import (
 
 # region workaround mypy bug -----------------------------------------------------------
 # FIXME: https://github.com/python/mypy/issues/17191
-pprint_sequence: PolymorphicClassDecorator[Any]  # pyright: ignore
-pprint_mapping: PolymorphicClassDecorator[Any]  # pyright: ignore
-pprint_set: PolymorphicClassDecorator[Any]  # pyright: ignore
-pprint_dataclass: PolymorphicClassDecorator[Any]  # pyright: ignore
-pprint_namedtuple: PolymorphicClassDecorator[Any]  # pyright: ignore
-pprint_repr: PolymorphicClassDecorator[Any]  # pyright: ignore
+pprint_sequence: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
+pprint_mapping: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
+pprint_set: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
+pprint_dataclass: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
+pprint_namedtuple: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
+pprint_repr: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
 # endregion workaround mypy bug --------------------------------------------------------
 
 
-@decorator
+@decorator  # type: ignore[no-redef]
 def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     # def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
     r"""Add appropriate __repr__ to class."""
@@ -52,7 +52,7 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     return cls
 
 
-@decorator
+@decorator  # type: ignore[no-redef]
 def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
     r"""Add appropriate __repr__ to class."""
@@ -62,7 +62,7 @@ def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     return cls
 
 
-@decorator
+@decorator  # type: ignore[no-redef]
 def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     # def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
     r"""Add appropriate __repr__ to class."""
@@ -74,7 +74,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
 
 # NOTE: Less specific than needed due to
 #   https://github.com/microsoft/pyright/issues/8681#issuecomment-2271979444
-@decorator
+@decorator  # type: ignore[no-redef]
 def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
     r"""Add appropriate __repr__ to class."""
@@ -84,7 +84,7 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     return cls  # type: ignore[return-value]
 
 
-@decorator
+@decorator  # type: ignore[no-redef]
 def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
     r"""Add appropriate __repr__ to class."""
@@ -94,7 +94,7 @@ def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     return cls
 
 
-@decorator
+@decorator  # type: ignore[no-redef]
 def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
     # def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""

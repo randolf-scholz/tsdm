@@ -2,15 +2,50 @@ r"""Test namedtuple decorator."""
 
 import ast
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable as Fn, Sequence
 from functools import partial, wraps
 from inspect import getsource
-from typing import NamedTuple, Optional, ParamSpec
-
-P = ParamSpec("P")
+from typing import Any, NamedTuple, Optional, Protocol, overload
 
 
-def get_exit_point_names(func: Callable) -> list[tuple[str, ...]]:
+class Decorator[T_in, T_out, **P](Protocol):
+    r"""Protocol for decorators."""
+
+    def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
+
+
+class ParametrizedDecorator[T_in, T_out, **P](Protocol):
+    r"""Protocol for parametrized decorators."""
+
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
+    @overload  # @decorator / decorator(obj, *args, **kwargs)
+    def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
+
+
+class PolymorphicDecorator[**P](Protocol):
+    r"""Polymorphic Decorator Protocol."""
+
+    @overload  # @decorator
+    def __call__[T](self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__[T](self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[T], T]: ...
+
+
+def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X, Y, P]:
+    r"""Decorator Factory."""
+    OBJ: Any = object()
+
+    @wraps(deco)
+    def _deco(obj: X = OBJ, /, *args: P.args, **kwargs: P.kwargs) -> Y | Fn[[X], Y]:
+        if obj is OBJ:
+            return partial(deco, *args, **kwargs)
+        return deco(obj, *args, **kwargs)
+
+    return _deco  # type: ignore[return-value]
+
+
+def get_exit_point_names(func: Fn, /) -> list[tuple[str, ...]]:
     r"""Return the variable names used in exit nodes."""
     source = textwrap.dedent(getsource(func))
     tree = ast.parse(source)
@@ -28,26 +63,14 @@ def get_exit_point_names(func: Callable) -> list[tuple[str, ...]]:
     return var_names
 
 
-def decorator[Fn: Callable](deco: Fn) -> Fn:
-    r"""Decorator Factory."""
-
-    @wraps(deco)
-    def __decorator(__func__=None, *args, **kwargs):  # type: ignore[no-untyped-def]
-        if __func__ is None:
-            return partial(deco, *args, **kwargs)
-        return deco(__func__, *args, **kwargs)
-
-    return __decorator
-
-
-@decorator
-def return_namedtuple(
-    func: Callable[P, tuple],
+@decorator  # type: ignore[arg-type]
+def return_namedtuple[**P](
+    func: Fn[P, tuple],
     /,
     *,
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
-) -> Callable[P, tuple]:
+) -> Fn[P, tuple]:
     r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
@@ -86,14 +109,14 @@ def return_namedtuple(
 
 
 def test_namedtuple_decorator() -> None:
-    @return_namedtuple
+    @return_namedtuple  # type: ignore[arg-type]
     def foo(x: int, y: int) -> tuple[int, int]:
         q, r = divmod(x, y)
         return q, r
 
     assert str(foo(5, 3)) == "foo_tuple(q=1, r=2)"
 
-    @return_namedtuple(name="divmod")  # pyright: ignore[reportCallIssue]
+    @return_namedtuple(name="divmod")  # type: ignore[arg-type]
     def bar(x: int, y: int) -> tuple[int, int]:
         q, r = divmod(x, y)
         return q, r
