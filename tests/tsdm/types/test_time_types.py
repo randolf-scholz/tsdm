@@ -215,7 +215,7 @@ def test_dt_diff() -> None:
 
     assert_type(diff(DT_FLOAT), float)
     assert_type(diff(DT_INT), int)
-    assert_type(diff(DT_NUMPY), np.timedelta64)  # pyright: ignore[reportAssertTypeFailure, reportArgumentType]
+    assert_type(diff(DT_NUMPY), np.timedelta64)
     assert_type(diff(DT_NUMPY_FLOAT), np.float64)  # type: ignore[assert-type, misc]
     assert_type(diff(DT_NUMPY_INT), np.float32)  # type: ignore[assert-type, misc]
     assert_type(diff(DT_PANDAS), pd.Timedelta)

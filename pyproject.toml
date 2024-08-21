@@ -41,7 +41,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "requests>=2.32.3",
     "scikit-learn>=1.5.1",
-    "scipy>=1.14.0",
+    "scipy>=1.14.1",
     "tensorboard>=2.17.1",
     "torch>=2.4.0",
     "tqdm>=4.66.5",
@@ -89,7 +89,7 @@ linters = [
 ]
 typing = [
     "mypy>=1.11.1",
-    "pyright>=1.1.376",
+    "pyright>=1.1.377",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20240724",
@@ -101,7 +101,7 @@ typing = [
     "types-pytz>=2024.1.0.20240417",
     "types-pyyaml>=6.0.12.20240808",
     "types-requests>=2.32.0.20240712",
-    "types-setuptools>=71.1.0.20240818",
+    "types-setuptools>=72.2.0.20240821",
     "types-six>=1.16.21.20240513",
     "types-tabulate>=0.9.0.20240106",
     "types-tqdm>=4.66.0.20240417",
@@ -116,7 +116,7 @@ devtools = [
     "pre-commit>=3.8.0",
     "pybadges>=3.0.1",
     "pygments>=2.18.0",
-    "setuptools>=73.0.0",
+    "setuptools>=73.0.1",
     "tuna>=0.5.11",
     "twine>=5.1.1",
     "wheel>=0.44.0",
@@ -286,7 +286,7 @@ docstring-code-line-length = "dynamic"
 # endregion ruff configuration ---------------------------------------------------------
 
 
-# region pylint Configuration ----------------------------------------------------------
+# region pylint configuration ----------------------------------------------------------
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
 enable = ["useless-suppression"]
@@ -331,7 +331,7 @@ max-line-length = 120
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
 # trigger E1101 when accessed. Python regular expressions are accepted.
 generated-members = ["numpy.*", "torch.*"]
-# endregion pylint Configuration -------------------------------------------------------
+# endregion pylint configuration -------------------------------------------------------
 
 
 # region mypy configuration ------------------------------------------------------------
@@ -413,7 +413,7 @@ ignore_missing_imports = true
 # endregion mypy configuration ---------------------------------------------------------
 
 
-# region pyright Configuration ---------------------------------------------------------
+# region pyright configuration ---------------------------------------------------------
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
@@ -437,7 +437,7 @@ reportUntypedClassDecorator = true
 #reportSelfClsParameterName = false
 reportUnnecessaryTypeIgnoreComment = false  # highlight any unnecessary "# type: ignore" comments
 #reportUnsupportedDunderAll = false
-# endregion pyright Configuration ------------------------------------------------------
+# endregion pyright configuration ------------------------------------------------------
 
 
 # region pytest configuration ----------------------------------------------------------
