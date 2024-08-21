@@ -192,7 +192,6 @@ def test_timedelta_assign() -> None:
 
 def test_dt_var() -> None:
     r"""Type-Checking DT_VAR."""
-    # TODO: submit issue to pyright
 
     def id_dt[DT: DateTime](x: DT, /) -> DT:
         return x
