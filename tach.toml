@@ -120,6 +120,7 @@ depends_on = [
 [[modules]]
 path = "tsdm.timeseries"
 depends_on = [
+    { path = "tsdm.constants" },
     { path = "tsdm.data" },
     { path = "tsdm.datasets" },
     { path = "tsdm.utils" },

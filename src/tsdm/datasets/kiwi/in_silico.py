@@ -64,7 +64,7 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
     table_shapes = {"timeseries": (5206, 7)}  # pyright: ignore[reportAssignmentType]
 
-    def _timeseries(self) -> DataFrame:
+    def _clean_timeseries(self) -> DataFrame:
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
             dfs = {}
             for fname in files.namelist():
@@ -85,11 +85,13 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
         return ts
 
     def clean_table(self, key: KEY) -> DataFrame:
-        if key == "timeseries":
-            return self._timeseries()
-        if key == "timeseries_metadata":
-            return make_dataframe(**TIMESERIES_METADATA)
-        raise KeyError(f"Unknown table {key}.")
+        match key:
+            case "timeseries":
+                return self._clean_timeseries()
+            case "timeseries_metadata":
+                return make_dataframe(**TIMESERIES_METADATA)
+            case _:
+                raise KeyError(f"Unknown table {key}.")
 
     def download_file(self, fname: str, /) -> None:
         r"""Download the dataset."""

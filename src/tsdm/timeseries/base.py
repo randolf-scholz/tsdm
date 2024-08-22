@@ -19,20 +19,20 @@ __all__ = [
 
 import warnings
 from collections.abc import Collection, Hashable, Iterator, Mapping, Sequence
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, asdict, dataclass
 from math import nan as NAN
-from types import NotImplementedType
-from typing import Any, NamedTuple, Optional, Self, overload
+from typing import Any, ClassVar, NamedTuple, Optional, Self, overload
 
 import numpy as np
-import pandas as pd
 import torch
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
-# from torch.utils.data import Dataset as TorchDataset
+from tsdm import constants as const
+from tsdm.constants import NOT_GIVEN
 from tsdm.data.datasets import TorchDataset
+from tsdm.datasets import MultiTableDataset
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -47,35 +47,57 @@ class TimeSeries(Collection):  # Q: Should this be a Mapping?
     For a given time-index, the time series data is a vector of measurements.
     """
 
+    FIELDS: ClassVar[frozenset[str]] = frozenset({
+        "timeseries",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
+    })
+
+    _: KW_ONLY
+
+    # Header
+    name: str = NOT_GIVEN
+    r"""The name of the dataset."""
+
     # Main Attributes
     timeseries: DataFrame
     r"""The time series data."""
-    _: KW_ONLY
-    static_covariates: Optional[DataFrame] = None
-    r"""The metadata of the dataset."""
-    timeindex: Index = NotImplemented
-    r"""The time-index of the dataset."""
-
-    # Metadata
     timeindex_metadata: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
-    timeseries_metadata: Optional[DataFrame] = None
-    r"""Data associated with each channel such as measurement device, unit, etc."""
+    static_covariates: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
     static_covariates_metadata: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
-    # Other
-    name: str = NotImplemented
-    r"""The name of the dataset."""
-    tags: dict[str, Any] = NotImplemented
+    # Extras
+    tags: dict[str, Any] = NOT_GIVEN
     r"""Tags associated with the dataset."""
+
+    # derived fields
+    timeindex: Index = NOT_GIVEN
+    r"""The time-index of the dataset."""
+
+    @classmethod
+    def from_dataset(cls, ds: MultiTableDataset) -> Self:
+        r"""Create a TimeSeries from a MultiTableDataset."""
+        if bad_names := set(ds.table_names) - cls.FIELDS:
+            raise ValueError(f"The following table names: {bad_names}")
+
+        return cls(
+            name=ds.__class__.__name__,
+            **{k: ds.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
+        )
 
     def __post_init__(self) -> None:
         r"""Post init."""
-        if self.name is NotImplemented:
-            self.name = self.__class__.__name__
-        if self.timeindex is NotImplemented:
+        if self.timeindex is NOT_GIVEN:
             self.timeindex = self.timeseries.index.copy().unique()
+        if isinstance(self.timeseries.index, MultiIndex):
+            raise TypeError(
+                "Tried to create a TimeSeries from a DataFrame with MultiIndex."
+                "\n    Are you sure this is not a TimeSeriesCollection?"
+            )
 
     def __iter__(self) -> Iterator[Series]:
         r"""Iterate over the timestamps."""
@@ -91,15 +113,10 @@ class TimeSeries(Collection):  # Q: Should this be a Mapping?
 
     def __getitem__(self, key: Any, /) -> "TimeSeries":
         r"""Return the subset of the timeseries at index `key`."""
-        return TimeSeries(
-            name=self.name,
-            static_covariates=self.static_covariates,
-            static_covariates_metadata=self.static_covariates_metadata,
-            timeindex=self.timeindex[key],
-            timeindex_metadata=self.timeindex_metadata,
-            timeseries=self.timeseries.loc[key],
-            timeseries_metadata=self.timeseries_metadata,
-        )
+        # only pass non-derived fields
+        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+        fields.update(timeseries=self.timeseries.loc[key])
+        return TimeSeries(**fields)
 
 
 @pprint_repr
@@ -111,55 +128,79 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
     `Equimodal` means that all time series share the same schema (i.e. subset of variables).
     """
 
+    FIELDS: ClassVar[frozenset[str]] = frozenset({
+        "timeseries",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
+        "constants",
+        "constants_metadata",
+    })
+
+    _: KW_ONLY
+
+    # Header
+    name: str = NOT_GIVEN
+    r"""The name of the collection."""
+
     # Main attributes
     timeseries: DataFrame
     r"""The collection of time series data."""
-    _: KW_ONLY
-    static_covariates: Optional[DataFrame] = None
-    r"""The static covariates associated with each timeseries."""
-    constants: Optional[DataFrame] = None
-    r"""Additional data that is independent of the metaindex."""
-    timeindex: MultiIndex = NotImplemented
-    r"""The time-index of the collection."""
-    metaindex: Index = NotImplemented
-    r"""The index of the collection."""
-
-    # Metadata
     timeseries_metadata: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
+    static_covariates: Optional[DataFrame] = None
+    r"""The static covariates associated with each timeseries."""
     static_covariates_metadata: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    constants: Optional[DataFrame] = None
+    r"""Additional data that is independent of the metaindex."""
     constants_metadata: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-    timeindex_metadata: Optional[DataFrame] = None
-    r"""Data associated with each time index such as measurement device, unit,  etc."""
-    metaindex_metadata: Optional[DataFrame] = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
-    # Other
-    name: str = NotImplemented
-    r"""The name of the collection."""
-    tags: dict[str, Any] = NotImplemented
+    # Extras
+    tags: dict[str, Any] = NOT_GIVEN
     r"""Tags associated with the dataset."""
+
+    # derived fields
+    timeindex: MultiIndex = NOT_GIVEN
+    r"""The time-index of the collection."""
+    metaindex: Index = NOT_GIVEN
+    r"""The index of the collection."""
+
+    @classmethod
+    def from_dataset(cls, ds: MultiTableDataset) -> Self:
+        r"""Create a TimeSeries from a MultiTableDataset."""
+        if bad_names := set(ds.table_names) - cls.FIELDS:
+            raise ValueError(f"The following table names: {bad_names}")
+
+        return cls(
+            name=ds.__class__.__name__,
+            **{k: ds.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
+        )
 
     def __post_init__(self) -> None:
         r"""Post init."""
-        if self.name is NotImplemented:
+        if self.name is NOT_GIVEN:
             if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
                 self.name = str(self.timeseries.name)
             else:
                 self.name = self.__class__.__name__
 
-        if self.timeindex is NotImplemented:
+        if self.timeindex is NOT_GIVEN:
             self.timeindex = self.timeseries.index.copy()
 
-        if self.metaindex is NotImplemented:
-            if self.static_covariates is not None:
-                self.metaindex = self.static_covariates.index.copy().unique()
-            elif isinstance(self.timeseries.index, MultiIndex):
-                self.metaindex = self.timeseries.index.copy().droplevel(-1).unique()
-            else:
-                self.metaindex = self.timeseries.index.copy().unique()
+        if not isinstance(self.timeindex, MultiIndex):
+            raise TypeError("Expected a timeseries with MultiIndex.")
+
+        if self.metaindex is NOT_GIVEN:
+            self.metaindex = self.timeindex.copy().droplevel(-1).unique()
+
+        # ensure that the index of the static covariates is a subset of the metaindex
+        if (
+            self.static_covariates is not None
+            and not self.static_covariates.index.difference(self.metaindex).empty
+        ):
+            raise TypeError("Static covariates index is not a subset of the metaindex.")
 
     def __len__(self) -> int:
         r"""Get the number of timeseries in the collection."""
@@ -169,80 +210,95 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
         r"""Iterate over the timeseries in the collection."""
         return iter(self.metaindex)
 
+    def _get_metaindex(self) -> Index:
+        r"""Get the metaindex."""
+        return self.timeindex.copy().droplevel(-1).unique()
+
     # fmt: off
     @overload
-    def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> Self: ...  # pyright: ignore[reportOverlappingOverload]
+    def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> "TimeSeriesCollection": ...  # pyright: ignore[reportOverlappingOverload]
     @overload
     def __getitem__(self, key: object, /) -> TimeSeries: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
-    def __getitem__(self, key: object, /) -> TimeSeries | Self:
+    def __getitem__(self, key: object, /) -> "TimeSeries | TimeSeriesCollection":
         r"""Get the timeseries and metadata of the dataset at index `key`."""
-        # TODO: There must be a better way to slice this
-        match key:
-            case Series(index=MultiIndex()) as s:
-                ts = self.timeseries.loc[s]
-            case Series() as s:
-                if not pd.api.types.is_bool_dtype(s):
-                    raise TypeError("Expected boolean mask.")
-                # NOTE: loc[s] would not work here?!
-                ts = self.timeseries.loc[s[s].index]
-            case _:
-                ts = self.timeseries.loc[key]
-
-        # make sure metadata is always DataFrame.
-        match self.static_covariates:
-            case DataFrame() as df:
-                md = df.loc[key]
-                if isinstance(md, Series):
-                    md = df.loc[[key]]
-            case _:
-                md = self.static_covariates
-
-        # slice the timeindex-descriptions
-        match self.timeindex_metadata:
-            case DataFrame() as desc if desc.index.equals(self.metaindex):
-                tidx_desc = desc.loc[key]
-            case _:
-                tidx_desc = self.timeindex_metadata
-
-        # slice the ts-descriptions
-        match self.timeseries_metadata:
-            case DataFrame() as desc if desc.index.equals(self.metaindex):
-                ts_desc = desc.loc[key]
-            case _:
-                ts_desc = self.timeseries_metadata
-
-        # slice the metadata-descriptions
-        match self.static_covariates_metadata:
-            case DataFrame() as desc if desc.index.equals(self.metaindex):
-                md_desc = desc.loc[key]
-            case _:
-                md_desc = self.static_covariates_metadata
+        # only pass non-derived fields
+        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+        ts = self.timeseries.loc[key]
+        cov = self.static_covariates
+        cov = cov if cov is None else cov.loc[key]
+        fields.update(timeseries=ts, static_covariates=cov)
 
         if isinstance(ts.index, MultiIndex):
-            return TimeSeriesCollection(
-                constants=self.constants,
-                constants_metadata=self.constants_metadata,
-                metaindex=md.index,
-                metaindex_metadata=self.metaindex_metadata,
-                name=self.name,
-                static_covariates=md,
-                static_covariates_metadata=md_desc,
-                timeindex=ts.index,
-                timeindex_metadata=tidx_desc,
-                timeseries=ts,
-                timeseries_metadata=ts_desc,
-            )
+            return TimeSeriesCollection(**fields)
+        return TimeSeries(**{k: v for k, v in fields.items() if k in TimeSeries.FIELDS})
 
-        return TimeSeries(
-            name=self.name,
-            static_covariates=md,
-            static_covariates_metadata=md_desc,
-            timeindex=ts.index,
-            timeindex_metadata=tidx_desc,
-            timeseries=ts,
-            timeseries_metadata=ts_desc,
-        )
+        # # TODO: There must be a better way to slice this
+        # match key:
+        #     case Series(index=MultiIndex()) as s:
+        #         ts = self.timeseries.loc[s]
+        #     case Series() as s:
+        #         if not pd.api.types.is_bool_dtype(s):
+        #             raise TypeError("Expected boolean mask.")
+        #         # NOTE: loc[s] would not work here?!
+        #         ts = self.timeseries.loc[s[s].index]
+        #     case _:
+        #         ts = self.timeseries.loc[key]
+        #
+        # # make sure metadata is always DataFrame.
+        # match self.static_covariates:
+        #     case DataFrame() as df:
+        #         md = df.loc[key]
+        #         if isinstance(md, Series):
+        #             md = df.loc[[key]]
+        #     case _:
+        #         md = self.static_covariates
+        #
+        # # slice the timeindex-descriptions
+        # match self.timeindex_metadata:
+        #     case DataFrame() as desc if desc.index.equals(self.metaindex):
+        #         tidx_desc = desc.loc[key]
+        #     case _:
+        #         tidx_desc = self.timeindex_metadata
+        #
+        # # slice the ts-descriptions
+        # match self.timeseries_metadata:
+        #     case DataFrame() as desc if desc.index.equals(self.metaindex):
+        #         ts_desc = desc.loc[key]
+        #     case _:
+        #         ts_desc = self.timeseries_metadata
+        #
+        # # slice the metadata-descriptions
+        # match self.static_covariates_metadata:
+        #     case DataFrame() as desc if desc.index.equals(self.metaindex):
+        #         md_desc = desc.loc[key]
+        #     case _:
+        #         md_desc = self.static_covariates_metadata
+        #
+        # if isinstance(ts.index, MultiIndex):
+        #     return TimeSeriesCollection(
+        #         constants=self.constants,
+        #         constants_metadata=self.constants_metadata,
+        #         metaindex=md.index,
+        #         metaindex_metadata=self.metaindex_metadata,
+        #         name=self.name,
+        #         static_covariates=md,
+        #         static_covariates_metadata=md_desc,
+        #         timeindex=ts.index,
+        #         timeindex_metadata=tidx_desc,
+        #         timeseries=ts,
+        #         timeseries_metadata=ts_desc,
+        #     )
+        #
+        # return TimeSeries(
+        #     name=self.name,
+        #     static_covariates=md,
+        #     static_covariates_metadata=md_desc,
+        #     timeindex=ts.index,
+        #     timeindex_metadata=tidx_desc,
+        #     timeseries=ts,
+        #     timeseries_metadata=ts_desc,
+        # )
 
 
 @pprint_repr
@@ -513,15 +569,15 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
 
     _: KW_ONLY
 
-    targets: Index | list = NotImplemented
+    targets: Index | list = NOT_GIVEN
     r"""Columns of the data that are used as targets."""
-    observables: Index | list = NotImplemented
+    observables: Index | list = NOT_GIVEN
     r"""Columns of the data that are used as inputs."""
-    covariates: Index | list = NotImplemented
+    covariates: Index | list = NOT_GIVEN
     r"""Columns of the data that are used as controls."""
     metadata_targets: Optional[Index | list] = None
     r"""Columns of the metadata that are targets."""
-    metadata_observables: Optional[Index | list] = NotImplemented
+    metadata_observables: Optional[Index | list] = NOT_GIVEN
     r"""Columns of the metadata that are targets."""
     sparse_index: bool = False
     r"""Whether to drop sparse rows from the index."""
@@ -530,13 +586,13 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
 
     def __post_init__(self) -> None:
         r"""Post init."""
-        if self.targets is NotImplemented:
+        if self.targets is NOT_GIVEN:
             self.targets = []
-        if self.observables is NotImplemented:
+        if self.observables is NOT_GIVEN:
             self.observables = self.dataset.timeseries.columns
-        if self.covariates is NotImplemented:
+        if self.covariates is NOT_GIVEN:
             self.covariates = []
-        if self.metadata_observables is NotImplemented:
+        if self.metadata_observables is NOT_GIVEN:
             if self.dataset.static_covariates is None:
                 self.metadata_observables = None
             else:
@@ -593,7 +649,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         joint_horizon_index = ts_observed.index.union(ts_forecast.index)
 
         # FIXME: this is a workaround for the bug above.
-        # FIXME: ArrowNotImplementedError: Function 'is_in' has no kernel matching input types (duration[ns])
+        # FIXME: ArrowNOT_GIVENError: Function 'is_in' has no kernel matching input types (duration[ns])
 
         # NOTE: Using numpy since isin is broken for pyarrow timestamps.
         joint_horizon_mask = np.isin(tsd.timeindex, joint_horizon_index)
@@ -693,14 +749,14 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
     """
 
     data_source: DataFrame
-    input_slice: slice = NotImplemented
-    target_slice: slice = NotImplemented
+    input_slice: slice = NOT_GIVEN
+    target_slice: slice = NOT_GIVEN
 
     _: KW_ONLY
 
-    observables: Sequence[Hashable] = NotImplemented
+    observables: Sequence[Hashable] = NOT_GIVEN
     r"""These columns are unmasked over the obs.-horizon in the input slice."""
-    targets: Sequence[Hashable] = NotImplemented
+    targets: Sequence[Hashable] = NOT_GIVEN
     r"""These columns are unmasked over the pred.-horizon in the target slice."""
     covariates: Sequence[Hashable] = ()
     r"""These columns are unmasked over the whole inputs slice."""
@@ -711,11 +767,11 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         self.columns: Index = self.data_source.columns
 
         match self.input_slice, self.target_slice:
-            case NotImplementedType(), NotImplementedType():
+            case const.NOT_GIVEN, const.NOT_GIVEN:
                 raise ValueError("Please specify slices for the input and target.")
-            case NotImplementedType(), slice():
+            case const.NOT_GIVEN, slice():
                 self.input_slice = slice(None, self.target_slice.start)
-            case slice(), NotImplementedType():
+            case slice(), const.NOT_GIVEN:
                 self.target_slice = slice(self.input_slice.stop, None)
             case slice(), slice():
                 pass
@@ -732,7 +788,7 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         self.combined_slice = slice(self.input_slice.start, self.target_slice.stop)
 
         match self.observables, self.targets:
-            case NotImplementedType(), NotImplementedType():
+            case const.NOT_GIVEN, const.NOT_GIVEN:
                 warnings.warn(
                     "No observables/targets specified. Assuming autoregressive case:"
                     " all columns are both inputs and targets.",
@@ -740,14 +796,14 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
                 )
                 self.observables = self.columns.copy()
                 self.targets = self.columns.copy()
-            case NotImplementedType(), Sequence():
+            case const.NOT_GIVEN, Sequence():
                 warnings.warn(
                     "Targets are specified, but not observables. Assuming remaining"
                     " columns are observables.",
                     stacklevel=2,
                 )
                 self.observables = self.columns.difference(self.targets).copy()
-            case Sequence(), NotImplementedType():
+            case Sequence(), const.NOT_GIVEN:
                 warnings.warn(
                     "Observables are specified, but not targets. Assuming remaining"
                     " columns are targets.",

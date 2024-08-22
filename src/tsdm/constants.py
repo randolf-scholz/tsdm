@@ -15,6 +15,7 @@ __all__ = [
     "KEYWORD_ONLY",
     "NA_STRINGS",
     "NA_VALUES",
+    "NOT_GIVEN",
     "NULL_VALUES",
     "POSITIONAL_ONLY",
     "POSITIONAL_OR_KEYWORD",
@@ -38,6 +39,8 @@ import torch
 from numpy.random import Generator
 
 # NOTE: Use frozenmap() if PEP 603 is accepted.
+NOT_GIVEN: Final[Any] = None
+r"""CONST: Default value for optional arguments."""
 EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
 RNG: Final[Generator] = np.random.default_rng()
