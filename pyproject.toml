@@ -406,6 +406,7 @@ no_incremental = false
 module = [
     "pandas.*",
     "pyarrow.*",
+    "pytest_benchmark.*",
     "scipy.*",
     "sklearn.*",
 ]

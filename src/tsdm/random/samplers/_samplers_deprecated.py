@@ -65,7 +65,7 @@ class IntervalSampler[TD: TimeDelta](BaseSampler[slice]):
         self.stride = zero if stride is None else stride
         self.offset = xmin if offset is None else offset
         self.deltax = deltax
-        delta_max = max(self.offset - xmin, xmax - self.offset)
+        delta_max = max(self.offset - xmin, xmax - self.offset)  # type: ignore[call-overload]
 
         # validate bounds
         if xmin > self.offset or self.offset > xmax:
@@ -224,7 +224,7 @@ class SequenceSampler[TD: TimeDelta](BaseSampler):
         x = self.xmin
         y = x + self.seq_len
         # allows nice handling of negative seq_len
-        x, y = min(x, y), max(x, y)
+        x, y = min(x, y), max(x, y)  # type: ignore[call-overload]
         yield x, y
 
         for _ in range(len(self)):

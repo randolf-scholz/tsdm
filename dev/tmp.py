@@ -1,13 +1,26 @@
 #!/usr/bin/env python
 
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+
+a = np.float64(4)
+b = np.float64(5)
+max(a, b)
 
 
-def gmean(x: ArrayLike) -> np.floating:
-    r"""Geometric mean."""
-    z = np.asarray(x)
-    return np.prod(np.abs(z)) ** (1 / len(z))
+class Foo:
+    def __lt__(self, other):
+        return self
+
+    def __gt__(self, other):
+        return self
+
+    def __le__(self, other):
+        return self
+
+    def __ge__(self, other):
+        return self
 
 
-reveal_type(np.float32(3.2) ** np.arange(3))
+x = Foo()
+y = Foo()
+assert min(x, y) is y

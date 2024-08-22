@@ -43,7 +43,7 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import Index, Series
 
-from tsdm.constants import RNG
+from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.data.datasets import (
     Dataset,
     MapDataset,
@@ -223,17 +223,17 @@ class RandomSampler[T](BaseSampler[T]):  # +T
 
 
 @pprint_repr
-@dataclass
+@dataclass(init=False)
 class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Draw samples from a hierarchical data source."""
 
     data: MapDataset[K, Dataset[K2]]
     r"""The shared index."""
-    subsamplers: Mapping[K, Sampler[K2]] = NotImplemented
-    r"""The subsamplers to sample from the collection."""
 
     _: KW_ONLY
 
+    subsamplers: dict[K, Sampler[K2]]
+    r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
     shuffle: bool = False
@@ -241,12 +241,27 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     rng: Generator = RNG
     r"""The random number generator."""
 
-    def __post_init__(self) -> None:
-        if self.subsamplers is NotImplemented:
-            self.subsamplers = {
+    def __init__(
+        self,
+        data: MapDataset[K, Dataset[K2]],
+        /,
+        *,
+        subsamplers: Mapping[K, Sampler[K2]] = EMPTY_MAP,
+        early_stop: bool = False,
+        shuffle: bool = False,
+        rng: Generator = RNG,
+    ) -> None:
+        super().__init__(shuffle=shuffle, rng=rng)
+        self.data = data
+        self.early_stop = early_stop
+        self.subsamplers = (
+            dict(subsamplers)
+            if subsamplers is not EMPTY_MAP
+            else {
                 key: RandomSampler(self.data[key], shuffle=self.shuffle)
                 for key in self.data.keys()  # noqa: SIM118
             }
+        )
 
         self.index: Index = get_index(self.data)
         self.sizes: Series = Series({
@@ -265,7 +280,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
             return min(self.sizes) * len(self.subsamplers)
         return sum(self.sizes)
 
-    def __getitem__(self, key: K) -> Sampler[K2]:
+    def __getitem__(self, key: K, /) -> Sampler[K2]:
         r"""Return the subsampler for the given key."""
         return self.subsamplers[key]
 
@@ -366,7 +381,7 @@ class SlidingSampler[
     tmax: DT
     cumulative_horizons: NDArray[TimeDelta]  # type: ignore[type-var,unused-ignore]
 
-    # __new__ definition
+    # region __new__ overloads ---------------------------------------------------------
     # TODO: simplify in the future when
     #   1. PEP 696 is implemented
     #   2. enums are considered subtypes of literals.

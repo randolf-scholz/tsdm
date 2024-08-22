@@ -29,6 +29,7 @@ __all__ = [
     "TimeScalar",
     "PythonScalar",
     # Maybe Type Aliases
+    "MaybeNA",
     "MaybeCallable",
     "MaybeFrozenset",
     "MaybeIterable",
@@ -94,6 +95,7 @@ type SplitID = Hashable
 r"""Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
+
 # region aliases for indexing ----------------------------------------------------------
 type SingleIndexer = int | tuple[int, ...]
 r"""Type hint for indexer that possibly selects a single element."""
@@ -155,6 +157,8 @@ r"""Type Alias for Python scalars."""
 
 # region Maybe Type Aliases ------------------------------------------------------------
 # NOTE: Maybe refers to types of the kind Union[T, Container[T]]
+type MaybeNA[T] = T | NAType
+r"""Type Alias for nullable types."""
 type MaybeList[T] = T | list[T]
 r"""Type Alias for T | list[T]."""
 type MaybeTuple[T] = T | tuple[T, ...]

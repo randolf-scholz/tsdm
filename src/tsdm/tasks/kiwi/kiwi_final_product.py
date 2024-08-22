@@ -17,7 +17,6 @@ from typing import Any, Literal, NamedTuple, Optional
 
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
-from pandas.api.typing import NAType
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit, nn
 from torch.utils.data import DataLoader, Dataset
@@ -28,6 +27,7 @@ from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiBenchmark
 from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.types.aliases import MaybeNA
 from tsdm.utils import timedelta
 from tsdm.utils.decorators import pprint_repr
 
@@ -42,7 +42,7 @@ class Sample(NamedTuple):
     originals: Optional[tuple[DataFrame, DataFrame]] = None
 
 
-def get_induction_time(s: Series) -> Timestamp | NAType:
+def get_induction_time(s: Series, /) -> MaybeNA[Timestamp]:
     r"""Compute the induction time."""
     inducer = s["InducerConcentration"]
     total_induction = inducer[-1] - inducer[0]

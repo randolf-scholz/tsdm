@@ -30,8 +30,7 @@ from matplotlib.figure import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
 from torch import Tensor
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LRScheduler
+from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 from typing_extensions import TypeIs
 
@@ -53,6 +52,7 @@ from tsdm.linalg import (
 from tsdm.logutils.utils import compute_metrics
 from tsdm.metrics import Metric
 from tsdm.models import Model
+from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, MaybeWrapped
 from tsdm.utils import transpose_list_of_dicts, unpack_maybewrapped
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
@@ -254,7 +254,7 @@ def log_lr_scheduler(
     step: int,
     writer: SummaryWriter,
     /,
-    lr_scheduler: LRScheduler,
+    lr_scheduler: TorchLRScheduler,
     *,
     name: str = "lr_scheduler",
     prefix: str = "",
