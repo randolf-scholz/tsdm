@@ -16,7 +16,6 @@ __all__ = [
     "ParametrizedDecorator",
     "ParametrizedFunctionDecorator",
     # Functions
-    "attribute",
     "autojit",
     "debug",
     "decorator",
@@ -46,7 +45,6 @@ from tsdm.utils.decorators.base import (
     ParametrizedClassDecorator,
     ParametrizedDecorator,
     ParametrizedFunctionDecorator,
-    attribute,
     decorator,
     recurse_on_container,
 )
