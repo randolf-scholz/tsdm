@@ -1,6 +1,10 @@
 r"""Dataset Import Facilities.
 
-Implement your own by subclassing `BaseDataset`
+This package contains a collection of datasets for time series analysis.
+The classes defined here are focused on dataset loading, pre-processing and serialization.
+For actual usage of the datasets in machine learning models, please use the wrapped
+classes in the `tsdm.timeseries` package.
+
 
 Basic Usage
 -----------
@@ -20,7 +24,6 @@ Some design decisions:
 __all__ = [
     # Sub-Modules
     "base",
-    "timeseries",
     "uci",
     "mimic",
     "physionet",
@@ -61,7 +64,6 @@ from tsdm.datasets import (
     mimic,
     physionet,
     synthetic,
-    timeseries,
     uci,
     ushcn,
 )

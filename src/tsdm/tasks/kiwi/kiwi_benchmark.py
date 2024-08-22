@@ -14,15 +14,13 @@ from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
 
+from tsdm import timeseries
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.data import (
-    TimeSeriesSampleGenerator,
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,
 )
-from tsdm.data.timeseries import Sample
-from tsdm.datasets import timeseries as tsd
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -37,6 +35,7 @@ from tsdm.encoders import (
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries import Sample, TimeSeriesSampleGenerator
 from tsdm.types.aliases import SplitID
 from tsdm.utils.decorators import pprint_repr
 
@@ -60,7 +59,7 @@ class KiwiBenchmark(TimeSeriesTask):
     The task is to forecast the observables inside the forecasting horizon.
     """
 
-    dataset: tsd.KiwiBenchmark
+    dataset: timeseries.KiwiBenchmark
 
     # sampler kwargs
     observation_horizon: str = "2h"
@@ -153,7 +152,7 @@ class KiwiBenchmark(TimeSeriesTask):
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
-        dataset = tsd.KiwiBenchmark()
+        dataset = timeseries.KiwiBenchmark()
         dataset.timeseries = dataset.timeseries.astype("float32")
 
         super().__init__(dataset=dataset)

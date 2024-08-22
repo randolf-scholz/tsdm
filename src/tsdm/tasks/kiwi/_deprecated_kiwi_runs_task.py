@@ -20,12 +20,12 @@ from torch.utils.data import DataLoader, Dataset
 from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset, TimeSeriesSampleGenerator
-from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiRuns, KiwiRunsTSC
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.timeseries import TimeSeries
 from tsdm.utils.decorators import pprint_repr
 
 

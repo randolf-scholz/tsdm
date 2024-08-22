@@ -16,11 +16,11 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries import TimeSeries
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 

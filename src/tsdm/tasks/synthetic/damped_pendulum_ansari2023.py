@@ -17,9 +17,9 @@ from sklearn.model_selection import train_test_split
 
 from tsdm import datasets
 from tsdm.data import folds_as_frame, is_partition
-from tsdm.data.timeseries import FixedSliceSampleGenerator, TimeSeriesCollection
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries import FixedSliceSampleGenerator, TimeSeriesCollection
 from tsdm.types.aliases import SplitID
 
 

@@ -1,6 +1,10 @@
-r"""Time series dataset."""
+r"""Time Series and Time Series Collections.
+
+This module provides wrappers for the datasets defined in `tsdm.datasets`.
+"""
 
 __all__ = [
+    # Classes
     "DampedPendulum_Ansari2023",
     "ETTh1",
     "ETTh2",
@@ -18,7 +22,6 @@ __all__ = [
     "USHCN_DeBrouwer2019",
 ]
 
-from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.kiwi.in_silico import InSilico as _InSilico
 from tsdm.datasets.kiwi.kiwi_benchmark import KiwiBenchmark as _KiwiBenchmark
@@ -37,8 +40,62 @@ from tsdm.datasets.ushcn.ushcn import USHCN as _USHCN
 from tsdm.datasets.ushcn.ushcn_debrouwer2019 import (
     USHCN_DeBrouwer2019 as _USHCN_DeBrouwer2019,
 )
+from tsdm.timeseries.base import TimeSeries, TimeSeriesCollection
 
 
+# region TimeSeries --------------------------------------------------------------------
+class ETTh1(TimeSeries):
+    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = ETT()
+        super().__init__(timeseries=ds["ETTh1"])
+
+
+class ETTh2(TimeSeries):
+    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = ETT()
+        super().__init__(timeseries=ds["ETTh2"])
+
+
+class ETTm1(TimeSeries):
+    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = ETT()
+        super().__init__(timeseries=ds["ETTm1"])
+
+
+class ETTm2(TimeSeries):
+    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = ETT()
+        super().__init__(timeseries=ds["ETTm2"])
+
+
+class Electricity(TimeSeries):
+    r"""The Electricity dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = _Electricity()
+        super().__init__(timeseries=ds.table)
+
+
+class Traffic(TimeSeries):
+    r"""The Traffic dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = _Traffic()
+        super().__init__(timeseries=ds.timeseries)
+
+
+# endregion TimeSeries -----------------------------------------------------------------
+
+
+# region TimeSeriesCollection ----------------------------------------------------------
 class InSilico(TimeSeriesCollection):
     r"""The in silico dataset wrapped as TimeSeriesCollection."""
 
@@ -57,8 +114,8 @@ class KiwiBenchmark(TimeSeriesCollection):
         ds = _KiwiBenchmark()
         super().__init__(
             timeseries=ds.timeseries,
-            static_covariates=ds.static_covariates,
             timeseries_metadata=ds.timeseries_metadata,
+            static_covariates=ds.static_covariates,
             static_covariates_metadata=ds.static_covariates_metadata,
         )
 
@@ -70,8 +127,8 @@ class USHCN(TimeSeriesCollection):
         ds = _USHCN()
         super().__init__(
             timeseries=ds.timeseries,
-            static_covariates=ds.static_covariates,
             timeseries_metadata=ds.timeseries_metadata,
+            static_covariates=ds.static_covariates,
             static_covariates_metadata=ds.static_covariates_metadata,
         )
 
@@ -93,8 +150,8 @@ class PhysioNet2012(TimeSeriesCollection):
         ds = _PhysioNet2012()
         super().__init__(
             timeseries=ds.timeseries,
-            static_covariates=ds.static_covariates,
             timeseries_metadata=ds.timeseries_metadata,
+            static_covariates=ds.static_covariates,
             static_covariates_metadata=ds.static_covariates_metadata,
         )
 
@@ -128,57 +185,12 @@ class MIMIC_III_DeBrouwer2019(TimeSeriesCollection):
         super().__init__(timeseries=ds.timeseries)
 
 
-class ETTh1(TimeSeriesCollection):
-    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = ETT()
-        super().__init__(timeseries=ds["ETTh1"])
-
-
-class ETTh2(TimeSeriesCollection):
-    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = ETT()
-        super().__init__(timeseries=ds["ETTh2"])
-
-
-class ETTm1(TimeSeriesCollection):
-    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = ETT()
-        super().__init__(timeseries=ds["ETTm1"])
-
-
-class ETTm2(TimeSeriesCollection):
-    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = ETT()
-        super().__init__(timeseries=ds["ETTm2"])
-
-
-class Electricity(TimeSeriesCollection):
-    r"""The Electricity dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = _Electricity()
-        super().__init__(timeseries=ds.table)
-
-
-class Traffic(TimeSeriesCollection):
-    r"""The Traffic dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = _Traffic()
-        super().__init__(timeseries=ds.timeseries)
-
-
 class DampedPendulum_Ansari2023(TimeSeriesCollection):
     r"""Damped Pendulum Time Series Collection."""
 
     def __init__(self) -> None:
         timeseries = _DampedPendulum().table
         super().__init__(timeseries=timeseries)
+
+
+# endregion TimeSeriesCollection -------------------------------------------------------

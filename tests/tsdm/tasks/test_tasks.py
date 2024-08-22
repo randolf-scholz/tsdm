@@ -6,8 +6,6 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
-from tsdm.data import TimeSeriesSampleGenerator
-from tsdm.data.timeseries import Sample, TimeSeries, TimeSeriesCollection
 from tsdm.datasets import InSilico
 from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks import (
@@ -15,6 +13,12 @@ from tsdm.tasks import (
     MIMIC_III_DeBrouwer2019,
     MIMIC_IV_Bilos2021,
     USHCN_DeBrouwer2019,
+)
+from tsdm.timeseries import (
+    Sample,
+    TimeSeries,
+    TimeSeriesCollection,
+    TimeSeriesSampleGenerator,
 )
 
 __logger__ = logging.getLogger(__name__)

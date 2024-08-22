@@ -105,6 +105,7 @@ depends_on = [
     { path = "tsdm.encoders" },
     { path = "tsdm.metrics" },
     { path = "tsdm.random" },
+    { path = "tsdm.timeseries" },
     { path = "tsdm.types" },
     { path = "tsdm.utils" },
 ]
@@ -114,6 +115,14 @@ path = "tsdm.testing"
 depends_on = [
     { path = "tsdm.constants" },
     { path = "tsdm.types" },
+]
+
+[[modules]]
+path = "tsdm.timeseries"
+depends_on = [
+    { path = "tsdm.data" },
+    { path = "tsdm.datasets" },
+    { path = "tsdm.utils" },
 ]
 
 [[modules]]
@@ -150,6 +159,7 @@ depends_on = [
     { path = "tsdm.optimizers" },
     { path = "tsdm.random" },
     { path = "tsdm.tasks" },
+    { path = "tsdm.timeseries" },
     { path = "tsdm.types" },
     { path = "tsdm.utils" },
     { path = "tsdm.viz" },

@@ -8,15 +8,13 @@ __all__ = [
 from pandas import DataFrame
 
 from tsdm.data import (
-    TimeSeriesSampleGenerator,
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,
 )
-from tsdm.data.timeseries import TimeSeriesCollection
-from tsdm.datasets.timeseries import InSilico
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries import InSilico, TimeSeriesCollection, TimeSeriesSampleGenerator
 from tsdm.types.aliases import SplitID
 
 

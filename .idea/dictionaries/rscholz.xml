@@ -419,6 +419,7 @@
       <w>tmax</w>
       <w>tmin</w>
       <w>toctree</w>
+      <w>torchscript</w>
       <w>tqdm</w>
       <w>trainlabel</w>
       <w>trainlabels</w>

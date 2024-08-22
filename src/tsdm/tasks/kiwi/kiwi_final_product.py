@@ -23,10 +23,10 @@ from torch.utils.data import DataLoader, Dataset
 from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset
-from tsdm.data.timeseries import TimeSeries
 from tsdm.datasets import KiwiBenchmark
 from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.timeseries import TimeSeries
 from tsdm.types.aliases import MaybeNA
 from tsdm.utils import timedelta
 from tsdm.utils.decorators import pprint_repr

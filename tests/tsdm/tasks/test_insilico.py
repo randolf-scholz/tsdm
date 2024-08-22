@@ -3,9 +3,9 @@ r"""Test task implementation with InSilico."""
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
 
-from tsdm.data.timeseries import TimeSeriesCollection, TimeSeriesSampleGenerator
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
+from tsdm.timeseries import TimeSeriesCollection, TimeSeriesSampleGenerator
 
 
 def test_insilico_task(SplitID: tuple[int, str] = (0, "train")) -> None:

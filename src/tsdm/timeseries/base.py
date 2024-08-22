@@ -67,6 +67,8 @@ class TimeSeries(Collection):  # Q: Should this be a Mapping?
     # Other
     name: str = NotImplemented
     r"""The name of the dataset."""
+    tags: dict[str, Any] = NotImplemented
+    r"""Tags associated with the dataset."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
@@ -137,6 +139,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
     # Other
     name: str = NotImplemented
     r"""The name of the collection."""
+    tags: dict[str, Any] = NotImplemented
+    r"""Tags associated with the dataset."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
