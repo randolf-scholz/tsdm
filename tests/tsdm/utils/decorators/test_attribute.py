@@ -2,7 +2,7 @@ r"""Tests the attribute decorator."""
 
 import pytest
 
-from tsdm.utils.decorators import attribute
+from tsdm.utils.decorators.experimental import attribute
 
 
 def test_attribute() -> None:
