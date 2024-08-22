@@ -231,7 +231,8 @@ class Traffic(MultiTableDataset[Key, DataFrame]):
         14. Feb. 16, 2009 (Washington’s Birthday)
         15. Mar. 8, 2009 (Anomaly day)
 
-        However, there was a big mistake made: they assumed 1 encodes as
+        However, there was a big mistake made: they assumed the value `1` encodes
+        Monday, when it actually encodes Sunday.
 
         The true missing dates appear to be by reverse-engineering:
 

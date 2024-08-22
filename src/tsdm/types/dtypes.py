@@ -6,7 +6,7 @@ Numerical Type Hierarchy:
     - interval
     - period
     - string
-        - unicode
+        - Unicode
         - ascii
         - bytes
     - numerical

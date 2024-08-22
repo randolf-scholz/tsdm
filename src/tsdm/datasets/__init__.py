@@ -1,7 +1,7 @@
 r"""Dataset Import Facilities.
 
 This package contains a collection of datasets for time series analysis.
-The classes defined here are focused on dataset loading, pre-processing and serialization.
+The classes defined here are focused on dataset loading, pre-processing, and serialization.
 For actual usage of the datasets in machine learning models, please use the wrapped
 classes in the `tsdm.timeseries` package.
 

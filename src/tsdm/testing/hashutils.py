@@ -98,7 +98,7 @@ def hash_object(x: Any, /) -> int:
 
 
 def hash_set(x: Iterable[Hashable], /, *, ignore_duplicates: bool = False) -> int:
-    r"""Hash an iterable of hashable objects in a permutation invariant manner."""
+    r"""Hash an `Iterable` of hashable objects in a permutation invariant manner."""
     if ignore_duplicates:
         return hash(frozenset(hash_object(y) for y in x))
     # We use counter as a proxy for multisets, do deal with duplicates in x.
@@ -107,12 +107,12 @@ def hash_set(x: Iterable[Hashable], /, *, ignore_duplicates: bool = False) -> in
 
 
 def hash_mapping(x: Mapping[Hashable, Hashable], /) -> int:
-    r"""Hash a Mapping of hashable objects in a permutation invariant manner."""
+    r"""Hash a `Mapping` of hashable objects in a permutation invariant manner."""
     return hash_set(x.items())
 
 
 def hash_iterable(x: Iterable[Hashable], /) -> int:
-    r"""Hash an iterable of hashable objects in an order dependent manner."""
+    r"""Hash an `Iterable` of hashable objects in an order-dependent manner."""
     return hash_set(enumerate(x))
 
 

@@ -536,7 +536,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
 # FIXME: Use dataclass?
 @pprint_sequence(recursive=2)
 class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
-    r"""Wraps List of encoders."""
+    r"""Wraps a list of encoders."""
 
     encoders: list[Encoder]
     r"""List of encoders."""

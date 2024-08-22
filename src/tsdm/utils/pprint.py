@@ -485,7 +485,7 @@ def repr_sequence(
     pad = " " * padding * linebreaks
     left, right = "(", ")"
 
-    # special case for list and tuple
+    # special case list and tuple
     if cls is list:
         left, right = "[", "]"
         identifier = ""

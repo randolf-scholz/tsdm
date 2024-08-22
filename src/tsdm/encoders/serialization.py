@@ -47,7 +47,7 @@ def deserialize(path: Path) -> dict:
     - if the file is zip, apply deserialization recursively
     - if the file is json/yaml/toml, deserialize as dictionary
     - if the file is a tensor, deserialize using the respective tensor library
-        - use the filename as key to the dictionary
+        - use the filename as a key to the dictionary
     """
     with path.open("rb") as f:
         return pickle.load(f)

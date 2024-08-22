@@ -1,6 +1,6 @@
 r"""A Lazy Dictionary implementation.
 
-The LazyDict is a dictionary that is initialized with functions as the values.
+The LazyDict is a dictionary initialized with functions as the values.
 Once the value is accessed, the function is called and the result is stored.
 """
 

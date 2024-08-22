@@ -33,6 +33,10 @@ class Helix(IVP_GeneratorBase):
         \dot{x} = -ω⋅y
         \dot{y} = +ω⋅x
         \dot{z} = ρ
+
+    Remark:
+        The required orthogonal basis is computed using the revised Frisvad algorithm.
+        See https://jcgt.org/published/0006/01/01/.
     """
 
     angular_velocity: float = 1.0
@@ -49,7 +53,6 @@ class Helix(IVP_GeneratorBase):
     def __post_init__(self) -> None:
         r"""Post-initialization hook."""
         # construct ONB using revised Frisvad algorithm
-        # REF: Building an Orthonormal Basis, Revisited https://jcgt.org/published/0006/01/01/
         d = np.array(self.direction)
         x, y, z = d
 
@@ -88,7 +91,7 @@ class Helix(IVP_GeneratorBase):
         T = np.asarray(t)
         S = np.asarray(state)
 
-        # 1. transform to basis
+        # 1. transform to a basis
         S = np.einsum("...i,ij->...j", S, self.Q)
         # 2. extract variables
         x = S[..., 0]
