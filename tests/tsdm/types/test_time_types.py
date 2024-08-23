@@ -47,13 +47,13 @@ TD_PANDAS: pd.Timedelta = timedelta(days=1)
 TD_PYTHON: python_timedelta = python_timedelta(days=1)
 TD_ARROW = pa.scalar(10, type=pa.duration("ms"))
 TIMEDELTAS: dict[str, TimeDelta] = {
-    "float"       : TD_FLOAT,
-    "int"         : TD_INT,
-    "numpy"       : TD_NUMPY,
-    "numpy_float" : TD_NUMPY_FLOAT,
-    "numpy_int"   : TD_NUMPY_INT,
-    "pandas"      : TD_PANDAS,
-    "python"      : TD_PYTHON,
+    "python_float"     : TD_FLOAT,
+    "python_int"       : TD_INT,
+    "numpy_timedelta"  : TD_NUMPY,
+    "numpy_float"      : TD_NUMPY_FLOAT,
+    "numpy_int"        : TD_NUMPY_INT,
+    "pandas_timedelta" : TD_PANDAS,
+    "python_timedelta" : TD_PYTHON,
     # NOT SUPPORTED: "arrow"       : TD_ARROW,
 }  # fmt: skip
 # endregion scalar timedeltas ----------------------------------------------------------
@@ -120,24 +120,47 @@ def test_datetime_protocol(name: str) -> None:
 def test_timedelta_protocol(name: str) -> None:
     r"""Test the datetime protocol."""
     td_value = TIMEDELTAS[name]
+    original_type = type(td_value)
     assert isinstance(td_value, TimeDelta)
-    assert issubclass(type(td_value), TimeDelta)
-
-    # test __add__
-    td_new = td_value + td_value
-    assert isinstance(td_new, TimeDelta)
-    assert issubclass(type(td_new), TimeDelta)
-
-    # test __sub__
-    zero = td_value - td_value
-    assert isinstance(zero, TimeDelta)
-    assert issubclass(type(zero), TimeDelta)
+    assert issubclass(original_type, TimeDelta)
 
     # test __ge__
-    result = td_value >= td_value
-    assert result
-    assert isinstance(result, BooleanScalar)
-    assert issubclass(type(result), BooleanScalar)
+    result_ge = td_value >= td_value
+    assert result_ge
+    assert isinstance(result_ge, BooleanScalar)
+    assert issubclass(type(result_ge), BooleanScalar)
+
+    # test __pos__
+    result_pos = +td_value
+    assert type(result_pos) is original_type
+
+    # test __neg__
+    result_neg = -td_value
+    assert type(result_neg) is original_type
+
+    # test __add__
+    result_add = td_value + td_value
+    assert type(result_add) is original_type
+
+    # test __sub__
+    result_sub = td_value - td_value
+    assert type(result_sub) is original_type
+
+    # test __mul__
+    result_mul_int = td_value * 2
+    assert type(result_mul_int) is original_type
+
+    # test __floordiv__
+    result_fdiv = td_value // 2
+    assert type(result_fdiv) is original_type
+
+    # test __truediv__ with self
+    result_div_self = td_value / td_value
+    assert isinstance(result_div_self, float)
+
+    # test __truediv__
+    result_div_int = td_value / 2
+    assert isinstance(result_div_int, TimeDelta)
 
 
 def test_joint_attrs_datetime() -> None:
