@@ -10,13 +10,63 @@
 
 ## Overview
 
-| library               | typed | continuous time | datasets | datasets-ext | tasks | tasks-ext | models | models-ext | encoders | encoders-ext |
-|-----------------------|-------|-----------------|----------|--------------|-------|-----------|--------|------------|----------|--------------|
-| `TSLib`               |       |                 |          |              |       |           |        |            |          |              |
-| `aeon`                |       |                 |          |              |       |           |        |            |          |              |
-| `darts`               |       |                 |          |              |       |           |        |            |          |              |
-| `pytorch-forecasting` |       |                 |          |              |       |           |        |            |          |              |
-| `sktime`              |       |                 |          |              |       |           |        |            |          |              |
-| `tsai`                |       |                 |          |              |       |           |        |            |          |              |
-| `tslearn`             |       |                 |          |              |       |           |        |            |          |              |
-| `tsdm`                |       |                 |          |              |       |           |        |            |          |              |
+|                                     | `tsdm` | `aeon` | `darts` | `pytorch-forecasting` | `sktime` | `tsai` | `tslearn` | `tslib` |
+|-------------------------------------|--------|--------|---------|-----------------------|----------|--------|-----------|---------|
+| **typing**                          |        |        |         |                       |          |        |           |         |
+| typed (coverage)                    |        |        |         |                       |          |        |           |         |
+| modern type-hints (PEP 585/604/695) |        |        |         |                       |          |        |           |         |
+| mypy/pyright                        |        |        |         |                       |          |        |           |         |
+| **features**                        |        |        |         |                       |          |        |           |         |
+| continuous time                     |        |        |         |                       |          |        |           |         |
+| duplicate values                    |        |        |         |                       |          |        |           |         |
+| missing values (basic/universal)    |        |        |         |                       |          |        |           |         |
+| static covariates                   |        |        |         |                       |          |        |           |         |
+| dynamic covariates                  |        |        |         |                       |          |        |           |         |
+| **infrastructure**                  |        |        |         |                       |          |        |           |         |
+| datasets                            |        |        |         |                       |          |        |           |         |
+| datasets-ext                        |        |        |         |                       |          |        |           |         |
+| encoders                            |        |        |         |                       |          |        |           |         |
+| encoders-ext                        |        |        |         |                       |          |        |           |         |
+| models                              |        |        |         |                       |          |        |           |         |
+| models-ext                          |        |        |         |                       |          |        |           |         |
+| tasks                               |        |        |         |                       |          |        |           |         |
+| tasks-ext                           |        |        |         |                       |          |        |           |         |
+| **performance**                     |        |        |         |                       |          |        |           |         |
+| **extensibility**                   |        |        |         |                       |          |        |           |         |
+| Abstract Base Classes               |        |        |         |                       |          |        |           |         |
+| Protocols                           |        |        |         |                       |          |        |           |         |
+| Wrappers                            |        |        |         |                       |          |        |           |         |
+| **usability**                       |        |        |         |                       |          |        |           |         |
+| **documentation**                   |        |        |         |                       |          |        |           |         |
+
+- typed:
+  - we ran both mypy and pyright on the codebase.
+  - we ran `pyright --verifytypes` on the codebase to get the type coverage.
+  - we test with `ruff check select=UP` if modern type hints are used.
+
+## Comparison with Darts
+
+Darts offers the `darts.TimeSeries` class as a way to encapsulate time series.
+However, we have abserved that this class does not work well with highly irregular time series data.
+For instance, trying to convert one of the time series from the `KiwiBenchmark` dataset (experiment `439/15325`) to a `darts.TimeSeries` requires to setting a frequency.
+However, as the time series is highly irregular, we have to set a very low frequency of 1 second, and the `DataFrame` blows up from a size of 1529 rows with a memory usage of less than 100KB to over 50k rows with over 6MB of memory usage.
+
+```python
+import tsdm
+import darts
+ds = tsdm.datasets.KiwiBenchmark()
+ts = ds.timeseries.loc[439, 15325]
+sc = ds.static_covariates.loc[439, 15325]
+ts.info()
+
+# convert to float as darts is incompatible with pyarrow backend
+ts_compat = ts.astype(float)
+# reset index
+ts_compat=ts_compat.reset_index()
+# convert index as darts is incompatible with time delta index
+ts_compat=ts_compat.assign(
+    time=ts_compat.pop("elapsed_time").astype("timedelta64[s]") + sc["start_time"]
+)
+# convert to darts.TimeSeries
+ts_darts = darts.TimeSeries.from_dataframe(ts_compat, time_col="time", freq="1s")
+```
