@@ -21,7 +21,7 @@ import warnings
 from collections.abc import Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from math import nan as NAN
-from typing import Any, ClassVar, NamedTuple, Optional, Self, overload
+from typing import Any, ClassVar, Final, NamedTuple, Optional, Self, overload
 
 import numpy as np
 import torch
@@ -36,9 +36,19 @@ from tsdm.datasets import MultiTableDataset
 from tsdm.utils.decorators import pprint_repr
 
 
+class _TimeSeriesBase:
+    # FIXME: Use Final[ClassVar] with python 3.13.
+    FIELDS: Final[frozenset[str]] = frozenset({
+        "timeseries",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
+    })
+
+
 @pprint_repr
 @dataclass
-class TimeSeries(Collection):  # Q: Should this be a Mapping?
+class TimeSeries(_TimeSeriesBase, Collection):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -47,12 +57,13 @@ class TimeSeries(Collection):  # Q: Should this be a Mapping?
     For a given time-index, the time series data is a vector of measurements.
     """
 
-    FIELDS: ClassVar[frozenset[str]] = frozenset({
-        "timeseries",
-        "timeseries_metadata",
-        "static_covariates",
-        "static_covariates_metadata",
-    })
+    # # FIXME: Use Final[ClassVar] with python 3.13.
+    # FIELDS: ClassVar[frozenset[str]] = frozenset({
+    #     "timeseries",
+    #     "timeseries_metadata",
+    #     "static_covariates",
+    #     "static_covariates_metadata",
+    # })
 
     _: KW_ONLY
 
@@ -79,8 +90,14 @@ class TimeSeries(Collection):  # Q: Should this be a Mapping?
     r"""The time-index of the dataset."""
 
     @classmethod
-    def from_dataset(cls, ds: MultiTableDataset) -> Self:
+    def from_dataset(cls, ds: MultiTableDataset | type, /) -> Self:
         r"""Create a TimeSeries from a MultiTableDataset."""
+        if isinstance(ds, type):
+            try:
+                ds = ds()
+            except Exception:
+                raise ValueError(f"Could not instantiate {ds}.")
+
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 
@@ -168,8 +185,14 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
     r"""The index of the collection."""
 
     @classmethod
-    def from_dataset(cls, ds: MultiTableDataset) -> Self:
+    def from_dataset(cls, ds: MultiTableDataset | type, /) -> Self:
         r"""Create a TimeSeries from a MultiTableDataset."""
+        if isinstance(ds, type):
+            try:
+                ds = ds()
+            except Exception:
+                raise ValueError(f"Could not instantiate {ds}.")
+
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 
