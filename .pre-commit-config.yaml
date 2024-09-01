@@ -68,7 +68,7 @@ repos:
         files: '^src/|^tests/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.2
+    rev: v0.6.3
     hooks:
       - id: ruff
         files: '^src/|^tests/'
@@ -86,7 +86,7 @@ repos:
         files: '^dev/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.3.5.9
+    rev: v0.3.6.0
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -145,7 +145,7 @@ repos:
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.10.3 # change this to the latest tag!
+    rev: v0.10.5 # change this to the latest tag!
     hooks:
       - id: tach
   # mypy

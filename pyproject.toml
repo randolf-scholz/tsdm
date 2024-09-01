@@ -84,8 +84,8 @@ tests = [
 ]
 linters = [
     "pylint>=3.2.6",
-    "ruff>=0.6.2",
-    "tach>=0.10.3",
+    "ruff>=0.6.3",
+    "tach>=0.10.5",
 ]
 typing = [
     "mypy>=1.11.2",
@@ -101,7 +101,7 @@ typing = [
     "types-pytz>=2024.1.0.20240417",
     "types-pyyaml>=6.0.12.20240808",
     "types-requests>=2.32.0.20240712",
-    "types-setuptools>=73.0.0.20240822",
+    "types-setuptools>=74.0.0.20240830",
     "types-six>=1.16.21.20240513",
     "types-tabulate>=0.9.0.20240106",
     "types-tqdm>=4.66.0.20240417",
