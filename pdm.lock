@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e4a4a6e66f08ab028adf2dd6c2c27de5758c5fcc04a6f4f93bd11a4807513040"
+content_hash = "sha256:274a4954aff949e455cbe0f1fd70127d994ad18ef11e255d5a3a45554b782a4e"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -589,13 +589,13 @@ files = [
 
 [[package]]
 name = "executing"
-version = "2.0.1"
-requires_python = ">=3.5"
+version = "2.1.0"
+requires_python = ">=3.8"
 summary = "Get the currently executing AST node of a frame, and other information"
 groups = ["devtools", "experiment"]
 files = [
-    {file = "executing-2.0.1-py2.py3-none-any.whl", hash = "sha256:eac49ca94516ccc753f9fb5ce82603156e590b27525a8bc32cce8ae302eb61bc"},
-    {file = "executing-2.0.1.tar.gz", hash = "sha256:35afe2ce3affba8ee97f2d69927fa823b08b472b7b994e36a52a964b93d16147"},
+    {file = "executing-2.1.0-py2.py3-none-any.whl", hash = "sha256:8d63781349375b5ebccc3142f4b30350c0cd9c79f921cde38be2be4637e98eaf"},
+    {file = "executing-2.1.0.tar.gz", hash = "sha256:8ea27ddd260da8150fa5a708269c4a10e76161e2496ec3e587da9e3c0fe4b9ab"},
 ]
 
 [[package]]
@@ -2508,7 +2508,7 @@ files = [
 
 [[package]]
 name = "pylint"
-version = "3.2.6"
+version = "3.2.7"
 requires_python = ">=3.8.0"
 summary = "python code static checker"
 groups = ["linters"]
@@ -2526,8 +2526,8 @@ dependencies = [
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
 ]
 files = [
-    {file = "pylint-3.2.6-py3-none-any.whl", hash = "sha256:03c8e3baa1d9fb995b12c1dbe00aa6c4bcef210c2a2634374aedeb22fb4a8f8f"},
-    {file = "pylint-3.2.6.tar.gz", hash = "sha256:a5d01678349454806cff6d886fb072294f56a58c4761278c97fb557d708e1eb3"},
+    {file = "pylint-3.2.7-py3-none-any.whl", hash = "sha256:02f4aedeac91be69fb3b4bea997ce580a4ac68ce58b89eaefeaf06749df73f4b"},
+    {file = "pylint-3.2.7.tar.gz", hash = "sha256:1b7a721b575eaeaa7d39db076b6e7743c993ea44f57979127c517c6c572c803e"},
 ]
 
 [[package]]
@@ -3661,13 +3661,13 @@ files = [
 
 [[package]]
 name = "types-psutil"
-version = "6.0.0.20240621"
+version = "6.0.0.20240901"
 requires_python = ">=3.8"
 summary = "Typing stubs for psutil"
 groups = ["typing"]
 files = [
-    {file = "types-psutil-6.0.0.20240621.tar.gz", hash = "sha256:1be027326c42ff51ebd65255a5146f9dc57e5cf8c4f9519a88b3f3f6a7fcd00e"},
-    {file = "types_psutil-6.0.0.20240621-py3-none-any.whl", hash = "sha256:b02f05d2c4141cd5926d82d8b56e4292a4d8f483d8a3400b73edf153834a3c64"},
+    {file = "types-psutil-6.0.0.20240901.tar.gz", hash = "sha256:437affa76670363db9ffecfa4f153cc6900bf8a7072b3420f3bc07a593f92226"},
+    {file = "types_psutil-6.0.0.20240901-py3-none-any.whl", hash = "sha256:20af311bfb0386a018a27ae47dc952119d7c0e849ff72b6aa24fc0433afb92a6"},
 ]
 
 [[package]]
@@ -3734,13 +3734,13 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "74.0.0.20240830"
+version = "74.0.0.20240831"
 requires_python = ">=3.8"
 summary = "Typing stubs for setuptools"
 groups = ["typing"]
 files = [
-    {file = "types-setuptools-74.0.0.20240830.tar.gz", hash = "sha256:2019cb0ef0fc11c3550946057e1fe78cb934284b856cec5f4ab45b43d9288685"},
-    {file = "types_setuptools-74.0.0.20240830-py3-none-any.whl", hash = "sha256:3ccb05f218012b6d1643f15c3395fced6a290a32bc49338b0e93ece73585a5a2"},
+    {file = "types-setuptools-74.0.0.20240831.tar.gz", hash = "sha256:8b4a544cc91d42a019dc1e41fd397608b4bc7e20c7d7d5bc326589ffd9e8f8a1"},
+    {file = "types_setuptools-74.0.0.20240831-py3-none-any.whl", hash = "sha256:4d9d18ea9214828d695a384633130009f5dee2681a157ee873d3680b62931590"},
 ]
 
 [[package]]
