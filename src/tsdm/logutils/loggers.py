@@ -79,6 +79,7 @@ from tsdm.logutils.callbacks import (
     KernelCallback,
     LRSchedulerCallback,
     MetricsCallback,
+    ModelCallback,
     OptimizerCallback,
 )
 from tsdm.metrics import Metric
@@ -254,4 +255,11 @@ class DefaultLogger(BaseLogger):
                 self.checkpointable_objects,
                 path=self.checkpoint_dir,
                 frequency=self.checkpoint_frequency,
+            )
+        if self.model is not None:
+            yield ModelCallback(
+                self.model,
+                writer=self.writer,
+                log_norms=True,
+                log_histograms=True,
             )

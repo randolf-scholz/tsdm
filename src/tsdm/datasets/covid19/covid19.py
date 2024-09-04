@@ -1,4 +1,5 @@
 r"""COVID-19 dataset.
 
-TODO: Implement this dataset!
+References:
+    https://github.com/CSSEGISandData/COVID-19
 """
