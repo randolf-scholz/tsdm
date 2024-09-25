@@ -23,6 +23,15 @@ __all__ = [
     "is_callback",
 ]
 
+
+# TODO:
+#   - Add ValueCallback for single Tensor,
+#   - Instead of inheriting from BaseCallback, write a WrapCallback that implements the functionality.
+#   - Create Logger for init of training:
+#       - store python env lockfile.
+#       - store git commit hash.
+#       - store copy of the code.
+
 import inspect
 import logging
 from abc import abstractmethod
