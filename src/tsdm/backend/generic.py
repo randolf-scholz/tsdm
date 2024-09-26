@@ -6,13 +6,14 @@ __all__ = [
     "is_scalar",
     "is_singleton",
     "true_like",
+    "round",
 ]
 
 from math import prod
 
 import pyarrow as pa
 
-from tsdm.types.protocols import NumericalArray, SupportsShape
+from tsdm.types.protocols import NumericalArray, SupportsRound, SupportsShape
 
 
 def false_like(x: NumericalArray, /) -> NumericalArray[bool]:
@@ -37,3 +38,26 @@ def is_singleton(x: SupportsShape, /) -> bool:
 def is_scalar(x: object, /) -> bool:
     r"""Determines whether an object is a scalar."""
     return isinstance(x, bool | float | int | pa.Scalar | str)
+
+
+def round[Arr: NumericalArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # noqa: A001
+    r"""Round elements of the array to the given number of decimals.
+
+    Note:
+        Keeps floating point data type, does not cast to integer.
+
+    Args:
+        x: Input array
+        decimals: Number of decimal places to round to (default: 0)
+
+    Returns:
+        Array with elements rounded to the given number of decimals
+
+    Refernces:
+        https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even
+    """
+    if isinstance(x, SupportsRound):
+        return x.round(decimals=decimals)
+
+    # Now, apply rounding-half-to-even, in accordance with IEEE
+    raise NotImplementedError("Rounding half-to-even not implemented.")

@@ -20,6 +20,7 @@ __all__ = [
     "SupportsDtype",
     "SupportsItem",
     "SupportsNdim",
+    "SupportsRound",
     "SupportsShape",
     # Scalars
     # Arrays
@@ -305,6 +306,20 @@ class SupportsArray(Protocol):
 
 
 @runtime_checkable
+class SupportsRound(Protocol):
+    r"""Protocol for objects that support `round`."""
+
+    # FIXME: https://github.com/python/typing/discussions/1782
+    @overload
+    def round(self) -> Self: ...
+    @overload
+    def round(self, *, decimals: int) -> Self: ...
+    def round(self, *, decimals: int = 0) -> Self:
+        r"""Round to the given number of decimals."""
+        ...
+
+
+@runtime_checkable
 class SupportsArrayUfunc(SupportsArray, Protocol):
     r"""Protocol for objects that support `__array_ufunc__`.
 
@@ -373,6 +388,7 @@ class ArrayKind[Scalar](Protocol):
         - `numpy.ndarray`
         - `pandas.DataFrame`
         - `pandas.Series`
+        - `pandas.extensions.ExtensionArray`
         - `polars.DataFrame`
         - `polars.Series`
         - `pyarrow.Array`
@@ -416,6 +432,7 @@ class SeriesKind[Scalar](Protocol):
         - `pandas.Index`
         - `pandas.Series`
         - `polars.Series`
+        - `pandas.extensions.ExtensionArray`
         - `pyarrow.Array`
 
     Counter-Examples:
@@ -487,6 +504,7 @@ class TableKind(Protocol):
     Counter-Examples:
         - `numpy.ndarray`  lacks `__dataframe__`
         - `pandas.Series`  lacks `__dataframe__`
+        - `pandas.extensions.ExtensionArray`  lacks `__dataframe__`
         - `polars.Series`  lacks `__dataframe__`
         - `pyarrow.Array`  lacks `__dataframe__`
         - `torch.Tensor`  lacks `__dataframe__`
@@ -542,6 +560,7 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
         - `numpy.ndarray`
         - `pandas.Index`
         - `pandas.Series`
+        - `pandas.extensions.ExtensionArray`
         - `pandas.DataFrame`
         - `polars.Series`
         - `torch.Tensor`
@@ -581,15 +600,6 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
 
     def max(self) -> Self | Scalar:
         r"""Return the maximum value."""
-        ...
-
-    # FIXME: https://github.com/python/typing/discussions/1782
-    @overload
-    def round(self) -> Self: ...
-    @overload
-    def round(self, *, decimals: int) -> Self: ...
-    def round(self, *, decimals: int = 0) -> Self:
-        r"""Round the array to the given number of decimals."""
         ...
 
     # region arithmetic operations -----------------------------------------------------
@@ -682,6 +692,7 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
         - `numpy.ndarray`
         - `pandas.Index`
         - `pandas.Series`
+        - `pandas.extensions.ExtensionArray`
         - `polars.Series`
         - `torch.Tensor`
 
@@ -770,6 +781,15 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
         r"""Return a flattened version of the tensor."""
         ...
 
+    # FIXME: https://github.com/python/typing/discussions/1782
+    @overload
+    def round(self) -> Self: ...
+    @overload
+    def round(self, *, decimals: int) -> Self: ...
+    def round(self, *, decimals: int = 0) -> Self:
+        r"""Round the array to the given number of decimals."""
+        ...
+
 
 @runtime_checkable
 class MutableArray[Scalar](NumericalArray[Scalar], Protocol):
@@ -783,6 +803,7 @@ class MutableArray[Scalar](NumericalArray[Scalar], Protocol):
 
     Counter-Examples:
         - `pandas.Index`     (does not support inplace operations)
+        - `pandas.extensions.ExtensionArray`  (does not support inplace operations)
         - `polars.DataFrame` (does not support inplace operations)
         - `polars.Series`    (does not support inplace operations)
         - `pyarrow.Array`    (does not support inplace operations)

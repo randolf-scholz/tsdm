@@ -5,8 +5,7 @@ TypeAlias are not protected unless
 1. `from __future__ import annotations` is used
 2. The `TypeAlias` is manually added to `autodoc_type_aliases`.
 
-[autodoc: Add support for PEP 613 - Explicit Type Alias #8934
-](https://github.com/sphinx-doc/sphinx/issues/8934)
+[autodoc: Add support for PEP 613 - Explicit Type Alias #8934](https://github.com/sphinx-doc/sphinx/issues/8934)
 
 This however has the side effect that for `imported-members`, types are no longer properly resolved and hyperlinked.
 

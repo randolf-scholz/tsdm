@@ -54,6 +54,12 @@ PD_INDEX_STR = pd.Index(_STRING_LIST)
 PD_INDEX_INT = pd.Index(_INT_LIST)
 PD_SERIES_INT = pd.Series(_INT_LIST)
 PD_SERIES_STR = pd.Series(_STRING_LIST)
+PD_ARRAY_INT = pd.Series(_INT_LIST).array
+PD_ARRAY_STR = pd.Series(_STRING_LIST).array
+PD_ARRAY_PD_INT = pd.Series(_INT_LIST, dtype="Int64").array
+PD_ARRAY_PD_STR = pd.Series(_STRING_LIST, dtype="string").array
+PD_ARRAY_PA_INT = pd.Series(_INT_LIST, dtype="int64[pyarrow]").array
+PD_ARRAY_PA_STR = pd.Series(_INT_LIST, dtype="string[pyarrow]").array
 PL_SERIES_INT = pl.Series(_INT_LIST)
 PL_SERIES_STR = pl.Series(_STRING_LIST)
 PT_TENSOR_1D = torch.tensor(_INT_LIST)
@@ -72,6 +78,8 @@ PL_TABLE_FLOAT = pl.DataFrame(_TABLE_DATA_FLOAT)
 TEST_OBJECTS = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_series_int"   : PD_SERIES_INT,
@@ -94,6 +102,8 @@ TEST_OBJECTS = {
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_series_int"   : PD_SERIES_INT,
@@ -115,6 +125,8 @@ SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
 SUPPORTS_DTYPE: dict[str, SupportsDtype] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_series_int"   : PD_SERIES_INT,
@@ -128,6 +140,7 @@ SUPPORTS_DTYPE: dict[str, SupportsDtype] = {
 SUPPORTS_ARRAYS_UFUNC: dict[str, SupportsArrayUfunc] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_series_int"   : PD_SERIES_INT,
     "pandas_table_float"  : PD_TABLE_FLOAT,
@@ -135,6 +148,8 @@ SUPPORTS_ARRAYS_UFUNC: dict[str, SupportsArrayUfunc] = {
 }  # fmt: skip
 
 SERIES: dict[str, SeriesKind[str]] = {
+    "pandas_array_int"  : PD_ARRAY_INT,
+    "pandas_array_str"  : PD_ARRAY_STR,
     "pandas_index_int"  : PD_INDEX_INT,
     "pandas_index_str"  : PD_INDEX_STR,
     "pandas_series_int" : PD_SERIES_INT,
@@ -157,6 +172,8 @@ TABLES: dict[str, TableKind] = {
 ARRAYS: dict[str, ArrayKind] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_series_int"   : PD_SERIES_INT,
@@ -176,6 +193,8 @@ ARRAYS: dict[str, ArrayKind] = {
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_series_int"   : PD_SERIES_INT,
@@ -189,38 +208,42 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
 }  # fmt: skip
 
 NUMERICAL_SERIES: dict[str, NumericalSeries] = {
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_index_int"  : PD_INDEX_INT,
-    "pandas_index_str"  : PD_INDEX_STR,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "polars_series_int" : PL_SERIES_INT,
-    "polars_series_str" : PL_SERIES_STR,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "polars_series_int"   : PL_SERIES_INT,
+    "polars_series_str"   : PL_SERIES_STR,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
-    "numpy_ndarray_1d"  : NP_ARRAY_1D,
-    "numpy_ndarray_2d"  : NP_ARRAY_2D,
-    "pandas_index_int"  : PD_INDEX_INT,
-    "pandas_index_str"  : PD_INDEX_STR,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
-    "torch_tensor_1d"   : PT_TENSOR_1D,
-    "torch_tensor_2d"   : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_array_int"    : PD_ARRAY_INT,
+    "pandas_array_str"    : PD_ARRAY_STR,
+    "pandas_index_int"    : PD_INDEX_INT,
+    "pandas_index_str"    : PD_INDEX_STR,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
-    "numpy_ndarray_1d"   : NP_ARRAY_1D,
-    "numpy_ndarray_2d"   : NP_ARRAY_2D,
-    "pandas_series_int"  : PD_SERIES_INT,
-    "pandas_series_str"  : PD_SERIES_STR,
-    "pandas_table_float" : PD_TABLE_FLOAT,
-    "pandas_table_mixed" : PD_TABLE_MIXED,
-    "torch_tensor_1d"    : PT_TENSOR_1D,
-    "torch_tensor_2d"    : PT_TENSOR_2D,
+    "numpy_ndarray_1d"    : NP_ARRAY_1D,
+    "numpy_ndarray_2d"    : NP_ARRAY_2D,
+    "pandas_series_int"   : PD_SERIES_INT,
+    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_table_float"  : PD_TABLE_FLOAT,
+    "pandas_table_mixed"  : PD_TABLE_MIXED,
+    "torch_tensor_1d"     : PT_TENSOR_1D,
+    "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
 EXAMPLES: dict[type, dict[str, Any]] = {
@@ -302,7 +325,7 @@ EXCLUDED_MEMBERS: dict[type, set[str]] = {
     NumericalSeries : set(),
     NumericalTensor : {
         "T", "transpose",
-        "__iadd__", "argsort", "nbytes", "repeat",
+        "argsort", "nbytes", "repeat",
         "size", "take", "view",
     },
     MutableArray    : {
@@ -512,15 +535,25 @@ def test_shared_attrs(proto: type) -> None:
     shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
 
     excluded_attrs = EXCLUDED_MEMBERS[proto]
-    unneeded_exclusions = excluded_attrs - shared_attrs
-    assert not unneeded_exclusions, f"Unnecessary Exclusions: {unneeded_exclusions}"
-    shared_attrs -= EXCLUDED_MEMBERS[proto]
 
-    if extra_attrs := sorted(protocol_members - shared_attrs):
-        raise AssertionError(f"\nMissing attributes: {extra_attrs}")
-    if missing_attrs := sorted(filter(is_admissable, shared_attrs - protocol_members)):
+    if unneeded_exclusions := sorted(excluded_attrs - shared_attrs):
         raise AssertionError(
-            f"\nShared members not covered by {proto}:\n\t{missing_attrs}"
+            "\n\tThe following members are marked as excluded,"
+            "\n\tbut this is not necessary as not all types implement them:"
+            f"\n\t{unneeded_exclusions}"
+        )
+
+    shared_attrs -= excluded_attrs
+
+    if missing_attrs := sorted(protocol_members - shared_attrs):
+        raise AssertionError(
+            f"\n\tNot all types implement the following members of {proto.__name__!r}:"
+            f"\n\t{missing_attrs}"
+        )
+    if extra_attrs := sorted(filter(is_admissable, shared_attrs - protocol_members)):
+        raise AssertionError(
+            f"\n\tAll types implement the following members not covered by {proto.__name__!r}:"
+            f"\n\t{extra_attrs}"
         )
 
 

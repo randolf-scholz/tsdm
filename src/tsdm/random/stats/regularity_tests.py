@@ -22,6 +22,8 @@ from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 from scipy import stats
 
+from tsdm.types.protocols import NumericalSeries
+
 
 def approx_float_gcd(
     x: ArrayLike, /, *, rtol: float = 1e-05, atol: float = 1e-08
@@ -168,7 +170,7 @@ def time_gcd(s: Series) -> float:
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
 
 
-def irregularity_coefficient(s: Series, /, *, drop_zero: bool = True) -> float:
+def irregularity_coefficient(s: NumericalSeries, /, *, drop_zero: bool = True) -> float:
     r"""Compute the irregularity coefficient of a time differences.
 
     Args:
@@ -178,12 +180,13 @@ def irregularity_coefficient(s: Series, /, *, drop_zero: bool = True) -> float:
     Returns:
         γ(T) = \max(∆T) / \gcd(∆T)
     """
-    dt = s.diff()
+    t = Series(s)
+    dt = t.array[1:] - t.array[:-1]
 
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls
         mask = (dt == 0).fillna(value=False)
-        dt = dt.loc[~mask]
+        dt = dt[~mask]
 
     # special case floating point numbers
     if pd.api.types.is_float_dtype(dt):
@@ -205,7 +208,7 @@ def irregularity_coefficient(s: Series, /, *, drop_zero: bool = True) -> float:
     return float(np.max(dt_int) / np.gcd.reduce(dt_int))
 
 
-def coefficient_of_variation(s: Series, /, *, drop_zero: bool = True) -> float:
+def coefficient_of_variation(s: NumericalSeries, /, *, drop_zero: bool = True) -> float:
     r"""Compute the coefficient of variation of a time differences.
 
     Args:
@@ -215,16 +218,18 @@ def coefficient_of_variation(s: Series, /, *, drop_zero: bool = True) -> float:
     Returns:
         γ(T) = σ(∆T) / μ(∆T)
     """
-    dt = s.diff()
+    t = Series(s)
+    dt = t.array[1:] - t.array[:-1]
+
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls
         mask = (dt == 0).fillna(value=False)
-        dt = dt.loc[~mask]
+        dt = dt[~mask]
 
     return stats.variation(dt)
 
 
-def geometric_std(s: Series, /, *, drop_zero: bool = True) -> float:
+def geometric_std(s: NumericalSeries, /, *, drop_zero: bool = True) -> float:
     r"""Compute the geometric standard deviation of a time differences.
 
     Args:
@@ -234,11 +239,12 @@ def geometric_std(s: Series, /, *, drop_zero: bool = True) -> float:
     Returns:
         σ_g(T) = exp(σ(log(∆T)))
     """
-    dt = s.diff()
+    t = Series(s.__array__())
+    dt = t.array[1:] - t.array[:-1]
 
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls
         mask = (dt == 0).fillna(value=False)
-        dt = dt.loc[~mask]
+        dt = dt[~mask]
 
     return stats.gstd(dt)

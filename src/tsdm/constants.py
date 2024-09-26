@@ -12,7 +12,9 @@ __all__ = [
     "EXAMPLE_CATEGORIES",
     "EXAMPLE_EMOJIS",
     "EXAMPLE_STRINGS",
+    "INF",
     "KEYWORD_ONLY",
+    "NAN",
     "NA_STRINGS",
     "NA_VALUES",
     "NOT_GIVEN",
@@ -38,6 +40,18 @@ import pandas as pd
 import torch
 from numpy.random import Generator
 
+INF: Final[float] = float("inf")
+r"""Infinity"""
+NAN: Final[float] = float("nan")
+r"""Not a Number."""
+ROOT_3: Final[float] = float(np.sqrt(3))
+r"""Square root of 3."""
+ATOL: Final[float] = 1e-6
+r"""CONST: Default absolute precision."""
+RTOL: Final[float] = 1e-6
+r"""CONST: Default relative precision."""
+
+
 # NOTE: Use frozenmap() if PEP 603 is accepted.
 NOT_GIVEN: Final[Any] = None
 r"""CONST: Default value for optional arguments."""
@@ -45,12 +59,7 @@ EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
 RNG: Final[Generator] = np.random.default_rng()
 r"""Default random number generator."""
-ROOT_3: Final[float] = float(np.sqrt(3))
-r"""Square root of 3."""
-ATOL: Final[float] = 1e-6
-r"""CONST: Default absolute precision."""
-RTOL: Final[float] = 1e-6
-r"""CONST: Default relative precision."""
+
 EPS: Final[dict[torch.dtype, float]] = {
     torch.bfloat16   : 1e-2,
     torch.complex128 : 1e-15,
