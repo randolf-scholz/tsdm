@@ -3,7 +3,9 @@ r"""Test for checking how regular time series is."""
 __all__ = [
     # Functions
     "approx_float_gcd",
+    "coefficient_of_variation",
     "float_gcd",
+    "geometric_std",
     "irregularity_coefficient",
     "is_quasiregular",
     "is_regular",
@@ -18,6 +20,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
+from scipy import stats
 
 
 def approx_float_gcd(
@@ -57,7 +60,7 @@ def approx_float_gcd(
     return _float_gcd(x)
 
 
-def float_gcd(x: ArrayLike) -> float:
+def float_gcd(x: ArrayLike, /) -> float:
     r"""Compute the greatest common divisor (GCD) of a list of floats.
 
     Note:
@@ -96,7 +99,7 @@ def float_gcd(x: ArrayLike) -> float:
     return cast(float, gcd)
 
 
-def is_quasiregular(s: Series | DataFrame) -> bool:
+def is_quasiregular(s: Series | DataFrame, /) -> bool:
     r"""Test if time series is quasi-regular.
 
     By definition, this is the case if all timedeltas are
@@ -165,16 +168,77 @@ def time_gcd(s: Series) -> float:
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
 
 
-def irregularity_coefficient(s: Series) -> float:
-    r"""Compute the distributiveness of a time series.
+def irregularity_coefficient(s: Series, /, *, drop_zero: bool = True) -> float:
+    r"""Compute the irregularity coefficient of a time differences.
 
-    For a given irregular timeseries, we define this as the minimum:
+    Args:
+        s: Sequence of time stamps
+        drop_zero: Whether to drop zero time differences (default: True)
 
-    .. math:: σ(TS) = \min\{ d(TS, TS') ∣ 𝐄[∆t(TS')] = 𝐄[∆t(TS)], TS' regular \}
-
-    I.e. the minimum distance (for example, Dynamic Time Warping) between the time series,
-    and a regular time series with the same average frequency.
+    Returns:
+        γ(T) = \max(∆T) / \gcd(∆T)
     """
-    # TODO: implement correct function
-    # something along the lines of s.index.to_series().diff().std()
-    raise NotImplementedError(f"Not implemented yet! {s=}")
+    dt = s.diff()
+
+    if drop_zero:
+        # NOTE: use equality instead of inequality to serve nulls
+        mask = (dt == 0).fillna(value=False)
+        dt = dt.loc[~mask]
+
+    # special case floating point numbers
+    if pd.api.types.is_float_dtype(dt):
+        # convert to a numpy float
+        dt_float = dt.astype(np.float64)
+        return float(dt_float.max() / float_gcd(dt_float))
+
+    # special case integer numbers
+    if pd.api.types.is_integer_dtype(dt):
+        dt_int = dt
+    # otherwise convert to integer
+    else:
+        try:
+            dt_int = dt.astype("int64[pyarrow]")
+        except Exception as e:
+            e.add_note("Could not convert time differences to int64[pyarrow]")
+            raise
+
+    return float(np.max(dt_int) / np.gcd.reduce(dt_int))
+
+
+def coefficient_of_variation(s: Series, /, *, drop_zero: bool = True) -> float:
+    r"""Compute the coefficient of variation of a time differences.
+
+    Args:
+        s: Sequence of time stamps
+        drop_zero: Whether to drop zero time differences (default: True)
+
+    Returns:
+        γ(T) = σ(∆T) / μ(∆T)
+    """
+    dt = s.diff()
+    if drop_zero:
+        # NOTE: use equality instead of inequality to serve nulls
+        mask = (dt == 0).fillna(value=False)
+        dt = dt.loc[~mask]
+
+    return stats.variation(dt)
+
+
+def geometric_std(s: Series, /, *, drop_zero: bool = True) -> float:
+    r"""Compute the geometric standard deviation of a time differences.
+
+    Args:
+        s: Sequence of time stamps
+        drop_zero: Whether to drop zero time differences (default: True)
+
+    Returns:
+        σ_g(T) = exp(σ(log(∆T)))
+    """
+    dt = s.diff()
+
+    if drop_zero:
+        # NOTE: use equality instead of inequality to serve nulls
+        mask = (dt == 0).fillna(value=False)
+        dt = dt.loc[~mask]
+
+    return stats.gstd(dt)
