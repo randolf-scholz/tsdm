@@ -9,7 +9,7 @@ import pytest
 
 from tsdm.encoders.time import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.protocols import NumericalSeries
+from tsdm.types.arrays import NumericalSeries
 
 
 def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:

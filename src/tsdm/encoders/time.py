@@ -24,7 +24,7 @@ from pyarrow.lib import ArrowNotImplementedError
 from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasDtype
-from tsdm.types.protocols import NumericalTensor
+from tsdm.types.arrays import NumericalTensor
 from tsdm.types.scalars import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr

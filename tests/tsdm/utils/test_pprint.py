@@ -9,7 +9,8 @@ import pandas as pd
 import pytest
 import torch
 
-from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
+from tsdm.types.arrays import SupportsArray
+from tsdm.types.protocols import Dataclass, NTuple
 from tsdm.utils.pprint import (
     INDENT,
     repr_array,

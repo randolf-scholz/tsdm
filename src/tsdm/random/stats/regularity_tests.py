@@ -22,7 +22,7 @@ from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 from scipy import stats
 
-from tsdm.types.protocols import NumericalSeries
+from tsdm.types.arrays import NumericalSeries
 
 
 def approx_float_gcd(

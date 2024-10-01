@@ -13,7 +13,7 @@ from math import prod
 
 import pyarrow as pa
 
-from tsdm.types.protocols import NumericalArray, SupportsRound, SupportsShape
+from tsdm.types.arrays import NumericalArray, SupportsRound, SupportsShape
 
 
 def false_like(x: NumericalArray, /) -> NumericalArray[bool]:

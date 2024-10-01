@@ -59,7 +59,7 @@ from typing_extensions import TypeVar
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
-from tsdm.types.protocols import NumericalArray as Array, NumericalSeries
+from tsdm.types.arrays import NumericalArray as Array, NumericalSeries
 from tsdm.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 

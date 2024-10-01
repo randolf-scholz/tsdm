@@ -19,7 +19,8 @@ from typing import Any, Self
 from torch import jit, nn
 
 from tsdm.config import CONFIG
-from tsdm.types.protocols import Dataclass, NTuple, SupportsArray
+from tsdm.types.arrays import SupportsArray
+from tsdm.types.protocols import Dataclass, NTuple
 from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
 from tsdm.utils.pprint import (
     repr_array,

@@ -26,7 +26,8 @@ from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checka
 
 from pandas import DataFrame, Index, MultiIndex
 
-from tsdm.types.protocols import ArrayKind, SupportsGetItem
+from tsdm.types.arrays import ArrayKind
+from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.pprint import repr_array
 

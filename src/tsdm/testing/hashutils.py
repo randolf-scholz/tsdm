@@ -39,7 +39,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import FilePath
-from tsdm.types.protocols import SupportsShape
+from tsdm.types.arrays import SupportsShape
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 

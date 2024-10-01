@@ -50,16 +50,18 @@ from tsdm.testing import (
     is_scalar,
 )
 from tsdm.types.aliases import DType
-from tsdm.types.dtypes import TYPESTRINGS
-from tsdm.types.protocols import (
-    Dataclass,
-    NTuple,
+from tsdm.types.arrays import (
     SupportsArray,
-    SupportsDataframe,
+    SupportsDataFrame,
     SupportsDevice,
     SupportsDtype,
     SupportsItem,
     SupportsShape,
+)
+from tsdm.types.dtypes import TYPESTRINGS
+from tsdm.types.protocols import (
+    Dataclass,
+    NTuple,
 )
 
 __logger__: logging.Logger = logging.getLogger(__name__)
@@ -105,7 +107,7 @@ class Types(Enum):
     NAMEDTUPLE = NTuple
     SEQUENCE = Sequence
     SET = AbstractSet
-    TABLE = SupportsDataframe
+    TABLE = SupportsDataFrame
     TYPE = type
 
 
@@ -139,7 +141,7 @@ def get_identifier(obj: object, /, **_: Any) -> str:
             return ""
         case SupportsArray():
             return "<array>"
-        case SupportsDataframe():
+        case SupportsDataFrame():
             return "<table>"
         case Dataclass():
             return "<dataclass>"
@@ -907,7 +909,7 @@ def repr_array(
             vals = [repr_dtype(dtype) for dtype in table.schema.types]
         case pl.DataFrame(dtypes=dtypes):
             vals = [repr_dtype(dtype) for dtype in dtypes]
-        case SupportsDataframe() as supports_frame:
+        case SupportsDataFrame() as supports_frame:
             frame: DataFrame = supports_frame.__dataframe__()
             vals = [repr_dtype(dtype) for dtype in frame.dtypes]
         # Tensor-like

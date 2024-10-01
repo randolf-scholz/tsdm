@@ -68,7 +68,7 @@ repos:
         files: '^src/|^tests/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.7
+    rev: v0.6.8
     hooks:
       - id: ruff
         files: '^src/|^tests/'
@@ -167,7 +167,7 @@ repos:
         - "--"
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.382.post0
+    rev: v1.1.382.post1
     hooks:
       - id: pyright
         # REF: https://stackoverflow.com/a/20401674
