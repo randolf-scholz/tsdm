@@ -8,21 +8,27 @@ Here is a summary, based on the library versions:
 - `torch`:
 - `pyarrow`:
 
-|                   | np.ndarray | torch.Tensor | pd.Index | pd.EA | pd.Series | pd.DataFrame | pl.Series | pl.DataFrame | pa.Array | pa.Table |
-|-------------------|------------|--------------|----------|-------|-----------|--------------|-----------|--------------|----------|----------|
-| dimensionality    | N          | N            | 1        | 1     | 1         | 2            | 1         | 2            | 1        | 2        |
-| comparisons       | ✅          | ✅            | ✅        | ✅     | ✅         | ✅            | ✅         | ✅            | ❌        | ❌        |
-| Arithmetic        | ✅          | ✅            | ✅        | ✅     | ✅         | ✅            | ✅         | ❌            | ❌        | ❌        |
-| inplace arith.    | ✅          | ✅            | ❌        | ❌     | ✅         | ✅            | ❌         | ❌            | ❌        | ❌        |
-| `__array__`       | ✅          | ✅            | ✅        | ✅     | ✅         | ✅            | ✅         | ✅            | ✅        | ✅        |
-| `__array_ufunc__` | ✅          | ❌            | ✅        | ✅     | ✅         | ✅            | ❌         | ❌            | ❌        | ❌        |
-| `__dataframe__`   | ❌          | ❌            | ❌        | ❌     | ❌         | ✅            | ❌         | ✅            | ❌        | ✅        |
-| `.shape`          | ✅          | ✅            | ✅        | ✅     | ✅         | ✅            | ✅         | ✅            | ❌        | ✅        |
-| `.dtype`          | ✅          | ✅            | ✅        | ✅     | ✅         | ❌            | ✅         | ❌            | ❌        | ❌        |
-| `.ndim`           | ✅          | ✅            | ✅        | ✅     | ✅         | ✅            | ❌         | ❌            | ❌        | ❌        |
-| `.device`         | ✅          | ✅            | ❌        | ❌     | ❌         | ❌            | ❌         | ❌            | ❌        | ❌        |
-| `.item()`         | ✅          | ✅            | ✅        | ❌     | ✅         | ❌            | ✅         | ✅            | ❌        | ❌        |
-| `__matmul__`      | ✅          | ✅            | ❌        | ❌     | ✅         | ✅            | ✅         | ❌            | ❌        | ❌        |
+|                    | np.ndarray | torch.Tensor | pd.Index | pd.EA | pd.Series  | pd.DataFrame | pl.Series | pl.DataFrame | pa.Array | pa.Table |
+|--------------------|------------|--------------|----------|-------|------------|--------------|-----------|--------------|----------|----------|
+| dimensionality     | N          | N            | 1        | 1     | 1          | 2            | 1         | 2            | 1        | 2        |
+| comparisons        | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ❌        | ❌        |
+| Arithmetic         | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ❌            | ❌        | ❌        |
+| inplace arith.     | ✅          | ✅            | ❌        | ❌     | ✅          | ✅            | ❌         | ❌            | ❌        | ❌        |
+| `__array__`        | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ✅        | ✅        |
+| `__array_ufunc__`  | ✅          | ❌            | ✅        | ✅     | ✅          | ✅            | ❌         | ❌            | ❌        | ❌        |
+| `__dataframe__`    | ❌          | ❌            | ❌        | ❌     | ❌          | ✅            | ❌         | ✅            | ❌        | ✅        |
+| `.shape`           | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ❌        | ✅        |
+| `.dtype`           | ✅          | ✅            | ✅        | ✅     | ✅          | ❌            | ✅         | ❌            | ❌        | ❌        |
+| `.ndim`            | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ❌         | ❌            | ❌        | ❌        |
+| `.device`          | ✅          | ✅            | ❌        | ❌     | ❌          | ❌            | ❌         | ❌            | ❌        | ❌        |
+| `item()`           | ✅          | ✅            | ✅        | ❌     | ✅          | ❌            | ✅         | ✅            | ❌        | ❌        |
+| `__matmul__()`     | ✅          | ✅            | ❌        | ❌     | ✅          | ✅            | ✅         | ❌            | ❌        | ❌        |
+| `__len__()`        | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ✅        | ✅        |
+| `__iter__()`       | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ✅        | ❌        |
+| `iter() -> Self`   | ✅          | ✅            | ❌        | ❌     | ❌          | ❌            | ❌         | ❌            | ❌        | ❌        |
+| `iter() -> ?`      | ROW        | ROW          | ROW      | ROW   | ROW        |              | COL NAME  | COL          | ROW      | COL      |
+| `__getitem__[int]` | ✅          | ✅            | ✅        | ✅     | ⚡ UNSAFE ⚡ | ❌            | ✅         | ROW          | ROW      | COL      |
+| `__getitem__[str]` |            |              |          |       |            |              |           | COL          | ❌        | COL      |
 
 From this table, we are inclined to derive several protocols:
 
