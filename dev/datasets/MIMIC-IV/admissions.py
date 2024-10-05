@@ -348,8 +348,8 @@ selected_patients = single_admissions[single_admissions].index
 mask = admissions["subject_id"].isin(selected_patients)
 admissions = admissions[mask].copy()
 print(f"Removing {(~mask).sum()} patients with multiple admissions!")
-print(f"Number of patients   remaining: {admissions['subject_id'].nunique()}")
-print(f"Number of admissions remaining: {admissions['hadm_id'].nunique()}")
+print(f"Number of patients   remaining: {admissions["subject_id"].nunique()}")
+print(f"Number of admissions remaining: {admissions["hadm_id"].nunique()}")
 
 
 # ## Only keep admissions with single patient associated
@@ -362,8 +362,8 @@ selected_admissions = single_admissions[single_admissions].index
 mask = admissions["hadm_id"].isin(selected_admissions)
 admissions = admissions[mask].copy()
 print(f"Removing {(~mask).sum()} admissions with multiple patients!")
-print(f"Number of patients   remaining: {admissions['subject_id'].nunique()}")
-print(f"Number of admissions remaining: {admissions['hadm_id'].nunique()}")
+print(f"Number of patients   remaining: {admissions["subject_id"].nunique()}")
+print(f"Number of admissions remaining: {admissions["hadm_id"].nunique()}")
 
 
 # ## Only keep patients that stayed between 2 and 29 days

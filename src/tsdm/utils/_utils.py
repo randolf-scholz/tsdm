@@ -287,7 +287,9 @@ def flatten_dict[K, K2](
         ... )
         {('a', 'b', 'x'): 2, ('a', 'c'): 2}
 
-        >>> flatten_dict({"a": {17: "foo", 18: "bar"}}, join_fn=tuple, split_fn=lambda x: x)
+        >>> flatten_dict(
+        ...     {"a": {17: "foo", 18: "bar"}}, join_fn=tuple, split_fn=lambda x: x
+        ... )
         {('a', 17): 'foo', ('a', 18): 'bar'}
 
         When trying to flatten a partially flattened dictionary, setting recursive=<int>.
@@ -352,7 +354,9 @@ def unflatten_dict[K, K2](
         keys like ``("a", "b", "c")`` into ``{"a": {"b": {"c": ...}}}``.
 
         >>> unflatten_dict(
-        ...     {("a", 17): "foo", ("a", 18): "bar"}, join_fn=tuple, split_fn=lambda x: x
+        ...     {("a", 17): "foo", ("a", 18): "bar"},
+        ...     join_fn=tuple,
+        ...     split_fn=lambda x: x,
         ... )
         {'a': {17: 'foo', 18: 'bar'}}
     """

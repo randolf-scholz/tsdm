@@ -79,8 +79,8 @@ for key in ["hadm_id", "subject_id"]:
     mask = metadata[key].isin(merged_df[key])
     metadata = metadata[mask]
     print(f"Removing {(~mask).sum()} {key}")
-    print(f"Number of patients remaining: {metadata['subject_id'].nunique()}")
-    print(f"Number of admissions remaining: {metadata['hadm_id'].nunique()}")
+    print(f"Number of patients remaining: {metadata["subject_id"].nunique()}")
+    print(f"Number of admissions remaining: {metadata["hadm_id"].nunique()}")
     print(f"Number of events remaining: {metadata.shape}")
 
 # # Filter tables
@@ -153,7 +153,7 @@ merged_df
 
 mask = merged_df["time_stamp"] < pd.Timedelta(48, "h")
 merged_df = merged_df[mask].copy()
-print(f"Number of patients considered: {merged_df['hadm_id'].nunique()}")
+print(f"Number of patients considered: {merged_df["hadm_id"].nunique()}")
 assert all(merged_df["time_stamp"] < pd.Timedelta(48, "h"))
 
 # ## Convert time_stamp to minutes

@@ -40,7 +40,9 @@ Non-decomposable METRICS
 
     .. code-block:: python
 
-        test_metric = torch.AUROC()  # expects two tensors of shape (N, ...) or (N, C, ...)
+        test_metric = (
+            torch.AUROC()
+        )  # expects two tensors of shape (N, ...) or (N, C, ...)
         score = test_metric([(y, model(x)) for x, y in test_loader])
         # accumulation = None or identity function (tbd.)
 
