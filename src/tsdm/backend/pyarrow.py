@@ -95,9 +95,9 @@ def strip_whitespace_array(arr: Array, /) -> Array:
             return pa.chunked_array(map(strip_whitespace_array, chunks))  # type: ignore[has-type]
         case ListArray(type=dtype) if dtype.value_type in STRING_TYPES:
             return pa.array(map(pc.utf8_trim_whitespace, arr), type=dtype)
-        case DictionaryArray(
-            type=dtype, indices=indices, dictionary=dictionary
-        ) if dtype.value_type in STRING_TYPES:
+        case DictionaryArray(type=dtype, indices=indices, dictionary=dictionary) if (
+            dtype.value_type in STRING_TYPES
+        ):
             return DictionaryArray.from_arrays(
                 indices,
                 pc.utf8_trim_whitespace(dictionary),
