@@ -8,7 +8,14 @@ import pytest
 import torch as pt
 from typing_extensions import get_protocol_members
 
-from tsdm.types.scalars import AdditiveScalar, BooleanScalar, OrderedScalar
+from tsdm.types.scalars import (
+    AdditiveScalar,
+    BoolScalar,
+    ComplexScalar,
+    FloatScalar,
+    IntScalar,
+    OrderedScalar,
+)
 
 BASE_SCALARS: dict[object, object] = {
     None         : None,
@@ -20,14 +27,9 @@ BASE_SCALARS: dict[object, object] = {
     dt.timedelta : dt.timedelta(days=1),
     pd.NA        : pd.NA,
 }  # fmt: skip
+r"""Base scalars for testing."""
 
-BOOLEAN_SCALAR_TYPES: dict[str, BooleanScalar] = {
-    "np_bool" : np.True_,
-    "py_bool" : True,
-    "pt_bool" : pt.tensor([True]),
-}  # fmt: skip
-
-ORDERED_SCALAR_TYPES: dict[str, OrderedScalar] = {
+ORDERED_SCALARS: dict[str, OrderedScalar] = {
     "np_bool"      : np.True_,
     "np_datetime"  : np.datetime64("2021-01-01"),
     "np_float"     : np.float64(1.0),
@@ -47,8 +49,9 @@ ORDERED_SCALAR_TYPES: dict[str, OrderedScalar] = {
     "pt_int"       : pt.tensor(1, dtype=pt.int64),
     "pt_float"     : pt.tensor(1.0, dtype=pt.float64),
 }  # fmt: skip
+r"""Ordered scalars for testing."""
 
-ADDITIVE_SCALAR_TYPES: dict[str, AdditiveScalar] = {
+ADDITIVE_SCALARS: dict[str, AdditiveScalar] = {
     "np_complex"   : np.complex128(1 + 1j),
     "np_float"     : np.float64(1.0),
     "np_int"       : np.int64(1),
@@ -62,63 +65,95 @@ ADDITIVE_SCALAR_TYPES: dict[str, AdditiveScalar] = {
     "py_int"       : 1,
     "py_timedelta" : dt.timedelta(days=1),
 }  # fmt: skip
+r"""Additive scalars for testing."""
 
-STRING_SCALARS = {
-    "py_string" : "1",
-    "py_bytes"  : b"1",
-    "np_string" : np.str_("1"),
-    "np_bytes"  : np.bytes_(b"1"),
+BOOLEAN_SCALARS: dict[str, BoolScalar] = {
+    "np_bool" : np.True_,
+    "py_bool" : True,
+    "pt_bool" : pt.tensor([True], dtype=pt.bool),
 }  # fmt: skip
+r"""Boolean scalars for testing."""
+
+FLOAT_SCALARS: dict[str, FloatScalar] = {
+    "np_float": np.float64(1.0),
+    "py_float": 1.0,
+    "pt_float": pt.tensor(1.0, dtype=pt.float64),
+}  # fmt: skip
+r"""Float scalars for testing."""
+
+INT_SCALARS: dict[str, IntScalar] = {
+    "np_int": np.int64(1),
+    "py_int": 1,
+    "pt_int": pt.tensor(1, dtype=pt.int64),
+}  # fmt: skip
+r"""Integer scalars for testing."""
+
+COMPLEX_SCALARS: dict[str, ComplexScalar] = {
+    "np_complex": np.complex128(1 + 1j),
+    "py_complex": 1 + 1j,
+    "pt_complex": pt.tensor(1 + 1j, dtype=pt.complex128),
+}  # fmt: skip
+r"""Complex scalars for testing."""
+
+TEST_TYPED_CASES: dict[type, dict] = {
+    BoolScalar     : BOOLEAN_SCALARS,
+    ComplexScalar  : COMPLEX_SCALARS,
+    FloatScalar    : FLOAT_SCALARS,
+    IntScalar      : INT_SCALARS,
+    # TimeDelta      : TIMEDELTA_SCALARS,
+    # DateTime       : DATETIME_SCALARS,
+}  # fmt: skip
+r"""Test cases for scalar types."""
 
 
-@pytest.mark.parametrize("name", BOOLEAN_SCALAR_TYPES)
+@pytest.mark.parametrize("name", BOOLEAN_SCALARS)
 def test_boolean_scalar(name: str) -> None:
-    value = BOOLEAN_SCALAR_TYPES[name]
-    assert isinstance(value, BooleanScalar)
-    assert issubclass(value.__class__, BooleanScalar)
+    value = BOOLEAN_SCALARS[name]
+    assert isinstance(value, BoolScalar)
+    assert issubclass(value.__class__, BoolScalar)
 
     # test __bool__
     assert bool(value) == value
     assert isinstance(bool(value), bool)
     # test __and__
     assert value & value == value
-    assert isinstance(value & value, BooleanScalar)
+    assert isinstance(value & value, BoolScalar)
     # test __or__
     assert value | value == value
-    assert isinstance(value | value, BooleanScalar)
+    assert isinstance(value | value, BoolScalar)
     # test __xor__
     assert value ^ value != value
-    assert isinstance(value ^ value, BooleanScalar)
+    assert isinstance(value ^ value, BoolScalar)
 
 
-@pytest.mark.parametrize("name", ORDERED_SCALAR_TYPES)
+@pytest.mark.parametrize("name", ORDERED_SCALARS)
 def test_ordered_scalar(name: str) -> None:
-    value = ORDERED_SCALAR_TYPES[name]
+    value = ORDERED_SCALARS[name]
     assert isinstance(value, OrderedScalar)
 
     # test ==
     assert value == value
-    assert isinstance(value == value, BooleanScalar)
+    assert isinstance(value == value, BoolScalar)
     # test !=
     assert value == value
-    assert isinstance(value != value, BooleanScalar)
+    assert isinstance(value != value, BoolScalar)
     # test <=
     assert value <= value
-    assert isinstance(value <= value, BooleanScalar)
+    assert isinstance(value <= value, BoolScalar)
     # test <
     assert not (value < value)
-    assert isinstance(value < value, BooleanScalar)
+    assert isinstance(value < value, BoolScalar)
     # test >=
     assert value >= value
-    assert isinstance(value >= value, BooleanScalar)
+    assert isinstance(value >= value, BoolScalar)
     # test >
     assert not (value > value)
-    assert isinstance(value > value, BooleanScalar)
+    assert isinstance(value > value, BoolScalar)
 
 
-@pytest.mark.parametrize("name", ADDITIVE_SCALAR_TYPES)
+@pytest.mark.parametrize("name", ADDITIVE_SCALARS)
 def test_additive_scalar(name: str) -> None:
-    value = ADDITIVE_SCALAR_TYPES[name]
+    value = ADDITIVE_SCALARS[name]
     assert isinstance(value, AdditiveScalar)
     cls = value.__class__
 
@@ -128,34 +163,22 @@ def test_additive_scalar(name: str) -> None:
     assert isinstance(value - value, cls)
 
 
-def test_shared_interface_boolean_scalar() -> None:
-    shared_attrs = set.intersection(
-        *(set(dir(obj)) for obj in BOOLEAN_SCALAR_TYPES.values())
-    )
-    interface = get_protocol_members(BooleanScalar)
+@pytest.mark.parametrize("case", TEST_TYPED_CASES)
+def test_shared_interface(case: type) -> None:
+    name = case.__name__
+    test_cases = TEST_TYPED_CASES[case]
+    shared_attrs = set.intersection(*(set(dir(obj)) for obj in test_cases.values()))
+    interface = get_protocol_members(case)
 
-    superfluous = interface - shared_attrs
-    assert not superfluous, f"{superfluous=}"
-    # assert not (missing := sorted(shared_attrs - interface)), f"{missing=}"
-
-
-def test_shared_interface_ordered_scalar() -> None:
-    shared_attrs = set.intersection(
-        *(set(dir(obj)) for obj in ORDERED_SCALAR_TYPES.values())
-    )
-    interface = get_protocol_members(OrderedScalar)
-
-    superfluous = interface - shared_attrs
-    assert not superfluous, f"{superfluous=}"
-    # assert not (missing := sorted(shared_attrs - interface)), f"{missing=}"
-
-
-def test_shared_interface_additive_scalar() -> None:
-    shared_attrs = set.intersection(
-        *(set(dir(obj)) for obj in ADDITIVE_SCALAR_TYPES.values())
-    )
-    interface = get_protocol_members(AdditiveScalar)
-
-    superfluous = interface - shared_attrs
-    assert not superfluous, f"{superfluous=}"
-    # assert not (missing := shared_attrs - interface), f"{missing=}"
+    unsatisfied = sorted(interface - shared_attrs)
+    missing = sorted(shared_attrs - interface)
+    if unsatisfied:
+        # make dictionary which example does not satisfy which part of the interface
+        bad_cases = {
+            obj.__class__.__name__: missing
+            for obj in test_cases.values()
+            if (missing := sorted(interface - set(dir(obj))))
+        }
+        raise AssertionError(f"Unsatisfied members for {name!r}:\n\t{bad_cases}")
+    if missing:
+        print(f"\nShared members not covered by {case.__name__!r}:\n\t{missing}")

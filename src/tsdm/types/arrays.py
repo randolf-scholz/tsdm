@@ -8,35 +8,46 @@ Here is a summary, based on the library versions:
 - `torch`:
 - `pyarrow`:
 
-|                    | np.ndarray | torch.Tensor | pd.Index | pd.EA | pd.Series  | pd.DataFrame | pl.Series | pl.DataFrame | pa.Array | pa.Table |
-|--------------------|------------|--------------|----------|-------|------------|--------------|-----------|--------------|----------|----------|
-| dimensionality     | N          | N            | 1        | 1     | 1          | 2            | 1         | 2            | 1        | 2        |
-| comparisons        | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ❌        | ❌        |
-| Arithmetic         | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ❌            | ❌        | ❌        |
-| inplace arith.     | ✅          | ✅            | ❌        | ❌     | ✅          | ✅            | ❌         | ❌            | ❌        | ❌        |
-| `__array__`        | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ✅        | ✅        |
-| `__array_ufunc__`  | ✅          | ❌            | ✅        | ✅     | ✅          | ✅            | ❌         | ❌            | ❌        | ❌        |
-| `__dataframe__`    | ❌          | ❌            | ❌        | ❌     | ❌          | ✅            | ❌         | ✅            | ❌        | ✅        |
-| `.shape`           | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ❌        | ✅        |
-| `.dtype`           | ✅          | ✅            | ✅        | ✅     | ✅          | ❌            | ✅         | ❌            | ❌        | ❌        |
-| `.ndim`            | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ❌         | ❌            | ❌        | ❌        |
-| `.device`          | ✅          | ✅            | ❌        | ❌     | ❌          | ❌            | ❌         | ❌            | ❌        | ❌        |
-| `item()`           | ✅          | ✅            | ✅        | ❌     | ✅          | ❌            | ✅         | ✅            | ❌        | ❌        |
-| `__matmul__()`     | ✅          | ✅            | ❌        | ❌     | ✅          | ✅            | ✅         | ❌            | ❌        | ❌        |
-| `__len__()`        | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ✅        | ✅        |
-| `__iter__()`       | ✅          | ✅            | ✅        | ✅     | ✅          | ✅            | ✅         | ✅            | ✅        | ❌        |
-| `iter() -> Self`   | ✅          | ✅            | ❌        | ❌     | ❌          | ❌            | ❌         | ❌            | ❌        | ❌        |
-| `iter() -> ?`      | ROW        | ROW          | ROW      | ROW   | ROW        |              | COL NAME  | COL          | ROW      | COL      |
-| `__getitem__[int]` | ✅          | ✅            | ✅        | ✅     | ⚡ UNSAFE ⚡ | ❌            | ✅         | ROW          | ROW      | COL      |
-| `__getitem__[str]` |            |              |          |       |            |              |           | COL          | ❌        | COL      |
+|                             | np.ndarray | torch.Tensor | pd.Index | pd.EA | pd.Series       | pl.Series | pa.Array | pd.DataFrame | pl.DataFrame | pa.Table |
+|-----------------------------|------------|--------------|----------|-------|-----------------|-----------|----------|--------------|--------------|----------|
+| dimensionality              | N          | N            | 1        | 1     | 1               | 1         | 1        | 2            | 2            | 2        |
+| comparisons                 | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ✅            | ✅            | ❌        |
+| Arithmetic                  | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ✅            | ❌            | ❌        |
+| inplace arith.              | ✅          | ✅            | ❌        | ❌     | ✅               | ❌         | ❌        | ✅            | ❌            | ❌        |
+| `__array__`                 | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ✅        | ✅            | ✅            | ✅        |
+| `__array_ufunc__`           | ✅          | ❌            | ✅        | ✅     | ✅               | ❌         | ❌        | ✅            | ❌            | ❌        |
+| `__dataframe__`             | ❌          | ❌            | ❌        | ❌     | ❌               | ❌         | ❌        | ✅            | ✅            | ✅        |
+| `.shape`                    | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ✅            | ✅            | ✅        |
+| `.dtype`                    | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ❌            | ❌            | ❌        |
+| `.ndim`                     | ✅          | ✅            | ✅        | ✅     | ✅               | ❌         | ❌        | ✅            | ❌            | ❌        |
+| `.device`                   | ✅          | ✅            | ❌        | ❌     | ❌               | ❌         | ❌        | ❌            | ❌            | ❌        |
+| `item()`                    | ✅          | ✅            | ✅        | ❌     | ✅               | ✅         | ❌        | ❌            | ✅            | ❌        |
+| `__matmul__()`              | ✅          | ✅            | ❌        | ❌     | ✅               | ✅         | ❌        | ✅            | ❌            | ❌        |
+| `__len__()`                 | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ✅        | ✅            | ✅            | ✅        |
+| `__iter__()`                | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ✅        | ✅            | ✅            | ❌        |
+| `iter()`                    | ROW        | ROW          | ROW      | ROW   | ROW             | ROW       | ROW      | COL NAME     | COL          | COL      |
+| `__getitem__(index)`        | ROW        | ROW          | ROW      | ROW   | ROWS (⚡UNSAFE⚡) | ROW       | ROW      | ❌            | ROW          | COL      |
+| `__getitem__(list[index])`  | ROWS       | ROWS         | ROWS     | ROWS  | ROWS (⚡UNSAFE⚡) | ROWS      | ❌        | COLS         | ROWS         | ❌        |
+| `__getitem__(slice[index])` | ROWS       | ROWS         | ROWS     | ROWS  | ROWS            | ROWS      | ROWS     | ROWS         | ROWS         | ROWS     |
+| `__getitem__(label)`        | ❌          | ❌            | ❌        | ❌     | ROW             | ❌         | ❌        | COL          | COL          | COL      |
+| `__getitem__(list[label])`  | ❌          | ❌            | ❌        | ❌     | ROWS            | ❌         | ❌        | COLS         | COLS         | ❌        |
+| `__getitem__(slice[label])` | ❌          | ❌            | ❌        | ❌     | ROWS            | ❌         | ❌        | ROWS         | COLS         | ❌        |
+| `__getitem__(list[bool])`   | ROWS       | ROWS         | ROWS     | ROWS  | ROWS            | ❌         | ❌        | ROWS         | ❌            | ❌        |
+
+Note:
+    The summary shows that `pyarrow` objects lack support for many operations.
 
 From this table, we are inclined to derive several protocols:
 
+- `Table`-like protocol for 2d column-oriented arrays pd.DataFrame, pl.DataFrame and pa.Table.
+
 Warning:
-    `polars` and `pyarrow` are strict by allowing columns to only be indexed by strings, and rows by integers.
-    This creates type-safety. `pandas` on the other hand does not have this safety.
-    For example, `series[0]` will select the first row if `0` is not in the index,
-    but if `0` is in the index, it will select the row(s) whose index is equal to `0`.
+    `pandas.Series` has inherently usafe indexing! This is because `series[int]` and `series[list[int]]`
+
+    - return the same as `series.iloc[int]` and `series.iloc[list[int]]` if series not indexed by integers.
+    - return the same as `series.loc[int]` and `series.loc[list[int]]` if the series is indexed by integers.
+
+    `polars` and `pyarrow` are strict by demanding that rows are indexed by indices, and columns by labels (strings).
 """  # noqa: E501, W505
 
 __all__ = [
@@ -71,7 +82,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from tsdm.types.aliases import MultiIndexer
-from tsdm.types.scalars import BaseScalar, BooleanScalar
+from tsdm.types.scalars import BoolScalar
 
 # region helper protocols --------------------------------------------------------------
 
@@ -375,33 +386,19 @@ class ArrayKind[Scalar](Protocol):
         - `pyarrow.Table`
         - `torch.Tensor`
 
+    Note:
+        `pyarrow` does not support element-wise comparisons.
+
     References:
         - https://docs.python.org/3/c-api/buffer.html
         - https://numpy.org/doc/stable/reference/arrays.interface.html
         - https://numpy.org/devdocs/user/basics.interoperability.html
     """
 
-    # NOTE: This is a highly cut down version, to support the bare minimum.
-
     @property
     def shape(self) -> tuple[int, ...]: ...
-
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
-
-    # comparisons (element-wise)
-    # equality ==
-    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
-    # inequality !=
-    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
-    # less than or equal <=
-    def __le__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than or equal >=
-    def __ge__(self, other: Self | Scalar, /) -> Self: ...
-    # less than <
-    def __lt__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than >
-    def __gt__(self, other: Self | Scalar, /) -> Self: ...
 
 
 @runtime_checkable
@@ -422,14 +419,14 @@ class SeriesKind[Scalar](Protocol):
         - `pyarrow.Table`     lacks `equals`
         - `torch.Tensor`      lacks `equals`
 
+    NOTE: Many methods have subtle differences between backends:
+     - `diff`: gives discrete differences for polars and pandas, but not for pyarrow
+     - `value_counts`: polars returns a DataFrame, pandas a Series, pyarrow a StructArray
+     - `unique`: polars and pyarrow return `Self`, pandas returns `np.ndarray`.
+
     References:
         - https://numpy.org/devdocs/user/basics.interoperability.html
     """
-
-    # NOTE: The following methods differ between backends:
-    #  - diff: gives discrete differences for polars and pandas, but not for pyarrow
-    #  - value_counts: polars returns a DataFrame, pandas a Series, pyarrow a StructArray
-    # NOTE: We do not include to_numpy(), as this is covered by __array__.
 
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
@@ -439,31 +436,9 @@ class SeriesKind[Scalar](Protocol):
     @overload
     def __getitem__(self, key: slice, /) -> Self: ...
 
-    def unique(self) -> Self:
-        r"""Return the unique elements of the series."""
-        ...
-
     def equals(self, other: Self) -> bool:
         r"""Check if the series is equal to another series."""
         ...
-
-    def value_counts(self) -> SupportsArray:
-        r"""For each unique value holds the number of counts."""
-        ...
-
-    # comparisons (element-wise)
-    # equality ==
-    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
-    # inequality !=
-    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
-    # less than or equal <=
-    def __le__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than or equal >=
-    def __ge__(self, other: Self | Scalar, /) -> Self: ...
-    # less than <
-    def __lt__(self, other: Self | Scalar, /) -> Self: ...
-    # greater than >
-    def __gt__(self, other: Self | Scalar, /) -> Self: ...
 
 
 @runtime_checkable
@@ -475,6 +450,15 @@ class TableKind(Protocol):
     Note:
         In contrast to tensors (row-oriented), tables are column-oriented. Therefore,
         `__getitem__` returns a column, which is a SeriesKind, i.e. homogeneous 1d tensor.
+
+    Note: The following methods differ between backends:
+        - `pyarrow` does not support element-wise comparisons.
+        - `iter`: yields columns for polars and pandas, but rows for pyarrow
+             This is because `pyarrow` does not actually define `__iter__`.
+        - `take`: not supported by polars
+        - `columns`: pandas and polars return column names, pyarrow returns list of Arrays
+        - `drop`: polars currently doing signature change
+        - `filter`: pandas goes over columns, polars over rows
 
     Examples:
         - `pandas.DataFrame`
@@ -494,42 +478,17 @@ class TableKind(Protocol):
         - https://data-apis.org/dataframe-protocol/latest/index.html
     """
 
-    # NOTE: The following methods differ between backends:
-    #  - __iter__: yields columns for polars and pandas, but rows for pyarrow
-    #  - take: not supported by polars
-    #  - columns: pandas and polars return column names, pyarrow returns list of Arrays
-    #  - drop: polars currently doing signature change
-    #  - filter: pandas goes over columns, polars over rows
-
     @property
     def shape(self) -> tuple[int, int]: ...
 
     def __array__(self) -> NDArray[np.object_]: ...
     def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
     def __len__(self) -> int: ...
-
-    @overload
-    def __getitem__(self, key: str, /) -> SeriesKind: ...
-    @overload
-    def __getitem__(self, key: slice, /) -> Self: ...
+    def __getitem__(self, key: str, /) -> SeriesKind: ...  # yields a column
 
     def equals(self, other: Self, /) -> bool:
         r"""Check if the table is equal to another table."""
         ...
-
-    # comparisons (element-wise)
-    # equality ==
-    def __eq__(self, other: object, /) -> Self: ...  # type: ignore[override]
-    # inequality !=
-    def __ne__(self, other: object, /) -> Self: ...  # type: ignore[override]
-    # less than or equal <=
-    def __le__(self, other: Self | object, /) -> Self: ...
-    # greater than or equal >=
-    def __ge__(self, other: Self | object, /) -> Self: ...
-    # less than <
-    def __lt__(self, other: Self | object, /) -> Self: ...
-    # greater than >
-    def __gt__(self, other: Self | object, /) -> Self: ...
 
 
 @runtime_checkable
@@ -538,10 +497,10 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
 
     Examples:
         - `numpy.ndarray`
+        - `pandas.DataFrame`
         - `pandas.Index`
         - `pandas.Series`
         - `pandas.extensions.ExtensionArray`
-        - `pandas.DataFrame`
         - `polars.Series`
         - `torch.Tensor`
 
@@ -564,13 +523,13 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
     def __len__(self) -> int: ...
 
     # NOTE: This is weakly typed since it returns different things on different objects.
-    def __getitem__(self, key: Any, /) -> "Self | NumericalSeries | BaseScalar": ...
+    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
 
-    def all(self) -> Self | BooleanScalar:
+    def all(self) -> Self | BoolScalar:
         r"""Return True if all elements are True."""
         ...
 
-    def any(self) -> Self | BooleanScalar:
+    def any(self) -> Self | BoolScalar:
         r"""Return True if any element is True."""
         ...
 
@@ -624,7 +583,7 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
     def __floordiv__(self, other: Self | Scalar, /) -> Self: ...
     def __rfloordiv__(self, other: Self | Scalar, /) -> Self: ...
     # power **
-    # NOTE: polars does not support complex data types!
+    # NOTE: arrow/polars does not support complex data types!
     def __pow__(self, exponent: Self | float, /) -> Self: ...
     def __rpow__(self, base: Self | float, /) -> Self: ...
     # modulo %
@@ -657,6 +616,7 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
     # endregion arithmetic operations --------------------------------------------------
 
 
+@runtime_checkable
 class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
     r"""Protocol for numerical series.
 
@@ -669,12 +629,12 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
         For instance, a 3-dimensional numpy array is a `NumericalSeries[NDArray]`.
 
     Examples:
-        - `numpy.ndarray`
+        - `numpy.ndarray` (if 1d)
         - `pandas.Index`
         - `pandas.Series`
         - `pandas.extensions.ExtensionArray`
         - `polars.Series`
-        - `torch.Tensor`
+        - `torch.Tensor` (if 1d)
 
     Counter-Examples:
         - `pandas.DataFrame`
@@ -692,13 +652,6 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
     @overload
     def __getitem__(self, key: slice | range | list[int] | Self, /) -> Self: ...
     # fmt: on
-
-    def item(self) -> Scalar:
-        r"""Return the scalar value the tensor if it only has a single element.
-
-        Otherwise, raises `ValueError`.
-        """
-        ...
 
 
 @runtime_checkable
@@ -762,6 +715,7 @@ class MutableArray[Scalar](NumericalArray[Scalar], Protocol):
     # def __irshift__(self, other: Self | Scalar, /) -> Self: ...
 
 
+@runtime_checkable
 class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     r"""Protocol for numerical tensors.
 

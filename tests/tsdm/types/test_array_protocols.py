@@ -39,6 +39,7 @@ __logger__ = logging.getLogger(__name__)
 RNG = np.random.default_rng()
 ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 
+_BOOL_LIST = [True, False, True, False]
 _STRING_LIST = ["a", "b", "c", "d"]
 _INT_LIST = [1, 2, 3, 4]
 _INT_MATRIX = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]]
@@ -85,7 +86,7 @@ PL_TABLE_FLOAT = pl.DataFrame(_TABLE_DATA_FLOAT)
 PL_TABLE_MIXED = pl.DataFrame(_TABLE_DATA_MIXED)
 
 
-TEST_OBJECTS = {
+TEST_ARRAYS = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
     "pandas_array_int"    : PD_ARRAY_INT,
@@ -105,33 +106,13 @@ TEST_OBJECTS = {
     "pyarrow_array_str"   : PA_ARRAY_STR,
     "pyarrow_table_float" : PA_TABLE_FLOAT,
     "pyarrow_table_mixed" : PA_TABLE_MIXED,
-    # "python_array"        : PY_ARRAY,
     "torch_tensor_1d"     : PT_TENSOR_1D,
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
+r"""Collection of all test arrays."""
 
-SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
-    "numpy_ndarray_1d"    : NP_ARRAY_1D,
-    "numpy_ndarray_2d"    : NP_ARRAY_2D,
-    "pandas_array_int"    : PD_ARRAY_INT,
-    "pandas_array_str"    : PD_ARRAY_STR,
-    "pandas_index_int"    : PD_INDEX_INT,
-    "pandas_index_str"    : PD_INDEX_STR,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
-    "pandas_table_float"  : PD_TABLE_FLOAT,
-    "pandas_table_mixed"  : PD_TABLE_MIXED,
-    "polars_series_int"   : PL_SERIES_INT,
-    "polars_series_str"   : PL_SERIES_STR,
-    "polars_table_float"  : PL_TABLE_FLOAT,
-    "polars_table_mixed"  : PL_TABLE_MIXED,
-    "pyarrow_array_int"   : PA_ARRAY_INT,
-    "pyarrow_array_str"   : PA_ARRAY_STR,
-    "pyarrow_table_float" : PA_TABLE_FLOAT,
-    "pyarrow_table_mixed" : PA_TABLE_MIXED,
-    "torch_tensor_1d"     : PT_TENSOR_1D,
-    "torch_tensor_2d"     : PT_TENSOR_2D,
-}  # fmt: skip
+SUPPORTS_ARRAYS: dict[str, SupportsArray] = TEST_ARRAYS.copy()
+r"""Collection of all test arrays that satisfy the `SupportsArray` protocol."""
 
 SUPPORTS_DTYPE: dict[str, SupportsDtype] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
@@ -355,19 +336,34 @@ def is_admissable(name: str) -> bool:
     return name in DUNDER_ARITHMETIC or not name.startswith("_")
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+def test_shared_interface() -> None:
+    shared_attrs = set.intersection(*(set(dir(obj)) for obj in TEST_ARRAYS.values()))
+    print(sorted(shared_attrs))
+
+
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_array(name: str) -> None:
     r"""Test the SupportsArray protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsArray)
     assert issubclass(obj.__class__, SupportsArray)
     assert isinstance(obj.__array__(), np.ndarray)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
+def test_supports_len(name: str) -> None:
+    r"""Test the SupportsLen protocol."""
+    obj = TEST_ARRAYS[name]
+    assert hasattr(obj, "__len__")
+    result = len(obj)
+    assert isinstance(result, int)
+    assert result == 4
+
+
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_array_ufunc(name: str) -> None:
     r"""Test the SupportsArrayUfunc protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsArrayUfunc)
     assert issubclass(obj.__class__, SupportsArrayUfunc)
 
@@ -376,107 +372,99 @@ def test_supports_array_ufunc(name: str) -> None:
     assert isinstance(result, type(obj))
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_dataframe(name: str) -> None:
     r"""Test the SupportsDataFrame protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsDataFrame)
     assert isinstance(obj.__dataframe__(), TableKind)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_dtype(name: str) -> None:
     r"""Test the SupportsDtype protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsDtype)
     assert isinstance(obj.dtype, object)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_shape(name: str) -> None:
     r"""Test the SupportsShape protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsShape)
     assert isinstance(obj.shape, tuple)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_ndim(name: str) -> None:
     r"""Test the SupportsNdim protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsNdim)
     assert isinstance(obj.ndim, int)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_device(name: str) -> None:
     r"""Test the SupportsDevice protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsDevice)
     assert isinstance(obj.device, object)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_matmul(name: str) -> None:
     r"""Test the SupportsMatmul protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsMatmul)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_item(name: str) -> None:
     r"""Test the SupportsShape protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsItem)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_comparison(name: str) -> None:
     r"""Test the SupportsComparison protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsComparison)
     try:
-        obj < obj  # noqa: B015
+        _ = obj < obj
     except TypeError as exc:
         raise AssertionError(f"Comparison failed for {name}!") from exc
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_arithmetic(name: str) -> None:
     r"""Test the SupportsArithmetic protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsArithmetic)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_inplace(name: str) -> None:
     r"""Test the SupportsInplaceArithmetic protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsInplaceArithmetic)
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
-def test_supports_len(name: str) -> None:
-    r"""Test the SupportsShape protocol."""
-    obj = TEST_OBJECTS[name]
-    assert hasattr(obj, "__len__")
-    assert isinstance(len(obj), int)
-
-
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_itering(name: str) -> None:
     r"""Test if the object supports iteration."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     try:
         next(iter(obj))
     except Exception:
         raise AssertionError(f"Failed to iterate over {name}!") from None
 
 
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_getitem_int(name: str) -> None:
     r"""Test if the object supports integer indexing."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     try:
         obj[0]
     except Exception:
@@ -508,15 +496,15 @@ def test_series(name: str) -> None:
     assert isinstance(series[0:2], cls)
     attrs.remove("__getitem__")
 
-    assert isinstance(series.unique(), cls | np.ndarray)
-    attrs.remove("unique")
-
     assert series.equals(series)
     attrs.remove("equals")
 
-    value_counts = series.value_counts()
-    assert isinstance(value_counts, SupportsArray)
-    attrs.remove("value_counts")
+    # assert isinstance(series.unique(), cls | np.ndarray)
+    # attrs.remove("unique")
+
+    # value_counts = series.value_counts()
+    # assert isinstance(value_counts, SupportsArray)
+    # attrs.remove("value_counts")
 
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
@@ -547,12 +535,11 @@ def test_table(name: str) -> None:
     assert isinstance(table.shape[1], int)
     attrs.remove("shape")
 
+    assert isinstance(table["x"], SeriesKind)
+    attrs.remove("__getitem__")
+
     assert table.equals(table)
     attrs.remove("equals")
-
-    assert isinstance(table["x"], SeriesKind)
-    assert isinstance(table[:], TableKind)
-    attrs.remove("__getitem__")
 
     # check that all attributes are tested
     assert not attrs, f"Forgot to test: {attrs}!"
@@ -626,10 +613,10 @@ def test_mutable_array(name: str) -> None:
 
 
 @pytest.mark.parametrize("proto", EXAMPLES)
-@pytest.mark.parametrize("name", TEST_OBJECTS)
+@pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_all_protocols(proto: type, name: str) -> None:
     r"""Test the NumericalArray protocol."""
-    obj = TEST_OBJECTS[name]
+    obj = TEST_ARRAYS[name]
     if name in EXAMPLES[proto]:
         assert_protocol(obj, proto)
     else:

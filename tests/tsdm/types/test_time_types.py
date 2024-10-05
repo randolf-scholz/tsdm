@@ -10,7 +10,7 @@ import pytest
 from numpy.typing import NDArray
 from typing_extensions import get_protocol_members
 
-from tsdm.types.scalars import BooleanScalar, DateTime, TimeDelta
+from tsdm.types.scalars import BoolScalar, DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
 ISO_DATE = "2021-01-01"
@@ -113,7 +113,7 @@ def test_datetime_protocol(name: str) -> None:
     # test __ge__
     result = dt_value >= dt_value
     assert result
-    assert isinstance(result, BooleanScalar)
+    assert isinstance(result, BoolScalar)
 
 
 @pytest.mark.parametrize("name", TIMEDELTAS)
@@ -127,8 +127,8 @@ def test_timedelta_protocol(name: str) -> None:
     # test __ge__
     result_ge = td_value >= td_value
     assert result_ge
-    assert isinstance(result_ge, BooleanScalar)
-    assert issubclass(type(result_ge), BooleanScalar)
+    assert isinstance(result_ge, BoolScalar)
+    assert issubclass(type(result_ge), BoolScalar)
 
     # test __pos__
     result_pos = +td_value
