@@ -68,7 +68,7 @@ repos:
         files: '^src/|^tests/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.8
+    rev: v0.6.9
     hooks:
       - id: ruff
         files: '^src/|^tests/'
@@ -145,7 +145,7 @@ repos:
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.11.3 # change this to the latest tag!
+    rev: v0.13.0 # change this to the latest tag!
     hooks:
       - id: tach
   # mypy
@@ -167,7 +167,7 @@ repos:
         - "--"
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.382.post1
+    rev: v1.1.383
     hooks:
       - id: pyright
         # REF: https://stackoverflow.com/a/20401674
