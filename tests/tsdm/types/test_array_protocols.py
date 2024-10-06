@@ -12,7 +12,7 @@ import pytest
 import torch
 from typing_extensions import get_protocol_members
 
-from tsdm.testing import assert_protocol
+from tsdm.testing import assert_protocol, check_shared_interface
 from tsdm.types.arrays import (
     ArrayKind,
     MutableArray,
@@ -238,7 +238,7 @@ MUTABLE_ARRAYS: dict[str, MutableArray] = {
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
-EXAMPLES: dict[type, dict[str, Any]] = {
+EXAMPLES_BY_PROTOCOL: dict[type, dict[str, Any]] = {
     SeriesKind      : SERIES,
     TableKind       : TABLES,
     ArrayKind       : ARRAYS,
@@ -247,6 +247,7 @@ EXAMPLES: dict[type, dict[str, Any]] = {
     NumericalTensor : NUMERICAL_TENSORS,
     MutableArray    : MUTABLE_ARRAYS,
 }  # fmt: skip
+r"""Examples by protocol."""
 
 DUNDER_ARITHMETIC: frozenset[str] = frozenset({
     # comparisons
@@ -334,11 +335,6 @@ r"""Excluded members for each protocol."""
 def is_admissable(name: str) -> bool:
     r"""Check if the name is admissable."""
     return name in DUNDER_ARITHMETIC or not name.startswith("_")
-
-
-def test_shared_interface() -> None:
-    shared_attrs = set.intersection(*(set(dir(obj)) for obj in TEST_ARRAYS.values()))
-    print(sorted(shared_attrs))
 
 
 @pytest.mark.parametrize("name", TEST_ARRAYS)
@@ -612,47 +608,23 @@ def test_mutable_array(name: str) -> None:
     assert_protocol(mutable_array, MutableArray)
 
 
-@pytest.mark.parametrize("proto", EXAMPLES)
+@pytest.mark.parametrize("proto", EXAMPLES_BY_PROTOCOL)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_all_protocols(proto: type, name: str) -> None:
     r"""Test the NumericalArray protocol."""
     obj = TEST_ARRAYS[name]
-    if name in EXAMPLES[proto]:
+    if name in EXAMPLES_BY_PROTOCOL[proto]:
         assert_protocol(obj, proto)
     else:
         with pytest.raises(AssertionError):
             assert_protocol(obj, proto)
 
 
-@pytest.mark.parametrize("proto", EXAMPLES)
-def test_shared_attrs(proto: type) -> None:
+@pytest.mark.parametrize("protocol", EXAMPLES_BY_PROTOCOL)
+def test_shared_attrs(protocol: type) -> None:
     r"""Test which shared attributes exist that are not covered by protocols."""
-    print("\nShared Attributes not covered by protocols:")
-    examples = EXAMPLES[proto]
-    protocol_members = get_protocol_members(proto)
-    shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
-
-    excluded_attrs = EXCLUDED_MEMBERS[proto]
-
-    if unneeded_exclusions := sorted(excluded_attrs - shared_attrs):
-        raise AssertionError(
-            "\n\tThe following members are marked as excluded,"
-            "\n\tbut this is not necessary as not all types implement them:"
-            f"\n\t{unneeded_exclusions}"
-        )
-
-    shared_attrs -= excluded_attrs
-
-    if missing_attrs := sorted(protocol_members - shared_attrs):
-        raise AssertionError(
-            f"\n\tNot all types implement the following members of {proto.__name__!r}:"
-            f"\n\t{missing_attrs}"
-        )
-    if extra_attrs := sorted(filter(is_admissable, shared_attrs - protocol_members)):
-        raise AssertionError(
-            f"\n\tAll types implement the following members not covered by {proto.__name__!r}:"
-            f"\n\t{extra_attrs}"
-        )
+    examples = EXAMPLES_BY_PROTOCOL[protocol]
+    check_shared_interface(examples.values(), protocol, raise_on_extra=False)
 
 
 def test_table_manual() -> None:

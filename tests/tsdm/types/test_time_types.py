@@ -10,6 +10,7 @@ import pytest
 from numpy.typing import NDArray
 from typing_extensions import get_protocol_members
 
+from tsdm.testing import check_shared_interface
 from tsdm.types.scalars import BoolScalar, DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 
@@ -165,16 +166,12 @@ def test_timedelta_protocol(name: str) -> None:
 
 def test_joint_attrs_datetime() -> None:
     r"""Test the joint attributes of datetime objects."""
-    shared_attrs = set.intersection(*(set(dir(v)) for v in DATETIMES.values()))
-    superfluous_attrs = shared_attrs - set(dir(DateTime))
-    print(f"\nShared members not covered by DateTime:\n\t{superfluous_attrs}")
+    check_shared_interface(DATETIMES.values(), DateTime, raise_on_extra=False)
 
 
 def test_joint_attrs_timedelta() -> None:
     r"""Test the joint attributes of datetime objects."""
-    shared_attrs = set.intersection(*(set(dir(v)) for v in TIMEDELTAS.values()))
-    superfluous_attrs = shared_attrs - set(dir(TimeDelta))
-    print(f"\nShared members not covered by TimeDelta:\n\t{superfluous_attrs}")
+    check_shared_interface(TIMEDELTAS.values(), TimeDelta, raise_on_extra=False)
 
 
 def test_datetime_assign() -> None:

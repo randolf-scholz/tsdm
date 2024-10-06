@@ -5,7 +5,7 @@ __all__ = [
     "assert_arrays_close",
     "assert_arrays_equal",
     "assert_protocol",
-    "check_shared_attrs",
+    "check_shared_interface",
     "is_builtin",
     "is_builtin_constant",
     "is_builtin_type",
@@ -16,7 +16,7 @@ __all__ = [
     "is_zipfile",
 ]
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
 from inspect import isbuiltin
 from pathlib import Path
 from typing import Any
@@ -208,17 +208,50 @@ def assert_protocol(obj: Any, proto: type, /, *, expected: bool = True) -> None:
         raise AssertionError(msg)
 
 
-def check_shared_attrs(*classes: type, protocol: type) -> list[str]:
+DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
+
+
+def check_shared_interface(
+    test_cases: Iterable[object],
+    protocol: type,
+    *,
+    excluded_members: AbstractSet[str] = DEFAULT_EXCLUSIONS,
+    raise_on_extra: bool = True,
+    raise_on_unsatisfied: bool = True,
+) -> None:
     r"""Check that all classes satisfy the protocol."""
+    proto_name = protocol.__name__
     if not is_protocol(protocol):
         raise TypeError(f"{protocol} is not a protocol!")
 
-    protocol_members = get_protocol_members(protocol)
-    shared_members = set.intersection(*(set(dir(cls)) for cls in classes))
-    missing_members = sorted(protocol_members - shared_members)
-    superfluous_members = sorted(shared_members - protocol_members)
+    interface = get_protocol_members(protocol)
+    interfaces = {type(obj).__name__: set(dir(obj)) for obj in test_cases}
 
-    if missing_members:
-        raise AssertionError(f"Missing members: {missing_members}")
+    shared_members = set.intersection(*interfaces.values())
+    shared_members -= excluded_members - interface  # remove excluded members
 
-    return superfluous_members
+    unsatisfied: dict[str, list[str]] = {
+        name: missing
+        for name, members in interfaces.items()
+        if (missing := sorted(interface - members))
+    }
+
+    if unsatisfied:
+        msg = (
+            f"The following examples do not satisfy the protocol {proto_name!r}:"
+            f"\n\t{unsatisfied}"
+        )
+        if raise_on_unsatisfied:
+            raise AssertionError(msg)
+        else:
+            print(msg)
+
+    if extra_members := sorted(shared_members - interface):
+        msg = (
+            f"Shared members not covered by protocol {proto_name!r}:"
+            f"\n\t{extra_members}"
+        )
+        if raise_on_extra:
+            raise AssertionError(msg)
+        else:
+            print(msg)

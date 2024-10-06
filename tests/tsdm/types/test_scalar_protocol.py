@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch as pt
-from typing_extensions import get_protocol_members
 
+from tsdm.testing import check_shared_interface
 from tsdm.types.scalars import (
     AdditiveScalar,
     BoolScalar,
@@ -163,22 +163,7 @@ def test_additive_scalar(name: str) -> None:
     assert isinstance(value - value, cls)
 
 
-@pytest.mark.parametrize("case", TEST_TYPED_CASES)
-def test_shared_interface(case: type) -> None:
-    name = case.__name__
-    test_cases = TEST_TYPED_CASES[case]
-    shared_attrs = set.intersection(*(set(dir(obj)) for obj in test_cases.values()))
-    interface = get_protocol_members(case)
-
-    unsatisfied = sorted(interface - shared_attrs)
-    missing = sorted(shared_attrs - interface)
-    if unsatisfied:
-        # make dictionary which example does not satisfy which part of the interface
-        bad_cases = {
-            obj.__class__.__name__: missing
-            for obj in test_cases.values()
-            if (missing := sorted(interface - set(dir(obj))))
-        }
-        raise AssertionError(f"Unsatisfied members for {name!r}:\n\t{bad_cases}")
-    if missing:
-        print(f"\nShared members not covered by {case.__name__!r}:\n\t{missing}")
+@pytest.mark.parametrize("protocol", TEST_TYPED_CASES)
+def test_shared_interface(protocol: type) -> None:
+    test_cases = TEST_TYPED_CASES[protocol]
+    check_shared_interface(test_cases.values(), protocol, raise_on_extra=False)
