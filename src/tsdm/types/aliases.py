@@ -203,21 +203,16 @@ type NestedTuple[T] = tuple[T | "NestedTuple[T]", ...]
 r"""Generic Type Alias for nested `tuple`."""
 type NestedBuiltin[T] = (
     T
-    | tuple[T, ...]
+    | tuple[T, ...]  # leaf-tuple
     | tuple["NestedBuiltin[T]", ...]
-    | tuple[T | "NestedBuiltin[T]", ...]
-    | set[T]
+    | set[T]  # leaf-set
     | set["NestedBuiltin[T]"]
-    | set[T | "NestedBuiltin[T]"]
-    | frozenset[T]
+    | frozenset[T]  # leaf-frozenset
     | frozenset["NestedBuiltin[T]"]
-    | frozenset[T | "NestedBuiltin[T]"]
-    | list[T]
+    | list[T]  # leaf-list
     | list["NestedBuiltin[T]"]
-    | list[T | "NestedBuiltin[T]"]
-    | dict[str, T]
+    | dict[str, T]  # leaf-dict
     | dict[str, "NestedBuiltin[T]"]
-    | dict[str, T | "NestedBuiltin[T]"]
 )
 r"""Type Alias for nested builtins."""
 # endregion Nested Builtins ------------------------------------------------------------
