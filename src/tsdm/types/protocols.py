@@ -254,16 +254,16 @@ class SupportsLenAndGetItem[V](Protocol):  # +V
     def __getitem__(self, index: int, /) -> V: ...
 
 
-class _SupportsKwargsMeta(type(Protocol)):  # type: ignore[misc]
+class _SupportsKwargsMeta(typing._ProtocolMeta):
     r"""Metaclass for `SupportsKwargs`."""
 
-    def __instancecheck__(cls, other: object, /) -> TypeIs["SupportsKwargs"]:
-        return isinstance(other, SupportsKeysAndGetItem) and all(
+    def __instancecheck__(cls, instance: object) -> TypeIs["SupportsKwargs"]:  # noqa: N805
+        return isinstance(instance, SupportsKeysAndGetItem) and all(
             isinstance(key, str)
-            for key in other.keys()  # noqa: SIM118
+            for key in instance.keys()  # noqa: SIM118
         )
 
-    def __subclasscheck__(cls, other: type, /) -> TypeIs[type["SupportsKwargs"]]:
+    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["SupportsKwargs"]]:  # noqa: N805
         raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
 
 
@@ -304,8 +304,8 @@ class SetProtocol[V](Protocol):  # +V
     def isdisjoint(self, other: Iterable, /) -> bool: ...
 
 
-class _ArrayMeta(type(Protocol)):  # type: ignore[misc]
-    def __subclasscheck__(cls, other: type) -> TypeIs[type["Array"]]:
+class _ArrayMeta(typing._ProtocolMeta):
+    def __subclasscheck__(cls, other: type) -> TypeIs[type["Array"]]:  # noqa: N805
         if issubclass(other, str | bytes | Mapping):
             return False
         return super().__subclasscheck__(other)
@@ -534,6 +534,7 @@ class MutMap[K, V](Map[K, V], Protocol):
 # region generic factory-protocols -----------------------------------------------------
 
 
+# Q: Why no metaclass here?
 @runtime_checkable
 class Dataclass(Protocol):
     r"""Protocol for anonymous dataclasses.
@@ -597,19 +598,19 @@ class NTuple[T](Protocol):  # +T
         return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
 
-class _SlottedMeta(type(Protocol)):  # type: ignore[misc]
+class _SlottedMeta(typing._ProtocolMeta):
     r"""Metaclass for `Slotted`.
 
     FIXME: https://github.com/python/cpython/issues/112319
     This issue will make the need for metaclass obsolete.
     """
 
-    def __instancecheck__(cls, instance: object) -> TypeIs["Slotted"]:
+    def __instancecheck__(cls, instance: object) -> TypeIs["Slotted"]:  # noqa: N805
         slots = getattr(instance, "__slots__", None)
         return isinstance(slots, str | Iterable)
 
-    def __subclasscheck__(cls, other: type, /) -> TypeIs[type["Slotted"]]:
-        slots = getattr(other, "__slots__", None)
+    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["Slotted"]]:  # noqa: N805
+        slots = getattr(subclass, "__slots__", None)
         return isinstance(slots, str | Iterable)
 
 

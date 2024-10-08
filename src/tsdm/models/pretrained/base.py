@@ -44,7 +44,16 @@ from collections.abc import Collection, Mapping
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, ClassVar, Optional, Protocol, Self, cast
+from typing import (
+    IO,
+    Any,
+    ClassVar,
+    Optional,
+    Protocol,
+    Self,
+    _ProtocolMeta as ProtocolMeta,
+    cast,
+)
 from zipfile import ZipFile
 
 import torch
@@ -70,11 +79,11 @@ class PreTrained(Protocol):
     r"""Mapping of component names to their respective components."""
 
 
-class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
+class PreTrainedMetaClass(ProtocolMeta):
     r"""Metaclass for PreTrained."""
 
     def __init__(
-        cls,
+        cls,  # noqa: N805
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],

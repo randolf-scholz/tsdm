@@ -48,7 +48,7 @@ class _TimeSeriesBase:
 
 @pprint_repr
 @dataclass
-class TimeSeries(_TimeSeriesBase, Collection):
+class TimeSeries(Collection):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -58,12 +58,12 @@ class TimeSeries(_TimeSeriesBase, Collection):
     """
 
     # # FIXME: Use Final[ClassVar] with python 3.13.
-    # FIELDS: ClassVar[frozenset[str]] = frozenset({
-    #     "timeseries",
-    #     "timeseries_metadata",
-    #     "static_covariates",
-    #     "static_covariates_metadata",
-    # })
+    FIELDS: ClassVar[frozenset[str]] = frozenset({
+        "timeseries",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
+    })
 
     _: KW_ONLY
 
@@ -95,8 +95,8 @@ class TimeSeries(_TimeSeriesBase, Collection):
         if isinstance(ds, type):
             try:
                 ds = ds()
-            except Exception:
-                raise ValueError(f"Could not instantiate {ds}.")
+            except Exception as exc:
+                raise ValueError(f"Could not instantiate {ds}.") from exc
 
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
@@ -190,8 +190,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
         if isinstance(ds, type):
             try:
                 ds = ds()
-            except Exception:
-                raise ValueError(f"Could not instantiate {ds}.")
+            except Exception as exc:
+                raise ValueError(f"Could not instantiate {ds}.") from exc
 
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")

@@ -30,6 +30,7 @@ from typing import (
     Optional,
     Protocol,
     Self,
+    _ProtocolMeta as ProtocolMeta,
     cast,
     final,
     overload,
@@ -40,6 +41,7 @@ from zipfile import ZipFile
 import pandas as pd
 from pyarrow import Table as PyArrowTable, parquet
 from tqdm.auto import tqdm
+from typing_extensions import deprecated
 
 from tsdm.config import CONFIG
 from tsdm.testing.hashutils import validate_file_hash, validate_table_hash
@@ -119,11 +121,11 @@ class Dataset[T](Protocol):  # +T
         ...
 
 
-class _DatasetMeta(type(Protocol)):  # type: ignore[misc]
+class _DatasetMeta(ProtocolMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls,
+        cls,  # noqa: N805
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -458,6 +460,7 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         self.remove_dataset_files(force=force)
 
 
+@deprecated("Just use MultiTableDataset instead.")
 class SingleTableDataset[T](BaseDataset[T]):  # +T
     r"""Dataset class that consists of a singular DataFrame."""
 
@@ -624,124 +627,6 @@ class MultiTableDataset[Key: str, T](
     table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
     r"""Shapes of the in-memory cleaned dataset table(s)."""
 
-    @classmethod
-    def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
-        r"""Create a dataset from a table."""
-        obj = cls(initialize=False)
-        obj._tables = dict(tables)
-        return obj
-
-    @classmethod
-    @overload
-    def deserialize(cls, filepath: FilePath, /) -> Self: ...
-    @classmethod
-    @overload
-    def deserialize(cls, filepath: FilePath, /, *, key: Key) -> T: ...
-    @classmethod
-    def deserialize(
-        cls, filepath: FilePath, /, *, key: Optional[Key] = None
-    ) -> Self | T:
-        r"""Deserialize the dataset."""
-        if key is None:
-            # assume ZipFile
-            tables: dict[Key, T] = {}
-            with ZipFile(filepath) as archive:
-                for fname in archive.namelist():
-                    with archive.open(fname) as file:
-                        name = cast(Key, Path(fname).stem)
-                        extension = Path(fname).suffix[1:]
-                        tables[name] = cls.deserialize_table(file, loader=extension)
-
-            return cls.from_tables(tables)
-
-        raise NotImplementedError
-
-    def serialize(self, filepath: FilePath, /, *, key: Optional[Key] = None) -> None:
-        r"""Serialize the dataset.
-
-        Args:
-            filepath: Where to save the dataset.
-            key: If None, serialize the whole dataset (as a zip file).
-                Otherwise, save the selected table.
-        """
-        path = Path(filepath)
-        if key is None:
-            if path.suffix != ".zip":
-                raise ValueError(
-                    "Path must be a zip file if serializing whole dataset."
-                )
-            with ZipFile(path, "w") as archive:
-                extension = self.DEFAULT_FILE_FORMAT
-                for name, table in self.items():
-                    fname = f"{name}.{extension}"
-                    with archive.open(fname, "w") as file:
-                        self.serialize_table(table, file, writer=extension)
-            return
-
-        raise NotImplementedError
-
-    @cached_property
-    def _enable_key_attributes(self) -> bool:
-        r"""Whether to add table names as attributes."""
-        if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
-            warnings.warn(
-                "Not adding keys as attributes!"
-                f" Keys {invalid_keys} are not valid identifiers!",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            return False
-
-        def attr_exists(obj: object, key: str) -> bool:
-            r"""Test if attribute exists using only __getattribute__ and not __getattr__."""
-            try:
-                obj.__getattribute__(key)
-            except AttributeError:
-                return False
-            return True
-
-        if hasattr_keys := {key for key in self.table_names if attr_exists(self, key)}:
-            warnings.warn(
-                "Not adding keys as attributes!"
-                f" Keys {hasattr_keys} already exist as attributes!",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            return False
-
-        self.LOGGER.debug("Adding keys as attributes.")
-        return True
-
-    def __dir__(self) -> list[str]:
-        if self._enable_key_attributes:
-            return list(super().__dir__()) + list(self.table_names)
-        return list(super().__dir__())
-
-    def __getattr__(self, key: Key, /) -> T:  # type: ignore[misc]
-        r"""Get attribute."""
-        if self._enable_key_attributes and key in self.table_names:
-            return self.tables[key]
-        return self.__getattribute__(key)
-
-    def __len__(self) -> int:
-        r"""Return the number of samples in the dataset."""
-        return len(self.tables)
-
-    def __getitem__(self, key: Key, /) -> T:
-        r"""Return the sample at index `idx`."""
-        # need to manually raise KeyError otherwise __getitem__ will execute.
-        if key not in self.tables:
-            raise KeyError(f"Key {key} not in {self.__class__.__name__}!")
-        return self.tables[key]
-
-    def __iter__(self) -> Iterator[Key]:
-        r"""Return an iterator over the dataset."""
-        return iter(self.tables)
-
-    def __repr__(self) -> str:
-        r"""Pretty Print."""
-        return repr_mapping(self.tables, wrapped=self)
-
     @property
     @abstractmethod
     def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
@@ -776,6 +661,100 @@ class MultiTableDataset[Key: str, T](
         r"""Absolute paths to the raw dataset file(s)."""
         return {k: self.DATASET_DIR / fname for k, fname in self.dataset_files.items()}
 
+    @cached_property
+    def _enable_key_attributes(self) -> bool:
+        r"""Whether to add table names as attributes."""
+        if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
+            warnings.warn(
+                "Not adding keys as attributes!"
+                f" Keys {invalid_keys} are not valid identifiers!",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return False
+
+        def attr_exists(obj: object, key: str) -> bool:
+            r"""Test if attribute exists using only __getattribute__ and not __getattr__."""
+            try:
+                obj.__getattribute__(key)
+            except AttributeError:
+                return False
+            return True
+
+        if hasattr_keys := {key for key in self.table_names if attr_exists(self, key)}:
+            warnings.warn(
+                "Not adding keys as attributes!"
+                f" Keys {hasattr_keys} already exist as attributes!",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return False
+
+        self.LOGGER.debug("Adding keys as attributes.")
+        return True
+
+    @classmethod
+    def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
+        r"""Create a dataset from a table."""
+        obj = cls(initialize=False)
+        obj._tables = dict(tables)
+        return obj
+
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self:
+        r"""Deserialize the dataset."""
+        tables: dict[Key, T] = {}
+        with ZipFile(filepath) as archive:
+            for fname in archive.namelist():
+                with archive.open(fname) as file:
+                    name = cast(Key, Path(fname).stem)
+                    extension = Path(fname).suffix[1:]
+                    tables[name] = cls.deserialize_table(file, loader=extension)
+
+        return cls.from_tables(tables)
+
+    def serialize(self, filepath: FilePath, /) -> None:
+        r"""Serialize the dataset."""
+        path = Path(filepath)
+        if path.suffix != ".zip":
+            raise ValueError("Path must be a zip file if serializing whole dataset.")
+        with ZipFile(path, "w") as archive:
+            extension = self.DEFAULT_FILE_FORMAT
+            for name, table in self.items():
+                fname = f"{name}.{extension}"
+                with archive.open(fname, "w") as file:
+                    self.serialize_table(table, file, writer=extension)
+
+    def __dir__(self) -> list[str]:
+        if self._enable_key_attributes:
+            return list(super().__dir__()) + list(self.table_names)
+        return list(super().__dir__())
+
+    def __getattr__(self, key: Key, /) -> T:  # type: ignore[misc]
+        r"""Get attribute."""
+        if self._enable_key_attributes and key in self.table_names:
+            return self.tables[key]
+        return self.__getattribute__(key)
+
+    def __len__(self) -> int:
+        r"""Return the number of samples in the dataset."""
+        return len(self.tables)
+
+    def __getitem__(self, key: Key, /) -> T:
+        r"""Return the sample at index `idx`."""
+        # need to manually raise KeyError otherwise __getitem__ will execute.
+        if key not in self.tables:
+            raise KeyError(f"Key {key} not in {self.__class__.__name__}!")
+        return self.tables[key]
+
+    def __iter__(self) -> Iterator[Key]:
+        r"""Return an iterator over the dataset."""
+        return iter(self.tables)
+
+    def __repr__(self) -> str:
+        r"""Pretty Print."""
+        return repr_mapping(self.tables, wrapped=self)
+
     def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
         r"""Check if dataset files exist."""
         if isinstance(self.dataset_paths, Mapping) and key is not None:
@@ -790,6 +769,14 @@ class MultiTableDataset[Key: str, T](
         If manually writing the table to disk, return None.
         """
         ...
+
+    def load_table(self, *, key: Key) -> T:
+        r"""Load the selected table.
+
+        By default, `self.deserialize` is used to load the table from disk.
+        Override this method if you want to customize loading the table from disk.
+        """
+        return self.deserialize_table(self.dataset_paths[key])
 
     @final
     def clean(
@@ -855,14 +842,6 @@ class MultiTableDataset[Key: str, T](
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
-
-    def load_table(self, *, key: Key) -> T:
-        r"""Load the selected DATASET_OBJECT.
-
-        By default, `self.deserialize` is used to load the table from disk.
-        Override this method if you want to customize loading the table from disk.
-        """
-        return self.deserialize_table(self.dataset_paths[key])
 
     @overload
     def load(

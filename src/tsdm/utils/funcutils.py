@@ -63,6 +63,7 @@ def accepts_varkwargs(func: Callable[..., Any], /) -> bool:
     return any(p.kind is VAR_KEYWORD for p in sig.parameters.values())
 
 
+# FIXME: do not use __dataclass_fields__! Use dataclasses.fields instead.
 def dataclass_args_kwargs(
     obj: Dataclass, /, *, ignore_parent_fields: bool = False
 ) -> tuple[tuple[Any, ...], dict[str, Any]]:
