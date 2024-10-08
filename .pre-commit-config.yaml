@@ -88,7 +88,7 @@ repos:
         files: '^dev/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.3.6.0
+    rev: v0.3.7
     hooks:
       # pygrep hooks
       - id: check-separator-length
@@ -106,6 +106,7 @@ repos:
       - id: python-check-typing
         args: ["--check-no-return-union", "--check-concrete"]
         files: '^src/|tests/'
+        exclude: 'lazydict.py'
       - id: python-direct-imports
       - id: python-no-mixed-args
         files: '^src/'
