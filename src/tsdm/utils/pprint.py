@@ -27,6 +27,7 @@ __all__ = [
 ]
 
 
+import dataclasses
 import logging
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
@@ -745,11 +746,11 @@ def repr_dataclass(
         else repr_shortform
     )
 
-    fields = obj.__dataclass_fields__
+    fields = dataclasses.fields(obj)
 
     if recursive:
         return repr_mapping(
-            {key: getattr(obj, key) for key, field in fields.items() if field.repr},
+            {field.name: getattr(obj, field.name) for field in fields if field.repr},
             align=align,
             identifier=identifier,
             indent=indent,
@@ -763,7 +764,7 @@ def repr_dataclass(
         )
 
     return repr_sequence(
-        [key for key, field in fields.items() if field.repr],
+        [field.name for field in fields if field.repr],
         align=align,
         identifier=identifier,
         indent=indent,
