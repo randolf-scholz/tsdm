@@ -6,7 +6,7 @@ default_language_version:
 repos:
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
         description: "prevents giant files from being committed."
@@ -18,6 +18,8 @@ repos:
         description: "forbids files which have a utf-8 byte-order marker."
       - id: check-case-conflict
         description: "checks for files with names that would conflict on a case-insensitive filesystem."
+      - id: check-illegal-windows-names
+        description: "checks for windows-incompatible filenames."
       - id: check-json
         description: "checks json files for parseable syntax."
       - id: check-executables-have-shebangs
