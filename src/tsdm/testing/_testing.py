@@ -225,12 +225,12 @@ def check_shared_interface(
         raise TypeError(f"{protocol} is not a protocol!")
 
     interface = get_protocol_members(protocol)
-    interfaces = {type(obj).__name__: set(dir(obj)) for obj in test_cases}
+    interfaces = {type(obj): set(dir(obj)) for obj in test_cases}
 
     shared_members = set.intersection(*interfaces.values())
     shared_members -= excluded_members - interface  # remove excluded members
 
-    unsatisfied: dict[str, list[str]] = {
+    unsatisfied: dict[type, list[str]] = {
         name: missing
         for name, members in interfaces.items()
         if (missing := sorted(interface - members))

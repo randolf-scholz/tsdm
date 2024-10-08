@@ -12,8 +12,8 @@ Here is a summary, based on the library versions:
 |-----------------------------|------------|--------------|----------|-------|-----------------|-----------|----------|--------------|--------------|----------|
 | dimensionality              | N          | N            | 1        | 1     | 1               | 1         | 1        | 2            | 2            | 2        |
 | comparisons                 | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ✅            | ✅            | ❌        |
-| Arithmetic                  | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ✅            | ❌            | ❌        |
-| inplace arith.              | ✅          | ✅            | ❌        | ❌     | ✅               | ❌         | ❌        | ✅            | ❌            | ❌        |
+| arithmetic                  | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ❌        | ✅            | ❌            | ❌        |
+| mutation                    | ✅          | ✅            | ❌        | ❌     | ✅               | ❌         | ❌        | ✅            | ❌            | ❌        |
 | `__array__`                 | ✅          | ✅            | ✅        | ✅     | ✅               | ✅         | ✅        | ✅            | ✅            | ✅        |
 | `__array_ufunc__`           | ✅          | ❌            | ✅        | ✅     | ✅               | ❌         | ❌        | ✅            | ❌            | ❌        |
 | `__dataframe__`             | ❌          | ❌            | ❌        | ❌     | ❌               | ❌         | ❌        | ✅            | ✅            | ✅        |
@@ -35,7 +35,9 @@ Here is a summary, based on the library versions:
 | `__getitem__(list[bool])`   | ROWS       | ROWS         | ROWS     | ROWS  | ROWS            | ❌         | ❌        | ROWS         | ❌            | ❌        |
 
 Note:
-    The summary shows that `pyarrow` objects lack support for many operations.
+    - The summary shows that `pyarrow` objects lack support for many operations.
+    - mutability means that `x += 1` changes `x` in-place, resulting in object with identical id.
+      Note that for instance `pl.Series` still supports `+=` but it does actually create a new object.
 
 From this table, we are inclined to derive several protocols:
 
@@ -61,7 +63,7 @@ __all__ = [
     "SupportsDataFrame",
     "SupportsItem",
     "SupportsArithmetic",
-    "SupportsInplaceArithmetic",
+    "SupportsMutation",
     "SupportsComparison",
     "SupportsMatmul",
     "ArrayKind",
@@ -70,18 +72,18 @@ __all__ = [
     "NumericalArray",
     "NumericalSeries",
     "NumericalTensor",
-    "MutableArray",
+    "MutableTensor",
 ]
 
 
 from abc import abstractmethod
 from collections.abc import Iterator
-from typing import Any, Literal, Protocol, Self, overload, runtime_checkable
+from typing import Any, Literal, Optional, Protocol, Self, overload, runtime_checkable
 
 import numpy as np
 from numpy.typing import NDArray
 
-from tsdm.types.aliases import MultiIndexer
+from tsdm.types.aliases import Axis, MultiIndexer
 from tsdm.types.scalars import BoolScalar
 
 # region helper protocols --------------------------------------------------------------
@@ -152,9 +154,6 @@ class SupportsRound(Protocol):
     def round(self) -> Self: ...
     @overload
     def round(self, *, decimals: int) -> Self: ...
-    def round(self, *, decimals: int = 0) -> Self:
-        r"""Round to the given number of decimals."""
-        ...
 
 
 @runtime_checkable
@@ -302,7 +301,7 @@ class SupportsArithmetic[Scalar](Protocol):
 
 
 @runtime_checkable
-class SupportsInplaceArithmetic[Scalar](Protocol):
+class SupportsMutation[Scalar](Protocol):
     """Mixin Protocol for inplace arithmetic operations.
 
     Note:
@@ -522,6 +521,9 @@ class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
     def __array__(self) -> NDArray: ...
     def __len__(self) -> int: ...
 
+    # FIXME: change to __bool__ with torch==2.5.0
+    def __contains__(self, element: Any, /) -> object: ...
+
     # NOTE: This is weakly typed since it returns different things on different objects.
     def __getitem__(self, key: Any, /) -> Self | Scalar: ...
 
@@ -622,7 +624,7 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
 
     Series are per definition one dimensional, and have a unique data type.
     Notably, this differs with respect to `NumericalTensor` by not supporting tuple-indexing.
-    Moreover, its Iterator and `__getitem__(int)` are guaranteed to return scalars.
+    Moreover, its Iterator and `__getitem__(int)` return scalars.
 
     Note:
         Multidimensional Tensors are by definition Series of Tensors.
@@ -655,67 +657,6 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
 
 
 @runtime_checkable
-class MutableArray[Scalar](NumericalArray[Scalar], Protocol):
-    r"""Subclass of `Array` that supports inplace operations.
-
-    Examples:
-        - `numpy.ndarray`
-        - `pandas.DataFrame`
-        - `pandas.Series`
-        - `torch.Tensor`
-
-    Counter-Examples:
-        - `pandas.Index`     (does not support inplace operations)
-        - `pandas.extensions.ExtensionArray`  (does not support inplace operations)
-        - `polars.DataFrame` (does not support inplace operations)
-        - `polars.Series`    (does not support inplace operations)
-        - `pyarrow.Array`    (does not support inplace operations)
-        - `pyarrow.Table`    (does not support inplace operations)
-    """
-
-    def take(self, indices: Any, /) -> Self:
-        r"""Select elements from the array by index."""
-        ...
-
-    # NOTE: The following operations are excluded:
-    #  - __imatmul__: because it potentially changes the shape of the array.
-
-    # matrix multiplication @
-    def __matmul__(self, other: Self, /) -> Self: ...
-    def __rmatmul__(self, other: Self, /) -> Self: ...
-
-    # inplace arithmetic operations
-    # addition +=
-    def __iadd__(self, other: Self | Scalar, /) -> Self: ...
-    # floor division //=
-    def __ifloordiv__(self, other: Self | Scalar, /) -> Self: ...
-    # modulo %=
-    def __imod__(self, other: Self | Scalar | float, /) -> Self: ...
-    # multiplication *=
-    def __imul__(self, other: Self | Scalar, /) -> Self: ...
-    # power **=
-    def __ipow__(self, power: Self | float, /) -> Self: ...
-    # subtraction -=
-    def __isub__(self, other: Self | Scalar, /) -> Self: ...
-    # true division /=
-    def __itruediv__(self, other: Self | Scalar, /) -> Self: ...
-
-    # inplace boolean operations
-    # AND &=
-    def __iand__(self, other: Self | Scalar, /) -> Self: ...
-    # OR |=
-    def __ior__(self, other: Self | Scalar, /) -> Self: ...
-    # XOR ^=
-    def __ixor__(self, other: Self | Scalar, /) -> Self: ...
-
-    # # inplace bitwise operations
-    # # left shift =<<
-    # def __ilshift__(self, other: Self | Scalar, /) -> Self: ...
-    # # right shift =>>
-    # def __irshift__(self, other: Self | Scalar, /) -> Self: ...
-
-
-@runtime_checkable
 class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     r"""Protocol for numerical tensors.
 
@@ -725,7 +666,6 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
 
     Examples:
         - `numpy.ndarray`
-        - `pandas.Index`
         - `pandas.Series`
         - `torch.Tensor`
 
@@ -739,12 +679,42 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     @property
     def ndim(self) -> int: ...
 
+    def __iter__(self) -> Iterator[Scalar] | Iterator[Self]: ...
+
+    # matrix multiplication @
+    def __matmul__(self, other: Self, /) -> Self: ...
+    def __rmatmul__(self, other: Self, /) -> Self: ...
+
     # fmt: off
     @overload  # depending on Tensor Rank, can return Scalar or Tensor
     def __getitem__(self, key: int | tuple[int, ...], /) -> Scalar | Self: ...  # type: ignore[overload-overlap]
     @overload
     def __getitem__(self, key: Self | MultiIndexer, /) -> Self: ...
     # fmt: on
+
+    def argmin(self, axis: Optional[int] = None, /) -> int | Self:
+        r"""Return the index of the minimum value."""
+        ...
+
+    def argmax(self, axis: Optional[int] = None, /) -> int | Self:
+        r"""Return the index of the maximum value."""
+        ...
+
+    def argsort(self, axis: int = -1, /) -> Self:
+        r"""Return the indices that would sort the tensor (along last axis)."""
+        ...
+
+    def clip(self, lower: Any, upper: Any, /) -> Self: ...
+    def cumsum(self, axis: int, /) -> Scalar | Self: ...
+    def cumprod(self, axis: int, /) -> Scalar | Self: ...
+
+    def ravel(self) -> Self:
+        r"""Return a flattened version of the tensor."""
+        ...
+
+    def take(self, indices: Any, /) -> Self:
+        r"""Select elements from the array by index."""
+        ...
 
     def item(self) -> Scalar:
         r"""Return the scalar value the tensor if it only has a single element.
@@ -753,23 +723,53 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
         """
         ...
 
-    def argmin(self) -> int | Self:
-        r"""Return the index of the minimum value."""
-        ...
+    def std(self, axis: Axis = ..., /) -> Scalar | Self: ...
+    def var(self, axis: Axis = ..., /) -> Scalar | Self: ...
 
-    def argmax(self) -> int | Self:
-        r"""Return the index of the maximum value."""
-        ...
-
-    def ravel(self) -> Self:
-        r"""Return a flattened version of the tensor."""
-        ...
-
+    # region stupid overloads ----------------------------------------------------------
     # FIXME: https://github.com/python/typing/discussions/1782
+    @overload
+    def mean(self) -> Scalar | Self: ...
+    @overload
+    def mean(self, axis: Axis, /) -> Scalar | Self: ...
+
+    @overload
+    def sum(self) -> Self: ...
+    @overload
+    def sum(self, axis: Axis, /) -> Self: ...
+
+    @overload
+    def prod(self) -> Scalar | Self: ...
+    @overload
+    def prod(self, axis: int, /) -> Scalar | Self: ...
+
     @overload
     def round(self) -> Self: ...
     @overload
     def round(self, *, decimals: int) -> Self: ...
-    def round(self, *, decimals: int = 0) -> Self:
-        r"""Round the array to the given number of decimals."""
-        ...
+
+    @overload
+    def squeeze(self) -> Self: ...
+    @overload  # FIXME: https://github.com/pytorch/pytorch/issues/137422
+    def squeeze(self, axis: int, /) -> Self: ...
+
+    # endregion stupid overloads -------------------------------------------------------
+
+
+@runtime_checkable
+class MutableTensor[Scalar](NumericalTensor[Scalar], SupportsMutation, Protocol):
+    r"""Subclass of `NumericalTensor` that supports inplace operations.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `pandas.Index`     (does not support inplace operations)
+        - `pandas.extensions.ExtensionArray`  (does not support inplace operations)
+        - `polars.DataFrame` (does not support inplace operations)
+        - `polars.Series`    (does not support inplace operations)
+        - `pyarrow.Array`    (does not support inplace operations)
+        - `pyarrow.Table`    (does not support inplace operations)
+    """

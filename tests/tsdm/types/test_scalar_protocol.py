@@ -26,6 +26,7 @@ BASE_SCALARS: dict[object, object] = {
     dt.datetime  : dt.datetime(2021, 1, 1),
     dt.timedelta : dt.timedelta(days=1),
     pd.NA        : pd.NA,
+    pd.NaT       : pd.NaT,
 }  # fmt: skip
 r"""Base scalars for testing."""
 
@@ -37,6 +38,8 @@ ORDERED_SCALARS: dict[str, OrderedScalar] = {
     "np_timedelta" : np.timedelta64(1, "D"),
     "pd_timedelta" : pd.Timedelta("1D"),
     "pd_timestamp" : pd.Timestamp("2021-01-01"),
+    "pd_nat"       : pd.NaT,
+    "pd_na"        : pd.NA,
     "py_string"    : "1",
     "py_bytes"     : b"1",
     "py_bool"      : True,
@@ -57,6 +60,8 @@ ADDITIVE_SCALARS: dict[str, AdditiveScalar] = {
     "np_int"       : np.int64(1),
     "np_timedelta" : np.timedelta64(1, "D"),
     "pd_timedelta" : pd.Timedelta("1D"),
+    "pd_nat"       : pd.NaT,
+    "pd_na"        : pd.NA,
     "pt_complex"   : pt.tensor(1 + 1j, dtype=pt.complex128),
     "pt_float"     : pt.tensor(1.0, dtype=pt.float64),
     "pt_int"       : pt.tensor(1, dtype=pt.int64),

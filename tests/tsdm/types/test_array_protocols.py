@@ -15,7 +15,7 @@ from typing_extensions import get_protocol_members
 from tsdm.testing import assert_protocol, check_shared_interface
 from tsdm.types.arrays import (
     ArrayKind,
-    MutableArray,
+    MutableTensor,
     NumericalArray,
     NumericalSeries,
     NumericalTensor,
@@ -27,9 +27,9 @@ from tsdm.types.arrays import (
     SupportsDataFrame,
     SupportsDevice,
     SupportsDtype,
-    SupportsInplaceArithmetic,
     SupportsItem,
     SupportsMatmul,
+    SupportsMutation,
     SupportsNdim,
     SupportsShape,
     TableKind,
@@ -37,7 +37,7 @@ from tsdm.types.arrays import (
 
 __logger__ = logging.getLogger(__name__)
 RNG = np.random.default_rng()
-ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
+ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableTensor)
 
 _BOOL_LIST = [True, False, True, False]
 _STRING_LIST = ["a", "b", "c", "d"]
@@ -84,7 +84,6 @@ PD_TABLE_FLOAT = pd.DataFrame(_TABLE_DATA_FLOAT, index=_DATETIME_LIST)
 PD_TABLE_MIXED = pd.DataFrame(_TABLE_DATA_MIXED, index=_DATETIME_LIST)
 PL_TABLE_FLOAT = pl.DataFrame(_TABLE_DATA_FLOAT)
 PL_TABLE_MIXED = pl.DataFrame(_TABLE_DATA_MIXED)
-
 
 TEST_ARRAYS = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
@@ -217,23 +216,17 @@ NUMERICAL_SERIES: dict[str, NumericalSeries] = {
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
-    "pandas_array_int"    : PD_ARRAY_INT,
-    "pandas_array_str"    : PD_ARRAY_STR,
-    "pandas_index_int"    : PD_INDEX_INT,
-    "pandas_index_str"    : PD_INDEX_STR,
     "pandas_series_int"   : PD_SERIES_INT,
     "pandas_series_str"   : PD_SERIES_STR,
     "torch_tensor_1d"     : PT_TENSOR_1D,
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
-MUTABLE_ARRAYS: dict[str, MutableArray] = {
+MUTABLE_TENSORS: dict[str, MutableTensor] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
     "pandas_series_int"   : PD_SERIES_INT,
     "pandas_series_str"   : PD_SERIES_STR,
-    "pandas_table_float"  : PD_TABLE_FLOAT,
-    "pandas_table_mixed"  : PD_TABLE_MIXED,
     "torch_tensor_1d"     : PT_TENSOR_1D,
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
@@ -245,7 +238,7 @@ EXAMPLES_BY_PROTOCOL: dict[type, dict[str, Any]] = {
     NumericalArray  : NUMERICAL_ARRAYS,
     NumericalSeries : NUMERICAL_SERIES,
     NumericalTensor : NUMERICAL_TENSORS,
-    MutableArray    : MUTABLE_ARRAYS,
+    MutableTensor    : MUTABLE_TENSORS,
 }  # fmt: skip
 r"""Examples by protocol."""
 
@@ -321,7 +314,7 @@ EXCLUDED_MEMBERS: dict[type, set[str]] = {
         "argsort", "nbytes", "repeat",
         "size", "take", "view",
     },
-    MutableArray    : {
+    MutableTensor    : {
         "T", "transpose",
         "clip", "cumprod", "cumsum", "dot",
         "mean", "ndim", "prod",
@@ -444,7 +437,7 @@ def test_supports_arithmetic(name: str) -> None:
 def test_supports_inplace(name: str) -> None:
     r"""Test the SupportsInplaceArithmetic protocol."""
     obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsInplaceArithmetic)
+    assert_protocol(obj, SupportsMutation)
 
 
 @pytest.mark.parametrize("name", TEST_ARRAYS)
@@ -601,11 +594,11 @@ def test_numerical_tensor_getitem(name: str) -> None:
         assert isinstance(tensor[..., [0, 1]], cls)
 
 
-@pytest.mark.parametrize("name", MUTABLE_ARRAYS)
+@pytest.mark.parametrize("name", MUTABLE_TENSORS)
 def test_mutable_array(name: str) -> None:
     r"""Test the MutableArray protocol."""
-    mutable_array = MUTABLE_ARRAYS[name]
-    assert_protocol(mutable_array, MutableArray)
+    mutable_array = MUTABLE_TENSORS[name]
+    assert_protocol(mutable_array, MutableTensor)
 
 
 @pytest.mark.parametrize("proto", EXAMPLES_BY_PROTOCOL)
