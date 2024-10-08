@@ -64,6 +64,7 @@ from typing import (
     Protocol,
     Self,
     SupportsIndex,
+    _ProtocolMeta as ProtocolMeta,
     overload,
     runtime_checkable,
 )
@@ -254,7 +255,7 @@ class SupportsLenAndGetItem[V](Protocol):  # +V
     def __getitem__(self, index: int, /) -> V: ...
 
 
-class _SupportsKwargsMeta(typing._ProtocolMeta):
+class _SupportsKwargsMeta(ProtocolMeta):
     r"""Metaclass for `SupportsKwargs`."""
 
     def __instancecheck__(cls, instance: object) -> TypeIs["SupportsKwargs"]:  # noqa: N805
@@ -304,7 +305,7 @@ class SetProtocol[V](Protocol):  # +V
     def isdisjoint(self, other: Iterable, /) -> bool: ...
 
 
-class _ArrayMeta(typing._ProtocolMeta):
+class _ArrayMeta(ProtocolMeta):
     def __subclasscheck__(cls, other: type) -> TypeIs[type["Array"]]:  # noqa: N805
         if issubclass(other, str | bytes | Mapping):
             return False
@@ -534,9 +535,19 @@ class MutMap[K, V](Map[K, V], Protocol):
 # region generic factory-protocols -----------------------------------------------------
 
 
-# Q: Why no metaclass here?
+class _DataclassMeta(ProtocolMeta):
+    r"""Metaclass for `Dataclass`."""
+
+    def __instancecheck__(cls, instance: object) -> TypeIs["Dataclass"]:  # noqa: N805
+        return cls.__subclasscheck__(type(instance))
+
+    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["Dataclass"]]:  # noqa: N805
+        fields = getattr(subclass, "__dataclass_fields__", None)
+        return isinstance(fields, dict)
+
+
 @runtime_checkable
-class Dataclass(Protocol):
+class Dataclass(Protocol, metaclass=_DataclassMeta):
     r"""Protocol for anonymous dataclasses.
 
     Similar to `DataClassInstance` from typeshed, but allows isinstance and issubclass.
@@ -545,15 +556,28 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]] = {}
     r"""The fields of the dataclass."""
 
-    @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
-        r"""Cf https://github.com/python/cpython/issues/106363."""
-        fields = getattr(other, "__dataclass_fields__", None)
-        return isinstance(fields, dict)
+
+class _NTupleMeta(ProtocolMeta):
+    r"""Metaclass for `NTuple`.
+
+    Note:
+        We use this as an alternative to defining `__subclasshook__`
+        See https://github.com/python/cpython/issues/106363
+    """
+
+    _fields: ClassVar[tuple[str, ...]] = ()
+    r"""The fields of the namedtuple."""
+
+    def __instancecheck__(cls, instance: object) -> TypeIs["NTuple"]:  # noqa: N805
+        return cls.__subclasscheck__(type(instance))
+
+    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["NTuple"]]:  # noqa: N805
+        bases = get_original_bases(subclass)
+        return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
 
 @runtime_checkable  # FIXME: Use TypeVarTuple
-class NTuple[T](Protocol):  # +T
+class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
     r"""Protocol for anonymous namedtuple.
 
     References:
@@ -566,7 +590,8 @@ class NTuple[T](Protocol):  # +T
     #   see: https://github.com/python/typing/issues/1273
 
     # NOTE: Added Final to silence pyright v1.1.376 complaints.
-    _fields: Final[tuple]  # type: ignore[misc]
+    # FIXME: python=3.13 use Final[ClassVar[tuple[str, ...]]].
+    _fields: Final[tuple[str, ...]]  # type: ignore[misc]
     r"""The fields of the namedtuple."""
 
     def _asdict(self) -> Mapping[str, T]: ...
@@ -591,14 +616,8 @@ class NTuple[T](Protocol):  # +T
     # def count(self, value: Any, /) -> int: ...
     # def index(self, value: Any, start: SupportsIndex = 0, stop: SupportsIndex = sys.maxsize, /) -> int: ...
 
-    @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
-        r"""Cf https://github.com/python/cpython/issues/106363."""
-        bases = get_original_bases(other)
-        return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
-
-class _SlottedMeta(typing._ProtocolMeta):
+class _SlottedMeta(ProtocolMeta):
     r"""Metaclass for `Slotted`.
 
     FIXME: https://github.com/python/cpython/issues/112319
@@ -606,8 +625,7 @@ class _SlottedMeta(typing._ProtocolMeta):
     """
 
     def __instancecheck__(cls, instance: object) -> TypeIs["Slotted"]:  # noqa: N805
-        slots = getattr(instance, "__slots__", None)
-        return isinstance(slots, str | Iterable)
+        return cls.__subclasscheck__(type(instance))
 
     def __subclasscheck__(cls, subclass: type) -> TypeIs[type["Slotted"]]:  # noqa: N805
         slots = getattr(subclass, "__slots__", None)
@@ -618,7 +636,7 @@ class _SlottedMeta(typing._ProtocolMeta):
 class Slotted(Protocol, metaclass=_SlottedMeta):
     r"""Protocol for objects that are slotted."""
 
-    __slots__: tuple[str, ...] = ()
+    __slots__: ClassVar[tuple[str, ...]] = ()
 
 
 def issubclass_dataclass(cls: type, /) -> TypeIs[type[Dataclass]]:

@@ -147,6 +147,16 @@ def test_dataclass_protocol() -> None:
     assert issubclass(Dataclass, Dataclass)  # type: ignore[misc]
 
 
+def test_namedtuple_protocol() -> None:
+    r"""Test the NTuple protocol."""
+    # check an instance
+    assert isinstance(MyNamedTuple(1, 2), tuple)
+    assert isinstance(MyNamedTuple(1, 2), NTuple)
+    assert issubclass(MyNamedTuple, tuple)
+    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
+    assert issubclass(NTuple, NTuple)  # type: ignore[misc]
+
+
 def test_slotted_protocol() -> None:
     r"""Test the Slotted protocol."""
     assert isinstance(MySlotted(1, 2), Slotted)
@@ -156,52 +166,63 @@ def test_slotted_protocol() -> None:
 
 def test_is_dataclass() -> None:
     r"""Check the is_dataclass utility."""
+    # check an instance
     assert is_dataclass(MyDataclass(1, 2))
+    assert isinstance(MyDataclass(1, 2), Dataclass)
+    # check the type
     assert is_dataclass(MyDataclass)
-    assert not is_dataclass(NotDataclass(1, 2))
-    assert not is_dataclass(NotDataclass)
-
-
-def test_is_namedtuple() -> None:
-    r"""Test the is_namedtuple utility."""
-    assert is_namedtuple(MyNamedTuple(1, 2))
-    assert is_namedtuple(MyNamedTuple)
-    assert not is_namedtuple(NotNamedTuple(1, 2))
-    assert not is_namedtuple(NotNamedTuple)
-
-
-def test_is_slotted() -> None:
-    r"""Test the is_slotted utility."""
-    assert is_slotted(MySlotted(1, 2))
-    assert is_slotted(MySlotted)
-    assert not is_slotted(NotDataclass(1, 2))
-    assert not is_slotted(NotDataclass)
+    assert issubclass(MyDataclass, Dataclass)  # type: ignore[misc]
 
 
 def test_not_dataclass() -> None:
     r"""Test the Dataclass protocol."""
+    # check an instance
+    assert not is_dataclass(NotDataclass(1, 2))
     assert not isinstance(NotDataclass(1, 2), Dataclass)
+    # check the type
+    assert not is_dataclass(NotDataclass)
     assert not issubclass(NotDataclass, Dataclass)  # type: ignore[misc]
+
+
+def test_is_namedtuple() -> None:
+    r"""Test the is_namedtuple utility."""
+    # check an instance
+    assert isinstance(MyNamedTuple(1, 2), tuple)
+    assert isinstance(MyNamedTuple(1, 2), NTuple)
+    assert is_namedtuple(MyNamedTuple(1, 2))
+    # check the type
+    assert issubclass(MyNamedTuple, tuple)
+    assert is_namedtuple(MyNamedTuple)
+    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
 
 
 def test_not_namedtuple() -> None:
     r"""Test the NTuple protocol."""
+    # check an instance
     assert isinstance(NotNamedTuple(1, 2), tuple)
-    assert issubclass(NotNamedTuple, tuple)
+    assert not is_namedtuple(NotNamedTuple(1, 2))
     assert not isinstance(NotNamedTuple(1, 2), NTuple)
+    # check the type
+    assert issubclass(NotNamedTuple, tuple)
+    assert not is_namedtuple(NotNamedTuple)
     assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]
 
 
-# @pytest.mark.xfail(reason="https://github.com/python/cpython/issues/112319.")
+def test_is_slotted() -> None:
+    r"""Test the is_slotted utility."""
+    # check an instance
+    assert is_slotted(MySlotted(1, 2))
+    assert isinstance(MySlotted(1, 2), Slotted)
+    # check the type
+    assert is_slotted(MySlotted)
+    assert issubclass(MySlotted, Slotted)  # pyright: ignore[reportGeneralTypeIssues]
+
+
 def test_not_slotted() -> None:
     r"""Test the Slotted protocol."""
+    # check an instance
+    assert not is_slotted(NotSlotted(1, 2))
     assert not isinstance(NotSlotted(1, 2), Slotted)
-    assert not issubclass(NotSlotted, Slotted)  # pyright: ignore[reportGeneralTypeIssues]
-
-
-def test_namedtuple_protocol() -> None:
-    r"""Test the NTuple protocol."""
-    assert isinstance(MyNamedTuple(1, 2), tuple)
-    assert issubclass(MyNamedTuple, tuple)
-    assert isinstance(MyNamedTuple(1, 2), NTuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
+    # check the type
+    assert not is_slotted(NotSlotted)
+    assert not issubclass(NotSlotted, Slotted)  # type: ignore[unreachable]
