@@ -29,7 +29,7 @@ EXAMPLES = {
 def test_generic_round(example: str, decimals: int) -> None:
     data = EXAMPLES[example]
     expected = data.round(decimals=decimals)
-    result = generic.generic_round(data, decimals=decimals)
+    result = generic.round_impl(data, decimals=decimals)
     # assert all(result == expected), f"Expected {expected}, but got {result}."
     # FIXME: https://github.com/pytorch/pytorch/issues/137337
     torch.testing.assert_close(result, expected, equal_nan=True, atol=0.0, rtol=0.0)

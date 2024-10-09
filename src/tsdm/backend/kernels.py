@@ -44,9 +44,9 @@ from tsdm.types.callback_protocols import (
     WhereProto,
 )
 
-type BackendID = Literal["arrow", "numpy", "pandas", "torch", "polars"]
+type BackendID = Literal["generic", "arrow", "numpy", "pandas", "polars", "torch"]
 r"""A type alias for the supported backends."""
-BACKENDS = ("arrow", "numpy", "pandas", "torch", "polars")
+BACKENDS = ("generic", "arrow", "numpy", "pandas", "polars", "torch")
 r"""A tuple of the supported backends."""
 
 
@@ -143,17 +143,15 @@ class Kernels:  # Q: how to make this more elegant?
     }
 
     false_like: dict[BackendID, SelfMap] = {
+        "generic": B.generic.false_like,
         "arrow": B.pyarrow.false_like,
-        "numpy": B.generic.false_like,
         "pandas": B.pandas.false_like,
-        "torch": B.generic.false_like,
     }
 
     true_like: dict[BackendID, SelfMap] = {
+        "generic": B.generic.true_like,
         "arrow": B.pyarrow.true_like,
-        "numpy": B.generic.true_like,
         "pandas": B.pandas.true_like,
-        "torch": B.generic.true_like,
     }
 
     null_like: dict[BackendID, SelfMap] = {
@@ -179,6 +177,7 @@ class Kernels:  # Q: how to make this more elegant?
     }
 
     where: dict[BackendID, WhereProto] = {
+        "generic": B.generic.where,
         "arrow": B.pyarrow.where,
         "numpy": np.where,
         "pandas": B.pandas.where,
@@ -281,6 +280,8 @@ class Backend[T]:
         for attr in Kernels.__annotations__:
             implementations = getattr(Kernels, attr)
             impl = implementations.get(name, NotImplemented)
+            if impl is NotImplemented:  # fallback to generic kernel
+                impl = implementations.get("generic", NotImplemented)
             object.__setattr__(self, attr, impl)
 
 

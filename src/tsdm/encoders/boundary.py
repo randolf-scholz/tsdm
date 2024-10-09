@@ -10,13 +10,14 @@ import pandas as pd
 from typing_extensions import TypeVar
 
 from tsdm.backend import Backend, get_backend
+from tsdm.constants import NOT_GIVEN
 from tsdm.encoders import BaseEncoder
 from tsdm.types.arrays import NumericalSeries
 from tsdm.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
 # FIXME: python==3.13: use PEP695 with default values.
-S = TypeVar("S", bound=OrderedScalar)
+S = TypeVar("S", bound=OrderedScalar, default=float)
 Arr = TypeVar("Arr", bound=NumericalSeries, default=NumericalSeries[S])
 
 
@@ -57,25 +58,25 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
     type ClippingMode = Literal["mask", "clip"]
     r"""Type Hint for clipping mode."""
 
-    lower_bound: Optional[S] = NotImplemented
-    upper_bound: Optional[S] = NotImplemented
+    lower_bound: Optional[S] = None
+    upper_bound: Optional[S] = None
 
     _: KW_ONLY
 
     lower_included: bool = True
     upper_included: bool = True
-    lower_mode: CLIPPING = NotImplemented
-    upper_mode: CLIPPING = NotImplemented
+    lower_mode: CLIPPING = NOT_GIVEN
+    upper_mode: CLIPPING = NOT_GIVEN
 
     # derived attributes
     backend: Backend = field(init=False)
-    lower_value: S = field(init=False, default=NotImplemented)
-    upper_value: S = field(init=False, default=NotImplemented)
+    lower_value: S = field(init=False, default=NOT_GIVEN)
+    upper_value: S = field(init=False, default=NOT_GIVEN)
 
     def __init__(
         self,
-        lower_bound: Optional[S] = NotImplemented,
-        upper_bound: Optional[S] = NotImplemented,
+        lower_bound: Optional[S] = None,
+        upper_bound: Optional[S] = None,
         *,
         lower_included: bool = True,
         upper_included: bool = True,
@@ -117,9 +118,9 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
         # validate internal consistency
         if (
             self.upper_bound is not None
-            and self.upper_bound is not NotImplemented
+            and self.upper_bound is not NOT_GIVEN
             and self.lower_bound is not None
-            and self.lower_bound is not NotImplemented
+            and self.lower_bound is not NOT_GIVEN
             and self.upper_bound <= self.lower_bound
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
@@ -164,9 +165,9 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
         self.backend: Backend = get_backend(data)
 
         # fit the parameters
-        if self.lower_bound is NotImplemented:
+        if self.lower_bound is NOT_GIVEN:
             self.lower_bound = self.backend.nanmin(data)
-        if self.upper_bound is NotImplemented:
+        if self.upper_bound is NOT_GIVEN:
             self.upper_bound = self.backend.nanmax(data)
 
         # set lower_value

@@ -50,11 +50,10 @@ ATOL: Final[float] = 1e-6
 r"""CONST: Default absolute precision."""
 RTOL: Final[float] = 1e-6
 r"""CONST: Default relative precision."""
-
-
-# NOTE: Use frozenmap() if PEP 603 is accepted.
 NOT_GIVEN: Final[Any] = None
 r"""CONST: Default value for optional arguments."""
+
+# NOTE: Use frozenmap() if PEP 603 is accepted.
 EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
 RNG: Final[Generator] = np.random.default_rng()

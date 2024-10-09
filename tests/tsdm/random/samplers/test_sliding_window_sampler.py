@@ -830,9 +830,10 @@ DATETIME_DATA = {
 
 
 @pytest.mark.parametrize("mode", SlidingSampler.MODES)
-@pytest.mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
-def test_datetime_data(mode: str, data: Any) -> None:
+@pytest.mark.parametrize("example", DATETIME_DATA)
+def test_datetime_data(example: str, mode: str) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
+    data = DATETIME_DATA[example]
     sampler = SlidingSampler(
         data,
         stride="8h",
@@ -885,9 +886,10 @@ INTEGER_DATA: dict[str, Any] = {
 
 
 @pytest.mark.parametrize("mode", SlidingSampler.MODES)
-@pytest.mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
-def test_integer_data(mode: SlidingSampler.Mode, data: Any) -> None:
+@pytest.mark.parametrize("example", INTEGER_DATA)
+def test_integer_data(example: str, mode: SlidingSampler.Mode) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
+    data = INTEGER_DATA[example]
     sampler = SlidingSampler(
         data,
         stride=2,
@@ -937,9 +939,10 @@ FLOAT_DATA = {
 
 
 @pytest.mark.parametrize("mode", SlidingSampler.MODES)
-@pytest.mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
-def test_float_data(mode: str, data: Any) -> None:
+@pytest.mark.parametrize("example", FLOAT_DATA)
+def test_float_data(example: str, mode: str) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
+    data = FLOAT_DATA[example]
     sampler = SlidingSampler(
         data,
         stride=2.1,
