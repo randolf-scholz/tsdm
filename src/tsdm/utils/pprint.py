@@ -20,7 +20,7 @@ __all__ = [
     "repr_dtype",
     "repr_mapping",
     "repr_namedtuple",
-    "repr_object",
+    "repr_generic",
     "repr_sequence",
     "repr_set",
     "repr_shortform",
@@ -188,7 +188,7 @@ def repr_shortform(
             return f"{obj.__class__.__name__}{identifier}()"
 
 
-def repr_object(
+def repr_generic(
     obj: object,
     /,
     *,
@@ -200,9 +200,9 @@ def repr_object(
     Special casing for a bunch of cases.
 
     Examples:
-        >>> repr_object(1)
+        >>> repr_generic(1)
         '1'
-        >>> repr_object(3.14)
+        >>> repr_generic(3.14)
         '3.14'
     """
     x = kwargs.get("wrapped", obj)
@@ -343,7 +343,7 @@ def repr_mapping(
     repr_fn = (
         repr_fn  # type: ignore[assignment]
         if repr_fn is not NotImplemented
-        else repr_object
+        else repr_generic
         if recursive
         else repr_shortform
     )
@@ -503,7 +503,7 @@ def repr_sequence(
     repr_fn = (
         repr_fn  # type: ignore[assignment]
         if repr_fn is not NotImplemented
-        else repr_object
+        else repr_generic
         if recursive
         else repr_shortform
     )
@@ -632,7 +632,7 @@ def repr_set(
     repr_fn = (
         repr_fn  # type: ignore[assignment]
         if repr_fn is not NotImplemented
-        else repr_object
+        else repr_generic
         if recursive
         else repr_shortform
     )
@@ -741,7 +741,7 @@ def repr_dataclass(
     repr_fn = (
         repr_fn  # type: ignore[assignment]
         if repr_fn is not NotImplemented
-        else repr_object
+        else repr_generic
         if recursive
         else repr_shortform
     )
@@ -823,7 +823,7 @@ def repr_namedtuple(
     repr_fn = (
         repr_fn  # type: ignore[assignment]
         if repr_fn is not NotImplemented
-        else repr_object
+        else repr_generic
         if recursive
         else repr_shortform
     )
@@ -923,6 +923,10 @@ def repr_array(
         case _:
             raise TypeError(f"Unsupported object type {type(obj)}.")
 
+    # if all vals are the same, show only one
+    if len(set(vals)) <= 1:
+        vals = vals[:1]
+
     # truncate the dtype-repr
     if len(vals) > maxitems:
         vals = vals[: maxitems // 2] + ["..."] + vals[-maxitems // 2 :]
@@ -980,7 +984,7 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     repr_dataclass,
     repr_mapping,
     repr_namedtuple,
-    repr_object,
+    repr_generic,
     repr_sequence,
     repr_shortform,
 ]
