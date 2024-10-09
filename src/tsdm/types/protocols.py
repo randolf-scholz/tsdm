@@ -45,7 +45,7 @@ __all__ = [
 
 import dataclasses
 import typing
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections.abc import (
     Collection,
     ItemsView,
@@ -572,6 +572,8 @@ class _NTupleMeta(ProtocolMeta):
         return cls.__subclasscheck__(type(instance))
 
     def __subclasscheck__(cls, subclass: type) -> TypeIs[type["NTuple"]]:  # noqa: N805
+        if ABCMeta.__subclasscheck__(cls, subclass):
+            return True
         bases = get_original_bases(subclass)
         return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
 
