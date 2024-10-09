@@ -66,9 +66,9 @@ __all__ = [
     "SupportsMutation",
     "SupportsComparison",
     "SupportsMatmul",
-    "ArrayKind",
-    "SeriesKind",
-    "TableKind",
+    "ArrayLike",
+    "SeriesLike",
+    "TableLike",
     "NumericalArray",
     "NumericalSeries",
     "NumericalTensor",
@@ -371,7 +371,7 @@ class SupportsMatmul(Protocol):
 
 
 @runtime_checkable
-class ArrayKind[Scalar](Protocol):
+class ArrayLike[Scalar](Protocol):
     r"""An n-dimensional array of a single homogeneous data type.
 
     Examples:
@@ -401,7 +401,7 @@ class ArrayKind[Scalar](Protocol):
 
 
 @runtime_checkable
-class SeriesKind[Scalar](Protocol):
+class SeriesLike[Scalar](Protocol):
     r"""A 1d-array of homogeneous data type.
 
     Examples:
@@ -421,7 +421,8 @@ class SeriesKind[Scalar](Protocol):
     NOTE: Many methods have subtle differences between backends:
      - `diff`: gives discrete differences for polars and pandas, but not for pyarrow
      - `value_counts`: polars returns a DataFrame, pandas a Series, pyarrow a StructArray
-     - `unique`: polars and pyarrow return `Self`, pandas returns `np.ndarray`.
+     - `unique`: polars and pyarrow return `Self`, pandas returns `np.ndarray` or ExtensionArray.
+     - `to_numpy`: is superfluous.
 
     References:
         - https://numpy.org/devdocs/user/basics.interoperability.html
@@ -441,7 +442,7 @@ class SeriesKind[Scalar](Protocol):
 
 
 @runtime_checkable
-class TableKind(Protocol):
+class TableLike(Protocol):
     r"""A 2d column-oriented array with heterogenous data types.
 
     That it, it is a column-oriented 2d tensor which allows heterogenous data types.
@@ -483,7 +484,7 @@ class TableKind(Protocol):
     def __array__(self) -> NDArray[np.object_]: ...
     def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
     def __len__(self) -> int: ...
-    def __getitem__(self, key: str, /) -> SeriesKind: ...  # yields a column
+    def __getitem__(self, key: str, /) -> SeriesLike: ...  # yields a column
 
     def equals(self, other: Self, /) -> bool:
         r"""Check if the table is equal to another table."""
@@ -491,7 +492,7 @@ class TableKind(Protocol):
 
 
 @runtime_checkable
-class NumericalArray[Scalar](ArrayKind[Scalar], Protocol):  # -Scalar
+class NumericalArray[Scalar](Protocol):  # -Scalar
     r"""Subclass of `ArrayKind` that supports numerical operations.
 
     Examples:
@@ -649,7 +650,7 @@ class NumericalSeries[Scalar](NumericalArray[Scalar], Protocol):
     def __iter__(self) -> Iterator[Scalar]: ...
 
     # fmt: off
-    @overload  # depending on Tensor Rank, can return Scalar or Tensor
+    @overload
     def __getitem__(self, key: int, /) -> Scalar: ...
     @overload
     def __getitem__(self, key: slice | range | list[int] | Self, /) -> Self: ...

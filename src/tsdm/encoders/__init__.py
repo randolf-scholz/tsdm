@@ -181,6 +181,7 @@ from tsdm.encoders.base import (
     UniversalEncoder,
     WrappedEncoder,
 )
+from tsdm.encoders.boundary import BoundaryEncoder
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
     CSVEncoder,
@@ -193,7 +194,6 @@ from tsdm.encoders.dataframe import (
     TripletEncoder,
 )
 from tsdm.encoders.numerical import (
-    BoundaryEncoder,
     LinearScaler,
     LogEncoder,
     LogitEncoder,

@@ -26,7 +26,7 @@ from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checka
 
 from pandas import DataFrame, Index, MultiIndex
 
-from tsdm.types.arrays import ArrayKind
+from tsdm.types.arrays import ArrayLike
 from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.pprint import repr_array
@@ -59,7 +59,7 @@ class PandasDataset[K, V](Protocol):  # K, +V
 
     @property
     @abstractmethod
-    def index(self) -> ArrayKind[K]:
+    def index(self) -> ArrayLike[K]:
         r"""Returns the row labels of the DataFrame."""
         ...
 

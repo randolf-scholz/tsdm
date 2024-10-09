@@ -21,10 +21,11 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from pyarrow.lib import ArrowNotImplementedError
 
+from tsdm.backend import generic
 from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasDtype
-from tsdm.types.arrays import NumericalTensor
+from tsdm.types.arrays import NumericalSeries
 from tsdm.types.scalars import DateTime, TimeDelta
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
@@ -32,7 +33,7 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
+class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
     unit: TimeDelta = NotImplemented
@@ -73,7 +74,7 @@ class TimeDeltaEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
 
     def _decode_impl(self, y: Arr, /) -> Arr:
         if self.round:
-            y = y.round()
+            y = generic.round(y)
 
         try:
             return self.backend.cast(y * self.unit, self.timedelta_dtype)
@@ -86,7 +87,7 @@ class TimeDeltaEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
+class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
     offset: DateTime = NotImplemented
@@ -146,7 +147,7 @@ class DateTimeEncoder[Arr: NumericalTensor](BackendMixin[Arr, Arr]):
 
     def _decode_impl(self, y: Arr, /) -> Arr:
         if self.round:
-            y = y.round()
+            y = generic.round(y)
 
         try:
             return self.backend.cast(y * self.unit + self.offset, self.datetime_dtype)
