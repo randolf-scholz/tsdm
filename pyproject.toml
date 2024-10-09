@@ -73,7 +73,7 @@ docs = [
     "sphinx>=8.0.2",
 ]
 tests = [
-    "coverage>=7.6.1",
+    "coverage>=7.6.2",
     "hypothesis[numpy,pandas,pytest]>=6.113.0",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=5.0.0",
@@ -89,7 +89,7 @@ linters = [
 ]
 typing = [
     "mypy>=1.11.2",
-    "pyright>=1.1.383",
+    "pyright>=1.1.384",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
     "types-docutils>=0.21.0.20241005",
