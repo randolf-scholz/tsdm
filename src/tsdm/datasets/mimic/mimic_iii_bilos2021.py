@@ -25,10 +25,10 @@ from getpass import getpass
 import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets.base import SingleTableDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class MIMIC_III_Bilos2021(SingleTableDataset):
+class MIMIC_III_Bilos2021(MultiTableDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -74,7 +74,9 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
         "static_covariates": (96, 3),
     }
 
-    def clean_table(self) -> DataFrame:
+    def clean_table(self, key: str) -> DataFrame:
+        if key != "timeseries":
+            raise KeyError(f"Invalid table name: {key}")
         self.LOGGER.info("Loading main file.")
         ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
 

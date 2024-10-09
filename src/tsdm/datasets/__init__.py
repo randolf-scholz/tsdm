@@ -35,7 +35,6 @@ __all__ = [
     # ABCs & Protocols
     "Dataset",
     "BaseDataset",
-    "SingleTableDataset",
     "MultiTableDataset",
     # Classes
     "DampedPendulum_Ansari2023",
@@ -71,7 +70,6 @@ from tsdm.datasets.base import (
     BaseDataset,
     Dataset,
     MultiTableDataset,
-    SingleTableDataset,
 )
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.kiwi import (

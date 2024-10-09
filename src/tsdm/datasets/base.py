@@ -9,7 +9,6 @@ __all__ = [
     "BaseDataset",
     "Dataset",
     "MultiTableDataset",
-    "SingleTableDataset",
 ]
 
 import inspect
@@ -19,12 +18,10 @@ import shutil
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from os import PathLike
 from pathlib import Path
 from typing import (
-    IO,
     Any,
     ClassVar,
     Optional,
@@ -38,12 +35,10 @@ from typing import (
 )
 from zipfile import ZipFile
 
-import pandas as pd
-from pyarrow import Table as PyArrowTable, parquet
 from tqdm.auto import tqdm
-from typing_extensions import deprecated
 
 from tsdm.config import CONFIG
+from tsdm.data import serialize
 from tsdm.testing.hashutils import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import FilePath
 from tsdm.utils import paths_exists, remote
@@ -153,7 +148,7 @@ class _DatasetMeta(ProtocolMeta):
             ) / cls.__name__
 
         # add post_init hook
-        cls.__init__ = wrap_method(cls.__init__, after=cls.__post_init__)  # type: ignore[misc]
+        cls.__init__ = wrap_method(cls.__init__, after=cls.__post_init__)  # type: ignore[attr-defined, misc]
 
 
 class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
@@ -194,6 +189,9 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
     r"""Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
     r"""Shapes for the raw dataset tables(s)."""
+
+    serialize_table = staticmethod(serialize.serialize_table)
+    deserialize_table = staticmethod(serialize.deserialize_table)
 
     def __init__(
         self,
@@ -245,100 +243,12 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}()"
 
-    @staticmethod
-    def serialize_table(
-        table: Any,
-        path_or_buf: FilePath | IO[bytes],
-        /,
-        *,
-        writer: Optional[str | Callable] = None,
-        **writer_kwargs: Any,
-    ) -> None:
-        r"""Serialize a table.
-
-        Args:
-            table: Table to serialize.
-            path_or_buf: Path or buffer to write to.
-            writer: Writer to use.
-                If None, the extension of the path is used to determine the writer.
-                Pass string like 'csv' to use the corresponding `pandas` writer.
-            **writer_kwargs: Additional keyword arguments to pass to the writer.
-        """
-        match path_or_buf, writer:
-            case [str() | PathLike() as filepath, _]:
-                path = Path(filepath)
-                if not path.suffix.startswith("."):
-                    raise ValueError("File must have a suffix!")
-                writer = path.suffix[1:] if writer is None else writer
-                target = path
-            case [target, str() | Callable()]:  # type: ignore[misc]
-                pass
-            case _:
-                raise TypeError(
-                    "Provide either a PathLike object or a buffer-like object with an extension!"
-                )
-
-        match writer, table:
-            case [Callable() as writer_impl, _]:  # type: ignore[misc]
-                writer_impl(target, **writer_kwargs)  # type: ignore[unreachable]
-            case ["parquet", PyArrowTable() as arrow_table]:
-                parquet.write_table(arrow_table, target, **writer_kwargs)
-            case [str(extension), _] if hasattr(table, f"to_{extension}"):
-                writer_impl = getattr(table, f"to_{extension}")
-                writer_impl(target, **writer_kwargs)
-            case _:
-                raise NotImplementedError(f"No serializer implemented for {writer=}")
-
-    @staticmethod
-    def deserialize_table(
-        path_or_buf: FilePath | IO[bytes],
-        /,
-        *,
-        loader: Optional[str | Callable] = None,
-        **loader_kwargs: Any,
-    ) -> Any:
-        r"""Deserialize a table."""
-        match path_or_buf, loader:
-            case [str() | PathLike() as filepath, _]:
-                path = Path(filepath)
-                if not path.suffix.startswith("."):
-                    raise ValueError("File must have a suffix!")
-                loader = path.suffix[1:] if loader is None else loader
-                target = path
-            case [target, str() | Callable()]:  # type: ignore[misc]
-                pass
-            case _:
-                raise TypeError(
-                    "Provide either a PathLike object or a buffer-like object with an extension!"
-                )
-
-        match loader:
-            case Callable() as loader_impl:  # type: ignore[misc]
-                return loader_impl(target, **loader_kwargs)  # type: ignore[unreachable]
-            case str(extension) if hasattr(pd, f"read_{extension}"):
-                loader_impl = getattr(pd, f"read_{extension}")
-                if extension in {"csv", "parquet", "feather"}:
-                    loader_kwargs = {
-                        "engine": "pyarrow",
-                        "dtype_backend": "pyarrow",
-                    } | dict(loader_kwargs)
-                return loader_impl(target, **loader_kwargs).squeeze()
-            case _:
-                raise NotImplementedError(f"No loader available! {loader=}")
-
     @property
     def version_info(self) -> tuple[int, ...]:
         r"""Version information of the dataset."""
         if self.__version__ is NotImplemented:
             return NotImplemented
         return tuple(int(i) for i in self.__version__.split("."))
-
-    @cached_property
-    def rawdata_valid(self) -> bool:
-        r"""Check if raw data files exist."""
-        self.LOGGER.debug("Validating raw data files.")
-        validate_file_hash(self.rawdata_paths, self.rawdata_hashes)
-        return True
 
     def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -409,7 +319,7 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
 
         # Validate the file.
         if validate and self.rawdata_hashes is not NotImplemented:
-            validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes)
+            self.validate_rawdata(key)
 
     def remove_rawdata_files(self, *, force: bool = False) -> None:
         r"""Recreate the rawdata directory."""
@@ -459,146 +369,30 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         self.remove_rawdata_files(force=force)
         self.remove_dataset_files(force=force)
 
-
-@deprecated("Just use MultiTableDataset instead.")
-class SingleTableDataset[T](BaseDataset[T]):  # +T
-    r"""Dataset class that consists of a singular DataFrame."""
-
-    RAWDATA_DIR: ClassVar[Path]
-    r"""Path to raw data directory."""
-    DATASET_DIR: ClassVar[Path]
-    r"""Path to pre-processed data directory."""
-
-    _table: T = NotImplemented
-    r"""INTERNAL: the dataset."""
-
-    # Validation - Implement on per dataset basis!
-    dataset_hash: str = NotImplemented
-    r"""Hashes of the cleaned dataset file(s)."""
-    table_hash: str = NotImplemented
-    r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schema: Mapping[str, str] = NotImplemented
-    r"""Schema of the in-memory cleaned dataset table(s)."""
-    table_shape: tuple[int, ...] = NotImplemented
-    r"""Shape of the in-memory cleaned dataset table(s)."""
-
-    @classmethod
-    def from_table(cls, table: T, /) -> Self:
-        r"""Create a dataset from a table."""
-        obj = cls(initialize=False)
-        obj._table = table
-        return obj
-
-    @classmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self:
-        r"""Deserialize the dataset."""
-        table = cls.deserialize_table(filepath)
-        return cls.from_table(table)
-
-    @property
-    def table(self) -> T:
-        r"""Store cached version of dataset."""
-        if self._table is NotImplemented:
-            self._table = self.load(initializing=True)
-        return self._table
-
     @cached_property
-    def dataset_file(self) -> FilePath:
-        r"""Return the dataset files."""
-        return f"{self.__class__.__name__}.{self.DEFAULT_FILE_FORMAT}"
+    def rawdata_valid(self) -> bool:
+        r"""Check if raw data files exist."""
+        self.validate_rawdata()
+        return True
 
-    @cached_property
-    def dataset_path(self) -> Path:
-        r"""Path to raw data."""
-        return self.DATASET_DIR / self.dataset_file
-
-    def dataset_file_exists(self) -> bool:
-        r"""Check if the dataset file exists."""
-        return paths_exists(self.dataset_path)
-
-    @abstractmethod
-    def clean_table(self) -> Optional[T]:
-        r"""Generate the cleaned dataset table.
-
-        If a table is returned, the `self.serialize` method is used to write it to disk.
-        If manually writing the table to disk, return None.
-        """
-
-    def load_table(self) -> T:
-        r"""Load the dataset.
-
-        By default, `deserialize_table` is used to load the table from disk.
-        Override this method if you want to customize loading the table from disk.
-        """
-        return self.deserialize_table(self.dataset_path)
-
-    @final
-    def load(
-        self,
-        *,
-        initializing: bool = False,
-        force: bool = True,
-        validate: bool = True,
-    ) -> T:
-        r"""Load the selected DATASET_OBJECT."""
-        # Create the pre-processed dataset file if it doesn't exist.
-        if not self.dataset_file_exists():
-            self.clean(force=force, validate=validate)
-
-        # Skip if already loaded.
-        if not initializing:
-            return self.table
-
-        # Validate file if hash is provided.
-        if validate and self.dataset_hash is not NotImplemented:
-            validate_file_hash(self.dataset_path, self.dataset_hash)
-
-        # Load table.
-        self.LOGGER.debug("Starting to load dataset.")
-        table = self.load_table()
-        self.LOGGER.debug("Finished loading dataset.")
-
-        # Validate table if hash/schema is provided.
-        if validate and self.table_hash is not NotImplemented:
-            validate_table_hash(table, self.table_hash)
-
-        return table
-
-    @final
-    def clean(self, *, force: bool = False, validate: bool = True) -> None:
-        r"""Clean the selected DATASET_OBJECT."""
-        # Skip if dataset file already exists.
-        if self.dataset_file_exists() and not force:
-            self.LOGGER.debug("Dataset files already exist, skipping.")
+    def validate_rawdata(self, key: Optional[str] = None) -> None:
+        r"""Validate the rawdata files."""
+        if key is None:
+            self.LOGGER.debug("Validating raw data files.")
+            for _key in (
+                pbar := tqdm(
+                    self.rawdata_paths,
+                    desc="Validating files",
+                    disable=not self.verbose,
+                    leave=False,
+                )
+            ):
+                pbar.set_postfix(file=_key)
+                self.validate_rawdata(key=_key)
             return
 
-        # Download raw data if it does not exist.
-        if not self.rawdata_files_exist():
-            self.download(force=force, validate=validate)
-
-        # Validate raw data.
-        if (
-            validate
-            and self.rawdata_hashes is not NotImplemented
-            and not self.rawdata_valid
-        ):
-            raise ValueError("Raw data files are not valid!")
-
-        # Clean dataset.
-        self.LOGGER.debug("Starting to clean dataset.")
-        df = self.clean_table()
-        if df is not None:
-            self.LOGGER.debug("Serializing dataset.")
-            self.serialize_table(df, self.dataset_path)
-        self.LOGGER.debug("Finished cleaning dataset.")
-
-        # Validate pre-processed file.
-        if validate and self.dataset_hash is not NotImplemented:
-            validate_file_hash(self.dataset_path, self.dataset_hash)
-
-    def serialize(self, filepath: FilePath, /) -> None:
-        r"""Serialize the dataset."""
-        self.serialize_table(self.table, filepath)
+        self.LOGGER.debug("Validating %s.", key)
+        validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes[key])
 
 
 class MultiTableDataset[Key: str, T](
@@ -841,7 +635,7 @@ class MultiTableDataset[Key: str, T](
 
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
-            validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
+            self.validate_dataset(key)
 
     @overload
     def load(
@@ -904,7 +698,7 @@ class MultiTableDataset[Key: str, T](
 
         # Validate file if hash is provided.
         if validate and self.dataset_hashes is not NotImplemented:
-            validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
+            self.validate_dataset(key)
 
         # Load the table, make sure to use the cached version if it exists.
         with timer() as t:
@@ -913,6 +707,41 @@ class MultiTableDataset[Key: str, T](
 
         # Validate the loaded table.
         if validate and self.table_hashes is not NotImplemented:
-            validate_table_hash(table, self.table_hashes[key])
+            self.validate_table(key)
 
         return table
+
+    def validate_dataset(self, key: Optional[Key] = None) -> None:
+        r"""Validate the dataset."""
+        if key is None:
+            self.LOGGER.debug("Validating dataset.")
+            for _key in (
+                pbar := tqdm(
+                    self.table_names,
+                    desc="Validating dataset",
+                    disable=not self.verbose,
+                    leave=False,
+                )
+            ):
+                pbar.set_postfix(table=_key)
+                self.validate_dataset(key=_key)
+            return
+        self.LOGGER.debug("Validating %s.", key)
+        validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
+
+    def validate_table(self, key: Optional[Key] = None) -> None:
+        if key is None:
+            self.LOGGER.debug("Validating tables.")
+            for _key in (
+                pbar := tqdm(
+                    self.table_names,
+                    desc="Validating tables",
+                    disable=not self.verbose,
+                    leave=False,
+                )
+            ):
+                pbar.set_postfix(table=_key)
+                self.validate_table(key=_key)
+            return
+        self.LOGGER.debug("Validating %s.", key)
+        validate_table_hash(self.tables[key], self.table_hashes[key])

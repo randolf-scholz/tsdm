@@ -26,10 +26,10 @@ import numpy as np
 from pandas import DataFrame
 from pyarrow import Table, csv
 
-from tsdm.datasets.base import SingleTableDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class MIMIC_IV_Bilos2021(SingleTableDataset):
+class MIMIC_IV_Bilos2021(MultiTableDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -70,7 +70,10 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
         "timeseries": (2485649, 102),
     }
 
-    def clean_table(self) -> DataFrame:
+    def clean_table(self, key: str) -> DataFrame:
+        if key != "timeseries":
+            raise KeyError(f"Unknown table {key=}")
+
         self.LOGGER.info("Loading main file.")
         table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
 

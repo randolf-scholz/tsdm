@@ -45,10 +45,10 @@ from zipfile import ZipFile
 from matplotlib.axes import Axes
 from pandas import DataFrame, read_csv
 
-from tsdm.datasets.base import SingleTableDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class Electricity(SingleTableDataset):
+class Electricity(MultiTableDataset):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -97,13 +97,16 @@ class Electricity(SingleTableDataset):
 
     rawdata_files = ["LD2011_2014.txt.zip"]
     rawdata_hashes = {
-        "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
+        "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
     }
-    table_shape = (140256, 370)
-    table_hash = "pandas:7114453877232760046"
+    table_hashes = {"timeseries": "pandas:7114453877232760046"}
+    table_names = ["timeseries"]
+    table_shapes = {"timeseries": (140256, 370)}
 
-    def clean_table(self) -> DataFrame:
+    def clean_table(self, key: str) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
+        if key != "timeseries":
+            raise KeyError(f"Unknown table {key=}")
         with (
             # can't use pandas.read_csv because of the zip contains other files.
             ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive,

@@ -11,12 +11,12 @@ from pandas import DataFrame, Index
 from scipy.stats import norm as univariate_normal
 from tqdm.auto import trange
 
-from tsdm.datasets.base import SingleTableDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.random import generators
 
 
 @final
-class DampedPendulum_Ansari2023(SingleTableDataset):
+class DampedPendulum_Ansari2023(MultiTableDataset):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
@@ -45,6 +45,7 @@ class DampedPendulum_Ansari2023(SingleTableDataset):
     step = 0.1
     t_min = 0.0
     t_max = 15.0
+    table_names = ["timeseries"]
 
     @cached_property
     def generator(self) -> generators.DampedPendulum:
@@ -59,7 +60,9 @@ class DampedPendulum_Ansari2023(SingleTableDataset):
             initial_state_dist=univariate_normal(loc=0, scale=1),
         )
 
-    def clean_table(self) -> DataFrame:
+    def clean_table(self, key: str) -> DataFrame:
+        if key != "timeseries":
+            raise KeyError(f"Unknown table {key=}")
         self.LOGGER.info("Generating data...")
 
         # generate time range

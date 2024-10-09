@@ -5,10 +5,10 @@ __all__ = ["USHCN_DeBrouwer2019"]
 import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets.base import SingleTableDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class USHCN_DeBrouwer2019(SingleTableDataset):
+class USHCN_DeBrouwer2019(MultiTableDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:
@@ -48,12 +48,13 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
             "Mask_4": "bool",
         }
     }
-    dataset_hash = (
-        "sha256:bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86"
-    )
+    table_names = ["timeseries"]
+    table_shapes = {"timeseries": (350665, 5)}
 
-    def clean_table(self) -> DataFrame:
+    def clean_table(self, key: str) -> DataFrame:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
+        if key != "timeseries":
+            raise KeyError(f"Unknown table {key=}")
         fname = "small_chunked_sporadic.csv"
         file = self.rawdata_paths[fname]
         df = pd.read_csv(file, dtype=self.rawdata_schemas[fname])
