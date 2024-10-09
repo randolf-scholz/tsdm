@@ -15,9 +15,9 @@ from tsdm.utils.pprint import (
     INDENT,
     repr_array,
     repr_dataclass,
+    repr_generic,
     repr_mapping,
     repr_namedtuple,
-    repr_object,
     repr_sequence,
     repr_set,
 )
@@ -90,7 +90,7 @@ class ExampleSequence(Sequence):
 )
 def test_pprint_object(obj: object, expected: str) -> None:
     r"""Test pprint_object."""
-    result = repr_object(obj)
+    result = repr_generic(obj)
     assert result == expected
 
 
