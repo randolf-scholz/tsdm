@@ -321,7 +321,7 @@ def download(
             validate_file_hash(
                 path,
                 hash_value,
-                hash_alg=hash_algorithm,
+                hash_algorithm=hash_algorithm,
                 hash_kwargs=hash_kwargs,
             )
         return None
@@ -348,7 +348,7 @@ def download(
         validate_file_hash(
             path,
             hash_value,
-            hash_alg=hash_algorithm,
+            hash_algorithm=hash_algorithm,
             hash_kwargs=hash_kwargs,
         )
 
