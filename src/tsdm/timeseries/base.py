@@ -32,7 +32,7 @@ from torch.nn.utils.rnn import pad_sequence
 from tsdm import constants as const
 from tsdm.constants import NOT_GIVEN
 from tsdm.data.datasets import TorchDataset
-from tsdm.datasets import MultiTableDataset
+from tsdm.datasets import DatasetBase
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -90,14 +90,8 @@ class TimeSeries(Collection):
     r"""The time-index of the dataset."""
 
     @classmethod
-    def from_dataset(cls, ds: MultiTableDataset | type, /) -> Self:
+    def from_dataset(cls, ds: DatasetBase, /) -> Self:
         r"""Create a TimeSeries from a MultiTableDataset."""
-        if isinstance(ds, type):
-            try:
-                ds = ds()
-            except Exception as exc:
-                raise ValueError(f"Could not instantiate {ds}.") from exc
-
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 
@@ -185,14 +179,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
     r"""The index of the collection."""
 
     @classmethod
-    def from_dataset(cls, ds: MultiTableDataset | type, /) -> Self:
+    def from_dataset(cls, ds: DatasetBase, /) -> Self:
         r"""Create a TimeSeries from a MultiTableDataset."""
-        if isinstance(ds, type):
-            try:
-                ds = ds()
-            except Exception as exc:
-                raise ValueError(f"Could not instantiate {ds}.") from exc
-
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 

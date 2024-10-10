@@ -174,7 +174,7 @@ from pandas import DataFrame
 from tqdm.auto import tqdm
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
@@ -263,7 +263,7 @@ type Key = Literal[
 ]
 
 
-class PhysioNet2019(MultiTableDataset[Key, DataFrame]):
+class PhysioNet2019(DatasetBase[Key, DataFrame]):
     r"""Physionet Challenge 2019.
 
     Each training data file provides a table with measurements over time. Each column of the table

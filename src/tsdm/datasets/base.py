@@ -6,9 +6,8 @@ r"""Base Classes for dataset."""
 
 __all__ = [
     # ABCs & Protocols
-    "BaseDataset",
     "Dataset",
-    "MultiTableDataset",
+    "DatasetBase",
 ]
 
 import inspect
@@ -24,6 +23,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Literal,
     Optional,
     Protocol,
     Self,
@@ -43,7 +43,6 @@ from tsdm.testing.hashutils import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import FilePath
 from tsdm.utils import paths_exists, remote
 from tsdm.utils.contextmanagers import timer
-from tsdm.utils.decorators import wrap_method
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.pprint import repr_mapping
@@ -52,7 +51,11 @@ from tsdm.utils.system import query_bool
 
 @runtime_checkable
 class Dataset[T](Protocol):  # +T
-    r"""Protocol for Dataset."""
+    r"""Protocol for Dataset.
+
+    This protocol describes a reduced interface of the `DatasetBase` class,
+    and covers only methods that should be used at call sites.
+    """
 
     SOURCE_URL: ClassVar[str] = NotImplemented
     r"""Web address from where the dataset can be downloaded."""
@@ -62,6 +65,29 @@ class Dataset[T](Protocol):  # +T
     r"""Directory where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
     r"""Directory where the dataset is stored."""
+
+    @property
+    def __version__(self) -> str | None: ...  # pyright: ignore[reportRedeclaration]
+
+    __version__: str | None  # type: ignore[no-redef]
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+
+    @property
+    @abstractmethod
+    def rawdata_files(self) -> Sequence[str]:  # pyright: ignore[reportRedeclaration]
+        r"""Return list of file names that make up the raw data."""
+        ...
+
+    rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+
+    @property
+    def rawdata_paths(self) -> Mapping[str, Path]:
+        r"""Return mapping from filenames to paths to the rawdata files."""
+        return {
+            str(fname): (self.RAWDATA_DIR / fname).absolute()
+            for fname in self.rawdata_files
+        }
 
     @classmethod
     def info(cls) -> None:
@@ -80,25 +106,6 @@ class Dataset[T](Protocol):  # +T
     def serialize(self, filepath: FilePath, /) -> None:
         r"""Serialize the (cleaned) dataset to a specific path."""
         ...
-
-    # FIXME: https://discuss.python.org/t/41137
-
-    @property
-    @abstractmethod
-    def rawdata_files(self) -> Sequence[str]:  # pyright: ignore[reportRedeclaration]
-        r"""Return list of file names that make up the raw data."""
-        ...
-
-    rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
-    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-
-    @property
-    def rawdata_paths(self) -> Mapping[str, Path]:
-        r"""Return mapping from filenames to paths to the rawdata files."""
-        return {
-            str(fname): (self.RAWDATA_DIR / fname).absolute()
-            for fname in self.rawdata_files
-        }
 
     @abstractmethod
     def download(self) -> None:
@@ -147,15 +154,19 @@ class _DatasetMeta(ProtocolMeta):
                 else CONFIG.DATASETDIR
             ) / cls.__name__
 
-        # add post_init hook
-        cls.__init__ = wrap_method(cls.__init__, after=cls.__post_init__)  # type: ignore[attr-defined, misc]
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        r"""When an instance of the class is created, this method is called."""
+        obj = super().__call__(*args, **kwargs)
+        obj.__post_init__()
+        return obj
 
 
-class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
+class DatasetBase[Key: str, T](
+    Dataset[Mapping[Key, T]], Mapping[Key, T], metaclass=_DatasetMeta
+):  # Key, +T
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
-
 
     We allow for systematic validation of the datasets.
     Users can check the validity of the datasets by implementing the following attributes/properites:
@@ -166,11 +177,11 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
     - table_schemas: Used to verify in-memory tables after `load`.
     """
 
+    # region class attributes ----------------------------------------------------------
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
-
     SOURCE_URL: ClassVar[str] = NotImplemented
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL: ClassVar[str] = NotImplemented
@@ -179,19 +190,38 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
     r"""Location where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
     r"""Location where the pre-processed data is stored."""
+    # endregion class attributes -------------------------------------------------------
 
-    # instance attribute
-    __version__: str = NotImplemented
-    r"""Version of the dataset, keep empty for unversioned dataset."""
+    # region instance attributes -------------------------------------------------------
+    # FIXME: Use Read-Only type
+    __version__: str | None = None
+    r"""READ-ONLY: The version of the dataset."""
     rawdata_hashes: Mapping[str, str | None] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = NotImplemented
     r"""Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
     r"""Shapes for the raw dataset tables(s)."""
+    dataset_hashes: Mapping[Key, str | None] = NotImplemented
+    r"""Hashes of the cleaned dataset file(s)."""
+    table_hashes: Mapping[Key, str | None] = NotImplemented
+    r"""Hashes of the in-memory cleaned dataset table(s)."""
+    table_schemas: Mapping[Key, Mapping[str, str]] = NotImplemented
+    r"""Schemas of the in-memory cleaned dataset table(s)."""
+    table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
+    r"""Shapes of the in-memory cleaned dataset table(s)."""
+    # endregion instance attributes ----------------------------------------------------
 
-    serialize_table = staticmethod(serialize.serialize_table)
-    deserialize_table = staticmethod(serialize.deserialize_table)
+    _tables: dict[Key, T] = NotImplemented
+    r"""INTERNAL: the dataset."""
+
+    # region constructors --------------------------------------------------------------
+    @classmethod
+    def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
+        r"""Create a dataset from a table."""
+        obj = cls(initialize=False)
+        obj._tables = dict(tables)
+        return obj
 
     def __init__(
         self,
@@ -199,7 +229,7 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         initialize: bool = True,
         reset: bool = False,
         verbose: bool = True,
-        version: str = NotImplemented,
+        version: Optional[str] = None,
     ) -> None:
         r"""Initialize the dataset.
 
@@ -213,11 +243,11 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         self.initialize = initialize
 
         # set the version
-        if version is not NotImplemented:
+        if self.__version__ is None and version is not None:
             self.__version__ = str(version)
 
         # update the paths
-        if self.__version__ is not NotImplemented:
+        if self.__version__ is not None:
             self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
             self.DATASET_DIR /= self.__version__  # type: ignore[misc]
 
@@ -227,8 +257,8 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
 
         if reset:
             # delete rawdata and dataset directories
-            self.remove_rawdata_files()
-            self.remove_dataset_files()
+            self.reset_rawdata_files()
+            self.reset_dataset_files()
 
     def __post_init__(self) -> None:
         r"""Initialize the dataset."""
@@ -239,89 +269,53 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
             self.clean()
             self.load(initializing=True)
 
-    def __repr__(self) -> str:
-        r"""Return a string representation of the dataset."""
-        return f"{self.__class__.__name__}()"
+    # endregion constructors -----------------------------------------------------------
 
-    @property
-    def version_info(self) -> tuple[int, ...]:
-        r"""Version information of the dataset."""
-        if self.__version__ is NotImplemented:
-            return NotImplemented
-        return tuple(int(i) for i in self.__version__.split("."))
+    # region serialization methods -----------------------------------------------------
+    serialize_table = staticmethod(serialize.serialize_table)
+    deserialize_table = staticmethod(serialize.deserialize_table)
 
-    def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
-        r"""Check if raw data files exist."""
-        if key is None:
-            return paths_exists(self.rawdata_paths)
-        if key not in self.rawdata_paths:
-            raise KeyError(f"{key=} not in {self.rawdata_paths=}")
-        return paths_exists(self.rawdata_paths[key])
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self:
+        r"""Deserialize the dataset."""
+        tables: dict[Key, T] = {}
+        with ZipFile(filepath) as archive:
+            for fname in archive.namelist():
+                with archive.open(fname) as file:
+                    name = cast(Key, Path(fname).stem)
+                    extension = Path(fname).suffix[1:]
+                    tables[name] = cls.deserialize_table(file, loader=extension)
 
-    @abstractmethod
-    def clean(self) -> None:
-        r"""Clean an already downloaded raw dataset and stores it in self.data_dir.
+        return cls.from_tables(tables)
 
-        Preferably, use the '.parquet' data format.
-        """
-        ...
+    def serialize(self, filepath: FilePath, /) -> None:
+        r"""Serialize the dataset."""
+        path = Path(filepath)
+        if path.suffix != ".zip":
+            raise ValueError("Path must be a zip file if serializing whole dataset.")
+        with ZipFile(path, "w") as archive:
+            extension = self.DEFAULT_FILE_FORMAT
+            for name, table in self.items():
+                fname = f"{name}.{extension}"
+                with archive.open(fname, "w") as file:
+                    self.serialize_table(table, file, writer=extension)
 
-    @abstractmethod
-    def load(self, *, initializing: bool = False) -> T:
-        r"""Load the pre-processed dataset."""
-        ...
+    # endregion serialization methods --------------------------------------------------
 
-    def download_file(self, fname: str, /) -> None:
-        r"""Download a single rawdata file.
+    # region reset methods -------------------------------------------------------------
+    @classmethod
+    def reset(cls, *, force: bool = False) -> None:
+        r"""Reset the dataset."""
+        try:
+            self = cls(initialize=False)
+        except Exception as exc:
+            exc.add_note("Could not create instance of dataset!")
+            raise
 
-        Override this method for custom download logic.
-        """
-        if self.SOURCE_URL is NotImplemented:
-            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
-            return
+        self.reset_rawdata_files(force=force)
+        self.reset_dataset_files(force=force)
 
-        url = self.SOURCE_URL + fname
-        path = self.RAWDATA_DIR / fname
-        self.LOGGER.debug("Downloading %s from %s", fname, url)
-        remote.download(url, path)
-
-    def download(
-        self,
-        *,
-        key: Optional[str] = None,
-        force: bool = True,
-        validate: bool = True,
-    ) -> None:
-        r"""Download the dataset."""
-        # Recurse if key is None.
-        if key is None:
-            for _key in (
-                pbar := tqdm(
-                    self.rawdata_paths,
-                    desc="Downloading files",
-                    disable=not self.verbose,
-                    leave=False,
-                )
-            ):
-                pbar.set_postfix(file=_key)
-                self.download(key=_key, force=force, validate=validate)
-            return
-
-        # Check if the file already exists.
-        if self.rawdata_files_exist(key) and not force:
-            self.LOGGER.debug("Files already exist. Skipping download.")
-            return
-
-        # Download the file.
-        with timer() as t:
-            self.download_file(key)
-        self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
-
-        # Validate the file.
-        if validate and self.rawdata_hashes is not NotImplemented:
-            self.validate_rawdata(key)
-
-    def remove_rawdata_files(self, *, force: bool = False) -> None:
+    def reset_rawdata_files(self, *, force: bool = False) -> None:
         r"""Recreate the rawdata directory."""
         if not self.RAWDATA_DIR.exists():
             raise FileNotFoundError(f"{self.RAWDATA_DIR} does not exist!")
@@ -339,7 +333,7 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         # else do nothing
         self.LOGGER.debug("Rawdata files not deleted.")
 
-    def remove_dataset_files(self, *, force: bool = False) -> None:
+    def reset_dataset_files(self, *, force: bool = False) -> None:
         r"""Recreate the dataset directory."""
         if not self.DATASET_DIR.exists():
             raise FileNotFoundError(f"{self.DATASET_DIR} does not exist!")
@@ -357,79 +351,27 @@ class BaseDataset[T](Dataset[T], metaclass=_DatasetMeta):  # +T
         # else do nothing
         self.LOGGER.debug("Dataset files not deleted.")
 
-    @classmethod
-    def reset(cls, *, force: bool = False) -> None:
-        r"""Reset the dataset."""
-        try:
-            self = cls(initialize=False)
-        except Exception as exc:
-            exc.add_note("Could not create instance of dataset!")
-            raise
+    # endregion reset methods ----------------------------------------------------------
 
-        self.remove_rawdata_files(force=force)
-        self.remove_dataset_files(force=force)
-
-    @cached_property
-    def rawdata_valid(self) -> bool:
-        r"""Check if raw data files exist."""
-        self.validate_rawdata()
-        return True
-
-    def validate_rawdata(self, key: Optional[str] = None) -> None:
-        r"""Validate the rawdata files."""
-        if key is None:
-            self.LOGGER.debug("Validating raw data files.")
-            for _key in (
-                pbar := tqdm(
-                    self.rawdata_paths,
-                    desc="Validating files",
-                    disable=not self.verbose,
-                    leave=False,
-                )
-            ):
-                pbar.set_postfix(file=_key)
-                self.validate_rawdata(key=_key)
-            return
-
-        self.LOGGER.debug("Validating %s.", key)
-        validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes[key])
-
-
-class MultiTableDataset[Key: str, T](
-    BaseDataset[Mapping[Key, T]], Mapping[Key, T]
-):  # Key, +T
-    r"""Dataset class that consists of multiple tables.
-
-    The tables are stored in a dictionary-like object.
-    """
-
-    RAWDATA_DIR: ClassVar[Path]
-    r"""Path to raw data directory."""
-    DATASET_DIR: ClassVar[Path]
-    r"""Path to pre-processed data directory."""
-
-    _tables: dict[Key, T] = NotImplemented
-    r"""INTERNAL: the dataset."""
-
-    # Validation - Implement on per dataset basis!
-    dataset_hashes: Mapping[Key, str | None] = NotImplemented
-    r"""Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[Key, str | None] = NotImplemented
-    r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[Key, Mapping[str, str]] = NotImplemented
-    r"""Schemas of the in-memory cleaned dataset table(s)."""
-    table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
-    r"""Shapes of the in-memory cleaned dataset table(s)."""
+    # region properties ----------------------------------------------------------------
+    @property
+    def version_info(self) -> tuple[int, ...]:
+        r"""Version information of the dataset."""
+        if self.__version__ is None:
+            return ()
+        # FIXME: preferably use packaging.version.parse or custom version parser
+        return tuple(int(i) for i in self.__version__.split("."))
 
     @property
     @abstractmethod
     def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
-        r"""Return the index of the dataset."""
+        r"""READ-ONLY: The names of the tables."""
         # TODO: use abstract-attribute!
-        # REF: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
+        # SEE: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
     table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
-    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    r"""READ-ONLY: The names of the tables."""
 
     @property
     def tables(self) -> dict[Key, T]:
@@ -487,38 +429,9 @@ class MultiTableDataset[Key: str, T](
         self.LOGGER.debug("Adding keys as attributes.")
         return True
 
-    @classmethod
-    def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
-        r"""Create a dataset from a table."""
-        obj = cls(initialize=False)
-        obj._tables = dict(tables)
-        return obj
+    # endregion properties -------------------------------------------------------------
 
-    @classmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self:
-        r"""Deserialize the dataset."""
-        tables: dict[Key, T] = {}
-        with ZipFile(filepath) as archive:
-            for fname in archive.namelist():
-                with archive.open(fname) as file:
-                    name = cast(Key, Path(fname).stem)
-                    extension = Path(fname).suffix[1:]
-                    tables[name] = cls.deserialize_table(file, loader=extension)
-
-        return cls.from_tables(tables)
-
-    def serialize(self, filepath: FilePath, /) -> None:
-        r"""Serialize the dataset."""
-        path = Path(filepath)
-        if path.suffix != ".zip":
-            raise ValueError("Path must be a zip file if serializing whole dataset.")
-        with ZipFile(path, "w") as archive:
-            extension = self.DEFAULT_FILE_FORMAT
-            for name, table in self.items():
-                fname = f"{name}.{extension}"
-                with archive.open(fname, "w") as file:
-                    self.serialize_table(table, file, writer=extension)
-
+    # region dunder methods ------------------------------------------------------------
     def __dir__(self) -> list[str]:
         if self._enable_key_attributes:
             return list(super().__dir__()) + list(self.table_names)
@@ -547,14 +460,64 @@ class MultiTableDataset[Key: str, T](
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
-        return repr_mapping(self.tables, wrapped=self)
+        return repr_mapping(self.tables, wrapped=self, modifier=self.__version__)
 
-    def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
-        r"""Check if dataset files exist."""
-        if isinstance(self.dataset_paths, Mapping) and key is not None:
-            return paths_exists(self.dataset_paths[key])
-        return paths_exists(self.dataset_paths)
+    # endregion dunder methods ---------------------------------------------------------
 
+    # region download methods ----------------------------------------------------------
+    def download_file(self, fname: str, /) -> None:
+        r"""Download a single rawdata file.
+
+        Override this method for custom download logic.
+        """
+        if self.SOURCE_URL is NotImplemented:
+            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
+            return
+
+        url = self.SOURCE_URL + fname
+        path = self.RAWDATA_DIR / fname
+        self.LOGGER.debug("Downloading %s from %s", fname, url)
+        remote.download(url, path)
+
+    def download(
+        self,
+        *,
+        key: Optional[str] = None,
+        force: bool = True,
+        validate: bool = True,
+    ) -> None:
+        r"""Download the dataset."""
+        # Recurse if key is None.
+        if key is None:
+            for _key in (
+                pbar := tqdm(
+                    self.rawdata_paths,
+                    desc="Downloading files",
+                    disable=not self.verbose,
+                    leave=False,
+                )
+            ):
+                pbar.set_postfix(file=_key)
+                self.download(key=_key, force=force, validate=validate)
+            return
+
+        # Check if the file already exists.
+        if self.rawdata_files_exist(key) and not force:
+            self.LOGGER.debug("Files already exist. Skipping download.")
+            return
+
+        # Download the file.
+        with timer() as t:
+            self.download_file(key)
+        self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
+
+        # Validate the file.
+        if validate and self.rawdata_hashes is not NotImplemented:
+            self.validate_rawdata(key)
+
+    # endregion download methods -------------------------------------------------------
+
+    # region cleaning methods ----------------------------------------------------------
     @abstractmethod
     def clean_table(self, key: Key) -> Optional[T]:
         r"""Create the cleaned table for the given key.
@@ -563,14 +526,6 @@ class MultiTableDataset[Key: str, T](
         If manually writing the table to disk, return None.
         """
         ...
-
-    def load_table(self, *, key: Key) -> T:
-        r"""Load the selected table.
-
-        By default, `self.deserialize` is used to load the table from disk.
-        Override this method if you want to customize loading the table from disk.
-        """
-        return self.deserialize_table(self.dataset_paths[key])
 
     @final
     def clean(
@@ -636,6 +591,17 @@ class MultiTableDataset[Key: str, T](
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
             self.validate_dataset(key)
+
+    # endregion cleaning methods -------------------------------------------------------
+
+    # region loading methods -----------------------------------------------------------
+    def load_table(self, *, key: Key) -> T:
+        r"""Load the selected table.
+
+        By default, `self.deserialize` is used to load the table from disk.
+        Override this method if you want to customize loading the table from disk.
+        """
+        return self.deserialize_table(self.dataset_paths[key])
 
     @overload
     def load(
@@ -706,10 +672,67 @@ class MultiTableDataset[Key: str, T](
         self.LOGGER.info("Loaded table <%s> in %s", key, t.value)
 
         # Validate the loaded table.
-        if validate and self.table_hashes is not NotImplemented:
-            self.validate_table(key)
+        # FIXME: infinite recursion
+        # if validate and self.table_hashes is not NotImplemented:
+        # self.validate_tables(key)
 
         return table
+
+    # endregion loading methods --------------------------------------------------------
+
+    # region validation methods --------------------------------------------------------
+    @cached_property
+    def rawdata_valid(self) -> Literal[True]:
+        r"""Check if raw data files exist."""
+        self.validate_rawdata()
+        return True
+
+    @cached_property
+    def dataset_valid(self) -> Literal[True]:
+        r"""Check if dataset files exist."""
+        self.validate_dataset()
+        return True
+
+    @cached_property
+    def tables_valid(self) -> Literal[True]:
+        r"""Check if tables are valid."""
+        self.validate_tables()
+        return True
+
+    def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
+        r"""Check if raw data files exist."""
+        if key is None:
+            return paths_exists(self.rawdata_paths)
+        if key not in self.rawdata_paths:
+            raise KeyError(f"{key=} not in {self.rawdata_paths=}")
+        return paths_exists(self.rawdata_paths[key])
+
+    def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
+        r"""Check if dataset files exist."""
+        if key is None:
+            return paths_exists(self.dataset_paths)
+        if key not in self.dataset_paths:
+            raise KeyError(f"{key=} not in {self.dataset_paths=}")
+        return paths_exists(self.dataset_paths[key])
+
+    def validate_rawdata(self, key: Optional[str] = None) -> None:
+        r"""Validate the rawdata files."""
+        if key is None:
+            self.LOGGER.debug("Validating raw data files.")
+            for _key in (
+                pbar := tqdm(
+                    self.rawdata_paths,
+                    desc="Validating files",
+                    disable=not self.verbose,
+                    leave=False,
+                )
+            ):
+                pbar.set_postfix(file=_key)
+                self.validate_rawdata(key=_key)
+            return
+
+        self.LOGGER.debug("Validating %s.", key)
+        validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes.get(key))
 
     def validate_dataset(self, key: Optional[Key] = None) -> None:
         r"""Validate the dataset."""
@@ -727,9 +750,9 @@ class MultiTableDataset[Key: str, T](
                 self.validate_dataset(key=_key)
             return
         self.LOGGER.debug("Validating %s.", key)
-        validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
+        validate_file_hash(self.dataset_paths[key], self.dataset_hashes.get(key))
 
-    def validate_table(self, key: Optional[Key] = None) -> None:
+    def validate_tables(self, key: Optional[Key] = None) -> None:
         if key is None:
             self.LOGGER.debug("Validating tables.")
             for _key in (
@@ -741,7 +764,9 @@ class MultiTableDataset[Key: str, T](
                 )
             ):
                 pbar.set_postfix(table=_key)
-                self.validate_table(key=_key)
+                self.validate_tables(key=_key)
             return
         self.LOGGER.debug("Validating %s.", key)
-        validate_table_hash(self.tables[key], self.table_hashes[key])
+        validate_table_hash(self.tables[key], self.table_hashes.get(key))
+
+    # endregion validation methods -----------------------------------------------------

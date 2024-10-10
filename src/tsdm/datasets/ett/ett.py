@@ -9,10 +9,10 @@ from typing import Literal
 
 from pandas import DataFrame, read_csv
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 
-class ETT(MultiTableDataset[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"], DataFrame]):
+class ETT(DatasetBase[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"], DataFrame]):
     r"""ETT dataset.
 
     This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data

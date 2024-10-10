@@ -30,12 +30,12 @@ from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 type Key = Literal["timeseries", "static_covariates"]
 
 
-class MIMIC_III_DeBrouwer2019(MultiTableDataset[Key, DataFrame]):
+class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data

@@ -160,7 +160,7 @@ from pandas import DataFrame
 from tqdm.auto import tqdm
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 type Key = Literal[
     "timeseries",
@@ -247,7 +247,7 @@ STATIC_COVARIATES_METADATA: InlineTable = {
 }  # fmt: skip
 
 
-class PhysioNet2012(MultiTableDataset[Key, DataFrame]):
+class PhysioNet2012(DatasetBase[Key, DataFrame]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.

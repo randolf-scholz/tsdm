@@ -2,7 +2,7 @@ r"""Testing of In Silico dataset, as a token for the whole BaseDataset architect
 
 import logging
 
-from tsdm.datasets import BaseDataset, Dataset, InSilico
+from tsdm.datasets import Dataset, DatasetBase, InSilico
 from tsdm.utils.decorators import timefun
 
 __logger__ = logging.getLogger(__name__)
@@ -33,4 +33,4 @@ def test_dataset_protocol() -> None:
     LOGGER.info("Testing attributes.")
     ds = InSilico()
     assert isinstance(ds, Dataset)
-    assert isinstance(ds, BaseDataset)
+    assert isinstance(ds, DatasetBase)

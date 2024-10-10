@@ -200,21 +200,21 @@ def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
-        (np.array(1.25), "ndarray@cpu(1.25)"),
-        (torch.tensor(1.25), "Tensor@cpu(1.25)"),
-        (np.array([]), "ndarray<0>@cpu"),
-        (np.array([[]]), "ndarray<1,0>@cpu"),
-        (np.empty((0, 0)), "ndarray<0,0>@cpu"),
-        (np.array([1.25]), "ndarray<1>@cpu(1.25)"),
-        (np.array([[1.25]]), "ndarray<1,1>@cpu(1.25)"),
-        (np.array([1, 2, 3]), "ndarray<3>[int64]@cpu"),
-        (np.array([[1.4, 2.3], [3.2, 4.1]]), "ndarray<2,2>[float64]@cpu"),
-        (torch.tensor([1, 2, 3]), "Tensor<3>[torch.int64]@cpu"),
-        (torch.tensor([[1.4, 2.3], [3.2, 4.1]]), "Tensor<2,2>[torch.float32]@cpu"),
-        (pd.DataFrame([[0, "foo", 1.25]]), "DataFrame<1,3>[int64, object, float64]"),
-        (pd.Series([1, 2, 3]), "Series<3>[int64]"),
+        (np.array(1.25)                         , "ndarray@cpu(1.25)"                     ),
+        (torch.tensor(1.25)                     , "Tensor@cpu(1.25)"                      ),
+        (np.array([])                           , "ndarray@cpu<0>"                        ),
+        (np.array([[]])                         , "ndarray@cpu<1,0>"                      ),
+        (np.empty((0, 0))                       , "ndarray@cpu<0,0>"                      ),
+        (np.array([1.25])                       , "ndarray@cpu<1>(1.25)"                  ),
+        (np.array([[1.25]])                     , "ndarray@cpu<1,1>(1.25)"                ),
+        (np.array([1, 2, 3])                    , "ndarray@cpu<3>[int64]"                 ),
+        (np.array([[1.4, 2.3], [3.2, 4.1]])     , "ndarray@cpu<2,2>[float64]"             ),
+        (torch.tensor([1, 2, 3])                , "Tensor@cpu<3>[torch.int64]"            ),
+        (torch.tensor([[1.4, 2.3], [3.2, 4.1]]) , "Tensor@cpu<2,2>[torch.float32]"        ),
+        (pd.DataFrame([[0, "foo", 1.25]])       , "DataFrame<1,3>[int64, object, float64]"),
+        (pd.Series([1, 2, 3])                   , "Series<3>[int64]"                      ),
     ],
-)
+)  # fmt: skip
 def test_pprint_array(obj: SupportsArray, expected: str) -> None:
     r"""Test pprint_array."""
     result = repr_array(obj)

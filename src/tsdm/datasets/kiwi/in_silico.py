@@ -16,7 +16,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
@@ -43,7 +43,7 @@ TIMESERIES_METADATA: InlineTable = {
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
 
-class InSilico(MultiTableDataset[KEY, DataFrame]):
+class InSilico(DatasetBase[KEY, DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+

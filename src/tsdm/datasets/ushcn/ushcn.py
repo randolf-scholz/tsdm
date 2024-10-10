@@ -17,7 +17,7 @@ import pyarrow as pa
 from pandas import DataFrame
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 type Key = Literal[
     "timeseries",
@@ -133,7 +133,7 @@ STATE_CODES: InlineTable = {
 }
 
 
-class USHCN(MultiTableDataset[Key, DataFrame]):
+class USHCN(DatasetBase[Key, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and

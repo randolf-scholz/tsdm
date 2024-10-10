@@ -23,10 +23,10 @@ from getpass import getpass
 
 import pandas as pd
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 
-class MIMIC_IV(MultiTableDataset):
+class MIMIC_IV(DatasetBase):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and

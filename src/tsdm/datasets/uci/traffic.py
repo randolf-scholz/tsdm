@@ -54,13 +54,13 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 from tsdm.utils import replace
 
 type Key = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
-class Traffic(MultiTableDataset[Key, DataFrame]):
+class Traffic(DatasetBase[Key, DataFrame]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+

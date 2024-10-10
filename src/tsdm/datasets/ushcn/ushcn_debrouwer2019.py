@@ -5,10 +5,10 @@ __all__ = ["USHCN_DeBrouwer2019"]
 import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 
-class USHCN_DeBrouwer2019(MultiTableDataset):
+class USHCN_DeBrouwer2019(DatasetBase):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:

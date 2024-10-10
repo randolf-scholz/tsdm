@@ -11,12 +11,12 @@ from pandas import DataFrame, Index
 from scipy.stats import norm as univariate_normal
 from tqdm.auto import trange
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 from tsdm.random import generators
 
 
 @final
-class DampedPendulum_Ansari2023(MultiTableDataset):
+class DampedPendulum_Ansari2023(DatasetBase):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:

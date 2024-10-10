@@ -4,13 +4,13 @@ __all__ = ["KiwiBenchmark"]
 
 from zipfile import ZipFile
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 
-class KiwiBenchmark(MultiTableDataset):
+class KiwiBenchmark(DatasetBase):
     r"""KIWI Benchmark Dataset."""
 
-    __version__ = "1.0"
+    __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
 
     SOURCE_URL = (
         r"https://tubcloud.tu-berlin.de/s/3CyRJMSqj5feQo2/download?path=%2F&files="

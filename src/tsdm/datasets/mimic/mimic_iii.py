@@ -29,7 +29,7 @@ from pyarrow import Table, csv
 
 from tsdm.backend.pyarrow import cast_columns, filter_nulls, set_nulls
 from tsdm.data import strip_whitespace
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 from tsdm.datasets.mimic.mimic_iii_schema import (
     FALSE_VALUES,
     KEYS,
@@ -40,7 +40,7 @@ from tsdm.datasets.mimic.mimic_iii_schema import (
 from tsdm.utils import remote
 
 
-class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
+class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
     r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -64,7 +64,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
         so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
-    __version__ = "1.4"
+    __version__: str = "1.4"  # pyright: ignore[reportIncompatibleVariableOverride]
 
     SOURCE_URL = r"https://physionet.org/content/mimiciii/get-zip/"
     INFO_URL = r"https://physionet.org/content/mimiciii/"
@@ -75,11 +75,12 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
     }
 
     @cached_property
-    def table_names(self) -> tuple[KEYS, ...]:
-        names = tuple(self.filelist)
-        if unknown_names := set(names) - set(get_args(KEYS)):
-            raise ValueError(f"Unknown table names: {unknown_names!r}")
-        return names
+    def table_names(self) -> list[KEYS]:
+        expected_names = list(self.filelist)
+        type_hinted_names = get_args(KEYS.__value__)
+        if unknown_names := set(expected_names) - set(type_hinted_names):
+            raise ValueError(f"Unexpected table names: {unknown_names!r}")
+        return expected_names
 
     @cached_property
     def rawdata_files(self) -> list[str]:

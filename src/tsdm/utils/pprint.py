@@ -1,4 +1,41 @@
-r"""Utility functions for string manipulation."""
+r"""Pretty printing utility for generic types.
+
+Provides functions for pretty printing
+
+- Sequences
+- Mappings
+- Sets
+- Dataclasses
+- Namedtuples
+- Arrays (numpy, torch, pandas, polars)
+  (provides a short form representation that shows that shape and dtype, but not the data)
+- DTypes (numpy, torch, pandas, polars)
+
+
+The output format is of the form Type@Modifier<Identifier>(values)
+
+Examples:
+    Type<Mapping>(
+        key1: value1,
+        key2: value2,
+        ...,
+        keyN: valueN,
+    )
+
+    Type<Sequence>(
+        value1,
+        value2,
+        ...,
+        valueN,
+    )
+
+    Type<Set>(
+        value1,
+        value2,
+        ...,
+        valueN,
+    )
+"""
 
 __all__ = [
     # CONSTANTS
@@ -113,7 +150,10 @@ class Types(Enum):
 
 
 class ReprProtocol(Protocol):
-    r"""Protocol for recursive repr functions."""
+    r"""Protocol for recursive repr functions.
+
+    The output string is of the form `Title@Modifier<Identifier>[generics](values)`
+    """
 
     def __call__(
         self,
@@ -121,6 +161,7 @@ class ReprProtocol(Protocol):
         /,
         *,
         align: bool = ALIGN,
+        modifier: Optional[str] = None,
         identifier: Optional[str] = None,
         indent: int = 0,
         linebreaks: Optional[bool] = None,
@@ -242,6 +283,7 @@ def repr_mapping(
     indent: int = 0,
     linebreaks: Optional[bool] = None,
     maxitems: Optional[int] = None,
+    modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
     repr_fn: Callable[..., str] = NotImplemented,
@@ -257,6 +299,7 @@ def repr_mapping(
         indent: Indentation level.
         linebreaks: Use linebreaks.
         maxitems: Maximum number of items to print.
+        modifier: Modifier of the object.
         padding: Padding between keys and values.
         recursive: Recursively print values.
         repr_fn: Function to use for printing values.
@@ -298,6 +341,9 @@ def repr_mapping(
         str(title) if title is not None
         else cls.__name__
     )  # fmt: skip
+
+    # set modifier
+    modifier = f"@{modifier}" if modifier is not None else ""
 
     # set identifier
     identifier = (
@@ -389,7 +435,7 @@ def repr_mapping(
     ]
 
     # assemble the string
-    string = f"{title}{identifier}{left}{br}"
+    string = f"{title}{modifier}{identifier}{left}{br}"
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -416,6 +462,7 @@ def repr_sequence(
     indent: int = 0,
     linebreaks: Optional[bool] = None,
     maxitems: Optional[int] = None,
+    modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
     repr_fn: Callable[..., str] = NotImplemented,
@@ -460,6 +507,9 @@ def repr_sequence(
         str(title) if title is not None
         else cls.__name__
     )  # fmt: skip
+
+    # set modifier
+    modifier = f"@{modifier}" if modifier is not None else ""
 
     # set identifier
     identifier = (
@@ -543,7 +593,7 @@ def repr_sequence(
     ]
 
     # assemble the string
-    string = f"{title}{identifier}{left}{br}"
+    string = f"{title}{modifier}{identifier}{left}{br}"
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -570,6 +620,7 @@ def repr_set(
     indent: int = 0,
     linebreaks: Optional[bool] = None,
     maxitems: Optional[int] = None,
+    modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
     repr_fn: Callable[..., str] = NotImplemented,
@@ -590,6 +641,9 @@ def repr_set(
         str(title) if title is not None
         else cls.__name__
     )  # fmt: skip
+
+    # set modifier
+    modifier = f"@{modifier}" if modifier is not None else ""
 
     # set identifier
     identifier = (
@@ -678,7 +732,8 @@ def repr_set(
     tail_items = [to_string(i, v) for i, v in tail_iter]
 
     # assemble the string
-    string = f"{title}{identifier}{left}{br}"
+    string = f"{title}{modifier}{identifier}{left}{br}"
+
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -705,6 +760,7 @@ def repr_dataclass(
     indent: int = 0,
     linebreaks: Optional[bool] = None,
     maxitems: Optional[int] = None,
+    modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
     repr_fn: Callable[..., str] = NotImplemented,
@@ -729,6 +785,9 @@ def repr_dataclass(
         else "" if is_builtin_constant(wrapped)
         else cls.__name__
     )  # fmt: skip
+
+    # set modifier
+    modifier = f"@{modifier}" if modifier is not None else ""
 
     # set identifier
     identifier = (
@@ -756,6 +815,7 @@ def repr_dataclass(
             indent=indent,
             linebreaks=linebreaks,
             maxitems=maxitems,
+            modifier=modifier,
             padding=padding,
             recursive=recursive,
             repr_fn=repr_fn,
@@ -770,6 +830,7 @@ def repr_dataclass(
         indent=indent,
         linebreaks=linebreaks,
         maxitems=maxitems,
+        modifier=modifier,
         padding=padding,
         recursive=recursive,
         repr_fn=repr_fn,
@@ -787,6 +848,7 @@ def repr_namedtuple(
     indent: int = 0,
     linebreaks: Optional[bool] = None,
     maxitems: Optional[int] = None,
+    modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
     repr_fn: Callable[..., str] = NotImplemented,
@@ -812,6 +874,9 @@ def repr_namedtuple(
         else cls.__name__
     )  # fmt: skip
 
+    # set modifier
+    modifier = f"@{modifier}" if modifier is not None else ""
+
     # set identifier
     identifier = (
         str(identifier) if identifier is not None
@@ -836,6 +901,7 @@ def repr_namedtuple(
             indent=indent,
             linebreaks=linebreaks,
             maxitems=maxitems,
+            modifier=modifier,
             padding=padding,
             recursive=recursive,
             repr_fn=repr_fn,
@@ -850,6 +916,7 @@ def repr_namedtuple(
         indent=indent,
         linebreaks=linebreaks,
         maxitems=maxitems,
+        modifier=modifier,
         padding=padding,
         recursive=recursive,
         repr_fn=repr_fn,
@@ -862,6 +929,8 @@ def repr_array(
     obj: SupportsArray,
     /,
     *,
+    modifier: Optional[str] = None,
+    identifier: Optional[str] = None,
     title: Optional[str] = None,
     maxitems: Optional[int] = MAXITEMS_INLINE,  # max number of dtypes to show
     **_: Any,
@@ -878,7 +947,7 @@ def repr_array(
     # get the type-repr
     type_repr = str(title) if title is not None else cls.__name__
 
-    # get the shape-repr
+    # set identifier = shape
     # if multidimensional: <dim1, dim2, ...>
     # if plain scalar: none
     shape: tuple[int, ...] = (
@@ -886,18 +955,18 @@ def repr_array(
         if isinstance(obj, SupportsShape)
         else tuple(obj.__array__().shape)
     )
-    match len(shape):
-        case 0:
-            shape_repr = ""
+    match identifier, len(shape):
+        case None, _:
+            shape_repr = "" if not shape else f"<{",".join(str(dim) for dim in shape)}>"
         case _:
-            shape_repr = f"<{",".join(str(dim) for dim in shape)}>"
+            shape_repr = "" if identifier is None else str(identifier)
 
-    # get the device-repr
-    match obj:
-        case SupportsDevice(device=device):
+    # set modifier = device
+    match modifier, obj:
+        case None, SupportsDevice(device=device):
             device_repr = f"@{device}"
         case _:
-            device_repr = ""
+            device_repr = f"@{modifier}" if modifier is not None else ""
 
     # get the dtype-repr
     # Table-like: [dtype1, dtype2, ...]
@@ -951,11 +1020,11 @@ def repr_array(
         # case _:
         #     raise TypeError(f"Unsupported object type {type(obj)}.")
 
-    # Tensor<shape>dtype@device
-    # Table<shape>[dtype1, dtype1, ...]@device
-    # Scalar<shape>(value)@device
-    # PlainScalar(value)@device
-    return f"{type_repr}{shape_repr}{dtype_repr}{device_repr}{value_repr}"
+    # Tensor@device<shape>dtype
+    # Table@device<shape>[dtype1, dtype1, ...]
+    # Scalar@device<shape>(value)
+    # PlainScalar@device(value)
+    return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
 
 
 def repr_dtype(

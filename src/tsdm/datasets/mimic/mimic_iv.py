@@ -82,7 +82,7 @@ from tsdm.backend.pyarrow import (
     unsafe_cast_columns,
 )
 from tsdm.data import strip_whitespace
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 from tsdm.datasets.mimic.mimic_iv_schema import (
     FALSE_VALUES,
     KEYS,
@@ -128,7 +128,7 @@ BAD_NAN_COLUMNS = {
 }  # fmt: skip
 
 
-class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
+class MIMIC_IV_RAW(DatasetBase[KEYS, DataFrame]):
     r"""Raw version of the MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -149,19 +149,21 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
     INFO_URL = r"https://physionet.org/content/mimiciv/"
 
-    __version__ = NotImplemented
     rawdata_hashes = {
         "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d",
         "mimic-iv-2.0.zip": "sha256:e11e9a56d234f2899714fb1712255abe0616dfcc6cba314178e8055b8765b3b9",
         "mimic-iv-2.2.zip": "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74",
     }
 
+    __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
+
     @cached_property
-    def table_names(self) -> tuple[KEYS, ...]:
-        names = tuple(self.filelist)
-        if unknown_names := set(names) - set(get_args(KEYS)):
-            raise ValueError(f"Unknown table names: {unknown_names!r}")
-        return names
+    def table_names(self) -> list[KEYS]:
+        expected_names = list(self.filelist)
+        type_hinted_names = get_args(KEYS.__value__)
+        if unknown_names := set(expected_names) - set(type_hinted_names):
+            raise ValueError(f"Unexpected table names: {unknown_names!r}")
+        return expected_names
 
     @cached_property
     def rawdata_files(self) -> list[str]:

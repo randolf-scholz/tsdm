@@ -106,15 +106,22 @@ class timer(ContextDecorator):
     r"""Start time of the timer."""
     end_time: int
     r"""End time of the timer."""
+    disable_gc: bool = False
+    r"""Whether to disable garbage collection."""
 
     def __enter__(self) -> Self:
         r"""Disable garbage collection and start the timer."""
         # flush pending writes
         sys.stdout.flush()
         sys.stderr.flush()
-        # disable garbage collection
+
+        # collect garbage
         gc.collect()
-        gc.disable()
+
+        # disable garbage collection
+        if self.disable_gc:
+            gc.disable()
+
         # start timer
         self.start_time = perf_counter_ns()
         return self
@@ -128,8 +135,10 @@ class timer(ContextDecorator):
     ) -> Literal[False]:
         r"""Stop the timer and re-enable garbage collection."""
         self.end_time = perf_counter_ns()
-        gc.enable()
-        gc.collect()
+
+        # re-enable garbage collection
+        if self.disable_gc:
+            gc.enable()
         return False
 
     @property

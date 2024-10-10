@@ -45,10 +45,10 @@ from zipfile import ZipFile
 from matplotlib.axes import Axes
 from pandas import DataFrame, read_csv
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import DatasetBase
 
 
-class Electricity(MultiTableDataset):
+class Electricity(DatasetBase):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
