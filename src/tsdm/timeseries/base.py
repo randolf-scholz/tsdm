@@ -91,7 +91,7 @@ class TimeSeries(Collection):
 
     @classmethod
     def from_dataset(cls, ds: DatasetBase, /) -> Self:
-        r"""Create a TimeSeries from a MultiTableDataset."""
+        r"""Create a TimeSeries from a Dataset."""
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 
@@ -180,7 +180,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
 
     @classmethod
     def from_dataset(cls, ds: DatasetBase, /) -> Self:
-        r"""Create a TimeSeries from a MultiTableDataset."""
+        r"""Create a TimeSeries from a Dataset."""
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 

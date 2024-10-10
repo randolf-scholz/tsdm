@@ -4,6 +4,27 @@ source_roots = [
 ]
 
 [[modules]]
+path = "<root>"
+depends_on = [
+    { path = "tsdm.backend" },
+    { path = "tsdm.config" },
+    { path = "tsdm.data" },
+    { path = "tsdm.datasets" },
+    { path = "tsdm.encoders" },
+    { path = "tsdm.linalg" },
+    { path = "tsdm.logutils" },
+    { path = "tsdm.metrics" },
+    { path = "tsdm.models" },
+    { path = "tsdm.optimizers" },
+    { path = "tsdm.random" },
+    { path = "tsdm.tasks" },
+    { path = "tsdm.timeseries" },
+    { path = "tsdm.types" },
+    { path = "tsdm.utils" },
+    { path = "tsdm.viz" },
+]
+
+[[modules]]
 path = "tsdm.backend"
 depends_on = [
     { path = "tsdm.types" },
@@ -143,25 +164,4 @@ depends_on = [
 path = "tsdm.viz"
 depends_on = [
     { path = "tsdm.constants" },
-]
-
-[[modules]]
-path = "<root>"
-depends_on = [
-    { path = "tsdm.backend" },
-    { path = "tsdm.config" },
-    { path = "tsdm.data" },
-    { path = "tsdm.datasets" },
-    { path = "tsdm.encoders" },
-    { path = "tsdm.linalg" },
-    { path = "tsdm.logutils" },
-    { path = "tsdm.metrics" },
-    { path = "tsdm.models" },
-    { path = "tsdm.optimizers" },
-    { path = "tsdm.random" },
-    { path = "tsdm.tasks" },
-    { path = "tsdm.timeseries" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-    { path = "tsdm.viz" },
 ]

@@ -74,6 +74,7 @@
       <excludeFolder url="file://$MODULE_DIR$/docs/_build_autoapi" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_previous_build" />
+      <excludeFolder url="file://$MODULE_DIR$/.tach" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (tsdm)" jdkType="Python SDK" />
