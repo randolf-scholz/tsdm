@@ -6,6 +6,7 @@ __all__ = [
     "HASH_REGEX",
     # Classes
     "Hash",
+    "ErrorHandler",
     # Functions
     "hash_array",
     "hash_file",
@@ -31,6 +32,7 @@ import string
 import warnings
 from collections import Counter
 from collections.abc import Collection, Hashable, Iterable, Mapping, Sequence
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Final, Literal, NamedTuple, Optional, Self
 
@@ -51,27 +53,6 @@ r"""The default hash method to use."""
 
 HASH_REGEX: Final[re.Pattern] = re.compile(r"^(?:(?P<alg>\w+):)?(?P<value>[a-f0-9]+)$")
 r"""Regular expression to match hash values."""
-
-
-def to_int(value: str, /, *, base: Optional[int] = None) -> int:
-    r"""Convert a string to an integer, autodetecting the base if necessary."""
-    # if only decimals:
-    if base is None:
-        if all(c in "01" for c in value):  # binary
-            base = 2
-        elif all(c in "01234567" for c in value):  # octal
-            base = 8
-        elif all(c.isdigit() for c in value):  # decimal
-            base = 10
-        elif all(c in string.hexdigits for c in value):  # hexadecimal
-            base = 16
-        elif all(
-            c in string.ascii_lowercase + string.digits for c in value
-        ):  # alphanumeric
-            base = 36
-        else:
-            raise ValueError(f"Could not autodetect base for {value!r}.")
-    return int(value, base=base)
 
 
 class Hash(NamedTuple):
@@ -99,6 +80,56 @@ class Hash(NamedTuple):
         if self.hash_algorithm is None:
             return self.hash_value
         return f"{self.hash_algorithm}:{self.hash_value}"
+
+
+class ErrorHandler:
+    r"""Validation mode for hash validation."""
+
+    class MODE(StrEnum):
+        r"""Validation mode for hash validation."""
+
+        IGNORE = "ignore"
+        LOG = "log"
+        WARN = "warn"
+        RAISE = "raise"
+
+    mode: MODE
+    r"""Validation mode for hash validation."""
+
+    def __init__(self, mode: Literal["ignore", "log", "warn", "raise"]) -> None:
+        self.mode = self.MODE(mode)
+
+    def emit(self, msg: str, /, *, valid: bool) -> None:
+        match self, valid:
+            case "raise", False:
+                raise ValueError(msg)
+            case "warn", False:
+                warnings.warn(msg, UserWarning, stacklevel=2)  # type: ignore[unreachable]
+            case "log", _:
+                __logger__.info(msg)  # type: ignore[unreachable]
+            case "ignore":
+                pass
+
+
+def to_int(value: str, /, *, base: Optional[int] = None) -> int:
+    r"""Convert a string to an integer, autodetecting the base if necessary."""
+    # if only decimals:
+    if base is None:
+        if all(c in "01" for c in value):  # binary
+            base = 2
+        elif all(c in "01234567" for c in value):  # octal
+            base = 8
+        elif all(c.isdigit() for c in value):  # decimal
+            base = 10
+        elif all(c in string.hexdigits for c in value):  # hexadecimal
+            base = 16
+        elif all(
+            c in string.ascii_lowercase + string.digits for c in value
+        ):  # alphanumeric
+            base = 36
+        else:
+            raise ValueError(f"Could not autodetect base for {value!r}.")
+    return int(value, base=base)
 
 
 def to_base(n: int, base: int, /) -> list[int]:
@@ -135,7 +166,7 @@ def to_alphanumeric(n: int, /) -> str:
 
 
 def hash_object(x: Any, /) -> int:
-    r"""Hash an object in a permutation invariant manner."""
+    r"""Hash an object."""
     match x:
         case Hashable():
             return hash(x)
@@ -219,14 +250,15 @@ def hash_pyarrow(array: pa.Array, /) -> int:
 
 def hash_file(
     filepath: FilePath,
+    /,
     *,
     block_size: int = 65536,
     hash_algorithm: str = "sha256",
-    **kwargs: Any,
+    **hash_kwargs: Any,
 ) -> Hash:
     r"""Calculate the SHA256-hash of a file."""
     algorithms = vars(hashlib)
-    hasher = algorithms[hash_algorithm](**kwargs)
+    hasher = algorithms[hash_algorithm](**hash_kwargs)
 
     with open(filepath, "rb") as file_handle:
         for byte_block in iter(lambda: file_handle.read(block_size), b""):
@@ -237,7 +269,7 @@ def hash_file(
 
 
 def hash_array(
-    array: Any, *, hash_algorithm: str = "pandas", **hash_kwargs: Any
+    array: Any, /, *, hash_algorithm: str = "pandas", **hash_kwargs: Any
 ) -> str:
     r"""Hash an array like object (pandas/numpy/pyarrow/etc.)."""
     match hash_algorithm:
@@ -261,8 +293,8 @@ def validate_file_hash(
     *,
     hash_algorithm: Optional[str] = None,
     hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
-    errors: Literal["warn", "raise", "log"] = "warn",
-) -> None:
+    errors: Literal["warn", "raise", "log", "ignore"] = "warn",
+) -> bool:
     r"""Validate file(s), given reference hash value(s).
 
     Args:
@@ -270,27 +302,23 @@ def validate_file_hash(
         reference: The reference hash value (optional).
         hash_algorithm: The hash algorithm to use.
         hash_kwargs: Additional keyword arguments to pass to the hash function.
-        errors: How to handle errors. Can be "warn", "raise", or "ignore".
+        errors: How to handle errors. Can be "warn", "raise", "log" or "ignore". (default: "warn")
 
     Raises:
         ValueError: If the file hash does not match the reference hash.
         LookupError: If the file is not found in the reference hash table.
     """
     # region input validation ----------------------------------------------------------
+    error_handler = ErrorHandler(errors)
     file = Path(filepath)
-    if file.suffix == ".parquet":
-        warnings.warn(
-            f"{file!s} ✘✘ refusing to hash, since parquet is not binary stable!",
-            UserWarning,
-            stacklevel=2,
-        )
-        return
+    valid_hash: bool = False
 
-    if errors not in {"warn", "raise", "log"}:
-        raise ValueError(
-            f"Invalid value for errors: {errors!r}. "
-            "Only 'warn', 'raise', and 'ignore' are allowed."
+    if file.suffix == ".parquet":
+        error_handler.emit(
+            f"{file!s} ✘✘ refusing to hash, since parquet is not binary stable!",
+            valid=valid_hash,
         )
+        return valid_hash
 
     # Determine the reference hash value.
     match reference:
@@ -325,32 +353,26 @@ def validate_file_hash(
 
     # Compute the hash
     result = hash_file(file, hash_algorithm=hash_algorithm, **hash_kwargs)
+    valid_hash = result.hash_value == ref_value
 
     # Finally, compare the hashes.
     if ref_value is None:
-        valid = False
         msg = (
             f"{file!s} cannot be validated, since no reference hash is given!"
             f"Hash {result!s}"
         )
     else:
-        valid = result.hash_value == ref_value
         msg = (
-            f"{file!s} ✔✔ passed validation! Hash {result!s} matches reference."
-            if valid
+            f"{file!s} ✔✔ file passed validation! Hash {result!s} matches reference."
+            if valid_hash
             else (
-                f"{file!s} ✘✘ failed validation!"
+                f"{file!s} ✘✘ file failed validation!"
                 f" Hash {result!s} does not match reference {ref_value!r}."
             )
         )
 
-    match valid, errors:
-        case False, "raise":
-            raise LookupError(msg)
-        case False, "warn":
-            warnings.warn(msg, UserWarning, stacklevel=2)
-        case _, "log":
-            __logger__.info(msg)
+    error_handler.emit(msg, valid=valid_hash)
+    return valid_hash
 
 
 def validate_table_hash(
@@ -358,13 +380,14 @@ def validate_table_hash(
     reference: str | None = None,
     /,
     *,
+    errors: Literal["warn", "raise", "log", "ignore"] = "warn",
     hash_algorithm: Optional[str] = None,
-    logger: logging.Logger = __logger__,
     **hash_kwargs: Any,
-) -> None:
+) -> bool:
     r"""Validate the hash of a `pandas` object, given hash values from a table."""
     # Try to determine the hash algorithm from the array type
     name = f"{type(table)} of shape={table.shape}"
+    error_handler = ErrorHandler(errors)
 
     # Determine the reference hash
     match reference:
@@ -404,30 +427,27 @@ def validate_table_hash(
 
     # Compute the hash.
     hash_value = hash_array(table, hash_algorithm=hash_algorithm, **hash_kwargs)
+    valid_hash = hash_value == ref_hash
 
     # Finally, compare the hashes.
     if ref_hash is None:
-        warnings.warn(
+        msg = (
             f"No reference hash given for array-like object {name!r}."
-            f"The {hash_algorithm!r}-hash is {hash_value!r}.",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-    elif hash_value != ref_hash:
-        warnings.warn(
-            f"Array-Like object {name!r} failed to validate! {ref_alg!r}-hash-"
-            f"value {hash_value!r} does not match reference {reference!r}."
-            "Ignore this warning if the format is parquet.",
-            RuntimeWarning,
-            stacklevel=2,
+            f"The {hash_algorithm!r}-hash is {hash_value!r}."
         )
     else:
-        logger.info(
-            "Array-Like object '%s' validated successfully with '%s'-hash '%s'.",
-            name,
-            hash_algorithm,
-            hash_value,
+        msg = (
+            f"{name!s} ✔✔ array passed validation!"
+            f" Hash {hash_value!s} matches reference."
+            if valid_hash
+            else (
+                f"{name!s} ✘✘ array failed validation!"
+                f" Hash {hash_value!s} does not match reference {reference!r}."
+            )
         )
+
+    error_handler.emit(msg, valid=valid_hash)
+    return valid_hash
 
 
 def validate_table_schema(
@@ -436,12 +456,15 @@ def validate_table_schema(
     *,
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
-) -> None:
+    errors: Literal["warn", "raise", "log", "ignore"] = "warn",
+) -> bool:
     r"""Validate the schema of a `pandas` object, given schema values from a table.
 
     Check if the columns and dtypes of the table match the reference schema.
     Check if the shape of the table matches the reference schema.
     """
+    error_handler = ErrorHandler(errors)
+
     # get data shape, columns and dtypes from table
     match table:
         case MultiIndex() as multiindex:
@@ -491,25 +514,36 @@ def validate_table_schema(
             raise TypeError(f"Invalid reference schema type! {type(reference_schema)=}")
 
     # Validate shape.
-    if reference_shape is None:
-        __logger__.info("No reference shape given, skipping shape validation.")
-    elif shape != reference_shape:
-        raise ValueError(f"Table {shape=!r} does not match {reference_shape=!r}!")
-    else:
-        __logger__.info("Table shape validated successfully.")
+    valid_shape = shape == reference_shape
+    msg_shape = (
+        "No reference shape given, skipping shape validation."
+        if reference_shape is None
+        else f"Table {shape=!r} does not match {reference_shape=!r}!"
+        if not valid_shape
+        else "Table shape validated successfully."
+    )
+    error_handler.emit(msg_shape, valid=valid_shape)
 
     # Validate columns.
-    if reference_columns is None:
-        __logger__.info("No reference columns given, skipping column validation.")
-    elif columns != reference_columns:
-        raise ValueError(f"Table {columns=!r} does not match {reference_columns=!r}!")
-    else:
-        __logger__.info("Table columns validated successfully.")
+    valid_columns = columns == reference_columns
+    msg_columns = (
+        "No reference columns given, skipping column validation."
+        if reference_columns is None
+        else f"Table {columns=!r} does not match {reference_columns=!r}!"
+        if not valid_columns
+        else "Table columns validated successfully."
+    )
+    error_handler.emit(msg_columns, valid=valid_columns)
 
     # Validate dtypes.
-    if reference_dtypes is None:
-        __logger__.info("No reference dtypes given, skipping dtype validation.")
-    elif dtypes != reference_dtypes:
-        raise ValueError(f"Table {dtypes=!r} does not match {reference_dtypes=!r}!")
-    else:
-        __logger__.info("Table dtypes validated successfully.")
+    valid_dtypes = dtypes == reference_dtypes
+    msg_dtypes = (
+        "No reference dtypes given, skipping dtype validation."
+        if reference_dtypes is None
+        else f"Table {dtypes=!r} does not match {reference_dtypes=!r}!"
+        if not valid_dtypes
+        else "Table dtypes validated successfully."
+    )
+    error_handler.emit(msg_dtypes, valid=valid_dtypes)
+
+    return valid_shape and valid_columns and valid_dtypes
