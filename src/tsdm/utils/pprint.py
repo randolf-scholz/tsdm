@@ -786,9 +786,6 @@ def repr_dataclass(
         else cls.__name__
     )  # fmt: skip
 
-    # set modifier
-    modifier = f"@{modifier}" if modifier is not None else ""
-
     # set identifier
     identifier = (
         str(identifier) if identifier is not None
@@ -873,9 +870,6 @@ def repr_namedtuple(
         else "" if is_builtin_constant(wrapped)
         else cls.__name__
     )  # fmt: skip
-
-    # set modifier
-    modifier = f"@{modifier}" if modifier is not None else ""
 
     # set identifier
     identifier = (
