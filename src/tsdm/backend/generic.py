@@ -36,7 +36,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
     return prod(x.shape) == 1
 
 
-# FIXME: improve type hints (HKTs)
+# FIXME: https://github.com/python/typing/issues/548
 def is_nan(x: Array, /) -> Array[bool]:
     r"""Determines whether an element is NaN."""
     try:
@@ -45,14 +45,14 @@ def is_nan(x: Array, /) -> Array[bool]:
         return x != x
 
 
-# FIXME: improve type hints (HKTs)
+# FIXME: https://github.com/python/typing/issues/548
 def false_like(x: Array, /) -> Array[bool]:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x
     return z ^ z
 
 
-# FIXME: improve type hints (HKTs)
+# FIXME: https://github.com/python/typing/issues/548
 def true_like(x: Array, /) -> Array[bool]:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
@@ -61,7 +61,7 @@ def true_like(x: Array, /) -> Array[bool]:
     return z ^ (~z)
 
 
-# FIXME: improve type hints (HKTs)
+# FIXME: https://github.com/python/typing/issues/548
 def where[Arr: Array](mask: Any, x: Arr, y: Arr, /) -> Arr:
     r"""Selects elements from `x` or `y` based on `m`."""
     # Note: A fundamental problem with implementing this generically is dealing
