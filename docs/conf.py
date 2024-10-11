@@ -351,7 +351,7 @@ html_sidebars = {}
 
 
 # region sphinx-autoapi configuration --------------------------------------------------
-# REF: https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
+# SEE: https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
 
 autoapi_dirs = [f"../{MODULE_DIR}"]
 # Paths (relative or absolute) to the source code that you wish to generate your API documentation from.

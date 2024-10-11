@@ -79,10 +79,10 @@ from typing_extensions import TypeIs
 class BaseBuffer(Protocol):
     r"""Base class for ReadBuffer and WriteBuffer."""
 
-    # REF: WriteBuffer from https://github.com/pandas-dev/pandas/blob/main/pandas/_typing.py
-    # REF: SupportsWrite from https://github.com/python/typeshed/blob/main/stdlib/_typeshed/__init__.pyi
-    # REF: IOBase from https://github.com/python/typeshed/blob/main/stdlib/io.pyi
-    # REF: IO from https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
+    # SEE: WriteBuffer from https://github.com/pandas-dev/pandas/blob/main/pandas/_typing.py
+    # SEE: SupportsWrite from https://github.com/python/typeshed/blob/main/stdlib/_typeshed/__init__.pyi
+    # SEE: IOBase from https://github.com/python/typeshed/blob/main/stdlib/io.pyi
+    # SEE: IO from https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
     @property
     def mode(self) -> str: ...
     def seek(self, offset: int, whence: int = ..., /) -> int: ...

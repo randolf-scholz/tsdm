@@ -149,7 +149,7 @@ class Sampler[T](Protocol):  # +T
         ...
 
     shuffle: bool  # type: ignore[no-redef]
-    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @property
     @abstractmethod
@@ -158,7 +158,7 @@ class Sampler[T](Protocol):  # +T
         ...
 
     rng: Generator  # type: ignore[no-redef]
-    # REF: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
 
 @dataclass

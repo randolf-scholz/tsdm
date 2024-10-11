@@ -79,7 +79,7 @@ r"""Dictionary of all available cases."""
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
-    # REF: https://stackoverflow.com/q/40818146
+    # SEE: https://stackoverflow.com/q/40818146
     # FIXME: https://github.com/pytest-dev/pytest/issues/349
     # FIXME: https://github.com/pytest-dev/pytest/issues/4050
     if "case_name" in metafunc.fixturenames:
