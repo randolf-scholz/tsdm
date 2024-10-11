@@ -72,7 +72,7 @@ class LazyValue[V]:  # +V
                 )
             case Callable() as func:  # type: ignore[misc]
                 return cls(func)  # type: ignore[unreachable]
-            case value:  # Fallback: wrap value.
+            case value:  # fallback to wrapping value.
                 raise TypeError(
                     f"Expected LazyValue or Callable. Got {type(value).__name__}."
                 )

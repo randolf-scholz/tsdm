@@ -468,11 +468,11 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         This might be violated due to numerical roundoff, so we need to be careful.
     """
 
-    ymin: Arr  # or: ScalarType.
-    ymax: Arr  # or: ScalarType.
-    xmin: Arr  # or: ScalarType.
-    xmax: Arr  # or: ScalarType.
-    scale: Arr  # or: ScalarType.
+    ymin: Arr  # or ScalarType.
+    ymax: Arr  # or ScalarType.
+    xmin: Arr  # or ScalarType.
+    xmax: Arr  # or ScalarType.
+    scale: Arr  # or ScalarType.
     r"""The scaling factor."""
 
     _: KW_ONLY

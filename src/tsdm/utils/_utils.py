@@ -5,7 +5,6 @@ __all__ = [
     # Functions
     "normalize_axes",
     "deep_dict_update",
-    "deep_kval_update",
     "dims_to_list",
     "flatten_dict",
     "flatten_nested",
@@ -34,9 +33,11 @@ from collections.abc import (
     Hashable,
     Iterable,
     Mapping,
+    MutableMapping as MutMap,
     Reversible,
     Sequence,
 )
+from copy import deepcopy
 from functools import wraps
 from importlib import import_module
 from pathlib import Path
@@ -388,31 +389,24 @@ def round_relative(x: np.ndarray, /, *, decimals: int = 2) -> np.ndarray:
     return np.true_divide(rounded, 10**digits)
 
 
-def deep_dict_update(d: dict, new_kvals: Mapping, /) -> dict:
+def deep_dict_update[D: MutMap](d: D, new: Mapping, /, *, inplace: bool = False) -> D:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
     References:
         - https://stackoverflow.com/a/30655448
     """
-    for key, value in new_kvals.items():
-        if isinstance(value, Mapping) and value:
-            d[key] = deep_dict_update(d.get(key, {}), value)
-        else:  # if value is not None or not safe:
-            d[key] = value
-    return d
+    if not inplace:
+        d = deepcopy(d)
 
-
-def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
-    r"""Update nested dictionary recursively in-place with key-value pairs.
-
-    References:
-        - https://stackoverflow.com/a/30655448
-    """
-    for key, value in d.items():
-        if isinstance(value, Mapping) and value:
-            d[key] = deep_kval_update(d.get(key, {}), **new_kvals)
-        elif key in new_kvals:
-            d[key] = new_kvals[key]
+    for key, value in new.items():
+        match value:
+            # recurse on non-empty mapping
+            case Mapping() as mapping if mapping:  # non-empty mapping
+                subdict = d.get(key, {})
+                d[key] = deep_dict_update(subdict, mapping, inplace=True)
+            # update value for the given key
+            case _:
+                d[key] = value
     return d
 
 

@@ -223,52 +223,51 @@ html_theme_options = {
     #         "name": "Donate to NumFocus",
     #     },
     # ],
+    #     # TOCTREE OPTIONS
+    #     "collapse_navigation": False,
+    #     # With this enabled, navigation entries are not expandable – the [+] icons next to each entry are removed.
+    #     # Default: True
+    #     "sticky_navigation": True,
+    #     # Scroll the navigation with the main page content as you scroll the page.
+    #     # Default: True
+    #     "navigation_depth": 4,
+    #     # The maximum depth of the table of contents tree. Set this to -1 to allow unlimited depth.
+    #     # Default: 4
+    #     "includehidden": True,
+    #     # Specifies if the navigation includes hidden table(s) of contents – that is,
+    #     # any toctree directive that is marked with the :hidden: option.
+    #     # Default: True
+    #     "titles_only": True,
+    #     # When enabled, page subheadings are not included in the navigation.
+    #     # Default: False
+    #     # MISCELLANEOUS OPTIONS
+    #     "analytics_id": "",
+    #     # If specified, Google Analytics’ gtag.js is included in your pages.
+    #     # Set the value to the ID provided to you by google (like UA-XXXXXXX or G-XXXXXXXXXX).
+    #     "analytics_anonymize_ip": False,
+    #     # Anonymize visitor IP addresses in Google Analytics.
+    #     # Default: False
+    #     "display_version": True,
+    #     # If True, the version number is shown at the top of the sidebar.
+    #     # Default: True
+    #     "logo_only": False,
+    #     # Only display the logo image, do not display the project name at the top of the sidebar
+    #     # Default: False
+    #     "prev_next_buttons_location": "bottom",
+    #     # Location to display Next and Previous buttons. This can be either bottom, top, both , or None.
+    #     # Default: "bottom"
+    #     "style_external_links": False,
+    #     # Add an icon next to external links.
+    #     # Default: False
+    #     "vcs_pageview_mode": "blob",
+    #     # Changes how to view files when using display_github, display_gitlab, etc. When using GitHub or GitLab
+    #     # this can be: blob (default), edit, or raw. On Bitbucket, this can be either: view (default) or edit.
+    #     # Default: "blob" or "view"
+    #     "style_nav_header_background": r"#2980B9",
+    #     # Changes the background of the search area in the navigation bar.
+    #     # The value can be anything valid in a CSS background property.
+    #     # Default: "#2980B9"
 }
-#     # TOCTREE OPTIONS
-#     "collapse_navigation": False,
-#     # With this enabled, navigation entries are not expandable – the [+] icons next to each entry are removed.
-#     # Default: True
-#     "sticky_navigation": True,
-#     # Scroll the navigation with the main page content as you scroll the page.
-#     # Default: True
-#     "navigation_depth": 4,
-#     # The maximum depth of the table of contents tree. Set this to -1 to allow unlimited depth.
-#     # Default: 4
-#     "includehidden": True,
-#     # Specifies if the navigation includes hidden table(s) of contents – that is,
-#     # any toctree directive that is marked with the :hidden: option.
-#     # Default: True
-#     "titles_only": True,
-#     # When enabled, page subheadings are not included in the navigation.
-#     # Default: False
-#     # MISCELLANEOUS OPTIONS
-#     "analytics_id": "",
-#     # If specified, Google Analytics’ gtag.js is included in your pages.
-#     # Set the value to the ID provided to you by google (like UA-XXXXXXX or G-XXXXXXXXXX).
-#     "analytics_anonymize_ip": False,
-#     # Anonymize visitor IP addresses in Google Analytics.
-#     # Default: False
-#     "display_version": True,
-#     # If True, the version number is shown at the top of the sidebar.
-#     # Default: True
-#     "logo_only": False,
-#     # Only display the logo image, do not display the project name at the top of the sidebar
-#     # Default: False
-#     "prev_next_buttons_location": "bottom",
-#     # Location to display Next and Previous buttons. This can be either bottom, top, both , or None.
-#     # Default: "bottom"
-#     "style_external_links": False,
-#     # Add an icon next to external links.
-#     # Default: False
-#     "vcs_pageview_mode": "blob",
-#     # Changes how to view files when using display_github, display_gitlab, etc. When using GitHub or GitLab
-#     # this can be: blob (default), edit, or raw. On Bitbucket, this can be either: view (default) or edit.
-#     # Default: "blob" or "view"
-#     "style_nav_header_background": r"#2980B9",
-#     # Changes the background of the search area in the navigation bar.
-#     # The value can be anything valid in a CSS background property.
-#     # Default: "#2980B9"
-# }
 # A dictionary of options that influence the look and feel of the selected theme. These are theme-specific.
 
 html_theme_path = []

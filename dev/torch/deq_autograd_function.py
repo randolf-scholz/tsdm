@@ -166,7 +166,7 @@ x = torch.randn(input_size)
 # %%
 model.zero_grad(set_to_none=True)
 
-# forward: fixed point iteration
+# forward via fixed point iteration
 z = fixed_point_iteration(model, x)
 
 # backward
@@ -180,7 +180,7 @@ print(reference_gradients)
 # %%
 model.zero_grad(set_to_none=True)
 
-# forward: fixed point iteration
+# forward via fixed point iteration
 with torch.no_grad():
     z = fixed_point_iteration(model, x)
 

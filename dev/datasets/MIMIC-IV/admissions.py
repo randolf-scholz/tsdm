@@ -194,7 +194,7 @@ patients
 # In[7]:
 
 
-# shape: (330M, 10) ⇝ 3.3B values
+# shape=(330M, 10) ⇝ 3.3B values
 key = "chartevents"
 with (
     ZipFile(rawdata_file) as archive,

@@ -150,6 +150,21 @@ repos:
     rev: v0.13.1 # change this to the latest tag!
     hooks:
       - id: tach
+  - repo: local
+    hooks:
+      - id: unknown-inline-pragma
+        name: unknown-inline-pragma
+        description: "Check for unknown inline pragmas."
+        language: pygrep
+        entry: '^([^#]*[^\#\s][^#]*)\#\s+(?!(type|pyright|noqa|fmt|FIXME|SEE|NOTE|TODO):)([\w\s]+:)'
+        types: [python]
+      - id: double-comment
+        name: double-comment
+        description: "Check for double comments."
+        language: pygrep
+        entry: '\#\s*\#'
+        types: [python]
+        files: '^src/|^tests/'
   # mypy
   - repo: local
     hooks:

@@ -459,7 +459,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
         ts = pd.concat(ts_list, axis=0, keys=record_ids).reset_index(
             level=-1, drop=True
         )
-        ts = ts.assign(  # from hh:mm to timedelta64
+        ts = ts.assign(  # from "hh:mm" to timedelta64
             Time=ts["Time"]
             .str.split(":", expand=True)
             .astype(int)

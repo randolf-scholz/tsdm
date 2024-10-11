@@ -332,10 +332,10 @@ class SupportsMutation[Scalar](Protocol):
     # XOR ^=
     def __ixor__(self, other: Self | Scalar, /) -> Self: ...
 
-    # # inplace bitwise operations
-    # # left shift =<<
+    # inplace bitwise operations
+    # left shift =<<
     # def __ilshift__(self, other: Self | Scalar, /) -> Self: ...
-    # # right shift =>>
+    # right shift =>>
     # def __irshift__(self, other: Self | Scalar, /) -> Self: ...
 
 

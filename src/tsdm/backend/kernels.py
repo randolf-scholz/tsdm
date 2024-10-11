@@ -99,7 +99,7 @@ def get_backend_id(obj: object, /, *, fallback: BackendID = "numpy") -> BackendI
             raise ValueError(f"More than 1 backend detected: {types}.")
 
 
-class Kernels:  # Q: how to make this more elegant?
+class Kernels:  # TODO: how to make this more elegant?
     r"""A collection of kernels for numerical operations."""
 
     clip: dict[BackendID, ClipProto] = {

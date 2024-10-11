@@ -149,7 +149,7 @@ class MSE(BaseMetric):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = r**2
-        r = torch.sum(r, dim=self.axis)  # shape: (..., )
+        r = torch.sum(r, dim=self.axis)  # shape=(..., )
 
         if self.normalize:
             c = torch.sum(m, dim=self.axis)

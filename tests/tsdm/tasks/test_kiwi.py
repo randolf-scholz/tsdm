@@ -17,10 +17,9 @@ from tsdm.utils import timedelta
 __logger__ = logging.getLogger(__name__)
 
 
+# FIXME: broken test! this mask is incorrect!
 @pytest.mark.slow
-@pytest.mark.skip(
-    reason="This test is broken."
-)  # FIXME: broken test! this mask is incorrect!
+@pytest.mark.skip(reason="This test is broken.")
 def test_kiwi_task(SplitID: tuple[int, str] = (0, "train")) -> None:
     r"""Test the KiwiTask."""
     LOGGER = __logger__.getChild(KiwiBenchmark.__name__)

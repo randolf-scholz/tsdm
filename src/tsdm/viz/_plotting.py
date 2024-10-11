@@ -233,10 +233,11 @@ def plot_spectrum(
         "xlabel": "real part",
     } | dict(axis_kwargs)
 
+    # default: 1024px×1024px
     fig_opts: dict[str, Any] = {
         "figsize": (4, 4),
         "constrained_layout": True,
-        "dpi": 256,  # default: 1024px×1024px
+        "dpi": 256,
     } | dict(figure_kwargs)
 
     scatter_opts: dict[str, Any] = {

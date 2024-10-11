@@ -207,7 +207,7 @@ class MIMIC_III_Bilos2021(OldBaseTask):
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
         ts = MIMIC_III_Dataset().table
-        # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
+        # SEE: https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         if self.normalize_time:
             ts = ts.reset_index()
             t_max = ts["TIME_STAMP"].max()
@@ -225,7 +225,7 @@ class MIMIC_III_Bilos2021(OldBaseTask):
         num_folds = 5
         folds = []
         # NOTE: all folds are the same due to fixed random state.
-        # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+        # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
         for _ in range(num_folds):
             train_idx, test_idx = train_test_split(
                 self.IDs,

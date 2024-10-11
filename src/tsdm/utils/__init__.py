@@ -15,7 +15,6 @@ __all__ = [
     # utils
     "normalize_axes",
     "deep_dict_update",
-    "deep_kval_update",
     "dims_to_list",
     "flatten_dict",
     "flatten_nested",
@@ -53,7 +52,6 @@ __all__ = [
 from tsdm.utils import contextmanagers, decorators, pprint, remote, system
 from tsdm.utils._utils import (
     deep_dict_update,
-    deep_kval_update,
     dims_to_list,
     flatten_dict,
     flatten_nested,

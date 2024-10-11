@@ -57,7 +57,7 @@ class TimeSeries(Collection):
     For a given time-index, the time series data is a vector of measurements.
     """
 
-    # # FIXME: Use Final[ClassVar] with python 3.13.
+    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]] = frozenset({
         "timeseries",
         "timeseries_metadata",
@@ -243,73 +243,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
         if isinstance(ts.index, MultiIndex):
             return TimeSeriesCollection(**fields)
         return TimeSeries(**{k: v for k, v in fields.items() if k in TimeSeries.FIELDS})
-
-        # # TODO: There must be a better way to slice this
-        # match key:
-        #     case Series(index=MultiIndex()) as s:
-        #         ts = self.timeseries.loc[s]
-        #     case Series() as s:
-        #         if not pd.api.types.is_bool_dtype(s):
-        #             raise TypeError("Expected boolean mask.")
-        #         # NOTE: loc[s] would not work here?!
-        #         ts = self.timeseries.loc[s[s].index]
-        #     case _:
-        #         ts = self.timeseries.loc[key]
-        #
-        # # make sure metadata is always DataFrame.
-        # match self.static_covariates:
-        #     case DataFrame() as df:
-        #         md = df.loc[key]
-        #         if isinstance(md, Series):
-        #             md = df.loc[[key]]
-        #     case _:
-        #         md = self.static_covariates
-        #
-        # # slice the timeindex-descriptions
-        # match self.timeindex_metadata:
-        #     case DataFrame() as desc if desc.index.equals(self.metaindex):
-        #         tidx_desc = desc.loc[key]
-        #     case _:
-        #         tidx_desc = self.timeindex_metadata
-        #
-        # # slice the ts-descriptions
-        # match self.timeseries_metadata:
-        #     case DataFrame() as desc if desc.index.equals(self.metaindex):
-        #         ts_desc = desc.loc[key]
-        #     case _:
-        #         ts_desc = self.timeseries_metadata
-        #
-        # # slice the metadata-descriptions
-        # match self.static_covariates_metadata:
-        #     case DataFrame() as desc if desc.index.equals(self.metaindex):
-        #         md_desc = desc.loc[key]
-        #     case _:
-        #         md_desc = self.static_covariates_metadata
-        #
-        # if isinstance(ts.index, MultiIndex):
-        #     return TimeSeriesCollection(
-        #         constants=self.constants,
-        #         constants_metadata=self.constants_metadata,
-        #         metaindex=md.index,
-        #         metaindex_metadata=self.metaindex_metadata,
-        #         name=self.name,
-        #         static_covariates=md,
-        #         static_covariates_metadata=md_desc,
-        #         timeindex=ts.index,
-        #         timeindex_metadata=tidx_desc,
-        #         timeseries=ts,
-        #         timeseries_metadata=ts_desc,
-        #     )
-        #
-        # return TimeSeries(
-        #     name=self.name,
-        #     static_covariates=md,
-        #     static_covariates_metadata=md_desc,
-        #     timeindex=ts.index,
-        #     timeindex_metadata=tidx_desc,
-        #     timeseries=ts,
-        #     timeseries_metadata=ts_desc,
-        # )
 
 
 @pprint_repr
