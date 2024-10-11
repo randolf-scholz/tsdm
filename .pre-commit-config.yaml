@@ -85,7 +85,6 @@ repos:
     rev: v1.0.4
     hooks:
       - id: nbstripout-fast
-        files: '^dev/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.3.7
@@ -93,7 +92,6 @@ repos:
       # pygrep hooks
       - id: check-separator-length
       - id: pyarrow-timestamp-seconds
-        exclude: 'dtypes.py'
       - id: python-consider-using-raw-string
       - id: python-no-blanket-type-ignore
       - id: python-no-builtin-eval
@@ -105,7 +103,7 @@ repos:
         files: '^src/'
       - id: python-check-typing
         args: ["--check-no-return-union", "--check-concrete"]
-        files: '^src/|tests/'
+        files: '^src/|^tests/'
         exclude: 'lazydict.py'
       - id: python-direct-imports
       - id: python-no-mixed-args
@@ -126,7 +124,8 @@ repos:
       - id: pyproject-update-deps
       - id: pyproject-check-unmaintained
       - id: python-check-clean-interface
-        files: 'src/'
+        files: '^src/'
+        exclude: '/tests/'
       # other hooks
       - id: check-resolved-github-issues
         files: '^src/|^tests/'
@@ -160,7 +159,7 @@ repos:
       require_serial: true
       types_or: [python, pyi]
       files: '^src/|^tests/'
-      exclude: '/tasks/.*'
+      exclude: '/tasks/'
       entry: mypy
       args:
         - "--scripts-are-modules"
@@ -173,7 +172,7 @@ repos:
     rev: v1.1.384
     hooks:
       - id: pyright
-        # REF: https://stackoverflow.com/a/20401674
+        # SEE: https://stackoverflow.com/a/20401674
 #        entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
         entry: |
           sh -c '
@@ -186,4 +185,4 @@ repos:
               fi
           ' --
         files: '^src/|^tests/'
-        exclude: '/tasks/.*'
+        exclude: '/tasks/'
