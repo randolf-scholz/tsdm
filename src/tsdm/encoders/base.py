@@ -821,10 +821,9 @@ class WrappedEncoder[X, Y](BaseEncoder[X, Y]):
     encoder: Encoder[X, Y]
     r"""The encoder to wrap."""
 
+    # FIXME: https://github.com/python/typing/issues/548
     def __invert__(self) -> "WrappedEncoder[Y, X]":
-        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
-        cls: type[WrappedEncoder] = type(self)
-        return cls(invert_encoder(self.encoder))
+        return WrappedEncoder(invert_encoder(self.encoder))
 
     @property
     def params(self) -> dict[str, Any]:
@@ -865,10 +864,9 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     output_leaf_type: type[Y] = object  # type: ignore[assignment]
     r"""The type of the output elements."""
 
+    # FIXME: https://github.com/python/typing/issues/548
     def __invert__(self) -> "NestedEncoder[Y, X]":
-        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
-        cls: type[NestedEncoder] = type(self)
-        return cls(
+        return NestedEncoder(
             invert_encoder(self.encoder),
             leaf_type=self.output_leaf_type,
             output_leaf_type=self.leaf_type,
@@ -933,10 +931,9 @@ class ChainedEncoder[X, Y](EncoderList[X, Y]):
         def __new__(cls, *encoders: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]]) -> Self: ...
         # fmt: on
 
+    # FIXME: https://github.com/python/typing/issues/548
     def __invert__(self) -> "ChainedEncoder[Y, X]":
-        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
-        cls: type[ChainedEncoder] = type(self)
-        return cls(*(InverseEncoder(e) for e in reversed(self)))
+        return ChainedEncoder(*(InverseEncoder(e) for e in reversed(self)))
 
     def _fit_impl(self, x: X, /) -> None:
         for encoder in reversed(self):
@@ -1022,10 +1019,9 @@ class PipedEncoder[X, Y](EncoderList[X, Y]):
         def __new__(cls, *encoders: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y]]) -> Self: ...
         # fmt: on
 
+    # FIXME: https://github.com/python/typing/issues/548
     def __invert__(self) -> "PipedEncoder[Y, X]":
-        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
-        cls: type[PipedEncoder] = type(self)
-        return cls(*(InverseEncoder(e) for e in reversed(self)))
+        return PipedEncoder(*(InverseEncoder(e) for e in reversed(self)))
 
     def _fit_impl(self, x: X, /) -> None:
         for encoder in self:
@@ -1129,7 +1125,7 @@ def pow_encoder(
 
 
 # FIXME: https://github.com/python/typing/issues/548
-#  We could have better type hints with HKTs
+#   We could have better type hints with HKTs
 @pprint_repr(recursive=2)
 class ParallelEncoder[TupleIn: tuple, TupleOut: tuple](EncoderList[TupleIn, TupleOut]):
     r"""Product-Type for Encoders.
