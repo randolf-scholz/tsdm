@@ -71,7 +71,7 @@ def get_activation(activation: object, /) -> Activation:
             return cls()
         case str(name):
             return get_activation(ACTIVATIONS[name])
-        case func if callable(func):
+        case Activation() as func:
             return func
         case _:
             raise TypeError(f"Invalid activation: {activation!r}")
