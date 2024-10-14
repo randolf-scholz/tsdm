@@ -11,7 +11,7 @@ from tsdm.random.stats.regularity_tests import (
     irregularity_coefficient,
 )
 
-DATA_EXAMPLES = {
+DATA_EXAMPLES: dict[str, np.ndarray] = {
     "almost-regular": np.array([0, 1, 2, 3, 5, 6, 7, 8, 9], dtype=int),
     # "long-irregular" : ...,
     # "long-regular" : ...,
@@ -20,7 +20,7 @@ DATA_EXAMPLES = {
 }
 
 
-COEFFICIENTS = {
+COEFFICIENTS: dict[str, Callable[[np.ndarray], float]] = {
     "coefficient_of_variation": coefficient_of_variation,
     "geometric_std": geometric_std,
     "irregularity_coefficient": irregularity_coefficient,
@@ -29,7 +29,7 @@ COEFFICIENTS = {
 
 @pytest.mark.parametrize("coeff", COEFFICIENTS)
 @pytest.mark.parametrize("example", DATA_EXAMPLES)
-def test_shift_invariance(example: str, coeff: Callable) -> None:
+def test_shift_invariance(*, example: str, coeff: str) -> None:
     gamma = COEFFICIENTS[coeff]
     data = DATA_EXAMPLES[example]
     assert gamma(data) == gamma(data + 1)
@@ -37,7 +37,7 @@ def test_shift_invariance(example: str, coeff: Callable) -> None:
 
 @pytest.mark.parametrize("coeff", COEFFICIENTS)
 @pytest.mark.parametrize("example", DATA_EXAMPLES)
-def test_scale_invariance(example: str, coeff: Callable) -> None:
+def test_scale_invariance(*, example: str, coeff: str) -> None:
     gamma = COEFFICIENTS[coeff]
     data = DATA_EXAMPLES[example]
     assert gamma(data) == gamma(data * 2)

@@ -53,6 +53,7 @@ path = "tsdm.datasets"
 depends_on = [
     { path = "tsdm.backend" },
     { path = "tsdm.config" },
+    { path = "tsdm.constants" },
     { path = "tsdm.data" },
     { path = "tsdm.random" },
     { path = "tsdm.testing" },
