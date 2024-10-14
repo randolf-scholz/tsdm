@@ -26,7 +26,7 @@ from tsdm.data import MappingDataset
 from tsdm.datasets import KiwiBenchmark
 from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.timeseries import TimeSeries
+from tsdm.timeseries import PandasTS
 from tsdm.types.aliases import MaybeNA
 from tsdm.utils import timedelta
 from tsdm.utils.decorators import pprint_repr
@@ -177,7 +177,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
         # Construct the dataset object
         self.DS = MappingDataset({
-            key: TimeSeries(
+            key: PandasTS(
                 self.timeseries.loc[key],
                 metadata=self.metadata.loc[key],
             )
@@ -302,7 +302,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         dataset = _Dataset(ts, md, self.observables)
 
         mapped_ds = MappingDataset({
-            idx: TimeSeries(
+            idx: PandasTS(
                 ts.loc[idx],
                 metadata=(md.loc[idx], self.final_value.loc[idx]),
             )

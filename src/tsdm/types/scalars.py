@@ -17,10 +17,10 @@ __all__ = [
     # concrete data types
     "BoolScalar",
     "ComplexScalar",
-    "DateTime",
     "FloatScalar",
     "IntScalar",
     "TimeDelta",
+    "TimeStamp",
 ]
 
 from typing import (
@@ -291,8 +291,8 @@ class TimeDelta(OrderedScalar, Protocol):
 
 
 @runtime_checkable
-class DateTime[TD: TimeDelta](OrderedScalar, Protocol):
-    r"""Datetime can be compared and subtracted.
+class TimeStamp[TD: TimeDelta](OrderedScalar, Protocol):
+    r"""TimeStamps can be compared and subtracted.
 
     Note: Due to typing issues, we only support the signature `__sub__(self, other: Self) -> TD`.
     """

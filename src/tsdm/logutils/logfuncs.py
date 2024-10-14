@@ -19,7 +19,7 @@ __all__ = [
 
 import inspect
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from inspect import Parameter
 from pathlib import Path
 from typing import Any, Literal, Optional, Protocol, runtime_checkable
@@ -53,8 +53,8 @@ from tsdm.logutils.utils import compute_metrics
 from tsdm.metrics import Metric
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-from tsdm.types.aliases import JSON, MaybeWrapped
-from tsdm.utils import transpose_list_of_dicts, unpack_maybewrapped
+from tsdm.types.aliases import JSON
+from tsdm.utils import transpose_list_of_dicts
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 
@@ -452,7 +452,7 @@ def log_plot(
     step: int,
     writer: SummaryWriter,
     /,
-    plot: MaybeWrapped[Figure],
+    plot: Figure | Callable[[int], Figure] | Callable[[], Figure],
     *,
     name: str = "forecastplot",
     prefix: str = "",
@@ -473,7 +473,22 @@ def log_plot(
     identifier = f"{prefix + ":" * bool(prefix)}{name}{":" * bool(postfix) + postfix}"
 
     # generate the figure
-    fig = unpack_maybewrapped(plot, step=step)
+    match plot:
+        case Figure():
+            fig = plot
+        case Callable() as fn:  # type: ignore[misc]
+            try:  # type: ignore[unreachable]
+                fig = fn(step)  # pyright: ignore[reportCallIssue]
+            except Exception as exc1:
+                try:
+                    fig = fn()  # pyright: ignore[reportCallIssue]
+                except Exception as exc2:
+                    exc = RuntimeError("Could not generate the plot!")
+                    exc.add_note(f"Passing step raised exception {exc1}")
+                    exc.add_note(f"Without step raised exception {exc2}")
+                    raise exc from None
+        case _:
+            raise TypeError(f"Expected a figure or a callable, got {type(plot)}!")
 
     # rasterize the figure
     image = rasterize(fig, **rasterization_options)

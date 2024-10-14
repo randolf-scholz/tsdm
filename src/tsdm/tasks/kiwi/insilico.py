@@ -14,7 +14,7 @@ from tsdm.data import (
 )
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import InSilico, TimeSeriesCollection, TimeSeriesSampleGenerator
+from tsdm.timeseries import InSilico, PandasTSC, TimeSeriesSampleGenerator
 from tsdm.types.aliases import SplitID
 
 
@@ -32,13 +32,13 @@ class InSilicoTask(TimeSeriesTask):
         forecasting_horizon: str = "1h",
     ) -> None:
         ds = InSilico()
-        dataset = TimeSeriesCollection(ds.timeseries)
+        dataset = PandasTSC(ds.timeseries)
         self.observation_horizon = observation_horizon
         self.forecasting_horizon = forecasting_horizon
         super().__init__(dataset)
 
     def make_sampler(self, key: SplitID, /) -> Sampler:
-        split: TimeSeriesCollection = self.splits[key]
+        split: PandasTSC = self.splits[key]
         subsamplers = {
             key: SlidingSampler(
                 tsd.timeindex,

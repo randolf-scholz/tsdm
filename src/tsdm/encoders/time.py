@@ -26,7 +26,7 @@ from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasDtype
 from tsdm.types.arrays import NumericalSeries
-from tsdm.types.scalars import DateTime, TimeDelta
+from tsdm.types.scalars import TimeDelta, TimeStamp
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
@@ -90,7 +90,7 @@ class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
 class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
-    offset: DateTime = NotImplemented
+    offset: TimeStamp = NotImplemented
     r"""The starting point of the timeseries."""
     unit: TimeDelta = NotImplemented
     r"""The base frequency to convert timedeltas to."""
@@ -116,7 +116,7 @@ class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
 
         # set the offset
         offset = (
-            cast(DateTime, self.backend.nanmin(data))
+            cast(TimeStamp, self.backend.nanmin(data))
             if self.offset is NotImplemented
             else self.offset
         )

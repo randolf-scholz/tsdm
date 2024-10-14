@@ -57,7 +57,6 @@ from tsdm.testing import is_dunder, is_zipfile
 from tsdm.types.aliases import (
     Axis,
     FilePath,
-    MaybeWrapped,
     Nested,
     NestedDict,
     NestedMapping,
@@ -494,17 +493,6 @@ def get_joint_keys[T](*mappings: Mapping[T, Any]) -> set[T]:
     r"""Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
     return set.intersection(*map(set, (d.keys() for d in mappings)))
-
-
-def unpack_maybewrapped[T](x: MaybeWrapped[T], /, *, step: int) -> T:
-    r"""Unpack wrapped values."""
-    if callable(x):
-        try:
-            return x(step)  # type: ignore[call-arg]
-        except TypeError:
-            return x()  # type: ignore[call-arg]
-
-    return x
 
 
 def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[V]]:

@@ -56,6 +56,7 @@ However, as the time series is highly irregular, we have to set a very low frequ
 ```python
 import tsdm
 import darts
+
 ds = tsdm.datasets.KiwiBenchmark()
 ts = ds.timeseries.loc[439, 15325]
 sc = ds.static_covariates.loc[439, 15325]
@@ -64,11 +65,11 @@ ts.info()
 # convert to float as darts is incompatible with pyarrow backend
 ts_compat = ts.astype(float)
 # reset index
-ts_compat=ts_compat.reset_index()
+ts_compat = ts_compat.reset_index()
 # convert index as darts is incompatible with time delta index
-ts_compat=ts_compat.assign(
-    time=ts_compat.pop("elapsed_time").astype("timedelta64[s]") + sc["start_time"]
+ts_compat = ts_compat.assign(
+  time=ts_compat.pop("elapsed_time").astype("timedelta64[s]") + sc["start_time"]
 )
 # convert to darts.TimeSeries
-ts_darts = darts.TimeSeries.from_dataframe(ts_compat, time_col="time", freq="1s")
+ts_darts = darts.PandasTS.from_dataframe(ts_compat, time_col="time", freq="1s")
 ```

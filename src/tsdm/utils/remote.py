@@ -32,7 +32,7 @@ from requests import Session
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.testing.hashutils import validate_file_hash
+from tsdm.testing.hashutils import validate_file
 from tsdm.types.aliases import FilePath
 
 
@@ -318,7 +318,7 @@ def download(
     if skip_existing and path.exists():
         # skip download, but validate the hash
         if hash_value is not None:
-            validate_file_hash(
+            validate_file(
                 path,
                 hash_value,
                 hash_algorithm=hash_algorithm,
@@ -345,7 +345,7 @@ def download(
 
     # validate the file hash
     if hash_value is not None:
-        validate_file_hash(
+        validate_file(
             path,
             hash_value,
             hash_algorithm=hash_algorithm,

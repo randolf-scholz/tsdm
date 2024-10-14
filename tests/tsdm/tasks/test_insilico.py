@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
-from tsdm.timeseries import TimeSeriesCollection, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
 
 
 def test_insilico_task(SplitID: tuple[int, str] = (0, "train")) -> None:
@@ -13,7 +13,7 @@ def test_insilico_task(SplitID: tuple[int, str] = (0, "train")) -> None:
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
-    assert isinstance(task.splits[SplitID], TimeSeriesCollection)
+    assert isinstance(task.splits[SplitID], PandasTSC)
     assert isinstance(task.samplers[SplitID], HierarchicalSampler)
     assert isinstance(task.generators[SplitID], TimeSeriesSampleGenerator)
     assert isinstance(task.dataloaders[SplitID], DataLoader)

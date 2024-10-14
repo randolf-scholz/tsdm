@@ -32,10 +32,10 @@ from tsdm.utils.funcutils import get_return_typehint
 
 type MaybeLazy[V] = V | LazyValue[V]
 type LazySpec[V] = (
-    LazyValue[V]                                        # LazyValue
-    | tuple[Callable[..., V], tuple, dict[str, Any]]      # func, args, kwargs
-    | Callable[[], V]                                     # func
-    # | V                                                 # value (cannot be tuple)
+    LazyValue[V]                                     # LazyValue
+    | Callable[[], V]                                # func
+    | tuple[Callable[..., V], tuple, dict[str, Any]] # func, args, kwargs
+    # | V                                            # value (cannot be tuple)
 )  # fmt: skip
 r"""A type alias for the possible values of a `LazyDict`."""
 
@@ -94,13 +94,13 @@ class LazyValue[V]:  # +V
             get_return_typehint(self.func) if type_hint is None else type_hint
         )
 
-    def compute(self) -> V:
-        r"""Execute the function and return the result."""
-        return self.func(*self.args, **self.kwargs)
-
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
         return f"{self.__class__.__name__}<{self.type_hint}>"
+
+    def compute(self) -> V:
+        r"""Execute the function and return the result."""
+        return self.func(*self.args, **self.kwargs)
 
 
 @pprint_repr

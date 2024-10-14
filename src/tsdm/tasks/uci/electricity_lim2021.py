@@ -20,7 +20,7 @@ from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import TimeSeries
+from tsdm.timeseries import PandasTS
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
@@ -109,7 +109,7 @@ class ElectricityLim2021(TimeSeriesTask):
     preprocessor: BaseEncoder
 
     # FIXME: need a different base class for this task!
-    dataset: TimeSeries  # type: ignore[assignment]
+    dataset: PandasTS  # type: ignore[assignment]
 
     def __init__(self) -> None:
         ds = Electricity().table

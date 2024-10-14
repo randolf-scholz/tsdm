@@ -28,6 +28,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generic,
     Literal,
     Optional,
     Protocol,
@@ -42,6 +43,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import Index, Series
+from typing_extensions import TypeVar
 
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.data.datasets import (
@@ -54,19 +56,19 @@ from tsdm.data.datasets import (
     get_last_sample,
 )
 from tsdm.types.protocols import Array
-from tsdm.types.scalars import DateTime, TimeDelta
+from tsdm.types.scalars import TimeDelta, TimeStamp
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
 
 # region helper functions --------------------------------------------------------------
 def compute_grid[TD: TimeDelta](
-    tmin: str | DateTime[TD],
-    tmax: str | DateTime[TD],
+    tmin: str | TimeStamp[TD],
+    tmax: str | TimeStamp[TD],
     step: str | TD,
     /,
     *,
-    offset: Optional[str | DateTime[TD]] = None,
+    offset: Optional[str | TimeStamp[TD]] = None,
 ) -> list[int]:
     r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
@@ -312,13 +314,14 @@ type U = str  # unknown (not statically known)
 type ONE = Literal["one"]
 type MULTI = Literal["multi"]
 
+# FIXME: python==3.13 use PEP695 with default values
+DT = TypeVar("DT", bound=TimeStamp)
+ModeVar = TypeVar("ModeVar", S, M, B, W, U, default=U)  # type: ignore[misc]
+HorizonVar = TypeVar("HorizonVar", ONE, MULTI, default=ONE)  # type: ignore[misc]
+
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
-class SlidingSampler[
-    DT: DateTime,
-    ModeVar: (S, M, B, W, U),
-    HorizonVar: (ONE, MULTI),
-](BaseSampler):
+class SlidingSampler(BaseSampler, Generic[DT, ModeVar, HorizonVar]):
     r"""Sampler that generates a single sliding window over an interval.
 
     Note:
@@ -353,7 +356,7 @@ class SlidingSampler[
     `TimeDelta` objects. In this case, lists of the above objects are returned.
     """
 
-    class MODES(StrEnum):
+    class MODE(StrEnum):
         r"""Valid modes for the sampler."""
 
         B = "bounds"
@@ -370,7 +373,7 @@ class SlidingSampler[
 
     horizons: TimeDelta | NDArray[TimeDelta]  # type: ignore[type-var]
     stride: TimeDelta
-    mode: MODES
+    mode: MODE
     multi_horizon: bool
     shuffle: bool
     drop_last: bool
@@ -386,14 +389,14 @@ class SlidingSampler[
     #   1. PEP 696 is implemented
     #   2. enums are considered subtypes of literals.
     if TYPE_CHECKING:
-        # multi-horizon
-        @overload
-        def __new__[TD: TimeDelta](
+
+        @overload  # multi-horizon -----------------------------------------------------
+        def __new__[TD: TimeDelta](  # pyright: ignore[reportOverlappingOverload]
             cls,
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["slices", MODES.S],
+            mode: Literal["slices", MODE.S],
             horizons: Array[str | TD],
             stride: str | TD,
             shuffle: bool = ...,
@@ -406,7 +409,7 @@ class SlidingSampler[
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["bounds", MODES.B],
+            mode: Literal["bounds", MODE.B],
             horizons: Array[str | TD],
             stride: str | TD,
             shuffle: bool = ...,
@@ -419,7 +422,7 @@ class SlidingSampler[
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["masks", MODES.M],
+            mode: Literal["masks", MODE.M],
             horizons: Array[str | TD],
             stride: str | TD,
             shuffle: bool = ...,
@@ -432,21 +435,33 @@ class SlidingSampler[
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["windows", MODES.W],
+            mode: Literal["windows", MODE.W],
             horizons: Array[str | TD],
             stride: str | TD,
             shuffle: bool = ...,
             drop_last: bool = ...,
             rng: Generator = ...,
         ) -> "SlidingSampler[DT, W, MULTI]": ...
-        # single horizon
-        @overload
+        @overload  # unknown mode
         def __new__[TD: TimeDelta](
             cls,
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["slices", MODES.S],
+            mode: MODE | Mode | str,
+            horizons: Array[str | TD],
+            stride: str | TD,
+            shuffle: bool = ...,
+            drop_last: bool = ...,
+            rng: Generator = ...,
+        ) -> "SlidingSampler[DT, U, MULTI]": ...
+        @overload  # single horizon ----------------------------------------------------
+        def __new__[TD: TimeDelta](  # pyright: ignore[reportOverlappingOverload]
+            cls,
+            data_source: SequentialDataset[DT],
+            /,
+            *,
+            mode: Literal["slices", MODE.S],
             horizons: str | TD,
             stride: str | TD,
             shuffle: bool = ...,
@@ -459,7 +474,7 @@ class SlidingSampler[
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["bounds", MODES.B],
+            mode: Literal["bounds", MODE.B],
             horizons: str | TD,
             stride: str | TD,
             shuffle: bool = ...,
@@ -472,7 +487,7 @@ class SlidingSampler[
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["masks", MODES.M],
+            mode: Literal["masks", MODE.M],
             horizons: str | TD,
             stride: str | TD,
             shuffle: bool = ...,
@@ -485,34 +500,20 @@ class SlidingSampler[
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: Literal["windows", MODES.W],
+            mode: Literal["windows", MODE.W],
             horizons: str | TD,
             stride: str | TD,
             shuffle: bool = ...,
             drop_last: bool = ...,
             rng: Generator = ...,
         ) -> "SlidingSampler[DT, W, ONE]": ...
-        # unknown mode
         @overload
         def __new__[TD: TimeDelta](
             cls,
             data_source: SequentialDataset[DT],
             /,
             *,
-            mode: MODES | Mode | str,
-            horizons: Array[str | TD],
-            stride: str | TD,
-            shuffle: bool = ...,
-            drop_last: bool = ...,
-            rng: Generator = ...,
-        ) -> "SlidingSampler[DT, U, MULTI]": ...
-        @overload
-        def __new__[TD: TimeDelta](
-            cls,
-            data_source: SequentialDataset[DT],
-            /,
-            *,
-            mode: MODES | Mode | str,
+            mode: MODE | Mode | str,
             horizons: str | TD,
             stride: str | TD,
             shuffle: bool = ...,
@@ -542,7 +543,7 @@ class SlidingSampler[
         dt_type: type[DT] = type(self.tmin)
         td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)
-        self.mode = self.MODES(mode)
+        self.mode = self.MODE(mode)
         self.drop_last = drop_last
         self.stride = timedelta(stride) if isinstance(stride, str) else stride
 

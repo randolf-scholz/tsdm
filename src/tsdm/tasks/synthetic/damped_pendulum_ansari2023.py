@@ -19,7 +19,7 @@ from tsdm import datasets
 from tsdm.data import folds_as_frame, is_partition
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import FixedSliceSampleGenerator, TimeSeriesCollection
+from tsdm.timeseries import FixedSliceSampleGenerator, PandasTSC
 from tsdm.types.aliases import SplitID
 
 
@@ -62,7 +62,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         missing_rate: float = 0.0,
     ) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
-        timeseries = TimeSeriesCollection(timeseries=dataset.table)
+        timeseries = PandasTSC(timeseries=dataset.table)
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
         self.missing_rate = float(missing_rate)
 

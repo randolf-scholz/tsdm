@@ -15,7 +15,7 @@ from numpy import (
 )
 
 from tsdm.random.samplers import compute_grid
-from tsdm.types.scalars import DateTime, TimeDelta
+from tsdm.types.scalars import TimeDelta, TimeStamp
 from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ __logger__ = logging.getLogger(__name__)
 
 # FIXME: Use PEP 696 with python 3.13
 def validate_grid_results[TD: TimeDelta](
-    *, tmin: DateTime[TD], tmax: DateTime[TD], tdelta: TD, offset: DateTime[TD]
+    *, tmin: TimeStamp[TD], tmax: TimeStamp[TD], tdelta: TD, offset: TimeStamp[TD]
 ) -> None:
     result = compute_grid(tmin, tmax, tdelta, offset=offset)
     kmin, kmax = result[0], result[-1]
@@ -50,7 +50,7 @@ def validate_grid_results[TD: TimeDelta](
         raise AssertionError(f"Failed with {values=}") from E
 
 
-class GridTuple[DT: DateTime, TD: TimeDelta](NamedTuple):
+class GridTuple[DT: TimeStamp, TD: TimeDelta](NamedTuple):
     r"""Input tuple for `compute_grid`."""
 
     tmin: DT
@@ -59,7 +59,7 @@ class GridTuple[DT: DateTime, TD: TimeDelta](NamedTuple):
     timedelta: TD
 
 
-EXAMPLES: dict[str, GridTuple[DateTime, TimeDelta]] = {
+EXAMPLES: dict[str, GridTuple[TimeStamp, TimeDelta]] = {
     "python_datetime": GridTuple(
         tmin=py_dt(2000, 1, 1),
         tmax=py_dt(2001, 1, 1),

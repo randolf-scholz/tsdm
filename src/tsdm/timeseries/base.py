@@ -1,6 +1,14 @@
 r"""Timeseries data structures and functions."""
 
 __all__ = [
+    # Protocols
+    "TimeSeries",
+    "TimeSeriesCollection",
+    # Classes
+    "PandasTS",
+    "PandasTSC",
+    "TimeSeriesSampleGenerator",
+    "FixedSliceSampleGenerator",
     # NamedTuples
     "Inputs",
     "Targets",
@@ -10,18 +18,13 @@ __all__ = [
     "PaddedBatch",
     # Functions
     "collate_timeseries",
-    # Classes
-    "TimeSeries",
-    "TimeSeriesCollection",
-    "TimeSeriesSampleGenerator",
-    "FixedSliceSampleGenerator",
 ]
 
 import warnings
-from collections.abc import Collection, Hashable, Iterator, Mapping, Sequence
+from collections.abc import Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from math import nan as NAN
-from typing import Any, ClassVar, Final, NamedTuple, Optional, Self, overload
+from typing import Any, ClassVar, NamedTuple, Optional, Protocol, Self, overload
 
 import numpy as np
 import torch
@@ -30,25 +33,89 @@ from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm import constants as const
-from tsdm.constants import NOT_GIVEN
+from tsdm.constants import EMPTY_MAP, EMPTY_SET, NOT_GIVEN
 from tsdm.data.datasets import TorchDataset
-from tsdm.datasets import DatasetBase
+from tsdm.datasets import Dataset
+from tsdm.types.scalars import TimeStamp
 from tsdm.utils.decorators import pprint_repr
 
 
-class _TimeSeriesBase:
-    # FIXME: Use Final[ClassVar] with python 3.13.
-    FIELDS: Final[frozenset[str]] = frozenset({
-        "timeseries",
-        "timeseries_metadata",
-        "static_covariates",
-        "static_covariates_metadata",
-    })
+class TimeSeries[T](Protocol):
+    r"""Protocol for time series objects."""
+
+    FIELDS: ClassVar[frozenset[str]]
+    r"""The fields of the time series."""
+
+    timeseries: T
+    r"""The time series data."""
+    timeseries_metadata: Optional[T]
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    static_covariates: Optional[T]
+    r"""The metadata of the dataset."""
+    static_covariates_metadata: Optional[T]
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+    # metadata
+    name: str
+    r"""The name of the dataset."""
+    tags: frozenset[str] = EMPTY_SET
+    r"""Tags associated with the dataset."""
+    labels: Mapping[str, Any] = EMPTY_MAP
+    r"""Labels associated with the dataset."""
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator: ...
+    def __contains__(self, key: Hashable, /) -> bool: ...
+    def __getitem__(self, key: Any, /) -> Self: ...
+
+
+class TimeSeriesCollection[Key, T](Protocol):
+    r"""Protocol for time series collection objects."""
+
+    FIELDS: ClassVar[frozenset[str]]
+    r"""The fields of the time series collection."""
+
+    timeseries: T
+    r"""The collection of time series data."""
+    timeseries_metadata: Optional[T] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    static_covariates: Optional[T] = None
+    r"""The static covariates associated with each timeseries."""
+    static_covariates_metadata: Optional[T] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    constants: Optional[T] = None
+    r"""Additional data that is independent of the metaindex."""
+    constants_metadata: Optional[T] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    # metadata
+    name: str
+    r"""The name of the dataset."""
+    tags: frozenset[str] = EMPTY_SET
+    r"""Tags associated with the dataset."""
+    labels: Mapping[str, Any] = EMPTY_MAP
+    r"""Labels associated with the dataset."""
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Any]: ...
+    def __contains__(self, item: Any, /) -> bool: ...
+    @overload
+    def __getitem__(self, key: slice | list[Key], /) -> Self: ...
+    @overload
+    def __getitem__(self, key: Key, /) -> TimeSeries[T]: ...
+
+
+# class TimeSeriesBase[T](TimeSeries[T]):
+#     r"""TimeSeries Base Class."""
+#
+#
+# class TimeSeriesCollectionBase[Key, T](TimeSeriesCollection[Key, T]):
+#     r"""TimeSeriesCollection Base Class."""
 
 
 @pprint_repr
 @dataclass
-class TimeSeries(Collection):
+class PandasTS(TimeSeries[DataFrame]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -64,6 +131,7 @@ class TimeSeries(Collection):
         "static_covariates",
         "static_covariates_metadata",
     })
+    r"""The essential fields of the time series collection."""
 
     _: KW_ONLY
 
@@ -74,71 +142,87 @@ class TimeSeries(Collection):
     # Main Attributes
     timeseries: DataFrame
     r"""The time series data."""
-    timeindex_metadata: Optional[DataFrame] = None
+    timeseries_metadata: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
     static_covariates: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
     static_covariates_metadata: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    timeindex: Index = NOT_GIVEN  # derived field
+    r"""The time-index of the dataset."""
+    timeindex_metadata: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
 
-    # Extras
-    tags: dict[str, Any] = NOT_GIVEN
+    # metadata
+    tags: frozenset[str] = EMPTY_SET
     r"""Tags associated with the dataset."""
 
-    # derived fields
-    timeindex: Index = NOT_GIVEN
-    r"""The time-index of the dataset."""
-
     @classmethod
-    def from_dataset(cls, ds: DatasetBase, /) -> Self:
+    def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
         r"""Create a TimeSeries from a Dataset."""
+        ds = arg() if isinstance(arg, type) else arg
+
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 
         return cls(
+            **{k: ds.tables.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
             name=ds.__class__.__name__,
-            **{k: ds.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
         )
 
     def __post_init__(self) -> None:
         r"""Post init."""
         if self.timeindex is NOT_GIVEN:
-            self.timeindex = self.timeseries.index.copy().unique()
-        if isinstance(self.timeseries.index, MultiIndex):
-            raise TypeError(
-                "Tried to create a TimeSeries from a DataFrame with MultiIndex."
-                "\n    Are you sure this is not a TimeSeriesCollection?"
-            )
-
-    def __iter__(self) -> Iterator[Series]:
-        r"""Iterate over the timestamps."""
-        return iter(self.timeindex)
+            self.timeindex = self._infer_timeindex()
 
     def __len__(self) -> int:
         r"""Return the number of timestamps."""
         return len(self.timeindex)
 
+    def __iter__(self) -> Iterator[TimeStamp]:
+        r"""Iterate over the timestamps."""
+        return iter(self.timeindex)
+
     def __contains__(self, key: Hashable, /) -> bool:
         r"""Check if the key is in the timeindex."""
         return key in self.timeindex
 
-    def __getitem__(self, key: Any, /) -> "TimeSeries":
+    def __getitem__(self, key: Any, /) -> "PandasTS":
         r"""Return the subset of the timeseries at index `key`."""
-        # only pass non-derived fields
-        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
-        fields.update(timeseries=self.timeseries.loc[key])
-        return TimeSeries(**fields)
+        match self.timeseries:
+            case DataFrame() as ts:
+                # only pass non-derived fields
+                fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+                fields.update(timeseries=ts.loc[key])
+                return PandasTS(**fields)
+            case _:
+                raise NotImplementedError("Only DataFrame is supported.")
+
+    def _infer_timeindex(self) -> Index:
+        r"""Get the timeindex."""
+        match self.timeseries:
+            case DataFrame() as ts:
+                index = ts.index.copy()
+                if isinstance(index, MultiIndex):
+                    raise TypeError(
+                        "Tried to create a TimeSeries from a DataFrame with MultiIndex."
+                        "\n    Are you sure this is not a TimeSeriesCollection?"
+                    )
+                return index.unique()
+            case _:
+                raise NotImplementedError("Only DataFrame is supported.")
 
 
 @pprint_repr
 @dataclass
-class TimeSeriesCollection(Mapping[Any, TimeSeries]):
+class PandasTSC[Key](Mapping[Key, PandasTS]):
     r"""Class for **equimodal** TimeSeriesCollections.
 
     A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
     `Equimodal` means that all time series share the same schema (i.e. subset of variables).
     """
 
+    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]] = frozenset({
         "timeseries",
         "timeseries_metadata",
@@ -147,6 +231,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
         "constants",
         "constants_metadata",
     })
+    r"""The essential fields of the time series collection."""
 
     _: KW_ONLY
 
@@ -169,8 +254,10 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
     # Extras
-    tags: dict[str, Any] = NOT_GIVEN
+    tags: frozenset[str] = EMPTY_SET
     r"""Tags associated with the dataset."""
+    labels: Mapping[str, Any] = EMPTY_MAP
+    r"""Labels associated with the dataset."""
 
     # derived fields
     timeindex: MultiIndex = NOT_GIVEN
@@ -179,39 +266,31 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
     r"""The index of the collection."""
 
     @classmethod
-    def from_dataset(cls, ds: DatasetBase, /) -> Self:
+    def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
         r"""Create a TimeSeries from a Dataset."""
+        ds = arg() if isinstance(arg, type) else arg
+
         if bad_names := set(ds.table_names) - cls.FIELDS:
             raise ValueError(f"The following table names: {bad_names}")
 
         return cls(
+            **{k: ds.tables.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
             name=ds.__class__.__name__,
-            **{k: ds.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
         )
 
     def __post_init__(self) -> None:
         r"""Post init."""
         if self.name is NOT_GIVEN:
-            if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
-                self.name = str(self.timeseries.name)
-            else:
-                self.name = self.__class__.__name__
+            self.name = self._infer_name()
 
         if self.timeindex is NOT_GIVEN:
-            self.timeindex = self.timeseries.index.copy()
-
-        if not isinstance(self.timeindex, MultiIndex):
-            raise TypeError("Expected a timeseries with MultiIndex.")
+            self.timeindex = self._infer_timeindex()
 
         if self.metaindex is NOT_GIVEN:
-            self.metaindex = self.timeindex.copy().droplevel(-1).unique()
+            self.metaindex = self._infer_metaindex()
 
         # ensure that the index of the static covariates is a subset of the metaindex
-        if (
-            self.static_covariates is not None
-            and not self.static_covariates.index.difference(self.metaindex).empty
-        ):
-            raise TypeError("Static covariates index is not a subset of the metaindex.")
+        self._validate_static_covariates()
 
     def __len__(self) -> int:
         r"""Get the number of timeseries in the collection."""
@@ -221,17 +300,49 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
         r"""Iterate over the timeseries in the collection."""
         return iter(self.metaindex)
 
-    def _get_metaindex(self) -> Index:
+    def __contains__(self, key: object, /) -> bool:
+        r"""Check if the key is in the metaindex."""
+        return key in self.metaindex
+
+    def _infer_timeindex(self) -> MultiIndex:
+        r"""Get the timeindex."""
+        match self.timeseries:
+            case DataFrame() as ts:
+                index = ts.index.copy()
+                if not isinstance(index, MultiIndex):
+                    raise TypeError("Expected a timeseries with MultiIndex.")
+                return index.unique()
+            case _:
+                raise NotImplementedError("Only DataFrame is supported.")
+
+    def _infer_metaindex(self) -> Index:
         r"""Get the metaindex."""
         return self.timeindex.copy().droplevel(-1).unique()
 
+    def _infer_name(self) -> str:
+        r"""Get the name of the collection."""
+        if (name := getattr(self.timeseries, "name", None)) is not None:
+            return str(name)
+        if self.__class__ != PandasTSC:
+            return self.__class__.__name__
+        return "unknown"
+
+    def _validate_static_covariates(self) -> None:
+        r"""Ensure that the static covariates index is a subset of the metaindex."""
+        match self.static_covariates:
+            case DataFrame() as static_cov:
+                if not static_cov.index.difference(self.metaindex).empty:
+                    raise ValueError(
+                        "Static covariates index is not a subset of the metaindex."
+                    )
+
     # fmt: off
     @overload
-    def __getitem__(self, key: Index | Series | slice | list[Hashable], /) -> "TimeSeriesCollection": ...  # pyright: ignore[reportOverlappingOverload]
+    def __getitem__(self, key: Index | Series | slice | list[Key], /) -> Self: ...  # pyright: ignore[reportOverlappingOverload]
     @overload
-    def __getitem__(self, key: object, /) -> TimeSeries: ...  # pyright: ignore[reportOverlappingOverload]
+    def __getitem__(self, key: Key, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
-    def __getitem__(self, key: object, /) -> "TimeSeries | TimeSeriesCollection":
+    def __getitem__(self, key: Any, /) -> PandasTS | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # only pass non-derived fields
         fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
@@ -241,8 +352,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeries]):
         fields.update(timeseries=ts, static_covariates=cov)
 
         if isinstance(ts.index, MultiIndex):
-            return TimeSeriesCollection(**fields)
-        return TimeSeries(**{k: v for k, v in fields.items() if k in TimeSeries.FIELDS})
+            return self.__class__(**fields)
+        return PandasTS(**{k: v for k, v in fields.items() if k in PandasTS.FIELDS})
 
 
 @pprint_repr
@@ -508,7 +619,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
     or dicts as containers.
     """
 
-    dataset: TimeSeries | TimeSeriesCollection
+    dataset: PandasTS | PandasTSC
     r"""The dataset to sample from."""
 
     _: KW_ONLY
@@ -562,19 +673,19 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         r"""Create a sample from a TimeSeriesCollection."""
         # extract key
         match self.dataset, key:
-            case TimeSeries() as tsd, [observation_horizon, forecasting_horizon]:
+            case PandasTS() as tsd, [observation_horizon, forecasting_horizon]:
                 pass
-            case TimeSeriesCollection() as tsc, [
+            case PandasTSC() as tsc, [
                 outer_key,
                 [observation_horizon, forecasting_horizon],
             ]:
                 tsd = tsc[outer_key]  # type: ignore[assignment]
-            case TimeSeries() | TimeSeriesCollection(), _:
+            case PandasTS() | PandasTSC(), _:
                 raise ValueError(f"Invalid key: {key!r}")
             case _:
                 raise TypeError(f"Invalid dataset type: {type(self.dataset)=}")
 
-        if not isinstance(tsd, TimeSeries):
+        if not isinstance(tsd, PandasTS):
             raise TypeError(f"Expected TimeSeriesDataset, got {type(tsd)=}")
 
         # NOTE: observation horizon and forecasting horizon might be given in different formats

@@ -7,6 +7,7 @@ __all__ = [
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
     "EMPTY_MAP",
+    "EMPTY_SET",
     "EPS",
     "EXAMPLE_BOOLS",
     "EXAMPLE_CATEGORIES",
@@ -54,6 +55,8 @@ NOT_GIVEN: Final[Any] = None
 r"""CONST: Default value for optional arguments."""
 
 # NOTE: Use frozenmap() if PEP 603 is accepted.
+EMPTY_SET: Final[frozenset[Any]] = frozenset()
+r"""Constant: Immutable Empty `Set`, use as default in function signatures."""
 EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
 RNG: Final[Generator] = np.random.default_rng()

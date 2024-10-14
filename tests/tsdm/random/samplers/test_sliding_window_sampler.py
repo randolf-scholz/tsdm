@@ -15,7 +15,7 @@ from pandas import Series
 
 from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingSampler
-from tsdm.types.scalars import DateTime
+from tsdm.types.scalars import TimeStamp
 from tsdm.utils import flatten_dict
 
 __logger__ = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ F = False
 # type B = Literal["bounds"]  # tuple
 # type W = Literal["windows"]  # windows (list)
 # type U = str  # unknown (not statically known)
-MODES = SlidingSampler.MODES
+MODES = SlidingSampler.MODE
 type B = Literal[MODES.B]
 type M = Literal[MODES.M]
 type S = Literal[MODES.S]
@@ -829,7 +829,7 @@ DATETIME_DATA = {
 }
 
 
-@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("mode", SlidingSampler.MODE)
 @pytest.mark.parametrize("example", DATETIME_DATA)
 def test_datetime_data(example: str, mode: str) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
@@ -885,7 +885,7 @@ INTEGER_DATA: dict[str, Any] = {
 }
 
 
-@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("mode", SlidingSampler.MODE)
 @pytest.mark.parametrize("example", INTEGER_DATA)
 def test_integer_data(example: str, mode: SlidingSampler.Mode) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
@@ -938,7 +938,7 @@ FLOAT_DATA = {
 }
 
 
-@pytest.mark.parametrize("mode", SlidingSampler.MODES)
+@pytest.mark.parametrize("mode", SlidingSampler.MODE)
 @pytest.mark.parametrize("example", FLOAT_DATA)
 def test_float_data(example: str, mode: str) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
@@ -987,7 +987,7 @@ def test_pandas_timestamps() -> None:
     r"""Test the SlidingWindowSampler."""
     timedeltas = Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
-    time: list[DateTime] = pd.concat([  # white lie, as its not a list
+    time: list[TimeStamp] = pd.concat([  # white lie, as its not a list
         Series([tmin]),
         tmin + timedeltas.cumsum(),
     ]).reset_index(drop=True)
@@ -1001,8 +1001,8 @@ def test_pandas_timestamps() -> None:
         drop_last=False,
     )
     result = list(sampler)
-    assert_type(sampler, SlidingSampler[DateTime, B, ONE])
-    assert_type(result, list[tuple[DateTime, DateTime]])
+    assert_type(sampler, SlidingSampler[TimeStamp, B, ONE])
+    assert_type(result, list[tuple[TimeStamp, TimeStamp]])
 
 
 def test_windows_single() -> None:

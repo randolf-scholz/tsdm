@@ -15,9 +15,9 @@ from tsdm.tasks import (
     USHCN_DeBrouwer2019,
 )
 from tsdm.timeseries import (
+    PandasTS,
+    PandasTSC,
     Sample,
-    TimeSeries,
-    TimeSeriesCollection,
     TimeSeriesSampleGenerator,
 )
 
@@ -47,7 +47,7 @@ def test_time_series_sample_generator() -> None:
 
     # make dataset
     dataset = InSilico()
-    TSC = TimeSeriesCollection(
+    TSC = PandasTSC(
         timeseries=dataset.timeseries,
     )
 
@@ -91,7 +91,7 @@ def test_time_series_sample_generator() -> None:
     outer_key = key[0]
     inner_key = key[1]
     TSD = TSC[outer_key]  # selecting individual time series.
-    assert isinstance(TSD, TimeSeries)
+    assert isinstance(TSD, PandasTS)
 
     generator = TimeSeriesSampleGenerator(
         TSD,

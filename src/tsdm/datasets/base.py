@@ -23,7 +23,6 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
-    Literal,
     Optional,
     Protocol,
     Self,
@@ -39,7 +38,12 @@ from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
 from tsdm.data import serialize
-from tsdm.testing.hashutils import validate_file_hash, validate_table_hash
+from tsdm.testing.hashutils import (
+    ErrorHandler,
+    ValidationError,
+    validate_file,
+    validate_table,
+)
 from tsdm.types.aliases import FilePath
 from tsdm.utils import paths_exists, remote
 from tsdm.utils.contextmanagers import timer
@@ -50,11 +54,14 @@ from tsdm.utils.system import query_bool
 
 
 @runtime_checkable
-class Dataset[T](Protocol):  # +T
+class Dataset[Key, T](Protocol):  # +T
     r"""Protocol for Dataset.
 
+    A dataset is a collection of table-like objects indexed by keys.
+
     This protocol describes a reduced interface of the `DatasetBase` class,
-    and covers only methods that should be used at call sites.
+    and covers only methods that should be used at call sites, that is methods
+    from an already instantiated object.
     """
 
     SOURCE_URL: ClassVar[str] = NotImplemented
@@ -66,11 +73,12 @@ class Dataset[T](Protocol):  # +T
     DATASET_DIR: ClassVar[Path]
     r"""Directory where the dataset is stored."""
 
+    # region property/attributes -------------------------------------------------------
     @property
     def __version__(self) -> str | None: ...  # pyright: ignore[reportRedeclaration]
 
-    __version__: str | None  # type: ignore[no-redef]
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    __version__: str | None  # type: ignore[no-redef]
 
     @property
     @abstractmethod
@@ -78,8 +86,22 @@ class Dataset[T](Protocol):  # +T
         r"""Return list of file names that make up the raw data."""
         ...
 
-    rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
+
+    @property
+    @abstractmethod
+    def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
+        r"""READ-ONLY: The names of the tables."""
+
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
+
+    @property
+    @abstractmethod
+    def tables(self) -> Mapping[Key, T]: ...  # pyright: ignore[reportRedeclaration]
+
+    # endregion property/attributes ----------------------------------------------------
 
     @property
     def rawdata_paths(self) -> Mapping[str, Path]:
@@ -107,20 +129,10 @@ class Dataset[T](Protocol):  # +T
         r"""Serialize the (cleaned) dataset to a specific path."""
         ...
 
-    @abstractmethod
-    def download(self) -> None:
-        r"""Download the dataset."""
-        ...
-
-    @abstractmethod
-    def clean(self) -> None:
-        r"""Clean the dataset."""
-        ...
-
-    @abstractmethod
-    def load(self) -> T:
-        r"""Load the dataset."""
-        ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Key]: ...
+    def __getitem__(self, key: Key, /) -> T: ...
+    def __contains__(self, key: object, /) -> bool: ...
 
 
 class _DatasetMeta(ProtocolMeta):
@@ -162,7 +174,7 @@ class _DatasetMeta(ProtocolMeta):
 
 
 class DatasetBase[Key: str, T](
-    Dataset[Mapping[Key, T]], Mapping[Key, T], metaclass=_DatasetMeta
+    Mapping[Key, T], Dataset[Key, T], metaclass=_DatasetMeta
 ):  # Key, +T
     r"""Abstract base class that all datasets must subclass.
 
@@ -178,6 +190,7 @@ class DatasetBase[Key: str, T](
     """
 
     # region class attributes ----------------------------------------------------------
+    # Abstract members: table_names, clean_table
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
@@ -447,16 +460,16 @@ class DatasetBase[Key: str, T](
         r"""Return the number of samples in the dataset."""
         return len(self.tables)
 
+    def __iter__(self) -> Iterator[Key]:
+        r"""Return an iterator over the dataset."""
+        return iter(self.tables)
+
     def __getitem__(self, key: Key, /) -> T:
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
             raise KeyError(f"Key {key} not in {self.__class__.__name__}!")
         return self.tables[key]
-
-    def __iter__(self) -> Iterator[Key]:
-        r"""Return an iterator over the dataset."""
-        return iter(self.tables)
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
@@ -640,7 +653,7 @@ class DatasetBase[Key: str, T](
         Returns:
             The loaded dataset
         """
-        # key=None: Recursively load all tables.
+        # key=None: load all tables.
         if key is None:
             for name in (
                 pbar := tqdm(
@@ -682,22 +695,19 @@ class DatasetBase[Key: str, T](
 
     # region validation methods --------------------------------------------------------
     @cached_property
-    def rawdata_valid(self) -> Literal[True]:
+    def rawdata_valid(self) -> bool:
         r"""Check if raw data files exist."""
-        self.validate_rawdata()
-        return True
+        return self.validate_rawdata()
 
     @cached_property
-    def dataset_valid(self) -> Literal[True]:
+    def dataset_valid(self) -> bool:
         r"""Check if dataset files exist."""
-        self.validate_dataset()
-        return True
+        return self.validate_dataset()
 
     @cached_property
-    def tables_valid(self) -> Literal[True]:
+    def tables_valid(self) -> bool:
         r"""Check if tables are valid."""
-        self.validate_tables()
-        return True
+        return self.validate_tables()
 
     def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -715,10 +725,14 @@ class DatasetBase[Key: str, T](
             raise KeyError(f"{key=} not in {self.dataset_paths=}")
         return paths_exists(self.dataset_paths[key])
 
-    def validate_rawdata(self, key: Optional[str] = None) -> None:
+    def validate_rawdata(
+        self, key: Optional[str] = None, errors: ErrorHandler.Mode = "raise"
+    ) -> bool:
         r"""Validate the rawdata files."""
         if key is None:
             self.LOGGER.debug("Validating raw data files.")
+            result = True
+            exceptions = []
             for _key in (
                 pbar := tqdm(
                     self.rawdata_paths,
@@ -728,16 +742,31 @@ class DatasetBase[Key: str, T](
                 )
             ):
                 pbar.set_postfix(file=_key)
-                self.validate_rawdata(key=_key)
-            return
+                try:
+                    result &= self.validate_rawdata(key=_key, errors="raise")
+                except ValidationError as exc:
+                    result = False
+                    exceptions.append(exc)
+            if exceptions:
+                failed = "\n".join(str(exc) for exc in exceptions)
+                ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
+            return result
 
         self.LOGGER.debug("Validating %s.", key)
-        validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes.get(key))
+        return validate_file(
+            self.rawdata_paths[key],
+            self.rawdata_hashes.get(key),
+            errors=errors,
+        )
 
-    def validate_dataset(self, key: Optional[Key] = None) -> None:
+    def validate_dataset(
+        self, key: Optional[Key] = None, *, errors: ErrorHandler.Mode = "warn"
+    ) -> bool:
         r"""Validate the dataset."""
         if key is None:
             self.LOGGER.debug("Validating dataset.")
+            result = True
+            exceptions = []
             for _key in (
                 pbar := tqdm(
                     self.table_names,
@@ -747,14 +776,30 @@ class DatasetBase[Key: str, T](
                 )
             ):
                 pbar.set_postfix(table=_key)
-                self.validate_dataset(key=_key)
-            return
-        self.LOGGER.debug("Validating %s.", key)
-        validate_file_hash(self.dataset_paths[key], self.dataset_hashes.get(key))
+                try:
+                    result &= self.validate_dataset(key=_key, errors="raise")
+                except ValidationError as exc:
+                    result = False
+                    exceptions.append(exc)
+            if exceptions:
+                failed = "\n".join(str(exc) for exc in exceptions)
+                ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
+            return result
 
-    def validate_tables(self, key: Optional[Key] = None) -> None:
+        self.LOGGER.debug("Validating %s.", key)
+        return validate_file(
+            self.dataset_paths[key],
+            self.dataset_hashes.get(key),
+            errors=errors,
+        )
+
+    def validate_tables(
+        self, key: Optional[Key] = None, *, errors: ErrorHandler.Mode = "warn"
+    ) -> bool:
         if key is None:
             self.LOGGER.debug("Validating tables.")
+            result = True
+            exceptions = []
             for _key in (
                 pbar := tqdm(
                     self.table_names,
@@ -764,9 +809,21 @@ class DatasetBase[Key: str, T](
                 )
             ):
                 pbar.set_postfix(table=_key)
-                self.validate_tables(key=_key)
-            return
+                try:
+                    result &= self.validate_tables(key=_key, errors="raise")
+                except ValidationError as exc:
+                    result = False
+                    exceptions.append(exc)
+            if exceptions:
+                failed = "\n".join(str(exc) for exc in exceptions)
+                ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
+            return result
+
         self.LOGGER.debug("Validating %s.", key)
-        validate_table_hash(self.tables[key], self.table_hashes.get(key))
+        return validate_table(
+            self.tables[key],
+            self.table_hashes.get(key),
+            errors=errors,
+        )
 
     # endregion validation methods -----------------------------------------------------

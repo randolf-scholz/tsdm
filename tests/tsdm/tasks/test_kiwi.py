@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
-from tsdm.timeseries import Sample, TimeSeriesCollection, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator
 from tsdm.utils import timedelta
 
 __logger__ = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def test_kiwi_task(SplitID: tuple[int, str] = (0, "train")) -> None:
 
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
-    assert isinstance(task.splits[SplitID], TimeSeriesCollection)
+    assert isinstance(task.splits[SplitID], PandasTSC)
     assert isinstance(task.samplers[SplitID], HierarchicalSampler)
     assert isinstance(task.generators[SplitID], TimeSeriesSampleGenerator)
     assert isinstance(task.dataloaders[SplitID], DataLoader)

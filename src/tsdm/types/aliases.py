@@ -15,6 +15,7 @@ __all__ = [
     "SingleIndexer",
     "Size",
     "SplitID",
+    "Thunk",
     # Dtype Aliases
     "NumpyDtype",
     "NumpyDtypeArg",
@@ -30,13 +31,6 @@ __all__ = [
     "PythonScalar",
     # Maybe Type Aliases
     "MaybeNA",
-    "MaybeCallable",
-    "MaybeFrozenset",
-    "MaybeIterable",
-    "MaybeList",
-    "MaybeSet",
-    "MaybeTuple",
-    "MaybeWrapped",
     # Configuration
     "JSON",
     "TOML",
@@ -93,6 +87,8 @@ type FilePath = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
 r"""Type Alias for path-like objects."""
 type SplitID = Hashable
 r"""Type Alias for split identifiers."""
+type Thunk[T] = Callable[[], T]
+r"""Type Alias for lazy evaluation."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 
@@ -155,25 +151,11 @@ r"""Type Alias for Python scalars."""
 # endregion Scalar Type Aliases --------------------------------------------------------
 
 
-# region Maybe Type Aliases ------------------------------------------------------------
-# NOTE: Maybe refers to types of the kind Union[T, Container[T]]
+# region maybe Type aliases ------------------------------------------------------------
+# NOTE: Maybe refers to types of the kind `T | Container[T]` or `T | Constant`.
 type MaybeNA[T] = T | NAType
 r"""Type Alias for nullable types."""
-type MaybeList[T] = T | list[T]
-r"""Type Alias for T | list[T]."""
-type MaybeTuple[T] = T | tuple[T, ...]
-r"""Type Alias for T | tuple[T, ...]."""
-type MaybeFrozenset[T] = T | frozenset[T]
-r"""Type Alias for T | frozenset[T]."""
-type MaybeSet[T] = T | set[T]
-r"""Type Alias for T | set[T]."""
-type MaybeIterable[T] = T | Iterable[T]
-r"""Type Alias for T | Iterable[T]."""
-type MaybeCallable[T] = T | Callable[[], T]
-r"""Type Alias for objects that maybe needs to be created first."""
-type MaybeWrapped[T] = T | Callable[[], T] | Callable[[int], T]  # +T
-r"""Type Alias for maybe wrapped values."""
-# endregion Maybe Type Aliases ---------------------------------------------------------
+# endregion maybe type aliases ---------------------------------------------------------
 
 
 # region Nested collections.abc --------------------------------------------------------

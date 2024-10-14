@@ -144,6 +144,7 @@ depends_on = [
     { path = "tsdm.constants" },
     { path = "tsdm.data" },
     { path = "tsdm.datasets" },
+    { path = "tsdm.types" },
     { path = "tsdm.utils" },
 ]
 

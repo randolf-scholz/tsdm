@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:46df8de86462727aefd5d496cd9303e33c8d4847f007d760ee1763a7f0fee1ad"
+content_hash = "sha256:cd3b1ae7535b86f3845b3adcc64914caba7c605a7149ab84403283c8a9c7620e"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -62,7 +62,7 @@ files = [
 
 [[package]]
 name = "anyio"
-version = "4.6.0"
+version = "4.6.1"
 requires_python = ">=3.9"
 summary = "High level compatibility layer for multiple asynchronous event loop implementations"
 groups = ["experiment"]
@@ -73,8 +73,8 @@ dependencies = [
     "typing-extensions>=4.1; python_version < \"3.11\"",
 ]
 files = [
-    {file = "anyio-4.6.0-py3-none-any.whl", hash = "sha256:c7d2e9d63e31599eeb636c8c5c03a7e108d73b345f064f1c19fdc87b79036a9a"},
-    {file = "anyio-4.6.0.tar.gz", hash = "sha256:137b4559cbb034c477165047febb6ff83f390fc3b20bf181c1fc0a728cb8beeb"},
+    {file = "anyio-4.6.1-py3-none-any.whl", hash = "sha256:0632863c9044798a494a05cab0b159dfad6a3f064094863a45878320eb4e8ed2"},
+    {file = "anyio-4.6.1.tar.gz", hash = "sha256:936e6613a08e8f71a300cfffca1c1c0806335607247696ac45f9b32c63bfb9aa"},
 ]
 
 [[package]]
@@ -760,7 +760,7 @@ files = [
 
 [[package]]
 name = "hypothesis"
-version = "6.114.1"
+version = "6.115.0"
 requires_python = ">=3.9"
 summary = "A library for property-based testing"
 groups = ["tests"]
@@ -770,26 +770,26 @@ dependencies = [
     "sortedcontainers<3.0.0,>=2.1.0",
 ]
 files = [
-    {file = "hypothesis-6.114.1-py3-none-any.whl", hash = "sha256:117f2d065d3f2ec5b2b37c89150c2350be7feb43dfb9ccc30f30d5293b34e607"},
-    {file = "hypothesis-6.114.1.tar.gz", hash = "sha256:15ea6e4bb297276351ada18f172c60049c117a91040154ea620c632cc4c53e88"},
+    {file = "hypothesis-6.115.0-py3-none-any.whl", hash = "sha256:b4f39185bd8fd7e98bdbced8062c8e844c71384d850725ad0bb6e16257e7a4f1"},
+    {file = "hypothesis-6.115.0.tar.gz", hash = "sha256:0603fdfa80b0866997ea8a618ca62c468fa03b902b2d3559a4b485dba0630e51"},
 ]
 
 [[package]]
 name = "hypothesis"
-version = "6.114.1"
+version = "6.115.0"
 extras = ["numpy", "pandas", "pytest"]
 requires_python = ">=3.9"
 summary = "A library for property-based testing"
 groups = ["tests"]
 dependencies = [
-    "hypothesis==6.114.1",
+    "hypothesis==6.115.0",
     "numpy>=1.19.3",
     "pandas>=1.1",
     "pytest>=4.6",
 ]
 files = [
-    {file = "hypothesis-6.114.1-py3-none-any.whl", hash = "sha256:117f2d065d3f2ec5b2b37c89150c2350be7feb43dfb9ccc30f30d5293b34e607"},
-    {file = "hypothesis-6.114.1.tar.gz", hash = "sha256:15ea6e4bb297276351ada18f172c60049c117a91040154ea620c632cc4c53e88"},
+    {file = "hypothesis-6.115.0-py3-none-any.whl", hash = "sha256:b4f39185bd8fd7e98bdbced8062c8e844c71384d850725ad0bb6e16257e7a4f1"},
+    {file = "hypothesis-6.115.0.tar.gz", hash = "sha256:0603fdfa80b0866997ea8a618ca62c468fa03b902b2d3559a4b485dba0630e51"},
 ]
 
 [[package]]
@@ -1727,13 +1727,13 @@ files = [
 
 [[package]]
 name = "networkx"
-version = "3.4"
+version = "3.4.1"
 requires_python = ">=3.10"
 summary = "Python package for creating and manipulating graphs and networks"
 groups = ["default", "linters"]
 files = [
-    {file = "networkx-3.4-py3-none-any.whl", hash = "sha256:46dad0ec74a825a968e2b36c37ef5b91faa3868f017b2283d9cbff33112222ce"},
-    {file = "networkx-3.4.tar.gz", hash = "sha256:1269b90f8f0d3a4095f016f49650f35ac169729f49b69d0572b2bb142748162b"},
+    {file = "networkx-3.4.1-py3-none-any.whl", hash = "sha256:e30a87b48c9a6a7cc220e732bffefaee585bdb166d13377734446ce1a0620eed"},
+    {file = "networkx-3.4.1.tar.gz", hash = "sha256:f9df45e85b78f5bd010993e897b4f1fdb242c11e015b101bd951e5c0e29982d8"},
 ]
 
 [[package]]
@@ -2532,13 +2532,13 @@ files = [
 
 [[package]]
 name = "pyparsing"
-version = "3.1.4"
-requires_python = ">=3.6.8"
+version = "3.2.0"
+requires_python = ">=3.9"
 summary = "pyparsing module - Classes and methods to define and execute parsing grammars"
 groups = ["default", "experiment", "linters"]
 files = [
-    {file = "pyparsing-3.1.4-py3-none-any.whl", hash = "sha256:a6a7ee4235a3f944aa1fa2249307708f893fe5717dc603503c6c7969c070fb7c"},
-    {file = "pyparsing-3.1.4.tar.gz", hash = "sha256:f86ec8d1a83f11977c9a6ea7598e8c27fc5cddfa5b07ea2241edbbde1d7bc032"},
+    {file = "pyparsing-3.2.0-py3-none-any.whl", hash = "sha256:93d9577b88da0bbea8cc8334ee8b918ed014968fd2ec383e868fb8afb1ccef84"},
+    {file = "pyparsing-3.2.0.tar.gz", hash = "sha256:cbf74e27246d595d9a74b186b810f6fbb86726dbf3b9532efb343f6d7294fe9c"},
 ]
 
 [[package]]
@@ -2705,14 +2705,14 @@ files = [
 
 [[package]]
 name = "pywin32"
-version = "307"
+version = "308"
 summary = "Python for Window Extensions"
 groups = ["docs", "experiment"]
 marker = "sys_platform == \"win32\" and platform_python_implementation != \"PyPy\""
 files = [
-    {file = "pywin32-307-cp312-cp312-win32.whl", hash = "sha256:07649ec6b01712f36debf39fc94f3d696a46579e852f60157a729ac039df0815"},
-    {file = "pywin32-307-cp312-cp312-win_amd64.whl", hash = "sha256:00d047992bb5dcf79f8b9b7c81f72e0130f9fe4b22df613f755ab1cc021d8347"},
-    {file = "pywin32-307-cp312-cp312-win_arm64.whl", hash = "sha256:b53658acbfc6a8241d72cc09e9d1d666be4e6c99376bc59e26cdb6223c4554d2"},
+    {file = "pywin32-308-cp312-cp312-win32.whl", hash = "sha256:587f3e19696f4bf96fde9d8a57cec74a57021ad5f204c9e627e15c33ff568897"},
+    {file = "pywin32-308-cp312-cp312-win_amd64.whl", hash = "sha256:00b3e11ef09ede56c6a43c71f2d31857cf7c54b0ab6e78ac659497abd2834f47"},
+    {file = "pywin32-308-cp312-cp312-win_arm64.whl", hash = "sha256:9b4de86c8d909aed15b7011182c8cab38c8850de36e6afb1f0db22b8959e3091"},
 ]
 
 [[package]]
@@ -3093,7 +3093,7 @@ files = [
 
 [[package]]
 name = "sphinx"
-version = "8.1.0"
+version = "8.1.3"
 requires_python = ">=3.10"
 summary = "Python documentation generator"
 groups = ["docs"]
@@ -3117,8 +3117,8 @@ dependencies = [
     "tomli>=2; python_version < \"3.11\"",
 ]
 files = [
-    {file = "sphinx-8.1.0-py3-none-any.whl", hash = "sha256:3202bba95697b9fc4371a07d6d457239de9860244ce235283149f817c253fd2f"},
-    {file = "sphinx-8.1.0.tar.gz", hash = "sha256:109454425dbf4c78ecfdd481e56f078376d077edbda29804dba05c5161c8de06"},
+    {file = "sphinx-8.1.3-py3-none-any.whl", hash = "sha256:09719015511837b76bf6e03e42eb7595ac8c2e41eeb9c29c5b755c6b677992a2"},
+    {file = "sphinx-8.1.3.tar.gz", hash = "sha256:43c1911eecb0d3e161ad78611bc905d1ad0e523e4ddc202a58a821773dc4c927"},
 ]
 
 [[package]]

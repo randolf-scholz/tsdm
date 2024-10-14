@@ -14,7 +14,7 @@ from typing_extensions import deprecated
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
-from tsdm.types.scalars import DateTime, TimeDelta
+from tsdm.types.scalars import TimeDelta, TimeStamp
 from tsdm.utils import timedelta, timestamp
 
 
@@ -156,14 +156,14 @@ class IntervalSampler[TD: TimeDelta](BaseSampler[slice]):
 class SequenceSampler[TD: TimeDelta](BaseSampler):
     r"""Samples sequences of fixed length."""
 
-    data: NDArray[DateTime[TD]]  # type: ignore[type-var]
+    data: NDArray[TimeStamp[TD]]  # type: ignore[type-var]
     seq_len: TD
     r"""The length of the sequences."""
     stride: TD
     r"""The stride at which to sample."""
-    xmax: DateTime[TD]
+    xmax: TimeStamp[TD]
     r"""The maximum value at which to stop sampling."""
-    xmin: DateTime[TD]
+    xmin: TimeStamp[TD]
     r"""The minimum value at which to start sampling."""
     return_mask: bool = False
     r"""Whether to return masks instead of indices."""
@@ -172,15 +172,15 @@ class SequenceSampler[TD: TimeDelta](BaseSampler):
 
     def __init__(
         self,
-        data_source: Iterable[DateTime[TD]] | SupportsLenAndGetItem[DateTime[TD]],
+        data_source: Iterable[TimeStamp[TD]] | SupportsLenAndGetItem[TimeStamp[TD]],
         /,
         *,
         return_mask: bool = False,
         seq_len: str | TD,
         shuffle: bool = False,
         stride: str | TD,
-        tmin: Optional[str | DateTime[TD]] = None,
-        tmax: Optional[str | DateTime[TD]] = None,
+        tmin: Optional[str | TimeStamp[TD]] = None,
+        tmax: Optional[str | TimeStamp[TD]] = None,
     ) -> None:
         super().__init__(shuffle=shuffle)
         self.data = np.asarray(data_source)
@@ -220,7 +220,7 @@ class SequenceSampler[TD: TimeDelta](BaseSampler):
             for x, y in self._iter_tuples()
         ])
 
-    def _iter_tuples(self) -> Iterator[tuple[DateTime[TD], DateTime[TD]]]:
+    def _iter_tuples(self) -> Iterator[tuple[TimeStamp[TD], TimeStamp[TD]]]:
         x = self.xmin
         y = x + self.seq_len
         # allows nice handling of negative seq_len

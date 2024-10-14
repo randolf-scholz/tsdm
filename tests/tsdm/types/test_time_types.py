@@ -11,30 +11,30 @@ from numpy.typing import NDArray
 from typing_extensions import get_protocol_members
 
 from tsdm.testing import check_shared_interface
-from tsdm.types.scalars import BoolScalar, DateTime, TimeDelta
+from tsdm.types.scalars import BoolScalar, TimeDelta, TimeStamp
 from tsdm.utils import timedelta, timestamp
 
 ISO_DATE = "2021-01-01"
 
 
 # region scalar datetimes --------------------------------------------------------------
-DT_FLOAT: float = 10.0
-DT_INT: int = 10
-DT_NUMPY: np.datetime64 = np.datetime64(ISO_DATE)
-DT_NUMPY_FLOAT: np.float64 = np.float64(DT_FLOAT)
-DT_NUMPY_INT: np.int64 = np.int64(DT_INT)
-DT_PANDAS: pd.Timestamp = timestamp(ISO_DATE)
-DT_PYTHON: python_datetime = python_datetime.fromisoformat(ISO_DATE)
-DT_ARROW = pa.scalar(DT_PYTHON, type=pa.timestamp("ms"))
-DATETIMES: dict[str, DateTime] = {
-    "float"       : DT_FLOAT,
-    "int"         : DT_INT,
-    "numpy"       : DT_NUMPY,
-    "numpy_float" : DT_NUMPY_FLOAT,
-    "numpy_int"   : DT_NUMPY_INT,
-    "pandas"      : DT_PANDAS,
-    "python"      : DT_PYTHON,
-    # NOT SUPPORTED: "arrow"       : DT_ARROW,
+TS_FLOAT: float = 10.0
+TS_INT: int = 10
+TS_NUMPY: np.datetime64 = np.datetime64(ISO_DATE)
+TS_NUMPY_FLOAT: np.float64 = np.float64(TS_FLOAT)
+TS_NUMPY_INT: np.int64 = np.int64(TS_INT)
+TS_PANDAS: pd.Timestamp = timestamp(ISO_DATE)
+TS_PYTHON: python_datetime = python_datetime.fromisoformat(ISO_DATE)
+TS_ARROW = pa.scalar(TS_PYTHON, type=pa.timestamp("ms"))
+TIMESTAMPS: dict[str, TimeStamp] = {
+    "float"       : TS_FLOAT,
+    "int"         : TS_INT,
+    "numpy"       : TS_NUMPY,
+    "numpy_float" : TS_NUMPY_FLOAT,
+    "numpy_int"   : TS_NUMPY_INT,
+    "pandas"      : TS_PANDAS,
+    "python"      : TS_PYTHON,
+    # NOT SUPPORTED: "arrow"       : TS_ARROW,
 }  # fmt: skip
 # endregion scalar datetimes -----------------------------------------------------------
 
@@ -60,9 +60,9 @@ TIMEDELTAS: dict[str, TimeDelta] = {
 # endregion scalar timedeltas ----------------------------------------------------------
 
 # region array datetimes ---------------------------------------------------------------
-DT_NDARRAY: NDArray[np.datetime64] = np.array([DT_NUMPY])
-DT_NDARRAY_FLOAT: NDArray[np.float64] = np.array([DT_NUMPY_FLOAT])
-DT_NDARRAY_INT: NDArray[np.int64] = np.array([DT_NUMPY_INT])
+TS_NDARRAY: NDArray[np.datetime64] = np.array([TS_NUMPY])
+TS_NDARRAY_FLOAT: NDArray[np.float64] = np.array([TS_NUMPY_FLOAT])
+TS_NDARRAY_INT: NDArray[np.int64] = np.array([TS_NUMPY_INT])
 # endregion array datetimes ------------------------------------------------------------
 
 # region array timedeltas --------------------------------------------------------------
@@ -72,15 +72,23 @@ TD_NDARRAY_INT: NDArray[np.int64] = np.array([TD_NUMPY_INT])
 # endregion array timedeltas -----------------------------------------------------------
 
 
-def test_datetime_protocol_itself() -> None:
+DATETIMES = {
+    "numpy"      : TS_NUMPY,
+    "pandas"     : TS_PANDAS,
+    "python"     : TS_PYTHON,
+}  # fmt: skip
+r"""All datetime objects."""
+
+
+def test_timestamp_protocol_itself() -> None:
     r"""Test the datetime protocol."""
     non_callable_members = {
         member
-        for member in get_protocol_members(DateTime)
-        if not callable(getattr(DateTime, member))
+        for member in get_protocol_members(TimeStamp)
+        if not callable(getattr(TimeStamp, member))
     }
     assert not non_callable_members
-    assert issubclass(DateTime, DateTime)
+    assert issubclass(TimeStamp, TimeStamp)
 
 
 def test_timedelta_protocol_itself() -> None:
@@ -94,25 +102,25 @@ def test_timedelta_protocol_itself() -> None:
     assert issubclass(TimeDelta, TimeDelta)
 
 
-@pytest.mark.parametrize("name", DATETIMES)
-def test_datetime_protocol(name: str) -> None:
+@pytest.mark.parametrize("name", TIMESTAMPS)
+def test_timestamp_protocol(name: str) -> None:
     r"""Test the datetime protocol."""
-    dt_value = DATETIMES[name]
-    assert isinstance(dt_value, DateTime)
-    assert issubclass(type(dt_value), DateTime)
+    TS_value = TIMESTAMPS[name]
+    assert isinstance(TS_value, TimeStamp)
+    assert issubclass(type(TS_value), TimeStamp)
 
     # test __sub__
-    zero = dt_value - dt_value
+    zero = TS_value - TS_value
     assert isinstance(zero, TimeDelta)
     assert issubclass(type(zero), TimeDelta)
 
     # test __add__
-    dt_new = dt_value + zero
-    assert isinstance(dt_new, DateTime)
-    assert issubclass(type(dt_new), DateTime)
+    TS_new = TS_value + zero
+    assert isinstance(TS_new, TimeStamp)
+    assert issubclass(type(TS_new), TimeStamp)
 
     # test __ge__
-    result = dt_value >= dt_value
+    result = TS_value >= TS_value
     assert result
     assert isinstance(result, BoolScalar)
 
@@ -166,7 +174,12 @@ def test_timedelta_protocol(name: str) -> None:
 
 def test_joint_attrs_datetime() -> None:
     r"""Test the joint attributes of datetime objects."""
-    check_shared_interface(DATETIMES.values(), DateTime, raise_on_extra=False)
+    check_shared_interface(DATETIMES.values(), TimeStamp, raise_on_extra=False)
+
+
+def test_joint_attrs_timestamp() -> None:
+    r"""Test the joint attributes of datetime objects."""
+    check_shared_interface(TIMESTAMPS.values(), TimeStamp, raise_on_extra=False)
 
 
 def test_joint_attrs_timedelta() -> None:
@@ -174,22 +187,22 @@ def test_joint_attrs_timedelta() -> None:
     check_shared_interface(TIMEDELTAS.values(), TimeDelta, raise_on_extra=False)
 
 
-def test_datetime_assign() -> None:
-    dt_float: DateTime[float] = DT_FLOAT
-    dt_int: DateTime[int] = DT_INT
-    dt_numpy: DateTime[np.timedelta64] = DT_NUMPY
-    dt_numpy_float: DateTime[np.float64] = DT_NUMPY_FLOAT
-    dt_numpy_int: DateTime[np.int64] = DT_NUMPY_INT
-    dt_pandas: DateTime[pd.Timedelta] = DT_PANDAS
-    dt_python: DateTime[python_timedelta] = DT_PYTHON
+def test_timestamp_assign() -> None:
+    TS_float: TimeStamp[float] = TS_FLOAT
+    TS_int: TimeStamp[int] = TS_INT
+    TS_numpy: TimeStamp[np.timedelta64] = TS_NUMPY
+    TS_numpy_float: TimeStamp[np.float64] = TS_NUMPY_FLOAT
+    TS_numpy_int: TimeStamp[np.int64] = TS_NUMPY_INT
+    TS_pandas: TimeStamp[pd.Timedelta] = TS_PANDAS
+    TS_python: TimeStamp[python_timedelta] = TS_PYTHON
 
-    assert isinstance(dt_float, DateTime)
-    assert isinstance(dt_int, DateTime)
-    assert isinstance(dt_numpy, DateTime)
-    assert isinstance(dt_numpy_float, DateTime)
-    assert isinstance(dt_numpy_int, DateTime)
-    assert isinstance(dt_pandas, DateTime)
-    assert isinstance(dt_python, DateTime)
+    assert isinstance(TS_float, TimeStamp)
+    assert isinstance(TS_int, TimeStamp)
+    assert isinstance(TS_numpy, TimeStamp)
+    assert isinstance(TS_numpy_float, TimeStamp)
+    assert isinstance(TS_numpy_int, TimeStamp)
+    assert isinstance(TS_pandas, TimeStamp)
+    assert isinstance(TS_python, TimeStamp)
 
 
 def test_timedelta_assign() -> None:
@@ -210,34 +223,34 @@ def test_timedelta_assign() -> None:
     assert isinstance(td_python, TimeDelta)
 
 
-def test_dt_var() -> None:
-    r"""Type-Checking DT_VAR."""
+def test_timestamp_typevar() -> None:
+    r"""Type-Checking TS_VAR."""
 
-    def id_dt[DT: DateTime](x: DT, /) -> DT:
+    def id_dt[DT: TimeStamp](x: DT, /) -> DT:
         return x
 
-    id_dt(DT_FLOAT)
-    id_dt(DT_INT)
-    id_dt(DT_NUMPY)
-    id_dt(DT_NUMPY_FLOAT)
-    id_dt(DT_NUMPY_INT)
-    id_dt(DT_PANDAS)
-    id_dt(DT_PYTHON)
+    id_dt(TS_FLOAT)
+    id_dt(TS_INT)
+    id_dt(TS_NUMPY)
+    id_dt(TS_NUMPY_FLOAT)
+    id_dt(TS_NUMPY_INT)
+    id_dt(TS_PANDAS)
+    id_dt(TS_PYTHON)
 
 
-def test_dt_diff() -> None:
+def test_timestamp_difference() -> None:
     r"""Test inference capabilities of type checkers."""
 
-    def diff[TD: TimeDelta](x: DateTime[TD]) -> TD:
+    def diff[TD: TimeDelta](x: TimeStamp[TD]) -> TD:
         return x - x
 
-    assert_type(diff(DT_FLOAT), float)
-    assert_type(diff(DT_INT), int)
-    assert_type(diff(DT_NUMPY), np.timedelta64)
-    assert_type(diff(DT_NUMPY_FLOAT), np.float64)  # type: ignore[assert-type, misc]
-    assert_type(diff(DT_NUMPY_INT), np.float32)  # type: ignore[assert-type, misc]
-    assert_type(diff(DT_PANDAS), pd.Timedelta)
-    assert_type(diff(DT_PYTHON), python_timedelta)
+    assert_type(diff(TS_FLOAT), float)
+    assert_type(diff(TS_INT), int)
+    assert_type(diff(TS_NUMPY), np.timedelta64)
+    assert_type(diff(TS_NUMPY_FLOAT), np.float64)  # type: ignore[assert-type, misc]
+    assert_type(diff(TS_NUMPY_INT), np.float32)  # type: ignore[assert-type, misc]
+    assert_type(diff(TS_PANDAS), pd.Timedelta)
+    assert_type(diff(TS_PYTHON), python_timedelta)
 
 
 def test_td_var() -> None:

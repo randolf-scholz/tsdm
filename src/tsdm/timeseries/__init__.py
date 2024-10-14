@@ -5,8 +5,8 @@ __all__ = [
     "TIMESERIES",
     "TIMESERIES_COLLECTIONS",
     # ABCs & Protocols
-    "TimeSeries",
-    "TimeSeriesCollection",
+    "PandasTS",
+    "PandasTSC",
     "TimeSeriesSampleGenerator",
     "FixedSliceSampleGenerator",
     # Classes
@@ -57,17 +57,18 @@ from tsdm.timeseries.base import (
     FixedSliceSampleGenerator,
     Inputs,
     PaddedBatch,
+    PandasTS,
+    PandasTSC,
     PlainSample,
     Sample,
     Targets,
-    TimeSeries,
-    TimeSeriesCollection,
     TimeSeriesSample,
     TimeSeriesSampleGenerator,
     collate_timeseries,
 )
+from tsdm.types.aliases import Thunk
 
-TIMESERIES: dict[str, type[TimeSeries]] = {
+TIMESERIES: dict[str, Thunk[PandasTS]] = {
     "ETTh1"       : ETTh1,
     "ETTh2"       : ETTh2,
     "ETTm1"       : ETTm1,
@@ -77,7 +78,7 @@ TIMESERIES: dict[str, type[TimeSeries]] = {
 }  # fmt: skip
 r"""Dictionary of all available time series datasets."""
 
-TIMESERIES_COLLECTIONS: dict[str, type[TimeSeriesCollection]] = {
+TIMESERIES_COLLECTIONS: dict[str, Thunk[PandasTSC]] = {
     "DampedPendulum_Ansari2023" : DampedPendulum_Ansari2023,
     "InSilico"                  : InSilico,
     "KiwiBenchmark"             : KiwiBenchmark,
@@ -89,3 +90,5 @@ TIMESERIES_COLLECTIONS: dict[str, type[TimeSeriesCollection]] = {
     "USHCN_DeBrouwer2019"       : USHCN_DeBrouwer2019,
 }  # fmt: skip
 r"""Dictionary of all available time series collections."""
+
+del Thunk

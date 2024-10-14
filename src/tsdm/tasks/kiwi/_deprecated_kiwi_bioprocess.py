@@ -23,7 +23,7 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.timeseries import TimeSeries
+from tsdm.timeseries import PandasTS
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -220,7 +220,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
         )
 
         mapped_ds = MappingDataset({
-            idx: TimeSeries(
+            idx: PandasTS(
                 ts.loc[idx],
                 metadata=md.loc[idx],
             )

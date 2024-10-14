@@ -5,6 +5,7 @@ __all__ = [
     "DEFAULT_HASH_METHOD",
     "HASH_REGEX",
     # Classes
+    "ValidationError",
     "Hash",
     "ErrorHandler",
     # Functions
@@ -20,8 +21,9 @@ __all__ = [
     "to_alphanumeric",
     "to_base",
     "to_int",
-    "validate_file_hash",
-    "validate_table_hash",
+    "validate_hash",
+    "validate_file",
+    "validate_table",
     "validate_table_schema",
 ]
 
@@ -62,7 +64,11 @@ class Hash(NamedTuple):
     hash_algorithm: str | None
 
     @classmethod
-    def from_string(cls, s: str) -> Self:
+    def from_value(cls, arg: str | Self, /) -> Self:
+        if isinstance(arg, cls):
+            return arg
+
+        s: str = arg  # type: ignore[assignment]
         s = s.lower()
         # match against the hash regex
         match = HASH_REGEX.match(s)
@@ -82,6 +88,10 @@ class Hash(NamedTuple):
         return f"{self.hash_algorithm}:{self.hash_value}"
 
 
+class ValidationError(ValueError):
+    r"""Validation error for hash validation."""
+
+
 class ErrorHandler:
     r"""Validation mode for hash validation."""
 
@@ -93,20 +103,22 @@ class ErrorHandler:
         WARN = "warn"
         RAISE = "raise"
 
+    type Mode = Literal["ignore", "log", "warn", "raise"] | MODE
+
     mode: MODE
     r"""Validation mode for hash validation."""
 
-    def __init__(self, mode: Literal["ignore", "log", "warn", "raise"]) -> None:
+    def __init__(self, mode: MODE | Literal["ignore", "log", "warn", "raise"]) -> None:
         self.mode = self.MODE(mode)
 
-    def emit(self, msg: str, /, *, valid: bool) -> None:
-        match self, valid:
+    def emit(self, msg: str, /, *, valid: bool = False) -> None:
+        match self.mode, valid:
             case "raise", False:
-                raise ValueError(msg)
+                raise ValidationError(msg)
             case "warn", False:
-                warnings.warn(msg, UserWarning, stacklevel=2)  # type: ignore[unreachable]
+                warnings.warn(msg, UserWarning, stacklevel=2)
             case "log", _:
-                __logger__.info(msg)  # type: ignore[unreachable]
+                __logger__.info(msg)
             case "ignore":
                 pass
 
@@ -286,14 +298,42 @@ def hash_array(
     return formatter(hash_value)
 
 
-def validate_file_hash(
+def validate_hash(
+    hash_value: Hash | str,
+    reference: Hash | str | None = None,
+    /,
+    *,
+    prefix: str = "",
+    errors: ErrorHandler.Mode = "raise",
+) -> bool:
+    r"""Compare a hash value against a reference hash value."""
+    error_handler = ErrorHandler(errors)
+    left = Hash.from_value(hash_value)
+    right = Hash.from_value(reference) if reference is not None else None
+    valid_hash = left == right
+
+    # Determine the message to emit.
+    if right is None:
+        msg = f"✘ No reference hash given for {left!s}."
+    elif right.hash_algorithm != left.hash_algorithm:
+        msg = f"✘ Hash algorithm mismatch: {left.hash_algorithm!r} ≠ {right.hash_algorithm!r}."
+    elif right.hash_value != left.hash_value:
+        msg = f"✘ Hash mismatch: {left!s} ≠ {right!s}."
+    else:
+        msg = f"✔ Hash {left!s} matches reference {right!s}."
+
+    error_handler.emit(prefix + msg, valid=valid_hash)
+    return valid_hash
+
+
+def validate_file(
     filepath: FilePath,
-    reference: None | str,
+    reference: Hash | str | None = None,
     /,
     *,
     hash_algorithm: Optional[str] = None,
     hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
-    errors: Literal["warn", "raise", "log", "ignore"] = "warn",
+    errors: ErrorHandler.Mode = "raise",
 ) -> bool:
     r"""Validate file(s), given reference hash value(s).
 
@@ -315,139 +355,83 @@ def validate_file_hash(
 
     if file.suffix == ".parquet":
         error_handler.emit(
-            f"{file!s} ✘✘ refusing to hash, since parquet is not binary stable!",
+            f"{file!s}: ✘✘ refusing to hash, since parquet is not binary stable!",
             valid=valid_hash,
         )
         return valid_hash
 
     # Determine the reference hash value.
-    match reference:
-        case None:
-            ref_alg, ref_value = None, None
-        case str(value):  # split hashes of the form "sha256:hash_value"
-            # if no hash algorithm is given, check hash_algorithm
-            spec = Hash.from_string(value)
-            ref_alg, ref_value = spec.hash_algorithm, spec.hash_value
-        case _:
-            raise ValueError(f"Invalid reference hash {reference!r}!")
+    right = Hash.from_value(reference) if reference is not None else None
 
     # Determine the hash algorithm to use.
-    match hash_algorithm, ref_alg:
-        case None, None:
+    match hash_algorithm, right:
+        case None, None | Hash(hash_algorithm=None):
             warnings.warn(
                 "No hash algorithm given for reference hash!"
                 f"Using {DEFAULT_HASH_METHOD!r} as default.",
                 UserWarning,
                 stacklevel=2,
             )
-            hash_algorithm = DEFAULT_HASH_METHOD
-        case None, str(name):
-            hash_algorithm = name
-        case str(), str():
-            if hash_algorithm != ref_alg:
-                raise ValueError(
-                    f"Hash algorithm mismatch: {hash_algorithm!r} ≠ {ref_alg!r}."
-                )
+            hash_alg = DEFAULT_HASH_METHOD
+        case None, Hash(hash_algorithm=str(ref_alg)):
+            hash_alg = ref_alg
+        case str(alg), _:
+            hash_alg = alg
         case _:
-            raise RuntimeError("Unreachable code reached!")
+            raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 
     # Compute the hash
-    result = hash_file(file, hash_algorithm=hash_algorithm, **hash_kwargs)
-    valid_hash = result.hash_value == ref_value
-
-    # Finally, compare the hashes.
-    if ref_value is None:
-        msg = (
-            f"{file!s} cannot be validated, since no reference hash is given!"
-            f"Hash {result!s}"
-        )
-    else:
-        msg = (
-            f"{file!s} ✔✔ file passed validation! Hash {result!s} matches reference."
-            if valid_hash
-            else (
-                f"{file!s} ✘✘ file failed validation!"
-                f" Hash {result!s} does not match reference {ref_value!r}."
-            )
-        )
-
-    error_handler.emit(msg, valid=valid_hash)
-    return valid_hash
+    left = hash_file(file, hash_algorithm=hash_alg, **hash_kwargs)
+    return validate_hash(left, right, errors=errors, prefix=f"{file!s}: ")
 
 
-def validate_table_hash(
+def validate_table(
     table: Any,
-    reference: str | None = None,
+    reference: Hash | str | None = None,
     /,
     *,
-    errors: Literal["warn", "raise", "log", "ignore"] = "warn",
+    errors: ErrorHandler.Mode = "warn",
     hash_algorithm: Optional[str] = None,
     **hash_kwargs: Any,
 ) -> bool:
     r"""Validate the hash of a `pandas` object, given hash values from a table."""
     # Try to determine the hash algorithm from the array type
-    name = f"{type(table)} of shape={table.shape}"
-    error_handler = ErrorHandler(errors)
-
-    # Determine the reference hash
-    match reference:
-        case None:
-            ref_alg, ref_hash = None, None
-        case str(name):
-            # split hashes of the form "sha256:hash_value"
-            # if no hash algorithm is given, check hash_algorithm
-            ref_alg, ref_hash = name.rsplit(":", 1) if ":" in name else (None, name)
-        case _:
-            raise ValueError(f"Invalid reference {reference=} hash!")
+    cls = type(table)
+    name = f"{cls} of shape={table.shape}"
+    right = Hash.from_value(reference) if reference is not None else None
 
     # Determine the hash algorithm
-    match ref_alg, hash_algorithm:
-        case None, None:
+    match hash_algorithm, right:
+        case None, None | Hash(hash_algorithm=None):
             # Try to determine the hash algorithm from the array type
-            match table:
-                case DataFrame() | Series() | Index():
-                    hash_algorithm = "pandas"
-                case np.ndarray():
-                    hash_algorithm = "numpy"
-                case _:
-                    hash_algorithm = DEFAULT_HASH_METHOD
-
             warnings.warn(
-                "No hash algorithm given for reference hash!"
-                f"Trying with {hash_algorithm!r} (auto-selected).",
+                "No hash algorithm given for reference hash! Trying to auto-select.",
                 UserWarning,
                 stacklevel=2,
             )
+
+            match table:
+                case DataFrame() | Series() | Index():
+                    hash_alg = "pandas"
+                case np.ndarray():
+                    hash_alg = "numpy"
+                case pa.Array():
+                    hash_alg = "pyarrow"
+                case _:
+                    raise TypeError(
+                        f"Could not autodetect hash algorithm for table of type {cls}"
+                    )
+
+        case None, Hash(hash_algorithm=str(ref_alg)):
+            hash_alg = ref_alg
         case str(alg), _:
-            hash_algorithm = alg
-        case None, str(alg):
-            hash_algorithm = alg
+            hash_alg = alg
         case _:
-            raise ValueError("Invalid hash algorithm given!")
+            raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 
     # Compute the hash.
-    hash_value = hash_array(table, hash_algorithm=hash_algorithm, **hash_kwargs)
-    valid_hash = hash_value == ref_hash
-
-    # Finally, compare the hashes.
-    if ref_hash is None:
-        msg = (
-            f"No reference hash given for array-like object {name!r}."
-            f"The {hash_algorithm!r}-hash is {hash_value!r}."
-        )
-    else:
-        msg = (
-            f"{name!s} ✔✔ array passed validation!"
-            f" Hash {hash_value!s} matches reference."
-            if valid_hash
-            else (
-                f"{name!s} ✘✘ array failed validation!"
-                f" Hash {hash_value!s} does not match reference {reference!r}."
-            )
-        )
-
-    error_handler.emit(msg, valid=valid_hash)
-    return valid_hash
+    left = hash_array(table, hash_algorithm=hash_alg, **hash_kwargs)
+    return validate_hash(left, right, errors=errors, prefix=f"{name!s}: ")
 
 
 def validate_table_schema(
@@ -456,7 +440,7 @@ def validate_table_schema(
     *,
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
-    errors: Literal["warn", "raise", "log", "ignore"] = "warn",
+    errors: ErrorHandler.Mode = "warn",
 ) -> bool:
     r"""Validate the schema of a `pandas` object, given schema values from a table.
 
