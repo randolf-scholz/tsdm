@@ -53,6 +53,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from tsdm.backend import Backend, get_backend
+from tsdm.constants import NOT_GIVEN
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
 from tsdm.types.arrays import NumericalArray as Array
@@ -357,7 +358,7 @@ class LinearScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class StandardScaler[Arr: Array](BaseEncoder[Arr, Arr]):
+class StandardScaler[Arr: Array[float]](BaseEncoder[Arr, Arr]):
     r"""Transforms data linearly x ↦ (x-μ)/σ.
 
     axis: tuple[int, ...] determines the shape of the mean and stdv.
@@ -372,13 +373,13 @@ class StandardScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
     axis: Axis = ()
     r"""The axis to perform the scaling. If None, automatically select the axis."""
-    backend: Backend[Arr] = NotImplemented
+    backend: Backend[Arr] = NOT_GIVEN
     r"""The backend of the encoder."""
 
     def __init__(
         self,
-        mean: float | Arr = NotImplemented,
-        stdv: float | Arr = NotImplemented,
+        mean: float | Arr = NOT_GIVEN,
+        stdv: float | Arr = NOT_GIVEN,
         *,
         axis: Axis = (),
     ) -> None:

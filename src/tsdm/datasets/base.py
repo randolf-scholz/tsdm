@@ -37,6 +37,7 @@ from zipfile import ZipFile
 from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
+from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.data import serialize
 from tsdm.testing.hashutils import (
     ErrorHandler,
@@ -64,9 +65,9 @@ class Dataset[Key, T](Protocol):  # +T
     from an already instantiated object.
     """
 
-    SOURCE_URL: ClassVar[str] = NotImplemented
+    SOURCE_URL: ClassVar[str] = NOT_GIVEN
     r"""Web address from where the dataset can be downloaded."""
-    INFO_URL: ClassVar[str] = NotImplemented
+    INFO_URL: ClassVar[Optional[str]] = None
     r"""Web address containing documentational information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
     r"""Directory where the raw data is stored."""
@@ -101,6 +102,8 @@ class Dataset[Key, T](Protocol):  # +T
     @abstractmethod
     def tables(self) -> Mapping[Key, T]: ...  # pyright: ignore[reportRedeclaration]
 
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    tables: Mapping[Key, T] | cached_property[Mapping[Key, T]]  # type: ignore[no-redef]
     # endregion property/attributes ----------------------------------------------------
 
     @property
@@ -114,7 +117,7 @@ class Dataset[Key, T](Protocol):  # +T
     @classmethod
     def info(cls) -> None:
         r"""Open dataset information in browser."""
-        if cls.INFO_URL is NotImplemented:
+        if cls.INFO_URL is None:
             raise NotImplementedError("No INFO_URL provided for this dataset!")
         webbrowser.open_new_tab(cls.INFO_URL)
 
@@ -195,9 +198,9 @@ class DatasetBase[Key: str, T](
     r"""Logger for the dataset."""
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
-    SOURCE_URL: ClassVar[str] = NotImplemented
+    SOURCE_URL: ClassVar[str] = NOT_GIVEN
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: ClassVar[str] = NotImplemented
+    INFO_URL: ClassVar[Optional[str]] = None
     r"""HTTP address containing additional information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
     r"""Location where the raw data is stored."""
@@ -209,23 +212,23 @@ class DatasetBase[Key: str, T](
     # FIXME: Use Read-Only type
     __version__: str | None = None
     r"""READ-ONLY: The version of the dataset."""
-    rawdata_hashes: Mapping[str, str | None] = NotImplemented
+    rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""Hashes of the raw dataset file(s)."""
-    rawdata_schemas: Mapping[str, Mapping[str, str]] = NotImplemented
+    rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
     r"""Schemas for the raw dataset tables(s)."""
-    rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
+    rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""Shapes for the raw dataset tables(s)."""
-    dataset_hashes: Mapping[Key, str | None] = NotImplemented
+    dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[Key, str | None] = NotImplemented
+    table_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[Key, Mapping[str, str]] = NotImplemented
+    table_schemas: Mapping[Key, Mapping[str, str]] = EMPTY_MAP
     r"""Schemas of the in-memory cleaned dataset table(s)."""
-    table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
+    table_shapes: Mapping[Key, tuple[int, ...]] = EMPTY_MAP
     r"""Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 
-    _tables: dict[Key, T] = NotImplemented
+    tables: dict[Key, T]
     r"""INTERNAL: the dataset."""
 
     # region constructors --------------------------------------------------------------
@@ -233,7 +236,7 @@ class DatasetBase[Key: str, T](
     def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
         r"""Create a dataset from a table."""
         obj = cls(initialize=False)
-        obj._tables = dict(tables)
+        obj.tables = dict(tables)
         return obj
 
     def __init__(
@@ -272,6 +275,14 @@ class DatasetBase[Key: str, T](
             # delete rawdata and dataset directories
             self.reset_rawdata_files()
             self.reset_dataset_files()
+
+        # initialize tables
+        self.tables = LazyDict.from_func(
+            self.table_names,
+            self.load,
+            kwargs={"initializing": True},
+            type_hint=get_return_typehint(self.clean_table),
+        )
 
     def __post_init__(self) -> None:
         r"""Initialize the dataset."""
@@ -386,19 +397,19 @@ class DatasetBase[Key: str, T](
     table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
     r"""READ-ONLY: The names of the tables."""
 
-    @property
-    def tables(self) -> dict[Key, T]:
-        r"""Store cached version of dataset."""
-        if self._tables is NotImplemented:
-            # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
-            self._tables = LazyDict.from_func(
-                self.table_names,
-                self.load,
-                kwargs={"initializing": True},
-                type_hint=get_return_typehint(self.clean_table),
-            )
-
-        return self._tables
+    # @property
+    # def tables(self) -> dict[Key, T]:
+    #     r"""Store cached version of dataset."""
+    #     if self._tables is EMPTY_MAP:
+    #         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
+    #         self._tables = LazyDict.from_func(
+    #             self.table_names,
+    #             self.load,
+    #             kwargs={"initializing": True},
+    #             type_hint=get_return_typehint(self.clean_table),
+    #         )
+    #
+    #     return self._tables
 
     @cached_property
     def dataset_files(self) -> dict[Key, str]:
@@ -483,7 +494,7 @@ class DatasetBase[Key: str, T](
 
         Override this method for custom download logic.
         """
-        if self.SOURCE_URL is NotImplemented:
+        if self.SOURCE_URL is NOT_GIVEN:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
@@ -525,7 +536,7 @@ class DatasetBase[Key: str, T](
         self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
 
         # Validate the file.
-        if validate and self.rawdata_hashes is not NotImplemented:
+        if validate and self.rawdata_hashes is not EMPTY_MAP:
             self.validate_rawdata(key)
 
     # endregion download methods -------------------------------------------------------
@@ -565,7 +576,7 @@ class DatasetBase[Key: str, T](
         # validate the raw data files
         if (
             validate_rawdata
-            and self.rawdata_hashes is not NotImplemented
+            and self.rawdata_hashes is not EMPTY_MAP
             and not self.rawdata_valid
         ):
             raise ValueError("Raw data files are not valid!")
@@ -602,7 +613,7 @@ class DatasetBase[Key: str, T](
             self.LOGGER.info("Serialized table <%s> in %s", key, t.value)
 
         # Validate the cleaned table
-        if validate and self.dataset_hashes is not NotImplemented:
+        if validate and self.dataset_hashes is not EMPTY_MAP:
             self.validate_dataset(key)
 
     # endregion cleaning methods -------------------------------------------------------
@@ -676,7 +687,7 @@ class DatasetBase[Key: str, T](
             self.clean(key=key, force=force, validate=validate)
 
         # Validate file if hash is provided.
-        if validate and self.dataset_hashes is not NotImplemented:
+        if validate and self.dataset_hashes is not EMPTY_MAP:
             self.validate_dataset(key)
 
         # Load the table, make sure to use the cached version if it exists.
