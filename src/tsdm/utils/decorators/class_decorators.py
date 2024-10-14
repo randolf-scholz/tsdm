@@ -173,7 +173,7 @@ def autojit[M: nn.Module](base_class: type[M], /) -> type[M]:
     if not issubclass(WrappedClass, base_class):
         raise TypeError(f"Expected {WrappedClass} to be a subclass of {base_class}.")
 
-    return WrappedClass
+    return WrappedClass  # pyright: ignore[reportReturnType]
 
 
 def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:

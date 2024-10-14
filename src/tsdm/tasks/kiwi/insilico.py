@@ -13,9 +13,8 @@ from tsdm.data import (
     folds_from_groups,
 )
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
-from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.base import SplitID, TimeSeriesTask
 from tsdm.timeseries import InSilico, PandasTSC, TimeSeriesSampleGenerator
-from tsdm.types.aliases import SplitID
 
 
 class InSilicoTask(TimeSeriesTask):

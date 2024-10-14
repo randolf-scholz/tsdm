@@ -34,9 +34,8 @@ from tsdm.encoders import (
 )
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
-from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.base import SplitID, TimeSeriesTask
 from tsdm.timeseries import Sample, TimeSeriesSampleGenerator
-from tsdm.types.aliases import SplitID
 from tsdm.utils.decorators import pprint_repr
 
 

@@ -1,6 +1,10 @@
 r"""Collection of Useful Type Aliases."""
 
 __all__ = [
+    # Generic Type Aliases
+    "MaybeNA",
+    "Nested",
+    "Thunk",
     # Custom Type Aliases
     "Axis",
     "Dims",
@@ -8,19 +12,14 @@ __all__ = [
     "Indexer",
     "Label",
     "MultiIndexer",
-    "Nested",
-    "PandasNullable",
-    "PandasObject",
     "Shape",
-    "SingleIndexer",
     "Size",
-    "SplitID",
-    "Thunk",
     # Dtype Aliases
     "NumpyDtype",
     "NumpyDtypeArg",
     "PandasDtype",
     "PandasDTypeArg",
+    "PandasObject",
     "DType",
     # Scalar Type Aliases
     "BuiltinScalar",
@@ -29,8 +28,6 @@ __all__ = [
     "TorchScalar",
     "TimeScalar",
     "PythonScalar",
-    # Maybe Type Aliases
-    "MaybeNA",
     # Configuration
     "JSON",
     "TOML",
@@ -55,7 +52,6 @@ import os
 from collections.abc import (
     Callable,
     Collection,
-    Hashable,
     Iterable,
     Mapping,
     MutableMapping,
@@ -72,7 +68,17 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
 
-# region Custom Type Aliases -----------------------------------------------------------
+# region generic type aliases ----------------------------------------------------------
+type Thunk[T] = Callable[[], T]
+r"""Type Alias for lazy evaluation."""
+type MaybeNA[T] = T | NAType
+r"""Type Alias for nullable types."""
+type Nested[T] = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]  # +T
+r"""Type Alias for nested types (JSON-Like)."""
+# endregion generic type aliases -------------------------------------------------------
+
+
+# region custom type aliases -----------------------------------------------------------
 type Axis = None | int | tuple[int, ...]
 r"""Type Alias for axestype ."""
 type Dims = None | int | list[int]
@@ -81,37 +87,22 @@ type Size = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
 type Shape = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
-type Nested[T] = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]  # +T
-r"""Type Alias for nested types (JSON-Like)."""
 type FilePath = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
 r"""Type Alias for path-like objects."""
-type SplitID = Hashable
-r"""Type Alias for split identifiers."""
-type Thunk[T] = Callable[[], T]
-r"""Type Alias for lazy evaluation."""
-# endregion Custom Type Aliases --------------------------------------------------------
+# endregion custom type aliases --------------------------------------------------------
 
 
 # region aliases for indexing ----------------------------------------------------------
-type SingleIndexer = int | tuple[int, ...]
-r"""Type hint for indexer that possibly selects a single element."""
-type MultiIndexer = (
-    (None | slice | range | list[int] | list[bool] | EllipsisType)
-    # or tuple of the above
-    | tuple[None | int | slice | range | list[int] | list[bool] | EllipsisType, ...]
-)
-
+type IndexArg = None | int | slice | range | list[int] | list[bool] | EllipsisType
+r"""Type alias for `__getitem__` argument for tensors."""
+type MultiIndexer = IndexArg | tuple[IndexArg, ...]
 r"""Indexer that always returns a sub-tensor."""
-type Indexer = SingleIndexer | MultiIndexer
+type Indexer = int | tuple[int, ...] | MultiIndexer
 r"""Type hint for `__getitem__` argument for tensors."""
-type Label = (
-    (None | str | int | slice | range | list[int] | list[str] | EllipsisType)
-    # or tuple of the above
-    | tuple[
-        None | str | int | slice | range | list[int] | list[str] | EllipsisType, ...
-    ]
-)
-r"""Integer or string label/index."""
+type LabelArg = None | int | str | slice | range | list[int] | list[str] | EllipsisType
+r"""Type Alias for `__getitem__` argument for tabular objects."""
+type Label = LabelArg | tuple[LabelArg, ...]
+r"""Type Alias for `__getitem__` argument for tabular objects."""
 # endregion aliases for indexing -------------------------------------------------------
 
 
@@ -130,8 +121,6 @@ type DTypeArg = str | type
 r"""Type Alias for dtype arguments."""
 type PandasObject = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
-type PandasNullable[T] = T | NAType
-r"""Type Alias for nullable types."""
 # endregion Dtype Aliases --------------------------------------------------------------
 
 
@@ -149,13 +138,6 @@ r"""Type Alias for time scalars."""
 type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
 r"""Type Alias for Python scalars."""
 # endregion Scalar Type Aliases --------------------------------------------------------
-
-
-# region maybe Type aliases ------------------------------------------------------------
-# NOTE: Maybe refers to types of the kind `T | Container[T]` or `T | Constant`.
-type MaybeNA[T] = T | NAType
-r"""Type Alias for nullable types."""
-# endregion maybe type aliases ---------------------------------------------------------
 
 
 # region Nested collections.abc --------------------------------------------------------
@@ -207,8 +189,8 @@ type YAML_LeafType = None | bool | int | float | str | datetime
 
 type JSON = JSON_LeafType | list["JSON"] | dict[str, "JSON"]
 r"""Type Alias for JSON-Like objects."""
-type TOML = TOML_LeafType | list["TOML"] | dict[str, "TOML"]
-r"""Type Alias for JSON-Like objects."""
 type YAML = YAML_LeafType | list["YAML"] | dict[str, "YAML"]
+r"""Type Alias for JSON-Like objects."""
+type TOML = TOML_LeafType | list["TOML"] | dict[str, "TOML"]
 r"""Type Alias for JSON-Like objects."""
 # endregion Nested Configuration -------------------------------------------------------
