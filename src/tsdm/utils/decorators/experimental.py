@@ -26,7 +26,7 @@ from typing import (
     overload,
 )
 
-from tsdm.utils.decorators.base import decorator
+from tsdm.utils.decorators.base import DecoratorError, decorator
 
 
 class _AttrMeta(type):
@@ -137,12 +137,13 @@ def return_namedtuple[**P](
     field_names: Optional[Sequence[str]] = None,
 ) -> Fn[P, tuple]:
     r"""Convert a function's return type to a namedtuple."""
-    name = f"{func.__name__}_tuple" if name is None else name
-
     # noinspection PyUnresolvedReferences
-    return_type = func.__annotations__.get("return", NotImplemented)
-    if return_type is NotImplemented:
-        raise ValueError("No return type hint found.")
+    annotations: dict = func.__annotations__
+    name = f"{func.__name__}_tuple" if name is None else name
+    if "return" not in annotations:
+        raise DecoratorError(func, "No return type hint found.")
+    return_type = annotations["return"]
+
     if not issubclass(return_type.__origin__, tuple):
         raise TypeError("Return type hint is not a tuple.")
 

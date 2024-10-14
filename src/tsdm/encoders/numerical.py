@@ -245,7 +245,7 @@ class ArrayEncoder[Arr: Array, Y](BaseEncoder[Arr, Y]):
     elementary arithmetic.
     """
 
-    backend: Backend[Arr] = NotImplemented
+    backend: Backend[Arr] = NOT_GIVEN
     r"""The backend of the encoder."""
 
     def _fit_impl(self, data: Arr, /) -> None:
@@ -267,7 +267,7 @@ class ArrayEncoder[Arr: Array, Y](BaseEncoder[Arr, Y]):
 class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
     r"""A decoder for Tensor-like data."""
 
-    backend: Backend[Arr] = NotImplemented
+    backend: Backend[Arr] = NOT_GIVEN
     r"""The backend of the encoder."""
 
     def _fit_impl(self, data: X, /) -> None:
@@ -482,7 +482,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
     r"""Over which axis to perform the scaling."""
     safe_computation: bool = True
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
-    backend: Backend[Arr] = NotImplemented
+    backend: Backend[Arr] = NOT_GIVEN
     r"""The backend of the encoder."""
 
     def __init__(

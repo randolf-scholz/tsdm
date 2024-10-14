@@ -300,9 +300,9 @@ def return_namedtuple[**P, T](
     r"""Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
     annotations = getattr(func, "__annotations__", {})
-    return_type = annotations.get("return", NotImplemented)
-    if return_type is NotImplemented:
+    if "return" not in annotations:
         raise DecoratorError(func, "No return type hint found.")
+    return_type = annotations["return"]
     if not issubclass(return_type.__origin__, tuple):
         raise DecoratorError(func, "Return type hint is not a tuple.")
 

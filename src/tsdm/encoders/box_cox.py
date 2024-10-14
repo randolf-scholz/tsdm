@@ -24,7 +24,7 @@ from pandas import Index, Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
-from tsdm.constants import ROOT_3
+from tsdm.constants import NOT_GIVEN, ROOT_3
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.decorators import pprint_repr
 
@@ -268,7 +268,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
     bounds: tuple[float, float] = (0.0, 1.0)
     initial_value: float = 1.0
     method: METHODS = METHODS.match_uniform
-    offset: float = NotImplemented
+    offset: float = NOT_GIVEN
     verbose: bool = False
 
     # FIXME: simplify if a converter option is added to the dataclass.field
@@ -278,7 +278,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         bounds: tuple[float, float] = (0.0, 1.0),
         initial_value: float = 1.0,
         method: METHOD | METHODS = "match-uniform",
-        offset: float = NotImplemented,
+        offset: float = NOT_GIVEN,
         verbose: bool = False,
     ) -> None:
         if method not in self.METHODS:

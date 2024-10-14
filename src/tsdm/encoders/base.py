@@ -336,6 +336,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     @property
     def requires_fit(self) -> bool:
         r"""Check if the encoder requires fitting."""
+        # FIXME: Use a different sentinel than NotImplemented.
         return any(
             val is NotImplemented or getattr(val, "requires_fit", False)
             for val in self.params.values()
