@@ -64,14 +64,17 @@ ACTIVATIONS: dict[str, Activation | type[Activation]] = {
 r"""Dictionary containing all available activations."""
 
 
-def get_activation(activation: object, /) -> Activation:
+def get_activation(activation: object, /, **options: object) -> Activation:
     r"""Get an activation function by name."""
     match activation:
         case type() as cls:
-            return cls()
+            return cls(**options)
         case str(name):
-            return get_activation(ACTIVATIONS[name])
+            return get_activation(ACTIVATIONS[name], **options)
         case Activation() as func:
+            if options:
+                # TODO: Should we return partial functions?
+                raise ValueError(f"Activation {func} does not support options.")
             return func
         case _:
             raise TypeError(f"Invalid activation: {activation!r}")
