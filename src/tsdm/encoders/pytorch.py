@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, Final
+from typing import Final
 
 import torch
 from numpy.typing import NDArray
@@ -142,10 +142,6 @@ class RecursiveTensorEncoder(
     BaseEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]
 ):
     r"""Encodes nested data as tensors."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
 
     def _encode_impl(self, data: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
         match data:

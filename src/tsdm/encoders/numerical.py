@@ -54,7 +54,7 @@ from pandas import DataFrame
 
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import NOT_GIVEN
-from tsdm.encoders.base import BaseEncoder
+from tsdm.encoders.base import BackendMixin, BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
 from tsdm.types.arrays import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
@@ -236,7 +236,7 @@ def reduce_param[T: Array](param: float | T, selection: Any) -> float | T:
             return sliced
 
 
-class ArrayEncoder[Arr: Array, Y](BaseEncoder[Arr, Y]):
+class ArrayEncoder[Arr: Array, Y](BackendMixin[Arr, Y]):
     r"""An encoder for Tensor-like data.
 
     We want numerical encoders to be applicable to different backends.
@@ -245,45 +245,9 @@ class ArrayEncoder[Arr: Array, Y](BaseEncoder[Arr, Y]):
     elementary arithmetic.
     """
 
-    backend: Backend[Arr] = NOT_GIVEN
-    r"""The backend of the encoder."""
 
-    def _fit_impl(self, data: Arr, /) -> None:
-        r"""Fit the encoder to the data."""
-        self.backend = get_backend(data)
-
-    def switch_backend(self, backend: str) -> None:
-        r"""Switch the backend of the encoder."""
-        self.backend: Backend[Arr] = Backend(backend)
-
-        # recast the parameters
-        self.recast_parameters()
-
-    def recast_parameters(self) -> None:
-        r"""Recast the parameters to the current backend."""
-        raise NotImplementedError
-
-
-class ArrayDecoder[X, Arr: Array](BaseEncoder[X, Arr]):
+class ArrayDecoder[X, Arr: Array](BackendMixin[X, Arr]):
     r"""A decoder for Tensor-like data."""
-
-    backend: Backend[Arr] = NOT_GIVEN
-    r"""The backend of the encoder."""
-
-    def _fit_impl(self, data: X, /) -> None:
-        r"""Fit the encoder to the data."""
-        self.backend = get_backend(data)
-
-    def switch_backend(self, backend: str) -> None:
-        r"""Switch the backend of the encoder."""
-        self.backend: Backend[Arr] = Backend(backend)
-
-        # recast the parameters
-        self.recast_parameters()
-
-    def recast_parameters(self) -> None:
-        r"""Recast the parameters to the current backend."""
-        raise NotImplementedError
 
 
 @pprint_repr
@@ -672,10 +636,6 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
 
 class LogitEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Logit encoder."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
 
     def _encode_impl(self, data: DataFrame, /) -> DataFrame:
         # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.

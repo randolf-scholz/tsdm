@@ -62,6 +62,7 @@ __all__ = [
     "BackendMixin",
     "BaseEncoder",
     "Encoder",
+    "EncoderMeta",
     "EncoderDict",
     "EncoderList",
     "EncoderProtocol",
@@ -113,6 +114,7 @@ from typing import (
     Literal,
     Protocol,
     Self,
+    _ProtocolMeta as ProtocolMeta,
     cast,
     final,
     overload,
@@ -124,6 +126,7 @@ from tsdm.backend import Backend, get_backend
 from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.types.aliases import FilePath, NestedBuiltin
 from tsdm.types.protocols import Dataclass, SupportsKeysAndGetItem
+from tsdm.types.utils import is_classvar
 from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
 
 type Agg[T] = Callable[[list[T]], T]
@@ -328,14 +331,44 @@ class UniversalEncoder(Encoder[Any, Any], Protocol):
 
 
 # region base classes ------------------------------------------------------------------
-class BaseEncoder[X, Y](Encoder[X, Y]):
+class EncoderMeta(ProtocolMeta):
+    r"""Metaclass for Encoders."""
+
+    def __new__(
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        /,
+        **kwds: Any,
+    ) -> type:
+        r"""Create a new Encoder class."""
+        # automatically at the FIELDS ClassVar for dataclasses
+        if "FIELDS" not in namespace:
+            # autogenerate fields
+            annotations = namespace.get("__annotations__", {})
+            cls_fields = frozenset(
+                key
+                for key, ann in annotations.items()
+                if not (is_classvar(ann) or key.startswith("_"))
+            )
+            cls_fields = cls_fields.union(
+                *(getattr(base, "FIELDS", set()) for base in bases)
+            )
+            namespace["FIELDS"] = cls_fields
+        return super().__new__(cls, name, bases, namespace, **kwds)
+
+
+class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     r"""Base class for encoders implemented within this package."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
+    FIELDS: ClassVar[frozenset[str]] = frozenset()
+    r"""Fields that are considered for the encoder."""
 
     def __setattr__(self, key: str, value: object, /) -> None:
-        if key in self.params:
+        if key in self.FIELDS:
             with suppress(AttributeError):
                 del self.requires_fit  # clear requires_fit flag
             with suppress(AttributeError):
@@ -346,7 +379,7 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     def params(self) -> dict[str, Any]:
         if isinstance(self, Dataclass):
             return asdict(self)
-        raise NotImplementedError("Method `params` must be implemented.")
+        return {key: getattr(self, key) for key in self.FIELDS}
 
     @cached_property
     def requires_fit(self) -> bool:
@@ -542,7 +575,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     # endregion chaining methods -------------------------------------------------------
 
 
-# FIXME: Use dataclass?
 @pprint_sequence(recursive=2)
 class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
     r"""Wraps a list of encoders."""
@@ -553,10 +585,6 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
     def __init__(self, *encoders: Encoder) -> None:
         r"""Initialize the encoder list."""
         self.encoders = list(encoders)
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {"encoders": self.encoders}
 
     @property
     def requires_fit(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -655,9 +683,11 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder], ABC):
         return self.__class__({k: e.simplify() for k, e in self.items()})  # type: ignore[abstract]
 
 
+@dataclass
 class BackendMixin[X, Y](BaseEncoder[X, Y]):
     r"""Encoder equipped with a backend."""
 
+    _: KW_ONLY
     backend: Backend = NOT_GIVEN
 
     # noinspection PyFinal
@@ -666,6 +696,17 @@ class BackendMixin[X, Y](BaseEncoder[X, Y]):
         self.backend = get_backend(x)
         super().fit(x)
 
+    def switch_backend(self, backend: str) -> None:
+        r"""Switch the backend of the encoder."""
+        self.backend = Backend(backend)
+
+        # recast the parameters
+        self.recast_parameters()
+
+    def recast_parameters(self) -> None:
+        r"""Recast the parameters to the current backend."""
+        raise NotImplementedError
+
 
 # endregion base classes ---------------------------------------------------------------
 
@@ -673,10 +714,6 @@ class BackendMixin[X, Y](BaseEncoder[X, Y]):
 # region nullary encoders --------------------------------------------------------------
 class IdentityEncoder(BaseEncoder[Any, Any]):
     r"""Dummy class that performs identity function."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
 
     def _encode_impl[T](self, x: T, /) -> T:
         return x
@@ -688,10 +725,6 @@ class IdentityEncoder(BaseEncoder[Any, Any]):
 class DeepcopyEncoder(BaseEncoder[Any, Any]):
     r"""Encoder that deepcopies the input."""
 
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
-
     def _encode_impl[T](self, x: T, /) -> T:
         return deepcopy(x)
 
@@ -701,10 +734,6 @@ class DeepcopyEncoder(BaseEncoder[Any, Any]):
 
 class TupleEncoder(BaseEncoder[Any, Any]):
     r"""Wraps input into a tuple."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
 
     def __invert__(self) -> "TupleDecoder":
         return TupleDecoder()
@@ -718,10 +747,6 @@ class TupleEncoder(BaseEncoder[Any, Any]):
 
 class TupleDecoder(BaseEncoder[Any, Any]):
     r"""Unwraps input from a tuple."""
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
 
     def __invert__(self) -> "TupleEncoder":
         return TupleEncoder()
@@ -1255,11 +1280,6 @@ class JointEncoder[X, TupleOut: tuple](EncoderList[X, TupleOut]):
     encoders: list[Encoder[X, Any]]
     aggregate_fn: Agg[X] = random.choice
 
-    # FIXME: use dataclass?
-    @property
-    def params(self) -> dict[str, Any]:
-        return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
-
     if TYPE_CHECKING:
         # fmt: off
         @overload  # n=0
@@ -1346,10 +1366,6 @@ class JointDecoder[TupleIn: tuple, Y](EncoderList[TupleIn, Y]):
 
     encoders: list[Encoder[Any, Y]]
     aggregate_fn: Agg[Y] = random.choice
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {"encoders": self.encoders, "aggregate_fn": self.aggregate_fn}
 
     if TYPE_CHECKING:
         # fmt: off
