@@ -12,7 +12,7 @@ __all__ = [
     "LazyValue",
 ]
 
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, ItemsView, Iterable, Mapping, ValuesView
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -109,7 +109,7 @@ class LazyDict[K, V](dict[K, V]):
 
     Note:
         - Getter methods `__getitem__`, `.pop`, `.get` trigger the lazy evaluation.
-        - Iterator methods `.values` and `.items` do not!
+        - View-operations `.values()` and `.items()` do not!
         - Using `__setitem__` or `.setdefault` does not create `LazyValue` entries.
         - Use `.get_lazy` and `.set_lazy` to lookup/create `LazyValue` entries.
 
@@ -153,15 +153,16 @@ class LazyDict[K, V](dict[K, V]):
         })
 
     if TYPE_CHECKING:
-
+        # fmt: off
         @overload
         def __new__(cls, /) -> "LazyDict": ...
         @overload  # mapping only
         def __new__(cls, items: Mapping[K, LazySpec[V]], /) -> "LazyDict[K, V]": ...
         @overload  # mapping and kwargs
-        def __new__(
-            cls, items: Mapping[str, LazySpec[V]] = ..., /, **kwargs: LazySpec[V]
-        ) -> "LazyDict[str, V]": ...
+        def __new__(cls, items: Mapping[str, LazySpec[V]] = ..., /, **kwargs: LazySpec[V]) -> "LazyDict[str, V]": ...
+        def values(self) -> ValuesView[V | LazyValue[V]]: ...  # type: ignore[override]
+        def items(self) -> ItemsView[K, V | LazyValue[V]]: ...  # type: ignore[override]
+        # fmt: on
 
     def __init__(
         self, mapping: Mapping[K, LazySpec[V]] = EMPTY_MAP, /, **kwargs: LazySpec[V]
