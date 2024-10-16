@@ -338,7 +338,7 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
 
     # fmt: off
     @overload
-    def __getitem__(self, key: Index | Series | slice | list[Key], /) -> Self: ...  # pyright: ignore[reportOverlappingOverload]
+    def __getitem__(self, key: Index | Series | slice | list[Key], /) -> Self: ...
     @overload
     def __getitem__(self, key: Key, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
