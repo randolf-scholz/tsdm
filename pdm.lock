@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:056ba3146f3a438984f7aa39e89324eea2360b6997b9c5ad2e6b4d726c8bc669"
+content_hash = "sha256:afb5556f61d508bee5b0b74aa409b616cae4b2d56a58201e49c49b0269e9f6d3"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -760,7 +760,7 @@ files = [
 
 [[package]]
 name = "hypothesis"
-version = "6.115.2"
+version = "6.115.3"
 requires_python = ">=3.9"
 summary = "A library for property-based testing"
 groups = ["tests"]
@@ -770,26 +770,26 @@ dependencies = [
     "sortedcontainers<3.0.0,>=2.1.0",
 ]
 files = [
-    {file = "hypothesis-6.115.2-py3-none-any.whl", hash = "sha256:d0ccbd67f588a6abcdc17a4f06fea3b2bc0a166ecd89126fb90985036c1940fe"},
-    {file = "hypothesis-6.115.2.tar.gz", hash = "sha256:6df95ea6cccf950f80e142f43a684d1462e26c5e28ba29ab4eceb8399e207e0b"},
+    {file = "hypothesis-6.115.3-py3-none-any.whl", hash = "sha256:d2770b0db08ad666fe6ff36027910039ab681084d13bcf9c057449c2e27099c4"},
+    {file = "hypothesis-6.115.3.tar.gz", hash = "sha256:d4efc8c7371bd4ec906d2777f1f18fee5539e47b3d7c7cdc93d1026ad35d9b33"},
 ]
 
 [[package]]
 name = "hypothesis"
-version = "6.115.2"
+version = "6.115.3"
 extras = ["numpy", "pandas", "pytest"]
 requires_python = ">=3.9"
 summary = "A library for property-based testing"
 groups = ["tests"]
 dependencies = [
-    "hypothesis==6.115.2",
+    "hypothesis==6.115.3",
     "numpy>=1.19.3",
     "pandas>=1.1",
     "pytest>=4.6",
 ]
 files = [
-    {file = "hypothesis-6.115.2-py3-none-any.whl", hash = "sha256:d0ccbd67f588a6abcdc17a4f06fea3b2bc0a166ecd89126fb90985036c1940fe"},
-    {file = "hypothesis-6.115.2.tar.gz", hash = "sha256:6df95ea6cccf950f80e142f43a684d1462e26c5e28ba29ab4eceb8399e207e0b"},
+    {file = "hypothesis-6.115.3-py3-none-any.whl", hash = "sha256:d2770b0db08ad666fe6ff36027910039ab681084d13bcf9c057449c2e27099c4"},
+    {file = "hypothesis-6.115.3.tar.gz", hash = "sha256:d4efc8c7371bd4ec906d2777f1f18fee5539e47b3d7c7cdc93d1026ad35d9b33"},
 ]
 
 [[package]]
@@ -3018,13 +3018,13 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "75.1.0"
+version = "75.2.0"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 groups = ["default", "devtools", "docs", "experiment"]
 files = [
-    {file = "setuptools-75.1.0-py3-none-any.whl", hash = "sha256:35ab7fd3bcd95e6b7fd704e4a1539513edad446c097797f2985e0e4b960772f2"},
-    {file = "setuptools-75.1.0.tar.gz", hash = "sha256:d59a21b17a275fb872a9c3dae73963160ae079f1049ed956880cd7c09b120538"},
+    {file = "setuptools-75.2.0-py3-none-any.whl", hash = "sha256:a7fcb66f68b4d9e8e66b42f9876150a3371558f98fa32222ffaa5bced76406f8"},
+    {file = "setuptools-75.2.0.tar.gz", hash = "sha256:753bb6ebf1f465a1912e19ed1d41f403a79173a9acf66a42e7e6aec45c3c16ec"},
 ]
 
 [[package]]
