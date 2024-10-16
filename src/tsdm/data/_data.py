@@ -93,30 +93,30 @@ class BoundaryTable(TypedDict):
 def make_dataframe(
     data: Sequence[tuple[Any, ...]],
     *,
-    columns: list[str] = NotImplemented,
-    dtypes: list[str | type] = NotImplemented,
-    schema: Mapping[str, Any] = NotImplemented,
-    index: str | list[str] = NotImplemented,
+    columns: Optional[list[str]] = None,
+    dtypes: Optional[list[str | type]] = None,
+    schema: Optional[Mapping[str, Any]] = None,
+    index: Optional[str | list[str]] = None,
 ) -> DataFrame:
     r"""Make a DataFrame from a dictionary."""
-    if dtypes is not NotImplemented and schema is not NotImplemented:
+    if dtypes is not None and schema is not None:
         raise ValueError("Cannot specify both dtypes and schema.")
 
-    if columns is not NotImplemented:
+    if columns is not None:
         cols = list(columns)
-    elif schema is not NotImplemented:
+    elif schema is not None:
         cols = list(schema)
     else:
         cols = None
 
     df = DataFrame.from_records(data, columns=cols)
 
-    if dtypes is not NotImplemented:
+    if dtypes is not None:
         df = df.astype(dict(zip(df.columns, dtypes, strict=True)))
-    elif schema is not NotImplemented:
+    elif schema is not None:
         df = df.astype(schema)
 
-    if index is not NotImplemented:
+    if index is not None:
         df = df.set_index(index)
 
     return df

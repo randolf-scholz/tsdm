@@ -102,8 +102,10 @@ import pickle
 import random
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import suppress
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -119,7 +121,7 @@ from typing import (
 
 from tsdm import encoders as E
 from tsdm.backend import Backend, get_backend
-from tsdm.constants import EMPTY_MAP
+from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.types.aliases import FilePath, NestedBuiltin
 from tsdm.types.protocols import Dataclass, SupportsKeysAndGetItem
 from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
@@ -212,16 +214,21 @@ class Encoder[X, Y](Protocol):
     # region abstract methods ----------------------------------------------------------
     @property
     @abstractmethod
-    def is_fitted(self, /) -> bool: ...
+    def requires_fit(self) -> bool: ...  # pyright: ignore[reportRedeclaration]
+    @property
+    @abstractmethod
+    def is_fitted(self, /) -> bool: ...  # pyright: ignore[reportRedeclaration]
     @is_fitted.setter
     @abstractmethod
-    def is_fitted(self, value: bool, /) -> None: ...
+    def is_fitted(self, value: bool, /) -> None: ...  # pyright: ignore[reportRedeclaration]
+
+    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # is_fitted: bool | cached_property[bool]  # type: ignore[no-redef]
+    requires_fit: bool | cached_property[bool]  # type: ignore[no-redef]
+
     @property
     @abstractmethod
     def params(self) -> dict[str, Any]: ...
-    @property
-    @abstractmethod
-    def requires_fit(self) -> bool: ...
     @abstractmethod
     def fit(self, x: X, /) -> None: ...
     @abstractmethod
@@ -327,42 +334,44 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
+    def __setattr__(self, key: str, value: object, /) -> None:
+        if key in self.params:
+            with suppress(AttributeError):
+                del self.requires_fit  # clear requires_fit flag
+            with suppress(AttributeError):
+                del self.is_fitted  # clear is_fitted flag
+        super().__setattr__(key, value)
+
     @property
     def params(self) -> dict[str, Any]:
         if isinstance(self, Dataclass):
             return asdict(self)
         raise NotImplementedError("Method `params` must be implemented.")
 
-    @property
+    @cached_property
     def requires_fit(self) -> bool:
         r"""Check if the encoder requires fitting."""
         # FIXME: Use a different sentinel than NotImplemented.
         return any(
-            val is NotImplemented or getattr(val, "requires_fit", False)
+            val is NotImplemented
+            or val is NOT_GIVEN
+            or getattr(val, "requires_fit", False)
             for val in self.params.values()
         )
 
-    @property
+    @cached_property
     def is_fitted(self) -> bool:
         r"""Whether the encoder has been fitted."""
-        return (not self.requires_fit) or self._is_fitted
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool, /) -> None:
-        self._is_fitted = value
-
-    _is_fitted: bool = False
-    r"""Whether the encoder has been fitted."""
+        return not self.requires_fit
 
     # region abstract methods ----------------------------------------------------------
-
     @final
     def fit(self, x: X, /) -> None:
         r"""Fit the encoder to the data."""
         self.LOGGER.info("Fitting encoder to data.")
         self._fit_impl(x)
         self.validate_params()
-        self.is_fitted = True
+        self.is_fitted = True  # pyright: ignore[reportIncompatibleMethodOverride]
 
     @final
     def encode(self, x: X, /) -> Y:
@@ -405,8 +414,8 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
         Automatically called after fitting the encoder.
         By default, this checks if any parameter is `NotImplemented`.
         """
-        # check if fitting was successful
         if self.requires_fit:
+            # check if fitting was successful
             msg = "Fitting was not successful, the encoder still requires fitting!"
 
             if bad_params := {
@@ -418,7 +427,6 @@ class BaseEncoder[X, Y](Encoder[X, Y]):
                     f"\nThis is likely because the following parameters are not set correctly:"
                     f"\n{bad_params}"
                 )
-
             raise AssertionError(msg)
 
     # endregion optional methods -------------------------------------------------------
@@ -551,7 +559,7 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
         return {"encoders": self.encoders}
 
     @property
-    def requires_fit(self) -> bool:
+    def requires_fit(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         return any(e.requires_fit for e in self.encoders)
 
     @property
@@ -559,7 +567,7 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
         return all(e.is_fitted for e in self.encoders)
 
     @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
+    def is_fitted(self, value: bool) -> None:  # pyright: ignore[reportIncompatibleVariableOverride]
         for encoder in self.encoders:
             encoder.is_fitted = value
 
@@ -620,15 +628,15 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder], ABC):
         self.encoders = dict(enc_map, **encoders)
 
     @property
-    def requires_fit(self) -> bool:
+    def requires_fit(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         return any(e.requires_fit for e in self.values())
 
     @property
-    def is_fitted(self) -> bool:
+    def is_fitted(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         return all(e.is_fitted for e in self.values())
 
     @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
+    def is_fitted(self, value: bool) -> None:  # pyright: ignore[reportIncompatibleVariableOverride]
         for encoder in self.values():
             encoder.is_fitted = value
 
@@ -650,7 +658,7 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder], ABC):
 class BackendMixin[X, Y](BaseEncoder[X, Y]):
     r"""Encoder equipped with a backend."""
 
-    backend: Backend = NotImplemented
+    backend: Backend = NOT_GIVEN
 
     # noinspection PyFinal
     @final  # type: ignore[misc]

@@ -251,8 +251,6 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
         r"""System of differential equations."""
         raise NotImplementedError
 
-    system = NotImplemented  # noqa: F811
-
     # region implementation ------------------------------------------------------------
     @abstractmethod
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:

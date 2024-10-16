@@ -343,7 +343,7 @@ class LinearScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
         # initialize the new encoder
         encoder = self.__class__(loc=loc, scale=scale, axis=axis)
-        encoder._is_fitted = self._is_fitted
+        encoder.is_fitted = self.is_fitted
         return encoder
 
     def _fit_impl(self, data: Arr, /) -> None:
@@ -398,7 +398,7 @@ class StandardScaler[Arr: Array[float]](BaseEncoder[Arr, Arr]):
         # initialize the new encoder
         cls = type(self)
         encoder = cls(mean=mean, stdv=stdv, axis=axis)
-        encoder._is_fitted = self._is_fitted
+        encoder.is_fitted = self.is_fitted
         return encoder
 
     def _fit_impl(self, data: Arr, /) -> None:
@@ -530,7 +530,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
         cls: type[Self] = type(self)
         encoder = cls(ymin, ymax, xmin=xmin, xmax=xmax, axis=axis)
         encoder.switch_backend(self.backend)
-        encoder._is_fitted = self._is_fitted
+        encoder.is_fitted = self.is_fitted
         return encoder
 
     def _fit_impl(self, data: Arr, /) -> None:

@@ -69,6 +69,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 from typing_extensions import TypeIs
 
+from tsdm.constants import NOT_GIVEN
 from tsdm.logutils.logfuncs import (
     log_config,
     log_kernel,
@@ -183,9 +184,9 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
         r"""The required kwargs for the callback."""
         return set().union(*(callback.required_kwargs for callback in self.callbacks))
 
-    def __init__(self, iterable: Iterable[Callback] = NotImplemented, /) -> None:
+    def __init__(self, iterable: Iterable[Callback] = (), /) -> None:
         r"""Initialize the callback."""
-        self.callbacks = list(iterable) if iterable is not NotImplemented else []
+        self.callbacks = list(iterable)
 
     def __len__(self) -> int:
         return len(self.callbacks)
@@ -281,7 +282,7 @@ class EvaluationCallback(BaseCallback):
     writer: SummaryWriter
 
     # Optional parameters
-    history: DataFrame = NotImplemented
+    history: DataFrame = NOT_GIVEN
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
@@ -291,7 +292,7 @@ class EvaluationCallback(BaseCallback):
 
     def __post_init__(self) -> None:
         r"""Initialize the callback."""
-        if self.history is NotImplemented:
+        if self.history is NOT_GIVEN:
             self.history = DataFrame(
                 columns=MultiIndex.from_product([self.dataloaders, self.metrics])
             )

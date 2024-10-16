@@ -251,7 +251,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         - a mean-0, variance-1 normal distribution
     """
 
-    class METHODS(StrEnum):
+    class METHOD(StrEnum):
         r"""Methods to fit the Box-Cox parameter."""
 
         fixed = "fixed"
@@ -260,15 +260,17 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         match_normal = "match-normal"
         match_uniform = "match-uniform"
 
-    type METHOD = Literal[
-        "fixed", "minimum", "quartile", "match-normal", "match-uniform"
-    ]
+    type Method = (
+        METHOD
+        | Literal["fixed", "minimum", "quartile", "match-normal", "match-uniform"]
+    )
 
     _: KW_ONLY
+
     bounds: tuple[float, float] = (0.0, 1.0)
-    initial_value: float = 1.0
-    method: METHODS = METHODS.match_uniform
+    method: METHOD = METHOD.match_uniform
     offset: float = NOT_GIVEN
+    offset_guess: float = 1.0
     verbose: bool = False
 
     # FIXME: simplify if a converter option is added to the dataclass.field
@@ -276,22 +278,22 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         self,
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
-        initial_value: float = 1.0,
-        method: METHOD | METHODS = "match-uniform",
+        offset_guess: float = 1.0,
+        method: Method = "match-uniform",
         offset: float = NOT_GIVEN,
         verbose: bool = False,
     ) -> None:
-        if method not in self.METHODS:
-            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHODS)}")
+        if method not in self.METHOD:
+            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHOD)}")
 
         self.bounds = bounds
-        self.inital_value = initial_value
-        self.method = self.METHODS(method)
+        self.offset_guess = offset_guess
+        self.method = self.METHOD(method)
         self.offset = offset
         self.verbose = verbose
 
-        if self.method == self.METHODS.fixed:
-            self.offset = self.initial_value
+        if self.method == self.METHOD.fixed:
+            self.offset = self.offset_guess
             self.validate_params()
 
     def validate_params(self) -> None:
@@ -322,16 +324,16 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
                 stacklevel=2,
             )
 
-        match self.METHODS(self.method):
-            case self.METHODS.fixed:
-                offset = self.initial_value
-            case self.METHODS.minimum:
+        match self.METHOD(self.method):
+            case self.METHOD.fixed:
+                offset = self.offset_guess
+            case self.METHOD.minimum:
                 offset = data[data > 0].min() / 2
-            case self.METHODS.quartile:
+            case self.METHOD.quartile:
                 offset = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
-            case self.METHODS.match_uniform:
+            case self.METHOD.match_uniform:
                 fun = construct_wasserstein_loss_boxcox_uniform(data)
-                x0 = np.array(self.initial_value)
+                x0 = np.array(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -340,9 +342,9 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
                     options={"disp": self.verbose},
                 )
                 offset = sol.x.squeeze()
-            case self.METHODS.match_normal:
+            case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_boxcox_normal(data)
-                x0 = np.array(self.initial_value)
+                x0 = np.array(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -377,7 +379,7 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         - a mean-0, variance-1 normal distribution
     """
 
-    class METHODS(StrEnum):
+    class METHOD(StrEnum):
         r"""Methods to fit the Box-Cox parameter."""
 
         fixed = "fixed"
@@ -386,15 +388,16 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         match_normal = "match-normal"
         match_uniform = "match-uniform"
 
-    type METHOD = Literal[
-        "fixed", "minimum", "quartile", "match-normal", "match-uniform"
-    ]
+    type Method = (
+        METHOD
+        | Literal["fixed", "minimum", "quartile", "match-normal", "match-uniform"]
+    )
 
     _: KW_ONLY
     bounds: tuple[float, float] = (0.0, 1.0)
-    initial_value: float = 0.01
-    method: METHODS = METHODS.match_uniform
-    offset: float = NotImplemented
+    method: METHOD = METHOD.match_uniform
+    offset: float = NOT_GIVEN
+    offset_guess: float = 0.1
     verbose: bool = False
 
     # FIXME: simplify if a converter option is added to the dataclass.field
@@ -402,25 +405,27 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         self,
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
-        initial_value: float = 1.0,
-        method: METHOD | METHODS = "match-uniform",
-        offset: float = NotImplemented,
+        method: Method = "match-uniform",
+        offset: float = NOT_GIVEN,
+        offset_guess: float = 0.1,
         verbose: bool = False,
     ) -> None:
-        if method not in self.METHODS:
-            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHODS)}")
+        if method not in self.METHOD:
+            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHOD)}")
 
         self.bounds = bounds
-        self.inital_value = initial_value
-        self.method = self.METHODS(method)
+        self.inital_value = offset_guess
+        self.method = self.METHOD(method)
         self.offset = offset
         self.verbose = verbose
 
-        if self.method == self.METHODS.fixed:
-            self.offset = self.initial_value
-            self.check_bounds()
+        if self.method is self.METHOD.fixed:
+            self.offset = self.offset_guess
+            self.validate_params()
 
-    def check_bounds(self) -> None:
+    def validate_params(self) -> None:
+        super().validate_params()
+        # FIXME: This appears to be incorrect
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
@@ -444,22 +449,22 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
                 stacklevel=2,
             )
 
-        match self.METHODS(self.method):
-            case self.METHODS.fixed:
-                offset = self.initial_value
-            case self.METHODS.minimum:
+        match self.method:
+            case self.METHOD.fixed:
+                offset = self.offset_guess
+            case self.METHOD.minimum:
                 lower = data[data > 0].min() / 2
                 upper = (1 - data[data < 1].max()) / 2
                 offset = (lower + upper) / 2
-            case self.METHODS.quartile:
+            case self.METHOD.quartile:
                 lower = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
                 upper = (
                     (1 - np.nanquantile(data, 0.75)) / (1 - np.nanquantile(data, 0.25))
                 ) ** 2
                 offset = (lower + upper) / 2
-            case self.METHODS.match_uniform:
+            case self.METHOD.match_uniform:
                 fun = construct_wasserstein_loss_logit_uniform(data)
-                x0 = np.array(self.initial_value)
+                x0 = np.array(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -468,9 +473,9 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
                     options={"disp": False},
                 )
                 offset = sol.x.squeeze()
-            case self.METHODS.match_normal:
+            case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_logit_normal(data)
-                x0 = np.array(self.initial_value)
+                x0 = np.array(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -483,4 +488,4 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
                 assert_never(other)
 
         self.offset = float(np.array(offset).item())
-        self.check_bounds()
+        self.validate_params()

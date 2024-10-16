@@ -1,6 +1,11 @@
 r"""Collection of Useful Type Aliases."""
 
 __all__ = [
+    # Type Qualifiers
+    "Fittable",
+    "Derivable",
+    "DerivedField",
+    "FittedField",
     # Generic Type Aliases
     "MaybeNA",
     "Nested",
@@ -60,13 +65,25 @@ from collections.abc import (
 from datetime import datetime, timedelta
 from pathlib import Path
 from types import EllipsisType
-from typing import Any
+from typing import Annotated, Any
 
 import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
+
+# region type qualifiers ---------------------------------------------------------------
+type Fittable[T] = Annotated[T, "Fittable"]
+r"""Type Alias for fields that can be fitted."""
+type Derivable[T] = Annotated[T, "Derivable"]
+r"""Type Alias for fields that can be derived automatically."""
+type DerivedField[T] = Annotated[T, "DerivedField"]
+r"""Type Alias for fields that are derived automatically."""
+type FittedField[T] = Annotated[T, "FittedField"]
+r"""Type Alias for fields that are fitted automatically."""
+# endregion type qualifiers ------------------------------------------------------------
+
 
 # region generic type aliases ----------------------------------------------------------
 type Thunk[T] = Callable[[], T]

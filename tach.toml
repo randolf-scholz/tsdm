@@ -98,6 +98,7 @@ depends_on = [
 path = "tsdm.models"
 depends_on = [
     { path = "tsdm.config" },
+    { path = "tsdm.constants" },
     { path = "tsdm.encoders" },
     { path = "tsdm.optimizers" },
     { path = "tsdm.testing" },

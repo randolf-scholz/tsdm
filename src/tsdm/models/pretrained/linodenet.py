@@ -62,10 +62,10 @@ class LinODEnet(PreTrainedBase):
 
     @classmethod
     def available_checkpoints(cls) -> DataFrame:
-        download(
-            cls.DOWNLOAD_URL + "checkpoints.xlsx", cls.RAWDATA_DIR / "checkpoints.xlsx"
-        )
-        return pd.read_excel(cls.RAWDATA_DIR / "checkpoints.xlsx")
+        url = cls.DOWNLOAD_URL + "checkpoints.xlsx"
+        fname = cls.RAWDATA_DIR / "checkpoints.xlsx"
+        download(url, fname)
+        return pd.read_excel(fname)
 
     def predict(self, ts: DataFrame) -> DataFrame:
         r"""Predict function for LinODEnet."""

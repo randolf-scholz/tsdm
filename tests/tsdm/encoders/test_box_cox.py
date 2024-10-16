@@ -58,17 +58,20 @@ LOGIT_EXAMPLES = {
 }  # fmt: skip
 
 
-@pytest.mark.parametrize("method", BoxCoxEncoder.METHODS)
+@pytest.mark.parametrize("method", BoxCoxEncoder.METHOD)
 @pytest.mark.parametrize("example", BOX_BOX_EXAMPLES_DENSE)
 @pytest.mark.parametrize("kind", ["dense", "sparse"])
-def test_box_cox_encoder(
-    example: str, kind: str, method: BoxCoxEncoder.METHODS
-) -> None:
+def test_box_cox_encoder(example: str, kind: str, method: BoxCoxEncoder.METHOD) -> None:
     r"""Test BoxCoxEncoder."""
     data = BOX_COX_EXAMPLES[kind][example]
     encoder = BoxCoxEncoder(method=method)
 
-    encoder.fit(data)
+    # check that encoding raises error before fitting
+    if method is not BoxCoxEncoder.METHOD.fixed:
+        with pytest.raises(RuntimeError):
+            encoder.encode(data)
+        encoder.fit(data)
+
     encoded = encoder.encode(data)
     assert isinstance(encoded, type(data))
     decoded = encoder.decode(encoded)
@@ -86,17 +89,22 @@ def test_box_cox_encoder(
     assert np.allclose(decoded.min(), 0.0)
 
 
-@pytest.mark.parametrize("method", LogitBoxCoxEncoder.METHODS)
+@pytest.mark.parametrize("method", LogitBoxCoxEncoder.METHOD)
 @pytest.mark.parametrize("example", LOGIT_EXAMPLES_DENSE)
 @pytest.mark.parametrize("kind", ["dense", "sparse"])
 def test_logit_box_cox_encoder(
-    example: str, kind: str, method: LogitBoxCoxEncoder.METHODS
+    example: str, kind: str, method: LogitBoxCoxEncoder.METHOD
 ) -> None:
     r"""Test LogitBoxCoxEncoder."""
     data = LOGIT_EXAMPLES[kind][example]
     encoder = LogitBoxCoxEncoder(method=method)
 
-    encoder.fit(data)
+    # check that encoding raises error before fitting
+    if method is not LogitBoxCoxEncoder.METHOD.fixed:
+        with pytest.raises(RuntimeError):
+            encoder.encode(data)
+        encoder.fit(data)
+
     encoded = encoder.encode(data)
     assert isinstance(encoded, type(data))
     decoded = encoder.decode(encoded)

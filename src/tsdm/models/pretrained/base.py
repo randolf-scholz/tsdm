@@ -63,6 +63,7 @@ from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 
 from tsdm.config import CONFIG
+from tsdm.constants import NOT_GIVEN
 from tsdm.encoders import BaseEncoder
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.testing._testing import is_zipfile
@@ -114,11 +115,11 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the class."""
-    CHECKPOINT_URL: ClassVar[str] = NotImplemented
+    CHECKPOINT_URL: ClassVar[Optional[str]] = None
     r"""URL with overview of available model checkpoints."""
-    DOWNLOAD_URL: ClassVar[str] = NotImplemented
+    DOWNLOAD_URL: ClassVar[str] = NOT_GIVEN
     r"""URL from which model checkpoints can be downloaded."""
-    DOCUMENTATION_URL: ClassVar[str] = NotImplemented
+    DOCUMENTATION_URL: ClassVar[Optional[str]] = None
     r"""URL of online documentation for the model."""
     RAWDATA_DIR: ClassVar[Path]
     r"""Default directory where the raw data is stored."""
@@ -129,7 +130,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
     device: str | torch.device
     r"""Device which the model components are loaded to."""
-    rawdata_path: Path = NotImplemented
+    rawdata_path: Path
     r"""Path where the raw data is stored (subpath of RAWDATA_DIR)."""
     rawdata_hash: Optional[dict[str, str]] = None
     r"""Dictionary of hash-method:value pairs for the raw data."""
@@ -153,12 +154,12 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         device: str | torch.device = "cpu",
         initialize: bool = True,
         reset: bool = False,
-        rawdata_path: Optional[Path] = None,
+        rawdata_file: Optional[FilePath] = None,
         rawdata_hash: Optional[dict[str, str]] = None,
         download_url: Optional[str] = None,
     ) -> None:
-        if rawdata_path is not None:
-            self.rawdata_path = Path(rawdata_path)
+        if rawdata_file is not None:
+            self.rawdata_path = Path(rawdata_file)
         if download_url is not None:
             self.download_url = download_url
         if rawdata_hash is not None:
@@ -216,14 +217,14 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
             path = Path.cwd() / path
         if not path.exists():
             raise ValueError(f"{path} does not exist!")
-        return cls(*args, rawdata_path=path, **kwargs)
+        return cls(*args, rawdata_file=path, **kwargs)
 
     @classmethod
     def from_url(cls, url: str, /, *args: Any, **kwargs: Any) -> Self:
         r"""Obtain model from arbitrary url."""
         fname = url.split("/")[-1]
         path = cls.RAWDATA_DIR / fname
-        return cls(*args, rawdata_path=path, download_url=url, **kwargs)
+        return cls(*args, rawdata_file=path, download_url=url, **kwargs)
 
     @classmethod
     def from_remote_checkpoint(
@@ -236,7 +237,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
             )
         url = cls.DOWNLOAD_URL + checkpoint
         path = cls.RAWDATA_DIR / checkpoint
-        return cls(*args, rawdata_path=path, download_url=url, **kwargs)
+        return cls(*args, rawdata_file=path, download_url=url, **kwargs)
 
     @cached_property
     def model(self) -> torch.nn.Module:

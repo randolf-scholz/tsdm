@@ -44,3 +44,46 @@ When to use `@property`:
   (i.e. `A.foo == A.foo` must always be true, however `x = A.foo; A.bar(); x == A.foo` may be false)
 - If it is computationally expensive to compute the property, caching should be used.
   (i.e. Calling A.foo N times should cost less than N times the cost of computing A.foo once)
+
+## Computed fields in dataclasses
+
+Standard python dataclasses do not know the notion of a "computed" field.
+Quite often, we want that either:
+
+  1. the user can provide the value of a field,
+  2. if the don't, the field is computed from other fields.
+
+Moreover, computed fields interplay with both typing and serialization.
+Computed fields are usually essential in the actual usage of the object.
+We distinguish between 2 types of derived fields:
+
+  1. Fields that can be determined at initialization time.
+  2. Fields that require additional data to be computed. This applies in particular to models such as sklearn transforms.
+
+For this purpose, we introduce type qualifiers that more precisely let us define the behavior of the fields.
+Moreover, we use metaclasses to inspect these fields, and to automatically validate the object.
+
+Typically, we want these fields to be optional arguments in the constructor.
+Therefore, they need to be given a default value.
+
+However, for typing purposes, it is annoying having to deal with values being `None`, when we finally use the fully initialized object.
+To alleviate these issues, we use a sentinel values `MISSING` / `UNDEFINED` / `NOT_SET` / `NOT_GIVEN` to indicate that the fields are not set.
+
+Regarding the default value, there is one potential problem:
+
+- if we want to allow serializing it, then we need to provide a default value.
+- the only sensible value is `None`, as it is the only value that can be serialized to JSON.
+- however, `None` might be a valid value for the field, which would lead to ambiguity.
+- this case is only consistent if `None` is also the default value for the field.
+- this in turn mean we would have to perform type analysis to determine whether the model is serializable
+- also how do we accomodate users that do not use type hints?
+- therefore, we may want to use a value different than `None`, but substitute it with `None` when serializing.
+
+### Serialization
+
+Models should still be serializable as long as all non-optional fields are given. For the optional fields, there are two options:
+
+1. serialize the field, providing some default value.
+2. do not serialize the field.
+
+In some cases, it may be serialable to make models JSON-serializable, which only supports a very small amount of types.
