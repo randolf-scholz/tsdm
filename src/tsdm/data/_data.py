@@ -127,9 +127,9 @@ def strip_whitespace(array: Array, /) -> Array: ...
 @overload
 def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
 @overload
-def strip_whitespace(series: Series, /) -> Series: ...  # type: ignore[misc]
+def strip_whitespace(series: Series, /) -> Series: ...  # type: ignore[overload-cannot-match]
 @overload
-def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[misc]
+def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[overload-cannot-match]
 def strip_whitespace[T](table: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string columns in a table or frame."""
     match table:

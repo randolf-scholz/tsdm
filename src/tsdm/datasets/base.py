@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Final,
     Optional,
     Protocol,
     Self,
@@ -61,7 +62,7 @@ class Dataset[Key, T](Protocol):  # +T
     A dataset is a collection of table-like objects indexed by keys.
 
     This protocol describes a reduced interface of the `DatasetBase` class,
-    and covers only methods that should be used at call sites, that is methods
+    and covers only methods that should be used at call sites, that is, methods
     from an already instantiated object.
     """
 
@@ -73,6 +74,9 @@ class Dataset[Key, T](Protocol):  # +T
     r"""Directory where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
     r"""Directory where the dataset is stored."""
+
+    tables: Mapping[Key, T]
+    r"""A dictionary of tables that make up the dataset."""
 
     # region property/attributes -------------------------------------------------------
     @property
@@ -98,12 +102,6 @@ class Dataset[Key, T](Protocol):  # +T
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
     table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
 
-    @property
-    @abstractmethod
-    def tables(self) -> Mapping[Key, T]: ...  # pyright: ignore[reportRedeclaration]
-
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    tables: Mapping[Key, T] | cached_property[Mapping[Key, T]]  # type: ignore[no-redef]
     # endregion property/attributes ----------------------------------------------------
 
     @property
@@ -228,7 +226,7 @@ class DatasetBase[Key: str, T](
     r"""Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 
-    tables: dict[Key, T]
+    tables: Final[dict[Key, T]]
     r"""INTERNAL: the dataset."""
 
     # region constructors --------------------------------------------------------------

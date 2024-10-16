@@ -111,7 +111,7 @@ def strip_whitespace_array(arr: Array, /) -> Array:
 @overload
 def strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
 @overload
-def strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
+def strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[overload-cannot-match]
 def strip_whitespace[T](obj: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
@@ -156,7 +156,7 @@ def null_like(arr: Array, /) -> Array:
 @overload
 def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
 @overload
-def where(  # type: ignore[misc]
+def where(  # type: ignore[overload-cannot-match]
     mask: BooleanArray | BooleanScalar, x: Array | Scalar, y: Array | Scalar = ..., /
 ) -> Array: ...
 def where[T](

@@ -80,7 +80,7 @@ def abstractattribute[R](obj: Optional[Fn[[Any], R]] = None) -> R:
     r"""Decorate method as abstract attribute."""
     attr = DummyAttribute() if obj is None else obj
     try:
-        attr.__is_abstract_attribute__ = True  # type: ignore[attr-defined]
+        attr.__is_abstract_attribute__ = True  # type: ignore[union-attr]
     except AttributeError as exc:
         raise AttributeError(
             f"Cannot decorate with abstractattribute decorator because {obj} "
