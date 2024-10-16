@@ -148,7 +148,7 @@ repos:
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.13.1 # change this to the latest tag!
+    rev: v0.13.4 # change this to the latest tag!
     hooks:
       - id: tach
   - repo: local
@@ -185,7 +185,7 @@ repos:
         - "--"
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.384
+    rev: v1.1.385
     hooks:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674
