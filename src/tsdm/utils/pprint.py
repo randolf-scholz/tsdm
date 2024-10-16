@@ -168,7 +168,7 @@ class ReprProtocol(Protocol):
         maxitems: Optional[int] = None,
         padding: int = INDENT,
         recursive: bool | int = RECURSIVE,
-        repr_fn: Callable[..., str] = NotImplemented,
+        repr_fn: Optional[Callable[..., str]] = None,
         title: Optional[str] = None,
         wrapped: Optional[object] = None,
     ) -> str: ...
@@ -286,7 +286,7 @@ def repr_mapping(
     modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Callable[..., str] = NotImplemented,
+    repr_fn: Optional[Callable[..., str]] = None,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -386,9 +386,9 @@ def repr_mapping(
         title = ""
 
     # set repr_func
-    repr_fn = (
-        repr_fn  # type: ignore[assignment]
-        if repr_fn is not NotImplemented
+    repr_func = (
+        repr_fn
+        if repr_fn is not None
         else repr_generic
         if recursive
         else repr_shortform
@@ -404,7 +404,7 @@ def repr_mapping(
     # construct the string-formatter
     def to_string(key: Any, value: Any, /) -> str:
         try:
-            encoded_value = repr_fn(
+            encoded_value = repr_func(
                 value,
                 align=align,
                 indent=indent + padding,
@@ -465,7 +465,7 @@ def repr_sequence(
     modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Callable[..., str] = NotImplemented,
+    repr_fn: Optional[Callable[..., str]] = None,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -550,9 +550,9 @@ def repr_sequence(
         title = ""
 
     # set repr_fun
-    repr_fn = (
-        repr_fn  # type: ignore[assignment]
-        if repr_fn is not NotImplemented
+    repr_func = (
+        repr_fn
+        if repr_fn is not None
         else repr_generic
         if recursive
         else repr_shortform
@@ -568,7 +568,7 @@ def repr_sequence(
     # construct the string-formatter
     def to_string(index: int, value: Any, /) -> str:
         try:
-            encoded_value = repr_fn(
+            encoded_value = repr_func(
                 value,
                 align=align,
                 indent=indent + padding,
@@ -623,7 +623,7 @@ def repr_set(
     modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Callable[..., str] = NotImplemented,
+    repr_fn: Optional[Callable[..., str]] = None,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -683,9 +683,9 @@ def repr_set(
         identifier = ""
 
     # set repr_fun
-    repr_fn = (
-        repr_fn  # type: ignore[assignment]
-        if repr_fn is not NotImplemented
+    repr_func = (
+        repr_fn
+        if repr_fn is not None
         else repr_generic
         if recursive
         else repr_shortform
@@ -701,7 +701,7 @@ def repr_set(
     # construct the string-formatter
     def to_string(index: int, value: Any, /) -> str:
         try:
-            encoded_value = repr_fn(
+            encoded_value = repr_func(
                 value,
                 align=align,
                 indent=indent + padding,
@@ -763,7 +763,7 @@ def repr_dataclass(
     modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Callable[..., str] = NotImplemented,
+    repr_fn: Optional[Callable[..., str]] = None,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -792,15 +792,6 @@ def repr_dataclass(
         else "<dataclass>" if recursive
         else ""
     )  # fmt: skip
-
-    # set repr_fun
-    repr_fn = (
-        repr_fn  # type: ignore[assignment]
-        if repr_fn is not NotImplemented
-        else repr_generic
-        if recursive
-        else repr_shortform
-    )
 
     fields = dataclasses.fields(obj)
 
@@ -848,7 +839,7 @@ def repr_namedtuple(
     modifier: Optional[str] = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Callable[..., str] = NotImplemented,
+    repr_fn: Optional[Callable[..., str]] = None,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -877,15 +868,6 @@ def repr_namedtuple(
         else "<namedtuple>" if recursive
         else ""
     )  # fmt: skip
-
-    # set repr_func
-    repr_fn = (
-        repr_fn  # type: ignore[assignment]
-        if repr_fn is not NotImplemented
-        else repr_generic
-        if recursive
-        else repr_shortform
-    )
 
     if recursive:
         return repr_mapping(
