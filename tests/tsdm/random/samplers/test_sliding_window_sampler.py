@@ -1,6 +1,6 @@
 r"""Test Sliding Window Sampler."""
 # FIXME: https://github.com/python/mypy/pull/16020
-# mypy: disable-error-code="assert-type, type-var, unreachable, arg-type"
+# mypy: ignore-errors
 
 import datetime
 import logging

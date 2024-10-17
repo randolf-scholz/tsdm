@@ -58,7 +58,7 @@ class KiwiBenchmark(TimeSeriesTask):
     The task is to forecast the observables inside the forecasting horizon.
     """
 
-    dataset: timeseries.KiwiBenchmark
+    dataset: timeseries.kiwi_benchmark
 
     # sampler kwargs
     observation_horizon: str = "2h"
@@ -151,7 +151,7 @@ class KiwiBenchmark(TimeSeriesTask):
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
-        dataset = timeseries.KiwiBenchmark()
+        dataset = timeseries.kiwi_benchmark()
         dataset.timeseries = dataset.timeseries.astype("float32")
 
         super().__init__(dataset=dataset)

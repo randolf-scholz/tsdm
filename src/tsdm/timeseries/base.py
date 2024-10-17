@@ -24,7 +24,16 @@ import warnings
 from collections.abc import Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from math import nan as NAN
-from typing import Any, ClassVar, NamedTuple, Optional, Protocol, Self, overload
+from typing import (
+    Any,
+    ClassVar,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    Self,
+    overload,
+)
 
 import numpy as np
 import torch
@@ -39,10 +48,22 @@ from tsdm.datasets import Dataset
 from tsdm.types.scalars import TimeStamp
 from tsdm.utils.decorators import pprint_repr
 
+# region field types -------------------------------------------------------------------
+type TS = Literal["timeseries"]
+type TS_meta = Literal["timeseries_metadata"]
+type SC = Literal["static_covariates"]
+type SC_meta = Literal["static_covariates_metadata"]
+type CS = Literal["constants"]
+type CS_meta = Literal["constants_metadata"]
+type TS_FIELDS = TS | TS_meta | SC | SC_meta
+type TSC_FIELDS = TS | TS_meta | SC | SC_meta | CS | CS_meta
+# endregion ----------------------------------------------------------------------------
+
 
 class TimeSeries[T](Protocol):
     r"""Protocol for time series objects."""
 
+    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series."""
 
@@ -72,6 +93,7 @@ class TimeSeries[T](Protocol):
 class TimeSeriesCollection[Key, T](Protocol):
     r"""Protocol for time series collection objects."""
 
+    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series collection."""
 
@@ -162,8 +184,8 @@ class PandasTS(TimeSeries[DataFrame]):
         r"""Create a TimeSeries from a Dataset."""
         ds = arg() if isinstance(arg, type) else arg
 
-        if bad_names := set(ds.table_names) - cls.FIELDS:
-            raise ValueError(f"The following table names: {bad_names}")
+        if unknown_fields := set(ds.table_names) - cls.FIELDS:
+            raise ValueError(f"The following tables: {unknown_fields}")
 
         return cls(
             **{k: ds.tables.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]

@@ -210,10 +210,10 @@ def get_return_typehint(func: Callable, /) -> Any:
     ann = sig.return_annotation
 
     match ann:
+        case sig.empty:
+            return "Unknown"
         case type():
             return ann.__name__
-        case sig.empty:
-            return Any
         case _:
             return ann
 

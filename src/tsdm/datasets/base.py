@@ -23,7 +23,6 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
-    Final,
     Optional,
     Protocol,
     Self,
@@ -35,6 +34,7 @@ from typing import (
 )
 from zipfile import ZipFile
 
+from pandas.core.interchange.dataframe_protocol import DataFrame
 from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
@@ -226,7 +226,7 @@ class DatasetBase[Key: str, T](
     r"""Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 
-    tables: Final[dict[Key, T]]
+    tables: dict[Key, T]
     r"""INTERNAL: the dataset."""
 
     # region constructors --------------------------------------------------------------
@@ -275,7 +275,7 @@ class DatasetBase[Key: str, T](
             self.reset_dataset_files()
 
         # initialize tables
-        self.tables = LazyDict.from_func(
+        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleVariableOverride]
             self.table_names,
             self.load,
             kwargs={"initializing": True},
@@ -384,16 +384,16 @@ class DatasetBase[Key: str, T](
         # FIXME: preferably use packaging.version.parse or custom version parser
         return tuple(int(i) for i in self.__version__.split("."))
 
-    @property
-    @abstractmethod
-    def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
-        r"""READ-ONLY: The names of the tables."""
-        # TODO: use abstract-attribute!
-        # SEE: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
-
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
-    r"""READ-ONLY: The names of the tables."""
+    # @property
+    # @abstractmethod
+    # def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
+    #     r"""READ-ONLY: The names of the tables."""
+    #     # TODO: use abstract-attribute!
+    #     # SEE: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
+    #
+    # # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
+    # r"""READ-ONLY: The names of the tables."""
 
     # @property
     # def tables(self) -> dict[Key, T]:
@@ -836,3 +836,6 @@ class DatasetBase[Key: str, T](
         )
 
     # endregion validation methods -----------------------------------------------------
+
+
+class PandasDS[Key](DatasetBase[Key, DataFrame]): ...

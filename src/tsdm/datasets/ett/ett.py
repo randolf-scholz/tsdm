@@ -64,3 +64,43 @@ class ETT(DatasetBase[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"], DataFrame]):
         )
         df.columns = df.columns.astype("string")
         return df
+
+
+class ETT1(DatasetBase[Literal["timeseries"], DataFrame]):
+    r"""ETTh1 dataset.
+
+    +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
+    | Field       | date              | HUFL             | HULL              | MUFL               | MULL                | LUFL            | LULL             | OT                       |
+    +=============+===================+==================+===================+====================+=====================+=================+==================+==========================+
+    | Description | The recorded date | High UseFul Load | High UseLess Load | Middle UseFul Load | Middle UseLess Load | Low UseFul Load | Low UseLess Load | Oil Temperature (target) |
+    +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
+    """  # noqa: E501, W505
+
+    type Key = Literal["timeseries"]
+    r"""Type of the dataset keys."""
+
+    SOURCE_URL = r"https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/"
+    r"""HTTP address from where the dataset can be downloaded."""
+    INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
+    r"""HTTP address containing additional information about the dataset."""
+
+    table_names = ["timeseries"]
+    rawdata_files = ["ETTh1.csv"]
+    rawdata_hashes = {
+        "ETTh1.csv": "sha256:f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066"
+    }
+    dataset_hashes = {
+        "timeseries": "sha256:b56abe3a5a0ac54428be73a37249d549440a7512fce182adcafba9ee43a03694"
+    }
+    table_shapes = {"timeseries": (17420, 7)}
+
+    def clean_table(self, key: Key) -> DataFrame:
+        df = read_csv(
+            self.rawdata_paths["ETTh1.csv"],
+            parse_dates=[0],
+            index_col=0,
+            dtype="float32",
+            dtype_backend="pyarrow",
+        )
+        df.columns = df.columns.astype("string")
+        return df

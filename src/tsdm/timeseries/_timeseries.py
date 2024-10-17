@@ -5,21 +5,21 @@ This module provides wrappers for the datasets defined in `tsdm.datasets`.
 
 __all__ = [
     # Classes
-    "DampedPendulum_Ansari2023",
-    "ETTh1",
-    "ETTh2",
-    "ETTm1",
-    "ETTm2",
-    "Electricity",
-    "InSilico",
-    "KiwiBenchmark",
-    "MIMIC_III_DeBrouwer2019",
-    "MIMIC_IV_Bilos2021",
-    "PhysioNet2012",
-    "PhysioNet2019",
-    "Traffic",
-    "USHCN",
-    "USHCN_DeBrouwer2019",
+    "damped_pendulum_ansari2023",
+    "etth1",
+    "etth2",
+    "ettm1",
+    "ettm2",
+    "electricity",
+    "in_silico",
+    "kiwi_benchmark",
+    "mimic_iii_de_brouwer2019",
+    "mimic_iv_bilos2021",
+    "physio_net2012",
+    "physio_net2019",
+    "traffic",
+    "ushcn",
+    "ushcn_de_brouwer2019",
 ]
 
 from tsdm import datasets
@@ -27,36 +27,36 @@ from tsdm.timeseries.base import PandasTS, PandasTSC
 
 
 # region TimeSeries --------------------------------------------------------------------
-def ETTh1() -> PandasTS:
+def etth1() -> PandasTS:
     r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTh1"], name="ETTh1")
 
 
-def ETTh2() -> PandasTS:
+def etth2() -> PandasTS:
     r"""The ETTh2 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTh2"], name="ETTh2")
 
 
-def ETTm1() -> PandasTS:
+def ettm1() -> PandasTS:
     r"""The ETTm1 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTm1"], name="ETTm1")
 
 
-def ETTm2() -> PandasTS:
+def ettm2() -> PandasTS:
     r"""The ETTm2 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTm2"], name="ETTm2")
 
 
-def Electricity() -> PandasTS:
+def electricity() -> PandasTS:
     r"""The Electricity dataset wrapped as TimeSeriesCollection."""
     return PandasTS.from_dataset(datasets.Electricity)
 
 
-def Traffic() -> PandasTS:
+def traffic() -> PandasTS:
     r"""The Traffic dataset wrapped as TimeSeriesCollection."""
     return PandasTS.from_dataset(datasets.Traffic)
 
@@ -65,47 +65,47 @@ def Traffic() -> PandasTS:
 
 
 # region TimeSeriesCollection ----------------------------------------------------------
-def InSilico() -> PandasTSC:
+def in_silico() -> PandasTSC:
     r"""The in silico dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.InSilico)
 
 
-def KiwiBenchmark() -> PandasTSC:
+def kiwi_benchmark() -> PandasTSC:
     r"""The KIWI dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.KiwiBenchmark)
 
 
-def USHCN() -> PandasTSC:
+def ushcn() -> PandasTSC:
     r"""The USHCN dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.USHCN)
 
 
-def USHCN_DeBrouwer2019() -> PandasTSC:
+def ushcn_de_brouwer2019() -> PandasTSC:
     r"""The USHCN_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.USHCN_DeBrouwer2019)
 
 
-def PhysioNet2012() -> PandasTSC:
+def physio_net2012() -> PandasTSC:
     r"""The PhysioNet2012 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.PhysioNet2012)
 
 
-def PhysioNet2019() -> PandasTSC:
+def physio_net2019() -> PandasTSC:
     r"""The PhysioNet2019 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.PhysioNet2019)
 
 
-def MIMIC_IV_Bilos2021() -> PandasTSC:
+def mimic_iv_bilos2021() -> PandasTSC:
     r"""The MIMIC_IV_Bilos2021 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.MIMIC_IV_Bilos2021)
 
 
-def MIMIC_III_DeBrouwer2019() -> PandasTSC:
+def mimic_iii_de_brouwer2019() -> PandasTSC:
     r"""The MIMIC_III_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.MIMIC_III_DeBrouwer2019)
 
 
-def DampedPendulum_Ansari2023() -> PandasTSC:
+def damped_pendulum_ansari2023() -> PandasTSC:
     r"""The DampedPendulum_Ansari2023 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.DampedPendulum_Ansari2023)
 

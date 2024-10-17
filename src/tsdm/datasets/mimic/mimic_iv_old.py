@@ -26,7 +26,7 @@ import pandas as pd
 from tsdm.datasets.base import DatasetBase
 
 
-class MIMIC_IV(DatasetBase):
+class MIMIC_IV(DatasetBase[str, pd.DataFrame]):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and

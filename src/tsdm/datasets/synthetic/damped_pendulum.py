@@ -3,7 +3,7 @@ r"""Dataset Wrapper for the Damped Pendulum Generator."""
 __all__ = ["DampedPendulum_Ansari2023"]
 
 from functools import cached_property
-from typing import final
+from typing import Literal, final
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from tsdm.random import generators
 
 
 @final
-class DampedPendulum_Ansari2023(DatasetBase):
+class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
