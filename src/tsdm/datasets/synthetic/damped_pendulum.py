@@ -3,7 +3,7 @@ r"""Dataset Wrapper for the Damped Pendulum Generator."""
 __all__ = ["DampedPendulum_Ansari2023"]
 
 from functools import cached_property
-from typing import Literal, final
+from typing import final
 
 import numpy as np
 import pandas as pd
@@ -13,10 +13,11 @@ from tqdm.auto import trange
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.random import generators
+from tsdm.types.aliases import TS
 
 
 @final
-class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
+class DampedPendulum_Ansari2023(DatasetBase[TS, DataFrame]):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
@@ -41,11 +42,12 @@ class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
     """
 
     rawdata_files = []
+    table_names = ["timeseries"]
+
     num_sequences = 7000
     step = 0.1
     t_min = 0.0
     t_max = 15.0
-    table_names = ["timeseries"]
 
     @cached_property
     def generator(self) -> generators.DampedPendulum:
@@ -60,9 +62,7 @@ class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
             initial_state_dist=univariate_normal(loc=0, scale=1),
         )
 
-    def clean_table(self, key: str) -> DataFrame:
-        if key != "timeseries":
-            raise KeyError(f"Unknown table {key=}")
+    def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Generating data...")
 
         # generate time range

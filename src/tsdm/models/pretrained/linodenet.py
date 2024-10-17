@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame, Index, MultiIndex
+from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.models.pretrained.base import PreTrainedBase
@@ -117,8 +118,8 @@ class LinODEnet(PreTrainedBase):
             T, X = self.encoder.encode(ts).values()
             T = T.to(device=self.device)
             X = X.to(device=self.device)
-            T_list = torch.split(T, sizes.to_list())
-            X_list = torch.split(X, sizes.to_list())
+            T_list: list[Tensor] = list(torch.split(T, sizes.to_list()))
+            X_list: list[Tensor] = list(torch.split(X, sizes.to_list()))
             T = pad_sequence(T_list, batch_first=True, padding_value=torch.nan)
             X = pad_sequence(X_list, batch_first=True, padding_value=torch.nan)
 

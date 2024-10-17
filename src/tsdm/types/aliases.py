@@ -50,6 +50,15 @@ __all__ = [
     "NestedTuple",
     "NestedFrozenSet",
     "NestedBuiltin",
+    # Fields
+    "TS",
+    "TS_meta",
+    "SC",
+    "SC_meta",
+    "CS",
+    "CS_meta",
+    "TS_FIELDS",
+    "TSC_FIELDS",
 ]
 
 
@@ -65,13 +74,24 @@ from collections.abc import (
 from datetime import datetime, timedelta
 from pathlib import Path
 from types import EllipsisType
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
+
+# region field types -------------------------------------------------------------------
+type TS = Literal["timeseries"]
+type TS_meta = Literal["timeseries_metadata"]
+type SC = Literal["static_covariates"]
+type SC_meta = Literal["static_covariates_metadata"]
+type CS = Literal["constants"]
+type CS_meta = Literal["constants_metadata"]
+type TS_FIELDS = TS | TS_meta | SC | SC_meta
+type TSC_FIELDS = TS | TS_meta | SC | SC_meta | CS | CS_meta
+# endregion ----------------------------------------------------------------------------
 
 # region type qualifiers ---------------------------------------------------------------
 type Fittable[T] = Annotated[T, "Fittable"]

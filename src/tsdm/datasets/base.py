@@ -8,6 +8,7 @@ __all__ = [
     # ABCs & Protocols
     "Dataset",
     "DatasetBase",
+    "DatasetMeta",
 ]
 
 import inspect
@@ -34,7 +35,6 @@ from typing import (
 )
 from zipfile import ZipFile
 
-from pandas.core.interchange.dataframe_protocol import DataFrame
 from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
@@ -136,7 +136,7 @@ class Dataset[Key, T](Protocol):  # +T
     def __contains__(self, key: object, /) -> bool: ...
 
 
-class _DatasetMeta(ProtocolMeta):
+class DatasetMeta(ProtocolMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(
@@ -175,7 +175,7 @@ class _DatasetMeta(ProtocolMeta):
 
 
 class DatasetBase[Key: str, T](
-    Mapping[Key, T], Dataset[Key, T], metaclass=_DatasetMeta
+    Mapping[Key, T], Dataset[Key, T], metaclass=DatasetMeta
 ):  # Key, +T
     r"""Abstract base class that all datasets must subclass.
 
@@ -540,14 +540,26 @@ class DatasetBase[Key: str, T](
     # endregion download methods -------------------------------------------------------
 
     # region cleaning methods ----------------------------------------------------------
-    @abstractmethod
     def clean_table(self, key: Key) -> Optional[T]:
         r"""Create the cleaned table for the given key.
+
+        By default, this method redirects to `self.clean_{key}` method.
+        Subclasses can either implement these, or override this method directly.
 
         If a table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
-        ...
+        if key not in self.table_names:
+            raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+        try:
+            cleaner = getattr(self, f"clean_{key}")
+        except AttributeError:
+            raise NotImplementedError(
+                f"Cleaning method for {key} not implemented!"
+                f" Either implement `clean_{key}` or override `clean_table`."
+            ) from None
+        else:
+            return cleaner()
 
     @final
     def clean(
@@ -836,6 +848,3 @@ class DatasetBase[Key: str, T](
         )
 
     # endregion validation methods -----------------------------------------------------
-
-
-class PandasDS[Key](DatasetBase[Key, DataFrame]): ...

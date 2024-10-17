@@ -19,15 +19,6 @@ from pandas import DataFrame
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import DatasetBase
 
-type Key = Literal[
-    "timeseries",
-    "timeseries_metadata",
-    "static_covariates",
-    "static_covariates_metadata",
-    "state_codes",
-    "raw_timeseries",
-]
-
 TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("PRCP", "float32[pyarrow]",    0, None,  True,  True, "0.01 in", "precipitation"      ),
@@ -131,6 +122,15 @@ STATE_CODES: InlineTable = {
         "State": "string[pyarrow]",
     },
 }
+
+type Key = Literal[
+    "timeseries",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
+    "state_codes",
+    "raw_timeseries",
+]
 
 
 class USHCN(DatasetBase[Key, DataFrame]):

@@ -27,7 +27,6 @@ from math import nan as NAN
 from typing import (
     Any,
     ClassVar,
-    Literal,
     NamedTuple,
     Optional,
     Protocol,
@@ -47,17 +46,6 @@ from tsdm.data.datasets import TorchDataset
 from tsdm.datasets import Dataset
 from tsdm.types.scalars import TimeStamp
 from tsdm.utils.decorators import pprint_repr
-
-# region field types -------------------------------------------------------------------
-type TS = Literal["timeseries"]
-type TS_meta = Literal["timeseries_metadata"]
-type SC = Literal["static_covariates"]
-type SC_meta = Literal["static_covariates_metadata"]
-type CS = Literal["constants"]
-type CS_meta = Literal["constants_metadata"]
-type TS_FIELDS = TS | TS_meta | SC | SC_meta
-type TSC_FIELDS = TS | TS_meta | SC | SC_meta | CS | CS_meta
-# endregion ----------------------------------------------------------------------------
 
 
 class TimeSeries[T](Protocol):

@@ -94,13 +94,10 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
     timeseries: DataFrame
     static_covariates: DataFrame
 
-    def clean_table(self, key: Key) -> DataFrame:
-        if key == "static_covariates":
-            return self.timeseries.describe().T.astype("float32")
+    def clean_static_covariavtes(self) -> DataFrame:
+        return self.timeseries.describe().T.astype("float32")
 
-        if key != "timeseries":
-            raise KeyError(f"{key=} is not a valid key.")
-
+    def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
         ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
 

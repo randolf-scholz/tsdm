@@ -46,9 +46,10 @@ from matplotlib.axes import Axes
 from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.types.aliases import TS
 
 
-class Electricity(DatasetBase):
+class Electricity(DatasetBase[TS, DataFrame]):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -103,10 +104,8 @@ class Electricity(DatasetBase):
     table_names = ["timeseries"]
     table_shapes = {"timeseries": (140256, 370)}
 
-    def clean_table(self, key: str) -> DataFrame:
+    def clean_timeseries(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
-        if key != "timeseries":
-            raise KeyError(f"Unknown table {key=}")
         with (
             # can't use pandas.read_csv because of the zip contains other files.
             ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive,
@@ -124,9 +123,5 @@ class Electricity(DatasetBase):
 
     def make_zero_plot(self) -> Axes:
         r"""Plot number of zero values per timestamp."""
-        return (
-            self.table.where(self.table > 0)
-            .isna()
-            .sum(axis=1)
-            .plot(ylabel="zero-values")
-        )
+        ts = self.timeseries
+        return ts.where(ts > 0).isna().sum(axis=1).plot(ylabel="zero-values")

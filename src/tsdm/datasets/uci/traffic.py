@@ -173,20 +173,7 @@ class Traffic(DatasetBase[Key, DataFrame]):
 
         return dates
 
-    def clean_table(self, key: Key) -> DataFrame:
-        match key:
-            case "timeseries":
-                return self._clean_timeseries()
-            case "labels":
-                return self._clean_labels()
-            case "randperm":
-                return self._clean_randperm()
-            case "invperm":
-                return self._clean_randperm()
-            case _:
-                raise KeyError(f"{key} is not a valid key")
-
-    def _clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> DataFrame:
         r"""Create DataFrame from raw data.
 
         Notes:
@@ -297,7 +284,7 @@ class Traffic(DatasetBase[Key, DataFrame]):
         ts.columns = ts.columns.astype("string")
         return ts
 
-    def _clean_labels(self) -> DataFrame:
+    def clean_labels(self) -> DataFrame:
         r"""Clean the labels of the PEMS-SF dataset."""
         # Shuffle the dates according to the permutation the authors applied.
         shuffled_dates = self.dates[self.randperm]
@@ -343,7 +330,7 @@ class Traffic(DatasetBase[Key, DataFrame]):
 
         return labels.to_frame()
 
-    def _clean_randperm(self) -> None:
+    def clean_randperm(self) -> None:
         with (
             ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive,
             archive.open("randperm") as file,
@@ -363,3 +350,6 @@ class Traffic(DatasetBase[Key, DataFrame]):
 
         DataFrame(randperm).to_parquet(self.dataset_paths["randperm"])
         DataFrame(invperm).to_parquet(self.dataset_paths["invperm"])
+
+    def clean_invperm(self) -> None:
+        return self.clean_randperm()

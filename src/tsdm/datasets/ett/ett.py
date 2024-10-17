@@ -3,30 +3,44 @@ r"""Electricity Transformer Dataset (ETDataset).
 **Source:** https://github.com/zhouhaoyi/ETDataset
 """
 
-__all__ = ["ETT"]
+__all__ = ["ETT", "ETTh1"]
 
 from typing import Literal
 
 from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.types.aliases import TS
+
+type Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
-class ETT(DatasetBase[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"], DataFrame]):
+class ETT(DatasetBase[Key, DataFrame]):
     r"""ETT dataset.
 
     This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data
     from two electrical transformers (1 and 2) with hourly (h) and minute (m) resolution.
 
-    +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
-    | Field       | date              | HUFL             | HULL              | MUFL               | MULL                | LUFL            | LULL             | OT                       |
-    +=============+===================+==================+===================+====================+=====================+=================+==================+==========================+
-    | Description | The recorded date | High UseFul Load | High UseLess Load | Middle UseFul Load | Middle UseLess Load | Low UseFul Load | Low UseLess Load | Oil Temperature (target) |
-    +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
-    """  # noqa: E501, W505
-
-    type Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
-    r"""Type of the dataset keys."""
+    +-------+--------------------------+
+    | Field | Description              |
+    +=======+==========================+
+    | date  | The recorded date        |
+    +-------+--------------------------+
+    | HUFL  | High UseFul Load         |
+    +-------+--------------------------+
+    | HULL  | High UseLess Load        |
+    +-------+--------------------------+
+    | MUFL  | Middle UseFul Load       |
+    +-------+--------------------------+
+    | MULL  | Middle UseLess Load      |
+    +-------+--------------------------+
+    | LUFL  | Low UseFul Load          |
+    +-------+--------------------------+
+    | LULL  | Low UseLess Load         |
+    +-------+--------------------------+
+    | OT    | Oil Temperature (target) |
+    +-------+--------------------------+
+    """
 
     SOURCE_URL = r"https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
@@ -66,18 +80,29 @@ class ETT(DatasetBase[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"], DataFrame]):
         return df
 
 
-class ETT1(DatasetBase[Literal["timeseries"], DataFrame]):
+class ETTh1(DatasetBase[TS, DataFrame]):
     r"""ETTh1 dataset.
 
-    +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
-    | Field       | date              | HUFL             | HULL              | MUFL               | MULL                | LUFL            | LULL             | OT                       |
-    +=============+===================+==================+===================+====================+=====================+=================+==================+==========================+
-    | Description | The recorded date | High UseFul Load | High UseLess Load | Middle UseFul Load | Middle UseLess Load | Low UseFul Load | Low UseLess Load | Oil Temperature (target) |
-    +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
-    """  # noqa: E501, W505
-
-    type Key = Literal["timeseries"]
-    r"""Type of the dataset keys."""
+    +-------+--------------------------+
+    | Field | Description              |
+    +=======+==========================+
+    | date  | The recorded date        |
+    +-------+--------------------------+
+    | HUFL  | High UseFul Load         |
+    +-------+--------------------------+
+    | HULL  | High UseLess Load        |
+    +-------+--------------------------+
+    | MUFL  | Middle UseFul Load       |
+    +-------+--------------------------+
+    | MULL  | Middle UseLess Load      |
+    +-------+--------------------------+
+    | LUFL  | Low UseFul Load          |
+    +-------+--------------------------+
+    | LULL  | Low UseLess Load         |
+    +-------+--------------------------+
+    | OT    | Oil Temperature (target) |
+    +-------+--------------------------+
+    """
 
     SOURCE_URL = r"https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
@@ -94,7 +119,7 @@ class ETT1(DatasetBase[Literal["timeseries"], DataFrame]):
     }
     table_shapes = {"timeseries": (17420, 7)}
 
-    def clean_table(self, key: Key) -> DataFrame:
+    def clean_timeseries(self) -> DataFrame:
         df = read_csv(
             self.rawdata_paths["ETTh1.csv"],
             parse_dates=[0],

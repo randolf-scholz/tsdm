@@ -4,10 +4,13 @@ __all__ = ["KiwiBenchmark"]
 
 from zipfile import ZipFile
 
+from pandas import DataFrame
+
 from tsdm.datasets.base import DatasetBase
+from tsdm.types.aliases import TS_FIELDS
 
 
-class KiwiBenchmark(DatasetBase):
+class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
     __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]

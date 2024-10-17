@@ -133,7 +133,7 @@ def test_array_static() -> None:
     _ = pd.Index
     _ = pd.Series
     _ = pl.Series
-    _ = torch.Tensor  # pyright: ignore[reportAssignmentType]  (__contains__ bad type hint)
+    _ = torch.Tensor
     # check
 
 

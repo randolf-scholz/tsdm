@@ -82,9 +82,6 @@ from pandas import DataFrame
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import DatasetBase
 
-type Key = Literal["timeseries", "timeseries_metadata"]
-
-
 TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("PM2.5",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
@@ -112,6 +109,8 @@ TIMESERIES_METADATA: InlineTable = {
     "index": ["variable"],
 }  # fmt: skip
 
+type Key = Literal["timeseries", "timeseries_metadata"]
+
 
 class BeijingAirQuality(DatasetBase[Key, DataFrame]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
@@ -133,11 +132,12 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
     )
     r"""HTTP address containing additional information about the dataset."""
 
+    table_names = ["timeseries", "timeseries_metadata"]
     rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
+
     rawdata_hashes = {
         "PRSA2017_Data_20130301-20170228.zip": "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
     }
-
     rawdata_schema = {
         "No"      : "uint16[pyarrow]",
         "year"    : "uint16[pyarrow]",
@@ -159,11 +159,6 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
         "WSPM"    : "float32[pyarrow]",
     }  # fmt: skip
 
-    table_names = [
-        "timeseries",
-        "timeseries_metadata",
-    ]  # pyright: ignore[reportAssignmentType]
-
     table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "PM2.5" : "float[pyarrow]",
@@ -182,7 +177,7 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
         "timeseries_metadata": TIMESERIES_METADATA["schema"],
     }  # fmt: skip
 
-    def _clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading Data.")
         file = self.rawdata_paths["PRSA2017_Data_20130301-20170228.zip"]
         with ZipFile(file) as compressed_archive:
@@ -221,12 +216,7 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
 
         return ts
 
-    def clean_table(self, key: Key) -> DataFrame:
-        r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
-        match key:
-            case "timeseries":
-                return self._clean_timeseries()
-            case "timeseries_metadata":
-                return make_dataframe(**TIMESERIES_METADATA)
-            case _:
-                raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")
+    @staticmethod
+    def clean_timeseries_metadata() -> DataFrame:
+        r"""Create DataFrame with metadata for all 12 stations."""
+        return make_dataframe(**TIMESERIES_METADATA)

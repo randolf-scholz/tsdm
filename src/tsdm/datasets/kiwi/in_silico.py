@@ -1,11 +1,6 @@
 r"""In silico experiments."""
 
-__all__ = [
-    # Constants
-    "TIMESERIES_METADATA",
-    # Classes
-    "InSilico",
-]
+__all__ = ["InSilico"]
 
 import shutil
 from importlib import resources
@@ -17,28 +12,6 @@ from pandas import DataFrame
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import DatasetBase
-
-TIMESERIES_METADATA: InlineTable = {
-    "data": [
-        ("Biomass"  , 0, None, True, True, "g/L", None),
-        ("Substrate", 0, None, True, True, "g/L", None),
-        ("Acetate"  , 0, None, True, True, "g/L", None),
-        ("DOTm"     , 0, 100,  True, True, "%",   None),
-        ("Product"  , 0, None, True, True, "g/L", None),
-        ("Volume"   , 0, None, True, True, "L",   None),
-        ("Feed"     , 0, None, True, True, "μL",  None),
-    ],
-    "schema": {
-        "variable"       : "string[pyarrow]",
-        "lower_bound"    : "float32[pyarrow]",
-        "upper_bound"    : "float32[pyarrow]",
-        "lower_inclusive": "bool[pyarrow]",
-        "upper_inclusive": "bool[pyarrow]",
-        "unit"           : "string[pyarrow]",
-        "description"    : "string[pyarrow]",
-    },
-    "index": "variable",
-}  # fmt: skip
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
@@ -64,7 +37,7 @@ class InSilico(DatasetBase[KEY, DataFrame]):
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
     table_shapes = {"timeseries": (5206, 7)}  # pyright: ignore[reportAssignmentType]
 
-    def _clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> DataFrame:
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
             dfs = {}
             for fname in files.namelist():
@@ -84,14 +57,31 @@ class InSilico(DatasetBase[KEY, DataFrame]):
         ts = remove_outliers(ts, self.timeseries_metadata)
         return ts
 
-    def clean_table(self, key: KEY) -> DataFrame:
-        match key:
-            case "timeseries":
-                return self._clean_timeseries()
-            case "timeseries_metadata":
-                return make_dataframe(**TIMESERIES_METADATA)
-            case _:
-                raise KeyError(f"Unknown table {key}.")
+    @staticmethod
+    def clean_timeseries_metadata() -> DataFrame:
+        r"""Create DataFrame with metadata for the timeseries."""
+        TIMESERIES_METADATA: InlineTable = {
+            "data": [
+                ("Biomass"  , 0, None, True, True, "g/L", None),
+                ("Substrate", 0, None, True, True, "g/L", None),
+                ("Acetate"  , 0, None, True, True, "g/L", None),
+                ("DOTm"     , 0, 100,  True, True, "%",   None),
+                ("Product"  , 0, None, True, True, "g/L", None),
+                ("Volume"   , 0, None, True, True, "L",   None),
+                ("Feed"     , 0, None, True, True, "μL",  None),
+            ],
+            "schema": {
+                "variable"       : "string[pyarrow]",
+                "lower_bound"    : "float32[pyarrow]",
+                "upper_bound"    : "float32[pyarrow]",
+                "lower_inclusive": "bool[pyarrow]",
+                "upper_inclusive": "bool[pyarrow]",
+                "unit"           : "string[pyarrow]",
+                "description"    : "string[pyarrow]",
+            },
+            "index": "variable",
+        }  # fmt: skip
+        return make_dataframe(**TIMESERIES_METADATA)
 
     def download_file(self, fname: str, /) -> None:
         r"""Download the dataset."""

@@ -27,9 +27,10 @@ from pandas import DataFrame
 from pyarrow import Table, csv
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.types.aliases import TS
 
 
-class MIMIC_IV_Bilos2021(DatasetBase):
+class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -50,6 +51,7 @@ class MIMIC_IV_Bilos2021(DatasetBase):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
+    table_names = ["timeseries"]
     rawdata_files = ["full_dataset.csv"]
     rawdata_hashes = {
         "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
@@ -62,7 +64,6 @@ class MIMIC_IV_Bilos2021(DatasetBase):
     }
 
     rawdata_shape = (2485649, 206)
-    table_names = ["timeseries"]
     table_hashes = {
         "timeseries": "pandas:-5464950709022187442",
     }
@@ -70,10 +71,7 @@ class MIMIC_IV_Bilos2021(DatasetBase):
         "timeseries": (2485649, 102),
     }
 
-    def clean_table(self, key: str) -> DataFrame:
-        if key != "timeseries":
-            raise KeyError(f"Unknown table {key=}")
-
+    def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
         table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
 

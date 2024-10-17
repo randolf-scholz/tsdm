@@ -220,10 +220,10 @@ class Encoder[X, Y](Protocol):
     def requires_fit(self) -> bool: ...  # pyright: ignore[reportRedeclaration]
     @property
     @abstractmethod
-    def is_fitted(self, /) -> bool: ...  # pyright: ignore[reportRedeclaration]
+    def is_fitted(self, /) -> bool: ...
     @is_fitted.setter
     @abstractmethod
-    def is_fitted(self, value: bool, /) -> None: ...  # pyright: ignore[reportRedeclaration]
+    def is_fitted(self, value: bool, /) -> None: ...
 
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
     # is_fitted: bool | cached_property[bool]  # type: ignore[no-redef]
@@ -660,7 +660,7 @@ class EncoderDict[X, Y, K](BaseEncoder[X, Y], Mapping[K, Encoder], ABC):
         return any(e.requires_fit for e in self.values())
 
     @property
-    def is_fitted(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def is_fitted(self) -> bool:
         return all(e.is_fitted for e in self.values())
 
     @is_fitted.setter

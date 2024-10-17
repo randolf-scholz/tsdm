@@ -162,15 +162,6 @@ from tqdm.auto import tqdm
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import DatasetBase
 
-type Key = Literal[
-    "timeseries",
-    "timeseries_metadata",
-    "static_covariates",
-    "static_covariates_metadata",
-    "raw_timeseries",
-    "raw_metadata",
-]
-
 TIMESERIES_METADATA: InlineTable = {
     "data": [
         # variable, lower, upper, lower_included, upper_included, unit, description
@@ -245,6 +236,15 @@ STATIC_COVARIATES_METADATA: InlineTable = {
     },
     "index": ["name"],
 }  # fmt: skip
+
+type Key = Literal[
+    "timeseries",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
+    "raw_timeseries",
+    "raw_metadata",
+]
 
 
 class PhysioNet2012(DatasetBase[Key, DataFrame]):
@@ -321,6 +321,14 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
     r"""HTTP address containing additional information about the dataset."""
 
     rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
+    table_names = [  # pyright: ignore[reportAssignmentType]
+        "timeseries",
+        "static_covariates",
+        "timeseries_metadata",
+        "static_covariates_metadata",
+        "raw_timeseries",
+        "raw_metadata",
+    ]
 
     rawdata_hashes = {
         "set-a.tar.gz": "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
@@ -333,16 +341,6 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
         "Parameter": "string[pyarrow]",
         "Value": "float32[pyarrow]",
     }
-
-    table_names = [  # pyright: ignore[reportAssignmentType]
-        "timeseries",
-        "static_covariates",
-        "timeseries_metadata",
-        "static_covariates_metadata",
-        "raw_timeseries",
-        "raw_metadata",
-    ]
-
     table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "Albumin"     : "float32[pyarrow]",
