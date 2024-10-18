@@ -18,14 +18,24 @@ __all__ = [
     "is_positional_only_arg",
     "is_variadic_arg",
     "prod_fn",
+    "recurse_on_nested_builtin",
+    "recurse_on_nested_generic",
     "rpartial",
     "yield_return_nodes",
 ]
 
 import ast
 import inspect
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from functools import wraps
+from collections.abc import (
+    Callable as Fn,
+    Hashable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+    Set as AbstractSet,
+)
+from functools import partial, wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Optional, overload
 
@@ -36,12 +46,14 @@ from tsdm.constants import (
     VAR_KEYWORD,
     VAR_POSITIONAL,
 )
+from tsdm.types.aliases import Nested, NestedBuiltin
 from tsdm.types.protocols import Dataclass, issubclass_dataclass
+from tsdm.utils.frozenmap import FrozenMap
 
 
 def rpartial[**P, R](  # +R
-    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Callable[..., R]:
+    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Fn[..., R]:
     r"""Apply positional arguments from the right.
 
     References:
@@ -57,7 +69,7 @@ def rpartial[**P, R](  # +R
     return __wrapper
 
 
-def accepts_varkwargs(func: Callable[..., Any], /) -> bool:
+def accepts_varkwargs(func: Fn[..., Any], /) -> bool:
     r"""Check if function accepts kwargs."""
     sig = inspect.signature(func)
     return any(p.kind is VAR_KEYWORD for p in sig.parameters.values())
@@ -117,7 +129,7 @@ def get_parameter_kind(s: str | ParameterKind, /) -> set[ParameterKind]:
 
 
 def get_function_args(
-    func: Callable[..., Any],
+    func: Fn[..., Any],
     /,
     *,
     mandatory: Optional[bool] = None,
@@ -147,13 +159,13 @@ def get_function_args(
     ]
 
 
-def get_mandatory_argcount(func: Callable, /) -> int:
+def get_mandatory_argcount(func: Fn, /) -> int:
     r"""Get the number of mandatory arguments of a function."""
     sig = inspect.signature(func)
     return sum(is_mandatory_arg(p) for p in sig.parameters.values())
 
 
-def get_mandatory_kwargs(func: Callable, /) -> set[str]:
+def get_mandatory_kwargs(func: Fn, /) -> set[str]:
     r"""Get the mandatory keyword arguments of a function."""
     sig = inspect.signature(func)
     return {
@@ -163,7 +175,7 @@ def get_mandatory_kwargs(func: Callable, /) -> set[str]:
     }
 
 
-def get_parameter(func: Callable, name: str, /) -> Parameter:
+def get_parameter(func: Fn, name: str, /) -> Parameter:
     r"""Get parameter from function."""
     sig = inspect.signature(func)
     if name not in sig.parameters:
@@ -189,7 +201,7 @@ def _yield_names(nodes: Iterable[ast.AST], /) -> Iterator[str]:
                 raise TypeError(f"Expected ast.Name, got {type(obj)}.")
 
 
-def get_exit_point_names(func: Callable, /) -> set[tuple[str, ...]]:
+def get_exit_point_names(func: Fn, /) -> set[tuple[str, ...]]:
     r"""Return the variable names used in exit nodes."""
     tree = ast.parse(getsource(func))
     iter_nodes = ast.walk(tree)
@@ -204,7 +216,7 @@ def get_exit_point_names(func: Callable, /) -> set[tuple[str, ...]]:
     return names
 
 
-def get_return_typehint(func: Callable, /) -> Any:
+def get_return_typehint(func: Fn, /) -> Any:
     r"""Get the return typehint of a function."""
     sig = inspect.signature(func)
     ann = sig.return_annotation
@@ -221,8 +233,8 @@ def get_return_typehint(func: Callable, /) -> Any:
 @overload
 def is_mandatory_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_mandatory_arg(func: Callable, name: str, /) -> bool: ...
-def is_mandatory_arg(arg: Callable | Parameter, name: Optional[str] = None, /) -> bool:
+def is_mandatory_arg(func: Fn, name: str, /) -> bool: ...
+def is_mandatory_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is mandatory."""
     match arg, name:
         case Parameter(kind=kind, default=default), None:
@@ -230,7 +242,7 @@ def is_mandatory_arg(arg: Callable | Parameter, name: Optional[str] = None, /) -
                 VAR_POSITIONAL,
                 VAR_KEYWORD,
             }
-        case Callable() as function, str(name):  # type: ignore[misc]
+        case Fn() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_mandatory_arg(param)
         case _:
@@ -240,8 +252,8 @@ def is_mandatory_arg(arg: Callable | Parameter, name: Optional[str] = None, /) -
 @overload
 def is_positional_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_positional_arg(func: Callable, name: str, /) -> bool: ...
-def is_positional_arg(arg: Callable | Parameter, name: Optional[str] = None, /) -> bool:
+def is_positional_arg(func: Fn, name: str, /) -> bool: ...
+def is_positional_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is positional argument."""
     match arg, name:
         case Parameter(kind=kind), None:
@@ -250,7 +262,7 @@ def is_positional_arg(arg: Callable | Parameter, name: Optional[str] = None, /) 
                 POSITIONAL_OR_KEYWORD,
                 VAR_POSITIONAL,
             }
-        case Callable() as function, str(name):  # type: ignore[misc]
+        case Fn() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_positional_arg(param)
         case _:
@@ -260,15 +272,13 @@ def is_positional_arg(arg: Callable | Parameter, name: Optional[str] = None, /) 
 @overload
 def is_positional_only_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_positional_only_arg(func: Callable, name: str, /) -> bool: ...
-def is_positional_only_arg(
-    arg: Parameter | Callable, name: Optional[str] = None, /
-) -> bool:
+def is_positional_only_arg(func: Fn, name: str, /) -> bool: ...
+def is_positional_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is positional only argument."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
-        case Callable() as function, str(name):  # type: ignore[misc]
+        case Fn() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_positional_only_arg(param)
         case _:
@@ -278,8 +288,8 @@ def is_positional_only_arg(
 @overload
 def is_keyword_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_keyword_arg(func: Callable, name: str, /) -> bool: ...
-def is_keyword_arg(arg: Parameter | Callable, name: Optional[str] = None, /) -> bool:
+def is_keyword_arg(func: Fn, name: str, /) -> bool: ...
+def is_keyword_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is keyword argument."""
     match arg, name:
         case Parameter(kind=kind), None:
@@ -288,7 +298,7 @@ def is_keyword_arg(arg: Parameter | Callable, name: Optional[str] = None, /) -> 
                 POSITIONAL_OR_KEYWORD,
                 VAR_KEYWORD,
             }
-        case Callable() as function, str(name):  # type: ignore[misc]
+        case Fn() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_keyword_arg(param)
         case _:
@@ -298,15 +308,13 @@ def is_keyword_arg(arg: Parameter | Callable, name: Optional[str] = None, /) -> 
 @overload
 def is_keyword_only_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_keyword_only_arg(func: Callable, name: str, /) -> bool: ...
-def is_keyword_only_arg(
-    arg: Parameter | Callable, name: Optional[str] = None, /
-) -> bool:
+def is_keyword_only_arg(func: Fn, name: str, /) -> bool: ...
+def is_keyword_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is keyword-only argument."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {KEYWORD_ONLY, VAR_KEYWORD}
-        case Callable() as function, str(name):  # type: ignore[misc]
+        case Fn() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_keyword_only_arg(param)
         case _:
@@ -316,20 +324,20 @@ def is_keyword_only_arg(
 @overload
 def is_variadic_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_variadic_arg(func: Callable, name: str, /) -> bool: ...
-def is_variadic_arg(arg: Parameter | Callable, name: Optional[str] = None, /) -> bool:
+def is_variadic_arg(func: Fn, name: str, /) -> bool: ...
+def is_variadic_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
     r"""Check if parameter is variadic argument."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {VAR_POSITIONAL, VAR_KEYWORD}
-        case Callable() as function, str(name):  # type: ignore[misc]
+        case Fn() as function, str(name):  # type: ignore[misc]
             param = get_parameter(function, name)  # type: ignore[unreachable]
             return is_variadic_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
 
 
-def prod_fn(*funcs: Callable[[Any], Any]) -> Callable[[tuple], tuple]:
+def prod_fn(*funcs: Fn[[Any], Any]) -> Fn[[tuple], tuple]:
     r"""Cartesian Product of Functions.
 
     It is assumed every function takes a single positional argument.
@@ -340,3 +348,131 @@ def prod_fn(*funcs: Callable[[Any], Any]) -> Callable[[tuple], tuple]:
         return tuple(f(arg) for f, arg in zip(funcs, args, strict=True))
 
     return __prod_fn
+
+
+def recurse_on_nested_builtin[T, R](
+    x: NestedBuiltin[T],
+    /,
+    *,
+    leaf_fn: Fn[[T], R],
+    leaf_type: type[T],
+    # optional arguments
+    leaf_priotizied: bool = False,
+    recursion_fn: Optional[Fn[[NestedBuiltin[T]], NestedBuiltin[R]]] = None,
+) -> NestedBuiltin[R]:
+    r"""Recursively apply a function to a nested data structures.
+
+    Args:
+        x: Nested data structure to apply the function to.
+        leaf_fn: Function to apply to the leaf nodes.
+        leaf_type: Type of the leaf nodes.
+        leaf_priotizied: Whether to check for leaf-type first or last.
+        recursion_fn: Function to apply to non-leaf nodes.
+
+    Returns:
+        Nested data structure.
+    """
+    recurse: Fn[[NestedBuiltin[T]], NestedBuiltin[R]] = (
+        recursion_fn
+        if recursion_fn is not None
+        else partial(
+            recurse_on_nested_builtin,
+            leaf_fn=leaf_fn,
+            leaf_type=leaf_type,
+            leaf_priotizied=leaf_priotizied,
+        )
+    )
+
+    match x:
+        case leaf_type() as leaf if leaf_priotizied:  # type: ignore[misc]
+            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case dict(mapping):
+            return {k: recurse(v) for k, v in mapping.items()}
+        case list(seq):
+            return [recurse(obj) for obj in seq]
+        case tuple(seq):
+            return tuple(recurse(obj) for obj in seq)
+        case frozenset(items):
+            return frozenset(recurse(obj) for obj in items)
+        case set(items):
+            # FIXME: https://github.com/python/typeshed/issues/9571
+            return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
+        case leaf_type() as leaf:  # type: ignore[misc]
+            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case _:
+            raise TypeError(
+                f"Unsupported type: {type(x)} not an instance of {leaf_type} or one of the builtin containers"
+                f" {dict, list, tuple, frozenset, set}."
+            )
+
+
+def recurse_on_nested_generic[T, R](
+    x: Nested[T],
+    /,
+    *,
+    leaf_fn: Fn[[T], R],
+    leaf_type: type[T],
+    # optional arguments
+    leaf_prioritized: bool = False,
+    recursion_fn: Optional[Fn[[Nested[T]], Nested[R]]] = None,
+    # factories
+    mapping_factory: Fn[[dict], Mapping] = dict,
+    sequence_factory: Fn[[list], Sequence] = list,
+    set_factory: Fn[[set], AbstractSet] = set,
+    hashable_set_factory: Fn[[set], AbstractSet] = frozenset,
+    hashable_sequence_factory: Fn[[list], Sequence] = tuple,
+    hashable_mapping_factory: Fn[[dict], Mapping] = FrozenMap,
+) -> Nested[R]:
+    r"""Recursively apply a function to a nested data structures.
+
+    Args:
+        x: Nested data structure to apply the function to.
+        leaf_fn: Function to apply to the leaf nodes.
+        leaf_type: Type of the leaf nodes.
+        recursion_fn: Function to apply to non-leaf nodes.
+        leaf_prioritized: Whether to check for leaf-type first or last.
+        mapping_factory: Factory function for mappings.
+        sequence_factory: Factory function for sequences.
+        set_factory: Factory function for sets.
+        hashable_set_factory: Factory function for hashable sets.
+        hashable_sequence_factory: Factory function for hashable sequences.
+        hashable_mapping_factory: Factory function for hashable mappings.
+
+    Returns:
+        Nested data structure.
+    """
+    recurse: Fn[[Nested[T]], Nested[R]] = (
+        recursion_fn
+        if recursion_fn is not None
+        else partial(
+            recurse_on_nested_generic,
+            leaf_fn=leaf_fn,
+            leaf_type=leaf_type,
+            leaf_prioritized=leaf_prioritized,
+        )
+    )
+
+    is_hashable = isinstance(x, Hashable)  # pyright: ignore[reportGeneralTypeIssues]
+
+    match x:
+        case leaf_type() as leaf if leaf_prioritized:  # type: ignore[misc]
+            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case Mapping() as mapping:
+            d = {k: recurse(v) for k, v in mapping.items()}
+            return hashable_mapping_factory(d) if is_hashable else mapping_factory(d)
+        case Sequence() as seq:
+            lst = [recurse(obj) for obj in seq]
+            return (
+                hashable_sequence_factory(lst) if is_hashable else sequence_factory(lst)
+            )
+        case AbstractSet() as items:
+            # FIXME: https://github.com/python/typeshed/issues/9571
+            col = {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
+            return hashable_set_factory(col) if is_hashable else set_factory(col)
+        case leaf_type() as leaf:  # type: ignore[misc]
+            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case _:
+            raise TypeError(
+                f"Unsupported type: {type(x)} not an instance of {leaf_type} or one of the builtin containers"
+                f" {dict, list, tuple, frozenset, set}."
+            )

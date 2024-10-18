@@ -119,7 +119,6 @@ repos:
           - "torch.no_grad"
           - "--allow-two"
           - "--"
-      - id: python-standard-generics
       # script-based hooks
       - id: pyproject-validate-version
       - id: pyproject-update-deps

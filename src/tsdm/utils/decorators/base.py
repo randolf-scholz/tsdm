@@ -23,12 +23,12 @@ __all__ = [
 import logging
 from collections.abc import Callable as Fn
 from dataclasses import dataclass
-from functools import wraps
+from functools import partial, wraps
 from inspect import Parameter, signature
-from typing import Any, Protocol, Self, cast, overload
+from typing import Any, Optional, Protocol, Self, cast, overload
 
 from tsdm.types.aliases import Nested
-from tsdm.utils.funcutils import rpartial
+from tsdm.utils.funcutils import recurse_on_nested_generic, rpartial
 
 
 @dataclass
@@ -341,31 +341,26 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
 
 
 def recurse_on_container[T, R](  # T, +R
-    func: Fn[[T], R], /, *, leaf_type: type[T]
+    leaf_fn: Fn[[T], R],
+    /,
+    *,
+    leaf_type: type[T],
+    leaf_prioritized: bool = False,
+    recursion_fn: Optional[Fn[[Nested[T]], Nested[R]]] = None,
 ) -> Fn[[Nested[T]], Nested[R]]:
     r"""Apply function to a nested iterables of a given kind.
 
     Args:
+        leaf_fn: A function to apply to all leave Nodes
         leaf_type: The type of the leave nodes
-        func: A function to apply to all leave Nodes
+        leaf_prioritized: Whether to check for leaf-type first or last.
+        recursion_fn: A function to apply to all non-leave Nodes
     """
-
-    @wraps(func)
-    def recurse(x: Nested[T]) -> Nested[R]:
-        match x:
-            case leaf_type():  # type: ignore[misc]
-                return func(x)  # type: ignore[unreachable]
-            case dict(mapping):
-                return {k: recurse(v) for k, v in mapping.items()}
-            case list(seq):
-                return [recurse(obj) for obj in seq]
-            case tuple(seq):
-                return tuple(recurse(obj) for obj in seq)
-            case set(items):
-                return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
-            case frozenset(items):
-                return frozenset(recurse(obj) for obj in items)
-            case _:
-                raise TypeError(f"Unsupported type: {type(x)}")
-
-    return recurse
+    recurse = partial(
+        recurse_on_nested_generic,
+        leaf_fn=leaf_fn,
+        recursion_fn=recursion_fn,
+        leaf_type=leaf_type,
+        leaf_prioritized=leaf_prioritized,
+    )
+    return wraps(leaf_fn)(recurse)

@@ -127,7 +127,12 @@ from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.types.aliases import FilePath, NestedBuiltin
 from tsdm.types.protocols import Dataclass, SupportsKeysAndGetItem
 from tsdm.types.utils import is_classvar
-from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
+from tsdm.utils.decorators import (
+    pprint_mapping,
+    pprint_repr,
+    pprint_sequence,
+)
+from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 type Agg[T] = Callable[[list[T]], T]
 
@@ -907,38 +912,18 @@ class NestedEncoder[X, Y](BaseEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
         )
 
     def _encode_impl(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
-        match x:
-            case list(seq):
-                return [self.encode(val) for val in seq]
-            case tuple(tup):
-                return tuple(self.encode(val) for val in tup)
-            case dict(mapping):
-                return {key: self.encode(val) for key, val in mapping.items()}
-            case set(items):
-                return {self.encode(val) for val in items}  # pyright: ignore[reportUnhashable]
-            case frozenset(items):
-                return frozenset(self.encode(val) for val in items)
-            case self.leaf_type() as leaf:  # pyright: ignore[reportGeneralTypeIssues]
-                return self.encoder.encode(leaf)
-            case _:
-                raise TypeError(f"Type {type(x)} not supported.")
+        return recurse_on_nested_builtin(
+            x,
+            leaf_type=self.leaf_type,
+            leaf_fn=self.encoder.encode,
+        )
 
     def _decode_impl(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
-        match y:
-            case list(seq):
-                return [self.decode(val) for val in seq]
-            case tuple(tup):
-                return tuple(self.decode(val) for val in tup)
-            case dict(mapping):
-                return {key: self.decode(val) for key, val in mapping.items()}
-            case set(items):
-                return {self.decode(val) for val in items}  # pyright: ignore[reportUnhashable]
-            case frozenset(items):
-                return frozenset(self.decode(val) for val in items)
-            case self.output_leaf_type() as leaf:  # pyright: ignore[reportGeneralTypeIssues]
-                return self.encoder.decode(leaf)
-            case _:
-                raise TypeError(f"Type {type(y)} not supported.")
+        return recurse_on_nested_builtin(
+            y,
+            leaf_type=self.output_leaf_type,
+            leaf_fn=self.encoder.decode,
+        )
 
 
 # endregion unary encoders -------------------------------------------------------------

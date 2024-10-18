@@ -13,6 +13,7 @@ __all__ = [
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Final
 
+import numpy as np
 import torch
 from numpy.typing import NDArray
 from torch import Tensor, jit, nn
@@ -20,6 +21,7 @@ from torch import Tensor, jit, nn
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import NestedBuiltin
 from tsdm.utils.decorators import autojit, pprint_repr
+from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 
 @autojit
@@ -143,41 +145,11 @@ class RecursiveTensorEncoder(
 ):
     r"""Encodes nested data as tensors."""
 
-    def _encode_impl(self, data: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
-        match data:
-            case list(seq):
-                return [self.encode(d) for d in seq]
-            case tuple(tup):
-                return tuple(self.encode(d) for d in tup)
-            case dict(mapping):
-                return {k: self.encode(v) for k, v in mapping.items()}
-            case set(items):
-                return {self.encode(d) for d in items}  # pyright: ignore[reportUnhashable]
-            case frozenset(items):
-                return frozenset({self.encode(d) for d in items})  # pyright: ignore[reportUnhashable]
-            case array:
-                try:
-                    return torch.tensor(array)
-                except Exception as exc:
-                    raise TypeError(f"Cannot encode data of type {type(data)}") from exc
+    def _encode_impl(self, x: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
+        return recurse_on_nested_builtin(x, leaf_fn=torch.tensor, leaf_type=np.ndarray)
 
-    def _decode_impl(self, data: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
-        match data:
-            case list(seq):
-                return [self.decode(d) for d in seq]
-            case tuple(tup):
-                return tuple(self.decode(d) for d in tup)
-            case dict(mapping):
-                return {k: self.decode(v) for k, v in mapping.items()}
-            case set(items):
-                return {self.decode(d) for d in items}  # pyright: ignore[reportUnhashable]
-            case frozenset(items):
-                return frozenset({self.decode(d) for d in items})  # pyright: ignore[reportUnhashable]
-            case tensor:
-                try:
-                    return tensor.numpy()
-                except Exception as exc:
-                    raise TypeError(f"Cannot encode data of type {type(data)}") from exc
+    def _decode_impl(self, y: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
+        return recurse_on_nested_builtin(y, leaf_fn=Tensor.numpy, leaf_type=Tensor)  # pyright: ignore[reportArgumentType]
 
 
 @pprint_repr
