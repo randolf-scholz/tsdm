@@ -70,7 +70,7 @@ repos:
         files: '^src/|^tests/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.7.0
     hooks:
       - id: ruff
         files: '^src/|^tests/'
@@ -148,7 +148,7 @@ repos:
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.13.4 # change this to the latest tag!
+    rev: v0.14.0 # change this to the latest tag!
     hooks:
       - id: tach
   - repo: local
