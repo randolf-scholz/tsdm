@@ -80,11 +80,11 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
             "STD"        : "float32",
         }
     }  # fmt: skip
-    dataset_hashes = {  # pyright: ignore[reportAssignmentType]
+    dataset_hashes = {
         "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
         "static_covariates": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
     }
-    table_shapes = {  # pyright: ignore[reportAssignmentType]
+    table_shapes = {
         "timeseries": (552327, 96),
         "static_covariates": (96, 3),
     }

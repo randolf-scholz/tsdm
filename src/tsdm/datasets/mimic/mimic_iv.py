@@ -703,7 +703,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
 
     __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
 
-    @cached_property
+    @property
     def table_names(self) -> list[KEYS]:
         expected_names = list(self.filelist)
         type_hinted_names = get_args(KEYS.__value__)

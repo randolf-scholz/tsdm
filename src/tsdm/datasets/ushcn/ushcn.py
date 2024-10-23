@@ -324,7 +324,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
         },
     }  # fmt: skip
 
-    table_shapes = {  # pyright: ignore[reportAssignmentType]
+    table_shapes = {
         "state_codes"                : (48, 3),
         "static_covariates"          : (1218, 9),
         "static_covariates_metadata" : (9, 6),
@@ -332,7 +332,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
         "timeseries_metadata"        : (8, 6),
     }  # fmt: skip
 
-    table_schemas = {  # pyright: ignore[reportAssignmentType]
+    table_schemas = {
         "timeseries": {
             "PRCP" : "int16[pyarrow]",
             "SNOW" : "int16[pyarrow]",

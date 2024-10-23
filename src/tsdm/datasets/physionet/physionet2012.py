@@ -341,7 +341,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
         "Parameter": "string[pyarrow]",
         "Value": "float32[pyarrow]",
     }
-    table_schemas = {  # pyright: ignore[reportAssignmentType]
+    table_schemas = {
         "timeseries": {
             "Albumin"     : "float32[pyarrow]",
             "ALP"         : "float32[pyarrow]",

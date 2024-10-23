@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Final,
     Optional,
     Protocol,
     Self,
@@ -92,7 +93,7 @@ class Dataset[Key, T](Protocol):  # +T
         ...
 
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
+    # rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
 
     @property
     @abstractmethod
@@ -100,7 +101,7 @@ class Dataset[Key, T](Protocol):  # +T
         r"""READ-ONLY: The names of the tables."""
 
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
+    # table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
 
     # endregion property/attributes ----------------------------------------------------
 
@@ -207,7 +208,9 @@ class DatasetBase[Key: str, T](
     # endregion class attributes -------------------------------------------------------
 
     # region instance attributes -------------------------------------------------------
-    # FIXME: Use Read-Only type
+    # FIXME: Replace Mapping[Key_, ...} with Readable[Mapping[Key, ...]] if Readable is added.
+    type Key_ = str
+    r"""Type alias for the key of the dataset."""
     __version__: str | None = None
     r"""READ-ONLY: The version of the dataset."""
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
@@ -216,13 +219,13 @@ class DatasetBase[Key: str, T](
     r"""Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""Shapes for the raw dataset tables(s)."""
-    dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
+    dataset_hashes: Mapping[Key_, str | None] = EMPTY_MAP
     r"""Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[Key, str | None] = EMPTY_MAP
+    table_hashes: Mapping[Key_, str | None] = EMPTY_MAP
     r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[Key, Mapping[str, str]] = EMPTY_MAP
+    table_schemas: Mapping[Key_, Mapping[str, str]] = EMPTY_MAP
     r"""Schemas of the in-memory cleaned dataset table(s)."""
-    table_shapes: Mapping[Key, tuple[int, ...]] = EMPTY_MAP
+    table_shapes: Mapping[Key_, tuple[int, ...]] = EMPTY_MAP
     r"""Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 
@@ -386,7 +389,7 @@ class DatasetBase[Key: str, T](
 
     # @property
     # @abstractmethod
-    # def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
+    # def table_names(self) -> Collection[Key]:
     #     r"""READ-ONLY: The names of the tables."""
     #     # TODO: use abstract-attribute!
     #     # SEE: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
@@ -608,7 +611,10 @@ class DatasetBase[Key: str, T](
             ):
                 pbar.set_postfix(table=name)
                 self.clean(
-                    key=name, force=force, validate=validate, validate_rawdata=False
+                    key=name,
+                    force=force,
+                    validate=validate,
+                    validate_rawdata=False,
                 )
             return
 
