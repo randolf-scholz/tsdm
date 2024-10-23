@@ -172,13 +172,22 @@ repos:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674
         #        entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
+        # simple grep: grep --color=never -Po "$PWD/.*:.*"
+        # better ripgrep: rg --multiline --multiline-dotall "($PWD/[^\n]*?)(?:\n.*?)?(\(report\w+\))" -or '$1 $2'
+        # perl:  perl -0777 -ne "while (/((?:\x20+)(${path}[^\n\r]*?)(?:[\r\n].*?)?(\(report\w+\)))/gms) { print \"\$1 \$2\n\"}"
+        # FIXME: some weird issues with ripgrep + script.
+        # NOTE: The issue is likely control characters that are not being handled correctly.
+        #   In fact, it turns out the problem is precisely carriage return. We need to check [\n\r] instead of just \n
         entry: |
-          sh -c '
-              result=$(script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)");
+          bash -c '
+              path="${PWD//\//\\/}";
+              grey="\x1b\[90m"
+              code_group="${grey}.*?\(report\w+\)";
+              result=$(script -fqc "pyright $*" /dev/null | rg --multiline --multiline-dotall "\x20+(${PWD}/[^\r\n]*?)(?:[\r\n].*?)?(${code_group})" -or "\$1 \$2");
               count=$(echo -n "$result" | grep -c "^");
               if [ "$count" -ne 0 ]; then
                   echo "$result";
-                  echo "\033[1;31mFound ${count} errors\033[0m";
+                  echo -e "\033[1;31mFound ${count} error(s)\033[0m";
                   exit 1;
               fi
           ' --
