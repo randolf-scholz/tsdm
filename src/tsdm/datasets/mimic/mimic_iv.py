@@ -711,7 +711,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
             raise ValueError(f"Unexpected table names: {unknown_names!r}")
         return expected_names
 
-    @cached_property
+    @property
     def rawdata_files(self) -> list[str]:
         return [f"mimic-iv-{self.__version__}.zip"]
 

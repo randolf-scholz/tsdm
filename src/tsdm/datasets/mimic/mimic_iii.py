@@ -541,7 +541,7 @@ class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
         "mimic-iii-clinical-database-1.4.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
     }
 
-    @cached_property
+    @property
     def rawdata_files(self) -> list[str]:
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
 

@@ -18,13 +18,12 @@ import shutil
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import (
     Any,
     ClassVar,
-    Final,
     Optional,
     Protocol,
     Self,
@@ -88,12 +87,12 @@ class Dataset[Key, T](Protocol):  # +T
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Sequence[str]:  # pyright: ignore[reportRedeclaration]
-        r"""Return list of file names that make up the raw data."""
+    def rawdata_files(self) -> Collection[str]:  # pyright: ignore[reportRedeclaration]
+        r"""READ-ONLY: List of file names that make up the raw data."""
         ...
 
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    # rawdata_files: Sequence[str] | cached_property[Sequence[str]]  # type: ignore[no-redef]
+    rawdata_files: Collection[str]  # type: ignore[no-redef]
 
     @property
     @abstractmethod
@@ -101,7 +100,7 @@ class Dataset[Key, T](Protocol):  # +T
         r"""READ-ONLY: The names of the tables."""
 
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    # table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
+    table_names: Collection[Key]  # type: ignore[no-redef]
 
     # endregion property/attributes ----------------------------------------------------
 
@@ -213,6 +212,10 @@ class DatasetBase[Key: str, T](
     r"""Type alias for the key of the dataset."""
     __version__: str | None = None
     r"""READ-ONLY: The version of the dataset."""
+    # table_names: Collection[Key]
+    # r"""READ-ONLY: The names of the tables."""
+    # rawdata_files: Collection[str]
+    # r"""The names of the raw dataset file(s)."""
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP

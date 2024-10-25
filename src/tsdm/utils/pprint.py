@@ -933,7 +933,7 @@ def repr_array(
     )
     match identifier, len(shape):
         case None, _:
-            shape_repr = "" if not shape else f"<{",".join(str(dim) for dim in shape)}>"
+            shape_repr = "" if not shape else f"<{','.join(str(dim) for dim in shape)}>"
         case _:
             shape_repr = "" if identifier is None else str(identifier)
 

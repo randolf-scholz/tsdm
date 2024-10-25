@@ -48,9 +48,9 @@ def test_loss_normalization(
         "MSE": 2,
         "RMSE": sqrt(2),
     }[loss.__name__]
-    assert (
-        abs(result - expected) < rtol * abs(expected) + atol
-    ), f"tolerance exceeded! {shape=}, {result=}, {expected=}"
+    assert abs(result - expected) < rtol * abs(expected) + atol, (
+        f"tolerance exceeded! {shape=}, {result=}, {expected=}"
+    )
 
 
 @pytest.mark.slow
@@ -96,6 +96,6 @@ def test_time_loss_normalization(
         return
 
     expected = 2 * prod(channel_shape)
-    assert (
-        abs(result - expected) < rtol * abs(expected) + atol
-    ), f"tolerance exceeded! {shape=}, {result=}, {expected=}"
+    assert abs(result - expected) < rtol * abs(expected) + atol, (
+        f"tolerance exceeded! {shape=}, {result=}, {expected=}"
+    )

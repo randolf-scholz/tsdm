@@ -71,8 +71,7 @@ class BaseTask[K]:
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
         string = (
-            f"{self.__class__.__name__}("
-            f"test_metric={type(self.test_metric).__name__})"
+            f"{self.__class__.__name__}(test_metric={type(self.test_metric).__name__})"
         )
         return string
 
@@ -210,8 +209,7 @@ class OldBaseTask[K]:
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
         string = (
-            f"{self.__class__.__name__}("
-            f"test_metric={type(self.test_metric).__name__})"
+            f"{self.__class__.__name__}(test_metric={type(self.test_metric).__name__})"
         )
         return string
 

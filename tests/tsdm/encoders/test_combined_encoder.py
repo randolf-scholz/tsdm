@@ -130,9 +130,9 @@ def test_combined_encoder(
 
     # check NaN-pattern and standardization
     xhat_train = DataFrame(train_encoded["X"], dtype="float32")
-    assert (
-        xhat_train.isna().to_numpy() == train_data.isna().to_numpy()
-    ).all(), "NaN pattern mismatch"
+    assert (xhat_train.isna().to_numpy() == train_data.isna().to_numpy()).all(), (
+        "NaN pattern mismatch"
+    )
     assert np.allclose(xhat_train.mean().dropna(), 0.0, atol=atol)
     assert np.allclose(xhat_train.std(ddof=0).dropna(), 1.0, atol=atol)
 
@@ -154,9 +154,9 @@ def test_combined_encoder(
 
     # check NaN-pattern
     xhat_test = DataFrame(test_encoded["X"], dtype="float32")
-    assert (
-        xhat_test.isna().to_numpy() == test_data.isna().to_numpy()
-    ).all(), "NaN pattern mismatch"
+    assert (xhat_test.isna().to_numpy() == test_data.isna().to_numpy()).all(), (
+        "NaN pattern mismatch"
+    )
     # NOTE: we cannot expect mean and std to be 0 and 1 for test data.
 
     # check that decoded matches with original

@@ -109,7 +109,7 @@ class ETTh1(DatasetBase[TS, DataFrame]):
     INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names: list[TS] = ["timeseries"]
+    table_names = ["timeseries"]
     rawdata_files = ["ETTh1.csv"]
     rawdata_hashes = {
         "ETTh1.csv": "sha256:f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066"

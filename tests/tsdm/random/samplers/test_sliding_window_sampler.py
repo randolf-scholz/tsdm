@@ -769,9 +769,9 @@ def test_sliding_window_sampler_discrete(
     )
 
     for m1, m2 in zip(sampler, expected, strict=True):
-        assert np.array_equal(
-            m1, m2
-        ), f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
+        assert np.array_equal(m1, m2), (
+            f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
+        )
 
 
 # write parametrized unit test with the above data for all modes
@@ -809,9 +809,9 @@ def test_sliding_window_sampler_continuous(
     )
 
     for m1, m2 in zip(sampler, expected, strict=True):
-        assert np.array_equal(
-            m1, m2
-        ), f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
+        assert np.array_equal(m1, m2), (
+            f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
+        )
 
 
 # dates 2020-01-01 to 2020-01-10

@@ -284,7 +284,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         verbose: bool = False,
     ) -> None:
         if method not in self.METHOD:
-            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHOD)}")
+            raise ValueError(f"{method=} unknown. Available: {', '.join(self.METHOD)}")
 
         self.bounds = bounds
         self.offset_guess = offset_guess
@@ -411,7 +411,7 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         verbose: bool = False,
     ) -> None:
         if method not in self.METHOD:
-            raise ValueError(f"{method=} unknown. Available: {", ".join(self.METHOD)}")
+            raise ValueError(f"{method=} unknown. Available: {', '.join(self.METHOD)}")
 
         self.bounds = bounds
         self.inital_value = offset_guess

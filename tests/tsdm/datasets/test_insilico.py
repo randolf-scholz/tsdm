@@ -20,9 +20,9 @@ def test_caching() -> None:
 
     LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
 
-    assert (
-        100 * post_cache_time <= pre_cache_time
-    ), f"{post_cache_time=}, {pre_cache_time=}"
+    assert 100 * post_cache_time <= pre_cache_time, (
+        f"{post_cache_time=}, {pre_cache_time=}"
+    )
 
     LOGGER.info("%s passes caching test ✔.")
 

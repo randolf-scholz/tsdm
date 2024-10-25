@@ -644,45 +644,45 @@ def test_table_manual() -> None:
 
     torch_tensor: torch.Tensor = torch.tensor([1, 2, 3])
     torch_table: SupportsShape = torch_tensor
-    assert isinstance(
-        torch_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
+    assert isinstance(torch_table, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
+    )
 
     numpy_ndarray: np.ndarray = np.array([1, 2, 3])
     numpy_table: SupportsShape = numpy_ndarray
-    assert isinstance(
-        numpy_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(numpy_table))}"
+    assert isinstance(numpy_table, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(numpy_table))}"
+    )
 
     pandas_frame: pd.DataFrame = pd.DataFrame(RNG.normal(size=(3, 3)))
     pandas_table: SupportsShape = pandas_frame
-    assert isinstance(
-        pandas_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_table))}"
+    assert isinstance(pandas_table, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_table))}"
+    )
 
     pandas_series: pd.Series = pd.Series([1, 2, 3])
     pandas_series_array: SupportsShape = pandas_series
-    assert isinstance(
-        pandas_series_array, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_series_array))}"
+    assert isinstance(pandas_series_array, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_series_array))}"
+    )
 
     pandas_index: pd.Index = pd.Index([1, 2, 3])
     pandas_index_array: SupportsShape = pandas_index
-    assert isinstance(
-        pandas_index_array, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_index_array))}"
+    assert isinstance(pandas_index_array, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_index_array))}"
+    )
 
     pyarrow_frame: pa.Table = pa.Table.from_pandas(pandas_frame)
     pyarrow_table: SupportsShape = pyarrow_frame
-    assert isinstance(
-        pyarrow_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_table))}"
+    assert isinstance(pyarrow_table, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_table))}"
+    )
 
     pyarrow_series: pa.Array = pa.Array.from_pandas(pandas_series)
     pyarrow_series_table: SupportsShape = pyarrow_series
-    assert isinstance(
-        pyarrow_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_series_table))}"
+    assert isinstance(pyarrow_table, SupportsShape), (
+        f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_series_table))}"
+    )
 
     tables = [
         torch_table,

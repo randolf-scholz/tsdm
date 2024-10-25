@@ -199,7 +199,7 @@ def assert_protocol(obj: Any, proto: type, /, *, expected: bool = True) -> None:
         name = obj.__class__.__name__
 
     member = "a subtype" if isinstance(obj, type) else "an instance"
-    msg = f"{name!r} is {"not" if expected else ""} {member} of {proto.__name__!r}!"
+    msg = f"{name!r} is {'not' if expected else ''} {member} of {proto.__name__!r}!"
     missing_attrs = sorted(get_protocol_members(proto) - set(dir(obj)))
 
     if expected and not match:
@@ -248,8 +248,7 @@ def check_shared_interface(
 
     if extra_members := sorted(shared_members - interface):
         msg = (
-            f"Shared members not covered by protocol {proto_name!r}:"
-            f"\n\t{extra_members}"
+            f"Shared members not covered by protocol {proto_name!r}:\n\t{extra_members}"
         )
         if raise_on_extra:
             raise AssertionError(msg)
