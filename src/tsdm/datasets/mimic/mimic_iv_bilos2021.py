@@ -51,7 +51,7 @@ class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
-    table_names = ["timeseries"]
+    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
     rawdata_files = ["full_dataset.csv"]
     rawdata_hashes = {
         "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"

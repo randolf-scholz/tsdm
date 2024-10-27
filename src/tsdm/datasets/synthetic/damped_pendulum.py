@@ -42,7 +42,7 @@ class DampedPendulum_Ansari2023(DatasetBase[TS, DataFrame]):
     """
 
     rawdata_files = []
-    table_names = ["timeseries"]
+    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
 
     num_sequences = 7000
     step = 0.1

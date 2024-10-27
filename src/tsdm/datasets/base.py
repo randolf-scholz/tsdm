@@ -13,7 +13,6 @@ __all__ = [
 
 import inspect
 import logging
-import os
 import shutil
 import warnings
 import webbrowser
@@ -66,59 +65,18 @@ class Dataset[Key, T](Protocol):  # +T
     from an already instantiated object.
     """
 
-    SOURCE_URL: ClassVar[str] = NOT_GIVEN
-    r"""Web address from where the dataset can be downloaded."""
-    INFO_URL: ClassVar[Optional[str]] = None
-    r"""Web address containing documentational information about the dataset."""
-    RAWDATA_DIR: ClassVar[Path]
-    r"""Directory where the raw data is stored."""
-    DATASET_DIR: ClassVar[Path]
-    r"""Directory where the dataset is stored."""
-
     tables: Mapping[Key, T]
     r"""A dictionary of tables that make up the dataset."""
 
-    # region property/attributes -------------------------------------------------------
-    @property
-    def __version__(self) -> str | None: ...  # pyright: ignore[reportRedeclaration]
+    # region dunder methods ------------------------------------------------------------
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Key]: ...
+    def __getitem__(self, key: Key, /) -> T: ...
+    def __contains__(self, key: object, /) -> bool: ...
 
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    __version__: str | None  # type: ignore[no-redef]
+    # endregion dunder methods ---------------------------------------------------------
 
-    @property
-    @abstractmethod
-    def rawdata_files(self) -> Collection[str]:  # pyright: ignore[reportRedeclaration]
-        r"""READ-ONLY: List of file names that make up the raw data."""
-        ...
-
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    rawdata_files: Collection[str]  # type: ignore[no-redef]
-
-    @property
-    @abstractmethod
-    def table_names(self) -> Collection[Key]:  # pyright: ignore[reportRedeclaration]
-        r"""READ-ONLY: The names of the tables."""
-
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    table_names: Collection[Key]  # type: ignore[no-redef]
-
-    # endregion property/attributes ----------------------------------------------------
-
-    @property
-    def rawdata_paths(self) -> Mapping[str, Path]:
-        r"""Return mapping from filenames to paths to the rawdata files."""
-        return {
-            str(fname): (self.RAWDATA_DIR / fname).absolute()
-            for fname in self.rawdata_files
-        }
-
-    @classmethod
-    def info(cls) -> None:
-        r"""Open dataset information in browser."""
-        if cls.INFO_URL is None:
-            raise NotImplementedError("No INFO_URL provided for this dataset!")
-        webbrowser.open_new_tab(cls.INFO_URL)
-
+    # region abstract methods ----------------------------------------------------------
     @classmethod
     @abstractmethod
     def deserialize(cls, filepath: FilePath, /) -> Self:
@@ -130,10 +88,7 @@ class Dataset[Key, T](Protocol):  # +T
         r"""Serialize the (cleaned) dataset to a specific path."""
         ...
 
-    def __len__(self) -> int: ...
-    def __iter__(self) -> Iterator[Key]: ...
-    def __getitem__(self, key: Key, /) -> T: ...
-    def __contains__(self, key: object, /) -> bool: ...
+    # endregion abstract methods -------------------------------------------------------
 
 
 class DatasetMeta(ProtocolMeta):
@@ -154,18 +109,10 @@ class DatasetMeta(ProtocolMeta):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if "RAWDATA_DIR" not in namespace:
-            cls.RAWDATA_DIR = (
-                Path("~/.tsdm/rawdata/")
-                if os.environ.get("GENERATING_DOCS", False)
-                else CONFIG.RAWDATADIR
-            ) / cls.__name__
+            cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
 
         if "DATASET_DIR" not in namespace:
-            cls.DATASET_DIR = (
-                Path("~/.tsdm/datasets")
-                if os.environ.get("GENERATING_DOCS", False)
-                else CONFIG.DATASETDIR
-            ) / cls.__name__
+            cls.DATASET_DIR = CONFIG.RAWDATADIR / cls.__name__
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         r"""When an instance of the class is created, this method is called."""
@@ -206,12 +153,26 @@ class DatasetBase[Key: str, T](
     r"""Location where the pre-processed data is stored."""
     # endregion class attributes -------------------------------------------------------
 
+    # region abstract readable members -------------------------------------------------
+    @property
+    @abstractmethod
+    def rawdata_files(self) -> Collection[str]: ...  # pyright: ignore[reportRedeclaration]
+    @property
+    @abstractmethod
+    def table_names(self) -> Collection[Key]: ...  # pyright: ignore[reportRedeclaration]
+
+    rawdata_files: Collection[str]  # type: ignore[no-redef]
+    r"""READ-ONLY: The names of the raw data files that make up the dataset."""
+    table_names: Collection[Key]  # type: ignore[no-redef]
+    r"""READ-ONLY: The names of the tables that make up the dataset."""
+    # endregion abstract readable members  ---------------------------------------------
+
     # region instance attributes -------------------------------------------------------
-    # FIXME: Replace Mapping[Key_, ...} with Readable[Mapping[Key, ...]] if Readable is added.
-    type Key_ = str
-    r"""Type alias for the key of the dataset."""
-    __version__: str | None = None
+    __version__: Optional[str] = None
     r"""READ-ONLY: The version of the dataset."""
+    # FIXME: Replace Mapping[Key_, ...} with Readable[Mapping[Key, ...]] if Readable is added.
+    type _Key = str
+    r"""Type alias for the key of the dataset."""
     # table_names: Collection[Key]
     # r"""READ-ONLY: The names of the tables."""
     # rawdata_files: Collection[str]
@@ -222,32 +183,49 @@ class DatasetBase[Key: str, T](
     r"""Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""Shapes for the raw dataset tables(s)."""
-    dataset_hashes: Mapping[Key_, str | None] = EMPTY_MAP
+    dataset_hashes: Mapping[_Key, str | None] = EMPTY_MAP
     r"""Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[Key_, str | None] = EMPTY_MAP
+    table_hashes: Mapping[_Key, str | None] = EMPTY_MAP
     r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[Key_, Mapping[str, str]] = EMPTY_MAP
+    table_schemas: Mapping[_Key, Mapping[str, str]] = EMPTY_MAP
     r"""Schemas of the in-memory cleaned dataset table(s)."""
-    table_shapes: Mapping[Key_, tuple[int, ...]] = EMPTY_MAP
+    table_shapes: Mapping[_Key, tuple[int, ...]] = EMPTY_MAP
     r"""Shapes of the in-memory cleaned dataset table(s)."""
+    tables: LazyDict[Key, T]
+    r"""Dictionary containing the tables that make up the dataset."""
     # endregion instance attributes ----------------------------------------------------
 
-    tables: dict[Key, T]
-    r"""INTERNAL: the dataset."""
+    @classmethod
+    def info(cls) -> None:
+        r"""Open dataset information in browser."""
+        if cls.INFO_URL is None:
+            raise NotImplementedError("No INFO_URL provided for this dataset!")
+        webbrowser.open_new_tab(cls.INFO_URL)
 
     # region constructors --------------------------------------------------------------
     @classmethod
     def from_tables(cls, tables: Mapping[Key, T], /) -> Self:
         r"""Create a dataset from a table."""
         obj = cls(initialize=False)
-        obj.tables = dict(tables)
+
+        # set the tables, raises KeyError if any key is missing
+        for key in obj:
+            obj.tables[key] = tables[key]
+
+        # check for superfluous keys
+        if superfluous_keys := tables.keys() - obj.keys():
+            warnings.warn(
+                f"Keys {superfluous_keys} are not valid keys for {cls.__name__}!"
+                f" They will not be added to the dataset.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
         return obj
 
     def __init__(
         self,
         *,
         initialize: bool = True,
-        reset: bool = False,
         verbose: bool = True,
         version: Optional[str] = None,
     ) -> None:
@@ -255,7 +233,6 @@ class DatasetBase[Key: str, T](
 
         Args:
             initialize: Whether to initialize the dataset.
-            reset: Whether to reset the dataset.
             version: Version of the dataset. Leave empty for unversioned dataset.
             verbose: Whether to print verbose output.
         """
@@ -274,11 +251,6 @@ class DatasetBase[Key: str, T](
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
-
-        if reset:
-            # delete rawdata and dataset directories
-            self.reset_rawdata_files()
-            self.reset_dataset_files()
 
         # initialize tables
         self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -332,52 +304,56 @@ class DatasetBase[Key: str, T](
 
     # region reset methods -------------------------------------------------------------
     @classmethod
-    def reset(cls, *, force: bool = False) -> None:
-        r"""Reset the dataset."""
-        try:
-            self = cls(initialize=False)
-        except Exception as exc:
-            exc.add_note("Could not create instance of dataset!")
-            raise
+    def reset(cls, *, version: Optional[str] = None, force: bool = False) -> None:
+        r"""Reset the data folders."""
+        cls.reset_rawdata_files(version=version, force=force)
+        cls.reset_dataset_files(version=version, force=force)
 
-        self.reset_rawdata_files(force=force)
-        self.reset_dataset_files(force=force)
-
-    def reset_rawdata_files(self, *, force: bool = False) -> None:
+    @classmethod
+    def reset_rawdata_files(
+        cls, *, version: Optional[str] = None, force: bool = False
+    ) -> None:
         r"""Recreate the rawdata directory."""
-        if not self.RAWDATA_DIR.exists():
-            raise FileNotFoundError(f"{self.RAWDATA_DIR} does not exist!")
+        rawdata_dir = cls.RAWDATA_DIR / (version or "")
 
-        if force or query_bool(f"Delete {self.RAWDATA_DIR}?", default=False):
+        if not rawdata_dir.exists():
+            raise FileNotFoundError(f"{rawdata_dir} does not exist!")
+
+        if force or query_bool(f"Delete {rawdata_dir}?", default=False):
             try:  # remove the rawdata directory
-                shutil.rmtree(self.RAWDATA_DIR)
+                shutil.rmtree(rawdata_dir)
             except Exception as exc:
-                raise RuntimeError(f"Failed to delete {self.RAWDATA_DIR}") from exc
+                raise RuntimeError(f"Failed to delete {rawdata_dir}") from exc
 
             # recreate the rawdata directory
-            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+            rawdata_dir.mkdir(parents=True, exist_ok=True)
             return
 
         # else do nothing
-        self.LOGGER.debug("Rawdata files not deleted.")
+        cls.LOGGER.debug("Rawdata files not deleted.")
 
-    def reset_dataset_files(self, *, force: bool = False) -> None:
+    @classmethod
+    def reset_dataset_files(
+        cls, *, version: Optional[str] = None, force: bool = False
+    ) -> None:
         r"""Recreate the dataset directory."""
-        if not self.DATASET_DIR.exists():
-            raise FileNotFoundError(f"{self.DATASET_DIR} does not exist!")
+        dataset_dir = cls.DATASET_DIR / (version or "")
 
-        if force or query_bool(f"Delete {self.DATASET_DIR}?", default=False):
+        if not dataset_dir.exists():
+            raise FileNotFoundError(f"{dataset_dir} does not exist!")
+
+        if force or query_bool(f"Delete {dataset_dir}?", default=False):
             try:  # remove the dataset directory
-                shutil.rmtree(self.DATASET_DIR)
+                shutil.rmtree(dataset_dir)
             except Exception as exc:
-                raise RuntimeError(f"Failed to delete {self.DATASET_DIR}") from exc
+                raise RuntimeError(f"Failed to delete {dataset_dir}") from exc
 
             # recreate the dataset directory
-            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+            dataset_dir.mkdir(parents=True, exist_ok=True)
             return
 
         # else do nothing
-        self.LOGGER.debug("Dataset files not deleted.")
+        cls.LOGGER.debug("Dataset files not deleted.")
 
     # endregion reset methods ----------------------------------------------------------
 
@@ -390,40 +366,21 @@ class DatasetBase[Key: str, T](
         # FIXME: preferably use packaging.version.parse or custom version parser
         return tuple(int(i) for i in self.__version__.split("."))
 
-    # @property
-    # @abstractmethod
-    # def table_names(self) -> Collection[Key]:
-    #     r"""READ-ONLY: The names of the tables."""
-    #     # TODO: use abstract-attribute!
-    #     # SEE: https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
-    #
-    # # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    # table_names: Collection[Key] | cached_property[Collection[Key]]  # type: ignore[no-redef]
-    # r"""READ-ONLY: The names of the tables."""
-
-    # @property
-    # def tables(self) -> dict[Key, T]:
-    #     r"""Store cached version of dataset."""
-    #     if self._tables is EMPTY_MAP:
-    #         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
-    #         self._tables = LazyDict.from_func(
-    #             self.table_names,
-    #             self.load,
-    #             kwargs={"initializing": True},
-    #             type_hint=get_return_typehint(self.clean_table),
-    #         )
-    #
-    #     return self._tables
-
     @cached_property
-    def dataset_files(self) -> dict[Key, str]:
-        r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.table_names}
+    def rawdata_paths(self) -> Mapping[str, Path]:
+        r"""Return mapping from filenames to paths to the rawdata files."""
+        return {
+            str(fname): (self.RAWDATA_DIR / fname).absolute()
+            for fname in self.rawdata_files
+        }
 
     @cached_property
     def dataset_paths(self) -> dict[Key, Path]:
         r"""Absolute paths to the raw dataset file(s)."""
-        return {k: self.DATASET_DIR / fname for k, fname in self.dataset_files.items()}
+        return {
+            key: self.DATASET_DIR / f"{key}.{self.DEFAULT_FILE_FORMAT}"
+            for key in self.table_names
+        }
 
     @cached_property
     def _enable_key_attributes(self) -> bool:

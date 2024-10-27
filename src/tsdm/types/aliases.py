@@ -13,10 +13,12 @@ __all__ = [
     # Custom Type Aliases
     "Axis",
     "Dims",
+    "DirPath",
     "FilePath",
     "Indexer",
     "Label",
     "MultiIndexer",
+    "PathLike",
     "Shape",
     "Size",
     # Dtype Aliases
@@ -125,6 +127,10 @@ r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."
 type Shape = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
 type FilePath = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
+r"""Type Alias for path-like objects pointing to file."""
+type DirPath = str | Path | os.PathLike[str]
+r"""Type Alias for path-like objects pointing to directory."""
+type PathLike = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 # endregion custom type aliases --------------------------------------------------------
 

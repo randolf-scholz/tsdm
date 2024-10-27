@@ -15,7 +15,7 @@ import os
 import sys
 from importlib import metadata
 
-os.environ["GENERATING_DOCS"] = "true"
+os.environ["TSDM_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("../src"))  # Source code dir relative to this file
 # sys.path.insert(0, os.path.abspath("."))
 sys.path.append(os.path.abspath("./extensions"))

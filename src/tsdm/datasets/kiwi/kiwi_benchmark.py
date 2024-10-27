@@ -22,16 +22,16 @@ class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
     HOME_URL = r"https://kiwi-biolab.de/"
     GITHUB_URL = r"https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/kiwi-dataset"
 
-    rawdata_files = ["kiwi-benchmark.zip"]
-    rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:dd5eb62dccd5fb7774e7600145fd838f92d55eb07d6b89510c3fddbfd295f928"
-    }
-    table_names = [
+    table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
         "static_covariates",
         "timeseries_metadata",
         "static_covariates_metadata",
     ]
+    rawdata_files = ["kiwi-benchmark.zip"]
+    rawdata_hashes = {
+        "kiwi-benchmark.zip": "sha256:dd5eb62dccd5fb7774e7600145fd838f92d55eb07d6b89510c3fddbfd295f928"
+    }
 
     def clean_table(self, key: str) -> None:
         path = self.rawdata_paths["kiwi-benchmark.zip"]

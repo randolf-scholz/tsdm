@@ -25,6 +25,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+from tsdm.types.aliases import DirPath
 from tsdm.utils.contextmanagers import system_path
 from tsdm.utils.pprint import repr_mapping
 
@@ -32,7 +33,7 @@ __logger__: logging.Logger = logging.getLogger(__name__)
 
 
 def import_module(
-    module_path: Path, /, *, module_name: Optional[str] = None
+    module_dir: DirPath, /, *, module_name: Optional[str] = None
 ) -> ModuleType:
     r"""Return python module imported from the path.
 
@@ -40,8 +41,9 @@ def import_module(
         - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
         - https://stackoverflow.com/a/41904558
     """
+    module_path = Path(module_dir)
+    module_init = module_path / "__init__.py"
     module_name = module_name or module_path.parts[-1]
-    module_init = module_path.joinpath("__init__.py")
 
     # validate that the module has an __init__ file.
     if not module_init.exists():
@@ -55,7 +57,7 @@ def import_module(
 
 
 def get_requirements(
-    package: str, /, *, version: Optional[str] = None
+    package_name: str, /, *, version: Optional[str] = None
 ) -> dict[str, str]:
     r"""Return dictionary containing requirements with version numbers.
 
@@ -65,7 +67,7 @@ def get_requirements(
     reqs = subprocess.check_output(
         (
             r"johnnydep",
-            f" {package}" + f"=={version}" * bool(version),
+            f" {package_name}" + f"=={version}" * bool(version),
             r" --output-format",
             r" pinned",
         ),
@@ -74,7 +76,7 @@ def get_requirements(
     return dict(line.split("==") for line in reqs.rstrip("\n").split("\n"))
 
 
-def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
+def get_napoleon_type_aliases(module: ModuleType, /) -> dict[str, str]:
     r"""Automatically create type aliases for all exported functions and classes."""
     d: dict[str, str] = {}
     if not hasattr(module, "__all__"):
@@ -212,6 +214,6 @@ def write_requirements(
     # Note: the first entry is the package itself!
     fname = f"requirements-{package}=={requirements.pop(package)}.txt"
     path = Path("requirements") if path is None else Path(path)
-    file = path.joinpath(fname)
+    file = path / fname
     text = "\n".join(f"{k}=={requirements[k]}" for k in sorted(requirements))
     file.write_text(text, encoding="utf8")

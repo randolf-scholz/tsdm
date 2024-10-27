@@ -13,21 +13,21 @@ class Meta(type):
 
     def __call__(cls, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Meta.__call__({cls=})")
+        print(f"Meta.__call__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
         return super().__call__(*args, **kwargs)
 
     def __new__(cls, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Meta.__new__({cls=})")
+        print(f"Meta.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
         return super().__new__(cls, *args, **kwargs)
 
     def __init__(cls, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Meta.__init__({cls=})")
+        print(f"Meta.__init__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
         super().__init__(*args, **kwargs)
 
 
-print("------- Base Defintion -----------")
+print("\n\n------- Base Defintion -----------")
 
 
 @class_decorator
@@ -36,25 +36,25 @@ class Base(metaclass=Meta):
 
     def __new__(cls, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Base.__new__({cls=})")
-        return super().__new__(cls, *args, **kwargs)
+        print(f"Base.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+        return super().__new__(cls)
 
-    def __init__(self):
+    def __init__(self, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Base.__init__({self=})")
+        print(f"Base.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
         super().__init__()
 
-    def __init_subclass__(cls, /, **kwargs):
+    def __init_subclass__(cls, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Base.__init_subclass__({cls=})")
+        print(f"Base.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
         super().__init_subclass__(**kwargs)
 
 
-print("------- Base Instantiation -----------")
+print("\n\n------- Base Instantiation -----------")
 
-base = Base()
+base = Base(1, 2, 3, foo="foo", bar="bar")
 
-print("------- Subclass Defintion -----------")
+print("\n\n------- Subclass Defintion -----------")
 
 
 @class_decorator
@@ -63,19 +63,19 @@ class Subclass(Base):
 
     def __new__(cls, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Subclass.__new__({cls=})")
-        return super().__new__(cls, *args, **kwargs)
+        print(f"Subclass.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+        return super().__new__(cls)
 
-    def __init__(self):
+    def __init__(self, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Subclass.__init__({self=})")
+        print(f"Subclass.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
         super().__init__()
 
-    def __init_subclass__(cls, /, **kwargs):
+    def __init_subclass__(cls, /, *args, **kwargs):
         r"""Create a decorator that converts class to decorator."""
-        print(f"Subclass.__init_subclass__({cls=})")
+        print(f"Subclass.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
 
 
-print("------- Subclass Instantiation -----------")
+print("\n\n------- Subclass Instantiation -----------")
 
-sub = Subclass()
+sub = Subclass(1, 2, 3, foo="foo", bar="bar")

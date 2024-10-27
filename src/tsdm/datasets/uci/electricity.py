@@ -100,8 +100,8 @@ class Electricity(DatasetBase[TS, DataFrame]):
     rawdata_hashes = {
         "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
     }
+    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
     table_hashes = {"timeseries": "pandas:7114453877232760046"}
-    table_names = ["timeseries"]
     table_shapes = {"timeseries": (140256, 370)}
 
     def clean_timeseries(self) -> DataFrame:

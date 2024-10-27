@@ -28,7 +28,7 @@ from typing import ClassVar, Literal, Never, Optional, Self
 class ray_cluster(ContextDecorator):
     r"""Context manager for starting and stopping a ray cluster."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}/{__qualname__}")
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for this class."""
     ray: ModuleType | None = None
     r"""Ray module."""
@@ -100,7 +100,7 @@ class system_path(ContextDecorator):
 class timer(ContextDecorator):
     r"""Context manager for timing a block of code."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}/{__qualname__}")
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
 
     start_time: int
     r"""Start time of the timer."""

@@ -8,6 +8,7 @@ __all__ = [
     # Functions
     "generate_folders",
     "get_package_structure",
+    "make_test_folders",
     # Constants
     "CONFIG",
     "PROJECT",
@@ -15,13 +16,12 @@ __all__ = [
 
 import logging
 import os
-import tomllib
 from functools import cached_property
-from importlib import import_module, resources
+from importlib import import_module
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar, Final
+from typing import Any, ClassVar, Final, final
 
 
 def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
@@ -48,43 +48,66 @@ def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
     """
     match dirs:
         case str(name):
-            path = parent.joinpath(name)
+            path = parent / name
             path.mkdir(parents=True, exist_ok=True)
         case list(seq):
             for item in seq:
                 generate_folders(item, parent=parent)
         case dict(mapping):
             for key, value in mapping.items():
-                generate_folders(value, parent=parent.joinpath(key))
+                generate_folders(value, parent=parent / key)
         case _:
             raise TypeError
 
 
-class ConfigMeta(type):
-    r"""Metaclass for Config."""
+def make_test_folders(
+    root: ModuleType, tests_path: Path, *, dry_run: bool = True
+) -> None:
+    r"""Make the tests folder if it does not exist."""
+    package_structure = get_package_structure(root)
 
-    def __init__(
-        cls,
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, Any],
-        /,
-        **kwds: Any,
-    ) -> None:
-        super().__init__(name, bases, namespace, **kwds)
+    def flattened(d: dict[str, Any], /) -> list[str]:
+        r"""Flatten nested dictionary."""
+        return list(d) + list(chain.from_iterable(map(flattened, d.values())))
 
-        if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+    for package in flattened(package_structure):
+        test_package_path = tests_path / package.replace(".", "/")
+        test_package_init_file = test_package_path / "__init__.py"
+
+        if not test_package_path.exists():
+            if dry_run:
+                print(f"Dry-Run: Creating {test_package_path}")
+            else:
+                print(f"Creating {test_package_path}")
+                test_package_path.mkdir(parents=True, exist_ok=True)
+        if not test_package_path.exists():
+            if dry_run:
+                print(f"Dry-Run: Creating {test_package_init_file}")
+            else:
+                raise RuntimeError(f"Creation of {test_package_path} failed!")
+        elif not test_package_init_file.exists():
+            if dry_run:
+                print(f"Dry-Run: Creating {test_package_init_file}")
+            else:
+                print(f"Creating {test_package_init_file}")
+                test_package_init_file.write_text(
+                    f'"""Tests for {package}."""\n',
+                    encoding="utf8",
+                )
+
+    if dry_run:
+        print("Pass option `dry_run=False` to actually create the folders.")
 
 
-class Config(metaclass=ConfigMeta):
+@final
+class Config:
     r"""Configuration Interface."""
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the class."""
+    GENERATING_DOCS: ClassVar[bool] = bool(os.environ.get("TSDM_DOCS", False))
+    r"""Whether the documentation is being generated."""
 
-    HOMEDIR: Path
-    r"""The users home directory."""
     BASEDIR: Path
     r"""Root directory for tsdm storage."""
     LOGDIR: Path
@@ -96,29 +119,32 @@ class Config(metaclass=ConfigMeta):
     RAWDATADIR: Path
     r"""Path where raw imported dataset are stored."""
 
-    _autojit: bool = True
-
     @cached_property
-    def CONFIG_FILE(self) -> dict:
+    def CONFIG_FILE(self) -> dict[str, Any]:
         r"""Return dictionary containing basic configuration of TSDM."""
-        if __package__ is None:
-            raise ValueError(f"Unexpected package: {__package__=}")
-
-        path = resources.files(__package__) / "config.toml"
-        with path.open("rb") as file:
-            return tomllib.load(file)
+        return {
+            "basedir"    : "~/.tsdm",
+            "logdir"     : "logs",
+            "modeldir"   : "models",
+            "datasetdir" : "datasets",
+            "rawdatadir" : "rawdata",
+            "folders"    : ["datasets", "models", "logs", "rawdata"],
+            "autojit"    : True,
+        }  # fmt: skip
 
     def __init__(self) -> None:
         r"""Initialize the configuration."""
         # TODO: Should be initialized by an init/toml file.
-        os.environ["TSDM_AUTOJIT"] = "True"
-        self._autojit: bool = True
-        self.HOMEDIR = Path.home()
-        self.BASEDIR = self.HOMEDIR.joinpath(self.CONFIG_FILE["basedir"])
-        self.LOGDIR = self.BASEDIR.joinpath(self.CONFIG_FILE["logdir"])
-        self.MODELDIR = self.BASEDIR.joinpath(self.CONFIG_FILE["modeldir"])
-        self.DATASETDIR = self.BASEDIR.joinpath(self.CONFIG_FILE["datasetdir"])
-        self.RAWDATADIR = self.BASEDIR.joinpath(self.CONFIG_FILE["rawdatadir"])
+        self.autojit = self.CONFIG_FILE["autojit"]
+
+        self.BASEDIR = Path(self.CONFIG_FILE["basedir"])
+        if not self.GENERATING_DOCS:
+            self.BASEDIR = self.BASEDIR.expanduser().absolute()
+
+        self.LOGDIR = self.BASEDIR / self.CONFIG_FILE["logdir"]
+        self.MODELDIR = self.BASEDIR / self.CONFIG_FILE["modeldir"]
+        self.DATASETDIR = self.BASEDIR / self.CONFIG_FILE["datasetdir"]
+        self.RAWDATADIR = self.BASEDIR / self.CONFIG_FILE["rawdatadir"]
 
         # further initialization
         self.LOGDIR.mkdir(parents=True, exist_ok=True)
@@ -129,6 +155,8 @@ class Config(metaclass=ConfigMeta):
     @property
     def autojit(self) -> bool:
         r"""Whether to automatically jit-compile the models."""
+        if getattr(self, "_autojit", None) is None:
+            self._autojit = False
         return self._autojit
 
     @autojit.setter
@@ -137,10 +165,9 @@ class Config(metaclass=ConfigMeta):
         os.environ["TSDM_AUTOJIT"] = str(value)
 
 
+@final
 class Project:
     r"""Holds Project related data."""
-
-    DOC_URL = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
 
     @cached_property
     def NAME(self) -> str:
@@ -220,47 +247,11 @@ class Project:
 
         return ResultsDir()
 
-    def make_test_folders(self, *, dry_run: bool = True) -> None:
-        r"""Make the tests folder if it does not exist."""
-        package_structure = get_package_structure(self.ROOT_PACKAGE)
 
-        def flattened(d: dict[str, Any], /) -> list[str]:
-            r"""Flatten nested dictionary."""
-            return list(d) + list(chain.from_iterable(map(flattened, d.values())))
-
-        for package in flattened(package_structure):
-            test_package_path = self.TESTS_PATH / package.replace(".", "/")
-            test_package_init_file = test_package_path / "__init__.py"
-
-            if not test_package_path.exists():
-                if dry_run:
-                    print(f"Dry-Run: Creating {test_package_path}")
-                else:
-                    print(f"Creating {test_package_path}")
-                    test_package_path.mkdir(parents=True, exist_ok=True)
-            if not test_package_path.exists():
-                if dry_run:
-                    print(f"Dry-Run: Creating {test_package_init_file}")
-                else:
-                    raise RuntimeError(f"Creation of {test_package_path} failed!")
-            elif not test_package_init_file.exists():
-                if dry_run:
-                    print(f"Dry-Run: Creating {test_package_init_file}")
-                else:
-                    print(f"Creating {test_package_init_file}")
-                    test_package_init_file.write_text(
-                        f'"""Tests for {package}."""\n',
-                        encoding="utf8",
-                    )
-
-        if dry_run:
-            print("Pass option `dry_run=False` to actually create the folders.")
-
-
-# region CONSTANTS
-PROJECT: Final[Project] = Project()
-r"""Project configuration."""
-
+# region CONSTANTS ---------------------------------------------------------------------
 CONFIG: Final[Config] = Config()
 r"""Configuration Class."""
-# endregion CONSTANTS
+
+PROJECT: Final[Project] = Project()
+r"""Project configuration."""
+# endregion CONSTANTS ------------------------------------------------------------------

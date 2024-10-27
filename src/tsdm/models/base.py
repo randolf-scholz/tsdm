@@ -11,7 +11,6 @@ __all__ = [
 ]
 
 import logging
-import os
 import subprocess
 from functools import cached_property
 from pathlib import Path
@@ -94,9 +93,7 @@ class BaseModelMetaClass(type):
         if "LOGGER" not in namespace:
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
-        if os.environ.get("GENERATING_DOCS", False):
-            cls.MODEL_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
-        else:
+        if "MODEL_DIR" not in namespace:
             cls.MODEL_DIR = CONFIG.MODELDIR / cls.__name__
 
 

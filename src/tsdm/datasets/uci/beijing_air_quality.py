@@ -130,7 +130,7 @@ class BeijingAirQuality(DatasetBase[TS | TS_meta, DataFrame]):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = ["timeseries", "timeseries_metadata"]
+    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
     rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
 
     rawdata_hashes = {
