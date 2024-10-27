@@ -1,5 +1,6 @@
 r"""Demonstrate class creation order."""
 # mypy: ignore-errors
+# pyright: basic
 
 
 def class_decorator[T](cls: type[T], /) -> type[T]:

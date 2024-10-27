@@ -56,6 +56,7 @@ That is, the encode signature is `Poly[T].encode[T: X](x: X) -> X: ...`.
 Polymorphic encoders might be problematic for this very reason, and possibly should be avoided.
 """
 # ruff: noqa: E501
+# pyright: ignore[  # pyright: ignore[reportIncompatibleVariableOverride]
 
 __all__ = [
     # ABCs & Protocols

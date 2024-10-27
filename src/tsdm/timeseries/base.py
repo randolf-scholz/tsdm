@@ -340,11 +340,15 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
     def _validate_static_covariates(self) -> None:
         r"""Ensure that the static covariates index is a subset of the metaindex."""
         match self.static_covariates:
+            case None:
+                pass
             case DataFrame() as static_cov:
                 if not static_cov.index.difference(self.metaindex).empty:
                     raise ValueError(
                         "Static covariates index is not a subset of the metaindex."
                     )
+            case _:
+                raise NotImplementedError("Only DataFrame is supported.")
 
     # fmt: off
     @overload

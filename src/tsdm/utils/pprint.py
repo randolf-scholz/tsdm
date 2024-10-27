@@ -328,10 +328,6 @@ def repr_mapping(
                 key2: repr_func(value2)
                 key3: repr_func(value3)
     """
-    # validate object
-    if not isinstance(obj, Mapping):
-        raise TypeError(f"Expected Mapping, got {type(obj)}.")
-
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
@@ -494,10 +490,6 @@ def repr_sequence(
             ),
         )
     """
-    # validate object
-    if not isinstance(obj, Sequence):
-        raise TypeError(f"Expected Sequence, got {type(obj)}.")
-
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
@@ -628,10 +620,6 @@ def repr_set(
     wrapped: Optional[object] = None,
 ) -> str:
     r"""Return a string representation of a set-like object."""
-    # validate object
-    if not isinstance(obj, AbstractSet):
-        raise TypeError(f"Expected Set, got {type(obj)}.")
-
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
@@ -772,9 +760,6 @@ def repr_dataclass(
     - recursive=`False`:  ``Name<dataclass>(item1, item2, ...)``
     - recursive=`True`: ``Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)``
     """
-    if not isinstance(obj, Dataclass):
-        raise TypeError(f"Expected Dataclass, got {type(obj)}.")
-
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
@@ -848,9 +833,6 @@ def repr_namedtuple(
     - recursive=True:  Name<tuple>(item1, item2, ...)
     - recursive=False: Name<tuple>(item1=repr(item1), item2=repr(item2), ...)
     """
-    if not isinstance(obj, NTuple):
-        raise TypeError(f"Expected NamedTuple, got {type(obj)}.")
-
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
@@ -912,9 +894,6 @@ def repr_array(
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
-    if not isinstance(obj, SupportsArray):
-        raise TypeError("Object does not support `__array__` dunder.")
-
     maxitems = MAXITEMS_INLINE if maxitems is None else int(maxitems)
 
     # set type

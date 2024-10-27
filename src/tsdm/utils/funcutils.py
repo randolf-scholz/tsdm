@@ -26,6 +26,7 @@ __all__ = [
 
 import ast
 import inspect
+from ast import AST, Name, Return, Tuple
 from collections.abc import (
     Callable as Fn,
     Hashable,
@@ -35,6 +36,7 @@ from collections.abc import (
     Sequence,
     Set as AbstractSet,
 )
+from dataclasses import fields
 from functools import partial, wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Optional, overload
@@ -75,31 +77,26 @@ def accepts_varkwargs(func: Fn[..., Any], /) -> bool:
     return any(p.kind is VAR_KEYWORD for p in sig.parameters.values())
 
 
-# FIXME: do not use __dataclass_fields__! Use dataclasses.fields instead.
 def dataclass_args_kwargs(
     obj: Dataclass, /, *, ignore_parent_fields: bool = False
 ) -> tuple[tuple[Any, ...], dict[str, Any]]:
     r"""Return positional and keyword arguments of a dataclass."""
-    if not isinstance(obj, Dataclass):
-        raise TypeError(f"Expected dataclass, got {type(obj)}")
-
     forbidden_keys: set[str] = set()
     if ignore_parent_fields:
         for parent in obj.__class__.__mro__[1:]:
             if issubclass_dataclass(parent):
-                forbidden_keys.update(parent.__dataclass_fields__)
+                forbidden_keys.update(field.name for field in fields(parent))
 
     args = tuple(
-        getattr(obj, key)
-        for key, val in obj.__dataclass_fields__.items()
-        if not val.kw_only and key not in forbidden_keys
+        getattr(obj, field.name)
+        for field in fields(obj)
+        if not field.kw_only and field.name not in forbidden_keys
     )
     kwargs = {
-        key: getattr(obj, key)
-        for key, val in obj.__dataclass_fields__.items()
-        if val.kw_only and key not in forbidden_keys
+        field.name: getattr(obj, field.name)
+        for field in fields(obj)
+        if field.kw_only and field.name not in forbidden_keys
     }
-
     return args, kwargs
 
 
@@ -125,7 +122,8 @@ def get_parameter_kind(s: str | ParameterKind, /) -> set[ParameterKind]:
             return {VAR_POSITIONAL}
         case "vk" | "var_keyword":
             return {VAR_KEYWORD}
-    raise ValueError(f"Unknown kind {s}")
+        case _:
+            raise ValueError(f"Unknown kind {s}")
 
 
 def get_function_args(
@@ -183,19 +181,18 @@ def get_parameter(func: Fn, name: str, /) -> Parameter:
     return sig.parameters[name]
 
 
-def yield_return_nodes(nodes: Iterable[ast.AST], /) -> Iterator[ast.Return]:
+def yield_return_nodes(nodes: Iterable[AST], /) -> Iterator[Return]:
     r"""Collect all exit points of a function as ast nodes."""
     for node in nodes:
-        match node:
-            case ast.Return():
-                yield node
+        if isinstance(node, Return):
+            yield node
 
 
-def _yield_names(nodes: Iterable[ast.AST], /) -> Iterator[str]:
+def _yield_names(nodes: Iterable[AST], /) -> Iterator[str]:
     r"""Yield variable names from ast nodes."""
     for obj in nodes:
         match obj:
-            case ast.Name(id=name):
+            case Name(id=name):
                 yield name
             case _:
                 raise TypeError(f"Expected ast.Name, got {type(obj)}.")
@@ -209,7 +206,7 @@ def get_exit_point_names(func: Fn, /) -> set[tuple[str, ...]]:
     names: set[tuple[str, ...]] = set()
     for exit_point in yield_return_nodes(iter_nodes):
         match exit_point:
-            case ast.Return(value=ast.Tuple(elts=elts)):
+            case Return(value=Tuple(elts=elts)):
                 names.add(tuple(_yield_names(elts)))
             case _:
                 raise TypeError("Return value must be a tuple.")

@@ -299,24 +299,25 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
     ErrorHandler = DecoratorError(deco)
 
     for param in deco_sig.parameters.values():
-        has_default = param.default is not Parameter.empty
-
-        match param.kind, has_default:
-            case Parameter.POSITIONAL_ONLY, True:
-                raise ErrorHandler(
-                    "@decorator does not support POSITIONAL_ONLY arguments with defaults!"
-                )
-            case Parameter.POSITIONAL_OR_KEYWORD, _:
+        match param.kind:
+            case Parameter.POSITIONAL_ONLY:
+                if param.default is not Parameter.empty:
+                    raise ErrorHandler(
+                        "@decorator does not support POSITIONAL_ONLY arguments with defaults!"
+                    )
+            case Parameter.POSITIONAL_OR_KEYWORD:
                 raise ErrorHandler(
                     "@decorator does not support POSITIONAL_OR_KEYWORD arguments!",
-                    "Separate positional and keyword arguments using '/' and '*':"
+                    "Separate positional and keyword arguments using '/' and '*':",
                     ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
                     "See https://www.python.org/dev/peps/pep-0570/",
                 )
-            case Parameter.VAR_POSITIONAL, _:
+            case Parameter.VAR_POSITIONAL:
                 raise ErrorHandler(
                     "@decorator does not support VAR_POSITIONAL arguments!",
                 )
+            case Parameter.VAR_KEYWORD | Parameter.KEYWORD_ONLY:
+                pass
 
     # FIXME: Instead of inner function, return instance of ParametrizedDecorator
     @overload  # @decorator(*args, **kwargs)

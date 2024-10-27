@@ -78,7 +78,8 @@ def is_canonically_indexed(df: DataFrame, /) -> bool:
     match df.index:
         case pd.RangeIndex(start=0, step=1, stop=stop) if stop == len(df):  # type: ignore[has-type]
             return True
-    return False
+        case _:
+            return False
 
 
 @pprint_mapping

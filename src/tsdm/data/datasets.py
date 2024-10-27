@@ -29,7 +29,6 @@ from pandas import DataFrame, Index, MultiIndex
 from tsdm.types.arrays import ArrayLike
 from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.decorators import pprint_repr
-from tsdm.utils.pprint import repr_array
 
 # region Protocols ---------------------------------------------------------------------
 
@@ -158,6 +157,7 @@ r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 
 
+@pprint_repr
 @dataclass
 class DataFrame2Dataset[K](MapDataset[K, DataFrame]):
     r"""Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting ``.loc``.
@@ -180,12 +180,6 @@ class DataFrame2Dataset[K](MapDataset[K, DataFrame]):
 
     def __getitem__(self, key: K, /) -> DataFrame:
         return self.data.loc[key]
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(groups: {len(self.index)}, data:"
-            f" {repr_array(self.data)})"
-        )
 
 
 @pprint_repr

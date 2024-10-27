@@ -112,14 +112,16 @@ class ErrorHandler:
         self.mode = self.MODE(mode)
 
     def emit(self, msg: str, /, *, valid: bool = False) -> None:
-        match self.mode, valid:
-            case "raise", False:
-                raise ValidationError(msg)
-            case "warn", False:
-                warnings.warn(msg, UserWarning, stacklevel=2)
-            case "log", _:
+        match self.mode:
+            case self.MODE.RAISE:
+                if not valid:
+                    raise ValidationError(msg)
+            case self.MODE.WARN:
+                if not valid:
+                    warnings.warn(msg, UserWarning, stacklevel=2)
+            case self.MODE.LOG:
                 __logger__.info(msg)
-            case "ignore":
+            case self.MODE.IGNORE:
                 pass
 
 

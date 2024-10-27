@@ -65,30 +65,19 @@ class Dataset[Key, T](Protocol):  # +T
     from an already instantiated object.
     """
 
-    tables: Mapping[Key, T]
-    r"""A dictionary of tables that make up the dataset."""
-
-    # region dunder methods ------------------------------------------------------------
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[Key]: ...
     def __getitem__(self, key: Key, /) -> T: ...
     def __contains__(self, key: object, /) -> bool: ...
 
-    # endregion dunder methods ---------------------------------------------------------
+    @property
+    def tables(self) -> Mapping[Key, T]: ...
+    @property
+    def table_names(self) -> Collection[Key]: ...
 
-    # region abstract methods ----------------------------------------------------------
     @classmethod
-    @abstractmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self:
-        r"""Deserialize the dataset (from cleaned format)."""
-        ...
-
-    @abstractmethod
-    def serialize(self, filepath: FilePath, /) -> None:
-        r"""Serialize the (cleaned) dataset to a specific path."""
-        ...
-
-    # endregion abstract methods -------------------------------------------------------
+    def deserialize(cls, filepath: FilePath, /) -> Self: ...
+    def serialize(self, filepath: FilePath, /) -> None: ...
 
 
 class DatasetMeta(ProtocolMeta):
@@ -253,7 +242,7 @@ class DatasetBase[Key: str, T](
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
         # initialize tables
-        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleVariableOverride]
+        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleMethodOverride]
             self.table_names,
             self.load,
             kwargs={"initializing": True},

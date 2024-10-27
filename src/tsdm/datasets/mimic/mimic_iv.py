@@ -704,7 +704,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
     __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @property
-    def table_names(self) -> list[KEYS]:
+    def table_names(self) -> list[KEYS]:  # pyright: ignore[reportIncompatibleVariableOverride]
         expected_names = list(self.filelist)
         type_hinted_names = get_args(KEYS.__value__)
         if unknown_names := set(expected_names) - set(type_hinted_names):
@@ -712,7 +712,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
         return expected_names
 
     @property
-    def rawdata_files(self) -> list[str]:
+    def rawdata_files(self) -> list[str]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return [f"mimic-iv-{self.__version__}.zip"]
 
     @cached_property
@@ -801,22 +801,23 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
         return table.combine_chunks()  # <- reduces size and avoids some bugs
 
     def download_file(self, fname: str, /) -> None:
-        if self.version_info not in {(1, 0), (2, 2)}:
-            # zip file is not directly downloadable for other versions.
-            remote.download_directory_to_zip(
-                f"{self.CONTENT_URL}/{self.__version__}/",
-                self.rawdata_paths[fname],
-                username=input("MIMIC-IV username: "),
-                password=getpass(prompt="MIMIC-IV password: ", stream=None),
-                headers={"User-Agent": "Wget/1.21.2"},
-            )
-        else:
+        if self.version_info in {(1, 0), (2, 2)}:
+            # direct zip available
             remote.download(
                 f"{self.SOURCE_URL}/{self.__version__}/",
                 self.rawdata_paths[fname],
                 username=input("MIMIC-IV username: "),
                 password=getpass(prompt="MIMIC-IV password: ", stream=None),
                 # NOTE: MIMIC only allows wget for some reason...
+                headers={"User-Agent": "Wget/1.21.2"},
+            )
+        else:
+            # zip file is not directly downloadable for other versions.
+            remote.download_directory_to_zip(
+                f"{self.CONTENT_URL}/{self.__version__}/",
+                self.rawdata_paths[fname],
+                username=input("MIMIC-IV username: "),
+                password=getpass(prompt="MIMIC-IV password: ", stream=None),
                 headers={"User-Agent": "Wget/1.21.2"},
             )
 
