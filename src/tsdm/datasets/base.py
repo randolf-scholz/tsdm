@@ -65,15 +65,22 @@ class Dataset[Key, T](Protocol):  # +T
     from an already instantiated object.
     """
 
+    tables: Mapping[Key, T]
+    r"""Dictionary containing the tables that make up the dataset."""
+    table_names: Collection[Key]
+    r"""READ-ONLY: The names of the tables that make up the dataset."""
+
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[Key]: ...
     def __getitem__(self, key: Key, /) -> T: ...
     def __contains__(self, key: object, /) -> bool: ...
 
-    @property
-    def tables(self) -> Mapping[Key, T]: ...
-    @property
-    def table_names(self) -> Collection[Key]: ...
+    # @property
+    # @abstractmethod
+    # def tables(self) -> Mapping[Key, T]: ...
+    # @property
+    # @abstractmethod
+    # def table_names(self) -> Collection[Key]: ...
 
     @classmethod
     def deserialize(cls, filepath: FilePath, /) -> Self: ...
@@ -242,7 +249,7 @@ class DatasetBase[Key: str, T](
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
         # initialize tables
-        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleVariableOverride]
             self.table_names,
             self.load,
             kwargs={"initializing": True},
@@ -725,7 +732,9 @@ class DatasetBase[Key: str, T](
                     exceptions.append(exc)
             if exceptions:
                 failed = "\n".join(str(exc) for exc in exceptions)
-                ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
+                ErrorHandler(errors).emit(
+                    f"Some raw data files failed validation:\n{failed}"
+                )
             return result
 
         self.LOGGER.debug("Validating %s.", key)

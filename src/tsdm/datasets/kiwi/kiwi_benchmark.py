@@ -30,7 +30,7 @@ class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
     ]
     rawdata_files = ["kiwi-benchmark.zip"]
     rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:dd5eb62dccd5fb7774e7600145fd838f92d55eb07d6b89510c3fddbfd295f928"
+        "kiwi-benchmark.zip": "sha256:56796faff3c70371c56a373bea285e7662bdd3c8f3882e45a07405cd36c103f4"
     }
 
     def clean_table(self, key: str) -> None:

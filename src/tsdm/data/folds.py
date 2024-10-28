@@ -162,26 +162,30 @@ def folds_as_sparse_frame(df: DataFrame, /) -> DataFrame:
         case MultiIndex() as multi_index:
             index_tuples = [
                 (*col, cat)
-                for col, cats in zip(multi_index, categories, strict=True)
+                for col, _ in zip(multi_index, categories, strict=True)
                 for cat in categories[col]
             ]
             names = [*df.columns.names, "partition"]
             new_columns = MultiIndex.from_tuples(index_tuples, names=names)
             result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+
             for col in new_columns:
                 result[col] = df[col[:-1]] == col[-1]
             return result
+
         case Index() as index:
             index_tuples = [
                 (col, cat)
-                for col, cats in zip(index, categories, strict=True)
+                for col, _ in zip(index, categories, strict=True)
                 for cat in categories[col]
             ]
             names = [df.columns.name, "partition"]
             new_columns = MultiIndex.from_tuples(index_tuples, names=names)
             result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+
             for col in new_columns:
                 result[col] = df[col[0]] == col[-1]
             return result
+
         case _:
             raise TypeError(f"Column type {type(df.columns)} not supported.")

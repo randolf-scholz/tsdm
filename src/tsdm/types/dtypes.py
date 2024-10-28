@@ -325,12 +325,12 @@ PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
 r"""Dictionary of all `pandas` data types."""
 
 PANDAS_ARROW_DURATION_TYPES: set[ArrowDtype] = {
-    ArrowDtype(pa.duration(unit)) for unit in ["s", "ms", "us", "ns"]
+    ArrowDtype(pa.duration(unit)) for unit in ("s", "ms", "us", "ns")
 }
 r"""Set of all `pandas` arrow duration types."""
 
 PANDAS_ARROW_TIMESTAMP_TYPES: set[ArrowDtype] = {
-    ArrowDtype(pa.timestamp(unit)) for unit in ["s", "ms", "us", "ns"]
+    ArrowDtype(pa.timestamp(unit)) for unit in ("s", "ms", "us", "ns")
 }
 r"""Set of all `pandas` arrow timestamp types."""
 

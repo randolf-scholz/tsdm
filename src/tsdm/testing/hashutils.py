@@ -320,9 +320,9 @@ def validate_hash(
     elif right.hash_algorithm != left.hash_algorithm:
         msg = f"✘ Hash algorithm mismatch: {left.hash_algorithm!r} ≠ {right.hash_algorithm!r}."
     elif right.hash_value != left.hash_value:
-        msg = f"✘ Hash mismatch: {left!s} ≠ {right!s}."
+        msg = f"✘ Hash mismatch:\n\tactual   : {left!s}\n\treference: {right!s}"
     else:
-        msg = f"✔ Hash {left!s} matches reference {right!s}."
+        msg = f"✔ Hashes match!\n\tactual   : {left!s}\n\treference: {right!s}"
 
     error_handler.emit(prefix + msg, valid=valid_hash)
     return valid_hash
