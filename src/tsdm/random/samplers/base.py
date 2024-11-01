@@ -316,7 +316,7 @@ type MULTI = Literal["multi"]
 
 # FIXME: python==3.13 use PEP695 with default values
 DT = TypeVar("DT", bound=TimeStamp)
-ModeVar = TypeVar("ModeVar", S, M, B, W, U, default=U)  # type: ignore[misc]
+ModeVar = TypeVar("ModeVar", U, S, M, B, W, default=U)  # type: ignore[misc]
 HorizonVar = TypeVar("HorizonVar", ONE, MULTI, default=ONE)  # type: ignore[misc]
 
 

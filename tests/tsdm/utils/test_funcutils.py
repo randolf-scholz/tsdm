@@ -1,5 +1,6 @@
 r"""Tests for `tsdm.utils.funcutils` module."""
 # ruff: noqa: ARG001
+# mypy: disable-error-code="no-untyped-def"
 
 from tsdm.utils.funcutils import (
     is_keyword_arg,
@@ -11,14 +12,14 @@ from tsdm.utils.funcutils import (
 )
 
 
-def foo(a, /): ...  # type: ignore[no-untyped-def]
-def bar(a): ...  # type: ignore[no-untyped-def]
-def baz(*a): ...  # type: ignore[no-untyped-def]
-def qux(*, a): ...  # type: ignore[no-untyped-def]
-def quux(**a): ...  # type: ignore[no-untyped-def]
-def foo2(a=None, /): ...  # type: ignore[no-untyped-def]
-def bar2(a=None): ...  # type: ignore[no-untyped-def]
-def qux2(*, a=None): ...  # type: ignore[no-untyped-def]
+def foo(a, /): ...
+def bar(a): ...
+def baz(*a): ...
+def qux(*, a): ...
+def quux(**a): ...
+def foo2(a=None, /): ...
+def bar2(a=None): ...
+def qux2(*, a=None): ...
 
 
 def test_is_mandatory_arg() -> None:

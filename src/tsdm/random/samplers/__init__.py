@@ -13,7 +13,6 @@ __all__ = [
     "Sampler",
     # Classes
     "HierarchicalSampler",
-    "IntervalSampler",
     "RandomSampler",
     "SequenceSampler",
     "SlidingSampler",
@@ -21,7 +20,7 @@ __all__ = [
     "compute_grid",
 ]
 
-from tsdm.random.samplers._samplers_deprecated import IntervalSampler, SequenceSampler
+from tsdm.random.samplers._samplers_deprecated import SequenceSampler
 from tsdm.random.samplers.base import (
     BaseSampler,
     HierarchicalSampler,
@@ -33,7 +32,6 @@ from tsdm.random.samplers.base import (
 
 SAMPLERS: dict[str, type[Sampler]] = {
     "HierarchicalSampler"  : HierarchicalSampler,
-    "IntervalSampler"      : IntervalSampler,
     "RandomSampler"        : RandomSampler,
     "SequenceSampler"      : SequenceSampler,
     "SlidingSampler"       : SlidingSampler,

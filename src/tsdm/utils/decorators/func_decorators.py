@@ -21,6 +21,7 @@ from typing import Concatenate, NamedTuple, Optional
 
 from torch import jit
 
+from tsdm.constants import EMPTY_FN
 from tsdm.types.protocols import NTuple
 from tsdm.utils.decorators.base import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
@@ -145,76 +146,32 @@ def wrap_func[**P, R](  # +R
     pass_args: bool = False,
 ) -> Fn[P, R]:
     r"""Wrap a function with pre- and post-hooks."""
-    logger = __logger__.getChild(func.__name__)
+    __logger__.getChild(func.__name__).debug("Wrapping function")
 
-    match before, after, pass_args:
-        case None, None, bool():
-            logger.debug("No hooks to add, returning as-is.")
-            return func
+    pre_func: Fn[..., None] = (
+        EMPTY_FN
+        if before is None
+        else (before if pass_args else lambda *_, **__: before())
+    )
+    post_func: Fn[..., None] = (
+        EMPTY_FN
+        if after is None
+        else (after if pass_args else lambda *_, **__: after())
+    )
 
-        case Fn() as pre, None, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
+    @wraps(func)
+    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        pre_func(*args, **kwargs)
+        result = func(*args, **kwargs)
+        post_func(*args, **kwargs)
+        return result
 
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                pre(*args, **kwargs)
-                return func(*args, **kwargs)
-
-        case None, Fn() as post, True:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                result = func(*args, **kwargs)
-                post(*args, **kwargs)
-                return result
-
-        case Fn() as pre, Fn() as post, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                pre(*args, **kwargs)
-                result = func(*args, **kwargs)
-                post(*args, **kwargs)
-                return result
-
-        case Fn() as pre, None, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                pre()
-                return func(*args, **kwargs)
-
-        case None, Fn() as post, False:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                result = func(*args, **kwargs)
-                post()
-                return result
-
-        case Fn() as pre, Fn() as post, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                pre()
-                result = func(*args, **kwargs)
-                post()
-                return result
-
-        case _:
-            raise TypeError("Got unexpected arguments.")
-
-    return __wrapper  # type: ignore[unreachable]
+    return __wrapper
 
 
 @decorator
 def wrap_method[**P, T, R](  # T, +R
-    func: Fn[Concatenate[T, P], R],
+    method: Fn[Concatenate[T, P], R],
     /,
     *,
     before: Optional[Fn[Concatenate[T, ...], None]] = None,
@@ -222,71 +179,28 @@ def wrap_method[**P, T, R](  # T, +R
     pass_args: bool = False,
 ) -> Fn[Concatenate[T, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
-    logger = __logger__.getChild(func.__name__)
+    __logger__.getChild(method.__name__).debug("Wrapping method")
 
-    match before, after, pass_args:
-        case None, None, bool():
-            logger.debug("No hooks to add, returning as-is.")
-            return func
+    pre_func: Fn[Concatenate[T, ...], None] = (
+        EMPTY_FN
+        if before is None
+        else (before if pass_args else lambda self, *_, **__: before(self))
+    )
 
-        case Fn() as pre, None, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
+    post_func: Fn[Concatenate[T, ...], None] = (
+        EMPTY_FN
+        if after is None
+        else (after if pass_args else lambda self, *_, **__: after(self))
+    )
 
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-                pre(self, *args, **kwargs)
-                return func(self, *args, **kwargs)
+    @wraps(method)
+    def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
+        pre_func(self, *args, **kwargs)
+        result = method(self, *args, **kwargs)
+        post_func(self, *args, **kwargs)
+        return result
 
-        case None, Fn() as post, True:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-                result = func(self, *args, **kwargs)
-                post(self, *args, **kwargs)
-                return result
-
-        case Fn() as pre, Fn() as post, True:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-                pre(self, *args, **kwargs)
-                result = func(self, *args, **kwargs)
-                post(self, *args, **kwargs)
-                return result
-
-        case Fn() as pre, None, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-                pre(self)
-                return func(self, *args, **kwargs)
-
-        case None, Fn() as post, False:  # type: ignore[misc]
-            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-                result = func(self, *args, **kwargs)
-                post(self)
-                return result
-
-        case Fn() as pre, Fn() as post, False:  # type: ignore[misc]
-            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
-
-            @wraps(func)
-            def __wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-                pre(self)
-                result = func(self, *args, **kwargs)
-                post(self)
-                return result
-
-        case _:
-            raise TypeError("Got unexpected arguments.")
-
-    return __wrapper  # type: ignore[unreachable]
+    return __wrapper
 
 
 @decorator

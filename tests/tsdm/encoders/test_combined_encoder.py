@@ -90,7 +90,7 @@ def encoder() -> BaseEncoder:
 @pytest.mark.slow
 def test_combined_encoder(
     encoder: Encoder,
-    split: SplitID = (0, "train"),  # pyrigh
+    split: SplitID = (0, "train"),
     atol: float = 1e-5,
     rtol: float = 1e-3,
 ) -> None:

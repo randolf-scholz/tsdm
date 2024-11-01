@@ -152,7 +152,7 @@ r"""Type alias for a "tabular" dataset."""
 type SequentialDataset[V] = IndexableDataset[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a sequential dataset."""
 
-type Dataset[V] = SequentialDataset[V] | MapDataset[Any, V]  # +V
+type Dataset[V] = MapDataset[Any, V] | IndexableDataset[V]  # +V
 r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 

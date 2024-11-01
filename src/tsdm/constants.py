@@ -8,6 +8,7 @@ __all__ = [
     "BUILTIN_TYPES",
     "EMPTY_MAP",
     "EMPTY_SET",
+    "EMPTY_FN",
     "EPS",
     "EXAMPLE_BOOLS",
     "EXAMPLE_CATEGORIES",
@@ -31,7 +32,7 @@ __all__ = [
     "VAR_POSITIONAL",
 ]
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
 from typing import Any, Final, Never
@@ -59,6 +60,8 @@ EMPTY_SET: Final[frozenset[Any]] = frozenset()
 r"""Constant: Immutable Empty `Set`, use as default in function signatures."""
 EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
+EMPTY_FN: Final[Callable[..., None]] = lambda *_, **__: None  # noqa: E731
+r"""Constant: Empty function, use as default in function signatures."""
 RNG: Final[Generator] = np.random.default_rng()
 r"""Default random number generator."""
 

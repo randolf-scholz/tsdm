@@ -63,20 +63,19 @@ class LazyValue[V]:  # +V
         match spec:
             case LazyValue() as lazy_value:
                 return lazy_value
-            case tuple([Callable() as func, tuple(args), dict(kwargs)]):  # type: ignore[misc]
-                return cls(func, args=args, kwargs=kwargs)  # type: ignore[has-type]
+            case fn if callable(fn):
+                return cls(fn)
+            case [fn, tuple(args), dict(kwargs)] if callable(fn):
+                return cls(fn, args=args, kwargs=kwargs)
             case tuple(tup):
                 raise TypeError(
                     "Expected tuple of function, args and kwargs."
                     f" Got tuple[{', '.join(type(arg).__name__ for arg in tup)}].",
                 )
-            case Callable() as func:  # type: ignore[misc]
-                return cls(func)  # type: ignore[unreachable]
             case value:  # fallback to wrapping value.
                 raise TypeError(
                     f"Expected LazyValue or Callable. Got {type(value).__name__}."
                 )
-                # return cls(lambda: value, type_hint=type(value).__name__)  # type: ignore[arg-type, return-value]
 
     def __init__(
         self,

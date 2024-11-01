@@ -476,12 +476,12 @@ def log_plot(
     match plot:
         case Figure():
             fig = plot
-        case Callable() as fn:  # type: ignore[misc]
-            try:  # type: ignore[unreachable]
-                fig = fn(step)  # pyright: ignore[reportCallIssue]
+        case fn if callable(fn):
+            try:
+                fig = fn(step)  # type: ignore[call-arg]
             except Exception as exc1:
                 try:
-                    fig = fn()  # pyright: ignore[reportCallIssue]
+                    fig = fn()  # type: ignore[call-arg]
                 except Exception as exc2:
                     exc = RuntimeError("Could not generate the plot!")
                     exc.add_note(f"Passing step raised exception {exc1}")

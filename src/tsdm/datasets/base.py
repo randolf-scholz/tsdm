@@ -110,7 +110,7 @@ class DatasetMeta(ProtocolMeta):
         if "DATASET_DIR" not in namespace:
             cls.DATASET_DIR = CONFIG.RAWDATADIR / cls.__name__
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: N805
         r"""When an instance of the class is created, this method is called."""
         obj = super().__call__(*args, **kwargs)
         obj.__post_init__()

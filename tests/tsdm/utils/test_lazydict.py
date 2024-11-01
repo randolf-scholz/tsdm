@@ -1,4 +1,5 @@
 r"""Test LazyDict."""
+# mypy: disable-error-code="no-untyped-def"
 
 import logging
 from collections.abc import Callable, MutableMapping
@@ -22,19 +23,19 @@ def test_lazydict_init() -> None:
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing.")
 
-    def no_input():  # type: ignore[no-untyped-def]
+    def no_input():
         return 0
 
-    def single_input(x):  # type: ignore[no-untyped-def]
+    def single_input(x):
         return x
 
-    def positional_only(a, /, b, c=1, *args):  # type: ignore[no-untyped-def]
+    def positional_only(a, /, b, c=1, *args):
         return a + b + c + sum(args)
 
-    def keyword_only(*, d, e=2, **kwargs):  # type: ignore[no-untyped-def]
+    def keyword_only(*, d, e=2, **kwargs):
         return d + e + sum(kwargs.values())
 
-    def generic(a, /, b, c=1, *args, d, e=2, **kwargs):  # type: ignore[no-untyped-def]
+    def generic(a, /, b, c=1, *args, d, e=2, **kwargs):
         return a + b + c + sum(args) + d + e + sum(kwargs.values())
 
     example_dict = {

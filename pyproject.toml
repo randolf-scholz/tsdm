@@ -427,7 +427,7 @@ typeCheckingMode = "standard"
 useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 
 # highlight any unnecessary "# type: ignore" comments
-reportUnnecessaryTypeIgnoreComment = false
+reportUnnecessaryTypeIgnoreComment = true
 
 # standard flags we disable
 reportPrivateImportUsage = false  # FIXME: https://github.com/microsoft/pyright/issues/9217
