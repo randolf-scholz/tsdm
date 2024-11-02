@@ -74,7 +74,7 @@ docs = [
 ]
 tests = [
     "coverage>=7.6.4",
-    "hypothesis[numpy,pandas,pytest]>=6.115.6",
+    "hypothesis[numpy,pandas,pytest]>=6.116.0",
     "pytest-benchmark[histogram]>=5.1.0",
     "pytest-cov>=6.0.0",
     "pytest-repeat>=0.9.3",
@@ -84,8 +84,8 @@ tests = [
 ]
 linters = [
     "pylint>=3.3.1",
-    "ruff>=0.7.1",
-    "tach>=0.14.1",
+    "ruff>=0.7.2",
+    "tach>=0.14.2",
 ]
 typing = [
     "mypy>=1.13.0",
@@ -96,7 +96,7 @@ typing = [
     "types-jsonschema>=4.23.0.20240813",
     "types-pillow>=10.2.0.20240822",
     "types-protobuf>=5.28.3.20241030",
-    "types-psutil>=6.1.0.20241022",
+    "types-psutil>=6.1.0.20241102",
     "types-pygments>=2.18.0.20240506",
     "types-pytz>=2024.2.0.20241003",
     "types-pyyaml>=6.0.12.20240917",
