@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
+from pandas import Series, date_range, testing
 
 from tsdm.encoders.time import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
@@ -136,3 +137,23 @@ def test_datetime_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
         assert encoder.backend.nanmax(abs(test_decoded - test_decoded)) <= encoder.unit
     else:
         assert_arrays_equal(test_data, test_decoded)
+
+
+def test_datetime_encoder_index() -> None:
+    r"""Test whether the encoder is reversible."""
+    time = date_range("2020-01-01", "2021-01-01", freq="1d")
+    encoder = DateTimeEncoder()
+    encoder.fit(time)
+    encoded = encoder.encode(time)
+    decoded = encoder.decode(encoded)
+    testing.assert_index_equal(time, decoded)
+
+
+def test_datetime_encoder_series() -> None:
+    r"""Test whether the encoder is reversible."""
+    time = Series(date_range("2020-01-01", "2021-01-01", freq="1d"))
+    encoder = DateTimeEncoder()
+    encoder.fit(time)
+    encoded = encoder.encode(time)
+    decoded = encoder.decode(encoded)
+    testing.assert_series_equal(time, decoded)

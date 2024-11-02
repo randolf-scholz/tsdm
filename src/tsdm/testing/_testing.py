@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
-from inspect import isbuiltin
+from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
 from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile, ZipFile
@@ -33,6 +33,9 @@ from typing_extensions import get_protocol_members, is_protocol
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
 from tsdm.types.aliases import PythonScalar
+
+DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
+r"""Default excluded members for shared interface checks."""
 
 
 def assert_arrays_equal[T: Any](array: T, reference: T, /) -> None:
@@ -111,6 +114,15 @@ def assert_arrays_close[T: Any](
                 raise AssertionError(f"{array=} != {reference=}")
         case _:
             raise TypeError(f"Unsupported {type(array)=}")
+
+
+def get_descriptors_and_callables(cls: type, /) -> set[str]:
+    r"""Return the descriptors and callables of a type."""
+    return {
+        name
+        for name, attr in getmembers(cls)
+        if (callable(attr) or ismethoddescriptor(attr) or isdatadescriptor(attr))
+    }
 
 
 def is_builtin_type(obj: object, /) -> bool:
@@ -206,9 +218,6 @@ def assert_protocol(obj: Any, proto: type, /, *, expected: bool = True) -> None:
         raise AssertionError(f"{msg}\n Missing Attributes: {missing_attrs}")
     if match and not expected:
         raise AssertionError(msg)
-
-
-DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
 
 
 def check_shared_interface(

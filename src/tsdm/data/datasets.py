@@ -44,38 +44,6 @@ class TorchDataset[K, V](Protocol):  # -K, +V
 
 
 @runtime_checkable
-class PandasDataset[K, V](Protocol):  # K, +V
-    r"""Protocol version of `pandas.DataFrame`/`Series`.
-
-    Note that in particular, `__getitem__` is not present, as it returns columns,
-    but we are usually interested in the rows.
-    """
-
-    @abstractmethod
-    def __len__(self) -> int:
-        r"""Length of the dataset."""
-        ...
-
-    @property
-    @abstractmethod
-    def index(self) -> ArrayLike[K]:
-        r"""Returns the row labels of the DataFrame."""
-        ...
-
-    @property
-    @abstractmethod
-    def loc(self) -> SupportsGetItem[K, V]:
-        r"""Access a group of rows and columns by label(s) or a boolean array."""
-        ...
-
-    @property
-    @abstractmethod
-    def iloc(self) -> SupportsGetItem[int, V]:
-        r"""Purely integer location-based indexing for selection by position."""
-        ...
-
-
-@runtime_checkable
 class IterableDataset[V](Protocol):  # +V
     r"""Protocol version of `torch.utils.data.IterableDataset`."""
 
@@ -110,10 +78,12 @@ class IndexableDataset[V](Protocol):  # +V
         r"""Iterate over the dataset."""
         ...
 
+    @overload
     @abstractmethod
-    def __getitem__(self, index: int, /) -> V:
-        r"""Lookup value for integer index."""
-        ...
+    def __getitem__(self, index: int, /) -> V: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: slice, /) -> Self: ...
 
 
 @runtime_checkable
@@ -146,13 +116,45 @@ class MapDataset[K, V](Protocol):  # +V
         ...
 
 
+@runtime_checkable
+class PandasDataset[K, V](Protocol):  # K, +V
+    r"""Protocol version of `pandas.DataFrame`/`Series`.
+
+    Note that in particular, `__getitem__` is not present, as it returns columns,
+    but we are usually interested in the rows.
+    """
+
+    @abstractmethod
+    def __len__(self) -> int:
+        r"""Length of the dataset."""
+        ...
+
+    @property
+    @abstractmethod
+    def index(self) -> ArrayLike[K]:
+        r"""Returns the row labels of the DataFrame."""
+        ...
+
+    @property
+    @abstractmethod
+    def loc(self) -> SupportsGetItem[K, V]:
+        r"""Access a group of rows and columns by label(s) or a boolean array."""
+        ...
+
+    @property
+    @abstractmethod
+    def iloc(self) -> SupportsGetItem[int, V]:
+        r"""Purely integer location-based indexing for selection by position."""
+        ...
+
+
 type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
 r"""Type alias for a "tabular" dataset."""
 
 type SequentialDataset[V] = IndexableDataset[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a sequential dataset."""
 
-type Dataset[V] = MapDataset[Any, V] | IndexableDataset[V]  # +V
+type Dataset[V] = MapDataset[Any, V] | IndexableDataset[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 

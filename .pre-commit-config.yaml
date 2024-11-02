@@ -209,7 +209,6 @@ repos:
       exclude: '/tasks/'
       entry: mypy
       args:
-        - "--scripts-are-modules"
         - "--hide-error-context"
         - "--hide-error-end"
         - "--no-pretty"
