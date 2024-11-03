@@ -49,15 +49,19 @@ def serialize_table[T](
         case _:
             raise TypeError(f"Invalid writer: {writer=}")
 
-    match table, ext:
-        case pd.DataFrame(), _:
-            writer_method = getattr(table, f"to_{ext}")
-            writer_method(table, path_or_buf, **writer_kwargs)
-        case pl.DataFrame(), _:
-            writer_method = getattr(table, f"write_{ext}")
-            writer_method(table, path_or_buf, **writer_kwargs)
-        case pa.Table(), "parquet":
+    match ext, table:
+        case "parquet", pa.Table():
             pyarrow_parquet.write_table(table, path_or_buf, **writer_kwargs)
+        case "parquet", pd.DataFrame():
+            writer_method = getattr(table, f"to_{ext}")
+            writer_kwargs = {"engine": "pyarrow"} | writer_kwargs
+            writer_method(path_or_buf, **writer_kwargs)
+        case _, pd.DataFrame():
+            writer_method = getattr(table, f"to_{ext}")
+            writer_method(path_or_buf, **writer_kwargs)
+        case _, pl.DataFrame():
+            writer_method = getattr(table, f"write_{ext}")
+            writer_method(path_or_buf, **writer_kwargs)
         case _ if callable(writer_method := getattr(table, f"to_{ext}", None)):
             writer_method(table, path_or_buf, **writer_kwargs)
         case _:
