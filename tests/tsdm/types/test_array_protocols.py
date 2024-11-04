@@ -2,7 +2,7 @@ r"""Test the Array protocol."""
 
 import logging
 from array import array as python_array
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -695,3 +695,10 @@ def test_table_manual() -> None:
     ]
     shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
     __logger__.info("\nShared members of Tables: %s", shared_attrs)
+
+
+if TYPE_CHECKING:
+
+    def cast(x: NumericalArray[object]) -> NumericalArray[float]:
+        r"""Ensure the protocol is contravariant in the data type."""
+        return x

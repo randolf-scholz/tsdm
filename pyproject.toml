@@ -339,7 +339,7 @@ generated-members = ["numpy.*", "torch.*"]
 # platform = "linux"
 # platform configuration
 files = ["src/", "tests/"]
-plugins = ["numpy.typing.mypy_plugin"]
+#plugins = ["numpy.typing.mypy_plugin"]
 python_version = "3.12"
 
 disable_error_code = [

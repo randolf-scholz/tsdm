@@ -84,7 +84,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from tsdm.types.aliases import Axis, MultiIndexer
-from tsdm.types.scalars import BoolScalar
+from tsdm.types.scalars import BaseScalar, BoolScalar, OrderedScalar
 
 # region helper protocols --------------------------------------------------------------
 
@@ -525,7 +525,7 @@ class NumericalArray[Scalar](Protocol):  # -Scalar
     def __contains__(self, element: Any, /) -> bool: ...
 
     # NOTE: This is weakly typed since it returns different things on different objects.
-    def __getitem__(self, key: Any, /) -> Self | Scalar: ...
+    def __getitem__(self, key: Any, /) -> Self | BaseScalar: ...
 
     def all(self) -> Self | BoolScalar:
         r"""Return True if all elements are True."""
@@ -535,11 +535,11 @@ class NumericalArray[Scalar](Protocol):  # -Scalar
         r"""Return True if any element is True."""
         ...
 
-    def min(self) -> Self | Scalar:
+    def min(self) -> Self | OrderedScalar:
         r"""Return the minimum value."""
         ...
 
-    def max(self) -> Self | Scalar:
+    def max(self) -> Self | OrderedScalar:
         r"""Return the maximum value."""
         ...
 
@@ -567,6 +567,12 @@ class NumericalArray[Scalar](Protocol):  # -Scalar
     def __lt__(self, other: Self | Scalar, /) -> Self: ...
     # greater than >
     def __gt__(self, other: Self | Scalar, /) -> Self: ...
+
+    # FIXME: Possibly should look like
+    #   def __add__[Z](self, other: Y | Vec[Y], /) -> Vec[Z]: ...
+    #   where Y = SupportsRAdd[Scalar, Z] is a protocol with
+    #   def __radd__(self, other: Scalar, /) -> Z: ...
+    #   this would allow compatibility for timedelta/datetime.
 
     # arithmetic
     # addition +

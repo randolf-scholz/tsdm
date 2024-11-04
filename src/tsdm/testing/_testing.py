@@ -14,6 +14,7 @@ __all__ = [
     "is_na_value",
     "is_scalar",
     "is_zipfile",
+    "supports_issubclass",
 ]
 
 from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
@@ -218,6 +219,17 @@ def assert_protocol(obj: Any, proto: type, /, *, expected: bool = True) -> None:
         raise AssertionError(f"{msg}\n Missing Attributes: {missing_attrs}")
     if match and not expected:
         raise AssertionError(msg)
+
+
+def supports_issubclass(cls: type, /) -> bool:
+    r"""Check if the class supports issubclass."""
+    try:
+        result = issubclass(cls, cls)
+    except TypeError:
+        return False
+    if not result:
+        raise AssertionError(f"{cls} is not a subclass of itself!")
+    return True
 
 
 def check_shared_interface(
