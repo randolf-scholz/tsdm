@@ -613,7 +613,7 @@ class MIMIC_III(MIMIC_III_RAW):
                     table,
                     ETHNICITY=["UNKNOWN/NOT SPECIFIED"],
                     RELIGION=["NOT SPECIFIED", "UNOBTAINABLE"],
-                    MARTIAL_STATUS=["UNKNOWN (DEFAULT)"],
+                    MARITAL_STATUS=["UNKNOWN (DEFAULT)"],
                 )
             case "CALLOUT":
                 pass

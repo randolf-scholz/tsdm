@@ -113,19 +113,26 @@ class MIMIC_III_Bilos2021(DatasetBase[TS, DataFrame]):
             )
 
         path = self.rawdata_paths[fname]
-
         cut_dirs = self.SOURCE_URL.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)
-
         os.environ["PASSWORD"] = password
-
         subprocess.run(
-            f"wget --user {user} --password $PASSWORD -c -r -np -nH -N --cut-dirs"
-            f" {cut_dirs} -P {self.RAWDATA_DIR!r} {self.SOURCE_URL} -O {path}",
-            shell=True,
+            [
+                "/usr/bin/wget",
+                "--user", user,
+                "--password", "$PASSWORD",
+                "--cut-dirs", str(cut_dirs),  # ignore the first 3 directories
+                "-P", str(self.RAWDATA_DIR),  # directory prefix
+                "-O", str(path),  # output document (zip file)
+                "-c",   # continue
+                "-r",   # recursive
+                "-np",  # don't ascend to the parent directory
+                "-nH",  # don't create host directories
+                "-N",   # don't re-retrieve files unless newer than local
+                self.SOURCE_URL,
+            ],
             check=True,
-        )
-
+        )  # fmt: skip
         file = self.RAWDATA_DIR / "index.html"
         file.rename(fname)

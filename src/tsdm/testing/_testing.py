@@ -264,8 +264,7 @@ def check_shared_interface(
         )
         if raise_on_unsatisfied:
             raise AssertionError(msg)
-        else:
-            print(msg)
+        print(msg)
 
     if extra_members := sorted(shared_members - interface):
         msg = (
@@ -273,5 +272,4 @@ def check_shared_interface(
         )
         if raise_on_extra:
             raise AssertionError(msg)
-        else:
-            print(msg)
+        print(msg)

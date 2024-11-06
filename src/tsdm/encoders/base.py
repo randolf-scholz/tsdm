@@ -107,6 +107,7 @@ from contextlib import suppress
 from copy import deepcopy
 from dataclasses import KW_ONLY, asdict, dataclass
 from functools import cached_property
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -266,7 +267,7 @@ class Encoder[X, Y](Protocol):
         if not self.is_serializable():
             raise RuntimeError("Encoder is not serializable!")
 
-        with open(filepath, "wb") as file:
+        with Path(filepath).open("wb") as file:
             pickle.dump(self, file)
 
     @classmethod

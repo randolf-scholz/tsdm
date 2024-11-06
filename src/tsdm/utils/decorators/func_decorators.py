@@ -51,16 +51,16 @@ def lazy_jit_torch[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
     r"""Create decorator to lazily compile a function with `torch.jit.script`."""
 
     @wraps(func)
-    def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         # script the original function if it hasn't been scripted yet
-        if __wrapper.__scripted is None:  # type: ignore[attr-defined]
-            __wrapper.__scripted = jit.script(__wrapper.__original_fn)  # type: ignore[attr-defined]
-        return __wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
+        if wrapper.scripted is None:  # type: ignore[attr-defined]
+            wrapper.scripted = jit.script(wrapper.original_fn)  # type: ignore[attr-defined]
+        return wrapper.scripted(*args, **kwargs)  # type: ignore[attr-defined]
 
-    __wrapper.__original_fn = func  # type: ignore[attr-defined]
-    __wrapper.__scripted = None  # type: ignore[attr-defined]
-    __wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
-    return __wrapper
+    wrapper.original_fn = func  # type: ignore[attr-defined]
+    wrapper.scripted = None  # type: ignore[attr-defined]
+    wrapper.script_if_tracing_wrapper = True  # type: ignore[attr-defined]
+    return wrapper
 
 
 def trace[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R

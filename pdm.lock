@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:a2235e642aaac6e08c1e93ab023ec30f4dada78bcf3475510d3fe75d48006055"
+content_hash = "sha256:8a4f61291c386587ca085f4aaaf06ba2d4b9c0ecf7398d9df7dccdf35ccc48c1"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -2551,7 +2551,7 @@ files = [
 
 [[package]]
 name = "pyright"
-version = "1.1.387"
+version = "1.1.388"
 requires_python = ">=3.7"
 summary = "Command line wrapper for pyright"
 groups = ["typing"]
@@ -2560,8 +2560,8 @@ dependencies = [
     "typing-extensions>=4.1",
 ]
 files = [
-    {file = "pyright-1.1.387-py3-none-any.whl", hash = "sha256:6a1f495a261a72e12ad17e20d1ae3df4511223c773b19407cfa006229b1b08a5"},
-    {file = "pyright-1.1.387.tar.gz", hash = "sha256:577de60224f7fe36505d5b181231e3a395d427b7873be0bbcaa962a29ea93a60"},
+    {file = "pyright-1.1.388-py3-none-any.whl", hash = "sha256:c7068e9f2c23539c6ac35fc9efac6c6c1b9aa5a0ce97a9a8a6cf0090d7cbf84c"},
+    {file = "pyright-1.1.388.tar.gz", hash = "sha256:0166d19b716b77fd2d9055de29f71d844874dbc6b9d3472ccd22df91db3dfa34"},
 ]
 
 [[package]]
@@ -3331,7 +3331,7 @@ files = [
 
 [[package]]
 name = "tach"
-version = "0.14.2"
+version = "0.14.3"
 requires_python = ">=3.7"
 summary = "A Python tool to maintain a modular package architecture."
 groups = ["linters"]
@@ -3348,17 +3348,17 @@ dependencies = [
     "tomli>=1.2.2",
 ]
 files = [
-    {file = "tach-0.14.2-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:667f40c92f3bea5abe85200f07476797a6451250a0716a635ee2754955134950"},
-    {file = "tach-0.14.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c72e563824bdcf3cfe3c9edf2d4c8e304128fc70f9eb56cdd6a8bb30501e8cb2"},
-    {file = "tach-0.14.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4aeed80b0921725d52a1bf7db27b53566bd91051d708a55cc3799e0d45ed197d"},
-    {file = "tach-0.14.2-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0fde08a51a336c32930f81df4821ea8171b573997a6d20fc9e0a86dbeaa74f02"},
-    {file = "tach-0.14.2-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2e00c6122c3fe3826309678b91e3fbffe55e12a2cc39b5f410f2793d64fce8d3"},
-    {file = "tach-0.14.2-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:85bc49770910621f8164d5b8a2b8ca3308e9b64e8297e5315152e56b88d0246d"},
-    {file = "tach-0.14.2-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f6f59f0ec88895841acdb45e2caae9a671cc6e1f31e428f2a8b5904770e924ba"},
-    {file = "tach-0.14.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5791700bbbe8dc6986b024f35ba1c2ed839288f738d03f5cd3c017083c6a9f1f"},
-    {file = "tach-0.14.2-cp312-none-win32.whl", hash = "sha256:2312c923407a783dc45a28f481ce4260d6bb5d98177354ab6ed7c97ebb1e26df"},
-    {file = "tach-0.14.2-cp312-none-win_amd64.whl", hash = "sha256:6c72d50705eac77bb48539502bcb4bc52e236152187fa0afd452d93c7b701072"},
-    {file = "tach-0.14.2.tar.gz", hash = "sha256:bbf818a332433e03d09303f2af1ebc471583f0735055bc01df8f36286f6dfaea"},
+    {file = "tach-0.14.3-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:6f4a431d4d2cc9c6e913535e8473bf7037c840ecea751230054bcc1493acc1d2"},
+    {file = "tach-0.14.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b311badc243d7755189e0a766aacafb9ec1fefaa3835de4d61284b9d441be442"},
+    {file = "tach-0.14.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a8cd1176d62595befa2bda67b6f42260378ba2454965b815a582d40d30b58eef"},
+    {file = "tach-0.14.3-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:5434000447afee6274d8358f60948143f5746ebeeed45dccffb795f41817e440"},
+    {file = "tach-0.14.3-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3ceea61c23a7e6841b1906567a10610d4b47b955394aa8a24c683a5ca4df9f0f"},
+    {file = "tach-0.14.3-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:911373fb1821b8dd2c05e9eb5308689331c88832b5cc0e029ec4e2bd2fb336c3"},
+    {file = "tach-0.14.3-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:2fd4c840dbf233bd90d0e5e127f01c3884905dce45f24ac83cf8c4e52b3cad35"},
+    {file = "tach-0.14.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b92f742506885db22e2ddaba31a2dc2dca7868c892be09d4d99a460b07ebebc5"},
+    {file = "tach-0.14.3-cp312-none-win32.whl", hash = "sha256:81ca2c43b22d637f1888f890501d3515b2b5565c69732de6d0b1b435c85d91f8"},
+    {file = "tach-0.14.3-cp312-none-win_amd64.whl", hash = "sha256:229c7df670fb17dd19365827c10c7db57588ec3f30afc410a2fec6ef7bc3e52d"},
+    {file = "tach-0.14.3.tar.gz", hash = "sha256:3e00fecef2a144bece45bb699a7b9dcc245f3e855590167c61d3b1341bee2e33"},
 ]
 
 [[package]]
@@ -3755,24 +3755,24 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "75.2.0.20241025"
+version = "75.3.0.20241105"
 requires_python = ">=3.8"
 summary = "Typing stubs for setuptools"
 groups = ["typing"]
 files = [
-    {file = "types-setuptools-75.2.0.20241025.tar.gz", hash = "sha256:2949913a518d5285ce00a3b7d88961c80a6e72ffb8f3da0a3f5650ea533bd45e"},
-    {file = "types_setuptools-75.2.0.20241025-py3-none-any.whl", hash = "sha256:6721ac0f1a620321e2ccd87a9a747c4a383dc381f78d894ce37f2455b45fcf1c"},
+    {file = "types-setuptools-75.3.0.20241105.tar.gz", hash = "sha256:080883032fb26dfb91c748f69e4efbb202aeeb3f9e95e68bf7352b7ab215069f"},
+    {file = "types_setuptools-75.3.0.20241105-py3-none-any.whl", hash = "sha256:c5a98b3308fea29d26228978bd83f6ea262d2fd4d967e34e8e49d04708bb3022"},
 ]
 
 [[package]]
 name = "types-six"
-version = "1.16.21.20241009"
+version = "1.16.21.20241105"
 requires_python = ">=3.8"
 summary = "Typing stubs for six"
 groups = ["typing"]
 files = [
-    {file = "types-six-1.16.21.20241009.tar.gz", hash = "sha256:16d9e3ab37abb7339d98ea2ba857b7098ff2a1f8e9d89795876075cab34c6e67"},
-    {file = "types_six-1.16.21.20241009-py3-none-any.whl", hash = "sha256:8de8698195ec96370be175864555df5313e6d47f6342bd44e7d31e8d0c60fa01"},
+    {file = "types-six-1.16.21.20241105.tar.gz", hash = "sha256:ce3534c38079ec3242f4a20376283eb265a3837f80592b0ecacb14bd41acc29e"},
+    {file = "types_six-1.16.21.20241105-py3-none-any.whl", hash = "sha256:8b4b29e5c8fe7f1131be8f3cb7cedbcd8bb889707336f32c3fb332c9b1c71991"},
 ]
 
 [[package]]
@@ -3915,7 +3915,7 @@ files = [
 
 [[package]]
 name = "werkzeug"
-version = "3.1.1"
+version = "3.1.2"
 requires_python = ">=3.9"
 summary = "The comprehensive WSGI web application library."
 groups = ["default"]
@@ -3923,8 +3923,8 @@ dependencies = [
     "MarkupSafe>=2.1.1",
 ]
 files = [
-    {file = "werkzeug-3.1.1-py3-none-any.whl", hash = "sha256:a71124d1ef06008baafa3d266c02f56e1836a5984afd6dd6c9230669d60d9fb5"},
-    {file = "werkzeug-3.1.1.tar.gz", hash = "sha256:8cd39dfbdfc1e051965f156163e2974e52c210f130810e9ad36858f0fd3edad4"},
+    {file = "werkzeug-3.1.2-py3-none-any.whl", hash = "sha256:4f7d1a5de312c810a8a2c6f0b47e9f6a7cffb7c8322def35e4d4d9841ff85597"},
+    {file = "werkzeug-3.1.2.tar.gz", hash = "sha256:f471a4cd167233077e9d2a8190c3471c5bc520c636a9e3c1e9300c33bced03bc"},
 ]
 
 [[package]]

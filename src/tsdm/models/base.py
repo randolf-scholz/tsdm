@@ -130,25 +130,24 @@ class BaseModel(metaclass=BaseModelMetaClass):
                 raise ValueError(f"Unrecognized URL: {target_url}")
 
             subprocess.run(
-                f"svn export --force {export_url} {self.model_path}",
-                shell=True,
+                [
+                    "/usr/bin/svn",
+                    "export",
+                    "--force",
+                    str(export_url),
+                    str(self.model_path),
+                ],
                 check=True,
             )
         elif "google-research" in parsed_url.path:
             subprocess.run(
-                f"svn export {self.SOURCE_URL} {self.model_path}",
-                shell=True,
-                check=True,
-            )
-            subprocess.run(
-                f"grep -qxF {self.model_path!r} .gitignore || echo"
-                f" {self.model_path!r} >> .gitignore",
-                shell=True,
+                ["/usr/bin/svn", "export", str(self.SOURCE_URL), str(self.model_path)],
                 check=True,
             )
         else:
             subprocess.run(
-                f"git clone {self.SOURCE_URL} {self.model_path}", shell=True, check=True
+                ["/usr/bin/git", "clone", str(self.SOURCE_URL), str(self.model_path)],
+                check=True,
             )
 
         self.LOGGER.info("Finished importing model from %s", self.SOURCE_URL)

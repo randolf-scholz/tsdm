@@ -2,6 +2,7 @@ r"""Serialization utilities for tables."""
 
 __all__ = [
     "serialize_table",
+    "serialize_table_ext",
     "deserialize_table",
 ]
 
@@ -41,31 +42,41 @@ def serialize_table[T](
                 path = Path(path_or_buf)  # type: ignore[arg-type]
             except TypeError:
                 raise TypeError("Cannot determine writer") from None
-            return serialize_table(table, path, writer=path.suffix[1:], **writer_kwargs)
+            serialize_table(table, path, writer=path.suffix[1:], **writer_kwargs)
         case writer_impl if callable(writer_impl):
-            return writer_impl(table, path_or_buf, **writer_kwargs)
+            writer_impl(table, path_or_buf, **writer_kwargs)
         case str(ext):
-            pass
+            serialize_table_ext(table, path_or_buf, extension=ext, **writer_kwargs)
         case _:
             raise TypeError(f"Invalid writer: {writer=}")
 
-    match ext, table:
+
+def serialize_table_ext(
+    table: Any,
+    path_or_buf: FilePath | IO[bytes],
+    /,
+    *,
+    extension: str,
+    **kwargs: Any,
+) -> None:
+    match extension, table:
         case "parquet", pa.Table():
-            pyarrow_parquet.write_table(table, path_or_buf, **writer_kwargs)
+            pyarrow_parquet.write_table(table, path_or_buf, **kwargs)
         case "parquet", pd.DataFrame():
-            writer_method = getattr(table, f"to_{ext}")
-            writer_kwargs = {"engine": "pyarrow"} | writer_kwargs
+            writer_method = getattr(table, f"to_{extension}")
+            writer_kwargs = {"engine": "pyarrow"} | kwargs
             writer_method(path_or_buf, **writer_kwargs)
         case _, pd.DataFrame():
-            writer_method = getattr(table, f"to_{ext}")
-            writer_method(path_or_buf, **writer_kwargs)
+            writer_method = getattr(table, f"to_{extension}")
+            writer_method(path_or_buf, **kwargs)
         case _, pl.DataFrame():
-            writer_method = getattr(table, f"write_{ext}")
-            writer_method(path_or_buf, **writer_kwargs)
-        case _ if callable(writer_method := getattr(table, f"to_{ext}", None)):
-            writer_method(table, path_or_buf, **writer_kwargs)
+            writer_method = getattr(table, f"write_{extension}")
+            writer_method(path_or_buf, **kwargs)
+        case _ if callable(writer_method := getattr(table, f"to_{extension}", None)):
+            writer_method(table, path_or_buf, **kwargs)
         case _:
-            raise NotImplementedError(f"No serializer implemented for {writer=}")
+            kind = type(table).__name__
+            raise NotImplementedError(f"No {extension!r}-serializer found for {kind}.")
 
 
 def deserialize_table(

@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import Literal, Optional, overload
 
 import pandas as pd
@@ -59,7 +59,6 @@ from tsdm.types.dtypes import PYARROW_TO_POLARS
 STR = pa.string()
 TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
-
 type AnyArray = Array | ChunkedArray
 type Mask = bool | list[bool] | BooleanArray | BooleanScalar
 
@@ -302,26 +301,28 @@ def compute_entropy(value_counts: AnyArray, /) -> float:
     return -H.as_py()
 
 
-def or_(masks: Sequence[BooleanArray], /) -> BooleanArray:
+def or_(masks: Iterable[BooleanArray], /) -> BooleanArray:
     r"""Compute the logical OR of a sequence of boolean arrays."""
-    match n := len(masks):
-        case 0:
-            return pa.array([], type=pa.bool_())
-        case 1:
-            return masks[0]
-        case _:
-            return pc.or_(or_(masks[: n // 2]), or_(masks[n // 2 :]))
+    iterator = iter(masks)
+    try:
+        result = next(iterator)
+    except StopIteration:
+        return pa.array([], type=pa.bool_())
+    for mask in iterator:
+        result = pc.or_(result, mask)
+    return result
 
 
-def and_(masks: Sequence[BooleanArray], /) -> BooleanArray:
+def and_(masks: Iterable[BooleanArray], /) -> BooleanArray:
     r"""Compute the logical AND of a sequence of boolean arrays."""
-    match n := len(masks):
-        case 0:
-            return pa.array([], type=pa.bool_())
-        case 1:
-            return masks[0]
-        case _:
-            return pc.and_(and_(masks[: n // 2]), and_(masks[n // 2 :]))
+    iterator = iter(masks)
+    try:
+        result = next(iterator)
+    except StopIteration:
+        return pa.array([], type=pa.bool_())
+    for mask in iterator:
+        result = pc.and_(result, mask)
+    return result
 
 
 def filter_nulls(
@@ -329,15 +330,25 @@ def filter_nulls(
 ) -> Table:
     r"""Filter rows with null values in the given columns."""
     agg = {"or": or_, "and": and_}[aggregation]
-    masks = [table[col].is_null() for col in cols]
-    mask = pc.invert(agg(masks))
+    mask = pc.invert(agg(table[col].is_null() for col in cols))
     return table.filter(mask)
 
 
 def set_nulls_series[A: AnyArray](series: A, values: Sequence, /) -> A:
     r"""Set values to null if they match any of the given values."""
+    if isinstance(series, ChunkedArray):
+        return pa.chunked_array(set_nulls_series(arr, values) for arr in series.chunks)
+
+    if isinstance(series, DictionaryArray):
+        ref_type = series.type.value_type
+        mask = pc.is_in(series, pa.array(values, type=ref_type))
+        null = pa.scalar(None, type=ref_type)
+        result = pc.replace_with_mask(series.dictionary_decode(), mask, null)
+        return result.dictionary_encode()
+
     mask = pc.is_in(series, pa.array(values, type=series.type))
-    return pc.replace_with_mask(series, mask, pa.null())
+    null = pa.scalar(None, type=series.type)
+    return pc.replace_with_mask(series, mask, null)
 
 
 def set_nulls(table: Table, /, **cols: Sequence) -> Table:

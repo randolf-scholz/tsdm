@@ -70,7 +70,7 @@ def download_io(
             "stream": True,
             "timeout": 10,
         } | dict(request_options)
-        response = requests.get(url, **request_options)
+        response = requests.get(url, **request_options)  # noqa: S113
     else:
         response = session.get(url)
 
@@ -112,7 +112,7 @@ def stream_download(
             "stream": True,
             "timeout": 10,
         } | dict(request_options)
-        response = requests.get(url, **request_options)
+        response = requests.get(url, **request_options)  # noqa: S113
     else:
         response = session.get(url)
 
@@ -241,11 +241,18 @@ def download_from_kaggle(url: str, fname: FilePath, /, **options: Any) -> None:
 
     # download the dataset
     kaggle_name = Path(urlparse(url).path).name
-    kaggle_opts = " ".join(f"--{k} {v}" for k, v in options.items())
+    kaggle_opts = [item for k, v in options.items() for item in (f"--{k}", str(v))]
     subprocess.run(
-        "kaggle competitions download"
-        f" -p {target_directory} -c {kaggle_name} {kaggle_opts}",
-        shell=True,
+        [  # noqa: S607
+            "kaggle",
+            "competitions",
+            "download",
+            "-p",
+            str(target_directory),
+            "-c",
+            kaggle_name,
+            *kaggle_opts,
+        ],
         check=True,
     )
 
@@ -269,10 +276,16 @@ def download_from_github(url: str, fname: FilePath, /, **options: Any) -> None:
 
     # download the file
     svn_url = url.replace("tree/main", "trunk")
-    svn_opts = " ".join(f"--{k} {v}" for k, v in options.items())
+    svn_opts = [item for k, v in options.items() for item in (f"--{k}", str(v))]
     subprocess.run(
-        f"svn export --force {svn_url} {target_directory} {svn_opts}",
-        shell=True,
+        [
+            "/usr/bin/svn",
+            "export",
+            "--force",
+            svn_url,
+            str(target_directory),
+            *svn_opts,
+        ],
         check=True,
     )
 
@@ -298,7 +311,7 @@ def download(
     This is essentially a wrapper around `requests.get` with a progress bar.
     """
     if isinstance(fname, IOBase):
-        return download_io(
+        download_io(
             url,
             fname,
             username=username,
@@ -307,6 +320,7 @@ def download(
             request_options=request_options,
             chunk_size=chunk_size,
         )
+        return
 
     # construct the path
     path = Path(url.split("/")[-1] if fname is None else fname)
@@ -324,7 +338,7 @@ def download(
                 hash_algorithm=hash_algorithm,
                 hash_kwargs=hash_kwargs,
             )
-        return None
+        return
 
     # attempt to download the file
     try:
@@ -365,14 +379,18 @@ def import_from_url(
     if parsed_url.netloc == "www.kaggle.com":
         kaggle_name = Path(parsed_url.path).name
         subprocess.run(
-            f"kaggle competitions download -p {path!s} -c {kaggle_name}",
-            shell=True,
+            ["kaggle", "competitions", "download", "-p", str(path), "-c", kaggle_name],  # noqa: S607
             check=True,
         )
     elif parsed_url.netloc == "github.com":
         subprocess.run(
-            f"svn export --force {url.replace('tree/main', 'trunk')} {path!s}",
-            shell=True,
+            [
+                "/usr/bin/svn",
+                "export",
+                "--force",
+                url.replace("tree/main", "trunk"),
+                str(path),
+            ],
             check=True,
         )
     else:  # default parsing, including for UCI dataset

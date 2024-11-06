@@ -442,11 +442,15 @@ class HParamCallback(BaseCallback):
         metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
 
         run_name = Path(self.writer.log_dir).absolute()
-        with open(run_name / f"{step}.yaml", "w", encoding="utf8") as file:
+        path = run_name / f"{step}.yaml"
+
+        with path.open("w", encoding="utf8") as file:
             yaml.safe_dump(scores, file)
 
         self.writer.add_hparams(
-            hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
+            hparam_dict=self.hparam_dict,
+            metric_dict=metric_dict,
+            run_name=run_name,
         )
 
     @property

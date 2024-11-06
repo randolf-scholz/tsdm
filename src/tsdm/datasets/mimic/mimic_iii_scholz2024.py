@@ -33,7 +33,7 @@ class MIMIC_III_Scholz2024(MIMIC_III):
         # Preprocessing
         admissions = ds.ADMISSIONS
         patients = ds.PATIENTS
-        static_covariates = pd.merge(admissions, patients, on="SUBJECT_ID")
+        static_covariates = pd.merge(admissions, patients, on="SUBJECT_ID")  # noqa: PD015
         static_covariates = static_covariates.assign(
             ELAPSED_TIME=static_covariates.DISCHTIME - static_covariates.ADMITTIME
         )

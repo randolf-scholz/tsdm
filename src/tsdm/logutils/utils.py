@@ -124,8 +124,10 @@ def save_checkpoint(step: int, path: FilePath, *, objects: Mapping[str, Any]) ->
             case LRScheduler():
                 torch.save(obj, path / name)
             case dict() | list() | tuple() | set() | str() | int() | float() | None:
-                with open(path / f"{name}.yaml", "w", encoding="utf8") as file:
+                path /= f"{name}.yaml"
+                with path.open("w", encoding="utf8") as file:
                     yaml.safe_dump(obj, file)
             case _:
-                with open(path / f"{name}.pickle", "wb") as file:
+                path /= f"{name}.pickle"
+                with path.open("wb") as file:
                     pickle.dump(obj, file)

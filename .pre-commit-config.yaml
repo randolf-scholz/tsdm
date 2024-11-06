@@ -46,17 +46,6 @@ repos:
         description: "sorts entries in requirements.txt"
       - id: trailing-whitespace
         description: "trims trailing whitespace."
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: python-check-blanket-noqa
-        description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
-      - id: python-no-log-warn
-        description: "Enforce that `logging.warn` is not used."
-      - id: rst-directive-colons
-        description: "Enforce that RST directives have colons."
-      - id: rst-inline-touching-normal
-        description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   #  - repo: https://github.com/pre-commit/mirrors-prettier
   #    rev: v4.0.0-alpha.8
@@ -147,7 +136,7 @@ repos:
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.14.2 # change this to the latest tag!
+    rev: v0.14.3 # change this to the latest tag!
     hooks:
       - id: tach
   - repo: local
@@ -167,7 +156,7 @@ repos:
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.387
+    rev: v1.1.388
     hooks:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674
