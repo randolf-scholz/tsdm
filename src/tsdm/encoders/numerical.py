@@ -217,8 +217,8 @@ def reduce_axes(axis: Axis, selection: str | list[str] | Indexer) -> Axis:
 @overload
 def reduce_param(param: float, selection: Any) -> float: ...
 @overload
-def reduce_param[T: Array](param: T, selection: Any) -> T: ...
-def reduce_param[T: Array](param: float | T, selection: Any) -> float | T:
+def reduce_param[T: Array[float]](param: T, selection: Any) -> T: ...
+def reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | T:
     r"""Perform a reduction on a parameter.
 
     For example, given tensor T, axis and selection, then this returns the slice of the tensor

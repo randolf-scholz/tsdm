@@ -135,6 +135,8 @@ ignore = [
     "D103",     # Missing docstring in public function
     "D105",     # Missing docstring in magic method
     "D107",     # Missing docstring in __init__
+    # datetime
+    "DTZ001",   # timezone-naive-datetime
     # pycodestyle
     "E201",     # Whitespace after '('
     "E202",     # Whitespace before ')'

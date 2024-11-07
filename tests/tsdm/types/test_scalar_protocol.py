@@ -111,20 +111,164 @@ r"""Test cases for scalar types."""
 def test_boolean_scalar(name: str) -> None:
     value = BOOLEAN_SCALARS[name]
     assert isinstance(value, BoolScalar)
-    assert issubclass(value.__class__, BoolScalar)
 
-    # test __bool__
-    assert bool(value) == value
-    assert isinstance(bool(value), bool)
+    cls = type(value)
+    as_bool: bool = bool(value)
+    as_int: int = int(value)
+    as_float: float = float(value)
+    as_complex: complex = complex(value)
+    assert value == as_bool
+    assert value == as_int
+    assert value == as_float
+    assert value == as_complex
+
     # test __and__
-    assert value & value == value
-    assert isinstance(value & value, BoolScalar)
+    assert type(value & value) is cls
+    assert type(value & as_bool) is cls
     # test __or__
-    assert value | value == value
-    assert isinstance(value | value, BoolScalar)
+    assert type(value | value) is cls
+    assert type(value | as_bool) is cls
     # test __xor__
-    assert value ^ value != value
-    assert isinstance(value ^ value, BoolScalar)
+    assert type(value ^ value) is cls
+    assert type(value ^ as_bool) is cls
+
+
+@pytest.mark.parametrize("name", INT_SCALARS)
+def test_int_scalar(name: str) -> None:
+    value: IntScalar = INT_SCALARS[name]
+    assert isinstance(value, IntScalar)
+
+    cls = type(value)
+    as_bool: bool = bool(value)
+    as_int: int = int(value)
+    as_float: float = float(value)
+    as_complex: complex = complex(value)
+    assert value == as_int
+    assert value == as_float
+    assert value == as_complex
+    assert type(value.__index__()) is int
+
+    # test __abs__
+    assert type(abs(value)) is cls
+    # test __neg__
+    assert type(-value) is cls
+    # test __pos__
+    assert type(+value) is cls
+
+    # test __add__
+    assert type(value + value) is cls
+    assert type(value + as_bool) is cls
+    assert type(value + as_int) is cls
+    # assert isinstance(value + as_float, FloatScalar)
+    # assert isinstance(value + as_complex, ComplexScalar)
+    # test __sub__
+    assert type(value - value) is cls
+    # assert type(value - as_bool) is cls  # not supported by torch
+    assert type(value - as_int) is cls
+    # assert isinstance(value - as_float, FloatScalar)
+    # assert isinstance(value - as_complex, ComplexScalar)
+    # test __mul__
+    assert type(value * value) is cls
+    assert type(value * as_bool) is cls
+    assert type(value * as_int) is cls
+    # assert isinstance(value * as_float, FloatScalar)
+    # assert isinstance(value * as_complex, ComplexScalar)
+    # test __pow__
+    assert type(value**value) is cls
+    assert type(value**as_bool) is cls
+    assert type(value**as_int) is cls
+    # assert isinstance(value**as_float, FloatScalar)
+    # assert isinstance(value**as_complex, ComplexScalar)
+    # test __floordiv__
+    assert type(value // value) is cls
+    assert type(value // as_bool) is cls
+    assert type(value // as_int) is cls
+    # assert isinstance(value // as_float, FloatScalar)
+    # assert isinstance(value // as_complex, ComplexScalar)  # nonsensical
+    # test __mod__
+    assert type(value % value) is cls
+    assert type(value % as_bool) is cls
+    assert type(value % as_int) is cls
+    # assert isinstance(value % as_float, FloatScalar)
+    # assert isinstance(value % as_complex, ComplexScalar)  # nonsensical
+
+
+@pytest.mark.parametrize("name", FLOAT_SCALARS)
+def test_float_scalar(name: str) -> None:
+    value: FloatScalar = FLOAT_SCALARS[name]
+    assert isinstance(value, FloatScalar)
+
+    cls = type(value)
+    as_float: float = float(value)
+    as_complex: complex = complex(value)
+    assert value == as_float
+    assert value == as_complex
+
+    # test __abs__
+    assert type(abs(value)) is cls
+    # test __neg__
+    assert type(-value) is cls
+    # test __pos__
+    assert type(+value) is cls
+
+    # test __add__
+    assert type(value + value) is cls
+    assert type(value + as_float) is cls
+    assert isinstance(value + as_complex, ComplexScalar)
+    # test __sub__
+    assert type(value - value) is cls
+    assert type(value - as_float) is cls
+    assert isinstance(value - as_complex, ComplexScalar)
+    # test __mul__
+    assert type(value * value) is cls
+    assert type(value * as_float) is cls
+    assert isinstance(value * as_complex, ComplexScalar)
+    # test __truediv__
+    assert type(value / value) is cls
+    assert type(value / as_float) is cls
+    assert isinstance(value / as_complex, ComplexScalar)
+    # test __pow__
+    assert type(value**value) is cls
+    assert type(value**as_float) is cls
+    assert isinstance(value**as_complex, ComplexScalar)
+    # test __floordiv__
+    assert type(value // value) is cls
+    assert type(value // as_float) is cls
+    # assert isinstance(value // as_complex, ComplexScalar)  # nonsensical
+
+
+@pytest.mark.parametrize("name", COMPLEX_SCALARS)
+def test_complex_scalar(name: str) -> None:
+    value = COMPLEX_SCALARS[name]
+    cls = type(value)
+    assert isinstance(value, ComplexScalar)
+
+    # test __complex__
+    as_complex: complex = complex(value)
+    assert as_complex == value
+
+    # test __abs__
+    assert isinstance(abs(value), FloatScalar)
+    # test __neg__
+    assert type(-value) is cls
+    # test __pos__
+    assert type(+value) is cls
+
+    # test __add__
+    assert type(value + value) is cls
+    assert type(value + as_complex) is cls
+    # test __sub__
+    assert type(value - value) is cls
+    assert type(value - as_complex) is cls
+    # test __mul__
+    assert type(value * value) is cls
+    assert type(value * as_complex) is cls
+    # test __truediv__
+    assert type(value / value) is cls
+    assert type(value / as_complex) is cls
+    # test __pow__
+    assert type(value**value) is cls
+    assert type(value**as_complex) is cls
 
 
 @pytest.mark.parametrize("name", ORDERED_SCALARS)

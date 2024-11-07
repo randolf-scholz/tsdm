@@ -11,8 +11,12 @@ Note:
 """
 
 __all__ = [
-    # Protocols
-    "SupportsBool",
+    # extras
+    "BoolOP",
+    "IntOP",
+    "FloatOP",
+    "ComplexOP",
+    # Generic Scalars
     "BaseScalar",
     "OrderedScalar",
     "AdditiveScalar",
@@ -30,8 +34,48 @@ from typing import (
     Self,
     SupportsFloat,
     SupportsInt,
+    overload,
     runtime_checkable,
+    type_check_only,
 )
+
+
+@type_check_only
+class BoolOP[T](Protocol):
+    # similar to numpy._FloatOP
+    @overload
+    def __call__(self, other: bool, /) -> T: ...  # noqa: FBT001
+    @overload
+    def __call__(self, other: T, /) -> T: ...
+
+
+@type_check_only
+class IntOP[T](Protocol):
+    # similar to numpy._FloatOP
+    @overload
+    def __call__(self, other: int, /) -> T: ...
+    @overload
+    def __call__(self, other: T, /) -> T: ...
+
+
+@type_check_only
+class FloatOP[T](Protocol):
+    # similar to numpy._FloatOP
+    @overload
+    def __call__(self, other: float, /) -> T: ...
+    @overload
+    def __call__(self, other: T, /) -> T: ...
+
+
+@type_check_only
+class ComplexOP[T](Protocol):
+    # similar to numpy._FloatOP
+    @overload
+    def __call__(self, other: complex, /) -> T: ...
+    @overload
+    def __call__(self, other: float, /) -> T: ...
+    @overload
+    def __call__(self, other: T, /) -> T: ...
 
 
 # region generic scalars ---------------------------------------------------------------
@@ -93,6 +137,10 @@ class AdditiveScalar(BaseScalar, Protocol):
     def __rsub__(self, other: Self, /) -> Self: ...
 
 
+class CompatScalar[T](Protocol):
+    r"""Scalar type that is compatible with the given type `T`."""
+
+
 # endregion generic scalars ------------------------------------------------------------
 
 
@@ -116,7 +164,6 @@ class BoolScalar(OrderedScalar, Protocol):
     # conversion to python scalar
     def __bool__(self) -> bool: ...
     def __int__(self) -> int: ...
-    def __float__(self) -> float: ...
 
     # unary operations
     # NOTE: __invert__ disabled, because ~True == -2
@@ -124,14 +171,14 @@ class BoolScalar(OrderedScalar, Protocol):
 
     # binary operations
     # and `&`
-    def __and__(self, other: Self | bool, /) -> Self: ...
-    def __rand__(self, other: Self | bool, /) -> Self: ...
+    __and__: BoolOP[Self]
+    __rand__: BoolOP[Self]
     # or `|`
-    def __or__(self, other: Self | bool, /) -> Self: ...
-    def __ror__(self, other: Self | bool, /) -> Self: ...
+    __or__: BoolOP[Self]
+    __ror__: BoolOP[Self]
     # xor `^`
-    def __xor__(self, other: Self | bool, /) -> Self: ...
-    def __rxor__(self, other: Self | bool, /) -> Self: ...
+    __xor__: BoolOP[Self]
+    __rxor__: BoolOP[Self]
 
 
 @runtime_checkable
@@ -150,23 +197,24 @@ class IntScalar(OrderedScalar, Protocol):
 
     # binary operations
     # + (addition)
-    def __add__(self, other: Self | int, /) -> Self: ...
-    def __radd__(self, other: Self | int, /) -> Self: ...
+    __add__: IntOP[Self]
+    __radd__: IntOP[Self]
     # - (subtraction)
-    def __sub__(self, other: Self | int, /) -> Self: ...
-    def __rsub__(self, other: Self | int, /) -> Self: ...
+    __sub__: IntOP[Self]
+    __rsub__: IntOP[Self]
     # * (multiplication)
-    def __mul__(self, other: Self | int, /) -> Self: ...
-    def __rmul__(self, other: Self | int, /) -> Self: ...
+    __mul__: IntOP[Self]
+    __rmul__: IntOP[Self]
     # ** (power)
-    def __pow__(self, exponent: Self | int, /) -> Self: ...
-    def __rpow__(self, base: Self | int, /) -> Self: ...
+    __pow__: IntOP[Self]
+    __rpow__: IntOP[Self]
     # % (modulo)
-    def __mod__(self, other: Self | int, /) -> Self: ...
-    def __rmod__(self, other: Self | int, /) -> Self: ...
+    __mod__: IntOP[Self]
+    __rmod__: IntOP[Self]
     # // (floor division)
-    def __floordiv__(self, other: Self | int, /) -> SupportsInt: ...
-    def __rfloordiv__(self, other: Self | int, /) -> SupportsInt: ...
+    __floordiv__: IntOP[Self]
+    __rfloordiv__: IntOP[Self]
+
     # / (division)
     def __truediv__(self, other: Self | int, /) -> SupportsFloat: ...
     def __rtruediv__(self, other: Self | int, /) -> SupportsFloat: ...
@@ -177,8 +225,6 @@ class FloatScalar(OrderedScalar, Protocol):
     r"""Protocol for floating point scalars."""
 
     # conversion to python scalar
-    def __bool__(self) -> bool: ...
-    def __int__(self) -> int: ...
     def __float__(self) -> float: ...
 
     # unary operations
@@ -189,36 +235,39 @@ class FloatScalar(OrderedScalar, Protocol):
     # + (positive)
     def __pos__(self) -> Self: ...
 
-    # binary operations
     # + (addition)
-    def __add__(self, other: Self | float, /) -> Self: ...
-    def __radd__(self, other: Self | float, /) -> Self: ...
+    __add__: FloatOP[Self]
+    __radd__: FloatOP[Self]
     # - (subtraction)
-    def __sub__(self, other: Self | float, /) -> Self: ...
-    def __rsub__(self, other: Self | float, /) -> Self: ...
+    __sub__: FloatOP[Self]
+    __rsub__: FloatOP[Self]
     # * (multiplication)
-    def __mul__(self, other: Self | float, /) -> Self: ...
-    def __rmul__(self, other: Self | float, /) -> Self: ...
+    __mul__: FloatOP[Self]
+    __rmul__: FloatOP[Self]
     # / (division)
-    def __truediv__(self, other: Self | float, /) -> Self: ...
-    def __rtruediv__(self, other: Self | float, /) -> Self: ...
+    __truediv__: FloatOP[Self]
+    __rtruediv__: FloatOP[Self]
     # ** (power)
-    def __pow__(self, exponent: Self | float, /) -> Self: ...
-    def __rpow__(self, base: Self | float, /) -> Self: ...
+    __pow__: FloatOP[Self]
+    __rpow__: FloatOP[Self]
     # // (floor division)
-    def __floordiv__(self, other: Self | float, /) -> Self: ...
-    def __rfloordiv__(self, other: Self | float, /) -> Self: ...
+    __floordiv__: FloatOP[Self]
+    __rfloordiv__: FloatOP[Self]
     # % (modulo)
-    def __mod__(self, other: Self | float, /) -> Self: ...
-    def __rmod__(self, other: Self | float, /) -> Self: ...
+    __mod__: FloatOP[Self]
+    __rmod__: FloatOP[Self]
 
 
 @runtime_checkable
 class ComplexScalar(BaseScalar, Protocol):
     r"""Protocol for complex scalars."""
 
+    # @property
+    # def imag(self) -> Self: ...
+    # @property
+    # def real(self) -> Self: ...
+
     # conversion to python scalar
-    def __bool__(self) -> bool: ...
     def __complex__(self) -> complex: ...
 
     # unary operations
@@ -228,25 +277,20 @@ class ComplexScalar(BaseScalar, Protocol):
 
     # binary operations
     # + (addition)
-    def __add__(self, other: Self | complex, /) -> Self: ...
-    def __radd__(self, other: Self | complex, /) -> Self: ...
+    __add__: ComplexOP[Self]
+    __radd__: ComplexOP[Self]
     # - (subtraction)
-    def __sub__(self, other: Self | complex, /) -> Self: ...
-    def __rsub__(self, other: Self | complex, /) -> Self: ...
+    __sub__: ComplexOP[Self]
+    __rsub__: ComplexOP[Self]
     # * (multiplication)
-    def __mul__(self, other: Self | complex, /) -> Self: ...
-    def __rmul__(self, other: Self | complex, /) -> Self: ...
+    __mul__: ComplexOP[Self]
+    __rmul__: ComplexOP[Self]
     # / (division)
-    def __truediv__(self, other: Self | complex, /) -> Self: ...
-    def __rtruediv__(self, other: Self | complex, /) -> Self: ...
+    __truediv__: ComplexOP[Self]
+    __rtruediv__: ComplexOP[Self]
     # ** (power)
-    def __pow__(self, exponent: Self | complex, /) -> Self: ...
-    def __rpow__(self, base: Self | complex, /) -> Self: ...
-
-    # @property
-    # def imag(self) -> Self: ...
-    # @property
-    # def real(self) -> Self: ...
+    __pow__: ComplexOP[Self]
+    __rpow__: ComplexOP[Self]
 
 
 @runtime_checkable

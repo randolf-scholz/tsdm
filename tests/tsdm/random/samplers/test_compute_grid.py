@@ -94,13 +94,13 @@ EXAMPLES: dict[str, GridTuple[TimeStamp, TimeDelta]] = {
         tmin=np_float(0.0),
         tmax=np_float(99.9),
         offset=np_float(1.4),
-        timedelta=np_float(0.6),  # type: ignore[arg-type]
+        timedelta=np_float(0.6),
     ),
     "numpy_int": GridTuple(
         tmin=np_int(0),
         tmax=np_int(100),
         offset=np_int(1),
-        timedelta=np_int(1),  # type: ignore[arg-type]
+        timedelta=np_int(1),
     ),
 }
 
