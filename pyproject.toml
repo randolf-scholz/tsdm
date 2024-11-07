@@ -136,7 +136,7 @@ ignore = [
     "D105",     # Missing docstring in magic method
     "D107",     # Missing docstring in __init__
     # datetime
-    "DTZ001",   # timezone-naive-datetime
+    "DTZ",      # timezone-naive-datetime
     # pycodestyle
     "E201",     # Whitespace after '('
     "E202",     # Whitespace before ')'
@@ -162,6 +162,7 @@ ignore = [
     # pandas
     "PD002",    # pandas-use-of-inplace-argument
     "PD010",    # pandas-use-of-dot-pivot-or-unstack
+    "PD011",    # pandas-use-of-dot-values
     "PD013",    # pandas-use-of-dot-stack
     "PD101",    # pandas-nunique-constant-series-check
     "PD901",    # Avoid using the generic variable name `df` for DataFrames
@@ -196,6 +197,7 @@ ignore = [
     "RUF022",   # __all__ not sorted
     # flake8-bandit
     "S301",     # suspicious-pickle-usage
+    "S311",     # standard-random-usage
     "S603",     # subprocess-without-shell-equals-true
     # todo
     "TD",       # todo
