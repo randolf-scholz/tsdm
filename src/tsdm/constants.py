@@ -1,22 +1,24 @@
 r"""Constants used throughout the package."""
 
 __all__ = [
+    # ENUMS
+    "FLOAT",
     # Constants
     "ATOL",
     "BOOLEAN_PAIRS",
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
+    "EMPTY_FN",
     "EMPTY_MAP",
     "EMPTY_SET",
-    "EMPTY_FN",
+    "EMPTY_SIZE",
     "EPS",
     "EXAMPLE_BOOLS",
     "EXAMPLE_CATEGORIES",
     "EXAMPLE_EMOJIS",
     "EXAMPLE_STRINGS",
-    "INF",
+    "IDENTITY",
     "KEYWORD_ONLY",
-    "NAN",
     "NA_STRINGS",
     "NA_VALUES",
     "NOT_GIVEN",
@@ -25,14 +27,15 @@ __all__ = [
     "POSITIONAL_OR_KEYWORD",
     "PRECISION",
     "RNG",
-    "ROOT_3",
     "RTOL",
     "TIME_UNITS",
     "VAR_KEYWORD",
     "VAR_POSITIONAL",
 ]
 
+import math
 from collections.abc import Callable, Mapping
+from enum import Enum
 from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
 from typing import Any, Final, Never
@@ -42,29 +45,45 @@ import pandas as pd
 import torch
 from numpy.random import Generator
 
-INF: Final[float] = float("inf")
-r"""Infinity"""
-NAN: Final[float] = float("nan")
-r"""Not a Number."""
-ROOT_3: Final[float] = float(np.sqrt(3))
-r"""Square root of 3."""
+
+class FLOAT(float, Enum):
+    r"""Enum: Common floating point values."""
+
+    ZERO = 0.0
+    ONE = 1.0
+    INF = math.inf
+    NAN = math.nan
+
+    E = math.e
+    PI = math.pi
+    ROOT_2 = math.sqrt(2)
+    ROOT_2PI = math.sqrt(2 * math.pi)
+    ROOT_3 = math.sqrt(3)
+
+
+# region callable constants ------------------------------------------------------------
+IDENTITY: Final[Callable] = lambda _: _  # noqa: E731
+r"""Constant: Identity function, use as default in function signatures."""
+EMPTY_FN: Final[Callable[..., None]] = lambda *_, **__: None  # noqa: E731
+r"""Constant: Empty function, use as default in function signatures."""
+# region collection constants ----------------------------------------------------------
+
+EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})  # FIXME: PEP 603
+r"""Constant: Immutable empty `Mapping`, use as default in function signatures."""
+EMPTY_SET: Final[frozenset[Any]] = frozenset()
+r"""Constant: Immutable empty `Set`, use as default in function signatures."""
+EMPTY_SIZE: Final[torch.Size] = torch.Size([])
+r"""Constant: Empty shape."""
+# endregion collection constants -------------------------------------------------------
+
+
+# region precision constants -----------------------------------------------------------
+RNG: Final[Generator] = np.random.default_rng()
+r"""Default random number generator."""
 ATOL: Final[float] = 1e-6
 r"""CONST: Default absolute precision."""
 RTOL: Final[float] = 1e-6
 r"""CONST: Default relative precision."""
-NOT_GIVEN: Final[Any] = None
-r"""CONST: Default value for optional arguments."""
-
-# NOTE: Use frozenmap() if PEP 603 is accepted.
-EMPTY_SET: Final[frozenset[Any]] = frozenset()
-r"""Constant: Immutable Empty `Set`, use as default in function signatures."""
-EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
-r"""Constant: Immutable Empty `Mapping`, use as default in function signatures."""
-EMPTY_FN: Final[Callable[..., None]] = lambda *_, **__: None  # noqa: E731
-r"""Constant: Empty function, use as default in function signatures."""
-RNG: Final[Generator] = np.random.default_rng()
-r"""Default random number generator."""
-
 EPS: Final[dict[torch.dtype, float]] = {
     torch.bfloat16   : 1e-2,
     torch.complex128 : 1e-15,
@@ -75,6 +94,12 @@ EPS: Final[dict[torch.dtype, float]] = {
     torch.float64    : 1e-15,
 }  # fmt: skip
 r"""CONST: Default epsilon for each dtype."""
+# endregion precision constants --------------------------------------------------------
+
+
+NOT_GIVEN: Final[Any] = None
+r"""CONST: Default value for optional arguments."""
+
 
 TIME_UNITS: Final[dict[str, np.timedelta64]] = {
     "Y": np.timedelta64(1, "Y"),
