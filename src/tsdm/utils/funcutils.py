@@ -182,14 +182,14 @@ def get_parameter(func: Fn, name: str, /) -> Parameter:
 
 
 def yield_return_nodes(nodes: Iterable[AST], /) -> Iterator[Return]:
-    r"""Collect all exit points of a function as ast nodes."""
+    r"""Yields all exit points of a function as ast nodes."""
     for node in nodes:
         if isinstance(node, Return):
             yield node
 
 
 def _yield_names(nodes: Iterable[AST], /) -> Iterator[str]:
-    r"""Yield variable names from ast nodes."""
+    r"""Yields variable names from ast nodes."""
     for obj in nodes:
         match obj:
             case Name(id=name):

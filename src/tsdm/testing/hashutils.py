@@ -131,9 +131,9 @@ def to_int(value: str, /, *, base: Optional[int] = None) -> int:
     if base is None:
         if all(c in "01" for c in value):  # binary
             base = 2
-        elif all(c in "01234567" for c in value):  # octal
+        elif all(c in string.octdigits for c in value):  # octal
             base = 8
-        elif all(c.isdigit() for c in value):  # decimal
+        elif all(c in string.digits for c in value):  # decimal
             base = 10
         elif all(c in string.hexdigits for c in value):  # hexadecimal
             base = 16

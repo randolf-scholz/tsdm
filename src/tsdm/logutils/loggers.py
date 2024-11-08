@@ -213,7 +213,7 @@ class DefaultLogger(BaseLogger):
         self.callbacks["result"].extend(self.make_default_result_callbacks())
 
     def make_default_batch_callbacks(self) -> Iterator[Callback]:
-        r"""Make the default batch callbacks."""
+        r"""Yield the default batch callbacks."""
         if self.metrics is not None:
             yield MetricsCallback(self.metrics, writer=self.writer, key="batch")
         if self.optimizer is not None:
@@ -222,14 +222,14 @@ class DefaultLogger(BaseLogger):
             )
 
     def make_default_result_callbacks(self) -> Iterator[Callback]:
-        r"""Make the default result callbacks."""
+        r"""Yield the default result callbacks."""
         if self.history is not None and self.hparam_dict is not None:
             yield HParamCallback(
                 self.hparam_dict, history=self.history, writer=self.writer
             )
 
     def make_default_epoch_callbacks(self) -> Iterator[Callback]:
-        r"""Make the default epoch callbacks."""
+        r"""Yield the default epoch callbacks."""
         if (
             self.metrics is not None
             and self.model is not None

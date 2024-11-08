@@ -34,7 +34,7 @@ class AdamState(TypedDict):
 
 
 def yield_optimizer_params(optimizer: Optimizer, /) -> Iterator[nn.Parameter]:
-    r"""Get parameters from optimizer."""
+    r"""Yield the parameters registered to an optimizer."""
     for group in optimizer.param_groups:
         for param in group["params"]:
             if param.requires_grad:

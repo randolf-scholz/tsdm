@@ -10,7 +10,7 @@ __all__ = [
     "download_from_kaggle",
     "download_io",
     "import_from_url",
-    "iter_content",
+    "yield_suburls",
     "stream_download",
 ]
 
@@ -103,7 +103,7 @@ def stream_download(
     request_options: Mapping[str, Any] = EMPTY_MAP,
     chunk_size: int = 1024,
 ) -> Iterator[bytes]:
-    r"""Download a file as a bytes-stream."""
+    r"""Yield a remote file as a byte-stream."""
     if session is None:
         # construct the request
         request_options = {
@@ -134,8 +134,8 @@ def stream_download(
                 yield data
 
 
-def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
-    r"""Iterate over the contents of a directory."""
+def yield_suburls(url: str, /, *, session: Session) -> Iterator[str]:
+    r"""Yield recursively suburls from an url."""
     response = session.get(url)
     if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
@@ -148,9 +148,8 @@ def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
     for link in parser.links:
         if link == "../":
             continue
-
         if link.endswith("/"):  # Recursion
-            yield from iter_content(url + link, session=session)
+            yield from yield_suburls(url + link, session=session)
         else:
             yield url + link
 
@@ -209,7 +208,7 @@ def download_directory_to_zip(
             )
 
         # Get the contents of the directory
-        content: list[str] = sorted(iter_content(url, session=session))
+        content: list[str] = sorted(yield_suburls(url, session=session))
 
         # Download the directory
         with ZipFile(zip_filename, **zip_options) as archive:

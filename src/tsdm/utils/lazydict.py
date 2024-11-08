@@ -32,10 +32,10 @@ from tsdm.utils.funcutils import get_return_typehint
 
 type MaybeLazy[V] = V | LazyValue[V]
 type LazySpec[V] = (
-    LazyValue[V]                                     # LazyValue
-    | Callable[[], V]                                # func
-    | tuple[Callable[..., V], tuple, dict[str, Any]] # func, args, kwargs
-    # | V                                            # value (cannot be tuple)
+    LazyValue[V]                                      # LazyValue
+    | Callable[[], V]                                 # func
+    | tuple[Callable[..., V], tuple, dict[str, Any]]  # func, args, kwargs
+    # | V                                             # value (cannot be tuple)
 )  # fmt: skip
 r"""A type alias for the possible values of a `LazyDict`."""
 
@@ -68,9 +68,9 @@ class LazyValue[V]:  # +V
             case [fn, tuple(args), dict(kwargs)] if callable(fn):
                 return cls(fn, args=args, kwargs=kwargs)
             case tuple(tup):
+                types = ", ".join(type(arg).__name__ for arg in tup)  # type: ignore[var-annotated]
                 raise TypeError(
-                    "Expected tuple of function, args and kwargs."
-                    f" Got tuple[{', '.join(type(arg).__name__ for arg in tup)}].",
+                    f"Expected tuple (function, args, kwargs), got tuple[{types}]."
                 )
             case value:  # fallback to wrapping value.
                 raise TypeError(

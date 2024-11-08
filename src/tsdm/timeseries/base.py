@@ -922,7 +922,7 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         return len(self.index)
 
     def __iter__(self) -> Iterator[PlainSample]:
-        r"""Iterate over all the samples in the dataset."""
+        r"""Yield all the samples in the dataset."""
         for key in self.index:
             yield self[key]
 

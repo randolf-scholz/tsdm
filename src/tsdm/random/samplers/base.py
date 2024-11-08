@@ -287,7 +287,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
         return self.subsamplers[key]
 
     def __iter__(self) -> Iterator[tuple[K, K2]]:
-        r"""Return indices of the samples.
+        r"""Yield indices of the samples.
 
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
