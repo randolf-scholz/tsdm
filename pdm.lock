@@ -5,7 +5,7 @@
 groups = ["default", "devtools", "docs", "experiment", "linters", "tests", "typing"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:41dbeadcb5dcf51a78f8c3bb6bee6038e9d570f947518e5877972f2a4fa2a5ae"
+content_hash = "sha256:4e1db7381c199022cdb73782bdf2513afe94ff5a907fadc31dc82eed7e96c330"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -160,7 +160,7 @@ files = [
 name = "asttokens"
 version = "2.4.1"
 summary = "Annotate AST trees with source code positions"
-groups = ["devtools", "experiment"]
+groups = ["experiment"]
 dependencies = [
     "six>=1.12.0",
     "typing; python_version < \"3.5\"",
@@ -314,7 +314,7 @@ files = [
 
 [[package]]
 name = "cmake"
-version = "3.30.5"
+version = "3.31.0.1"
 requires_python = ">=3.7"
 summary = "CMake is an open-source, cross-platform family of tools designed to build, test and package software"
 groups = ["devtools"]
@@ -322,24 +322,24 @@ dependencies = [
     "importlib-metadata>=1.4; python_version < \"3.8\"",
 ]
 files = [
-    {file = "cmake-3.30.5-py3-none-macosx_10_10_universal2.whl", hash = "sha256:c518d174cde8c5bda3dc9c906af2e1ad54448019d9a9061c5d85331c67bbaa60"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:085728e950e6096014c99fc46361fbaa508863157bafe0ecf6dc232c16098456"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:437e9f885cf576f47b45974a92239d7c86da91e99e62ecf1aa8be454703dd1a6"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b3a662e22dba1288b678daa5544a62a05da1992e0b654e799217e22bc7e5194a"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9dbedacaba2daa40726569590762d775246325b609753d7af888dc7eda49c7bd"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:4a5c113428aa9f3b4b2ce2e6dc1b932cfe3991be04d215c5ab51c078eae3e674"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:9edd4065dbc67a6861255f05135249a3f042f1e09a73c608f84a1a0c6a60a266"},
-    {file = "cmake-3.30.5-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:db049e551e2f0562b3b225ac760888ee38b8ade62d74213f3611420e6b22f36d"},
-    {file = "cmake-3.30.5-py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:f9b351ad3b0bacd04fe73a35b71bf603416b0441d295c13881e56eba6ec01b4b"},
-    {file = "cmake-3.30.5-py3-none-musllinux_1_1_i686.whl", hash = "sha256:c37f41ac7e7a806c91d16cd3efcd696635634bb63e0d9007582373f5a81c4fa1"},
-    {file = "cmake-3.30.5-py3-none-musllinux_1_1_ppc64le.whl", hash = "sha256:e4fd409b3455a01fe80860503be4c1b34e2e12cc5433921c7aed1102a3870322"},
-    {file = "cmake-3.30.5-py3-none-musllinux_1_1_s390x.whl", hash = "sha256:4a1ded0183a75bd71ee275ef976e8eb97b4a5f4b58e09c90c1734c509acb7d5a"},
-    {file = "cmake-3.30.5-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:e2fd43ab522695e0ebbb6dfc6a1466daeb66c57f7f4aade02fe8c5a61acc2828"},
-    {file = "cmake-3.30.5-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:6161031b0c89f3f60b82cd5e1dd8cdef47b0a057f9a5349e18bf1507ac4b2402"},
-    {file = "cmake-3.30.5-py3-none-win32.whl", hash = "sha256:3ee3ab9b4d3fcdb9360104ef2175a47e145693b365983dcd8ccb5d58b1d0ab7f"},
-    {file = "cmake-3.30.5-py3-none-win_amd64.whl", hash = "sha256:dddb1c82e69c8cf79a314f57c2cbb1b3c152758fa0997a5f5ddf8fc8207c994a"},
-    {file = "cmake-3.30.5-py3-none-win_arm64.whl", hash = "sha256:ef454176664c941da91197feb91b68cab91ef0354ab0c4d7bfb70e069cb700f1"},
-    {file = "cmake-3.30.5.tar.gz", hash = "sha256:2815a2b4dde61a78648a2ff4318d2d303eb41600c4bdb32fcb237b4746444ed2"},
+    {file = "cmake-3.31.0.1-py3-none-macosx_10_10_universal2.whl", hash = "sha256:0bfb1c002f950ce34816d141d61e1def73549465c3ecce9b37e7a7ba966bbed3"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:5f0f0fddca1b52e98d8229c4f862ba2c2327a8aadad3f0bf3579fd6e3054c5d1"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:cb6a80b422a116796d5650e076396eb6f5d218a093dc2e9a57e4c5456269b23c"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5e20285159870023f4ed1bf05b4b2e414acca5b298a601a07769c8564fbfebe8"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:789b69efc404effbd8506c81874bd5c7fad0a2aed009adc624b03fd24d5e083d"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:701835343aabc0798fe7b4a3eeb5388011119a8b2753d93c2de6f4d174b3a150"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c67fb0367749797b8a5a1c154c463a626c8427cde09c8402e0e7afbe772dff47"},
+    {file = "cmake-3.31.0.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:15866c85417d986f5f813c4826e1588aa3bbba93a5a1e5e432b4e44b2298a13a"},
+    {file = "cmake-3.31.0.1-py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:01651560102fe957b7f6e466186ed90ab254874facb7371a64c7255e3b34f089"},
+    {file = "cmake-3.31.0.1-py3-none-musllinux_1_1_i686.whl", hash = "sha256:7739445b63ccad62715193116fe29bb48425e82dc8014c32c87503232d986270"},
+    {file = "cmake-3.31.0.1-py3-none-musllinux_1_1_ppc64le.whl", hash = "sha256:d73a57c8974f50448edf5b12fde8988e307da654e1a06ad3bdc50297446637f0"},
+    {file = "cmake-3.31.0.1-py3-none-musllinux_1_1_s390x.whl", hash = "sha256:c1bc721fb526e1398b15809d2f8599f0b7349c364b94515558a80140ca209b15"},
+    {file = "cmake-3.31.0.1-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:fde5eae9aa9357ac21f567624c9af4085b160908e8f4f703ef58e3f4c65b88c1"},
+    {file = "cmake-3.31.0.1-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:c987b0c30d9996fcdddccfbaefc0f8126f21cbf74f24fc3373d76136672597bc"},
+    {file = "cmake-3.31.0.1-py3-none-win32.whl", hash = "sha256:6a6936d5165ede55498e698f42fe33a58bb920644f3987069a13c9ad420ff7b7"},
+    {file = "cmake-3.31.0.1-py3-none-win_amd64.whl", hash = "sha256:64989a8d095ea056f2492ba4c78ea6f0240841d5ddb4e32cd5b7535c767c7863"},
+    {file = "cmake-3.31.0.1-py3-none-win_arm64.whl", hash = "sha256:48aefa1c288bfba6c2fbcbb58b88985e3a9eeb795d7ab97e97f02f675de55c25"},
+    {file = "cmake-3.31.0.1.tar.gz", hash = "sha256:8e513610a59b0a8bc3e85edf10aebe835dcd613d216bae98e7f2f9f84f6f9b53"},
 ]
 
 [[package]]
@@ -370,25 +370,25 @@ files = [
 
 [[package]]
 name = "contourpy"
-version = "1.3.0"
-requires_python = ">=3.9"
+version = "1.3.1"
+requires_python = ">=3.10"
 summary = "Python library for calculating contours of 2D quadrilateral grids"
 groups = ["default", "experiment"]
 dependencies = [
     "numpy>=1.23",
 ]
 files = [
-    {file = "contourpy-1.3.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:570ef7cf892f0afbe5b2ee410c507ce12e15a5fa91017a0009f79f7d93a1268f"},
-    {file = "contourpy-1.3.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:da84c537cb8b97d153e9fb208c221c45605f73147bd4cadd23bdae915042aad6"},
-    {file = "contourpy-1.3.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0be4d8425bfa755e0fd76ee1e019636ccc7c29f77a7c86b4328a9eb6a26d0639"},
-    {file = "contourpy-1.3.0-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:9c0da700bf58f6e0b65312d0a5e695179a71d0163957fa381bb3c1f72972537c"},
-    {file = "contourpy-1.3.0-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:eb8b141bb00fa977d9122636b16aa67d37fd40a3d8b52dd837e536d64b9a4d06"},
-    {file = "contourpy-1.3.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3634b5385c6716c258d0419c46d05c8aa7dc8cb70326c9a4fb66b69ad2b52e09"},
-    {file = "contourpy-1.3.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:0dce35502151b6bd35027ac39ba6e5a44be13a68f55735c3612c568cac3805fd"},
-    {file = "contourpy-1.3.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:aea348f053c645100612b333adc5983d87be69acdc6d77d3169c090d3b01dc35"},
-    {file = "contourpy-1.3.0-cp312-cp312-win32.whl", hash = "sha256:90f73a5116ad1ba7174341ef3ea5c3150ddf20b024b98fb0c3b29034752c8aeb"},
-    {file = "contourpy-1.3.0-cp312-cp312-win_amd64.whl", hash = "sha256:b11b39aea6be6764f84360fce6c82211a9db32a7c7de8fa6dd5397cf1d079c3b"},
-    {file = "contourpy-1.3.0.tar.gz", hash = "sha256:7ffa0db17717a8ffb127efd0c95a4362d996b892c2904db72428d5b52e1938a4"},
+    {file = "contourpy-1.3.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:0ffa84be8e0bd33410b17189f7164c3589c229ce5db85798076a3fa136d0e509"},
+    {file = "contourpy-1.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:805617228ba7e2cbbfb6c503858e626ab528ac2a32a04a2fe88ffaf6b02c32bc"},
+    {file = "contourpy-1.3.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ade08d343436a94e633db932e7e8407fe7de8083967962b46bdfc1b0ced39454"},
+    {file = "contourpy-1.3.1-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:47734d7073fb4590b4a40122b35917cd77be5722d80683b249dac1de266aac80"},
+    {file = "contourpy-1.3.1-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:2ba94a401342fc0f8b948e57d977557fbf4d515f03c67682dd5c6191cb2d16ec"},
+    {file = "contourpy-1.3.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:efa874e87e4a647fd2e4f514d5e91c7d493697127beb95e77d2f7561f6905bd9"},
+    {file = "contourpy-1.3.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:1bf98051f1045b15c87868dbaea84f92408337d4f81d0e449ee41920ea121d3b"},
+    {file = "contourpy-1.3.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:61332c87493b00091423e747ea78200659dc09bdf7fd69edd5e98cef5d3e9a8d"},
+    {file = "contourpy-1.3.1-cp312-cp312-win32.whl", hash = "sha256:e914a8cb05ce5c809dd0fe350cfbb4e881bde5e2a38dc04e3afe1b3e58bd158e"},
+    {file = "contourpy-1.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:08d9d449a61cf53033612cb368f3a1b26cd7835d9b8cd326647efe43bca7568d"},
+    {file = "contourpy-1.3.1.tar.gz", hash = "sha256:dfd97abd83335045a913e3bcc4a09c0ceadbe66580cf573fe961f4a825efa699"},
 ]
 
 [[package]]
@@ -517,22 +517,6 @@ files = [
 ]
 
 [[package]]
-name = "devtools"
-version = "0.12.2"
-requires_python = ">=3.7"
-summary = "Python's missing debug print command, and more."
-groups = ["devtools"]
-dependencies = [
-    "asttokens<3.0.0,>=2.0.0",
-    "executing>=1.1.1",
-    "pygments>=2.15.0",
-]
-files = [
-    {file = "devtools-0.12.2-py3-none-any.whl", hash = "sha256:c366e3de1df4cdd635f1ad8cbcd3af01a384d7abda71900e68d43b04eb6aaca7"},
-    {file = "devtools-0.12.2.tar.gz", hash = "sha256:efceab184cb35e3a11fa8e602cc4fadacaa2e859e920fc6f87bf130b69885507"},
-]
-
-[[package]]
 name = "dill"
 version = "0.3.9"
 requires_python = ">=3.8"
@@ -592,7 +576,7 @@ name = "executing"
 version = "2.1.0"
 requires_python = ">=3.8"
 summary = "Get the currently executing AST node of a frame, and other information"
-groups = ["devtools", "experiment"]
+groups = ["experiment"]
 files = [
     {file = "executing-2.1.0-py2.py3-none-any.whl", hash = "sha256:8d63781349375b5ebccc3142f4b30350c0cd9c79f921cde38be2be4637e98eaf"},
     {file = "executing-2.1.0.tar.gz", hash = "sha256:8ea27ddd260da8150fa5a708269c4a10e76161e2496ec3e587da9e3c0fe4b9ab"},
@@ -760,7 +744,7 @@ files = [
 
 [[package]]
 name = "hypothesis"
-version = "6.118.0"
+version = "6.118.8"
 requires_python = ">=3.9"
 summary = "A library for property-based testing"
 groups = ["tests"]
@@ -770,37 +754,37 @@ dependencies = [
     "sortedcontainers<3.0.0,>=2.1.0",
 ]
 files = [
-    {file = "hypothesis-6.118.0-py3-none-any.whl", hash = "sha256:40e27343570cbb65d14a4d6da5ee38286995100d4fb93d4b8038ba3669e240e5"},
-    {file = "hypothesis-6.118.0.tar.gz", hash = "sha256:5568bae62a2b29c92e579589befa7773f685e3ca76ca4b9ec0b2e356dbf8541e"},
+    {file = "hypothesis-6.118.8-py3-none-any.whl", hash = "sha256:9363bde019f9d11d584d3c96af8273ab8a6a43009a7c9b1c2fd503c646062304"},
+    {file = "hypothesis-6.118.8.tar.gz", hash = "sha256:2a564996f60b8961b5112672564516a522fbd6ab4b536f8c6f3e4adb125b7dd2"},
 ]
 
 [[package]]
 name = "hypothesis"
-version = "6.118.0"
+version = "6.118.8"
 extras = ["numpy", "pandas", "pytest"]
 requires_python = ">=3.9"
 summary = "A library for property-based testing"
 groups = ["tests"]
 dependencies = [
-    "hypothesis==6.118.0",
+    "hypothesis==6.118.8",
     "numpy>=1.19.3",
     "pandas>=1.1",
     "pytest>=4.6",
 ]
 files = [
-    {file = "hypothesis-6.118.0-py3-none-any.whl", hash = "sha256:40e27343570cbb65d14a4d6da5ee38286995100d4fb93d4b8038ba3669e240e5"},
-    {file = "hypothesis-6.118.0.tar.gz", hash = "sha256:5568bae62a2b29c92e579589befa7773f685e3ca76ca4b9ec0b2e356dbf8541e"},
+    {file = "hypothesis-6.118.8-py3-none-any.whl", hash = "sha256:9363bde019f9d11d584d3c96af8273ab8a6a43009a7c9b1c2fd503c646062304"},
+    {file = "hypothesis-6.118.8.tar.gz", hash = "sha256:2a564996f60b8961b5112672564516a522fbd6ab4b536f8c6f3e4adb125b7dd2"},
 ]
 
 [[package]]
 name = "identify"
-version = "2.6.1"
-requires_python = ">=3.8"
+version = "2.6.2"
+requires_python = ">=3.9"
 summary = "File identification library for Python"
 groups = ["devtools"]
 files = [
-    {file = "identify-2.6.1-py2.py3-none-any.whl", hash = "sha256:53863bcac7caf8d2ed85bd20312ea5dcfc22226800f6d6881f232d861db5a8f0"},
-    {file = "identify-2.6.1.tar.gz", hash = "sha256:91478c5fb7c3aac5ff7bf9b4344f803843dc586832d5f110d672b19aa1984c98"},
+    {file = "identify-2.6.2-py2.py3-none-any.whl", hash = "sha256:c097384259f49e372f4ea00a19719d95ae27dd5ff0fd77ad630aa891306b82f3"},
+    {file = "identify-2.6.2.tar.gz", hash = "sha256:fab5c716c24d7a789775228823797296a2994b075fb6080ac83a102772a98cbd"},
 ]
 
 [[package]]
@@ -1018,16 +1002,16 @@ files = [
 
 [[package]]
 name = "jedi"
-version = "0.19.1"
+version = "0.19.2"
 requires_python = ">=3.6"
 summary = "An autocompletion tool for Python that can be used for text editors."
 groups = ["experiment"]
 dependencies = [
-    "parso<0.9.0,>=0.8.3",
+    "parso<0.9.0,>=0.8.4",
 ]
 files = [
-    {file = "jedi-0.19.1-py2.py3-none-any.whl", hash = "sha256:e983c654fe5c02867aef4cdfce5a2fbb4a50adc0af145f70504238f18ef5e7e0"},
-    {file = "jedi-0.19.1.tar.gz", hash = "sha256:cf0496f3651bc65d7174ac1b7d043eff454892c708a87d1b683e57b569927ffd"},
+    {file = "jedi-0.19.2-py2.py3-none-any.whl", hash = "sha256:a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9"},
+    {file = "jedi-0.19.2.tar.gz", hash = "sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0"},
 ]
 
 [[package]]
@@ -1069,13 +1053,13 @@ files = [
 
 [[package]]
 name = "json5"
-version = "0.9.25"
-requires_python = ">=3.8"
+version = "0.9.28"
+requires_python = ">=3.8.0"
 summary = "A Python implementation of the JSON5 data format."
 groups = ["experiment"]
 files = [
-    {file = "json5-0.9.25-py3-none-any.whl", hash = "sha256:34ed7d834b1341a86987ed52f3f76cd8ee184394906b6e22a1e0deb9ab294e8f"},
-    {file = "json5-0.9.25.tar.gz", hash = "sha256:548e41b9be043f9426776f05df8635a00fe06104ea51ed24b67f908856e151ae"},
+    {file = "json5-0.9.28-py3-none-any.whl", hash = "sha256:29c56f1accdd8bc2e037321237662034a7e07921e2b7223281a5ce2c46f0c4df"},
+    {file = "json5-0.9.28.tar.gz", hash = "sha256:1f82f36e615bc5b42f1bbd49dbc94b12563c56408c6ffa06414ea310890e9a6e"},
 ]
 
 [[package]]
@@ -2220,17 +2204,17 @@ files = [
 
 [[package]]
 name = "polars"
-version = "1.12.0"
+version = "1.13.0"
 requires_python = ">=3.9"
 summary = "Blazingly fast DataFrame library"
 groups = ["default"]
 files = [
-    {file = "polars-1.12.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:8f3c4e4e423c373dda07b4c8a7ff12aa02094b524767d0ca306b1eba67f2d99e"},
-    {file = "polars-1.12.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:aa6f9862f0cec6353243920d9b8d858c21ec8f25f91af203dea6ff91980e140d"},
-    {file = "polars-1.12.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:afb03647b5160737d2119532ee8ffe825de1d19d87f81bbbb005131786f7d59b"},
-    {file = "polars-1.12.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:ea96aba5eb3dab8f0e6abf05ab3fc2136b329261860ef8661d20f5456a2d78e0"},
-    {file = "polars-1.12.0-cp39-abi3-win_amd64.whl", hash = "sha256:a228a4b320a36d03a9ec9dfe7241b6d80a2f119b2dceb1da953166655e4cf43c"},
-    {file = "polars-1.12.0.tar.gz", hash = "sha256:fb5c92de1a8f7d0a3f923fe48ea89eb518bdf55315ae917012350fa072bd64f4"},
+    {file = "polars-1.13.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:953d797040e5f253b6ca038b87e4d4de65fd64698b4bdb408e04544f2ed7f38d"},
+    {file = "polars-1.13.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:9f329f672f07f4d5de7fa7071974216bc5915a6ab21d42bd94a66c45631f0afb"},
+    {file = "polars-1.13.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2cb24b6da6cd7d88ee9b89742251beb1b2dc952df3d3315f68845179372b31b9"},
+    {file = "polars-1.13.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:68d050826484c894bf6e5a32bc544b9dcdb46508ae406d84ce598bffd13f8d71"},
+    {file = "polars-1.13.0-cp39-abi3-win_amd64.whl", hash = "sha256:33728d4175af1176c7c9c57b1483a7907876aa7b979e08b391317d1296f520f0"},
+    {file = "polars-1.13.0.tar.gz", hash = "sha256:8d05370f9463710c7f5e3857c1ace2e9b538ead799424f22f388137f6b01440f"},
 ]
 
 [[package]]
@@ -2466,6 +2450,20 @@ files = [
 ]
 
 [[package]]
+name = "pydeps"
+version = "2.0.1"
+requires_python = ">=3.8"
+summary = "Display module dependencies"
+groups = ["devtools"]
+dependencies = [
+    "stdlib-list",
+]
+files = [
+    {file = "pydeps-2.0.1-py3-none-any.whl", hash = "sha256:9e3589fff8ac2fc17d672c8132c8b7fab921d30fbb6b37b61bea2c9fc4f84901"},
+    {file = "pydeps-2.0.1.tar.gz", hash = "sha256:6f898ab683ef7c47b14c9cc86bf28b15adebc466cb343c784da4090b2573c704"},
+]
+
+[[package]]
 name = "pydot"
 version = "3.0.2"
 requires_python = ">=3.8"
@@ -2551,7 +2549,7 @@ files = [
 
 [[package]]
 name = "pyright"
-version = "1.1.388"
+version = "1.1.389"
 requires_python = ">=3.7"
 summary = "Command line wrapper for pyright"
 groups = ["typing"]
@@ -2560,8 +2558,8 @@ dependencies = [
     "typing-extensions>=4.1",
 ]
 files = [
-    {file = "pyright-1.1.388-py3-none-any.whl", hash = "sha256:c7068e9f2c23539c6ac35fc9efac6c6c1b9aa5a0ce97a9a8a6cf0090d7cbf84c"},
-    {file = "pyright-1.1.388.tar.gz", hash = "sha256:0166d19b716b77fd2d9055de29f71d844874dbc6b9d3472ccd22df91db3dfa34"},
+    {file = "pyright-1.1.389-py3-none-any.whl", hash = "sha256:41e9620bba9254406dc1f621a88ceab5a88af4c826feb4f614d95691ed243a60"},
+    {file = "pyright-1.1.389.tar.gz", hash = "sha256:716bf8cc174ab8b4dcf6828c3298cac05c5ed775dda9910106a5dcfe4c7fe220"},
 ]
 
 [[package]]
@@ -3027,13 +3025,13 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "75.3.0"
-requires_python = ">=3.8"
+version = "75.5.0"
+requires_python = ">=3.9"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 groups = ["default", "devtools", "docs", "experiment", "tests"]
 files = [
-    {file = "setuptools-75.3.0-py3-none-any.whl", hash = "sha256:f2504966861356aa38616760c0f66568e535562374995367b4e69c7143cf6bcd"},
-    {file = "setuptools-75.3.0.tar.gz", hash = "sha256:fba5dd4d766e97be1b1681d98712680ae8f2f26d7881245f2ce9e40714f1a686"},
+    {file = "setuptools-75.5.0-py3-none-any.whl", hash = "sha256:87cb777c3b96d638ca02031192d40390e0ad97737e27b6b4fa831bea86f2f829"},
+    {file = "setuptools-75.5.0.tar.gz", hash = "sha256:5c4ccb41111392671f02bb5f8436dfc5a9a7185e80500531b133f5775c4163ef"},
 ]
 
 [[package]]
@@ -3041,7 +3039,7 @@ name = "six"
 version = "1.16.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
-groups = ["default", "devtools", "docs", "experiment", "tests"]
+groups = ["default", "docs", "experiment", "tests"]
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
@@ -3315,6 +3313,17 @@ files = [
 ]
 
 [[package]]
+name = "stdlib-list"
+version = "0.11.0"
+requires_python = ">=3.9"
+summary = "A list of Python Standard Libraries (2.7 through 3.12)."
+groups = ["devtools"]
+files = [
+    {file = "stdlib_list-0.11.0-py3-none-any.whl", hash = "sha256:8bf8decfffaaf273d4cfeb5bd852b910a00dec1037dcf163576803622bccf597"},
+    {file = "stdlib_list-0.11.0.tar.gz", hash = "sha256:b74a7b643a77a12637e907f3f62f0ab9f67300bce4014f6b2d3c8b4c8fd63c66"},
+]
+
+[[package]]
 name = "sympy"
 version = "1.13.1"
 requires_python = ">=3.8"
@@ -3438,13 +3447,13 @@ files = [
 
 [[package]]
 name = "tomli"
-version = "2.0.2"
+version = "2.1.0"
 requires_python = ">=3.8"
 summary = "A lil' TOML parser"
 groups = ["linters"]
 files = [
-    {file = "tomli-2.0.2-py3-none-any.whl", hash = "sha256:2ebe24485c53d303f690b0ec092806a085f07af5a5aa1464f3931eec36caaa38"},
-    {file = "tomli-2.0.2.tar.gz", hash = "sha256:d46d457a85337051c36524bc5349dd91b1877838e2979ac5ced3e710ed8a60ed"},
+    {file = "tomli-2.1.0-py3-none-any.whl", hash = "sha256:a5c57c3d1c56f5ccdf89f6523458f60ef716e210fc47c4cfb188c5ba473e0391"},
+    {file = "tomli-2.1.0.tar.gz", hash = "sha256:3f646cae2aec94e17d04973e4249548320197cfabdf130015d023de4b74d8ab8"},
 ]
 
 [[package]]
@@ -3755,13 +3764,13 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "75.3.0.20241107"
+version = "75.3.0.20241112"
 requires_python = ">=3.8"
 summary = "Typing stubs for setuptools"
 groups = ["typing"]
 files = [
-    {file = "types-setuptools-75.3.0.20241107.tar.gz", hash = "sha256:f66710e1cd4a936e5fcc12d4e49be1a67c34372cf753e87ebe704426451b4012"},
-    {file = "types_setuptools-75.3.0.20241107-py3-none-any.whl", hash = "sha256:bc6de6e2bcb6d610556304d0a69fe4ca208ac4896162647314ecfd9fd73d8550"},
+    {file = "types-setuptools-75.3.0.20241112.tar.gz", hash = "sha256:f9e1ebd17a56f606e16395c4ee4efa1cdc394b9a2a0ee898a624058b4b62ef8f"},
+    {file = "types_setuptools-75.3.0.20241112-py3-none-any.whl", hash = "sha256:78cb5fef4a6056d2f37114d27da90f4655a306e4e38042d7034a8a880bc3f5dd"},
 ]
 
 [[package]]
@@ -3883,13 +3892,13 @@ files = [
 
 [[package]]
 name = "webcolors"
-version = "24.8.0"
-requires_python = ">=3.8"
+version = "24.11.1"
+requires_python = ">=3.9"
 summary = "A library for working with the color formats defined by HTML and CSS."
 groups = ["experiment"]
 files = [
-    {file = "webcolors-24.8.0-py3-none-any.whl", hash = "sha256:fc4c3b59358ada164552084a8ebee637c221e4059267d0f8325b3b560f6c7f0a"},
-    {file = "webcolors-24.8.0.tar.gz", hash = "sha256:08b07af286a01bcd30d583a7acadf629583d1f79bfef27dd2c2c5c263817277d"},
+    {file = "webcolors-24.11.1-py3-none-any.whl", hash = "sha256:515291393b4cdf0eb19c155749a096f779f7d909f7cceea072791cb9095b92e9"},
+    {file = "webcolors-24.11.1.tar.gz", hash = "sha256:ecb3d768f32202af770477b8b65f318fa4f566c22948673a977b00d589dd80f6"},
 ]
 
 [[package]]
@@ -3915,7 +3924,7 @@ files = [
 
 [[package]]
 name = "werkzeug"
-version = "3.1.2"
+version = "3.1.3"
 requires_python = ">=3.9"
 summary = "The comprehensive WSGI web application library."
 groups = ["default"]
@@ -3923,19 +3932,19 @@ dependencies = [
     "MarkupSafe>=2.1.1",
 ]
 files = [
-    {file = "werkzeug-3.1.2-py3-none-any.whl", hash = "sha256:4f7d1a5de312c810a8a2c6f0b47e9f6a7cffb7c8322def35e4d4d9841ff85597"},
-    {file = "werkzeug-3.1.2.tar.gz", hash = "sha256:f471a4cd167233077e9d2a8190c3471c5bc520c636a9e3c1e9300c33bced03bc"},
+    {file = "werkzeug-3.1.3-py3-none-any.whl", hash = "sha256:54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"},
+    {file = "werkzeug-3.1.3.tar.gz", hash = "sha256:60723ce945c19328679790e3282cc758aa4a6040e4bb330f53d30fa546d44746"},
 ]
 
 [[package]]
 name = "wheel"
-version = "0.44.0"
+version = "0.45.0"
 requires_python = ">=3.8"
 summary = "A built-package format for Python"
 groups = ["devtools", "docs"]
 files = [
-    {file = "wheel-0.44.0-py3-none-any.whl", hash = "sha256:2376a90c98cc337d18623527a97c31797bd02bad0033d41547043a1cbfbe448f"},
-    {file = "wheel-0.44.0.tar.gz", hash = "sha256:a29c3f2817e95ab89aa4660681ad547c0e9547f20e75b0562fe7723c9a2a9d49"},
+    {file = "wheel-0.45.0-py3-none-any.whl", hash = "sha256:52f0baa5e6522155090a09c6bd95718cc46956d1b51d537ea5454249edb671c7"},
+    {file = "wheel-0.45.0.tar.gz", hash = "sha256:a57353941a3183b3d5365346b567a260a0602a0f8a635926a7dede41b94c674a"},
 ]
 
 [[package]]
@@ -3962,11 +3971,11 @@ files = [
 
 [[package]]
 name = "zipp"
-version = "3.20.2"
-requires_python = ">=3.8"
+version = "3.21.0"
+requires_python = ">=3.9"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 groups = ["devtools", "tests"]
 files = [
-    {file = "zipp-3.20.2-py3-none-any.whl", hash = "sha256:a817ac80d6cf4b23bf7f2828b7cabf326f15a001bea8b1f9b49631780ba28350"},
-    {file = "zipp-3.20.2.tar.gz", hash = "sha256:bc9eb26f4506fda01b81bcde0ca78103b6e62f991b381fec825435c836edbc29"},
+    {file = "zipp-3.21.0-py3-none-any.whl", hash = "sha256:ac1bbe05fd2991f160ebce24ffbac5f6d11d83dc90891255885223d42b3cd931"},
+    {file = "zipp-3.21.0.tar.gz", hash = "sha256:2c9958f6430a2040341a52eb608ed6dd93ef4392e02ffe219417c1b28b5dd1f4"},
 ]

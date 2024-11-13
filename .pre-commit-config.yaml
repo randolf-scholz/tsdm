@@ -146,7 +146,7 @@ repos:
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.388
+    rev: v1.1.389
     hooks:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674
