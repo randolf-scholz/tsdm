@@ -9,55 +9,38 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-added-large-files
-        description: "prevents giant files from being committed."
-      - id: check-ast
-        description: "simply checks whether the files parse as valid python."
-      - id: check-builtin-literals
-        description: "requires literal syntax when initializing empty or zero python builtin types."
-      - id: check-byte-order-marker
-        description: "forbids files which have a utf-8 byte-order marker."
       - id: check-case-conflict
-        description: "checks for files with names that would conflict on a case-insensitive filesystem."
       - id: check-illegal-windows-names
-        description: "checks for windows-incompatible filenames."
       - id: check-json
-        description: "checks json files for parseable syntax."
       - id: check-executables-have-shebangs
-        description: "ensures that (non-binary) executables have a shebang."
       - id: check-shebang-scripts-are-executable
-        description: "ensures that (non-binary) files with a shebang are executable."
       - id: check-symlinks
-        description: "checks for symlinks which do not point to anything."
       - id: check-toml
-        description: "checks toml files for parseable syntax."
       - id: check-xml
-        description: "checks xml files for parseable syntax."
       - id: check-yaml
-        description: "checks yaml files for parseable syntax."
-      - id: debug-statements
-        description: "checks for debugger imports and py37+ `breakpoint()` calls in python source."
       - id: end-of-file-fixer
-        description: "ensures that a file is either empty, or ends with one newline."
-      - id: pretty-format-json
-        exclude_types: [jupyter]
-        args: ["--autofix"]
-        description: "sets a standard for formatting json files."
-      - id: requirements-txt-fixer
-        description: "sorts entries in requirements.txt"
       - id: trailing-whitespace
-        description: "trims trailing whitespace."
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.3
+    rev: v0.8.1
     hooks:
-      - id: ruff
+      - id: ruff-format
         files: '^src/|^tests/'
       - id: ruff
         name: ruff-isort
         files: '^src/|^tests/'
         args: ["--select", "I", "--fix"]
-      - id: ruff-format
+      - id: ruff
         files: '^src/|^tests/'
+  # uv
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.5.5
+    hooks:
+      - id: uv-lock
+      - id: pip-compile
+        files: 'pyproject\.toml'
+        pass_filenames: true
+        args: ["--quiet", "--all-extras", "-o", "requirements.txt"]
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.4
@@ -66,26 +49,24 @@ repos:
         exclude: '^experiments/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.3.79
+    rev: v0.5.5
     hooks:
       # pygrep hooks
-      - id: check-separator-length
+      - id: check-separator-length-88
       - id: pyarrow-timestamp-seconds
       - id: python-consider-using-raw-string
-      - id: python-no-blanket-type-ignore
-      - id: python-no-builtin-eval
       - id: python-rename-axes-axis
       - id: python-system-exit
       - id: python-match-case-builtins
       # ast-based hooks
-      - id: python-check-dunder-all
+      - id: check-direct-imports
+      - id: check-dunder-all
         files: '^src/'
-      - id: python-check-typing
+      - id: check-typing
         args: ["--check-no-return-union", "--check-concrete"]
         files: '^src/|^tests/'
-        exclude: 'lazydict.py'
-      - id: python-direct-imports
-      - id: python-no-mixed-args
+        exclude: "lazydict.py"
+      - id: check-no-mixed-args
         files: '^src/'
         args:
           - "--ignore-names"
@@ -98,10 +79,12 @@ repos:
           - "--allow-two"
           - "--"
       # script-based hooks
-      - id: pyproject-validate-version
-      - id: pyproject-update-deps
-      - id: pyproject-check-unmaintained
-      - id: python-check-clean-interface
+      - id: update-requirements
+      - id: check-requirements-maintained
+      - id: check-requirements-used
+        args: ["--known-unimported", "tensorboard", "pydantic", "--"]
+      - id: check-requirements-valid
+      - id: check-clean-interface
         files: '^src/'
         exclude: '/tests/'
       # other hooks
@@ -110,7 +93,7 @@ repos:
         files: '^src/|^tests/'
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.42.0
+    rev: v0.43.0
     hooks:
       - id: markdownlint
         args:
@@ -122,11 +105,11 @@ repos:
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
-    - id: shellcheck
-      args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
+      - id: shellcheck
+        args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.14.3 # change this to the latest tag!
+    rev: v0.16.2 # change this to the latest tag!
     hooks:
       - id: tach
   - repo: local
@@ -135,7 +118,7 @@ repos:
         name: unknown-inline-pragma
         description: "Check for unknown inline pragmas."
         language: pygrep
-        entry: '^([^#]*[^\#\s][^#]*)\#\s+(?!(type|pyright|noqa|fmt|FIXME|SEE|NOTE|TODO):)([\w\s]+:)'
+        entry: '^([^#]*[^\#\s][^#]*)\#\s+(?!(type|pyright|noqa|fmt|shape|FIXME|SEE|NOTE|TODO):)([\w\s]+:)'
         types: [python]
       - id: double-comment
         name: double-comment
@@ -179,16 +162,16 @@ repos:
   # mypy
   - repo: local
     hooks:
-    - id: mypy
-      name: mypy
-      language: system
-      require_serial: true
-      types_or: [python, pyi]
-      files: '^src/|^tests/'
-      exclude: '/tasks/'
-      entry: mypy
-      args:
-        - "--hide-error-context"
-        - "--hide-error-end"
-        - "--no-pretty"
-        - "--"
+      - id: mypy
+        name: mypy
+        language: system
+        require_serial: true
+        types_or: [python, pyi]
+        files: '^src/|^tests/'
+        exclude: '/tasks/'
+        entry: mypy
+        args:
+          - "--hide-error-context"
+          - "--hide-error-end"
+          - "--no-pretty"
+          - "--"

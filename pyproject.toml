@@ -28,13 +28,13 @@ classifiers = [
 ]
 
 # dependencies
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12"
 dependencies = [
     "matplotlib>=3.9.2",
     "numpy>=2.1.3",
     "pandas>=2.2.3",
     "pillow>=11.0.0",
-    "polars>=1.13.0",
+    "polars>=1.13.1",
     "pyarrow>=18.0.0",
     "pydantic>=2.9.2",
     "pyyaml>=6.0.2",
@@ -56,18 +56,21 @@ repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple
 
 # region development dependencies ------------------------------------------------------
 [dependency-groups]
+dev = [
+    {include-group="devtools"},
+    {include-group="docs"},
+    {include-group="experiment"},
+    {include-group="linters"},
+    {include-group="tests"},
+    {include-group="typing"},
+]
 devtools = [
     "cmake>=3.31.0.1",
     "ninja>=1.11.1.1",
-    "pip>=24.3.1",
     "pre-commit>=4.0.1",
     "pybadges>=3.0.1",
     "pydeps>=2.0.1",
     "pygments>=2.18.0",
-    "setuptools>=75.5.0",
-    "tuna>=0.5.11",
-    "twine>=5.1.1",
-    "wheel>=0.45.0",
 ]
 docs = [
     "docutils>=0.21.2",
@@ -371,9 +374,9 @@ generated-members = ["numpy.*", "torch.*"]
 
 # region mypy configuration ------------------------------------------------------------
 [tool.mypy]
-# platform = "linux"
-# platform configuration
 files = ["src/", "tests/"]
+platform = "linux"
+plugins = []
 python_version = "3.12"
 
 disable_error_code = [
@@ -407,33 +410,23 @@ disallow_untyped_decorators = false
 disallow_untyped_defs = true
 
 # strictness flags
+#strict = false
+#strict_equality = false
+implicit_reexport = false
+#enable_error_code =[]
+#disable_error_code = []
 allow_untyped_globals = false
 allow_redefinition = false
-#local_partial_types = true
-no_implicit_reexport = false
-#strict_equality = false
-#strict = false
-#disable_error_code = []
-#enable_error_code =[]
 
 # configuring error messages
-show_error_context = true
-show_column_numbers = true
-show_error_end = true
+color_output = true
+error_summary = true
 hide_error_codes = false
 pretty = false
-no_error_summary = false
-no_color_output = false
 show_absolute_path = false
-#soft_error_limit = 200
-
-# incremental mode
-no_incremental = false
-#cache_dir = ".mypy_cache/"
-#sqlite_cache = true
-#cache_fine_grained = true
-#skip_version_check = false
-#skip_cache_mtime_checks = false
+show_column_numbers = true
+show_error_code_links = false
+show_error_context = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -500,13 +493,13 @@ minversion = "8.0"
 testpaths = ["src/", "tests/"]
 addopts = [
     "--doctest-modules",
-    "--junit-xml=reports/pytest.xml",
+#    "--junit-xml=reports/pytest.xml",
     # rerunfailures options
     #    "--reruns=",          # number of times to re-run failed tests (default 0)
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.
     #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
     # xdists options
-    "--numprocesses=0",  # use 4 parallel processes
+    "--numprocesses=0",  # number of parallel processes
     # "--dist=loadfile", # loadscope, loadfile, load, each, no
     # coverage options
     "--cov=tsdm",  # Path or package name to measure during execution (multi-allowed).
@@ -529,22 +522,3 @@ required_plugins = [
     "pytest-xdist",
 ]
 # endregion pytest configuration -------------------------------------------------------
-
-
-# region coverage configuration --------------------------------------------------------
-[tool.coverage]
-
-[tool.coverage.paths]
-source = ["src/tsdm"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "@abstractmethod",
-    "@abc.abstractmethod",
-    "@overload",
-    "@typing.overload",
-]
-
-[tool.coverage.run]
-source = ["src/"]
-# endregion coverage configuration -----------------------------------------------------

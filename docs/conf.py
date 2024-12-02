@@ -17,7 +17,6 @@ from importlib import metadata
 
 os.environ["TSDM_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("../src"))  # Source code dir relative to this file
-# sys.path.insert(0, os.path.abspath("."))
 sys.path.append(os.path.abspath("./extensions"))
 
 AUTHOR = "Randolf Scholz"
@@ -171,7 +170,7 @@ python_use_unqualified_type_names = True
 
 
 # region HTML Theme Configuration ------------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/theming.html
+# SEE: https://www.sphinx-doc.org/en/master/usage/theming.html
 
 # extensions.append("sphinx_typo3_theme")
 
@@ -180,7 +179,7 @@ html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
 html_theme_options = {
-    # faster builds?  https://stackoverflow.com/a/52175461
+    # faster builds?  SEE: https://stackoverflow.com/a/52175461
     "collapse_navigation": False,
     "navigation_depth": 2,
     #
@@ -595,7 +594,8 @@ suppress_warnings = [
 
 
 # region sphinx.ext.autosummary configuration ------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
+# SEE: https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
+
 autosummary_context = {}
 # A dictionary of values to pass into the template engine’s context for autosummary stubs files.
 
@@ -653,7 +653,6 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
-    # "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
 # This config value contains the locations and names of other projects that should be linked to
 # in this documentation.
