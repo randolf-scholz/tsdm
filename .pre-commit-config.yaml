@@ -37,10 +37,7 @@ repos:
     rev: 0.5.6
     hooks:
       - id: uv-lock
-      - id: pip-compile
-        files: 'pyproject\.toml'
-        pass_filenames: true
-        args: ["--quiet", "--all-extras", "-o", "requirements.txt"]
+      - id: uv-export
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.4
