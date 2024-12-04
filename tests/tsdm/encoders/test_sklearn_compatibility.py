@@ -1,5 +1,6 @@
 r"""Test compatibility with sklearn encoders."""
 # mypy: disable-error-code="no-untyped-def"
+# ruff: noqa: N803
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.utils.estimator_checks import parametrize_with_checks

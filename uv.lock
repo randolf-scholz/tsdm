@@ -465,15 +465,6 @@ wheels = [
 ]
 
 [[package]]
-name = "et-xmlfile"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz", hash = "sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54", size = 17234 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee489817272089c4203e679c63b570a5aaeb18d852ae3cbba6a/et_xmlfile-2.0.0-py3-none-any.whl", hash = "sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa", size = 18059 },
-]
-
-[[package]]
 name = "execnet"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1125,12 +1116,6 @@ wheels = [
 ]
 
 [[package]]
-name = "liac-arff"
-version = "2.5.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6e/43/73944aa5ad2b3185c0f0ba0ee6f73277f2eb51782ca6ccf3e6793caf209a/liac-arff-2.5.0.tar.gz", hash = "sha256:3220d0af6487c5aa71b47579be7ad1d94f3849ff1e224af3bf05ad49a0b5c4da", size = 13358 }
-
-[[package]]
 name = "markdown"
 version = "3.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1266,22 +1251,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979 },
-]
-
-[[package]]
-name = "minio"
-version = "7.2.12"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "argon2-cffi" },
-    { name = "certifi" },
-    { name = "pycryptodome" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/71/a4/3b98ffb91d2ccb9d1e049e7b91b05109592cd7a0fce4383459e74ce1240a/minio-7.2.12.tar.gz", hash = "sha256:2a3fcf4ab753824de8ae3ffeb14da33d6ad416f83a7e82363a27b34da8e91f27", size = 136451 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/36/bd87f410d74138b7fa8d177eb09ac3aa73c94ed46eb9c990212b846304cb/minio-7.2.12-py3-none-any.whl", hash = "sha256:4b63370ca83f82c23e6fb0a094a1e2b08b275884ae43f6a90c4388a45633e3f5", size = 94346 },
 ]
 
 [[package]]
@@ -1476,22 +1445,6 @@ wheels = [
 ]
 
 [[package]]
-name = "notebook"
-version = "7.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jupyter-server" },
-    { name = "jupyterlab" },
-    { name = "jupyterlab-server" },
-    { name = "notebook-shim" },
-    { name = "tornado" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/82/83c222b852f39e08ba768bf20f26a4f0347a83c05ee2b8a02019d553b561/notebook-7.3.0.tar.gz", hash = "sha256:e1dc37db32620b04043ae78866a40b087c43308d85067699db99e6f9e22846bc", size = 12554580 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/77/5b2bf6b30d8c1476183e32244b64b992172e76c429d035ba8521855cc291/notebook-7.3.0-py3-none-any.whl", hash = "sha256:affa2fdbc10661aa05790ba105836871666b3919559abb5bc92dd8d9f0cbeee3", size = 12939580 },
-]
-
-[[package]]
 name = "notebook-shim"
 version = "0.2.4"
 source = { registry = "https://pypi.org/simple" }
@@ -1659,41 +1612,6 @@ source = { registry = "https://pypi.org/simple" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/06/39/471f581edbb7804b39e8063d92fc8305bdc7a80ae5c07dbe6ea5c50d14a5/nvidia_nvtx_cu12-12.4.127-py3-none-manylinux2014_aarch64.whl", hash = "sha256:7959ad635db13edf4fc65c06a6e9f9e55fc2f92596db928d169c0bb031e88ef3", size = 100417 },
     { url = "https://files.pythonhosted.org/packages/87/20/199b8713428322a2f22b722c62b8cc278cc53dffa9705d744484b5035ee9/nvidia_nvtx_cu12-12.4.127-py3-none-manylinux2014_x86_64.whl", hash = "sha256:781e950d9b9f60d8241ccea575b32f5105a5baf4c2351cab5256a24869f12a1a", size = 99144 },
-]
-
-[[package]]
-name = "openml"
-version = "0.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "liac-arff" },
-    { name = "minio" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-    { name = "python-dateutil" },
-    { name = "requests" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "tqdm" },
-    { name = "xmltodict" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/76/9a193c9425787022f512cb9d45874263e346b00b70696cb08b990f76b714/openml-0.15.0.tar.gz", hash = "sha256:3e4d1da80e9b38f5e44d93b23aa58726a77b7039a5a0498f86a5231aeee8e4a6", size = 143571 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/84/ff/c046b91020e41785e7e1b85d22917199b105ba5222fa6cd438a7caf0fae2/openml-0.15.0-py3-none-any.whl", hash = "sha256:f702209901afa96797e1cda3be9fb97efd154fddcfb0134f94ed8a994aed4e2e", size = 157956 },
-]
-
-[[package]]
-name = "openpyxl"
-version = "3.1.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "et-xmlfile" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050", size = 186464 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910 },
 ]
 
 [[package]]
@@ -2003,26 +1921,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pycryptodome"
-version = "3.21.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/13/52/13b9db4a913eee948152a079fe58d035bd3d1a519584155da8e786f767e6/pycryptodome-3.21.0.tar.gz", hash = "sha256:f7787e0d469bdae763b876174cf2e6c0f7be79808af26b1da96f1a64bcf47297", size = 4818071 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/88/5e83de10450027c96c79dc65ac45e9d0d7a7fef334f39d3789a191f33602/pycryptodome-3.21.0-cp36-abi3-macosx_10_9_universal2.whl", hash = "sha256:2480ec2c72438430da9f601ebc12c518c093c13111a5c1644c82cdfc2e50b1e4", size = 2495937 },
-    { url = "https://files.pythonhosted.org/packages/66/e1/8f28cd8cf7f7563319819d1e172879ccce2333781ae38da61c28fe22d6ff/pycryptodome-3.21.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:de18954104667f565e2fbb4783b56667f30fb49c4d79b346f52a29cb198d5b6b", size = 1634629 },
-    { url = "https://files.pythonhosted.org/packages/6a/c1/f75a1aaff0c20c11df8dc8e2bf8057e7f73296af7dfd8cbb40077d1c930d/pycryptodome-3.21.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2de4b7263a33947ff440412339cb72b28a5a4c769b5c1ca19e33dd6cd1dcec6e", size = 2168708 },
-    { url = "https://files.pythonhosted.org/packages/ea/66/6f2b7ddb457b19f73b82053ecc83ba768680609d56dd457dbc7e902c41aa/pycryptodome-3.21.0-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0714206d467fc911042d01ea3a1847c847bc10884cf674c82e12915cfe1649f8", size = 2254555 },
-    { url = "https://files.pythonhosted.org/packages/2c/2b/152c330732a887a86cbf591ed69bd1b489439b5464806adb270f169ec139/pycryptodome-3.21.0-cp36-abi3-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7d85c1b613121ed3dbaa5a97369b3b757909531a959d229406a75b912dd51dd1", size = 2294143 },
-    { url = "https://files.pythonhosted.org/packages/55/92/517c5c498c2980c1b6d6b9965dffbe31f3cd7f20f40d00ec4069559c5902/pycryptodome-3.21.0-cp36-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:8898a66425a57bcf15e25fc19c12490b87bd939800f39a03ea2de2aea5e3611a", size = 2160509 },
-    { url = "https://files.pythonhosted.org/packages/39/1f/c74288f54d80a20a78da87df1818c6464ac1041d10988bb7d982c4153fbc/pycryptodome-3.21.0-cp36-abi3-musllinux_1_2_i686.whl", hash = "sha256:932c905b71a56474bff8a9c014030bc3c882cee696b448af920399f730a650c2", size = 2329480 },
-    { url = "https://files.pythonhosted.org/packages/39/1b/d0b013bf7d1af7cf0a6a4fce13f5fe5813ab225313755367b36e714a63f8/pycryptodome-3.21.0-cp36-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:18caa8cfbc676eaaf28613637a89980ad2fd96e00c564135bf90bc3f0b34dd93", size = 2254397 },
-    { url = "https://files.pythonhosted.org/packages/14/71/4cbd3870d3e926c34706f705d6793159ac49d9a213e3ababcdade5864663/pycryptodome-3.21.0-cp36-abi3-win32.whl", hash = "sha256:280b67d20e33bb63171d55b1067f61fbd932e0b1ad976b3a184303a3dad22764", size = 1775641 },
-    { url = "https://files.pythonhosted.org/packages/43/1d/81d59d228381576b92ecede5cd7239762c14001a828bdba30d64896e9778/pycryptodome-3.21.0-cp36-abi3-win_amd64.whl", hash = "sha256:b7aa25fc0baa5b1d95b7633af4f5f1838467f1815442b22487426f94e0d66c53", size = 1812863 },
-    { url = "https://files.pythonhosted.org/packages/25/b3/09ff7072e6d96c9939c24cf51d3c389d7c345bf675420355c22402f71b68/pycryptodome-3.21.0-pp27-pypy_73-manylinux2010_x86_64.whl", hash = "sha256:2cb635b67011bc147c257e61ce864879ffe6d03342dc74b6045059dfbdedafca", size = 1691593 },
-    { url = "https://files.pythonhosted.org/packages/a8/91/38e43628148f68ba9b68dedbc323cf409e537fd11264031961fd7c744034/pycryptodome-3.21.0-pp27-pypy_73-win32.whl", hash = "sha256:4c26a2f0dc15f81ea3afa3b0c87b87e501f235d332b7f27e2225ecb80c0b1cdd", size = 1765997 },
-]
-
-[[package]]
 name = "pydantic"
 version = "2.10.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2091,18 +1989,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/91/c3/5240f2a5dc0b4856655c003466f70aa50d676b1709e5b04f0bee296bbd28/pydata_sphinx_theme-0.16.0.tar.gz", hash = "sha256:721dd26e05fa8b992d66ef545536e6cbe0110afb9865820a08894af1ad6f7707", size = 2407197 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/92/38f384061e1361fac7092c35e932c0e08026fb9080bf3fbf05f4c3bb6bda/pydata_sphinx_theme-0.16.0-py3-none-any.whl", hash = "sha256:18c810ee4e67e05281e371e156c1fb5bb0fa1f2747240461b225272f7d8d57d8", size = 6739948 },
-]
-
-[[package]]
-name = "pydeps"
-version = "2.0.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "stdlib-list" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/65/b5/8163e1594c45cee4e2890c74b7a7c78f4b3973ffecd418cd5e37119b342d/pydeps-2.0.1.tar.gz", hash = "sha256:6f898ab683ef7c47b14c9cc86bf28b15adebc466cb343c784da4090b2573c704", size = 51327 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/67/2274bf061ca84621d9e3e006193a76a6ca94c760d16ff7c6414ca2323a79/pydeps-2.0.1-py3-none-any.whl", hash = "sha256:9e3589fff8ac2fc17d672c8132c8b7fab921d30fbb6b37b61bea2c9fc4f84901", size = 46450 },
 ]
 
 [[package]]
@@ -2601,11 +2487,11 @@ wheels = [
 
 [[package]]
 name = "six"
-version = "1.16.0"
+version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926", size = 34041 }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254", size = 11053 },
+    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050 },
 ]
 
 [[package]]
@@ -2833,15 +2719,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521 },
-]
-
-[[package]]
-name = "stdlib-list"
-version = "0.11.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5d/04/6b37a71e92ddca16b190b7df62494ac4779d58ced4787f73584eb32c8f03/stdlib_list-0.11.0.tar.gz", hash = "sha256:b74a7b643a77a12637e907f3f62f0ab9f67300bce4014f6b2d3c8b4c8fd63c66", size = 60335 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/fe/e07300c027a868d32d8ed7a425503401e91a03ff90e7ca525c115c634ffb/stdlib_list-0.11.0-py3-none-any.whl", hash = "sha256:8bf8decfffaaf273d4cfeb5bd852b910a00dec1037dcf163576803622bccf597", size = 83617 },
 ]
 
 [[package]]
@@ -3122,6 +2999,17 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+ci = [
+    { name = "pybadges" },
+]
+debug = [
+    { name = "ipympl" },
+    { name = "ipywidgets" },
+    { name = "jupyterlab" },
+    { name = "jupyterlab-execute-time" },
+    { name = "psutil" },
+    { name = "torchinfo" },
+]
 dev = [
     { name = "cmake" },
     { name = "coverage" },
@@ -3135,15 +3023,11 @@ dev = [
     { name = "myst-parser" },
     { name = "nbsphinx" },
     { name = "ninja" },
-    { name = "notebook" },
-    { name = "openml" },
-    { name = "openpyxl" },
     { name = "piccolo-theme" },
     { name = "pre-commit" },
     { name = "psutil" },
-    { name = "pybadges" },
     { name = "pydata-sphinx-theme" },
-    { name = "pydeps" },
+    { name = "pygal" },
     { name = "pygments" },
     { name = "pylint" },
     { name = "pyright" },
@@ -3186,9 +3070,6 @@ devtools = [
     { name = "cmake" },
     { name = "ninja" },
     { name = "pre-commit" },
-    { name = "pybadges" },
-    { name = "pydeps" },
-    { name = "pygments" },
 ]
 docs = [
     { name = "docutils" },
@@ -3196,6 +3077,7 @@ docs = [
     { name = "nbsphinx" },
     { name = "piccolo-theme" },
     { name = "pydata-sphinx-theme" },
+    { name = "pygments" },
     { name = "sphinx" },
     { name = "sphinx-autoapi" },
     { name = "sphinx-autodoc2" },
@@ -3205,18 +3087,6 @@ docs = [
     { name = "sphinx-togglebutton" },
     { name = "sphinx-typo3-theme" },
 ]
-experiment = [
-    { name = "ipympl" },
-    { name = "ipywidgets" },
-    { name = "jupyterlab" },
-    { name = "jupyterlab-execute-time" },
-    { name = "notebook" },
-    { name = "openml" },
-    { name = "openpyxl" },
-    { name = "psutil" },
-    { name = "pygments" },
-    { name = "torchinfo" },
-]
 linters = [
     { name = "pylint" },
     { name = "ruff" },
@@ -3225,6 +3095,8 @@ linters = [
 tests = [
     { name = "coverage" },
     { name = "hypothesis", extra = ["numpy", "pandas", "pytest"] },
+    { name = "psutil" },
+    { name = "pygal" },
     { name = "pytest" },
     { name = "pytest-benchmark", extra = ["histogram"] },
     { name = "pytest-cov" },
@@ -3274,11 +3146,20 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+ci = [{ name = "pybadges", specifier = ">=3.0.1" }]
+debug = [
+    { name = "ipympl", specifier = ">=0.9.4" },
+    { name = "ipywidgets", specifier = ">=8.1.5" },
+    { name = "jupyterlab", specifier = ">=4.2.5" },
+    { name = "jupyterlab-execute-time", specifier = ">=3.2.0" },
+    { name = "psutil", specifier = ">=6.1.0" },
+    { name = "torchinfo", specifier = ">=1.8.0" },
+]
 dev = [
     { name = "cmake", specifier = ">=3.31.0.1" },
     { name = "coverage", specifier = ">=7.6.4" },
     { name = "docutils", specifier = ">=0.21.2" },
-    { name = "hypothesis", extras = ["numpy", "pandas", "pytest"], specifier = ">=6.118.8" },
+    { name = "hypothesis", extras = ["numpy", "pandas", "pytest"], specifier = ">=6.118.0" },
     { name = "ipympl", specifier = ">=0.9.4" },
     { name = "ipywidgets", specifier = ">=8.1.5" },
     { name = "jupyterlab", specifier = ">=4.2.5" },
@@ -3287,15 +3168,11 @@ dev = [
     { name = "myst-parser", specifier = ">=4.0.0" },
     { name = "nbsphinx", specifier = ">=0.9.5" },
     { name = "ninja", specifier = ">=1.11.1.1" },
-    { name = "notebook", specifier = ">=7.2.2" },
-    { name = "openml", specifier = ">=0.15.0" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "piccolo-theme", specifier = ">=0.24.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "psutil", specifier = ">=6.1.0" },
-    { name = "pybadges", specifier = ">=3.0.1" },
     { name = "pydata-sphinx-theme", specifier = ">=0.16.0" },
-    { name = "pydeps", specifier = ">=2.0.1" },
+    { name = "pygal", specifier = ">=3.0.5" },
     { name = "pygments", specifier = ">=2.18.0" },
     { name = "pylint", specifier = ">=3.3.1" },
     { name = "pyright", specifier = ">=1.1.389" },
@@ -3338,9 +3215,6 @@ devtools = [
     { name = "cmake", specifier = ">=3.31.0.1" },
     { name = "ninja", specifier = ">=1.11.1.1" },
     { name = "pre-commit", specifier = ">=4.0.1" },
-    { name = "pybadges", specifier = ">=3.0.1" },
-    { name = "pydeps", specifier = ">=2.0.1" },
-    { name = "pygments", specifier = ">=2.18.0" },
 ]
 docs = [
     { name = "docutils", specifier = ">=0.21.2" },
@@ -3348,6 +3222,7 @@ docs = [
     { name = "nbsphinx", specifier = ">=0.9.5" },
     { name = "piccolo-theme", specifier = ">=0.24.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.16.0" },
+    { name = "pygments", specifier = ">=2.18.0" },
     { name = "sphinx", specifier = ">=8.1.3" },
     { name = "sphinx-autoapi", specifier = ">=3.3.3" },
     { name = "sphinx-autodoc2", specifier = ">=0.5.0" },
@@ -3357,18 +3232,6 @@ docs = [
     { name = "sphinx-togglebutton", specifier = ">=0.3.2" },
     { name = "sphinx-typo3-theme", specifier = ">=4.9.0" },
 ]
-experiment = [
-    { name = "ipympl", specifier = ">=0.9.4" },
-    { name = "ipywidgets", specifier = ">=8.1.5" },
-    { name = "jupyterlab", specifier = ">=4.2.5" },
-    { name = "jupyterlab-execute-time", specifier = ">=3.2.0" },
-    { name = "notebook", specifier = ">=7.2.2" },
-    { name = "openml", specifier = ">=0.15.0" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "psutil", specifier = ">=6.1.0" },
-    { name = "pygments", specifier = ">=2.18.0" },
-    { name = "torchinfo", specifier = ">=1.8.0" },
-]
 linters = [
     { name = "pylint", specifier = ">=3.3.1" },
     { name = "ruff", specifier = ">=0.7.3" },
@@ -3376,7 +3239,9 @@ linters = [
 ]
 tests = [
     { name = "coverage", specifier = ">=7.6.4" },
-    { name = "hypothesis", extras = ["numpy", "pandas", "pytest"], specifier = ">=6.118.8" },
+    { name = "hypothesis", extras = ["numpy", "pandas", "pytest"], specifier = ">=6.118.0" },
+    { name = "psutil", specifier = ">=6.1.0" },
+    { name = "pygal", specifier = ">=3.0.5" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-benchmark", extras = ["histogram"], specifier = ">=5.1.0" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
@@ -3686,15 +3551,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/56/fc/238c424fd7f4ebb25f8b1da9a934a3ad7c848286732ae04263661eb0fc03/widgetsnbextension-4.0.13.tar.gz", hash = "sha256:ffcb67bc9febd10234a362795f643927f4e0c05d9342c727b65d2384f8feacb6", size = 1164730 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/21/02/88b65cc394961a60c43c70517066b6b679738caf78506a5da7b88ffcb643/widgetsnbextension-4.0.13-py3-none-any.whl", hash = "sha256:74b2692e8500525cc38c2b877236ba51d34541e6385eeed5aec15a70f88a6c71", size = 2335872 },
-]
-
-[[package]]
-name = "xmltodict"
-version = "0.14.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/50/05/51dcca9a9bf5e1bce52582683ce50980bcadbc4fa5143b9f2b19ab99958f/xmltodict-0.14.2.tar.gz", hash = "sha256:201e7c28bb210e374999d1dde6382923ab0ed1a8a5faeece48ab525b7810a553", size = 51942 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/45/fc303eb433e8a2a271739c98e953728422fa61a3c1f36077a49e395c972e/xmltodict-0.14.2-py2.py3-none-any.whl", hash = "sha256:20cc7d723ed729276e808f26fb6b3599f786cbc37e06c65e192ba77c40f20aac", size = 9981 },
 ]
 
 [[package]]

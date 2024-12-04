@@ -48,29 +48,31 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
-repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple"
+repository = "https://github.com/randolf-scholz/tsdm.git"
 # endregion project configuration ------------------------------------------------------
 
 
 # region development dependencies ------------------------------------------------------
 [dependency-groups]
 dev = [
-    {include-group="devtools"},
-    {include-group="docs"},
-    {include-group="experiment"},
-    {include-group="linters"},
-    {include-group="tests"},
-    {include-group="typing"},
+    {include-group="devtools"}, {include-group="docs"}, {include-group="debug"},
+    {include-group="linters"}, {include-group="tests"}, {include-group="typing"},
+]
+ci = [
+    "pybadges>=3.0.1",
 ]
 devtools = [
     "cmake>=3.31.0.1",
     "ninja>=1.11.1.1",
     "pre-commit>=4.0.1",
-    "pybadges>=3.0.1",
-    "pydeps>=2.0.1",
-    "pygments>=2.18.0",
+]
+debug = [
+    "ipympl>=0.9.4",
+    "ipywidgets>=8.1.5",
+    "jupyterlab-execute-time>=3.2.0",
+    "jupyterlab>=4.2.5",
+    "psutil>=6.1.0",
+    "torchinfo>=1.8.0",
 ]
 docs = [
     "docutils>=0.21.2",
@@ -78,26 +80,15 @@ docs = [
     "nbsphinx>=0.9.5",
     "piccolo-theme>=0.24.0",
     "pydata-sphinx-theme>=0.16.0",
+    "pygments>=2.18.0",
     "sphinx-autoapi>=3.3.3",
-    "sphinx-automodapi>=0.18.0",
     "sphinx-autodoc2>=0.5.0",
+    "sphinx-automodapi>=0.18.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
     "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
     "sphinx>=8.1.3",
-]
-experiment = [
-    "ipympl>=0.9.4",
-    "ipywidgets>=8.1.5",
-    "jupyterlab-execute-time>=3.2.0",
-    "jupyterlab>=4.2.5",
-    "notebook>=7.2.2",
-    "openml>=0.15.0",
-    "openpyxl>=3.1.5",
-    "psutil>=6.1.0",
-    "pygments>=2.18.0",
-    "torchinfo>=1.8.0",
 ]
 linters = [
     "pylint>=3.3.1",
@@ -106,7 +97,9 @@ linters = [
 ]
 tests = [
     "coverage>=7.6.4",
-    "hypothesis[numpy,pandas,pytest]>=6.118.8",
+    "hypothesis[numpy,pandas,pytest]>=6.118.0",
+    "psutil>=6.1.0",
+    "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
     "pytest-cov>=6.0.0",
     "pytest-repeat>=0.9.3",
@@ -289,11 +282,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/*" = ["S101", "N803", "T20"]
+"**/test*" = ["S101", "T20"]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
 "src/tsdm/models/*" = ["N803"]
-"src/tsdm/testing/*" = ["S101"]
 "src/tsdm/types/*" = ["ERA001"]
 
 [tool.ruff.lint.pylint]
@@ -493,7 +485,7 @@ minversion = "8.0"
 testpaths = ["src/", "tests/"]
 addopts = [
     "--doctest-modules",
-#    "--junit-xml=reports/pytest.xml",
+    # "--junit-xml=reports/pytest.xml",
     # rerunfailures options
     #    "--reruns=",          # number of times to re-run failed tests (default 0)
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.

@@ -8,27 +8,27 @@ from tsdm.tasks import InSilicoTask
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
 
 
-def test_insilico_task(SplitID: tuple[int, str] = (0, "train")) -> None:
+def test_insilico_task(split_id: tuple[int, str] = (0, "train")) -> None:
     r"""Test the TimeSeriesDatasetTask."""
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
-    assert isinstance(task.splits[SplitID], PandasTSC)
-    assert isinstance(task.samplers[SplitID], HierarchicalSampler)
-    assert isinstance(task.generators[SplitID], TimeSeriesSampleGenerator)
-    assert isinstance(task.dataloaders[SplitID], DataLoader)
-    assert task.collate_fns[SplitID] is NotImplemented
+    assert isinstance(task.splits[split_id], PandasTSC)
+    assert isinstance(task.samplers[split_id], HierarchicalSampler)
+    assert isinstance(task.generators[split_id], TimeSeriesSampleGenerator)
+    assert isinstance(task.dataloaders[split_id], DataLoader)
+    assert task.collate_fns[split_id] is NotImplemented
     assert isinstance(task.train_split, dict)
 
-    sampler = task.samplers[SplitID]
+    sampler = task.samplers[split_id]
     key = next(iter(sampler))
     assert isinstance(key, tuple)
-    generator = task.generators[SplitID]
+    generator = task.generators[split_id]
     print("key", type(key), key)
     print("generator", type(generator), generator)
     sample = generator[key]
     assert isinstance(sample, tuple)
 
-    dataloader = task.dataloaders[SplitID]
+    dataloader = task.dataloaders[split_id]
     batch = next(iter(dataloader))
     assert batch is not None

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 # # MIMIC 4 data - dataset construction admissions
 

@@ -20,7 +20,7 @@ __logger__ = logging.getLogger(__name__)
 # FIXME: broken test! this mask is incorrect!
 @pytest.mark.slow
 @pytest.mark.skip(reason="This test is broken.")
-def test_kiwi_task(SplitID: tuple[int, str] = (0, "train")) -> None:
+def test_kiwi_task(split_id: tuple[int, str] = (0, "train")) -> None:
     r"""Test the KiwiTask."""
     LOGGER = __logger__.getChild(KiwiBenchmark.__name__)
     LOGGER.info("Testing.")
@@ -28,20 +28,20 @@ def test_kiwi_task(SplitID: tuple[int, str] = (0, "train")) -> None:
 
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
-    assert isinstance(task.splits[SplitID], PandasTSC)
-    assert isinstance(task.samplers[SplitID], HierarchicalSampler)
-    assert isinstance(task.generators[SplitID], TimeSeriesSampleGenerator)
-    assert isinstance(task.dataloaders[SplitID], DataLoader)
-    assert isinstance(task.encoders[SplitID], BaseEncoder)
+    assert isinstance(task.splits[split_id], PandasTSC)
+    assert isinstance(task.samplers[split_id], HierarchicalSampler)
+    assert isinstance(task.generators[split_id], TimeSeriesSampleGenerator)
+    assert isinstance(task.dataloaders[split_id], DataLoader)
+    assert isinstance(task.encoders[split_id], BaseEncoder)
     assert isinstance(task.train_split, dict)
-    assert callable(task.collate_fns[SplitID])
+    assert callable(task.collate_fns[split_id])
 
     # validate generator
-    generator: TimeSeriesSampleGenerator = task.generators[SplitID]  # type: ignore[assignment]
+    generator: TimeSeriesSampleGenerator = task.generators[split_id]  # type: ignore[assignment]
     assert isinstance(generator, torch.utils.data.Dataset)
 
     # make sample
-    sampler = task.samplers[SplitID]
+    sampler = task.samplers[split_id]
     key = next(iter(sampler))
     sample: Sample = generator[key]
     assert isinstance(sample, tuple)
@@ -68,7 +68,7 @@ def test_kiwi_task(SplitID: tuple[int, str] = (0, "train")) -> None:
     assert y.loc[mask_observation, targets].isna().all().all(), f"{key=}"
     assert y.loc[mask_forecasting, targets].notna().any().any(), f"{key=}"
 
-    dataloader = task.dataloaders[SplitID]
+    dataloader = task.dataloaders[split_id]
     batch = next(iter(dataloader))
     assert isinstance(batch, list | tuple)
     sample = batch[0]

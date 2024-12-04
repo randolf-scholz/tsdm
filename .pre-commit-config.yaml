@@ -79,11 +79,11 @@ repos:
           - "--allow-two"
           - "--"
       # script-based hooks
+      - id: update-requirements
       - id: check-requirements-valid
       - id: check-requirements-maintained
       - id: check-requirements-used
         args: ["--known-unimported", "tensorboard", "pydantic", "--"]
-      - id: update-requirements
       - id: check-clean-interface
         files: '^src/'
         exclude: '/tests/'
@@ -118,7 +118,7 @@ repos:
         name: unknown-inline-pragma
         description: "Check for unknown inline pragmas."
         language: pygrep
-        entry: '^([^#]*[^\#\s][^#]*)\#\s+(?!(type|pyright|noqa|fmt|shape|FIXME|SEE|NOTE|TODO):)([\w\s]+:)'
+        entry: '^([^#]*[^\#\s][^#]*)\#\s+(?!(type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO):)([\w\s]+:)'
         types: [python]
       - id: double-comment
         name: double-comment

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding: utf-8
+
 # %% [markdown]
 # # Test of the possibility of inputting a nn.Module as input into a custom autograd function
 
