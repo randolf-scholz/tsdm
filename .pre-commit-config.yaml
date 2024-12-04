@@ -1,4 +1,4 @@
-exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/|bugs/)'
+exclude: bugs/
 minimum_pre_commit_version: 3.6.0
 default_language_version:
   python: python3.12
@@ -34,7 +34,7 @@ repos:
         files: '^src/|^tests/'
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.5.5
+    rev: 0.5.6
     hooks:
       - id: uv-lock
       - id: pip-compile
@@ -79,11 +79,11 @@ repos:
           - "--allow-two"
           - "--"
       # script-based hooks
-      - id: update-requirements
+      - id: check-requirements-valid
       - id: check-requirements-maintained
       - id: check-requirements-used
         args: ["--known-unimported", "tensorboard", "pydantic", "--"]
-      - id: check-requirements-valid
+      - id: update-requirements
       - id: check-clean-interface
         files: '^src/'
         exclude: '/tests/'
@@ -109,7 +109,7 @@ repos:
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.16.2 # change this to the latest tag!
+    rev: v0.16.3 # change this to the latest tag!
     hooks:
       - id: tach
   - repo: local
@@ -129,7 +129,7 @@ repos:
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.389
+    rev: v1.1.390
     hooks:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674

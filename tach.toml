@@ -1,3 +1,4 @@
+interfaces = []
 exclude = []
 source_roots = [
     "src",
@@ -7,7 +8,6 @@ source_roots = [
 path = "<root>"
 depends_on = [
     { path = "tsdm.backend" },
-    { path = "tsdm.config" },
     { path = "tsdm.data" },
     { path = "tsdm.datasets" },
     { path = "tsdm.encoders" },
