@@ -33,14 +33,14 @@ dependencies = [
     "matplotlib>=3.10.0",
     "numpy>=2.2.1",
     "pandas>=2.2.3",
-    "pillow>=11.0.0",
-    "polars>=1.17.1",
+    "pillow>=11.1.0",
+    "polars>=1.19.0",
     "pyarrow>=18.1.0",
     "pydantic>=2.10.4",
     "pyyaml>=6.0.2",
     "requests>=2.32.3",
     "scikit-learn>=1.6.0",
-    "scipy>=1.14.1",
+    "scipy>=1.15.0",
     "tensorboard>=2.18.0",
     "torch>=2.5.1",
     "tqdm>=4.67.1",
@@ -64,7 +64,7 @@ devtools = [
     "pybadges>=3.0.1",
 ]
 debug = [
-    "ipympl>=0.9.5",
+    "ipympl>=0.9.6",
     "ipywidgets>=8.1.5",
     "jupyterlab-execute-time>=3.2.0",
     "jupyterlab>=4.3.4",
@@ -74,10 +74,10 @@ debug = [
 docs = [
     "docutils>=0.21.2",
     "myst-parser>=4.0.0",
-    "nbsphinx>=0.9.5",
+    "nbsphinx>=0.9.6",
     "piccolo-theme>=0.24.0",
     "pydata-sphinx-theme>=0.16.1",
-    "pygments>=2.18.0",
+    "pygments>=2.19.0",
     "sphinx-autoapi>=3.4.0",
     "sphinx-autodoc2>=0.5.0",
     "sphinx-automodapi>=0.18.0",
@@ -89,13 +89,13 @@ docs = [
 ]
 linters = [
     "pre-commit>=4.0.1",
-    "pylint>=3.3.2",
-    "ruff>=0.8.4",
-    "tach>=0.19.0",
+    "pylint>=3.3.3",
+    "ruff>=0.8.6",
+    "tach>=0.19.2",
 ]
 tests = [
-    "coverage>=7.6.9",
-    "hypothesis[numpy,pandas,pytest]>=6.122.6",
+    "coverage>=7.6.10",
+    "hypothesis[numpy,pandas,pytest]>=6.123.3",
     "psutil>=6.1.1",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
@@ -106,7 +106,7 @@ tests = [
     "pytest>=8.3.4",
 ]
 typing = [
-    "mypy>=1.14.0",
+    "mypy>=1.14.1",
     "pyright>=1.1.391",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.1.8.20240310",
@@ -117,9 +117,9 @@ typing = [
     "types-psutil>=6.1.0.20241221",
     "types-pygments>=2.18.0.20240506",
     "types-pytz>=2024.2.0.20241221",
-    "types-pyyaml>=6.0.12.20241221",
+    "types-pyyaml>=6.0.12.20241230",
     "types-requests>=2.32.0.20241016",
-    "types-setuptools>=75.6.0.20241126",
+    "types-setuptools>=75.6.0.20241223",
     "types-six>=1.17.0.20241205",
     "types-tabulate>=0.9.0.20241207",
     "types-tqdm>=4.67.0.20241221",
@@ -269,6 +269,8 @@ ignore = [
     "S403",     # suspicious-pickle-import
     "S404",     # suspicious-subprocess-import
     "S603",     # subprocess-without-shell-equals-true
+    # type-check
+    "TC006",    # Add quotes to type expression in `typing.cast()`
     # todo
     "TD",       # todo
     #

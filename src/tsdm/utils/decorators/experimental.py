@@ -34,9 +34,9 @@ class _AttrMeta(type):
 
     def __call__[T, R](cls, func: Fn[[T], R], /) -> R:
         r"""Create a decorator that converts method to attribute."""
-        _attr = super().__call__(func)
+        attr_ = super().__call__(func)
         wrapper = wraps(func, updated=())
-        attr = cast(R, wrapper(_attr))
+        attr = cast(R, wrapper(attr_))
         return attr
 
 
@@ -54,7 +54,7 @@ class attribute[T, R](metaclass=_AttrMeta):
     def __get__(self, obj: None, obj_type: Optional[type] = ..., /) -> Self: ...
     @overload
     def __get__(self, obj: T, obj_type: Optional[type] = ..., /) -> R: ...
-    def __get__(self, obj: None | T, obj_type: Optional[type] = None) -> Self | R:
+    def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
         if obj is None:
             return self
         if self.payload is self.DELETED:

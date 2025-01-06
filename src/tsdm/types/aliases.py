@@ -112,7 +112,7 @@ type Thunk[T] = Callable[[], T]
 r"""Type Alias for lazy evaluation."""
 type MaybeNA[T] = T | NAType
 r"""Type Alias for nullable types."""
-type Nested[T] = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]  # +T
+type Nested[T] = T | Collection[Nested[T]] | Mapping[Any, Nested[T]]  # +T
 r"""Type Alias for nested types (JSON-Like)."""
 # endregion generic type aliases -------------------------------------------------------
 
@@ -211,15 +211,15 @@ r"""Generic Type Alias for nested `tuple`."""
 type NestedBuiltin[T] = (
     T
     | tuple[T, ...]  # leaf-tuple
-    | tuple["NestedBuiltin[T]", ...]
+    | tuple[NestedBuiltin[T], ...]
     | set[T]  # leaf-set
-    | set["NestedBuiltin[T]"]
+    | set[NestedBuiltin[T]]
     | frozenset[T]  # leaf-frozenset
-    | frozenset["NestedBuiltin[T]"]
+    | frozenset[NestedBuiltin[T]]
     | list[T]  # leaf-list
-    | list["NestedBuiltin[T]"]
+    | list[NestedBuiltin[T]]
     | dict[str, T]  # leaf-dict
-    | dict[str, "NestedBuiltin[T]"]
+    | dict[str, NestedBuiltin[T]]
 )
 r"""Type Alias for nested builtins."""
 # endregion Nested Builtins ------------------------------------------------------------
@@ -230,10 +230,10 @@ type JSON_LeafType = None | bool | int | float | str
 type TOML_LeafType = None | bool | int | float | str | datetime
 type YAML_LeafType = None | bool | int | float | str | datetime
 
-type JSON = JSON_LeafType | list["JSON"] | dict[str, "JSON"]
+type JSON = JSON_LeafType | list[JSON] | dict[str, JSON]
 r"""Type Alias for JSON-Like objects."""
-type YAML = YAML_LeafType | list["YAML"] | dict[str, "YAML"]
+type YAML = YAML_LeafType | list[YAML] | dict[str, YAML]
 r"""Type Alias for JSON-Like objects."""
-type TOML = TOML_LeafType | list["TOML"] | dict[str, "TOML"]
+type TOML = TOML_LeafType | list[TOML] | dict[str, TOML]
 r"""Type Alias for JSON-Like objects."""
 # endregion Nested Configuration -------------------------------------------------------

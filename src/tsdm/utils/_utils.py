@@ -120,7 +120,7 @@ def normalize_axes(axes: str | Axis, *, ndim: int) -> tuple[int, ...]:
 
 
 # NOTE: For torchscript compatibility we cannot use python 3.12 type alias.
-def dims_to_list(dims: None | int | list[int], *, ndim: int) -> list[int]:
+def dims_to_list(dims: int | list[int] | None, *, ndim: int) -> list[int]:
     r"""Convert dimensions to list.
 
     Note:

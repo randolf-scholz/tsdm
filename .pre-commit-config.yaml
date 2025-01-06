@@ -22,19 +22,19 @@ repos:
       - id: trailing-whitespace
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+    rev: v0.8.6
     hooks:
-      - id: ruff-format
-        files: '^src/|^tests/'
       - id: ruff
         name: ruff-isort
         files: '^src/|^tests/'
-        args: ["--select", "I", "--fix"]
+        args: [ "--select", "I", "--fix" ]
+      - id: ruff-format
+        files: '^src/|^tests/'
       - id: ruff
         files: '^src/|^tests/'
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.5.11
+    rev: 0.5.14
     hooks:
       - id: uv-lock
       - id: uv-export
@@ -106,7 +106,7 @@ repos:
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.19.0 # change this to the latest tag!
+    rev: v0.19.2 # change this to the latest tag!
     hooks:
       - id: tach
   - repo: local
@@ -115,7 +115,7 @@ repos:
         name: unknown-inline-pragma
         description: "Check for unknown inline pragmas."
         language: pygrep
-        entry: '^([^#]*[^\#\s][^#]*)\#\s+(?!(type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO):)([\w\s]+:)'
+        entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
         types: [python]
       - id: double-comment
         name: double-comment

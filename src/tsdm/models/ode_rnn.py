@@ -126,7 +126,6 @@ class ODE_RNN(BaseModel, nn.Module):
         create_net = module.lib.utils.create_net
         ODEFunc = module.lib.ode_func.ODEFunc
         DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver
-        _ODE_RNN = module.lib.ode_rnn.ODE_RNN
         Net_cfg = {} if Net_cfg is NotImplemented else Net_cfg
         ODEFunc_cfg = {} if ODEFunc_cfg is NotImplemented else ODEFunc_cfg
         DiffeqSolver_cfg = (
@@ -187,7 +186,7 @@ class ODE_RNN(BaseModel, nn.Module):
             device=device,
         )
 
-        self.model = _ODE_RNN(
+        self.model = module.lib.ode_rnn.ODE_RNN(
             input_dim=input_dim,
             latent_dim=n_ode_gru_dims,
             device=device,

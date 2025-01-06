@@ -59,8 +59,8 @@ def eval_metric(
     r"""Evaluate a metric."""
     match metric:
         case str(metric_name):
-            _metric = LOSSES[metric_name]
-            return eval_metric(_metric, targets=targets, predics=predics)
+            metric_ = LOSSES[metric_name]
+            return eval_metric(metric_, targets=targets, predics=predics)
         case type() as metric_type:
             metric_func = metric_type()
             return eval_metric(metric_func, targets=targets, predics=predics)

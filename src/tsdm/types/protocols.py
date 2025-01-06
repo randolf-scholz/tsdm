@@ -388,7 +388,7 @@ class Seq[T](Protocol):  # +T
     def index(self, value: Any, start: int = ..., /) -> int: ...
     @overload
     def index(self, value: Any, start: int = ..., stop: int = ..., /) -> int: ...
-    def index(self, value: Any, start: int = 0, stop: None | int = None, /) -> int:
+    def index(self, value: Any, start: int = 0, stop: Optional[int] = None, /) -> int:
         for i, x in enumerate(self[start:stop]):
             if x == value or x is value:
                 return i

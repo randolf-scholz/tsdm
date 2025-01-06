@@ -105,7 +105,7 @@ class Config:
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the class."""
-    GENERATING_DOCS: ClassVar[bool] = bool(os.environ.get("TSDM_DOCS", False))
+    GENERATING_DOCS: ClassVar[bool] = bool(os.environ.get("TSDM_DOCS"))
     r"""Whether the documentation is being generated."""
 
     BASEDIR: Path

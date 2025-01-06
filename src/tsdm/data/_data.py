@@ -182,10 +182,10 @@ def detect_outliers[T: Series | DataFrame](
     limits: Any = NotImplemented,
     /,
     *,
-    lower_bound: float | None | Mapping[Any, float | None] = NotImplemented,
-    upper_bound: float | None | Mapping[Any, float | None] = NotImplemented,
-    lower_inclusive: bool | Mapping[Any, bool] = NotImplemented,
-    upper_inclusive: bool | Mapping[Any, bool] = NotImplemented,
+    lower_bound: Mapping[Any, float | None] | float | None = NotImplemented,
+    upper_bound: Mapping[Any, float | None] | float | None = NotImplemented,
+    lower_inclusive: Mapping[Any, bool] | bool = NotImplemented,
+    upper_inclusive: Mapping[Any, bool] | bool = NotImplemented,
 ) -> T:
     r"""Detect outliers in a Series or DataFrame, given boundary values."""
     lims = {
@@ -266,10 +266,10 @@ def remove_outliers[T: Series | DataFrame](
     limits: Any = NotImplemented,
     /,
     *,
-    lower_bound: float | None | Mapping[Any, float | None] = NotImplemented,
-    upper_bound: float | None | Mapping[Any, float | None] = NotImplemented,
-    lower_inclusive: bool | Mapping[Any, bool] = NotImplemented,
-    upper_inclusive: bool | Mapping[Any, bool] = NotImplemented,
+    lower_bound: Mapping[Any, float | None] | float | None = NotImplemented,
+    upper_bound: Mapping[Any, float | None] | float | None = NotImplemented,
+    lower_inclusive: Mapping[Any, bool] | bool = NotImplemented,
+    upper_inclusive: Mapping[Any, bool] | bool = NotImplemented,
     drop: bool = True,
     inplace: bool = False,
 ) -> T:
@@ -400,8 +400,8 @@ def describe(
     try:
         idx = s.first_valid_index()
         # NOTE: dropna is necessary for duplicate index
-        _val = s.loc[idx].dropna().iloc[0] if idx is not None else 0
-        zero = _val - _val
+        val = s.loc[idx].dropna().iloc[0] if idx is not None else 0
+        zero = val - val
         neg_count = (s < zero).sum()
         pos_count = (s > zero).sum()
         zero_count = (s == zero).sum()

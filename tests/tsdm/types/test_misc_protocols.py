@@ -123,21 +123,18 @@ def test_dataclass_types() -> None:
     r"""Test the Dataclass protocol."""
     _typ: type[Dataclass] = MyDataclass
     _obj: Dataclass = MyDataclass(1, 2)
-    del _typ, _obj
 
 
 def test_namedtuple_types() -> None:
     r"""Test the NTuple protocol."""
     _typ: type[NTuple] = MyNamedTuple
     _obj: NTuple = MyNamedTuple(1, 2)
-    del _typ, _obj
 
 
 def test_slotted_types() -> None:
     r"""Test the Slotted protocol."""
     _typ: type[Slotted] = MySlotted
     _obj: Slotted = MySlotted(1, 2)
-    del _typ, _obj
 
 
 def test_dataclass_protocol() -> None:

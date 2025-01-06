@@ -184,11 +184,11 @@ def multi_norm(
 
     If `normalize=True`, the sums are replaced with averages.
     """
-    _tensors: list[Tensor] = []
+    tesnors_: list[Tensor] = []
     for tensor in tensors:
         if tensor.numel() > 0:
-            _tensors.append(tensor)  # noqa: PERF401 (jit no support list comprehension)
-    tensors = _tensors
+            tesnors_.append(tensor)  # noqa: PERF401 (jit no support list comprehension)
+    tensors = tesnors_
 
     if len(tensors) == 0:
         return torch.tensor(0.0)

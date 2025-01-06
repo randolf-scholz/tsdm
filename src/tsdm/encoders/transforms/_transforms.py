@@ -129,9 +129,9 @@ def make_masked_format(df: DataFrame, /) -> tuple[DataFrame, DataFrame, DataFram
     """
     m = df.notna().astype(np.uint8)
     # note: s here is not the same s as in the GRU-D paper, but s(t) - s(t-1)
-    _s = Series(df.index).diff()
-    _s[0] = 0 * _s[1]
-    s = pd.Index(_s)
+    s_ = Series(df.index).diff()
+    s_[0] = 0 * s_[1]
+    s = pd.Index(s_)
 
     # @numba.njit
     def get_deltas(a: np.ndarray, b: np.ndarray, /) -> np.ndarray:
