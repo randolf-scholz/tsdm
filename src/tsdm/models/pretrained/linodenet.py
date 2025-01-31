@@ -20,13 +20,6 @@ from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.types.aliases import FilePath
 from tsdm.utils.remote import download
 
-# FIXME: broken doctest
-# Example:
-# >> > from tsdm.models.pretrained import LinODEnet
-# >> > pretrained = LinODEnet.from_remote_checkpoint("2022-12-01/270")
-# >> > pretrained.components["LinODEnet"]  # doctest: +ELLIPSIS
-# RecursiveScriptModule(...
-
 
 class LinODEnet(PreTrainedBase):
     r"""Import pre-trained LinODEnet model."""

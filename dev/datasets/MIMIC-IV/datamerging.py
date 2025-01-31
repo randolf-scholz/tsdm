@@ -129,7 +129,7 @@ et = merged_df.groupby("subject_id")["charttime"].max()
 mask &= (lb <= et) & (et <= ub)
 mask.mean()
 
-# ### Note: combined masks ⟹ only ~ 70 % of data remains
+# ### NOTE: combined masks ⟹ only ~ 70 % of data remains
 
 # # Add timestamps and Label Codes
 

@@ -20,7 +20,7 @@ TD_PY_DUR: py_timedelta = py_timedelta(days=1)
 # numpy timedeltas
 TD_NP_FLOAT: np.float64 = np.float64(10.0)
 TD_NP_INT: np.int64 = np.int64(10)
-TD_NP_DUR: np.timedelta64 = np.timedelta64(1, "D")
+TD_NP_DUR: np.timedelta64[py_timedelta] = np.timedelta64(1, "D")
 # pandas timedeltas
 TD_PD_DUR: pd.Timedelta = timedelta(days=1)
 # python timestamps
@@ -28,7 +28,7 @@ TS_PY_DATE: py_datetime = py_datetime.fromisoformat(ISO_DATE)
 TS_PY_FLOAT: float = 10.0
 TS_PY_INT: int = 10
 # numpy timestamps
-TS_NP_DATE: np.datetime64 = np.datetime64(ISO_DATE)
+TS_NP_DATE: np.datetime64[py_datetime] = np.datetime64(ISO_DATE)
 TS_NP_FLOAT: np.float64 = np.float64(TS_PY_FLOAT)
 TS_NP_INT: np.int64 = np.int64(TS_PY_INT)
 # pandas timestamps
@@ -93,6 +93,17 @@ INT_TIMESTAMPS: dict[TS, TimeStamp[int]] = {
 }  # fmt: skip
 r"""Dictionary of int-like timestamps."""
 # endregion test data ------------------------------------------------------------------
+
+
+def test_assign() -> None:
+    r"""Test the datetime protocol."""
+    _0: TimeDelta = TD_NP_FLOAT
+    _1: TimeDelta = TD_NP_INT
+    _2: TimeDelta = TD_NP_DUR
+    _3: TimeDelta = TD_PD_DUR
+    _4: TimeDelta = TD_PY_FLOAT
+    _5: TimeDelta = TD_PY_INT
+    _6: TimeDelta = TD_PY_DUR
 
 
 def test_timestamp_issubclass() -> None:
@@ -193,7 +204,7 @@ def test_timedelta_protocol(name: TD) -> None:
 def test_timestamp_assign() -> None:
     TS_float: TimeStamp[float] = TS_PY_FLOAT
     TS_int: TimeStamp[int] = TS_PY_INT
-    TS_numpy: TimeStamp[np.timedelta64] = TS_NP_DATE
+    TS_numpy: TimeStamp[np.timedelta64[py_timedelta]] = TS_NP_DATE
     TS_numpy_float: TimeStamp[np.float64] = TS_NP_FLOAT
     TS_numpy_int: TimeStamp[np.int64] = TS_NP_INT
     TS_pandas: TimeStamp[pd.Timedelta] = TS_PD_DATE
@@ -244,16 +255,24 @@ def test_timestamp_typevar() -> None:
 def test_timestamp_difference() -> None:
     r"""Test inference capabilities of type checkers."""
 
-    def diff[TD: TimeDelta](x: TimeStamp[TD]) -> TD:
+    def infer_delta_type[TD: TimeDelta](x: TimeStamp[TD]) -> TD:
         return x - x
 
-    assert_type(diff(TS_PY_FLOAT), float)
-    assert_type(diff(TS_PY_INT), int)
-    assert_type(diff(TS_NP_DATE), np.timedelta64)
-    assert_type(diff(TS_NP_FLOAT), np.float64)  # type: ignore[assert-type, misc]
-    assert_type(diff(TS_NP_INT), np.float32)  # type: ignore[assert-type, misc]
-    assert_type(diff(TS_PD_DATE), pd.Timedelta)
-    assert_type(diff(TS_PY_DATE), py_timedelta)
+    assert_type(TS_PY_FLOAT - TS_PY_FLOAT, float)
+    assert_type(TS_PY_INT - TS_PY_INT, int)
+    assert_type(TS_NP_DATE - TS_NP_DATE, np.timedelta64)
+    assert_type(TS_NP_FLOAT - TS_NP_FLOAT, np.float64)
+    assert_type(TS_NP_INT - TS_NP_INT, np.int64)
+    assert_type(TS_PD_DATE - TS_PD_DATE, pd.Timedelta)
+    assert_type(TS_PY_DATE - TS_PY_DATE, py_timedelta)
+
+    assert_type(infer_delta_type(TS_PY_FLOAT), float)
+    assert_type(infer_delta_type(TS_PY_INT), int)
+    assert_type(infer_delta_type(TS_NP_DATE), np.timedelta64)
+    assert_type(infer_delta_type(TS_NP_FLOAT), np.float64)
+    assert_type(infer_delta_type(TS_NP_INT), np.int64)
+    assert_type(infer_delta_type(TS_PD_DATE), pd.Timedelta)
+    assert_type(infer_delta_type(TS_PY_DATE), py_timedelta)
 
 
 def test_td_var() -> None:

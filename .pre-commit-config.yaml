@@ -22,7 +22,7 @@ repos:
       - id: trailing-whitespace
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.9.4
     hooks:
       - id: ruff
         name: ruff-isort
@@ -34,10 +34,18 @@ repos:
         files: '^src/|^tests/'
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.5.14
+    rev: 0.5.26
     hooks:
       - id: uv-lock
       - id: uv-export
+      - id: uv-sync
+        args: ["--upgrade"]
+        stages: [ "pre-commit" ]
+  # tach
+  - repo: https://github.com/gauge-sh/tach-pre-commit
+    rev: v0.24.0 # change this to the latest tag!
+    hooks:
+      - id: tach
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.4
@@ -46,7 +54,7 @@ repos:
         exclude: '^experiments/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.5.53
+    rev: v0.5.56
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -90,7 +98,7 @@ repos:
         files: '^src/|^tests/'
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.43.0
+    rev: v0.44.0
     hooks:
       - id: markdownlint
         args:
@@ -104,11 +112,6 @@ repos:
     hooks:
       - id: shellcheck
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
-  # tach
-  - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.19.2 # change this to the latest tag!
-    hooks:
-      - id: tach
   - repo: local
     hooks:
       - id: unknown-inline-pragma
@@ -117,16 +120,17 @@ repos:
         language: pygrep
         entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
         types: [python]
+        files: '^src/|^tests/'
       - id: double-comment
         name: double-comment
         description: "Check for double comments."
         language: pygrep
-        entry: '\#\s*\#'
+        entry: '\#\s+\#\s+'
         types: [python]
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.391
+    rev: v1.1.393
     hooks:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674

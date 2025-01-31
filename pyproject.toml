@@ -5,12 +5,12 @@ build-backend = "pdm.backend"
 # region project configuration ---------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.6.0"
-authors = [{name="Randolf Scholz", email="randolf.scholz@gmail.com"}]
+version = "0.7.0"
+authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
 # package content
-license = {file="LICENSE"}
+license = { file = "LICENSE" }
 readme = "README.md"
 
 # meta-information
@@ -28,21 +28,21 @@ classifiers = [
 ]
 
 # dependencies
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "matplotlib>=3.10.0",
-    "numpy>=2.2.1",
+    "numpy>=2.2.2",
     "pandas>=2.2.3",
     "pillow>=11.1.0",
-    "polars>=1.19.0",
-    "pyarrow>=18.1.0",
-    "pydantic>=2.10.4",
+    "polars>=1.21.0",
+    "pyarrow>=19.0.0",
+    "pydantic>=2.10.6",
     "pyyaml>=6.0.2",
     "requests>=2.32.3",
-    "scikit-learn>=1.6.0",
-    "scipy>=1.15.0",
+    "scikit-learn>=1.6.1",
+    "scipy>=1.15.1",
     "tensorboard>=2.18.0",
-    "torch>=2.5.1",
+    "torch>=2.6.0",
     "tqdm>=4.67.1",
     "typing-extensions>=4.12.2",
 ]
@@ -59,7 +59,7 @@ dev = [
     {include-group="linters"}, {include-group="tests"}, {include-group="typing"},
 ]
 devtools = [
-    "cmake>=3.31.2",
+    "cmake>=3.31.4",
     "ninja>=1.11.1.3",
     "pybadges>=3.0.1",
 ]
@@ -67,7 +67,7 @@ debug = [
     "ipympl>=0.9.6",
     "ipywidgets>=8.1.5",
     "jupyterlab-execute-time>=3.2.0",
-    "jupyterlab>=4.3.4",
+    "jupyterlab>=4.3.5",
     "psutil>=6.1.1",
     "torchinfo>=1.8.0",
 ]
@@ -77,7 +77,7 @@ docs = [
     "nbsphinx>=0.9.6",
     "piccolo-theme>=0.24.0",
     "pydata-sphinx-theme>=0.16.1",
-    "pygments>=2.19.0",
+    "pygments>=2.19.1",
     "sphinx-autoapi>=3.4.0",
     "sphinx-autodoc2>=0.5.0",
     "sphinx-automodapi>=0.18.0",
@@ -88,14 +88,14 @@ docs = [
     "sphinx>=8.1.3",
 ]
 linters = [
-    "pre-commit>=4.0.1",
-    "pylint>=3.3.3",
-    "ruff>=0.8.6",
-    "tach>=0.19.2",
+    "pre-commit>=4.1.0",
+    "pylint>=3.3.4",
+    "ruff>=0.9.4",
+    "tach>=0.24.0",
 ]
 tests = [
     "coverage>=7.6.10",
-    "hypothesis[numpy,pandas,pytest]>=6.123.3",
+    "hypothesis[numpy,pandas,pytest]>=6.124.7",
     "psutil>=6.1.1",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
@@ -107,19 +107,19 @@ tests = [
 ]
 typing = [
     "mypy>=1.14.1",
-    "pyright>=1.1.391",
+    "pyright>=1.1.393",
     "types-colorama>=0.4.15.20240311",
-    "types-decorator>=5.1.8.20240310",
+    "types-decorator>=5.1.8.20250121",
     "types-docutils>=0.21.0.20241128",
     "types-jsonschema>=4.23.0.20241208",
     "types-pillow>=10.2.0.20240822",
     "types-protobuf>=5.29.1.20241207",
     "types-psutil>=6.1.0.20241221",
-    "types-pygments>=2.18.0.20240506",
+    "types-pygments>=2.19.0.20250107",
     "types-pytz>=2024.2.0.20241221",
     "types-pyyaml>=6.0.12.20241230",
     "types-requests>=2.32.0.20241016",
-    "types-setuptools>=75.6.0.20241223",
+    "types-setuptools>=75.8.0.20250110",
     "types-six>=1.17.0.20241205",
     "types-tabulate>=0.9.0.20241207",
     "types-tqdm>=4.67.0.20241221",
@@ -161,6 +161,7 @@ unfixable = []
 #    "ISC",   # implicit-str-concat
 #    "N",     # pep8-naming
 #    "NPY",   # numpy
+#    "N",     # naming
 #    "PERF",  # performance related
 #    "PGH",   # pygrep-hooks
 #    "PIE",   # pie
@@ -325,7 +326,7 @@ disable = [
     "C0144",  # non-ascii-name
     "C0204",  # bad-mcs-classmethod-argument
     "C0301",  # line-too-long
-    # "E0611",  # no-name-in-module
+    "E0611",  # no-name-in-module
     "E1101",  # no-member  # FIXME: too many false positives
     "E1102",  # not-callable  # FIXME: too many false positives (torch)
     "E1121",  # too-many-function-args  # FIXME: too many false positives
@@ -372,10 +373,10 @@ plugins = []
 python_version = "3.12"
 
 disable_error_code = [
-    "func-returns-value",  # SEE: https://github.com/python/mypy/issues/6549
-    # "overload-overlap",  # SEE: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
-    "method-assign",  # SEE: https://github.com/python/mypy/issues/2427#issuecomment-1419206807
-    "no-overload-impl", # SEE: https://github.com/python/mypy/issues/17618
+    "func-returns-value", # SEE: https://github.com/python/mypy/issues/6549
+    "method-assign",      # SEE: https://github.com/python/mypy/issues/2427#issuecomment-1419206807
+    "no-overload-impl",   # SEE: https://github.com/python/mypy/issues/17618
+    # "overload-overlap",   # SEE: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
 ]
 
 # warnings
@@ -401,7 +402,7 @@ disallow_untyped_calls = false
 disallow_untyped_decorators = false
 disallow_untyped_defs = true
 
-# strictness flags
+## strictness flags
 #strict = false
 #strict_equality = false
 implicit_reexport = false
@@ -410,7 +411,7 @@ implicit_reexport = false
 allow_untyped_globals = false
 allow_redefinition = false
 
-# configuring error messages
+## configuring error messages
 color_output = true
 error_summary = true
 hide_error_codes = false
@@ -439,18 +440,12 @@ venvPath = "."
 pythonVersion = "3.12"
 pythonPlatform = "Linux"
 include = ["src/", "tests/"]
-
-# Type Check Diagnostics Settings
-# https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
 typeCheckingMode = "standard"
 useLibraryCodeForTypes = false  # `pandas` has way too many false positives
 
-# highlight any unnecessary "# type: ignore" comments
+## Type Check Diagnostics Settings
+# SEE: https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
 reportUnnecessaryTypeIgnoreComment = false
-
-# standard flags we disable
-reportPrivateImportUsage = false  # FIXME: https://github.com/microsoft/pyright/issues/9217
-reportNoOverloadImplementation = false  # SEE: https://github.com/microsoft/pyright/issues/8619
 
 # strict mode flags we enable by default
 reportUntypedClassDecorator = true
@@ -486,15 +481,14 @@ testpaths = ["src/", "tests/"]
 addopts = [
     "--doctest-modules",
     # "--junit-xml=reports/pytest.xml",
-    # rerunfailures options
+    # ## xdists options
+    "--numprocesses=0",  # number of parallel processes
+    # ## rerunfailures options
     #    "--reruns=",          # number of times to re-run failed tests (default 0)
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.
     #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
-    # xdists options
-    "--numprocesses=0",  # number of parallel processes
-    # "--dist=loadfile", # loadscope, loadfile, load, each, no
-    # coverage options
-    "--cov=tsdm",  # Path or package name to measure during execution (multi-allowed).
+    # ## coverage options
+    "--cov=tsdm",
     "--cov-report=term:skip-covered",
     "--cov-report=xml:reports/coverage.xml",
     #    "--cov-report=annotate:reports/coverage",

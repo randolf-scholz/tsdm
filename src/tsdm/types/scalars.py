@@ -30,6 +30,7 @@ from typing import (
     Self,
     SupportsFloat,
     SupportsInt,
+    overload,
     runtime_checkable,
 )
 
@@ -312,12 +313,11 @@ class TimeStamp[TD: TimeDelta](OrderedScalar, Protocol):
     def __radd__(self, other: TD, /) -> Self: ...
 
     # FIXME: https://github.com/python/mypy/issues/18101
-    def __sub__(self, other: Self, /) -> TD: ...
-
-    # @overload
     # def __sub__(self, other: Self, /) -> TD: ...
-    # @overload
-    # def __sub__(self, other: TD, /) -> Self: ...
+    @overload
+    def __sub__(self, other: Self, /) -> TD: ...
+    @overload
+    def __sub__(self, other: TD, /) -> Self: ...
 
     # NOTE: __rsub__ missing on fallback pydatetime
     # def __rsub__(self, other: Self, /) -> TD: ...

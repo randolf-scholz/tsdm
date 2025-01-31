@@ -78,7 +78,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.pdm-build" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 (tsdm)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.13 (tsdm)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">
