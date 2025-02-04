@@ -15,7 +15,7 @@ __all__ = [
     "HierarchicalSampler",
     "RandomSampler",
     "SequenceSampler",
-    "SlidingSampler",
+    "SlidingWindowSampler",
     # Functions
     "compute_grid",
 ]
@@ -26,7 +26,7 @@ from tsdm.random.samplers.base import (
     HierarchicalSampler,
     RandomSampler,
     Sampler,
-    SlidingSampler,
+    SlidingWindowSampler,
     compute_grid,
 )
 
@@ -34,6 +34,6 @@ SAMPLERS: dict[str, type[Sampler]] = {
     "HierarchicalSampler"  : HierarchicalSampler,
     "RandomSampler"        : RandomSampler,
     "SequenceSampler"      : SequenceSampler,
-    "SlidingSampler"       : SlidingSampler,
+    "SlidingSampler"       : SlidingWindowSampler,
 }  # fmt: skip
 r"""Dictionary of all available samplers."""

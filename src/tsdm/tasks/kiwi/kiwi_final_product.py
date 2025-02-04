@@ -24,7 +24,7 @@ from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset
 from tsdm.datasets import KiwiBenchmark
-from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
+from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
 from tsdm.types.aliases import MaybeNA
@@ -312,7 +312,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         # construct the sampler
         subsamplers = {}
         for idx in mapped_ds:
-            subsampler = SlidingSampler(
+            subsampler = SlidingWindowSampler(
                 xmin=self.final_product_times.loc[idx, "t_min"],
                 xmax=self.final_product_times.loc[idx, "t_max"],
                 deltax=lambda k: k * self.delta_t,

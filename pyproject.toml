@@ -17,11 +17,11 @@ readme = "README.md"
 keywords = ["time-series", "machine-learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 12.1",
+    "Environment :: GPU :: NVIDIA CUDA :: 12.6",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
@@ -95,7 +95,7 @@ linters = [
 ]
 tests = [
     "coverage>=7.6.10",
-    "hypothesis[numpy,pandas,pytest]>=6.124.7",
+    "hypothesis[numpy,pandas,pytest]>=6.125.1",
     "psutil>=6.1.1",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
@@ -116,7 +116,7 @@ typing = [
     "types-protobuf>=5.29.1.20241207",
     "types-psutil>=6.1.0.20241221",
     "types-pygments>=2.19.0.20250107",
-    "types-pytz>=2024.2.0.20241221",
+    "types-pytz>=2025.1.0.20250204",
     "types-pyyaml>=6.0.12.20241230",
     "types-requests>=2.32.0.20241016",
     "types-setuptools>=75.8.0.20250110",
@@ -134,7 +134,7 @@ typing = [
 src = ["src/", "tests/"]
 indent-width = 4
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 output-format = "concise"
 
 [tool.ruff.lint]
@@ -370,7 +370,7 @@ generated-members = ["numpy.*", "torch.*"]
 files = ["src/", "tests/"]
 platform = "linux"
 plugins = []
-python_version = "3.12"
+python_version = "3.13"
 
 disable_error_code = [
     "func-returns-value", # SEE: https://github.com/python/mypy/issues/6549
@@ -437,7 +437,7 @@ ignore_missing_imports = true
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 pythonPlatform = "Linux"
 include = ["src/", "tests/"]
 typeCheckingMode = "standard"

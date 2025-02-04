@@ -12,7 +12,7 @@ from tsdm.data import (
     folds_as_sparse_frame,
     folds_from_groups,
 )
-from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import SplitID, TimeSeriesTask
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator, in_silico
 
@@ -39,7 +39,7 @@ class InSilicoTask(TimeSeriesTask):
     def make_sampler(self, key: SplitID, /) -> Sampler:
         split: PandasTSC = self.splits[key]
         subsamplers = {
-            key: SlidingSampler(
+            key: SlidingWindowSampler(
                 tsd.timeindex,
                 horizons=["2h", "1h"],
                 stride="1h",

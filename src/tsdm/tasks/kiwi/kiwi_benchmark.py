@@ -33,7 +33,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.metrics import TimeSeriesMSE
-from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import SplitID, TimeSeriesTask
 from tsdm.timeseries import Sample, TimeSeriesSampleGenerator
 from tsdm.utils.decorators import pprint_repr
@@ -269,7 +269,7 @@ class KiwiBenchmark(TimeSeriesTask):
             raise ValueError(f"Unknown sampler_kwargs: {sampler_kwargs}")
 
         subsamplers = {
-            key: SlidingSampler(
+            key: SlidingWindowSampler(
                 tsd.timeindex,
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,
