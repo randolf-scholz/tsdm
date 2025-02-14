@@ -534,16 +534,6 @@ class SlidingWindowSampler[
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
     @overload
-    def __iter__(self: "SlidingWindowSampler[DT, S, MULTI]", /) -> Iterator[list[slice]]: ...
-    @overload
-    def __iter__(self: "SlidingWindowSampler[DT, B, MULTI]", /) -> Iterator[list[tuple[DT, DT]]]: ...
-    @overload
-    def __iter__(self: "SlidingWindowSampler[DT, M, MULTI]", /) -> Iterator[list[NDArray[np.bool_]]]: ...
-    @overload
-    def __iter__(self: "SlidingWindowSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...  # type: ignore[type-var,unused-ignore]
-    @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DT, U, MULTI]", /) -> Iterator[list]: ...
-    @overload
     def __iter__(self: "SlidingWindowSampler[DT, S, ONE]", /) -> Iterator[slice]: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, B, ONE]", /) -> Iterator[tuple[DT, DT]]: ...
@@ -552,7 +542,7 @@ class SlidingWindowSampler[
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ...  # type: ignore[type-var,unused-ignore]
     @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DT, U, ONE]", /) -> Iterator: ...
+    def __iter__(self: "SlidingWindowSampler[DT, U, ONE]", /) -> Iterator[Any]: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self, /) -> Iterator:
@@ -581,40 +571,16 @@ class SlidingWindowSampler[
             case "bounds", False:
                 for horizons in iter_horizons:
                     yield horizons[0], horizons[-1]
-            case "bounds", True:
-                for horizons in iter_horizons:
-                    yield [
-                        (start, stop)
-                        for start, stop in sliding_window_view(horizons, 2)
-                    ]
             case "slices", False:
                 for horizons in iter_horizons:
                     yield slice(horizons[0], horizons[-1])
-            case "slices", True:
-                for horizons in iter_horizons:
-                    yield [
-                        slice(start, stop)
-                        for start, stop in sliding_window_view(horizons, 2)
-                    ]
             case "masks", False:
                 for horizons in iter_horizons:
                     yield (horizons[0] <= self.data) & (self.data < horizons[-1])
-            case "masks", True:
-                for horizons in iter_horizons:
-                    yield [
-                        (start <= self.data) & (self.data < stop)
-                        for start, stop in sliding_window_view(horizons, 2)
-                    ]
             case "windows", False:
                 for horizons in iter_horizons:
                     yield self.data[
                         (horizons[0] <= self.data) & (self.data < horizons[-1])
-                    ]
-            case "windows", True:
-                for horizons in iter_horizons:
-                    yield [
-                        self.data[(start <= self.data) & (self.data < stop)]
-                        for start, stop in sliding_window_view(horizons, 2)
                     ]
             case _:
                 raise TypeError(f"Invalid mode {self.mode=}")
@@ -905,13 +871,13 @@ class SlidingMultiHorizonSampler[
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, B]", /) -> Iterator[list[tuple[DT, DT]]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DT, I]", /) -> Iterator[list[Interval[DT]]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, I]", /) -> Iterator[list["Interval[DT]"]]: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, M]", /) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, W]", /) -> Iterator[list[NDArray[DT]]]: ...  # type: ignore[type-var,unused-ignore]
     @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DT, U]", /) -> Iterator[list]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, U]", /) -> Iterator[list[Any]]: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self, /) -> Iterator:
