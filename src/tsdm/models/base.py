@@ -2,7 +2,6 @@ r"""Base Model that all other models must subclass."""
 
 __all__ = [
     # ABCs & Protocols
-    "Model",
     "ForecastingModel",
     "StateSpaceForecastingModel",
     # Classes
@@ -17,12 +16,9 @@ from pathlib import Path
 from typing import Any, ClassVar, Optional, Protocol
 from urllib.parse import urlparse
 
-from torch import Tensor, nn
+from torch import Tensor
 
 from tsdm.config import CONFIG
-
-type Model = nn.Module
-r"""Type hint for models."""
 
 
 class ForecastingModel(Protocol):

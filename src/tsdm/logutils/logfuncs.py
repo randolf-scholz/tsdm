@@ -29,7 +29,7 @@ import yaml
 from matplotlib.figure import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
-from torch import Tensor
+from torch import Tensor, nn
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
@@ -50,7 +50,6 @@ from tsdm.linalg import (
 )
 from tsdm.logutils.utils import compute_metrics
 from tsdm.metrics import Metric
-from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON
 from tsdm.utils import transpose_list_of_dicts
@@ -309,7 +308,7 @@ def log_model(
     step: int,
     writer: SummaryWriter,
     /,
-    model: Model,
+    model: nn.Module,
     *,
     log_histograms: bool = True,
     log_norms: bool = True,

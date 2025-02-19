@@ -16,7 +16,6 @@ __all__ = [
     # ABCs & Protocols
     "ForecastingModel",
     "StateSpaceForecastingModel",
-    "Model",
     "BaseModel",
     # Classes
     "ODE_RNN",
@@ -28,7 +27,6 @@ from tsdm.models import activations, generic, pretrained
 from tsdm.models.base import (
     BaseModel,
     ForecastingModel,
-    Model,
     StateSpaceForecastingModel,
 )
 from tsdm.models.ode_rnn import ODE_RNN

@@ -63,7 +63,7 @@ from typing import (
 import torch
 import yaml
 from pandas import DataFrame, MultiIndex
-from torch import Tensor
+from torch import Tensor, nn
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -82,7 +82,6 @@ from tsdm.logutils.logfuncs import (
 )
 from tsdm.logutils.utils import TargetsAndPredics, compute_metrics, save_checkpoint
 from tsdm.metrics import Metric
-from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.types.protocols import MutSeq
@@ -269,7 +268,7 @@ class ConfigCallback(BaseCallback):
 class EvaluationCallback(BaseCallback):
     r"""Callback to log evaluation metrics to tensorboard."""
 
-    model: Model
+    model: nn.Module
 
     _: KW_ONLY
 
@@ -574,7 +573,7 @@ class MetricsCallback(BaseCallback):
 class ModelCallback(BaseCallback):
     r"""Callback to log model information to tensorboard."""
 
-    model: Model
+    model: nn.Module
 
     _: KW_ONLY
 

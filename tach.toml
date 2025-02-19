@@ -74,7 +74,7 @@ depends_on = ["tsdm.utils", "tsdm.datasets", "tsdm.data", "tsdm.types", "tsdm.co
 
 [[modules ]]
 path = "tsdm.logutils"
-depends_on = ["tsdm.constants", "tsdm.types", "tsdm.metrics", "tsdm.utils", "tsdm.models", "tsdm.viz", "tsdm.optimizers", "tsdm.linalg"]
+depends_on = ["tsdm.constants", "tsdm.types", "tsdm.metrics", "tsdm.utils", "tsdm.viz", "tsdm.optimizers", "tsdm.linalg"]
 
 [[modules ]]
 path = "tsdm.datasets"
