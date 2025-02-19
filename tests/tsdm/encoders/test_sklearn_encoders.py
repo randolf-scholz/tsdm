@@ -1,10 +1,11 @@
 r"""Test sklearn encoders."""
 
+from typing import get_protocol_members
+
 import numpy as np
 import pytest
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
-from typing_extensions import get_protocol_members
 
 from tsdm.encoders.sklearn import (
     SKLEARN_ENCODERS,

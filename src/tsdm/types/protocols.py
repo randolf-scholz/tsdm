@@ -64,13 +64,13 @@ from typing import (
     Protocol,
     Self,
     SupportsIndex,
+    TypeIs,
     _ProtocolMeta as ProtocolMeta,
     overload,
     runtime_checkable,
 )
 
 import typing_extensions
-from typing_extensions import TypeIs
 
 # region io protocols ------------------------------------------------------------------
 

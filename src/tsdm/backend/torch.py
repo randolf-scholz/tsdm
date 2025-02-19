@@ -1,6 +1,8 @@
 r"""Implementations for torch backend."""
 
 __all__ = [
+    # Constants
+    "EPS",
     # Functions
     "apply_along_axes",
     "copy_like",
@@ -9,17 +11,35 @@ __all__ = [
     "nanmin",
     "nanstd",
     "scalar",
+    # utils
+    "initialize_from_config",
+    "autojit",
+    "lazy_jit_torch",
 ]
 
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable as Fn
+from functools import wraps
+from importlib import import_module
+from typing import Any, Final, Self
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-from torch import Tensor
+from torch import Tensor, jit, nn
 
+from tsdm.config import CONFIG
 from tsdm.types.aliases import Axis
+
+EPS: Final[dict[torch.dtype, float]] = {
+    torch.bfloat16   : 1e-2,
+    torch.complex128 : 1e-15,
+    torch.complex32  : 1e-3,
+    torch.complex64  : 1e-6,
+    torch.float16    : 1e-3,
+    torch.float32    : 1e-6,
+    torch.float64    : 1e-15,
+}  # fmt: skip
+r"""CONST: Default epsilon for each dtype."""
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:
@@ -66,9 +86,7 @@ def copy_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
     return torch.tensor(x, dtype=ref.dtype, device=ref.device)
 
 
-def apply_along_axes(
-    op: Callable[..., Tensor], /, *tensors: Tensor, axis: Axis
-) -> Tensor:
+def apply_along_axes(op: Fn[..., Tensor], /, *tensors: Tensor, axis: Axis) -> Tensor:
     r"""Apply a function to multiple tensors along axes.
 
     It is assumed that all tensors have the same shape.
@@ -88,3 +106,93 @@ def apply_along_axes(
     result = op(*tensors)
     result = torch.moveaxis(result, source, inverse_permutation)
     return result
+
+
+def lazy_jit_torch[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
+    r"""Create decorator to lazily compile a function with `torch.jit.script`."""
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        # script the original function if it hasn't been scripted yet
+        if wrapper.scripted is None:  # type: ignore[attr-defined]
+            wrapper.scripted = jit.script(wrapper.original_fn)  # type: ignore[attr-defined]
+        return wrapper.scripted(*args, **kwargs)  # type: ignore[attr-defined]
+
+    wrapper.original_fn = func  # type: ignore[attr-defined]
+    wrapper.scripted = None  # type: ignore[attr-defined]
+    wrapper.script_if_tracing_wrapper = True  # type: ignore[attr-defined]
+    return wrapper
+
+
+def autojit[M: nn.Module](base_class: type[M], /) -> type[M]:
+    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
+
+    Makes it so that
+
+    .. code-block:: python
+
+        class MyModule: ...
+
+
+        model = jit.script(MyModule())
+
+    and
+
+    .. code-block:: python
+
+        @autojit
+        class MyModule: ...
+
+
+        model = MyModule()
+
+    are (roughly?) equivalent
+    """
+    if not isinstance(base_class, type):
+        raise TypeError("Expected a class.")
+    if not issubclass(base_class, nn.Module):
+        raise TypeError("Expected a subclass of nn.Module.")
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type: ignore[valid-type,misc]
+        r"""A simple Wrapper."""
+
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+            # Note: If __new__() does not return an instance of cls,
+            #   then the new instance's __init__() method will not be invoked.
+            instance = base_class(*args, **kwargs)
+
+            if CONFIG.autojit:
+                scripted = jit.script(instance)
+                return scripted  # type: ignore[return-value]
+            return instance  # type: ignore[return-value]
+
+    if not isinstance(WrappedClass, type):
+        raise TypeError(f"Expected a class, got {WrappedClass}.")
+    if not issubclass(WrappedClass, base_class):
+        raise TypeError(f"Expected {WrappedClass} to be a subclass of {base_class}.")
+
+    return WrappedClass  # pyright: ignore[reportReturnType]
+
+
+def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
+    r"""Initialize `nn.Module` from a config object."""
+    conf = config.copy()
+    cls_name: str = conf.pop("__name__")
+    module_name: str = conf.pop("__module__")
+
+    # drop other dunder keys
+    opts = {k: v for k, v in conf.items() if not k.startswith("__")}
+
+    # import module and class
+    module = import_module(module_name)
+    cls = getattr(module, cls_name)
+
+    # initialize class with options
+    try:
+        obj = cls(**opts)
+    except Exception as exc:
+        exc.add_note(f"Failed to initialize {cls_name} with {opts}.")
+        raise
+
+    return obj

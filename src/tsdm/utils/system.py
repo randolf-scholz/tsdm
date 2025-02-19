@@ -25,9 +25,9 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+from tsdm.pprint import repr_mapping
 from tsdm.types.aliases import DirPath
 from tsdm.utils.contextmanagers import system_path
-from tsdm.utils.pprint import repr_mapping
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 

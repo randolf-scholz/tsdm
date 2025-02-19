@@ -6,7 +6,19 @@ contains generators for synthetic dataset. By design, each generator consists of
 - Configuration parameters, e.g. number of dimensions etc.
 - Allows sampling from the data ground truth distribution $p(x,y)$.
 - Allows estimating the Bayes Error, i.e. the best performance possible on the dataset.
+
+
+Note: Constrained differential equations:
+
+- initial conditions are necessary to get unqiue solutions.
+- however, instead of initial conditions, why not consider a constraint like minimizing some
+  arbitrary error term?
+  -> existence & uniquness of solutions?
+
 """
+
+# note multiplying a diagonal matrix from the right is equivalent to scaling the rows
+#  multiplication from the left scales the columns
 
 __all__ = [
     # ABCs & Protocols
@@ -30,7 +42,7 @@ from typing import Any, Literal, Optional, Protocol, final, runtime_checkable
 import numpy as np
 from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
-from scipy.integrate import solve_ivp as scipy_solver
+from scipy.integrate import solve_ivp as scipy_solve_ivp
 
 from tsdm.constants import RNG
 from tsdm.random.distributions import TimeSeriesRV
@@ -80,6 +92,7 @@ class IVP_Solver[T](Protocol):  # +T
             - expects system to be SDE object with methods
                 - `f(self, t, y) -> ...` (drift)
                 - `g(self, t, y) -> ...` (diffusion)
+        - `brainpy.sdeint` decorated functions
 
     Note:
         - `scipy.integrate.solve_ivp` has y0 before t, therefore, we require that
@@ -148,7 +161,7 @@ class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
         options = asdict(self)
         system = options.pop("system")
         options |= kwargs
-        sol = scipy_solver(system, t_span=t_span, y0=y0, t_eval=t_eval, **options)
+        sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **options)
         # NOTE: output shape: (d, n_timestamps), move time axis to the front
         return np.moveaxis(sol.y, -1, 0)
 
@@ -157,7 +170,7 @@ def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> 
     r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
     t_eval = np.asarray(t)
     t_span = (t_eval.min(), t_eval.max())
-    sol = scipy_solver(system, t_span=t_span, y0=y0, t_eval=t_eval, **kwargs)
+    sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **kwargs)
     # NOTE: output shape: (d, n_timestamps), move time axis to the front
     return np.moveaxis(sol.y, -1, 0)
 
@@ -266,7 +279,7 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
         r"""Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
-        if self.ivp_solver is scipy_solver:
+        if self.ivp_solver is scipy_solve_ivp:
             raise ValueError(
                 "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
                 " since it requires separate bounds [t0,tf] and evaluation points"

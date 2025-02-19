@@ -22,7 +22,7 @@ import json
 from collections.abc import Callable, Mapping
 from inspect import Parameter
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, runtime_checkable
+from typing import Any, Literal, Optional, Protocol, TypeIs, runtime_checkable
 
 import torch
 import yaml
@@ -32,7 +32,6 @@ from pandas import DataFrame
 from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
-from typing_extensions import TypeIs
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.linalg import (

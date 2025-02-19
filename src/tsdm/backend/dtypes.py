@@ -79,6 +79,16 @@ import torch
 from pandas import ArrowDtype
 from pandas.api.extensions import ExtensionDtype
 
+# region Dtype Aliases -----------------------------------------------------------------
+type DType = np.dtype | torch.dtype | type[ExtensionDtype]
+r"""Type Alias for dtypes."""
+type DTypeArg = str | type
+r"""Type Alias for dtype arguments."""
+AnyDtype = np.dtype | torch.dtype | ExtensionDtype
+r"""Type Alias for any dtype."""
+# endregion Dtype Aliases --------------------------------------------------------------
+
+
 # region numpy typecodes ---------------------------------------------------------------
 NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
     "int8"        : np.int8,

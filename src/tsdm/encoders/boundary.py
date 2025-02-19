@@ -4,10 +4,9 @@ __all__ = ["BoundaryEncoder"]
 
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
-from typing import Any, Generic, Literal, Optional, Self
+from typing import Any, Generic, Literal, Optional, Self, TypeVar
 
 import pandas as pd
-from typing_extensions import TypeVar
 
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import NOT_GIVEN

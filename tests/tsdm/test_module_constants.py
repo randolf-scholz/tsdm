@@ -3,10 +3,9 @@ r"""Checks the internal consistency of the module constants."""
 from collections.abc import Callable, Mapping
 from inspect import isabstract
 from types import ModuleType
-from typing import NamedTuple
+from typing import NamedTuple, is_protocol
 
 import pytest
-from typing_extensions import is_protocol
 
 import tsdm
 from tsdm.datasets import DATASETS, Dataset, DatasetBase

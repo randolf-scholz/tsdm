@@ -4,7 +4,6 @@ __all__ = [
     # ABCs & Protocols
     # Functions
     "debug",
-    "lazy_jit_torch",
     "return_namedtuple",
     "timefun",
     "trace",
@@ -18,8 +17,6 @@ from collections.abc import Callable as Fn, Sequence
 from functools import wraps
 from time import perf_counter_ns
 from typing import Concatenate, NamedTuple, Optional
-
-from torch import jit
 
 from tsdm.constants import EMPTY_FN
 from tsdm.types.protocols import NTuple
@@ -45,22 +42,6 @@ def debug[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
         return value
 
     return __wrapper
-
-
-def lazy_jit_torch[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
-    r"""Create decorator to lazily compile a function with `torch.jit.script`."""
-
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        # script the original function if it hasn't been scripted yet
-        if wrapper.scripted is None:  # type: ignore[attr-defined]
-            wrapper.scripted = jit.script(wrapper.original_fn)  # type: ignore[attr-defined]
-        return wrapper.scripted(*args, **kwargs)  # type: ignore[attr-defined]
-
-    wrapper.original_fn = func  # type: ignore[attr-defined]
-    wrapper.scripted = None  # type: ignore[attr-defined]
-    wrapper.script_if_tracing_wrapper = True  # type: ignore[attr-defined]
-    return wrapper
 
 
 def trace[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R

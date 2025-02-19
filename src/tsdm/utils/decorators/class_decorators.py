@@ -2,7 +2,6 @@ r"""Function decorators for wrapping classes with additional functionality."""
 
 __all__ = [
     # Functions
-    "autojit",
     "implements",
     "pprint_dataclass",
     "pprint_mapping",
@@ -13,16 +12,10 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
-from functools import partialmethod, wraps
-from typing import Any, Self
+from functools import partialmethod
+from typing import Any
 
-from torch import jit, nn
-
-from tsdm.config import CONFIG
-from tsdm.types.arrays import SupportsArray
-from tsdm.types.protocols import Dataclass, NTuple
-from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
-from tsdm.utils.pprint import (
+from tsdm.pprint import (
     repr_array,
     repr_dataclass,
     repr_mapping,
@@ -31,6 +24,9 @@ from tsdm.utils.pprint import (
     repr_set,
     repr_shortform,
 )
+from tsdm.types.arrays import SupportsArray
+from tsdm.types.protocols import Dataclass, NTuple
+from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
 
 # region workaround mypy bug -----------------------------------------------------------
 # FIXME: https://github.com/python/mypy/issues/17191
@@ -123,57 +119,6 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
 
     cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]
     return cls
-
-
-def autojit[M: nn.Module](base_class: type[M], /) -> type[M]:
-    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
-
-    Makes it so that
-
-    .. code-block:: python
-
-        class MyModule: ...
-
-
-        model = jit.script(MyModule())
-
-    and
-
-    .. code-block:: python
-
-        @autojit
-        class MyModule: ...
-
-
-        model = MyModule()
-
-    are (roughly?) equivalent
-    """
-    if not isinstance(base_class, type):
-        raise TypeError("Expected a class.")
-    if not issubclass(base_class, nn.Module):
-        raise TypeError("Expected a subclass of nn.Module.")
-
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore[valid-type,misc]
-        r"""A simple Wrapper."""
-
-        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-            # Note: If __new__() does not return an instance of cls,
-            #   then the new instance's __init__() method will not be invoked.
-            instance = base_class(*args, **kwargs)
-
-            if CONFIG.autojit:
-                scripted = jit.script(instance)
-                return scripted  # type: ignore[return-value]
-            return instance  # type: ignore[return-value]
-
-    if not isinstance(WrappedClass, type):
-        raise TypeError(f"Expected a class, got {WrappedClass}.")
-    if not issubclass(WrappedClass, base_class):
-        raise TypeError(f"Expected {WrappedClass} to be a subclass of {base_class}.")
-
-    return WrappedClass  # pyright: ignore[reportReturnType]
 
 
 def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:

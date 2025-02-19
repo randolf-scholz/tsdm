@@ -10,12 +10,12 @@ from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
+from warnings import deprecated
 
 import torch
 from pandas import DataFrame, Series
 from torch import Tensor, jit
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset, folds_as_frame, folds_from_groups
 from tsdm.datasets import KiwiRuns

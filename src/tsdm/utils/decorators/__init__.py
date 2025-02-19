@@ -16,7 +16,6 @@ __all__ = [
     "ParametrizedDecorator",
     "ParametrizedFunctionDecorator",
     # Functions
-    "autojit",
     "debug",
     "decorator",
     "implements",
@@ -49,7 +48,6 @@ from tsdm.utils.decorators.base import (
     recurse_on_container,
 )
 from tsdm.utils.decorators.class_decorators import (
-    autojit,
     implements,
     pprint_dataclass,
     pprint_mapping,
@@ -78,7 +76,6 @@ FUNCTION_DECORATORS: dict[str, FunctionDecorator] = {
 r"""Dictionary of all available function decorators."""
 
 CLASS_DECORATORS: dict[str, ClassDecorator] = {
-    "autojit"          : autojit,
     "pprint_dataclass" : pprint_dataclass,
     "pprint_mapping"   : pprint_mapping,
     "pprint_repr"      : pprint_repr,

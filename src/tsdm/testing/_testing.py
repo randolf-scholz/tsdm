@@ -19,8 +19,7 @@ __all__ = [
 
 from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
 from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
-from pathlib import Path
-from typing import Any
+from typing import Any, TypeIs, get_protocol_members, is_protocol
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -30,10 +29,10 @@ import polars.testing as pl_testing
 import torch
 import torch.testing
 from pandas import NA, NaT
-from typing_extensions import get_protocol_members, is_protocol
 
+from tsdm.backend.dtypes import AnyDtype
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
-from tsdm.types.aliases import PythonScalar
+from tsdm.types.aliases import FilePath, PythonScalar
 
 DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
 r"""Default excluded members for shared interface checks."""
@@ -126,12 +125,17 @@ def get_descriptors_and_callables(cls: type, /) -> set[str]:
     }
 
 
-def is_builtin_type(obj: object, /) -> bool:
+def is_builtin_type(obj: object, /) -> TypeIs[type]:
     r"""Check if the object is a builtin type."""
     try:
         return obj in BUILTIN_TYPES
     except TypeError:
         return False
+
+
+def is_dtype(dtype: object) -> TypeIs[AnyDtype]:
+    r"""Check if a string is a valid dtype."""
+    return isinstance(dtype, AnyDtype)
 
 
 def is_builtin_constant(obj: object, /) -> bool:
@@ -190,7 +194,7 @@ def is_dunder(name: str, /) -> bool:
     )
 
 
-def is_zipfile(path: Path, /) -> bool:
+def is_zipfile(path: FilePath, /) -> bool:
     r"""Return `True` if the file is a zipfile."""
     try:
         with ZipFile(path):

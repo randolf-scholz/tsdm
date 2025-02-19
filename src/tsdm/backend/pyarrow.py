@@ -54,7 +54,7 @@ from pyarrow import (
 )
 from tqdm import tqdm
 
-from tsdm.types.dtypes import PYARROW_TO_POLARS
+from tsdm.backend.dtypes import PYARROW_TO_POLARS
 
 STR = pa.string()
 TEXT = pa.large_string()

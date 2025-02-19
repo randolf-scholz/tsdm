@@ -1,6 +1,12 @@
 r"""Implements `numpy`-backend for tsdm."""
 
 __all__ = [
+    # types
+    "NumpyDtype",
+    "NumpyDtypeArg",
+    # Constants
+    "TIME_UNITS",
+    "NA_VALUES",
     # Functions
     "scalar",
     "drop_null",
@@ -8,13 +14,44 @@ __all__ = [
     "apply_along_axes",
 ]
 
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Hashable
+from typing import Any, Final
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from tsdm.types.aliases import Axis
+
+type NumpyDtype = np.dtype
+r"""Type Alias for `numpy` dtypes."""
+
+type NumpyDtypeArg = str | type | NumpyDtype
+r"""Type Alias for `numpy` dtype arguments."""
+
+
+TIME_UNITS: Final[dict[str, np.timedelta64]] = {
+    "Y": np.timedelta64(1, "Y"),
+    "M": np.timedelta64(1, "M"),
+    "W": np.timedelta64(1, "W"),
+    "D": np.timedelta64(1, "D"),
+    "h": np.timedelta64(1, "h"),
+    "m": np.timedelta64(1, "m"),
+    "s": np.timedelta64(1, "s"),
+    "us": np.timedelta64(1, "us"),
+    "ns": np.timedelta64(1, "ns"),
+    "ps": np.timedelta64(1, "ps"),
+    "fs": np.timedelta64(1, "fs"),
+    "as": np.timedelta64(1, "as"),
+}
+r"""Time units for `numpy.timedelta64`."""
+
+
+NA_VALUES: Final[frozenset[Hashable]] = frozenset({
+    np.nan,
+    np.datetime64(None),
+    np.timedelta64(None),
+})
+r"""Values that correspond to NaN."""
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:

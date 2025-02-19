@@ -34,7 +34,7 @@ repos:
         files: '^src/|^tests/'
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.5.31
+    rev: 0.6.1
     hooks:
       - id: uv-lock
       - id: uv-export
@@ -43,7 +43,7 @@ repos:
         stages: [ "pre-commit" ]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.25.5 # change this to the latest tag!
+    rev: v0.26.0 # change this to the latest tag!
     hooks:
       - id: tach
   # nbstripout-fast

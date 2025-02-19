@@ -21,13 +21,6 @@ __all__ = [
     "PathLike",
     "Shape",
     "Size",
-    # Dtype Aliases
-    "NumpyDtype",
-    "NumpyDtypeArg",
-    "PandasDtype",
-    "PandasDTypeArg",
-    "PandasObject",
-    "DType",
     # Scalar Type Aliases
     "BuiltinScalar",
     "StringScalar",
@@ -78,11 +71,7 @@ from pathlib import Path
 from types import EllipsisType
 from typing import Annotated, Any, Literal
 
-import numpy as np
-import torch
-from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.api.typing import NAType
-from pandas.core.dtypes.base import ExtensionDtype
 
 # region field types -------------------------------------------------------------------
 type TS = Literal["timeseries"]
@@ -106,7 +95,6 @@ type FittedField[T] = Annotated[T, "FittedField"]
 r"""Type Alias for fields that are fitted automatically."""
 # endregion type qualifiers ------------------------------------------------------------
 
-
 # region generic type aliases ----------------------------------------------------------
 type Thunk[T] = Callable[[], T]
 r"""Type Alias for lazy evaluation."""
@@ -115,7 +103,6 @@ r"""Type Alias for nullable types."""
 type Nested[T] = T | Collection[Nested[T]] | Mapping[Any, Nested[T]]  # +T
 r"""Type Alias for nested types (JSON-Like)."""
 # endregion generic type aliases -------------------------------------------------------
-
 
 # region custom type aliases -----------------------------------------------------------
 type Axis = None | int | tuple[int, ...]
@@ -134,7 +121,6 @@ type PathLike = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 # endregion custom type aliases --------------------------------------------------------
 
-
 # region aliases for indexing ----------------------------------------------------------
 type IndexArg = None | int | slice | range | list[int] | list[bool] | EllipsisType
 r"""Type alias for `__getitem__` argument for tensors."""
@@ -147,25 +133,6 @@ r"""Type Alias for `__getitem__` argument for tabular objects."""
 type Label = LabelArg | tuple[LabelArg, ...]
 r"""Type Alias for `__getitem__` argument for tabular objects."""
 # endregion aliases for indexing -------------------------------------------------------
-
-
-# region Dtype Aliases -----------------------------------------------------------------
-type NumpyDtype = np.dtype
-r"""Type Alias for `numpy` dtypes."""
-type NumpyDtypeArg = str | type | NumpyDtype
-r"""Type Alias for `numpy` dtype arguments."""
-type PandasDtype = ExtensionDtype | NumpyDtype
-r"""Type Alias for `pandas` dtype."""
-type PandasDTypeArg = str | type | PandasDtype
-r"""Type Alias for `pandas` dtype arguments."""
-type DType = np.dtype | torch.dtype | type[ExtensionDtype]
-r"""Type Alias for dtypes."""
-type DTypeArg = str | type
-r"""Type Alias for dtype arguments."""
-type PandasObject = DataFrame | Series | Index | MultiIndex
-r"""Type Alias for `pandas` objects."""
-# endregion Dtype Aliases --------------------------------------------------------------
-
 
 # region Scalar Type Aliases -----------------------------------------------------------
 type BuiltinScalar = bool | int | float | complex | str | bytes
@@ -182,7 +149,6 @@ type PythonScalar = bool | int | float | complex | str | bytes | datetime | time
 r"""Type Alias for Python scalars."""
 # endregion Scalar Type Aliases --------------------------------------------------------
 
-
 # region Nested collections.abc --------------------------------------------------------
 type NestedCollection[T] = Collection[T | "NestedCollection[T]"]
 r"""Generic Type Alias for nested `Collection`."""
@@ -195,7 +161,6 @@ r"""Generic Type Alias for nested `Mapping`."""
 type NestedMutableMapping[K, V] = MutableMapping[K, V | "NestedMutableMapping[K, V]"]
 r"""Generic Type Alias for nested `MutableMapping`."""
 # endregion Nested collections.abc -----------------------------------------------------
-
 
 # region Nested Builtins ---------------------------------------------------------------
 type NestedDict[K, V] = dict[K, V | "NestedDict[K, V]"]
@@ -223,7 +188,6 @@ type NestedBuiltin[T] = (
 )
 r"""Type Alias for nested builtins."""
 # endregion Nested Builtins ------------------------------------------------------------
-
 
 # region Nested Configuration ----------------------------------------------------------
 type JSON_LeafType = None | bool | int | float | str

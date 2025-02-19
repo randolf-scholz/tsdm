@@ -14,13 +14,13 @@ from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
+from warnings import deprecated
 
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit, nn
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset
 from tsdm.datasets import KiwiBenchmark

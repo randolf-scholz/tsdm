@@ -1,6 +1,12 @@
 r"""Implement `pandas`-backend for tsdm."""
 
 __all__ = [
+    # types
+    "PandasDTypeArg",
+    "PandasDtype",
+    "PandasObject",
+    # Constants
+    "NA_VALUES",
     # Functions
     "cast",
     "clip",
@@ -29,24 +35,35 @@ __all__ = [
 
 import logging
 import operator
-from collections.abc import Mapping
+from collections.abc import Hashable, Mapping
 from contextlib import suppress
 from functools import reduce
-from typing import Any, Literal, TypeVar
+from typing import Any, Final, Literal, TypeVar
 
 from numpy.typing import ArrayLike, NDArray
-from pandas import NA, DataFrame, Index, Series
+from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
+from pandas.core.dtypes.base import ExtensionDtype
 
+from tsdm.backend.numpy import NumpyDtype
 from tsdm.types.aliases import Axis, BuiltinScalar
 from tsdm.utils import get_joint_keys
 
 __logger__ = logging.getLogger(__name__)
 
+PandasDtype = ExtensionDtype | NumpyDtype
+r"""Type Alias for `pandas` dtype."""
+PandasDTypeArg = str | type | PandasDtype
+r"""Type Alias for `pandas` dtype arguments."""
+type PandasObject = DataFrame | Series | Index | MultiIndex
+r"""Type Alias for `pandas` objects."""
+type PANDAS_TYPE = Index | Series | DataFrame
+r"""A type alias for pandas objects."""
 P = TypeVar("P", Index, Series, DataFrame)
 r"""A type variable for pandas objects."""
 
-type PANDAS_TYPE = Index | Series | DataFrame
-r"""A type alias for pandas objects."""
+
+NA_VALUES: Final[frozenset[Hashable]] = frozenset({NA, NaT})
+r"""Values that correspond to NaN."""
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:

@@ -62,14 +62,15 @@ from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 
+from tsdm.backend.torch import initialize_from_config
 from tsdm.config import CONFIG
 from tsdm.constants import NOT_GIVEN
 from tsdm.encoders import BaseEncoder
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
+from tsdm.pprint import repr_mapping
 from tsdm.testing._testing import is_zipfile
 from tsdm.types.aliases import FilePath
-from tsdm.utils import LazyDict, initialize_from_config, paths_exists, repackage_zip
-from tsdm.utils.pprint import repr_mapping
+from tsdm.utils import LazyDict, paths_exists, repackage_zip
 from tsdm.utils.remote import import_from_url
 
 

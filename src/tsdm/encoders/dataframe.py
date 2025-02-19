@@ -36,9 +36,10 @@ from pandas import DataFrame, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
+from tsdm.backend.pandas import PandasDtype, PandasDTypeArg
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder, EncoderDict
-from tsdm.types.aliases import FilePath, PandasDtype, PandasDTypeArg
+from tsdm.types.aliases import FilePath
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 

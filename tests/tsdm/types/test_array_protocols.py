@@ -2,7 +2,7 @@ r"""Test the Array protocol."""
 
 import logging
 from array import array as python_array
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_protocol_members
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,6 @@ import polars as pl
 import pyarrow as pa
 import pytest
 import torch
-from typing_extensions import get_protocol_members
 
 from tsdm.testing import assert_protocol, check_shared_interface
 from tsdm.types.arrays import (

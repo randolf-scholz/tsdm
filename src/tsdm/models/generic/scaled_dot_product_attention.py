@@ -11,7 +11,7 @@ from typing import Optional
 import torch
 from torch import Tensor, nn
 
-from tsdm.utils.decorators import autojit
+from tsdm.backend.torch import autojit
 
 
 @autojit

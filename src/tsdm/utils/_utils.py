@@ -8,7 +8,6 @@ __all__ = [
     "dims_to_list",
     "flatten_dict",
     "flatten_nested",
-    "initialize_from_config",
     "get_joint_keys",
     "last",
     "timedelta",
@@ -39,7 +38,6 @@ from collections.abc import (
 )
 from copy import deepcopy
 from functools import wraps
-from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional, cast
@@ -49,11 +47,10 @@ import numpy as np
 from numpy.typing import NDArray
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
-from torch import nn
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.testing import is_dunder, is_zipfile
+from tsdm.testing import is_zipfile
 from tsdm.types.aliases import (
     Axis,
     FilePath,
@@ -427,27 +424,6 @@ def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
             return all(paths_exists(f) for f in iterable)
         case _:
             raise TypeError(f"Unknown type for rawdata_file: {type(paths)}")
-
-
-def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
-    r"""Initialize `nn.Module` from a config object."""
-    conf = config.copy()
-    cls_name: str = conf.pop("__name__")
-    module_name: str = conf.pop("__module__")
-    opts = {key: val for key, val in config.items() if not is_dunder("key")}
-
-    # import module and class
-    module = import_module(module_name)
-    cls = getattr(module, cls_name)
-
-    # initialize class with options
-    try:
-        obj = cls(**opts)
-    except Exception as exc:
-        exc.add_note(f"Failed to initialize {cls_name} with {opts}.")
-        raise
-
-    return obj
 
 
 def repackage_zip(filepath: FilePath, /) -> None:

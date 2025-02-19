@@ -1,170 +1,89 @@
 interfaces = []
-exclude = []
-source_roots = [
-    "src",
+exclude = [
+    "**/*__pycache__",
+    "**/*egg-info",
+    "**/docs",
+    "**/tests",
+    "**/venv",
 ]
+source_roots = [ "src"]
 
-[[modules]]
-path = "<root>"
-depends_on = [
-    { path = "tsdm.backend" },
-    { path = "tsdm.data" },
-    { path = "tsdm.datasets" },
-    { path = "tsdm.encoders" },
-    { path = "tsdm.linalg" },
-    { path = "tsdm.logutils" },
-    { path = "tsdm.metrics" },
-    { path = "tsdm.models" },
-    { path = "tsdm.optimizers" },
-    { path = "tsdm.random" },
-    { path = "tsdm.tasks" },
-    { path = "tsdm.timeseries" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-    { path = "tsdm.viz" },
-]
+[[modules ]]
+path = "tsdm"
+depends_on = ["tsdm.logutils", "tsdm.metrics", "tsdm.tasks", "tsdm.timeseries", "tsdm.linalg", "tsdm.backend", "tsdm.data", "tsdm.utils", "tsdm.encoders", "tsdm.optimizers", "tsdm.viz", "tsdm.datasets", "tsdm.types", "tsdm.models", "tsdm.random"]
 
-[[modules]]
-path = "tsdm.backend"
-depends_on = [
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
+[[modules ]]
 path = "tsdm.config"
 depends_on = []
 
-[[modules]]
+[[modules ]]
 path = "tsdm.constants"
 depends_on = []
 
-[[modules]]
-path = "tsdm.data"
-depends_on = [
-    { path = "tsdm.backend" },
-    { path = "tsdm.linalg" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.datasets"
-depends_on = [
-    { path = "tsdm.backend" },
-    { path = "tsdm.config" },
-    { path = "tsdm.constants" },
-    { path = "tsdm.data" },
-    { path = "tsdm.random" },
-    { path = "tsdm.testing" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.encoders"
-depends_on = [
-    { path = "tsdm.backend" },
-    { path = "tsdm.constants" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.linalg"
-depends_on = []
-
-[[modules]]
-path = "tsdm.logutils"
-depends_on = [
-    { path = "tsdm.constants" },
-    { path = "tsdm.linalg" },
-    { path = "tsdm.metrics" },
-    { path = "tsdm.models" },
-    { path = "tsdm.optimizers" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-    { path = "tsdm.viz" },
-]
-
-[[modules]]
-path = "tsdm.metrics"
-depends_on = [
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.models"
-depends_on = [
-    { path = "tsdm.config" },
-    { path = "tsdm.constants" },
-    { path = "tsdm.encoders" },
-    { path = "tsdm.optimizers" },
-    { path = "tsdm.testing" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.optimizers"
-depends_on = []
-
-[[modules]]
-path = "tsdm.random"
-depends_on = [
-    { path = "tsdm.constants" },
-    { path = "tsdm.data" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.tasks"
-depends_on = [
-    { path = "tsdm.constants" },
-    { path = "tsdm.data" },
-    { path = "tsdm.datasets" },
-    { path = "tsdm.encoders" },
-    { path = "tsdm.metrics" },
-    { path = "tsdm.random" },
-    { path = "tsdm.timeseries" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
-path = "tsdm.testing"
-depends_on = [
-    { path = "tsdm.constants" },
-    { path = "tsdm.types" },
-]
-
-[[modules]]
-path = "tsdm.timeseries"
-depends_on = [
-    { path = "tsdm.constants" },
-    { path = "tsdm.data" },
-    { path = "tsdm.datasets" },
-    { path = "tsdm.types" },
-    { path = "tsdm.utils" },
-]
-
-[[modules]]
+[[modules ]]
 path = "tsdm.types"
 depends_on = []
 
-[[modules]]
-path = "tsdm.utils"
-depends_on = [
-    { path = "tsdm.config" },
-    { path = "tsdm.constants" },
-    { path = "tsdm.testing" },
-    { path = "tsdm.types" },
-]
+[[modules ]]
+path = "tsdm.testing"
+depends_on = ["tsdm.constants", "tsdm.types", "tsdm.backend"]
 
-[[modules]]
+[[modules ]]
+path = "tsdm.pprint"
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.testing"]
+
+[[modules ]]
+path = "tsdm.utils"
+depends_on = ["tsdm.types", "tsdm.constants", "tsdm.testing", "tsdm.pprint"]
+
+[[modules ]]
+path = "tsdm.backend"
+depends_on = ["tsdm.config", "tsdm.utils", "tsdm.types"]
+
+[[modules ]]
 path = "tsdm.viz"
-depends_on = [
-    { path = "tsdm.constants" },
-]
+depends_on = ["tsdm.constants"]
+
+[[modules ]]
+path = "tsdm.optimizers"
+depends_on = []
+
+[[modules ]]
+path = "tsdm.metrics"
+depends_on = ["tsdm.backend", "tsdm.types"]
+
+[[modules ]]
+path = "tsdm.random"
+depends_on = ["tsdm.types", "tsdm.data", "tsdm.utils", "tsdm.constants", "tsdm.backend"]
+
+[[modules ]]
+path = "tsdm.encoders"
+depends_on = ["tsdm.types", "tsdm.constants", "tsdm.backend", "tsdm.utils"]
+
+[[modules ]]
+path = "tsdm.data"
+depends_on = ["tsdm.utils", "tsdm.types", "tsdm.backend", "tsdm.linalg"]
+
+[[modules ]]
+path = "tsdm.linalg"
+depends_on = []
+
+[[modules ]]
+path = "tsdm.timeseries"
+depends_on = ["tsdm.utils", "tsdm.datasets", "tsdm.data", "tsdm.types", "tsdm.constants"]
+
+[[modules ]]
+path = "tsdm.logutils"
+depends_on = ["tsdm.constants", "tsdm.types", "tsdm.metrics", "tsdm.utils", "tsdm.models", "tsdm.viz", "tsdm.optimizers", "tsdm.linalg"]
+
+[[modules ]]
+path = "tsdm.datasets"
+depends_on = ["tsdm.config", "tsdm.testing", "tsdm.data", "tsdm.backend", "tsdm.utils", "tsdm.random", "tsdm.types", "tsdm.constants", "tsdm.pprint"]
+
+[[modules ]]
+path = "tsdm.models"
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.config", "tsdm.optimizers", "tsdm.constants", "tsdm.testing", "tsdm.utils", "tsdm.encoders", "tsdm.pprint"]
+
+[[modules ]]
+path = "tsdm.tasks"
+depends_on = ["tsdm.timeseries", "tsdm.utils", "tsdm.constants", "tsdm.random", "tsdm.data", "tsdm.metrics", "tsdm.types", "tsdm.encoders", "tsdm.datasets", "tsdm.pprint"]

@@ -5,7 +5,6 @@ __all__ = [
     "decorators",
     "contextmanagers",
     # Sub-Modules
-    "pprint",
     "remote",
     "system",
     # Constants
@@ -18,7 +17,6 @@ __all__ = [
     "dims_to_list",
     "flatten_dict",
     "flatten_nested",
-    "initialize_from_config",
     "get_joint_keys",
     "last",
     "timestamp",
@@ -48,14 +46,13 @@ __all__ = [
     "get_mandatory_kwargs",
 ]
 
-from tsdm.utils import contextmanagers, decorators, pprint, remote, system
+from tsdm.utils import contextmanagers, decorators, remote, system
 from tsdm.utils._utils import (
     deep_dict_update,
     dims_to_list,
     flatten_dict,
     flatten_nested,
     get_joint_keys,
-    initialize_from_config,
     last,
     normalize_axes,
     pairwise_disjoint,

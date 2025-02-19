@@ -2,9 +2,7 @@ r"""Test IO Protocol types."""
 
 from io import IOBase
 from tempfile import TemporaryFile
-from typing import IO
-
-from typing_extensions import get_protocol_members
+from typing import IO, get_protocol_members
 
 from tsdm.types.protocols import ReadBuffer, WriteBuffer
 

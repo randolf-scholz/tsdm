@@ -22,9 +22,10 @@ from pandas import DataFrame, Series
 from pyarrow.lib import ArrowNotImplementedError
 
 from tsdm.backend import generic
+from tsdm.backend.dtypes import DType
+from tsdm.backend.pandas import PandasDtype
 from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import DType, PandasDtype
 from tsdm.types.arrays import NumericalSeries
 from tsdm.types.scalars import TimeDelta, TimeStamp
 from tsdm.utils import timedelta, timestamp

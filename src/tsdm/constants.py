@@ -11,8 +11,6 @@ __all__ = [
     "EMPTY_FN",
     "EMPTY_MAP",
     "EMPTY_SET",
-    "EMPTY_SIZE",
-    "EPS",
     "EXAMPLE_BOOLS",
     "EXAMPLE_CATEGORIES",
     "EXAMPLE_EMOJIS",
@@ -25,16 +23,14 @@ __all__ = [
     "NULL_VALUES",
     "POSITIONAL_ONLY",
     "POSITIONAL_OR_KEYWORD",
-    "PRECISION",
     "RNG",
     "RTOL",
-    "TIME_UNITS",
     "VAR_KEYWORD",
     "VAR_POSITIONAL",
 ]
 
 import math
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Hashable, Mapping
 from enum import Enum
 from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
@@ -42,7 +38,6 @@ from typing import Any, Final, Never
 
 import numpy as np
 import pandas as pd
-import torch
 from numpy.random import Generator
 
 
@@ -61,6 +56,26 @@ class FLOAT(float, Enum):
     ROOT_3 = math.sqrt(3)
 
 
+NA_VALUES: Final[frozenset[Hashable]] = frozenset({
+    None,
+    float("nan"),
+    np.nan,
+    pd.NA,
+    pd.NaT,
+    np.datetime64("NaT"),
+})
+r"""Values that correspond to NaN."""
+
+# region precision constants -----------------------------------------------------------
+RNG: Final[Generator] = np.random.default_rng()
+r"""Default random number generator."""
+ATOL: Final[float] = 1e-6
+r"""CONST: Default absolute precision."""
+RTOL: Final[float] = 1e-6
+r"""CONST: Default relative precision."""
+# endregion precision constants --------------------------------------------------------
+
+
 # region callable constants ------------------------------------------------------------
 IDENTITY: Final[Callable] = lambda _: _  # noqa: E731
 r"""Constant: Identity function, use as default in function signatures."""
@@ -72,50 +87,12 @@ EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})  # FIXME: PEP 603
 r"""Constant: Immutable empty `Mapping`, use as default in function signatures."""
 EMPTY_SET: Final[frozenset[Any]] = frozenset()
 r"""Constant: Immutable empty `Set`, use as default in function signatures."""
-EMPTY_SIZE: Final[torch.Size] = torch.Size([])
-r"""Constant: Empty shape."""
 # endregion collection constants -------------------------------------------------------
-
-
-# region precision constants -----------------------------------------------------------
-RNG: Final[Generator] = np.random.default_rng()
-r"""Default random number generator."""
-ATOL: Final[float] = 1e-6
-r"""CONST: Default absolute precision."""
-RTOL: Final[float] = 1e-6
-r"""CONST: Default relative precision."""
-EPS: Final[dict[torch.dtype, float]] = {
-    torch.bfloat16   : 1e-2,
-    torch.complex128 : 1e-15,
-    torch.complex32  : 1e-3,
-    torch.complex64  : 1e-6,
-    torch.float16    : 1e-3,
-    torch.float32    : 1e-6,
-    torch.float64    : 1e-15,
-}  # fmt: skip
-r"""CONST: Default epsilon for each dtype."""
-# endregion precision constants --------------------------------------------------------
 
 
 NOT_GIVEN: Final[Any] = None
 r"""CONST: Default value for optional arguments."""
 
-
-TIME_UNITS: Final[dict[str, np.timedelta64]] = {
-    "Y": np.timedelta64(1, "Y"),
-    "M": np.timedelta64(1, "M"),
-    "W": np.timedelta64(1, "W"),
-    "D": np.timedelta64(1, "D"),
-    "h": np.timedelta64(1, "h"),
-    "m": np.timedelta64(1, "m"),
-    "s": np.timedelta64(1, "s"),
-    "us": np.timedelta64(1, "us"),
-    "ns": np.timedelta64(1, "ns"),
-    "ps": np.timedelta64(1, "ps"),
-    "fs": np.timedelta64(1, "fs"),
-    "as": np.timedelta64(1, "as"),
-}
-r"""Time units for `numpy.timedelta64`."""
 
 BUILTIN_CONSTANTS: Final[frozenset[object]] = frozenset({
     None,
@@ -156,7 +133,6 @@ VAR_KEYWORD = Parameter.VAR_KEYWORD
 VAR_POSITIONAL = Parameter.VAR_POSITIONAL
 # endregion Parameter constants---------------------------------------------------------
 
-
 NA_STRINGS: Final[frozenset[str]] = frozenset({
     "", "-",
     "n/a", "N/A",
@@ -191,15 +167,6 @@ NULL_VALUES: Final[frozenset[str]] = frozenset({
 })  # fmt: skip
 r"""A list of common null value string represenations."""
 
-NA_VALUES: Final[frozenset[object]] = frozenset({
-    None,
-    float("nan"),
-    np.nan,
-    pd.NA,
-    pd.NaT,
-    np.datetime64("NaT"),
-})
-r"""Values that correspond to NaN."""
 
 BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {"f"     : False, "t"    : True},
@@ -213,20 +180,6 @@ BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {-1.0    : False, +1.0   : True},
 ]  # fmt: skip
 r"""Matched pairs of values that correspond to booleans."""
-
-PRECISION: Final[dict[int | type | torch.dtype, float]] = {
-    16            : 2**-11,
-    32            : 2**-24,
-    64            : 2**-53,
-    torch.float16 : 2**-11,
-    torch.float32 : 2**-24,
-    torch.float64 : 2**-53,
-    np.float16    : 2**-11,
-    np.float32    : 2**-24,
-    np.float64    : 2**-53,
-}  # fmt: skip
-r"""Maps precision to the corresponding precision factor."""
-
 
 # region example collections------------------------------------------------------------
 

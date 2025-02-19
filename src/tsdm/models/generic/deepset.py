@@ -11,9 +11,9 @@ from typing import Optional
 import torch
 from torch import Tensor, nn
 
+from tsdm.backend.torch import autojit
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP
-from tsdm.utils.decorators import autojit
 
 
 @autojit

@@ -57,6 +57,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, NamedTuple
+from warnings import deprecated
 
 import torch
 from pandas import DataFrame, Index, MultiIndex
@@ -64,13 +65,12 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import deprecated
 
 from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler
+from tsdm.pprint import repr_namedtuple
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.pprint import repr_namedtuple
 
 
 class Inputs(NamedTuple):

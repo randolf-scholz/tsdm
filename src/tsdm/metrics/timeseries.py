@@ -30,10 +30,10 @@ from typing import Final, Optional, Protocol, runtime_checkable
 import torch
 from torch import Tensor, jit, nn
 
+from tsdm.backend.torch import autojit
 from tsdm.metrics.base import BaseMetric
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.types.aliases import Axis
-from tsdm.utils.decorators import autojit
 
 
 @runtime_checkable

@@ -4,10 +4,10 @@ __all__ = ["SequenceSampler"]
 
 from collections.abc import Iterable, Iterator
 from typing import Optional, cast
+from warnings import deprecated
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import deprecated
 
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler

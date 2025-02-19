@@ -39,6 +39,7 @@ from tqdm.auto import tqdm
 from tsdm.config import CONFIG
 from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.data import serialize
+from tsdm.pprint import repr_mapping
 from tsdm.testing.hashutils import (
     ErrorHandler,
     ValidationError,
@@ -50,7 +51,6 @@ from tsdm.utils import paths_exists, remote
 from tsdm.utils.contextmanagers import timer
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict
-from tsdm.utils.pprint import repr_mapping
 from tsdm.utils.system import query_bool
 
 

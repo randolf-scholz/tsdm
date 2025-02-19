@@ -11,13 +11,13 @@ from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
+from warnings import deprecated
 
 import torch
 from pandas import DataFrame, MultiIndex, Series
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import deprecated
 
 from tsdm.data import MappingDataset, TimeSeriesSampleGenerator
 from tsdm.datasets import KiwiRuns, KiwiRunsTSC

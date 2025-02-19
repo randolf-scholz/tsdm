@@ -72,14 +72,12 @@ from math import prod
 from types import FunctionType
 from typing import Any, Final, Optional, Protocol
 
-import numpy as np
 import polars as pl
 import pyarrow as pa
-import torch
 from pandas import ArrowDtype, DataFrame, MultiIndex
-from pandas.core.dtypes.base import ExtensionDtype
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 
+from tsdm.backend.dtypes import TYPESTRINGS, DType
 from tsdm.testing import (
     is_builtin,
     is_builtin_constant,
@@ -87,7 +85,7 @@ from tsdm.testing import (
     is_na_value,
     is_scalar,
 )
-from tsdm.types.aliases import DType
+from tsdm.testing._testing import is_dtype
 from tsdm.types.arrays import (
     SupportsArray,
     SupportsDataFrame,
@@ -96,7 +94,6 @@ from tsdm.types.arrays import (
     SupportsItem,
     SupportsShape,
 )
-from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import (
     Dataclass,
     NTuple,
@@ -217,7 +214,7 @@ def repr_shortform(
             return repr(builtin)
         case SupportsArray() as arr if arr.__array__().size <= 1:
             return repr(arr.__array__().item())
-        case np.dtype() | torch.dtype() | ExtensionDtype() as dtype:
+        case dtype if is_dtype(dtype):
             return repr_dtype(dtype)
         case nan if is_na_value(nan):
             return repr(nan)
@@ -265,7 +262,7 @@ def repr_generic(
             return repr_sequence(sequence, **kwargs)
         case AbstractSet() as set_:
             return repr_set(set_, **kwargs)
-        case np.dtype() | torch.dtype() | ExtensionDtype() as dtype:
+        case dtype if is_dtype(dtype):
             return repr_dtype(dtype)
         case _:
             # avoid recursion:

@@ -28,10 +28,10 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     Literal,
     Optional,
     Protocol,
+    TypeVar,
     cast,
     overload,
     runtime_checkable,
@@ -43,7 +43,6 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import Index, Interval, Series
-from typing_extensions import TypeVar
 
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.data.datasets import (
