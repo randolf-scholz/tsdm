@@ -9,7 +9,6 @@ __all__ = [
     # Generic Type Aliases
     "MaybeNA",
     "Nested",
-    "Thunk",
     # Custom Type Aliases
     "Axis",
     "Dims",
@@ -59,7 +58,6 @@ __all__ = [
 
 import os
 from collections.abc import (
-    Callable,
     Collection,
     Iterable,
     Mapping,
@@ -96,8 +94,6 @@ r"""Type Alias for fields that are fitted automatically."""
 # endregion type qualifiers ------------------------------------------------------------
 
 # region generic type aliases ----------------------------------------------------------
-type Thunk[T] = Callable[[], T]
-r"""Type Alias for lazy evaluation."""
 type MaybeNA[T] = T | NAType
 r"""Type Alias for nullable types."""
 type Nested[T] = T | Collection[Nested[T]] | Mapping[Any, Nested[T]]  # +T

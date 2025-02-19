@@ -36,6 +36,8 @@ __all__ = [
     "collate_timeseries",
 ]
 
+from collections.abc import Callable as Fn
+
 from tsdm.timeseries._timeseries import (
     damped_pendulum_ansari2023,
     electricity,
@@ -66,9 +68,8 @@ from tsdm.timeseries.base import (
     TimeSeriesSampleGenerator,
     collate_timeseries,
 )
-from tsdm.types.aliases import Thunk
 
-TIMESERIES: dict[str, Thunk[PandasTS]] = {
+TIMESERIES: dict[str, Fn[[], PandasTS]] = {
     "ETTh1"       : etth1,
     "ETTh2"       : etth2,
     "ETTm1"       : ettm1,
@@ -78,7 +79,7 @@ TIMESERIES: dict[str, Thunk[PandasTS]] = {
 }  # fmt: skip
 r"""Dictionary of all available time series datasets."""
 
-TIMESERIES_COLLECTIONS: dict[str, Thunk[PandasTSC]] = {
+TIMESERIES_COLLECTIONS: dict[str, Fn[[], PandasTSC]] = {
     "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
     "InSilico"                  : in_silico,
     "KiwiBenchmark"             : kiwi_benchmark,
@@ -91,4 +92,4 @@ TIMESERIES_COLLECTIONS: dict[str, Thunk[PandasTSC]] = {
 }  # fmt: skip
 r"""Dictionary of all available time series collections."""
 
-del Thunk
+del Fn

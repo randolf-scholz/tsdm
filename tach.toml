@@ -70,7 +70,7 @@ depends_on = []
 
 [[modules ]]
 path = "tsdm.timeseries"
-depends_on = ["tsdm.utils", "tsdm.datasets", "tsdm.data", "tsdm.types", "tsdm.constants"]
+depends_on = ["tsdm.utils", "tsdm.data", "tsdm.types", "tsdm.constants", "tsdm.datasets"]
 
 [[modules ]]
 path = "tsdm.logutils"
@@ -78,7 +78,7 @@ depends_on = ["tsdm.constants", "tsdm.types", "tsdm.metrics", "tsdm.utils", "tsd
 
 [[modules ]]
 path = "tsdm.datasets"
-depends_on = ["tsdm.config", "tsdm.testing", "tsdm.data", "tsdm.backend", "tsdm.utils", "tsdm.random", "tsdm.types", "tsdm.constants", "tsdm.pprint"]
+depends_on = ["tsdm.config", "tsdm.testing", "tsdm.data", "tsdm.backend", "tsdm.utils", "tsdm.types", "tsdm.constants", "tsdm.pprint", "tsdm.datasets.synthetic"]
 
 [[modules ]]
 path = "tsdm.models"
@@ -87,3 +87,7 @@ depends_on = ["tsdm.types", "tsdm.backend", "tsdm.config", "tsdm.optimizers", "t
 [[modules ]]
 path = "tsdm.tasks"
 depends_on = ["tsdm.timeseries", "tsdm.utils", "tsdm.constants", "tsdm.random", "tsdm.data", "tsdm.metrics", "tsdm.types", "tsdm.encoders", "tsdm.datasets", "tsdm.pprint"]
+
+[[modules ]]
+path = "tsdm.datasets.synthetic"
+depends_on = ["tsdm.types", "tsdm.datasets", "tsdm.random"]

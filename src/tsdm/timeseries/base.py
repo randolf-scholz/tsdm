@@ -115,14 +115,6 @@ class TimeSeriesCollection[Key, T](Protocol):
     def __getitem__(self, key: Key, /) -> TimeSeries[T]: ...
 
 
-# class TimeSeriesBase[T](TimeSeries[T]):
-#     r"""TimeSeries Base Class."""
-#
-#
-# class TimeSeriesCollectionBase[Key, T](TimeSeriesCollection[Key, T]):
-#     r"""TimeSeriesCollection Base Class."""
-
-
 @pprint_repr
 @dataclass
 class PandasTS(TimeSeries[DataFrame]):
