@@ -1,4 +1,6 @@
+r"""Check numpy datetime64 and timedelta64 types type inference."""
 # mypy: enable-error-code="unused-ignore"
+
 import datetime as dt
 from typing import Protocol, Self, assert_type, overload
 
@@ -31,7 +33,7 @@ assert_type(np_td, "np.timedelta64[dt.timedelta]")
 assert_type(np_td_int, "np.timedelta64[int]")
 assert_type(np_td_nat, "np.timedelta64[None]")
 
-# ----------- runtime checks -------------
+# ----------- runtime checks -----------------------------------------------------------
 # fmt: off
 # py_date
 assert type(py_date - py_td) is dt.date
@@ -84,7 +86,7 @@ assert type(np_dt_nat - np_td)      is np.datetime64
 assert type(np_dt_nat - np_td_int)  is np.datetime64
 assert type(np_dt_nat - np_td_nat)  is np.datetime64
 
-# ---------- static checks ----------
+# ---------- static checks -------------------------------------------------------------
 
 # py_date
 assert_type(py_date - py_td, dt.date)
@@ -137,6 +139,8 @@ assert_type(np_dt_nat - np_td_nat,  "np.datetime64[None]")
 
 
 class Timedelta(Protocol):
+    r"""Protocol for timedelta types."""
+
     def __add__(self, other: Self, /) -> Self: ...
     def __radd__(self, other: Self, /) -> Self: ...
     def __sub__(self, other: Self, /) -> Self: ...
@@ -144,6 +148,8 @@ class Timedelta(Protocol):
 
 
 class Timestamp[TD: Timedelta](Protocol):
+    r"""Protocol for timestamp types."""
+
     @overload
     def __sub__(self, other: Self, /) -> TD: ...
     @overload
@@ -151,10 +157,14 @@ class Timestamp[TD: Timedelta](Protocol):
 
 
 class SupportsSubSelf[TD: Timedelta](Protocol):
+    r"""Protocol for types that support subtraction with self."""
+
     def __sub__(self, other: Self, /) -> TD: ...
 
 
 class SupportsSubTD[TD: Timedelta](Protocol):
+    r"""Protocol for types that support subtraction with timedelta."""
+
     def __sub__(self, other: TD, /) -> Self: ...
 
 

@@ -54,9 +54,9 @@ def if_else_union(x: object) -> None:
 
 
 def if_else_tuple(x: object) -> None:
-    if isinstance(x, (bool, int, float)):  # noqa: UP038
+    if isinstance(x, (bool, int, float)):
         return
-    if isinstance(x, (str, bytes)):  # noqa: UP038
+    if isinstance(x, (str, bytes)):
         return
     raise TypeError
 

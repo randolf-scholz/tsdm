@@ -34,23 +34,11 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/bugs/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_autosummary" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/pics" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/cluster/checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/cluster/runs" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/.virtual_documents" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/runs" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/docs/apidoc" />
       <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/processed" />
       <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/raw" />
       <excludeFolder url="file://$MODULE_DIR$/tests/reports" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/CLUSTER" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/tensorboard" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/results" />
-      <excludeFolder url="file://$MODULE_DIR$/experiments/evaluation/checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/dev/experiments/kiwi/checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/dev/experiments/kiwi/tensorboard" />
       <excludeFolder url="file://$MODULE_DIR$/dev/plotting/pics" />
@@ -76,6 +64,19 @@
       <excludeFolder url="file://$MODULE_DIR$/docs/_previous_build" />
       <excludeFolder url="file://$MODULE_DIR$/.tach" />
       <excludeFolder url="file://$MODULE_DIR$/.pdm-build" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/.benchmarks" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/.virtual_documents" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/cluster/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/cluster/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/evaluation/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/kiwi/CLUSTER" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/kiwi/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/kiwi/results" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/kiwi/tensorboard" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/pics" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/demos/runs" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.13 (tsdm)" jdkType="Python SDK" />

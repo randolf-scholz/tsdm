@@ -1,4 +1,4 @@
-exclude: bugs/
+exclude: 'bugs/'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
   python: python3.13
@@ -22,7 +22,7 @@ repos:
       - id: trailing-whitespace
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.6
+    rev: v0.10.0
     hooks:
       - id: ruff
         name: ruff-isort
@@ -34,16 +34,16 @@ repos:
         files: '^src/|^tests/'
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.1
+    rev: 0.6.6
     hooks:
       - id: uv-lock
-      - id: uv-export
+      # - id: uv-export
       - id: uv-sync
         args: ["--upgrade"]
         stages: [ "pre-commit" ]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.26.0 # change this to the latest tag!
+    rev: v0.28.1 # change this to the latest tag!
     hooks:
       - id: tach
   # nbstripout-fast
@@ -51,7 +51,7 @@ repos:
     rev: v1.0.4
     hooks:
       - id: nbstripout-fast
-        exclude: '^experiments/'
+        exclude: '^docs/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.5.56
@@ -59,6 +59,7 @@ repos:
       # pygrep hooks
       - id: check-separator-length-88
       - id: pyarrow-timestamp-seconds
+        exclude: '/backend/'
       - id: python-consider-using-raw-string
       - id: python-rename-axes-axis
       - id: python-system-exit
@@ -130,7 +131,7 @@ repos:
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.394
+    rev: v1.1.396
     hooks:
       - id: pyright
         # SEE: https://stackoverflow.com/a/20401674
