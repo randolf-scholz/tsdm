@@ -4,7 +4,7 @@ __all__ = [
     # types
     "PandasDTypeArg",
     "PandasDtype",
-    "PandasObject",
+    "PandasType",
     # Constants
     "NA_VALUES",
     # Functions
@@ -38,7 +38,7 @@ import operator
 from collections.abc import Hashable, Mapping
 from contextlib import suppress
 from functools import reduce
-from typing import Any, Final, Literal, TypeVar
+from typing import Any, Final, Literal
 
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
@@ -54,13 +54,10 @@ PandasDtype = ExtensionDtype | NumpyDtype
 r"""Type Alias for `pandas` dtype."""
 PandasDTypeArg = str | type | PandasDtype
 r"""Type Alias for `pandas` dtype arguments."""
-type PandasObject = DataFrame | Series | Index | MultiIndex
+type PandasType = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 type PANDAS_TYPE = Index | Series | DataFrame
 r"""A type alias for pandas objects."""
-P = TypeVar("P", Index, Series, DataFrame)
-r"""A type variable for pandas objects."""
-
 
 NA_VALUES: Final[frozenset[Hashable]] = frozenset({NA, NaT})
 r"""Values that correspond to NaN."""
@@ -71,29 +68,31 @@ def scalar(x: Any, /, dtype: Any) -> Any:
     return Index([x]).astype(dtype).item()
 
 
-def cast(x: P, /, dtype: Any) -> P:
+def cast[P: PandasType](x: P, /, dtype: Any) -> P:
     r"""Cast a `pandas` object to a different dtype."""
     return x.astype(dtype)
 
 
-def drop_null(x: P, /) -> P:
+def drop_null[P: PandasType](x: P, /) -> P:
     r"""Drop `NaN` values from a pandas object."""
     return x.dropna()
 
 
-def false_like(x: P, /) -> P:
+def false_like[P: PandasType](x: P, /) -> P:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ m
 
 
-def true_like(x: P, /) -> P:
+def true_like[P: PandasType](x: P, /) -> P:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ (~m)
 
 
-def infer_axes(x: P, /, *, axis: Axis = None) -> Literal[None, "index", "columns"]:
+def infer_axes(
+    x: PandasType, /, *, axis: Axis = None
+) -> Literal[None, "index", "columns"]:
     r"""Convert axes specification to pandas-compatible axes specification.
 
     - Series: -1 → 0, -2 → Error
@@ -111,7 +110,7 @@ def infer_axes(x: P, /, *, axis: Axis = None) -> Literal[None, "index", "columns
     return "columns" if axis % len(x.shape) else "index"
 
 
-def clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
+def clip[P: PandasType](x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
     r"""Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
     # FIXME: https://github.com/pandas-dev/pandas/issues/59053
@@ -123,39 +122,39 @@ def clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
     return x.clip(lower, upper, axis=axis)
 
 
-def nanmax(x: P, /, *, axis: Axis = None) -> P:
+def nanmax[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmax`."""
     return x.max(axis=infer_axes(x, axis=axis), skipna=True)
 
 
-def nanmin(x: P, /, *, axis: Axis = None) -> P:
+def nanmin[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmin`."""
     return x.min(axis=infer_axes(x, axis=axis), skipna=True)
 
 
-def nanmean(x: P, /, *, axis: Axis = None) -> P:
+def nanmean[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanmean`."""
     return x.mean(axis=infer_axes(x, axis=axis), skipna=True)
 
 
-def nanstd(x: P, /, *, axis: Axis = None) -> P:
+def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     r"""Analogue to `numpy.nanstd`."""
     return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
-def where(cond: NDArray, a: P, b: BuiltinScalar | NDArray, /) -> P:
+def where[P: PandasType](cond: NDArray, a: P, b: BuiltinScalar | NDArray, /) -> P:
     r"""Analogue to `numpy.where`."""
     if isinstance(a, Index | Series | DataFrame):
         return a.where(cond, b)
     return a if cond else copy_like(b, a)  # scalar fallback
 
 
-def null_like(x: P, /) -> P:
+def null_like[P: PandasType](x: P, /) -> P:
     r"""Returns a copy of the input filled with nulls."""
     return where(true_like(x), x, NA)
 
 
-def copy_like(x: ArrayLike, ref: P, /) -> P:
+def copy_like[P: PandasType](x: ArrayLike, ref: P, /) -> P:
     r"""Create a Series/DataFrame with the same modality as a reference."""
     match ref:
         case Index() as idx:
@@ -190,7 +189,7 @@ def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
     })
 
 
-def strip_whitespace(x: P, /) -> P:
+def strip_whitespace[P: PandasType](x: P, /) -> P:
     r"""Strip whitespace from all string elements in a `pandas` object."""
     match x:
         case DataFrame() as df:

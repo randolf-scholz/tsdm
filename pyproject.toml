@@ -67,7 +67,7 @@ debug = [
     "ipympl>=0.9.7",
     "ipywidgets>=8.1.5",
     "jupyterlab-execute-time>=3.2.0",
-    "jupyterlab>=4.3.5",
+    "jupyterlab>=4.3.6",
     "psutil>=7.0.0",
     "torchinfo>=1.8.0",
 ]
@@ -90,7 +90,7 @@ docs = [
 linters = [
     "pre-commit>=4.1.0",
     "pylint>=3.3.5",
-    "ruff>=0.10.0",
+    "ruff>=0.11.0",
     "tach>=0.28.1",
 ]
 tests = [
@@ -182,20 +182,25 @@ unfixable = []
 #]
 select=["ALL"]
 ignore = [
+    # fully ignored:
+    "ANN",      # missing-annotations
+    "COM",      # comma
+    "CPY",      # missing-copyright
+    "DTZ",      # timezone-naive-datetime
+    "EM",       # error-messages
+    "ERA",   # commented-out-code
+    "FIX",      # fixme
+    "T20",      # flake8-print
+    "TD",       # todo
+    # partially ignored:
     # flake8-builtins
     "A005",     # builtin-module-shadowing
-    # annotations
-    "ANN",      # missing-annotations
     # unused-arguments
     "ARG003",   # Unused class method argument
     # blind-except
     "BLE001",
     # mccabe
     "C90",      # too-complex
-    # commas
-    "COM",      # comma
-    # copyright
-    "CPY",      # missing-copyright
     # pydocstyle
     "D102",     # Missing docstring in public method
     "D103",     # Missing docstring in public function
@@ -203,25 +208,16 @@ ignore = [
     "D107",     # Missing docstring in __init__
     # pydoclint
     "DOC201",   # docstring-missing-returns
+    "DOC402",   # docstring-missing-yields
     "DOC501",   # docstring-missing-exception
-    # datetime
-    "DTZ",      # timezone-naive-datetime
     # pycodestyle
     "E201",     # Whitespace after '('
     "E202",     # Whitespace before ')'
     "E203",     # Whitespace before ':'
     "E221",     # Multiple spaces before operator
-    # "E226",   # Missing whitespace around arithmetic operator
-    # "E231",   # Missing whitespace after ','
     "E241",     # Multiple spaces after comma
     "E271",     # Multiple spaces after keyword
     "E272",     # Multiple spaces before keyword
-    # error-messages
-    "EM",       # error-messages
-    # eradicate
-    "ERA001",   # commented-out-code
-    # fixme
-    "FIX",      # fixme
     # refurb
     "FURB140",  # reimplemented-starmap (less efficient than comprehension)
     # naming
@@ -253,8 +249,6 @@ ignore = [
     "PLR0917",  # Too many positional arguments
     # flake8-use-pathlib
     "PTH123",   # builtin-open
-    # PYI
-    "PYI051",   # redundant-literal-union
     # RET
     "RET504",   # unnecessary-assign
     # RUFF
@@ -264,18 +258,15 @@ ignore = [
     "RUF012",   # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
     "RUF013",   # PEP 484 prohibits implicit Optional
     "RUF022",   # __all__ not sorted
+    "RUF036",   # None not at the end of type annotation
     # flake8-bandit
     "S301",     # suspicious-pickle-usage
     "S311",     # standard-random-usage
     "S403",     # suspicious-pickle-import
     "S404",     # suspicious-subprocess-import
     "S603",     # subprocess-without-shell-equals-true
-    # type-check
+    # type-checking
     "TC006",    # Add quotes to type expression in `typing.cast()`
-    # todo
-    "TD",       # todo
-    #
-    "T201",     # `print` found
     # tryceratops
     "TRY003",   # Avoid specifying long messages outside the exception class
     # pyupgrade

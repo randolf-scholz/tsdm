@@ -22,7 +22,7 @@ repos:
       - id: trailing-whitespace
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.10.0
+    rev: v0.11.0
     hooks:
       - id: ruff
         name: ruff-isort
@@ -54,14 +54,14 @@ repos:
         exclude: '^docs/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.5.56
+    rev: v0.6.12
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
+      - id: numpy-rename-axes-axis
       - id: pyarrow-timestamp-seconds
         exclude: '/backend/'
       - id: python-consider-using-raw-string
-      - id: python-rename-axes-axis
       - id: python-system-exit
       - id: python-match-case-builtins
       # ast-based hooks
@@ -85,14 +85,14 @@ repos:
           - "--allow-two"
           - "--"
       # script-based hooks
+      - id: check-clean-interface
+        files: '^src/'
+        exclude: '/tests/'
       - id: update-requirements
       - id: check-requirements-valid
       - id: check-requirements-maintained
       - id: check-requirements-used
         args: ["--known-unimported", "tensorboard", "pydantic", "--"]
-      - id: check-clean-interface
-        files: '^src/'
-        exclude: '/tests/'
       # other hooks
       - id: check-archived-hooks
       - id: check-resolved-github-issues
