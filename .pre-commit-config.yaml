@@ -1,8 +1,8 @@
 exclude: 'bugs/'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
-  python: python3.13
-  node: "20.10.0"
+  python: '3.13'
+  node: '22.14.0'
 repos:
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -20,9 +20,30 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
+  # uv
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.6.10
+    hooks:
+      - id: uv-lock
+      - id: uv-export
+        args: ["--no-dev", "--no-hashes", "--frozen", "--output-file=requirements.txt"]
+      - id: uv-sync
+        args: ["--upgrade"]
+        stages: [ "pre-commit" ]
+  # tach
+  - repo: https://github.com/gauge-sh/tach-pre-commit
+    rev: v0.28.4 # change this to the latest tag!
+    hooks:
+      - id: tach
+  # nbstripout-fast
+  - repo: https://github.com/deshaw/nbstripout-fast.git
+    rev: v1.0.4
+    hooks:
+      - id: nbstripout-fast
+        exclude: '^docs/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.0
+    rev: v0.11.2
     hooks:
       - id: ruff
         name: ruff-isort
@@ -32,29 +53,9 @@ repos:
         files: '^src/|^tests/'
       - id: ruff
         files: '^src/|^tests/'
-  # uv
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.6
-    hooks:
-      - id: uv-lock
-      # - id: uv-export
-      - id: uv-sync
-        args: ["--upgrade"]
-        stages: [ "pre-commit" ]
-  # tach
-  - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.28.1 # change this to the latest tag!
-    hooks:
-      - id: tach
-  # nbstripout-fast
-  - repo: https://github.com/deshaw/nbstripout-fast.git
-    rev: v1.0.4
-    hooks:
-      - id: nbstripout-fast
-        exclude: '^docs/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.12
+    rev: v0.6.15
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -130,35 +131,10 @@ repos:
         types: [python]
         files: '^src/|^tests/'
   # pyright
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.396
+  - repo: https://github.com/randolf-scholz/assorted-hooks.git
+    rev: v0.6.15
     hooks:
-      - id: pyright
-        # SEE: https://stackoverflow.com/a/20401674
-        #        entry: sh -c '! script -c "pyright $*" /dev/null | grep --color=never -Po "(?<=$PWD/)(.*:.*)"' --
-        # simple grep: grep --color=never -Po "$PWD/.*:.*"
-        # better ripgrep: rg --multiline --multiline-dotall "($PWD/[^\n]*?)(?:\n.*?)?(\(report\w+\))" -or '$1 $2'
-        # perl:  perl -0777 -ne "while (/((?:\x20+)(${path}[^\n\r]*?)(?:[\r\n].*?)?(\(report\w+\)))/gms) { print \"\$1 \$2\n\"}"
-        # FIXME: some weird issues with ripgrep + script.
-        # NOTE: The issue is likely control characters that are not being handled correctly.
-        #   In fact, it turns out the problem is precisely carriage return. We need to check [\n\r] instead of just \n
-        entry: |
-          bash -c '
-              path="${PWD//\//\\/}";
-              grey="\x1b\[90m"
-              end="\x1b\[0m"
-              code_group="(${grey}).*?\(report(\w+)\)";
-              git_root=$(git rev-parse --show-toplevel);
-              regex="\x20+(?:${git_root})/([^\r\n]*?)(?:[\r\n].*?)?${code_group}";
-              output="\$1 \$2(\$3)";
-              result=$(script -fqc "pyright $*" /dev/null | rg --multiline --multiline-dotall "$regex" -or "$output");
-              count=$(echo -n "$result" | grep -c "^");
-              if [ "$count" -ne 0 ]; then
-                  echo "$result";
-                  echo -e "\033[1;31mFound ${count} error(s)\033[0m";
-                  exit 1;
-              fi
-          ' --
+      - id: pyright-concise
         files: '^src/|^tests/'
         exclude: '/tasks/'
   # mypy
