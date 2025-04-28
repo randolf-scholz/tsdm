@@ -22,7 +22,7 @@ repos:
       - id: trailing-whitespace
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.10
+    rev: 0.6.17
     hooks:
       - id: uv-lock
       - id: uv-export
@@ -32,7 +32,7 @@ repos:
         stages: [ "pre-commit" ]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.28.4 # change this to the latest tag!
+    rev: v0.29.0 # change this to the latest tag!
     hooks:
       - id: tach
   # nbstripout-fast
@@ -43,7 +43,7 @@ repos:
         exclude: '^docs/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.2
+    rev: v0.11.7
     hooks:
       - id: ruff
         name: ruff-isort
@@ -55,7 +55,7 @@ repos:
         files: '^src/|^tests/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.15
+    rev: v0.6.16
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -132,7 +132,7 @@ repos:
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.15
+    rev: v0.6.16
     hooks:
       - id: pyright-concise
         files: '^src/|^tests/'
