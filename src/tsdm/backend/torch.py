@@ -22,7 +22,6 @@ from functools import wraps
 from importlib import import_module
 from typing import Any, Final, Self
 
-import numpy as np
 import torch
 from numpy.typing import ArrayLike
 from torch import Tensor, jit, nn
@@ -89,22 +88,31 @@ def copy_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
 def apply_along_axes(op: Fn[..., Tensor], /, *tensors: Tensor, axis: Axis) -> Tensor:
     r"""Apply a function to multiple tensors along axes.
 
-    It is assumed that all tensors have the same shape.
+    Assumptions:
+    - All tensors must have the same shape.
+    - The operator `op` acts on the last `len(axis)` axes of the tensors.
+    - The operator `op` does not change the shape of the tensors.
     """
     if len(tensors) < 1:
         raise ValueError("At least one tensor is required!")
     if len({t.shape for t in tensors}) != 1:
         raise ValueError("All tensors must have the same shape!")
 
-    axes = () if axis is None else (axis,) if isinstance(axis, int) else tuple(axis)
-
+    # we move the target axes to the front, apply the operation,
+    # then move them back to their original position
     rank = len(tensors[0].shape)
+    target_axes = (
+        () if axis is None
+        else (axis % rank,) if isinstance(axis, int)
+        else tuple(ax % rank for ax in axis)
+    )  # fmt: skip
+    other_axes = tuple(ax for ax in range(rank) if ax not in target_axes)
     source = tuple(range(rank))
-    inverse_permutation = axes + tuple(ax for ax in range(rank) if ax not in axes)
-    perm = tuple(np.argsort(inverse_permutation))
-    tensors = tuple(torch.moveaxis(tensor, source, perm) for tensor in tensors)
+    inv = target_axes + other_axes  # inverse permutation
+    dest = tuple(sorted(source, key=inv.__getitem__))
+    tensors = tuple(torch.moveaxis(tensor, source, dest) for tensor in tensors)
     result = op(*tensors)
-    result = torch.moveaxis(result, source, inverse_permutation)
+    result = torch.moveaxis(result, source, dest)
     return result
 
 

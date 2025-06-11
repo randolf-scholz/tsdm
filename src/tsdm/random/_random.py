@@ -15,17 +15,17 @@ from pandas import date_range, timedelta_range
 
 from tsdm.backend.numpy import TIME_UNITS
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
-from tsdm.types.scalars import TimeDelta, TimeStamp
+from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 
 
-def sample_timestamps[DT: TimeStamp[TimeDelta]](
+def sample_timestamps[DT: TimestampScalar[DurationScalar]](
     start: str | DT = "today",
     final: Optional[DT] = None,
     /,
     *,
     size: int,
-    freq: str | TimeDelta = "1s",
+    freq: str | DurationScalar = "1s",
     replace: bool = False,
     include_start: bool = True,
     include_final: bool = False,
@@ -71,7 +71,7 @@ def sample_timestamps[DT: TimeStamp[TimeDelta]](
     return timestamps.astype(f"datetime64[{base_unit}]")
 
 
-def sample_timedeltas[TD: TimeDelta](
+def sample_timedeltas[TD: DurationScalar](
     low: str | TD = "0s",
     high: str | TD = "1h",
     size: int = 1,

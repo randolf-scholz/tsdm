@@ -86,7 +86,7 @@ from tsdm.testing import (
     is_scalar,
 )
 from tsdm.testing._testing import is_dtype
-from tsdm.types.arrays import (
+from tsdm.types.mixins import (
     SupportsArray,
     SupportsDataFrame,
     SupportsDevice,

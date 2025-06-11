@@ -44,7 +44,7 @@ from tsdm import constants as const
 from tsdm.constants import EMPTY_MAP, EMPTY_SET, NOT_GIVEN
 from tsdm.data.datasets import TorchDataset
 from tsdm.datasets import Dataset
-from tsdm.types.scalars import TimeStamp
+from tsdm.types.scalars import TimestampScalar
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -181,7 +181,7 @@ class PandasTS(TimeSeries[DataFrame]):
         r"""Return the number of timestamps."""
         return len(self.timeindex)
 
-    def __iter__(self) -> Iterator[TimeStamp]:
+    def __iter__(self) -> Iterator[TimestampScalar]:
         r"""Iterate over the timestamps."""
         return iter(self.timeindex)
 
@@ -660,7 +660,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
                 self.metadata_observables = self.dataset.static_covariates.columns
         self.validate()
 
-    def __getitem__(self, key: Hashable) -> Sample:
+    def __getitem__(self, key: Hashable, /) -> Sample:
         return self.make_sample(
             key,
             sparse_index=self.sparse_index,
@@ -918,7 +918,7 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         for key in self.index:
             yield self[key]
 
-    def __getitem__(self, key: Hashable) -> PlainSample:
+    def __getitem__(self, key: Hashable, /) -> PlainSample:
         r"""Yield a single sample."""
         # select the individual time series
         ts = self.data_source.loc[key]

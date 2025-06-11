@@ -126,7 +126,8 @@ from tsdm import encoders as E
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.types.aliases import FilePath, NestedBuiltin
-from tsdm.types.protocols import Dataclass, SupportsKeysAndGetItem
+from tsdm.types.mixins import SupportsKeysAndGetItem
+from tsdm.types.protocols import Dataclass
 from tsdm.types.utils import is_classvar
 from tsdm.utils.decorators import (
     pprint_mapping,
@@ -614,10 +615,10 @@ class EncoderList[X, Y](BaseEncoder[X, Y], Sequence[Encoder]):
         return iter(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> Encoder: ...
+    def __getitem__(self, index: int, /) -> Encoder: ...
     @overload
-    def __getitem__(self, index: slice) -> Self: ...
-    def __getitem__(self, index: int | slice) -> Encoder | Self:
+    def __getitem__(self, index: slice, /) -> Self: ...
+    def __getitem__(self, index: int | slice, /) -> Encoder | Self:
         r"""Get the encoder at the given index."""
         match index:
             case int(idx):

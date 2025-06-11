@@ -30,21 +30,23 @@ classifiers = [
 # dependencies
 requires-python = ">=3.13"
 dependencies = [
-    "matplotlib>=3.10.1",
-    "numpy>=2.2.3",
-    "pandas>=2.2.3",
-    "pillow>=11.1.0",
-    "polars>=1.23.0",
-    "pyarrow>=19.0.1",
-    "pydantic>=2.10.6",
+    "array-api-compat>=1.12.0",
+    "dataframe-api-compat>=0.2.7",
+    "matplotlib>=3.10.3",
+    "numpy>=2.3.0",
+    "pandas>=2.3.0",
+    "pillow>=11.2.1",
+    "polars>=1.30.0",
+    "pyarrow>=20.0.0",
+    "pydantic>=2.11.5",
     "pyyaml>=6.0.2",
-    "requests>=2.32.3",
-    "scikit-learn>=1.6.1",
-    "scipy>=1.15.2",
+    "requests>=2.32.4",
+    "scikit-learn>=1.7.0",
+    "scipy>=1.15.3",
     "tensorboard>=2.19.0",
-    "torch>=2.6.0",
+    "torch>=2.7.1",
     "tqdm>=4.67.1",
-    "typing-extensions>=4.12.2",
+    "typing-extensions>=4.14.0",
 ]
 
 [project.urls]
@@ -59,16 +61,16 @@ dev = [
     {include-group="linters"}, {include-group="tests"}, {include-group="typing"},
 ]
 devtools = [
-    "cmake>=3.31.6",
-    "ninja>=1.11.1.3",
+    "cmake>=4.0.2",
+    "ninja>=1.11.1.4",
     "pybadges>=3.0.1",
 ]
 debug = [
-    "ipympl>=0.9.6",
-    "ipywidgets>=8.1.5",
+    "ipympl>=0.9.7",
+    "ipywidgets>=8.1.7",
     "jupyterlab-execute-time>=3.2.0",
-    "jupyterlab>=4.3.5",
-    "psutil>=6.1.1",
+    "jupyterlab>=4.4.3",
+    "psutil>=7.0.0",
     "torchinfo>=1.8.0",
 ]
 docs = [
@@ -80,51 +82,52 @@ docs = [
     "pygments>=2.19.1",
     "sphinx-autoapi>=3.6.0",
     "sphinx-autodoc2>=0.5.0",
-    "sphinx-automodapi>=0.18.0",
+    "sphinx-automodapi>=0.19.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
     "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
-    "sphinx>=8.2.1",
+    "sphinx>=8.2.3",
 ]
 linters = [
-    "pre-commit>=4.1.0",
-    "pylint>=3.3.4",
-    "ruff>=0.9.9",
-    "tach>=0.27.2",
+    "pre-commit>=4.2.0",
+    "pylint>=3.3.7",
+    "ruff>=0.11.13",
+    "tach>=0.29.0",
 ]
 tests = [
-    "coverage>=7.6.12",
-    "hypothesis[numpy,pandas,pytest]>=6.127.3",
-    "psutil>=6.1.1",
+    "coverage>=7.9.0",
+    "hypothesis[numpy,pandas,pytest]>=6.135.7",
+    "psutil>=7.0.0",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
-    "pytest-cov>=6.0.0",
-    "pytest-repeat>=0.9.3",
-    "pytest-rerunfailures>=15.0",
-    "pytest-xdist>=3.6.1",
-    "pytest>=8.3.4",
+    "pytest-cov>=6.2.0",
+    "pytest-repeat>=0.9.4",
+    "pytest-rerunfailures>=15.1",
+    "pytest-xdist>=3.7.0",
+    "pytest>=8.4.0",
 ]
 typing = [
-    "mypy>=1.15.0",
-    "pyright>=1.1.395",
+    "mypy>=1.16.0",
+    "pyrefly>=0.19.0",
+    "pyright>=1.1.402",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.2.0.20250324",
-    "types-docutils>=0.21.0.20241128",
-    "types-jsonschema>=4.23.0.20241208",
+    "types-docutils>=0.21.0.20250604",
+    "types-jsonschema>=4.24.0.20250528",
     "types-pillow>=10.2.0.20240822",
-    "types-protobuf>=5.29.1.20250208",
-    "types-psutil>=7.0.0.20250218",
-    "types-pygments>=2.19.0.20250305",
-    "types-pytz>=2025.1.0.20250204",
-    "types-pyyaml>=6.0.12.20241230",
-    "types-requests>=2.32.0.20250301",
-    "types-setuptools>=75.8.2.20250301",
-    "types-six>=1.17.0.20250304",
+    "types-protobuf>=6.30.2.20250516",
+    "types-psutil>=7.0.0.20250601",
+    "types-pygments>=2.19.0.20250516",
+    "types-pytz>=2025.2.0.20250516",
+    "types-pyyaml>=6.0.12.20250516",
+    "types-requests>=2.32.4.20250611",
+    "types-setuptools>=80.9.0.20250529",
+    "types-six>=1.17.0.20250515",
     "types-tabulate>=0.9.0.20241207",
-    "types-tqdm>=4.67.0.20250319",
+    "types-tqdm>=4.67.0.20250516",
     "types-urllib3>=1.26.25.14",
-    "typing-extensions>=4.12.2",
+    "typing-extensions>=4.14.0",
 ]
 # endregion development dependencies ---------------------------------------------------
 
@@ -247,6 +250,7 @@ ignore = [
     "PLR0915",  # Too many statements
     "PLR0916",  # Too many boolean expressions
     "PLR0917",  # Too many positional arguments
+    # pygrep-hooks
     # flake8-use-pathlib
     "PTH123",   # builtin-open
     # RET
@@ -275,7 +279,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/test*" = ["S101", "T20"]
+"**/test*" = ["S101", "SIM300", "T20", "UP018", "RUF046"]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
 "src/tsdm/models/*" = ["N803"]
@@ -434,10 +438,10 @@ pythonPlatform = "Linux"
 include = ["src/", "tests/"]
 typeCheckingMode = "standard"
 useLibraryCodeForTypes = false  # `pandas` has way too many false positives
-
+enableTypeIgnoreComments = false  # disable `# type: ignore` comments (use `# pyright: ignore` instead)
 ## Type Check Diagnostics Settings
 # SEE: https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
-reportUnnecessaryTypeIgnoreComment = false
+reportUnnecessaryTypeIgnoreComment = true
 
 # strict mode flags we enable by default
 reportUntypedClassDecorator = true

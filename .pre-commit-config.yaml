@@ -2,7 +2,7 @@ exclude: 'bugs/'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
   python: '3.13'
-  node: '22.14.0'
+  node: '22.15.1'
 repos:
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -22,7 +22,7 @@ repos:
       - id: trailing-whitespace
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.17
+    rev: 0.7.11
     hooks:
       - id: uv-lock
       - id: uv-export
@@ -43,7 +43,7 @@ repos:
         exclude: '^docs/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.7
+    rev: v0.11.12
     hooks:
       - id: ruff
         name: ruff-isort
@@ -55,7 +55,7 @@ repos:
         files: '^src/|^tests/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.16
+    rev: v0.6.28
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -73,7 +73,7 @@ repos:
         args: ["--check-no-return-union", "--check-concrete"]
         files: '^src/|^tests/'
         exclude: "lazydict.py"
-      - id: check-no-mixed-args
+      - id: check-signatures
         files: '^src/'
         args:
           - "--ignore-names"
@@ -83,7 +83,6 @@ repos:
           - "jit.script"
           - "jit.export"
           - "torch.no_grad"
-          - "--allow-two"
           - "--"
       # script-based hooks
       - id: check-clean-interface
@@ -100,7 +99,7 @@ repos:
         files: '^src/|^tests/'
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
         args:
@@ -132,7 +131,7 @@ repos:
         files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.16
+    rev: v0.6.28
     hooks:
       - id: pyright-concise
         files: '^src/|^tests/'

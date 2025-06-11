@@ -8,7 +8,7 @@ __all__ = [
     "MapDataset",
     "IterableDataset",
     "PandasDataset",
-    "IndexableDataset",
+    "Indexable",
     "Dataset",
     # Classes
     "MappingDataset",
@@ -55,7 +55,7 @@ from tsdm.data.dataloaders import (
 from tsdm.data.datasets import (
     DataFrame2Dataset,
     Dataset,
-    IndexableDataset,
+    Indexable,
     IterableDataset,
     MapDataset,
     MappingDataset,

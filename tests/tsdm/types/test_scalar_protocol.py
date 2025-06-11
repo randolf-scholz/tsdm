@@ -1,7 +1,6 @@
 r"""Tests for `tsdm.types.scalars`."""
 
 import datetime as dt
-from typing import SupportsFloat, SupportsInt
 
 import numpy as np
 import pandas as pd
@@ -13,11 +12,11 @@ from tsdm.types.scalars import (
     AdditiveScalar,
     BoolScalar,
     ComplexScalar,
+    DurationScalar,
     FloatScalar,
     IntScalar,
     OrderedScalar,
-    TimeDelta,
-    TimeStamp,
+    TimestampScalar,
 )
 
 BASE_SCALARS: dict[object, object] = {
@@ -72,37 +71,43 @@ ADDITIVE_SCALARS: dict[str, AdditiveScalar] = {
 r"""Additive scalars for testing."""
 
 BOOLEAN_SCALARS: dict[str, BoolScalar] = {
-    "np_bool" : np.True_,
-    "py_bool" : True,
-    "pt_bool" : pt.tensor([True], dtype=pt.bool),
+    "np_bool"    : np.bool(bool(1)),
+    "np_literal" : np.True_,  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
+    "py_bool"    : bool(1),
+    "py_literal" : True,
+    "pt_bool"    : pt.tensor([True], dtype=pt.bool),
 }  # fmt: skip
 r"""Boolean scalars for testing."""
 
-FLOAT_SCALARS: dict[str, FloatScalar] = {
-    "np_float": np.float64(1.0),
-    "py_float": 1.0,
-    "pt_float": pt.tensor(1.0, dtype=pt.float64),
-}  # fmt: skip
-r"""Float scalars for testing."""
-
 INT_SCALARS: dict[str, IntScalar] = {
-    "np_int": np.int64(1),
-    "py_int": 1,
-    "pt_int": pt.tensor(1, dtype=pt.int64),
+    "np_int"     : np.int64(1),  # type: ignore[dict-item]
+    "py_int"     : int(1.0),  # type: ignore[dict-item]
+    "py_literal" : 1,  # type: ignore[dict-item]
+    "pt_int"     : pt.tensor(1, dtype=pt.int64),
 }  # fmt: skip
 r"""Integer scalars for testing."""
 
+FLOAT_SCALARS: dict[str, FloatScalar] = {
+    "np_float"   : np.float64(1.0),
+    "py_float"   : float(1),
+    "py_literal" : 1.0,
+    "pt_float"   : pt.tensor(1.0, dtype=pt.float64),
+}  # fmt: skip
+r"""Float scalars for testing."""
+
+
 COMPLEX_SCALARS: dict[str, ComplexScalar] = {
-    "np_complex": np.complex128(1 + 1j),
-    "py_complex": 1 + 1j,
-    "pt_complex": pt.tensor(1 + 1j, dtype=pt.complex128),
+    "np_complex" : np.complex128(1 + 1j),
+    "py_complex" : complex(1 + 1j),
+    "py_literal" : 1 + 1j,
+    "pt_complex" : pt.tensor(1 + 1j, dtype=pt.complex128),
 }  # fmt: skip
 r"""Complex scalars for testing."""
 
-TIMEDELTA_SCALARS: dict[str, TimeDelta] = {
+TIMEDELTA_SCALARS: dict[str, DurationScalar] = {
     "np_float" : np.float64(1.0),
     "np_int"   : np.int64(1),
-    "np_time"  : np.timedelta64(1, "D"),
+    "np_time"  : np.timedelta64(1, "D"),  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
     "pd_time"  : pd.Timedelta("1D"),
     "py_float" : 1.0,
     "py_int"   : 1,
@@ -110,157 +115,264 @@ TIMEDELTA_SCALARS: dict[str, TimeDelta] = {
 }  # fmt: skip
 r"""Dictionary of timedelta scalars."""
 
-TIMESTAMP_SCALARS: dict[str, TimeStamp] = {
-    "np_time"  : np.datetime64("2021-01-01"),
+
+TIMESTAMP_SCALARS: dict[str, TimestampScalar] = {
+    "np_time"  : np.datetime64("2021-01-01"),  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
     "np_float" : np.float64(1.0),
-    "np_int"   : np.int64(1),
+    "np_int"   : np.int64(1),  # type: ignore[dict-item]
     "pd_time"  : pd.Timestamp("2021-01-01"),
     "py_time"  : dt.datetime(2021, 1, 1),
-    "py_float" : 1.0,
-    "py_int"   : 1,
+    "py_float" : float(1),
+    "py_int"   : int(1.0),
 }  # fmt: skip
 r"""Dictionary of timestamp scalars."""
 
 
 TEST_TYPED_CASES: dict[type, dict] = {
-    BoolScalar     : BOOLEAN_SCALARS,
-    ComplexScalar  : COMPLEX_SCALARS,
-    FloatScalar    : FLOAT_SCALARS,
-    IntScalar      : INT_SCALARS,
-    TimeDelta      : TIMEDELTA_SCALARS,
-    TimeStamp      : TIMESTAMP_SCALARS,
+    BoolScalar      : BOOLEAN_SCALARS,
+    ComplexScalar   : COMPLEX_SCALARS,
+    FloatScalar     : FLOAT_SCALARS,
+    IntScalar       : INT_SCALARS,
+    DurationScalar  : TIMEDELTA_SCALARS,
+    TimestampScalar : TIMESTAMP_SCALARS,
 }  # fmt: skip
 r"""Test cases for scalar types."""
+
+BOOL: bool = bool(1)
+INT: int = int(1.0)
+FLOAT: float = float(1)
+COMPLEX: complex = complex(0 + 1j)
+DATETIME: dt.datetime = dt.datetime(2021, 1, 1)
+TIMEDELTA: dt.timedelta = dt.timedelta(days=1)
 
 
 @pytest.mark.parametrize("name", BOOLEAN_SCALARS)
 def test_boolean_scalar(name: str) -> None:
     value = BOOLEAN_SCALARS[name]
+    cls = type(value)
     assert isinstance(value, BoolScalar)
 
-    cls = type(value)
-    as_bool: bool = bool(value)
-    as_int: int = int(value)
-    as_float: float = float(value)
-    as_complex: complex = complex(value)
-    assert value == as_bool
-    assert value == as_int
-    assert value == as_float
-    assert value == as_complex
-
-    # test __and__
-    assert type(value & value) is cls
-    assert type(value & as_bool) is cls
-    # test __or__
-    assert type(value | value) is cls
-    assert type(value | as_bool) is cls
-    # test __xor__
-    assert type(value ^ value) is cls
-    assert type(value ^ as_bool) is cls
+    # fmt: off
+    # region test unary operations
+    # test conversions
+    assert type(bool(value)) is bool       # __bool__
+    assert type(int(value)) is int         # __int__
+    assert type(float(value)) is float     # __float_
+    # endregion test unary operations
+    # region test binary operations
+    # test boolean operators (self)
+    assert type(value & value) is cls      # __and__
+    assert type(value ^ value) is cls      # __xor__
+    assert type(value | value) is cls      # __or__
+    # test boolean operators (bool)
+    assert type(value & BOOL) is cls       # __and__
+    assert type(value | BOOL) is cls       # __or__
+    assert type(value ^ BOOL) is cls       # __xor__
+    # test boolean operators (bool, reversed)
+    assert type(BOOL & value) is cls       # __rand__
+    assert type(BOOL | value) is cls       # __ror__
+    assert type(BOOL ^ value) is cls       # __rxor__
+    # endregion test binary operations
+    # region test comparisons
+    # test comparisons (self)
+    assert type(value == value) is cls     # __eq__
+    assert type(value != value) is cls     # __ne__
+    assert type(value <  value) is cls     # __lt__
+    assert type(value <= value) is cls     # __le__
+    assert type(value >  value) is cls     # __gt__
+    assert type(value >= value) is cls     # __ge__
+    # test comparisons (bool)
+    assert type(value != BOOL) is cls      # __ne__
+    assert type(value <  BOOL) is cls      # __lt__
+    assert type(value <= BOOL) is cls      # __le__
+    assert type(value >  BOOL) is cls      # __gt__
+    assert type(value >= BOOL) is cls      # __ge__
+    # test comparisons (int)
+    assert type(value == INT) is cls       # __eq__
+    assert type(value != INT) is cls       # __ne__
+    assert type(value <  INT) is cls       # __lt__
+    assert type(value <= INT) is cls       # __le__
+    assert type(value >  INT) is cls       # __gt__
+    assert type(value >= INT) is cls       # __ge__
+    # test comparisons (float)
+    assert type(value == FLOAT) is cls     # __eq__
+    assert type(value != FLOAT) is cls     # __ne__
+    assert type(value <  FLOAT) is cls     # __lt__
+    assert type(value <= FLOAT) is cls     # __le__
+    assert type(value >  FLOAT) is cls     # __gt__
+    assert type(value >= FLOAT) is cls     # __ge__
+    # test comparisons (complex)
+    assert type(value == COMPLEX) is cls   # __eq__
+    assert type(value != COMPLEX) is cls   # __ne__
+    # endregion test comparisons
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", INT_SCALARS)
 def test_int_scalar(name: str) -> None:
     value: IntScalar = INT_SCALARS[name]
+    cls = type(value)
     assert isinstance(value, IntScalar)
 
-    cls = type(value)
-    as_bool: bool = bool(value)
-    as_int: int = int(value)
-    as_float: float = float(value)
-    as_complex: complex = complex(value)
-    assert value == as_int
-    assert value == as_float
-    assert value == as_complex
-    assert type(value.__index__()) is int
-
-    # test __abs__
-    assert type(abs(value)) is cls
-    # test __neg__
-    assert type(-value) is cls
-    # test __pos__
-    assert type(+value) is cls
-
-    # test __add__
-    assert type(value + value) is cls
-    assert type(value + as_bool) is cls
-    assert type(value + as_int) is cls
-    # assert isinstance(value + as_float, FloatScalar)
-    # assert isinstance(value + as_complex, ComplexScalar)
-    # test __sub__
-    assert type(value - value) is cls
-    # assert type(value - as_bool) is cls  # not supported by torch
-    assert type(value - as_int) is cls
-    # assert isinstance(value - as_float, FloatScalar)
-    # assert isinstance(value - as_complex, ComplexScalar)
-    # test __mul__
-    assert type(value * value) is cls
-    assert type(value * as_bool) is cls
-    assert type(value * as_int) is cls
-    # assert isinstance(value * as_float, FloatScalar)
-    # assert isinstance(value * as_complex, ComplexScalar)
-    # test __pow__
-    assert type(value**value) is cls
-    assert type(value**as_bool) is cls
-    assert type(value**as_int) is cls
-    # assert isinstance(value**as_float, FloatScalar)
-    # assert isinstance(value**as_complex, ComplexScalar)
-    # test __floordiv__
-    assert type(value // value) is cls
-    assert type(value // as_bool) is cls
-    assert type(value // as_int) is cls
-    # assert isinstance(value // as_float, FloatScalar)
-    # assert isinstance(value // as_complex, ComplexScalar)  # nonsensical
-    # test __mod__
-    assert type(value % value) is cls
-    assert type(value % as_bool) is cls
-    assert type(value % as_int) is cls
-    # assert isinstance(value % as_float, FloatScalar)
-    # assert isinstance(value % as_complex, ComplexScalar)  # nonsensical
+    # fmt: off
+    # region test unary operations
+    # test conversions
+    assert type(bool(value)) is bool         # __bool__
+    assert type(int(value)) is int           # __int__
+    assert type(value.__index__()) is int    # __index__
+    assert type(float(value)) is float       # __float_
+    # test unary operations
+    assert type(abs(value)) is cls           # __abs__
+    assert type(-value) is cls               # __neg__
+    assert type(+value) is cls               # __pos__
+    # endregion test unary operations
+    # region test binary operations
+    # test arithmetic operations (self)
+    assert type(value +  value) is cls  # __add__
+    assert type(value -  value) is cls  # __sub__
+    assert type(value *  value) is cls  # __mul__
+    assert type(value ** value) is cls  # __pow__
+    assert type(value // value) is cls  # __floordiv__
+    assert type(value %  value) is cls  # __mod__
+    # test arithmetic operations (int)
+    assert type(value +  INT) is cls    # __add__
+    assert type(value -  INT) is cls    # __sub__
+    assert type(value *  INT) is cls    # __mul__
+    assert type(value ** INT) is cls    # __pow__
+    assert type(value // INT) is cls    # __floordiv__
+    assert type(value %  INT) is cls    # __mod__
+    # test arithmetic operations (int, reversed)
+    assert type(INT +  value) is cls    # __radd__
+    assert type(INT -  value) is cls    # __rsub__
+    assert type(INT *  value) is cls    # __rmul__
+    assert type(INT ** value) is cls    # __rpow__
+    assert type(INT // value) is cls    # __rfloordiv__
+    assert type(INT %  value) is cls    # __rmod__
+    # test arithmetic operations (bool)
+    assert type(value +  BOOL) is cls   # __add__
+    # assert type(value -  BOOL) is cls   # __sub__
+    assert type(value *  BOOL) is cls   # __mul__
+    assert type(value ** BOOL) is cls   # __pow__
+    assert type(value // BOOL) is cls   # __floordiv__
+    assert type(value %  BOOL) is cls   # __mod__
+    # test arithmetic operations (bool, reversed)
+    assert type(BOOL +  value) is cls   # __radd__
+    # assert type(BOOL -  value) is cls   # __rsub__
+    assert type(BOOL *  value) is cls   # __rmul__
+    assert type(BOOL ** value) is cls   # __rpow__
+    assert type(BOOL // value) is cls   # __rfloordiv__
+    assert type(BOOL %  value) is cls   # __rmod__
+    # endregion test binary operations
+    # region test comparisons
+    # test comparisons (self)
+    assert isinstance(value == value, BoolScalar)     # __eq__
+    assert isinstance(value != value, BoolScalar)     # __ne__
+    assert isinstance(value <  value, BoolScalar)     # __lt__
+    assert isinstance(value <= value, BoolScalar)     # __le__
+    assert isinstance(value >  value, BoolScalar)     # __gt__
+    assert isinstance(value >= value, BoolScalar)     # __ge__
+    # test comparisons (bool)
+    assert isinstance(value == BOOL, BoolScalar)      # __eq__
+    assert isinstance(value != BOOL, BoolScalar)      # __ne__
+    assert isinstance(value <  BOOL, BoolScalar)      # __lt__
+    assert isinstance(value <= BOOL, BoolScalar)      # __le__
+    assert isinstance(value >  BOOL, BoolScalar)      # __gt__
+    assert isinstance(value >= BOOL, BoolScalar)      # __ge__
+    # test comparisons (int)
+    assert isinstance(value == INT, BoolScalar)       # __eq__
+    assert isinstance(value != INT, BoolScalar)       # __ne__
+    assert isinstance(value <  INT, BoolScalar)       # __lt__
+    assert isinstance(value <= INT, BoolScalar)       # __le__
+    assert isinstance(value >  INT, BoolScalar)       # __gt__
+    assert isinstance(value >= INT, BoolScalar)       # __ge__
+    # test comparisons (float)
+    assert isinstance(value == FLOAT, BoolScalar)     # __eq__
+    assert isinstance(value != FLOAT, BoolScalar)     # __ne__
+    assert isinstance(value <  FLOAT, BoolScalar)     # __lt__
+    assert isinstance(value <= FLOAT, BoolScalar)     # __le__
+    assert isinstance(value >  FLOAT, BoolScalar)     # __gt__
+    assert isinstance(value >= FLOAT, BoolScalar)     # __ge__
+    # test comparisons (complex)
+    assert isinstance(value == COMPLEX, BoolScalar)   # __eq__
+    assert isinstance(value != COMPLEX, BoolScalar)   # __ne__
+    # endregion test comparisons
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", FLOAT_SCALARS)
 def test_float_scalar(name: str) -> None:
     value: FloatScalar = FLOAT_SCALARS[name]
+    cls = type(value)
     assert isinstance(value, FloatScalar)
 
-    cls = type(value)
-    as_float: float = float(value)
-    as_complex: complex = complex(value)
-    assert value == as_float
-    assert value == as_complex
-
-    # test __abs__
-    assert type(abs(value)) is cls
-    # test __neg__
-    assert type(-value) is cls
-    # test __pos__
-    assert type(+value) is cls
-
-    # test __add__
-    assert type(value + value) is cls
-    assert type(value + as_float) is cls
-    # assert isinstance(value + as_complex, ComplexScalar)
-    # test __sub__
-    assert type(value - value) is cls
-    assert type(value - as_float) is cls
-    # assert isinstance(value - as_complex, ComplexScalar)
-    # test __mul__
-    assert type(value * value) is cls
-    assert type(value * as_float) is cls
-    # assert isinstance(value * as_complex, ComplexScalar)
-    # test __truediv__
-    assert type(value / value) is cls
-    assert type(value / as_float) is cls
-    # assert isinstance(value / as_complex, ComplexScalar)
-    # test __pow__
-    assert type(value**value) is cls
-    assert type(value**as_float) is cls
-    # assert isinstance(value**as_complex, ComplexScalar)
-    # test __floordiv__
-    assert type(value // value) is cls
-    assert type(value // as_float) is cls
-    # assert isinstance(value // as_complex, ComplexScalar)  # nonsensical
+    # fmt: off
+    # region test unary operations
+    # test conversions
+    assert type(bool(value)) is bool       # __bool__
+    assert type(int(value)) is int         # __int__
+    assert type(float(value)) is float     # __float_
+    # test unary operations
+    assert type(abs(value)) is cls       # __abs__
+    assert type(-value) is cls           # __neg__
+    assert type(+value) is cls           # __pos__
+    # endregion test unary operations
+    # region test binary operations
+    # test arithmetic operations (self)
+    assert type(value + value) is cls    # __add__
+    assert type(value - value) is cls    # __sub__
+    assert type(value * value) is cls    # __mul__
+    assert type(value / value) is cls    # __truediv__
+    assert type(value**value) is cls     # __pow__
+    assert type(value // value) is cls   # __floordiv__
+    # test arithmetic operations (float)
+    assert type(value +  FLOAT) is cls   # __add__
+    assert type(value -  FLOAT) is cls   # __sub__
+    assert type(value *  FLOAT) is cls   # __mul__
+    assert type(value /  FLOAT) is cls   # __truediv__
+    assert type(value ** FLOAT) is cls   # __pow__
+    assert type(value // FLOAT) is cls   # __floordiv__
+    # test arithmetic operations (float, reversed)
+    assert type(FLOAT +  value) is cls   # __radd__
+    assert type(FLOAT -  value) is cls   # __rsub__
+    assert type(FLOAT *  value) is cls   # __rmul__
+    assert type(FLOAT /  value) is cls   # __rtruediv__
+    assert type(FLOAT ** value) is cls   # __rpow__
+    assert type(FLOAT // value) is cls   # __rfloordiv__
+    # endregion test binary operations
+    # region test comparisons
+    # test comparisons (self)
+    assert isinstance(value == value, BoolScalar)     # __eq__
+    assert isinstance(value != value, BoolScalar)     # __ne__
+    assert isinstance(value <  value, BoolScalar)     # __lt__
+    assert isinstance(value <= value, BoolScalar)     # __le__
+    assert isinstance(value >  value, BoolScalar)     # __gt__
+    assert isinstance(value >= value, BoolScalar)     # __ge__
+    # test comparisons (bool)
+    assert isinstance(value == BOOL, BoolScalar)      # __eq__
+    assert isinstance(value != BOOL, BoolScalar)      # __ne__
+    assert isinstance(value <  BOOL, BoolScalar)      # __lt__
+    assert isinstance(value <= BOOL, BoolScalar)      # __le__
+    assert isinstance(value >  BOOL, BoolScalar)      # __gt__
+    assert isinstance(value >= BOOL, BoolScalar)      # __ge__
+    # test comparisons (int)
+    assert isinstance(value == INT, BoolScalar)       # __eq__
+    assert isinstance(value != INT, BoolScalar)       # __ne__
+    assert isinstance(value <  INT, BoolScalar)       # __lt__
+    assert isinstance(value <= INT, BoolScalar)       # __le__
+    assert isinstance(value >  INT, BoolScalar)       # __gt__
+    assert isinstance(value >= INT, BoolScalar)       # __ge__
+    # test comparisons (float)
+    assert isinstance(value == FLOAT, BoolScalar)     # __eq__
+    assert isinstance(value != FLOAT, BoolScalar)     # __ne__
+    assert isinstance(value <  FLOAT, BoolScalar)     # __lt__
+    assert isinstance(value <= FLOAT, BoolScalar)     # __le__
+    assert isinstance(value >  FLOAT, BoolScalar)     # __gt__
+    assert isinstance(value >= FLOAT, BoolScalar)     # __ge__
+    # test comparisons (complex)
+    assert isinstance(value == COMPLEX, BoolScalar)   # __eq__
+    assert isinstance(value != COMPLEX, BoolScalar)   # __ne__
+    # endregion test comparisons
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", COMPLEX_SCALARS)
@@ -269,89 +381,124 @@ def test_complex_scalar(name: str) -> None:
     cls = type(value)
     assert isinstance(value, ComplexScalar)
 
-    # test __complex__
-    as_complex: complex = complex(value)
-    assert as_complex == value
-
-    # test __abs__
-    assert isinstance(abs(value), FloatScalar)
-    # test __neg__
-    assert type(-value) is cls
-    # test __pos__
-    assert type(+value) is cls
-
-    # test __add__
-    assert type(value + value) is cls
-    assert type(value + as_complex) is cls
-    # test __sub__
-    assert type(value - value) is cls
-    assert type(value - as_complex) is cls
-    # test __mul__
-    assert type(value * value) is cls
-    assert type(value * as_complex) is cls
-    # test __truediv__
-    assert type(value / value) is cls
-    assert type(value / as_complex) is cls
-    # test __pow__
-    assert type(value**value) is cls
-    assert type(value**as_complex) is cls
+    # fmt: off
+    # region test unary operations
+    # test conversions
+    assert type(bool(value)) is bool            # __bool__
+    assert type(complex(value)) is complex      # __complex__
+    # test unary operations
+    assert isinstance(abs(value), FloatScalar)  # __abs__
+    assert type(-value) is cls                  # __neg__
+    assert type(+value) is cls                  # __pos__
+    # endregion test unary operations
+    # region test binary operations
+    # test arithmetic operations (self)
+    assert type(value +  value) is cls    # __add__
+    assert type(value -  value) is cls    # __sub__
+    assert type(value *  value) is cls    # __mul__
+    assert type(value /  value) is cls    # __truediv__
+    assert type(value ** value) is cls    # __pow__
+    # test arithmetic operations (complex)
+    assert type(value +  COMPLEX) is cls  # __add__
+    assert type(value -  COMPLEX) is cls  # __sub__
+    assert type(value *  COMPLEX) is cls  # __mul__
+    assert type(value /  COMPLEX) is cls  # __truediv__
+    assert type(value ** COMPLEX) is cls  # __pow__
+    # test arithmetic operations (complex, reversed)
+    assert type(COMPLEX +  value) is cls  # __radd__
+    assert type(COMPLEX -  value) is cls  # __rsub__
+    assert type(COMPLEX *  value) is cls  # __rmul__
+    assert type(COMPLEX /  value) is cls  # __rtruediv__
+    assert type(COMPLEX ** value) is cls  # __rpow__
+    # test arithmetic operations (float)
+    assert type(value +  FLOAT) is cls    # __add__
+    assert type(value -  FLOAT) is cls    # __sub__
+    assert type(value *  FLOAT) is cls    # __mul__
+    assert type(value /  FLOAT) is cls    # __truediv__
+    assert type(value ** FLOAT) is cls    # __pow__
+    # test arithmetic operations (float, reversed)
+    assert type(FLOAT +  value) is cls    # __radd__
+    assert type(FLOAT -  value) is cls    # __rsub__
+    assert type(FLOAT *  value) is cls    # __rmul__
+    assert type(FLOAT /  value) is cls    # __rtruediv__
+    assert type(FLOAT ** value) is cls    # __rpow__
+    # endregion test binary operations
+    # region test comparisons
+    # test comparisons (self)
+    assert isinstance(value == value, BoolScalar)     # __eq__
+    assert isinstance(value != value, BoolScalar)     # __ne__
+    # test comparisons (bool)
+    assert isinstance(value == BOOL, BoolScalar)      # __eq__
+    assert isinstance(value != BOOL, BoolScalar)      # __ne__
+    # test comparisons (int)
+    assert isinstance(value == INT, BoolScalar)       # __eq__
+    assert isinstance(value != INT, BoolScalar)       # __ne__
+    # test comparisons (float)
+    assert isinstance(value == FLOAT, BoolScalar)     # __eq__
+    assert isinstance(value != FLOAT, BoolScalar)     # __ne__
+    # test comparisons (complex)
+    assert isinstance(value == COMPLEX, BoolScalar)   # __eq__
+    assert isinstance(value != COMPLEX, BoolScalar)   # __ne__
+    # endregion test comparisons
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", TIMEDELTA_SCALARS)
 def test_timedelta_scalar(name: str) -> None:
     value = TIMEDELTA_SCALARS[name]
     cls = type(value)
-    assert isinstance(value, TimeDelta)
+    assert isinstance(value, DurationScalar)
 
-    # test comparisons
-    assert isinstance(value > value, BoolScalar)
-    assert isinstance(value < value, BoolScalar)
-    assert isinstance(value >= value, BoolScalar)
-    assert isinstance(value <= value, BoolScalar)
-    assert isinstance(value == value, BoolScalar)
-    assert isinstance(value != value, BoolScalar)
-
-    # test __abs__
-    assert type(abs(value)) is cls
-    # test __neg__
-    assert type(-value) is cls
-    # test __pos__
-    assert type(+value) is cls
-
-    # test __add__
-    assert type(value + value) is cls
-    # test __sub__
-    assert type(value - value) is cls
-    # test __mul__
-    assert type(value * 2) is cls
-    # test modulo
-    assert type(value % value) is cls
-    # test __floordiv__
-    assert type(value // 2) is cls
-    assert isinstance(value // value, SupportsInt)
-    # test __truediv__
-    assert isinstance(value / 2, cls | SupportsFloat)
+    # fmt: off
+    # region test unary operations
+    assert type(abs(value)) is cls      # __abs__
+    assert type(-value) is cls          # __neg__
+    assert type(+value) is cls          # __pos__
+    # endregion test unary operations
+    # region test binary operations
+    # test arithmetic operations (self)
+    assert type(value + value) is cls               # __add__
+    assert type(value - value) is cls               # __sub__
+    assert type(value % value) is cls               # __mod__
+    assert isinstance(value / value, FloatScalar)   # __truediv__
+    assert isinstance(value // value, FloatScalar)  # __truediv__
+    # test arithmetic operations (int)
+    assert type(value *  INT) is cls                # __mul__
+    assert type(INT * value) is cls                 # __rmul__
+    # endregion test binary operations
+    # region test comparisons
+    # test comparisons (self)
+    assert isinstance(value == value, BoolScalar)   # __eq__
+    assert isinstance(value != value, BoolScalar)   # __ne__
+    assert isinstance(value <  value, BoolScalar)   # __lt__
+    assert isinstance(value <= value, BoolScalar)   # __le__
+    assert isinstance(value >  value, BoolScalar)   # __gt__
+    assert isinstance(value >= value, BoolScalar)   # __ge__
+    # endregion test comparisons
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", TIMESTAMP_SCALARS)
 def test_timestamp_scalar(name: str) -> None:
     value = TIMESTAMP_SCALARS[name]
     cls = type(value)
-    assert isinstance(value, TimeStamp)
-
-    # test comparisons
-    assert isinstance(value > value, BoolScalar)
-    assert isinstance(value < value, BoolScalar)
+    assert isinstance(value, TimestampScalar)
+    ZERO = value - value
+    # fmt: off
+    # region test binary operations
+    assert type(value + ZERO) is cls                  # __add__
+    assert type(ZERO + value) is cls                  # __radd__
+    assert isinstance(value - value, DurationScalar)  # __sub__
+    # endregion test binary operations
+    # region test comparisons
+    assert isinstance(value >  value, BoolScalar)
+    assert isinstance(value <  value, BoolScalar)
     assert isinstance(value >= value, BoolScalar)
     assert isinstance(value <= value, BoolScalar)
     assert isinstance(value == value, BoolScalar)
     assert isinstance(value != value, BoolScalar)
-
-    # test __sub__
-    zero = value - value
-    assert isinstance(zero, TimeDelta)
-    # test __add__
-    assert type(value + zero) is cls
+    # endregion test comparisons
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", ORDERED_SCALARS)
@@ -359,36 +506,32 @@ def test_ordered_scalar(name: str) -> None:
     value = ORDERED_SCALARS[name]
     assert isinstance(value, OrderedScalar)
 
-    # test ==
+    # fmt: off
+    # test comparisons (self)
+    assert isinstance(value == value, BoolScalar)     # __eq__
+    assert isinstance(value != value, BoolScalar)     # __ne__
+    assert isinstance(value <  value, BoolScalar)     # __lt__
+    assert isinstance(value <= value, BoolScalar)     # __le__
+    assert isinstance(value >  value, BoolScalar)     # __gt__
+    assert isinstance(value >= value, BoolScalar)     # __ge__
+    # value check comparisons
     assert value == value
-    assert isinstance(value == value, BoolScalar)
-    # test !=
-    assert value == value
-    assert isinstance(value != value, BoolScalar)
-    # test <=
     assert value <= value
-    assert isinstance(value <= value, BoolScalar)
-    # test <
-    assert not (value < value)
-    assert isinstance(value < value, BoolScalar)
-    # test >=
     assert value >= value
-    assert isinstance(value >= value, BoolScalar)
-    # test >
+    assert not (value != value)  # noqa: SIM202
     assert not (value > value)
-    assert isinstance(value > value, BoolScalar)
+    assert not (value < value)
+    # fmt: on
 
 
 @pytest.mark.parametrize("name", ADDITIVE_SCALARS)
 def test_additive_scalar(name: str) -> None:
     value = ADDITIVE_SCALARS[name]
-    assert isinstance(value, AdditiveScalar)
     cls = type(value)
+    assert isinstance(value, AdditiveScalar)
 
-    # test __add__
-    assert type(value + value) is cls
-    # test __sub__
-    assert type(value - value) is cls
+    assert type(value + value) is cls  # __add__
+    assert type(value - value) is cls  # __sub__
 
 
 @pytest.mark.parametrize("protocol", TEST_TYPED_CASES)

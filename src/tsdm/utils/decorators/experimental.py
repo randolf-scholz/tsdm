@@ -54,7 +54,7 @@ class attribute[T, R](metaclass=_AttrMeta):
     def __get__(self, obj: None, obj_type: Optional[type] = ..., /) -> Self: ...
     @overload
     def __get__(self, obj: T, obj_type: Optional[type] = ..., /) -> R: ...
-    def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
+    def __get__(self, obj: T | None, obj_type: Optional[type] = None, /) -> Self | R:
         if obj is None:
             return self
         if self.payload is self.DELETED:

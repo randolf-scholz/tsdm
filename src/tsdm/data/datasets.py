@@ -3,7 +3,7 @@ r"""Generic Dataset classes."""
 __all__ = [
     # ABCs & Protocols
     "Dataset",
-    "IndexableDataset",
+    "Indexable",
     "IterableDataset",
     "MapDataset",
     "PandasDataset",
@@ -20,14 +20,15 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterator, KeysView, Mapping
+from collections.abc import Collection, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
 from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checkable
 
+from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex
 
 from tsdm.types.arrays import ArrayLike
-from tsdm.types.protocols import SupportsGetItem
+from tsdm.types.mixins import SupportsGetItem, SupportsSlicing
 from tsdm.utils.decorators import pprint_repr
 
 # region Protocols ---------------------------------------------------------------------
@@ -38,9 +39,7 @@ class TorchDataset[K, V](Protocol):  # -K, +V
     r"""Protocol version of `torch.utils.data.Dataset`."""
 
     @abstractmethod
-    def __getitem__(self, key: K, /) -> V:
-        r"""Map key to sample."""
-        ...
+    def __getitem__(self, key: K, /) -> V: ...
 
 
 @runtime_checkable
@@ -48,13 +47,11 @@ class IterableDataset[V](Protocol):  # +V
     r"""Protocol version of `torch.utils.data.IterableDataset`."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[V]:
-        r"""Iterate over the dataset."""
-        ...
+    def __iter__(self) -> Iterator[V]: ...
 
 
 @runtime_checkable
-class IndexableDataset[V](Protocol):  # +V
+class Indexable[V](Protocol):  # +V
     r"""Protocol version of `torch.utils.data.IterableDataset` with len and getitem.
 
     Note:
@@ -66,24 +63,21 @@ class IndexableDataset[V](Protocol):  # +V
 
     Important:
         Always test for MapDataset first!
+
+    Examples:
+        - `list`, `pandas.Series`, `torch.Tensor`, `numpy.ndarray`
     """
 
     @abstractmethod
-    def __len__(self) -> int:
-        r"""Length of the dataset."""
-        ...
-
+    def __len__(self) -> int: ...
     @abstractmethod
-    def __iter__(self) -> Iterator[V]:
-        r"""Iterate over the dataset."""
-        ...
-
+    def __iter__(self) -> Iterator[V]: ...
     @overload
     @abstractmethod
     def __getitem__(self, index: int, /) -> V: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> Self: ...
+    def __getitem__(self, index: slice, /) -> "Indexable[V]": ...
 
 
 @runtime_checkable
@@ -98,25 +92,35 @@ class MapDataset[K, V](Protocol):  # +V
     """
 
     @abstractmethod
-    def __len__(self) -> int:
-        r"""Length of the dataset."""
-        ...
-
+    def __len__(self) -> int: ...
     @abstractmethod
-    def __getitem__(self, key: K, /) -> V:
-        r"""Map key to sample."""
-        ...
-
+    def __getitem__(self, key: K, /) -> V: ...
     @abstractmethod
     # NOTE: We want keys to support __reverse__, which requires either
     #   - SupportsLenAndGetItem -> Use IndexableDataset instead
     #   - Reversible -> Use KeysView instead
-    def keys(self) -> KeysView[K] | IndexableDataset[K]:
-        r"""Iterate over the keys."""
+    def keys(self) -> Collection[K]:  # supertype of `KeysView[K]`
+        r"""Access the keys."""
         ...
 
 
 @runtime_checkable
+class SeriesDataset[K, V](Protocol):  # -K, +V
+    r"""Protocol version of `pandas.Series`.
+
+    Similar to a `Mapping`, but with an `__iter__` method that returns the values.
+    """
+
+    @abstractmethod
+    def __array__(self) -> NDArray: ...
+    @abstractmethod
+    def __len__(self) -> int: ...
+    @abstractmethod
+    def __iter__(self) -> Iterator[V]: ...
+    @abstractmethod
+    def __getitem__(self, key: K, /) -> V: ...
+
+
 class PandasDataset[K, V](Protocol):  # K, +V
     r"""Protocol version of `pandas.DataFrame`/`Series`.
 
@@ -124,37 +128,24 @@ class PandasDataset[K, V](Protocol):  # K, +V
     but we are usually interested in the rows.
     """
 
-    @abstractmethod
-    def __len__(self) -> int:
-        r"""Length of the dataset."""
-        ...
-
     @property
-    @abstractmethod
-    def index(self) -> ArrayLike[K]:
-        r"""Returns the row labels of the DataFrame."""
-        ...
-
+    def index(self) -> ArrayLike[K]: ...
     @property
-    @abstractmethod
-    def loc(self) -> SupportsGetItem[K, V]:
-        r"""Access a group of rows and columns by label(s) or a boolean array."""
-        ...
-
+    def loc(self) -> SupportsGetItem[K, V]: ...
     @property
-    @abstractmethod
-    def iloc(self) -> SupportsGetItem[int, V]:
-        r"""Purely integer location-based indexing for selection by position."""
-        ...
+    def iloc(self) -> SupportsSlicing[V]: ...
+
+    def __array__(self) -> NDArray[Any]: ...
+    def __len__(self) -> int: ...
 
 
 type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
 r"""Type alias for a "tabular" dataset."""
 
-type SequentialDataset[V] = IndexableDataset[V] | PandasDataset[Any, V]  # +V
+type SequentialDataset[V] = Indexable[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a sequential dataset."""
 
-type Dataset[V] = MapDataset[Any, V] | IndexableDataset[V] | PandasDataset[Any, V]  # +V
+type Dataset[V] = MapDataset[Any, V] | Indexable[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 
@@ -259,7 +250,7 @@ def get_index(dataset: Dataset, /) -> Index:
             return pandas_dataset.index
         case MapDataset() as map_dataset:
             return Index(map_dataset.keys())
-        case IndexableDataset() as iterable_dataset:
+        case Indexable() as iterable_dataset:
             return Index(range(len(iterable_dataset)))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
@@ -272,7 +263,7 @@ def get_first_sample[T](dataset: Dataset[T], /) -> T:
             return pandas_dataset.iloc[0]
         case MapDataset() as map_dataset:
             return map_dataset[next(iter(map_dataset.keys()))]
-        case IndexableDataset() as iterable_dataset:
+        case Indexable() as iterable_dataset:
             return next(iter(iterable_dataset))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
@@ -285,7 +276,7 @@ def get_last_sample[T](dataset: Dataset[T], /) -> T:
             return pandas_dataset.iloc[-1]
         case MapDataset() as map_dataset:
             return map_dataset[next(reversed(map_dataset.keys()))]
-        case IndexableDataset() as iterable_dataset:
+        case Indexable() as iterable_dataset:
             return next(reversed(iterable_dataset))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")

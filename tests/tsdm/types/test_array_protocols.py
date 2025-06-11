@@ -14,24 +14,28 @@ import torch
 from tsdm.testing import assert_protocol, check_shared_interface
 from tsdm.types.arrays import (
     ArrayLike,
+    SeriesLike,
+    TableLike,
+)
+from tsdm.types.linalg import (
     MutableTensor,
     NumericalArray,
     NumericalSeries,
     NumericalTensor,
-    SeriesLike,
-    SupportsArithmetic,
+    SupportsInequality,
+    SupportsMatmul,
+    SupportsMutation,
+    SupportsVectorArithmetic,
+)
+from tsdm.types.mixins import (
     SupportsArray,
     SupportsArrayUfunc,
-    SupportsComparison,
     SupportsDataFrame,
     SupportsDevice,
     SupportsDtype,
     SupportsItem,
-    SupportsMatmul,
-    SupportsMutation,
     SupportsNdim,
     SupportsShape,
-    TableLike,
 )
 
 __logger__ = logging.getLogger(__name__)
@@ -431,7 +435,7 @@ def test_supports_item(name: str) -> None:
 def test_supports_comparison(name: str) -> None:
     r"""Test the SupportsComparison protocol."""
     obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsComparison)
+    assert_protocol(obj, SupportsInequality)
     try:
         _ = obj < obj
     except TypeError as exc:
@@ -443,7 +447,7 @@ def test_supports_comparison(name: str) -> None:
 def test_supports_arithmetic(name: str) -> None:
     r"""Test the SupportsArithmetic protocol."""
     obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsArithmetic)
+    assert_protocol(obj, SupportsVectorArithmetic)
 
 
 @pytest.mark.xfail

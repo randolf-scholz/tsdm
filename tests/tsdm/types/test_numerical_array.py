@@ -9,9 +9,17 @@ import pyarrow as pa
 import pytest
 import torch as pt
 
-from tsdm.types.arrays import NumericalArray
+from tsdm.types.linalg import (
+    BooleanArray,
+    ComplexArray,
+    DatetimeArray,
+    FloatArray,
+    IntegerArray,
+    NumericalArray,
+    TimedeltaArray,
+)
 
-BOOL_ARRAYS: dict[str, NumericalArray[bool]] = {
+BOOL_ARRAYS: dict[str, BooleanArray] = {
     "numpy[bool]"     : np.array([True], dtype=np.bool_),
     "pandas[np_bool]" : pd.Series([True], dtype=bool),
     "pandas[pa_bool]" : pd.Series([True], dtype="bool[pyarrow]"),
@@ -20,8 +28,8 @@ BOOL_ARRAYS: dict[str, NumericalArray[bool]] = {
 }  # fmt: skip
 r"""Dictionary of bool arrays."""
 
-INT_ARRAYS: dict[str, NumericalArray[int]] = {
-    "numpy[int]"     : np.array([1], dtype=np.int64),
+INT_ARRAYS: dict[str, IntegerArray] = {
+    "numpy[int]"     : np.array([1], dtype=np.int64),  # pyright: ignore[reportAssignmentType]
     "pandas[np_int]" : pd.Series([1], dtype=np.int64),
     "pandas[pa_int]" : pd.Series([1], dtype="int64[pyarrow]"),
     "polars[int]"    : pl.Series([1], dtype=pl.Int64()),
@@ -29,8 +37,8 @@ INT_ARRAYS: dict[str, NumericalArray[int]] = {
 }  # fmt: skip
 r"""Dictionary of int arrays."""
 
-FLOAT_ARRAYS: dict[str, NumericalArray[float]] = {
-    "numpy[float]"     : np.array([1.0], dtype=np.float64),
+FLOAT_ARRAYS: dict[str, FloatArray] = {
+    "numpy[float]"     : np.array([1.0], dtype=np.float64),  # pyright: ignore[reportAssignmentType]
     "pandas[np_float]" : pd.Series([1.0], dtype=np.float64),
     "pandas[pa_float]" : pd.Series([1.0], dtype="float64[pyarrow]"),
     "polars[float]"    : pl.Series([1.0], dtype=pl.Float64()),
@@ -38,14 +46,14 @@ FLOAT_ARRAYS: dict[str, NumericalArray[float]] = {
 }  # fmt: skip
 r"""Dictionary of float arrays."""
 
-COMPLEX_ARRAYS: dict[str, NumericalArray[complex]] = {
-    "numpy[complex]"     : np.array([1 + 1j], dtype=np.complex128),
+COMPLEX_ARRAYS: dict[str, ComplexArray] = {
+    "numpy[complex]"     : np.array([1 + 1j], dtype=np.complex128),  # pyright: ignore[reportAssignmentType]
     "torch[complex]"     : pt.tensor([1 + 1j], dtype=pt.complex128),
     "pandas[np_complex]" : pd.Series([1 + 1j], dtype=np.complex128),
 }  # fmt: skip
 r"""Dictionary of complex arrays."""
 
-TIME_ARRAYS: dict[str, NumericalArray[py_timedelta]] = {
+TIME_ARRAYS: dict[str, TimedeltaArray] = {
     "numpy[time]"     : np.array([py_timedelta(days=1)], dtype="timedelta64[ns]"),
     "pandas[np_time]" : pd.Series([py_timedelta(days=1)], dtype="timedelta64[ns]"),
     "pandas[pa_time]" : pd.Series([py_timedelta(days=1)], dtype=pd.ArrowDtype(pa.duration("s"))),
@@ -53,7 +61,7 @@ TIME_ARRAYS: dict[str, NumericalArray[py_timedelta]] = {
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
-DATE_ARRAYS: dict[str, NumericalArray[py_datetime]] = {
+DATE_ARRAYS: dict[str, DatetimeArray] = {
     "numpy[date]"     : np.array([py_datetime(2021, 1, 1)], dtype="datetime64[ns]"),
     "pandas[np_date]" : pd.Series([py_datetime(2021, 1, 1)], dtype="datetime64[ns]"),
     "pandas[pa_date]" : pd.Series([py_datetime(2021, 1, 1)], dtype=pd.ArrowDtype(pa.timestamp("ns"))),
@@ -62,210 +70,373 @@ DATE_ARRAYS: dict[str, NumericalArray[py_datetime]] = {
 r"""Dictionary of datetime arrays."""
 
 
+BOOL: bool = bool(1)
+INT: int = int(1.0)
+FLOAT: float = float(1)
+COMPLEX: complex = complex(0 + 1j)
+DATETIME: py_datetime = py_datetime(2021, 1, 1)
+TIMEDELTA: py_timedelta = py_timedelta(days=1)
+
+
 @pytest.mark.parametrize("example", BOOL_ARRAYS)
-def test_bool_array(example: str):
+def test_bool_array(example: str) -> None:
     r"""Test bool arrays."""
     array = BOOL_ARRAYS[example]
-    assert isinstance(array, NumericalArray)
     cls = type(array)
+    assert isinstance(array, BooleanArray)
 
-    as_bool = True
-
-    # test __and__
-    assert type(array & array) is cls
-    assert type(array & as_bool) is cls
-    # test __or__
-    assert type(array | array) is cls
-    assert type(array | as_bool) is cls
-    # test __xor__
-    assert type(array ^ array) is cls
-    assert type(array ^ as_bool) is cls
+    # fmt: off
+    # test unary operations
+    assert type(~array) is cls  # __invert__
+    # test vector operations
+    assert type(array == array) is cls  # __eq__
+    assert type(array != array) is cls  # __ne__
+    assert type(array < array) is cls   # __lt__
+    assert type(array <= array) is cls  # __le__
+    assert type(array > array) is cls   # __gt__
+    assert type(array >= array) is cls  # __ge__
+    assert type(array & array) is cls   # __and__
+    assert type(array | array) is cls   # __or__
+    assert type(array ^ array) is cls   # __xor__
+    # test scalar operations (bool)
+    assert type(array == BOOL) is cls   # __eq__
+    assert type(array != BOOL) is cls   # __ne__
+    # assert type(array < BOOL) is cls    # __lt__
+    # assert type(array <= BOOL) is cls   # __le__
+    # assert type(array > BOOL) is cls    # __gt__
+    # assert type(array >= BOOL) is cls   # __ge__
+    assert type(array & BOOL) is cls    # __and__
+    assert type(array | BOOL) is cls    # __or__
+    assert type(array ^ BOOL) is cls    # __xor__
+    # test reverse scalar operations (bool)
+    # assert type(BOOL == array) is cls   # __eq__
+    # assert type(BOOL != array) is cls   # __ne__
+    # assert type(BOOL < array) is cls    # __lt__
+    # assert type(BOOL <= array) is cls   # __le__
+    # assert type(BOOL > array) is cls    # __gt__
+    # assert type(BOOL >= array) is cls   # __ge__
+    assert type(BOOL & array) is cls    # __and__
+    assert type(BOOL | array) is cls    # __or__
+    assert type(BOOL ^ array) is cls    # __xor__
+    # fmt: on
 
 
 @pytest.mark.parametrize("example", INT_ARRAYS)
-def test_int_array(example: str):
+def test_int_array(example: str) -> None:
     r"""Test int arrays."""
     array = INT_ARRAYS[example]
-    assert isinstance(array, NumericalArray)
     cls = type(array)
+    assert isinstance(array, IntegerArray)
 
-    as_int = 1
-    as_bool = True
-
-    # test __abs__
-    assert type(abs(array)) is cls
-    # test __neg__
-    assert type(-array) is cls
-    # test __pos__
-    assert type(+array) is cls
-
-    # test __add__
-    assert type(array + array) is cls
-    assert type(array + as_bool) is cls
-    assert type(array + as_int) is cls
-    # assert isinstance(array + as_float, FloatScalar)
-    # assert isinstance(array + as_complex, ComplexScalar)
-    # test __sub__
-    assert type(array - array) is cls
-    # assert type(array - as_bool) is cls  # not supported by torch
-    assert type(array - as_int) is cls
-    # assert isinstance(array - as_float, FloatScalar)
-    # assert isinstance(array - as_complex, ComplexScalar)
-    # test __mul__
-    assert type(array * array) is cls
-    assert type(array * as_bool) is cls
-    assert type(array * as_int) is cls
-    # assert isinstance(array * as_float, FloatScalar)
-    # assert isinstance(array * as_complex, ComplexScalar)
-    # test __pow__
-    assert type(array**array) is cls
-    assert type(array**as_bool) is cls
-    assert type(array**as_int) is cls
-    # assert isinstance(array**as_float, FloatScalar)
-    # assert isinstance(array**as_complex, ComplexScalar)
-    # test __mod__
-    assert type(array % array) is cls
-    assert type(array % as_bool) is cls
-    assert type(array % as_int) is cls
-    # assert isinstance(array % as_float, FloatScalar)
-    # assert isinstance(array % as_complex, ComplexScalar)  # nonsensical
-    # test __floordiv__
-    assert type(array // array) is cls
-    assert type(array // as_bool) is cls
-    assert type(array // as_int) is cls
-    # assert isinstance(array // as_float, FloatScalar)
-    # assert isinstance(array // as_complex, ComplexScalar)  # nonsensical
+    # fmt: off
+    # test unary operations
+    assert type(abs(array)) is cls      # __abs__
+    assert type(-array) is cls          # __neg__
+    assert type(+array) is cls          # __pos__
+    assert type(~array) is cls          # __invert__
+    # test vector operations
+    assert type(array == array) is cls  # __eq__
+    assert type(array != array) is cls  # __ne__
+    assert type(array < array) is cls   # __lt__
+    assert type(array <= array) is cls  # __le__
+    assert type(array > array) is cls   # __gt__
+    assert type(array >= array) is cls  # __ge__
+    assert type(array + array) is cls   # __add__
+    assert type(array - array) is cls   # __sub__
+    assert type(array * array) is cls   # __mul__
+    assert type(array**array) is cls    # __pow__
+    assert type(array // array) is cls  # __floordiv__
+    assert type(array % array) is cls   # __mod__
+    # test scalar operations (int)
+    assert type(array == INT) is cls    # __eq__
+    assert type(array != INT) is cls    # __ne__
+    assert type(array < INT) is cls     # __lt__
+    assert type(array <= INT) is cls    # __le__
+    assert type(array > INT) is cls     # __gt__
+    assert type(array >= INT) is cls    # __ge__
+    assert type(array + INT) is cls     # __add__
+    assert type(array - INT) is cls     # __sub__
+    assert type(array * INT) is cls     # __mul__
+    assert type(array**INT) is cls      # __pow__
+    assert type(array // INT) is cls    # __floordiv__
+    assert type(array % INT) is cls     # __mod__
+    # assert type(array & INT) is cls     # __and__
+    # assert type(array | INT) is cls     # __or__
+    # assert type(array ^ INT) is cls     # __xor__
+    # test reverse scalar operations (int)
+    # assert type(INT == array) is cls    # __eq__
+    # assert type(INT != array) is cls    # __ne__
+    assert type(INT < array) is cls     # __lt__
+    assert type(INT <= array) is cls    # __le__
+    assert type(INT > array) is cls     # __gt__
+    assert type(INT >= array) is cls    # __ge__
+    assert type(INT + array) is cls     # __add__
+    assert type(INT - array) is cls     # __sub__
+    assert type(INT * array) is cls     # __mul__
+    assert type(INT**array) is cls      # __pow__
+    assert type(INT // array) is cls    # __floordiv__
+    assert type(INT % array) is cls     # __mod__
+    # assert type(INT & array) is cls     # __and__
+    # assert type(INT | array) is cls     # __or__
+    # assert type(INT ^ array) is cls     # __xor__
+    # test scalar operations (float)
+    assert type(array == FLOAT) is cls    # __eq__
+    assert type(array != FLOAT) is cls    # __ne__
+    assert type(array < FLOAT) is cls     # __lt__
+    assert type(array <= FLOAT) is cls    # __le__
+    assert type(array > FLOAT) is cls     # __gt__
+    assert type(array >= FLOAT) is cls    # __ge__
+    # test scalar operations (float)
+    # assert type(FLOAT == array) is cls    # __eq__
+    # assert type(FLOAT != array) is cls    # __ne__
+    assert type(FLOAT < array) is cls     # __lt__
+    assert type(FLOAT <= array) is cls    # __le__
+    assert type(FLOAT > array) is cls     # __gt__
+    assert type(FLOAT >= array) is cls    # __ge__
+    # fmt: on
 
 
 @pytest.mark.parametrize("example", FLOAT_ARRAYS)
-def test_float_array(example: str):
+def test_float_array(example: str) -> None:
     r"""Test float arrays."""
     array = FLOAT_ARRAYS[example]
-    assert isinstance(array, NumericalArray)
     cls = type(array)
+    assert isinstance(array, FloatArray)
 
-    as_float = 1.0
-
-    # test __abs__
-    assert type(abs(array)) is cls
-    # test __neg__
-    assert type(-array) is cls
-    # test __pos__
-    assert type(+array) is cls
-
-    # test __add__
-    assert type(array + array) is cls
-    assert type(array + as_float) is cls
-    # assert isinstance(array + as_complex, ComplexScalar)
-    # test __sub__
-    assert type(array - array) is cls
-    assert type(array - as_float) is cls
-    # assert isinstance(array - as_complex, ComplexScalar)
-    # test __mul__
-    assert type(array * array) is cls
-    assert type(array * as_float) is cls
-    # assert isinstance(array * as_complex, ComplexScalar)
-    # test __truediv__
-    assert type(array / array) is cls
-    assert type(array / as_float) is cls
-    # assert isinstance(array / as_complex, ComplexScalar)
-    # test __pow__
-    assert type(array**array) is cls
-    assert type(array**as_float) is cls
-    # assert isinstance(array**as_complex, ComplexScalar)
-    # test __floordiv__
-    assert type(array // array) is cls
-    assert type(array // as_float) is cls
-    # assert isinstance(array // as_complex, ComplexScalar)  # nonsensical
+    # fmt: off
+    # test unary operations
+    assert type(abs(array)) is cls      # __abs__
+    assert type(-array) is cls          # __neg__
+    assert type(+array) is cls          # __pos__
+    # test vector operations
+    assert type(array == array) is cls  # __eq__
+    assert type(array != array) is cls  # __ne__
+    assert type(array < array) is cls   # __lt__
+    assert type(array <= array) is cls  # __le__
+    assert type(array > array) is cls   # __gt__
+    assert type(array >= array) is cls  # __ge__
+    assert type(array + array) is cls   # __add__
+    assert type(array - array) is cls   # __sub__
+    assert type(array * array) is cls   # __mul__
+    assert type(array**array) is cls    # __pow__
+    assert type(array / array) is cls   # __truediv__
+    assert type(array // array) is cls  # __floordiv__
+    assert type(array % array) is cls   # __mod__
+    # test scalar operations (float)
+    assert type(array == FLOAT) is cls  # __eq__
+    assert type(array != FLOAT) is cls  # __ne__
+    assert type(array < FLOAT) is cls   # __lt__
+    assert type(array <= FLOAT) is cls  # __le__
+    assert type(array > FLOAT) is cls   # __gt__
+    assert type(array >= FLOAT) is cls  # __ge__
+    assert type(array + FLOAT) is cls   # __add__
+    assert type(array - FLOAT) is cls   # __sub__
+    assert type(array * FLOAT) is cls   # __mul__
+    assert type(array**FLOAT) is cls    # __pow__
+    assert type(array / FLOAT) is cls   # __truediv__
+    assert type(array // FLOAT) is cls  # __floordiv__
+    assert type(array % FLOAT) is cls   # __mod__
+    # test reverse scalar operations (float)
+    # assert type(FLOAT == array) is cls  # __eq__
+    # assert type(FLOAT != array) is cls  # __ne__
+    assert type(FLOAT < array) is cls   # __lt__
+    assert type(FLOAT <= array) is cls  # __le__
+    assert type(FLOAT > array) is cls   # __gt__
+    assert type(FLOAT >= array) is cls  # __ge__
+    assert type(FLOAT + array) is cls   # __add__
+    assert type(FLOAT - array) is cls   # __sub__
+    assert type(FLOAT * array) is cls   # __mul__
+    assert type(FLOAT**array) is cls    # __pow__
+    assert type(FLOAT / array) is cls   # __truediv__
+    assert type(FLOAT // array) is cls  # __floordiv__
+    assert type(FLOAT % array) is cls   # __mod__
+    # test scalar operations (int)
+    assert type(array == INT) is cls    # __eq__
+    assert type(array != INT) is cls    # __ne__
+    assert type(array < INT) is cls     # __lt__
+    assert type(array <= INT) is cls    # __le__
+    assert type(array > INT) is cls     # __gt__
+    assert type(array >= INT) is cls    # __ge__
+    assert type(array + INT) is cls     # __add__
+    assert type(array - INT) is cls     # __sub__
+    assert type(array * INT) is cls     # __mul__
+    assert type(array**INT) is cls      # __pow__
+    assert type(array / INT) is cls     # __truediv__
+    assert type(array // INT) is cls    # __floordiv__
+    assert type(array % INT) is cls     # __mod__
+    # test reverse scalar operations (int)
+    # assert type(INT == array) is cls    # __eq__
+    # assert type(INT != array) is cls    # __ne__
+    assert type(INT < array) is cls     # __lt__
+    assert type(INT <= array) is cls    # __le__
+    assert type(INT > array) is cls     # __gt__
+    assert type(INT >= array) is cls    # __ge__
+    assert type(INT + array) is cls     # __add__
+    assert type(INT - array) is cls     # __sub__
+    assert type(INT * array) is cls     # __mul__
+    assert type(INT**array) is cls      # __pow__
+    assert type(INT / array) is cls     # __truediv__
+    assert type(INT // array) is cls    # __floordiv__
+    assert type(INT % array) is cls     # __mod__
+    # fmt: on
 
 
 @pytest.mark.parametrize("example", COMPLEX_ARRAYS)
-def test_complex_array(example: str):
+def test_complex_array(example: str) -> None:
     r"""Test complex arrays."""
     array = COMPLEX_ARRAYS[example]
-    assert isinstance(array, NumericalArray)
     cls = type(array)
+    assert isinstance(array, ComplexArray)
 
-    as_complex = complex(1.0)
-
-    # test __abs__
-    assert type(abs(array)) is cls
-    # test __neg__
-    assert type(-array) is cls
-    # test __pos__
-    assert type(+array) is cls
-
-    # test __add__
-    assert type(array + array) is cls
-    assert type(array + as_complex) is cls
-    # test __sub__
-    assert type(array - array) is cls
-    assert type(array - as_complex) is cls
-    # test __mul__
-    assert type(array * array) is cls
-    assert type(array * as_complex) is cls
-    # test __truediv__
-    assert type(array / array) is cls
-    assert type(array / as_complex) is cls
-    # test __pow__
-    assert type(array**array) is cls
-    assert type(array**as_complex) is cls
+    # fmt: off
+    # test unary operations
+    assert type(abs(array)) is cls      # __abs__
+    assert type(-array) is cls          # __neg__
+    assert type(+array) is cls          # __pos__
+    # test vector operations
+    assert type(array == array) is cls  # __eq__
+    assert type(array != array) is cls  # __ne__
+    assert type(array + array) is cls   # __add__
+    assert type(array - array) is cls   # __sub__
+    assert type(array * array) is cls   # __mul__
+    assert type(array / array) is cls   # __truediv__
+    assert type(array**array) is cls    # __pow__
+    # test scalar operations (complex)
+    assert type(array == COMPLEX) is cls  # __eq__
+    assert type(array != COMPLEX) is cls  # __ne__
+    assert type(array + COMPLEX) is cls   # __add__
+    assert type(array - COMPLEX) is cls   # __sub__
+    assert type(array * COMPLEX) is cls   # __mul__
+    assert type(array / COMPLEX) is cls   # __truediv__
+    assert type(array**COMPLEX) is cls    # __pow__
+    # test reverse scalar operations (complex)
+    # assert type(COMPLEX == array) is cls  # __eq__
+    # assert type(COMPLEX != array) is cls  # __ne__
+    assert type(COMPLEX + array) is cls   # __add__
+    assert type(COMPLEX - array) is cls   # __sub__
+    assert type(COMPLEX * array) is cls   # __mul__
+    assert type(COMPLEX / array) is cls   # __truediv__
+    assert type(COMPLEX**array) is cls    # __pow__
+    # test scalar operations (float)
+    assert type(array == FLOAT) is cls  # __eq__
+    assert type(array != FLOAT) is cls  # __ne__
+    assert type(array + FLOAT) is cls   # __add__
+    assert type(array - FLOAT) is cls   # __sub__
+    assert type(array * FLOAT) is cls   # __mul__
+    assert type(array / FLOAT) is cls   # __truediv__
+    assert type(array**FLOAT) is cls    # __pow__
+    # test reverse scalar operations (float)
+    # assert type(FLOAT == array) is cls  # __eq__
+    # assert type(FLOAT != array) is cls  # __ne__
+    assert type(FLOAT + array) is cls   # __add__
+    assert type(FLOAT - array) is cls   # __sub__
+    assert type(FLOAT * array) is cls   # __mul__
+    assert type(FLOAT / array) is cls   # __truediv__
+    assert type(FLOAT**array) is cls    # __pow__
+    # test scalar operations (int)
+    assert type(array == INT) is cls  # __eq__
+    assert type(array != INT) is cls  # __ne__
+    assert type(array + INT) is cls   # __add__
+    assert type(array - INT) is cls   # __sub__
+    assert type(array * INT) is cls   # __mul__
+    assert type(array / INT) is cls   # __truediv__
+    assert type(array**INT) is cls    # __pow__
+    # test reverse scalar operations (int)
+    # assert type(INT == array) is cls  # __eq__
+    # assert type(INT != array) is cls  # __ne__
+    assert type(INT + array) is cls   # __add__
+    assert type(INT - array) is cls   # __sub__
+    assert type(INT * array) is cls   # __mul__
+    assert type(INT / array) is cls   # __truediv__
+    assert type(INT**array) is cls    # __pow__
+    # fmt: on
 
 
 @pytest.mark.parametrize("example", TIME_ARRAYS)
-def test_time_array(example: str):
+def test_timedelta_array(example: str) -> None:
     r"""Test timedelta arrays."""
     array = TIME_ARRAYS[example]
-    assert isinstance(array, NumericalArray)
     cls = type(array)
+    assert isinstance(array, NumericalArray)
 
-    # test comparisons
-    assert type(array > array) is cls
-    assert type(array < array) is cls
-    assert type(array >= array) is cls
-    assert type(array <= array) is cls
-    assert type(array == array) is cls
-    assert type(array != array) is cls
+    # fmt: off
+    # test unary operations
+    assert type(abs(array)) is cls           # __abs__
+    assert type(-array) is cls               # __neg__
+    assert type(+array) is cls               # __pos__
+    # test vector operations
+    assert type(array == array) is cls       # __eq__
+    assert type(array != array) is cls       # __ne__
+    assert type(array < array) is cls        # __lt__
+    assert type(array <= array) is cls       # __le__
+    assert type(array > array) is cls        # __gt__
+    assert type(array >= array) is cls       # __ge__
 
-    # test __abs__
-    assert type(abs(array)) is cls
-    # test __neg__
-    assert type(-array) is cls
-    # test __pos__
-    assert type(+array) is cls
+    assert type(array + array) is cls        # __add__
+    assert type(array - array) is cls        # __sub__
 
-    # test __add__
-    assert type(array + array) is cls
-    # test __sub__
-    assert type(array - array) is cls
-    # test __mul__
-    assert type(array * 2) is cls
-    # test modulo
-    # assert type(array % array) is cls
-    # test __floordiv__
-    # assert type(array // 2) is cls
-    assert type(array // array) is cls
-    # test __truediv__
-    assert type(array / 2) is cls
+    # test scalar operations (timedelta)
+    assert type(array == TIMEDELTA) is cls   # __eq__
+    assert type(array != TIMEDELTA) is cls   # __ne__
+    assert type(array < TIMEDELTA) is cls    # __lt__
+    assert type(array <= TIMEDELTA) is cls   # __le__
+    assert type(array > TIMEDELTA) is cls    # __gt__
+    assert type(array >= TIMEDELTA) is cls   # __ge__
+
+    # test reverse scalar operations (timedelta)
+    # assert type(TIMEDELTA == array) is cls   # __eq__
+    # assert type(TIMEDELTA != array) is cls   # __ne__
+    assert type(TIMEDELTA < array) is cls    # __lt__
+    assert type(TIMEDELTA <= array) is cls   # __le__
+    assert type(TIMEDELTA > array) is cls    # __gt__
+    assert type(TIMEDELTA >= array) is cls   # __ge__
+
+    # test scalar operations (int)
+    assert type(array * 2) is cls            # __mul__
+    assert type(2 * array) is cls            # __rmul__
+    assert type(array / 2) is cls            # __truediv__
+    # fmt: on
 
 
 @pytest.mark.parametrize("example", DATE_ARRAYS)
-def test_date_array(example: str):
+def test_datetime_array(example: str) -> None:
     r"""Test datetime arrays."""
     array = DATE_ARRAYS[example]
-    assert isinstance(array, NumericalArray)
     cls = type(array)
+    ZERO = array - array
+    assert isinstance(array, DatetimeArray)
 
-    # test comparisons
-    assert type(array > array) is cls
-    assert type(array < array) is cls
-    assert type(array >= array) is cls
-    assert type(array <= array) is cls
-    assert type(array == array) is cls
-    assert type(array != array) is cls
+    # fmt: off
+    # test vector operations
+    assert type(array == array) is cls      # __eq__
+    assert type(array != array) is cls      # __ne__
+    assert type(array < array) is cls       # __lt__
+    assert type(array <= array) is cls      # __le__
+    assert type(array > array) is cls       # __gt__
+    assert type(array >= array) is cls      # __ge__
 
-    # test __sub__
-    zero = array - array
-    assert isinstance(zero, NumericalArray)
-    # test __add__
-    assert type(array + zero) is cls
+    assert type(array + ZERO) is cls        # __add__
+    assert type(array - array) is cls       # __sub__
+
+    # test scalar operations (datetime)
+    assert type(array == DATETIME) is cls   # __eq__
+    assert type(array != DATETIME) is cls   # __ne__
+    assert type(array < DATETIME) is cls    # __lt__
+    assert type(array <= DATETIME) is cls   # __le__
+    assert type(array > DATETIME) is cls    # __gt__
+    assert type(array >= DATETIME) is cls   # __ge__
+
+    assert type(array + TIMEDELTA) is cls   # __add__
+    assert type(array - DATETIME) is cls    # __sub__
+
+    # test reverse scalar operations (datetime)
+    # assert type(DATETIME == array) is cls   # __eq__
+    # assert type(DATETIME != array) is cls   # __ne__
+    assert type(DATETIME < array) is cls    # __lt__
+    assert type(DATETIME <= array) is cls   # __le__
+    assert type(DATETIME > array) is cls    # __gt__
+    assert type(DATETIME >= array) is cls   # __ge__
+
+    assert type(TIMEDELTA + array) is cls   # __add__
+    assert type(DATETIME - array) is cls    # __sub__
+    # fmt: on

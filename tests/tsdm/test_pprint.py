@@ -9,9 +9,7 @@ import pandas as pd
 import pytest
 import torch
 
-from tsdm.types.arrays import SupportsArray
-from tsdm.types.protocols import Dataclass, NTuple
-from tsdm.utils.pprint import (
+from tsdm.pprint import (
     INDENT,
     repr_array,
     repr_dataclass,
@@ -21,6 +19,8 @@ from tsdm.utils.pprint import (
     repr_sequence,
     repr_set,
 )
+from tsdm.types.mixins import SupportsArray
+from tsdm.types.protocols import Dataclass, NTuple
 
 INDENTATION = " " * INDENT
 

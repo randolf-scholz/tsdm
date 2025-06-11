@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from tsdm.types.protocols import Seq, ShapeLike, SupportsKeysAndGetItem, SupportsKwargs
+from tsdm.types.mixins import SupportsKeysAndGetItem
+from tsdm.types.protocols import Seq, ShapeLike, SupportsKwargs
 
 
 def test_supportskwargs() -> None:
@@ -65,18 +66,21 @@ def test_sequence_protocol() -> None:
     d: Sequence[int] = [1, 2, 3]
     _: Seq[int] = d
 
+    tup: tuple[int, ...] = tuple(d)
+    lst: list[int] = [1, 2, 3]
+
     def down_cast[T](x: Sequence[T]) -> Seq[T]:
         return x
 
     assert_type(down_cast([1, 2, 3]), Seq[int])
 
-    # checking list
-    seq_list: Seq[int] = [1, 2, 3]
+    # check list
+    seq_list: Seq[int] = lst
     assert isinstance(seq_list, Sequence)
     assert isinstance(seq_list, Seq)
 
-    # check inference 2
-    seq_tup: Seq[int] = (1, 2, 3)  # pyright: ignore[reportAssignmentType]
+    # check tuple
+    seq_tup: Seq[int] = tup
     assert isinstance(seq_tup, Sequence)
     assert isinstance(seq_tup, Seq)
 

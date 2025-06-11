@@ -65,26 +65,24 @@ class Dataset[Key, T](Protocol):  # +T
     from an already instantiated object.
     """
 
-    tables: Mapping[Key, T]
-    r"""Dictionary containing the tables that make up the dataset."""
-    table_names: Collection[Key]
-    r"""READ-ONLY: The names of the tables that make up the dataset."""
+    @property
+    @abstractmethod
+    def tables(self) -> Mapping[Key, T]:
+        r"""READ-ONLY: The tables that make up the dataset."""
+
+    @property
+    @abstractmethod
+    def table_names(self) -> Collection[Key]:
+        r"""READ-ONLY: The names of the tables that make up the dataset."""
+
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self: ...
+    def serialize(self, filepath: FilePath, /) -> None: ...
 
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[Key]: ...
     def __getitem__(self, key: Key, /) -> T: ...
     def __contains__(self, key: object, /) -> bool: ...
-
-    # @property
-    # @abstractmethod
-    # def tables(self) -> Mapping[Key, T]: ...
-    # @property
-    # @abstractmethod
-    # def table_names(self) -> Collection[Key]: ...
-
-    @classmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self: ...
-    def serialize(self, filepath: FilePath, /) -> None: ...
 
 
 class DatasetMeta(ProtocolMeta):
@@ -249,7 +247,7 @@ class DatasetBase[Key: str, T](
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
         # initialize tables
-        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleVariableOverride]
+        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleMethodOverride]
             self.table_names,
             self.load,
             kwargs={"initializing": True},

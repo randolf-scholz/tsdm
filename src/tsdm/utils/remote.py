@@ -367,7 +367,7 @@ def download(
 
 
 def import_from_url(
-    url: str, fname: Optional[FilePath] = None, *args: Any, **kwargs: Any
+    url: str, fname: Optional[FilePath] = None, /, *args: Any, **kwargs: Any
 ) -> None:
     r"""Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)

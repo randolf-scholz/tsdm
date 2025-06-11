@@ -24,7 +24,7 @@ from tsdm.pprint import (
     repr_set,
     repr_shortform,
 )
-from tsdm.types.arrays import SupportsArray
+from tsdm.types.mixins import SupportsArray
 from tsdm.types.protocols import Dataclass, NTuple
 from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
 
@@ -118,7 +118,7 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
         raise TypeError(f"Unsupported type {cls}.")
 
     cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]
-    return cls
+    return cls  # type: ignore[return-value]
 
 
 def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:

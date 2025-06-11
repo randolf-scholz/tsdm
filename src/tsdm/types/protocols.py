@@ -5,6 +5,7 @@ References:
     - https://docs.python.org/3/library/typing.html#typing.Protocol
     - https://numpy.org/doc/stable/reference/c-api/array.html
 """
+# ruff: noqa: N805 (__isinstancecheck__)
 
 __all__ = [
     # Classes
@@ -18,10 +19,7 @@ __all__ = [
     "MutSeq",
     "Seq",
     "Set",
-    "SupportsGetItem",
-    "SupportsKeysAndGetItem",
     "SupportsKwargs",
-    "SupportsLenAndGetItem",
     # other
     "BaseBuffer",
     "Buffer",
@@ -66,11 +64,14 @@ from typing import (
     SupportsIndex,
     TypeIs,
     _ProtocolMeta as ProtocolMeta,
+    cast,
     overload,
     runtime_checkable,
 )
 
 import typing_extensions
+
+from tsdm.types.mixins import SupportsKeysAndGetItem
 
 # region io protocols ------------------------------------------------------------------
 
@@ -119,7 +120,7 @@ class GenericIterable[T](Protocol):  # +T
     r"""Does not work currently!"""
 
     # FIXME: https://github.com/python/cpython/issues/112319
-    def __class_getitem__(cls, item: type) -> GenericAlias: ...
+    def __class_getitem__(cls, item: type, /) -> GenericAlias: ...
     def __iter__(self) -> Iterator[T]: ...
 
 
@@ -232,39 +233,16 @@ class ShapeLike(Protocol):
 # - SupportsAbs (and other Supports* classes)
 
 
-@runtime_checkable
-class SupportsGetItem[K, V](Protocol):  # -K, +V
-    r"""Protocol for objects that support `__getitem__`."""
-
-    def __getitem__(self, key: K, /) -> V: ...
-
-
-@runtime_checkable
-class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
-    r"""Protocol for objects that support `__getitem__` and `keys`."""
-
-    def keys(self) -> Iterable[K]: ...
-    def __getitem__(self, key: K, /) -> V: ...
-
-
-@runtime_checkable
-class SupportsLenAndGetItem[V](Protocol):  # +V
-    r"""Protocol for objects that support integer based `__getitem__` and `__len__`."""
-
-    def __len__(self) -> int: ...
-    def __getitem__(self, index: int, /) -> V: ...
-
-
 class _SupportsKwargsMeta(ProtocolMeta):
     r"""Metaclass for `SupportsKwargs`."""
 
-    def __instancecheck__(cls, instance: object) -> TypeIs["SupportsKwargs"]:  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs["SupportsKwargs"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return isinstance(instance, SupportsKeysAndGetItem) and all(
             isinstance(key, str)
             for key in instance.keys()  # noqa: SIM118
         )
 
-    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["SupportsKwargs"]]:  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["SupportsKwargs"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
 
 
@@ -277,7 +255,7 @@ class SupportsKwargs[V](Protocol, metaclass=_SupportsKwargsMeta):  # +V
 
 
 class _ArrayMeta(ProtocolMeta):
-    def __subclasscheck__(cls, other: type) -> TypeIs[type["Array"]]:  # noqa: N805
+    def __subclasscheck__(cls, other: type, /) -> TypeIs[type["Array"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if issubclass(other, str | bytes | Mapping):
             return False
         return super().__subclasscheck__(other)
@@ -357,9 +335,7 @@ class Seq[T](Protocol):  # +T
     r"""Protocol version of `collections.abc.Sequence`.
 
     Note:
-        We intentionally exclude `Reversible`, since `tuple` fakes this:
-        `tuple` has no attribute `__reversed__`, rather, it uses the
-        `Sequence.register(tuple)` to artificially become a nominal subtype.
+        Only compatible with `tuple[T, ...]`, not `tuple[*Ts]` when using pyright.
 
     References:
         - https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
@@ -368,34 +344,16 @@ class Seq[T](Protocol):  # +T
 
     @abstractmethod
     def __len__(self) -> int: ...
+    @abstractmethod
+    def __iter__(self) -> Iterator[T]: ...
+    @abstractmethod
+    def __contains__(self, value: object, /) -> bool: ...
     @overload
     @abstractmethod
     def __getitem__(self, index: int, /) -> T: ...
     @overload
     @abstractmethod
     def __getitem__(self, index: slice, /) -> Self: ...
-
-    # Mixin methods
-    # NOTE: intentionally excluded __reversed__
-    def __iter__(self) -> Iterator[T]:
-        for i in range(len(self)):
-            yield self[i]
-
-    def __contains__(self, value: object, /) -> bool:
-        return any(x == value or x is value for x in self)
-
-    @overload
-    def index(self, value: Any, start: int = ..., /) -> int: ...
-    @overload
-    def index(self, value: Any, start: int = ..., stop: int = ..., /) -> int: ...
-    def index(self, value: Any, start: int = 0, stop: Optional[int] = None, /) -> int:
-        for i, x in enumerate(self[start:stop]):
-            if x == value or x is value:
-                return i
-        raise ValueError(f"{value!r} is not in list")
-
-    def count(self, value: Any, /) -> int:
-        return sum(x == value or x is value for x in self)
 
 
 @runtime_checkable
@@ -403,50 +361,35 @@ class MutSeq[T](Seq[T], Protocol):
     r"""Protocol version of `collections.abc.MutableSequence`."""
 
     @overload
-    @abstractmethod
-    def __getitem__(self, index: int, /) -> T: ...
-    @overload
-    @abstractmethod
-    def __getitem__(self, index: slice, /) -> Self: ...
-    @overload
-    @abstractmethod
     def __setitem__(self, index: int, value: T, /) -> None: ...
     @overload
-    @abstractmethod
     def __setitem__(self, index: slice, value: Iterable[T], /) -> None: ...
     @overload
-    @abstractmethod
     def __delitem__(self, index: int, /) -> None: ...
     @overload
-    @abstractmethod
     def __delitem__(self, index: slice, /) -> None: ...
-    def insert(self, index: int, value: T, /) -> None: ...
 
     # Mixin Methods
     def __iadd__(self, values: Iterable[T], /) -> Self:
         self.extend(values)
         return self
 
+    def insert(self, index: int, value: T, /) -> None: ...
+
     def append(self, value: T, /) -> None:
         self.insert(len(self), value)
-
-    def clear(self, /) -> None:
-        del self[:]
 
     def extend(self, values: Iterable[T], /) -> None:
         for idx, value in enumerate(values, start=len(self)):
             self.insert(idx, value)
-
-    def reverse(self, /) -> None:
-        self[:] = self[::-1]
 
     def pop(self, index: int = -1, /) -> T:
         value = self[index]
         del self[index]
         return value
 
-    def remove(self, value: T, /) -> None:
-        del self[self.index(value)]
+    def clear(self, /) -> None:
+        del self[:]
 
 
 @runtime_checkable
@@ -458,13 +401,14 @@ class Map[K, V](Collection[K], Protocol):  # K, +V
 
     # Mixin Methods
     def keys(self) -> KeysView[K]:
-        return KeysView(self)  # type: ignore[arg-type]
+        # NOTE: MappingView really only needs __contains__, __iter__, and __getitem__.
+        return KeysView(cast(Mapping, self))
 
     def values(self) -> ValuesView[V]:
-        return ValuesView(self)  # type: ignore[arg-type]
+        return ValuesView(cast(Mapping, self))
 
     def items(self) -> ItemsView[K, V]:
-        return ItemsView(self)  # type: ignore[arg-type]
+        return ItemsView(cast(Mapping, self))
 
     # NOTE: dict.get has default as positional-only, whereas Mapping defines it as
     #   positional-or-keyword. We follow the weaker dict definition.
@@ -485,7 +429,7 @@ class Map[K, V](Collection[K], Protocol):  # K, +V
 
     def __contains__(self, key: object, /) -> bool:
         try:
-            self[key]  # type: ignore[index]
+            self[key]  # type: ignore[index]  # pyright: ignore[reportArgumentType]
         except KeyError:
             return False
         return True
@@ -505,6 +449,7 @@ class MutMap[K, V](Map[K, V], Protocol):
 
     # NOTE: dict.pop has default as positional-only, whereas Mapping defines it as
     #   positional-or-keyword. We follow the weaker dict definition.
+    # fmt: off
     @overload
     def pop(self, key: K, /) -> V: ...
     @overload
@@ -513,9 +458,7 @@ class MutMap[K, V](Map[K, V], Protocol):
     def pop[T](self, key: K, default: T, /) -> V | T: ...
     def popitem(self) -> tuple[K, V]: ...
     @overload
-    def setdefault[T](
-        self: "MutMap[K, T | None]", key: K, default: None = ..., /
-    ) -> T | None: ...
+    def setdefault[T](self: "MutMap[K, T | None]", key: K, default: None = ..., /) -> T | None: ...
     @overload
     def setdefault(self, key: K, default: V, /) -> V: ...
     @overload
@@ -524,6 +467,7 @@ class MutMap[K, V](Map[K, V], Protocol):
     def update(self, m: Iterable[tuple[K, V]], /, **kwargs: V) -> None: ...
     @overload
     def update(self, **kwargs: V) -> None: ...
+    # fmt: on
 
 
 # endregion stdlib protocols -----------------------------------------------------------
@@ -535,10 +479,10 @@ class MutMap[K, V](Map[K, V], Protocol):
 class _DataclassMeta(ProtocolMeta):
     r"""Metaclass for `Dataclass`."""
 
-    def __instancecheck__(cls, instance: object) -> TypeIs["Dataclass"]:  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs["Dataclass"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["Dataclass"]]:  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["Dataclass"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         fields = getattr(subclass, "__dataclass_fields__", None)
         return isinstance(fields, dict)
 
@@ -565,10 +509,10 @@ class _NTupleMeta(ProtocolMeta):
     _fields: ClassVar[tuple[str, ...]] = ()
     r"""The fields of the namedtuple."""
 
-    def __instancecheck__(cls, instance: object) -> TypeIs["NTuple"]:  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs["NTuple"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["NTuple"]]:  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["NTuple"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if ABCMeta.__subclasscheck__(cls, subclass):
             return True
         bases = get_original_bases(subclass)
@@ -623,10 +567,10 @@ class _SlottedMeta(ProtocolMeta):
     This issue will make the need for metaclass obsolete.
     """
 
-    def __instancecheck__(cls, instance: object) -> TypeIs["Slotted"]:  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs["Slotted"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type) -> TypeIs[type["Slotted"]]:  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["Slotted"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         slots = getattr(subclass, "__slots__", None)
         return isinstance(slots, str | Iterable)
 
@@ -639,11 +583,11 @@ class Slotted(Protocol, metaclass=_SlottedMeta):
 
 
 def issubclass_dataclass(cls: type, /) -> TypeIs[type[Dataclass]]:
-    return issubclass(cls, Dataclass)  # type: ignore[misc]
+    return issubclass(cls, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def isinstance_dataclass(obj: object, /) -> TypeIs[Dataclass]:
-    return issubclass(type(obj), Dataclass)  # type: ignore[misc]
+    return issubclass(type(obj), Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 @overload
@@ -653,16 +597,16 @@ def is_dataclass(obj: object, /) -> TypeIs[Dataclass]: ...
 def is_dataclass(obj: object, /) -> TypeIs[Dataclass] | TypeIs[type[Dataclass]]:
     r"""Check if the object is a dataclass."""
     if isinstance(obj, type):
-        return issubclass(obj, Dataclass)  # type: ignore[misc]
-    return issubclass(type(obj), Dataclass)  # type: ignore[misc]
+        return issubclass(obj, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    return issubclass(type(obj), Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def issubclass_namedtuple(cls: type, /) -> TypeIs[type[NTuple]]:
-    return issubclass(cls, NTuple)  # type: ignore[misc]
+    return issubclass(cls, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def isinstance_namedtuple(obj: object, /) -> TypeIs[NTuple]:
-    return issubclass(type(obj), NTuple)  # type: ignore[misc]
+    return issubclass(type(obj), NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 @overload
@@ -672,8 +616,8 @@ def is_namedtuple(obj: object, /) -> TypeIs[NTuple]: ...
 def is_namedtuple(obj: object, /) -> TypeIs[NTuple] | TypeIs[type[NTuple]]:
     r"""Check if the object is a namedtuple."""
     if isinstance(obj, type):
-        return issubclass(obj, NTuple)  # type: ignore[misc]
-    return issubclass(type(obj), NTuple)  # type: ignore[misc]
+        return issubclass(obj, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    return issubclass(type(obj), NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def is_slotted(obj: object, /) -> TypeIs[Slotted]:

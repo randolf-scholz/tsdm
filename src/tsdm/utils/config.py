@@ -114,7 +114,7 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
         r"""Returns permutation-invariant hash on `items()`."""
         return hash(frozenset(self.items()))
 
-    def __or__(self, other: dict) -> Self:
+    def __or__(self, other: dict, /) -> Self:
         r"""Return a new dictionary with the keys from both dictionaries."""
         res: dict = {}
         res.update(self)

@@ -1,6 +1,5 @@
 r"""Test Sliding Window Sampler."""
 # FIXME: https://github.com/python/mypy/pull/16020
-# mypy: ignore-errors
 
 import datetime
 import logging
@@ -11,28 +10,39 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.typing import NDArray
-from pandas import Series
 
 from tsdm.constants import RNG
+from tsdm.data.datasets import Indexable
 from tsdm.random.samplers import SlidingWindowSampler
-from tsdm.types.scalars import TimeStamp
+from tsdm.types.scalars import TimestampScalar
 from tsdm.utils import flatten_dict
 
 __logger__ = logging.getLogger(__name__)
-T = True
-F = False
+Y = True
+N = False
 # type S = Literal["slices"]  # slice
 # type M = Literal["masks"]  # bool
 # type B = Literal["bounds"]  # tuple
 # type W = Literal["windows"]  # windows (list)
 # type U = str  # unknown (not statically known)
 MODES = SlidingWindowSampler.MODE
-type B = Literal[MODES.B]
-type M = Literal[MODES.M]
-type S = Literal[MODES.S]
-type W = Literal[MODES.W]
-type U = MODES
-
+MODE = SlidingWindowSampler.MODE
+type B = Literal[MODES.B]  # -> tuple[DT, DT]
+type M = Literal[MODES.M]  # -> array[bool]
+type S = Literal[MODES.S]  # -> slice[DT, DT]
+type I = Literal[MODES.I]  # -> interval[DT]
+type T = Literal[MODES.T]  # -> array[DT]
+type X = Literal[MODES.X]  # -> array[int]
+type U = Literal["unknown"]  # fallback
+# type Modes = B | M | S | I | T | X
+type Mode = Literal[
+    "bound",
+    "mask",
+    "slice",
+    "interval",
+    "timestamp",
+    "index",
+]
 
 type ONE = Literal["one"]
 type MULTI = Literal["multi"]
@@ -218,113 +228,113 @@ EXPECTED_RESULTS_DISCRETE_SLICES = {
 EXPECTED_RESULTS_DISCRETE_MASKS = {
     # horizons, stride=1, drop_last=True
     (2, 1, True): [
-        np.array([T, T, F, F, F, F, F, F, F, F]),  # (11, 13)
-        np.array([F, T, T, F, F, F, F, F, F, F]),  # (12, 14)
-        np.array([F, F, T, T, F, F, F, F, F, F]),  # (13, 15)
-        np.array([F, F, F, T, T, F, F, F, F, F]),  # (14, 16)
-        np.array([F, F, F, F, T, T, F, F, F, F]),  # (15, 17)
-        np.array([F, F, F, F, F, T, T, F, F, F]),  # (16, 18)
-        np.array([F, F, F, F, F, F, T, T, F, F]),  # (17, 19)
-        np.array([F, F, F, F, F, F, F, T, T, F]),  # (18, 20)
+        np.array([Y, Y, N, N, N, N, N, N, N, N]),  # (11, 13)
+        np.array([N, Y, Y, N, N, N, N, N, N, N]),  # (12, 14)
+        np.array([N, N, Y, Y, N, N, N, N, N, N]),  # (13, 15)
+        np.array([N, N, N, Y, Y, N, N, N, N, N]),  # (14, 16)
+        np.array([N, N, N, N, Y, Y, N, N, N, N]),  # (15, 17)
+        np.array([N, N, N, N, N, Y, Y, N, N, N]),  # (16, 18)
+        np.array([N, N, N, N, N, N, Y, Y, N, N]),  # (17, 19)
+        np.array([N, N, N, N, N, N, N, Y, Y, N]),  # (18, 20)
         # excluded: np.array([F, F, F, F, F, F, F, F, T, T]),
     ],
     (3, 1, True): [
-        np.array([T, T, T, F, F, F, F, F, F, F]),  # (11, 14)
-        np.array([F, T, T, T, F, F, F, F, F, F]),  # (12, 15)
-        np.array([F, F, T, T, T, F, F, F, F, F]),  # (13, 16)
-        np.array([F, F, F, T, T, T, F, F, F, F]),  # (14, 17)
-        np.array([F, F, F, F, T, T, T, F, F, F]),  # (15, 18)
-        np.array([F, F, F, F, F, T, T, T, F, F]),  # (16, 19)
-        np.array([F, F, F, F, F, F, T, T, T, F]),  # (17, 20)
+        np.array([Y, Y, Y, N, N, N, N, N, N, N]),  # (11, 14)
+        np.array([N, Y, Y, Y, N, N, N, N, N, N]),  # (12, 15)
+        np.array([N, N, Y, Y, Y, N, N, N, N, N]),  # (13, 16)
+        np.array([N, N, N, Y, Y, Y, N, N, N, N]),  # (14, 17)
+        np.array([N, N, N, N, Y, Y, Y, N, N, N]),  # (15, 18)
+        np.array([N, N, N, N, N, Y, Y, Y, N, N]),  # (16, 19)
+        np.array([N, N, N, N, N, N, Y, Y, Y, N]),  # (17, 20)
         # excluded: np.array([F, F, F, F, F, F, F, T, T, T]),
     ],
     (4, 1, True): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),  # (11, 15)
-        np.array([F, T, T, T, T, F, F, F, F, F]),  # (12, 16)
-        np.array([F, F, T, T, T, T, F, F, F, F]),  # (13, 17)
-        np.array([F, F, F, T, T, T, T, F, F, F]),  # (14, 18)
-        np.array([F, F, F, F, T, T, T, T, F, F]),  # (15, 19)
-        np.array([F, F, F, F, F, T, T, T, T, F]),  # (16, 20)
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),  # (11, 15)
+        np.array([N, Y, Y, Y, Y, N, N, N, N, N]),  # (12, 16)
+        np.array([N, N, Y, Y, Y, Y, N, N, N, N]),  # (13, 17)
+        np.array([N, N, N, Y, Y, Y, Y, N, N, N]),  # (14, 18)
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),  # (15, 19)
+        np.array([N, N, N, N, N, Y, Y, Y, Y, N]),  # (16, 20)
         # excluded: np.array([F, F, F, F, F, F, T, T, T, T]),
     ],
     # horizons, stride=2, drop_last=True
     (2, 2, True): [
-        np.array([T, T, F, F, F, F, F, F, F, F]),  # (11, 13)
-        np.array([F, F, T, T, F, F, F, F, F, F]),  # (13, 15)
-        np.array([F, F, F, F, T, T, F, F, F, F]),  # (15, 17)
-        np.array([F, F, F, F, F, F, T, T, F, F]),  # (17, 19)
+        np.array([Y, Y, N, N, N, N, N, N, N, N]),  # (11, 13)
+        np.array([N, N, Y, Y, N, N, N, N, N, N]),  # (13, 15)
+        np.array([N, N, N, N, Y, Y, N, N, N, N]),  # (15, 17)
+        np.array([N, N, N, N, N, N, Y, Y, N, N]),  # (17, 19)
         # excluded: np.array([F, F, F, F, F, F, F, F, T, T]),
     ],
     (3, 2, True): [
-        np.array([T, T, T, F, F, F, F, F, F, F]),  # (11, 14)
-        np.array([F, F, T, T, T, F, F, F, F, F]),  # (13, 16)
-        np.array([F, F, F, F, T, T, T, F, F, F]),  # (15, 18)
-        np.array([F, F, F, F, F, F, T, T, T, F]),  # (17, 20)
+        np.array([Y, Y, Y, N, N, N, N, N, N, N]),  # (11, 14)
+        np.array([N, N, Y, Y, Y, N, N, N, N, N]),  # (13, 16)
+        np.array([N, N, N, N, Y, Y, Y, N, N, N]),  # (15, 18)
+        np.array([N, N, N, N, N, N, Y, Y, Y, N]),  # (17, 20)
     ],
     (4, 2, True): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),  # (11, 15)
-        np.array([F, F, T, T, T, T, F, F, F, F]),  # (13, 17)
-        np.array([F, F, F, F, T, T, T, T, F, F]),  # (15, 19)
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),  # (11, 15)
+        np.array([N, N, Y, Y, Y, Y, N, N, N, N]),  # (13, 17)
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),  # (15, 19)
         # excluded: np.array([F, F, F, F, F, F, T, T, T, T]),
     ],
     # horizons, stride=1, drop_last=False
     (2, 1, False): [
-        np.array([T, T, F, F, F, F, F, F, F, F]),
-        np.array([F, T, T, F, F, F, F, F, F, F]),
-        np.array([F, F, T, T, F, F, F, F, F, F]),
-        np.array([F, F, F, T, T, F, F, F, F, F]),
-        np.array([F, F, F, F, T, T, F, F, F, F]),
-        np.array([F, F, F, F, F, T, T, F, F, F]),
-        np.array([F, F, F, F, F, F, T, T, F, F]),
-        np.array([F, F, F, F, F, F, F, T, T, F]),
-        np.array([F, F, F, F, F, F, F, F, T, T]),
-        np.array([F, F, F, F, F, F, F, F, F, T]),
+        np.array([Y, Y, N, N, N, N, N, N, N, N]),
+        np.array([N, Y, Y, N, N, N, N, N, N, N]),
+        np.array([N, N, Y, Y, N, N, N, N, N, N]),
+        np.array([N, N, N, Y, Y, N, N, N, N, N]),
+        np.array([N, N, N, N, Y, Y, N, N, N, N]),
+        np.array([N, N, N, N, N, Y, Y, N, N, N]),
+        np.array([N, N, N, N, N, N, Y, Y, N, N]),
+        np.array([N, N, N, N, N, N, N, Y, Y, N]),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),
+        np.array([N, N, N, N, N, N, N, N, N, Y]),
     ],
     (3, 1, False): [
-        np.array([T, T, T, F, F, F, F, F, F, F]),
-        np.array([F, T, T, T, F, F, F, F, F, F]),
-        np.array([F, F, T, T, T, F, F, F, F, F]),
-        np.array([F, F, F, T, T, T, F, F, F, F]),
-        np.array([F, F, F, F, T, T, T, F, F, F]),
-        np.array([F, F, F, F, F, T, T, T, F, F]),
-        np.array([F, F, F, F, F, F, T, T, T, F]),
-        np.array([F, F, F, F, F, F, F, T, T, T]),
-        np.array([F, F, F, F, F, F, F, F, T, T]),
-        np.array([F, F, F, F, F, F, F, F, F, T]),
+        np.array([Y, Y, Y, N, N, N, N, N, N, N]),
+        np.array([N, Y, Y, Y, N, N, N, N, N, N]),
+        np.array([N, N, Y, Y, Y, N, N, N, N, N]),
+        np.array([N, N, N, Y, Y, Y, N, N, N, N]),
+        np.array([N, N, N, N, Y, Y, Y, N, N, N]),
+        np.array([N, N, N, N, N, Y, Y, Y, N, N]),
+        np.array([N, N, N, N, N, N, Y, Y, Y, N]),
+        np.array([N, N, N, N, N, N, N, Y, Y, Y]),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),
+        np.array([N, N, N, N, N, N, N, N, N, Y]),
     ],
     (4, 1, False): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),
-        np.array([F, T, T, T, T, F, F, F, F, F]),
-        np.array([F, F, T, T, T, T, F, F, F, F]),
-        np.array([F, F, F, T, T, T, T, F, F, F]),
-        np.array([F, F, F, F, T, T, T, T, F, F]),
-        np.array([F, F, F, F, F, T, T, T, T, F]),
-        np.array([F, F, F, F, F, F, T, T, T, T]),
-        np.array([F, F, F, F, F, F, F, T, T, T]),
-        np.array([F, F, F, F, F, F, F, F, T, T]),
-        np.array([F, F, F, F, F, F, F, F, F, T]),
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),
+        np.array([N, Y, Y, Y, Y, N, N, N, N, N]),
+        np.array([N, N, Y, Y, Y, Y, N, N, N, N]),
+        np.array([N, N, N, Y, Y, Y, Y, N, N, N]),
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),
+        np.array([N, N, N, N, N, Y, Y, Y, Y, N]),
+        np.array([N, N, N, N, N, N, Y, Y, Y, Y]),
+        np.array([N, N, N, N, N, N, N, Y, Y, Y]),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),
+        np.array([N, N, N, N, N, N, N, N, N, Y]),
     ],
     # horizons, stride=2, drop_last=False
     (2, 2, False): [
-        np.array([T, T, F, F, F, F, F, F, F, F]),
-        np.array([F, F, T, T, F, F, F, F, F, F]),
-        np.array([F, F, F, F, T, T, F, F, F, F]),
-        np.array([F, F, F, F, F, F, T, T, F, F]),
-        np.array([F, F, F, F, F, F, F, F, T, T]),
+        np.array([Y, Y, N, N, N, N, N, N, N, N]),
+        np.array([N, N, Y, Y, N, N, N, N, N, N]),
+        np.array([N, N, N, N, Y, Y, N, N, N, N]),
+        np.array([N, N, N, N, N, N, Y, Y, N, N]),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),
     ],
     (3, 2, False): [
-        np.array([T, T, T, F, F, F, F, F, F, F]),
-        np.array([F, F, T, T, T, F, F, F, F, F]),
-        np.array([F, F, F, F, T, T, T, F, F, F]),
-        np.array([F, F, F, F, F, F, T, T, T, F]),
-        np.array([F, F, F, F, F, F, F, F, T, T]),
+        np.array([Y, Y, Y, N, N, N, N, N, N, N]),
+        np.array([N, N, Y, Y, Y, N, N, N, N, N]),
+        np.array([N, N, N, N, Y, Y, Y, N, N, N]),
+        np.array([N, N, N, N, N, N, Y, Y, Y, N]),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),
     ],
     (4, 2, False): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),
-        np.array([F, F, T, T, T, T, F, F, F, F]),
-        np.array([F, F, F, F, T, T, T, T, F, F]),
-        np.array([F, F, F, F, F, F, T, T, T, T]),
-        np.array([F, F, F, F, F, F, F, F, T, T]),
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),
+        np.array([N, N, Y, Y, Y, Y, N, N, N, N]),
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),
+        np.array([N, N, N, N, N, N, Y, Y, Y, Y]),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),
     ],
 }
 EXPECTED_RESULTS_DISCRETE_WINDOWS = {
@@ -575,75 +585,75 @@ EXPECTED_RESULTS_CONTINUOUS_WINDOWS = {
 EXPECTED_RESULTS_CONTINUOUS_MASKS = {
     # horizons, stride=1.0, drop_last=True
     (2.5, 1.0, True): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
-        np.array([F, F, T, T, T, F, F, F, F, F]),  # (3.5, 6.0)
-        np.array([F, F, F, F, T, T, T, T, F, F]),  # (4.5, 7.0)
-        np.array([F, F, F, F, T, T, T, T, T, F]),  # (5.5, 8.0)
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),  # (2.5, 5.0)
+        np.array([N, N, Y, Y, Y, N, N, N, N, N]),  # (3.5, 6.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),  # (4.5, 7.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, N]),  # (5.5, 8.0)
     ],
     (3.5, 1.0, True): [
-        np.array([T, T, T, T, T, F, F, F, F, F]),  # (2.5, 6.0)
-        np.array([F, F, T, T, T, T, T, T, F, F]),  # (3.5, 7.0)
-        np.array([F, F, F, F, T, T, T, T, T, F]),  # (4.5, 8.0)
+        np.array([Y, Y, Y, Y, Y, N, N, N, N, N]),  # (2.5, 6.0)
+        np.array([N, N, Y, Y, Y, Y, Y, Y, N, N]),  # (3.5, 7.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, N]),  # (4.5, 8.0)
     ],
     (4.5, 1.0, True): [
-        np.array([T, T, T, T, T, T, T, T, F, F]),  # (2.5, 7.0)
-        np.array([F, F, T, T, T, T, T, T, T, F]),  # (3.5, 8.0)
+        np.array([Y, Y, Y, Y, Y, Y, Y, Y, N, N]),  # (2.5, 7.0)
+        np.array([N, N, Y, Y, Y, Y, Y, Y, Y, N]),  # (3.5, 8.0)
     ],
     # horizons, stride=2.5, drop_last=True
     (2.5, 2.5, True): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
-        np.array([F, F, F, F, T, T, T, T, F, F]),  # (5.0, 7.5)
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),  # (2.5, 5.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),  # (5.0, 7.5)
     ],
     (3.5, 2.5, True): [
-        np.array([T, T, T, T, T, F, F, F, F, F]),  # (2.5, 6.0)
-        np.array([F, F, F, F, T, T, T, T, T, F]),  # (5.0, 8.5)
+        np.array([Y, Y, Y, Y, Y, N, N, N, N, N]),  # (2.5, 6.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, N]),  # (5.0, 8.5)
     ],
     (4.5, 2.5, True): [
-        np.array([T, T, T, T, T, T, T, T, F, F]),  # (2.5, 7.0)
+        np.array([Y, Y, Y, Y, Y, Y, Y, Y, N, N]),  # (2.5, 7.0)
     ],
     # horizons, stride=1.0, drop_last=False
     (2.5, 1.0, False): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
-        np.array([F, F, T, T, T, F, F, F, F, F]),  # (3.5, 6.0)
-        np.array([F, F, F, F, T, T, T, T, F, F]),  # (4.5, 7.0)
-        np.array([F, F, F, F, T, T, T, T, T, F]),  # (5.5, 8.0)
-        np.array([F, F, F, F, F, F, F, T, T, T]),  # (6.5, 9.0)
-        np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 10.0)
-        np.array([F, F, F, F, F, F, F, F, F, T]),  # (8.5, 11.0)
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),  # (2.5, 5.0)
+        np.array([N, N, Y, Y, Y, N, N, N, N, N]),  # (3.5, 6.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),  # (4.5, 7.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, N]),  # (5.5, 8.0)
+        np.array([N, N, N, N, N, N, N, Y, Y, Y]),  # (6.5, 9.0)
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),  # (7.5, 10.0)
+        np.array([N, N, N, N, N, N, N, N, N, Y]),  # (8.5, 11.0)
     ],
     (3.5, 1.0, False): [
-        np.array([T, T, T, T, T, F, F, F, F, F]),  # (2.5, 6.0)
-        np.array([F, F, T, T, T, T, T, T, F, F]),  # (3.5, 7.0)
-        np.array([F, F, F, F, T, T, T, T, T, F]),  # (4.5, 8.0)
-        np.array([F, F, F, F, T, T, T, T, T, T]),  # (5.5, 9.0)
-        np.array([F, F, F, F, F, F, F, T, T, T]),  # (6.5, 10.0)
-        np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 11.0)
-        np.array([F, F, F, F, F, F, F, F, F, T]),  # (8.5, 12.0)
+        np.array([Y, Y, Y, Y, Y, N, N, N, N, N]),  # (2.5, 6.0)
+        np.array([N, N, Y, Y, Y, Y, Y, Y, N, N]),  # (3.5, 7.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, N]),  # (4.5, 8.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, Y]),  # (5.5, 9.0)
+        np.array([N, N, N, N, N, N, N, Y, Y, Y]),  # (6.5, 10.0)
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),  # (7.5, 11.0)
+        np.array([N, N, N, N, N, N, N, N, N, Y]),  # (8.5, 12.0)
     ],
     (4.5, 1.0, False): [
-        np.array([T, T, T, T, T, T, T, T, F, F]),  # (2.5, 7.0),
-        np.array([F, F, T, T, T, T, T, T, T, F]),  # (3.5, 8.0),
-        np.array([F, F, F, F, T, T, T, T, T, T]),  # (4.5, 9.0),
-        np.array([F, F, F, F, T, T, T, T, T, T]),  # (5.5, 10.0),
-        np.array([F, F, F, F, F, F, F, T, T, T]),  # (6.5, 11.0),
-        np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 12.0),
-        np.array([F, F, F, F, F, F, F, F, F, T]),  # (8.5, 13.0),
+        np.array([Y, Y, Y, Y, Y, Y, Y, Y, N, N]),  # (2.5, 7.0),
+        np.array([N, N, Y, Y, Y, Y, Y, Y, Y, N]),  # (3.5, 8.0),
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, Y]),  # (4.5, 9.0),
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, Y]),  # (5.5, 10.0),
+        np.array([N, N, N, N, N, N, N, Y, Y, Y]),  # (6.5, 11.0),
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),  # (7.5, 12.0),
+        np.array([N, N, N, N, N, N, N, N, N, Y]),  # (8.5, 13.0),
     ],
     # horizons, stride=2.5, drop_last=False
     (2.5, 2.5, False): [
-        np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
-        np.array([F, F, F, F, T, T, T, T, F, F]),  # (5.0, 7.5)
-        np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 10.0)
+        np.array([Y, Y, Y, Y, N, N, N, N, N, N]),  # (2.5, 5.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, N, N]),  # (5.0, 7.5)
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),  # (7.5, 10.0)
     ],
     (3.5, 2.5, False): [
-        np.array([T, T, T, T, T, F, F, F, F, F]),  # (2.5, 6.0)
-        np.array([F, F, F, F, T, T, T, T, T, F]),  # (5.0, 8.5)
-        np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 11.0)
+        np.array([Y, Y, Y, Y, Y, N, N, N, N, N]),  # (2.5, 6.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, N]),  # (5.0, 8.5)
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),  # (7.5, 11.0)
     ],
     (4.5, 2.5, False): [
-        np.array([T, T, T, T, T, T, T, T, F, F]),  # (2.5, 7.0)
-        np.array([F, F, F, F, T, T, T, T, T, T]),  # (5.0, 9.5)
-        np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 12.0)
+        np.array([Y, Y, Y, Y, Y, Y, Y, Y, N, N]),  # (2.5, 7.0)
+        np.array([N, N, N, N, Y, Y, Y, Y, Y, Y]),  # (5.0, 9.5)
+        np.array([N, N, N, N, N, N, N, N, Y, Y]),  # (7.5, 12.0)
     ],
 }
 EXPECTED_RESULTS_CONTINUOUS_SLICES = {
@@ -740,7 +750,7 @@ EXPECTED_RESULTS_CONTINUOUS_DATA: dict = flatten_dict(
 @pytest.mark.parametrize("horizons", [2, 3, 4], ids=lambda x: f"horizon={x}")
 @pytest.mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
 def test_sliding_window_sampler_discrete(
-    *, drop_last: bool, stride: int, horizons: int, mode: str
+    *, drop_last: bool, stride: int, horizons: int, mode: Mode
 ) -> None:
     r"""Test the SlidingWindowSampler."""
     sampler = SlidingWindowSampler(
@@ -755,7 +765,8 @@ def test_sliding_window_sampler_discrete(
     sample = result[0]
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[int, U, ONE])
+    assert_type(sampler, SlidingWindowSampler[int, MODE, ONE])
+    assert_type(sampler.mode, SlidingWindowSampler.MODE)
     assert_type(iter(sampler), Iterator[Any])
     assert_type(result, list[Any])
     assert_type(sample, Any)
@@ -796,6 +807,7 @@ def test_sliding_window_sampler_continuous(
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[float, U, ONE])
+    assert_type(sampler.mode, MODES)
     assert_type(iter(sampler), Iterator[Any])
     assert_type(result, list[Any])
     assert_type(sample, Any)
@@ -818,15 +830,17 @@ def test_sliding_window_sampler_continuous(
 PYTHON_DATES = [
     datetime.datetime(2020, 1, 1) + datetime.timedelta(days=i) for i in range(10)
 ]
-DATETIME_DATA = {
+DATETIME_DATA: dict[str, Indexable[Any]] = {
     "list-python": PYTHON_DATES,
     "list-pandas": [pd.Timestamp(d) for d in PYTHON_DATES],
     "numpy": np.array(PYTHON_DATES, dtype="datetime64[ns]"),
-    "series-numpy": Series(PYTHON_DATES, dtype="datetime64[ns]"),
-    "series-pyarrow": Series(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
+    "series-numpy": pd.Series(PYTHON_DATES, dtype="datetime64[ns]"),
+    "series-pyarrow": pd.Series(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
     "index-numpy": pd.Index(PYTHON_DATES, dtype="datetime64[ns]"),
     "index-pyarrow": pd.Index(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
 }
+
+_____s: Indexable[Any] = pd.Series(PYTHON_DATES, dtype="datetime64[ns]")
 
 
 @pytest.mark.parametrize("mode", SlidingWindowSampler.MODE)
@@ -847,6 +861,7 @@ def test_datetime_data(example: str, mode: str) -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[Any, U, ONE])
+    assert_type(sampler.mode, MODES)
     assert_type(iter(sampler), Iterator[Any])
     assert_type(result, list[Any])
     assert_type(sample, Any)
@@ -876,11 +891,11 @@ def test_datetime_data(example: str, mode: str) -> None:
 
 # increasing data with random step size
 PYTHON_INTEGERS = [-7, 0, 3, 4, 6, 11, 12, 14, 18, 20, 21]
-INTEGER_DATA: dict[str, Any] = {
+INTEGER_DATA: dict[str, Indexable[Any]] = {
     "python-int": PYTHON_INTEGERS,
     "numpy-int64": np.array(PYTHON_INTEGERS, dtype=np.int64),
     "numpy-int32": np.array(PYTHON_INTEGERS, dtype=np.int32),
-    "series-pyarrow-int32": Series(PYTHON_INTEGERS, dtype="int32[pyarrow]"),
+    "series-pyarrow-int32": pd.Series(PYTHON_INTEGERS, dtype="int32[pyarrow]"),
     "index-pyarrow-int32": pd.Index(PYTHON_INTEGERS, dtype="int32[pyarrow]"),
 }
 
@@ -903,6 +918,7 @@ def test_integer_data(example: str, mode: SlidingWindowSampler.Mode) -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[Any, U, ONE])
+    assert_type(sampler.mode, MODES)
     assert_type(iter(sampler), Iterator[Any])
     assert_type(result, list)
     assert_type(sample, Any)
@@ -929,11 +945,11 @@ def test_integer_data(example: str, mode: SlidingWindowSampler.Mode) -> None:
 
 
 PYTHON_FLOATS = [-2.3, 0.1, 4.2, 5.3, 5.5, 5.6, 6.0, 8.4, 10.7]
-FLOAT_DATA = {
+FLOAT_DATA: dict[str, Indexable[Any]] = {
     "python-float": PYTHON_FLOATS,
     "numpy-float64": np.array(PYTHON_FLOATS, dtype=np.float64),
     "numpy-float32": np.array(PYTHON_FLOATS, dtype=np.float32),
-    "series-pyarrow-float32": Series(PYTHON_FLOATS, dtype="float32[pyarrow]"),
+    "series-pyarrow-float32": pd.Series(PYTHON_FLOATS, dtype="float32[pyarrow]"),
     "index-pyarrow-float32": pd.Index(PYTHON_FLOATS, dtype="float32[pyarrow]"),
 }
 
@@ -956,6 +972,7 @@ def test_float_data(example: str, mode: str) -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[Any, U, ONE])
+    assert_type(sampler.mode, MODES)
     assert_type(iter(sampler), Iterator[Any])
     assert_type(result, list[Any])
     assert_type(sample, Any)
@@ -985,13 +1002,12 @@ def test_float_data(example: str, mode: str) -> None:
 # NOTE: here we have statically known mode, so they should be type checked.
 def test_pandas_timestamps() -> None:
     r"""Test the SlidingWindowSampler."""
-    timedeltas = Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
+    timedeltas = pd.Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
-    time: list[TimeStamp] = pd.concat([  # white lie, as its not a list
-        Series([tmin]),
+    time = pd.concat([
+        pd.Series([tmin]),
         tmin + timedeltas.cumsum(),
     ]).reset_index(drop=True)
-
     sampler = SlidingWindowSampler(
         time,
         stride="5m",
@@ -1001,8 +1017,9 @@ def test_pandas_timestamps() -> None:
         drop_last=False,
     )
     result = list(sampler)
-    assert_type(sampler, SlidingWindowSampler[TimeStamp, B, ONE])
-    assert_type(result, list[tuple[TimeStamp, TimeStamp]])
+    assert_type(sampler, SlidingWindowSampler[pd.Timestamp, B, ONE])
+    assert_type(sampler.mode, B)
+    assert_type(result, list[tuple[TimestampScalar, TimestampScalar]])
 
 
 def test_windows_single() -> None:
@@ -1022,7 +1039,7 @@ def test_windows_single() -> None:
     sample = result[0]
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[int, W, ONE])
+    assert_type(sampler, SlidingWindowSampler[int, T, ONE])
     assert_type(iter(sampler), Iterator[NDArray])
     assert_type(result, list[NDArray])
     assert_type(sample, NDArray)
@@ -1072,7 +1089,8 @@ def test_windows_multi() -> None:
     sample = result[0]
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[int, W, MULTI])
+    assert_type(sampler, SlidingWindowSampler[int, T, MULTI])
+    assert_type(sampler.mode, B)
     assert_type(iter(sampler), Iterator[list[NDArray]])
     assert_type(result, list[list[NDArray]])
     assert_type(sample, list[NDArray])
@@ -1111,6 +1129,7 @@ def test_masks_single() -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[int, M, ONE])
+    assert_type(sampler.mode, M)
     assert_type(iter(sampler), Iterator[NDArray[np.bool_]])
     assert_type(result, list[NDArray[np.bool_]])
     assert_type(sample, NDArray[np.bool_])
@@ -1120,11 +1139,11 @@ def test_masks_single() -> None:
         for m1, m2 in zip(
             result,
             [
-                np.array([T, T, T, F, F, F, F, F, F, F]),
-                np.array([F, F, T, T, T, F, F, F, F, F]),
-                np.array([F, F, F, F, T, T, T, F, F, F]),
-                np.array([F, F, F, F, F, F, T, T, T, F]),
-                np.array([F, F, F, F, F, F, F, F, T, T]),
+                np.array([Y, Y, Y, N, N, N, N, N, N, N]),
+                np.array([N, N, Y, Y, Y, N, N, N, N, N]),
+                np.array([N, N, N, N, Y, Y, Y, N, N, N]),
+                np.array([N, N, N, N, N, N, Y, Y, Y, N]),
+                np.array([N, N, N, N, N, N, N, N, Y, Y]),
             ],
             strict=True,
         )
@@ -1137,10 +1156,10 @@ def test_masks_single() -> None:
         for m1, m2 in zip(
             sampler,
             [
-                np.array([T, T, T, F, F, F, F, F, F, F]),
-                np.array([F, F, T, T, T, F, F, F, F, F]),
-                np.array([F, F, F, F, T, T, T, F, F, F]),
-                np.array([F, F, F, F, F, F, T, T, T, F]),
+                np.array([Y, Y, Y, N, N, N, N, N, N, N]),
+                np.array([N, N, Y, Y, Y, N, N, N, N, N]),
+                np.array([N, N, N, N, Y, Y, Y, N, N, N]),
+                np.array([N, N, N, N, N, N, Y, Y, Y, N]),
             ],
             strict=True,
         )
@@ -1165,6 +1184,7 @@ def test_masks_multi() -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[int, M, MULTI])
+    assert_type(sampler.mode, M)
     assert_type(iter(sampler), Iterator[list[NDArray[np.bool_]]])
     assert_type(result, list[list[NDArray[np.bool_]]])
     assert_type(sample, list[NDArray[np.bool_]])
@@ -1176,20 +1196,20 @@ def test_masks_multi() -> None:
             result,
             [
                 [
-                    np.array([T, T, T, F, F, F, F, F, F, F]),
-                    np.array([F, F, F, T, F, F, F, F, F, F]),
+                    np.array([Y, Y, Y, N, N, N, N, N, N, N]),
+                    np.array([N, N, N, Y, N, N, N, N, N, N]),
                 ],
                 [
-                    np.array([F, F, T, T, T, F, F, F, F, F]),
-                    np.array([F, F, F, F, F, T, F, F, F, F]),
+                    np.array([N, N, Y, Y, Y, N, N, N, N, N]),
+                    np.array([N, N, N, N, N, Y, N, N, N, N]),
                 ],
                 [
-                    np.array([F, F, F, F, T, T, T, F, F, F]),
-                    np.array([F, F, F, F, F, F, F, T, F, F]),
+                    np.array([N, N, N, N, Y, Y, Y, N, N, N]),
+                    np.array([N, N, N, N, N, N, N, Y, N, N]),
                 ],
                 [
-                    np.array([F, F, F, F, F, F, T, T, T, F]),
-                    np.array([F, F, F, F, F, F, F, F, F, T]),
+                    np.array([N, N, N, N, N, N, Y, Y, Y, N]),
+                    np.array([N, N, N, N, N, N, N, N, N, Y]),
                 ],
             ],
             strict=True,
@@ -1215,6 +1235,7 @@ def test_bounds_single() -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[int, B, ONE])
+    assert_type(sampler.mode, B)
     assert_type(iter(sampler), Iterator[tuple[int, int]])
     assert_type(result, list[tuple[int, int]])
     assert_type(sample, tuple[int, int])
@@ -1252,6 +1273,7 @@ def test_bounds_multi() -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[int, B, MULTI])
+    assert_type(sampler.mode, B)
     assert_type(iter(sampler), Iterator[list[tuple[int, int]]])
     assert_type(result, list[list[tuple[int, int]]])
     assert_type(sample, list[tuple[int, int]])
@@ -1283,6 +1305,7 @@ def test_slices_single() -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[int, S, ONE])
+    assert_type(sampler.mode, S)
     assert_type(result, list[slice])
     assert_type(sample, slice)
 
@@ -1319,6 +1342,7 @@ def test_slices_multi() -> None:
 
     # check that static types are correct
     assert_type(sampler, SlidingWindowSampler[int, S, MULTI])
+    assert_type(sampler.mode, S)
     assert_type(result, list[list[slice]])
     assert_type(sample, list[slice])
     assert_type(sample[0], slice)
@@ -1346,6 +1370,7 @@ def test_unknown_single() -> None:
         drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler[int, U, ONE])
+    assert_type(sampler.mode, MODES)
     assert_type(iter(sampler), Iterator[Any])
 
 
@@ -1364,6 +1389,7 @@ def test_unknown_multi() -> None:
         drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler[int, U, MULTI])
+    assert_type(sampler.mode, MODES)
     assert_type(iter(sampler), Iterator[list[Any]])
 
 

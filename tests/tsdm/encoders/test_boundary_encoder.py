@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from tsdm.encoders import BoundaryEncoder
-from tsdm.types.arrays import NumericalTensor
+from tsdm.types.linalg import NumericalTensor
 
 DATA_1D = [
     float("-inf"),
@@ -137,20 +137,20 @@ def test_boundary_encoder(example: str) -> None:
     assert ((encoded == -1) == (data <= -1)).all()
     assert ((encoded == +1) == (data >= +1)).all()
 
-    match encoded:
-        case np.ndarray() as array:
-            assert array.dtype == data.dtype
-        case torch.Tensor() as tensor:
-            assert tensor.device == data.device  # type: ignore[attr-defined]
-            assert tensor.dtype == data.dtype
-        case pd.Index() as index:
-            assert index.name == data.name  # type: ignore[attr-defined]
-        case pd.Series() as series:
-            assert series.name == data.name  # type: ignore[attr-defined]
-            assert series.index.equals(data.index)  # type: ignore[attr-defined]
-        case pd.DataFrame() as df:
-            assert df.columns.equals(data.columns)  # type: ignore[attr-defined]
-            assert df.index.equals(data.index)  # type: ignore[attr-defined]
+    match encoded, data:
+        case np.ndarray() as transformed, np.ndarray() as original:
+            assert transformed.dtype == original.dtype
+        case torch.Tensor() as transformed, torch.Tensor() as original:
+            assert transformed.device == original.device
+            assert transformed.dtype == data.dtype
+        case pd.Index() as transformed, pd.Index() as original:
+            assert transformed.name == original.name
+        case pd.Series() as transformed, pd.Series() as original:
+            assert transformed.name == original.name
+            assert transformed.index.equals(original.index)
+        case pd.DataFrame() as transformed, pd.DataFrame() as original:
+            assert transformed.columns.equals(original.columns)
+            assert transformed.index.equals(original.index)
         case _:
             raise TypeError(f"Unexpected type: {type(data)}")
 
@@ -181,14 +181,14 @@ def test_boundary_encoder(example: str) -> None:
     assert (encoded2[mask] == data2[mask]).all()
     assert np.isnan(encoded2[~mask]).all()
 
-    # test half-open interval + clip
+    # test half-open interval with clip
     encoder = BoundaryEncoder(0.0, None, mode="clip")
     encoder.fit(data)
     encoded = encoder.encode(data)
     assert (encoded >= 0).all()
     assert ((encoded == 0) == (data <= 0)).all()
 
-    # test half-open unbounded interval + mask
+    # test half-open unbounded interval with mask
     encoder = BoundaryEncoder(0.0, None, mode="mask")
     encoder.fit(data)
     encoded = encoder.encode(data)
@@ -196,7 +196,7 @@ def test_boundary_encoder(example: str) -> None:
     assert (encoded_missing ^ (encoded >= 0)).all()
     assert (encoded_missing == (data < 0)).all()
 
-    # test half-open bounded interval + mask
+    # test half-open and bounded interval with mask
     encoder = BoundaryEncoder(0.0, 1.0, mode="mask", lower_included=False)
     encoder.fit(data)
     encoded = encoder.encode(data)

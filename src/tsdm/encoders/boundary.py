@@ -11,7 +11,7 @@ import pandas as pd
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import NOT_GIVEN
 from tsdm.encoders import BaseEncoder
-from tsdm.types.arrays import NumericalSeries
+from tsdm.types.linalg import NumericalSeries
 from tsdm.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 

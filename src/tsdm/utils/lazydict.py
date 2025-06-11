@@ -26,7 +26,7 @@ from typing import (
 )
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.types.protocols import SupportsKeysAndGetItem
+from tsdm.types.mixins import SupportsKeysAndGetItem
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import get_return_typehint
 

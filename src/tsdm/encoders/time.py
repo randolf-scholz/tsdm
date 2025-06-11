@@ -26,8 +26,8 @@ from tsdm.backend.dtypes import DType
 from tsdm.backend.pandas import PandasDtype
 from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.arrays import NumericalSeries
-from tsdm.types.scalars import TimeDelta, TimeStamp
+from tsdm.types.linalg import NumericalSeries
+from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
@@ -37,7 +37,7 @@ from tsdm.utils.decorators import pprint_repr
 class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
-    unit: TimeDelta = NotImplemented
+    unit: DurationScalar = NotImplemented
     r"""The base frequency to convert timedeltas to."""
     timedelta_dtype: PandasDtype = NotImplemented
     r"""The original dtype of the Series."""
@@ -47,7 +47,7 @@ class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     def __init__(
         self,
         *,
-        unit: str | TimeDelta = NotImplemented,
+        unit: str | DurationScalar = NotImplemented,
         rounding: bool = True,
     ) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
@@ -91,9 +91,9 @@ class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
 class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
-    offset: TimeStamp = NotImplemented
+    offset: TimestampScalar = NotImplemented
     r"""The starting point of the timeseries."""
-    unit: TimeDelta = NotImplemented
+    unit: DurationScalar = NotImplemented
     r"""The base frequency to convert timedeltas to."""
     datetime_dtype: Any = NotImplemented
     r"""The original dtype of the Series."""
@@ -103,8 +103,8 @@ class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
     def __init__(
         self,
         *,
-        unit: str | TimeDelta = NotImplemented,
-        offset: str | TimeDelta = NotImplemented,
+        unit: str | DurationScalar = NotImplemented,
+        offset: str | DurationScalar = NotImplemented,
         rounding: bool = True,
     ) -> None:
         self.unit = NotImplemented if unit is NotImplemented else timedelta(unit)
@@ -117,7 +117,7 @@ class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
 
         # set the offset
         offset = (
-            cast(TimeStamp, self.backend.nanmin(data))
+            cast(TimestampScalar, self.backend.nanmin(data))
             if self.offset is NotImplemented
             else self.offset
         )
@@ -132,7 +132,7 @@ class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
             # This looks awkward but is robust.
             deltas = self.backend.drop_null(deltas)
             diffs = np.array(self.backend.cast(deltas, int))
-            unit: TimeDelta = int(np.gcd.reduce(diffs))
+            unit: DurationScalar = int(np.gcd.reduce(diffs))
         else:
             unit = self.unit
         self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)

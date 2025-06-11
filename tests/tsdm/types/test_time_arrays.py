@@ -9,8 +9,8 @@ import polars as pl
 import pytest
 from numpy.typing import NDArray
 
-from tsdm.types.arrays import NumericalArray
-from tsdm.types.scalars import TimeDelta, TimeStamp
+from tsdm.types.linalg import NumericalArray
+from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 
 # region setup -------------------------------------------------------------------------
@@ -80,7 +80,7 @@ TEST_CASES: list[KEY] = [
 # endregion setup ----------------------------------------------------------------------
 
 # region test data ---------------------------------------------------------------------
-TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[TimeDelta]] = {
+TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[DurationScalar]] = {
     "numpy[float]"     : TD_NUMPY_FLOAT,
     "numpy[int]"       : TD_NUMPY_INT,
     "numpy[time]"      : TD_NUMPY_DUR,
@@ -96,7 +96,7 @@ TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[TimeDelta]] = {
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
-TIMEDELTA_SCALARS: dict[KEY, TimeDelta] = {
+TIMEDELTA_SCALARS: dict[KEY, DurationScalar] = {
     "numpy[float]"     : TD_NP_FLOAT,
     "numpy[int]"       : TD_NP_INT,
     "numpy[time]"      : TD_NP_DUR,
@@ -112,7 +112,7 @@ TIMEDELTA_SCALARS: dict[KEY, TimeDelta] = {
 }  # fmt: skip
 r"""Dictionary of compatible python timedelta values for each timedelta."""
 
-TIMESTAMP_ARRAYS: dict[KEY, NumericalArray[TimeStamp]] = {
+TIMESTAMP_ARRAYS: dict[KEY, NumericalArray[TimestampScalar]] = {
     "numpy[float]"     : TS_NUMPY_FLOAT,
     "numpy[int]"       : TS_NUMPY_INT,
     "numpy[time]"      : TS_NUMPY_DATE,
@@ -128,7 +128,7 @@ TIMESTAMP_ARRAYS: dict[KEY, NumericalArray[TimeStamp]] = {
 }  # fmt: skip
 r"""Dictionary of timestamp arrays."""
 
-TIMESTAMP_SCALARS: dict[KEY, TimeStamp] = {
+TIMESTAMP_SCALARS: dict[KEY, TimestampScalar] = {
     "numpy[float]"     : TS_NP_FLOAT,
     "numpy[int]"       : TS_NP_INT,
     "numpy[time]"      : TS_NP_DATE,
@@ -201,7 +201,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of timedelta arrays."""
 
-    TS_FLOAT_ARRAYS: dict[KEY, NumericalArray[TimeStamp[float]]] = {
+    TS_FLOAT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[float]]] = {
         "numpy[float]"     : TS_NUMPY_FLOAT,
         "pandas[np_float]" : TS_PANDAS_NP_FLOAT,
         "pandas[pa_float]" : TS_PANDAS_PA_FLOAT,
@@ -209,7 +209,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of float arrays."""
 
-    TS_INT_ARRAYS: dict[KEY, NumericalArray[TimeStamp[int]]] = {
+    TS_INT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[int]]] = {
         "numpy[int]"     : TS_NUMPY_INT,
         "pandas[np_int]" : TS_PANDAS_NP_INT,
         "pandas[pa_int]" : TS_PANDAS_PA_INT,
@@ -217,7 +217,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of int arrays."""
 
-    TS_TIME_ARRAYS: dict[KEY, NumericalArray[TimeStamp[py_timedelta]]] = {
+    TS_TIME_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[py_timedelta]]] = {
         "numpy[time]"     : TS_NUMPY_DATE,
         "pandas[np_time]" : TS_PANDAS_NP_DATE,
         "pandas[pa_time]" : TS_PANDAS_PA_DATE,

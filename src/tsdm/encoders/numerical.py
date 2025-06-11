@@ -56,7 +56,7 @@ from tsdm.backend import Backend, get_backend
 from tsdm.constants import NOT_GIVEN
 from tsdm.encoders.base import BackendMixin, BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
-from tsdm.types.arrays import NumericalArray as Array
+from tsdm.types.linalg import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
 
 

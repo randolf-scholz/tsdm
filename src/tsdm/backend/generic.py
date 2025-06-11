@@ -17,7 +17,8 @@ __all__ = [
 from math import prod
 from typing import Any, cast
 
-from tsdm.types.arrays import NumericalArray as Array, SupportsShape
+from tsdm.types.linalg import NumericalArray as Array
+from tsdm.types.mixins import SupportsShape
 from tsdm.types.scalars import FloatScalar
 
 

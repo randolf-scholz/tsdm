@@ -11,23 +11,23 @@ from numpy.typing import NDArray
 
 from tsdm.constants import RNG
 from tsdm.random.samplers.base import BaseSampler
-from tsdm.types.protocols import SupportsLenAndGetItem
-from tsdm.types.scalars import TimeDelta, TimeStamp
+from tsdm.types.mixins import SupportsLenAndGetItem
+from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 
 
 @deprecated("Use SlidingWindowSampler instead.")
-class SequenceSampler[TD: TimeDelta](BaseSampler):
+class SequenceSampler[TD: DurationScalar](BaseSampler):
     r"""Samples sequences of fixed length."""
 
-    data: NDArray[TimeStamp[TD]]  # type: ignore[type-var]
+    data: NDArray[TimestampScalar[TD]]  # type: ignore[type-var]
     seq_len: TD
     r"""The length of the sequences."""
     stride: TD
     r"""The stride at which to sample."""
-    xmax: TimeStamp[TD]
+    xmax: TimestampScalar[TD]
     r"""The maximum value at which to stop sampling."""
-    xmin: TimeStamp[TD]
+    xmin: TimestampScalar[TD]
     r"""The minimum value at which to start sampling."""
     return_mask: bool = False
     r"""Whether to return masks instead of indices."""
@@ -36,15 +36,16 @@ class SequenceSampler[TD: TimeDelta](BaseSampler):
 
     def __init__(
         self,
-        data_source: Iterable[TimeStamp[TD]] | SupportsLenAndGetItem[TimeStamp[TD]],
+        data_source: Iterable[TimestampScalar[TD]]
+        | SupportsLenAndGetItem[TimestampScalar[TD]],
         /,
         *,
         return_mask: bool = False,
         seq_len: str | TD,
         shuffle: bool = False,
         stride: str | TD,
-        tmin: Optional[str | TimeStamp[TD]] = None,
-        tmax: Optional[str | TimeStamp[TD]] = None,
+        tmin: Optional[str | TimestampScalar[TD]] = None,
+        tmax: Optional[str | TimestampScalar[TD]] = None,
     ) -> None:
         super().__init__(shuffle=shuffle)
         self.data = np.asarray(data_source)
@@ -84,7 +85,7 @@ class SequenceSampler[TD: TimeDelta](BaseSampler):
             for x, y in self._iter_tuples()
         ])
 
-    def _iter_tuples(self) -> Iterator[tuple[TimeStamp[TD], TimeStamp[TD]]]:
+    def _iter_tuples(self) -> Iterator[tuple[TimestampScalar[TD], TimestampScalar[TD]]]:
         x = self.xmin
         y = x + self.seq_len
         # allows nice handling of negative seq_len
