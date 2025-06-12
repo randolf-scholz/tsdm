@@ -3,7 +3,6 @@ r"""Test sequence like protocol."""
 import collections
 from collections import abc
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -139,7 +138,7 @@ def test_array_static() -> None:
 def test_instances_static() -> None:
     _0: Array[int]
     _1: Array[int] = (1, 2)
-    _2: Array[int] = tuple([1, 2])
+    _2: Array[int] = tuple([1, 2])  # noqa: C409
     _3: Array[int] = [1, 2]
     _4: Array[int] = range(2)
 
