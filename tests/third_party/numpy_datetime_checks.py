@@ -6,6 +6,9 @@ from typing import Protocol, Self, assert_type, overload
 
 import numpy as np
 
+type np_datetime = "np.datetime64[dt.datetime]"  # noqa: PYI042
+type np_timedelta = "np.timedelta64[dt.timedelta]"  # noqa: PYI042
+
 py_date = dt.date(year=2025, month=1, day=31)
 py_dt = dt.datetime(year=2025, month=1, day=31, hour=1, minute=23, second=45)
 py_td = dt.timedelta(seconds=37)
@@ -170,7 +173,6 @@ class SupportsSubTD[TD: Timedelta](Protocol):
 
 td: Timedelta = np_td
 
-
 _1: SupportsSubTD = py_dt  # ✅
 _2: SupportsSubTD = np_dt  # ✅
 
@@ -182,6 +184,6 @@ _5: Timestamp = py_dt  # ✅
 _6: Timestamp = np_dt  # ❌ (not fixed by reorder)
 # w/ generic
 _7: Timestamp[dt.timedelta] = py_dt  # ✅
-_8: Timestamp[np.timedelta64] = np_dt  # ❌ (not fixed by reorder)
+_8: Timestamp[np_timedelta] = np_dt  # ❌ (not fixed by reorder)
 # w/ nested generic
-_9: Timestamp[np.timedelta64[dt.timedelta]] = np_dt  # ❌ (fixed by reorder)
+_9: Timestamp[np_timedelta] = np_dt  # ❌ (fixed by reorder)

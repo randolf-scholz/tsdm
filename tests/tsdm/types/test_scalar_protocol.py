@@ -19,6 +19,13 @@ from tsdm.types.scalars import (
     TimestampScalar,
 )
 
+BOOL: bool = bool(1)
+INT: int = int(1.0)
+FLOAT: float = float(1)
+COMPLEX: complex = complex(0 + 1j)
+DATETIME: dt.datetime = dt.datetime(2021, 1, 1)
+TIMEDELTA: dt.timedelta = dt.timedelta(days=1)
+
 BASE_SCALARS: dict[object, object] = {
     None         : None,
     bool         : True,
@@ -95,7 +102,6 @@ FLOAT_SCALARS: dict[str, FloatScalar] = {
 }  # fmt: skip
 r"""Float scalars for testing."""
 
-
 COMPLEX_SCALARS: dict[str, ComplexScalar] = {
     "np_complex" : np.complex128(1 + 1j),
     "py_complex" : complex(1 + 1j),
@@ -115,7 +121,6 @@ TIMEDELTA_SCALARS: dict[str, DurationScalar] = {
 }  # fmt: skip
 r"""Dictionary of timedelta scalars."""
 
-
 TIMESTAMP_SCALARS: dict[str, TimestampScalar] = {
     "np_time"  : np.datetime64("2021-01-01"),  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
     "np_float" : np.float64(1.0),
@@ -127,7 +132,6 @@ TIMESTAMP_SCALARS: dict[str, TimestampScalar] = {
 }  # fmt: skip
 r"""Dictionary of timestamp scalars."""
 
-
 TEST_TYPED_CASES: dict[type, dict] = {
     BoolScalar      : BOOLEAN_SCALARS,
     ComplexScalar   : COMPLEX_SCALARS,
@@ -137,13 +141,6 @@ TEST_TYPED_CASES: dict[type, dict] = {
     TimestampScalar : TIMESTAMP_SCALARS,
 }  # fmt: skip
 r"""Test cases for scalar types."""
-
-BOOL: bool = bool(1)
-INT: int = int(1.0)
-FLOAT: float = float(1)
-COMPLEX: complex = complex(0 + 1j)
-DATETIME: dt.datetime = dt.datetime(2021, 1, 1)
-TIMEDELTA: dt.timedelta = dt.timedelta(days=1)
 
 
 @pytest.mark.parametrize("name", BOOLEAN_SCALARS)
@@ -538,3 +535,81 @@ def test_additive_scalar(name: str) -> None:
 def test_shared_interface(protocol: type) -> None:
     test_cases = TEST_TYPED_CASES[protocol]
     check_shared_interface(test_cases.values(), protocol, raise_on_extra=False)
+
+
+def type_float_scalar() -> None:
+    _1: FloatScalar = np.floating()  # type: ignore[assignment]
+
+
+def type_timestamp_assignable() -> None:
+    # numpy
+    _np_0: TimestampScalar[np.int64] = np.int64(0)
+    _np_1: TimestampScalar[np.float64] = np.float64(1)
+    # FIXME: https://github.com/numpy/numpy/issues/28257
+    _np_2: TimestampScalar[np.timedelta64] = np.datetime64("2021-01-01")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _np_3: TimestampScalar[dt.timedelta] = np.datetime64("2021-01-01")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    # python
+    _py_1: TimestampScalar[dt.timedelta] = dt.datetime(2021, 1, 1)
+    _py_2: TimestampScalar[int] = int(3)
+    _py_3: TimestampScalar[float] = float(3.0)
+    # pandas
+    _pd_1: TimestampScalar[dt.timedelta] = pd.Timestamp("2021-01-01")
+    _pd_2: TimestampScalar[pd.Timedelta] = pd.Timestamp("2021-01-01")
+
+
+def type_duration_assignable() -> None:
+    # numpy
+    _np_0: DurationScalar = np.int64(0)
+    _np_1: DurationScalar = np.float64(1)
+    # FIXME: https://github.com/numpy/numpy/issues/28257
+    _np_2: DurationScalar = np.timedelta64(1, "D")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _np_3: DurationScalar = np.timedelta64(1, "D")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    # python
+    _py_1: DurationScalar = dt.timedelta(days=1)
+    _py_2: DurationScalar = int(3)
+    _py_3: DurationScalar = float(3.0)
+    # pandas
+    _pd_1: DurationScalar = pd.Timedelta(days=1)
+
+
+def type_boolean_assignable() -> None:
+    # python
+    _py_0: BoolScalar = bool(1234)
+    _py_2: BoolScalar = True
+    _py_3: BoolScalar = False
+    # numpy
+    _np_0: BoolScalar = np.bool_(bool(1234))
+    _np_1: BoolScalar = np.True_  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _np_2: BoolScalar = np.False_  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    # pytorch
+    _pt_0: BoolScalar = pt.tensor([True], dtype=pt.bool)
+
+
+def type_int_assignable() -> None:
+    # python
+    _py_0: IntScalar = int(1234)  # type: ignore[assignment]
+    _py_1: IntScalar = 0  # type: ignore[assignment]
+    # numpy
+    _np_0: IntScalar = np.int64(1234)  # type: ignore[assignment]
+    # pytorch
+    _pt_0: IntScalar = pt.tensor([1234], dtype=pt.int64)
+
+
+def type_float_assignable() -> None:
+    # python
+    _py_0: FloatScalar = float(1234.0)
+    _py_1: FloatScalar = 0.0
+    # numpy
+    _np_0: FloatScalar = np.float64(1234.0)
+    # pytorch
+    _pt_0: FloatScalar = pt.tensor([1234.0], dtype=pt.float64)
+
+
+def type_complex_assignable() -> None:
+    # python
+    _py_0: ComplexScalar = complex(1, 2)
+    _py_1: ComplexScalar = 0 + 0j
+    # numpy
+    _np_0: ComplexScalar = np.complex128(1 + 2j)
+    # pytorch
+    _pt_0: ComplexScalar = pt.tensor([1 + 2j], dtype=pt.complex128)

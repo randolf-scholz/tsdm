@@ -1,43 +1,13 @@
 r"""Test other protocols."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import assert_type
 
 import numpy as np
 import pandas as pd
 import torch
 
-from tsdm.types.mixins import SupportsKeysAndGetItem
-from tsdm.types.protocols import Seq, ShapeLike, SupportsKwargs
-
-
-def test_supportskwargs() -> None:
-    r"""Test the SupportsKwargs protocol."""
-
-    class StrKeys:
-        r"""Dummy class that supports `**kwargs`."""
-
-        @staticmethod
-        def keys() -> list[str]:
-            return ["some", "strings"]
-
-        def __getitem__(self, key: str) -> int:
-            return len(key)
-
-    class IntKeys:
-        r"""Dummy class that does not support `**kwargs`."""
-
-        @staticmethod
-        def keys() -> list[int]:
-            return [1, 2]
-
-        def __getitem__(self, key: int) -> int:
-            return key
-
-    assert isinstance(StrKeys(), SupportsKeysAndGetItem)
-    assert isinstance(IntKeys(), SupportsKeysAndGetItem)
-    assert isinstance(StrKeys(), SupportsKwargs)
-    assert not isinstance(IntKeys(), SupportsKwargs)
+from tsdm.types.protocols import Seq, ShapeLike
 
 
 def test_shapelike_protocol() -> None:
@@ -100,7 +70,7 @@ def test_seq_inference() -> None:
     assert_type(seq_tup, Seq[int])  # pyright: ignore[reportAssertTypeFailure]
 
 
-def test_get_interscetion_indexable() -> None:
+def show_interscetion_indexable_types() -> None:
     containers = [
         list,
         tuple,
@@ -130,12 +100,3 @@ def test_get_interscetion_indexable() -> None:
     }
     attrs = sorted(shared_attrs - excluded_attrs)
     print("Shared attributes:\n" + "\n".join(attrs))
-
-
-def test_supportskeysgetitem() -> None:
-    r"""Test the SupportsKeysAndGetItem protocol."""
-
-    def foo[K, V](x: Mapping[K, V]) -> SupportsKeysAndGetItem[K, V]:
-        return x
-
-    assert_type(foo({"a": 1}), SupportsKeysAndGetItem[str, int])

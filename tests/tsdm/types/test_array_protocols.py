@@ -2,7 +2,7 @@ r"""Test the Array protocol."""
 
 import logging
 from array import array as python_array
-from typing import TYPE_CHECKING, Any, get_protocol_members
+from typing import Any, get_protocol_members
 
 import numpy as np
 import pandas as pd
@@ -113,33 +113,6 @@ TEST_ARRAYS = {
 }  # fmt: skip
 r"""Collection of all test arrays."""
 
-SUPPORTS_ARRAYS: dict[str, SupportsArray] = TEST_ARRAYS.copy()
-r"""Collection of all test arrays that satisfy the `SupportsArray` protocol."""
-
-SUPPORTS_DTYPE: dict[str, SupportsDtype] = {
-    "numpy_ndarray_1d"    : NP_ARRAY_1D,
-    "numpy_ndarray_2d"    : NP_ARRAY_2D,
-    "pandas_array_int"    : PD_ARRAY_INT,
-    "pandas_array_str"    : PD_ARRAY_STR,
-    "pandas_index_int"    : PD_INDEX_INT,
-    "pandas_index_str"    : PD_INDEX_STR,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
-    "polars_series_int"   : PL_SERIES_INT,
-    "polars_series_str"   : PL_SERIES_STR,
-    "torch_tensor_1d"     : PT_TENSOR_1D,
-    "torch_tensor_2d"     : PT_TENSOR_2D,
-}  # fmt: skip
-
-SUPPORTS_ARRAYS_UFUNC: dict[str, SupportsArrayUfunc] = {
-    "numpy_ndarray_1d"    : NP_ARRAY_1D,
-    "numpy_ndarray_2d"    : NP_ARRAY_2D,
-    "pandas_array_int"    : PD_ARRAY_INT,
-    "pandas_index_int"    : PD_INDEX_INT,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_table_float"  : PD_TABLE_FLOAT,
-    "polars_series_int"   : PL_SERIES_INT,
-}  # fmt: skip
 
 SERIES: dict[str, SeriesLike] = {
     "pandas_array_int"  : PD_ARRAY_INT,
@@ -702,8 +675,6 @@ def test_table_manual() -> None:
     __logger__.info("\nShared members of Tables: %s", shared_attrs)
 
 
-if TYPE_CHECKING:
-
-    def cast(x: NumericalArray[object]) -> NumericalArray[float]:
-        r"""Ensure the protocol is contravariant in the data type."""
+def type_numericalarray_covariance() -> None:
+    def _upcast(x: NumericalArray[float]) -> NumericalArray[object]:
         return x

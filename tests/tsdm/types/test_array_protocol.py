@@ -96,11 +96,20 @@ EXPECTED_3RD_PARTY: dict[type, bool] = {
         | EXPECTED_3RD_PARTY
     ).items(),
 )
-def test_array_builtins(*, cls: type, expected: bool) -> None:
+def test_satisfies_array_protocol(*, cls: type, expected: bool) -> None:
     assert_protocol(cls, Array, expected=expected)
 
 
-def test_array_static() -> None:
+def test_array_collections_abc() -> None:
+    for name in dir(collections):
+        if name.startswith("_"):
+            continue
+        cls = getattr(collections, name)
+        if isinstance(cls, type):
+            print(f"{name}: {issubclass(cls, Array)}")
+
+
+def type_array_assignable() -> None:
     _: type[Array]
     # builtins
     # _ = bytes  # ❌ __contains__
@@ -135,18 +144,9 @@ def test_array_static() -> None:
     # check
 
 
-def test_instances_static() -> None:
+def type_integer_array_assignable() -> None:
     _0: Array[int]
     _1: Array[int] = (1, 2)
     _2: Array[int] = tuple([1, 2])  # noqa: C409
     _3: Array[int] = [1, 2]
     _4: Array[int] = range(2)
-
-
-def test_array_collections_abc() -> None:
-    for name in dir(collections):
-        if name.startswith("_"):
-            continue
-        cls = getattr(collections, name)
-        if isinstance(cls, type):
-            print(f"{name}: {issubclass(cls, Array)}")

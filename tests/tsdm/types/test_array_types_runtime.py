@@ -29,7 +29,7 @@ BOOL_ARRAYS: dict[str, BooleanArray] = {
 r"""Dictionary of bool arrays."""
 
 INT_ARRAYS: dict[str, IntegerArray] = {
-    "numpy[int]"     : np.array([1], dtype=np.int64),  # pyright: ignore[reportAssignmentType]
+    "numpy[int]"     : np.array([1], dtype=np.int64),
     "pandas[np_int]" : pd.Series([1], dtype=np.int64),
     "pandas[pa_int]" : pd.Series([1], dtype="int64[pyarrow]"),
     "polars[int]"    : pl.Series([1], dtype=pl.Int64()),
@@ -38,7 +38,7 @@ INT_ARRAYS: dict[str, IntegerArray] = {
 r"""Dictionary of int arrays."""
 
 FLOAT_ARRAYS: dict[str, FloatArray] = {
-    "numpy[float]"     : np.array([1.0], dtype=np.float64),  # pyright: ignore[reportAssignmentType]
+    "numpy[float]"     : np.array([1.0], dtype=np.float64),
     "pandas[np_float]" : pd.Series([1.0], dtype=np.float64),
     "pandas[pa_float]" : pd.Series([1.0], dtype="float64[pyarrow]"),
     "polars[float]"    : pl.Series([1.0], dtype=pl.Float64()),
@@ -440,3 +440,15 @@ def test_datetime_array(example: str) -> None:
     assert type(TIMEDELTA + array) is cls   # __add__
     assert type(DATETIME - array) is cls    # __sub__
     # fmt: on
+
+
+@pytest.mark.parametrize("example", FLOAT_ARRAYS)
+def test_generic_normalize(example: str) -> None:
+    r"""Test normalization of numerical arrays."""
+    array = FLOAT_ARRAYS[example]
+    cls = type(array)
+
+    def normalize[Arr: NumericalArray](x: Arr) -> Arr:
+        return (x - x.min()) / (x.max() - x.min())
+
+    assert type(normalize(array)) is cls

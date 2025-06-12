@@ -1,7 +1,7 @@
 r"""Test the timestamp protocol on arrays."""
 
 from datetime import datetime as py_datetime, timedelta as py_timedelta
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -14,56 +14,55 @@ from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 
 # region setup -------------------------------------------------------------------------
+type np_int = np.int64  # noqa: PYI042
+type np_float = np.float64  # noqa: PYI042
+type np_timedelta = "np.timedelta64[py_timedelta]"  # noqa: PYI042
+type np_datetime = "np.datetime64[py_datetime]"  # noqa: PYI042
+type pd_datetime = pd.Timestamp  # noqa: PYI042
+type pd_timedelta = pd.Timedelta  # noqa: PYI042
+# fmt: off
 ISO_DATE = "2021-01-01"
-# python timedeltas
-TD_PY_FLOAT: float = 10.0
-TD_PY_INT: int = 10
-TD_PY_DUR: py_timedelta = py_timedelta(days=1)
-# numpy timedeltas
-TD_NP_FLOAT: np.float64 = np.float64(10.0)
-TD_NP_INT: np.int64 = np.int64(10)
-TD_NP_DUR: np.timedelta64 = np.timedelta64(1, "D")
-# pandas timedeltas
-TD_PD_DUR: pd.Timedelta = timedelta(days=1)
-# python timestamps
-TS_PY_DATE: py_datetime = py_datetime.fromisoformat(ISO_DATE)
-TS_PY_FLOAT: float = 10.0
-TS_PY_INT: int = 10
-# numpy timestamps
-TS_NP_DATE: np.datetime64 = np.datetime64(ISO_DATE)
-TS_NP_FLOAT: np.float64 = np.float64(TS_PY_FLOAT)
-TS_NP_INT: np.int64 = np.int64(TS_PY_INT)
-# pandas timestamps
-TS_PD_DATE: pd.Timestamp = timestamp(ISO_DATE)
-
+PY_FLOAT     : float        = float(10)
+PY_INT       : int          = int(10.0)
+PY_DATETIME  : py_datetime  = py_datetime.fromisoformat(ISO_DATE)
+PY_TIMEDELTA : py_timedelta = py_timedelta(days=1)
+NP_FLOAT     : np_float     = np.float64(10.0)
+NP_INT       : np_int       = np.int64(10)
+NP_TIMEDELTA : np_timedelta = np.timedelta64(1, "D")
+NP_DATETIME  : np_datetime  = np.datetime64(ISO_DATE)
+PD_DATETIME  : pd_datetime  = timestamp(ISO_DATE)
+PD_TIMEDELTA : pd_timedelta = timedelta(days=1)
+# fmt: on
 # region array datetimes ---------------------------------------------------------------
-TS_NUMPY_DATE: NDArray[np.datetime64] = np.array([TS_NP_DATE])
-TS_NUMPY_FLOAT: NDArray[np.float64] = np.array([TS_NP_FLOAT])
-TS_NUMPY_INT: NDArray[np.int64] = np.array([TS_NP_INT])
-TS_PANDAS_NP_DATE: pd.Series = pd.Series([TS_PD_DATE])
-TS_PANDAS_NP_FLOAT: pd.Series = pd.Series([TS_PY_FLOAT], dtype="float64")
-TS_PANDAS_NP_INT: pd.Series = pd.Series([TS_PY_INT], dtype="int64")
-TS_PANDAS_PA_DATE: pd.Series = pd.Series([TS_PD_DATE], dtype="timestamp[ms][pyarrow]")
-TS_PANDAS_PA_FLOAT: pd.Series = pd.Series([TS_PY_FLOAT], dtype="float64[pyarrow]")
-TS_PANDAS_PA_INT: pd.Series = pd.Series([TS_PY_INT], dtype="int64[pyarrow]")
-TS_POLARS_DATE: pl.Series = pl.Series([TS_PD_DATE], dtype=pl.Date())
-TS_POLARS_FLOAT: pl.Series = pl.Series([TS_PY_FLOAT], dtype=pl.Float64())
-TS_POLARS_INT: pl.Series = pl.Series([TS_PY_INT], dtype=pl.Int64())
+TS_NUMPY_DATE: NDArray[np.datetime64] = np.array([NP_DATETIME])
+TS_NUMPY_FLOAT: NDArray[np.float64] = np.array([NP_FLOAT])
+TS_NUMPY_INT: NDArray[np.int64] = np.array([NP_INT])
+TS_PANDAS_NP_DATE: pd.Series = pd.Series([PD_DATETIME])
+TS_PANDAS_NP_FLOAT: pd.Series = pd.Series([PY_FLOAT], dtype="float64")
+TS_PANDAS_NP_INT: pd.Series = pd.Series([PY_INT], dtype="int64")
+TS_PANDAS_PA_DATE: pd.Series = pd.Series([PD_DATETIME], dtype="timestamp[ms][pyarrow]")
+TS_PANDAS_PA_FLOAT: pd.Series = pd.Series([PY_FLOAT], dtype="float64[pyarrow]")
+TS_PANDAS_PA_INT: pd.Series = pd.Series([PY_INT], dtype="int64[pyarrow]")
+TS_POLARS_DATE: pl.Series = pl.Series([PD_DATETIME], dtype=pl.Date())
+TS_POLARS_FLOAT: pl.Series = pl.Series([PY_FLOAT], dtype=pl.Float64())
+TS_POLARS_INT: pl.Series = pl.Series([PY_INT], dtype=pl.Int64())
 # endregion array datetimes ------------------------------------------------------------
 
 # region array timedeltas --------------------------------------------------------------
-TD_NUMPY_DUR: NDArray[np.timedelta64] = np.array([TD_PY_DUR], dtype="timedelta64[ns]")
-TD_NUMPY_FLOAT: NDArray[np.float64] = np.array([TD_PY_FLOAT], dtype="float64")
-TD_NUMPY_INT: NDArray[np.int64] = np.array([TD_PY_INT], dtype="int64")
-TD_PANDAS_NP_DUR: pd.Series = pd.Series([TD_PY_DUR], dtype="timedelta64[ns]")
-TD_PANDAS_NP_FLOAT: pd.Series = pd.Series([TD_PY_FLOAT], dtype="float64")
-TD_PANDAS_NP_INT: pd.Series = pd.Series([TD_PY_INT], dtype="int64")
-TD_PANDAS_PA_DUR: pd.Series = pd.Series([TD_PY_DUR], dtype="duration[ns][pyarrow]")
-TD_PANDAS_PA_FLOAT: pd.Series = pd.Series([TD_PY_FLOAT], dtype="float64[pyarrow]")
-TD_PANDAS_PA_INT: pd.Series = pd.Series([TD_PY_INT], dtype="int64[pyarrow]")
-TD_POLARS_DUR: pl.Series = pl.Series([TD_PY_DUR], dtype=pl.Duration())
-TD_POLARS_FLOAT: pl.Series = pl.Series([TD_PY_FLOAT], dtype=pl.Float64())
-TD_POLARS_INT: pl.Series = pl.Series([TD_PY_INT], dtype=pl.Int64())
+TD_NUMPY_DUR: NDArray[np.timedelta64] = np.array(
+    [PY_TIMEDELTA], dtype="timedelta64[ns]"
+)
+TD_NUMPY_FLOAT: NDArray[np.float64] = np.array([PY_FLOAT], dtype="float64")
+TD_NUMPY_INT: NDArray[np.int64] = np.array([PY_INT], dtype="int64")
+TD_PANDAS_NP_DUR: pd.Series = pd.Series([PY_TIMEDELTA], dtype="timedelta64[ns]")
+TD_PANDAS_NP_FLOAT: pd.Series = pd.Series([PY_FLOAT], dtype="float64")
+TD_PANDAS_NP_INT: pd.Series = pd.Series([PY_INT], dtype="int64")
+TD_PANDAS_PA_DUR: pd.Series = pd.Series([PY_TIMEDELTA], dtype="duration[ns][pyarrow]")
+TD_PANDAS_PA_FLOAT: pd.Series = pd.Series([PY_FLOAT], dtype="float64[pyarrow]")
+TD_PANDAS_PA_INT: pd.Series = pd.Series([PY_INT], dtype="int64[pyarrow]")
+TD_POLARS_DUR: pl.Series = pl.Series([PY_TIMEDELTA], dtype=pl.Duration())
+TD_POLARS_FLOAT: pl.Series = pl.Series([PY_FLOAT], dtype=pl.Float64())
+TD_POLARS_INT: pl.Series = pl.Series([PY_INT], dtype=pl.Int64())
 # endregion array timedeltas -----------------------------------------------------------
 
 type KEY_NP = Literal["numpy[float]", "numpy[int]", "numpy[time]"]
@@ -97,18 +96,18 @@ TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[DurationScalar]] = {
 r"""Dictionary of timedelta arrays."""
 
 TIMEDELTA_SCALARS: dict[KEY, DurationScalar] = {
-    "numpy[float]"     : TD_NP_FLOAT,
-    "numpy[int]"       : TD_NP_INT,
-    "numpy[time]"      : TD_NP_DUR,
-    "pandas[np_time]"  : TD_PY_DUR,
-    "pandas[np_float]" : TD_PY_FLOAT,
-    "pandas[np_int]"   : TD_PY_INT,
-    "pandas[pa_time]"  : TD_PY_DUR,
-    "pandas[pa_float]" : TD_PY_FLOAT,
-    "pandas[pa_int]"   : TD_PY_INT,
-    "polars[time]"     : TD_PY_DUR,
-    "polars[float]"    : TD_PY_FLOAT,
-    "polars[int]"      : TD_PY_INT,
+    "numpy[float]"     : NP_FLOAT,
+    "numpy[int]"       : NP_INT,
+    "numpy[time]"      : NP_TIMEDELTA,
+    "pandas[np_time]"  : PY_TIMEDELTA,
+    "pandas[np_float]" : PY_FLOAT,
+    "pandas[np_int]"   : PY_INT,
+    "pandas[pa_time]"  : PY_TIMEDELTA,
+    "pandas[pa_float]" : PY_FLOAT,
+    "pandas[pa_int]"   : PY_INT,
+    "polars[time]"     : PY_TIMEDELTA,
+    "polars[float]"    : PY_FLOAT,
+    "polars[int]"      : PY_INT,
 }  # fmt: skip
 r"""Dictionary of compatible python timedelta values for each timedelta."""
 
@@ -129,18 +128,18 @@ TIMESTAMP_ARRAYS: dict[KEY, NumericalArray[TimestampScalar]] = {
 r"""Dictionary of timestamp arrays."""
 
 TIMESTAMP_SCALARS: dict[KEY, TimestampScalar] = {
-    "numpy[float]"     : TS_NP_FLOAT,
-    "numpy[int]"       : TS_NP_INT,
-    "numpy[time]"      : TS_NP_DATE,
-    "pandas[np_time]"  : TS_PY_DATE,
-    "pandas[np_float]" : TS_PY_FLOAT,
-    "pandas[np_int]"   : TS_PY_INT,
-    "pandas[pa_time]"  : TS_PY_DATE,
-    "pandas[pa_float]" : TS_PY_FLOAT,
-    "pandas[pa_int]"   : TS_PY_INT,
-    "polars[time]"     : TS_PY_DATE,
-    "polars[float]"    : TS_PY_FLOAT,
-    "polars[int]"      : TS_PY_INT,
+    "numpy[float]"     : NP_FLOAT,
+    "numpy[int]"       : NP_INT,
+    "numpy[time]"      : NP_DATETIME,
+    "pandas[np_time]"  : PY_DATETIME,
+    "pandas[np_float]" : PY_FLOAT,
+    "pandas[np_int]"   : PY_INT,
+    "pandas[pa_time]"  : PY_DATETIME,
+    "pandas[pa_float]" : PY_FLOAT,
+    "pandas[pa_int]"   : PY_INT,
+    "polars[time]"     : PY_DATETIME,
+    "polars[float]"    : PY_FLOAT,
+    "polars[int]"      : PY_INT,
 }  # fmt: skip
 r"""Dictionary of compatible python datetime values for each datetime."""
 # endregion test data ------------------------------------------------------------------
@@ -176,8 +175,9 @@ def test_timestamp_arrays(example: KEY) -> None:
     assert type(ts_array - td_scalar) is cls
 
 
-if TYPE_CHECKING:
-    TD_FLOAT_ARRAYS: dict[KEY, NumericalArray[float]] = {
+def type_duration_array_assignable() -> None:
+    r"""Test assignability of duration-like arrays."""
+    _FLOAT_ARRAYS: dict[KEY, NumericalArray[float]] = {
         "numpy[float]"     : TD_NUMPY_FLOAT,
         "pandas[np_float]" : TD_PANDAS_NP_FLOAT,
         "pandas[pa_float]" : TD_PANDAS_PA_FLOAT,
@@ -185,7 +185,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of float arrays."""
 
-    TD_INT_ARRAYS: dict[KEY, NumericalArray[int]] = {
+    _INT_ARRAYS: dict[KEY, NumericalArray[int]] = {
         "numpy[int]"     : TD_NUMPY_INT,
         "pandas[np_int]" : TD_PANDAS_NP_INT,
         "pandas[pa_int]" : TD_PANDAS_PA_INT,
@@ -193,7 +193,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of int arrays."""
 
-    TD_TIME_ARRAYS: dict[KEY, NumericalArray[py_timedelta]] = {
+    _TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[py_timedelta]] = {
         "numpy[time]"     : TD_NUMPY_DUR,
         "pandas[np_time]" : TD_PANDAS_NP_DUR,
         "pandas[pa_time]" : TD_PANDAS_PA_DUR,
@@ -201,7 +201,10 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of timedelta arrays."""
 
-    TS_FLOAT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[float]]] = {
+
+def type_timestamp_array_assignable() -> None:
+    r"""Test assignability of timestamp-like arrays."""
+    _FLOAT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[float]]] = {
         "numpy[float]"     : TS_NUMPY_FLOAT,
         "pandas[np_float]" : TS_PANDAS_NP_FLOAT,
         "pandas[pa_float]" : TS_PANDAS_PA_FLOAT,
@@ -209,7 +212,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of float arrays."""
 
-    TS_INT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[int]]] = {
+    _INT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[int]]] = {
         "numpy[int]"     : TS_NUMPY_INT,
         "pandas[np_int]" : TS_PANDAS_NP_INT,
         "pandas[pa_int]" : TS_PANDAS_PA_INT,
@@ -217,7 +220,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of int arrays."""
 
-    TS_TIME_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[py_timedelta]]] = {
+    _DATETIME_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[py_timedelta]]] = {
         "numpy[time]"     : TS_NUMPY_DATE,
         "pandas[np_time]" : TS_PANDAS_NP_DATE,
         "pandas[pa_time]" : TS_PANDAS_PA_DATE,
@@ -225,7 +228,7 @@ if TYPE_CHECKING:
     }  # fmt: skip
     r"""Dictionary of datetime arrays."""
 
-    TS_DATE_ARRAYS: dict[KEY, NumericalArray[py_datetime]] = {
+    _DATE_ARRAYS: dict[KEY, NumericalArray[py_datetime]] = {
         "numpy[time]"     : TS_NUMPY_DATE,
         "pandas[np_time]" : TS_PANDAS_NP_DATE,
         "pandas[pa_time]" : TS_PANDAS_PA_DATE,
