@@ -101,10 +101,10 @@ def strip_whitespace_array[A: AnyArray](arr: A, /) -> A:
 
 
 @overload
-def strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
+def strip_whitespace[A: AnyArray](obj: A, /) -> A: ...
 @overload
-def strip_whitespace[A: AnyArray](obj: A, /, *cols: str) -> A: ...  # type: ignore[overload-cannot-match]
-def strip_whitespace[T](obj: T, /, *cols: str) -> T:
+def strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
+def strip_whitespace[T: Table | AnyArray](obj: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
         case Table() as table:
@@ -146,9 +146,9 @@ def null_like[A: AnyArray](arr: A, /) -> A:
 
 
 @overload
-def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
+def where[A: AnyArray](mask: Mask, x: A, y: Array | Scalar = ..., /) -> A: ...
 @overload
-def where[A: AnyArray](mask: Mask, x: A, y: Array | Scalar = ..., /) -> A: ...  # type: ignore[overload-cannot-match]
+def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...  # type: ignore[overload-cannot-match]
 def where[T](mask: Mask, x: T | Scalar, y: T | Scalar = NA, /) -> T:
     r"""Select elements from x or y depending on mask.
 

@@ -42,8 +42,7 @@ EXPECTED_COLLECTIONS_ABC: dict[type, bool] = {
     abc.AsyncIterable   : False,
     abc.AsyncIterator   : False,
     abc.Awaitable       : False,
-    # abc.ByteString      : True,  # deprecated!
-    abc.Callable        : False,  # type: ignore[dict-item]
+    abc.Callable        : False,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
     abc.Collection      : False,
     abc.Container       : False,
     abc.Coroutine       : False,
@@ -138,12 +137,11 @@ def test_array_static() -> None:
 
 
 def test_instances_static() -> None:
-    _: Array[int]
-    _ = (1, 2)
-    _ = cast(tuple[int, int], (1, 2))
-    _ = cast(tuple[int, ...], (1, 2))
-    _ = [1, 2]
-    _ = range(2)
+    _0: Array[int]
+    _1: Array[int] = (1, 2)
+    _2: Array[int] = tuple([1, 2])
+    _3: Array[int] = [1, 2]
+    _4: Array[int] = range(2)
 
 
 def test_array_collections_abc() -> None:

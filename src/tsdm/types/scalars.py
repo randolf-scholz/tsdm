@@ -12,6 +12,7 @@ Note:
 
 __all__ = [
     # Protocols
+    "Orderable",
     "SupportsBool",
     "BaseScalar",
     "OrderedScalar",
@@ -38,6 +39,16 @@ from typing import (
 
 
 # region generic scalars ---------------------------------------------------------------
+@runtime_checkable
+class Orderable(Protocol):
+    r"""Protocol for types that support ordering operations."""
+
+    def __ge__(self, other: Any, /) -> object: ...
+    def __gt__(self, other: Any, /) -> object: ...
+    def __le__(self, other: Any, /) -> object: ...
+    def __lt__(self, other: Any, /) -> object: ...
+
+
 @runtime_checkable
 class BaseScalar(Protocol):
     r"""Protocol for scalars.

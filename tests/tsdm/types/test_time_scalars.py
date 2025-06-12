@@ -260,21 +260,23 @@ def test_timestamp_difference() -> None:
     def infer_delta_type[TD: DurationScalar](x: TimestampScalar[TD]) -> TD:
         return x - x
 
+    # fmt: off
     assert_type(TS_PY_FLOAT - TS_PY_FLOAT, float)
-    assert_type(TS_PY_INT - TS_PY_INT, int)
-    assert_type(TS_NP_DATE - TS_NP_DATE, np.timedelta64)
+    assert_type(TS_PY_INT   - TS_PY_INT,   int)
+    assert_type(TS_NP_DATE  - TS_NP_DATE,  "np.timedelta64[timedelta]")
     assert_type(TS_NP_FLOAT - TS_NP_FLOAT, np.float64)
-    assert_type(TS_NP_INT - TS_NP_INT, np.int64)
-    assert_type(TS_PD_DATE - TS_PD_DATE, pd.Timedelta)
-    assert_type(TS_PY_DATE - TS_PY_DATE, py_timedelta)
+    assert_type(TS_NP_INT   - TS_NP_INT,   np.int64)
+    assert_type(TS_PD_DATE  - TS_PD_DATE,  pd.Timedelta)
+    assert_type(TS_PY_DATE  - TS_PY_DATE,  py_timedelta)
 
     assert_type(infer_delta_type(TS_PY_FLOAT), float)
-    assert_type(infer_delta_type(TS_PY_INT), int)
-    assert_type(infer_delta_type(TS_NP_DATE), np.timedelta64)
+    assert_type(infer_delta_type(TS_PY_INT),   int)
+    assert_type(infer_delta_type(TS_NP_DATE),  "np.timedelta64[timedelta]")
     assert_type(infer_delta_type(TS_NP_FLOAT), np.float64)
-    assert_type(infer_delta_type(TS_NP_INT), np.int64)
-    assert_type(infer_delta_type(TS_PD_DATE), pd.Timedelta)
-    assert_type(infer_delta_type(TS_PY_DATE), py_timedelta)
+    assert_type(infer_delta_type(TS_NP_INT),   np.int64)
+    assert_type(infer_delta_type(TS_PD_DATE),  pd.Timedelta)
+    assert_type(infer_delta_type(TS_PY_DATE),  py_timedelta)
+    # fmt: on
 
 
 def test_td_var() -> None:

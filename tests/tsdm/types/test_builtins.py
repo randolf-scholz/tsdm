@@ -11,7 +11,7 @@ ABCS: list[type] = [
     abc.Generator,
     abc.Reversible,
     abc.Sized,
-    abc.Callable,  # type: ignore[list-item]
+    abc.Callable,  # type: ignore[list-item]  # pyright: ignore[reportAssignmentType]
     abc.Collection,
     abc.Sequence,
     abc.MutableSequence,

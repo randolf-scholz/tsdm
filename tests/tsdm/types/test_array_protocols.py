@@ -22,10 +22,10 @@ from tsdm.types.linalg import (
     NumericalArray,
     NumericalSeries,
     NumericalTensor,
-    SupportsInequality,
     SupportsMatmul,
     SupportsMutation,
     SupportsVectorArithmetic,
+    SupportsVectorComparison,
 )
 from tsdm.types.mixins import (
     SupportsArray,
@@ -219,6 +219,8 @@ NUMERICAL_SERIES: dict[str, NumericalSeries] = {
     "torch_tensor_1d"     : PT_TENSOR_1D,
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
+
+x: NumericalTensor = NP_ARRAY_1D
 
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
@@ -435,7 +437,7 @@ def test_supports_item(name: str) -> None:
 def test_supports_comparison(name: str) -> None:
     r"""Test the SupportsComparison protocol."""
     obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsInequality)
+    assert_protocol(obj, SupportsVectorComparison)
     try:
         _ = obj < obj
     except TypeError as exc:
