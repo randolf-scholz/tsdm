@@ -22,7 +22,7 @@ repos:
       - id: trailing-whitespace
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.7.11
+    rev: 0.7.13
     hooks:
       - id: uv-lock
       - id: uv-export
@@ -43,7 +43,7 @@ repos:
         exclude: '^docs/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.12
+    rev: v0.11.13
     hooks:
       - id: ruff
         name: ruff-isort
@@ -134,7 +134,7 @@ repos:
     rev: v0.6.28
     hooks:
       - id: pyright-concise
-        files: '^src/|^tests/'
+        files: '^src/'
         exclude: '/tasks/'
   # mypy
   - repo: local

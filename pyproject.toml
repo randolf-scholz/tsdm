@@ -30,15 +30,13 @@ classifiers = [
 # dependencies
 requires-python = ">=3.13"
 dependencies = [
-    "array-api-compat>=1.12.0",
-    "dataframe-api-compat>=0.2.7",
     "matplotlib>=3.10.3",
     "numpy>=2.3.0",
     "pandas>=2.3.0",
     "pillow>=11.2.1",
     "polars>=1.30.0",
     "pyarrow>=20.0.0",
-    "pydantic>=2.11.5",
+    "pydantic>=2.11.7",
     "pyyaml>=6.0.2",
     "requests>=2.32.4",
     "scikit-learn>=1.7.0",
@@ -61,7 +59,7 @@ dev = [
     {include-group="linters"}, {include-group="tests"}, {include-group="typing"},
 ]
 devtools = [
-    "cmake>=4.0.2",
+    "cmake>=4.0.3",
     "ninja>=1.11.1.4",
     "pybadges>=3.0.1",
 ]
@@ -82,7 +80,7 @@ docs = [
     "pygments>=2.19.1",
     "sphinx-autoapi>=3.6.0",
     "sphinx-autodoc2>=0.5.0",
-    "sphinx-automodapi>=0.19.0",
+    "sphinx-automodapi>=0.20.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
     "sphinx-togglebutton>=0.3.2",
@@ -92,12 +90,12 @@ docs = [
 linters = [
     "pre-commit>=4.2.0",
     "pylint>=3.3.7",
-    "ruff>=0.11.13",
+    "ruff>=0.12.0",
     "tach>=0.29.0",
 ]
 tests = [
-    "coverage>=7.9.0",
-    "hypothesis[numpy,pandas,pytest]>=6.135.7",
+    "coverage>=7.9.1",
+    "hypothesis[numpy,pandas,pytest]>=6.135.10",
     "psutil>=7.0.0",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
@@ -108,8 +106,8 @@ tests = [
     "pytest>=8.4.0",
 ]
 typing = [
-    "mypy>=1.16.0",
-    "pyrefly>=0.19.0",
+    "mypy>=1.16.1",
+    "pyrefly>=0.20.1",
     "pyright>=1.1.402",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.2.0.20250324",
