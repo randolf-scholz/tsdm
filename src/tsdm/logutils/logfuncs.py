@@ -19,10 +19,17 @@ __all__ = [
 
 import inspect
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from inspect import Parameter
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, TypeIs, runtime_checkable
+from typing import (
+    Any,
+    Literal,
+    Optional,
+    Protocol,
+    TypeIs,
+    runtime_checkable,
+)
 
 import torch
 import yaml
@@ -450,45 +457,25 @@ def log_plot(
     step: int,
     writer: SummaryWriter,
     /,
-    plot: Figure | Callable[[int], Figure] | Callable[[], Figure],
+    fig: Figure,
     *,
+    rasterization_options: Mapping[str, Any] = EMPTY_MAP,
     name: str = "forecastplot",
     prefix: str = "",
     postfix: str = "",
-    rasterization_options: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     r"""Make a forecast plot.
 
     Args:
         step: The current step.
-        plot: The plot to log can be a figure or a function returning a figure.
+        fig: The plot to log can be a figure or a function returning a figure.
+        rasterization_options: Options to pass to `tsdm.viz.rasterize`.
         writer: The writer to log to.
         name: The name of the plot.
         prefix: The prefix of the plot.
         postfix: The postfix of the plot.
-        rasterization_options: Options to pass to `tsdm.viz.rasterize`.
     """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
-
-    # generate the figure
-    match plot:
-        case Figure():
-            fig = plot
-        case fn if callable(fn):
-            try:
-                fig = fn(step)  # type: ignore[call-arg]
-            except Exception as exc1:
-                try:
-                    fig = fn()  # type: ignore[call-arg]
-                except Exception as exc2:
-                    exc = RuntimeError("Could not generate the plot!")
-                    exc.add_note(f"Passing step raised exception {exc1}")
-                    exc.add_note(f"Without step raised exception {exc2}")
-                    raise exc from None
-        case _:
-            raise TypeError(f"Expected a figure or a callable, got {type(plot)}!")
-
     # rasterize the figure
     image = rasterize(fig, **rasterization_options)
-
     writer.add_image(f"{identifier}", image, step, dataformats="HWC")

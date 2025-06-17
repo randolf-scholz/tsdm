@@ -1,4 +1,11 @@
-r"""Callback utilities for logging."""
+r"""Callback utilities for logging.
+
+A callback class generally should take a single positional argument to initialize.
+This argument can be either:
+
+1. A mutable object that changes by itself over time, e.g. a `DataFrame`, `nn.Module`, etc.
+2. A `Callable[[int, **kwargs], T]` that takes a step index and returns a value to log.
+"""
 
 __all__ = [
     # ABCs & Protocols & Structural classes
@@ -19,18 +26,10 @@ __all__ = [
     "ScalarsCallback",
     "TableCallback",
     "WrapCallback",
+    "PlotCallback",
     # Functions
     "is_callback",
 ]
-
-
-# TODO:
-#   - Add ValueCallback for single Tensor,
-#   - Instead of inheriting from BaseCallback, write a WrapCallback that implements the functionality.
-#   - Create Logger for init of training:
-#       - store python env lockfile.
-#       - store git commit hash.
-#       - store copy of the code.
 
 import inspect
 import logging
@@ -49,6 +48,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Concatenate,
     Literal,
     Optional,
     Protocol,
@@ -62,6 +62,7 @@ from typing import (
 
 import torch
 import yaml
+from matplotlib.figure import Figure
 from pandas import DataFrame, MultiIndex
 from torch import Tensor, nn
 from torch.optim.lr_scheduler import LRScheduler
@@ -69,7 +70,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
-from tsdm.constants import NOT_GIVEN
+from tsdm.constants import EMPTY_MAP, NOT_GIVEN
 from tsdm.logutils.logfuncs import (
     log_config,
     log_kernel,
@@ -77,6 +78,7 @@ from tsdm.logutils.logfuncs import (
     log_metrics,
     log_model,
     log_optimizer,
+    log_plot,
     log_table,
     log_values,
 )
@@ -197,7 +199,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     def __getitem__(self, index: int, /) -> Callback: ...
     @overload
     def __getitem__(self, index: slice, /) -> Self: ...
-    def __getitem__(self, index: int | slice, /) -> Callback | Self:
+    def __getitem__(self, index: int | slice, /) -> Callback | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(index, SupportsIndex):
             return self.callbacks[index]
         return self.__class__(self.callbacks[index])
@@ -206,14 +208,14 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     def __setitem__(self, index: int, value: Callback, /) -> None: ...
     @overload
     def __setitem__(self, index: slice, value: Iterable[Callback], /) -> None: ...
-    def __setitem__(self, index: int | slice, value: Any, /) -> None:
+    def __setitem__(self, index: int | slice, value: Any, /) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         self.callbacks[index] = value
 
     @overload
     def __delitem__(self, index: int, /) -> None: ...
     @overload
     def __delitem__(self, index: slice, /) -> None: ...
-    def __delitem__(self, index: int | slice, /) -> None:
+    def __delitem__(self, index: int | slice, /) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         del self.callbacks[index]
 
     def __call__(self, step: int, /, **state_dict: Any) -> None:
@@ -229,7 +231,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
 class WrapCallback(BaseCallback):
     r"""Wraps callable as a callback."""
 
-    func: Callable[..., None]
+    func: Callable[Concatenate[int, ...], None]
 
     def __call__(self, step: int, /, **state_dict: Any) -> None:
         self.func(step, **state_dict)
@@ -268,7 +270,7 @@ class ConfigCallback(BaseCallback):
 class EvaluationCallback(BaseCallback):
     r"""Callback to log evaluation metrics to tensorboard."""
 
-    model: nn.Module
+    model: nn.Module  # mutable
 
     _: KW_ONLY
 
@@ -396,7 +398,7 @@ class EvaluationCallback(BaseCallback):
 class CheckpointCallback(BaseCallback):
     r"""Callback to save checkpoints."""
 
-    objects: Mapping[str, object]
+    objects: Mapping[str, object]  # mutable objects to snapshot
 
     _: KW_ONLY
 
@@ -470,7 +472,7 @@ class HParamCallback(BaseCallback):
 class KernelCallback(BaseCallback):
     r"""Callback to log kernel information to tensorboard."""
 
-    kernel: Tensor
+    kernel: Tensor  # mutable
 
     _: KW_ONLY
 
@@ -515,7 +517,7 @@ class KernelCallback(BaseCallback):
 class LRSchedulerCallback(BaseCallback):
     r"""Callback to log learning rate information to tensorboard."""
 
-    lr_scheduler: LRScheduler
+    lr_scheduler: LRScheduler  # mutable
 
     _: KW_ONLY
 
@@ -554,14 +556,14 @@ class MetricsCallback(BaseCallback):
     postfix: str = ""
 
     def __call__(  # type: ignore[override]
-        self, step: int, /, *, targets: Tensor, predics: Tensor, **_: Any
+        self, step: int, /, *, targets: Tensor, predictions: Tensor, **_: Any
     ) -> None:
         log_metrics(
             step,
             self.writer,
             metrics=self.metrics,
             targets=targets,
-            predics=predics,
+            predics=predictions,
             key=self.key,
             name=self.name,
             prefix=self.prefix,
@@ -573,7 +575,7 @@ class MetricsCallback(BaseCallback):
 class ModelCallback(BaseCallback):
     r"""Callback to log model information to tensorboard."""
 
-    model: nn.Module
+    model: nn.Module  # mutable
 
     _: KW_ONLY
 
@@ -605,7 +607,7 @@ class ModelCallback(BaseCallback):
 class OptimizerCallback(BaseCallback):
     r"""Callback to log optimizer information to tensorboard."""
 
-    optimizer: Optimizer
+    optimizer: Optimizer  # mutable
 
     _: KW_ONLY
 
@@ -688,6 +690,39 @@ class TableCallback(BaseCallback):
             table=self.table,
             options=self.options,
             filetype=self.filetype,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
+
+
+@dataclass
+class PlotCallback(BaseCallback):
+    r"""Callback to log a plot to tensorboard."""
+
+    plot_fn: Callable[Concatenate[int, ...], Figure]
+
+    _: KW_ONLY
+
+    plot_kwargs: Mapping[str, Any] = EMPTY_MAP
+    rasterization_options: Mapping[str, Any] = EMPTY_MAP
+
+    writer: SummaryWriter
+    name: str = "plot"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, step: int, /, **_: Any) -> None:
+        try:
+            fig = self.plot_fn(step, **self.plot_kwargs)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to create plot[{step}]") from exc
+
+        log_plot(
+            step,
+            self.writer,
+            fig=fig,
+            rasterization_options=self.rasterization_options,
             name=self.name,
             prefix=self.prefix,
             postfix=self.postfix,
