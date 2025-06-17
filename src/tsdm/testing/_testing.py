@@ -19,7 +19,7 @@ __all__ = [
 
 from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
 from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
-from typing import Any, TypeIs, get_protocol_members, is_protocol
+from typing import Any, TypeGuard, TypeIs, get_protocol_members, is_protocol
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -125,7 +125,8 @@ def get_descriptors_and_callables(cls: type, /) -> set[str]:
     }
 
 
-def is_builtin_type(obj: object, /) -> TypeIs[type]:
+# NOTE: We ought to use TypeGuard here. see https://peps.python.org/pep-0742/#typeis-and-typeguard
+def is_builtin_type(obj: object, /) -> TypeGuard[type]:
     r"""Check if the object is a builtin type."""
     try:
         return obj in BUILTIN_TYPES

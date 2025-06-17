@@ -64,11 +64,11 @@ class Hash(NamedTuple):
     hash_algorithm: str | None
 
     @classmethod
-    def from_value(cls, arg: str | Self, /) -> Self:
-        if isinstance(arg, cls):
+    def from_value(cls, arg: str | Self, /) -> "Hash":
+        if isinstance(arg, Hash):
             return arg
 
-        s: str = arg  # type: ignore[assignment]
+        s: str = arg
         s = s.lower()
         # match against the hash regex
         match = HASH_REGEX.match(s)
