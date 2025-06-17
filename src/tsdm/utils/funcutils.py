@@ -381,8 +381,8 @@ def recurse_on_nested_builtin[T, R](
     )
 
     match x:
-        case leaf_type() as leaf if leaf_priotizied:  # type: ignore[misc]
-            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case leaf if leaf_priotizied and isinstance(leaf, leaf_type):
+            return leaf_fn(leaf)
         case dict(mapping):
             return {k: recurse(v) for k, v in mapping.items()}
         case list(seq):
@@ -394,8 +394,8 @@ def recurse_on_nested_builtin[T, R](
         case set(items):
             # FIXME: https://github.com/python/typeshed/issues/9571
             return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
-        case leaf_type() as leaf:  # type: ignore[misc]
-            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case leaf if isinstance(leaf, leaf_type):
+            return leaf_fn(leaf)
         case _:
             raise TypeError(
                 f"Unsupported type: {type(x)} not an instance of {leaf_type} or one of the builtin containers"
@@ -452,8 +452,8 @@ def recurse_on_nested_generic[T, R](
     is_hashable = isinstance(x, Hashable)  # pyright: ignore[reportGeneralTypeIssues]
 
     match x:
-        case leaf_type() as leaf if leaf_prioritized:  # type: ignore[misc]
-            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case leaf if leaf_prioritized and isinstance(leaf, leaf_type):
+            return leaf_fn(leaf)
         case Mapping() as mapping:
             d = {k: recurse(v) for k, v in mapping.items()}
             return hashable_mapping_factory(d) if is_hashable else mapping_factory(d)
@@ -466,8 +466,8 @@ def recurse_on_nested_generic[T, R](
             # FIXME: https://github.com/python/typeshed/issues/9571
             col = {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
             return hashable_set_factory(col) if is_hashable else set_factory(col)
-        case leaf_type() as leaf:  # type: ignore[misc]
-            return leaf_fn(leaf)  # type: ignore[unreachable]
+        case leaf if isinstance(leaf, leaf_type):
+            return leaf_fn(leaf)
         case _:
             raise TypeError(
                 f"Unsupported type: {type(x)} not an instance of {leaf_type} or one of the builtin containers"

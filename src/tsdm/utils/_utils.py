@@ -13,7 +13,6 @@ __all__ = [
     "timedelta",
     "timestamp",
     "pairwise_disjoint",
-    "pairwise_disjoint_masks",
     "paths_exists",
     "repackage_zip",
     "replace",
@@ -44,7 +43,6 @@ from typing import Any, Optional, cast
 from zipfile import ZipFile
 
 import numpy as np
-from numpy.typing import NDArray
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from tqdm.auto import tqdm
@@ -219,18 +217,13 @@ def pairwise_disjoint(sets: Iterable[set], /) -> bool:
     return len(union) == sum(len(s) for s in sets)
 
 
-def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]], /) -> bool:
-    r"""Check if masks are pairwise disjoint."""
-    return all(sum(masks) == 1)  # type: ignore[arg-type]
-
-
 def flatten_nested[H: Hashable](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
     r"""Flatten nested iterables of a given kind."""
     match nested:
         case None:
             return set()
-        case leaf_type() as leaf:  # type: ignore[misc]
-            return {leaf}  # type: ignore[unreachable]
+        case leaf if isinstance(leaf, leaf_type):
+            return {leaf}
         case Mapping() as mapping:
             return set.union(
                 *(flatten_nested(v, leaf_type=leaf_type) for v in mapping.values())
@@ -248,8 +241,8 @@ def flatten_dict[K, K2](
     /,
     *,
     recursive: bool | int = True,
-    join_fn: Callable[[Iterable[K]], K2] = ".".join,  # type: ignore[assignment]
-    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),  # type: ignore[attr-defined]
+    join_fn: Callable[[Iterable[K]], K2] = tuple,  # type: ignore[assignment]
+    split_fn: Callable[[K2], Iterable[K]] = tuple.__iter__,  # type: ignore[assignment]
 ) -> dict[K2, Any]:
     r"""Flatten dictionaries recursively.
 
@@ -332,8 +325,8 @@ def unflatten_dict[K, K2](
     /,
     *,
     recursive: bool | int = True,
-    join_fn: Callable[[Iterable[K]], K2] = ".".join,  # type: ignore[assignment]
-    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),  # type: ignore[attr-defined]
+    join_fn: Callable[[Iterable[K]], K2] = tuple,  # type: ignore[assignment]
+    split_fn: Callable[[K2], Iterable[K]] = tuple.__iter__,  # type: ignore[assignment]
 ) -> NestedDict[K, Any]:
     r"""Unflatten dictionaries recursively.
 

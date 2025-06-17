@@ -179,7 +179,7 @@ def download_directory_to_zip(
     headers: Mapping[str, str] = EMPTY_MAP,
     stream: bool = True,
     add_toplevel_dir: bool = True,
-    zip_options: Mapping[str, Any] = EMPTY_MAP,
+    zip_options: Mapping[str, object] = EMPTY_MAP,
 ) -> None:
     r"""Download a directory from a URL to a zip file."""
     path = Path(zip_filename)
@@ -211,7 +211,8 @@ def download_directory_to_zip(
         content: list[str] = sorted(yield_suburls(url, session=session))
 
         # Download the directory
-        with ZipFile(zip_filename, **zip_options) as archive:
+        # FIXME: https://github.com/python/typeshed/issues/14283
+        with ZipFile(zip_filename, **zip_options) as archive:  # type: ignore[call-overload] # pyright: ignore[reportCallIssue, reportArgumentType]
             for href in (pbar := tqdm(content)):
                 # get relative path w.r.t. the base url
                 file_name = os.path.relpath(href, url)

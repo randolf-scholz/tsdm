@@ -120,20 +120,47 @@ def test_replace() -> None:
 
 def test_flatten_dict() -> None:
     r"""Test `tsdm.utils.flatten_dict`."""
-    d = {"a": {"b": {"c": 1}, "d": {"e": 2}, "f": 3}}
-    assert flatten_dict(d) == {"a.b.c": 1, "a.d.e": 2, "a.f": 3}
+    empty_dict: dict = {}
+    assert flatten_dict(empty_dict) == {}
 
-    d = {}
-    assert flatten_dict(d) == {}
+    d = {
+        "a": {
+            "b": {"c": 1},
+            "d": {"e": 2},
+            "f": 3,
+        },
+        "g": 4,
+    }
+    tuple_target = {("a", "b", "c"): 1, ("a", "d", "e"): 2, ("a", "f"): 3, ("g",): 4}
+    tuple_result = flatten_dict(d, join_fn=tuple, split_fn=lambda x: x)
+    assert tuple_result == tuple_target
+
+    dot_target = {"a.b.c": 1, "a.d.e": 2, "a.f": 3, "g": 4}
+    dot_result = flatten_dict(d, join_fn=".".join, split_fn=lambda x: x.split("."))
+    assert dot_result == dot_target
 
 
 def test_unflatten_dict() -> None:
     r"""Test `tsdm.utils.unflatten_dict`."""
-    d = {"a.b.c": 1, "a.d.e": 2, "a.f": 3}
-    assert unflatten_dict(d) == {"a": {"b": {"c": 1}, "d": {"e": 2}, "f": 3}}
+    empty_dict: dict = {}
+    assert unflatten_dict(empty_dict) == {}
 
-    d = {}
-    assert unflatten_dict(d) == {}
+    result = {
+        "a": {
+            "b": {"c": 1},
+            "d": {"e": 2},
+            "f": 3,
+        },
+        "g": 4,
+    }
+
+    tup = {("a", "b", "c"): 1, ("a", "d", "e"): 2, ("a", "f"): 3, ("g",): 4}
+    tuple_result = unflatten_dict(tup, join_fn=tuple, split_fn=lambda x: x)
+    assert tuple_result == result
+
+    dot = {"a.b.c": 1, "a.d.e": 2, "a.f": 3, "g": 4}
+    dot_result = unflatten_dict(dot, join_fn=".".join, split_fn=lambda x: x.split("."))
+    assert dot_result == result
 
 
 def test_pairwise_disjoint() -> None:

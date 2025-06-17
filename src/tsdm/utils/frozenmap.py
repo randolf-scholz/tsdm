@@ -3,27 +3,31 @@ r"""Frozen mapping type."""
 
 __all__ = ["FrozenMap"]
 
-from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, overload
-
-from tsdm.constants import EMPTY_MAP
+from collections.abc import Iterable, Iterator, Mapping
+from typing import Any, overload
 
 
-class FrozenMap[K, V](Mapping[K, V]):
+class FrozenMap[K = Any, V = Any](Mapping[K, V]):
     r"""A frozen mapping type."""
 
-    if TYPE_CHECKING:
-        # fmt: off
-        @overload
-        def __new__(cls, /) -> "FrozenMap": ...
-        @overload  # mapping only
-        def __new__(cls, items: Mapping[K, V], /) -> "FrozenMap[K, V]": ...
-        @overload  # mapping and kwargs
-        def __new__(cls, items: Mapping[str, V] = ..., /, **kwargs: V) -> "FrozenMap[str, V]": ...
-        # fmt: on
-
-    def __init__(self, mapping: Mapping[K, V] = EMPTY_MAP, /, **kwargs: V) -> None:
-        self._values: dict[K, V] = dict(mapping, **kwargs)
+    # if TYPE_CHECKING:
+    # fmt: off
+    @overload  # mapping only
+    def __init__(
+        self: "FrozenMap[K, V]",  # pyright: ignore[reportInvalidTypeVarUse]
+        items: Mapping[K, V] | Iterable[tuple[K, V]] = ..., /
+    ) -> None: ...
+    @overload  # mapping and kwargs
+    def __init__(
+        self: "FrozenMap[K | str, V]",  # pyright: ignore[reportInvalidTypeVarUse]
+        items: Mapping[K, V] | Iterable[tuple[K, V]] = ..., /,
+        **kwargs: V
+    ) -> None: ...
+    # fmt: on
+    def __init__(
+        self, items: Mapping[K, V] | Iterable[tuple[K, V]] = (), /, **kwargs: V
+    ) -> None:
+        self._values: dict[K, V] = dict(items, **kwargs)
 
     def __getitem__(self, key: K, /) -> V:
         return self._values[key]
