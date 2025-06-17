@@ -2,8 +2,8 @@ r"""Test LazyDict."""
 # mypy: disable-error-code="no-untyped-def"
 
 import logging
-from collections.abc import Callable, MutableMapping
-from typing import assert_type
+from collections.abc import Callable, Mapping, MutableMapping
+from typing import Final, assert_type
 
 import pytest
 
@@ -11,11 +11,109 @@ from tsdm.utils import LazyDict, LazyValue
 
 __logger__ = logging.getLogger(__name__)
 
-EMPTY_LAZYDICT: LazyDict = LazyDict()
+from tsdm.utils.lazydict import lazy_dict
+
+EMPTY_LAZYDICT: Final[LazyDict] = LazyDict()
+EMPTY_DICT: Final[dict] = {}
 
 
-def make_int() -> int:
+def lazy_int() -> int:
     return 42
+
+
+def lazy_float() -> float:
+    return 3.14
+
+
+def lazy_str() -> str:
+    return "hello"
+
+
+def test_lazy_dict_function() -> None:
+    _0 = lazy_dict()
+    assert_type(_0, LazyDict)
+    _1 = lazy_dict({})
+    assert_type(_1, LazyDict)
+    _2 = lazy_dict(pi=lambda: 3.14)
+    assert_type(_2, LazyDict[str, float])
+    _3 = lazy_dict({"pi": lambda: 3.14})
+    assert_type(_3, LazyDict[str, float])
+    _4 = lazy_dict({0: lambda: 0.0, 1: lambda: 1.0})
+    assert_type(_4, LazyDict[int, float])
+
+
+def test_init_type_inference() -> None:
+    d1 = {0: lazy_int, 1: lazy_int, 2: lazy_int}
+    ld1 = lazy_dict(d1)
+    assert_type(ld1, LazyDict[int, int])
+
+    d2: dict[int, Callable[[], int]] = {0: lazy_int, 1: lazy_int, 2: lazy_int}
+    ld2 = lazy_dict(d2)
+    assert_type(ld2, LazyDict[int, int])
+
+    # without type hints
+    # FIXME: https://github.com/microsoft/pyright/issues/8638
+    d3 = {0: lazy_int, 1: lazy_int, 2: lazy_int}
+    ld3 = lazy_dict(d3)
+    assert_type(ld3, LazyDict[int, int])
+    assert all(isinstance(value, LazyValue) for value in ld3.values())
+    assert isinstance(ld3[0], int)
+
+
+def test_lazy_dict_init() -> None:
+    # check unbound initializers
+    _d1 = LazyDict()
+    assert_type(_d1, LazyDict)
+    _d2 = LazyDict({"x": 0.0})
+    assert_type(_d2, LazyDict[str, float])
+
+    # check bound initializers
+    _d3 = LazyDict[str, float]()
+    assert_type(_d3, LazyDict[str, float])
+    _d4 = LazyDict[str, float]({})
+    assert_type(_d4, LazyDict[str, float])
+    _d5 = LazyDict[str, float]({"x": 0.0})
+    assert_type(_d5, LazyDict[str, float])
+
+
+def test_lazy_dict_new() -> None:
+    # no arguments
+    _no0 = LazyDict.new()
+    _no1 = LazyDict[int, float].new()
+    assert_type(_no0, LazyDict)
+    assert_type(_no1, LazyDict[int, float])  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure]
+
+    # positional arguments
+    _po0 = LazyDict.new({1: lazy_float})
+    _po1 = LazyDict[int, float].new({1: lazy_float})
+    assert_type(_po0, LazyDict[int, float])
+    assert_type(_po1, LazyDict[int, float])
+
+    # keyword arguments
+    _kw0 = LazyDict.new(foo=lazy_float)
+    _kw1 = LazyDict[str, float].new(foo=lazy_float)
+    assert_type(_kw0, LazyDict[str, float])
+    assert_type(_kw1, LazyDict[str, float])
+
+    # mixed key types
+    _1 = LazyDict.new({1: lazy_float}, foo=lazy_float)
+    _2 = LazyDict[int | str, float].new({1: lazy_float}, foo=lazy_float)
+    assert_type(_1, LazyDict[int | str, float])
+    assert_type(_2, LazyDict[int | str, float])
+
+    # mixed value types
+    _3 = LazyDict.new({"x": lazy_float}, foo=lazy_str)
+    _4 = LazyDict[str, str | float].new({"x": lazy_float}, foo=lazy_str)
+    assert_type(_3, LazyDict[str, str | float])  # type: ignore[assert-type]
+    assert_type(_4, LazyDict[str, str | float])  # type: ignore[assert-type]
+
+    # mixed key and value types
+    _5 = LazyDict.new({"x": lazy_float, 1: lazy_str}, foo=lazy_float)
+    _6 = LazyDict[str | int, str | float].new(
+        {"x": lazy_float, 1: lazy_str}, foo=lazy_float
+    )
+    assert_type(_5, LazyDict[str | int, str | float])  # type: ignore[assert-type]
+    assert_type(_6, LazyDict[str | int, str | float])  # type: ignore[assert-type]
 
 
 def test_lazydict_init() -> None:
@@ -39,15 +137,15 @@ def test_lazydict_init() -> None:
         return a + b + c + sum(args) + d + e + sum(kwargs.values())
 
     example_dict = {
-        0: (no_input, (), {}),
-        1: (single_input, (1,), {}),
+        0: LazyValue(no_input, (), {}),
+        1: LazyValue(single_input, (1,), {}),
         # 2: (no_input,),
         # 3: (single_input,),
-        4: (positional_only, (1, 1, 1, 1), {}),
-        5: (keyword_only, (), {"d": 1, "e": 1, "f": 1, "g": 1}),
-        6: (generic, (1, 1, 1, 1), {"d": 1, "e": 1, "f": 1, "g": 1}),
+        4: LazyValue(positional_only, (1, 1, 1, 1), {}),
+        5: LazyValue(keyword_only, (), {"d": 1, "e": 1, "f": 1, "g": 1}),
+        6: LazyValue(generic, (1, 1, 1, 1), {"d": 1, "e": 1, "f": 1, "g": 1}),
     }
-    ld = LazyDict(example_dict)  # type: ignore[arg-type,var-annotated]
+    ld = lazy_dict(example_dict)
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)
@@ -60,34 +158,47 @@ def test_lazydict_init() -> None:
         assert isinstance(ld[key], int)
 
 
-def test_or() -> None:
+@pytest.mark.parametrize("other", [EMPTY_DICT, EMPTY_LAZYDICT])
+def test_or(other: Mapping) -> None:
     r"""Test `__or__` operator."""
-    other = LazyDict({0: lambda: 0})
-    ld = EMPTY_LAZYDICT | other
-    assert ld is not EMPTY_LAZYDICT, "__or__ should create a new dictionary"
+    self = lazy_dict({"x": lazy_float})
+    assert_type(self, LazyDict[str, float])
+
+    ld = self | other
+    assert ld is not other, "__or__ should create a new dictionary"
+    assert ld is not self, "__or__ should create a new dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
+    assert ld == self
+
     for value in ld.values():
         assert isinstance(value, LazyValue)
 
 
-def test_ror() -> None:
+@pytest.mark.parametrize("other", [EMPTY_DICT, EMPTY_LAZYDICT])
+def test_ror(other: Mapping) -> None:
     r"""Test `__ror__` operator."""
-    empty: dict = {}
-    other = LazyDict({0: make_int})
-    assert_type(LazyDict({0: make_int}), LazyDict[int, int])
-    with pytest.raises(NotImplementedError):
-        _ = empty | other
+    self = lazy_dict({"x": lazy_float})
+    assert_type(self, LazyDict[str, float])
 
-
-def test_ior() -> None:
-    r"""Test `__ior__` operator."""
-    ld = EMPTY_LAZYDICT
-    other = {0: make_int}
-    ld |= other
-    assert ld is EMPTY_LAZYDICT, "__ior__ should modify existing dictionary"
+    ld = other | self
+    assert ld is not other, "__or__ should create a new dictionary"
+    assert ld is not self, "__or__ should create a new dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
+    assert ld == self
+
     for value in ld.values():
-        assert not isinstance(value, LazyValue)
+        assert isinstance(value, LazyValue)
+
+
+@pytest.mark.parametrize("other", [EMPTY_DICT, EMPTY_LAZYDICT])
+def test_ior(other: Mapping) -> None:
+    r"""Test `__ior__` operator."""
+    self = lazy_dict({"x": lazy_float})
+    assert_type(self, LazyDict[str, float])
+    self |= other
+
+    for value in self.values():
+        assert isinstance(value, LazyValue)
 
 
 def test_fromkeys() -> None:
@@ -115,12 +226,21 @@ def test_get() -> None:
     assert ld.get(1) == 0
 
 
+def test_get_lazy() -> None:
+    r"""Test the `get` method of `LazyDict` with lazy values."""
+    # get should return lazy values
+    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)  # type: ignore[misc]
+
+    assert isinstance(ld.get_lazy(2), LazyValue)
+    assert ld.get_lazy(5, "foo") == "foo"
+
+
 def test_from_func() -> None:
     r"""Test the `from_func` method of `LazyDict`."""
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.fromkeys)
 
-    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)  # type: ignore[misc]
+    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)  # type: ignore[misc]
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)
@@ -131,6 +251,7 @@ def test_from_func() -> None:
 
     for key in ld:
         assert isinstance(ld[key], int)
+        assert ld[key] == key**2
 
 
 def test_copy() -> None:
@@ -138,7 +259,7 @@ def test_copy() -> None:
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.copy)
 
-    ldA = LazyDict.fromkeys([1, 2, 3], LazyValue(lambda: 0))
+    ldA = LazyDict.fromkeys([1, 2, 3], LazyValue(lazy_int))
     ldB = ldA.copy()
     assert isinstance(ldB, LazyDict)
 
@@ -158,23 +279,3 @@ def test_copy() -> None:
         assert valueA is not valueB
         assert isinstance(valueB, int)
         assert isinstance(valueA, LazyValue)
-
-
-def test_init_type_inference() -> None:
-    d1 = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}
-    ld1 = LazyDict(d1)
-    assert_type(ld1, LazyDict[int, int])  # pyright: ignore[reportAssertTypeFailure]
-
-    d2: dict[int, Callable[[], int]] = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}
-    ld2 = LazyDict(d2)
-    assert_type(ld2, LazyDict[int, int])
-    # assert all(isinstance(value, LazyValue) for value in ld2.values())
-    # assert isinstance(ld2[0], int)
-
-    # without type hints
-    # FIXME: https://github.com/microsoft/pyright/issues/8638
-    d3 = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}
-    ld3 = LazyDict(d3)
-    assert_type(ld3, LazyDict[int, int])  # pyright: ignore[reportAssertTypeFailure]
-    assert all(isinstance(value, LazyValue) for value in ld3.values())
-    assert isinstance(ld3[0], int)
