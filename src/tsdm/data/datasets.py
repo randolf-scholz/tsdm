@@ -8,6 +8,7 @@ __all__ = [
     "MapDataset",
     "PandasDataset",
     "SequentialDataset",
+    "SeriesDataset",
     "TabularDataset",
     "TorchDataset",
     # Classes
@@ -121,6 +122,7 @@ class SeriesDataset[K, V](Protocol):  # -K, +V
     def __getitem__(self, key: K, /) -> V: ...
 
 
+@runtime_checkable
 class PandasDataset[K, V](Protocol):  # K, +V
     r"""Protocol version of `pandas.DataFrame`/`Series`.
 
@@ -275,7 +277,8 @@ def get_last_sample[T](dataset: Dataset[T], /) -> T:
         case PandasDataset() as pandas_dataset:
             return pandas_dataset.iloc[-1]
         case MapDataset() as map_dataset:
-            return map_dataset[next(reversed(map_dataset.keys()))]
+            *_, last_key = map_dataset.keys()
+            return map_dataset[last_key]
         case Indexable() as iterable_dataset:
             return next(reversed(iterable_dataset))
         case _:

@@ -122,26 +122,20 @@ def make_dataframe(
     return df
 
 
-@overload
-def strip_whitespace(array: Array, /) -> Array: ...
-@overload
-def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
-@overload
-def strip_whitespace(series: Series, /) -> Series: ...  # type: ignore[overload-cannot-match]
-@overload
-def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[overload-cannot-match]
-def strip_whitespace[T](table: T, /, *cols: str) -> T:
+def strip_whitespace[T: Array | Table | Series | DataFrame](
+    table: T, /, *cols: str
+) -> T:
     r"""Strip whitespace from all string columns in a table or frame."""
     match table:
         case Table() as table:
             return strip_whitespace_table(table, *cols)
         case Array() as array:
             if cols:
-                raise AssertionError("Cannot specify columns for an Array.")
+                raise ValueError("Cannot specify columns for an Array.")
             return strip_whitespace_array(array)
         case Series() as series:
             if cols:
-                raise AssertionError("Cannot specify columns for a Series.")
+                raise ValueError("Cannot specify columns for a Series.")
             return strip_whitespace_series(series)
         case DataFrame() as frame:
             return strip_whitespace_dataframe(frame, *cols)
@@ -285,22 +279,21 @@ def remove_outliers[T: Series | DataFrame](
     # check that either limits or kwargs are provided
     if limits is NotImplemented:
         if any(undef.values()):
-            raise AssertionError(f"Missing boundary values: {undef}")
+            raise ValueError(f"Missing boundary values: {undef}")
         opts = lims
     elif not all(undef.values()):
-        raise AssertionError(
-            "Limits specified both as positional and keyword arguments."
-        )
+        raise ValueError("Limits specified both as positional and keyword arguments.")
     else:
         opts = {key: limits[key] for key in lims}
 
-    opts = {"drop": drop, "inplace": inplace} | opts
+    # apply defaults
+    kwargs: dict = {"drop": drop, "inplace": inplace} | opts
 
     match obj:
         case Series() as s:
-            return remove_outliers_series(s, **opts)  # type: ignore[arg-type]
+            return remove_outliers_series(s, **kwargs)
         case DataFrame() as df:
-            return remove_outliers_dataframe(df, **opts)  # type: ignore[arg-type]
+            return remove_outliers_dataframe(df, **kwargs)
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 

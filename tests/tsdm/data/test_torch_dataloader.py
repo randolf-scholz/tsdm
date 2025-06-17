@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 
 
 def test_dataloader() -> None:
+    r"""Check that torch is ok with protocol for dataloader."""
+
     class Dataset:
         def __getitem__(self, item: int, /) -> int:
             return -item
@@ -19,7 +21,11 @@ def test_dataloader() -> None:
 
     dataset = Dataset()
     sampler = Sampler()
-    dataloader = DataLoader(dataset, sampler=sampler, batch_size=5)  # type: ignore[arg-type, var-annotated]
+    dataloader = DataLoader(
+        dataset,  # type: ignore[arg-type, var-annotated]  # pyright: ignore[reportArgumentType]
+        sampler=sampler,
+        batch_size=5,
+    )
 
     for batch in dataloader:
         print(batch)
