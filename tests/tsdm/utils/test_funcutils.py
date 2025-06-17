@@ -1,5 +1,4 @@
 r"""Tests for `tsdm.utils.funcutils` module."""
-# ruff: noqa: ARG001
 # mypy: disable-error-code="no-untyped-def"
 
 from tsdm.utils.funcutils import (

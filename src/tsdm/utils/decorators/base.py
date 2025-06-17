@@ -43,7 +43,7 @@ class DecoratorError(Exception):
     def __call__(self, *message_lines: str) -> Self:
         r"""Raise a new error."""
         # TODO: CHECK if dataclasses are the problem
-        return DecoratorError(self.decorated, message="\n".join(message_lines))  # type: ignore[return-value]
+        return self.__class__(self.decorated, message="\n".join(message_lines))
 
     def __str__(self) -> str:
         r"""Create Error Message."""
