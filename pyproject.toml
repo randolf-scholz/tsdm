@@ -95,7 +95,7 @@ linters = [
 ]
 tests = [
     "coverage>=7.9.1",
-    "hypothesis[numpy,pandas,pytest]>=6.135.10",
+    "hypothesis[numpy,pandas,pytest]>=6.135.11",
     "psutil>=7.0.0",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
@@ -103,11 +103,11 @@ tests = [
     "pytest-repeat>=0.9.4",
     "pytest-rerunfailures>=15.1",
     "pytest-xdist>=3.7.0",
-    "pytest>=8.4.0",
+    "pytest>=8.4.1",
 ]
 typing = [
     "mypy>=1.16.1",
-    "pyrefly>=0.20.1",
+    "pyrefly>=0.20.2",
     "pyright>=1.1.402",
     "types-colorama>=0.4.15.20240311",
     "types-decorator>=5.2.0.20250324",

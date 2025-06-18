@@ -25,11 +25,14 @@ repos:
     rev: 0.7.13
     hooks:
       - id: uv-lock
+        files: '^pyproject.toml$'
       - id: uv-export
         args: ["--no-dev", "--no-hashes", "--frozen", "--output-file=requirements.txt"]
+        files: '^pyproject.toml$'
       - id: uv-sync
         args: ["--upgrade"]
         stages: [ "pre-commit" ]
+        files: '^pyproject.toml$'
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
     rev: v0.29.0 # change this to the latest tag!
