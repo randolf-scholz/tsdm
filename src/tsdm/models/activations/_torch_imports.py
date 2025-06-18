@@ -85,8 +85,6 @@ r"""Dictionary containing all available functional activations in torch."""
 TORCH_SPECIAL_ACTIVATIONS: dict[str, GenericActivation] = {
     "threshold": nn.functional.threshold,
     # Thresholds each element of the input Tensor.
-    "threshold_": nn.functional.threshold_,  # type: ignore[attr-defined]
-    # In-place version of threshold().
     "prelu": nn.functional.prelu,
     # `PReLU(x)=\max(0,x)+ω⋅\min(0,x)` where ω is a learnable parameter.
     "batch_norm": nn.functional.batch_norm,

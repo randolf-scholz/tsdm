@@ -65,7 +65,7 @@ from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from tsdm.backend.torch import initialize_from_config
 from tsdm.config import CONFIG
 from tsdm.constants import NOT_GIVEN
-from tsdm.encoders import BaseEncoder
+from tsdm.encoders import Encoder
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.pprint import repr_mapping
 from tsdm.testing._testing import is_zipfile
@@ -256,7 +256,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         return self.components.get("hyperparameters", NotImplemented)
 
     @cached_property
-    def encoder(self, /) -> BaseEncoder:
+    def encoder(self, /) -> Encoder:
         r"""Return the encoder."""
         return self.components.get("encoder", NotImplemented)
 

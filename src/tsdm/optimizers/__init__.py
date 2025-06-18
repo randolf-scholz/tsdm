@@ -24,7 +24,7 @@ OPTIMIZERS: dict[str, type[Optimizer]] = {
     "Adam"       : optim.Adam,
     "AdamW"      : optim.AdamW,
     "Adamax"     : optim.Adamax,
-    "LBFGS"      : optim.LBFGS,  # type: ignore[dict-item]
+    "LBFGS"      : optim.LBFGS,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
     "RMSprop"    : optim.RMSprop,
     "Rprop"      : optim.Rprop,
     "SGD"        : optim.SGD,
@@ -41,7 +41,7 @@ LR_SCHEDULERS: dict[str, type[LRScheduler]] = {
     "MultiStepLR"                 : lr_scheduler.MultiStepLR,
     "MultiplicativeLR"            : lr_scheduler.MultiplicativeLR,
     "OneCycleLR"                  : lr_scheduler.OneCycleLR,
-    "ReduceLROnPlateau"           : lr_scheduler.ReduceLROnPlateau,  # type: ignore[dict-item]
+    # "ReduceLROnPlateau"           : lr_scheduler.ReduceLROnPlateau,  # FIXME: https://github.com/pytorch/pytorch/issues/125531
     "StepLR"                      : lr_scheduler.StepLR,
 }  # fmt: skip
 r"""Dictionary of all available lr_schedulers."""

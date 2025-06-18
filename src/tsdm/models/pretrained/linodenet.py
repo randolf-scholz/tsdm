@@ -7,6 +7,7 @@ __all__ = [
 
 import pickle
 from collections.abc import Collection
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -54,6 +55,8 @@ class LinODEnet(PreTrainedBase):
         "Probe_Volume",
     ])
 
+    encoder: Any
+
     @classmethod
     def available_checkpoints(cls) -> DataFrame:
         url = cls.DOWNLOAD_URL + "checkpoints.xlsx"
@@ -70,7 +73,7 @@ class LinODEnet(PreTrainedBase):
         self, ts: DataFrame, /, *, ffill_controls: bool = True
     ) -> DataFrame:
         r"""Preprocess the time-series input."""
-        encoder_cols = Index(self.encoder[-1].column_encoders)  # type: ignore[index]
+        encoder_cols = Index(self.encoder[-1].column_encoders)
 
         columns = ts.columns
         used_columns = list(columns.intersection(encoder_cols))
