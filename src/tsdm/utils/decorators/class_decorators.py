@@ -24,6 +24,7 @@ from tsdm.pprint import (
     repr_set,
     repr_shortform,
 )
+from tsdm.types.callback_protocols import IdentityMapOnCls
 from tsdm.types.mixins import SupportsArray
 from tsdm.types.protocols import Dataclass, NTuple
 from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
@@ -121,13 +122,14 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
     return cls  # type: ignore[return-value]
 
 
-def implements[T](*protocols: type) -> Callable[[type[T]], type[T]]:
+def implements(*protocols: type) -> IdentityMapOnCls:
     r"""Check if class implements a set of protocols."""
 
-    def __wrapper(cls: type[T], /) -> type[T]:
-        for protocol in protocols:
-            if not issubclass(cls, protocol):
-                raise TypeError(f"{cls} does not implement {protocol}")
+    def __wrapper[Cls: type](cls: Cls, /) -> Cls:
+        if __debug__:
+            for protocol in protocols:
+                if not issubclass(cls, protocol):
+                    raise TypeError(f"{cls} does not implement {protocol}")
         return cls
 
     return __wrapper

@@ -5,7 +5,10 @@ __all__ = [
     "IntMap",
     "NullMap",
     "SelfMap",
-    "WrappedValue",
+    "Lazy",
+    "IdentityMap",
+    "IdentityMapOnFn",
+    "IdentityMapOnCls",
     # callback-protocols
     "ApplyAlongAxes",
     "ArraySplitProto",
@@ -21,9 +24,8 @@ __all__ = [
     "WhereProto",
 ]
 
-from abc import abstractmethod
-from collections.abc import Callable
-from typing import Any, Protocol, SupportsIndex, SupportsInt
+from collections.abc import Callable as Fn
+from typing import Any, Protocol, SupportsIndex
 
 from numpy.typing import ArrayLike
 
@@ -31,40 +33,48 @@ from tsdm.types.aliases import Axis, BuiltinScalar
 
 
 # region generic callback-protocols ----------------------------------------------------
+class IdentityMap(Protocol):
+    r"""Protocol for Identity functions."""
+
+    def __call__[T](self, obj: T, /) -> T: ...
+
+
+# FIXME: use IdentityMap[type] once bounding T-vars by other T-vars is supported
+class IdentityMapOnCls(Protocol):
+    r"""Protocol for class decorators that return the same class."""
+
+    def __call__[Cls: type](self, cls: Cls, /) -> Cls: ...
+
+
+# FIXME: use IdentityMap[Fn] once bounding T-vars by other T-vars is supported
+class IdentityMapOnFn(Protocol):
+    r"""Protocol for function decorators that return the same function."""
+
+    def __call__[F: Fn](self, fn: F, /) -> F: ...
+
+
 class NullMap[T](Protocol):  # -T
     r"""A generic protocol for functions without args that always returns None."""
 
-    @abstractmethod
-    def __call__(self, x: T, /) -> None:
-        r"""Returns `None`."""
-        ...
+    def __call__(self, x: T, /) -> None: ...
 
 
 class SelfMap[T](Protocol):  # T
     r"""A generic protocol for endofunctions."""
 
-    @abstractmethod
-    def __call__(self, x: T, /) -> T:
-        r"""Returns the result of the endofunction."""
-        ...
+    def __call__(self, x: T, /) -> T: ...
 
 
 class IntMap[T](Protocol):  # +T
     r"""A generic protocol for indexed values."""
 
-    @abstractmethod
-    def __call__(self, index: SupportsInt | SupportsIndex, /) -> T:
-        r"""Returns the value at the given integer."""
-        ...
+    def __call__(self, index: SupportsIndex, /) -> T: ...
 
 
-class WrappedValue[T](Protocol):  # +T
+class Lazy[T](Protocol):  # +T
     r"""A generic protocol for wrapped values."""
 
-    @abstractmethod
-    def __call__(self) -> T:
-        r"""Returns the wrapped value."""
-        ...
+    def __call__(self, /) -> T: ...
 
 
 # endregion generic callback protocols -------------------------------------------------
@@ -116,7 +126,7 @@ class WhereProto[T](Protocol):  # T
 class ApplyAlongAxes[T](Protocol):  # T
     r"""Bound-Protocol for `apply_along_axes`-function."""
 
-    def __call__(self, op: Callable[..., T], /, *tensors: T, axis: Axis) -> T: ...
+    def __call__(self, op: Fn[..., T], /, *tensors: T, axis: Axis) -> T: ...
 
 
 class ArraySplitProto[T](Protocol):  # T

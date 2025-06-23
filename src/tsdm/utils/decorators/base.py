@@ -25,9 +25,10 @@ from collections.abc import Callable as Fn
 from dataclasses import dataclass
 from functools import partial, wraps
 from inspect import Parameter, signature
-from typing import Any, Optional, Protocol, Self, cast, overload
+from typing import Any, Never, Optional, Protocol, Self, cast, overload
 
 from tsdm.types.aliases import Nested
+from tsdm.types.callback_protocols import IdentityMap, IdentityMapOnCls, IdentityMapOnFn
 from tsdm.utils.funcutils import recurse_on_nested_generic, rpartial
 
 
@@ -63,6 +64,22 @@ class DecoratorError(Exception):
 
 
 # region ClassDecorator ----------------------------------------------------------------
+
+
+class PolymorphicClassDecorator[**P](Protocol):
+    r"""Polymorphic Class Decorator Protocol.
+
+    Note: Only supports identity decorators, i.e. those that return the same class.
+    """
+
+    # fmt: off
+    @overload  # @decorator
+    def __call__[Cls: type](self, cls: Cls, /, *args: P.args, **kwargs: P.kwargs) -> Cls: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, _: Never = ..., /, *args: P.args, **kwargs: P.kwargs) -> IdentityMapOnCls: ...
+    # fmt: on
+
+
 class ClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):  # -F_in, +F_out
     r"""Function Decorator Protocol that preserves type."""
 
@@ -83,21 +100,10 @@ class ParametrizedClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):
     r"""Parametrized Function Decorator Protocol that preserves type."""
 
     # fmt: off
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[Cls_in], Cls_out]: ...
     @overload  # @decorator
     def __call__(self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs) -> Cls_out: ...
-    # fmt: on
-
-
-class PolymorphicClassDecorator[**P](Protocol):
-    r"""Polymorphic Class Decorator Protocol."""
-
-    # fmt: off
-    @overload  # @decorator
-    def __call__[Cls: type](self, cls: Cls, /, *args: P.args, **kwargs: P.kwargs) -> Cls: ...
     @overload  # @decorator(*args, **kwargs)
-    def __call__[Cls: type](self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[Cls], Cls]: ...
+    def __call__(self, _: Never = ..., /, *args: P.args, **kwargs: P.kwargs) -> Fn[[Cls_in], Cls_out]: ...
     # fmt: on
 
 
@@ -105,6 +111,21 @@ class PolymorphicClassDecorator[**P](Protocol):
 
 
 # region FunctionDecorator -------------------------------------------------------------
+# FIXME: use Identity[Fn] once bounding T-vars by other T-vars is supported
+
+
+class PolymorphicFunctionDecorator[**P](Protocol):
+    r"""Polymorphic Function Decorator Protocol."""
+
+    # fmt: off
+    @overload  # @decorator
+    def __call__[F: Fn](self, fn: F, /, *args: P.args, **kwargs: P.kwargs) -> F: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> IdentityMapOnFn: ...
+
+    # fmt: on
+
+
 class FunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):  # -F_in, +F_out
     r"""Function Decorator Protocol that preserves type."""
 
@@ -130,21 +151,23 @@ class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
     # fmt: on
 
 
-class PolymorphicFunctionDecorator[**P](Protocol):
-    r"""Polymorphic Function Decorator Protocol."""
-
-    # fmt: off
-    @overload  # @decorator
-    def __call__[F: Fn](self, fn: F, /, *args: P.args, **kwargs: P.kwargs) -> F: ...
-    @overload  # @decorator(*args, **kwargs)
-    def __call__[F: Fn](self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[F], F]: ...
-    # fmt: on
-
-
 # endregion FunctionDecorator ----------------------------------------------------------
 
 
 # region general decorators ------------------------------------------------------------
+
+
+class PolymorphicDecorator[**P](Protocol):
+    r"""Polymorphic Decorator Protocol."""
+
+    # fmt: off
+    @overload  # @decorator
+    def __call__[T](self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__[T](self, /, *args: P.args, **kwargs: P.kwargs) -> IdentityMap: ...
+    # fmt: on
+
+
 class Decorator[T_in, T_out, **P](Protocol):
     r"""Protocol for decorators."""
 
@@ -179,17 +202,6 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
     @overload  # @decorator / decorator(obj, *args, **kwargs)
     def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
-    # fmt: on
-
-
-class PolymorphicDecorator[**P](Protocol):
-    r"""Polymorphic Decorator Protocol."""
-
-    # fmt: off
-    @overload  # @decorator
-    def __call__[T](self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
-    @overload  # @decorator(*args, **kwargs)
-    def __call__[T](self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[T], T]: ...
     # fmt: on
 
 
