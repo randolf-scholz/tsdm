@@ -37,7 +37,7 @@ from zipfile import ZipFile
 from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
-from tsdm.constants import EMPTY_MAP, NOT_GIVEN
+from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.data import serialize
 from tsdm.pprint import repr_mapping
 from tsdm.testing.hashutils import (
@@ -137,7 +137,7 @@ class DatasetBase[Key: str, T](
     r"""Logger for the dataset."""
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
-    SOURCE_URL: ClassVar[str] = NOT_GIVEN
+    SOURCE_URL: ClassVar[str] = UNDEFINED
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL: ClassVar[Optional[str]] = None
     r"""HTTP address containing additional information about the dataset."""
@@ -449,7 +449,7 @@ class DatasetBase[Key: str, T](
 
         Override this method for custom download logic.
         """
-        if self.SOURCE_URL is NOT_GIVEN:
+        if self.SOURCE_URL is UNDEFINED:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 

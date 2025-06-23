@@ -53,7 +53,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from tsdm.backend import Backend, get_backend
-from tsdm.constants import NOT_GIVEN
+from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import BackendMixin, BaseEncoder
 from tsdm.types.aliases import Axis, Indexer
 from tsdm.types.linalg import NumericalArray as Array
@@ -337,13 +337,13 @@ class StandardScaler[Arr: Array[float]](BaseEncoder[Arr, Arr]):
 
     axis: Axis = ()
     r"""The axis to perform the scaling. If None, automatically select the axis."""
-    backend: Backend[Arr] = NOT_GIVEN
+    backend: Backend[Arr] = UNDEFINED
     r"""The backend of the encoder."""
 
     def __init__(
         self,
-        mean: float | Arr = NOT_GIVEN,
-        stdv: float | Arr = NOT_GIVEN,
+        mean: float | Arr = UNDEFINED,
+        stdv: float | Arr = UNDEFINED,
         *,
         axis: Axis = (),
     ) -> None:
@@ -446,7 +446,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
     r"""Over which axis to perform the scaling."""
     safe_computation: bool = True
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
-    backend: Backend[Arr] = NOT_GIVEN
+    backend: Backend[Arr] = UNDEFINED
     r"""The backend of the encoder."""
 
     def __init__(

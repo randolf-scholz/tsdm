@@ -9,7 +9,7 @@ from typing import Any, Generic, Literal, Optional, Self, TypeVar
 import pandas as pd
 
 from tsdm.backend import Backend, get_backend
-from tsdm.constants import NOT_GIVEN
+from tsdm.constants import UNDEFINED
 from tsdm.encoders import BaseEncoder
 from tsdm.types.linalg import NumericalSeries
 from tsdm.types.scalars import OrderedScalar
@@ -64,13 +64,13 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
 
     lower_included: bool = True
     upper_included: bool = True
-    lower_mode: CLIPPING = NOT_GIVEN
-    upper_mode: CLIPPING = NOT_GIVEN
+    lower_mode: CLIPPING = UNDEFINED
+    upper_mode: CLIPPING = UNDEFINED
 
     # derived attributes
     backend: Backend = field(init=False)
-    lower_value: S = field(init=False, default=NOT_GIVEN)
-    upper_value: S = field(init=False, default=NOT_GIVEN)
+    lower_value: S = field(init=False, default=UNDEFINED)
+    upper_value: S = field(init=False, default=UNDEFINED)
 
     def __init__(
         self,
@@ -117,9 +117,9 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
         # validate internal consistency
         if (
             self.upper_bound is not None
-            and self.upper_bound is not NOT_GIVEN
+            and self.upper_bound is not UNDEFINED
             and self.lower_bound is not None
-            and self.lower_bound is not NOT_GIVEN
+            and self.lower_bound is not UNDEFINED
             and self.upper_bound <= self.lower_bound
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
@@ -164,9 +164,9 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr], Generic[S, Arr]):
         self.backend: Backend = get_backend(data)
 
         # fit the parameters
-        if self.lower_bound is NOT_GIVEN:
+        if self.lower_bound is UNDEFINED:
             self.lower_bound = self.backend.nanmin(data)
-        if self.upper_bound is NOT_GIVEN:
+        if self.upper_bound is UNDEFINED:
             self.upper_bound = self.backend.nanmax(data)
 
         # set lower_value

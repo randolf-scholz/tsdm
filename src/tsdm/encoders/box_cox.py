@@ -24,7 +24,7 @@ from pandas import Index, Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
-from tsdm.constants import FLOAT, NOT_GIVEN
+from tsdm.constants import FLOAT, UNDEFINED
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.decorators import pprint_repr
 
@@ -274,7 +274,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
 
     bounds: tuple[float, float] = (0.0, 1.0)
     method: METHOD = METHOD.match_uniform
-    offset: float = NOT_GIVEN
+    offset: float = UNDEFINED
     offset_guess: float = 1.0
     verbose: bool = False
 
@@ -285,7 +285,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         bounds: tuple[float, float] = (0.0, 1.0),
         offset_guess: float = 1.0,
         method: Method = "match-uniform",
-        offset: float = NOT_GIVEN,
+        offset: float = UNDEFINED,
         verbose: bool = False,
     ) -> None:
         if method not in self.METHOD:
@@ -401,7 +401,7 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
     _: KW_ONLY
     bounds: tuple[float, float] = (0.0, 1.0)
     method: METHOD = METHOD.match_uniform
-    offset: float = NOT_GIVEN
+    offset: float = UNDEFINED
     offset_guess: float = 0.1
     verbose: bool = False
 
@@ -411,7 +411,7 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
         method: Method = "match-uniform",
-        offset: float = NOT_GIVEN,
+        offset: float = UNDEFINED,
         offset_guess: float = 0.1,
         verbose: bool = False,
     ) -> None:

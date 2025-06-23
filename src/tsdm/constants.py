@@ -19,7 +19,7 @@ __all__ = [
     "KEYWORD_ONLY",
     "NA_STRINGS",
     "NA_VALUES",
-    "NOT_GIVEN",
+    "UNDEFINED",
     "NULL_VALUES",
     "POSITIONAL_ONLY",
     "POSITIONAL_OR_KEYWORD",
@@ -90,7 +90,7 @@ r"""Constant: Immutable empty `Set`, use as default in function signatures."""
 # endregion collection constants -------------------------------------------------------
 
 
-NOT_GIVEN: Final[Any] = None
+UNDEFINED: Final[Any] = object()
 r"""CONST: Default value for optional arguments."""
 
 

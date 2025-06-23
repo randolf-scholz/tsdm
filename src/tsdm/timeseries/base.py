@@ -41,7 +41,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm import constants as const
-from tsdm.constants import EMPTY_MAP, EMPTY_SET, NOT_GIVEN
+from tsdm.constants import EMPTY_MAP, EMPTY_SET, UNDEFINED
 from tsdm.data.datasets import TorchDataset
 from tsdm.datasets import Dataset
 from tsdm.types.scalars import TimestampScalar
@@ -138,7 +138,7 @@ class PandasTS(TimeSeries[DataFrame]):
     _: KW_ONLY
 
     # Header
-    name: str = NOT_GIVEN
+    name: str = UNDEFINED
     r"""The name of the dataset."""
 
     # Main Attributes
@@ -150,7 +150,7 @@ class PandasTS(TimeSeries[DataFrame]):
     r"""The metadata of the dataset."""
     static_covariates_metadata: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    timeindex: Index = NOT_GIVEN  # derived field
+    timeindex: Index = UNDEFINED  # derived field
     r"""The time-index of the dataset."""
     timeindex_metadata: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
@@ -174,7 +174,7 @@ class PandasTS(TimeSeries[DataFrame]):
 
     def __post_init__(self) -> None:
         r"""Post init."""
-        if self.timeindex is NOT_GIVEN:
+        if self.timeindex is UNDEFINED:
             self.timeindex = self._infer_timeindex()
 
     def __len__(self) -> int:
@@ -238,7 +238,7 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
     _: KW_ONLY
 
     # Header
-    name: str = NOT_GIVEN
+    name: str = UNDEFINED
     r"""The name of the collection."""
 
     # Main attributes
@@ -262,9 +262,9 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
     r"""Labels associated with the dataset."""
 
     # derived fields
-    timeindex: MultiIndex = NOT_GIVEN
+    timeindex: MultiIndex = UNDEFINED
     r"""The time-index of the collection."""
-    metaindex: Index = NOT_GIVEN
+    metaindex: Index = UNDEFINED
     r"""The index of the collection."""
 
     @classmethod
@@ -282,13 +282,13 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
 
     def __post_init__(self) -> None:
         r"""Post init."""
-        if self.name is NOT_GIVEN:
+        if self.name is UNDEFINED:
             self.name = self._infer_name()
 
-        if self.timeindex is NOT_GIVEN:
+        if self.timeindex is UNDEFINED:
             self.timeindex = self._infer_timeindex()
 
-        if self.metaindex is NOT_GIVEN:
+        if self.metaindex is UNDEFINED:
             self.metaindex = self._infer_metaindex()
 
         # ensure that the index of the static covariates is a subset of the metaindex
@@ -630,15 +630,15 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
 
     _: KW_ONLY
 
-    targets: Index | list = NOT_GIVEN
+    targets: Index | list = UNDEFINED
     r"""Columns of the data that are used as targets."""
-    observables: Index | list = NOT_GIVEN
+    observables: Index | list = UNDEFINED
     r"""Columns of the data that are used as inputs."""
-    covariates: Index | list = NOT_GIVEN
+    covariates: Index | list = UNDEFINED
     r"""Columns of the data that are used as controls."""
     metadata_targets: Optional[Index | list] = None
     r"""Columns of the metadata that are targets."""
-    metadata_observables: Optional[Index | list] = NOT_GIVEN
+    metadata_observables: Optional[Index | list] = UNDEFINED
     r"""Columns of the metadata that are targets."""
     sparse_index: bool = False
     r"""Whether to drop sparse rows from the index."""
@@ -647,13 +647,13 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
 
     def __post_init__(self) -> None:
         r"""Post init."""
-        if self.targets is NOT_GIVEN:
+        if self.targets is UNDEFINED:
             self.targets = []
-        if self.observables is NOT_GIVEN:
+        if self.observables is UNDEFINED:
             self.observables = self.dataset.timeseries.columns
-        if self.covariates is NOT_GIVEN:
+        if self.covariates is UNDEFINED:
             self.covariates = []
-        if self.metadata_observables is NOT_GIVEN:
+        if self.metadata_observables is UNDEFINED:
             if self.dataset.static_covariates is None:
                 self.metadata_observables = None
             else:
@@ -810,14 +810,14 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
     """
 
     data_source: DataFrame
-    input_slice: slice = NOT_GIVEN
-    target_slice: slice = NOT_GIVEN
+    input_slice: slice = UNDEFINED
+    target_slice: slice = UNDEFINED
 
     _: KW_ONLY
 
-    observables: Sequence[Hashable] = NOT_GIVEN
+    observables: Sequence[Hashable] = UNDEFINED
     r"""These columns are unmasked over the obs.-horizon in the input slice."""
-    targets: Sequence[Hashable] = NOT_GIVEN
+    targets: Sequence[Hashable] = UNDEFINED
     r"""These columns are unmasked over the pred.-horizon in the target slice."""
     covariates: Sequence[Hashable] = ()
     r"""These columns are unmasked over the whole inputs slice."""
@@ -828,11 +828,11 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         self.columns: Index = self.data_source.columns
 
         match self.input_slice, self.target_slice:
-            case const.NOT_GIVEN, const.NOT_GIVEN:
+            case const.UNDEFINED, const.UNDEFINED:
                 raise ValueError("Please specify slices for the input and target.")
-            case const.NOT_GIVEN, slice():
+            case const.UNDEFINED, slice():
                 self.input_slice = slice(None, self.target_slice.start)
-            case slice(), const.NOT_GIVEN:
+            case slice(), const.UNDEFINED:
                 self.target_slice = slice(self.input_slice.stop, None)
             case slice(), slice():
                 pass
@@ -849,7 +849,7 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         self.combined_slice = slice(self.input_slice.start, self.target_slice.stop)
 
         match self.observables, self.targets:
-            case const.NOT_GIVEN, const.NOT_GIVEN:
+            case const.UNDEFINED, const.UNDEFINED:
                 warnings.warn(
                     "No observables/targets specified. Assuming autoregressive case:"
                     " all columns are both inputs and targets.",
@@ -857,14 +857,14 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
                 )
                 self.observables = self.columns.copy()
                 self.targets = self.columns.copy()
-            case const.NOT_GIVEN, Sequence():
+            case const.UNDEFINED, Sequence():
                 warnings.warn(
                     "Targets are specified, but not observables. Assuming remaining"
                     " columns are observables.",
                     stacklevel=2,
                 )
                 self.observables = self.columns.difference(self.targets).copy()
-            case Sequence(), const.NOT_GIVEN:
+            case Sequence(), const.UNDEFINED:
                 warnings.warn(
                     "Observables are specified, but not targets. Assuming remaining"
                     " columns are targets.",

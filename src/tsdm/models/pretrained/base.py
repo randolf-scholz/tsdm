@@ -64,7 +64,7 @@ from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 
 from tsdm.backend.torch import initialize_from_config
 from tsdm.config import CONFIG
-from tsdm.constants import NOT_GIVEN
+from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.pprint import repr_mapping
@@ -118,7 +118,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     r"""Logger for the class."""
     CHECKPOINT_URL: ClassVar[Optional[str]] = None
     r"""URL with overview of available model checkpoints."""
-    DOWNLOAD_URL: ClassVar[str] = NOT_GIVEN
+    DOWNLOAD_URL: ClassVar[str] = UNDEFINED
     r"""URL from which model checkpoints can be downloaded."""
     DOCUMENTATION_URL: ClassVar[Optional[str]] = None
     r"""URL of online documentation for the model."""

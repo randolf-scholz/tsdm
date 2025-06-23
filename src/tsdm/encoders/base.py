@@ -124,7 +124,7 @@ from typing import (
 
 from tsdm import encoders as E
 from tsdm.backend import Backend, get_backend
-from tsdm.constants import EMPTY_MAP, NOT_GIVEN
+from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.types.aliases import FilePath, NestedBuiltin
 from tsdm.types.mixins import SupportsKeysAndGetItem
 from tsdm.types.protocols import Dataclass
@@ -394,7 +394,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         # FIXME: Use a different sentinel than NotImplemented.
         return any(
             val is NotImplemented
-            or val is NOT_GIVEN
+            or val is UNDEFINED
             or getattr(val, "requires_fit", False)
             for val in self.params.values()
         )
@@ -695,7 +695,7 @@ class BackendMixin[X, Y](BaseEncoder[X, Y]):
     r"""Encoder equipped with a backend."""
 
     _: KW_ONLY
-    backend: Backend = NOT_GIVEN
+    backend: Backend = UNDEFINED
 
     # noinspection PyFinal
     @final  # type: ignore[misc]

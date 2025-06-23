@@ -70,7 +70,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
-from tsdm.constants import EMPTY_MAP, NOT_GIVEN
+from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.logutils.logfuncs import (
     log_config,
     log_kernel,
@@ -283,7 +283,7 @@ class EvaluationCallback(BaseCallback):
     writer: SummaryWriter
 
     # Optional parameters
-    history: DataFrame = NOT_GIVEN
+    history: DataFrame = UNDEFINED
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
@@ -293,7 +293,7 @@ class EvaluationCallback(BaseCallback):
 
     def __post_init__(self) -> None:
         r"""Initialize the callback."""
-        if self.history is NOT_GIVEN:
+        if self.history is UNDEFINED:
             self.history = DataFrame(
                 columns=MultiIndex.from_product([self.dataloaders, self.metrics])
             )
