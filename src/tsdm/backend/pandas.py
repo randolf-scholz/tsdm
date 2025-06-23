@@ -330,10 +330,10 @@ def remove_outliers_dataframe(
     *,
     drop: bool = True,
     inplace: bool = False,
-    lower_bound: Mapping[Any, float | None],
-    upper_bound: Mapping[Any, float | None],
-    lower_inclusive: Mapping[Any, bool],
-    upper_inclusive: Mapping[Any, bool],
+    lower_bound: Mapping[str, float | None],
+    upper_bound: Mapping[str, float | None],
+    lower_inclusive: Mapping[str, bool],
+    upper_inclusive: Mapping[str, bool],
     erroron_extra_bounds: bool = False,
 ) -> DataFrame:
     r"""Remove outliers from a DataFrame, given boundary values."""

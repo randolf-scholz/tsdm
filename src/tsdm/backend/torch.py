@@ -54,7 +54,7 @@ def nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     r"""Analogue to `numpy.nanmin`."""
     return torch.amin(
         torch.where(torch.isnan(x), float("+inf"), x),
-        dim=axis,  # type: ignore[arg-type]
+        dim=axis,  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
         keepdim=keepdims,
     )
 
@@ -63,7 +63,7 @@ def nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     r"""Analogue to `numpy.nanmax`."""
     return torch.amax(
         torch.where(torch.isnan(x), float("-inf"), x),
-        dim=axis,  # type: ignore[arg-type]
+        dim=axis,  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
         keepdim=keepdims,
     )
 

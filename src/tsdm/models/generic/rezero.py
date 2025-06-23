@@ -92,7 +92,7 @@ class ReZero(nn.Sequential):
         return x
 
     @_copy_to_script_wrapper
-    def __getitem__(self, item: int | slice, /) -> nn.Module:
+    def __getitem__(self, item: int | slice, /) -> nn.Module:  # pyright: ignore[reportIncompatibleMethodOverride]
         r"""Get a submodel."""
         modules: list[nn.Module] = list(self._modules.values())
         if isinstance(item, slice):
