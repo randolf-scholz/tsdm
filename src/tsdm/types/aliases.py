@@ -53,11 +53,15 @@ __all__ = [
     "CS_meta",
     "TS_FIELDS",
     "TSC_FIELDS",
+    # Misc
+    "DictArg",
+    "Fn",
 ]
 
 
 import os
 from collections.abc import (
+    Callable,
     Collection,
     Iterable,
     Mapping,
@@ -70,6 +74,10 @@ from types import EllipsisType
 from typing import Annotated, Any, Literal
 
 from pandas.api.typing import NAType
+
+type DictArg[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
+type Fn[X, Y] = Callable[[X], Y]
+
 
 # region field types -------------------------------------------------------------------
 type TS = Literal["timeseries"]

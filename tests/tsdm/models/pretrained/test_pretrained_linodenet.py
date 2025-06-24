@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import torch
 
-from tsdm.encoders import BaseEncoder
+from tsdm.encoders import FittableEncoder
 from tsdm.models.pretrained import LinODEnet
 
 __logger__ = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def test_pretrained() -> None:
     assert isinstance(model, torch.nn.Module)
 
     encoder = pretrained.components["encoder"]
-    assert isinstance(encoder, BaseEncoder)
+    assert isinstance(encoder, FittableEncoder)
 
     hyperparameters = pretrained.components["hparams"]
     assert isinstance(hyperparameters, dict)

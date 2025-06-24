@@ -22,17 +22,22 @@ __all__ = [
 
 from collections.abc import Iterator
 from datetime import datetime, timedelta
-from typing import Any, Protocol, Self, SupportsInt, overload, runtime_checkable
+from typing import (
+    Any,
+    Protocol,
+    Self,
+    SupportsInt,
+    overload,
+    runtime_checkable,
+)
 
 from numpy.typing import NDArray
 
 from tsdm.types.aliases import Axis, MultiIndexer
 from tsdm.types.scalars import (
     BoolScalar,
-    ComplexScalar,
     DurationScalar,
     FloatScalar,
-    IntScalar,
     TimestampScalar,
 )
 
@@ -392,9 +397,9 @@ class NumericalArray[Scalar](BaseArray, SupportsVectorComparison[Scalar], Protoc
 
 
 @runtime_checkable
-class BooleanArray[T: BoolScalar](
-    BaseArray,
-    SupportsVectorComparison[T | bool],
+class BooleanArray[T](
+    # BaseArray,
+    # SupportsVectorComparison[T | bool],
     Protocol,
 ):
     r"""Protocol for boolean array-like types supporting standard boolean operations."""
@@ -430,15 +435,20 @@ class BooleanArray[T: BoolScalar](
 
 
 @runtime_checkable
-class IntegerArray[T: Any = int](
-    BaseArray,
-    SupportsVectorComparison[T | float],
+class IntegerArray[T](
+    # BaseArray,
+    # SupportsVectorComparison[T | float],
     Protocol,
 ):
     r"""Protocol for integer array-like types supporting standard arithmetic operations."""
 
-    def min(self) -> Any | Self | T | IntScalar: ...
-    def max(self) -> Any | Self | T | IntScalar: ...
+    def clip(self, lower: Any, upper: Any, /) -> Self: ...
+
+    # aggregations
+    def min(self) -> Self | T | int: ...
+    def max(self) -> Self | T | int: ...
+
+    def sum(self) -> Self | T | int: ...
 
     # + (positive)
     def __pos__(self) -> Self: ...
@@ -453,8 +463,16 @@ class IntegerArray[T: Any = int](
     # FIXME: https://github.com/python/typing/issues/2021
     #   Because of the current spec, we need overloads instead of simply unions.
     # + (addition)
+    @overload
     def __add__(self, other: Self | T | int, /) -> Self: ...
+    @overload
+    def __add__(self, other: float, /) -> "FloatArray": ...
+    @overload
     def __radd__(self, other: Self | T | int, /) -> Self: ...
+    @overload
+    def __radd__(self, other: float, /) -> "FloatArray": ...
+    # def __add__(self, other: Self | T | int, /) -> Self: ...
+    # def __radd__(self, other: Self | T | int, /) -> Self: ...
     # - (subtraction)
     def __sub__(self, other: Self | T | int, /) -> Self: ...
     def __rsub__(self, other: Self | T | int, /) -> Self: ...
@@ -468,8 +486,14 @@ class IntegerArray[T: Any = int](
     def __floordiv__(self, other: Self | T | int, /) -> Self: ...
     def __rfloordiv__(self, other: Self | T | int, /) -> Self: ...
     # % (modulo)
+    @overload
     def __mod__(self, other: Self | T | int, /) -> Self: ...
+    @overload
+    def __mod__(self, other: float, /) -> "FloatArray": ...
+    @overload
     def __rmod__(self, other: Self | T | int, /) -> Self: ...
+    @overload
+    def __rmod__(self, other: float, /) -> "FloatArray": ...
 
     # FIXME: https://github.com/pytorch/pytorch/issues/155701
     # >>> # & (bitwise AND)
@@ -485,15 +509,27 @@ class IntegerArray[T: Any = int](
 
 
 @runtime_checkable
-class FloatArray[T: FloatScalar = float](
-    BaseArray,
-    SupportsVectorComparison[T | float],
+class FloatArray[T](
+    # BaseArray,
+    # SupportsVectorComparison[T | float],
     Protocol,
 ):
     r"""Protocol for floating-point array-like types supporting standard arithmetic operations."""
 
-    def min(self) -> Any | Self | T: ...
-    def max(self) -> Any | Self | T: ...
+    @overload
+    def round(self) -> Self: ...
+    @overload
+    def round(self, *, decimals: int) -> Self: ...
+    def clip(self, lower: Any, upper: Any, /) -> Self: ...
+
+    # aggregations
+    def min(self) -> Self | T | float: ...
+    def max(self) -> Self | T | float: ...
+
+    def sum(self) -> Self | T | float: ...
+    def mean(self) -> Self | T | float: ...
+    def std(self) -> Self | T | float: ...
+    def var(self) -> Self | T | float: ...
 
     # + (positive)
     def __pos__(self) -> Self: ...
@@ -521,23 +557,34 @@ class FloatArray[T: FloatScalar = float](
     # // (floor division)
     def __floordiv__(self, other: Self | T | float, /) -> Self: ...
     def __rfloordiv__(self, other: Self | T | float, /) -> Self: ...
+
     # % (modulo)
-    def __mod__(self, other: Self | T | float, /) -> Self: ...
-    def __rmod__(self, other: Self | T | float, /) -> Self: ...
+    # FIXME:
+    # def __mod__(self, other: Self | T | float, /) -> Self: ...
+    # def __rmod__(self, other: Self | T | float, /) -> Self: ...
 
     # endregion binary operations ------------------------------------------------------
 
 
 @runtime_checkable
-class ComplexArray[T: ComplexScalar = complex](BaseArray, Protocol):
+class ComplexArray[T](
+    # BaseArray,
+    Protocol,
+):
     r"""Protocol for complex array-like types supporting standard arithmetic operations."""
 
+    # aggregations
+    def sum(self) -> Self | T | complex: ...
+    def mean(self) -> Self | T | complex: ...
+    def std(self) -> FloatArray | FloatScalar: ...
+    def var(self) -> FloatArray | FloatScalar: ...
+
+    # absolute value abs()
+    def __abs__(self) -> FloatArray[Any]: ...
     # + (positive)
     def __pos__(self) -> Self: ...
     # - (negation)
     def __neg__(self) -> Self: ...
-    # absolute value abs()
-    def __abs__(self) -> Self: ...
 
     # region binary operations ---------------------------------------------------------
     # + (addition)
@@ -703,6 +750,8 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     def clip(self, lower: Any, upper: Any, /) -> Self: ...
     def cumsum(self, axis: int, /) -> Scalar | Self: ...
     def cumprod(self, axis: int, /) -> Scalar | Self: ...
+    def std(self, axis: Axis = ..., /) -> Scalar | Self: ...
+    def var(self, axis: Axis = ..., /) -> Scalar | Self: ...
 
     def ravel(self) -> Self:
         r"""Return a flattened version of the tensor."""
@@ -719,9 +768,6 @@ class NumericalTensor[Scalar](NumericalArray[Scalar], Protocol):
     #     Otherwise, raises `ValueError`.
     #     """
     #     ...
-
-    def std(self, axis: Axis = ..., /) -> Scalar | Self: ...
-    def var(self, axis: Axis = ..., /) -> Scalar | Self: ...
 
     # region stupid overloads ----------------------------------------------------------
     # FIXME: https://github.com/python/typing/discussions/1782

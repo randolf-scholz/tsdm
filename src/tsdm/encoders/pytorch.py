@@ -19,7 +19,7 @@ from numpy.typing import NDArray
 from torch import Tensor, jit, nn
 
 from tsdm.backend.torch import autojit
-from tsdm.encoders.base import BaseEncoder
+from tsdm.encoders.base import FittableEncoder
 from tsdm.types.aliases import NestedBuiltin
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import recurse_on_nested_builtin
@@ -142,7 +142,7 @@ class PositionalEncoding(nn.Module):
 
 
 class RecursiveTensorEncoder(
-    BaseEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]
+    FittableEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]
 ):
     r"""Encodes nested data as tensors."""
 
@@ -155,7 +155,7 @@ class RecursiveTensorEncoder(
 
 @pprint_repr
 @dataclass
-class Time2VecEncoder(BaseEncoder[Tensor, Tensor]):
+class Time2VecEncoder(FittableEncoder[Tensor, Tensor]):
     r"""Wraps Time2Vec encoder."""
 
     # Constants
@@ -185,7 +185,7 @@ class Time2VecEncoder(BaseEncoder[Tensor, Tensor]):
 
 @pprint_repr
 @dataclass
-class PositionalEncoder(BaseEncoder[Tensor, Tensor]):
+class PositionalEncoder(FittableEncoder[Tensor, Tensor]):
     r"""Wraps PositionalEncoder encoder."""
 
     _: KW_ONLY

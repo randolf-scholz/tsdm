@@ -7,7 +7,7 @@ import pytest
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
 
-from tsdm.encoders.sklearn import (
+from tsdm.encoders._sklearn import (
     SKLEARN_ENCODERS,
     SKLEARN_TRANSFORMS,
     SklearnEncoder,

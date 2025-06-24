@@ -24,7 +24,7 @@ from pyarrow.lib import ArrowNotImplementedError
 from tsdm.backend import generic
 from tsdm.backend.dtypes import DType
 from tsdm.backend.pandas import PandasDtype
-from tsdm.encoders.base import BackendMixin, BaseEncoder, WrappedEncoder
+from tsdm.encoders.base import BackendMixin, FittableEncoder, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.linalg import NumericalSeries
 from tsdm.types.scalars import DurationScalar, TimestampScalar
@@ -161,7 +161,7 @@ class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
+class PositionalEncoder(FittableEncoder[NDArray, NDArray]):
     r"""Positional encoding.
 
     .. math::
@@ -201,7 +201,7 @@ class PositionalEncoder(BaseEncoder[NDArray, NDArray]):
 
 @pprint_repr
 @dataclass
-class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
+class PeriodicEncoder(FittableEncoder[Series, DataFrame]):
     r"""Encode periodic data as sin/cos waves."""
 
     period: float = NotImplemented
@@ -243,7 +243,7 @@ class PeriodicEncoder(BaseEncoder[Series, DataFrame]):
 
 @pprint_repr
 @dataclass
-class SocialTimeEncoder(BaseEncoder[Series, DataFrame]):
+class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
     r"""Social time encoding."""
 
     LEVEL_CODES: ClassVar[Mapping[str, str]] = {

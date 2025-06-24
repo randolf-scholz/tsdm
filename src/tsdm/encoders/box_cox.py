@@ -25,7 +25,7 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import FLOAT, UNDEFINED
-from tsdm.encoders.base import BaseEncoder
+from tsdm.encoders.base import FittableEncoder
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -240,7 +240,7 @@ def construct_wasserstein_loss_logit_normal(
 
 @pprint_repr
 @dataclass(init=False)
-class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
+class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
@@ -366,7 +366,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
 
 @pprint_repr
 @dataclass
-class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](BaseEncoder[NPC, NPC]):
+class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
     r"""Encode data from the interval [0,1] with a logit transform.
 
     An offset c is added/subtracted to avoid log(0) and division by zero.

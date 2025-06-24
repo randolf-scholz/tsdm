@@ -110,37 +110,36 @@ def test_array_collections_abc() -> None:
 
 
 def type_array_assignable() -> None:
-    _: type[Array]
     # builtins
-    # _ = bytes  # ❌ __contains__
-    # _ = dict  # ❌ __getitem__
-    _ = list
-    _ = range
-    # _ = str  # ❌ __contains__
-    _ = tuple
+    # _00: type[Array] = bytes  # ❌ __contains__
+    # _01: type[Array] = dict  # ❌ __getitem__
+    _02: type[Array] = list
+    _03: type[Array] = range
+    # _04: type[Array] = str  # ❌ __contains__
+    _05: type[Array] = tuple
     # collections.abc
-    # _ = abc.Mapping  # __getitem__ does not support slicing
-    # _ = abc.MutableMapping  # __getitem__ does not support slicing
-    _ = abc.MutableSequence  # type: ignore[type-abstract]
-    _ = abc.Sequence  # type: ignore[type-abstract]
+    # _06: type[Array] = abc.Mapping  # __getitem__ does not support slicing
+    # _07: type[Array] = abc.MutableMapping  # __getitem__ does not support slicing
+    _08: type[Array] = abc.MutableSequence  # type: ignore[type-abstract]
+    _09: type[Array] = abc.Sequence  # type: ignore[type-abstract]
     # collections
-    # _ = collections.ChainMap  # __getitem__ does not support slicing
-    # _ = collections.Counter  # __getitem__ does not support slicing
-    # _ = collections.OrderedDict  # __getitem__ does not support slicing
-    # _ = collections.UserDict  # __getitem__ does not support slicing
-    _ = collections.UserList
-    _ = collections.UserString
-    # _ = collections.defaultdict  # __getitem__ does not support slicing
-    # _ = collections.deque  # __getitem__ does not support slicing
+    # _10: type[Array] = collections.ChainMap  # __getitem__ does not support slicing
+    # _11: type[Array] = collections.Counter  # __getitem__ does not support slicing
+    # _11: type[Array] = collections.OrderedDict  # __getitem__ does not support slicing
+    # _12: type[Array] = collections.UserDict  # __getitem__ does not support slicing
+    _13: type[Array] = collections.UserList
+    _14: type[Array] = collections.UserString
+    # _15: type[Array] = collections.defaultdict  # __getitem__ does not support slicing
+    # _16: type[Array] = collections.deque  # __getitem__ does not support slicing
     # 3rd party
-    _ = np.ndarray
-    _ = pa.Array
-    _ = pa.ChunkedArray
-    _ = pd.DataFrame
-    _ = pd.Index
-    _ = pd.Series
-    _ = pl.Series
-    _ = torch.Tensor
+    _17: type[Array] = np.ndarray
+    _18: type[Array] = pa.Array
+    _19: type[Array] = pa.ChunkedArray
+    _20: type[Array] = pd.DataFrame
+    _21: type[Array] = pd.Index
+    _22: type[Array] = pd.Series
+    _23: type[Array] = pl.Series
+    _24: type[Array] = torch.Tensor
     # check
 
 

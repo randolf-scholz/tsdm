@@ -8,7 +8,7 @@ from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.encoders import BaseEncoder
+from tsdm.encoders import FittableEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
 from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator
@@ -32,7 +32,7 @@ def test_kiwi_task(split_id: tuple[int, str] = (0, "train")) -> None:
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], TimeSeriesSampleGenerator)
     assert isinstance(task.dataloaders[split_id], DataLoader)
-    assert isinstance(task.encoders[split_id], BaseEncoder)
+    assert isinstance(task.encoders[split_id], FittableEncoder)
     assert isinstance(task.train_split, dict)
     assert callable(task.collate_fns[split_id])
 

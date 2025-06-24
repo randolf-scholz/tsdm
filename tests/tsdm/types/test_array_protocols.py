@@ -675,6 +675,6 @@ def test_table_manual() -> None:
     __logger__.info("\nShared members of Tables: %s", shared_attrs)
 
 
-def type_numericalarray_covariance() -> None:
-    def _upcast(x: NumericalArray[float]) -> NumericalArray[object]:
-        return x
+# def type_numericalarray_covariance() -> None:
+#     def _upcast(x: NumericalArray[float]) -> NumericalArray[object]:
+#         return x

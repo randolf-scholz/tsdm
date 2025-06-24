@@ -17,7 +17,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
-from tsdm.encoders import BaseEncoder, StandardScaler
+from tsdm.encoders import FittableEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTS
@@ -106,7 +106,7 @@ class ElectricityLim2021(TimeSeriesTask):
     KeyType = Literal["train", "test", "valid", "joint", "whole"]
     r"""Type Hint for index."""
 
-    preprocessor: BaseEncoder
+    preprocessor: FittableEncoder
 
     # FIXME: need a different base class for this task!
     dataset: PandasTS  # type: ignore[assignment]

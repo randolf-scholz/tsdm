@@ -38,7 +38,7 @@ from torch import Tensor
 
 from tsdm.backend.pandas import PandasDtype, PandasDTypeArg
 from tsdm.constants import EMPTY_MAP
-from tsdm.encoders.base import BaseEncoder, Encoder, EncoderDict
+from tsdm.encoders.base import Encoder, EncoderDict, FittableEncoder
 from tsdm.types.aliases import FilePath
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
@@ -149,7 +149,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K]):
 
 @pprint_repr
 @dataclass(init=False, repr=False)
-class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
+class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
     r"""Converts wide DataFrame to a tall DataFrame.
 
     Requires that all columns share the same data type.
@@ -249,7 +249,7 @@ class TripletEncoder(BaseEncoder[DataFrame, DataFrame]):
 
 @pprint_repr
 @dataclass(init=False, repr=False)
-class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
+class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
     r"""Convert a tall DataFrame to a wide DataFrame."""
 
     sparse: bool = False
@@ -365,7 +365,7 @@ class TripletDecoder(BaseEncoder[DataFrame, DataFrame]):
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class CSVEncoder(BaseEncoder[DataFrame, Path]):
+class CSVEncoder(FittableEncoder[DataFrame, Path]):
     r"""Encode the data into a CSV file."""
 
     DEFAULT_READ_OPTIONS: ClassVar[dict] = {}
@@ -407,7 +407,7 @@ class CSVEncoder(BaseEncoder[DataFrame, Path]):
 
 @pprint_repr
 @dataclass(init=False, repr=False)
-class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
+class DTypeConverter(FittableEncoder[DataFrame, DataFrame]):
     r"""Converts dtypes of a DataFrame.
 
     Note:
@@ -446,7 +446,7 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
 
 @pprint_repr
 @dataclass
-class FrameAsTensor(BaseEncoder[DataFrame, Tensor]):
+class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
 
     Note:
@@ -477,7 +477,7 @@ class FrameAsTensor(BaseEncoder[DataFrame, Tensor]):
 
 @pprint_repr
 @dataclass(init=False)
-class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
+class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
     """Encodes a DataFrame as a dict of DataFrames.
 
     Note:
@@ -537,7 +537,7 @@ class FrameAsDict(BaseEncoder[DataFrame, dict[str, DataFrame]]):
 
 @pprint_repr
 @dataclass(init=False)
-class FrameAsTensorDict(BaseEncoder[DataFrame, dict[str, Tensor]]):
+class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.

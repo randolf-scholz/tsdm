@@ -54,7 +54,7 @@ from pandas import DataFrame
 
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
-from tsdm.encoders.base import BackendMixin, BaseEncoder
+from tsdm.encoders.base import BackendMixin, FittableEncoder
 from tsdm.types.aliases import Axis, Indexer
 from tsdm.types.linalg import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
@@ -252,7 +252,7 @@ class ArrayDecoder[X, Arr: Array](BackendMixin[X, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class LinearScaler[Arr: Array](BaseEncoder[Arr, Arr]):
+class LinearScaler[Arr: Array](FittableEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 
     Args:
@@ -322,7 +322,7 @@ class LinearScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class StandardScaler[Arr: Array[float]](BaseEncoder[Arr, Arr]):
+class StandardScaler[Arr: Array[float]](FittableEncoder[Arr, Arr]):
     r"""Transforms data linearly x ↦ (x-μ)/σ.
 
     axis: tuple[int, ...] determines the shape of the mean and stdv.
@@ -393,7 +393,7 @@ class StandardScaler[Arr: Array[float]](BaseEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
+class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
     r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
 
     If x_min and/or x_max are provided at initialization, they are marked as
@@ -604,7 +604,7 @@ class MinMaxScaler[Arr: Array](BaseEncoder[Arr, Arr]):
 
 
 @dataclass
-class LogEncoder(BaseEncoder[NDArray, NDArray]):
+class LogEncoder(FittableEncoder[NDArray, NDArray]):
     r"""Encode data on a logarithmic scale.
 
     Uses base 2 by default for lower numerical error and fast computation.
@@ -634,7 +634,7 @@ class LogEncoder(BaseEncoder[NDArray, NDArray]):
         return result
 
 
-class LogitEncoder(BaseEncoder[NDArray, NDArray]):
+class LogitEncoder(FittableEncoder[NDArray, NDArray]):
     r"""Logit encoder."""
 
     def _encode_impl(self, data: DataFrame, /) -> DataFrame:

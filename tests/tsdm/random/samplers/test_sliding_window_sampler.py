@@ -1394,3 +1394,16 @@ def test_unknown_multi() -> None:
 
 
 # endregion specific tests -------------------------------------------------------------
+
+
+def type_slidingsampler_assignable() -> None:
+    int_list: list[int] = [1, 2, 3]
+
+    assert_type(
+        SlidingWindowSampler(int_list, horizons=2, stride=2, mode=MODES.S),
+        SlidingWindowSampler[int, S, ONE],
+    )
+    assert_type(
+        SlidingWindowSampler(int_list, horizons=[1, 2], stride=2, mode=MODES.M),
+        SlidingWindowSampler[int, M, MULTI],
+    )

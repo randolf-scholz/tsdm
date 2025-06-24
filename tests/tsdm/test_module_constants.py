@@ -9,7 +9,7 @@ import pytest
 
 import tsdm
 from tsdm.datasets import DATASETS, Dataset, DatasetBase
-from tsdm.encoders import ENCODERS, BaseEncoder, Encoder
+from tsdm.encoders import ENCODERS, Encoder, FittableEncoder
 from tsdm.logutils import (
     CALLBACKS,
     LOGFUNCS,
@@ -60,7 +60,7 @@ class Case(NamedTuple):
 CASES: dict[str, Case] = {
     "callbacks"      : Case(tsdm.logutils          , Callback          , BaseCallback       , CALLBACKS           ),
     "datasets"       : Case(tsdm.datasets          , Dataset           , DatasetBase        , DATASETS            ),
-    "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS            ),
+    "encoders"       : Case(tsdm.encoders, Encoder, FittableEncoder, ENCODERS),
     "generators"     : Case(tsdm.random.generators , IVP_Generator     , IVP_GeneratorBase  , GENERATORS          ),
     "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
     "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),

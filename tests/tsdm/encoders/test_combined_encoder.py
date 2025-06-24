@@ -10,11 +10,11 @@ from pandas import DataFrame
 
 from tsdm.config import PROJECT
 from tsdm.encoders import (
-    BaseEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
     DateTimeEncoder,
     Encoder,
+    FittableEncoder,
     FrameAsTensorDict,
     FrameEncoder,
     IdentityEncoder,
@@ -29,7 +29,7 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
 @pytest.fixture(scope="session")
-def encoder() -> BaseEncoder:
+def encoder() -> FittableEncoder:
     # initialize the task object
     task = KiwiBenchmark()
     descr = task.dataset.timeseries_metadata[["kind", "lower_bound", "upper_bound"]]
@@ -216,4 +216,4 @@ def test_serialization(encoder: Encoder) -> None:
     with path.open("rb") as file:
         loaded_encoder = pickle.load(file)
 
-    assert isinstance(loaded_encoder, BaseEncoder)
+    assert isinstance(loaded_encoder, FittableEncoder)
