@@ -5,41 +5,56 @@ __all__ = [
     "SKLEARN_TRANSFORMS",
     "SKLEARN_ENCODERS",
     # ABCs & Protocols
-    "SklearnTransform",
+    "InvertibleTransform",
     "SklearnEncoder",
+    "Transform",
 ]
 
 from abc import abstractmethod
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable
 
 from sklearn import preprocessing as sk_preprocessing
 
 
+# region sklearn protocols -------------------------------------------------------------
 @runtime_checkable
-class SklearnTransform[X, Y](Protocol):  # -X, +Y
-    r"""Protocol for scikit-learn transformers."""
+class Transform[X, Y](Protocol):  # -X, +Y
+    r"""Protocol for transformers."""
 
     @abstractmethod
-    def fit(self, data: X, /) -> None: ...
+    def fit(self, x: X, /) -> None: ...
     @abstractmethod
     def transform(self, x: X, /) -> Y: ...
-    @abstractmethod
-    def fit_transform(self, x: X, /) -> Y: ...
-    @abstractmethod
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]: ...
-    @abstractmethod
-    def set_params(self, **params: Any) -> None: ...
 
 
 @runtime_checkable
-class SklearnEncoder[X, Y](SklearnTransform[X, Y], Protocol):
-    r"""Protocol for scikit-learn encoders."""
+class InvertibleTransform[X, Y](Transform[X, Y], Protocol):
+    r"""Protocol for invertible transformers."""
 
     @abstractmethod
     def inverse_transform(self, y: Y, /) -> X: ...
 
 
-SKLEARN_TRANSFORMS: dict[str, type[SklearnTransform]] = {
+@runtime_checkable
+class SklearnEncoder[X, Y](Protocol):
+    r"""Protocol for scikit-learn transformers."""
+
+    def transform(self, x: X, /) -> Y: ...
+    def inverse_transform(self, x: Y, /) -> X: ...
+
+    def fit(self, x: X, /, y: Optional[Y] = None) -> None: ...
+    def fit_transform(self, x: X, y: Optional[Y] = None, **fit_params: Any) -> None: ...
+
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]: ...
+    def set_params(self, **params: Any) -> None: ...
+    def __setstate__(self, state: dict[str, Any], /) -> None: ...
+    def __getstate__(self) -> dict[str, Any]: ...
+
+
+# endregion sklearn protocols ----------------------------------------------------------
+
+
+SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
     "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,
