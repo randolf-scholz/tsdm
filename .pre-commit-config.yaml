@@ -31,7 +31,6 @@ repos:
         files: '^pyproject.toml$'
       - id: uv-sync
         args: ["--upgrade"]
-        stages: [ "pre-commit" ]
         files: '^pyproject.toml$'
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
