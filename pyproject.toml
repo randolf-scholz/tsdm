@@ -361,6 +361,7 @@ generated-members = ["numpy.*", "torch.*"]
 
 # region mypy configuration ------------------------------------------------------------
 [tool.mypy]
+# SEE: https://mypy.readthedocs.io/en/stable/config_file.html
 files = ["src/", "tests/"]
 platform = "linux"
 plugins = []
@@ -429,45 +430,128 @@ ignore_missing_imports = true
 
 # region pyright configuration ---------------------------------------------------------
 [tool.pyright]
-venv = ".venv"
-venvPath = "."
+# SEE: https://microsoft.github.io/pyright/#/configuration
+
+# Environment Options
+include = ["src/", "tests/"]
+exclude = []
+strict = []
+#extends = ""
+defineConstant = {"__debug__" = true}
+#typeshedPath = ""
+#stubPath = ""
+venvPath = ".venv"
+#venv = ".venv"
 pythonVersion = "3.13"
 pythonPlatform = "Linux"
-include = ["src/", "tests/"]
-typeCheckingMode = "standard"
+#executionEnvironments = []
 useLibraryCodeForTypes = false  # `pandas` has way too many false positives
+
+# Type Check Diagnostics Settings
+typeCheckingMode = "standard"  # "off", "basic", "strict", "standard"
+ignore = []
+
+# Type Evaluation Settings
+strictLIstInference = false
+strictDictionaryInference = false
+strictSetInference = false
+analyzeUnannotatedFunctions = true
+strictParameterNoneValue = true
 enableTypeIgnoreComments = false  # disable `# type: ignore` comments (use `# pyright: ignore` instead)
-## Type Check Diagnostics Settings
-# SEE: https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
-reportUnnecessaryTypeIgnoreComment = true
+deprecateTypingAliases = true  # deprecate `typing` aliases like `List`, `Dict`, etc.
+enableReachabilityAnalysis = true
+enableExperimentalFeatures = false
+disableBytesTypePromotions = true
 
-# strict mode flags we enable by default
-reportUntypedClassDecorator = true
-reportUnusedVariable = true
-reportMatchNotExhaustive = true
-reportUnnecessaryCast = true
-#reportUnnecessaryComparison = true
-#reportUnnecessaryContains = true
-#reportUnnecessaryIsInstance = true
-#reportUnusedClass = true
-#reportUnusedImport = true
-#reportUnusedFunction = true
-#reportUnusedVariable = true
-
-# Disable these when running in strict mode
-reportUnknownVariableType = false
-reportUnknownMemberType = false
-reportUnknownArgumentType = false
-reportMissingTypeArgument = false
-reportUnknownParameterType = false
-reportMissingTypeStubs = false
-reportConstantRedefinition = false  # we use uppercase for matrices/tensors.
+# Type Check Rule Overrides
+#reportAbstractUsage = "error"  # default: "error"
+#reportArgumentType = "error"  # default: "error"
+#reportAssertAlwaysTrue = "warning"  # default: "warning"
+#reportAssertTypeFailure = "error"  # default: "error"
+#reportAssignmentType = "error"  # default: "error"
+#reportAttributeAccessIssue = "error"  # default: "error"
+#reportCallInDefaultInitializer = "none"  # default: "none"
+#reportCallIssue = "error"  # default: "error"
+#reportConstantRedefinition = "none"  # default: "none"
+#reportDeprecated = "none"  # default: "none"
+reportDuplicateImport = "error"  # default: "none"
+#reportFunctionMemberAccess = "error"  # default: "error"
+#reportGeneralTypeIssues = "error"  # default: "error"
+#reportImplicitOverride = "none"  # default: "none"
+#reportImplicitStringConcatenation = "none"  # default: "none"
+reportImportCycles = "error"  # default: "none"
+#reportIncompatibleMethodOverride = "error"  # default: "error"
+#reportIncompatibleVariableOverride = "error"  # default: "error"
+#reportIncompleteStub = "none"  # default: "none"
+#reportInconsistentConstructor = "none"  # default: "none"
+#reportInconsistentOverload = "error"  # default: "error"
+#reportIndexIssue = "error"  # default: "error"
+#reportInvalidStringEscapeSequence = "warning"  # default: "warning"
+#reportInvalidStubStatement = "none"  # default: "none"
+#reportInvalidTypeArguments = "error"  # default: "error"
+#reportInvalidTypeForm = "error"  # default: "error"
+#reportInvalidTypeVarUse = "warning"  # default: "warning"
+reportMatchNotExhaustive = "error"  # default: "none"
+#reportMissingImports = "error"  # default: "error"
+#reportMissingModuleSource = "warning"  # default: "warning"
+#reportMissingParameterType = "none"  # default: "none"
+#reportMissingSuperCall = "none"  # default: "none"
+#reportMissingTypeArgument = "none"  # default: "none"
+#reportMissingTypeStubs = "none"  # default: "none"
+#reportNoOverloadImplementation = "error"  # default: "error"
+#reportOperatorIssue = "error"  # default: "error"
+#reportOptionalCall = "error"  # default: "error"
+#reportOptionalContextManager = "error"  # default: "error"
+#reportOptionalIterable = "error"  # default: "error"
+#reportOptionalMemberAccess = "error"  # default: "error"
+#reportOptionalOperand = "error"  # default: "error"
+#reportOptionalSubscript = "error"  # default: "error"
+#reportOverlappingOverload = "error"  # default: "error"
+#reportPossiblyUnboundVariable = "error"  # default: "error"
+#reportPrivateImportUsage = "error"  # default: "error"
+#reportPrivateUsage = "none"  # default: "none"
+#reportPropertyTypeMismatch = "none"  # default: "none"
+#reportRedeclaration = "error"  # default: "error"
+#reportReturnType = "error"  # default: "error"
+#reportSelfClsParameterName = "warning"  # default: "warning"
+#reportShadowedImports = "none"  # default: "none"
+#reportTypeCommentUsage = "none"  # default: "none"
+#reportTypedDictNotRequiredAccess = "error"  # default: "error"
+#reportUnboundVariable = "error"  # default: "error"
+#reportUndefinedVariable = "error"  # default: "error"
+#reportUnhashable = "error"  # default: "error"
+#reportUninitializedInstanceVariable = "none"  # default: "none"
+#reportUnknownArgumentType = "none"  # default: "none"
+#reportUnknownLambdaType = "none"  # default: "none"
+#reportUnknownMemberType = "none"  # default: "none"
+#reportUnknownParameterType = "none"  # default: "none"
+#reportUnknownVariableType = "none"  # default: "none"
+reportUnnecessaryCast = "error"  # default: "none"
+#reportUnnecessaryComparison = "none"  # default: "none"
+#reportUnnecessaryContains = "none"  # default: "none"
+#reportUnnecessaryIsInstance = "none"  # default: "none"
+reportUnnecessaryTypeIgnoreComment = "error"  # default: "none"
+#reportUnreachable = "none"  # default: "none"
+#reportUnsupportedDunderAll = "warning"  # default: "warning"
+reportUntypedBaseClass = "error"  # default: "none"
+reportUntypedClassDecorator = "error"  # default: "none"
+reportUntypedFunctionDecorator = "error"  # default: "none"
+reportUntypedNamedTuple = "error"  # default: "none"
+#reportUnusedCallResult = "none"  # default: "none"
+reportUnusedClass = "error"  # default: "none"
+#reportUnusedCoroutine = "error"  # default: "error"
+#reportUnusedExcept = "error"  # default: "error"
+#reportUnusedExpression = "none"  # default: "none"
+reportUnusedFunction = "error"  # default: "none"
+reportUnusedImport = "error"  # default: "none"
+reportUnusedVariable = "error"  # default: "none"
+reportWildcardImportFromLibrary = "error"  # default: "warning"
 # endregion pyright configuration ------------------------------------------------------
 
 
 # region pytest configuration ----------------------------------------------------------
 [tool.pytest]
-# NOTE: currently unused https://docs.pytest.org/en/stable/reference/customize.html
+# SEE: https://docs.pytest.org/en/stable/reference/customize.html
 
 [tool.pytest.ini_options]
 minversion = "8.0"
