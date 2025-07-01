@@ -54,7 +54,7 @@ from pandas import DataFrame
 
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
-from tsdm.encoders.base import BackendMixin, FittableEncoder
+from tsdm.encoders.base import FittableEncoder, SupportsBackend
 from tsdm.types.aliases import Axis, Indexer
 from tsdm.types.linalg import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
@@ -236,7 +236,7 @@ def reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | T
             return sliced
 
 
-class ArrayEncoder[Arr: Array, Y](BackendMixin[Arr, Y]):
+class ArrayEncoder[Arr: Array, Y](SupportsBackend[Arr, Y]):
     r"""An encoder for Tensor-like data.
 
     We want numerical encoders to be applicable to different backends.
@@ -246,7 +246,7 @@ class ArrayEncoder[Arr: Array, Y](BackendMixin[Arr, Y]):
     """
 
 
-class ArrayDecoder[X, Arr: Array](BackendMixin[X, Arr]):
+class ArrayDecoder[X, Arr: Array](SupportsBackend[X, Arr]):
     r"""A decoder for Tensor-like data."""
 
 

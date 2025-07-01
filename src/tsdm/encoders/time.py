@@ -24,7 +24,7 @@ from pyarrow.lib import ArrowNotImplementedError
 from tsdm.backend import generic
 from tsdm.backend.dtypes import DType
 from tsdm.backend.pandas import PandasDtype
-from tsdm.encoders.base import BackendMixin, FittableEncoder, WrappedEncoder
+from tsdm.encoders.base import FittableEncoder, SupportsBackend, WrappedEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.linalg import NumericalSeries
 from tsdm.types.scalars import DurationScalar, TimestampScalar
@@ -34,7 +34,7 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
+class TimeDeltaEncoder[Arr: NumericalSeries](SupportsBackend[Arr, Arr]):
     r"""Encode TimeDelta as Float."""
 
     unit: DurationScalar = NotImplemented
@@ -88,7 +88,7 @@ class TimeDeltaEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder[Arr: NumericalSeries](BackendMixin[Arr, Arr]):
+class DateTimeEncoder[Arr: NumericalSeries](SupportsBackend[Arr, Arr]):
     r"""Encode Datetime as Float."""
 
     offset: TimestampScalar = NotImplemented

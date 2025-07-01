@@ -97,12 +97,11 @@ __all__ = [
     "numerical",
     "pytorch",
     "time",
-    "transforms",
     # Constants
     "ID",
     "ENCODERS",
     # ABCs & Protocols
-    "BackendMixin",
+    "SupportsBackend",
     "FittableEncoder",
     "Encoder",
     "EncoderDict",
@@ -129,7 +128,7 @@ __all__ = [
     "FrameEncoder",
     "IdentityEncoder",
     "InverseEncoder",
-    "Join",
+    "Meet",
     "LinearScaler",
     "LogEncoder",
     "LogitBoxCoxEncoder",
@@ -149,8 +148,8 @@ __all__ = [
     "TimeDeltaEncoder",
     "TripletDecoder",
     "TripletEncoder",
-    "TupleDecoder",
-    "TupleEncoder",
+    "TupleUnwrapper",
+    "TupleWrapper",
     "WrappedEncoder",
     # Functions
     "choice",
@@ -164,14 +163,13 @@ __all__ = [
     "pipe",
     "repeat",
     "replicate",
-    "wrap_encoder",
+    "wrap",
 ]
 
 from tsdm.encoders import base, numerical, pytorch, time  # , transforms
 from tsdm.encoders.base import (
     # constants
     ID,
-    BackendMixin,
     Choice,
     Compose,
     DeepcopyEncoder,
@@ -186,15 +184,16 @@ from tsdm.encoders.base import (
     Fork,
     IdentityEncoder,
     InverseEncoder,
-    Join,
     MappedEncoder,
+    Meet,
     Parallel,
     ParametrizedEncoder,
     Pipe,
     Replicate,
+    SupportsBackend,
     SupportsSerialization,
-    TupleDecoder,
-    TupleEncoder,
+    TupleUnwrapper,
+    TupleWrapper,
     WrappedEncoder,
     choice,
     # functions
@@ -208,7 +207,7 @@ from tsdm.encoders.base import (
     pipe,
     repeat,
     replicate,
-    wrap_encoder,
+    wrap,
 )
 from tsdm.encoders.boundary import BoundaryEncoder
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
@@ -255,7 +254,7 @@ ENCODERS: dict[str, type[FittableEncoder]] = {
     "FrameEncoder"              : FrameEncoder,
     "IdentityEncoder"           : IdentityEncoder,
     "InverseEncoder"            : InverseEncoder,
-    "JointDecoder"              : Join,
+    "JointDecoder"              : Meet,
     "JointEncoder"              : Fork,
     "LinearScaler"              : LinearScaler,
     "LogEncoder"                : LogEncoder,
@@ -275,8 +274,8 @@ ENCODERS: dict[str, type[FittableEncoder]] = {
     "TimeDeltaEncoder"          : TimeDeltaEncoder,
     "TripletDecoder"            : TripletDecoder,
     "TripletEncoder"            : TripletEncoder,
-    "TupleDecoder"              : TupleDecoder,
-    "TupleEncoder"              : TupleEncoder,
+    "TupleDecoder"              : TupleUnwrapper,
+    "TupleEncoder"              : TupleWrapper,
     "WrappedEncoder"            : WrappedEncoder,
 }  # fmt: skip
 r"""Dictionary of all available encoders."""
