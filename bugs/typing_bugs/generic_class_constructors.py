@@ -2,64 +2,279 @@
 from typing import Any, Self, assert_type
 
 
-class Array[T = Any]:
-    @classmethod
-    def from_list(cls, x: list[T], /) -> Self:
-        return cls()
+def test_return_self() -> None:
+    r"""from_list(cls, list[T]) -> Self."""
+    class Array[T = Any]:
+        @classmethod
+        def from_list(cls, x: list[T], /) -> Self:
+            return cls()
 
-assert_type(Array.from_list([])      , Array[Any])
-assert_type(Array.from_list([1])     , Array[int])
-assert_type(Array[int].from_list([]) , Array[int])
-assert_type(Array[int].from_list([1]), Array[int])
+    class IntArray(Array[int]): ...
+    class SubArray[T=Any](Array[T]): ...
 
-class Array1[T = Any]:
-    @classmethod
-    def from_list(cls, x: list[T], /) -> Self:
-        return cls()
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
 
-assert_type(Array1.from_list([])      , Array1[Any])
-assert_type(Array1.from_list([1])     , Array1[int])  # Error in pyright
-assert_type(Array1[int].from_list([]) , Array1[int])
-assert_type(Array1[int].from_list([1]), Array1[int])
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
 
-class Array2[T = Any]:
-    @classmethod
-    def from_list(cls: "type[Array2[T]]", x: list[T], /) -> "Array2[T]":
-        return cls()
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
 
-assert_type(Array2.from_list([])      , Array2[Any])
-assert_type(Array2.from_list([1])     , Array2[int])  # Error in pyright
-assert_type(Array2[int].from_list([]) , Array2[int])
-assert_type(Array2[int].from_list([1]), Array2[int])
 
-class Array3[T = Any]:
-    @classmethod
-    def from_list[X = Any](cls: "type[Array3[X]]", x: list[X], /) -> "Array3[X]":
-        return cls()
+def test_bind_using_class_typevar() -> None:
+    r"""from_list(type[Array[T]], list[T]) -> Array[T]."""
 
-assert_type(Array3.from_list([])      , Array3[Any])
-assert_type(Array3.from_list([1])     , Array3[int])  # Error in pyright
-assert_type(Array3[int].from_list([]) , Array3[int])
-assert_type(Array3[int].from_list([1]), Array3[int])
+    class Array[T = Any]:
+        @classmethod
+        def from_list(cls: "type[Array[T]]", x: list[T], /) -> "Array[T]":
+            return cls()
 
-class Array4Meta(type):
-    def from_list[T = Any](cls, x: list[T], /) -> "Array4[T]":
-        return cls()
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
 
-class Array4[T](metaclass=Array4Meta): ...
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
 
-assert_type(Array4.from_list([])      , Array4[Any])
-assert_type(Array4.from_list([1])     , Array4[int])
-assert_type(Array4[int].from_list([]) , Array4[int])  # Error in mypy and pyright
-assert_type(Array4[int].from_list([1]), Array4[int])
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
 
-class Array5Meta(type):
-    def from_list[T = Any](cls: "type[Array5[T]]", x: list[T], /) -> "Array5[T]":  # error in mypy and pyright
-        return cls()
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
 
-class Array5[T = Any](metaclass=Array5Meta): ...
+def test_bind_using_method_typevar() -> None:
+    r"""from_list[X](type[Array[X]], list[X]) -> Array[X]."""
+    class Array[T = Any]:
+        @classmethod
+        def from_list[X = Any](cls: "type[Array[X]]", x: list[X], /) -> "Array[X]":
+            return cls()
 
-assert_type(Array5.from_list([])      , Array5[Any])  # Error in mypy
-assert_type(Array5.from_list([1])     , Array5[int])  # Error in mypy and pyright
-assert_type(Array5[int].from_list([]) , Array5[int])
-assert_type(Array5[int].from_list([1]), Array5[int])
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+
+def test_bind_using_metaclass_naive() -> None:
+    r"""Meta.from_list[T](cls, list[T]) -> Array[T]."""
+
+    class Meta(type):
+        def from_list[T = Any](cls, x: list[T], /) -> Self:
+            return cls()
+
+    class Array[X = Any](metaclass=Meta): ...
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+
+def test_bind_using_metaclass() -> None:
+    r"""Meta.from_list[T](cls, list[T]) -> Array[T]."""
+
+    class Meta(type):
+        def from_list[T = Any](cls, x: list[T], /) -> "Array[T]":
+            return cls()
+
+    class Array[X = Any](metaclass=Meta): ...
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+def test_bind_using_metaclass_with_typevar() -> None:
+    r"""Meta.from_list[T](cls: type[Array[T]], list[T]) -> Array[T]."""
+
+    class Meta(type):
+        def from_list[T = Any](cls: "type[Array[T]]", x: list[T], /) -> "Array[T]":
+            return cls()
+
+    class Array[X = Any](metaclass=Meta): ...
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+
+def test_bind_using_metaclass_with_typevar_error() -> None:
+    r"""Meta.from_list[T = Any](cls: type[Array[T]], list[T]) -> Array[T]."""
+
+    class Meta(type):
+        def from_list[T = Any](cls: "type[Array[T]]", x: list[T], /) -> "Array[T]":  # error in mypy and pyright
+            return cls()
+
+    class Array[X = Any](metaclass=Meta): ...
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+
+def test_with_metaclass_bind_array() -> None:
+    r"""Meta.from_list[Arr: Array](type[A], list) -> A."""
+    class Meta(type):
+        def from_list[A: "Array"](cls: "type[A]", x: list, /) -> "A":
+            return cls()
+
+    class Array[X = Any](metaclass=Meta): ...
+    class IntArray(Array[int]): ...
+    class SubArray[T](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+def test_with_metaclass_bind_array_generic() -> None:
+    r"""Meta.from_list[X, A: Array](type[A], list[X]) -> A."""
+    class Meta(type):
+        def from_list[X=Any, A: "Array[X]"](cls: "type[A]", x: list[X], /) -> "A":
+            return cls()
+
+    class Array[Z = Any](metaclass=Meta): ...
+    class IntArray(Array[int]): ...
+    class SubArray[Z=Any](Array[Z]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
+
+
+
+def test_demo() -> None:
+    class Array[T = Any]: ...
+    class IntArray(Array[int]): ...
+    class SubArray[T=Any](Array[T]): ...
+
+    assert_type(Array.from_list([])        , Array[Any])
+    assert_type(Array.from_list([1])       , Array[int])
+    assert_type(Array[int].from_list([])   , Array[int])
+    assert_type(Array[int].from_list([1])  , Array[int])
+    assert_type(Array[str].from_list([])   , Array[str])
+    assert_type(Array[str].from_list(["a"]), Array[str])
+
+    assert_type(SubArray.from_list([])        , SubArray[Any])
+    assert_type(SubArray.from_list([1])       , SubArray[int])
+    assert_type(SubArray[int].from_list([])   , SubArray[int])
+    assert_type(SubArray[int].from_list([1])  , SubArray[int])
+    assert_type(SubArray[str].from_list([])   , SubArray[str])
+    assert_type(SubArray[str].from_list(["a"]), SubArray[str])
+
+    assert_type(IntArray.from_list([])   , IntArray)
+    assert_type(IntArray.from_list([1])  , IntArray)
