@@ -6,7 +6,7 @@ default_language_version:
 repos:
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -22,16 +22,13 @@ repos:
       - id: trailing-whitespace
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.7.13
+    rev: 0.8.18
     hooks:
       - id: uv-lock
-        files: '^pyproject.toml$'
       - id: uv-export
         args: ["--no-dev", "--no-hashes", "--frozen", "--output-file=requirements.txt"]
-        files: '^pyproject.toml$'
-      - id: uv-sync
-        args: ["--upgrade"]
-        files: '^pyproject.toml$'
+      - id: uv-export
+        args: [ "--no-dev", "--frozen", "--output-file=pylock.toml" ]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
     rev: v0.29.0 # change this to the latest tag!
@@ -39,13 +36,13 @@ repos:
       - id: tach
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
-    rev: v1.0.4
+    rev: v1.1.1
     hooks:
       - id: nbstripout-fast
         exclude: '^docs/'
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.13
+    rev: v0.13.0
     hooks:
       - id: ruff
         name: ruff-isort
@@ -57,7 +54,7 @@ repos:
         files: '^src/|^tests/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.28
+    rev: v0.6.30
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -67,12 +64,13 @@ repos:
       - id: python-consider-using-raw-string
       - id: python-system-exit
       - id: python-match-case-builtins
+      - id: python-double-comment
       # ast-based hooks
       - id: check-direct-imports
       - id: check-dunder-all
         files: '^src/'
       - id: check-typing
-        args: ["--check-no-return-union", "--check-concrete"]
+        args: ["--check-no-return-union"]
         files: '^src/|^tests/'
         exclude: "lazydict.py"
       - id: check-signatures
@@ -99,6 +97,15 @@ repos:
       - id: check-archived-hooks
       - id: check-resolved-github-issues
         files: '^src/|^tests/'
+  - repo: local
+    hooks:
+      - id: unknown-inline-pragma
+        name: unknown-inline-pragma
+        description: "Check for unknown inline pragmas."
+        language: pygrep
+        entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
+        types: [ python ]
+        files: '^src/|^tests/'
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
@@ -111,29 +118,13 @@ repos:
           - "--"        # otherwise files are interpreted as args
   # shellcheck
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
-  - repo: local
-    hooks:
-      - id: unknown-inline-pragma
-        name: unknown-inline-pragma
-        description: "Check for unknown inline pragmas."
-        language: pygrep
-        entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
-        types: [python]
-        files: '^src/|^tests/'
-      - id: double-comment
-        name: double-comment
-        description: "Check for double comments."
-        language: pygrep
-        entry: '\#\s+\#\s+'
-        types: [python]
-        files: '^src/|^tests/'
   # pyright
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.6.28
+    rev: v0.6.30
     hooks:
       - id: pyright-concise
         files: '^src/'
@@ -150,6 +141,8 @@ repos:
         exclude: '/tasks/'
         entry: mypy
         args:
+          - "--no-incremental"
+          - "--cache-dir=/dev/null"
           - "--hide-error-context"
           - "--hide-error-end"
           - "--no-pretty"
