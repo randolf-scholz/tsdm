@@ -11,7 +11,7 @@ from tsdm.encoders._sklearn import (
     SKLEARN_ENCODERS,
     SKLEARN_TRANSFORMS,
     SklearnEncoder,
-    SklearnTransform,
+    Transform,
 )
 
 BINARY_DATA = np.array(["yes", "no", "no", "yes", "yes"])

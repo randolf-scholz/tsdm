@@ -168,7 +168,7 @@ class PandasTS(TimeSeries[DataFrame]):
             raise ValueError(f"The following tables: {unknown_fields}")
 
         return cls(
-            **{k: ds.tables.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
+            **{k: ds.tables.get(k, None) for k in cls.FIELDS},
             name=ds.__class__.__name__,
         )
 
@@ -276,7 +276,7 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
             raise ValueError(f"The following table names: {bad_names}")
 
         return cls(
-            **{k: ds.tables.get(k, None) for k in cls.FIELDS},  # pyright: ignore[reportArgumentType]
+            **{k: ds.tables.get(k, None) for k in cls.FIELDS},
             name=ds.__class__.__name__,
         )
 
