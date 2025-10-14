@@ -2,7 +2,7 @@ exclude: 'bugs/'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
   python: '3.13'
-  node: '22.15.1'
+  node: '22.20.0'
 repos:
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
