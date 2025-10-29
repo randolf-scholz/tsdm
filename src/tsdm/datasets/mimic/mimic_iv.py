@@ -720,7 +720,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
         r"""Mapping between table_names and contents of the zip file."""
         top = f"mimic-iv-{self.__version__}"
 
-        files = {
+        files: dict[KEYS, str] = {
             # "CHANGELOG"          : f"{top}/CHANGELOG.txt",
             # "LICENSE"            : f"{top}/LICENSE.txt",
             # "SHA256SUMS"         : f"{top}/SHA256SUMS.txt",
@@ -776,7 +776,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
                 "provider"         : f"{top}/hosp/provider.csv.gz",  # NOTE: new table
             }  # fmt: skip
 
-        return files  # type: ignore[return-value]
+        return files
 
     def clean_table(self, key: KEYS) -> pa.Table:
         with (
@@ -976,7 +976,8 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 pass
             case "poe_detail":
                 # NOTE: we use polars because pandas is too slow.
-                pl_frame: pl.DataFrame = pl.from_arrow(table)  # type: ignore[assignment]
+                pl_frame = pl.from_arrow(table)
+                assert isinstance(pl_frame, pl.DataFrame)
                 table = pl_frame.pivot(
                     "field_name",
                     index=["poe_id", "poe_seq", "subject_id"],

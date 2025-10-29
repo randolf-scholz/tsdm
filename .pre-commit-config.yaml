@@ -1,7 +1,7 @@
 exclude: 'bugs/'
 minimum_pre_commit_version: 3.6.0
 default_language_version:
-  python: '3.14'
+  python: '3.13'
   node: '22.20.0'
 repos:
   # https://pre-commit.com/hooks.html
@@ -31,7 +31,7 @@ repos:
         args: [ "--no-dev", "--frozen", "--output-file=pylock.toml" ]
   # tach
   - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.29.0 # change this to the latest tag!
+    rev: v0.29.0
     hooks:
       - id: tach
   # nbstripout-fast

@@ -50,7 +50,7 @@ depends_on = []
 
 [[modules ]]
 path = "tsdm.metrics"
-depends_on = ["tsdm.backend", "tsdm.types"]
+depends_on = [ "tsdm.types"]
 
 [[modules ]]
 path = "tsdm.random"

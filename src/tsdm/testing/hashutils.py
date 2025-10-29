@@ -36,7 +36,7 @@ from collections import Counter
 from collections.abc import Collection, Hashable, Iterable, Mapping, Sequence
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Final, Literal, NamedTuple, Optional, Self
+from typing import Any, Final, Literal, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -64,7 +64,7 @@ class Hash(NamedTuple):
     hash_algorithm: str | None
 
     @classmethod
-    def from_value(cls, arg: str | Self, /) -> "Hash":
+    def from_value(cls, arg: "str | Hash", /) -> "Hash":
         if isinstance(arg, Hash):
             return arg
 
@@ -367,6 +367,8 @@ def validate_file(
 
     # Determine the hash algorithm to use.
     match hash_algorithm, right:
+        case None, Hash(hash_algorithm=str(ref_alg)):
+            hash_alg = ref_alg
         case None, None | Hash(hash_algorithm=None):
             warnings.warn(
                 "No hash algorithm given for reference hash!"
@@ -375,8 +377,6 @@ def validate_file(
                 stacklevel=2,
             )
             hash_alg = DEFAULT_HASH_METHOD
-        case None, Hash(hash_algorithm=str(ref_alg)):
-            hash_alg = ref_alg
         case str(alg), _:
             hash_alg = alg
         case _:
@@ -404,6 +404,8 @@ def validate_table(
 
     # Determine the hash algorithm
     match hash_algorithm, right:
+        case None, Hash(hash_algorithm=str(ref_alg)):
+            hash_alg = ref_alg
         case None, None | Hash(hash_algorithm=None):
             # Try to determine the hash algorithm from the array type
             warnings.warn(
@@ -423,9 +425,6 @@ def validate_table(
                     raise TypeError(
                         f"Could not autodetect hash algorithm for table of type {cls}"
                     )
-
-        case None, Hash(hash_algorithm=str(ref_alg)):
-            hash_alg = ref_alg
         case str(alg), _:
             hash_alg = alg
         case _:
