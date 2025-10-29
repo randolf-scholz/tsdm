@@ -27,7 +27,7 @@ from tsdm.datasets import KiwiBenchmark
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
-from tsdm.types.aliases import MaybeNA
+from tsdm.types.pandas import MaybeNA
 from tsdm.utils import timedelta
 from tsdm.utils.decorators import pprint_repr
 

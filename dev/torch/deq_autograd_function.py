@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # %% [markdown]
-# # Test of the possibility of inputting a nn.Module as input into a custom autograd function
+# Test of the possibility of inputting a nn.Module as input into a custom autograd function
 
 # %%
 import warnings
@@ -14,7 +14,7 @@ from torch import Tensor, dot, nn
 from torch.autograd import grad
 
 # %% [markdown]
-# # Setup - Implement a Linear Solver (CGS - Conjugate Gradients Squared)
+# Setup - Implement a Linear Solver (CGS - Conjugate Gradients Squared)
 
 
 # %%
@@ -122,7 +122,7 @@ print(f"MSE between custom and reference solution: {diff}")
 
 
 # %% [markdown]
-# # Test on a model
+# Test on a model
 #
 # We compute gradients for $‖\text{deq-layer}(x)‖^2$.
 

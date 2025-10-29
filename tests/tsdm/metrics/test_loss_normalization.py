@@ -26,12 +26,13 @@ LOSSES = [MSE, RMSE, MAE]
 @pytest.mark.parametrize("loss", LOSSES)
 @pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
 @pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
+@pytest.mark.parametrize(("atol", "rtol"), [(0.01, 0.01)])
 def test_loss_normalization(
     loss: type[BaseMetric],
     batch_shape: tuple[int, ...],
     channel_shape: tuple[int, ...],
-    atol: float = 0.01,
-    rtol: float = 0.01,
+    atol: float,
+    rtol: float,
 ) -> None:
     r"""Test whether the modular losses are normalized."""
     loss_func = loss(normalize=True)
@@ -58,12 +59,13 @@ def test_loss_normalization(
 @pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
 @pytest.mark.parametrize("time_shape", TIME_SHAPES, ids=lambda ts: f"{ts=}")
 @pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
+@pytest.mark.parametrize(("atol", "rtol"), [(0.01, 0.01)])
 def test_time_loss_normalization(
     batch_shape: tuple[int, ...],
     time_shape: tuple[int, ...],
     channel_shape: tuple[int, ...],
-    atol: float = 0.01,
-    rtol: float = 0.01,
+    atol: float,
+    rtol: float,
 ) -> None:
     r"""Test whether the time-series losses are normalized.
 

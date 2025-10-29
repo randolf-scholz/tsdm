@@ -92,7 +92,7 @@ def true_like[P: PandasType](x: P, /) -> P:
 
 def infer_axes(
     x: PandasType, /, *, axis: Axis = None
-) -> Literal[None, "index", "columns"]:
+) -> Literal["index", "columns"] | None:
     r"""Convert axes specification to pandas-compatible axes specification.
 
     - Series: -1 → 0, -2 → Error

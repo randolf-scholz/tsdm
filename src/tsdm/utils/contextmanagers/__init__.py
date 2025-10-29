@@ -26,5 +26,3 @@ CONTEXT_MANAGERS: dict[str, type[AbstractContextManager]] = {
     "timeout": timeout,
 }
 r"""Dictionary of all available context managers."""
-
-del AbstractContextManager

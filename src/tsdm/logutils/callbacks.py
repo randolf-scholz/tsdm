@@ -368,7 +368,7 @@ class EvaluationCallback(BaseCallback):
                 best_value = self.history.loc[best_epochs[metric], (key, metric)]
                 self.best_epoch.loc[step, (key, metric)] = best_value
 
-    @torch.no_grad()
+    @torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
         r"""Return the targets and predictions for the given dataloader."""
         targets_list: list[Tensor] = []

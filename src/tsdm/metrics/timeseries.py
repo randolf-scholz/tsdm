@@ -30,7 +30,6 @@ from typing import Final, Optional, Protocol, runtime_checkable
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.backend.torch import autojit
 from tsdm.metrics.base import BaseMetric
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.types.aliases import Axis
@@ -182,7 +181,6 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
         raise NotImplementedError
 
 
-@autojit
 class ND(TimeSeriesBaseLoss):
     r"""Compute the normalized deviation score.
 
@@ -204,7 +202,6 @@ class ND(TimeSeriesBaseLoss):
         return nd(targets, predictions)
 
 
-@autojit
 class NRMSE(TimeSeriesBaseLoss):
     r"""Compute the normalized root mean squared error.
 
@@ -221,7 +218,6 @@ class NRMSE(TimeSeriesBaseLoss):
         return nrmse(targets, predictions)
 
 
-@autojit
 class Q_Quantile(TimeSeriesBaseLoss):
     r"""The q-quantile.
 
@@ -238,7 +234,6 @@ class Q_Quantile(TimeSeriesBaseLoss):
         return q_quantile(targets, predictions)
 
 
-@autojit
 class Q_Quantile_Loss(TimeSeriesBaseLoss):
     r"""The q-quantile loss.
 
@@ -255,7 +250,6 @@ class Q_Quantile_Loss(TimeSeriesBaseLoss):
         return q_quantile_loss(targets, predictions)
 
 
-@autojit
 class TimeSeriesMSE(TimeSeriesBaseLoss):
     r"""Time-Series Mean Square Error.
 
@@ -324,7 +318,6 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
         return r
 
 
-@autojit
 class TimeSeriesWMSE(WeightedTimeSeriesLoss):
     r"""Weighted Time-Series Mean Square Error.
 

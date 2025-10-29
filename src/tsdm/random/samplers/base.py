@@ -96,9 +96,9 @@ def compute_grid[TD: DurationScalar](
     # Python just lacks some critical abilities like
     #  typeof https://github.com/python/typing/issues/769
     #  or generic bounds https://github.com/python/typing/issues/548
-    t_min = cast(Any, timestamp(tmin) if isinstance(tmin, str) else tmin)
-    t_max = cast(Any, timestamp(tmax) if isinstance(tmax, str) else tmax)
-    t_0 = cast(Any, timestamp(offset) if isinstance(offset, str) else offset)
+    t_min = cast("Any", timestamp(tmin) if isinstance(tmin, str) else tmin)
+    t_max = cast("Any", timestamp(tmax) if isinstance(tmax, str) else tmax)
+    t_0 = cast("Any", timestamp(offset) if isinstance(offset, str) else offset)
     delta = timedelta(step) if isinstance(step, str) else step
 
     # validate inputs
@@ -778,7 +778,7 @@ class SlidingWindowSampler[
             *,
             mode: Literal["timestamp", MODE.T],
             horizons: str | TD,
-            stride: str | TD, shuffle: bool = ..., drop_last: bool = ...,rng: Generator = ...,
+            stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
@@ -810,7 +810,7 @@ class SlidingWindowSampler[
         # region set basic attributes --------------------------------------------------
         self.tmin = get_first_sample(data_source)
         self.tmax = get_last_sample(data_source)
-        zero_td = cast(Any, self.tmin - self.tmin)  # timedelta of the correct type
+        zero_td = cast("Any", self.tmin - self.tmin)  # timedelta of the correct type
         dt_type: type[DType] = type(self.tmin)
         td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)

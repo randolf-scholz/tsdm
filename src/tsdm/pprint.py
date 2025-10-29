@@ -950,7 +950,7 @@ def repr_array(
 
     # truncate the dtype-repr
     if len(vals) > maxitems:
-        vals = vals[: maxitems // 2] + ["..."] + vals[-maxitems // 2 :]
+        vals = [*vals[: maxitems // 2], "...", *vals[-maxitems // 2 :]]
 
     match vals, prod(shape):
         case _, 0 | 1:
@@ -993,7 +993,7 @@ def repr_dtype(
             return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
         # Some special casing for dictionary types.
         case pa.DictionaryType(index_type=index_type, value_type=value_type):
-            return f"dict[{index_type!s},{value_type!s}]"  # type: ignore[has-type]
+            return f"dict[{index_type!s},{value_type!s}]"
         case type() as cls if cls in TYPESTRINGS:
             return TYPESTRINGS[cls]
         case _:

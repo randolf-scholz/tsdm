@@ -323,7 +323,7 @@ def download(
         return
 
     # construct the path
-    path = Path(url.split("/")[-1] if fname is None else fname)
+    path = Path(url.rsplit("/", maxsplit=1)[-1] if fname is None else fname)
     target_directory = path.parent
     if not target_directory.exists():
         target_directory.mkdir(parents=True, exist_ok=True)
@@ -372,7 +372,7 @@ def import_from_url(
 ) -> None:
     r"""Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
-    path = Path(url.split("/")[-1] if fname is None else fname)
+    path = Path(url.rsplit("/", maxsplit=1)[-1] if fname is None else fname)
     logger = logging.getLogger(__name__)
     logger.info("Downloading %s to %s", url, path)
 

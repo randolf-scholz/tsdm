@@ -4,6 +4,6 @@ from tsdm.encoders import EncoderProtocol, IdentityEncoder
 
 
 def test_identity_encoder() -> None:
-    DEMO = IdentityEncoder() @ IdentityEncoder()
+    DEMO = IdentityEncoder() >> IdentityEncoder()
     repr(DEMO)
     assert isinstance(DEMO, EncoderProtocol)

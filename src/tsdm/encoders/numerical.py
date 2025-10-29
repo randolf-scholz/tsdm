@@ -279,8 +279,8 @@ class LinearScaler[Arr: Array](FittableEncoder[Arr, Arr]):
         axis: Axis = None,
     ) -> None:
         r"""Initialize the MinMaxScaler."""
-        self.loc = cast(Arr, loc)
-        self.scale = cast(Arr, scale)
+        self.loc = cast("Arr", loc)
+        self.scale = cast("Arr", scale)
         self.axis = axis
 
         if axis is not None:
@@ -347,8 +347,8 @@ class StandardScaler[Arr: Array[float]](FittableEncoder[Arr, Arr]):
         *,
         axis: Axis = (),
     ) -> None:
-        self.mean = cast(Arr, mean)
-        self.stdv = cast(Arr, stdv)
+        self.mean = cast("Arr", mean)
+        self.stdv = cast("Arr", stdv)
         self.axis = axis
         self.mean_learnable = mean is NotImplemented
         self.stdv_learnable = stdv is NotImplemented
@@ -461,13 +461,13 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
     ) -> None:
         self.axis = axis
         self.safe_computation = safe_computation
-        self.ymax = cast(Arr, ymax)
-        self.ymin = cast(Arr, ymin)
+        self.ymax = cast("Arr", ymax)
+        self.ymin = cast("Arr", ymin)
 
         self.xmin_learnable = xmin is None
         self.xmax_learnable = xmax is None
-        self.xmin = cast(Arr, NotImplemented if xmin is None else xmin)
-        self.xmax = cast(Arr, NotImplemented if xmax is None else xmax)
+        self.xmin = cast("Arr", NotImplemented if xmin is None else xmin)
+        self.xmax = cast("Arr", NotImplemented if xmax is None else xmax)
 
         # set derived parameters
         if not (self.xmin_learnable or self.xmax_learnable):
@@ -675,7 +675,7 @@ class TensorConcatenator[Arr: Array](ArrayDecoder[list[Arr], Arr]):
     indices: int | list[int] = NotImplemented
     axis: int = 0
 
-    def __invert__(self) -> "TensorSplitter[Arr]":
+    def __invert__(self) -> TensorSplitter[Arr]:
         return TensorSplitter(axis=self.axis, indices=self.indices)
 
     def _fit_impl(self, x: list[Arr], /) -> None:

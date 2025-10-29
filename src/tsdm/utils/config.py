@@ -88,7 +88,7 @@ class ConfigMetaclass(ABCMeta):
         config_type.NAME = field(default=actual_name)
         config_type.MODULE = field(default=namespace["__module__"])
 
-        return dataclass(config_type, eq=False, frozen=True)  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
+        return dataclass(config_type, eq=False, frozen=True)  # pyright: ignore[reportCallIssue, reportArgumentType]
 
 
 class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):

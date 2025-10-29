@@ -1,7 +1,6 @@
 # type JSON_SCALAR = str | bool | int | float | None
 # type JSON = dict[str, JSON_SCALAR | list[JSON] | dict[str, JSON]]
 
-
 # type JSON_SCLAR = str | int | float | bool | None
 # type JSON_TYPE = JSON_SCLAR | dict[str, JSON_TYPE] | list[JSON_TYPE]
 # type JSON = dict[str, JSON_TYPE]

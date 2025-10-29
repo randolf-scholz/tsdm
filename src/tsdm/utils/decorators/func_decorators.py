@@ -55,7 +55,7 @@ def trace[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
             "\n\t".join((
                 f"{func.__qualname__}: ENTERING",
                 f"args={tuple(type(arg).__name__ for arg in args)}",
-                f"kwargs={str({k: type(v).__name__ for k, v in kwargs.items()})}",
+                f"kwargs={ {k: type(v).__name__ for k, v in kwargs.items()}!s}",
             )),
         )
         try:

@@ -268,7 +268,7 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
 # ) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
 # def decorator(deco, /):
 
-_OBJ = cast(Any, object())
+_OBJ = cast("Any", object())
 r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 
 

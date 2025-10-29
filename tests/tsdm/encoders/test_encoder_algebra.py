@@ -1,18 +1,47 @@
 import unittest
 from typing import assert_type, reveal_type
 
-from tsdm.encoders import Encoder, duplicate, wrap
+from tsdm.encoders import (
+    BaseEncoder,
+    Compose,
+    Encoder,
+    EncoderDict,
+    EncoderList,
+    duplicate,
+    wrap,
+)
+
+
+def test_encoderlist_covariant() -> None:
+    def _[X, Y](
+        x: EncoderList[X, Y, BaseEncoder[X, Y]],
+    ) -> EncoderList[X, Y, Encoder[X, Y]]:
+        r"""Test that we can upcast to a more general type."""
+        return x
+
+
+def test_encoderdict_covariant() -> None:
+    def _[X, Y, K](
+        x: EncoderDict[X, Y, K, BaseEncoder],
+    ) -> EncoderDict[X, Y, K, Encoder]:
+        r"""Test that we can upcast to a more general type."""
+        return x
+
+
+def test_compose_covariant() -> None:
+    def _[X, Y](x: Compose[X, Y, BaseEncoder]) -> Compose[X, Y, Encoder]:
+        r"""Test that we can upcast to a more general type."""
+        return x
 
 
 class TestDuplicate(unittest.TestCase):
     encoder: Encoder[str, str] = wrap(
         encoder=lambda x: f"({x} + 1)",
-        decoder=lambda x: x.lstrip("(").rstrip(" + 1)"),
+        decoder=lambda x: x.removeprefix("(").removesuffix(" + 1)"),
     )
 
     def test_duplicate_zero(self) -> None:
-        reduce0 = lambda x: "∅"
-        duplicated_encoder = duplicate(self.encoder, 0, reduction=reduce0)
+        duplicated_encoder = duplicate(self.encoder, num=0, reduction=lambda _: "∅")
 
         # encode
         result = duplicated_encoder.encode("a")
@@ -23,8 +52,9 @@ class TestDuplicate(unittest.TestCase):
         assert decoded_result == "∅"
 
     def test_duplicate_one(self) -> None:
-        reduce1 = lambda x: f"abs({x[0]})"
-        duplicated_encoder = duplicate(self.encoder, 1, reduction=reduce1)
+        duplicated_encoder = duplicate(
+            self.encoder, num=1, reduction=lambda x: f"abs({x[0]})"
+        )
 
         # encode
         result = duplicated_encoder("a")
@@ -35,8 +65,9 @@ class TestDuplicate(unittest.TestCase):
         assert decoded_result == "abs(a)"
 
     def test_duplicate_two(self) -> None:
-        reduce2 = lambda x: f"max({x[0]}, {x[1]})"
-        duplicated_encoder = duplicate(self.encoder, 2, reduction=reduce2)
+        duplicated_encoder = duplicate(
+            self.encoder, num=2, reduction=lambda x: f"max({x[0]}, {x[1]})"
+        )
 
         # encode
         result = duplicated_encoder("a")

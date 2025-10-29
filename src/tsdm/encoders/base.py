@@ -395,7 +395,7 @@ class EncoderMeta(ProtocolMeta):
     LOGGER: logging.Logger = logging.getLogger(__name__)
 
     @property
-    def FIELDS(cls) -> frozenset[str]:
+    def FIELDS(cls) -> frozenset[str]:  # noqa: N802,N805
         r"""Fields that are considered for the encoder."""
         if is_dataclass(cls):
             return frozenset({f.name for f in fields(cls)})
@@ -959,7 +959,6 @@ class EncoderList[
     def __getitem__(self, index: int | slice, /) -> E | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(index, slice):
             result = self.new(encoders=self._encoders[index])
-            reveal_type(result)
             if type(result) is not type(self):
                 raise TypeError(
                     f"Slicing produced an unexpected type."
@@ -1071,12 +1070,12 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
 
             # only one of them provided
             case e, None:
-                assert e is not None  # noqa: S101
+                assert e is not None
                 self._encode_impl = e.encode if isinstance(e, SupportsEncode) else e
                 if isinstance(e, SupportsDecode):
                     self._decode_impl = e.decode  # type: ignore[unreachable]
             case None, d:
-                assert d is not None  # noqa: S101
+                assert d is not None
                 self._decode_impl = d.encode if isinstance(d, SupportsEncode) else d
                 if isinstance(d, SupportsDecode):
                     self._encode_impl = d.decode  # type: ignore[unreachable]
@@ -1520,11 +1519,11 @@ class MappedEncoder[
 
     def _encode_impl(self, xmap: MappingIn, /) -> MappingOut:
         ymap = {k: self[k].encode(x) for k, x in xmap.items()}
-        return cast(MappingOut, ymap)
+        return cast("MappingOut", ymap)
 
     def _decode_impl(self, ymap: MappingOut, /) -> MappingIn:
         xmap = {k: self[k].decode(y) for k, y in ymap.items()}
-        return cast(MappingIn, xmap)
+        return cast("MappingIn", xmap)
 
     def simplify(self) -> "MappedEncoder[MappingIn, MappingOut]":
         r"""Simplify the encoders."""
@@ -1693,12 +1692,12 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def _encode_impl(self, x: X, /) -> Y:
         for encoder in self:
             x = encoder.encode(x)
-        return cast(Y, x)
+        return cast("Y", x)
 
     def _decode_impl(self, y: Y, /) -> X:
         for encoder in reversed(self):
             y = encoder.decode(y)
-        return cast(X, y)
+        return cast("X", y)
 
     def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the chained encoder."""
@@ -1798,12 +1797,11 @@ class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
 
     def __init__(self, encoder: E, num: int, /) -> None:
         r"""Initialize the encoder."""
+        if num < 0:
+            raise ValueError("num must be >= 0")
         self.encoder = encoder
         self.num = num
-        if num >= 0:
-            super().__init__([deepcopy(encoder) for _ in range(num)])
-        else:
-            super().__init__([deepcopy(invert(encoder)) for _ in range(-num)])
+        super().__init__([deepcopy(encoder) for _ in range(num)])
 
     def get_slice[V](self: "Repeat[V]", arg: slice, /) -> "Repeat[V]":  # fmt: skip
         num = len(self.encoders[arg])
@@ -1855,10 +1853,10 @@ class Parallel[
 ](EncoderList[TupleIn, TupleOut, E]):
     r"""Apply multiple encoders in parallel on tuples of data (MIMO).
 
-        x₁ ───▶ f₁(x₁)
-        x₂ ───▶ f₂(x₂)
-        ⋮         ⋮
-        xₙ ───▶ fₙ(xₙ)
+        x₁ ────▶ f₁(x₁)
+        x₂ ────▶ f₂(x₂)
+             ⋮
+        xₙ ────▶ fₙ(xₙ)
 
     .. math::
         Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) ⟶ Fun(X₁×…×Xₙ，Y₁×…×Yₙ)  \\
@@ -1936,10 +1934,10 @@ def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]: ...
 def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]:
     r"""Apply multiple encoders in parallel on tuples of data (MIMO).
 
-        x₁ ───▶ f₁(x₁)
-        x₂ ───▶ f₂(x₂)
-        ⋮         ⋮
-        xₙ ───▶ fₙ(xₙ)
+        x₁ ────▶ f₁(x₁)
+        x₂ ────▶ f₂(x₂)
+             ⋮
+        xₙ ────▶ fₙ(xₙ)
 
     See Also: `Parallel`
     """
@@ -1954,10 +1952,10 @@ class Replicate[
 ](Parallel[TupleIn, TupleOut]):
     r"""Apply copies of single encoder in parallel to multiple inputs (MIMO).
 
-        x₁ ───▶ f(x₁)
-        x₂ ───▶ f(x₂)
-            ⋮
-        xₙ ───▶ f(xₙ)
+        x₁ ────▶ f(x₁)
+        x₂ ────▶ f(x₂)
+             ⋮
+        xₙ ────▶ f(xₙ)
 
     Example:
         >>> from tsdm.encoders import Replicate, wrap
@@ -2048,6 +2046,11 @@ def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], t
 def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], tuple[Y, ...]]:  # type: ignore[misc]  # fmt: skip
     r"""Create copies of an Encoder in parallel.
 
+        x₁ ────▶ f(x₁)
+        x₂ ────▶ f(x₂)
+             ⋮
+        xₙ ────▶ f(xₙ)
+
     Args:
         e: The encoder to duplicate.
         num: The number of copies. Must be non-negative.
@@ -2110,10 +2113,10 @@ class Fork[
 ](EncoderList[X, TupleOut, E]):
     r"""Apply multiple encoders to the same input (SIMO).
 
-             ┌───▶ f₁(x)
-        x ───┼───▶ f₂(x)
-             │       ⋮
-             └───▶ fₙ(x)
+              ┌────▶ f₁(x)
+        x ────┼────▶ f₂(x)
+              │        ⋮
+              └────▶ fₙ(x)
 
     .. math::
         Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) ⟶ Fun(X₁∩…∩Xₙ，Y₁×…×Yₙ)  \\
@@ -2192,7 +2195,7 @@ class Fork[
                 )
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                encoder = cast(Encoder[X, Any], encoder)
+                encoder = cast("Encoder[X, Any]", encoder)
                 return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
                     encoder
                     >> wrap(
@@ -2235,8 +2238,10 @@ def fork[X, Y](  # type: ignore[misc]  # pyright: ignore[reportInconsistentOverl
 @dataclass
 class Duplicate[
     X,
-    Ys: TupleOf,
-](Fork[X, Ys]):  # (X, tuple[Y, ...]])
+    Ys: TupleOf,  # tuple[Y, Y, ..., Y]
+    # FIXME: https://github.com/python/cpython/issues/140596
+    E: Encoder = Encoder[X, Any],  # Encoder[X, Y]
+](Fork[X, Ys, E]):
     r"""Apply copies of a single encoder to the same input (SIMO).
 
               ┌────▶ f(x)
@@ -2328,7 +2333,7 @@ class Duplicate[
                 ).simplify()
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                encoder = cast(Encoder[X, Any], encoder)
+                encoder = cast("Encoder[X, Any]", encoder)
                 return (  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
                     encoder
                     >> wrap(
@@ -2634,7 +2639,7 @@ class Fold[Xs: TupleOf, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
                 ).simplify()
 
             case [encoder]:
-                encoder = cast(Encoder[Any, Y], encoder)
+                encoder = cast("Encoder[Any, Y]", encoder)
                 return (  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
                     wrap(
                         encoder=self.reduction,
@@ -2680,25 +2685,3 @@ def fold[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, Y] 
 
 
 # endregion single input multiple output encoders --------------------------------------
-
-
-def test_encoderlist_covariant() -> None:
-    def _[X, Y](
-        x: EncoderList[X, Y, BaseEncoder[X, Y]],
-    ) -> EncoderList[X, Y, Encoder[X, Y]]:
-        r"""Test that we can upcast to a more general type."""
-        return x
-
-
-def test_encoderdict_covariant() -> None:
-    def _[X, Y, K](
-        x: EncoderDict[X, Y, K, BaseEncoder],
-    ) -> EncoderDict[X, Y, K, Encoder]:
-        r"""Test that we can upcast to a more general type."""
-        return x
-
-
-def test_compose_covariant() -> None:
-    def _[X, Y](x: Compose[X, Y, BaseEncoder]) -> Compose[X, Y, Encoder]:
-        r"""Test that we can upcast to a more general type."""
-        return x

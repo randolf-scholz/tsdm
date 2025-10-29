@@ -133,7 +133,7 @@ class _LazyDictMeta(type):
 
 
 @pprint_repr
-class LazyDict[K = Any, V = Any](dict[K, V], metaclass=_LazyDictMeta):  # type: ignore[misc]
+class LazyDict[K = Any, V = Any](dict[K, V], metaclass=_LazyDictMeta):
     r"""A Lazy Dictionary implementation.
 
     Note:
@@ -283,6 +283,6 @@ def lazy_dict[K=Never, V=Any](
     /,
     **kwargs: Lazy[V],
 ) -> LazyDict[K, V] | LazyDict[K | str, V]:
-# fmt: on
+    # fmt: on
     r"""Create a new LazyDict from an iterable of keys and a Lazy."""
     return LazyDict.new(arg, **kwargs)

@@ -13,14 +13,14 @@ class FrozenMap[K = Any, V = Any](Mapping[K, V]):
     # if TYPE_CHECKING:
     # fmt: off
     @overload  # mapping only
-    def __init__(
-        self: "FrozenMap[K, V]",  # pyright: ignore[reportInvalidTypeVarUse]
-        items: Mapping[K, V] | Iterable[tuple[K, V]] = ..., /
+    def __init__[X, Y](
+        self: "FrozenMap[X, Y]",
+        items: Mapping[X, Y] | Iterable[tuple[X, Y]] = ..., /
     ) -> None: ...
     @overload  # mapping and kwargs
-    def __init__(
-        self: "FrozenMap[K | str, V]",  # pyright: ignore[reportInvalidTypeVarUse]
-        items: Mapping[K, V] | Iterable[tuple[K, V]] = ..., /,
+    def __init__[X, Y](
+        self: "FrozenMap[X | str, Y]",
+        items: Mapping[X, Y] | Iterable[tuple[X, Y]] = ..., /,
         **kwargs: V
     ) -> None: ...
     # fmt: on

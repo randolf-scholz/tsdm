@@ -223,7 +223,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     @classmethod
     def from_url(cls, url: str, /, *args: Any, **kwargs: Any) -> Self:
         r"""Obtain model from arbitrary url."""
-        fname = url.split("/")[-1]
+        fname = url.rsplit("/", maxsplit=1)[-1]
         path = cls.RAWDATA_DIR / fname
         return cls(*args, rawdata_file=path, download_url=url, **kwargs)
 
@@ -420,7 +420,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     def __load_torch_optimizer(self, file: str | Path | IO[bytes], /) -> TorchOptimizer:
         r"""Load a torch optimizer."""
         return cast(
-            TorchOptimizer,
+            "TorchOptimizer",
             self.__load_torch_component(
                 file, component="optimizer", params=self.model.parameters()
             ),
@@ -431,6 +431,6 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     ) -> TorchLRScheduler:
         r"""Load a torch learning rate scheduler."""
         return cast(
-            TorchLRScheduler,
+            "TorchLRScheduler",
             self.__load_torch_component(file, component="lr_scheduler"),
         )

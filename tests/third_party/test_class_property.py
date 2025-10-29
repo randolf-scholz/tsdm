@@ -32,9 +32,8 @@ class Demo(Base):
 
 def test_fields() -> None:
     assert Base.FIELDS == set()
-
     assert Demo.FIELDS == {"x", "y"}
 
     # check that fields are read-only
     with pytest.raises(AttributeError):
-        Demo.fields = {}
+        Demo.FIELDS = {}

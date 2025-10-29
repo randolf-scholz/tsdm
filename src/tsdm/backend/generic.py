@@ -72,7 +72,7 @@ def where[Arr: Array](mask: Any, x: Arr, y: Arr, /) -> Arr:
     #   therefore, what we can do is use xᵐ = {x: m=1, 1: x=0} to select between x and 1.
     #   in particular, xᵐ - (1-m) = {x: m=1, 0: m=0}
     #   so, we can return (xᵐ - (1-m)) + (y¹⁻ᵐ - m) = xᵐ + y¹⁻ᵐ - 1
-    m = cast(Arr, mask * 1.0)  # floating conversion
+    m = cast("Arr", mask * 1.0)  # floating conversion
     return x**m + y ** (1.0 - m) - 1.0
 
 

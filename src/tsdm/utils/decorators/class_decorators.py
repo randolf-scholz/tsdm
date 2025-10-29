@@ -79,7 +79,7 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     if not issubclass(cls, Dataclass):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
         raise TypeError(f"Expected Sequence type, got {cls}.")
     cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
-    return cls  # type: ignore[return-value]
+    return cls
 
 
 @decorator  # type: ignore[no-redef]
@@ -119,7 +119,7 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
         raise TypeError(f"Unsupported type {cls}.")
 
     cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
-    return cls  # type: ignore[return-value]
+    return cls
 
 
 def implements(*protocols: type) -> IdentityMapOnCls:

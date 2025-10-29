@@ -96,11 +96,11 @@ def assert_arrays_close[T: Any](
             np.testing.assert_allclose(array, reference, atol=atol, rtol=rtol)
         case pl.Series():
             pl_testing.assert_series_equal(
-                array, reference, check_exact=False, atol=atol, rtol=rtol
+                array, reference, check_exact=False, abs_tol=atol, rel_tol=rtol
             )
         case pl.DataFrame():
             pl_testing.assert_frame_equal(
-                array, reference, check_exact=False, atol=atol, rtol=rtol
+                array, reference, check_exact=False, abs_tol=atol, rel_tol=rtol
             )
         case torch.Tensor() as tensor:
             torch.testing.assert_close(tensor, reference, atol=atol, rtol=rtol)
@@ -136,7 +136,7 @@ def is_builtin_type(obj: object, /) -> TypeGuard[type]:
 
 def is_dtype(dtype: object) -> TypeIs[AnyDtype]:
     r"""Check if a string is a valid dtype."""
-    return isinstance(dtype, AnyDtype)
+    return isinstance(dtype, AnyDtype.__value__)
 
 
 def is_builtin_constant(obj: object, /) -> bool:

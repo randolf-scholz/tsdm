@@ -8,7 +8,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 
-def run_mypy_timed(path: Path, show_errors: bool = False):
+def run_mypy_timed(path: Path, /, *, show_errors: bool = False):
     start = time.perf_counter()
     try:
         result = subprocess.run(
@@ -23,7 +23,7 @@ def run_mypy_timed(path: Path, show_errors: bool = False):
     return end - start
 
 
-def analyze_project(root_dir: Path, limit: int, show_errors: bool):
+def analyze_project(root_dir: Path, *, limit: int, show_errors: bool):
     files = sorted(root_dir.rglob("*.py"))
     timings = []
 
@@ -66,7 +66,7 @@ def main():
 
     if not args.path.exists():
         print(f"Error: path {args.path} does not exist.")
-        exit(1)
+        raise SystemExit(1)
 
     analyze_project(args.path, args.limit, args.show_errors)
 

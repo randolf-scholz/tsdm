@@ -36,7 +36,7 @@ class _AttrMeta(type):
         r"""Create a decorator that converts method to attribute."""
         attr_ = super().__call__(func)
         wrapper = wraps(func, updated=())
-        attr = cast(R, wrapper(attr_))
+        attr = cast("R", wrapper(attr_))
         return attr
 
 
@@ -86,7 +86,7 @@ def abstractattribute[R](obj: Optional[Fn[[Any], R]] = None) -> R:
             f"Cannot decorate with abstractattribute decorator because {obj} "
             "does not support setting attributes."
         ) from exc
-    return cast(R, attr)
+    return cast("R", attr)
 
 
 class PatchedABCMeta(ABCMeta):

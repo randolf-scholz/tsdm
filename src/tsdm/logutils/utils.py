@@ -48,7 +48,7 @@ class TargetsAndPredics(NamedTuple):
     predics: Tensor
 
 
-@torch.no_grad()
+@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
 def eval_metric(
     metric: str | Metric | type[Metric],
     /,
@@ -70,7 +70,7 @@ def eval_metric(
             raise TypeError(f"{type(metric)=} not understood!")
 
 
-@torch.no_grad()
+@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
 def compute_metrics(
     metrics: (
         str

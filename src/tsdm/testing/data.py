@@ -72,7 +72,7 @@ def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
     if not pd.api.types.is_float_dtype(s):
         raise TypeError("Series must be 'float' dtype!")
     values = get_uniques(s) if uniques is None else uniques
-    return cast(bool, values.apply(float.is_integer).all())
+    return cast("bool", values.apply(float.is_integer).all())
 
 
 def compare_dataframes(given: DataFrame, reference: DataFrame) -> None:

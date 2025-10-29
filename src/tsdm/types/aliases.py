@@ -7,16 +7,17 @@ __all__ = [
     "DerivedField",
     "FittedField",
     # Generic Type Aliases
-    "MaybeNA",
-    "Nested",
+    "DictArg",
+    "IndexArg",
+    "Indexer",
+    "Label",
+    "LabelArg",
+    "MultiIndexer",
     # Custom Type Aliases
     "Axis",
     "Dims",
     "DirPath",
     "FilePath",
-    "Indexer",
-    "Label",
-    "MultiIndexer",
     "PathLike",
     "Shape",
     "Size",
@@ -32,17 +33,9 @@ __all__ = [
     "TOML",
     "YAML",
     # Nested ABCs
-    "NestedCollection",
-    "NestedIterable",
+    "Nested",
     "NestedMapping",
-    "NestedMutableMapping",
-    "NestedSequence",
-    # Nested Builtins
-    "NestedList",
     "NestedDict",
-    "NestedSet",
-    "NestedTuple",
-    "NestedFrozenSet",
     "NestedBuiltin",
     # Fields
     "TS",
@@ -53,31 +46,18 @@ __all__ = [
     "CS_meta",
     "TS_FIELDS",
     "TSC_FIELDS",
-    # Misc
-    "DictArg",
-    "Fn",
 ]
 
 
 import os
 from collections.abc import (
-    Callable,
     Collection,
     Iterable,
     Mapping,
-    MutableMapping,
-    Sequence,
 )
 from datetime import datetime, timedelta
-from pathlib import Path
 from types import EllipsisType
-from typing import Annotated, Any, Literal
-
-from pandas.api.typing import NAType
-
-type DictArg[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
-type Fn[X, Y] = Callable[[X], Y]
-
+from typing import Annotated, Literal
 
 # region field types -------------------------------------------------------------------
 type TS = Literal["timeseries"]
@@ -101,13 +81,6 @@ type FittedField[T] = Annotated[T, "FittedField"]
 r"""Type Alias for fields that are fitted automatically."""
 # endregion type qualifiers ------------------------------------------------------------
 
-# region generic type aliases ----------------------------------------------------------
-type MaybeNA[T] = T | NAType
-r"""Type Alias for nullable types."""
-type Nested[T] = T | Collection[Nested[T]] | Mapping[Any, Nested[T]]  # +T
-r"""Type Alias for nested types (JSON-Like)."""
-# endregion generic type aliases -------------------------------------------------------
-
 # region custom type aliases -----------------------------------------------------------
 type Axis = None | int | tuple[int, ...]
 r"""Type Alias for axestype ."""
@@ -117,12 +90,12 @@ type Size = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
 type Shape = int | tuple[int, ...]
 r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
-type FilePath = str | Path | os.PathLike[str]  # cf. pandas._typing.FilePath
-r"""Type Alias for path-like objects pointing to file."""
-type DirPath = str | Path | os.PathLike[str]
-r"""Type Alias for path-like objects pointing to directory."""
-type PathLike = str | Path | os.PathLike[str]
+type PathLike = str | os.PathLike[str]
 r"""Type Alias for path-like objects."""
+type FilePath = str | os.PathLike[str]
+r"""Type Alias for path-like objects pointing to file."""
+type DirPath = str | os.PathLike[str]
+r"""Type Alias for path-like objects pointing to directory."""
 # endregion custom type aliases --------------------------------------------------------
 
 # region aliases for indexing ----------------------------------------------------------
@@ -153,30 +126,15 @@ type PythonScalar = bool | int | float | complex | str | bytes | datetime | time
 r"""Type Alias for Python scalars."""
 # endregion Scalar Type Aliases --------------------------------------------------------
 
-# region Nested collections.abc --------------------------------------------------------
-type NestedCollection[T] = Collection[T | "NestedCollection[T]"]
-r"""Generic Type Alias for nested `Collection`."""
-type NestedIterable[T] = Iterable[T | "NestedIterable[T]"]
-r"""Generic Type Alias for nested `Iterable`."""
-type NestedSequence[T] = Sequence[T | "NestedSequence[T]"]
-r"""Generic Type Alias for nested `Sequence`."""
-type NestedMapping[K, V] = Mapping[K, V | "NestedMapping[K, V]"]
+# region generic type aliases ----------------------------------------------------------
+type DictArg[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
+r"""Type Alias for dictionary-like arguments."""
+type Nested[T] = Mapping[str, Nested[T]] | Collection[Nested[T]] | T  # +T
+r"""Type Alias for nested types (JSON-Like)."""
+type NestedMapping[K, V] = Mapping[K, V | NestedMapping[K, V]]
 r"""Generic Type Alias for nested `Mapping`."""
-type NestedMutableMapping[K, V] = MutableMapping[K, V | "NestedMutableMapping[K, V]"]
-r"""Generic Type Alias for nested `MutableMapping`."""
-# endregion Nested collections.abc -----------------------------------------------------
-
-# region Nested Builtins ---------------------------------------------------------------
-type NestedDict[K, V] = dict[K, V | "NestedDict[K, V]"]
+type NestedDict[K, V] = dict[K, V | NestedDict[K, V]]
 r"""Generic Type Alias for nested `dict`."""
-type NestedList[T] = list[T | "NestedList[T]"]
-r"""GenericType Alias for nested `list`."""
-type NestedSet[T] = set[T | "NestedSet[T]"]
-r"""Generic Type Alias for nested `set`."""
-type NestedFrozenSet[T] = frozenset[T | "NestedFrozenSet[T]"]
-r"""Generic Type Alias for nested `set`."""
-type NestedTuple[T] = tuple[T | "NestedTuple[T]", ...]
-r"""Generic Type Alias for nested `tuple`."""
 type NestedBuiltin[T] = (
     T
     | tuple[T, ...]  # leaf-tuple
@@ -191,17 +149,17 @@ type NestedBuiltin[T] = (
     | dict[str, NestedBuiltin[T]]
 )
 r"""Type Alias for nested builtins."""
-# endregion Nested Builtins ------------------------------------------------------------
+# endregion generic type aliases -------------------------------------------------------
 
-# region Nested Configuration ----------------------------------------------------------
-type JSON_LeafType = None | bool | int | float | str
-type TOML_LeafType = None | bool | int | float | str | datetime
-type YAML_LeafType = None | bool | int | float | str | datetime
+# region JSON-like types ---------------------------------------------------------------
+type JSON_LEAF = None | bool | int | float | str
+type TOML_LEAF = None | bool | int | float | str | datetime
+type YAML_LEAF = None | bool | int | float | str | datetime
 
-type JSON = JSON_LeafType | list[JSON] | dict[str, JSON]
+type JSON = JSON_LEAF | list[JSON] | dict[str, JSON]
 r"""Type Alias for JSON-Like objects."""
-type YAML = YAML_LeafType | list[YAML] | dict[str, YAML]
+type YAML = YAML_LEAF | list[YAML] | dict[str, YAML]
 r"""Type Alias for JSON-Like objects."""
-type TOML = TOML_LeafType | list[TOML] | dict[str, TOML]
+type TOML = TOML_LEAF | list[TOML] | dict[str, TOML]
 r"""Type Alias for JSON-Like objects."""
-# endregion Nested Configuration -------------------------------------------------------
+# endregion JSON-like types ------------------------------------------------------------

@@ -84,7 +84,7 @@ type DType = np.dtype | torch.dtype | type[ExtensionDtype]
 r"""Type Alias for dtypes."""
 type DTypeArg = str | type
 r"""Type Alias for dtype arguments."""
-AnyDtype = np.dtype | torch.dtype | ExtensionDtype
+type AnyDtype = np.dtype | torch.dtype | ExtensionDtype
 r"""Type Alias for any dtype."""
 # endregion Dtype Aliases --------------------------------------------------------------
 
@@ -189,6 +189,17 @@ NUMPY_OBJECT_TYPECODES: Final[dict[type[np.generic], str]] = {
     np.object_ : "O",
 }  # fmt: skip
 r"""Dictionary of all `numpy` generic data type typecodes."""
+
+NUMPY_TYPECODES2: Final[dict[type[np.generic], str]] = {
+    **NUMPY_INT_TYPECODES,
+    **NUMPY_UINT_TYPECODES,
+    **NUMPY_FLOAT_TYPECODES,
+    **NUMPY_COMPLEX_TYPECODES,
+    **NUMPY_TIME_TYPECODES,
+    **NUMPY_STRING_TYPECODES,
+    **NUMPY_OBJECT_TYPECODES,
+}
+r"""Dictionary of all `numpy` data type typecodes."""
 
 NUMPY_TYPECODES: Final[dict[type[np.generic], str]] = (
     NUMPY_INT_TYPECODES

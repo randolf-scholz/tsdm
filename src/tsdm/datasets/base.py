@@ -276,7 +276,7 @@ class DatasetBase[Key: str, T](
         with ZipFile(filepath) as archive:
             for fname in archive.namelist():
                 with archive.open(fname) as file:
-                    name = cast(Key, Path(fname).stem)
+                    name = cast("Key", Path(fname).stem)
                     extension = Path(fname).suffix[1:]
                     tables[name] = cls.deserialize_table(file, loader=extension)
 

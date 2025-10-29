@@ -18,7 +18,7 @@ from PIL import Image
 from torch import Tensor
 
 
-@torch.no_grad()
+@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
 def kernel_heatmap(
     kernel: NDArray | Tensor,
     /,

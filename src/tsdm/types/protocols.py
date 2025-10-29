@@ -402,13 +402,13 @@ class Map[K, V](Collection[K], Protocol):  # K, +V
     # Mixin Methods
     def keys(self) -> KeysView[K]:
         # NOTE: MappingView really only needs __contains__, __iter__, and __getitem__.
-        return KeysView(cast(Mapping, self))
+        return KeysView(cast("Mapping", self))
 
     def values(self) -> ValuesView[V]:
-        return ValuesView(cast(Mapping, self))
+        return ValuesView(cast("Mapping", self))
 
     def items(self) -> ItemsView[K, V]:
-        return ItemsView(cast(Mapping, self))
+        return ItemsView(cast("Mapping", self))
 
     # NOTE: dict.get has default as positional-only, whereas Mapping defines it as
     #   positional-or-keyword. We follow the weaker dict definition.

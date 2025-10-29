@@ -22,12 +22,10 @@ from typing import Final
 import torch
 from torch import Tensor, jit
 
-from tsdm.backend.torch import autojit
 from tsdm.metrics.base import BaseMetric, WeightedMetric
 from tsdm.types.aliases import Axis
 
 
-@autojit
 class MAE(BaseMetric):
     r"""Mean Absolute Error.
 
@@ -62,7 +60,6 @@ class MAE(BaseMetric):
         return r
 
 
-@autojit
 class WMAE(WeightedMetric):
     r"""Weighted Mean Absolute Error.
 
@@ -97,7 +94,6 @@ class WMAE(WeightedMetric):
         return r
 
 
-@autojit
 class MSE(BaseMetric):
     r"""Mean Square Error.
 
@@ -163,7 +159,6 @@ class MSE(BaseMetric):
         return r
 
 
-@autojit
 class WMSE(WeightedMetric):
     r"""Weighted Mean Square Error.
 
@@ -228,7 +223,6 @@ class WMSE(WeightedMetric):
         return r
 
 
-@autojit
 class RMSE(BaseMetric):
     r"""Root Mean Square Error.
 
@@ -263,7 +257,6 @@ class RMSE(BaseMetric):
         return torch.sqrt(r)
 
 
-@autojit
 class WRMSE(WeightedMetric):
     r"""Weighted Root Mean Square Error.
 
@@ -298,7 +291,6 @@ class WRMSE(WeightedMetric):
         return torch.sqrt(r)
 
 
-@autojit
 class LP(BaseMetric):
     r"""$L^p$ Loss.
 
@@ -351,7 +343,6 @@ class LP(BaseMetric):
         return torch.pow(r, 1 / self.p)
 
 
-@autojit
 class WLP(WeightedMetric):
     r"""Weighted $L^p$ Loss.
 

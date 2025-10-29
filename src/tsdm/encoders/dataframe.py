@@ -77,7 +77,7 @@ def get_ellipsis_cols[T](
 def is_canonically_indexed(df: DataFrame, /) -> bool:
     r"""Check if the DataFrame has a canonical index."""
     match df.index:
-        case pd.RangeIndex(start=0, step=1, stop=stop) if stop == len(df):  # type: ignore[has-type]
+        case pd.RangeIndex(start=0, step=1, stop=stop) if stop == len(df):
             return True
         case _:
             return False
@@ -85,7 +85,8 @@ def is_canonically_indexed(df: DataFrame, /) -> bool:
 
 @pprint_mapping
 @dataclass(init=False)
-class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K]):
+# FIXME: https://github.com/python/cpython/issues/140596
+class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Similar to `sklearn.compose.ColumnTransformer`.

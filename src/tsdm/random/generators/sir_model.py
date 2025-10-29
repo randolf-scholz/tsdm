@@ -71,7 +71,8 @@ class SIR(IVP_GeneratorBase):
         """
         t = np.asarray(t)
         state = np.asarray(state)
-        S, I, _ = np.moveaxis(state, -1, 0)  # noqa: E741
+        S, I, R = np.moveaxis(state, -1, 0)
+        assert S.shape == I.shape == R.shape, "Incompatible shapes."
 
         x = np.stack([
             -self.beta * I * S,

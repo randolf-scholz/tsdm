@@ -214,7 +214,7 @@ class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
         """
         match key:
             case k if key in self:
-                return self.datasets[cast(K, k)]
+                return self.datasets[cast("K", k)]
             case [outer, inner]:
                 return self.datasets[outer][inner]
             case _:

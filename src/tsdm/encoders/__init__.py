@@ -107,6 +107,7 @@ __all__ = [
     "EncoderDict",
     "EncoderList",
     "EncoderProtocol",
+    "BaseEncoder",
     "ParametrizedEncoder",
     "SupportsSerialization",
     # Classes
@@ -166,10 +167,11 @@ __all__ = [
     "wrap",
 ]
 
-from tsdm.encoders import base, numerical, pytorch, time  # , transforms
+from tsdm.encoders import base, numerical, pytorch, time
 from tsdm.encoders.base import (
-    # constants
     ID,
+    # constants
+    BaseEncoder,
     Choice,
     Compose,
     DeepcopyEncoder,

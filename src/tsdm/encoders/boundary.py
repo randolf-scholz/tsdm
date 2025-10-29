@@ -176,7 +176,7 @@ class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
             case _, self.CLIPPING.mask:
                 self.lower_value = self.backend.to_tensor(float("nan"))
             case _, self.CLIPPING.clip:
-                self.lower_value = self.lower_bound  # type: ignore[assignment]
+                self.lower_value = self.lower_bound
             case _:
                 raise NotImplementedError
 
@@ -187,7 +187,7 @@ class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
             case _, self.CLIPPING.mask:
                 self.upper_value = self.backend.to_tensor(float("nan"))
             case _, self.CLIPPING.clip:
-                self.upper_value = self.upper_bound  # type: ignore[assignment]
+                self.upper_value = self.upper_bound
             case _:
                 raise NotImplementedError
 

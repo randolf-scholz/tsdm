@@ -300,7 +300,7 @@ def flatten_dict[K, K2](
         {('a', 1, True): 'foo', ('a', 2, False): 'bar'}
     """
     if not recursive:
-        return cast(dict[K2, Any], dict(d))
+        return cast("dict[K2, Any]", dict(d))
 
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[K2, Any] = {}
@@ -351,7 +351,7 @@ def unflatten_dict[K, K2](
         {'a': {17: 'foo', 18: 'bar'}}
     """
     if not recursive:
-        return cast(dict[K, Any], dict(d))
+        return cast("dict[K, Any]", dict(d))
 
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[K, Any] = {}

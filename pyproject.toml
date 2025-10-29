@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 # region project configuration ---------------------------------------------------------
 [project]
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.13,<3.15"
 name = "tsdm"
 version = "0.7.0"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
@@ -18,30 +18,30 @@ readme = "README.md"
 keywords = ["time-series", "machine-learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 12.6",
+    "Environment :: GPU :: NVIDIA CUDA :: 12.8",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
-    "Operating System :: POSIX :: Linux",
 ]
 
 dependencies = [
     "matplotlib>=3.10.7",
-    "numpy>=2.3.3",
+    "numpy>=2.3.4",
     "pandas>=2.3.3",
-    "pillow>=11.3.0",
+    "pillow>=12.0.0",
     "polars>=1.34.0",
-    "pyarrow>=21.0.0",
-    "pydantic>=2.12.2",
+    "pyarrow>=22.0.0",
+    "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
     "scikit-learn>=1.7.2",
-    "scipy>=1.16.2",
+    "scipy>=1.16.3",
     "tensorboard>=2.20.0",
-    "torch>=2.8.0",
+    "torch>=2.9.0",
     "tqdm>=4.67.1",
     "typing-extensions>=4.15.0",
 ]
@@ -58,7 +58,7 @@ dev = [
     {include-group="linters"}, {include-group="tests"}, {include-group="typing"},
 ]
 devtools = [
-    "cmake>=4.1.0",
+    "cmake>=4.1.2",
     "ninja>=1.13.0",
     "pybadges>=3.0.1",
 ]
@@ -66,8 +66,8 @@ debug = [
     "ipympl>=0.9.8",
     "ipywidgets>=8.1.7",
     "jupyterlab-execute-time>=3.2.0",
-    "jupyterlab>=4.4.9",
-    "psutil>=7.1.0",
+    "jupyterlab>=4.4.10",
+    "psutil>=7.1.2",
     "torchinfo>=1.8.0",
 ]
 docs = [
@@ -89,13 +89,13 @@ docs = [
 linters = [
     "pre-commit>=4.3.0",
     "pylint>=3.3.9",
-    "ruff>=0.14.0",
+    "ruff>=0.14.2",
     "tach>=0.29.0",
 ]
 tests = [
-    "coverage>=7.10.7",
-    "hypothesis[numpy,pandas,pytest]>=6.140.4",
-    "psutil>=7.1.0",
+    "coverage>=7.11.0",
+    "hypothesis[numpy,pandas,pytest]>=6.142.4",
+    "psutil>=7.1.2",
     "pygal>=3.0.5",
     "pytest-benchmark[histogram]>=5.1.0",
     "pytest-cov>=7.0.0",
@@ -106,8 +106,9 @@ tests = [
 ]
 typing = [
     "mypy>=1.18.2",
-    "pyrefly>=0.37.0",
-    "pyright>=1.1.406",
+    "pyrefly>=0.39.2",
+    "pyright>=1.1.407",
+    "scipy-stubs>=1.16.3.0",
     "types-colorama>=0.4.15.20250801",
     "types-decorator>=5.2.0.20250324",
     "types-docutils>=0.22.2.20251006",
@@ -125,6 +126,10 @@ typing = [
     "types-tqdm>=4.67.0.20250809",
     "types-urllib3>=1.26.25.14",
     "typing-extensions>=4.15.0",
+    "zuban>=0.2.0",
+]
+ty = [
+    "zuban>=0.2.0",
 ]
 # endregion development dependencies ---------------------------------------------------
 
@@ -184,6 +189,7 @@ select=["ALL"]
 ignore = [
     # fully ignored:
     "ANN",      # missing-annotations
+    "C90",      # too-complex
     "COM",      # comma
     "CPY",      # missing-copyright
     "DTZ",      # timezone-naive-datetime
@@ -199,8 +205,6 @@ ignore = [
     "ARG003",   # Unused class method argument
     # blind-except
     "BLE001",
-    # mccabe
-    "C90",      # too-complex
     # pydocstyle
     "D102",     # Missing docstring in public method
     "D103",     # Missing docstring in public function
@@ -215,6 +219,9 @@ ignore = [
     "E202",     # Whitespace before ')'
     "E203",     # Whitespace before ':'
     "E221",     # Multiple spaces before operator
+    "E741",     # Ambiguous variable name (like l, O, or I)
+    # "E226",   # Missing whitespace around arithmetic operator
+    # "E231",   # Missing whitespace after ','
     "E241",     # Multiple spaces after comma
     "E271",     # Multiple spaces after keyword
     "E272",     # Multiple spaces before keyword
@@ -230,7 +237,6 @@ ignore = [
     "PD011",    # pandas-use-of-dot-values
     "PD013",    # pandas-use-of-dot-stack
     "PD101",    # pandas-nunique-constant-series-check
-    "PD901",    # Avoid using the generic variable name `df` for DataFrames
     # pylint
     "PLC2401",  # non-ascii-name
     "PLC2801",  # unnecessary-dunder-call
@@ -247,7 +253,6 @@ ignore = [
     "PLR0915",  # Too many statements
     "PLR0916",  # Too many boolean expressions
     "PLR0917",  # Too many positional arguments
-    # pygrep-hooks
     # flake8-use-pathlib
     "PTH123",   # builtin-open
     # RET
@@ -261,18 +266,20 @@ ignore = [
     "RUF022",   # __all__ not sorted
     "RUF036",   # None not at the end of type annotation
     # flake8-bandit
+    "S101",     # assert statement
     "S301",     # suspicious-pickle-usage
     "S311",     # standard-random-usage
     "S403",     # suspicious-pickle-import
     "S404",     # suspicious-subprocess-import
     "S603",     # subprocess-without-shell-equals-true
     # type-checking
-    "TC006",    # Add quotes to type expression in `typing.cast()`
+    "TC001",    # Move application library import into a type-checking block
+    "TC002",    # Move third-party library import into a type-checking block
+    "TC003",    # Move standard library import into a type-checking block
     # tryceratops
     "TRY003",   # Avoid specifying long messages outside the exception class
     # pyupgrade
-    "UP007",    # Use `X | Y` for type annotations
-    "UP045",    # Use `X | None` for type annotations
+    "UP045",    # Use `X | Y` for type annotations
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -310,6 +317,18 @@ docstring-code-line-length = "dynamic"
 # endregion ruff configuration ---------------------------------------------------------
 
 
+[tool.ty.environment]
+python-version = "3.13"
+
+
+[tool.ty.terminal]
+output-format = "concise"
+
+[tool.pyrefly]
+output_format = "min-text"
+python_version = "3.13"
+
+
 # region pylint configuration ----------------------------------------------------------
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
@@ -319,7 +338,7 @@ disable = [
     "C0144",  # non-ascii-name
     "C0204",  # bad-mcs-classmethod-argument
     "C0301",  # line-too-long
-    "E0611",  # no-name-in-module
+    # "E0611",  # no-name-in-module
     "E1101",  # no-member  # FIXME: too many false positives
     "E1102",  # not-callable  # FIXME: too many false positives (torch)
     "E1121",  # too-many-function-args  # FIXME: too many false positives
@@ -344,8 +363,8 @@ fail-on = [
 fail-under = 9.0
 
 [tool.pylint.REPORTS]
-# Set the output format. Available formats are text, parseable, colorized, json and
-# msvs (visual studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
+# Set the output format. Available formats are text, parseable, colorized, JSON and
+# msvs (Visual Studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
 output-format = "colorized"
 
 [tool.pylint.FORMAT]
@@ -365,6 +384,7 @@ files = ["src/", "tests/"]
 platform = "linux"
 plugins = []
 python_version = "3.13"
+exclude = ["test_json_types.py"]  # FIXME: https://github.com/python/mypy/issues/20135
 
 disable_error_code = [
     "func-returns-value", # SEE: https://github.com/python/mypy/issues/6549
@@ -396,7 +416,7 @@ disallow_untyped_calls = false
 disallow_untyped_decorators = false
 disallow_untyped_defs = true
 
-## strictness flags
+# strictness flags
 #strict = false
 #strict_equality = false
 implicit_reexport = false
@@ -405,7 +425,7 @@ implicit_reexport = false
 allow_untyped_globals = false
 allow_redefinition = false
 
-## configuring error messages
+# configuring error messages
 color_output = true
 error_summary = true
 hide_error_codes = false
@@ -451,7 +471,7 @@ typeCheckingMode = "standard"  # "off", "basic", "strict", "standard"
 ignore = []
 
 # Type Evaluation Settings
-strictLIstInference = false
+strictListInference = false
 strictDictionaryInference = false
 strictSetInference = false
 analyzeUnannotatedFunctions = true
@@ -497,7 +517,7 @@ reportMatchNotExhaustive = "error"  # default: "none"
 #reportMissingSuperCall = "none"  # default: "none"
 #reportMissingTypeArgument = "none"  # default: "none"
 #reportMissingTypeStubs = "none"  # default: "none"
-#reportNoOverloadImplementation = "error"  # default: "error"
+reportNoOverloadImplementation = "none"  # default: "error"
 #reportOperatorIssue = "error"  # default: "error"
 #reportOptionalCall = "error"  # default: "error"
 #reportOptionalContextManager = "error"  # default: "error"
@@ -548,19 +568,20 @@ reportWildcardImportFromLibrary = "error"  # default: "warning"
 # endregion pyright configuration ------------------------------------------------------
 
 
+
+
 # region pytest configuration ----------------------------------------------------------
 [tool.pytest]
-# SEE: https://docs.pytest.org/en/stable/reference/customize.html
+# NOTE: currently unused https://docs.pytest.org/en/stable/reference/customize.html
 
 [tool.pytest.ini_options]
+xfail_strict = true
 minversion = "8.0"
 testpaths = ["src/", "tests/"]
 addopts = [
     "--doctest-modules",
     # "--junit-xml=reports/pytest.xml",
-    # ## xdists options
-    "--numprocesses=0",  # number of parallel processes
-    # ## rerunfailures options
+    # rerunfailures options
     #    "--reruns=",          # number of times to re-run failed tests (default 0)
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.
     #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.

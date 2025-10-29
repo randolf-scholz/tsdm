@@ -67,9 +67,11 @@ class SequenceSampler[TD: DurationScalar](BaseSampler):
                 self.xmax = tmax
 
         total_delta = self.xmax - self.xmin
-        self.stride = cast(TD, timedelta(stride) if isinstance(stride, str) else stride)
+        self.stride = cast(
+            "TD", timedelta(stride) if isinstance(stride, str) else stride
+        )
         self.seq_len = cast(
-            TD, timedelta(seq_len) if isinstance(seq_len, str) else seq_len
+            "TD", timedelta(seq_len) if isinstance(seq_len, str) else seq_len
         )
 
         # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
@@ -77,11 +79,7 @@ class SequenceSampler[TD: DurationScalar](BaseSampler):
         self.return_mask = return_mask
 
         self.samples = np.array([
-            (
-                (x <= self.data) & (self.data < y)  # type: ignore[operator]
-                if self.return_mask
-                else [x, y]
-            )
+            ((x <= self.data) & (self.data < y) if self.return_mask else [x, y])
             for x, y in self._iter_tuples()
         ])
 
@@ -89,7 +87,7 @@ class SequenceSampler[TD: DurationScalar](BaseSampler):
         x = self.xmin
         y = x + self.seq_len
         # allows nice handling of negative seq_len
-        x, y = min(x, y), max(x, y)  # type: ignore[call-overload]
+        x, y = min(x, y), max(x, y)
         yield x, y
 
         for _ in range(len(self)):

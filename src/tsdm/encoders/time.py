@@ -117,7 +117,7 @@ class DateTimeEncoder[Arr: NumericalSeries](SupportsBackend[Arr, Arr]):
 
         # set the offset
         offset = (
-            cast(TimestampScalar, self.backend.nanmin(data))
+            cast("TimestampScalar", self.backend.nanmin(data))
             if self.offset is NotImplemented
             else self.offset
         )

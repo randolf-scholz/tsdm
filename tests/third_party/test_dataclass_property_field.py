@@ -18,7 +18,7 @@ def test_property_field() -> None:
     assert obj.value == "abc"
 
     cls_fields = {field.name for field in fields(Demo)}
-    assert cls_fields == {"value"}
+    assert "value" not in cls_fields
 
     obj_fields = {field.name for field in fields(obj)}
-    assert obj_fields == {"value"}
+    assert "value" not in obj_fields

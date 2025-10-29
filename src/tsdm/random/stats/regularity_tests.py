@@ -98,7 +98,7 @@ def float_gcd(x: ArrayLike, /) -> float:
     if not np.allclose(z, z_int) or np.gcd.reduce(z_int) != 1:
         raise ValueError("Error check failed, computed GCD is not correct!")
 
-    return cast(float, gcd)
+    return cast("float", gcd)
 
 
 def is_quasiregular(s: Series | DataFrame, /) -> bool:

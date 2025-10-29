@@ -20,12 +20,12 @@ def test_base_logger() -> None:
     metrics = {"MSE": MSE}
     writer = SummaryWriter(RESULT_DIR)
     cb = tsdm.logutils.MetricsCallback(metrics, writer=writer)
-    assert cb.required_kwargs == {"targets", "predics"}
+    assert cb.required_kwargs == {"targets", "predictions"}
     logger.add_callback("batch", cb)
     # run callbacks
     targets = torch.randn(10, 3)
     predics = torch.randn(10, 3)
-    logger["batch"].callback(1, targets=targets, predics=predics)
+    logger["batch"].callback(1, targets=targets, predictions=predics)
     print(logger)
 
 

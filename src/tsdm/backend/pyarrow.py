@@ -270,9 +270,9 @@ def is_string_array(arr: AnyArray, /) -> bool:
         case _ if arr.type in STRING_TYPES:
             return True
         case pa.ListType(value_type=value_type):
-            return value_type in STRING_TYPES  # type: ignore[has-type]
+            return value_type in STRING_TYPES
         case pa.DictionaryType(value_type=value_type):
-            return value_type in STRING_TYPES  # type: ignore[has-type]
+            return value_type in STRING_TYPES
         case _:
             return False
 
