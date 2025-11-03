@@ -4,25 +4,25 @@ __all__ = ["BoundaryEncoder"]
 
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
-from typing import Any, Generic, Literal, Optional, Self, TypeVar
+from typing import Any, Literal, Optional, Self
 
 import pandas as pd
 
 from tsdm.backend import Backend, get_backend
+from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
-from tsdm.encoders import FittableEncoder
+from tsdm.encoders.base import FittableEncoder
 from tsdm.types.linalg import NumericalSeries
 from tsdm.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
-# FIXME: python==3.13: use PEP695 with default values.
-S = TypeVar("S", bound=OrderedScalar, default=float)
-Arr = TypeVar("Arr", bound=NumericalSeries, default=NumericalSeries[S])
-
 
 @pprint_repr
 @dataclass
-class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
+class BoundaryEncoder[
+    S: OrderedScalar = float,
+    Arr: NumericalSeries = NumericalSeries[S],
+](FittableEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -48,73 +48,60 @@ class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
-    class CLIPPING(StrEnum):
+    class MODES(StrEnum):
         r"""Type Hint for clipping mode."""
 
         mask = "mask"
         clip = "clip"
 
-    type ClippingMode = Literal["mask", "clip"]
+    type Mode = Literal["mask", "clip"]
     r"""Type Hint for clipping mode."""
 
-    lower_bound: Optional[S] = None
-    upper_bound: Optional[S] = None
+    lower_bound: Optional[S] = UNDEFINED
+    upper_bound: Optional[S] = UNDEFINED
 
     _: KW_ONLY
 
     lower_included: bool = True
     upper_included: bool = True
-    lower_mode: CLIPPING = UNDEFINED
-    upper_mode: CLIPPING = UNDEFINED
+    lower_mode: MODES = UNDEFINED
+    upper_mode: MODES = UNDEFINED
 
     # derived attributes
-    backend: Backend = field(init=False)
+    backend: Backend = field(init=False, default=UNDEFINED)
     lower_value: S = field(init=False, default=UNDEFINED)
     upper_value: S = field(init=False, default=UNDEFINED)
 
     def __init__(
         self,
-        lower_bound: Optional[S] = None,
-        upper_bound: Optional[S] = None,
+        lower_bound: Optional[S] = UNDEFINED,
+        upper_bound: Optional[S] = UNDEFINED,
         *,
         lower_included: bool = True,
         upper_included: bool = True,
-        mode: CLIPPING | str | tuple[CLIPPING | str, CLIPPING | str] = "mask",
+        mode: MODES | str | tuple[MODES | str, MODES | str] = "mask",
     ) -> None:
         r"""Initialize the BoundaryEncoder."""
         self.lower_included = lower_included
         self.upper_included = upper_included
-
-        try:  # set the lower_bound
-            lower_is_nan = pd.isna(lower_bound)
-        except (TypeError, ValueError):
-            # Raises if upper_bound is an array
-            self.lower_bound = lower_bound
-        else:
-            self.lower_bound = None if lower_is_nan else lower_bound
-
-        try:  # set the upper_bound
-            upper_is_nan = pd.isna(upper_bound)
-        except (TypeError, ValueError):
-            # Raises if upper_bound is an array
-            self.upper_bound = upper_bound
-        else:
-            self.upper_bound = None if upper_is_nan else upper_bound
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
 
         match mode:
-            case (self.CLIPPING() | str()) as value:
-                self.lower_mode = self.CLIPPING(value)
-                self.upper_mode = self.CLIPPING(value)
+            case (self.MODES() | str()) as value:
+                self.lower_mode = self.MODES(value)
+                self.upper_mode = self.MODES(value)
             case [
-                (self.CLIPPING() | str()) as lower,
-                (self.CLIPPING() | str()) as upper,
+                (self.MODES() | str()) as lower,
+                (self.MODES() | str()) as upper,
             ]:
-                self.lower_mode = self.CLIPPING(lower)
-                self.upper_mode = self.CLIPPING(upper)
+                self.lower_mode = self.MODES(lower)
+                self.upper_mode = self.MODES(upper)
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
 
-        # validate internal consistency
+    def _validate(self) -> None:
+        r"""Validate the encoder configuration."""
         if (
             self.upper_bound is not None
             and self.upper_bound is not UNDEFINED
@@ -124,17 +111,26 @@ class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
 
+        if self.lower_included and self.lower_mode == self.MODES.clip:
+            raise ValueError(
+                "Incompatible combination: lower_included=True and lower_mode='clip'."
+            )
+        if self.upper_included and self.upper_mode == self.MODES.clip:
+            raise ValueError(
+                "Incompatible combination: upper_included=True and upper_mode='clip'."
+            )
+
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
         r"""Create a BoundaryEncoder from a pandas Interval."""
         lower_bound = interval.left
         upper_bound = interval.right
         lower_included, upper_included = {
-            "left": (True, False),
-            "right": (False, True),
-            "both": (True, True),
+            "left":    (True, False),
+            "right":   (False, True),
+            "both":    (True, True),
             "neither": (False, False),
-        }[interval.closed]
+        }[interval.closed]  # fmt: skip
         return cls(
             lower_bound,
             upper_bound,
@@ -147,35 +143,37 @@ class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
         r"""Return a boolean mask for the lower boundary (true: value ok)."""
         if self.lower_bound is None:
             return self.backend.true_like(x)
-        if self.lower_included or self.lower_included is None:
-            return (x >= self.lower_bound) | self.backend.is_null(x)
-        return (x > self.lower_bound) | self.backend.is_null(x)
+        r = (x >= self.lower_bound) if self.lower_included else (x > self.lower_bound)
+        return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
     def upper_satisfied(self, x: Arr) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)
-        if self.upper_included or self.upper_included is None:
-            return (x <= self.upper_bound) | self.backend.is_null(x)
-        return (x < self.upper_bound) | self.backend.is_null(x)
+        r = (x <= self.upper_bound) if self.upper_included else (x < self.upper_bound)
+        return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
-    def _fit_impl(self, data: Arr, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         # select the backend
         self.backend: Backend = get_backend(data)
 
         # fit the parameters
         if self.lower_bound is UNDEFINED:
             self.lower_bound = self.backend.nanmin(data)
+        elif is_null_scalar(self.lower_bound):
+            self.lower_bound = None
         if self.upper_bound is UNDEFINED:
             self.upper_bound = self.backend.nanmax(data)
+        elif is_null_scalar(self.upper_bound):
+            self.upper_bound = None
 
         # set lower_value
         match self.lower_bound, self.lower_mode:
             case None, _:
                 self.lower_value = self.backend.to_tensor(float("-inf"))
-            case _, self.CLIPPING.mask:
+            case _, self.MODES.mask:
                 self.lower_value = self.backend.to_tensor(float("nan"))
-            case _, self.CLIPPING.clip:
+            case _, self.MODES.clip:
                 self.lower_value = self.lower_bound
             case _:
                 raise NotImplementedError
@@ -184,18 +182,18 @@ class BoundaryEncoder(FittableEncoder[Arr, Arr], Generic[S, Arr]):
         match self.upper_bound, self.upper_mode:
             case None, _:
                 self.upper_value = self.backend.to_tensor(float("+inf"))
-            case _, self.CLIPPING.mask:
+            case _, self.MODES.mask:
                 self.upper_value = self.backend.to_tensor(float("nan"))
-            case _, self.CLIPPING.clip:
+            case _, self.MODES.clip:
                 self.upper_value = self.upper_bound
             case _:
                 raise NotImplementedError
 
-    def _encode_impl(self, data: Arr, /) -> Arr:
+    def encode(self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def _decode_impl(self, data: Arr, /) -> Arr:
+    def decode(self, data: Arr, /) -> Arr:
         return data

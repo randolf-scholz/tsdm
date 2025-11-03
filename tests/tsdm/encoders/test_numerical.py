@@ -12,13 +12,8 @@ import pytest
 import torch
 
 from tsdm.constants import RNG
-from tsdm.encoders.numerical import (
-    LinearScaler,
-    MinMaxScaler,
-    StandardScaler,
-    get_broadcast,
-    reduce_axes,
-)
+from tsdm.encoders import LinearScaler, MinMaxScaler, StandardScaler
+from tsdm.linalg.utils import get_broadcast, reduce_axes
 from tsdm.types.aliases import Axis
 
 __logger__ = logging.getLogger(__name__)

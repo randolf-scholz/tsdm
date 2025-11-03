@@ -41,7 +41,7 @@ class TestDuplicate(unittest.TestCase):
     )
 
     def test_duplicate_zero(self) -> None:
-        duplicated_encoder = duplicate(self.encoder, num=0, reduction=lambda _: "∅")
+        duplicated_encoder = duplicate(self.encoder, 0, reduction=lambda _: "∅")
 
         # encode
         result = duplicated_encoder.encode("a")
@@ -53,7 +53,7 @@ class TestDuplicate(unittest.TestCase):
 
     def test_duplicate_one(self) -> None:
         duplicated_encoder = duplicate(
-            self.encoder, num=1, reduction=lambda x: f"abs({x[0]})"
+            self.encoder, 1, reduction=lambda x: f"abs({x[0]})"
         )
 
         # encode
@@ -66,7 +66,7 @@ class TestDuplicate(unittest.TestCase):
 
     def test_duplicate_two(self) -> None:
         duplicated_encoder = duplicate(
-            self.encoder, num=2, reduction=lambda x: f"max({x[0]}, {x[1]})"
+            self.encoder, 2, reduction=lambda x: f"max({x[0]}, {x[1]})"
         )
 
         # encode

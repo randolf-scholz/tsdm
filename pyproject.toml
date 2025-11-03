@@ -106,6 +106,7 @@ tests = [
 ]
 typing = [
     "mypy>=1.18.2",
+    "pyarrow-stubs>=20.0.0.20250928",
     "pyrefly>=0.39.2",
     "pyright>=1.1.407",
     "scipy-stubs>=1.16.3.0",

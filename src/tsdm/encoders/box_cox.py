@@ -4,6 +4,8 @@ __all__ = [
     # Classes
     "BoxCoxEncoder",
     "LogitBoxCoxEncoder",
+    "LogEncoder",
+    "LogitEncoder",
     # Functions
     "construct_wasserstein_loss_boxcox_uniform",
     "construct_wasserstein_loss_boxcox_normal",
@@ -20,7 +22,7 @@ from typing import Literal, assert_never
 import numpy as np
 from numpy import pi as PI
 from numpy.typing import NDArray
-from pandas import Index, Series
+from pandas import DataFrame, Index, Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
@@ -311,13 +313,13 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def _encode_impl(self, data: NPC, /) -> NPC:
+    def encode(self, data: NPC, /) -> NPC:
         return np.log(data + self.offset)  # pyright: ignore[reportReturnType]
 
-    def _decode_impl(self, data: NPC, /) -> NPC:
+    def decode(self, data: NPC, /) -> NPC:
         return np.maximum(np.exp(data) - self.offset, 0)  # pyright: ignore[reportReturnType]
 
-    def _fit_impl(self, data: NPC, /) -> None:
+    def fit(self, data: NPC, /) -> None:
         if not all((data >= 0) | np.isnan(data)):
             raise ValueError("Data must be in [0, ∞) or NaN.")
 
@@ -338,7 +340,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
                 offset = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
             case self.METHOD.match_uniform:
                 fun = construct_wasserstein_loss_boxcox_uniform(data)
-                x0 = np.array(self.offset_guess)
+                x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -349,7 +351,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
                 offset = sol.x.squeeze()
             case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_boxcox_normal(data)
-                x0 = np.array(self.offset_guess)
+                x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -434,15 +436,15 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def _encode_impl(self, data: NPC, /) -> NPC:
+    def encode(self, data: NPC, /) -> NPC:
         return np.log((data + self.offset) / (1 - (data - self.offset)))  # pyright: ignore[reportReturnType]
 
-    def _decode_impl(self, data: NPC, /) -> NPC:
+    def decode(self, data: NPC, /) -> NPC:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
         return np.clip(r, 0, 1)  # pyright: ignore[reportReturnType]
 
-    def _fit_impl(self, data: NPC, /) -> None:
+    def fit(self, data: NPC, /) -> None:
         if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
@@ -469,7 +471,7 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC
                 offset = (lower + upper) / 2
             case self.METHOD.match_uniform:
                 fun = construct_wasserstein_loss_logit_uniform(data)
-                x0 = np.array(self.offset_guess)
+                x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -480,7 +482,7 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC
                 offset = sol.x.squeeze()
             case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_logit_normal(data)
-                x0 = np.array(self.offset_guess)
+                x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
                     x0,
@@ -494,3 +496,47 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC
 
         self.offset = float(np.array(offset).item())
         self.validate_params()
+
+
+@dataclass
+class LogEncoder(FittableEncoder[NDArray, NDArray]):
+    r"""Encode data on a logarithmic scale.
+
+    Uses base 2 by default for lower numerical error and fast computation.
+    """
+
+    threshold: NDArray
+    replacement: NDArray
+
+    def fit(self, data: NDArray, /) -> None:
+        if np.any(data < 0):
+            raise ValueError("Data must be non-negative.")
+
+        mask = data == 0
+        self.threshold = data[~mask].min()
+        self.replacement = np.log2(self.threshold / 2)
+
+    def encode(self, data: NDArray, /) -> NDArray:
+        result = data.copy()
+        mask = data <= 0
+        result[:] = np.where(mask, self.replacement, np.log2(data))
+        return result
+
+    def decode(self, data: NDArray, /) -> NDArray:
+        result = 2**data
+        mask = result < self.threshold
+        result[:] = np.where(mask, 0, result)
+        return result
+
+
+class LogitEncoder(FittableEncoder[NDArray, NDArray]):
+    r"""Logit encoder."""
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
+        if not np.all((data > 0) & (data < 1)):
+            raise ValueError("Data must be in the range (0, 1).")
+        return np.log(data / (1 - data))
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        return np.clip(1 / (1 + np.exp(-data)), 0, 1)

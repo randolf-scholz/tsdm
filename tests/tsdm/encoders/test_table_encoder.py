@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
+import pytest
 
 angle = np.linspace(0, np.pi, 5)
 
@@ -29,21 +30,25 @@ TABLES = {
 }
 
 
+@pytest.mark.xfail(strict=True)
 def test_one_to_one() -> None:
     r"""Test an encoder that transforms a single column to a single column."""
     raise NotImplementedError
 
 
+@pytest.mark.xfail(strict=True)
 def test_one_to_many() -> None:
     r"""Test an encoder that transforms a single column to multiple columns."""
     raise NotImplementedError
 
 
+@pytest.mark.xfail(strict=True)
 def test_many_to_many() -> None:
     r"""Test an encoder that transforms multiple columns to multiple columns."""
     raise NotImplementedError
 
 
+@pytest.mark.xfail(strict=True)
 def test_many_to_one() -> None:
     r"""Test an encoder that transforms multiple columns to a single column."""
     raise NotImplementedError

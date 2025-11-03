@@ -37,8 +37,8 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.backend.pandas import PandasDtype, PandasDTypeArg
-from tsdm.constants import EMPTY_MAP
-from tsdm.encoders.base import Encoder, EncoderDict, FittableEncoder
+from tsdm.constants import EMPTY_MAP, UNDEFINED
+from tsdm.encoders.base import Encoder, EncoderDict, FittableEncoder, StaticEncoder
 from tsdm.types.aliases import FilePath
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
@@ -84,7 +84,6 @@ def is_canonically_indexed(df: DataFrame, /) -> bool:
 
 
 @pprint_mapping
-@dataclass(init=False)
 # FIXME: https://github.com/python/cpython/issues/140596
 class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
@@ -100,14 +99,11 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
     - [ ] Add support for groups of column-encoders
     """
 
-    encoders: dict[K, Encoder]
-    r"""The encoders for each group."""
-
     # fitted attributes
-    original_index: list[K] = field(init=False)
-    original_schema: Series = field(init=False)
+    original_index: list[K] = field(init=False, default=UNDEFINED)
+    original_schema: Series = field(init=False, default=UNDEFINED)
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         data = data.copy(deep=True)
         index = data.index.to_frame()
         self.original_index = FrozenList(index.columns)
@@ -125,7 +121,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
                 exc.add_note(f"{typ}[{group}]: Failed to fit {enc}.")
                 raise
 
-    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
 
         for group, encoder in self.encoders.items():
@@ -135,7 +131,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
         data = data.set_index(index_columns.tolist())
         return data
 
-    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
 
         for group, encoder in self.encoders.items():
@@ -163,12 +159,12 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
     r"""The name of the variable column."""
     value_name: str = "value"
     r"""The name of the value column."""
-    value_dtype: PandasDtype = NotImplemented
+    value_dtype: PandasDtype = UNDEFINED
     r"""The dtype of the variable column."""
 
-    original_schema: Series = NotImplemented
+    original_schema: Series = UNDEFINED
     r"""The original schema (column -> dtype)."""
-    categories: pd.CategoricalDtype = NotImplemented
+    categories: pd.CategoricalDtype = UNDEFINED
     r"""The stored categories."""
 
     def __init__(
@@ -182,7 +178,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
         self.var_name = var_name
         self.value_name = value_name
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         self.original_schema = data.dtypes
         self.categories = pd.CategoricalDtype(data.columns)
 
@@ -192,7 +188,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
 
         self.value_dtype = variable_dtypes.pop()
 
-    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         df = (
             data.melt(
                 ignore_index=False,
@@ -220,7 +216,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
 
         return df
 
-    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
             df = data.iloc[:, :-1].stack()
             df = df[df == 1]
@@ -255,25 +251,25 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
 
     sparse: bool = False
     r"""Whether to use a sparse representation."""
-    value_name: str = NotImplemented
+    value_name: str = UNDEFINED
     r"""The name of the value column."""
-    var_name: str = NotImplemented
+    var_name: str = UNDEFINED
     r"""The name of the variable column."""
-    value_dtype: PandasDtype = NotImplemented
+    value_dtype: PandasDtype = UNDEFINED
     r"""The dtype of the variable column."""
 
-    categories: pd.CategoricalDtype = NotImplemented
+    categories: pd.CategoricalDtype = UNDEFINED
     r"""The stored categories."""
-    original_schema: Series = NotImplemented
+    original_schema: Series = UNDEFINED
     r"""The original dtypes."""
 
     def __init__(
         self,
         *,
-        sparse: bool = NotImplemented,
-        value_name: str = NotImplemented,
-        var_name: str = NotImplemented,
-        categories: pd.CategoricalDtype | Iterable = NotImplemented,
+        sparse: bool = UNDEFINED,
+        value_name: str = UNDEFINED,
+        var_name: str = UNDEFINED,
+        categories: pd.CategoricalDtype | Iterable = UNDEFINED,
     ) -> None:
         self.sparse = sparse
         self.var_name = var_name
@@ -284,17 +280,17 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
             else categories
         )
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
-        if self.sparse is NotImplemented:
+    def fit(self, data: DataFrame, /) -> None:
+        if self.sparse is UNDEFINED:
             self.sparse = len(data.columns) > 2
-        if self.var_name is NotImplemented:
+        if self.var_name is UNDEFINED:
             self.var_name = "variable" if self.sparse else data.columns[0]
-        if self.value_name is NotImplemented:
+        if self.value_name is UNDEFINED:
             self.value_name = data.columns[-1]
 
         self.categories = (
             self.categories
-            if self.categories is not NotImplemented
+            if self.categories is not UNDEFINED
             else pd.CategoricalDtype(data.columns[:-1])
             if self.sparse
             else pd.CategoricalDtype(data[self.var_name].unique())
@@ -303,7 +299,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
         self.value_dtype = data[self.value_name].dtype
         self.original_schema = data.dtypes
 
-    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
             df = data.iloc[:, :-1].stack()
             df = df[df == 1]
@@ -333,7 +329,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
         result = df[self.categories.categories]  # fix column order
         return result.sort_index()
 
-    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: DataFrame, /) -> DataFrame:
         df = (
             data.melt(
                 ignore_index=False,
@@ -366,7 +362,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class CSVEncoder(FittableEncoder[DataFrame, Path]):
+class CSVEncoder(StaticEncoder[DataFrame, Path]):
     r"""Encode the data into a CSV file."""
 
     DEFAULT_READ_OPTIONS: ClassVar[dict] = {}
@@ -397,12 +393,12 @@ class CSVEncoder(FittableEncoder[DataFrame, Path]):
             else lambda _: Path(filename_or_generator)
         )
 
-    def _encode_impl(self, data: DataFrame, /) -> Path:
+    def encode(self, data: DataFrame, /) -> Path:
         path = self.path_generator(data)
         data.to_csv(path, **self.csv_write_options)
         return path
 
-    def _decode_impl(self, str_or_path: Path, /) -> DataFrame:
+    def decode(self, str_or_path: Path, /) -> DataFrame:
         return pd.read_csv(str_or_path, **self.csv_read_options)
 
 
@@ -418,9 +414,9 @@ class DTypeConverter(FittableEncoder[DataFrame, DataFrame]):
           (Ellipsis will be removed during `.fit()`)
     """
 
-    target_dtypes: dict[Any, PandasDTypeArg] = NotImplemented
+    target_dtypes: dict[Any, PandasDTypeArg] = UNDEFINED
     r"""The target dtypes."""
-    original_schema: dict[str, Any] = NotImplemented
+    original_schema: dict[str, Any] = UNDEFINED
     r"""The original dtypes."""
 
     def __init__(self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg]) -> None:
@@ -429,7 +425,7 @@ class DTypeConverter(FittableEncoder[DataFrame, DataFrame]):
             dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
         )
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         self.original_schema = data.dtypes.to_dict()
 
         if Ellipsis in self.target_dtypes:
@@ -438,10 +434,10 @@ class DTypeConverter(FittableEncoder[DataFrame, DataFrame]):
             for col in ellipsis_cols:
                 self.target_dtypes[col] = fill_dtype
 
-    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         return data.astype({k: self.target_dtypes[k] for k in data.columns})
 
-    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: DataFrame, /) -> DataFrame:
         return data.astype({k: self.original_schema[k] for k in data.columns})
 
 
@@ -455,22 +451,22 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
         - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
-    dtype: Optional[str | torch.dtype] = None
+    dtype: Optional[torch.dtype] = None
     r"""The default dtype."""
     device: Optional[str | torch.device] = None
     r"""The device the tensors are stored in."""
-    original_schema: dict[str, Any] = NotImplemented
+    original_schema: dict[str, Any] = UNDEFINED
     r"""The original schema."""
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         if data.index != pd.RangeIndex(len(data)):
             raise ValueError("DataFrame must be canonically indexed!")
         self.original_schema = data.dtypes.to_dict()
 
-    def _encode_impl(self, data: DataFrame, /) -> Tensor:
-        return torch.tensor(data.values, device=self.device, dtype=self.dtype)  # type: ignore[arg-type]
+    def encode(self, data: DataFrame, /) -> Tensor:
+        return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
-    def _decode_impl(self, data: Tensor, /) -> DataFrame:
+    def decode(self, data: Tensor, /) -> DataFrame:
         array = data.detach().cpu().numpy()
         frame = DataFrame(array, columns=self.original_schema)
         return frame.astype(self.original_schema)
@@ -491,7 +487,8 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
     r"""The schema for grouping the columns (group-name -> col-name(s))."""
 
     # Fitted attributes
-    original_schema: dict[str, Any] = NotImplemented  # cols -> dtype
+    original_schema: dict[str, Any] = UNDEFINED  # cols -> dtype
+    target_schema: dict[str, list[str]] = UNDEFINED
 
     def __init__(
         self,
@@ -502,32 +499,35 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
             for k, v in schema.items()
         }
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         # get the original dtypes
         self.original_schema = data.dtypes.to_dict()
 
-        # fill in the missing columns
-        if Ellipsis in self.schema.values():
-            ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
-            for group, cols in self.schema.items():
-                if cols is Ellipsis:
-                    self.schema[group] = ellipsis_cols
+        self.target_schema = {}
+        ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
+        for group, cols in self.schema.items():
+            if cols is ...:  # NOTE: https://github.com/microsoft/pyright/issues/10721
+                self.target_schema[group] = ellipsis_cols
+            else:
+                self.target_schema[group] = cols
 
-        if missing_cols := set().union(*self.schema.values()) - set(data.columns):  # type: ignore[arg-type]
+        if missing_cols := set().union(*self.target_schema.values()) - set(
+            data.columns
+        ):
             raise ValueError(f"Missing columns {missing_cols}!")
-        if extra_cols := set(data.columns) - set().union(*self.schema.values()):  # type: ignore[arg-type]
+        if extra_cols := set(data.columns) - set().union(*self.target_schema.values()):
             raise ValueError(f"Extra columns {extra_cols}!")
 
-    def _encode_impl(self, data: DataFrame, /) -> dict[str, DataFrame]:
+    def encode(self, data: DataFrame, /) -> dict[str, DataFrame]:
         r"""Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
         if columns in the dataframe are missing, the correponding tensor columns
         will be filled with `NAN`-values if the datatype allows it.
         """
-        return {key: data[cols] for key, cols in self.schema.items()}
+        return {key: data[cols] for key, cols in self.target_schema.items()}
 
-    def _decode_impl(self, data: Mapping[str, DataFrame], /) -> DataFrame:
+    def decode(self, data: Mapping[str, DataFrame], /) -> DataFrame:
         # Assemble the DataFrame
         return (
             pd.concat(data.values(), axis="columns")
@@ -580,12 +580,13 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
     r"""The schema for grouping the columns (group-name -> col-name(s))."""
     device: dict[str | EllipsisType, None | str | torch.device]
     r"""The device for each group (group-name -> device)."""
-    dtypes: dict[str | EllipsisType, None | str | torch.dtype]
+    dtypes: dict[str | EllipsisType, None | torch.dtype]
     r"""The dtype for each group (group-name -> dtype)."""
 
     # Fitted attributes
-    original_index: list[str] = NotImplemented
-    original_schema: dict[str, Any] = NotImplemented  # cols -> dtype
+    original_index: list[str] = UNDEFINED
+    original_schema: dict[str, Any] = UNDEFINED  # cols -> dtype
+    target_schema: dict[str, list[str]] = UNDEFINED
 
     def __init__(
         self,
@@ -595,7 +596,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
             str | torch.device | Mapping[str | EllipsisType, None | str | torch.device]
         ] = None,
         dtypes: Optional[
-            str | torch.dtype | Mapping[str | EllipsisType, None | str | torch.dtype]
+            torch.dtype | Mapping[str | EllipsisType, None | torch.dtype]
         ] = None,
     ) -> None:
         self.schema = {
@@ -605,7 +606,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
         self.dtypes = dict(dtypes) if isinstance(dtypes, Mapping) else {...: dtypes}
         self.device = dict(device) if isinstance(device, Mapping) else {...: device}
 
-    def _fit_impl(self, data: DataFrame, /) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         # check the index of the dataframe
         self.original_index = list(data.index.names)
         if not is_canonically_indexed(data):
@@ -613,38 +614,41 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
         # get the original dtypes
         self.original_schema = data.dtypes.to_dict()
-
-        # fill in the missing columns
-        if Ellipsis in self.schema.values():
-            ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
-            for group, cols in self.schema.items():
-                if cols is Ellipsis:
-                    self.schema[group] = ellipsis_cols
+        self.target_schema = {}
+        ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
+        for group, cols in self.schema.items():
+            if cols is ...:  # NOTE: https://github.com/microsoft/pyright/issues/10721
+                self.target_schema[group] = ellipsis_cols
+            else:
+                self.target_schema[group] = cols
+        assert self.target_schema.keys() == self.schema.keys()
 
         # fill in the dtype for missing groups
         dtype = None if Ellipsis not in self.dtypes else self.dtypes.pop(Ellipsis)
-        for group in self.schema.keys() - self.dtypes.keys():
+        for group in self.target_schema.keys() - self.dtypes.keys():
             self.dtypes[group] = dtype
 
         # fill in the device for missing groups
         device = None if Ellipsis not in self.device else self.device.pop(Ellipsis)
-        for group in self.schema.keys() - self.device.keys():
+        for group in self.target_schema.keys() - self.device.keys():
             self.device[group] = device
 
-        if self.dtypes.keys() & self.device.keys() != self.schema.keys():
+        if self.dtypes.keys() & self.device.keys() != self.target_schema.keys():
             raise ValueError(
                 "Schema, dtypes and device columns must share groups!"
-                f"\nSchema: {self.schema}"
+                f"\nSchema: {self.target_schema}"
                 f"\ndtypes: {self.dtypes}"
                 f"\ndevice: {self.device}"
             )
 
-        if missing_cols := set().union(*self.schema.values()) - set(data.columns):  # type: ignore[arg-type]
+        if missing_cols := set().union(*self.target_schema.values()) - set(
+            data.columns
+        ):
             raise ValueError(f"Missing columns {missing_cols}!")
-        if extra_cols := set(data.columns) - set().union(*self.schema.values()):  # type: ignore[arg-type]
+        if extra_cols := set(data.columns) - set().union(*self.target_schema.values()):
             raise ValueError(f"Extra columns {extra_cols}!")
 
-    def _encode_impl(self, data: DataFrame, /) -> dict[str, Tensor]:
+    def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         r"""Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
@@ -655,17 +659,17 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
         return {
             # FIXME: https://github.com/pandas-dev/pandas/issues/22791
             group: torch.tensor(
-                np.stack([data[col].to_numpy() for col in cols], axis=-1),  # type: ignore[union-attr]
+                np.stack([data[col].to_numpy() for col in cols], axis=-1),
                 device=self.device[group],
-                dtype=self.dtypes[group],  # type: ignore[arg-type]
+                dtype=self.dtypes[group],
             ).squeeze()
-            for group, cols in self.schema.items()
+            for group, cols in self.target_schema.items()
         }
 
-    def _decode_impl(self, data: Mapping[str, Tensor], /) -> DataFrame:
+    def decode(self, data: Mapping[str, Tensor], /) -> DataFrame:
         # convert the tensors to dataframes
         dfs = [
-            DataFrame(tensor.detach().cpu().numpy(), columns=self.schema[group])
+            DataFrame(tensor.detach().cpu().numpy(), columns=self.target_schema[group])
             for group, tensor in data.items()
         ]
 

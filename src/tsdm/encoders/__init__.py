@@ -94,8 +94,8 @@ See Also:
 __all__ = [
     # Sub-Packages & Modules
     "base",
-    "numerical",
-    "pytorch",
+    "torch",
+    "universal",
     "time",
     # Constants
     "ID",
@@ -167,7 +167,7 @@ __all__ = [
     "wrap",
 ]
 
-from tsdm.encoders import base, numerical, pytorch, time
+from tsdm.encoders import base, time, torch, universal
 from tsdm.encoders.base import (
     ID,
     # constants
@@ -211,9 +211,13 @@ from tsdm.encoders.base import (
     replicate,
     wrap,
 )
-from tsdm.encoders.boundary import BoundaryEncoder
-from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
-from tsdm.encoders.dataframe import (
+from tsdm.encoders.box_cox import (
+    BoxCoxEncoder,
+    LogEncoder,
+    LogitBoxCoxEncoder,
+    LogitEncoder,
+)
+from tsdm.encoders.pandas import (
     CSVEncoder,
     DTypeConverter,
     FrameAsDict,
@@ -223,15 +227,6 @@ from tsdm.encoders.dataframe import (
     TripletDecoder,
     TripletEncoder,
 )
-from tsdm.encoders.numerical import (
-    LinearScaler,
-    LogEncoder,
-    LogitEncoder,
-    MinMaxScaler,
-    StandardScaler,
-    TensorConcatenator,
-    TensorSplitter,
-)
 from tsdm.encoders.time import (
     DateTimeEncoder,
     PeriodicEncoder,
@@ -240,34 +235,42 @@ from tsdm.encoders.time import (
     SocialTimeEncoder,
     TimeDeltaEncoder,
 )
+from tsdm.encoders.universal import (
+    BoundaryEncoder,
+    LinearScaler,
+    MinMaxScaler,
+    StandardScaler,
+    TensorConcatenator,
+    TensorSplitter,
+)
 
-ENCODERS: dict[str, type[FittableEncoder]] = {
+ENCODERS: dict[str, type[BaseEncoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,
     "BoxCoxEncoder"             : BoxCoxEncoder,
     "CSVEncoder"                : CSVEncoder,
-    "ChainedEncoder"            : Compose,
+    "Compose"                   : Compose,
     "DTypeConverter"            : DTypeConverter,
     "DateTimeEncoder"           : DateTimeEncoder,
     "DeepcopyEncoder"           : DeepcopyEncoder,
-    "DiagonalEncoder"           : Diagonal,
+    "Diagonal"                  : Diagonal,
     "FrameAsDict"               : FrameAsDict,
     "FrameAsTensor"             : FrameAsTensor,
     "FrameAsTensorDict"         : FrameAsTensorDict,
     "FrameEncoder"              : FrameEncoder,
     "IdentityEncoder"           : IdentityEncoder,
     "InverseEncoder"            : InverseEncoder,
-    "JointDecoder"              : Meet,
-    "JointEncoder"              : Fork,
+    "Meet"                      : Meet,
+    "Fork"                      : Fork,
     "LinearScaler"              : LinearScaler,
     "LogEncoder"                : LogEncoder,
     "LogitBoxCoxEncoder"        : LogitBoxCoxEncoder,
     "LogitEncoder"              : LogitEncoder,
     "MappedEncoder"             : MappedEncoder,
     "MinMaxScaler"              : MinMaxScaler,
-    "ParallelEncoder"           : Parallel,
+    "Parallel"                  : Parallel,
     "PeriodicEncoder"           : PeriodicEncoder,
     "PeriodicSocialTimeEncoder" : PeriodicSocialTimeEncoder,
-    "PipedEncoder"              : Pipe,
+    "Pipe"                      : Pipe,
     "PositionalEncoder"         : PositionalEncoder,
     "SocialTimeEncoder"         : SocialTimeEncoder,
     "StandardScaler"            : StandardScaler,
@@ -276,8 +279,8 @@ ENCODERS: dict[str, type[FittableEncoder]] = {
     "TimeDeltaEncoder"          : TimeDeltaEncoder,
     "TripletDecoder"            : TripletDecoder,
     "TripletEncoder"            : TripletEncoder,
-    "TupleDecoder"              : TupleUnwrapper,
-    "TupleEncoder"              : TupleWrapper,
+    "TupleUnwrapper"              : TupleUnwrapper,
+    "TupleWrapper"              : TupleWrapper,
     "WrappedEncoder"            : WrappedEncoder,
 }  # fmt: skip
 r"""Dictionary of all available encoders."""

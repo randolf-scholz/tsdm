@@ -77,6 +77,8 @@
       <excludeFolder url="file://$MODULE_DIR$/dev/demos/kiwi/tensorboard" />
       <excludeFolder url="file://$MODULE_DIR$/dev/demos/pics" />
       <excludeFolder url="file://$MODULE_DIR$/dev/demos/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/bugs" />
+      <excludeFolder url="file://$MODULE_DIR$/dev" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="uv (tsdm)" jdkType="Python SDK" />

@@ -10,6 +10,7 @@ __all__ = [
     "is_builtin_constant",
     "is_builtin_type",
     "is_dunder",
+    "is_private",
     "is_flattened",
     "is_na_value",
     "is_scalar",
@@ -192,6 +193,19 @@ def is_dunder(name: str, /) -> bool:
         and name.endswith("__")
         and not name.endswith("___")
         and len(name) > 4
+    )
+
+
+def is_private(name: str, /) -> bool:
+    r"""Check if the name is a private method.
+
+    Equivalent to the regex pattern: `^_.*[^_]$`
+    """
+    return (
+        name.isidentifier()
+        and name.startswith("_")
+        and not name.startswith("__")
+        and len(name) > 1
     )
 
 

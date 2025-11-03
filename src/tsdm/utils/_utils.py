@@ -39,7 +39,7 @@ from copy import deepcopy
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional, cast
+from typing import Any, Optional
 from zipfile import ZipFile
 
 import numpy as np
@@ -299,13 +299,10 @@ def flatten_dict[K, K2](
         ... )
         {('a', 1, True): 'foo', ('a', 2, False): 'bar'}
     """
-    if not recursive:
-        return cast("dict[K2, Any]", dict(d))
-
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[K2, Any] = {}
     for key, item in d.items():
-        if isinstance(item, Mapping):
+        if recursive and isinstance(item, Mapping):
             for subkey, subitem in flatten_dict(
                 item,
                 recursive=recursive,
@@ -350,14 +347,11 @@ def unflatten_dict[K, K2](
         ... )
         {'a': {17: 'foo', 18: 'bar'}}
     """
-    if not recursive:
-        return cast("dict[K, Any]", dict(d))
-
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[K, Any] = {}
     for key, item in d.items():
         outer_key, *inner_keys = split_fn(key)
-        if inner_keys:
+        if recursive and inner_keys:
             result.setdefault(outer_key, {})
             result[outer_key] |= unflatten_dict(
                 {join_fn(inner_keys): item},

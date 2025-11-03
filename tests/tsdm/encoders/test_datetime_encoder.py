@@ -104,20 +104,20 @@ r"""Example data for testing datetime encoders."""
 # endregion datetime sample data -------------------------------------------------------
 
 
-@pytest.mark.parametrize("name", DT_TRAIN_ARRAYS)
+@pytest.mark.parametrize("case", DT_TRAIN_ARRAYS)
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
-def test_datetime_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
+def test_datetime_encoder(case, *, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
-    if rounding and sparse and name in {"pandas-index-arrow", "pandas-series-arrow"}:
+    if rounding and sparse and case in {"pandas-index-arrow", "pandas-series-arrow"}:
         pytest.xfail("Overflow error: https://github.com/apache/arrow/issues/43031.")
 
     if sparse:
-        train_data = DT_TRAIN_ARRAYS_SPARSE[name]
-        test_data = DT_TEST_ARRAYS_SPARSE[name]
+        train_data = DT_TRAIN_ARRAYS_SPARSE[case]
+        test_data = DT_TEST_ARRAYS_SPARSE[case]
     else:
-        train_data = DT_TRAIN_ARRAYS[name]
-        test_data = DT_TEST_ARRAYS[name]
+        train_data = DT_TRAIN_ARRAYS[case]
+        test_data = DT_TEST_ARRAYS[case]
 
     encoder: DateTimeEncoder = DateTimeEncoder()
     encoder.fit(train_data)

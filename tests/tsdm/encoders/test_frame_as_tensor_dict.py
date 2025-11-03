@@ -30,7 +30,7 @@ def test_frame_as_tensor_dict(df: DataFrame, schema: dict) -> None:
 
     # test fit
     encoder.fit(df)
-    assert encoder.is_fitted
+    assert not encoder.requires_fit
     assert encoder.dtypes == {"key": None, "M": None, "Position": None}
 
     # test encode

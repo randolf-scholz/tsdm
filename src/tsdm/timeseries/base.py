@@ -27,6 +27,7 @@ from math import nan as NAN
 from typing import (
     Any,
     ClassVar,
+    Final,
     NamedTuple,
     Optional,
     Protocol,
@@ -51,7 +52,6 @@ from tsdm.utils.decorators import pprint_repr
 class TimeSeries[T](Protocol):
     r"""Protocol for time series objects."""
 
-    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series."""
 
@@ -81,7 +81,6 @@ class TimeSeries[T](Protocol):
 class TimeSeriesCollection[Key, T](Protocol):
     r"""Protocol for time series collection objects."""
 
-    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series collection."""
 
@@ -126,7 +125,6 @@ class PandasTS(TimeSeries[DataFrame]):
     For a given time-index, the time series data is a vector of measurements.
     """
 
-    # FIXME: Use Final[ClassVar] with python 3.13.
     FIELDS: ClassVar[frozenset[str]] = frozenset({
         "timeseries",
         "timeseries_metadata",
@@ -224,8 +222,7 @@ class PandasTSC[Key](Mapping[Key, PandasTS]):
     `Equimodal` means that all time series share the same schema (i.e. subset of variables).
     """
 
-    # FIXME: Use Final[ClassVar] with python 3.13.
-    FIELDS: ClassVar[frozenset[str]] = frozenset({
+    FIELDS: Final[ClassVar[frozenset[str]]] = frozenset({
         "timeseries",
         "timeseries_metadata",
         "static_covariates",

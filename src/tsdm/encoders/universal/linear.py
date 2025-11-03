@@ -1,224 +1,29 @@
-r"""Numerical Transformations, Standardization, Log-Transforms, etc.
-
-Numerical Encoders should be able to be applied with different backends such as
-
-- numpy arrays
-- pandas dataframes
-- torch tensors
-- pyarrow tables
-- etc.
-
-To ensure performance during encoding/decoding, the backend should be fixed.
-
-Goals
-=====
-- numerical encoders should allow for different backends: numpy, pandas, torch, etc.
-- numerical encoders should be vectorized and fast
-- we should be able to "slice" vectorized encoders just like we slice numpy arrays
-- calling fit twice on the same data should not change the encoder (idempotent)
-- one should be able to (partially or fully) fix the encoder parameters
-- should have an axis attribute that allows for broadcasting.
-- switching between backends should be easy and fast
-    - switching between backends probably not considered a "fit" operation
-    - fitting changes the encoder parameter values, switching backends changes their types.
-"""
+r"""Linear data encoders."""
 
 __all__ = [
-    # Protocols & ABCs
-    "ArrayEncoder",
-    "ArrayDecoder",
     # Classes
     "LinearScaler",
-    "LogEncoder",
-    "LogitEncoder",
     "MinMaxScaler",
     "StandardScaler",
-    "TensorConcatenator",
-    "TensorSplitter",
-    # Functions
-    "get_broadcast",
-    "invert_axis_selection",
-    "reduce_axes",
-    "reduce_param",
-    "slice_size",
 ]
 
-from collections.abc import Iterable
 from dataclasses import KW_ONLY, dataclass
-from types import EllipsisType
-from typing import Any, Optional, Self, cast, overload
-
-import numpy as np
-from numpy.typing import NDArray
-from pandas import DataFrame
+from typing import Any, Self, cast, overload
 
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
-from tsdm.encoders.base import FittableEncoder, SupportsBackend
-from tsdm.types.aliases import Axis, Indexer
+from tsdm.encoders.base import FittableEncoder
+from tsdm.linalg.utils import invert_axis_selection, reduce_axes
+from tsdm.types.aliases import Axis
 from tsdm.types.linalg import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
 
 
-def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:
-    r"""Invert axes-selection for a rank `ndim` tensor.
-
-    Example:
-        +------+------------+-----------+
-        | ndim | axis       | inverted  |
-        +======+============+===========+
-        | 4    | None       | ()        |
-        +------+------------+-----------+
-        | 4    | (-3,-2,-1) | (0,)      |
-        +------+------------+-----------+
-        | 4    | (-2,-1)    | (0,1)     |
-        +------+------------+-----------+
-        | 4    | (-1)       | (0,1,2)   |
-        +------+------------+-----------+
-        | 4    | ()         | (0,1,2,3) |
-        +------+------------+-----------+
-    """
-    match axis:
-        case None:
-            return ()
-        case int():
-            return tuple(set(range(ndim)) - {axis % ndim})
-        case Iterable():
-            return tuple(set(range(ndim)) - {a % ndim for a in axis})
-        case _:
-            raise TypeError(f"axis must be None, int, or Iterable, not {type(axis)}")
-
-
-def get_broadcast(
-    original_shape: tuple[int, ...],
-    /,
-    *,
-    axis: Axis,
-    keep_axis: bool = False,
-) -> tuple[slice | None, ...]:
-    r"""Creates an indexer that broadcasts a tensors contracted via `axis`.
-
-    Essentially works like a-posteriori adding the `keepdims=True` option to a contraction.
-    If `x = contraction(data, axis)` (e.g. sum, mean, max), then ``x[broadcast]``
-    for ``broadcast=get_braodcast(data.shape, axis) is roughly equivalent to
-    ``contraction(data, axis, keepdims=True)``.
-
-    This achieves element-wise compatibility: ``data + x[broadcast]``.
-
-    >>> arr = np.random.randn(1, 2, 3, 4, 5)
-    >>> axis = (1, -1)
-    >>> broadcast = get_broadcast(arr.shape, axis=axis)
-    >>> m = np.mean(arr, axis)
-    >>> m_ref = np.mean(arr, axis=axis, keepdims=True)
-    >>> m[broadcast].shape == m_ref.shape
-    True
-
-    If `keep_axis` is True, then the broadcast is the complement of the contraction,
-    i.e. ``x[broadcast]`` is roughly equivalent to ``contraction(data, kept_axis, keepdims=True)``,
-    where ``kept_axis = set(range(data.ndim)) - set(ax%data.ndim for ax in axis)``.
-
-    Args:
-        original_shape: The tensor to be contracted.
-        axis: The axes to be contracted.
-        keep_axis: select `True` if the axes are to be kept instead.
-
-    Example:
-        data is of shape  ``(2,3,4,5,6,7)``
-        axis is the tuple ``(0,2,-1)``
-        broadcast is ``(:, None, :, None, None, :)``
-    """
-    rank = len(original_shape)
-
-    if keep_axis:
-        match axis:
-            case None:  # all axes are contracted
-                kept_axis = set()
-            case int():
-                kept_axis = {axis % rank}
-            case _:
-                kept_axis = {a % rank for a in axis}
-        return tuple(slice(None) if a in kept_axis else None for a in range(rank))
-
-    match axis:
-        case None:  # all axes are contracted
-            contracted_axes = set(range(rank))
-        case int():
-            contracted_axes = {axis % rank}
-        case _:
-            contracted_axes = {a % rank for a in axis}
-
-    return tuple(None if a in contracted_axes else slice(None) for a in range(rank))
-
-
-def slice_size(slc: slice, /) -> Optional[int]:
-    r"""Get the size of a slice."""
-    if slc.stop is None or slc.start is None:
-        return None
-    return slc.stop - slc.start
-
-
 @overload
-def reduce_axes(axis: None, selection: Indexer) -> None: ...
+def _reduce_param(param: float, selection: Any) -> float: ...
 @overload
-def reduce_axes(
-    axis: int | tuple[int, ...], selection: str | list[str] | Indexer
-) -> tuple[int, ...]: ...
-def reduce_axes(axis: Axis, selection: str | list[str] | Indexer) -> Axis:
-    r"""Returns axis selection corresponding to given tensor indexing.
-
-    Assuming some universal operator `op` acts in tensor `T`, that is `op(T, axis=axis)`,
-    then the return of this method allows to apply `op(T[selection], axis=reduced_axis)`.
-    """
-    # convert to tuple
-    match axis:
-        case None:
-            return None
-        case []:
-            return ()
-        case int(a):
-            axis = (a,)
-        case _:
-            axis = tuple(axis)
-
-    match selection:
-        case None:
-            raise NotImplementedError("Slicing with None not implemented.")
-        case int() | str():
-            return axis[1:]
-        case EllipsisType():
-            return axis
-        case list(seq):
-            drop = len(seq) <= 1
-            return axis[drop:]
-        case slice() as slc:
-            drop = slice_size(slc) in {0, 1}
-            return axis[drop:]
-        case range(start=start, stop=stop):
-            drop = stop - start in {0, 1}
-            return axis[drop:]
-        case tuple(tup):
-            if sum(x is Ellipsis for x in tup) > 1:
-                raise ValueError("Only one Ellipsis is allowed.")
-            if len(tup) == 0:
-                return axis
-            if Ellipsis in tup:
-                idx = tup.index(Ellipsis)
-                return (
-                    reduce_axes(axis[:idx], tup[:idx])
-                    + reduce_axes(axis[idx : idx + len(tup) - 1], tup[idx])
-                    + reduce_axes(axis[idx + len(tup) - 1 :], tup[idx + 1 :])
-                )
-            # recurse on the first element
-            return reduce_axes(axis[:1], tup[0]) + reduce_axes(axis[1:], tup[1:])
-        case _:
-            raise TypeError(f"Unknown type {type(selection)}")
-
-
-@overload
-def reduce_param(param: float, selection: Any) -> float: ...
-@overload
-def reduce_param[T: Array[float]](param: T, selection: Any) -> T: ...
-def reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | T:
+def _reduce_param[T: Array[float]](param: T, selection: Any) -> T: ...
+def _reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | T:
     r"""Perform a reduction on a parameter.
 
     For example, given tensor T, axis and selection, then this returns the slice of the tensor
@@ -234,20 +39,6 @@ def reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | T
         case tensor:
             sliced = tensor[selection]
             return sliced
-
-
-class ArrayEncoder[Arr: Array, Y](SupportsBackend[Arr, Y]):
-    r"""An encoder for Tensor-like data.
-
-    We want numerical encoders to be applicable to different backends.
-    Therefore, they should be equipped with a `backend`-object which
-    provides computational kernels for important tensor-operations beyond
-    elementary arithmetic.
-    """
-
-
-class ArrayDecoder[X, Arr: Array](SupportsBackend[X, Arr]):
-    r"""A decoder for Tensor-like data."""
 
 
 @pprint_repr
@@ -268,7 +59,7 @@ class LinearScaler[Arr: Array](FittableEncoder[Arr, Arr]):
 
     axis: Axis
     r"""Over which axis to perform the scaling."""
-    backend: Backend[Arr]
+    backend: Backend[Arr] = UNDEFINED
     r"""The backend of the encoder."""
 
     def __init__(
@@ -302,21 +93,21 @@ class LinearScaler[Arr: Array](FittableEncoder[Arr, Arr]):
               (), (1,), (1,1), (30,), (30,1), (1,40), (30,40).
         """
         axis = reduce_axes(self.axis, item)
-        loc = reduce_param(self.loc, item)
-        scale = reduce_param(self.scale, item)
+        loc = _reduce_param(self.loc, item)
+        scale = _reduce_param(self.scale, item)
 
         # initialize the new encoder
         encoder = self.__class__(loc=loc, scale=scale, axis=axis)
-        encoder.is_fitted = self.is_fitted
+        encoder.backend = self.backend
         return encoder
 
-    def _fit_impl(self, data: Arr, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         self.backend: Backend[Arr] = get_backend(data)
 
-    def _encode_impl(self, data: Arr, /) -> Arr:
+    def encode(self, data: Arr, /) -> Arr:
         return data * self.scale + self.loc
 
-    def _decode_impl(self, data: Arr, /) -> Arr:
+    def decode(self, data: Arr, /) -> Arr:
         return (data - self.loc) / self.scale
 
 
@@ -350,22 +141,21 @@ class StandardScaler[Arr: Array[float]](FittableEncoder[Arr, Arr]):
         self.mean = cast("Arr", mean)
         self.stdv = cast("Arr", stdv)
         self.axis = axis
-        self.mean_learnable = mean is NotImplemented
-        self.stdv_learnable = stdv is NotImplemented
+        self.mean_learnable = mean is UNDEFINED
+        self.stdv_learnable = stdv is UNDEFINED
 
     def __getitem__(self, item: Any, /) -> Self:
         r"""Return a slice of the Standardizer."""
-        mean = reduce_param(self.mean, item)
-        stdv = reduce_param(self.stdv, item)
+        mean = _reduce_param(self.mean, item)
+        stdv = _reduce_param(self.stdv, item)
         axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
-        cls = type(self)
-        encoder = cls(mean=mean, stdv=stdv, axis=axis)
-        encoder.is_fitted = self.is_fitted
+        encoder = self.__class__(mean=mean, stdv=stdv, axis=axis)
+        encoder.backend = self.backend
         return encoder
 
-    def _fit_impl(self, data: Arr, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         # switch the backend
         self.backend: Backend[Arr] = get_backend(data)
 
@@ -378,13 +168,13 @@ class StandardScaler[Arr: Array[float]](FittableEncoder[Arr, Arr]):
         if self.stdv_learnable:
             self.stdv = self.backend.nanstd(data, axis=axes)
 
-    def _encode_impl(self, data: Arr, /) -> Arr:
+    def encode(self, data: Arr, /) -> Arr:
         # TODO: consider adding broadcasting
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return (data - self.mean[broadcast]) / self.stdv[broadcast]
         return (data - self.mean) / self.stdv
 
-    def _decode_impl(self, data: Arr, /) -> Arr:
+    def decode(self, data: Arr, /) -> Arr:
         # TODO: consider adding broadcasting
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return data * self.stdv[broadcast] + self.mean[broadcast]
@@ -466,8 +256,8 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
 
         self.xmin_learnable = xmin is None
         self.xmax_learnable = xmax is None
-        self.xmin = cast("Arr", NotImplemented if xmin is None else xmin)
-        self.xmax = cast("Arr", NotImplemented if xmax is None else xmax)
+        self.xmin = cast("Arr", UNDEFINED if xmin is None else xmin)
+        self.xmax = cast("Arr", UNDEFINED if xmax is None else xmax)
 
         # set derived parameters
         if not (self.xmin_learnable or self.xmax_learnable):
@@ -475,31 +265,29 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
             self.ybar: Arr = (self.ymax + self.ymin) / 2
             self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
         else:
-            self.xbar = NotImplemented
-            self.ybar = NotImplemented
-            self.scale = NotImplemented
+            self.xbar = UNDEFINED
+            self.ybar = UNDEFINED
+            self.scale = UNDEFINED
 
         # set initial backend
         self.switch_backend(get_backend(self.params))
 
     def __getitem__(self, item: Any, /) -> Self:
         r"""Return a slice of the MinMaxScaler."""
-        xmin = reduce_param(self.xmin, item)
-        xmax = reduce_param(self.xmax, item)
-        ymin = reduce_param(self.ymin, item)
-        ymax = reduce_param(self.ymax, item)
+        xmin = _reduce_param(self.xmin, item)
+        xmax = _reduce_param(self.xmax, item)
+        ymin = _reduce_param(self.ymin, item)
+        ymax = _reduce_param(self.ymax, item)
         axis = reduce_axes(self.axis, item)
 
         # initialize the new encoder
-        cls: type[Self] = type(self)
-        encoder = cls(ymin, ymax, xmin=xmin, xmax=xmax, axis=axis)
-        encoder.switch_backend(self.backend)
-        encoder.is_fitted = self.is_fitted
+        encoder = self.__class__(ymin, ymax, xmin=xmin, xmax=xmax, axis=axis)
+        encoder.backend = self.backend
         return encoder
 
-    def _fit_impl(self, data: Arr, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         # switch the backend
-        self.switch_backend(get_backend(data))
+        self.backend: Backend[Arr] = get_backend(data)
 
         # skip if the parameters are not learnable
         if not (self.xmin_learnable or self.xmax_learnable):
@@ -511,6 +299,8 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
             self.xmin = self.backend.nanmin(data, axis=axes)
         if self.xmax_learnable:
             self.xmax = self.backend.nanmax(data, axis=axes)
+
+        self.recast_parameters()
 
         # broadcast y to the same shape as x
         self.ymin = self.ymin + 0.0 * self.xmin
@@ -526,7 +316,7 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
         scale = dy / dx
         self.scale = self.backend.where(dx != 0, scale, scale**0)
 
-    def _encode_impl(self, x: Arr, /) -> Arr:
+    def encode(self, x: Arr, /) -> Arr:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
         y = (x - self.xbar) * self.scale + self.ybar
         if self.safe_computation:
@@ -551,7 +341,7 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
         y = backend.where((x >= xmin) & (x <= xmax), backend.clip(y, ymin, ymax), y)
         return y
 
-    def _decode_impl(self, y: Arr, /) -> Arr:
+    def decode(self, y: Arr, /) -> Arr:
         r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
         x = (y - self.ybar) / self.scale + self.xbar
         if self.safe_computation:
@@ -601,89 +391,3 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
         self.scale = self.backend.to_tensor(self.scale)
 
     # endregion parameters -------------------------------------------------------------
-
-
-@dataclass
-class LogEncoder(FittableEncoder[NDArray, NDArray]):
-    r"""Encode data on a logarithmic scale.
-
-    Uses base 2 by default for lower numerical error and fast computation.
-    """
-
-    threshold: NDArray
-    replacement: NDArray
-
-    def _fit_impl(self, data: NDArray, /) -> None:
-        if np.any(data < 0):
-            raise ValueError("Data must be non-negative.")
-
-        mask = data == 0
-        self.threshold = data[~mask].min()
-        self.replacement = np.log2(self.threshold / 2)
-
-    def _encode_impl(self, data: NDArray, /) -> NDArray:
-        result = data.copy()
-        mask = data <= 0
-        result[:] = np.where(mask, self.replacement, np.log2(data))
-        return result
-
-    def _decode_impl(self, data: NDArray, /) -> NDArray:
-        result = 2**data
-        mask = result < self.threshold
-        result[:] = np.where(mask, 0, result)
-        return result
-
-
-class LogitEncoder(FittableEncoder[NDArray, NDArray]):
-    r"""Logit encoder."""
-
-    def _encode_impl(self, data: DataFrame, /) -> DataFrame:
-        # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
-        if not np.all((data > 0) & (data < 1)):
-            raise ValueError("Data must be in the range (0, 1).")
-        return np.log(data / (1 - data))
-
-    def _decode_impl(self, data: DataFrame, /) -> DataFrame:
-        return np.clip(1 / (1 + np.exp(-data)), 0, 1)
-
-
-@pprint_repr
-@dataclass
-class TensorSplitter[Arr: Array](ArrayEncoder[Arr, list[Arr]]):
-    r"""Split tensor along specified axis."""
-
-    _: KW_ONLY
-    indices: int | list[int] = 1
-    axis: int = 0
-
-    def __invert__(self) -> "TensorConcatenator[Arr]":
-        return TensorConcatenator(axis=self.axis, indices=self.indices)
-
-    def _encode_impl(self, x: Arr, /) -> list[Arr]:
-        return self.backend.array_split(x, self.indices, axis=self.axis)
-
-    def _decode_impl(self, y: list[Arr], /) -> Arr:
-        return self.backend.concatenate(y, axis=self.axis)
-
-
-@pprint_repr
-@dataclass
-class TensorConcatenator[Arr: Array](ArrayDecoder[list[Arr], Arr]):
-    r"""Concatenate multiple tensors."""
-
-    _: KW_ONLY
-    indices: int | list[int] = NotImplemented
-    axis: int = 0
-
-    def __invert__(self) -> TensorSplitter[Arr]:
-        return TensorSplitter(axis=self.axis, indices=self.indices)
-
-    def _fit_impl(self, x: list[Arr], /) -> None:
-        super().fit(x)
-        self.indices = [arr.shape[self.axis] for arr in x]
-
-    def _encode_impl(self, x: list[Arr], /) -> Arr:
-        return self.backend.concatenate(x, axis=self.axis)
-
-    def _decode_impl(self, y: Arr, /) -> list[Arr]:
-        return self.backend.array_split(y, self.indices, axis=self.axis)

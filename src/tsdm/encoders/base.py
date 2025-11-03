@@ -149,7 +149,7 @@ from collections.abc import Callable as Fn, Iterable, Iterator, Mapping, Sequenc
 from contextlib import suppress
 from copy import deepcopy
 from dataclasses import KW_ONLY, dataclass, fields, is_dataclass
-from functools import cached_property
+from functools import cached_property, wraps
 from pathlib import Path
 from typing import (
     Any,
@@ -244,7 +244,7 @@ class SupportsBackend[X, Y](Protocol):
 
     backend: Backend
 
-    def fit(self, x: X, /) -> None:
+    def set_backend_from_data(self, x: X, /) -> None:
         self.backend = get_backend(x)
 
     def switch_backend(self, backend: str) -> None:
@@ -257,6 +257,8 @@ class SupportsBackend[X, Y](Protocol):
     def recast_parameters(self) -> None:
         r"""Recast the parameters to the current backend."""
         raise NotImplementedError
+
+    pre_fit_hooks: ClassVar[list[Fn]] = [set_backend_from_data]
 
 
 # endregion encoder mixin protocols ----------------------------------------------------
@@ -289,22 +291,7 @@ class Encoder[X, Y](Protocol):
 
     @property
     @abstractmethod
-    def is_fitted(self) -> bool: ...
-
-    @property
-    @abstractmethod
-    def requires_fit(self) -> bool: ...  # pyright: ignore[reportRedeclaration]
-
-    # @property
-    # @abstractmethod
-    # def is_fitted(self, /) -> bool: ...
-    # @is_fitted.setter
-    # @abstractmethod
-    # def is_fitted(self, value: bool, /) -> None: ...
-
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-    requires_fit: bool | cached_property[bool]  # type: ignore[no-redef]
-    # is_fitted: bool | cached_property[bool]  # type: ignore[no-redef]
+    def requires_fit(self) -> bool: ...
 
     @abstractmethod
     def fit(self, x: X, /) -> None: ...
@@ -376,7 +363,7 @@ class ParametrizedEncoder[X, Y](EncoderProtocol[X, Y], Protocol):
     def requires_fit(self) -> bool:
         r"""Check if the encoder requires fitting."""
         params = self.params
-        return any(params[key] is NotImplemented for key in self.required_params)
+        return any(params[key] is UNDEFINED for key in self.required_params)
 
     def get_params(self, *, deep: bool = True) -> dict[str, Any]:  # noqa: ARG002
         r"""Alias for `self.params`."""
@@ -415,29 +402,12 @@ class EncoderMeta(ProtocolMeta):
         **kwds: Any,
     ) -> type:
         r"""Create a new Encoder class."""
+        if "FIELDS" not in namespace and not inspect.isabstract(cls):
+            # use the default, but users can override it.
+            namespace["FIELDS"] = cls.FIELDS
+
         new_type = super().__new__(cls, name, bases, namespace, **kwds)
-
-        # check that the abstract "FIELDS" is defined in the class.
-        if __debug__ and "FIELDS" not in namespace and not inspect.isabstract(new_type):
-            # try to automatically create the FIELDS from annotations
-            if "__annotations__" in namespace:
-                anns: dict[str, Any] = namespace["__annotations__"]
-
-                # Add all non-ClassVars
-                FIELDS = frozenset(
-                    key for key, val in anns.items() if not is_classvar(val)
-                )
-                # add the fields to the namespace
-                namespace["FIELDS"] = FIELDS
-                namespace["__annotations__"]["FIELDS"] = ClassVar[frozenset[str]]
-
-            else:
-                pass
-                # raise AssertionError(
-                #     f"Non-abstract Encoder class {new_type}"
-                #     f" must provide the `FIELDS` ClassVar."
-                # )
-
+        new_type.__annotations__["FIELDS"] = ClassVar[frozenset[str]]
         return new_type
 
 
@@ -450,6 +420,57 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     @final
     def __call__(self, x: X, /) -> Y:
         return self.encode(x)
+
+    @abstractmethod
+    def encode(self, x: X, /) -> Y: ...
+    @abstractmethod
+    def decode(self, y: Y, /) -> X: ...
+    @abstractmethod
+    def fit(self, x: X, /) -> None: ...
+
+    # region hook interface ------------------------------------------------------------
+    # we offer pre- and post- hooks for fit, encode, and decode methods.
+    # as well as a general post-init hook
+    # hooks must be registered on the class-level as lists of callables.
+    post_init_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    pre_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    post_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    pre_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    post_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    pre_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    post_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []
+    pre_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}
+    post_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}
+
+    def __init_subclass__(cls) -> None:
+        r"""Initialize subclass hooks."""
+        super().__init_subclass__()
+        cls.encode = cls.with_hooks(cls.encode)
+        cls.decode = cls.with_hooks(cls.decode)
+        cls.fit = cls.with_hooks(cls.fit)
+        cls.pre_hooks["fit"] = cls.pre_fit_hooks
+        cls.post_hooks["fit"] = cls.post_fit_hooks
+        cls.pre_hooks["encode"] = cls.pre_encode_hooks
+        cls.post_hooks["encode"] = cls.post_encode_hooks
+        cls.pre_hooks["decode"] = cls.pre_decode_hooks
+        cls.post_hooks["decode"] = cls.post_decode_hooks
+
+    @staticmethod
+    def with_hooks(method: Fn) -> Fn:
+        r"""Decorator to add hooks to methods."""
+
+        @wraps(method)
+        def wrapper(self, /, *args, **kwargs):
+            for hook in self.pre_hooks[method.__name__]:
+                hook(self)
+            result = method(self, *args, **kwargs)
+            for hook in self.post_hooks[method.__name__]:
+                hook(self)
+            return result
+
+        return wrapper
+
+    # endregion hook interface ---------------------------------------------------------
 
     # region serialization interface ---------------------------------------------------
     def is_serializable(self) -> bool:
@@ -484,7 +505,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # endregion simplify interface -----------------------------------------------------
 
     # region parameter interface -------------------------------------------------------
-    FIELDS: ClassVar[frozenset[str]] = frozenset()
+    FIELDS: ClassVar[frozenset[str]]
     r"""Fields that are considered for the encoder."""
 
     @property
@@ -498,11 +519,6 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
             (val is UNDEFINED or getattr(val, "requires_fit", False))
             for val in self.params.values()
         )
-
-    @cached_property
-    def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
-        return not self.requires_fit
 
     def validate_params(self) -> None:
         r"""Validate the encoder parameters.
@@ -814,13 +830,13 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # region other methods -------------------------------------------------------------
     def standardize(self) -> "BaseEncoder[X, Y]":
         r"""Chain a standardizer."""
-        from tsdm import encoders as E
+        import tsdm.encoders as E
 
         return self >> E.StandardScaler()
 
     def minmax_scale(self) -> "BaseEncoder[X, Y]":
         r"""Chain a minmax scaling."""
-        from tsdm import encoders as E
+        import tsdm.encoders as E
 
         return self >> E.MinMaxScaler()
 
@@ -833,43 +849,28 @@ class FittableEncoder[X, Y](BaseEncoder[X, Y]):
 
     # region abstract methods ----------------------------------------------------------
     @abstractmethod
-    def _encode_impl(self, x: X, /) -> Y: ...
+    def encode(self, x: X, /) -> Y: ...
     @abstractmethod
-    def _decode_impl(self, y: Y, /) -> X: ...
+    def decode(self, y: Y, /) -> X: ...
     @abstractmethod
-    def _fit_impl(self, x: X, /) -> None: ...
+    def fit(self, x: X, /) -> None: ...
 
     # endregion abstract methods -------------------------------------------------------
-
-    @final
-    def encode(self, x: X, /) -> Y:
-        r"""Encode the data."""
-        if self.requires_fit and not self.is_fitted:
-            raise RuntimeError("Encoder has not been fitted!")
-        return self._encode_impl(x)
-
-    @final
-    def decode(self, y: Y, /) -> X:
-        r"""Decode the data."""
-        if self.requires_fit and not self.is_fitted:
-            raise RuntimeError("Encoder has not been fitted!")
-        return self._decode_impl(y)
-
-    @final
-    def fit(self, x: X, /) -> None:
-        r"""Fit the encoder to the data."""
-        self.LOGGER.info("Fitting encoder to data.")
-        self._fit_impl(x)
-        self.validate_params()
-        self.is_fitted = True
 
     def __setattr__(self, key: str, value: object, /) -> None:
         if key in self.FIELDS:
             with suppress(AttributeError):
                 del self.requires_fit  # clear requires_fit flag
-            with suppress(AttributeError):
-                del self.is_fitted  # clear is_fitted flag
         super().__setattr__(key, value)
+
+    def assert_fitted(self, /) -> None:
+        r"""Assert that the encoder has been fitted."""
+        if self.requires_fit:
+            raise AssertionError("Encoder has not been fitted!")
+
+    pre_encode_hooks = [assert_fitted]
+    pre_decode_hooks = [assert_fitted]
+    post_fit_hooks = [BaseEncoder.validate_params, assert_fitted]
 
 
 class StaticEncoder[X, Y](BaseEncoder[X, Y]):
@@ -879,16 +880,17 @@ class StaticEncoder[X, Y](BaseEncoder[X, Y]):
     provided/determined at initialization time.
     """
 
-    requires_fit: Final[ClassVar[L[False]]] = False  # pyright: ignore[reportInvalidTypeForm]
-    is_fitted: Final[ClassVar[L[True]]] = True  # pyright: ignore[reportInvalidTypeForm]
+    requires_fit: Final[L[False]] = False  # pyright: ignore[reportIncompatibleVariableOverride]  # noqa: PYI064
+    post_fit_hooks = [BaseEncoder.validate_params]
 
     @final
     def fit(self, _: X, /) -> None:
-        cls = self.__class__
-        cls.LOGGER.getChild(cls.__name__).info(
-            "Static encoder does not require fitting."
-        )
-        self.validate_params()
+        r"""Noop since the encoder is static."""
+
+    @abstractmethod
+    def encode(self, x: X, /) -> Y: ...
+    @abstractmethod
+    def decode(self, y: Y, /) -> X: ...
 
 
 @pprint_sequence(recursive=2)
@@ -932,18 +934,9 @@ class EncoderList[
         r"""The raw sequence of encoders."""
         return self._encoders
 
-    @property
-    def requires_fit(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
+    @cached_property
+    def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self)
-
-    @property
-    def is_fitted(self) -> bool:
-        return all(e.is_fitted for e in self)
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
-        for encoder in self:
-            encoder.is_fitted = value
 
     #  region abstract implementation --------------------------------------------------
     def __init__(self, encoders: Iterable[E] = ()) -> None:
@@ -1006,18 +999,9 @@ class EncoderDict[
     def encoders(self) -> Mapping[K, E]:
         return self._encoders
 
-    @property
-    def requires_fit(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
+    @cached_property
+    def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self.values())
-
-    @property
-    def is_fitted(self) -> bool:
-        return all(e.is_fitted for e in self.values())
-
-    @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
-        for encoder in self.values():
-            encoder.is_fitted = value
 
     def simplify(self) -> "EncoderDict[X, Y, K, Encoder]":
         return self.new(encoders={k: simplify(e) for k, e in self.items()})
@@ -1071,28 +1055,28 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
             # only one of them provided
             case e, None:
                 assert e is not None
-                self._encode_impl = e.encode if isinstance(e, SupportsEncode) else e
+                self.encode = e.encode if isinstance(e, SupportsEncode) else e
                 if isinstance(e, SupportsDecode):
-                    self._decode_impl = e.decode  # type: ignore[unreachable]
+                    self.decode = e.decode  # type: ignore[unreachable]
             case None, d:
                 assert d is not None
-                self._decode_impl = d.encode if isinstance(d, SupportsEncode) else d
+                self.decode = d.encode if isinstance(d, SupportsEncode) else d
                 if isinstance(d, SupportsDecode):
-                    self._encode_impl = d.decode  # type: ignore[unreachable]
+                    self.encode = d.decode  # type: ignore[unreachable]
 
             # ambiguous cases
             case SupportsEncode() as e, SupportsEncode() as d:
-                self._encode_impl = e.encode
-                self._decode_impl = d.encode
+                self.encode = e.encode
+                self.decode = d.encode
             case SupportsEncode() as e, d if callable(d):
-                self._encode_impl = e.encode
-                self._decode_impl = d
+                self.encode = e.encode
+                self.decode = d
             case e, SupportsEncode() as d if callable(e):
-                self._encode_impl = e
-                self._decode_impl = d.encode
+                self.encode = e
+                self.decode = d.encode
             case e, d if callable(e) and callable(d):
-                self._encode_impl = e
-                self._decode_impl = d
+                self.encode = e
+                self.decode = d
             case _ as never:
                 raise TypeError(f"Unsupported encoder/decoder types: {never}")
 
@@ -1100,7 +1084,7 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
     def params(self) -> dict[str, Any]:
         return getattr(self.encoder, "params", {})
 
-    def _fit_impl(self, x: X, /) -> None:
+    def fit(self, x: X, /) -> None:
         r"""Fit the encoder if it is a `FittableEncoder`."""
         match self.encoder:
             case SupportsFit() as fittable:
@@ -1108,11 +1092,11 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
             case _:
                 pass
 
-    def _encode_impl(self, x: X, /) -> Y:
+    def encode(self, x: X, /) -> Y:
         # overwritten in __post_init__
         raise NotImplementedError
 
-    def _decode_impl(self, y: Y, /) -> X:
+    def decode(self, y: Y, /) -> X:
         # overwritten in __post_init__
         raise NotImplementedError
 
@@ -1168,13 +1152,13 @@ class InverseEncoder[X, Y](FittableEncoder[Y, X]):
     encoder: Encoder[X, Y]
     r"""The encoder to invert."""
 
-    def _fit_impl(self, y: Y, /) -> None:
+    def fit(self, y: Y, /) -> None:
         raise NotImplementedError("Inverse encoders cannot be fitted.")
 
-    def _encode_impl(self, y: Y, /) -> X:
+    def encode(self, y: Y, /) -> X:
         return self.encoder.decode(y)
 
-    def _decode_impl(self, x: X, /) -> Y:
+    def decode(self, x: X, /) -> Y:
         return self.encoder.encode(x)
 
     def simplify(self) -> BaseEncoder[Y, X]:
@@ -1430,17 +1414,17 @@ class NestedEncoder[X, Y](FittableEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
             output_leaf_type=self.leaf_type,
         )
 
-    def _fit_impl(self, x: NestedBuiltin[X], /) -> None:
+    def fit(self, x: NestedBuiltin[X], /) -> None:
         pass
 
-    def _encode_impl(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
+    def encode(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
         return recurse_on_nested_builtin(
             x,
             leaf_type=self.leaf_type,
             leaf_fn=self.encoder.encode,
         )
 
-    def _decode_impl(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
+    def decode(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
         return recurse_on_nested_builtin(
             y,
             leaf_type=self.output_leaf_type,
@@ -1508,7 +1492,7 @@ class MappedEncoder[
         inverse = MappedEncoder[MappingOut, MappingIn](decoders)
         return inverse  # type: ignore[return-value]
 
-    def _fit_impl(self, xmap: MappingIn, /) -> None:
+    def fit(self, xmap: MappingIn, /) -> None:
         if missing_keys := self.keys() - xmap.keys():
             raise ValueError(f"No data to fit encoders {missing_keys}.")
         if extra_keys := xmap.keys() - self.keys():
@@ -1517,11 +1501,11 @@ class MappedEncoder[
         for k, x in xmap.items():
             self[k].fit(x)
 
-    def _encode_impl(self, xmap: MappingIn, /) -> MappingOut:
+    def encode(self, xmap: MappingIn, /) -> MappingOut:
         ymap = {k: self[k].encode(x) for k, x in xmap.items()}
         return cast("MappingOut", ymap)
 
-    def _decode_impl(self, ymap: MappingOut, /) -> MappingIn:
+    def decode(self, ymap: MappingOut, /) -> MappingIn:
         xmap = {k: self[k].decode(y) for k, y in ymap.items()}
         return cast("MappingIn", xmap)
 
@@ -1568,7 +1552,7 @@ class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def __invert__(self) -> "Compose[Y, X]":  # type: ignore[override]
         return Compose[Y, X](map(invert, reversed(self)))
 
-    def _fit_impl(self, x: X, /) -> None:
+    def fit(self, x: X, /) -> None:
         for encoder in reversed(self):
             try:
                 encoder.fit(x)
@@ -1581,12 +1565,12 @@ class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
             else:
                 x = encoder.encode(x)
 
-    def _encode_impl(self, x: X, /) -> Y:
+    def encode(self, x: X, /) -> Y:
         for encoder in reversed(self):
             x = encoder.encode(x)
         return cast("Y", x)
 
-    def _decode_impl(self, y: Y, /) -> X:
+    def decode(self, y: Y, /) -> X:
         for encoder in self:
             y = encoder.decode(y)
         return cast("X", y)
@@ -1676,7 +1660,7 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def __invert__(self) -> "Pipe[Y, X]":  # type: ignore[override]
         return Pipe(map(invert, reversed(self)))
 
-    def _fit_impl(self, x: X, /) -> None:
+    def fit(self, x: X, /) -> None:
         for encoder in self:
             try:
                 encoder.fit(x)
@@ -1689,12 +1673,12 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
             else:
                 x = encoder.encode(x)
 
-    def _encode_impl(self, x: X, /) -> Y:
+    def encode(self, x: X, /) -> Y:
         for encoder in self:
             x = encoder.encode(x)
         return cast("Y", x)
 
-    def _decode_impl(self, y: Y, /) -> X:
+    def decode(self, y: Y, /) -> X:
         for encoder in reversed(self):
             y = encoder.decode(y)
         return cast("X", y)
@@ -1883,16 +1867,16 @@ class Parallel[
     def __invert__(self) -> "Parallel[TupleOut, TupleIn]":
         return Parallel(map(invert, self))
 
-    def _fit_impl(self, xs: TupleIn, /) -> None:
+    def fit(self, xs: TupleIn, /) -> None:
         for encoder, x in zip(self, xs, strict=True):
             encoder.fit(x)
 
-    def _encode_impl(self, xs: TupleIn, /) -> TupleOut:
+    def encode(self, xs: TupleIn, /) -> TupleOut:
         return tuple(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
             encoder.encode(x) for encoder, x in zip(self, xs, strict=True)
         )
 
-    def _decode_impl(self, ys: TupleOut, /) -> TupleIn:
+    def decode(self, ys: TupleOut, /) -> TupleIn:
         return tuple(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
             encoder.decode(x) for encoder, x in zip(self, ys, strict=True)
         )
@@ -2078,13 +2062,13 @@ def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], t
 #     reduction: Fn[[TupleOut], X]
 #     r"""The inverse, if applicable."""
 #
-#     def _fit_impl(self, x: X, /) -> None:
+#     def fit(self, x: X, /) -> None:
 #         self.expansion.fit(x)
 #
-#     def _encode_impl(self, x: X, /) -> TupleOut:
+#     def encode(self, x: X, /) -> TupleOut:
 #         return self.expansion.encode(x)
 #
-#     def _decode_impl(self, ys: TupleOut, /) -> X:
+#     def decode(self, ys: TupleOut, /) -> X:
 #         return self.reduction(ys)
 #
 #
@@ -2172,15 +2156,15 @@ class Fork[
         decoders = map(invert, self)
         return Meet(*decoders, reduction=self.reduction)
 
-    def _fit_impl(self, x: X, /) -> None:
+    def fit(self, x: X, /) -> None:
         r"""Fit all encoders in the fork."""
         for encoder in self:
             encoder.fit(x)
 
-    def _encode_impl(self, x: X, /) -> TupleOut:
+    def encode(self, x: X, /) -> TupleOut:
         return tuple(e.encode(x) for e in self)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
 
-    def _decode_impl(self, ys: TupleOut, /) -> X:
+    def decode(self, ys: TupleOut, /) -> X:
         decoded_vals = tuple(e.decode(y) for e, y in zip(self, ys, strict=True))
         return self.reduction(decoded_vals)
 
@@ -2406,13 +2390,13 @@ def duplicate[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple
 #     def __invert__(self) -> "BaseEncoder[T, tuple[T, ...]]":
 #         raise NotImplementedError
 #
-#     def _fit_impl(self, x: tuple[T, ...], /) -> None:
+#     def fit(self, x: tuple[T, ...], /) -> None:
 #         pass
 #
-#     def _encode_impl(self, x: tuple[T, ...], /) -> T:
+#     def encode(self, x: tuple[T, ...], /) -> T:
 #         return self.reduction(x)
 #
-#     def _decode_impl(self, y: T, /) -> tuple[T, ...]:
+#     def decode(self, y: T, /) -> tuple[T, ...]:
 #         return self.expansion(y)
 #
 #
@@ -2497,15 +2481,15 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
     def __invert__(self) -> "Fork[Y, TupleIn]":
         return Fork(*map(invert, self), reduction=self.reduction)
 
-    def _fit_impl(self, xs: TupleIn, /) -> None:
+    def fit(self, xs: TupleIn, /) -> None:
         for x, e in zip(xs, self, strict=True):
             e.fit(x)
 
-    def _encode_impl(self, xs: TupleIn, /) -> Y:
+    def encode(self, xs: TupleIn, /) -> Y:
         encoded_vals = tuple(e.encode(x) for e, x in zip(self, xs, strict=True))
         return self.reduction(encoded_vals)
 
-    def _decode_impl(self, y: Y, /) -> TupleIn:
+    def decode(self, y: Y, /) -> TupleIn:
         return tuple(e.decode(y) for e in self)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
 
     def simplify(self) -> BaseEncoder[TupleIn, Y]:

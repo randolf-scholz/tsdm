@@ -2154,6 +2154,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyarrow-stubs"
+version = "20.0.0.20250928"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyarrow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/18/5f/9520b0a5cd42b95a945b8ca3bc47f723fc7ec906b7a7de76f2d075d69911/pyarrow_stubs-20.0.0.20250928.tar.gz", hash = "sha256:e802b18e8e5fdf0a78afa05fae78f1456d861fcb1f95ec0234be5d6a5ecdcde2", size = 236588, upload-time = "2025-09-28T02:50:04.839Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/13/75c86a8ef61ea2c758c924318cf894dced2436b0f7aeb3c5f0fe9e4305b4/pyarrow_stubs-20.0.0.20250928-py3-none-any.whl", hash = "sha256:5389057a55db3c2662c05f22685a52e15e5effaf4345f41f12fb9b6b348647b9", size = 235745, upload-time = "2025-09-28T02:50:03.205Z" },
+]
+
+[[package]]
 name = "pybadges"
 version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3398,6 +3410,7 @@ dev = [
     { name = "piccolo-theme" },
     { name = "pre-commit" },
     { name = "psutil" },
+    { name = "pyarrow-stubs" },
     { name = "pybadges" },
     { name = "pydata-sphinx-theme" },
     { name = "pygal" },
@@ -3486,6 +3499,7 @@ ty = [
 ]
 typing = [
     { name = "mypy" },
+    { name = "pyarrow-stubs" },
     { name = "pyrefly" },
     { name = "pyright" },
     { name = "scipy-stubs" },
@@ -3553,6 +3567,7 @@ dev = [
     { name = "piccolo-theme", specifier = ">=0.24.0" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "psutil", specifier = ">=7.1.2" },
+    { name = "pyarrow-stubs", specifier = ">=20.0.0.20250928" },
     { name = "pybadges", specifier = ">=3.0.1" },
     { name = "pydata-sphinx-theme", specifier = ">=0.16.1" },
     { name = "pygal", specifier = ">=3.0.5" },
@@ -3639,6 +3654,7 @@ tests = [
 ty = [{ name = "zuban", specifier = ">=0.2.0" }]
 typing = [
     { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pyarrow-stubs", specifier = ">=20.0.0.20250928" },
     { name = "pyrefly", specifier = ">=0.39.2" },
     { name = "pyright", specifier = ">=1.1.407" },
     { name = "scipy-stubs", specifier = ">=1.16.3.0" },

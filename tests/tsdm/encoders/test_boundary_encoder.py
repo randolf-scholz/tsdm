@@ -51,16 +51,19 @@ r"""Example data for testing."""
 @pytest.mark.parametrize("lower_included", [True, False])
 @pytest.mark.parametrize("bounds", BOUNDS, ids=str)
 @pytest.mark.parametrize("mode", ["clip", "mask"])
-@pytest.mark.parametrize("data", TENSORS.values())
+# @pytest.mark.parametrize("data", TENSORS.values())
+@pytest.mark.parametrize("case", TENSORS)
 def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)](
+    case: str,
     *,
-    data: D,
-    mode: BoundaryEncoder.ClippingMode,
+    # data: D,
+    mode: BoundaryEncoder.Mode,
     bounds: tuple[float | None, float | None],
     lower_included: bool,
     upper_included: bool,
 ) -> None:
     r"""Test the boundary encoder."""
+    data: D = TENSORS[case]
     # create the encoder
     encoder = BoundaryEncoder(
         bounds[0],
@@ -122,10 +125,10 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
             raise ValueError(f"Unexpected mode: {mode=}")
 
 
-@pytest.mark.parametrize("example", TENSORS)
-def test_boundary_encoder(example: str) -> None:
+@pytest.mark.parametrize("case", TENSORS)
+def test_boundary_encoder(case: str) -> None:
     r"""Test the boundary encoder."""
-    data = TENSORS[example]
+    data = TENSORS[case]
     encoder = BoundaryEncoder(-1.0, +1.0, mode="clip")
     encoder.fit(data)
     encoded = encoder.encode(data)

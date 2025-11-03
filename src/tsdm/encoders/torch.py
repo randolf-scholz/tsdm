@@ -6,7 +6,7 @@ __all__ = [
     "PositionalEncoding",
     # Encoders
     "PositionalEncoder",
-    "RecursiveTensorEncoder",
+    "NDArrayToTensor",
     "Time2VecEncoder",
 ]
 
@@ -19,7 +19,8 @@ from numpy.typing import NDArray
 from torch import Tensor, jit, nn
 
 from tsdm.backend.torch import autojit
-from tsdm.encoders.base import FittableEncoder
+from tsdm.constants import UNDEFINED
+from tsdm.encoders.base import StaticEncoder
 from tsdm.types.aliases import NestedBuiltin
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import recurse_on_nested_builtin
@@ -141,34 +142,35 @@ class PositionalEncoding(nn.Module):
         return self.decode(t)
 
 
-class RecursiveTensorEncoder(
-    FittableEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]
-):
+class NDArrayToTensor(StaticEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]):
     r"""Encodes nested data as tensors."""
 
-    def _encode_impl(self, x: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
+    def encode(self, x: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
         return recurse_on_nested_builtin(x, leaf_fn=torch.tensor, leaf_type=np.ndarray)
 
-    def _decode_impl(self, y: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
+    def decode(self, y: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
         return recurse_on_nested_builtin(y, leaf_fn=Tensor.numpy, leaf_type=Tensor)  # pyright: ignore[reportArgumentType]
 
 
 @pprint_repr
 @dataclass
-class Time2VecEncoder(FittableEncoder[Tensor, Tensor]):
+class Time2VecEncoder(StaticEncoder[Tensor, Tensor]):
     r"""Wraps Time2Vec encoder."""
+
+    _: KW_ONLY
 
     # Constants
     num_dim: int
     r"""Number of dimensions of the time encoding."""
     activation: str
     r"""Activation function for the time encoding."""
+
     # Parameters
-    freq: Tensor = field(init=False)
+    freq: Tensor = field(init=False, default=UNDEFINED)
     r"""Frequency of the time encoding."""
-    phase: Tensor = field(init=False)
+    phase: Tensor = field(init=False, default=UNDEFINED)
     r"""Phase of the time encoding."""
-    encoder: Time2Vec = field(init=False)
+    encoder: Time2Vec = field(init=False, default=UNDEFINED)
     r"""The wrapped encoder."""
 
     def __post_init__(self) -> None:
@@ -176,35 +178,36 @@ class Time2VecEncoder(FittableEncoder[Tensor, Tensor]):
         self.freq = self.encoder.freq
         self.phase = self.encoder.phase
 
-    def _encode_impl(self, data: Tensor, /) -> Tensor:
+    def encode(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)
 
-    def _decode_impl(self, data: Tensor, /) -> Tensor:
+    def decode(self, data: Tensor, /) -> Tensor:
         return self.encoder.decode(data)
 
 
 @pprint_repr
 @dataclass
-class PositionalEncoder(FittableEncoder[Tensor, Tensor]):
+class PositionalEncoder(StaticEncoder[Tensor, Tensor]):
     r"""Wraps PositionalEncoder encoder."""
 
     _: KW_ONLY
-    # Constants
+
     num_dim: int
     r"""Number of dimensions."""
     scale: float
     r"""Scale factor for positional encoding."""
-    scales: Tensor = field(init=False)
+
+    scales: Tensor = field(init=False, default=UNDEFINED)
     r"""Scale factors for positional encoding."""
-    encoder: PositionalEncoding = field(init=False)
+    encoder: PositionalEncoding = field(init=False, default=UNDEFINED)
     r"""The wrapped encoder."""
 
     def __post_init__(self) -> None:
         self.encoder = PositionalEncoding(num_dim=self.num_dim, scale=self.scale)
         self.scales = self.encoder.scales
 
-    def _encode_impl(self, data: Tensor, /) -> Tensor:
+    def encode(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)
 
-    def _decode_impl(self, data: Tensor, /) -> Tensor:
+    def decode(self, data: Tensor, /) -> Tensor:
         return self.encoder.decode(data)

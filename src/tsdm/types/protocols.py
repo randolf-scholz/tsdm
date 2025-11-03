@@ -533,7 +533,6 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
     #   see: https://github.com/python/typing/issues/1273
 
     # NOTE: Added Final to silence pyright v1.1.376 complaints.
-    # FIXME: python=3.13 use Final[ClassVar[tuple[str, ...]]].
     _fields: Final[tuple[str, ...]]  # type: ignore[misc]
     r"""The fields of the namedtuple."""
 

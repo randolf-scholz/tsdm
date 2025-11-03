@@ -4,7 +4,7 @@ from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
 from tsdm.config import PROJECT
-from tsdm.encoders.dataframe import CSVEncoder, DTypeConverter
+from tsdm.encoders.pandas import CSVEncoder, DTypeConverter
 
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -43,7 +43,7 @@ def test_type_converter() -> None:
     # fit on the test data
     assert encoder.requires_fit
     encoder.fit(TEST_FRAME_A)
-    assert encoder.is_fitted
+    assert not encoder.requires_fit
 
     # compare encoded frame with expected
     encoded = encoder.encode(TEST_FRAME_A)

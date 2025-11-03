@@ -13,6 +13,7 @@ from tsdm.encoders._sklearn import (
     SklearnEncoder,
     Transform,
 )
+from tsdm.testing import is_dunder, is_private
 
 BINARY_DATA = np.array(["yes", "no", "no", "yes", "yes"])
 CATEGORICAL_DATA = np.array([["car"], ["bike"], ["car"], ["bike"], ["house"]])
@@ -47,7 +48,7 @@ r"""Dictionary of all available sklearn encoders."""
 @pytest.mark.parametrize("name", SKLEARN_TRANSFORMS)
 def test_transform(name: str) -> None:
     cls = SKLEARN_TRANSFORMS[name]
-    assert issubclass(cls, SklearnTransform)
+    assert issubclass(cls, Transform)
     assert issubclass(cls, BaseEstimator)
     assert issubclass(cls, TransformerMixin)
     assert name in SKLEARN_ENCODERS or not issubclass(cls, SklearnEncoder)
@@ -80,12 +81,13 @@ def test_left_inverse(name: str) -> None:
 
 def test_shared_attrs() -> None:
     defined_attrs = get_protocol_members(SklearnEncoder)
-    assert not any(attr.startswith("_") for attr in defined_attrs)
+    assert not any(is_private(attr) for attr in defined_attrs)
 
     shared_attrs = set.intersection(
         *(set(dir(cls)) for cls in SKLEARN_ENCODERS.values())
     )
-    filtered_attrs = {attr for attr in shared_attrs if not attr.startswith("_")}
-
+    filtered_attrs = {attr for attr in shared_attrs if not is_private(attr)}
     assert defined_attrs <= filtered_attrs
+
+    filtered_attrs = {attr for attr in filtered_attrs if not is_dunder(attr)}
     assert filtered_attrs <= defined_attrs | {"get_metadata_routing", "set_output"}

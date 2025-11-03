@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from tsdm.encoders.dataframe import DTypeConverter
+from tsdm.encoders.pandas import DTypeConverter
 
 
 @pytest.fixture

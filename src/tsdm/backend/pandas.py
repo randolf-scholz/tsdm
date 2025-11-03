@@ -40,6 +40,7 @@ from contextlib import suppress
 from functools import reduce
 from typing import Any, Final, Literal
 
+import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
@@ -146,7 +147,7 @@ def where[P: PandasType](cond: NDArray, a: P, b: BuiltinScalar | NDArray, /) -> 
     r"""Analogue to `numpy.where`."""
     if isinstance(a, Index | Series | DataFrame):
         return a.where(cond, b)
-    return a if cond else copy_like(b, a)  # scalar fallback
+    return np.where(cond, a, b)
 
 
 def null_like[P: PandasType](x: P, /) -> P:

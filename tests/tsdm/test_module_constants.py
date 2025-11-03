@@ -9,7 +9,7 @@ import pytest
 
 import tsdm
 from tsdm.datasets import DATASETS, Dataset, DatasetBase
-from tsdm.encoders import ENCODERS, Encoder, FittableEncoder
+from tsdm.encoders import ENCODERS, BaseEncoder, Encoder
 from tsdm.logutils import (
     CALLBACKS,
     LOGFUNCS,
@@ -60,7 +60,7 @@ class Case(NamedTuple):
 CASES: dict[str, Case] = {
     "callbacks"      : Case(tsdm.logutils          , Callback          , BaseCallback       , CALLBACKS           ),
     "datasets"       : Case(tsdm.datasets          , Dataset           , DatasetBase        , DATASETS            ),
-    "encoders"       : Case(tsdm.encoders, Encoder, FittableEncoder, ENCODERS),
+    "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS            ),
     "generators"     : Case(tsdm.random.generators , IVP_Generator     , IVP_GeneratorBase  , GENERATORS          ),
     "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
     "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
@@ -112,9 +112,10 @@ def test_base_class(case_name: str) -> None:
 def test_name(case_name: str, item_name: str) -> None:
     case = CASES[case_name]
     obj = case.elements[item_name]
+    name = getattr(obj, "__name__", None)
     # fallback for jit.ScriptFunction
-    name = getattr(obj, "__name__", getattr(obj, "name", None))
-    assert name == item_name
+    fallback_name = getattr(obj, "name", None)
+    assert item_name in (name, fallback_name)
 
 
 def test_issubclass(case_name: str, item_name: str) -> None:

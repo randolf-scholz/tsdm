@@ -12,7 +12,7 @@ import torch
 from torch import Tensor, jit, nn
 
 from tsdm.backend.torch import autojit
-from tsdm.encoders.pytorch import PositionalEncoding, Time2Vec
+from tsdm.encoders.torch import PositionalEncoding, Time2Vec
 from tsdm.models.generic import (
     MLP,
     DeepSet,

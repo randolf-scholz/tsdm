@@ -8,7 +8,7 @@ from pandas import DataFrame, Index, MultiIndex
 from pandas.testing import assert_frame_equal
 
 from tsdm.config import PROJECT
-from tsdm.encoders.dataframe import TripletDecoder, TripletEncoder
+from tsdm.encoders.pandas import TripletDecoder, TripletEncoder
 
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -201,7 +201,7 @@ def test_triplet_encoder(
     # fit on the training data
     assert encoder.requires_fit
     encoder.fit(train_data)
-    assert encoder.is_fitted
+    assert not encoder.requires_fit
 
     # compare encoded test data with expected
     encoded = encoder.encode(test_data)
@@ -239,7 +239,7 @@ def test_triplet_decoder(
     # fit on the training data
     assert encoder.requires_fit
     encoder.fit(train_data)
-    assert encoder.is_fitted
+    assert not encoder.requires_fit
 
     # compare encoded test data with expected
     encoded = encoder.encode(test_data)

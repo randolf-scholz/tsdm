@@ -7,7 +7,7 @@ import torch
 
 from tsdm.constants import RNG
 from tsdm.encoders import PositionalEncoder
-from tsdm.encoders.pytorch import (
+from tsdm.encoders.torch import (
     PositionalEncoding as PositionalEncoder_Torch,
     Time2Vec,
 )

@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
+from tsdm.utils import flatten_dict
 
 NAN = float("nan")
 
@@ -30,10 +31,14 @@ BOX_COX_EXAMPLES_SPARSE = {
 }  # fmt: skip
 
 
-BOX_COX_EXAMPLES = {
-    "dense"  : BOX_BOX_EXAMPLES_DENSE,
-    "sparse" : BOX_COX_EXAMPLES_SPARSE,
-}  # fmt: skip
+BOX_COX_EXAMPLES = flatten_dict(
+    {
+        "dense": BOX_BOX_EXAMPLES_DENSE,
+        "sparse": BOX_COX_EXAMPLES_SPARSE,
+    },
+    join_fn=".".join,
+    split_fn=lambda x: x.split("."),
+)
 
 LOGIT_EXAMPLES_DENSE = {
     "numpy"                : _LOGIT_DATA,
@@ -52,23 +57,26 @@ LOGIT_EXAMPLES_SPARSE = {
 }  # fmt: skip
 
 
-LOGIT_EXAMPLES = {
-    "dense"  : LOGIT_EXAMPLES_DENSE,
-    "sparse" : LOGIT_EXAMPLES_SPARSE,
-}  # fmt: skip
+LOGIT_EXAMPLES = flatten_dict(
+    {
+        "dense": LOGIT_EXAMPLES_DENSE,
+        "sparse": LOGIT_EXAMPLES_SPARSE,
+    },
+    join_fn=".".join,
+    split_fn=lambda x: x.split("."),
+)
 
 
 @pytest.mark.parametrize("method", BoxCoxEncoder.METHOD)
-@pytest.mark.parametrize("example", BOX_BOX_EXAMPLES_DENSE)
-@pytest.mark.parametrize("kind", ["dense", "sparse"])
-def test_box_cox_encoder(example: str, kind: str, method: BoxCoxEncoder.METHOD) -> None:
+@pytest.mark.parametrize("case", BOX_COX_EXAMPLES)
+def test_box_cox_encoder(case: str, method: BoxCoxEncoder.METHOD) -> None:
     r"""Test BoxCoxEncoder."""
-    data = BOX_COX_EXAMPLES[kind][example]
+    data = BOX_COX_EXAMPLES[case]
     encoder = BoxCoxEncoder(method=method)
 
     # check that encoding raises error before fitting
     if method is not BoxCoxEncoder.METHOD.fixed:
-        with pytest.raises(RuntimeError):
+        with pytest.raises(AssertionError):
             encoder.encode(data)
         encoder.fit(data)
 
@@ -90,18 +98,15 @@ def test_box_cox_encoder(example: str, kind: str, method: BoxCoxEncoder.METHOD) 
 
 
 @pytest.mark.parametrize("method", LogitBoxCoxEncoder.METHOD)
-@pytest.mark.parametrize("example", LOGIT_EXAMPLES_DENSE)
-@pytest.mark.parametrize("kind", ["dense", "sparse"])
-def test_logit_box_cox_encoder(
-    example: str, kind: str, method: LogitBoxCoxEncoder.METHOD
-) -> None:
+@pytest.mark.parametrize("case", LOGIT_EXAMPLES)
+def test_logit_box_cox_encoder(case: str, method: LogitBoxCoxEncoder.METHOD) -> None:
     r"""Test LogitBoxCoxEncoder."""
-    data = LOGIT_EXAMPLES[kind][example]
+    data = LOGIT_EXAMPLES[case]
     encoder = LogitBoxCoxEncoder(method=method)
 
     # check that encoding raises error before fitting
     if method is not LogitBoxCoxEncoder.METHOD.fixed:
-        with pytest.raises(RuntimeError):
+        with pytest.raises(AssertionError):
             encoder.encode(data)
         encoder.fit(data)
 
