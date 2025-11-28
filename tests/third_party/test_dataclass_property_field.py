@@ -1,5 +1,6 @@
+r"""Test dataclass fields do not include properties."""
+
 from dataclasses import dataclass, fields
-from typing import Final
 
 
 def test_property_field() -> None:

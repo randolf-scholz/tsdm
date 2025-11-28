@@ -1,3 +1,4 @@
+r"""JSON types for type hinting."""
 # type JSON_SCALAR = str | bool | int | float | None
 # type JSON = dict[str, JSON_SCALAR | list[JSON] | dict[str, JSON]]
 

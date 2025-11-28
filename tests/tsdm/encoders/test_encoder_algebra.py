@@ -1,5 +1,6 @@
+r"""Test encoder algebra functionalities."""
+
 import unittest
-from typing import assert_type, reveal_type
 
 from tsdm.encoders import (
     BaseEncoder,
@@ -35,6 +36,8 @@ def test_compose_covariant() -> None:
 
 
 class TestDuplicate(unittest.TestCase):
+    r"""Test the duplicate class."""
+
     encoder: Encoder[str, str] = wrap(
         encoder=lambda x: f"({x} + 1)",
         decoder=lambda x: x.removeprefix("(").removesuffix(" + 1)"),

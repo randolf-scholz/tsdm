@@ -1,4 +1,1 @@
-#!/usr/bin/env python
-
-if __name__ == "__main__":
-    pass
+r"""Continuous Time Random Variable Generators."""

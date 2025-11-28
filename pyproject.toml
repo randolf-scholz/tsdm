@@ -30,18 +30,18 @@ classifiers = [
 
 dependencies = [
     "matplotlib>=3.10.7",
-    "numpy>=2.3.4",
+    "numpy>=2.3.5",
     "pandas>=2.3.3",
     "pillow>=12.0.0",
-    "polars>=1.34.0",
+    "polars>=1.35.2",
     "pyarrow>=22.0.0",
-    "pydantic>=2.12.3",
+    "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
     "scikit-learn>=1.7.2",
     "scipy>=1.16.3",
     "tensorboard>=2.20.0",
-    "torch>=2.9.0",
+    "torch>=2.9.1",
     "tqdm>=4.67.1",
     "typing-extensions>=4.15.0",
 ]
@@ -58,22 +58,22 @@ dev = [
     {include-group="linters"}, {include-group="tests"}, {include-group="typing"},
 ]
 devtools = [
-    "cmake>=4.1.2",
+    "cmake>=4.2.0",
     "ninja>=1.13.0",
     "pybadges>=3.0.1",
 ]
 debug = [
     "ipympl>=0.9.8",
-    "ipywidgets>=8.1.7",
+    "ipywidgets>=8.1.8",
     "jupyterlab-execute-time>=3.2.0",
-    "jupyterlab>=4.4.10",
-    "psutil>=7.1.2",
+    "jupyterlab>=4.5.0",
+    "psutil>=7.1.3",
     "torchinfo>=1.8.0",
 ]
 docs = [
     "docutils>=0.21.2",
     "myst-parser>=4.0.1",
-    "nbsphinx>=0.9.6",
+    "nbsphinx>=0.9.8",
     "piccolo-theme>=0.24.0",
     "pydata-sphinx-theme>=0.16.1",
     "pygments>=2.19.2",
@@ -87,38 +87,38 @@ docs = [
     "sphinx>=8.2.3",
 ]
 linters = [
-    "pre-commit>=4.3.0",
+    "pre-commit>=4.5.0",
     "pylint>=3.3.9",
-    "ruff>=0.14.2",
-    "tach>=0.29.0",
+    "ruff>=0.14.6",
+    "tach>=0.32.1",
 ]
 tests = [
-    "coverage>=7.11.0",
-    "hypothesis[numpy,pandas,pytest]>=6.142.4",
-    "psutil>=7.1.2",
+    "coverage>=7.12.0",
+    "hypothesis[numpy,pandas,pytest]>=6.148.3",
+    "psutil>=7.1.3",
     "pygal>=3.0.5",
-    "pytest-benchmark[histogram]>=5.1.0",
+    "pytest-benchmark[histogram]>=5.2.3",
     "pytest-cov>=7.0.0",
     "pytest-repeat>=0.9.4",
     "pytest-rerunfailures>=16.1",
     "pytest-xdist>=3.8.0",
-    "pytest>=8.4.2",
+    "pytest>=9.0.1",
 ]
 typing = [
-    "mypy>=1.18.2",
-    "pyarrow-stubs>=20.0.0.20250928",
-    "pyrefly>=0.39.2",
+    "mypy>=1.19.0",
+    "pyarrow-stubs>=20.0.0.20251107",
+    "pyrefly>=0.43.1",
     "pyright>=1.1.407",
-    "scipy-stubs>=1.16.3.0",
+    "scipy-stubs>=1.16.3.1",
     "types-colorama>=0.4.15.20250801",
-    "types-decorator>=5.2.0.20250324",
-    "types-docutils>=0.22.2.20251006",
+    "types-decorator>=5.2.0.20251101",
+    "types-docutils>=0.22.3.20251115",
     "types-jsonschema>=4.25.1.20251009",
     "types-pillow>=10.2.0.20240822",
-    "types-protobuf>=6.32.1.20250918",
-    "types-psutil>=7.0.0.20251001",
-    "types-pygments>=2.19.0.20250809",
-    "types-pytz>=2025.2.0.20250809",
+    "types-protobuf>=6.32.1.20251105",
+    "types-psutil>=7.1.3.20251128",
+    "types-pygments>=2.19.0.20251121",
+    "types-pytz>=2025.2.0.20251108",
     "types-pyyaml>=6.0.12.20250915",
     "types-requests>=2.32.4.20250913",
     "types-setuptools>=80.9.0.20250822",
@@ -281,7 +281,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/test*" = ["S101", "SIM300", "T20", "UP018", "RUF046"]
+"**/test*" = ["D101", "S101", "SIM300", "T20", "UP018", "RUF046"]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
 "src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
 "src/tsdm/models/*" = ["N803"]

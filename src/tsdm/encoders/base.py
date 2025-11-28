@@ -382,7 +382,7 @@ class EncoderMeta(ProtocolMeta):
     LOGGER: logging.Logger = logging.getLogger(__name__)
 
     @property
-    def FIELDS(cls) -> frozenset[str]:  # noqa: N802,N805
+    def FIELDS(cls) -> frozenset[str]:  # noqa: N802
         r"""Fields that are considered for the encoder."""
         if is_dataclass(cls):
             return frozenset({f.name for f in fields(cls)})

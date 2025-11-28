@@ -1,3 +1,5 @@
+r"""Test class properties defined via metaclass."""
+
 from dataclasses import dataclass, fields
 from typing import ClassVar
 
@@ -8,7 +10,7 @@ from tsdm.types.protocols import is_dataclass
 
 class Meta(type):
     @property
-    def FIELDS(cls) -> set[str]:
+    def FIELDS(cls) -> set[str]:  # noqa: N802
         r"""Return the fields of the class."""
         print("!!!!!")
         if is_dataclass(cls):

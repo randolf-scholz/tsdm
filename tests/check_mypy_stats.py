@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+r"""Measure mypy execution time per file in a project (without incremental mode)."""
 
 import argparse
 import subprocess
@@ -11,8 +12,8 @@ from tqdm import tqdm
 def run_mypy_timed(path: Path, /, *, show_errors: bool = False):
     start = time.perf_counter()
     try:
-        result = subprocess.run(
-            ["mypy", "--no-incremental", "--cache-dir=/dev/null", str(path)],
+        subprocess.run(
+            [".venv/bin/mypy", "--no-incremental", "--cache-dir=/dev/null", str(path)],
             stdout=None if show_errors else subprocess.DEVNULL,
             stderr=None if show_errors else subprocess.DEVNULL,
             check=False,

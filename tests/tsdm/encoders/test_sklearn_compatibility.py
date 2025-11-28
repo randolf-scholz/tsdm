@@ -1,6 +1,5 @@
 r"""Test compatibility with sklearn encoders."""
 # mypy: disable-error-code="no-untyped-def"
-# ruff: noqa: N803
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.utils.estimator_checks import parametrize_with_checks
@@ -28,6 +27,6 @@ class MyEstimator:
         return self.transform(X)
 
 
-@parametrize_with_checks([MinMaxScaler(), StandardScaler()])
+@parametrize_with_checks([MinMaxScaler(), StandardScaler()])  # pyright: ignore[reportUntypedFunctionDecorator]
 def test_sklearn_compatibility(estimator, check):
     check(estimator)

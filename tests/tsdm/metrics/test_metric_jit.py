@@ -1,3 +1,5 @@
+r"""Test JIT compilation of all metrics."""
+
 import pytest
 import torch
 

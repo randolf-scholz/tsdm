@@ -1,4 +1,1 @@
-#!/usr/bin/env python
-
-if __name__ == "__main__":
-    pass
+r"""Discrete time random variable generators."""
