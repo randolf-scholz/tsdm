@@ -2422,7 +2422,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
 
         x₁ ────┐
         x₂ ────┼────▶ reduction([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-        ⋮     │
+        ⋮      │
         xₙ ────┘
 
     .. math::
@@ -2546,7 +2546,7 @@ class Fold[Xs: TupleOf, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
         x₁ ────┐
         x₂ ────┼────▶ reduction([f(x₁), f(x₂), ..., f(xₙ)])
-        ⋮     │
+        ⋮      │
         xₙ ────┘
 
     .. math::
@@ -2654,7 +2654,7 @@ def fold[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, Y] 
 
         x₁ ────┐
         x₂ ────┼────▶ reduction([f(x₁), f(x₂), ..., f(xₙ)])
-        ⋮     │
+        ⋮      │
         xₙ ────┘
 
     Args:

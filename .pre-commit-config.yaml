@@ -20,9 +20,21 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
+  # ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
+    hooks:
+      - id: ruff-check
+        name: ruff isort
+        files: '^src/|^tests/'
+        args: [ "--select", "I", "--fix" ]
+      - id: ruff-format
+        files: '^src/|^tests/'
+      - id: ruff-check
+        files: '^src/|^tests/'
   # uv
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.5
+    rev: 0.9.13
     hooks:
       - id: uv-lock
       - id: uv-export
@@ -40,21 +52,9 @@ repos:
     hooks:
       - id: nbstripout-fast
         exclude: '^docs/'
-  # ruff
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.2
-    hooks:
-      - id: ruff
-        name: ruff-isort
-        files: '^src/|^tests/'
-        args: [ "--select", "I", "--fix" ]
-      - id: ruff-format
-        files: '^src/|^tests/'
-      - id: ruff
-        files: '^src/|^tests/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.0
+    rev: v0.7.2
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -108,7 +108,7 @@ repos:
         files: '^src/|^tests/'
   # markdownlint
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+    rev: v0.46.0
     hooks:
       - id: markdownlint
         args:
@@ -124,10 +124,10 @@ repos:
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # pyright
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.0
+    rev: v0.7.2
     hooks:
       - id: pyright-concise
-        files: '^src/'
+        files: '^src/|^tests/'
         exclude: '/tasks/'
   # mypy
   - repo: local
