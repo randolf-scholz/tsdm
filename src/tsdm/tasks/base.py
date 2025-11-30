@@ -122,7 +122,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.data import MapDataset, TorchDataset
+from tsdm.datatools import MapDataset, TorchDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler

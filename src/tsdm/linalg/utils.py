@@ -1,3 +1,5 @@
+r"""Utility functions for linear algebra operations."""
+
 __all__ = [
     "get_broadcast",
     "reduce_axes",

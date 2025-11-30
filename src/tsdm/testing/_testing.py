@@ -1,7 +1,7 @@
 r"""Utilities for testing and validation."""
 
 __all__ = [
-    # Functions
+    # functions
     "assert_arrays_close",
     "assert_arrays_equal",
     "assert_protocol",
@@ -31,12 +31,9 @@ import torch
 import torch.testing
 from pandas import NA, NaT
 
-from tsdm.backend.dtypes import AnyDtype
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
+from tsdm.dtypes import DType
 from tsdm.types.aliases import FilePath, PythonScalar
-
-DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
-r"""Default excluded members for shared interface checks."""
 
 
 def assert_arrays_equal[T: Any](array: T, reference: T, /) -> None:
@@ -135,9 +132,9 @@ def is_builtin_type(obj: object, /) -> TypeGuard[type]:
         return False
 
 
-def is_dtype(dtype: object) -> TypeIs[AnyDtype]:
+def is_dtype(dtype: object) -> TypeIs[DType]:
     r"""Check if a string is a valid dtype."""
-    return isinstance(dtype, AnyDtype.__value__)
+    return isinstance(dtype, DType.__value__)
 
 
 def is_builtin_constant(obj: object, /) -> bool:
@@ -251,11 +248,15 @@ def supports_issubclass(cls: type, /) -> bool:
     return True
 
 
+_DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
+r"""Default excluded members for shared interface checks."""
+
+
 def check_shared_interface(
     test_cases: Iterable[object],
     protocol: type,
     *,
-    excluded_members: AbstractSet[str] = DEFAULT_EXCLUSIONS,
+    excluded_members: AbstractSet[str] = _DEFAULT_EXCLUSIONS,
     raise_on_extra: bool = True,
     raise_on_unsatisfied: bool = True,
 ) -> None:

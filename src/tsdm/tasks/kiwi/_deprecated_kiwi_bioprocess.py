@@ -17,8 +17,8 @@ from pandas import DataFrame, Series
 from torch import Tensor, jit
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.data import MappingDataset, folds_as_frame, folds_from_groups
 from tsdm.datasets import KiwiRuns
+from tsdm.datatools import MappingDataset, folds_as_frame, folds_from_groups
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler

@@ -1,3 +1,5 @@
+r"""Fallback backend implementations."""
+
 __all__ = [
     "is_null_scalar",
 ]

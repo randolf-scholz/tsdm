@@ -24,6 +24,7 @@ from tsdm.encoders import Encoder
 from tsdm.utils import LazyDict
 
 
+@warnings.deprecated("Do not use")
 class BaseTask[K]:
     r"""Abstract Base Class for Tasks.
 
@@ -176,6 +177,7 @@ class BaseTask[K]:
         return LazyDict.from_func(self, self.make_dataloader)
 
 
+@warnings.deprecated("Do not use")
 class OldBaseTask[K]:
     r"""Abstract Base Class for Tasks.
 

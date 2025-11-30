@@ -159,8 +159,8 @@ import pandas as pd
 from pandas import DataFrame
 from tqdm.auto import tqdm
 
-from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [

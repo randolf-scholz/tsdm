@@ -323,7 +323,6 @@ python-version = "3.13"
 output-format = "concise"
 
 [tool.pyrefly]
-output_format = "min-text"
 python_version = "3.13"
 
 
@@ -436,9 +435,7 @@ show_error_context = true
 [[tool.mypy.overrides]]
 module = [
     "pandas.*",
-    "pyarrow.*",
     "pytest_benchmark.*",
-    "scipy.*",
     "sklearn.*",
 ]
 ignore_missing_imports = true

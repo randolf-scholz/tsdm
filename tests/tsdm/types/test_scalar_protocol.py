@@ -87,7 +87,7 @@ BOOLEAN_SCALARS: dict[str, BoolScalar] = {
 r"""Boolean scalars for testing."""
 
 INT_SCALARS: dict[str, IntScalar] = {
-    "np_int"     : np.int64(1),  # type: ignore[dict-item]
+    "np_int"     : np.int64(1),
     "py_int"     : int(1.0),  # type: ignore[dict-item]
     "py_literal" : 1,  # type: ignore[dict-item]
     "pt_int"     : pt.tensor(1, dtype=pt.int64),
@@ -124,7 +124,7 @@ r"""Dictionary of timedelta scalars."""
 TIMESTAMP_SCALARS: dict[str, TimestampScalar] = {
     "np_time"  : np.datetime64("2021-01-01"),  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
     "np_float" : np.float64(1.0),
-    "np_int"   : np.int64(1),  # type: ignore[dict-item]
+    "np_int"   : np.int64(1),
     "pd_time"  : pd.Timestamp("2021-01-01"),
     "py_time"  : dt.datetime(2021, 1, 1),
     "py_float" : float(1),
@@ -538,7 +538,7 @@ def test_shared_interface(protocol: type) -> None:
 
 
 def type_float_scalar() -> None:
-    _1: FloatScalar = np.floating()  # type: ignore[assignment]
+    _1: FloatScalar = np.floating()
 
 
 def type_timestamp_assignable() -> None:
@@ -590,7 +590,7 @@ def type_int_assignable() -> None:
     _py_0: IntScalar = int(1234)  # type: ignore[assignment]
     _py_1: IntScalar = 0  # type: ignore[assignment]
     # numpy
-    _np_0: IntScalar = np.int64(1234)  # type: ignore[assignment]
+    _np_0: IntScalar = np.int64(1234)
     # pytorch
     _pt_0: IntScalar = pt.tensor([1234], dtype=pt.int64)
 

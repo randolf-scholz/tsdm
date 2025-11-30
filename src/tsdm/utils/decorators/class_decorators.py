@@ -31,12 +31,12 @@ from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
 
 # region workaround mypy bug -----------------------------------------------------------
 # FIXME: https://github.com/python/mypy/issues/17191
-pprint_sequence: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
-pprint_mapping: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
-pprint_set: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
-pprint_dataclass: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
-pprint_namedtuple: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
-pprint_repr: PolymorphicClassDecorator[Any]  # pyright: ignore[reportRedeclaration]
+pprint_sequence: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
+pprint_mapping: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
+pprint_set: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
+pprint_dataclass: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
+pprint_namedtuple: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
+pprint_repr: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
 # endregion workaround mypy bug --------------------------------------------------------
 
 

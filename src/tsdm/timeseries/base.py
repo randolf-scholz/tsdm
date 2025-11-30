@@ -43,8 +43,8 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm import constants as const
 from tsdm.constants import EMPTY_MAP, EMPTY_SET, UNDEFINED
-from tsdm.data.datasets import TorchDataset
 from tsdm.datasets import Dataset
+from tsdm.datatools.datasets import TorchDataset
 from tsdm.types.scalars import TimestampScalar
 from tsdm.utils.decorators import pprint_repr
 

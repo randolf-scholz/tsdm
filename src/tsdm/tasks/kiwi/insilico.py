@@ -7,7 +7,7 @@ __all__ = [
 
 from pandas import DataFrame
 
-from tsdm.data import (
+from tsdm.datatools import (
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,

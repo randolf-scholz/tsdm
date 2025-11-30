@@ -190,17 +190,6 @@ NUMPY_OBJECT_TYPECODES: Final[dict[type[np.generic], str]] = {
 }  # fmt: skip
 r"""Dictionary of all `numpy` generic data type typecodes."""
 
-NUMPY_TYPECODES2: Final[dict[type[np.generic], str]] = {
-    **NUMPY_INT_TYPECODES,
-    **NUMPY_UINT_TYPECODES,
-    **NUMPY_FLOAT_TYPECODES,
-    **NUMPY_COMPLEX_TYPECODES,
-    **NUMPY_TIME_TYPECODES,
-    **NUMPY_STRING_TYPECODES,
-    **NUMPY_OBJECT_TYPECODES,
-}
-r"""Dictionary of all `numpy` data type typecodes."""
-
 NUMPY_TYPECODES: Final[dict[type[np.generic], str]] = (
     NUMPY_INT_TYPECODES
     | NUMPY_UINT_TYPECODES

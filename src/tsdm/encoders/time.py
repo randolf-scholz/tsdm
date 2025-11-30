@@ -22,9 +22,9 @@ from pandas import DataFrame, Index, Series
 from pyarrow.lib import ArrowNotImplementedError
 
 from tsdm.backend import Backend, generic, get_backend
-from tsdm.backend.dtypes import DType
 from tsdm.backend.pandas import PandasDtype
 from tsdm.constants import UNDEFINED
+from tsdm.dtypes import DType
 from tsdm.encoders.base import FittableEncoder, StaticEncoder, WrappedEncoder
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.types.linalg import NumericalSeries

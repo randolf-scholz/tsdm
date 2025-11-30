@@ -54,7 +54,7 @@ from pyarrow import (
 )
 from tqdm import tqdm
 
-from tsdm.backend.dtypes import PYARROW_TO_POLARS
+from tsdm.dtypes import PYARROW_TO_POLARS
 
 STR = pa.string()
 TEXT = pa.large_string()
@@ -148,7 +148,7 @@ def null_like[A: AnyArray](arr: A, /) -> A:
 @overload
 def where[A: AnyArray](mask: Mask, x: A, y: Array | Scalar = ..., /) -> A: ...
 @overload
-def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...  # type: ignore[overload-cannot-match]
+def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
 def where[T](mask: Mask, x: T | Scalar, y: T | Scalar = NA, /) -> T:
     r"""Select elements from x or y depending on mask.
 

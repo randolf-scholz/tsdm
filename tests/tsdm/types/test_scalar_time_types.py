@@ -67,7 +67,7 @@ r"""Dictionary of timedelta-like durations."""
 TIMESTAMPS: dict[TimestampKey, TimestampScalar] = {
     "numpy[datetime]"  : NP_DATETIME, # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
     "numpy[float]"     : NP_FLOAT,
-    "numpy[int]"       : NP_INT,  # type: ignore[dict-item]
+    "numpy[int]"       : NP_INT,
     "pandas[datetime]" : PD_DATETIME,
     "python[datetime]" : PY_DATETIME,
     "python[float]"    : PY_FLOAT,
@@ -126,8 +126,8 @@ def test_joint_attrs_timedelta() -> None:
 def test_timestamp_assign() -> None:
     assert isinstance(PY_FLOAT, TimestampScalar)
     assert isinstance(PY_INT, TimestampScalar)
-    assert isinstance(NP_INT, TimestampScalar)  # type: ignore[unreachable]
-    assert isinstance(NP_FLOAT, TimestampScalar)  # type: ignore[unreachable]
+    assert isinstance(NP_INT, TimestampScalar)
+    assert isinstance(NP_FLOAT, TimestampScalar)
     assert isinstance(NP_DATETIME, TimestampScalar)
     assert isinstance(PD_DATETIME, TimestampScalar)
     assert isinstance(PY_DATETIME, TimestampScalar)
@@ -160,7 +160,7 @@ def type_assign_timestamp_generic() -> None:
     r"""Test the datetime protocol."""
     # fmt: off
     _0: TimestampScalar = NP_DATETIME   # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
-    _1: TimestampScalar = NP_INT        # type: ignore[assignment]
+    _1: TimestampScalar = NP_INT
     _2: TimestampScalar = NP_FLOAT
     _3: TimestampScalar = PY_DATETIME
     _4: TimestampScalar = PY_INT
@@ -220,7 +220,7 @@ def type_timestamp_inference() -> None:
     assert_type( _id(PY_FLOAT)    , float       )
     assert_type( _id(PY_INT)      , int         )
     assert_type( _id(NP_FLOAT)    , np_float    )
-    assert_type( _id(NP_INT)      , np_int      )  # type: ignore[type-var]
+    assert_type( _id(NP_INT)      , np_int      )
     assert_type( _id(NP_DATETIME) , np_datetime )  # type: ignore[type-var]  # pyright: ignore[reportAssertTypeFailure,reportArgumentType]
     assert_type( _id(PY_DATETIME) , py_datetime )
     assert_type( _id(PD_DATETIME) , pd_datetime )
@@ -250,7 +250,7 @@ def type_timestamp_difference_inference() -> None:
     assert_type( _sub(PY_FLOAT)    , float        )
     assert_type( _sub(PY_INT)      , int          )
     assert_type( _sub(NP_FLOAT)    , np_float     )
-    assert_type( _sub(NP_INT)      , np_int       )  # type: ignore[assert-type, arg-type]  # pyright: ignore[reportAssertTypeFailure,reportArgumentType]
+    assert_type( _sub(NP_INT)      , np_int       )  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure,reportArgumentType]
     assert_type( _sub(NP_DATETIME) , np_timedelta )  # type: ignore[assert-type, arg-type]  # pyright: ignore[reportAssertTypeFailure,reportArgumentType]
     assert_type( _sub(PY_DATETIME) , py_timedelta )  # type: ignore[assert-type, misc]
     assert_type( _sub(PD_DATETIME) , pd_timedelta )

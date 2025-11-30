@@ -5,7 +5,7 @@ __all__ = [
     "__version__",
     # Sub-Modules
     "backend",
-    "data",
+    "datatools",
     "datasets",
     "encoders",
     "linalg",
@@ -34,8 +34,8 @@ finally:
 
 from tsdm import (
     backend,
-    data,
     datasets,
+    datatools,
     encoders,
     linalg,
     logutils,

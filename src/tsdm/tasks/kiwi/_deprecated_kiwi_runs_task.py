@@ -19,8 +19,8 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.data import MappingDataset, TimeSeriesSampleGenerator
 from tsdm.datasets import KiwiRuns, KiwiRunsTSC
+from tsdm.datatools import MappingDataset, TimeSeriesSampleGenerator
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler

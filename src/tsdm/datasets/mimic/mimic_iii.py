@@ -49,8 +49,8 @@ from pandas import DataFrame
 from pyarrow import Table, csv
 
 from tsdm.backend.pyarrow import cast_columns, filter_nulls, set_nulls
-from tsdm.data import strip_whitespace
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import strip_whitespace
 from tsdm.utils import remote
 
 type KEYS = Literal[
@@ -581,7 +581,7 @@ class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
 
     def download_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""
-        if tuple(map(int, self.__version__.split("."))) < (1, 4):
+        if tuple(map(int, self.__version__.split("."))) < (1, 4):  # noqa: RUF048
             raise ValueError(
                 "MIMIC-III v1.4+ is required. At the time of writing, the website"
                 " does not provide legacy versions of the MIMIC-III dataset."

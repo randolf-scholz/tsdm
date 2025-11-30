@@ -72,51 +72,50 @@ Remark: naming conventions:
 # ** num: repeat (>>)
 # * num: duplicate? (⇝ similar to (x,) * n)
 """
-# ruff: noqa: E501
 
 __all__ = [
-    # Protocols
-    "SupportsBackend",
-    "Encoder",
-    "EncoderMeta",
-    "EncoderProtocol",
-    "ParametrizedEncoder",
-    "Reduction",
-    "Expansion",
-    # Mixins
-    "SupportSimplify",
-    "SupportsDecode",
-    "SupportsEncode",
-    "SupportsFit",
-    "SupportsParameters",
-    "SupportsSerialization",
-    # Base Classes
+    # constants
+    "ID",
+    "CLONE",
+    "WRAP_TUPLE",
+    "UNWRAP_TUPLE",
+    # protocols & abcs
     "BaseEncoder",
-    "FittableEncoder",
     "EncoderDict",
     "EncoderList",
+    "EncoderMeta",
+    "EncoderProtocol",
+    "FittableEncoder",
+    "ParametrizedEncoder",
     "StaticEncoder",
-    # Classes
+    # classes
+    "DeepcopyEncoder",
+    "IdentityEncoder",
+    "MappedEncoder",
+    "NestedEncoder",
+    "TupleUnwrapper",
+    "TupleWrapper",
+    "WrappedEncoder",
+    # functions
+    "map_encoders",
+    "nest_encoder",
+    "simplify",
+    "wrap",
+    # ALGEBRA SUBMODULE
+    # classes
     "Choice",
     "Compose",
-    "DeepcopyEncoder",
     "Diagonal",
     "Duplicate",  # %
     "Fold",
     "Fork",  # &
-    "IdentityEncoder",
     "InverseEncoder",  # ~
     "Meet",
-    "MappedEncoder",
-    "NestedEncoder",
     "Parallel",
     "Pipe",  # >>
     "Repeat",  # **
     "Replicate",
-    "TupleUnwrapper",
-    "TupleWrapper",
-    "WrappedEncoder",
-    # Functions
+    # functions
     "choice",
     "compose",
     "diagonal",
@@ -125,19 +124,10 @@ __all__ = [
     "fork",  # &
     "invert",  # ~
     "meet",
-    "map_encoders",
-    "nest_encoder",
     "parallel",
     "pipe",  # >>
     "repeat",  # **
     "replicate",
-    "simplify",
-    "wrap",
-    # Canonical Instances
-    "CLONE",
-    "ID",
-    "UNWRAP_TUPLE",
-    "WRAP_TUPLE",
 ]
 
 import inspect
@@ -160,6 +150,7 @@ from typing import (
     Protocol,
     Self,
     _ProtocolMeta as ProtocolMeta,
+    assert_type,
     cast,
     final,
     overload,
@@ -167,104 +158,20 @@ from typing import (
 )
 from warnings import deprecated
 
-from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
+from tsdm.encoders.protocols import (
+    Reduction,
+    SupportsDecode,
+    SupportsEncode,
+    SupportsFit,
+    SupportSimplify,
+)
 from tsdm.types.aliases import DictArg, FilePath, NestedBuiltin
 from tsdm.types.utils import is_classvar
-from tsdm.utils.decorators import (
-    pprint_mapping,
-    pprint_repr,
-    pprint_sequence,
-)
+from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
 from tsdm.utils.funcutils import recurse_on_nested_builtin
 
-type TupleOf[T] = tuple[T, ...]
 
-
-class Reduction[Xs: tuple, Y](Protocol):
-    def __call__(self, xs: Xs, /) -> Y: ...
-
-
-class Expansion[X, Ys: tuple](Protocol):
-    def __call__(self, x: X, /) -> Ys: ...
-
-
-# region encoder mixin protocols -------------------------------------------------------
-@runtime_checkable
-class SupportsEncode[X, Y](Protocol):
-    r"""Protocol for objects that support encoding."""
-
-    def encode(self, x: X, /) -> Y: ...
-
-
-@runtime_checkable
-class SupportsDecode[X, Y](Protocol):
-    r"""Protocol for objects that support decoding."""
-
-    def decode(self, y: Y, /) -> X: ...
-
-
-@runtime_checkable
-class SupportsFit[X](Protocol):
-    r"""Protocol for objects that support fitting."""
-
-    def fit(self, x: X, /) -> None: ...
-
-
-@runtime_checkable
-class SupportSimplify(Protocol):  # Encoder[X, Y]
-    r"""Protocol for objects that support simplification."""
-
-    def simplify(self) -> Any: ...
-
-
-@runtime_checkable
-class SupportsParameters(Protocol):
-    r"""Protocol for objects that support parameters."""
-
-    @property
-    def params(self) -> Mapping[str, Any]: ...
-    def validate_params(self) -> None: ...
-
-
-@runtime_checkable
-class SupportsSerialization(Protocol):
-    r"""Protocol for serializable encoders."""
-
-    @abstractmethod
-    def serialize(self, filepath: FilePath, /) -> None: ...
-
-    @classmethod
-    @abstractmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self: ...
-
-
-class SupportsBackend[X, Y](Protocol):
-    r"""Encoder equipped with a backend."""
-
-    backend: Backend
-
-    def set_backend_from_data(self, x: X, /) -> None:
-        self.backend = get_backend(x)
-
-    def switch_backend(self, backend: str) -> None:
-        r"""Switch the backend of the encoder."""
-        self.backend = Backend(backend)
-
-        # recast the parameters
-        self.recast_parameters()
-
-    def recast_parameters(self) -> None:
-        r"""Recast the parameters to the current backend."""
-        raise NotImplementedError
-
-    pre_fit_hooks: ClassVar[list[Fn]] = [set_backend_from_data]
-
-
-# endregion encoder mixin protocols ----------------------------------------------------
-
-
-# region encoder protocol --------------------------------------------------------------
 @runtime_checkable
 class EncoderProtocol[X, Y](Protocol):
     r"""Minimal Protocol for Encoders.
@@ -372,10 +279,6 @@ class ParametrizedEncoder[X, Y](EncoderProtocol[X, Y], Protocol):
     # endregion mixin methods ---------------------------------------------------------
 
 
-# endregion encoder protocol -----------------------------------------------------------
-
-
-# region base classes ------------------------------------------------------------------
 class EncoderMeta(ProtocolMeta):
     r"""Metaclass for Encoders."""
 
@@ -631,7 +534,9 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         See Also: `Fork`
         """
         # FIXME: mypy does not predict correct return type...
-        return fork(self, other)
+        result = fork(self, other)
+        assert_type(result, Fork[X, tuple[Y, Y2]])
+        return result
 
     # TODO: automatically combine `e1 & e2 & e3` into a single meet?
     def __ror__[Y2](self, other: Encoder[X, Y2], /) -> "Fork[X, tuple[Y2, Y]]":
@@ -645,7 +550,9 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         See Also: `Fork`
         """
         # FIXME: mypy does not predict correct return type...
-        return fork(other, self)
+        result = fork(other, self)
+        assert_type(result, Fork[X, tuple[Y2, Y]])
+        return result
 
     def __mul__(self, other: int, /) -> "Fork[X, tuple[Y, ...]]":
         r"""Duplicate the encoder multiple times (``%``).
@@ -667,7 +574,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
             x₁ ────┐
             x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-            ⋮     │
+            ⋮      │
             xₙ ────┘
 
         See Also: `Meet`
@@ -679,7 +586,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
             x₁ ────┐
             x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-            ⋮     │
+            ⋮      │
             xₙ ────┘
 
         See Also: `Meet`
@@ -692,7 +599,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
             x₁ ────┐
             x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-             ⋮    │
+             ⋮     │
             xₙ ────┘
 
         See Also: `Meet`
@@ -844,6 +751,23 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # endregion fluent interface -------------------------------------------------------
 
 
+# fmt: off
+@overload
+def simplify[X, Y](e: BaseEncoder[X, Y], /) -> BaseEncoder[X, Y]: ...
+@overload
+def simplify[X, Y](e: Encoder[X, Y], /) -> Encoder[X, Y]: ...
+# fmt: on
+def simplify[X, Y](encoder: Encoder[X, Y], /) -> Encoder[X, Y]:  # fmt: skip
+    r"""Simplify the encoder.
+
+    This will call the `simplify` method of the encoder if it exists.
+    Otherwise, it will return the encoder as is.
+    """
+    if isinstance(encoder, SupportSimplify):
+        return encoder.simplify()
+    return wrap(encoder)
+
+
 class FittableEncoder[X, Y](BaseEncoder[X, Y]):
     r"""Base class for encoders implemented within this package."""
 
@@ -868,9 +792,13 @@ class FittableEncoder[X, Y](BaseEncoder[X, Y]):
         if self.requires_fit:
             raise AssertionError("Encoder has not been fitted!")
 
-    pre_encode_hooks = [assert_fitted]
-    pre_decode_hooks = [assert_fitted]
-    post_fit_hooks = [BaseEncoder.validate_params, assert_fitted]
+    # NOTE: not putting annotation on these makes mypy incredibly slow.
+    pre_encode_hooks: ClassVar[list[Fn[..., None]]] = [assert_fitted]
+    pre_decode_hooks: ClassVar[list[Fn[..., None]]] = [assert_fitted]
+    post_fit_hooks: ClassVar[list[Fn[..., None]]] = [
+        BaseEncoder.validate_params,
+        assert_fitted,
+    ]
 
 
 class StaticEncoder[X, Y](BaseEncoder[X, Y]):
@@ -914,7 +842,7 @@ class EncoderList[
     ) -> "EncoderList[Any, Any, E2]":
         r"""Create a new instance with the given values."""
         try:
-            result = cls(encoders=encoders)
+            result = cls(encoders)
         except TypeError as exc:
             exc.add_note(
                 f"Failed to create {cls.__name__} with encoders={encoders!r}."
@@ -939,7 +867,7 @@ class EncoderList[
         return any(e.requires_fit for e in self)
 
     #  region abstract implementation --------------------------------------------------
-    def __init__(self, encoders: Iterable[E] = ()) -> None:
+    def __init__(self, encoders: Iterable[E] = (), /) -> None:
         self._encoders: Final[Sequence[E]] = [wrap(e) for e in encoders]  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
 
     def __len__(self) -> int:
@@ -1005,26 +933,6 @@ class EncoderDict[
 
     def simplify(self) -> "EncoderDict[X, Y, K, Encoder]":
         return self.new(encoders={k: simplify(e) for k, e in self.items()})
-
-
-# endregion base classes ---------------------------------------------------------------
-
-
-# fmt: off
-@overload
-def simplify[X, Y](e: BaseEncoder[X, Y], /) -> BaseEncoder[X, Y]: ...
-@overload
-def simplify[X, Y](e: Encoder[X, Y], /) -> Encoder[X, Y]: ...
-# fmt: on
-def simplify[X, Y](encoder: Encoder[X, Y], /) -> Encoder[X, Y]:  # fmt: skip
-    r"""Simplify the encoder.
-
-    This will call the `simplify` method of the encoder if it exists.
-    Otherwise, it will return the encoder as is.
-    """
-    if isinstance(encoder, SupportSimplify):
-        return encoder.simplify()
-    return wrap(encoder)
 
 
 @pprint_repr
@@ -1129,258 +1037,84 @@ def wrap[X=Any, Y=Any](
     return WrappedEncoder(encoder, decoder)
 
 
-@dataclass(frozen=True, slots=True, repr=False)
-class InverseEncoder[X, Y](FittableEncoder[Y, X]):
-    r"""Applies an encoder in reverse.
+class MappedEncoder[
+    MappingIn: Mapping[str, Any],  # Mapping[K, X]
+    MappingOut: Mapping[str, Any],  # Mapping[K, Y]
+](EncoderDict[MappingIn, MappingOut, str, Encoder]):  # Encoder[X, Y]
+    r"""Maps encoders to keys.
+
+        (k₁, x₂) ────▶ f_{k₁}(x₁)
+        (k₂, x₂) ────▶ f_{k₂}(x₂)
+            ⋮              ⋮
+        (kₙ, xₙ) ────▶ f_{kₙ}(xₙ)
 
     Example:
-        >>> from tsdm.encoders import wrap
-        >>> enc = WrappedEncoder(
-        ...     encoder=lambda x: f"{x} + 1",
-        ...     decoder=lambda y: f"{y} - 1",
-        ... )
-        >>> assert enc("a") == "a + 1"
-        >>> enc = ~enc
-        >>> assert enc("a") == "a - 1"
-        >>> enc = ~enc
-        >>> assert enc("a") == "a + 1"
+        >>> from tsdm.encoders import MappedEncoder, wrap
+        >>> e1 = wrap(lambda x: f"{x} + 1")
+        >>> e2 = wrap(lambda x: f"2 * {x}")
+        >>> enc = MappedEncoder({"key1": e1, "key2": e2})
+        >>> assert enc({"key1": "a", "key2": "b"}) == {"key1": "a + 1", "key2": "2 * b"}
     """
 
-    FIELDS: ClassVar[frozenset[str]] = frozenset({"encoder"})
-    r"""The names of the parameters of the encoder."""
+    @classmethod
+    def new[X, Y](
+        cls, *, encoders: DictArg[str, Encoder[X, Y]]
+    ) -> "MappedEncoder[Mapping[str, X], Mapping[str, Y]]":
+        return MappedEncoder(encoders)
 
-    encoder: Encoder[X, Y]
-    r"""The encoder to invert."""
+    @overload
+    def __init__[X, Y](
+        self: "MappedEncoder[Mapping[str, X], Mapping[str, Y]]",
+        encoders: DictArg[str, Encoder[X, Y]] = ...,
+        /,
+    ) -> None: ...
+    @overload
+    def __init__(self, encoders: DictArg[str, Encoder] = ..., /) -> None: ...
+    def __init__(self, encoders: DictArg[str, Encoder] = (), /) -> None:
+        super().__init__(encoders)
 
-    def fit(self, y: Y, /) -> None:
-        raise NotImplementedError("Inverse encoders cannot be fitted.")
+    # FIXME: https://github.com/python/typing/issues/548
+    def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn]":
+        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
+        decoders = {k: InverseEncoder(e) for k, e in self.items()}
+        inverse = MappedEncoder[MappingOut, MappingIn](decoders)
+        return inverse  # type: ignore[return-value]
 
-    def encode(self, y: Y, /) -> X:
-        return self.encoder.decode(y)
+    def fit(self, xmap: MappingIn, /) -> None:
+        if missing_keys := self.keys() - xmap.keys():
+            raise ValueError(f"No data to fit encoders {missing_keys}.")
+        if extra_keys := xmap.keys() - self.keys():
+            raise ValueError(f"Extra data with no matching encoder {extra_keys}.")
 
-    def decode(self, x: X, /) -> Y:
-        return self.encoder.encode(x)
+        for k, x in xmap.items():
+            self[k].fit(x)
 
-    def simplify(self) -> BaseEncoder[Y, X]:
-        # reduction 1: simplify the encoder
-        e = simplify(self.encoder)
+    def encode(self, xmap: MappingIn, /) -> MappingOut:
+        ymap = {k: self[k].encode(x) for k, x in xmap.items()}
+        return cast("MappingOut", ymap)
 
-        # reduction 2: remove double inversion
-        if isinstance(e, InverseEncoder):
-            return simplify(wrap(e.encoder))
+    def decode(self, ymap: MappingOut, /) -> MappingIn:
+        xmap = {k: self[k].decode(y) for k, y in ymap.items()}
+        return cast("MappingIn", xmap)
 
-        return InverseEncoder(e)
-
-    def __repr__(self) -> str:
-        return f"~{self.encoder}"
-
-
-def invert[X, Y](encoder: Encoder[X, Y], /) -> BaseEncoder[Y, X]:
-    r"""Return the inverse encoder (i.e. decoder)."""
-    if isinstance(encoder, InverseEncoder):
-        # simplify double inversion
-        return wrap(encoder.encoder)
-    return InverseEncoder(encoder)
-
-
-# region static encoders ---------------------------------------------------------------
-class IdentityEncoder(StaticEncoder[Any, Any]):
-    r"""Identity function as an encoder."""
-
-    FIELDS: ClassVar[frozenset[str]] = frozenset()
-    r"""The names of the parameters of the encoder."""
-
-    def __invert__(self) -> Self:
-        return self
-
-    def encode[T](self, x: T, /) -> T:
-        return x
-
-    def decode[T](self, y: T, /) -> T:
-        return y
-
-    def simplify(self) -> Self:
-        return self
+    def simplify(self) -> "MappedEncoder[MappingIn, MappingOut]":
+        r"""Simplify the encoders."""
+        return MappedEncoder[MappingIn, MappingOut](super().simplify())  # type: ignore[return-value]
 
 
-ID: Final[IdentityEncoder] = IdentityEncoder()
-r"""Canonical identity encoder."""
+def map_encoders[X, Y](
+    encoders: Mapping[str, Encoder[X, Y]], /
+) -> MappedEncoder[Mapping[str, X], Mapping[str, Y]]:
+    r"""Map encoders.
 
+        (k₁, x₂) ────▶ f_{k₁}(x₁)
+        (k₂, x₂) ────▶ f_{k₂}(x₂)
+                   ⋮
+        (kₙ, xₙ) ────▶ f_{kₙ}(xₙ)
 
-class DeepcopyEncoder(StaticEncoder[Any, Any]):
-    r"""Encoder that deepcopies the input."""
-
-    FIELDS: ClassVar[frozenset[str]] = frozenset()
-    r"""The names of the parameters of the encoder."""
-
-    def __invert__(self) -> Self:
-        return self
-
-    def encode[T](self, x: T, /) -> T:
-        return deepcopy(x)
-
-    def decode[T](self, y: T, /) -> T:
-        return deepcopy(y)
-
-    def simplify(self) -> Self:
-        return self
-
-
-CLONE: Final[DeepcopyEncoder] = DeepcopyEncoder()
-r"""Canonical deepcopy encoder."""
-
-
-class TupleWrapper(StaticEncoder[Any, tuple[Any]]):
-    r"""Wraps input into a tuple."""
-
-    FIELDS: ClassVar[frozenset[str]] = frozenset()
-    r"""The names of the parameters of the encoder."""
-
-    def __invert__(self) -> "TupleUnwrapper":
-        return TupleUnwrapper()
-
-    def encode[T](self, x: T, /) -> tuple[T]:
-        return (x,)
-
-    def decode[T](self, y: tuple[T], /) -> T:
-        return y[0]
-
-    def simplify(self) -> Self:
-        return self
-
-
-WRAP_TUPLE: Final[TupleWrapper] = TupleWrapper()
-r"""Canonical tuple encoder."""
-
-
-class TupleUnwrapper(StaticEncoder[tuple[Any], Any]):
-    r"""Unwraps input from a tuple."""
-
-    FIELDS: ClassVar[frozenset[str]] = frozenset()
-    r"""The names of the parameters of the encoder."""
-
-    def __invert__(self) -> "TupleWrapper":
-        return TupleWrapper()
-
-    def encode[T](self, y: tuple[T], /) -> T:
-        return y[0]
-
-    def decode[T](self, x: T, /) -> tuple[T]:
-        return (x,)
-
-    def simplify(self) -> Self:
-        return self
-
-
-UNWRAP_TUPLE: Final[TupleUnwrapper] = TupleUnwrapper()
-r"""Canonical tuple decoder."""
-
-
-class Diagonal(StaticEncoder[Any, tuple[Any, ...]]):
-    r"""Encodes the input into a tuple of itself (SIMO).
-
-             ┌───▶ x
-        x ───┼───▶ x
-             │      ⋮
-             └───▶ x
-
-    Note:
-        `Diagonal(n)` is equivalent to `Fork(ID, n)`, where `ID` is the identity encoder.
-
-    Note:
-        In practice, when working with float arrays, we need to be careful how to select
-        the inverse. Due to rounding errors, the values in the tuple elements might be
-        slightly different. In this case, an aggregation function needs to be supplied.
+    See Also: `MappedEncoder`
     """
-
-    num: Final[int]
-    r"""The number of elements in the tuple."""
-    reduction: Final[Reduction[tuple[Any, ...], Any]]
-    r"""The function to aggregate the elements of the tuple."""
-
-    def __init__(self, num: int, /, *, reduction: Optional[Reduction] = None) -> None:
-        self.num = num
-        self.reduction = choice(self.num) if reduction is None else reduction
-
-    def encode[X](self, x: X, /) -> tuple[X, ...]:
-        return (x,) * self.num
-
-    def decode[Y](self, y: tuple[Y, ...], /) -> Y:
-        return self.reduction(y)
-
-    def simplify(self) -> Self:
-        return self
-
-
-def diagonal[T](num: int, /, reduction: Reduction[tuple[T, ...], T] = random.choice) -> Diagonal:  # fmt: skip
-    r"""Encodes the input into a tuple of itself (SIMO).
-
-    Args:
-        num: The number of elements in the tuple.
-        reduction: The function to aggregate the elements of the tuple.
-
-    Returns:
-        A diagonal encoder.
-    """
-    return Diagonal(num, reduction=reduction)
-
-
-@pprint_repr
-@dataclass
-class Choice(StaticEncoder[tuple[Any, ...], Any]):
-    r"""Encoder that randomly selects one of the input values.
-
-        x₁ ────┐
-        x₂ ────┼────▶ choice(x₁, x₂, ..., xₙ)
-        ⋮     │
-        xₙ ────┘
-
-    Example:
-        >>> from tsdm.encoders import Choice
-        >>> enc = Choice(3)
-        >>> assert enc((1, 2, 3)) in (1, 2, 3)
-        >>> enc = Choice()  # variable number of elements
-        >>> assert enc((1, 2)) in (1, 2)
-        >>> assert enc((1, 2, 3, 4)) in (1, 2, 3, 4)
-    """
-
-    num: Final[int | None]  # type: ignore[misc]
-    r"""The number of elements to choose from. If `None`, the encoder will not be invertible."""
-
-    def __invert__(self) -> "Diagonal":
-        if self.num is None:
-            raise ValueError("Choice not invertible when `num=None`.")
-        return Diagonal(self.num, reduction=self)
-
-    # FIXME: https://discuss.python.org/t/proposal-allow-typevartuple-unpacking-in-unions/
-    def encode[X](self, x: tuple[X, ...], /) -> X:
-        return random.choice(x)
-
-    # FIXME: https://discuss.python.org/t/proposal-allow-typevartuple-unpacking-in-unions/
-    def decode[Y](self, y: Y, /) -> tuple[Y, ...]:
-        return (y,) * (self.num or False)
-
-    def simplify(self) -> Self:
-        return self
-
-
-def choice(num: int | None = None, /) -> Choice:
-    r"""Create a choice encoder.
-
-    Args:
-        num: The number of elements to choose from. If `None`, the encoder will not
-            be invertible.
-
-    Returns:
-        A choice encoder.
-    """
-    return Choice(num)
-
-
-# endregion static encoders ------------------------------------------------------------
-
-
-# region unary encoders ----------------------------------------------------------------
+    return MappedEncoder(encoders)
 
 
 @pprint_repr
@@ -1448,85 +1182,260 @@ def nest_encoder[X, Y](
     )
 
 
-# Note: may allow non-string keys in the future
-class MappedEncoder[
-    MappingIn: Mapping[str, Any],  # Mapping[K, X]
-    MappingOut: Mapping[str, Any],  # Mapping[K, Y]
-](EncoderDict[MappingIn, MappingOut, str, Encoder]):  # Encoder[X, Y]
-    r"""Maps encoders to keys.
+########################################################################################
+# STATIC ENCODERS / CANONICAL INSTANCES                                                #
+########################################################################################
 
-        (k₁, x₂) ────▶ f_{k₁}(x₁)
-        (k₂, x₂) ────▶ f_{k₂}(x₂)
-            ⋮              ⋮
-        (kₙ, xₙ) ────▶ f_{kₙ}(xₙ)
+
+# region static encoders ---------------------------------------------------------------
+class IdentityEncoder(StaticEncoder[Any, Any]):
+    r"""Identity function as an encoder."""
+
+    FIELDS: ClassVar[frozenset[str]] = frozenset()
+    r"""The names of the parameters of the encoder."""
+
+    def __invert__(self) -> Self:
+        return self
+
+    def encode[T](self, x: T, /) -> T:
+        return x
+
+    def decode[T](self, y: T, /) -> T:
+        return y
+
+    def simplify(self) -> Self:
+        return self
+
+
+class DeepcopyEncoder(StaticEncoder[Any, Any]):
+    r"""Encoder that deepcopies the input."""
+
+    FIELDS: ClassVar[frozenset[str]] = frozenset()
+    r"""The names of the parameters of the encoder."""
+
+    def __invert__(self) -> Self:
+        return self
+
+    def encode[T](self, x: T, /) -> T:
+        return deepcopy(x)
+
+    def decode[T](self, y: T, /) -> T:
+        return deepcopy(y)
+
+    def simplify(self) -> Self:
+        return self
+
+
+class TupleWrapper(StaticEncoder[Any, tuple[Any]]):
+    r"""Wraps input into a tuple."""
+
+    FIELDS: ClassVar[frozenset[str]] = frozenset()
+    r"""The names of the parameters of the encoder."""
+
+    def __invert__(self) -> "TupleUnwrapper":
+        return TupleUnwrapper()
+
+    def encode[T](self, x: T, /) -> tuple[T]:
+        return (x,)
+
+    def decode[T](self, y: tuple[T], /) -> T:
+        return y[0]
+
+    def simplify(self) -> Self:
+        return self
+
+
+class TupleUnwrapper(StaticEncoder[tuple[Any], Any]):
+    r"""Unwraps input from a tuple."""
+
+    FIELDS: ClassVar[frozenset[str]] = frozenset()
+    r"""The names of the parameters of the encoder."""
+
+    def __invert__(self) -> "TupleWrapper":
+        return TupleWrapper()
+
+    def encode[T](self, y: tuple[T], /) -> T:
+        return y[0]
+
+    def decode[T](self, x: T, /) -> tuple[T]:
+        return (x,)
+
+    def simplify(self) -> Self:
+        return self
+
+
+ID: Final[IdentityEncoder] = IdentityEncoder()
+r"""Canonical identity encoder."""
+CLONE: Final[DeepcopyEncoder] = DeepcopyEncoder()
+r"""Canonical deepcopy encoder."""
+WRAP_TUPLE: Final[TupleWrapper] = TupleWrapper()
+r"""Canonical tuple encoder."""
+UNWRAP_TUPLE: Final[TupleUnwrapper] = TupleUnwrapper()
+r"""Canonical tuple decoder."""
+
+
+########################################################################################
+# region ALGEBRAIC INTERFACE                                                           #
+########################################################################################
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class InverseEncoder[X, Y](FittableEncoder[Y, X]):
+    r"""Applies an encoder in reverse.
 
     Example:
-        >>> from tsdm.encoders import MappedEncoder, wrap
-        >>> e1 = wrap(lambda x: f"{x} + 1")
-        >>> e2 = wrap(lambda x: f"2 * {x}")
-        >>> enc = MappedEncoder({"key1": e1, "key2": e2})
-        >>> assert enc({"key1": "a", "key2": "b"}) == {"key1": "a + 1", "key2": "2 * b"}
+        >>> from tsdm.encoders import wrap
+        >>> enc = WrappedEncoder(
+        ...     encoder=lambda x: f"{x} + 1",
+        ...     decoder=lambda y: f"{y} - 1",
+        ... )
+        >>> assert enc("a") == "a + 1"
+        >>> enc = ~enc
+        >>> assert enc("a") == "a - 1"
+        >>> enc = ~enc
+        >>> assert enc("a") == "a + 1"
     """
 
-    @classmethod
-    def new[X, Y](
-        cls, *, encoders: DictArg[str, Encoder[X, Y]]
-    ) -> "MappedEncoder[Mapping[str, X], Mapping[str, Y]]":
-        return MappedEncoder(encoders)
+    FIELDS: ClassVar[frozenset[str]] = frozenset({"encoder"})
+    r"""The names of the parameters of the encoder."""
 
-    @overload
-    def __init__[X, Y](
-        self: "MappedEncoder[Mapping[str, X], Mapping[str, Y]]",
-        encoders: DictArg[str, Encoder[X, Y]] = ...,
-        /,
-    ) -> None: ...
-    @overload
-    def __init__(self, encoders: DictArg[str, Encoder] = ..., /) -> None: ...
-    def __init__(self, encoders: DictArg[str, Encoder] = ..., /) -> None:
-        super().__init__(encoders)
+    encoder: Encoder[X, Y]
+    r"""The encoder to invert."""
 
-    # FIXME: https://github.com/python/typing/issues/548
-    def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn]":
-        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
-        decoders = {k: InverseEncoder(e) for k, e in self.items()}
-        inverse = MappedEncoder[MappingOut, MappingIn](decoders)
-        return inverse  # type: ignore[return-value]
+    def fit(self, y: Y, /) -> None:
+        raise NotImplementedError("Inverse encoders cannot be fitted.")
 
-    def fit(self, xmap: MappingIn, /) -> None:
-        if missing_keys := self.keys() - xmap.keys():
-            raise ValueError(f"No data to fit encoders {missing_keys}.")
-        if extra_keys := xmap.keys() - self.keys():
-            raise ValueError(f"Extra data with no matching encoder {extra_keys}.")
+    def encode(self, y: Y, /) -> X:
+        return self.encoder.decode(y)
 
-        for k, x in xmap.items():
-            self[k].fit(x)
+    def decode(self, x: X, /) -> Y:
+        return self.encoder.encode(x)
 
-    def encode(self, xmap: MappingIn, /) -> MappingOut:
-        ymap = {k: self[k].encode(x) for k, x in xmap.items()}
-        return cast("MappingOut", ymap)
+    def simplify(self) -> BaseEncoder[Y, X]:
+        # reduction 1: simplify the encoder
+        e = simplify(self.encoder)
 
-    def decode(self, ymap: MappingOut, /) -> MappingIn:
-        xmap = {k: self[k].decode(y) for k, y in ymap.items()}
-        return cast("MappingIn", xmap)
+        # reduction 2: remove double inversion
+        if isinstance(e, InverseEncoder):
+            return simplify(wrap(e.encoder))
 
-    def simplify(self) -> "MappedEncoder[MappingIn, MappingOut]":
-        r"""Simplify the encoders."""
-        return MappedEncoder[MappingIn, MappingOut](super().simplify())  # type: ignore[return-value]
+        return InverseEncoder(e)
+
+    def __repr__(self) -> str:
+        return f"~{self.encoder}"
 
 
-def map_encoders[X, Y](
-    encoders: Mapping[str, Encoder[X, Y]], /
-) -> MappedEncoder[Mapping[str, X], Mapping[str, Y]]:
-    r"""Map encoders.
+def invert[X, Y](encoder: Encoder[X, Y], /) -> BaseEncoder[Y, X]:
+    r"""Return the inverse encoder (i.e. decoder)."""
+    if isinstance(encoder, InverseEncoder):
+        # simplify double inversion
+        return wrap(encoder.encoder)
+    return InverseEncoder(encoder)
 
-        (k₁, x₂) ────▶ f_{k₁}(x₁)
-        (k₂, x₂) ────▶ f_{k₂}(x₂)
-            ⋮
-        (kₙ, xₙ) ────▶ f_{kₙ}(xₙ)
 
-    See Also: `MappedEncoder`
+# region static encoders ---------------------------------------------------------------
+class Diagonal(StaticEncoder[Any, tuple[Any, ...]]):
+    r"""Encodes the input into a tuple of itself (SIMO).
+
+             ┌───▶ x
+        x ───┼───▶ x
+             │     ⋮
+             └───▶ x
+
+    Note:
+        `Diagonal(n)` is equivalent to `Fork(ID, n)`, where `ID` is the identity encoder.
+
+    Note:
+        In practice, when working with float arrays, we need to be careful how to select
+        the inverse. Due to rounding errors, the values in the tuple elements might be
+        slightly different. In this case, an aggregation function needs to be supplied.
     """
-    return MappedEncoder(encoders)
+
+    num: Final[int]
+    r"""The number of elements in the tuple."""
+    reduction: Final[Reduction[tuple[Any, ...], Any]]
+    r"""The function to aggregate the elements of the tuple."""
+
+    def __init__(self, num: int, /, *, reduction: Optional[Reduction] = None) -> None:
+        self.num = num
+        self.reduction = choice(self.num) if reduction is None else reduction
+
+    def encode[X](self, x: X, /) -> tuple[X, ...]:
+        return (x,) * self.num
+
+    def decode[Y](self, y: tuple[Y, ...], /) -> Y:
+        return self.reduction(y)
+
+    def simplify(self) -> Self:
+        return self
+
+
+def diagonal[T](num: int, /, reduction: Reduction[tuple[T, ...], T] = random.choice) -> Diagonal:  # fmt: skip
+    r"""Encodes the input into a tuple of itself (SIMO).
+
+    Args:
+        num: The number of elements in the tuple.
+        reduction: The function to aggregate the elements of the tuple.
+
+    Returns:
+        A diagonal encoder.
+    """
+    return Diagonal(num, reduction=reduction)
+
+
+@pprint_repr
+@dataclass
+class Choice(StaticEncoder[tuple[Any, ...], Any]):
+    r"""Encoder that randomly selects one of the input values.
+
+        x₁ ────┐
+        x₂ ────┼────▶ choice(x₁, x₂, ..., xₙ)
+        ⋮      │
+        xₙ ────┘
+
+    Example:
+        >>> from tsdm.encoders import Choice
+        >>> enc = Choice(3)
+        >>> assert enc((1, 2, 3)) in (1, 2, 3)
+        >>> enc = Choice()  # variable number of elements
+        >>> assert enc((1, 2)) in (1, 2)
+        >>> assert enc((1, 2, 3, 4)) in (1, 2, 3, 4)
+    """
+
+    num: Final[int | None]  # type: ignore[misc]
+    r"""The number of elements to choose from. If `None`, the encoder will not be invertible."""
+
+    def __invert__(self) -> "Diagonal":
+        if self.num is None:
+            raise ValueError("Choice not invertible when `num=None`.")
+        return Diagonal(self.num, reduction=self)
+
+    # FIXME: https://discuss.python.org/t/proposal-allow-typevartuple-unpacking-in-unions/
+    def encode[X](self, x: tuple[X, ...], /) -> X:
+        return random.choice(x)
+
+    # FIXME: https://discuss.python.org/t/proposal-allow-typevartuple-unpacking-in-unions/
+    def decode[Y](self, y: Y, /) -> tuple[Y, ...]:
+        return (y,) * (self.num or False)
+
+    def simplify(self) -> Self:
+        return self
+
+
+def choice(num: int | None = None, /) -> Choice:
+    r"""Create a choice encoder.
+
+    Args:
+        num: The number of elements to choose from. If `None`, the encoder will not
+            be invertible.
+
+    Returns:
+        A choice encoder.
+    """
+    return Choice(num)
+
+
+# endregion static encoders ------------------------------------------------------------
 
 
 # region single input single output encoders -------------------------------------------
@@ -1863,9 +1772,9 @@ class Parallel[
     ) -> "Parallel[tuple[U, ...], tuple[V, ...]]":
         return Parallel(self.encoders[arg])
 
-    # FIXME: https://github.com/python/mypy/issues/17134
-    def __invert__(self) -> "Parallel[TupleOut, TupleIn]":
-        return Parallel(map(invert, self))
+    def __invert__(self) -> "Parallel[TupleOut, TupleIn, Encoder]":
+        inverse = Parallel(map(invert, self))
+        return cast("Parallel[TupleOut, TupleIn]", inverse)
 
     def fit(self, xs: TupleIn, /) -> None:
         for encoder, x in zip(self, xs, strict=True):
@@ -1931,8 +1840,8 @@ def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]:
 @pprint_repr
 @dataclass
 class Replicate[
-    TupleIn: TupleOf,  # tuple[X, ...]
-    TupleOut: TupleOf,  # tuple[Y, ...]
+    TupleIn: tuple,  # tuple[X, ...]
+    TupleOut: tuple,  # tuple[Y, ...]
 ](Parallel[TupleIn, TupleOut]):
     r"""Apply copies of single encoder in parallel to multiple inputs (MIMO).
 
@@ -2222,7 +2131,7 @@ def fork[X, Y](  # type: ignore[misc]  # pyright: ignore[reportInconsistentOverl
 @dataclass
 class Duplicate[
     X,
-    Ys: TupleOf,  # tuple[Y, Y, ..., Y]
+    Ys: tuple,  # tuple[Y, Y, ..., Y]
     # FIXME: https://github.com/python/cpython/issues/140596
     E: Encoder = Encoder[X, Any],  # Encoder[X, Y]
 ](Fork[X, Ys, E]):
@@ -2368,12 +2277,12 @@ def duplicate[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple
 # region single input multiple output encoders -----------------------------------------
 # @pprint_repr
 # @dataclass
-# class Reduce[T , E: Encoder ](FittableEncoder[tuple[T, ...], T]):
+# class Reduce[T, E: Encoder](FittableEncoder[tuple[T, ...], T]):
 #     r"""Encoder that reduces the input to a single value.
 #
 #         x₁ ────┐
 #         x₂ ────┼────▶ aggregate(x₁, x₂, ..., xₙ)
-#         ⋮     │
+#         ⋮      │
 #         xₙ ────┘
 #
 #     Examples:
@@ -2400,7 +2309,7 @@ def duplicate[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple
 #         return self.expansion(y)
 #
 #
-# def reduce[T , E: Encoder ](
+# def reduce[T, E: Encoder](
 #     reduction: Reduction[tuple[T, ...], T] | None = None,
 #     expansion: Expansion[T, tuple[T, ...]] | None = None,
 # ) -> Reduce[T, E]:
@@ -2541,7 +2450,7 @@ def meet[Y](*es: Encoder[Any, Y], reduction: Reduction[tuple, Y] = random.choice
     return Meet(*es, reduction=reduction)
 
 
-class Fold[Xs: TupleOf, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
+class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
     r"""Apply copies of a single encoder to multiple inputs and reduces (MISO).
 
         x₁ ────┐
@@ -2669,3 +2578,4 @@ def fold[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, Y] 
 
 
 # endregion single input multiple output encoders --------------------------------------
+# endregion ALGEBRAIC INTERFACE ########################################################

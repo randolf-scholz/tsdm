@@ -6,7 +6,7 @@ from collections.abc import KeysView, Mapping
 import pandas as pd
 import pytest
 
-from tsdm.data import MapDataset, PandasDataset
+from tsdm.datatools import MapDataset, PandasDataset
 from tsdm.testing import assert_protocol
 from tsdm.types.protocols import Map
 

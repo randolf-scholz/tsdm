@@ -66,8 +66,8 @@ from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
+from tsdm.datatools import is_partition
 from tsdm.encoders import FrameEncoder, MinMaxScaler
 from tsdm.pprint import repr_namedtuple
 from tsdm.tasks._deprecated import OldBaseTask

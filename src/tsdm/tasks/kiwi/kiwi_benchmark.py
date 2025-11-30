@@ -16,7 +16,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm import timeseries
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.data import (
+from tsdm.datatools import (
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,

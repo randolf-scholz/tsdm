@@ -71,8 +71,8 @@ from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.data import is_partition
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
+from tsdm.datatools import is_partition
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.decorators import pprint_repr
 

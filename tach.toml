@@ -10,15 +10,17 @@ source_roots = [ "src"]
 
 [[modules ]]
 path = "tsdm"
-depends_on = ["tsdm.logutils", "tsdm.metrics", "tsdm.tasks", "tsdm.timeseries", "tsdm.linalg", "tsdm.backend", "tsdm.data", "tsdm.utils", "tsdm.encoders", "tsdm.optimizers", "tsdm.viz", "tsdm.datasets", "tsdm.types", "tsdm.models", "tsdm.random"]
+depends_on = ["tsdm.logutils", "tsdm.metrics", "tsdm.tasks", "tsdm.timeseries", "tsdm.linalg", "tsdm.backend", "tsdm.encoders", "tsdm.optimizers", "tsdm.viz", "tsdm.datasets", "tsdm.types", "tsdm.models", "tsdm.random", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.config"
 depends_on = []
+utility = true
 
 [[modules ]]
 path = "tsdm.constants"
 depends_on = []
+utility = true
 
 [[modules ]]
 path = "tsdm.types"
@@ -26,23 +28,25 @@ depends_on = []
 
 [[modules ]]
 path = "tsdm.testing"
-depends_on = ["tsdm.constants", "tsdm.types", "tsdm.backend"]
+depends_on = [ "tsdm.types"]
 
 [[modules ]]
 path = "tsdm.pprint"
-depends_on = ["tsdm.types", "tsdm.backend", "tsdm.testing"]
+depends_on = ["tsdm.types", "tsdm.testing"]
+utility = true
 
 [[modules ]]
 path = "tsdm.utils"
-depends_on = ["tsdm.types", "tsdm.constants", "tsdm.testing", "tsdm.pprint"]
+depends_on = ["tsdm.types", "tsdm.testing"]
+utility = true
 
 [[modules ]]
 path = "tsdm.backend"
-depends_on = ["tsdm.config", "tsdm.utils", "tsdm.types"]
+depends_on = [ "tsdm.types"]
 
 [[modules ]]
 path = "tsdm.viz"
-depends_on = ["tsdm.constants"]
+depends_on = []
 
 [[modules ]]
 path = "tsdm.optimizers"
@@ -54,40 +58,45 @@ depends_on = [ "tsdm.types"]
 
 [[modules ]]
 path = "tsdm.random"
-depends_on = ["tsdm.types", "tsdm.data", "tsdm.utils", "tsdm.constants", "tsdm.backend"]
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.encoders"
-depends_on = ["tsdm.types", "tsdm.constants", "tsdm.backend", "tsdm.utils"]
-
-[[modules ]]
-path = "tsdm.data"
-depends_on = ["tsdm.utils", "tsdm.types", "tsdm.backend", "tsdm.linalg"]
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.linalg", "tsdm.encoders.algebra"]
 
 [[modules ]]
 path = "tsdm.linalg"
-depends_on = []
+depends_on = ["tsdm.types"]
 
 [[modules ]]
 path = "tsdm.timeseries"
-depends_on = ["tsdm.utils", "tsdm.data", "tsdm.types", "tsdm.constants", "tsdm.datasets"]
+depends_on = [ "tsdm.types", "tsdm.datasets", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.logutils"
-depends_on = ["tsdm.constants", "tsdm.types", "tsdm.metrics", "tsdm.utils", "tsdm.viz", "tsdm.optimizers", "tsdm.linalg"]
+depends_on = [ "tsdm.types", "tsdm.metrics", "tsdm.viz", "tsdm.optimizers", "tsdm.linalg"]
 
 [[modules ]]
 path = "tsdm.datasets"
-depends_on = ["tsdm.config", "tsdm.testing", "tsdm.data", "tsdm.backend", "tsdm.utils", "tsdm.types", "tsdm.constants", "tsdm.pprint", "tsdm.datasets.synthetic"]
+depends_on = [ "tsdm.testing", "tsdm.backend", "tsdm.types", "tsdm.random", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.models"
-depends_on = ["tsdm.types", "tsdm.backend", "tsdm.config", "tsdm.optimizers", "tsdm.constants", "tsdm.testing", "tsdm.utils", "tsdm.encoders", "tsdm.pprint"]
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.optimizers", "tsdm.testing", "tsdm.encoders"]
 
 [[modules ]]
 path = "tsdm.tasks"
-depends_on = ["tsdm.timeseries", "tsdm.utils", "tsdm.constants", "tsdm.random", "tsdm.data", "tsdm.metrics", "tsdm.types", "tsdm.encoders", "tsdm.datasets", "tsdm.pprint"]
+depends_on = ["tsdm.timeseries", "tsdm.random", "tsdm.metrics", "tsdm.types", "tsdm.encoders", "tsdm.datasets", "tsdm.datatools"]
 
 [[modules ]]
-path = "tsdm.datasets.synthetic"
-depends_on = ["tsdm.types", "tsdm.datasets", "tsdm.random"]
+path = "tsdm.encoders.algebra"
+depends_on = [ "tsdm.encoders"]
+
+[[modules ]]
+path = "tsdm.dtypes"
+depends_on = []
+utility = true
+
+[[modules ]]
+path = "tsdm.datatools"
+depends_on = ["tsdm.types", "tsdm.linalg", "tsdm.backend"]

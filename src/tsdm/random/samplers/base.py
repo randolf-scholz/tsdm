@@ -43,7 +43,7 @@ from numpy.typing import NDArray
 from pandas import Index, Interval, Series
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.data.datasets import (
+from tsdm.datatools.datasets import (
     Dataset,
     MapDataset,
     PandasDataset,

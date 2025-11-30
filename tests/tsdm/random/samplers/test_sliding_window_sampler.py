@@ -12,7 +12,7 @@ import pytest
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
-from tsdm.data.datasets import Indexable
+from tsdm.datatools.datasets import Indexable
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.types.scalars import TimestampScalar
 from tsdm.utils import flatten_dict

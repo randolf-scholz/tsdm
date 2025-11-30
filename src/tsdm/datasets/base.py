@@ -38,7 +38,7 @@ from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.data import serialize
+from tsdm.datatools import serialize
 from tsdm.pprint import repr_mapping
 from tsdm.testing.hashutils import (
     ErrorHandler,

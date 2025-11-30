@@ -11,7 +11,6 @@ Provides functions for pretty printing
   (provides a short form representation that shows that shape and dtype, but not the data)
 - DTypes (numpy, torch, pandas, polars)
 
-
 The output format is of the form Type@Modifier<Identifier>(values)
 
 Examples:
@@ -65,7 +64,6 @@ __all__ = [
 
 
 import dataclasses
-import logging
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
 from math import prod
@@ -77,15 +75,15 @@ import pyarrow as pa
 from pandas import ArrowDtype, DataFrame, MultiIndex
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 
-from tsdm.backend.dtypes import TYPESTRINGS, DType
+from tsdm.dtypes import TYPESTRINGS, DType
 from tsdm.testing import (
     is_builtin,
     is_builtin_constant,
     is_builtin_type,
+    is_dtype,
     is_na_value,
     is_scalar,
 )
-from tsdm.testing._testing import is_dtype
 from tsdm.types.mixins import (
     SupportsArray,
     SupportsDataFrame,
@@ -94,12 +92,7 @@ from tsdm.types.mixins import (
     SupportsItem,
     SupportsShape,
 )
-from tsdm.types.protocols import (
-    Dataclass,
-    NTuple,
-)
-
-__logger__: logging.Logger = logging.getLogger(__name__)
+from tsdm.types.protocols import Dataclass, NTuple
 
 MAXITEMS: Final[int] = 20
 r"""Default maxitems for repr_funcs."""

@@ -93,7 +93,6 @@ See Also:
 
 __all__ = [
     # Sub-Packages & Modules
-    "base",
     "torch",
     "universal",
     "time",
@@ -167,11 +166,11 @@ __all__ = [
     "wrap",
 ]
 
-from tsdm.encoders import base, time, torch, universal
+from tsdm.encoders import time, torch, universal
 from tsdm.encoders.base import (
     ID,
-    # constants
     BaseEncoder,
+    # constants
     Choice,
     Compose,
     DeepcopyEncoder,
@@ -192,8 +191,6 @@ from tsdm.encoders.base import (
     ParametrizedEncoder,
     Pipe,
     Replicate,
-    SupportsBackend,
-    SupportsSerialization,
     TupleUnwrapper,
     TupleWrapper,
     WrappedEncoder,
@@ -227,6 +224,7 @@ from tsdm.encoders.pandas import (
     TripletDecoder,
     TripletEncoder,
 )
+from tsdm.encoders.protocols import SupportsBackend, SupportsSerialization
 from tsdm.encoders.time import (
     DateTimeEncoder,
     PeriodicEncoder,

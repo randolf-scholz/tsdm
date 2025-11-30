@@ -98,8 +98,8 @@ from tsdm.backend.pyarrow import (
     force_cast,
     unsafe_cast_columns,
 )
-from tsdm.data import strip_whitespace
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import strip_whitespace
 from tsdm.utils import remote
 
 type KEYS = Literal[

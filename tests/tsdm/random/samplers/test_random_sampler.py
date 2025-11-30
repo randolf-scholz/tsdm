@@ -9,7 +9,7 @@ import pytest
 from tsdm.random.samplers import RandomSampler
 
 if TYPE_CHECKING:
-    from tsdm.data import Indexable, MapDataset
+    from tsdm.datatools import Indexable, MapDataset
 
 PYTHON_STRINGS = ["foo", "bar", "baz", "qux", "quux", "quuz", "corge", "grault"]
 MAPPED_STRINGS = {2 * k + 1: s for k, s in enumerate(PYTHON_STRINGS)}  # generic index
