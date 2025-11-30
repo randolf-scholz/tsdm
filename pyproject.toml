@@ -377,6 +377,7 @@ generated-members = ["numpy.*", "torch.*"]
 # region mypy configuration ------------------------------------------------------------
 [tool.mypy]
 # SEE: https://mypy.readthedocs.io/en/stable/config_file.html
+follow_imports = "silent"
 files = ["src/", "tests/"]
 platform = "linux"
 plugins = []

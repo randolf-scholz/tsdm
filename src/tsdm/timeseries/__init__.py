@@ -91,3 +91,5 @@ TIMESERIES_COLLECTIONS: dict[str, Fn[[], PandasTSC]] = {
     "USHCN_DeBrouwer2019"       : ushcn_de_brouwer2019,
 }  # fmt: skip
 r"""Dictionary of all available time series collections."""
+
+del Fn

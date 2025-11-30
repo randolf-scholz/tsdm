@@ -22,8 +22,6 @@ from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 from scipy import stats
 
-from tsdm.types.linalg import NumericalSeries
-
 
 def approx_float_gcd(
     x: ArrayLike, /, *, rtol: float = 1e-05, atol: float = 1e-08
@@ -170,7 +168,7 @@ def time_gcd(s: Series) -> float:
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
 
 
-def irregularity_coefficient(s: NumericalSeries, /, *, drop_zero: bool = True) -> float:
+def irregularity_coefficient(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
     r"""Compute the irregularity coefficient of a time differences.
 
     Args:
@@ -208,7 +206,7 @@ def irregularity_coefficient(s: NumericalSeries, /, *, drop_zero: bool = True) -
     return float(np.max(dt_int) / np.gcd.reduce(dt_int))
 
 
-def coefficient_of_variation(s: NumericalSeries, /, *, drop_zero: bool = True) -> float:
+def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
     r"""Compute the coefficient of variation of a time differences.
 
     Args:
@@ -229,7 +227,7 @@ def coefficient_of_variation(s: NumericalSeries, /, *, drop_zero: bool = True) -
     return stats.variation(dt)
 
 
-def geometric_std(s: NumericalSeries, /, *, drop_zero: bool = True) -> float:
+def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
     r"""Compute the geometric standard deviation of a time differences.
 
     Args:

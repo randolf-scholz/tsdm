@@ -1,6 +1,8 @@
 r"""Utility functions that act on tabular data."""
 
 __all__ = [
+    # types
+    "MaybeNA",
     # classes
     "BoundaryInformation",
     "BoundaryTable",
@@ -22,8 +24,9 @@ from collections.abc import Mapping, Sequence
 from typing import Any, NamedTuple, NotRequired, Optional, Required, TypedDict, overload
 
 import pandas as pd
+import pyarrow as pa
 from pandas import DataFrame, Series
-from pyarrow import Array, Table
+from pandas.api.typing import NAType
 from scipy import stats
 
 from tsdm.backend.pandas import (
@@ -36,7 +39,8 @@ from tsdm.backend.pandas import (
 )
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
 
-__logger__: logging.Logger = logging.getLogger(__name__)
+type MaybeNA[T] = T | NAType
+r"""Type Alias for nullable types (pandas-specific)."""
 
 
 class Schema(NamedTuple):
@@ -122,14 +126,14 @@ def make_dataframe(
     return df
 
 
-def strip_whitespace[T: Array | Table | Series | DataFrame](
+def strip_whitespace[T: pa.Array | pa.Table | Series | DataFrame](
     table: T, /, *cols: str
 ) -> T:
     r"""Strip whitespace from all string columns in a table or frame."""
     match table:
-        case Table() as table:
+        case pa.Table() as table:
             return strip_whitespace_table(table, *cols)
-        case Array() as array:
+        case pa.Array() as array:
             if cols:
                 raise ValueError("Cannot specify columns for an Array.")
             return strip_whitespace_array(array)
@@ -306,13 +310,15 @@ def is_integer_series(s: Series, /) -> bool:
 
 def get_integer_cols(table: DataFrame, /) -> set[str]:
     r"""Get all columns that contain only integers."""
+    logger = logging.getLogger(f"{__name__}/get_integer_cols")
+
     cols: set[str] = set()
     for col in table.columns:
         if pd.api.types.is_integer_dtype(table[col]):
-            __logger__.debug("Integer column                       : %s", col)
+            logger.debug("Integer column                       : %s", col)
             cols.add(col)
         elif pd.api.types.is_float_dtype(table[col]) and is_integer_series(table[col]):
-            __logger__.debug("Integer column pretending to be float: %s", col)
+            logger.debug("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
 

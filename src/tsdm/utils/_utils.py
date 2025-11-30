@@ -59,8 +59,6 @@ from tsdm.types.aliases import (
     Size,
 )
 
-__logger__ = logging.getLogger(__name__)
-
 
 @wraps(Timedelta)
 def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Timedelta:
@@ -435,7 +433,8 @@ def repackage_zip(filepath: FilePath, /) -> None:
         )
 
         if not requirements:
-            __logger__.info("Skipping repackage_zip for %s", original_path)
+            logger = logging.getLogger(f"{__name__}/{repackage_zip.__name__}")
+            logger.info("Skipping repackage_zip for %s", original_path)
             return
 
     # create a temporary directory

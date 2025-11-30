@@ -20,7 +20,9 @@ type Writer[T] = Callable[Concatenate[T, ...], None]
 type Loader[T] = Callable[Concatenate[FilePath | IO[bytes], ...], T]
 
 
-def _choose_default_writer[T](table: T, extension: str) -> Writer[T]:
+def _choose_default_writer[T: (pa.Table, pd.DataFrame, pl.DataFrame)](
+    table: T, extension: str
+) -> Writer[T]:
     r"""Default writer function that uses the extension of the path."""
     match extension, table:
         case "parquet", pa.Table():

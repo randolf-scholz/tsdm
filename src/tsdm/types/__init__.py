@@ -6,15 +6,7 @@ __all__ = [
     "arrays",
     "callback_protocols",
     "protocols",
-    "scalars",
     "utils",
 ]
 
-from tsdm.types import (
-    aliases,
-    arrays,
-    callback_protocols,
-    protocols,
-    scalars,
-    utils,
-)
+from tsdm.types import aliases, arrays, callback_protocols, protocols, utils

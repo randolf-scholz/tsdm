@@ -23,8 +23,6 @@ from tsdm.types.protocols import NTuple
 from tsdm.utils.decorators.base import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
 
-__logger__ = logging.getLogger(__name__)
-
 
 # region without @decorator ------------------------------------------------------------
 def debug[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
@@ -127,7 +125,8 @@ def wrap_func[**P, R](  # +R
     pass_args: bool = False,
 ) -> Fn[P, R]:
     r"""Wrap a function with pre- and post-hooks."""
-    __logger__.getChild(func.__name__).debug("Wrapping function")
+    logger = logging.getLogger(f"{__name__}/{wrap_func.__name__}/{func.__name__}")
+    logger.debug("Wrapping function")
 
     pre_func: Fn[..., None] = (
         EMPTY_FN
@@ -160,7 +159,8 @@ def wrap_method[**P, T, R](  # T, +R
     pass_args: bool = False,
 ) -> Fn[Concatenate[T, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
-    __logger__.getChild(method.__name__).debug("Wrapping method")
+    logger = logging.getLogger(f"{__name__}/{wrap_method.__name__}/{method.__name__})")
+    logger.debug("Wrapping method")
 
     pre_func: Fn[Concatenate[T, ...], None] = (
         EMPTY_FN

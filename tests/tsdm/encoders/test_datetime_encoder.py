@@ -8,9 +8,9 @@ import polars as pl
 import pytest
 from pandas import Series, date_range, testing
 
-from tsdm.encoders.time import DateTimeEncoder
+from tsdm.backend.types import NumericalSeries
+from tsdm.encoders import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.linalg import NumericalSeries
 
 
 def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:

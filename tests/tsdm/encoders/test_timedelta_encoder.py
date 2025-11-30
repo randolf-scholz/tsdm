@@ -8,9 +8,9 @@ import pandas as pd
 import polars as pl
 import pytest
 
-from tsdm.encoders.time import TimeDeltaEncoder
+from tsdm.backend.types import NumericalSeries
+from tsdm.encoders import TimeDeltaEncoder
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.linalg import NumericalSeries
 
 
 def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSeries:

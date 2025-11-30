@@ -29,8 +29,6 @@ from tsdm.pprint import repr_mapping
 from tsdm.types.aliases import DirPath
 from tsdm.utils.contextmanagers import system_path
 
-__logger__: logging.Logger = logging.getLogger(__name__)
-
 
 def import_module(
     module_dir: DirPath, /, *, module_name: Optional[str] = None
@@ -99,7 +97,8 @@ def get_napoleon_type_aliases(module: ModuleType, /) -> dict[str, str]:
         else:
             d[item] = item
 
-    __logger__.info("Found napoleon type aliases: %s", repr_mapping(d, maxitems=-1))
+    logger = logging.getLogger(f"{__name__}/{get_napoleon_type_aliases.__name__}")
+    logger.info("Found napoleon type aliases: %s", repr_mapping(d, maxitems=-1))
     return d
 
 
@@ -198,7 +197,8 @@ def install_package(
             except subprocess.CalledProcessError as exc:
                 raise RuntimeError("Execution failed with error") from exc
     else:
-        __logger__.info("Package '%s' already installed.", package_name)
+        logger = logging.getLogger(f"{__name__}/{install_package.__name__}")
+        logger.info("Package '%s' already installed.", package_name)
 
 
 def write_requirements(

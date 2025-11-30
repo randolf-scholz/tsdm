@@ -67,7 +67,7 @@ def scalar(x: object, /, dtype: DataType | str) -> Scalar:
     return pa.scalar(x, type=dtype)
 
 
-def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
+def strip_whitespace_table[T: pa.Table](table: T, /, *cols: str) -> T:
     r"""Strip whitespace from selected columns in table."""
     for col in cols or table.column_names:
         if is_string_array(table[col]):
@@ -80,7 +80,7 @@ def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
     return table
 
 
-def strip_whitespace_array[A: AnyArray](arr: A, /) -> A:
+def strip_whitespace_array[A: (pa.Array, pa.ChunkedArray)](arr: A, /) -> A:
     r"""Strip whitespace from all string elements in an array."""
     match arr:
         case ChunkedArray(chunks=chunks):
@@ -103,7 +103,7 @@ def strip_whitespace_array[A: AnyArray](arr: A, /) -> A:
 @overload
 def strip_whitespace[A: AnyArray](obj: A, /) -> A: ...
 @overload
-def strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
+def strip_whitespace[T: pa.Table](obj: T, /, *cols: str) -> T: ...
 def strip_whitespace[T: Table | AnyArray](obj: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:

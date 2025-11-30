@@ -11,12 +11,12 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.types.arrays import (
-    ArrayLike,
-)
-from tsdm.types.linalg import (
+from tsdm.backend.types import (
     MutableTensor,
     NumericalArray,
+)
+from tsdm.types.arrays import (
+    ArrayLike,
 )
 from tsdm.types.mixins import (
     SupportsArray,

@@ -226,12 +226,10 @@ from tsdm.encoders.pandas import (
 )
 from tsdm.encoders.protocols import SupportsBackend, SupportsSerialization
 from tsdm.encoders.time import (
-    DateTimeEncoder,
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
     PositionalEncoder,
     SocialTimeEncoder,
-    TimeDeltaEncoder,
 )
 from tsdm.encoders.universal import (
     BoundaryEncoder,
@@ -241,6 +239,7 @@ from tsdm.encoders.universal import (
     TensorConcatenator,
     TensorSplitter,
 )
+from tsdm.encoders.universal.temporal import DateTimeEncoder, TimeDeltaEncoder
 
 ENCODERS: dict[str, type[BaseEncoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,

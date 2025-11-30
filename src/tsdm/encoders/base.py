@@ -81,6 +81,7 @@ __all__ = [
     "UNWRAP_TUPLE",
     # protocols & abcs
     "BaseEncoder",
+    "Encoder",
     "EncoderDict",
     "EncoderList",
     "EncoderMeta",

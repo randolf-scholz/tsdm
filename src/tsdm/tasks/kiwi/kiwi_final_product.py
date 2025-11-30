@@ -23,11 +23,10 @@ from torch import Tensor, jit, nn
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import KiwiBenchmark
-from tsdm.datatools import MappingDataset
+from tsdm.datatools import MappingDataset, MaybeNA
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
-from tsdm.types.pandas import MaybeNA
 from tsdm.utils import timedelta
 from tsdm.utils.decorators import pprint_repr
 

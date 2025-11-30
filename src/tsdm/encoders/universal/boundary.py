@@ -10,9 +10,9 @@ import pandas as pd
 
 from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
+from tsdm.backend.types import NumericalSeries
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.types.linalg import NumericalSeries
 from tsdm.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 

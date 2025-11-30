@@ -20,9 +20,11 @@ from tsdm.utils.contextmanagers._contextmanagers import (
 )
 
 CONTEXT_MANAGERS: dict[str, type[AbstractContextManager]] = {
-    "add_to_path": system_path,
-    "ray_cluster": ray_cluster,
-    "timer": timer,
-    "timeout": timeout,
-}
+    "add_to_path" : system_path,
+    "ray_cluster" : ray_cluster,
+    "timeout"     : timeout,
+    "timer"       : timer,
+}  # fmt: skip
 r"""Dictionary of all available context managers."""
+
+del AbstractContextManager

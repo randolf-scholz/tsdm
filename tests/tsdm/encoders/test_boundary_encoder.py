@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 import torch
 
+from tsdm.backend.types import NumericalTensor
 from tsdm.encoders import BoundaryEncoder
-from tsdm.types.linalg import NumericalTensor
 
 DATA_1D = [
     float("-inf"),

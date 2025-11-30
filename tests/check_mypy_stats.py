@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 
-def run_mypy_timed(path: Path, /, *, show_errors: bool = False):
+def run_mypy_timed(path: Path, /, *, show_errors: bool = False) -> float:
     start = time.perf_counter()
     try:
         subprocess.run(
@@ -24,7 +24,7 @@ def run_mypy_timed(path: Path, /, *, show_errors: bool = False):
     return end - start
 
 
-def analyze_project(root_dir: Path, *, limit: int, show_errors: bool):
+def analyze_project(root_dir: Path, *, limit: int, show_errors: bool) -> None:
     files = sorted(root_dir.rglob("*.py"))
     timings = []
 
@@ -40,7 +40,7 @@ def analyze_project(root_dir: Path, *, limit: int, show_errors: bool):
         print(f"{duration:.2f}s  {file}")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Measure mypy execution time per Python file in a project (no incremental mode)."
     )
@@ -69,7 +69,7 @@ def main():
         print(f"Error: path {args.path} does not exist.")
         raise SystemExit(1)
 
-    analyze_project(args.path, args.limit, args.show_errors)
+    analyze_project(args.path, limit=args.limit, show_errors=args.show_errors)
 
 
 if __name__ == "__main__":

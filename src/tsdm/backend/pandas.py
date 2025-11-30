@@ -143,7 +143,9 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
-def where[P: PandasType](cond: NDArray, a: P, b: BuiltinScalar | NDArray, /) -> P:
+def where[P: (Index, MultiIndex, Series, DataFrame)](
+    cond: NDArray, a: P, b: BuiltinScalar | NDArray, /
+) -> P:
     r"""Analogue to `numpy.where`."""
     if isinstance(a, Index | Series | DataFrame):
         return a.where(cond, b)
@@ -169,21 +171,21 @@ def copy_like[P: PandasType](x: ArrayLike, ref: P, /) -> P:
 
 
 # region auxiliary functions -----------------------------------------------------------
-def strip_whitespace_index(index: Index, /) -> Index:
+def strip_whitespace_index[I: Index](index: I, /) -> I:
     r"""Strip whitespace from all string elements in an Index."""
     if index.dtype == "string":
         return index.str.strip()
     return index
 
 
-def strip_whitespace_series(series: Series, /) -> Series:
+def strip_whitespace_series[S: Series](series: S, /) -> S:
     r"""Strip whitespace from all string elements in a Series."""
     if series.dtype == "string":
         return series.str.strip()
     return series
 
 
-def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
+def strip_whitespace_dataframe[DF: DataFrame](frame: DF, /, *cols: str) -> DF:
     r"""Strip whitespace from selected columns in a DataFrame."""
     return frame.assign(**{
         col: strip_whitespace_series(frame[col]) for col in (cols or frame)

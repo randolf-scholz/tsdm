@@ -1,3 +1,17 @@
-class Foo[X, Y, Z = object](Base[X, Y]):
-    def test(self, swapped: Foo[Y, X]) -> None:
-        reveal_type(swapped)  # "Foo[X`1, Y`2, builtins.object]" ❓️❗️
+from typing import Callable, Protocol
+
+
+class Decorator[**P](Protocol):
+    def __call__(self, **kwargs: P.kwargs) -> None: ...
+
+
+def make[**P](fn: Callable[P, None]) -> Decorator[P]: ...
+
+
+def demo(a: int = 1, /, *, b: int = 2) -> None: ...
+
+
+fn = make(demo)
+fn(b=1)
+fn(c=1)
+fn(1)

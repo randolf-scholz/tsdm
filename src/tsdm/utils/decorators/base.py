@@ -74,24 +74,26 @@ class PolymorphicClassDecorator[**P](Protocol):
 
     # fmt: off
     @overload  # @decorator / decorator(cls, *args, **kwargs)
-    def __call__[Cls: type](self, cls: Cls, /, *args: P.args, **kwargs: P.kwargs) -> Cls: ...
+    def __call__[Cls: type](self, cls: Cls, /, **kwargs: P.kwargs) -> Cls: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> IdentityMapOnCls: ...
+    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnCls: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
 
 
 class ClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):  # -F_in, +F_out
     r"""Function Decorator Protocol that preserves type."""
 
-    def __call__(
-        self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs
-    ) -> Cls_out: ...
+    # fmt: off
+    # @decorator / decorator(cls, *args, **kwargs)
+    def __call__(self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs) -> Cls_out: ...
+    # fmt: on
 
 
 class ClassDecoratorFactory[Cls_in: type, Cls_out: type, **P](Protocol):
     r"""Function Decorator Factory Protocol that preserves type."""
 
     # fmt: off
+    # @decorator(*args, **kwargs)
     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> ClassDecorator[Cls_in, Cls_out, P]: ...
     # fmt: on
 
@@ -119,16 +121,16 @@ class PolymorphicFunctionDecorator[**P](Protocol):
 
     # fmt: off
     @overload  # @decorator / decorator(fn, *args, **kwargs)
-    def __call__[F: Fn](self, fn: F, /, *args: P.args, **kwargs: P.kwargs) -> F: ...
+    def __call__[F: Fn](self, fn: F, /, **kwargs: P.kwargs) -> F: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> IdentityMapOnFn: ...
-
+    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnFn: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
 
 
 class FunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):  # -F_in, +F_out
     r"""Function Decorator Protocol that preserves type."""
 
+    # @decorator / decorator(fn, *args, **kwargs)
     def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
 
 
@@ -136,6 +138,7 @@ class FunctionDecoratorFactory[F_in: Fn, F_out: Fn, **P](Protocol):
     r"""Function Decorator Factory Protocol that preserves type."""
 
     # fmt: off
+    # @decorator(*args, **kwargs)
     def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[F_in, F_out, P]: ...
     # fmt: on
 
@@ -145,9 +148,9 @@ class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
 
     # fmt: off
     @overload  # @decorator / decorator(fn, *args, **kwargs)
-    def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
+    def __call__(self, fn: F_in, /, **kwargs: P.kwargs) -> F_out: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[F_in], F_out]: ...
+    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[F_in], F_out]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
 
 
@@ -162,9 +165,9 @@ class PolymorphicDecorator[**P](Protocol):
 
     # fmt: off
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def __call__[T](self, obj: T, /, *args: P.args, **kwargs: P.kwargs) -> T: ...
+    def __call__[T](self, obj: T, /, **kwargs: P.kwargs) -> T: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     @overload  # @decorator(*args, **kwargs)
-    def __call__[T](self, /, *args: P.args, **kwargs: P.kwargs) -> IdentityMap: ...
+    def __call__[T](self, /, **kwargs: P.kwargs) -> IdentityMap: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
 
 
@@ -198,10 +201,10 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     __annotations__: dict[str, Any]
 
     # fmt: off
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
+    def __call__(self, obj: T_in, /, **kwargs: P.kwargs) -> T_out: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
 
 
@@ -332,11 +335,11 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
                 pass
 
     # FIXME: Instead of inner function, return instance of ParametrizedDecorator
-    @overload  # @decorator(*args, **kwargs)
-    def _deco(*args: P.args, **kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore[overload-overlap]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def _deco(obj: X, /, *args: P.args, **kwargs: P.kwargs) -> Y: ...
-    @wraps(deco)  # type: ignore[misc]
+    def _deco(obj: X, /, **kwargs: P.kwargs) -> Y: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    @overload  # @decorator(*args, **kwargs)
+    def _deco(**kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    @wraps(deco)
     def _deco(obj: X = _OBJ, /, *args: P.args, **kwargs: P.kwargs) -> Y | Fn[[X], Y]:
         if obj is _OBJ:
             logger.debug(

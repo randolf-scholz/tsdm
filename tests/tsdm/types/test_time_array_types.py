@@ -9,7 +9,7 @@ import polars as pl
 import pytest
 from numpy.typing import NDArray
 
-from tsdm.types.linalg import NumericalArray
+from tsdm.backend.types import NumericalArray
 from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 

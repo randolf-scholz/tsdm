@@ -4,10 +4,10 @@ r"""Frozen mapping type."""
 __all__ = ["FrozenMap"]
 
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Any, overload
+from typing import overload
 
 
-class FrozenMap[K = Any, V = Any](Mapping[K, V]):
+class FrozenMap[K, V](Mapping[K, V]):
     r"""A frozen mapping type."""
 
     # if TYPE_CHECKING:
@@ -24,7 +24,7 @@ class FrozenMap[K = Any, V = Any](Mapping[K, V]):
         **kwargs: V
     ) -> None: ...
     # fmt: on
-    def __init__(
+    def __init__(  # type: ignore[misc]
         self, items: Mapping[K, V] | Iterable[tuple[K, V]] = (), /, **kwargs: V
     ) -> None:
         self._values: dict[K, V] = dict(items, **kwargs)

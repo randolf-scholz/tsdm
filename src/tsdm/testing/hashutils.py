@@ -36,7 +36,7 @@ from collections import Counter
 from collections.abc import Collection, Hashable, Iterable, Mapping, Sequence
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Final, Literal, NamedTuple, Optional
+from typing import Any, ClassVar, Final, Literal, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -47,8 +47,6 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import FilePath
 from tsdm.types.mixins import SupportsShape
-
-__logger__: logging.Logger = logging.getLogger(__name__)
 
 DEFAULT_HASH_METHOD: Final[str] = "sha256"
 r"""The default hash method to use."""
@@ -95,6 +93,8 @@ class ValidationError(ValueError):
 class ErrorHandler:
     r"""Validation mode for hash validation."""
 
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}/{__qualname__}")
+
     class MODE(StrEnum):
         r"""Validation mode for hash validation."""
 
@@ -120,7 +120,7 @@ class ErrorHandler:
                 if not valid:
                     warnings.warn(msg, UserWarning, stacklevel=2)
             case self.MODE.LOG:
-                __logger__.info(msg)
+                self.LOGGER.info(msg)
             case self.MODE.IGNORE:
                 pass
 

@@ -42,7 +42,7 @@ utility = true
 
 [[modules ]]
 path = "tsdm.backend"
-depends_on = [ "tsdm.types"]
+depends_on = [ "tsdm.types", "tsdm.backend.types"]
 
 [[modules ]]
 path = "tsdm.viz"
@@ -62,7 +62,7 @@ depends_on = ["tsdm.types", "tsdm.backend", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.encoders"
-depends_on = ["tsdm.types", "tsdm.backend", "tsdm.linalg", "tsdm.encoders.algebra"]
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.encoders.universal"]
 
 [[modules ]]
 path = "tsdm.linalg"
@@ -86,11 +86,7 @@ depends_on = ["tsdm.types", "tsdm.backend", "tsdm.optimizers", "tsdm.testing", "
 
 [[modules ]]
 path = "tsdm.tasks"
-depends_on = ["tsdm.timeseries", "tsdm.random", "tsdm.metrics", "tsdm.types", "tsdm.encoders", "tsdm.datasets", "tsdm.datatools"]
-
-[[modules ]]
-path = "tsdm.encoders.algebra"
-depends_on = [ "tsdm.encoders"]
+depends_on = ["tsdm.timeseries", "tsdm.random", "tsdm.metrics", "tsdm.encoders", "tsdm.datasets", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.dtypes"
@@ -100,3 +96,11 @@ utility = true
 [[modules ]]
 path = "tsdm.datatools"
 depends_on = ["tsdm.types", "tsdm.linalg", "tsdm.backend"]
+
+[[modules ]]
+path = "tsdm.encoders.universal"
+depends_on = ["tsdm.encoders", "tsdm.types", "tsdm.backend", "tsdm.linalg", "tsdm.backend.types"]
+
+[[modules ]]
+path = "tsdm.backend.types"
+depends_on = ["tsdm.types"]

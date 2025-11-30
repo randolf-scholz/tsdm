@@ -31,9 +31,9 @@ __all__ = [
 from dataclasses import KW_ONLY, dataclass
 
 from tsdm.backend import Backend, get_backend
+from tsdm.backend.types import NumericalArray as Array
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.types.linalg import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
 
 

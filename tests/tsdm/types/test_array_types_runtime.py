@@ -11,8 +11,7 @@ import pytest
 import torch as pt
 
 from tests import pytest_xfail
-from tsdm.testing import assert_protocol
-from tsdm.types.linalg import (
+from tsdm.backend.types import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,
@@ -20,6 +19,7 @@ from tsdm.types.linalg import (
     IntegerArray,
     TimedeltaArray,
 )
+from tsdm.testing import assert_protocol
 
 # def chk(x: NDArray[np.floating]) -> FloatArray:
 #     return x

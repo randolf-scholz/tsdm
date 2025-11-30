@@ -11,13 +11,7 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.testing import assert_protocol, check_shared_interface
-from tsdm.types.arrays import (
-    ArrayLike,
-    SeriesLike,
-    TableLike,
-)
-from tsdm.types.linalg import (
+from tsdm.backend.types import (
     MutableTensor,
     NumericalArray,
     NumericalSeries,
@@ -26,6 +20,12 @@ from tsdm.types.linalg import (
     SupportsMutation,
     SupportsVectorArithmetic,
     SupportsVectorComparison,
+)
+from tsdm.testing import assert_protocol, check_shared_interface
+from tsdm.types.arrays import (
+    ArrayLike,
+    SeriesLike,
+    TableLike,
 )
 from tsdm.types.mixins import (
     SupportsArray,

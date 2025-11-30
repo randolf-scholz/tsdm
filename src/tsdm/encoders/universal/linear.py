@@ -11,11 +11,11 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any, Self, cast, overload
 
 from tsdm.backend import Backend, get_backend
+from tsdm.backend.types import NumericalArray as Array
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
 from tsdm.linalg.utils import invert_axis_selection, reduce_axes
 from tsdm.types.aliases import Axis
-from tsdm.types.linalg import NumericalArray as Array
 from tsdm.utils.decorators import pprint_repr
 
 

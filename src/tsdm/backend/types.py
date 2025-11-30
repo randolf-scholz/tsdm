@@ -34,12 +34,7 @@ from typing import (
 from numpy.typing import NDArray
 
 from tsdm.types.aliases import Axis, MultiIndexer
-from tsdm.types.scalars import (
-    BoolScalar,
-    DurationScalar,
-    FloatScalar,
-    TimestampScalar,
-)
+from tsdm.types.scalars import BoolScalar, DurationScalar, FloatScalar, TimestampScalar
 
 
 @runtime_checkable
