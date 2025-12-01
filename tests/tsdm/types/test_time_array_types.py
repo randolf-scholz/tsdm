@@ -9,7 +9,7 @@ import polars as pl
 import pytest
 from numpy.typing import NDArray
 
-from tsdm.backend.types import NumericalArray
+from tsdm.backend.types import DurationArray, TimestampArray
 from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 
@@ -79,7 +79,7 @@ TEST_CASES: list[KEY] = [
 # endregion setup ----------------------------------------------------------------------
 
 # region test data ---------------------------------------------------------------------
-TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[DurationScalar]] = {
+TIMEDELTA_ARRAYS: dict[KEY, DurationArray] = {
     "numpy[float]"     : TD_NUMPY_FLOAT,
     "numpy[int]"       : TD_NUMPY_INT,
     "numpy[time]"      : TD_NUMPY_DUR,
@@ -111,7 +111,7 @@ TIMEDELTA_SCALARS: dict[KEY, DurationScalar] = {
 }  # fmt: skip
 r"""Dictionary of compatible python timedelta values for each timedelta."""
 
-TIMESTAMP_ARRAYS: dict[KEY, NumericalArray[TimestampScalar]] = {
+TIMESTAMP_ARRAYS: dict[KEY, TimestampArray] = {
     "numpy[float]"     : TS_NUMPY_FLOAT,
     "numpy[int]"       : TS_NUMPY_INT,
     "numpy[time]"      : TS_NUMPY_DATE,
@@ -145,39 +145,26 @@ r"""Dictionary of compatible python datetime values for each datetime."""
 # endregion test data ------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("example", TEST_CASES)
-def test_timedelta_arrays(example: KEY) -> None:
-    td_array = TIMEDELTA_ARRAYS[example]
-    td_scalar = TIMEDELTA_SCALARS[example]
-    ts_scalar = TIMESTAMP_SCALARS[example]
-    cls = type(td_array)
+class TestDurationArrayProtocol:
+    r"""Test the duration array protocol."""
 
-    # arithmetic
-    assert type(td_array + td_scalar) is cls
-    assert type(td_array - td_scalar) is cls
-    assert type(ts_scalar + td_array) is cls
-    assert type(ts_scalar - td_array) is cls
-    # comparisons
-    assert type(td_array < td_scalar) is cls
+    # float arrays
+    _numpy_float: DurationArray[float] = TD_NUMPY_FLOAT
+    _pandas_np_float: DurationArray[float] = TD_PANDAS_NP_FLOAT
+    _pandas_pa_float: DurationArray[float] = TD_PANDAS_PA_FLOAT
+    _polars_float: DurationArray[float] = TD_POLARS_FLOAT
+    # int arrays
+    _numpy_int: DurationArray[int] = TD_NUMPY_INT
+    _pandas_np_int: DurationArray[int] = TD_PANDAS_NP_INT
+    _pandas_pa_int: DurationArray[int] = TD_PANDAS_PA_INT
+    _polars_int: DurationArray[int] = TD_POLARS_INT
+    # timedelta arrays
+    # _numpy_time: DurationArray[py_timedelta] = TD_NUMPY_DUR
+    _pandas_np_time: DurationArray[py_timedelta] = TD_PANDAS_NP_DUR
+    _pandas_pa_time: DurationArray[py_timedelta] = TD_PANDAS_PA_DUR
+    _polars_time: DurationArray[py_timedelta] = TD_POLARS_DUR
 
-
-@pytest.mark.parametrize("example", TEST_CASES)
-def test_timestamp_arrays(example: KEY) -> None:
-    ts_array = TIMESTAMP_ARRAYS[example]
-    td_scalar = TIMEDELTA_SCALARS[example]
-    ts_scalar = TIMESTAMP_SCALARS[example]
-    cls = type(ts_array)
-
-    # comparisons
-    assert type(ts_array < ts_scalar) is cls
-    # arithmetic
-    assert type(ts_array + td_scalar) is cls
-    assert type(ts_array - td_scalar) is cls
-
-
-def type_duration_array_assignable() -> None:
-    r"""Test assignability of duration-like arrays."""
-    _FLOAT_ARRAYS: dict[KEY, NumericalArray[float]] = {
+    DURATION_FLOAT_ARRAYS: dict[KEY, DurationArray[float]] = {
         "numpy[float]"     : TD_NUMPY_FLOAT,
         "pandas[np_float]" : TD_PANDAS_NP_FLOAT,
         "pandas[pa_float]" : TD_PANDAS_PA_FLOAT,
@@ -185,53 +172,181 @@ def type_duration_array_assignable() -> None:
     }  # fmt: skip
     r"""Dictionary of float arrays."""
 
-    _INT_ARRAYS: dict[KEY, NumericalArray[int]] = {
-        "numpy[int]"     : TD_NUMPY_INT,
-        "pandas[np_int]" : TD_PANDAS_NP_INT,
-        "pandas[pa_int]" : TD_PANDAS_PA_INT,
-        "polars[int]"    : TD_POLARS_INT,
+    DURATION_INT_ARRAYS: dict[KEY, DurationArray[int]] = {
+        "numpy[int]": TD_NUMPY_INT,
+        "pandas[np_int]": TD_PANDAS_NP_INT,
+        "pandas[pa_int]": TD_PANDAS_PA_INT,
+        "polars[int]": TD_POLARS_INT,
     }  # fmt: skip
     r"""Dictionary of int arrays."""
 
-    _TIMEDELTA_ARRAYS: dict[KEY, NumericalArray[py_timedelta]] = {
-        "numpy[time]"     : TD_NUMPY_DUR,
-        "pandas[np_time]" : TD_PANDAS_NP_DUR,
-        "pandas[pa_time]" : TD_PANDAS_PA_DUR,
-        "polars[time]"    : TD_POLARS_DUR,
+    DURATION_TIMEDELTA_ARRAYS: dict[KEY, DurationArray[py_timedelta]] = {
+        # "numpy[time]"     : TD_NUMPY_DUR,
+        "pandas[np_time]": TD_PANDAS_NP_DUR,
+        "pandas[pa_time]": TD_PANDAS_PA_DUR,
+        "polars[time]": TD_POLARS_DUR,
     }  # fmt: skip
     r"""Dictionary of timedelta arrays."""
 
+    @pytest.mark.parametrize("case", TEST_CASES)
+    def test_timedelta_arrays(self, case) -> None:
+        td_array = TIMEDELTA_ARRAYS[case]
+        td_scalar = TIMEDELTA_SCALARS[case]
+        ts_scalar = TIMESTAMP_SCALARS[case]
+        cls = type(td_array)
 
-def type_timestamp_array_assignable() -> None:
-    r"""Test assignability of timestamp-like arrays."""
-    _FLOAT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[float]]] = {
-        "numpy[float]"     : TS_NUMPY_FLOAT,
-        "pandas[np_float]" : TS_PANDAS_NP_FLOAT,
-        "pandas[pa_float]" : TS_PANDAS_PA_FLOAT,
-        "polars[float]"    : TS_POLARS_FLOAT,
+        # unary operations
+        assert type(+td_array) is cls
+        assert type(-td_array) is cls
+        assert type(abs(td_array)) is cls
+        # arithmetic
+        assert type(td_array + td_scalar) is cls
+        assert type(td_array - td_scalar) is cls
+        assert type(ts_scalar + td_array) is cls
+        assert type(ts_scalar - td_array) is cls
+        # comparisons
+        assert type(td_array < td_scalar) is cls
+        # multiplication with int
+        assert type(td_array * PY_INT) is cls
+        assert type(PY_INT * td_array) is cls
+        # floor division with int
+        assert type(td_array // PY_INT) is cls
+
+    @pytest.mark.parametrize("case", DURATION_FLOAT_ARRAYS)
+    def test_duration_float_arrays(self, case: str) -> None:
+        td_array = self.DURATION_FLOAT_ARRAYS[case]
+        cls = type(td_array)
+
+        # addition
+        assert type(PY_FLOAT + td_array) is cls
+        assert type(td_array + PY_FLOAT) is cls
+        # subtraction
+        assert type(td_array - PY_FLOAT) is cls
+        assert type(PY_FLOAT - td_array) is cls
+        # comparisons
+        assert type(td_array < PY_FLOAT) is cls
+
+    @pytest.mark.parametrize("case", DURATION_INT_ARRAYS)
+    def test_duration_int_arrays(self, case: str) -> None:
+        td_array = self.DURATION_INT_ARRAYS[case]
+        cls = type(td_array)
+
+        # addition
+        assert type(td_array + PY_INT) is cls
+        assert type(PY_INT + td_array) is cls
+        # subtraction
+        assert type(td_array - PY_INT) is cls
+        assert type(PY_INT - td_array) is cls
+        # comparisons
+        assert type(td_array < PY_INT) is cls
+
+    @pytest.mark.parametrize("case", DURATION_TIMEDELTA_ARRAYS)
+    def test_duration_timedelta_arrays(self, case: str) -> None:
+        td_array = self.DURATION_TIMEDELTA_ARRAYS[case]
+        cls = type(td_array)
+
+        # addition
+        assert type(td_array + PY_TIMEDELTA) is cls
+        assert type(PY_TIMEDELTA + td_array) is cls
+        # subtraction
+        assert type(td_array - PY_TIMEDELTA) is cls
+        assert type(PY_TIMEDELTA - td_array) is cls
+        # comparisons
+        assert type(td_array < PY_TIMEDELTA) is cls
+
+
+class TestTimestampArrayProtocol:
+    r"""Test the timestamp array protocol."""
+
+    # float arrays
+    _numpy_float: TimestampArray[TimestampScalar[float]] = TS_NUMPY_FLOAT
+    _pandas_np_float: TimestampArray[TimestampScalar[float]] = TS_PANDAS_NP_FLOAT
+    _pandas_pa_float: TimestampArray[TimestampScalar[float]] = TS_PANDAS_PA_FLOAT
+    _polars_float: TimestampArray[TimestampScalar[float]] = TS_POLARS_FLOAT
+
+    # int arrays
+    _numpy_int: TimestampArray[TimestampScalar[int]] = TS_NUMPY_INT
+    _pandas_np_int: TimestampArray[TimestampScalar[int]] = TS_PANDAS_NP_INT
+    _pandas_pa_int: TimestampArray[TimestampScalar[int]] = TS_PANDAS_PA_INT
+    _polars_int: TimestampArray[TimestampScalar[int]] = TS_POLARS_INT
+
+    # datetime arrays
+    # _numpy_time: TimestampArray[TimestampScalar[py_timedelta]] = TS_NUMPY_DATE
+    _pandas_np_time: TimestampArray[TimestampScalar[py_timedelta]] = TS_PANDAS_NP_DATE
+    _pandas_pa_time: TimestampArray[TimestampScalar[py_timedelta]] = TS_PANDAS_PA_DATE
+    _polars_time: TimestampArray[TimestampScalar[py_timedelta]] = TS_POLARS_DATE
+
+    TIMESTAMP_FLOAT_ARRAYS: dict[KEY, TimestampArray[TimestampScalar[float]]] = {
+        "numpy[float]": TS_NUMPY_FLOAT,
+        "pandas[np_float]": TS_PANDAS_NP_FLOAT,
+        "pandas[pa_float]": TS_PANDAS_PA_FLOAT,
+        "polars[float]": TS_POLARS_FLOAT,
     }  # fmt: skip
     r"""Dictionary of float arrays."""
-
-    _INT_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[int]]] = {
-        "numpy[int]"     : TS_NUMPY_INT,
-        "pandas[np_int]" : TS_PANDAS_NP_INT,
-        "pandas[pa_int]" : TS_PANDAS_PA_INT,
-        "polars[int]"    : TS_POLARS_INT,
+    TIMESTAMP_INT_ARRAYS: dict[KEY, TimestampArray[TimestampScalar[int]]] = {
+        "numpy[int]": TS_NUMPY_INT,
+        "pandas[np_int]": TS_PANDAS_NP_INT,
+        "pandas[pa_int]": TS_PANDAS_PA_INT,
+        "polars[int]": TS_POLARS_INT,
     }  # fmt: skip
     r"""Dictionary of int arrays."""
-
-    _DATETIME_ARRAYS: dict[KEY, NumericalArray[TimestampScalar[py_timedelta]]] = {
-        "numpy[time]"     : TS_NUMPY_DATE,
-        "pandas[np_time]" : TS_PANDAS_NP_DATE,
-        "pandas[pa_time]" : TS_PANDAS_PA_DATE,
-        "polars[time]"    : TS_POLARS_DATE,
+    TIMESTAMP_PYDATETIME_ARRAYS: dict[KEY, TimestampArray[TimestampScalar[py_timedelta]]] = {
+        # "numpy[time]"     : TS_NUMPY_DATE,
+        "pandas[np_time]": TS_PANDAS_NP_DATE,
+        "pandas[pa_time]": TS_PANDAS_PA_DATE,
+        "polars[time]": TS_POLARS_DATE,
     }  # fmt: skip
     r"""Dictionary of datetime arrays."""
 
-    _DATE_ARRAYS: dict[KEY, NumericalArray[py_datetime]] = {
-        "numpy[time]"     : TS_NUMPY_DATE,
-        "pandas[np_time]" : TS_PANDAS_NP_DATE,
-        "pandas[pa_time]" : TS_PANDAS_PA_DATE,
-        "polars[time]"    : TS_POLARS_DATE,
-    }  # fmt: skip
-    r"""Dictionary of datetime arrays."""
+    @pytest.mark.parametrize("case", TEST_CASES)
+    def test_timestamp_arrays(self, case: KEY) -> None:
+        ts_array = TIMESTAMP_ARRAYS[case]
+        td_scalar = TIMEDELTA_SCALARS[case]
+        ts_scalar = TIMESTAMP_SCALARS[case]
+        cls = type(ts_array)
+
+        # comparisons
+        assert type(ts_array < ts_scalar) is cls
+        # arithmetic
+        assert type(ts_array + td_scalar) is cls
+        assert type(ts_array - td_scalar) is cls
+
+    @pytest.mark.parametrize("case", TIMESTAMP_FLOAT_ARRAYS)
+    def test_timestamp_float_arrays(self, case: str) -> None:
+        ts_array = self.TIMESTAMP_FLOAT_ARRAYS[case]
+        cls = type(ts_array)
+
+        # arithmetic
+        assert type(ts_array + PY_FLOAT) is cls
+        assert type(PY_FLOAT + ts_array) is cls
+        assert type(ts_array - PY_FLOAT) is cls
+        assert type(PY_FLOAT - ts_array) is cls
+        # comparisons
+        assert type(ts_array < PY_FLOAT) is cls
+
+    @pytest.mark.parametrize("case", TIMESTAMP_INT_ARRAYS)
+    def test_timestamp_int_arrays(self, case: str) -> None:
+        ts_array = self.TIMESTAMP_INT_ARRAYS[case]
+        cls = type(ts_array)
+
+        # arithmetic
+        assert type(ts_array + PY_INT) is cls
+        assert type(PY_INT + ts_array) is cls
+        assert type(ts_array - PY_INT) is cls
+        assert type(PY_INT - ts_array) is cls
+        # comparisons
+        assert type(ts_array < PY_INT) is cls
+
+    @pytest.mark.parametrize("case", TIMESTAMP_PYDATETIME_ARRAYS)
+    def test_timestamp_datetime_arrays(self, case: str) -> None:
+        ts_array = self.TIMESTAMP_PYDATETIME_ARRAYS[case]
+        cls = type(ts_array)
+
+        # addition
+        assert type(ts_array + PY_TIMEDELTA) is cls
+        assert type(PY_TIMEDELTA + ts_array) is cls
+        # subtraction
+        assert type(ts_array - PY_DATETIME) is cls
+        assert type(PY_DATETIME - ts_array) is cls
+        # comparisons
+        assert type(ts_array < PY_DATETIME) is cls

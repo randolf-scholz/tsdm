@@ -157,7 +157,7 @@ class DatasetBase[Key: str, T](
 
     rawdata_files: Collection[str]  # type: ignore[no-redef]
     r"""READ-ONLY: The names of the raw data files that make up the dataset."""
-    table_names: Collection[Key]  # type: ignore[no-redef]
+    table_names: Collection[Key]  # type: ignore[no-redef]  # pyright: ignore[reportIncompatibleMethodOverride]
     r"""READ-ONLY: The names of the tables that make up the dataset."""
     # endregion abstract readable members  ---------------------------------------------
 
@@ -167,10 +167,6 @@ class DatasetBase[Key: str, T](
     # FIXME: Replace Mapping[Key_, ...} with Readable[Mapping[Key, ...]] if Readable is added.
     type _Key = str
     r"""Type alias for the key of the dataset."""
-    # table_names: Collection[Key]
-    # r"""READ-ONLY: The names of the tables."""
-    # rawdata_files: Collection[str]
-    # r"""The names of the raw dataset file(s)."""
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP

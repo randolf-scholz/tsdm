@@ -408,7 +408,9 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
 
                 record_id = int("".join(c for c in member.name if c.isdigit()))
                 progress_bar.set_postfix(record_id=record_id)
-                with archive.extractfile(member) as file:  # type: ignore[union-attr]
+                archive_item = archive.extractfile(member)
+                assert archive_item is not None
+                with archive_item as file:
                     df = pd.read_csv(
                         file,
                         dtype=self.rawdata_schema,

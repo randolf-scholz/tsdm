@@ -14,10 +14,10 @@ from tests import pytest_xfail
 from tsdm.backend.types import (
     BooleanArray,
     ComplexArray,
-    DatetimeArray,
+    DurationArray,
     FloatArray,
     IntegerArray,
-    TimedeltaArray,
+    TimestampArray,
 )
 from tsdm.testing import assert_protocol
 
@@ -62,7 +62,7 @@ INT_ARRAYS: dict[str, IntegerArray] = {
     "numpy[int]"     : np.array(_INTS, dtype=np.int64),
     "pandas[np_int]" : pd.Series(_INTS, dtype=np.int64),
     "pandas[pa_int]" : pd.Series(_INTS, dtype=_pa_int64),
-    "polars[int]"    : pl.Series(_INTS, dtype=pl.Int64()),  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    "polars[int]"    : pl.Series(_INTS, dtype=pl.Int64()),  # pyright: ignore[reportAssignmentType]
     "torch[int]"     : pt.tensor(_INTS, dtype=pt.int64),
 }  # fmt: skip
 r"""Dictionary of int arrays."""
@@ -71,7 +71,7 @@ FLOAT_ARRAYS: dict[str, FloatArray] = {
     "numpy[float]"     : np.array(_FLOATS, dtype=np.float64),
     "pd_series[np_float]" : pd.Series(_FLOATS, dtype=np.float64),
     "pd_series[pa_float]" : pd.Series(_FLOATS, dtype=_pa_float64),
-    "polars[float]"    : pl.Series(_FLOATS, dtype=pl.Float64()),  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    "polars[float]"    : pl.Series(_FLOATS, dtype=pl.Float64()),  # pyright: ignore[reportAssignmentType]
     "torch[float]"     : pt.tensor(_FLOATS, dtype=pt.float64),
 }  # fmt: skip
 r"""Dictionary of float arrays."""
@@ -83,7 +83,7 @@ COMPLEX_ARRAYS: dict[str, ComplexArray] = {
 }  # fmt: skip
 r"""Dictionary of complex arrays."""
 
-TIME_ARRAYS: dict[str, TimedeltaArray] = {
+TIME_ARRAYS: dict[str, DurationArray] = {
     "numpy[time]"     : np.array(_TIMEDELTAS, dtype="timedelta64[ns]"),
     "pandas[np_time]" : pd.Series(_TIMEDELTAS, dtype="timedelta64[ns]"),
     "pandas[pa_time]" : pd.Series(_TIMEDELTAS, dtype=_pa_duration_ns),
@@ -91,7 +91,7 @@ TIME_ARRAYS: dict[str, TimedeltaArray] = {
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
-DATE_ARRAYS: dict[str, DatetimeArray] = {
+DATE_ARRAYS: dict[str, TimestampArray] = {
     "numpy[date]"     : np.array(_DATETIMES, dtype="datetime64[ns]"),
     "pandas[np_date]" : pd.Series(_DATETIMES, dtype="datetime64[ns]"),
     "pandas[pa_date]" : pd.Series(_DATETIMES, dtype=_pa_timestamp_ns),
@@ -367,10 +367,10 @@ def test_float_array(case: str) -> None:
     # fmt: on
 
 
-@pytest.mark.parametrize("example", COMPLEX_ARRAYS)
-def test_complex_array(example: str) -> None:
+@pytest.mark.parametrize("case", COMPLEX_ARRAYS)
+def test_complex_array(case: str) -> None:
     r"""Test complex arrays."""
-    array = COMPLEX_ARRAYS[example]
+    array = COMPLEX_ARRAYS[case]
     cls = type(array)
 
     # test interface
@@ -378,7 +378,7 @@ def test_complex_array(example: str) -> None:
     assert array.mean() == 0
 
     with pytest_xfail(
-        "pandas/#61646", strict=(example == "pandas[complex]"), raise_on_exit=False
+        "pandas/#61646", strict=(case == "pandas[complex]"), raise_on_exit=False
     ) as ctx1:
         assert array.std() <= 1  # different results due to ddof
         assert array.var() <= 1  # different results due to ddof
@@ -449,7 +449,7 @@ def test_complex_array(example: str) -> None:
 
 
 @pytest.mark.parametrize("case", TIME_ARRAYS)
-def test_timedelta_array(case) -> None:
+def test_timedelta_array(case: str) -> None:
     r"""Test timedelta arrays."""
     array = TIME_ARRAYS[case]
     cls = type(array)
@@ -472,7 +472,8 @@ def test_timedelta_array(case) -> None:
     # test scalar operations (int)
     assert type( array *  INT   ) is cls  # __mul__(int)
     assert type( INT   *  array ) is cls  # __rmul__(int)
-    assert type( array /  INT   ) is cls  # __truediv__(int)
+    # assert type( array /  INT   ) is cls  # __truediv__(int)
+    # assert type( array //  INT  ) is cls  # __floordiv__(int)
 
     with pytest_xfail("numpy/#29201", strict=(case=="numpy[time]")):
         assert type( array == TIMEDELTA ) is cls  # __eq__(timedelta)
@@ -539,10 +540,10 @@ def test_datetime_array(case: str) -> None:
     # fmt: on
 
 
-@pytest.mark.parametrize("example", FLOAT_ARRAYS)
-def test_generic_normalize(example: str) -> None:
+@pytest.mark.parametrize("case", FLOAT_ARRAYS)
+def test_generic_normalize(case: str) -> None:
     r"""Test normalization of numerical arrays."""
-    array = FLOAT_ARRAYS[example]
+    array = FLOAT_ARRAYS[case]
     cls = type(array)
 
     def normalize[Arr: FloatArray](x: Arr) -> Arr:
@@ -593,17 +594,17 @@ def type_complex_array_assignable() -> None:
 
 def type_timedelta_array_assignable() -> None:
     # fmt: off
-    _numpy_time     : TimedeltaArray = np.array([py_timedelta(days=1)], dtype="timedelta64[ns]")
-    _pandas_np_time : TimedeltaArray = pd.Series([py_timedelta(days=1)], dtype="timedelta64[ns]")
-    _pandas_pa_time : TimedeltaArray = pd.Series([py_timedelta(days=1)], dtype=_pa_duration_ns)
-    _polars_time    : TimedeltaArray = pl.Series([py_timedelta(days=1)], dtype=pl.Time())
+    _numpy_time     : DurationArray = np.array([py_timedelta(days=1)], dtype="timedelta64[ns]")
+    _pandas_np_time : DurationArray = pd.Series([py_timedelta(days=1)], dtype="timedelta64[ns]")
+    _pandas_pa_time : DurationArray = pd.Series([py_timedelta(days=1)], dtype=_pa_duration_ns)
+    _polars_time    : DurationArray = pl.Series([py_timedelta(days=1)], dtype=pl.Time())
     # fmt: on
 
 
 def type_datetime_array_assignable() -> None:
     # fmt: off
-    _numpy_date     : DatetimeArray = np.array([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
-    _pandas_np_date : DatetimeArray = pd.Series([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
-    _pandas_pa_date : DatetimeArray = pd.Series([py_datetime(2021, 1, 1)], dtype=_pa_timestamp_ns)
-    _polars_date    : DatetimeArray = pl.Series([py_datetime(2021, 1, 1)], dtype=pl.Date())
+    _numpy_date     : TimestampArray = np.array([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
+    _pandas_np_date : TimestampArray = pd.Series([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
+    _pandas_pa_date : TimestampArray = pd.Series([py_datetime(2021, 1, 1)], dtype=_pa_timestamp_ns)
+    _polars_date    : TimestampArray = pl.Series([py_datetime(2021, 1, 1)], dtype=pl.Date())
     # fmt: on

@@ -1,5 +1,4 @@
 r"""Implements `pyarrow`-backend for tsdm."""
-# FIXME: Replace type hints 'Array' with 'Array | ChunkedArray'
 
 __all__ = [
     # Constants
@@ -34,10 +33,8 @@ __all__ = [
 
 
 from collections.abc import Iterable, Sequence
-from typing import Literal, Optional, overload
+from typing import Any, Literal, Optional, overload
 
-import pandas as pd
-import polars as pl
 import pyarrow as pa
 import pyarrow.compute as pc
 from pyarrow import (
@@ -52,6 +49,7 @@ from pyarrow import (
     Scalar,
     Table,
 )
+from pyarrow.types import lib as pyarrow_lib
 from tqdm import tqdm
 
 from tsdm.dtypes import PYARROW_TO_POLARS
@@ -59,15 +57,17 @@ from tsdm.dtypes import PYARROW_TO_POLARS
 STR = pa.string()
 TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
+
+# FIXME: Replace type hints 'Array' with 'Array | ChunkedArray'
 type AnyArray = Array | ChunkedArray
 type Mask = bool | list[bool] | BooleanArray | BooleanScalar
 
 
-def scalar(x: object, /, dtype: DataType | str) -> Scalar:
+def scalar(x: Any, /, dtype: DataType | str) -> Scalar:
     return pa.scalar(x, type=dtype)
 
 
-def strip_whitespace_table[T: pa.Table](table: T, /, *cols: str) -> T:
+def strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
     r"""Strip whitespace from selected columns in table."""
     for col in cols or table.column_names:
         if is_string_array(table[col]):
@@ -80,7 +80,7 @@ def strip_whitespace_table[T: pa.Table](table: T, /, *cols: str) -> T:
     return table
 
 
-def strip_whitespace_array[A: (pa.Array, pa.ChunkedArray)](arr: A, /) -> A:
+def strip_whitespace_array[A: Array | ChunkedArray](arr: A, /) -> A:
     r"""Strip whitespace from all string elements in an array."""
     match arr:
         case ChunkedArray(chunks=chunks):
@@ -103,7 +103,7 @@ def strip_whitespace_array[A: (pa.Array, pa.ChunkedArray)](arr: A, /) -> A:
 @overload
 def strip_whitespace[A: AnyArray](obj: A, /) -> A: ...
 @overload
-def strip_whitespace[T: pa.Table](obj: T, /, *cols: str) -> T: ...
+def strip_whitespace[T: Table](obj: T, /, *cols: str) -> T: ...
 def strip_whitespace[T: Table | AnyArray](obj: T, /, *cols: str) -> T:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
@@ -167,12 +167,14 @@ def force_cast[T: AnyArray | Table](
     r"""Cast an array or table to the given data type, replacing non-castable elements with null."""
     match x:
         case (Array() | ChunkedArray()) as array:
+            import polars as pl
+
             if dtypes:
                 raise ValueError("Unexpected argument dtypes for Array input.")
             if dtype is None:
                 raise ValueError("Must specify dtype for Array input.")
 
-            actual_dtype = pa.types.lib.ensure_type(dtype)
+            actual_dtype = pyarrow_lib.ensure_type(dtype)
 
             return (
                 pl.from_arrow(array)
@@ -245,6 +247,8 @@ def unsafe_cast_columns(table: Table, /, **dtypes: DataType | str) -> Table:
 
 def is_numeric(array: AnyArray, /) -> BooleanArray:
     r"""Return mask determining if each element can be cast to the given data type."""
+    import pandas as pd
+
     prior_null = pc.is_null(array)
     post_null = pc.is_null(
         Array.from_pandas(

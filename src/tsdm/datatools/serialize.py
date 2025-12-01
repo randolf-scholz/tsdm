@@ -20,17 +20,17 @@ type Writer[T] = Callable[Concatenate[T, ...], None]
 type Loader[T] = Callable[Concatenate[FilePath | IO[bytes], ...], T]
 
 
-def _choose_default_writer[T: (pa.Table, pd.DataFrame, pl.DataFrame)](
+def _choose_default_writer[T: pa.Table | pd.DataFrame | pl.DataFrame](
     table: T, extension: str
 ) -> Writer[T]:
     r"""Default writer function that uses the extension of the path."""
-    match extension, table:
-        case "parquet", pa.Table():
+    match table, extension:
+        case pa.Table(), "parquet":
             return pyarrow_parquet.write_table
-        case _, pd.DataFrame() as pd_frame:
-            return getattr(type(pd_frame), f"to_{extension}")
-        case _, pl.DataFrame() as pl_frame:
-            return getattr(type(pl_frame), f"write_{extension}")
+        case pd.DataFrame() as pd_frame, ext:
+            return getattr(type(pd_frame), f"to_{ext}")
+        case pl.DataFrame() as pl_frame, ext:
+            return getattr(type(pl_frame), f"write_{ext}")
         case _:
             if (writer := getattr(type(table), f"to_{extension}", None)) is not None:
                 return writer

@@ -312,7 +312,7 @@ def is_admissable(name: str) -> bool:
     return name in DUNDER_ARITHMETIC or not name.startswith("_")
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_array(name: str) -> None:
     r"""Test the SupportsArray protocol."""
@@ -322,7 +322,7 @@ def test_supports_array(name: str) -> None:
     assert isinstance(obj.__array__(), np.ndarray)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_len(name: str) -> None:
     r"""Test the SupportsLen protocol."""
@@ -333,7 +333,7 @@ def test_supports_len(name: str) -> None:
     assert result == 4
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_array_ufunc(name: str) -> None:
     r"""Test the SupportsArrayUfunc protocol."""
@@ -345,7 +345,7 @@ def test_supports_array_ufunc(name: str) -> None:
     assert isinstance(result, type(obj))
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_dataframe(name: str) -> None:
     r"""Test the SupportsDataFrame protocol."""
@@ -353,7 +353,7 @@ def test_supports_dataframe(name: str) -> None:
     assert_protocol(obj, SupportsDataFrame)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_dtype(name: str) -> None:
     r"""Test the SupportsDtype protocol."""
@@ -362,7 +362,7 @@ def test_supports_dtype(name: str) -> None:
     assert isinstance(obj.dtype, object)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_shape(name: str) -> None:
     r"""Test the SupportsShape protocol."""
@@ -371,7 +371,7 @@ def test_supports_shape(name: str) -> None:
     assert isinstance(obj.shape, tuple)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_ndim(name: str) -> None:
     r"""Test the SupportsNdim protocol."""
@@ -380,7 +380,7 @@ def test_supports_ndim(name: str) -> None:
     assert isinstance(obj.ndim, int)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_device(name: str) -> None:
     r"""Test the SupportsDevice protocol."""
@@ -389,7 +389,7 @@ def test_supports_device(name: str) -> None:
     assert isinstance(obj.device, object)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_matmul(name: str) -> None:
     r"""Test the SupportsMatmul protocol."""
@@ -397,7 +397,7 @@ def test_supports_matmul(name: str) -> None:
     assert_protocol(obj, SupportsMatmul)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_item(name: str) -> None:
     r"""Test the SupportsShape protocol."""
@@ -405,7 +405,7 @@ def test_supports_item(name: str) -> None:
     assert_protocol(obj, SupportsItem)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_comparison(name: str) -> None:
     r"""Test the SupportsComparison protocol."""
@@ -417,7 +417,7 @@ def test_supports_comparison(name: str) -> None:
         raise AssertionError(f"Comparison failed for {name}!") from exc
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_arithmetic(name: str) -> None:
     r"""Test the SupportsArithmetic protocol."""
@@ -425,7 +425,7 @@ def test_supports_arithmetic(name: str) -> None:
     assert_protocol(obj, SupportsVectorArithmetic)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_inplace(name: str) -> None:
     r"""Test the SupportsInplaceArithmetic protocol."""
@@ -433,7 +433,7 @@ def test_supports_inplace(name: str) -> None:
     assert_protocol(obj, SupportsMutation)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_itering(name: str) -> None:
     r"""Test if the object supports iteration."""
@@ -444,7 +444,7 @@ def test_supports_itering(name: str) -> None:
         raise AssertionError(f"Failed to iterate over {name}!") from None
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 @pytest.mark.parametrize("name", TEST_ARRAYS)
 def test_supports_getitem_int(name: str) -> None:
     r"""Test if the object supports integer indexing."""

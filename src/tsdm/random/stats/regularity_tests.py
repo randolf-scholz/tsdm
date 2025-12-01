@@ -224,7 +224,7 @@ def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> floa
         mask = (dt == 0).fillna(value=False)
         dt = dt[~mask]
 
-    return stats.variation(dt)
+    return float(stats.variation(dt))
 
 
 def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
@@ -237,7 +237,7 @@ def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
     Returns:
         σ_g(T) = exp(σ(log(∆T)))
     """
-    t = Series(s.__array__())
+    t = Series(s)
     dt = t.array[1:] - t.array[:-1]
 
     if drop_zero:
@@ -245,4 +245,4 @@ def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
         mask = (dt == 0).fillna(value=False)
         dt = dt[~mask]
 
-    return stats.gstd(dt)
+    return float(stats.gstd(dt))
