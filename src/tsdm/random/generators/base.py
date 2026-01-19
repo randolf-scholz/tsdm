@@ -156,18 +156,15 @@ class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
 
     def __call__(self, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
         r"""Solve the initial value problem."""
-        t_eval = np.asarray(t)
-        t_span = (t_eval.min(), t_eval.max())
         options = asdict(self)
         system = options.pop("system")
         options |= kwargs
-        sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **options)
-        # NOTE: output shape: (d, n_timestamps), move time axis to the front
-        return np.moveaxis(sol.y, -1, 0)
+        return solve_ivp(system, t, y0=y0, **options)
 
 
 def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
     r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    y0 = np.asarray(y0)
     t_eval = np.asarray(t)
     t_span = (t_eval.min(), t_eval.max())
     sol = scipy_solve_ivp(system, t_span=t_span, y0=y0, t_eval=t_eval, **kwargs)
@@ -271,7 +268,7 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
         ...
 
     @abstractmethod
-    def _make_observations_impl(self, sol: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, state: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         ...
 
@@ -312,10 +309,10 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
         return y0
 
     @final
-    def make_observations(self, sol: NDArray, /) -> NDArray:
+    def make_observations(self, state: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         # get observations (add noise)
-        obs = self._make_observations_impl(sol)
+        obs = self._make_observations_impl(state)
         # project onto the constraint set
         obs = self.project_observations(obs)
         # validate observations
@@ -345,9 +342,9 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
         r"""Project the observations onto the constraint set."""
         return obs
 
-    def project_solution(self, sol: NDArray, /) -> NDArray:
+    def project_solution(self, state: NDArray, /) -> NDArray:
         r"""Project the solution onto the constraint set."""
-        return sol
+        return state
 
     def validate_initial_state(self, y0: NDArray, /) -> None:
         r"""Validate constraints on the initial state."""
@@ -355,7 +352,7 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
     def validate_observations(self, obs: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""
 
-    def validate_solution(self, sol: NDArray, /) -> None:
+    def validate_solution(self, state: NDArray, /) -> None:
         r"""Validate constraints on the parameters."""
 
     # endregion validation and projection ----------------------------------------------

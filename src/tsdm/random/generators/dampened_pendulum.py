@@ -125,19 +125,19 @@ class DampedPendulum(IVP_GeneratorBase):
         omega0 = self.omega0 * p.rvs(size=size, random_state=self.rng).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def _make_observations_impl(self, y: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, state: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         # add observation noise
         p = self.observation_noise_dist
-        return y + p.rvs(size=y.shape, random_state=self.rng)
+        return state + p.rvs(size=state.shape, random_state=self.rng)
 
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.
 
-        .. signature:: ``[(...,), (..., 2) -> (..., 2)``
+        .. signature:: ``[(...), (..., 2) -> (..., 2)``
 
         sub-signatures:
-            - ``[(...,), (2, ) -> (..., 2)``
+            - ``[(...), (2, ) -> (..., 2)``
             - ``[(,), (..., 2) -> (..., 2)``
         """
         t = np.asarray(t)
@@ -161,12 +161,14 @@ class DampedPendulumXY(DampedPendulum):
     This variant returns only cartesian coordinates.
     """
 
-    def _make_observations_impl(self, y: NDArray, /, *, noise: float = 0.05) -> NDArray:
+    def _make_observations_impl(
+        self, state: NDArray, /, *, noise: float = 0.05
+    ) -> NDArray:
         r"""Create observations from the solution.
 
         Noise is automatically scaled by the length of the pendulum.
         """
-        theta = y[..., 0]
+        theta = state[..., 0]
         x = self.length * np.sin(theta)
         y = -self.length * np.cos(theta)
         loc = np.stack([x, y], axis=-1)

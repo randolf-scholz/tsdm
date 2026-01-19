@@ -17,7 +17,7 @@ __all__ = [
 from math import prod
 from typing import Any, cast
 
-from tsdm.backend.types import NumericalArray as Array
+from tsdm.backend.types import BooleanArray, NumericalArray as Array
 from tsdm.types.mixins import SupportsShape
 from tsdm.types.scalars import FloatScalar
 
@@ -38,7 +38,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def is_nan(x: Array, /) -> Array[bool]:
+def is_nan(x: Array, /) -> BooleanArray:
     r"""Determines whether an element is NaN."""
     try:
         return x.isnan()  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
@@ -47,14 +47,14 @@ def is_nan(x: Array, /) -> Array[bool]:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def false_like(x: Array, /) -> Array[bool]:
+def false_like(x: Array, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x
     return z ^ z
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def true_like(x: Array, /) -> Array[bool]:
+def true_like(x: Array, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
     #   `(𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True`
@@ -120,6 +120,6 @@ def round[Arr: Array[FloatScalar]](x: Arr, /, *, decimals: int = 0) -> Arr:  # n
         https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even
     """
     try:
-        return x.round(decimals=decimals)  # type: ignore[attr-defined]
+        return x.round(decimals=decimals)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
     except AttributeError:
         return round_impl(x, decimals=decimals)

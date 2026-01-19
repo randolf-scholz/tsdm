@@ -58,9 +58,9 @@ class BouncingBall(IVP_GeneratorBase):
         v0 = d0 * self.rng.uniform(low=self.v_min, high=self.v_max, size=size)
         return np.stack([x0, v0], axis=-1)
 
-    def _make_observations_impl(self, loc: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, state: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
-        x = loc[..., 0]
+        x = state[..., 0]
         # sample from truncated normal distribution
         # cf. https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html
         lower = (self.x_min - x) / self.y_noise

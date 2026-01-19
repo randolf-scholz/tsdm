@@ -28,7 +28,7 @@ r"""Type Alias for `numpy` dtypes."""
 type NumpyDtypeArg = str | type | NumpyDtype
 r"""Type Alias for `numpy` dtype arguments."""
 
-
+# NOTE: We rely on dict preserving insertion order (Python 3.7+)
 TIME_UNITS: Final[dict[str, np.timedelta64]] = {
     "Y": np.timedelta64(1, "Y"),
     "M": np.timedelta64(1, "M"),

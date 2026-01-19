@@ -541,7 +541,8 @@ class USHCN(DatasetBase[Key, DataFrame]):
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = (
-            data.stack(level="DAY", dropna=False)
+            data
+            .stack(level="DAY", dropna=False)
             .reset_index(level="DAY")
             .astype({  # correct dtypes after stacking operation
                 "DAY": "int8[pyarrow]",
@@ -561,14 +562,16 @@ class USHCN(DatasetBase[Key, DataFrame]):
             "date32[pyarrow]"
         )
         data = (
-            data.assign(DATE=dates)
+            data
+            .assign(DATE=dates)
             .drop(columns=date_cols)
             .dropna(subset=["DATE", "VALUE"])
         )
 
         self.LOGGER.info("Set index and sort...")
         data = (
-            data.set_index(["COOP_ID", "DATE"])
+            data
+            .set_index(["COOP_ID", "DATE"])
             .reindex(columns=["ELEMENT", "MFLAG", "QFLAG", "SFLAG", "VALUE"])
             .sort_values(by=["COOP_ID", "DATE", "ELEMENT"])
         )

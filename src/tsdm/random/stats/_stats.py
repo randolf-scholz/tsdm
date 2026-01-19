@@ -3,26 +3,16 @@ r"""Utility functions to get statistics from dataset."""
 __all__ = [
     # Functions
     "data_overview",
-    "sparsity",
 ]
 
-from collections.abc import Hashable
 from typing import Optional
 
 import pandas as pd
 from pandas import DataFrame, Series
 
 
-def sparsity(df: DataFrame) -> tuple[float, float]:
-    r"""Quantify sparsity in the data."""
-    mask = pd.isna(df)
-    col_wise = mask.mean(axis=0)
-    total = mask.mean()
-    return col_wise, total
-
-
 def data_overview(
-    df: DataFrame, /, *, index_col: Optional[Hashable] = None, digits: int = 2
+    df: DataFrame, /, *, index_col: Optional[int | str] = None, digits: int = 2
 ) -> DataFrame:
     r"""Get a summary of the data."""
     overview = DataFrame(index=df.columns)
@@ -30,7 +20,7 @@ def data_overview(
     numerical_cols = df.select_dtypes(include="number").columns
 
     overview["datapoints"] = (~null_values).sum()
-    overview["uniques"] = df.nunique()
+    overview["num_unique"] = df.nunique()
     overview["missing"] = (null_values.mean() * 100).round(2)
 
     overview.loc[numerical_cols, "min"] = df[numerical_cols].min()
@@ -39,12 +29,13 @@ def data_overview(
     overview.loc[numerical_cols, "max"] = df[numerical_cols].max()
 
     column_dtypes = {
-        "datapoints" : "Int64",
-        "missing"    : "Float64",
-        "min"        : "Float64",
-        "mean"       : "Float64",
-        "std"        : "Float64",
-        "max"        : "Float64",
+        "datapoints" : "int64[pyarrow]",
+        "num_unique" : "int64[pyarrow]",
+        "missing"    : "float64[pyarrow]",
+        "min"        : "float64[pyarrow]",
+        "mean"       : "float64[pyarrow]",
+        "std"        : "float64[pyarrow]",
+        "max"        : "float64[pyarrow]",
     }  # fmt: skip
 
     overview = overview.astype(column_dtypes)

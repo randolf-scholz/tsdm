@@ -177,7 +177,8 @@ def force_cast[T: AnyArray | Table](
             actual_dtype = pyarrow_lib.ensure_type(dtype)
 
             return (
-                pl.from_arrow(array)
+                pl
+                .from_arrow(array)
                 .cast(PYARROW_TO_POLARS[actual_dtype], strict=False)
                 .to_arrow()
                 .cast(dtype)

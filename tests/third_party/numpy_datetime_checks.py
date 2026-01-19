@@ -6,8 +6,8 @@ from typing import Protocol, Self, assert_type, overload
 
 import numpy as np
 
-type np_datetime = "np.datetime64[dt.datetime]"  # noqa: PYI042
-type np_timedelta = "np.timedelta64[dt.timedelta]"  # noqa: PYI042
+type np_datetime = np.datetime64[dt.datetime]  # noqa: PYI042
+type np_timedelta = np.timedelta64[dt.timedelta]  # noqa: PYI042
 
 py_date = dt.date(year=2025, month=1, day=31)
 py_dt = dt.datetime(year=2025, month=1, day=31, hour=1, minute=23, second=45)
@@ -15,11 +15,11 @@ py_td = dt.timedelta(seconds=37)
 
 np_dt = np.datetime64(py_dt)
 np_dt_date = np.datetime64(py_date)
-np_dt_int = np.datetime64(100, "ns")
+np_dt_int = np.datetime64(1, "fs")
 np_dt_nat = np.datetime64(None)
 
 np_td = np.timedelta64(py_td)
-np_td_int = np.timedelta64(100, "ns")
+np_td_int = np.timedelta64(1, "fs")
 np_td_nat = np.timedelta64(None)
 
 # static checks
@@ -100,7 +100,7 @@ assert_type(py_dt - py_dt, dt.timedelta)
 # np_dt
 # assert_type(np_dt - py_date,    dt.timedelta)
 assert_type(np_dt - py_dt,      dt.timedelta)
-assert_type(np_dt - py_td,      dt.datetime)  # ❌ raises [operator]
+assert_type(np_dt - py_td,      dt.datetime)   # type: ignore[assert-type, operator]
 assert_type(np_dt - np_dt,      "np.timedelta64[dt.timedelta]")
 assert_type(np_dt - np_dt_date, "np.timedelta64[dt.timedelta]")
 assert_type(np_dt - np_dt_int,  "np.timedelta64[int]")
@@ -111,10 +111,10 @@ assert_type(np_dt - np_td_nat,  "np.datetime64[None]")
 # np_date
 assert_type(np_dt_date - py_date,    dt.timedelta)
 # assert_type(np_dt_date - py_dt,      dt.timedelta)
-assert_type(np_dt_date - py_td,      dt.date)  # ❌ raises [operator]
+assert_type(np_dt_date - py_td,      dt.date)  # type: ignore[assert-type, operator]
 assert_type(np_dt_date - np_dt,      "np.timedelta64[dt.timedelta]")
 assert_type(np_dt_date - np_dt_date, "np.timedelta64[dt.timedelta]")
-assert_type(np_dt_date - np_dt_int,  "np.timedelta64[int]")
+assert_type(np_dt_date - np_dt_int,  "np.timedelta64[int]")  # type: ignore[assert-type]
 assert_type(np_dt_date - np_dt_nat,  "np.timedelta64[None]")
 assert_type(np_dt_date - np_td,      "np.datetime64[dt.date]")
 assert_type(np_dt_date - np_td_int,  "np.datetime64[int]")

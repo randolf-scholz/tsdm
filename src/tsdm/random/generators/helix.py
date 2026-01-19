@@ -70,21 +70,21 @@ class Helix(IVP_GeneratorBase):
     @property
     def initial_state_dist(self) -> RV:
         r"""Noise distribution."""
-        return multivariate_normal(mean=np.zeros(3), cov=0.1)
+        return multivariate_normal(mean=np.zeros(3), cov=0.1)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
 
     @property
     def observation_noise_dist(self) -> RV:
         r"""Noise distribution."""
-        return multivariate_normal(mean=np.zeros(3), cov=0.1)
+        return multivariate_normal(mean=np.zeros(3), cov=0.1)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         p = self.initial_state_dist
         return p.rvs(size=size, random_state=self.rng)
 
-    def _make_observations_impl(self, sol: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, state: NDArray, /) -> NDArray:
         r"""Additive noise."""
         p = self.observation_noise_dist
-        return sol + p.rvs(size=sol.shape, random_state=self.rng)
+        return state + p.rvs(size=state.shape, random_state=self.rng)
 
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""System function."""

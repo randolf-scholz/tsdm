@@ -26,7 +26,7 @@ class RV[T](Protocol):  # +T
 
     @abstractmethod
     def rvs(
-        self, size: Size = (), *, random_state: Optional[int | Generator] = None
+        self, /, size: Size = (), *, random_state: Optional[int | Generator] = None
     ) -> T:
         r"""Random variates of the given type."""
         ...
@@ -91,24 +91,15 @@ class Distribution[T](RV[T], Protocol):  # +T
 
     def logpdf(self, x: ArrayLike, /) -> T:
         r"""Log of the probability density function at x of the given RV."""
-        try:
-            return self.pdf(x).log()  # type: ignore[attr-defined]
-        except AttributeError as exc:
-            raise NotImplementedError from exc
+        raise NotImplementedError
 
     def logcdf(self, x: ArrayLike, /) -> T:
         r"""Log of the cumulative distribution function at x of the given RV."""
-        try:
-            return self.cdf(x).log()  # type: ignore[attr-defined]
-        except AttributeError as exc:
-            raise NotImplementedError from exc
+        raise NotImplementedError
 
     def logsf(self, x: ArrayLike, /) -> T:
         r"""Log of the survival function of the given RV."""
-        try:
-            return self.sf(x).log()  # type: ignore[attr-defined]
-        except AttributeError as exc:
-            raise NotImplementedError from exc
+        raise NotImplementedError
 
 
 class Dirichlet:

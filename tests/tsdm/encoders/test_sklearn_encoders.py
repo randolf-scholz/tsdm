@@ -7,11 +7,11 @@ import pytest
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
 
-from tsdm.encoders._sklearn import (
+from tsdm.encoders.sklearn_import import (
     SKLEARN_ENCODERS,
     SKLEARN_TRANSFORMS,
     SklearnEncoder,
-    Transform,
+    SklearnTransform,
 )
 from tsdm.testing import is_dunder, is_private
 
@@ -48,7 +48,7 @@ r"""Dictionary of all available sklearn encoders."""
 @pytest.mark.parametrize("name", SKLEARN_TRANSFORMS)
 def test_transform(name: str) -> None:
     cls = SKLEARN_TRANSFORMS[name]
-    assert issubclass(cls, Transform)
+    assert issubclass(cls, SklearnTransform)
     assert issubclass(cls, BaseEstimator)
     assert issubclass(cls, TransformerMixin)
     assert name in SKLEARN_ENCODERS or not issubclass(cls, SklearnEncoder)

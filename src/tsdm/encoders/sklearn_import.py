@@ -5,9 +5,9 @@ __all__ = [
     "SKLEARN_TRANSFORMS",
     "SKLEARN_ENCODERS",
     # ABCs & Protocols
-    "InvertibleTransform",
+    "InvertibleSklearnTransform",
     "SklearnEncoder",
-    "Transform",
+    "SklearnTransform",
 ]
 
 from abc import abstractmethod
@@ -18,7 +18,7 @@ from sklearn import preprocessing as sk_preprocessing
 
 # region sklearn protocols -------------------------------------------------------------
 @runtime_checkable
-class Transform[X, Y](Protocol):  # -X, +Y
+class SklearnTransform[X, Y](Protocol):  # -X, +Y
     r"""Protocol for transformers."""
 
     @abstractmethod
@@ -28,7 +28,7 @@ class Transform[X, Y](Protocol):  # -X, +Y
 
 
 @runtime_checkable
-class InvertibleTransform[X, Y](Transform[X, Y], Protocol):
+class InvertibleSklearnTransform[X, Y](SklearnTransform[X, Y], Protocol):
     r"""Protocol for invertible transformers."""
 
     @abstractmethod
@@ -54,7 +54,7 @@ class SklearnEncoder[X, Y](Protocol):
 # endregion sklearn protocols ----------------------------------------------------------
 
 
-SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
+SKLEARN_TRANSFORMS: dict[str, type[SklearnTransform]] = {
     "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,

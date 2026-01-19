@@ -178,8 +178,8 @@ def irregularity_coefficient(s: ArrayLike, /, *, drop_zero: bool = True) -> floa
     Returns:
         γ(T) = \max(∆T) / \gcd(∆T)
     """
-    t = Series(s)
-    dt = t.array[1:] - t.array[:-1]
+    t = Series(np.asarray(s))
+    dt: Series = t.iloc[1:] - t.iloc[:-1]
 
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls
@@ -216,8 +216,8 @@ def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> floa
     Returns:
         γ(T) = σ(∆T) / μ(∆T)
     """
-    t = Series(s)
-    dt = t.array[1:] - t.array[:-1]
+    t = Series(np.asarray(s))
+    dt: Series = t.iloc[1:] - t.iloc[:-1]
 
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls
@@ -237,8 +237,8 @@ def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
     Returns:
         σ_g(T) = exp(σ(log(∆T)))
     """
-    t = Series(s)
-    dt = t.array[1:] - t.array[:-1]
+    t: Series = Series(np.asarray(s))
+    dt: Series = t.iloc[1:] - t.iloc[:-1]
 
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls

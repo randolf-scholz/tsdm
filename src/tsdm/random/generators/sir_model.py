@@ -51,14 +51,14 @@ class SIR(IVP_GeneratorBase):
         return Dirichlet.rvs(weights, size=size, random_state=self.rng)
 
     def _make_observations_impl(
-        self, y: NDArray, /, *, noise: float = 0.001
+        self, sir: NDArray, /, *, noise: float = 0.001
     ) -> NDArray:
         r"""Create observations from the solution.
 
         We sample from a dirichlet distribution with parameters
         [S, I, R]/noise.
         """
-        return Dirichlet.rvs(y / noise, random_state=self.rng)
+        return Dirichlet.rvs(sir / noise, random_state=self.rng)
 
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the SIR model.

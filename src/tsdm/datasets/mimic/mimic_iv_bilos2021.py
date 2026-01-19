@@ -80,7 +80,8 @@ class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
 
         # Convert to pandas.
         ts = (
-            table.to_pandas(self_destruct=True)
+            table
+            .to_pandas(self_destruct=True)
             .astype(self.rawdata_schemas["full_dataset.csv"])
             .set_index(["hadm_id", "time_stamp"])
             .sort_index()
@@ -97,7 +98,8 @@ class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
 
         # Drop mask columns.
         ts = (
-            ts.drop(columns=ts.columns[1::2])
+            ts
+            .drop(columns=ts.columns[1::2])
             .dropna(how="all")
             .astype("float32")
             .sort_index(axis="columns")

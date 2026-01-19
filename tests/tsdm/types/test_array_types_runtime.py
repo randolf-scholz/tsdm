@@ -475,7 +475,7 @@ def test_timedelta_array(case: str) -> None:
     # assert type( array /  INT   ) is cls  # __truediv__(int)
     # assert type( array //  INT  ) is cls  # __floordiv__(int)
 
-    with pytest_xfail("numpy/#29201", strict=(case=="numpy[time]")):
+    with pytest_xfail("numpy/#29201", strict=(case == "numpy[time]")):
         assert type( array == TIMEDELTA ) is cls  # __eq__(timedelta)
         assert type( array != TIMEDELTA ) is cls  # __ne__(timedelta)
         assert type( array <  TIMEDELTA ) is cls  # __lt__(timedelta)
@@ -558,7 +558,7 @@ def type_float_array_assignable() -> None:
     _pandas_np_float : FloatArray = pd.Series([1.0], dtype=np.float64)
     _pandas_pa_float : FloatArray = pd.Series([1.0], dtype=_pa_float64)
     # FIXME: https://github.com/pola-rs/polars/issues/23132
-    _polars_float    : FloatArray = pl.Series([1.0], dtype=pl.Float64())  # mypy: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _polars_float    : FloatArray = pl.Series([1.0], dtype=pl.Float64())  # pyright: ignore[reportAssignmentType]
     _torch_float     : FloatArray = pt.tensor([1.0], dtype=pt.float64)
     # fmt: on
 
@@ -579,7 +579,7 @@ def type_int_array_assignable() -> None:
     _pandas_np_int : IntegerArray = pd.Series([1], dtype=np.int64)
     _pandas_pa_int : IntegerArray = pd.Series([1], dtype=_pa_int64)
     # FIXME: https://github.com/pola-rs/polars/issues/23132
-    _polars_int    : IntegerArray = pl.Series([1], dtype=pl.Int64())  # mypy: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _polars_int    : IntegerArray = pl.Series([1], dtype=pl.Int64())  # pyright: ignore[reportAssignmentType]
     _torch_int     : IntegerArray = pt.tensor([1], dtype=pt.int64)
     # fmt: on
 

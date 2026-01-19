@@ -22,7 +22,7 @@ def lazy_int() -> int:
 
 
 def lazy_float() -> float:
-    return 3.14
+    return 1.23
 
 
 def lazy_str() -> str:
@@ -30,16 +30,16 @@ def lazy_str() -> str:
 
 
 def test_lazy_dict_function() -> None:
-    _0 = lazy_dict()
-    assert_type(_0, LazyDict)
-    _1 = lazy_dict({})
-    assert_type(_1, LazyDict)
-    _2 = lazy_dict(pi=lambda: 3.14)
-    assert_type(_2, LazyDict[str, float])
-    _3 = lazy_dict({"pi": lambda: 3.14})
-    assert_type(_3, LazyDict[str, float])
-    _4 = lazy_dict({0: lambda: 0.0, 1: lambda: 1.0})
-    assert_type(_4, LazyDict[int, float])
+    d0 = lazy_dict()
+    assert_type(d0, LazyDict)
+    d1 = lazy_dict({})
+    assert_type(d1, LazyDict)
+    d2 = lazy_dict(pi=lambda: 1.23)
+    assert_type(d2, LazyDict[str, float])
+    d3 = lazy_dict({"pi": lambda: 1.23})
+    assert_type(d3, LazyDict[str, float])
+    d4 = lazy_dict({0: lambda: 0.0, 1: lambda: 1.0})
+    assert_type(d4, LazyDict[int, float])
 
 
 def test_init_type_inference() -> None:
@@ -62,58 +62,58 @@ def test_init_type_inference() -> None:
 
 def test_lazy_dict_init() -> None:
     # check unbound initializers
-    _d1 = LazyDict()
-    assert_type(_d1, LazyDict)
-    _d2 = LazyDict({"x": 0.0})
-    assert_type(_d2, LazyDict[str, float])
+    d1 = LazyDict()
+    assert_type(d1, LazyDict)
+    d2 = LazyDict({"x": 0.0})
+    assert_type(d2, LazyDict[str, float])
 
     # check bound initializers
-    _d3 = LazyDict[str, float]()
-    assert_type(_d3, LazyDict[str, float])
-    _d4 = LazyDict[str, float]({})
-    assert_type(_d4, LazyDict[str, float])
-    _d5 = LazyDict[str, float]({"x": 0.0})
-    assert_type(_d5, LazyDict[str, float])
+    d3 = LazyDict[str, float]()
+    assert_type(d3, LazyDict[str, float])
+    d4 = LazyDict[str, float]({})
+    assert_type(d4, LazyDict[str, float])
+    d5 = LazyDict[str, float]({"x": 0.0})
+    assert_type(d5, LazyDict[str, float])
 
 
 def test_lazy_dict_new() -> None:
     # no arguments
-    _no0 = LazyDict.new()
-    _no1 = LazyDict[int, float].new()
-    assert_type(_no0, LazyDict)
-    assert_type(_no1, LazyDict[int, float])  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure]
+    no0 = LazyDict.new()
+    no1 = LazyDict[int, float].new()
+    assert_type(no0, LazyDict)
+    assert_type(no1, LazyDict[int, float])  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure]
 
     # positional arguments
-    _po0 = LazyDict.new({1: lazy_float})
-    _po1 = LazyDict[int, float].new({1: lazy_float})
-    assert_type(_po0, LazyDict[int, float])
-    assert_type(_po1, LazyDict[int, float])
+    po0 = LazyDict.new({1: lazy_float})
+    po1 = LazyDict[int, float].new({1: lazy_float})
+    assert_type(po0, LazyDict[int, float])
+    assert_type(po1, LazyDict[int, float])
 
     # keyword arguments
-    _kw0 = LazyDict.new(foo=lazy_float)
-    _kw1 = LazyDict[str, float].new(foo=lazy_float)
-    assert_type(_kw0, LazyDict[str, float])
-    assert_type(_kw1, LazyDict[str, float])
+    kw0 = LazyDict.new(foo=lazy_float)
+    kw1 = LazyDict[str, float].new(foo=lazy_float)
+    assert_type(kw0, LazyDict[str, float])
+    assert_type(kw1, LazyDict[str, float])
 
     # mixed key types
-    _1 = LazyDict.new({1: lazy_float}, foo=lazy_float)
-    _2 = LazyDict[int | str, float].new({1: lazy_float}, foo=lazy_float)
-    assert_type(_1, LazyDict[int | str, float])
-    assert_type(_2, LazyDict[int | str, float])
+    mix_k0 = LazyDict.new({1: lazy_float}, foo=lazy_float)
+    mix_k1 = LazyDict[int | str, float].new({1: lazy_float}, foo=lazy_float)
+    assert_type(mix_k0, LazyDict[int | str, float])
+    assert_type(mix_k1, LazyDict[int | str, float])
 
     # mixed value types
-    _3 = LazyDict.new({"x": lazy_float}, foo=lazy_str)
-    _4 = LazyDict[str, str | float].new({"x": lazy_float}, foo=lazy_str)
-    assert_type(_3, LazyDict[str, str | float])  # type: ignore[assert-type]
-    assert_type(_4, LazyDict[str, str | float])  # type: ignore[assert-type]
+    mix_v0 = LazyDict.new({"x": lazy_float}, foo=lazy_str)
+    mix_v1 = LazyDict[str, str | float].new({"x": lazy_float}, foo=lazy_str)
+    assert_type(mix_v0, LazyDict[str, str | float])  # type: ignore[assert-type]
+    assert_type(mix_v1, LazyDict[str, str | float])  # type: ignore[assert-type]
 
     # mixed key and value types
-    _5 = LazyDict.new({"x": lazy_float, 1: lazy_str}, foo=lazy_float)
-    _6 = LazyDict[str | int, str | float].new(
+    mix_kv0 = LazyDict.new({"x": lazy_float, 1: lazy_str}, foo=lazy_float)
+    mix_kv1 = LazyDict[str | int, str | float].new(
         {"x": lazy_float, 1: lazy_str}, foo=lazy_float
     )
-    assert_type(_5, LazyDict[str | int, str | float])  # type: ignore[assert-type]
-    assert_type(_6, LazyDict[str | int, str | float])  # type: ignore[assert-type]
+    assert_type(mix_kv0, LazyDict[str | int, str | float])  # type: ignore[assert-type]
+    assert_type(mix_kv1, LazyDict[str | int, str | float])  # type: ignore[assert-type]
 
 
 def test_lazydict_init() -> None:

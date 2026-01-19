@@ -455,7 +455,8 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
         ts = table[list(self.table_schemas["timeseries"])]
         self.LOGGER.info("Setting timeindex")
         ts = (
-            ts.assign(ICULOS=table["ICULOS"].astype("int32") * np.timedelta64(1, "h"))
+            ts
+            .assign(ICULOS=table["ICULOS"].astype("int32") * np.timedelta64(1, "h"))
             .rename({"ICULOS": "time"}, axis=1)
             .set_index("time", append=True)
             .sort_index()
@@ -478,7 +479,8 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
 
         self.LOGGER.info("Finalizing static_covariates table.")
         md = (
-            md.assign(
+            md
+            .assign(
                 HospAdmTime=md["HospAdmTime"].astype("float32") * np.timedelta64(1, "h")
             )
             .assign(Gender=md["Gender"].map({False: "female", True: "male"}))

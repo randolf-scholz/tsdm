@@ -70,11 +70,11 @@ class LotkaVolterra(IVP_GeneratorBase):
         omega0 = self.predator0 + predator_noise
         return np.stack([theta0, omega0], axis=-1)
 
-    def _make_observations_impl(self, x: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, state: NDArray, /) -> NDArray:
         r"""Create observations from the solution."""
         # multiplicative noise
         p = self.observation_noise_dist
-        return x * p.rvs(size=x.shape, random_state=self.rng)
+        return state * p.rvs(size=state.shape, random_state=self.rng)
 
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.

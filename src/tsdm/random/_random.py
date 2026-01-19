@@ -63,11 +63,7 @@ def sample_timestamps[DT: TimestampScalar[DurationScalar]](
         timestamps = np.insert(timestamps, -1, final_dt)
 
     # Convert to base unit based on freq
-    units: dict[str, np.timedelta64] = {
-        u: np.timedelta64(1, u)
-        for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
-    }
-    base_unit = next(u for u, val in units.items() if freq_td >= val)
+    base_unit = next(u for u, val in TIME_UNITS.items() if freq_td >= val)
     return timestamps.astype(f"datetime64[{base_unit}]")
 
 
@@ -109,7 +105,7 @@ def random_data(
         data = rng.integers(low=iinfo.min, high=iinfo.max, size=size)
         result = data.astype(dtype)
     elif np.issubdtype(dtype, np.floating):
-        finfo = np.finfo(dtype)  # type: ignore[arg-type]
+        finfo = np.finfo(dtype)
         exp = rng.integers(low=finfo.minexp, high=finfo.maxexp, size=size)
         mant = rng.uniform(low=-2, high=+2, size=size)
         result = (mant * 2**exp).astype(dtype)

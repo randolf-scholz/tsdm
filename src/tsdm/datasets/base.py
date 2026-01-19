@@ -162,27 +162,28 @@ class DatasetBase[Key: str, T](
     # endregion abstract readable members  ---------------------------------------------
 
     # region instance attributes -------------------------------------------------------
+    # TODO: Use typing.ReadOnly (https://peps.python.org/pep-0767/)
     __version__: Optional[str] = None
     r"""READ-ONLY: The version of the dataset."""
-    # FIXME: Replace Mapping[Key_, ...} with Readable[Mapping[Key, ...]] if Readable is added.
+    rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
+    r"""READ-ONLY: Hashes of the raw dataset file(s)."""
+    rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
+    r"""READ-ONLY: Schemas for the raw dataset tables(s)."""
+    rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
+    r"""READ-ONLY: Shapes for the raw dataset tables(s)."""
+
+    # FIXME: Hack due to lack of ReadOnly attributes.
+    # We can't use Key, as that would screw up covariance.
     type _Key = str
     r"""Type alias for the key of the dataset."""
-    rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
-    r"""Hashes of the raw dataset file(s)."""
-    rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
-    r"""Schemas for the raw dataset tables(s)."""
-    rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
-    r"""Shapes for the raw dataset tables(s)."""
-    dataset_hashes: Mapping[_Key, str | None] = EMPTY_MAP
-    r"""Hashes of the cleaned dataset file(s)."""
+    dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
+    r"""READ-ONLY: Hashes of the cleaned dataset file(s)."""
     table_hashes: Mapping[_Key, str | None] = EMPTY_MAP
-    r"""Hashes of the in-memory cleaned dataset table(s)."""
+    r"""READ-ONLY: Hashes of the in-memory cleaned dataset table(s)."""
     table_schemas: Mapping[_Key, Mapping[str, str]] = EMPTY_MAP
-    r"""Schemas of the in-memory cleaned dataset table(s)."""
+    r"""READ-ONLY: Schemas of the in-memory cleaned dataset table(s)."""
     table_shapes: Mapping[_Key, tuple[int, ...]] = EMPTY_MAP
-    r"""Shapes of the in-memory cleaned dataset table(s)."""
-    tables: LazyDict[Key, T]
-    r"""Dictionary containing the tables that make up the dataset."""
+    r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 
     @classmethod
@@ -191,6 +192,15 @@ class DatasetBase[Key: str, T](
         if cls.INFO_URL is None:
             raise NotImplementedError("No INFO_URL provided for this dataset!")
         webbrowser.open_new_tab(cls.INFO_URL)
+
+    @cached_property
+    def tables(self) -> LazyDict[Key, T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        return LazyDict.from_func(
+            self.table_names,
+            self.load,
+            kwargs={"initializing": True},
+            type_hint=get_return_typehint(self.clean_table),
+        )
 
     # region constructors --------------------------------------------------------------
     @classmethod
@@ -241,14 +251,6 @@ class DatasetBase[Key: str, T](
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
-
-        # initialize tables
-        self.tables = LazyDict.from_func(  # pyright: ignore[reportIncompatibleMethodOverride]
-            self.table_names,
-            self.load,
-            kwargs={"initializing": True},
-            type_hint=get_return_typehint(self.clean_table),
-        )
 
     def __post_init__(self) -> None:
         r"""Initialize the dataset."""
@@ -408,6 +410,7 @@ class DatasetBase[Key: str, T](
 
     # region dunder methods ------------------------------------------------------------
     def __dir__(self) -> list[str]:
+        r"""Dynamically add table names to dir()."""
         if self._enable_key_attributes:
             return list(super().__dir__()) + list(self.table_names)
         return list(super().__dir__())

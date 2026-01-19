@@ -89,10 +89,10 @@ class Electricity(DatasetBase[TS, DataFrame]):
         At the given dates, replace zero with NaN.
     """  # noqa: E501, W505
 
-    SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    SOURCE_URL = r"https://archive.ics.uci.edu/static/public/321/electricityloaddiagrams20112014.zip"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = (
-        r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
+        r"https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014"
     )
     r"""HTTP address containing additional information about the dataset."""
 

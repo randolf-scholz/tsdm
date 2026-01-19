@@ -16,8 +16,8 @@ from tsdm.utils import timedelta, timestamp
 # region setup -------------------------------------------------------------------------
 type np_int = np.int64  # noqa: PYI042
 type np_float = np.float64  # noqa: PYI042
-type np_timedelta = "np.timedelta64[py_timedelta]"  # noqa: PYI042
-type np_datetime = "np.datetime64[py_datetime]"  # noqa: PYI042
+type np_timedelta = np.timedelta64[py_timedelta]  # noqa: PYI042
+type np_datetime = np.datetime64[py_datetime]  # noqa: PYI042
 type pd_datetime = pd.Timestamp  # noqa: PYI042
 type pd_timedelta = pd.Timedelta  # noqa: PYI042
 # fmt: off

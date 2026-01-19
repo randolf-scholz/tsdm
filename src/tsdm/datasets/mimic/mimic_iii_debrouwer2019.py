@@ -80,7 +80,7 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
             "STD"        : "float32",
         }
     }  # fmt: skip
-    dataset_hashes = {
+    dataset_hashes = {  # pyright: ignore[reportAssignmentType]
         "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
         "static_covariates": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
     }
@@ -111,7 +111,8 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
 
         # Extract Original Data Table.
         ts = (
-            ts.astype(self.rawdata_schemas["complete_tensor.csv"])
+            ts
+            .astype(self.rawdata_schemas["complete_tensor.csv"])
             .loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
             .reset_index(drop=True)
             .set_index(["UNIQUE_ID", "TIME_STAMP"])
