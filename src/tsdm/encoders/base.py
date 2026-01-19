@@ -145,6 +145,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Concatenate,
     Final,
     Literal as L,  # noqa: N817
     Optional,
@@ -336,15 +337,15 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # we offer pre- and post- hooks for fit, encode, and decode methods.
     # as well as a general post-init hook
     # hooks must be registered on the class-level as lists of callables.
-    post_init_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    pre_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    post_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    pre_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    post_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    pre_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    post_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []
-    pre_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}
-    post_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}
+    post_init_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    pre_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    post_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    pre_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    post_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    pre_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    post_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
+    pre_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}  # type: ignore[misc]
+    post_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}  # type: ignore[misc]
 
     def __init_subclass__(cls) -> None:
         r"""Initialize subclass hooks."""
@@ -360,11 +361,13 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         cls.post_hooks["decode"] = cls.post_decode_hooks
 
     @staticmethod
-    def with_hooks(method: Fn) -> Fn:
+    def with_hooks[T: BaseEncoder, **P, R](
+        method: Fn[Concatenate[T, P], R],
+    ) -> Fn[Concatenate[T, P], R]:
         r"""Decorator to add hooks to methods."""
 
         @wraps(method)
-        def wrapper(self, /, *args, **kwargs):
+        def wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
             for hook in self.pre_hooks[method.__name__]:
                 hook(self)
             result = method(self, *args, **kwargs)
@@ -877,8 +880,8 @@ class EncoderList[
     @overload
     def __getitem__(self, index: int, /) -> E: ...
     @overload
-    def __getitem__(self, index: slice, /) -> Self: ...
-    def __getitem__(self, index: int | slice, /) -> E | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: slice, /) -> "EncoderList[Any, Any, E]": ...
+    def __getitem__(self, index: int | slice, /) -> "E | EncoderList[Any, Any, E]":  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(index, slice):
             result = self.new(encoders=self._encoders[index])
             if type(result) is not type(self):
@@ -887,7 +890,7 @@ class EncoderList[
                     f"\n\tGot {type(result)}, expected {type(self)}."
                     f"\n\tThis can happen if {type(self)} does not correctly override `new`."
                 )
-            return result  # type: ignore[return-value]
+            return result
         return self._encoders[index]
 
     # endregion abstract implementation ------------------------------------------------
@@ -949,9 +952,8 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
     decoder: SupportsEncode[Y, X] | Fn[[Y], X] | None = None
     r"""The decoder/function to wrap, if available."""
 
-    # FIXME: https://github.com/python/mypy/issues/17134
-    def __invert__(self) -> "WrappedEncoder[Y, X]":
-        return WrappedEncoder(self.decoder, self.encoder)
+    def __invert__(self) -> "BaseEncoder[Y, X]":
+        return wrap(encoder=self.decoder, decoder=self.encoder)
 
     def __post_init__(self) -> None:
         match self.encoder, self.decoder:
@@ -1074,12 +1076,12 @@ class MappedEncoder[
     def __init__(self, encoders: DictArg[str, Encoder] = (), /) -> None:
         super().__init__(encoders)
 
-    # FIXME: https://github.com/python/typing/issues/548
     def __invert__(self) -> "MappedEncoder[MappingOut, MappingIn]":
-        # NOTE: Annotating type[WrappedEncoder] make it forget the bound types.
-        decoders = {k: InverseEncoder(e) for k, e in self.items()}
-        inverse = MappedEncoder[MappingOut, MappingIn](decoders)
-        return inverse  # type: ignore[return-value]
+        # FIXME: https://github.com/python/typing/issues/548
+        return cast(
+            "MappedEncoder[MappingOut, MappingIn]",
+            map_encoders({k: invert(e) for k, e in self.items()}),
+        )
 
     def fit(self, xmap: MappingIn, /) -> None:
         if missing_keys := self.keys() - xmap.keys():
@@ -1143,7 +1145,7 @@ class NestedEncoder[X, Y](FittableEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
 
     # FIXME: https://github.com/python/typing/issues/548
     def __invert__(self) -> "NestedEncoder[Y, X]":
-        return NestedEncoder(
+        return nest_encoder(
             invert(self.encoder),
             leaf_type=self.output_leaf_type,
             output_leaf_type=self.leaf_type,
@@ -1409,7 +1411,7 @@ class Choice(StaticEncoder[tuple[Any, ...], Any]):
     def __invert__(self) -> "Diagonal":
         if self.num is None:
             raise ValueError("Choice not invertible when `num=None`.")
-        return Diagonal(self.num, reduction=self)
+        return diagonal(self.num, reduction=self)
 
     # FIXME: https://discuss.python.org/t/proposal-allow-typevartuple-unpacking-in-unions/
     def encode[X](self, x: tuple[X, ...], /) -> X:
@@ -1458,9 +1460,8 @@ class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def new[E2: Encoder](cls, *, encoders: Iterable[E2]) -> "Compose[Any, Any, E2]":
         return Compose(encoders)
 
-    # FIXME: https://github.com/python/mypy/issues/17134
     def __invert__(self) -> "Compose[Y, X]":  # type: ignore[override]
-        return Compose[Y, X](map(invert, reversed(self)))
+        return compose(*map(invert, reversed(self)))
 
     def fit(self, x: X, /) -> None:
         for encoder in reversed(self):
@@ -1566,9 +1567,8 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def get_slice(self, arg: slice, /) -> "Pipe":
         return Pipe(self.encoders[arg])
 
-    # FIXME: https://github.com/python/mypy/issues/17134
     def __invert__(self) -> "Pipe[Y, X]":  # type: ignore[override]
-        return Pipe(map(invert, reversed(self)))
+        return pipe(*map(invert, reversed(self)))
 
     def fit(self, x: X, /) -> None:
         for encoder in self:
@@ -1702,7 +1702,7 @@ class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
         return Repeat(self.encoder, num)
 
     def __invert__(self) -> "Repeat[T]":
-        return Repeat(self.encoder, -self.num)
+        return repeat(self.encoder, -self.num)
 
     def simplify(self) -> BaseEncoder[T, T]:
         r"""Simplify the repeat encoder."""
@@ -1774,8 +1774,10 @@ class Parallel[
         return Parallel(self.encoders[arg])
 
     def __invert__(self) -> "Parallel[TupleOut, TupleIn, Encoder]":
-        inverse = Parallel(map(invert, self))
-        return cast("Parallel[TupleOut, TupleIn]", inverse)
+        return cast(
+            "Parallel[TupleOut, TupleIn, Encoder]",
+            parallel(*map(invert, self)),
+        )
 
     def fit(self, xs: TupleIn, /) -> None:
         for encoder, x in zip(self, xs, strict=True):
@@ -1882,7 +1884,7 @@ class Replicate[
         self.num = len(self)
 
     @classmethod
-    def new[X, Y](
+    def new[X, Y](  # type: ignore[override]
         cls: "type[Replicate]", /, *, encoders: Iterable[Encoder[X, Y]]
     ) -> "Replicate[tuple[X, ...], tuple[Y, ...]]":
         if cls is not Replicate:
@@ -1903,8 +1905,8 @@ class Replicate[
     ) -> "Replicate[tuple[U, ...], tuple[V, ...]]":
         return Replicate.new(encoders=self.encoders[arg])
 
-    # FIXME: https://github.com/python/mypy/issues/17134
     def __invert__(self) -> "Replicate[TupleOut, TupleIn]":
+        # FIXME: https://github.com/python/mypy/issues/20336
         return Replicate.new(encoders=map(invert, self))  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
 
     def simplify(self) -> BaseEncoder[TupleIn, TupleOut]:
@@ -2054,7 +2056,7 @@ class Fork[
         *encoders: Encoder[X, Any],  # *(Encoder[X, Y] for Y in Ys),
         reduction: Reduction[tuple[X, ...], X] = random.choice,
     ) -> None:
-        super().__init__(encoders)
+        super().__init__(encoders)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
         # self.expansion = diagonal(len(encoders)) >> parallel(*encoders)
         self.reduction: Final[Reduction[tuple[X, ...], X]] = reduction
 
@@ -2063,8 +2065,10 @@ class Fork[
         return Fork(*self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> "Meet[TupleOut, X]":
-        decoders = map(invert, self)
-        return Meet(*decoders, reduction=self.reduction)
+        return cast(
+            "Meet[TupleOut, X]",
+            meet(*map(invert, self), reduction=self.reduction),
+        )
 
     def fit(self, x: X, /) -> None:
         r"""Fit all encoders in the fork."""
@@ -2089,9 +2093,8 @@ class Fork[
                 )
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                encoder = cast("Encoder[X, Any]", encoder)
                 return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
-                    encoder
+                    cast("Encoder[X, Any]", encoder)
                     >> wrap(
                         encoder=WRAP_TUPLE,
                         decoder=self.reduction,
@@ -2163,7 +2166,6 @@ class Duplicate[
         >>> assert enc("a") == ("a + 1", "a + 1", "a + 1")
     """
 
-    kind: Final[type[Encoder[X, Any]]]  # type: ignore[misc]
     num: Final[int]
     reduction: Final[Reduction[tuple[X, ...], X]]  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
 
@@ -2186,11 +2188,10 @@ class Duplicate[
         reduction: Reduction[tuple[U, ...], U] = random.choice,
     ) -> None:
         super().__init__(*(deepcopy(encoder) for _ in range(num)), reduction=reduction)
-        self.kind = type(self[0]) if self else Encoder
         self.num = num
 
     @classmethod
-    def new[Y](
+    def new[Y](  # type: ignore[override]
         cls: "type[Duplicate]",
         /,
         *,
@@ -2206,7 +2207,6 @@ class Duplicate[
 
         new = Duplicate.__new__(Duplicate)
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
-        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
         new.num = len(encoders)  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
         return new
 
@@ -2214,8 +2214,7 @@ class Duplicate[
         return Duplicate.new(encoders=self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> "Fold[Ys, X]":
-        inv = Fold.new(encoders=map(invert, self), reduction=self.reduction)
-        return inv  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return Fold.new(encoders=map(invert, self), reduction=self.reduction)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
 
     def simplify(self) -> BaseEncoder[X, Ys]:
         r"""Simplify the duplicate encoder."""
@@ -2227,9 +2226,8 @@ class Duplicate[
                 ).simplify()
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                encoder = cast("Encoder[X, Any]", encoder)
                 return (  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
-                    encoder
+                    cast("Encoder[X, Any]", encoder)
                     >> wrap(
                         encoder=WRAP_TUPLE,
                         decoder=self.reduction,
@@ -2389,7 +2387,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         *encoders: Encoder[Any, Y],  # *(Encoder[X, Y] for X in Xs)
         reduction: Reduction[tuple[Y, ...], Y] = random.choice,
     ) -> None:
-        super().__init__(encoders)
+        super().__init__(encoders)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
         self.reduction: Final[Reduction[tuple[Y, ...], Y]] = reduction
 
     # FIXME: possibly incorrect for inhomogeneous reductions
@@ -2399,7 +2397,10 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         return Meet(*self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> "Fork[Y, TupleIn]":
-        return Fork(*map(invert, self), reduction=self.reduction)
+        return cast(
+            "Fork[Y, TupleIn]",
+            fork(*map(invert, self), reduction=self.reduction),
+        )
 
     def fit(self, xs: TupleIn, /) -> None:
         for x, e in zip(xs, self, strict=True):
@@ -2425,13 +2426,12 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
                 ).simplify()
 
             case [encoder]:  # encode[[x] -> f(reduce([x])], decode[y -> [f⁻¹y]))]
-                encoder = cast("Encoder[Any, Y]", encoder)
                 return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
                     wrap(
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
                     )
-                    >> encoder
+                    >> cast("Encoder[Any, Y]", encoder)
                 )
 
             case _:
@@ -2516,7 +2516,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         self.num = num
 
     @classmethod
-    def new[X](
+    def new[X](  # type: ignore[override]
         cls: "type[Fold]",
         /,
         *,
@@ -2540,8 +2540,10 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         return Fold.new(encoders=self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> "Duplicate[Y, Xs]":
-        inv = Duplicate.new(encoders=map(invert, self), reduction=self.reduction)
-        return inv  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return cast(
+            "Duplicate[Y, Xs]",
+            Duplicate.new(encoders=map(invert, self), reduction=self.reduction),
+        )
 
     def simplify(self) -> BaseEncoder[Xs, Y]:
         r"""Simplify the fold encoder."""
