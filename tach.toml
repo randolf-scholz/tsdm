@@ -28,11 +28,11 @@ depends_on = []
 
 [[modules ]]
 path = "tsdm.testing"
-depends_on = [ "tsdm.types"]
+depends_on = [ "tsdm.types", "tsdm.dtypes"]
 
 [[modules ]]
 path = "tsdm.pprint"
-depends_on = ["tsdm.types", "tsdm.testing"]
+depends_on = ["tsdm.types", "tsdm.testing", "tsdm.dtypes"]
 utility = true
 
 [[modules ]]
@@ -42,7 +42,7 @@ utility = true
 
 [[modules ]]
 path = "tsdm.backend"
-depends_on = [ "tsdm.types", "tsdm.backend.types"]
+depends_on = [ "tsdm.types", "tsdm.backend.types", "tsdm.dtypes"]
 
 [[modules ]]
 path = "tsdm.viz"
@@ -62,7 +62,7 @@ depends_on = ["tsdm.types", "tsdm.backend", "tsdm.datatools"]
 
 [[modules ]]
 path = "tsdm.encoders"
-depends_on = ["tsdm.types", "tsdm.backend", "tsdm.encoders.universal"]
+depends_on = ["tsdm.types", "tsdm.backend", "tsdm.encoders.universal", "tsdm.dtypes"]
 
 [[modules ]]
 path = "tsdm.linalg"
@@ -78,7 +78,7 @@ depends_on = [ "tsdm.types", "tsdm.metrics", "tsdm.viz", "tsdm.optimizers", "tsd
 
 [[modules ]]
 path = "tsdm.datasets"
-depends_on = [ "tsdm.testing", "tsdm.backend", "tsdm.types", "tsdm.random", "tsdm.datatools"]
+depends_on = [ "tsdm.testing", "tsdm.backend", "tsdm.types", "tsdm.random", "tsdm.datatools", "tsdm.dtypes"]
 
 [[modules ]]
 path = "tsdm.models"
@@ -91,7 +91,6 @@ depends_on = ["tsdm.timeseries", "tsdm.random", "tsdm.metrics", "tsdm.encoders",
 [[modules ]]
 path = "tsdm.dtypes"
 depends_on = []
-utility = true
 
 [[modules ]]
 path = "tsdm.datatools"
