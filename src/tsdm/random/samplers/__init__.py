@@ -23,9 +23,11 @@ __all__ = [
 from tsdm.random.samplers._samplers_deprecated import SequenceSampler
 from tsdm.random.samplers.base import (
     BaseSampler,
-    HierarchicalSampler,
     RandomSampler,
     Sampler,
+)
+from tsdm.random.samplers.hierarchical_sampler import HierarchicalSampler
+from tsdm.random.samplers.sliding_window_sampler import (
     SlidingWindowSampler,
     compute_grid,
 )
