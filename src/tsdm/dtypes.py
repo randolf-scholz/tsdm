@@ -32,6 +32,7 @@ __all__ = [
     "PANDAS_ARROW_DURATION_TYPES",
     "PANDAS_ARROW_TIMESTAMP_TYPES",
     "PANDAS_NULLABLE_DTYPES",
+    "PANDAS_PYARROW_TYPES",
     # TYPESTRINGS
     "NUMPY_TYPESTRINGS",
     "NUMPY_TYPECODES",
@@ -333,6 +334,28 @@ PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
     "UInt8"    : pd.UInt8Dtype,
 }  # fmt: skip
 r"""Dictionary of all `pandas` data types."""
+
+PANDAS_PYARROW_TYPES: Final[dict[str, ArrowDtype]] = {
+    "null[pyarrow]"         : ArrowDtype(pa.null()),
+    "bool[pyarrow]"         : ArrowDtype(pa.bool_()),
+    "int8[pyarrow]"         : ArrowDtype(pa.int8()),
+    "int16[pyarrow]"        : ArrowDtype(pa.int16()),
+    "int32[pyarrow]"        : ArrowDtype(pa.int32()),
+    "int64[pyarrow]"        : ArrowDtype(pa.int64()),
+    "uint8[pyarrow]"        : ArrowDtype(pa.uint8()),
+    "uint16[pyarrow]"       : ArrowDtype(pa.uint16()),
+    "uint32[pyarrow]"       : ArrowDtype(pa.uint32()),
+    "uint64[pyarrow]"       : ArrowDtype(pa.uint64()),
+    "float16[pyarrow]"      : ArrowDtype(pa.float16()),
+    "float32[pyarrow]"      : ArrowDtype(pa.float32()),
+    "float64[pyarrow]"      : ArrowDtype(pa.float64()),
+    "string[pyarrow]"       : ArrowDtype(pa.string()),
+    "large_string[pyarrow]" : ArrowDtype(pa.large_string()),
+    "date32[day][pyarrow]"  : ArrowDtype(pa.date32()),
+    "date64[ms][pyarrow]"   : ArrowDtype(pa.date64()),
+}  # fmt: skip
+r"""Dictionary of all `pandas` pyarrow data types."""
+
 
 PANDAS_ARROW_DURATION_TYPES: set[ArrowDtype] = {
     ArrowDtype(pa.duration(unit)) for unit in ("s", "ms", "us", "ns")

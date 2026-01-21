@@ -46,11 +46,11 @@ def test_type_converter() -> None:
     assert not encoder.requires_fit
 
     # compare encoded frame with expected
-    encoded = encoder.encode(TEST_FRAME_A)
-    assert encoded.dtypes[0] == "duration[ns][pyarrow]"
-    assert encoded.dtypes[1] == "Int64"
-    assert encoded.dtypes[2] == "Float64"
-    assert encoded.dtypes[3] == "Float64"
+    encoded = encoder.encode(TEST_FRAME_A)  # type: ignore[unreachable]
+    assert encoded.dtypes.iloc[0] == "duration[ns][pyarrow]"
+    assert encoded.dtypes.iloc[1] == "Int64"
+    assert encoded.dtypes.iloc[2] == "Float64"
+    assert encoded.dtypes.iloc[3] == "Float64"
 
     # compare decoded frame with original
     decoded = encoder.decode(encoded)
