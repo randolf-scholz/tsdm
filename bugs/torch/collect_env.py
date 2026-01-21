@@ -17,7 +17,7 @@ try:
     import torch
 
     TORCH_AVAILABLE = True
-except (ImportError, NameError, AttributeError, OSError):
+except ImportError, NameError, AttributeError, OSError:
     TORCH_AVAILABLE = False
 
 # System Environment Information

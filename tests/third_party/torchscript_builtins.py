@@ -41,7 +41,7 @@ def show_incompatible_builtins() -> None:
         except AssertionError as exc:
             if " Unsupported annotation" in str(exc):
                 continue
-        except (NotSupportedError, UnsupportedNodeError):
+        except NotSupportedError, UnsupportedNodeError:
             continue
 
 

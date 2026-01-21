@@ -124,7 +124,7 @@ def log_config(
             raise ValueError(f"{fmt=} not understood!")
 
 
-@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
+@torch.no_grad()
 def log_kernel(
     step: int,
     writer: SummaryWriter,
@@ -310,7 +310,7 @@ def log_metrics(
     )
 
 
-@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
+@torch.no_grad()
 def log_model(
     step: int,
     writer: SummaryWriter,

@@ -62,7 +62,7 @@ class Hash(NamedTuple):
     hash_algorithm: str | None
 
     @classmethod
-    def from_value(cls, arg: "str | Hash", /) -> "Hash":
+    def from_value(cls, arg: str | Hash, /) -> Hash:
         if isinstance(arg, Hash):
             return arg
 

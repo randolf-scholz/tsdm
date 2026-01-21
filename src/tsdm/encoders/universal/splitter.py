@@ -47,7 +47,7 @@ class TensorSplitter[Arr: Array](FittableEncoder[Arr, list[Arr]]):
     axis: int = 0
     backend: Backend = UNDEFINED
 
-    def __invert__(self) -> "TensorConcatenator[Arr]":
+    def __invert__(self) -> TensorConcatenator[Arr]:
         return TensorConcatenator(
             axis=self.axis, indices=self.indices, backend=self.backend
         )

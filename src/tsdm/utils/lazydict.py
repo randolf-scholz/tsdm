@@ -83,7 +83,7 @@ class LazyValue[V]:  # +V
             raise ValueError("Got unexpected args or kwargs for LazyValue.")
 
     @staticmethod
-    def unwrap[T](arg: "T | LazyValue[T]", /) -> T:
+    def unwrap[T](arg: T | LazyValue[T], /) -> T:
         r"""Unwrap the value if it is a LazyValue."""
         if isinstance(arg, LazyValue):
             # recursion to unwrap nested LazyValues
@@ -123,19 +123,19 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     @staticmethod
     def new[T=Any, X=Any](  # pyright: ignore[reportOverlappingOverload]
         items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /  # pyright: ignore[reportInvalidTypeVarUse]
-    ) -> "LazyDict[T, X]": ...
+    ) -> LazyDict[T, X]: ...
     @overload  # mapping and kwargs
     @staticmethod
     def new[X=Any](
         items: Mapping[str, Lazy[X]] | Iterable[tuple[str, Lazy[X]]] = ..., /,
         **kwargs: Lazy[X]
-    ) -> "LazyDict[str, X]": ...
+    ) -> LazyDict[str, X]: ...
     @staticmethod
     def new[T=Never, X=Any](
         args: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = (),
         /,
         **kwargs: Lazy[X],
-    ) -> "LazyDict[T, X] | LazyDict[str, X]":
+    ) -> LazyDict[T, X] | LazyDict[str, X]:
     # fmt: on
         r"""Create a new LazyDict."""
         self = LazyDict[Any, X]()
@@ -158,7 +158,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
         args: tuple = (),
         kwargs: dict[str, Any] | None = None,
         type_hint: Optional[str] = None,
-    ) -> "LazyDict[K, V]":
+    ) -> LazyDict[K, V]:
         r"""Create a new LazyDict by passing the keys to a function.
 
         Args:
@@ -217,11 +217,11 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
 
     # region dict-methods --------------------------------------------------------------
 
-    def __or__[K2, V2](self, other: Mapping[K2, V2], /) -> "LazyDict[K | K2, V | V2]":
+    def __or__[K2, V2](self, other: Mapping[K2, V2], /) -> LazyDict[K | K2, V | V2]:
         new_dict = super().__or__(dict(other))
         return LazyDict(new_dict)
 
-    def __ror__[K2, V2](self, other: Mapping[K2, V2], /) -> "LazyDict[K | K2, V | V2]":
+    def __ror__[K2, V2](self, other: Mapping[K2, V2], /) -> LazyDict[K | K2, V | V2]:
         new_dict = super().__ror__(dict(other))
         return LazyDict(new_dict)
 

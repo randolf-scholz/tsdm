@@ -209,7 +209,7 @@ class ShapeLike(Protocol):
     def __lt__(self, other: Self | tuple, /) -> bool: ...
     def __le__(self, other: Self | tuple, /) -> bool: ...
     # arithmetic
-    def __add__(self, other: Self | tuple, /) -> "ShapeLike": ...
+    def __add__(self, other: Self | tuple, /) -> ShapeLike: ...
 
 
 # endregion array protocols ------------------------------------------------------------
@@ -236,13 +236,13 @@ class ShapeLike(Protocol):
 class _SupportsKwargsMeta(ProtocolMeta):
     r"""Metaclass for `SupportsKwargs`."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs["SupportsKwargs"]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[SupportsKwargs]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return isinstance(instance, SupportsKeysAndGetItem) and all(
             isinstance(key, str)
             for key in instance.keys()  # noqa: SIM118
         )
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["SupportsKwargs"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[SupportsKwargs]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
 
 
@@ -255,7 +255,7 @@ class SupportsKwargs[V](Protocol, metaclass=_SupportsKwargsMeta):  # +V
 
 
 class _ArrayMeta(ProtocolMeta):
-    def __subclasscheck__(cls, other: type, /) -> TypeIs[type["Array"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __subclasscheck__(cls, other: type, /) -> TypeIs[type[Array]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if issubclass(other, str | bytes | Mapping):
             return False
         return super().__subclasscheck__(other)
@@ -293,7 +293,7 @@ class Array[T](Protocol, metaclass=_ArrayMeta):  # +T
     @overload
     @abstractmethod
     # NOTE: not "-> Self" to ensure compatibility with tuple.
-    def __getitem__(self, index: slice, /) -> "Array[T]": ...
+    def __getitem__(self, index: slice, /) -> Array[T]: ...
 
     # Mixin methods
     def __iter__(self) -> Iterator[T]:
@@ -315,16 +315,16 @@ class Set[V](Protocol):  # +V
 
     # mixin methods
     # set arithmetic
-    def __and__(self, other: "Set", /) -> Self: ...
-    def __or__[T](self, other: "Set[T]", /) -> "Set[T | V]": ...
-    def __sub__(self, other: "Set", /) -> Self: ...
-    def __xor__[T](self, other: "Set[T]", /) -> "Set[T | V]": ...
+    def __and__(self, other: Set, /) -> Self: ...
+    def __or__[T](self, other: Set[T], /) -> Set[T | V]: ...
+    def __sub__(self, other: Set, /) -> Self: ...
+    def __xor__[T](self, other: Set[T], /) -> Set[T | V]: ...
 
     # set comparison
-    def __le__(self, other: "Set", /) -> bool: ...
-    def __lt__(self, other: "Set", /) -> bool: ...
-    def __ge__(self, other: "Set", /) -> bool: ...
-    def __gt__(self, other: "Set", /) -> bool: ...
+    def __le__(self, other: Set, /) -> bool: ...
+    def __lt__(self, other: Set, /) -> bool: ...
+    def __ge__(self, other: Set, /) -> bool: ...
+    def __gt__(self, other: Set, /) -> bool: ...
     def __eq__(self, other: object, /) -> bool: ...
     def __ne__(self, other: object, /) -> bool: ...
     def isdisjoint(self, other: Iterable, /) -> bool: ...
@@ -458,7 +458,7 @@ class MutMap[K, V](Map[K, V], Protocol):
     def pop[T](self, key: K, default: T, /) -> V | T: ...
     def popitem(self) -> tuple[K, V]: ...
     @overload
-    def setdefault[T](self: "MutMap[K, T | None]", key: K, default: None = ..., /) -> T | None: ...
+    def setdefault[T](self: MutMap[K, T | None], key: K, default: None = ..., /) -> T | None: ...
     @overload
     def setdefault(self, key: K, default: V, /) -> V: ...
     @overload
@@ -479,10 +479,10 @@ class MutMap[K, V](Map[K, V], Protocol):
 class _DataclassMeta(ProtocolMeta):
     r"""Metaclass for `Dataclass`."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs["Dataclass"]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[Dataclass]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["Dataclass"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Dataclass]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         fields = getattr(subclass, "__dataclass_fields__", None)
         return isinstance(fields, dict)
 
@@ -509,10 +509,10 @@ class _NTupleMeta(ProtocolMeta):
     _fields: ClassVar[tuple[str, ...]] = ()
     r"""The fields of the namedtuple."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs["NTuple"]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[NTuple]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["NTuple"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[NTuple]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if ABCMeta.__subclasscheck__(cls, subclass):
             return True
         bases = get_original_bases(subclass)
@@ -566,10 +566,10 @@ class _SlottedMeta(ProtocolMeta):
     This issue will make the need for metaclass obsolete.
     """
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs["Slotted"]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[Slotted]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type["Slotted"]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Slotted]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         slots = getattr(subclass, "__slots__", None)
         return isinstance(slots, str | Iterable)
 

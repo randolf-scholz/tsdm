@@ -2,7 +2,7 @@ r"""Context managers for use in decorators."""
 
 __all__ = [
     # Protocol
-    # use contextlib.AbstractContextManager instead
+    "ContextManager",
     # Classes
     "ray_cluster",
     "system_path",
@@ -16,7 +16,7 @@ import logging
 import os
 import signal
 import sys
-from contextlib import AbstractContextManager, ContextDecorator
+from contextlib import AbstractContextManager as ContextManager, ContextDecorator
 from dataclasses import KW_ONLY, dataclass
 from importlib.util import find_spec
 from pathlib import Path
@@ -178,7 +178,7 @@ class timer(ContextDecorator):
 
 
 @dataclass
-class timeout(ContextDecorator, AbstractContextManager):
+class timeout(ContextDecorator, ContextManager):
     r"""Context manager for timing out a block of code."""
 
     num_seconds: int

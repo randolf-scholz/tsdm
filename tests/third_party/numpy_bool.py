@@ -17,14 +17,14 @@ class MyBool:
     def __bool__(self) -> bool:
         return bool(self.b)
 
-    def __and__(self, other: SupportsBool) -> "MyBool":
+    def __and__(self, other: SupportsBool) -> MyBool:
         try:
             other_bool = bool(other)
         except Exception:
             return NotImplemented
         return MyBool(bool(self) & other_bool)
 
-    def __rand__(self, other: SupportsBool) -> "MyBool":
+    def __rand__(self, other: SupportsBool) -> MyBool:
         try:
             other_bool = bool(other)
         except Exception:

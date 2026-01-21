@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 # region project configuration ---------------------------------------------------------
 [project]
-requires-python = ">=3.13,<3.15"
+requires-python = ">=3.14,<3.15"
 name = "tsdm"
 version = "0.7.0"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
@@ -22,7 +22,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
@@ -137,7 +136,7 @@ typing = [
 src = ["src/", "tests/"]
 indent-width = 4
 line-length = 88
-target-version = "py313"
+target-version = "py314"
 output-format = "concise"
 
 [tool.ruff.lint]
@@ -319,14 +318,14 @@ docstring-code-line-length = "dynamic"
 
 
 [tool.ty.environment]
-python-version = "3.13"
+python-version = "3.14"
 
 
 [tool.ty.terminal]
 output-format = "concise"
 
 [tool.pyrefly]
-python_version = "3.13"
+python_version = "3.14"
 replace_imports_with_any = [
     "pandas.*",
     "pyarrow.*",
@@ -390,7 +389,7 @@ follow_imports = "silent"
 files = ["src/", "tests/"]
 platform = "linux"
 plugins = []
-python_version = "3.13"
+python_version = "3.14"
 exclude = ["test_json_types.py"]  # FIXME: https://github.com/python/mypy/issues/20135
 
 disable_error_code = [
@@ -467,7 +466,7 @@ defineConstant = {"__debug__" = true}
 #stubPath = ""
 venvPath = ".venv"
 #venv = ".venv"
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 pythonPlatform = "Linux"
 #executionEnvironments = []
 useLibraryCodeForTypes = false  # `pandas` has way too many false positives

@@ -17,14 +17,14 @@ from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 
 from tsdm.optimizers.base import LRScheduler, Optimizer
 
-OPTIMIZERS: dict[str, type[Optimizer]] = {
+OPTIMIZERS: dict[str, type[TorchOptimizer]] = {
     "ASGD"       : optim.ASGD,
     "Adadelta"   : optim.Adadelta,
     "Adagrad"    : optim.Adagrad,
     "Adam"       : optim.Adam,
     "AdamW"      : optim.AdamW,
     "Adamax"     : optim.Adamax,
-    "LBFGS"      : optim.LBFGS,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    "LBFGS"      : optim.LBFGS,
     "RMSprop"    : optim.RMSprop,
     "Rprop"      : optim.Rprop,
     "SGD"        : optim.SGD,
@@ -32,7 +32,7 @@ OPTIMIZERS: dict[str, type[Optimizer]] = {
 }  # fmt: skip
 r"""Dictionary of all available optimizers."""
 
-LR_SCHEDULERS: dict[str, type[LRScheduler]] = {
+LR_SCHEDULERS: dict[str, type[TorchLRScheduler]] = {
     "CosineAnnealingLR"           : lr_scheduler.CosineAnnealingLR,
     "CosineAnnealingWarmRestarts" : lr_scheduler.CosineAnnealingWarmRestarts,
     "CyclicLR"                    : lr_scheduler.CyclicLR,
@@ -41,7 +41,7 @@ LR_SCHEDULERS: dict[str, type[LRScheduler]] = {
     "MultiStepLR"                 : lr_scheduler.MultiStepLR,
     "MultiplicativeLR"            : lr_scheduler.MultiplicativeLR,
     "OneCycleLR"                  : lr_scheduler.OneCycleLR,
-    # "ReduceLROnPlateau"           : lr_scheduler.ReduceLROnPlateau,  # FIXME: https://github.com/pytorch/pytorch/issues/125531
+    "ReduceLROnPlateau"           : lr_scheduler.ReduceLROnPlateau,
     "StepLR"                      : lr_scheduler.StepLR,
 }  # fmt: skip
 r"""Dictionary of all available lr_schedulers."""

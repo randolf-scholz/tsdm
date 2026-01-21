@@ -92,7 +92,7 @@ def abstractattribute[R](obj: Optional[Fn[[Any], R]] = None) -> R:
 class PatchedABCMeta(ABCMeta):
     r"""Patched ABCMeta class to allow @abstractattribute."""
 
-    def __call__(cls, *args: Any, **kwargs: Any) -> "PatchedABCMeta":
+    def __call__(cls, *args: Any, **kwargs: Any) -> PatchedABCMeta:
         r"""Override __call__ to allow @abstractattribute."""
         instance: PatchedABCMeta = ABCMeta.__call__(cls, *args, **kwargs)
         abstract_attributes = {

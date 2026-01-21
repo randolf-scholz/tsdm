@@ -105,7 +105,7 @@ class LinODEnet(PreTrainedBase):
             ts.loc[:, control_cols] = ts.loc[:, control_cols].ffill()
         return ts
 
-    @torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
+    @torch.no_grad()
     def get_predictions(self, ts: DataFrame) -> DataFrame:
         r"""Get predictions from the model."""
         if isinstance(ts.index, MultiIndex):

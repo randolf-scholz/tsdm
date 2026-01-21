@@ -214,7 +214,7 @@ def is_zipfile(path: FilePath, /) -> bool:
     try:
         with ZipFile(path):
             return True
-    except (BadZipFile, IsADirectoryError):
+    except BadZipFile, IsADirectoryError:
         return False
 
 

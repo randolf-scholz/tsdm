@@ -430,7 +430,7 @@ class SlidingWindowSampler[
         # HORIZON=MULTI ----------------------------------------------------------------
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, S, MULTI]",
+            self: SlidingWindowSampler[DT, S, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -440,7 +440,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, B, MULTI]",
+            self: SlidingWindowSampler[DT, B, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -450,7 +450,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, M, MULTI]",
+            self: SlidingWindowSampler[DT, M, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -460,7 +460,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, I, MULTI]",
+            self: SlidingWindowSampler[DT, I, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -470,7 +470,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, X, MULTI]",
+            self: SlidingWindowSampler[DT, X, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -480,7 +480,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, P, MULTI]",
+            self: SlidingWindowSampler[DT, P, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -490,7 +490,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload  # unknown mode
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, UNKNOWN, MULTI]",
+            self: SlidingWindowSampler[DT, UNKNOWN, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -501,7 +501,7 @@ class SlidingWindowSampler[
         # HORIZON=ONE ------------------------------------------------------------------
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, S, ONE]",
+            self: SlidingWindowSampler[DT, S, ONE],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -511,7 +511,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, B, ONE]",
+            self: SlidingWindowSampler[DT, B, ONE],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -521,7 +521,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, M, ONE]",
+            self: SlidingWindowSampler[DT, M, ONE],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -531,7 +531,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, X, ONE]",
+            self: SlidingWindowSampler[DT, X, ONE],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -541,7 +541,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, P, ONE]",
+            self: SlidingWindowSampler[DT, P, ONE],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -551,7 +551,7 @@ class SlidingWindowSampler[
         ) -> None: ...
         @overload
         def __init__[DT: TimestampScalar, TD: DurationScalar](
-            self: "SlidingWindowSampler[DT, UNKNOWN, ONE]",
+            self: SlidingWindowSampler[DT, UNKNOWN, ONE],
             data_source: SequentialDataset[DT],
             /,
             *,
@@ -628,35 +628,35 @@ class SlidingWindowSampler[
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, S, MULTI]", /) -> Iterator[list["slice[DType, DType]"]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, S, MULTI], /) -> Iterator[list[slice[DType, DType]]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, B, MULTI]", /) -> Iterator[list[tuple[DType, DType]]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, B, MULTI], /) -> Iterator[list[tuple[DType, DType]]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, I, MULTI]", /) -> Iterator[list["Interval[DType]"]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, I, MULTI], /) -> Iterator[list[Interval[DType]]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, M, MULTI]", /) -> Iterator[list[NDArray[np.bool_]]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, M, MULTI], /) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, X, MULTI]", /) -> Iterator[list[NDArray[np.integer]]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, X, MULTI], /) -> Iterator[list[NDArray[np.integer]]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, P, MULTI]", /) -> Iterator[list[NDArray]]: ...  # type: ignore[type-var,unused-ignore]
+    def __iter__(self: SlidingWindowSampler[DType, P, MULTI], /) -> Iterator[list[NDArray]]: ...  # type: ignore[type-var,unused-ignore]
     @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DType, Any, MULTI]", /) -> Iterator[list[Any]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, Any, MULTI], /) -> Iterator[list[Any]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, S, ONE]", /) -> Iterator["slice[DType, DType]"]: ...
+    def __iter__(self: SlidingWindowSampler[DType, S, ONE], /) -> Iterator[slice[DType, DType]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, B, ONE]", /) -> Iterator[tuple[DType, DType]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, B, ONE], /) -> Iterator[tuple[DType, DType]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, I, ONE]", /) -> Iterator["Interval[DType]"]: ...
+    def __iter__(self: SlidingWindowSampler[DType, I, ONE], /) -> Iterator[Interval[DType]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, X, ONE]", /) -> Iterator[NDArray[np.integer]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, X, ONE], /) -> Iterator[NDArray[np.integer]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, M, ONE]", /) -> Iterator[NDArray[np.bool_]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, M, ONE], /) -> Iterator[NDArray[np.bool_]]: ...
     @overload
-    def __iter__(self: "SlidingWindowSampler[DType, P, ONE]", /) -> Iterator[NDArray]: ...  # type: ignore[type-var,unused-ignore]
+    def __iter__(self: SlidingWindowSampler[DType, P, ONE], /) -> Iterator[NDArray]: ...  # type: ignore[type-var,unused-ignore]
     @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DType, Any, ONE]", /) -> Iterator[Any]: ...
+    def __iter__(self: SlidingWindowSampler[DType, Any, ONE], /) -> Iterator[Any]: ...
     @overload  # fallback
-    def __iter__(self: "SlidingWindowSampler[DType, Any, Any]", /) -> Iterator[Any]: ...
+    def __iter__(self: SlidingWindowSampler[DType, Any, Any], /) -> Iterator[Any]: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self, /) -> Iterator[Any]:

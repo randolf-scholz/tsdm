@@ -37,7 +37,7 @@ type Location = Literal[
 ]
 
 
-@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
+@torch.no_grad()
 def visualize_distribution(
     data: ArrayLike,
     /,
@@ -114,7 +114,7 @@ def visualize_distribution(
         ax.add_artist(textbox)
 
 
-@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
+@torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
     /,
@@ -206,7 +206,7 @@ def shared_grid_plot(
     return fig, axes
 
 
-@torch.no_grad()  # pyright: ignore[reportUntypedFunctionDecorator]
+@torch.no_grad()
 def plot_spectrum(
     kernel: Tensor | NDArray,
     /,

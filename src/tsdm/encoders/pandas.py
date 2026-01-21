@@ -100,7 +100,7 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
     """
 
     @classmethod
-    def new(cls, *, encoders: DictArg) -> "EncoderDict":
+    def new(cls, *, encoders: DictArg) -> EncoderDict:
         return cls(encoders)
 
     # fitted attributes

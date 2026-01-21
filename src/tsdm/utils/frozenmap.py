@@ -14,12 +14,12 @@ class FrozenMap[K, V](Mapping[K, V]):
     # fmt: off
     @overload  # mapping only
     def __init__[X, Y](
-        self: "FrozenMap[X, Y]",
+        self: FrozenMap[X, Y],
         items: Mapping[X, Y] | Iterable[tuple[X, Y]] = ..., /
     ) -> None: ...
     @overload  # mapping and kwargs
     def __init__[X, Y](
-        self: "FrozenMap[X | str, Y]",
+        self: FrozenMap[X | str, Y],
         items: Mapping[X, Y] | Iterable[tuple[X, Y]] = ..., /,
         **kwargs: V
     ) -> None: ...

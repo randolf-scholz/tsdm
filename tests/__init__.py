@@ -104,7 +104,7 @@ class pytest_xfail(AbstractContextManager):
         raise exc_value
 
     @staticmethod
-    def any_failed(*cms: "pytest_xfail") -> None:
+    def any_failed(*cms: pytest_xfail) -> None:
         r"""Check if any of the context managers in `it` are active."""
         if not any(cms):
             return
