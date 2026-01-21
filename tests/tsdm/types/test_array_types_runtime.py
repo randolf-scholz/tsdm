@@ -378,8 +378,8 @@ def test_complex_array(case: str) -> None:
     assert array.mean() == 0
 
     with pytest_xfail(
-        "pandas/#61646", strict=(case == "pandas[complex]"), raise_on_exit=False
-    ) as ctx1:
+        "pandas/#61646", strict=(case == "pandas[complex]"), defer_xfail=True
+    ) as chk:
         assert array.std() <= 1  # different results due to ddof
         assert array.var() <= 1  # different results due to ddof
 
@@ -445,7 +445,7 @@ def test_complex_array(case: str) -> None:
     assert type( INT     ** array   ) is cls  # __rpow__(int)
     # fmt: on
 
-    pytest_xfail.raise_if_any(ctx1)
+    pytest_xfail.any_failed(chk)
 
 
 @pytest.mark.parametrize("case", TIME_ARRAYS)

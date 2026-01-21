@@ -33,7 +33,7 @@ class pytest_xfail(AbstractContextManager):
 
     def __bool__(self) -> bool:
         # True if error, or no error and strict mode is enabled.
-        return self.exc_type is not None or self.strict
+        return self.triggered
 
     def __init__(
         self,
@@ -41,7 +41,7 @@ class pytest_xfail(AbstractContextManager):
         *,
         strict: bool = True,
         raises: Sequence[type[BaseException]] | type[BaseException] | None = None,
-        raise_on_exit: bool = True,
+        defer_xfail: bool = False,
         condition: Callable[..., bool] | None = None,
     ) -> None:
         self.strict: bool = strict
@@ -52,11 +52,12 @@ class pytest_xfail(AbstractContextManager):
             if raises is None
             else ((raises,) if isinstance(raises, type) else tuple(raises))
         )
-        self.raise_on_exit: bool = raise_on_exit
+        self.defer_xfail: bool = defer_xfail
         self.exc_type: type[BaseException] | None = None
         self.exc_value: BaseException | None = None
         self.traceback: TracebackType | None = None
         self.condition: Callable[..., bool] | None = condition
+        self.triggered: bool = False
 
     def __call__[**P](self, func: Callable[P, None], /) -> Callable[P, None]:
         r"""Decorator version of the context manager."""
@@ -85,12 +86,14 @@ class pytest_xfail(AbstractContextManager):
         # no exception raised
         if exc_type is None:
             if self.strict:
+                self.triggered = True
                 raise AssertionError("Expected test to fail, but it passed.")
             return True
 
         # caught expected exception
         if self.raises is None or any(issubclass(exc_type, r) for r in self.raises):
-            if self.raise_on_exit:
+            self.triggered = True
+            if not self.defer_xfail:
                 pytest.xfail(
                     f"{self.reason}\n Due to: {exc_type.__name__}: {exc_value}"
                 )
@@ -101,7 +104,7 @@ class pytest_xfail(AbstractContextManager):
         raise exc_value
 
     @staticmethod
-    def raise_if_any(*cms: "pytest_xfail") -> None:
+    def any_failed(*cms: "pytest_xfail") -> None:
         r"""Check if any of the context managers in `it` are active."""
         if not any(cms):
             return

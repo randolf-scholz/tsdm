@@ -30,30 +30,73 @@ class Meta(type):
         super().__init__(*args, **kwargs)
 
 
-@class_decorator
-class Base(metaclass=Meta):
-    r"""Base class for class decorators."""
+def test_dataclass_subclass_definition() -> None:
+    print("\n\nClass definition...\n")
 
-    def __new__(cls, /, *args, **kwargs):
-        r"""Create a decorator that converts class to decorator."""
-        print(f"Base.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
-        print(f"{is_dataclass(cls)=}")
-        return super().__new__(cls)
+    @class_decorator
+    class Base(metaclass=Meta):
+        r"""Base class for class decorators."""
 
-    def __init__(self, /, *args, **kwargs):
-        r"""Create a decorator that converts class to decorator."""
-        print(f"Base.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
-        super().__init__()
+        def __new__(cls, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Base.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+            print(f"{is_dataclass(cls)=}")
+            return super().__new__(cls)
 
-    def __init_subclass__(cls, /, *args, **kwargs):
-        r"""Create a decorator that converts class to decorator."""
-        print(f"Base.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
-        print(f"{is_dataclass(cls)=}")
-        super().__init_subclass__(**kwargs)
+        def __init__(self, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Base.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
+            super().__init__()
+
+        def __init_subclass__(cls, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Base.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+            print(f"{is_dataclass(cls)=}")
+            super().__init_subclass__(**kwargs)
+
+    @dataclass
+    class ExampleSubclass(Base):
+        r"""Subclass for class decorators."""
+
+        def __new__(cls, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Subclass.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+            return super().__new__(cls)
+
+        def __init__(self, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Subclass.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
+            super().__init__()
+
+        def __init_subclass__(cls, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Subclass.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
 
 
 def test_instantiate_subclass() -> None:
     r"""Test instantiation of the subclass."""
+
+    @class_decorator
+    class Base(metaclass=Meta):
+        r"""Base class for class decorators."""
+
+        def __new__(cls, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Base.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+            print(f"{is_dataclass(cls)=}")
+            return super().__new__(cls)
+
+        def __init__(self, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Base.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
+            super().__init__()
+
+        def __init_subclass__(cls, /, *args, **kwargs):
+            r"""Create a decorator that converts class to decorator."""
+            print(f"Base.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
+            print(f"{is_dataclass(cls)=}")
+            super().__init_subclass__(**kwargs)
+
     print("\n\nSubclass instantiation...\n")
 
     @class_decorator
@@ -104,34 +147,6 @@ def test_class_definition() -> None:
             super().__init_subclass__(**kwargs)
 
 
-def test_subclass_definition() -> None:
-    print("\n\nClass definition...\n")
-
-    @class_decorator
-    class ExampleSubclass(Base):
-        r"""Subclass for class decorators."""
-
-        def __new__(cls, /, *args, **kwargs):
-            r"""Create a decorator that converts class to decorator."""
-            print(f"Subclass.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
-            return super().__new__(cls)
-
-        def __init__(self, /, *args, **kwargs):
-            r"""Create a decorator that converts class to decorator."""
-            print(f"Subclass.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
-            super().__init__()
-
-        def __init_subclass__(cls, /, *args, **kwargs):
-            r"""Create a decorator that converts class to decorator."""
-            print(f"Subclass.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
-
-
-def test_instantiate_class() -> None:
-    r"""Test instantiation of the class."""
-    print("\n\nClass instantiation...\n")
-    Base(1, 2, 3, foo="foo", bar="bar")
-
-
 def test_dataclass_definition() -> None:
     print("\n\nDataclass definition...\n")
 
@@ -153,25 +168,3 @@ def test_dataclass_definition() -> None:
             r"""Create a decorator that converts class to decorator."""
             print(f"Base.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
             super().__init_subclass__(**kwargs)
-
-
-def test_dataclass_subclass_definition() -> None:
-    print("\n\nClass definition...\n")
-
-    @dataclass
-    class ExampleSubclass(Base):
-        r"""Subclass for class decorators."""
-
-        def __new__(cls, /, *args, **kwargs):
-            r"""Create a decorator that converts class to decorator."""
-            print(f"Subclass.__new__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")
-            return super().__new__(cls)
-
-        def __init__(self, /, *args, **kwargs):
-            r"""Create a decorator that converts class to decorator."""
-            print(f"Subclass.__init__(\n\t{self=}\n\t{args=}\n\t{kwargs=})")
-            super().__init__()
-
-        def __init_subclass__(cls, /, *args, **kwargs):
-            r"""Create a decorator that converts class to decorator."""
-            print(f"Subclass.__init_subclass__(\n\t{cls=}\n\t{args=}\n\t{kwargs=})")

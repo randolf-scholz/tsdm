@@ -576,13 +576,11 @@ reportWildcardImportFromLibrary = "error"  # default: "warning"
 
 # region pytest configuration ----------------------------------------------------------
 [tool.pytest]
-# NOTE: currently unused https://docs.pytest.org/en/stable/reference/customize.html
-
-[tool.pytest.ini_options]
 xfail_strict = true
-minversion = "8.0"
+minversion = "9.0"
 testpaths = ["src/", "tests/"]
 addopts = [
+    "-p", "no:tach",  # FIXME: https://github.com/tach-org/tach/issues/903
     "--doctest-modules",
     # "--junit-xml=reports/pytest.xml",
     # rerunfailures options
