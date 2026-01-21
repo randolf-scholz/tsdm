@@ -38,7 +38,9 @@ __all__ = [
 
 from collections.abc import Callable as Fn
 
-from tsdm.timeseries._timeseries import (
+from tsdm.timeseries.pandas import (
+    PandasTS,
+    PandasTSC,
     damped_pendulum_ansari2023,
     electricity,
     etth1,
@@ -55,19 +57,15 @@ from tsdm.timeseries._timeseries import (
     ushcn,
     ushcn_de_brouwer2019,
 )
-from tsdm.timeseries.base import (
+from tsdm.timeseries.sampling import (
     FixedSliceSampleGenerator,
     Inputs,
-    PaddedBatch,
-    PandasTS,
-    PandasTSC,
     PlainSample,
     Sample,
     Targets,
-    TimeSeriesSample,
     TimeSeriesSampleGenerator,
-    collate_timeseries,
 )
+from tsdm.timeseries.util import PaddedBatch, TimeSeriesSample, collate_timeseries
 
 TIMESERIES: dict[str, Fn[[], PandasTS]] = {
     "ETTh1"       : etth1,
