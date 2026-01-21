@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import polars.testing as pl_testing
+import pyarrow as pa
 import torch
 import torch.testing
 from pandas import NA, NaT
@@ -132,9 +133,11 @@ def is_builtin_type(obj: object, /) -> TypeGuard[type]:
         return False
 
 
-def is_dtype(dtype: object) -> TypeIs[DType]:
+def is_dtype(arg: object, /) -> TypeIs[DType]:
     r"""Check if a string is a valid dtype."""
-    return isinstance(dtype, DType.__value__)
+    return isinstance(
+        arg, np.dtype | torch.dtype | pa.DataType | pd.api.extensions.ExtensionDtype
+    )
 
 
 def is_builtin_constant(obj: object, /) -> bool:

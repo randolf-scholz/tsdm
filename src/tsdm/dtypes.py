@@ -80,11 +80,11 @@ from pandas import ArrowDtype
 from pandas.api.extensions import ExtensionDtype
 
 # region Dtype Aliases -----------------------------------------------------------------
-type DType = np.dtype | torch.dtype | type[ExtensionDtype]
+type DType = np.dtype | torch.dtype | ExtensionDtype | pa.DataType
 r"""Type Alias for dtypes."""
 type DTypeArg = str | type
 r"""Type Alias for dtype arguments."""
-type AnyDtype = np.dtype | torch.dtype | ExtensionDtype
+type AnyDtype = np.dtype | torch.dtype | ExtensionDtype | pa.DataType
 r"""Type Alias for any dtype."""
 # endregion Dtype Aliases --------------------------------------------------------------
 
