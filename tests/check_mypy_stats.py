@@ -31,7 +31,7 @@ def analyze_project(root_dir: Path, *, limit: int, show_errors: bool) -> None:
     print(f"Running mypy on {len(files)} files...\n")
     for file in (pbar := tqdm(files, desc="Checking")):
         pbar.set_description(f"Processing {file}")
-        duration = run_mypy_timed(file, show_errors)
+        duration = run_mypy_timed(file, show_errors=show_errors)
         timings.append((duration, file))
 
     timings.sort(reverse=True)

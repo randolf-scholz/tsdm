@@ -34,7 +34,7 @@ dependencies = [
     "pandas>=2.3.3",
     "pillow>=12.1.0",
     "polars>=1.37.1",
-    "pyarrow>=22.0.0",
+    "pyarrow>=23.0.0",
     "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
@@ -60,7 +60,7 @@ dev = [
 devtools = [
     "cmake>=4.2.1",
     "ninja>=1.13.0",
-    "prek>=0.2.29",
+    "prek>=0.2.30",
     "pybadges>=3.0.1",
 ]
 debug = [
@@ -89,7 +89,7 @@ docs = [
 ]
 linters = [
     "pre-commit>=4.5.1",
-    "prek>=0.2.29",
+    "prek>=0.2.30",
     "pylint>=3.3.9",
     "ruff>=0.14.13",
     "tach>=0.33.0",
@@ -108,7 +108,7 @@ tests = [
 ]
 typing = [
     "mypy>=1.19.1",
-    "pyrefly>=0.48.1",
+    "pyrefly>=0.49.0",
     "pyright>=1.1.408",
     "scipy-stubs>=1.17.0.1",
     "types-colorama>=0.4.15.20250801",
@@ -327,6 +327,12 @@ output-format = "concise"
 
 [tool.pyrefly]
 python_version = "3.13"
+replace_imports_with_any = [
+    "pandas.*",
+    "pyarrow.*",
+    "pytest_benchmark.*",
+    "sklearn.*",
+]
 
 
 # region pylint configuration ----------------------------------------------------------

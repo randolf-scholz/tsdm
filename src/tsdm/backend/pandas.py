@@ -40,7 +40,6 @@ from contextlib import suppress
 from functools import reduce
 from typing import Any, Final, Literal
 
-import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
@@ -143,13 +142,11 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
-def where[P: (Index, MultiIndex, Series, DataFrame)](
-    cond: NDArray, a: P, b: BuiltinScalar | NDArray, /
-) -> P:
+def where[T: (Index, MultiIndex, Series, DataFrame)](
+    cond: NDArray, a: T, b: BuiltinScalar | NDArray, /
+) -> T:
     r"""Analogue to `numpy.where`."""
-    if isinstance(a, Index | Series | DataFrame):
-        return a.where(cond, b)
-    return np.where(cond, a, b)
+    return a.where(cond, b)
 
 
 def null_like[P: PandasType](x: P, /) -> P:

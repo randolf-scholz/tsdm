@@ -62,17 +62,18 @@ def download_io(
     chunk_size: int = 1024,
 ) -> None:
     r"""Download a file from a URL to an IO stream."""
-    if session is None:
-        # construct the request
-        request_options = {
-            "headers": headers,
-            "auth": None if username is None else (username, password),
-            "stream": True,
-            "timeout": 10,
-        } | dict(request_options)
-        response = requests.get(url, **request_options)  # noqa: S113
-    else:
-        response = session.get(url)
+    options: dict[str, Any] = {
+        "headers": headers,
+        "auth": None if username is None else (username, password),
+        "stream": True,
+        "timeout": 10,
+    } | dict(request_options)
+
+    response = (
+        requests.get(url, **options)  # noqa: S113
+        if session is None
+        else session.get(url, **options)
+    )
 
     if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
@@ -104,22 +105,24 @@ def stream_download(
     chunk_size: int = 1024,
 ) -> Iterator[bytes]:
     r"""Yield a remote file as a byte-stream."""
-    if session is None:
-        # construct the request
-        request_options = {
-            "headers": headers,
-            "auth": None if username is None else (username, password),
-            "stream": True,
-            "timeout": 10,
-        } | dict(request_options)
-        response = requests.get(url, **request_options)  # noqa: S113
-    else:
-        response = session.get(url)
+    options: dict[str, Any] = {
+        "headers": headers,
+        "auth": None if username is None else (username, password),
+        "stream": True,
+        "timeout": 10,
+    } | dict(request_options)
+
+    response = (
+        requests.get(url, **options)  # noqa: S113
+        if session is None
+        else session.get(url, **options)
+    )
 
     if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
             f"Failed to download {url} with status code {response.status_code}."
         )
+
     with tqdm(
         desc=f"Downloading {url}",
         total=int(response.headers.get("content-length", 0)),

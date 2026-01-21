@@ -395,7 +395,7 @@ class Sample(NamedTuple):
     r"""The targets the model is supposed to predict."""
     rawdata: Optional[Any] = None
 
-    def sparsify_index(self) -> Self:
+    def drop_null_rows(self) -> Self:
         r"""Drop rows that contain only NAN values."""
         if self.inputs.x is not None:
             self.inputs.x.dropna(how="all", inplace=True)
@@ -406,9 +406,10 @@ class Sample(NamedTuple):
         if self.targets.y is not None:
             self.targets.y.dropna(how="all", inplace=True)
 
-        if self.inputs.q is not None:
-            diff = self.inputs.q.index.difference(self.targets.y.index)
-            self.inputs.q.drop(diff, inplace=True)
+        if self.inputs.q is not None and self.targets.y is not None:
+            # drop all queries that are no longer in the target index
+            missing = self.inputs.q.index.difference(self.targets.y.index)
+            self.inputs.q.drop(missing, inplace=True)
 
         return self
 
@@ -755,7 +756,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         sample = Sample(key=key, inputs=inputs, targets=targets, rawdata=ts)
 
         if sparse_index:
-            sample.sparsify_index()
+            sample.drop_null_rows()
 
         return sample
 

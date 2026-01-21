@@ -119,17 +119,18 @@ def folds_as_frame(
     first_split = next(iter(first_fold.values()))
     is_mask = first_split.dtype == bool
 
-    match index, is_mask:
-        case None, False:
-            raise ValueError("Please provide `index` if `folds` are not boolean masks.")
-        case None, True:
-            idx: Index = (
-                first_split.index
-                if isinstance(first_split, Series)
-                else Index(range(len(first_split)))
-            )
-        case _:
-            idx = Index(index)
+    if index is None and not is_mask:
+        raise ValueError("Please provide `index` if `folds` are not boolean masks.")
+
+    idx = (
+        index
+        if index is not None
+        else (
+            first_split.index
+            if isinstance(first_split, Series)
+            else Index(range(len(first_split)))
+        )
+    )
 
     fold_idx = Index(range(len(folds)), name="fold")
     splits = DataFrame(index=idx, columns=fold_idx, dtype="string")

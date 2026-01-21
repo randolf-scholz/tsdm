@@ -108,7 +108,7 @@ polars-runtime-32==1.37.1
     # via polars
 protobuf==6.33.4
     # via tensorboard
-pyarrow==22.0.0
+pyarrow==23.0.0
     # via tsdm
 pydantic==2.12.5
     # via tsdm

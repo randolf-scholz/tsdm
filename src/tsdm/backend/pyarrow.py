@@ -58,7 +58,6 @@ STR = pa.string()
 TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
 
-# FIXME: Replace type hints 'Array' with 'Array | ChunkedArray'
 type AnyArray = Array | ChunkedArray
 type Mask = bool | list[bool] | BooleanArray | BooleanScalar
 
@@ -80,7 +79,7 @@ def strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
     return table
 
 
-def strip_whitespace_array[A: Array | ChunkedArray](arr: A, /) -> A:
+def strip_whitespace_array[A: AnyArray](arr: A, /) -> A:
     r"""Strip whitespace from all string elements in an array."""
     match arr:
         case ChunkedArray(chunks=chunks):
@@ -145,11 +144,7 @@ def null_like[A: AnyArray](arr: A, /) -> A:
     return full_like(arr, fill_value=NA)
 
 
-@overload
-def where[A: AnyArray](mask: Mask, x: A, y: Array | Scalar = ..., /) -> A: ...
-@overload
-def where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
-def where[T](mask: Mask, x: T | Scalar, y: T | Scalar = NA, /) -> T:
+def where[T: AnyArray](mask: Mask, x: T | Scalar, y: T | Scalar = NA, /) -> T:
     r"""Select elements from x or y depending on mask.
 
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).

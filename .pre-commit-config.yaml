@@ -54,7 +54,7 @@ repos:
         exclude: '^docs/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.2
+    rev: v0.7.3
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -124,7 +124,7 @@ repos:
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   # pyright
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.2
+    rev: v0.7.3
     hooks:
       - id: pyright-concise
         files: '^src/|^tests/'

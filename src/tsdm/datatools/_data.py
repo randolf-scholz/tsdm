@@ -305,7 +305,7 @@ def remove_outliers[T: Series | DataFrame](
 def is_integer_series(s: Series, /) -> bool:
     r"""Check if all float values are integral."""
     mask = pd.notna(s)
-    return s[mask].apply(float.is_integer).all()
+    return s[mask].apply(float.is_integer).all().item()
 
 
 def get_integer_cols(table: DataFrame, /) -> set[str]:

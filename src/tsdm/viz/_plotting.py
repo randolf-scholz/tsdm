@@ -55,7 +55,7 @@ def visualize_distribution(
         data: Data to plot.
         ax: Axes to plot into.
         num_bins: Number of bins to use for histogram.
-        log: If True, use log base 10, if `float`, use  log w.r.t. this base
+        log: If True, use log base 10.
         loc: Location of 'stats' text.
         print_stats: Add table of mean, std, min, max, median, mode to plot
         extra_stats: Additional things to add to the 'stats' table
@@ -71,7 +71,7 @@ def visualize_distribution(
     ax.set_axisbelow(True)
 
     if log:
-        base = 10 if log is True else log
+        base = 10
         tol = 2**-24 if np.issubdtype(x.dtype, np.float32) else 2**-53
         z = np.log10(np.maximum(x, tol))
         ax.set_xscale("log", base=base)

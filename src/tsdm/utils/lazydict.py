@@ -96,44 +96,8 @@ class LazyValue[V]:  # +V
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
-class _LazyDictMeta(type):
-    r"""Metaclass for LazyDict providing custom constructors."""
-
-    # fmt: off
-    @overload
-    def new[T=Any, X=Any](  # pyright: ignore[reportOverlappingOverload]
-        cls, items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /  # pyright: ignore[reportInvalidTypeVarUse]
-    ) -> "LazyDict[T, X]": ...
-    @overload  # mapping and kwargs
-    def new[T=Never, X=Any](
-        cls, items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /,   # pyright: ignore[reportInvalidTypeVarUse]
-        **kwargs: Lazy[X]
-    ) -> "LazyDict[T | str, X]": ...
-    def new[T=Never, X=Any](
-        cls,
-        args: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = (),
-        /,
-        **kwargs: Lazy[X],
-    ) -> "LazyDict[T, X] | LazyDict[T | str, X]":
-    # fmt: on
-        r"""Create a new LazyDict from an iterable of keys and a Lazy."""
-        self: LazyDict[T | str, X] = cls()
-
-        if isinstance(args, Mapping):
-            for key, value in args.items():
-                self.set_lazy(key, value)  # pyright: ignore[reportArgumentType]
-        else:
-            for key, value in args:
-                self.set_lazy(key, value)
-
-        for key, value in kwargs.items():
-            self.set_lazy(key, value)
-
-        return self
-
-
 @pprint_repr
-class LazyDict[K = Any, V = Any](dict[K, V], metaclass=_LazyDictMeta):
+class LazyDict[K = Any, V = Any](dict[K, V]):
     r"""A Lazy Dictionary implementation.
 
     Note:
@@ -154,9 +118,39 @@ class LazyDict[K = Any, V = Any](dict[K, V], metaclass=_LazyDictMeta):
     - tuple of the form tuple[Callable, tuple, dict]
     """
 
-    @classmethod
+    # fmt: off
+    @overload
+    @staticmethod
+    def new[T=Any, X=Any](  # pyright: ignore[reportOverlappingOverload]
+        items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /  # pyright: ignore[reportInvalidTypeVarUse]
+    ) -> "LazyDict[T, X]": ...
+    @overload  # mapping and kwargs
+    @staticmethod
+    def new[X=Any](
+        items: Mapping[str, Lazy[X]] | Iterable[tuple[str, Lazy[X]]] = ..., /,
+        **kwargs: Lazy[X]
+    ) -> "LazyDict[str, X]": ...
+    @staticmethod
+    def new[T=Never, X=Any](
+        args: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = (),
+        /,
+        **kwargs: Lazy[X],
+    ) -> "LazyDict[T, X] | LazyDict[str, X]":
+    # fmt: on
+        r"""Create a new LazyDict."""
+        self = LazyDict[Any, X]()
+
+        for key, value in dict(args).items():
+            self.set_lazy(key, value)
+
+        for str_key, value in kwargs.items():
+            self.set_lazy(str_key, value)
+
+        return self
+
+
+    @staticmethod
     def from_func(
-        cls,
         iterable: Iterable[K],
         func: Callable[Concatenate[K, ...], V],
         /,
@@ -176,7 +170,7 @@ class LazyDict[K = Any, V = Any](dict[K, V], metaclass=_LazyDictMeta):
         """
         type_hint = get_return_typehint(func) if type_hint is None else type_hint
 
-        return cls.new({
+        return LazyDict.new({
             key: LazyValue(func, args=(key, *args), kwargs=kwargs, type_hint=type_hint)
             for key in iterable
         })
@@ -273,16 +267,16 @@ def lazy_dict[K=Any, V=Any](  # pyright: ignore[reportOverlappingOverload]
     items: Mapping[K, Lazy[V]] | Iterable[tuple[K, Lazy[V]]] = ..., /  # pyright: ignore[reportInvalidTypeVarUse]
 ) -> LazyDict[K, V]: ...
 @overload  # mapping and kwargs
-def lazy_dict[K=Never, V=Any](
-    items: Mapping[K, Lazy[V]] | Iterable[tuple[K, Lazy[V]]] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
+def lazy_dict[V=Any](
+    items: Mapping[str, Lazy[V]] | Iterable[tuple[str, Lazy[V]]] = ...,
     /,
     **kwargs: Lazy[V],
-) -> LazyDict[K | str, V]: ...
+) -> LazyDict[str, V]: ...
 def lazy_dict[K=Never, V=Any](
     arg: Mapping[K, Lazy[V]] | Iterable[tuple[K, Lazy[V]]] = (),
     /,
     **kwargs: Lazy[V],
-) -> LazyDict[K, V] | LazyDict[K | str, V]:
+) -> LazyDict[K, V] | LazyDict[str, V]:
     # fmt: on
     r"""Create a new LazyDict from an iterable of keys and a Lazy."""
     return LazyDict.new(arg, **kwargs)

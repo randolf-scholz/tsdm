@@ -283,12 +283,14 @@ class EvaluationCallback(BaseCallback):
     writer: SummaryWriter
 
     # Optional parameters
+    # index:Index[step], columns:MultiIndex[key, metric]
     history: DataFrame = UNDEFINED
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
     # non-init fields
+    # index:Index[step], columns:MultiIndex[key, metric]
     best_epoch: DataFrame = field(init=False)
 
     def __post_init__(self) -> None:

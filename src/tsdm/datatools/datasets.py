@@ -250,7 +250,7 @@ def get_index(dataset: Dataset, /) -> Index:
     match dataset:
         # NOTE: Series and DataFrame satisfy the MapDataset protocol.
         case PandasDataset() as pandas_dataset:
-            return pandas_dataset.index
+            return Index(pandas_dataset.index)
         case MapDataset() as map_dataset:
             return Index(map_dataset.keys())
         case Indexable() as iterable_dataset:

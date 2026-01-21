@@ -488,7 +488,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
         MFLAGS_DTYPE = pd.CategoricalDtype(list("BDHKLOPTW"))
         QFLAGS_DTYPE = pd.CategoricalDtype(list("DGIKLMNORSTWXZ"))
         SFLAGS_DTYPE = pd.CategoricalDtype(list("067ABFGHKMNRSTUWXZ"))
-        ELEMENTS_DTYPE = pd.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
+        ELEMENTS_DTYPE = pd.CategoricalDtype(["PRCP", "SNOW", "SNWD", "TMAX", "TMIN"])
         VALUES_DTYPE = "int16[pyarrow]"
 
         updated_dtypes = {

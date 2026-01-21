@@ -39,7 +39,7 @@ from torch import Tensor
 from tsdm.backend.pandas import PandasDtype, PandasDTypeArg
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.encoders.base import Encoder, EncoderDict, FittableEncoder, StaticEncoder
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import DictArg, FilePath
 from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 
@@ -98,6 +98,10 @@ class FrameEncoder[K](EncoderDict[DataFrame, DataFrame, K, Encoder]):
 
     - [ ] Add support for groups of column-encoders
     """
+
+    @classmethod
+    def new(cls, *, encoders: DictArg) -> "EncoderDict":
+        return cls(encoders)
 
     # fitted attributes
     original_index: list[K] = field(init=False, default=UNDEFINED)

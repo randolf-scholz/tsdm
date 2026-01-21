@@ -1,5 +1,7 @@
 r"""Test `module.class`."""
 
+from typing import Any
+
 import numpy as np
 import pytest
 import torch
@@ -116,6 +118,58 @@ def test_replace() -> None:
     string = "Hello World"
     replacements = {"Hello": "Goodbye", "World": "Earth"}
     assert replace(string, replacements) == "Goodbye Earth"
+
+
+@pytest.mark.parametrize(
+    ("d", "kwargs", "expected"),
+    [
+        pytest.param(
+            {"a": {"b": 1, "c": 2}},
+            {},
+            {"a.b": 1, "a.c": 2},
+            id="dot_flat_simple",
+        ),
+        pytest.param(
+            {"a": {"b": {"x": 2}, "c": 2}},
+            {},
+            {"a.b.x": 2, "a.c": 2},
+            id="dot_flat_nested",
+        ),
+        pytest.param(
+            {"a": {"b": 1, "c": 2}},
+            {"join_fn": tuple, "split_fn": lambda x: x},
+            {("a", "b"): 1, ("a", "c"): 2},
+            id="tuple_flat_simple",
+        ),
+        pytest.param(
+            {"a": {"b": {"x": 2}, "c": 2}},
+            {"join_fn": tuple, "split_fn": lambda x: x},
+            {("a", "b", "x"): 2, ("a", "c"): 2},
+            id="tuple_flat_nested",
+        ),
+        pytest.param(
+            {"a": {"i": {"x": 0}, "b": {"y": 1}}},
+            {},
+            {"a.i.x": 0, "a.b.y": 1},
+            id="dot_partial_default",
+        ),
+        pytest.param(
+            {"a": {"i": {"x": 0}, "b": {"y": 1}}},
+            {"recursive": 2},
+            {"a.i": {"x": 0}, "a.b": {"y": 1}},
+            id="dot_partial_recursive_2",
+        ),
+        pytest.param(
+            {"a": {"i": {"x": 0}, "b": {"y": 1}}},
+            {"recursive": 1},
+            {"a": {"i": {"x": 0}, "b": {"y": 1}}},
+            id="dot_partial_recursive_1",
+        ),
+    ],
+)
+def test_flatten_dict_doctests(d: dict, kwargs: Any, expected: dict) -> None:
+    result = flatten_dict(d, **kwargs)
+    assert result == expected
 
 
 def test_flatten_dict() -> None:

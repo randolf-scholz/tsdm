@@ -103,7 +103,9 @@ class ErrorHandler:
         WARN = "warn"
         RAISE = "raise"
 
-    type Mode = Literal["ignore", "log", "warn", "raise"] | MODE
+    # type alias for handling both enums and string literals.
+    # SEE: https://discuss.python.org/t/amend-pep-586-to-make-enum-values-subtypes-of-literal/59456
+    type Mode = MODE | Literal["ignore", "log", "warn", "raise"]
 
     mode: MODE
     r"""Validation mode for hash validation."""

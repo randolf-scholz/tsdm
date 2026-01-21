@@ -157,37 +157,37 @@ class BoundaryEncoder[
         # select the backend
         self.backend: Backend = get_backend(data)
 
-        # fit the parameters
+        # set lower_bound
         if self.lower_bound is UNDEFINED:
             self.lower_bound = self.backend.nanmin(data)
         elif is_null_scalar(self.lower_bound):
             self.lower_bound = None
+
+        # set upper_bound
         if self.upper_bound is UNDEFINED:
             self.upper_bound = self.backend.nanmax(data)
         elif is_null_scalar(self.upper_bound):
             self.upper_bound = None
 
         # set lower_value
-        match self.lower_bound, self.lower_mode:
-            case None, _:
-                self.lower_value = self.backend.to_tensor(float("-inf"))
-            case _, self.MODES.mask:
-                self.lower_value = self.backend.to_tensor(float("nan"))
-            case _, self.MODES.clip:
-                self.lower_value = self.lower_bound
-            case _:
-                raise NotImplementedError
+        if self.lower_bound is None:
+            self.lower_value = self.backend.to_tensor(float("-inf"))
+        elif self.lower_mode is self.MODES.mask:
+            self.lower_value = self.backend.to_tensor(float("nan"))
+        elif self.lower_mode is self.MODES.clip:
+            self.lower_value = self.lower_bound
+        else:
+            raise NotImplementedError
 
         # set upper_value
-        match self.upper_bound, self.upper_mode:
-            case None, _:
-                self.upper_value = self.backend.to_tensor(float("+inf"))
-            case _, self.MODES.mask:
-                self.upper_value = self.backend.to_tensor(float("nan"))
-            case _, self.MODES.clip:
-                self.upper_value = self.upper_bound
-            case _:
-                raise NotImplementedError
+        if self.upper_bound is None:
+            self.upper_value = self.backend.to_tensor(float("+inf"))
+        elif self.upper_mode is self.MODES.mask:
+            self.upper_value = self.backend.to_tensor(float("nan"))
+        elif self.upper_mode is self.MODES.clip:
+            self.upper_value = self.upper_bound
+        else:
+            raise NotImplementedError
 
     def encode(self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!

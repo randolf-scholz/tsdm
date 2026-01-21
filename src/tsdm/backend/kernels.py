@@ -27,7 +27,7 @@ import torch as pt
 from numpy import ndarray
 from torch import Tensor
 
-from tsdm import backend as B, constants
+from tsdm import backend as B, constants as C
 from tsdm.types.callback_protocols import (
     ApplyAlongAxes,
     ArraySplitProto,
@@ -68,7 +68,7 @@ def gather_types(obj: object, /) -> set[BackendID]:
         case ndarray():
             return {"numpy"}
         case (
-            constants.UNDEFINED
+            C.UNDEFINED
             | None
             | bool()
             | int()
@@ -182,7 +182,7 @@ class Kernels:  # TODO: how to make this more elegant?
         "arrow": B.pyarrow.where,
         "numpy": np.where,
         "pandas": B.pandas.where,
-        "torch": pt.where,  # type: ignore[dict-item]
+        "torch": pt.where,
     }
 
     strip_whitespace: dict[BackendID, SelfMap] = {

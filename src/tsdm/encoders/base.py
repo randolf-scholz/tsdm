@@ -902,15 +902,19 @@ class EncoderDict[
     X,  # invariant
     Y,  # invariant
     K,  # invariant
-    E: Encoder,  # covariant
+    E: Encoder = Encoder,  # covariant
 ](FittableEncoder[X, Y], Mapping[K, E]):
     r"""Wraps dictionary of encoders."""
 
     @classmethod
     @abstractmethod
-    def new(cls, *, encoders: DictArg) -> "EncoderDict":
-        r"""Create a new instance with the given values."""
-        ...
+    def new(cls, *, encoders: DictArg) -> "EncoderDict": ...
+    @abstractmethod
+    def encode(self, x: X, /) -> Y: ...
+    @abstractmethod
+    def decode(self, y: Y, /) -> X: ...
+    @abstractmethod
+    def fit(self, x: X, /) -> None: ...
 
     # region abstract implementation ---------------------------------------------------
     def __init__[K2, E2: Encoder](
