@@ -18,7 +18,6 @@ import torch
 from numpy.typing import NDArray
 from torch import Tensor, jit, nn
 
-from tsdm.backend.torch import autojit
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import StaticEncoder
 from tsdm.types.aliases import NestedBuiltin
@@ -26,7 +25,6 @@ from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 
-@autojit
 class Time2Vec(nn.Module):
     r"""Learnable Time Encoding.
 
@@ -81,7 +79,6 @@ class Time2Vec(nn.Module):
         return self.decode(z)
 
 
-@autojit
 class PositionalEncoding(nn.Module):
     r"""Positional encoding.
 
