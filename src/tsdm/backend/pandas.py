@@ -24,8 +24,8 @@ __all__ = [
     "true_like",
     "where",
     # auxiliary functions
-    "detect_outliers_series",
-    "detect_outliers_dataframe",
+    "select_outliers_series",
+    "select_outliers_dataframe",
     "remove_outliers_series",
     "remove_outliers_dataframe",
     "strip_whitespace_index",
@@ -35,11 +35,13 @@ __all__ = [
 
 import logging
 import operator
+import warnings
 from collections.abc import Hashable, Mapping
 from contextlib import suppress
 from functools import reduce
 from typing import Any, Final, Literal
 
+import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
@@ -202,7 +204,7 @@ def strip_whitespace[P: PandasType](x: P, /) -> P:
             raise TypeError(f"Expected {PANDAS_TYPE}, got {type(x)}.")
 
 
-def detect_outliers_series(
+def select_outliers_series(
     s: Series,
     /,
     *,
@@ -210,8 +212,16 @@ def detect_outliers_series(
     upper_bound: float | None,
     lower_inclusive: bool,
     upper_inclusive: bool,
-) -> Series:
+) -> Series:  # Series[bool]
     r"""Detect outliers in a Series, given boundary values."""
+    if not pd.api.types.is_any_real_numeric_dtype(s):
+        warnings.warn(
+            "Currently, only float-compatible dtypes are support outlier selection.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return false_like(s)
+
     # detect lower-bound violations
     match lower_bound, lower_inclusive:
         case None, _:
@@ -244,7 +254,7 @@ def detect_outliers_series(
     return mask_lower | mask_upper
 
 
-def detect_outliers_dataframe(
+def select_outliers_dataframe(
     df: DataFrame,
     /,
     *,
@@ -252,7 +262,7 @@ def detect_outliers_dataframe(
     upper_bound: Mapping[Any, float | None],
     lower_inclusive: Mapping[Any, bool],
     upper_inclusive: Mapping[Any, bool],
-) -> DataFrame:
+) -> DataFrame:  # DataFrame[bool]
     r"""Detect outliers in a DataFrame, given boundary values."""
     given_bounds = get_joint_keys(
         lower_bound, upper_bound, lower_inclusive, upper_inclusive
@@ -261,14 +271,21 @@ def detect_outliers_dataframe(
         raise ValueError(f"Columns {missing_bounds} do not have bounds!")
 
     mask = false_like(df)
+    exceptions: dict[str, Exception] = {}
     for col in df.columns:
-        mask[col] = detect_outliers_series(
-            df[col],
-            lower_bound=lower_bound[col],
-            upper_bound=upper_bound[col],
-            lower_inclusive=lower_inclusive[col],
-            upper_inclusive=upper_inclusive[col],
-        )
+        try:
+            mask[col] = select_outliers_series(
+                df[col],
+                lower_bound=lower_bound[col],
+                upper_bound=upper_bound[col],
+                lower_inclusive=lower_inclusive[col],
+                upper_inclusive=upper_inclusive[col],
+            )
+        except Exception as e:
+            exceptions[col] = e
+    if exceptions:
+        msg = "\n".join(f"{col!r}: {exc!s}" for col, exc in exceptions.items())
+        raise RuntimeError(msg) from ExceptionGroup("", list(exceptions.values()))
 
     return mask
 
@@ -306,7 +323,7 @@ def remove_outliers_series(
     s = s.copy() if inplace else s
 
     # compute mask for values that are considered outliers
-    mask = detect_outliers_series(
+    mask = select_outliers_series(
         s,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -350,7 +367,7 @@ def remove_outliers_dataframe(
         raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
     # compute mask for values that are considered outliers
-    mask = detect_outliers_dataframe(
+    mask = select_outliers_dataframe(
         df,
         lower_bound=lower_bound,
         upper_bound=upper_bound,

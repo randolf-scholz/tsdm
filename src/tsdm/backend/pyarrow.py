@@ -14,7 +14,6 @@ __all__ = [
     "filter_nulls",
     "force_cast",
     "full_like",
-    "is_numeric",
     "is_string_array",
     "null_like",
     "or_",
@@ -30,7 +29,6 @@ __all__ = [
     "strip_whitespace_table",
     "strip_whitespace_array",
 ]
-
 
 from collections.abc import Iterable, Sequence
 from typing import Any, Literal, Optional, overload
@@ -51,8 +49,6 @@ from pyarrow import (
 )
 from pyarrow.types import lib as pyarrow_lib
 from tqdm import tqdm
-
-from tsdm.dtypes import PYARROW_TO_POLARS
 
 STR = pa.string()
 TEXT = pa.large_string()
@@ -162,8 +158,6 @@ def force_cast[T: AnyArray | Table](
     r"""Cast an array or table to the given data type, replacing non-castable elements with null."""
     match x:
         case (Array() | ChunkedArray()) as array:
-            import polars as pl
-
             if dtypes:
                 raise ValueError("Unexpected argument dtypes for Array input.")
             if dtype is None:
@@ -171,13 +165,15 @@ def force_cast[T: AnyArray | Table](
 
             actual_dtype = pyarrow_lib.ensure_type(dtype)
 
-            return (
-                pl
-                .from_arrow(array)
-                .cast(PYARROW_TO_POLARS[actual_dtype], strict=False)
-                .to_arrow()
-                .cast(dtype)
+            return array.cast(
+                actual_dtype,
+                options=pc.CastOptions(
+                    allow_float_truncate=True,
+                    allow_decimal_truncate=True,
+                    allow_time_truncate=True,
+                ),
             )
+
         case Table() as table:
             if unknown_keys := set(dtypes.keys()) - set(table.column_names):
                 raise ValueError(f"Keys: {unknown_keys} not in table columns.")
@@ -190,6 +186,7 @@ def force_cast[T: AnyArray | Table](
                 name: force_cast(table[name], dtypes.get(name) or current_dtypes[name])
                 for name in table.column_names
             }).cast(new_schema)
+
         case _:
             raise TypeError(f"Expected Array or Table, got {type(x)}.")
 
@@ -205,9 +202,10 @@ def cast_column(
             else table[col].cast(dtype, safe=safe)
         )
     except Exception as exc:
-        raise RuntimeError(
+        exc.add_note(
             f"Error {exc!r} occurred while casting column {col!r} to {dtype!r}."
-        ) from exc
+        )
+        raise
 
     index = table.column_names.index(col)
     return table.set_column(index, col, casted_column)
@@ -239,29 +237,6 @@ def unsafe_cast_columns(table: Table, /, **dtypes: DataType | str) -> Table:
     for col, dtype in new_dtypes.items():
         table = cast_column(table, col, dtype, safe=False)
     return table
-
-
-def is_numeric(array: AnyArray, /) -> BooleanArray:
-    r"""Return mask determining if each element can be cast to the given data type."""
-    import pandas as pd
-
-    prior_null = pc.is_null(array)
-    post_null = pc.is_null(
-        Array.from_pandas(
-            pd.to_numeric(
-                pd.Series(array, dtype="string[pyarrow]"),
-                # NOTE: string[pyarrow] is actually `StringDtype`, so we can't use `to_pandas`
-                errors="coerce",
-                dtype_backend="pyarrow",
-                downcast="float",
-            )
-        )
-    )
-
-    return pc.or_(
-        prior_null,
-        pc.invert(post_null),
-    )
 
 
 def is_string_array(arr: AnyArray, /) -> bool:
