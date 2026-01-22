@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from torch import nn
 
-from tsdm.backend.torch import autojit
+from tsdm.models.util import autojit
 
 type PaddingMode = Literal["zeros", "reflect", "replicate", "circular"]
 

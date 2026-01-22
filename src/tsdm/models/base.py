@@ -90,7 +90,7 @@ class BaseModelMetaClass(type):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if "MODEL_DIR" not in namespace:
-            cls.MODEL_DIR = CONFIG.MODELDIR / cls.__name__
+            cls.MODEL_DIR = CONFIG.MODEL_DIR / cls.__name__
 
 
 class BaseModel(metaclass=BaseModelMetaClass):
@@ -108,7 +108,7 @@ class BaseModel(metaclass=BaseModelMetaClass):
     @cached_property
     def model_path(self) -> Path:
         r"""Return the path to the model."""
-        return CONFIG.MODELDIR / self.__class__.__name__
+        return CONFIG.MODEL_DIR / self.__class__.__name__
 
     def download(self, *, url: Optional[str | Path] = None) -> None:
         r"""Download model (e.g. via git clone)."""

@@ -6,7 +6,7 @@ from typing import Any, Final, Optional
 
 from torch import Tensor, jit, nn
 
-from tsdm.backend.torch import autojit, initialize_from_config
+from tsdm.models.util import autojit, initialize_from_config
 from tsdm.utils import deep_dict_update
 
 

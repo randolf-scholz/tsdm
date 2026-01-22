@@ -9,7 +9,7 @@ from typing import Optional
 
 from torch import nn
 
-from tsdm.backend.torch import autojit
+from tsdm.models.util import autojit
 
 
 @autojit

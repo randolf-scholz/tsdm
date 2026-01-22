@@ -11,7 +11,6 @@ from typing import Optional
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.backend.torch import autojit
 from tsdm.encoders.torch import PositionalEncoding, Time2Vec
 from tsdm.models.generic import (
     MLP,
@@ -20,6 +19,7 @@ from tsdm.models.generic import (
     ReZeroMLP,
     ScaledDotProductAttention,
 )
+from tsdm.models.util import autojit
 
 
 @autojit
