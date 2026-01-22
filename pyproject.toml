@@ -30,12 +30,11 @@ classifiers = [
 dependencies = [
     "matplotlib>=3.10.8",
     "numpy>=2.4.1",
-    "pandas>=3.0.0",
-    "pillow>=12.1.0",
+    "pandas>=3.0.0",  # removal candidate
     "polars>=1.37.1",
     "pyarrow>=23.0.0",
-    "pydantic>=2.12.5",
-    "pyyaml>=6.0.3",
+    "pydantic>=2.12.5",  # removal candidate
+    "pyyaml>=6.0.3",  # removal candidate
     "requests>=2.32.5",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.0",
@@ -225,6 +224,8 @@ ignore = [
     "E272",     # Multiple spaces before keyword
     # refurb
     "FURB140",  # reimplemented-starmap (less efficient than comprehension)
+    #
+    "G004",     # logging f-string
     # naming
     "N801",     # class names should use CapWords convention
     "N803",     # argument name should be lowercase

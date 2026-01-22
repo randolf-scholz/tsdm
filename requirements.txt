@@ -105,7 +105,6 @@ pillow==12.1.0
     # via
     #   matplotlib
     #   tensorboard
-    #   tsdm
 polars==1.37.1
     # via tsdm
 polars-runtime-32==1.37.1

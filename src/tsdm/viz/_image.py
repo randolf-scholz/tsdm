@@ -6,15 +6,14 @@ __all__ = [
     "rasterize",
 ]
 
-from tempfile import TemporaryFile
 from typing import Literal
 
 import numpy as np
 import torch
 from matplotlib import colormaps, colors
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
-from PIL import Image
 from torch import Tensor
 
 
@@ -80,11 +79,11 @@ def rasterize(
     """
     dpi = (px / w + py / h) // 2  # compromise
     fig.set_dpi(dpi)
-    fig.set_size_inches(w, h)
+    fig.set_size_inches(w, h, forward=True)
 
-    # we serialize with PIL and return the array
-    with TemporaryFile(suffix=".png") as file:
-        fig.savefig(file, dpi=dpi)
-        im = Image.open(file)
+    # Render via Agg and extract RGBA buffer without Pillow.
+    fig.canvas.draw()
+    rgba_buf = FigureCanvasAgg(fig).buffer_rgba()
+    rgba = np.frombuffer(rgba_buf, dtype=np.uint8).reshape((py, px, 4))
 
-    return np.array(im)
+    return rgba
