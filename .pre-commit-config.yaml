@@ -27,7 +27,7 @@ repos:
         description: "Use pyarrow types instead of numpy nullable types in pandas."
         language: pygrep
         entry: 'dtype="(boolean|U?Int(8|16|32|64)|Float(32|64))"'
-        exclude: '/tests/'
+        exclude: '^tests/'
         types: [ python ]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
