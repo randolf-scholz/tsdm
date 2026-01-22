@@ -19,21 +19,36 @@ import os
 import shutil
 import subprocess
 from collections.abc import Iterator, Mapping
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from html.parser import HTMLParser
 from http import HTTPStatus
 from io import IOBase
 from pathlib import Path
 from typing import IO, Any, Optional
 from urllib.parse import urlparse
-from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
 from requests import Session
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.testing.hashutils import validate_file
+from tsdm.testing.validation import validate_file_hash
 from tsdm.types.aliases import FilePath
+
+# NOTE: Session options as of requests 2.26.0
+# - "headers"
+# - "cookies"
+# - "auth"
+# - "proxies"
+# - "hooks"
+# - "params"
+# - "verify"
+# - "cert"
+# - "adapters"
+# - "stream"
+# - "trust_env"
+# - "max_redirects"
 
 
 class LinkParser(HTMLParser):
@@ -50,6 +65,7 @@ class LinkParser(HTMLParser):
                     self.links.append(value)
 
 
+# src/tsdm/utils/remote.py
 def download_io(
     url: str,
     file: IO | IOBase,
@@ -76,22 +92,22 @@ def download_io(
     )
 
     if response.status_code != HTTPStatus.OK:
-        raise RuntimeError(
-            f"Failed to download {url} with status code {response.status_code}."
-        )
+        msg = f"Failed to download {url} with status code {response.status_code}"
+        raise RuntimeError(msg)
+
+    total = int(response.headers.get("content-length", 0) or 0)
 
     with tqdm(
         desc=f"Downloading {url}",
-        total=int(response.headers.get("content-length", 0)),
+        total=total,
         unit="iB",
         unit_scale=True,
         unit_divisor=1024,
         leave=False,
     ) as progress_bar:
         for data in response.iter_content(chunk_size=chunk_size):
-            if data:  # filter out keep-alive new chunks
-                progress_bar.update(chunk_size)
-                file.write(data)
+            file.write(data)
+            progress_bar.update(len(data))
 
 
 def stream_download(
@@ -157,21 +173,16 @@ def yield_suburls(url: str, /, *, session: Session) -> Iterator[str]:
             yield url + link
 
 
-# NOTE: Session options as of requests 2.26.0
-#
-# - "headers"
-# - "cookies"
-# - "auth"
-# - "proxies"
-# - "hooks"
-# - "params"
-# - "verify"
-# - "cert"
-# - "adapters"
-# - "stream"
-# - "trust_env"
-# - "max_redirects"
-#
+def _fetch_bytes(session: Session, url: str, *, chunk_size: int = 1024 * 1024) -> bytes:
+    r"""Download a URL and return its content as bytes."""
+    resp = session.get(url, stream=True)
+    if resp.status_code != HTTPStatus.OK:
+        raise RuntimeError(
+            f"Failed to download {url} with status code {resp.status_code}."
+        )
+    return b"".join(resp.iter_content(chunk_size=chunk_size))
+
+
 def download_directory_to_zip(
     url: str,
     zip_filename: FilePath,
@@ -182,18 +193,19 @@ def download_directory_to_zip(
     headers: Mapping[str, str] = EMPTY_MAP,
     stream: bool = True,
     add_toplevel_dir: bool = True,
-    zip_options: Mapping[str, object] = EMPTY_MAP,
+    zip_options: Mapping[str, Any] = EMPTY_MAP,
+    # concurrency options
+    max_workers: int = 8,
+    chunk_size: int = 1024 * 1024,
 ) -> None:
-    r"""Download a directory from a URL to a zip file."""
-    path = Path(zip_filename)
-    stem = f"{path.stem}/" if add_toplevel_dir else ""
-    zip_options = {"mode": "w"} | dict(zip_options)
+    r"""Download a directory from a URL to a zip file (concurrent fetch, serial zip write)."""
+    zipfile_path = Path(zip_filename)
+    stem = f"{zipfile_path.stem}/" if add_toplevel_dir else ""
+    zip_options = {"mode": "w", "compression": ZIP_DEFLATED} | dict(zip_options)
 
-    # validate the path
-    if path.suffix != ".zip":
-        raise ValueError(f"{path=} must have .zip suffix!")
+    if zipfile_path.suffix != ".zip":
+        raise ValueError(f"{zipfile_path=} must have .zip suffix!")
 
-    # Create a session
     with Session() as session:
         session.auth = (
             (username, password)
@@ -206,23 +218,34 @@ def download_directory_to_zip(
         response = session.get(url)
         if response.status_code != HTTPStatus.OK:
             raise RuntimeError(
-                f"Failed to create session for {url} with status code"
-                f" {response.status_code}."
+                f"Failed to create session for {url} with status code {response.status_code}."
             )
 
-        # Get the contents of the directory
         content: list[str] = sorted(yield_suburls(url, session=session))
+        if not content:
+            raise RuntimeError(f"No files found at {url}.")
 
-        # Download the directory
-        # FIXME: https://github.com/python/typeshed/issues/14283
-        with ZipFile(zip_filename, **zip_options) as archive:  # type: ignore[call-overload] # pyright: ignore[reportCallIssue, reportArgumentType]
-            for href in (pbar := tqdm(content)):
-                # get relative path w.r.t. the base url
+        # Fetch in parallel, write sequentially to avoid corrupting the zip.
+        with (
+            ZipFile(zipfile_path, **zip_options) as archive,  # type: ignore[call-overload]
+            ThreadPoolExecutor(max_workers=max_workers) as pool,
+            tqdm(total=len(content), leave=False) as pbar,
+        ):
+            futures = {
+                pool.submit(_fetch_bytes, session, href, chunk_size=chunk_size): href
+                for href in content
+            }
+
+            for fut in as_completed(futures):
+                href = futures[fut]
                 file_name = os.path.relpath(href, url)
                 pbar.set_description(f"Downloading {file_name}")
 
-                with archive.open(stem + file_name, "w", force_zip64=True) as file:
-                    download_io(href, file, session=session)
+                data = fut.result()
+                with archive.open(stem + file_name, "w", force_zip64=True) as f:
+                    f.write(data)
+
+                pbar.update(1)
 
 
 def download_from_kaggle(url: str, fname: FilePath, /, **options: Any) -> None:
@@ -307,7 +330,6 @@ def download(
     skip_existing: bool = False,
     hash_value: Optional[str] = None,
     hash_algorithm: Optional[str] = None,
-    hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     r"""Download a file from a URL.
 
@@ -335,12 +357,7 @@ def download(
     if skip_existing and path.exists():
         # skip download, but validate the hash
         if hash_value is not None:
-            validate_file(
-                path,
-                hash_value,
-                hash_algorithm=hash_algorithm,
-                hash_kwargs=hash_kwargs,
-            )
+            validate_file_hash(path, hash_value, hash_algorithm=hash_algorithm)
         return
 
     # attempt to download the file
@@ -362,12 +379,7 @@ def download(
 
     # validate the file hash
     if hash_value is not None:
-        validate_file(
-            path,
-            hash_value,
-            hash_algorithm=hash_algorithm,
-            hash_kwargs=hash_kwargs,
-        )
+        validate_file_hash(path, hash_value, hash_algorithm=hash_algorithm)
 
 
 def import_from_url(
@@ -379,22 +391,31 @@ def import_from_url(
     logger = logging.getLogger(__name__)
     logger.info("Downloading %s to %s", url, path)
 
-    if parsed_url.netloc == "www.kaggle.com":
-        kaggle_name = Path(parsed_url.path).name
-        subprocess.run(
-            ["kaggle", "competitions", "download", "-p", str(path), "-c", kaggle_name],  # noqa: S607
-            check=True,
-        )
-    elif parsed_url.netloc == "github.com":
-        subprocess.run(
-            [
-                "/usr/bin/svn",
-                "export",
-                "--force",
-                url.replace("tree/main", "trunk"),
-                str(path),
-            ],
-            check=True,
-        )
-    else:  # default parsing, including for UCI dataset
-        download(url, path, *args, **kwargs)
+    match parsed_url.netloc:
+        case "www.kaggle.com":
+            kaggle_name = Path(parsed_url.path).name
+            subprocess.run(
+                [  # noqa: S607
+                    "kaggle",
+                    "competitions",
+                    "download",
+                    "-p",
+                    str(path),
+                    "-c",
+                    kaggle_name,
+                ],
+                check=True,
+            )
+        case "github.com":
+            subprocess.run(
+                [
+                    "/usr/bin/svn",
+                    "export",
+                    "--force",
+                    url.replace("tree/main", "trunk"),
+                    str(path),
+                ],
+                check=True,
+            )
+        case _:  # default parsing, including for UCI dataset
+            download(url, path, *args, **kwargs)
