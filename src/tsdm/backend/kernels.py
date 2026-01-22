@@ -10,13 +10,12 @@ __all__ = [
     # Functions
     "get_backend",
     "get_backend_id",
-    "gather_types",
 ]
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
-from typing import Literal, Self, overload
+from typing import Literal, Self, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -48,56 +47,6 @@ type BackendID = Literal["generic", "arrow", "numpy", "pandas", "polars", "torch
 r"""A type alias for the supported backends."""
 BACKENDS = ("generic", "arrow", "numpy", "pandas", "polars", "torch")
 r"""A tuple of the supported backends."""
-
-
-def gather_types(obj: object, /) -> set[BackendID]:
-    r"""Gather the backend types of a set of objects."""
-    match obj:
-        case (tuple() | set() | frozenset() | list()) as container:
-            return set().union(*map(gather_types, container))
-        case dict(mapping):
-            return set().union(*map(gather_types, mapping.values()))
-        case Tensor():
-            return {"torch"}
-        case pd.DataFrame() | pd.Series() | pd.Index():
-            return {"pandas"}
-        case pl.Series() | pl.DataFrame():
-            return {"polars"}
-        case pa.Array() | pa.Table():
-            return {"arrow"}
-        case ndarray():
-            return {"numpy"}
-        case (
-            C.UNDEFINED
-            | None
-            | bool()
-            | int()
-            | float()
-            | complex()
-            | str()
-            | datetime()
-            | timedelta()
-            | EllipsisType()
-            | NotImplementedType()
-        ):
-            # FIXME: https://github.com/python/cpython/issues/106246
-            # use PythonScalar instead of Scalar when the above issue is fixed
-            return set()
-        case _:
-            raise TypeError(f"Unsupported type: {type(obj)}.")
-
-
-def get_backend_id(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
-    r"""Get the backend of a set of objects."""
-    types: set[BackendID] = gather_types(obj)
-
-    match len(types):
-        case 0:
-            return fallback
-        case 1:
-            return types.pop()
-        case _:
-            raise ValueError(f"More than 1 backend detected: {types}.")
 
 
 class Kernels:  # TODO: how to make this more elegant?
@@ -134,7 +83,7 @@ class Kernels:  # TODO: how to make this more elegant?
     nanmean: dict[BackendID, ContractionProto] = {
         "numpy": np.nanmean,
         "pandas": B.pandas.nanmean,
-        "torch": pt.nanmean,  # type: ignore[dict-item]
+        "torch": cast("ContractionProto[Tensor]", pt.nanmean),
     }
 
     nanstd: dict[BackendID, ContractionProto] = {
@@ -197,13 +146,13 @@ class Kernels:  # TODO: how to make this more elegant?
 
     array_split: dict[BackendID, ArraySplitProto] = {
         "numpy": np.array_split,
-        "torch": pt.tensor_split,  # type: ignore[dict-item]
+        "torch": cast("ArraySplitProto[Tensor]", pt.tensor_split),
     }
 
     concatenate: dict[BackendID, ConcatenateProto] = {
         "numpy": np.concatenate,
         "pandas": pd.concat,
-        "torch": pt.cat,  # type: ignore[dict-item]
+        "torch": cast("ConcatenateProto[Tensor]", pt.cat),
     }
 
     drop_null: dict[BackendID, SelfMap] = {
@@ -284,6 +233,56 @@ class Backend[T]:
             if impl is NotImplemented:  # fallback to generic kernel
                 impl = implementations.get("generic", NotImplemented)
             object.__setattr__(self, attr, impl)
+
+
+def _gather_types(obj: object, /) -> set[BackendID]:
+    r"""Gather the backend types of a set of objects."""
+    match obj:
+        case (tuple() | set() | frozenset() | list()) as container:
+            return set().union(*map(_gather_types, container))
+        case dict(mapping):
+            return set().union(*map(_gather_types, mapping.values()))
+        case Tensor():
+            return {"torch"}
+        case pd.DataFrame() | pd.Series() | pd.Index():
+            return {"pandas"}
+        case pl.Series() | pl.DataFrame():
+            return {"polars"}
+        case pa.Array() | pa.Table():
+            return {"arrow"}
+        case ndarray():
+            return {"numpy"}
+        case (
+            C.UNDEFINED
+            | None
+            | bool()
+            | int()
+            | float()
+            | complex()
+            | str()
+            | datetime()
+            | timedelta()
+            | EllipsisType()
+            | NotImplementedType()
+        ):
+            # FIXME: https://github.com/python/cpython/issues/106246
+            # use PythonScalar instead of Scalar when the above issue is fixed
+            return set()
+        case _:
+            raise TypeError(f"Unsupported type: {type(obj)}.")
+
+
+def get_backend_id(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
+    r"""Get the backend of a set of objects."""
+    types: set[BackendID] = _gather_types(obj)
+
+    match len(types):
+        case 0:
+            return fallback
+        case 1:
+            return types.pop()
+        case _:
+            raise ValueError(f"More than 1 backend detected: {types}.")
 
 
 @overload

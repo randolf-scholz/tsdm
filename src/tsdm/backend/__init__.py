@@ -7,14 +7,16 @@ Supports pandas / numpy / torch.
 
 __all__ = [
     # submodules
+    "fallback",
     "generic",
     "numpy",
     "pandas",
     "polars",
     "pyarrow",
     "torch",
+    "types",
     # Constants
-    # "KERNELS",
+    "BACKENDS",
     # Type aliases
     "BackendID",
     # Classes
@@ -25,5 +27,5 @@ __all__ = [
 ]
 
 
-from tsdm.backend import generic, numpy, pandas, polars, pyarrow, torch
-from tsdm.backend.kernels import Backend, BackendID, Kernels, get_backend
+from tsdm.backend import fallback, generic, numpy, pandas, polars, pyarrow, torch, types
+from tsdm.backend.kernels import BACKENDS, Backend, BackendID, Kernels, get_backend

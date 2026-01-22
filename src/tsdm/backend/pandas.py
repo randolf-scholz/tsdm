@@ -41,18 +41,18 @@ from contextlib import suppress
 from functools import reduce
 from typing import Any, Final, Literal
 
+import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
-from tsdm.backend.numpy import NumpyDtype
 from tsdm.types.aliases import Axis, BuiltinScalar
 from tsdm.utils import get_joint_keys
 
 __logger__ = logging.getLogger(__name__)
 
-PandasDtype = ExtensionDtype | NumpyDtype
+PandasDtype = ExtensionDtype | np.dtype
 r"""Type Alias for `pandas` dtype."""
 PandasDTypeArg = str | type | PandasDtype
 r"""Type Alias for `pandas` dtype arguments."""
