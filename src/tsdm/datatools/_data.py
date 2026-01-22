@@ -11,7 +11,7 @@ __all__ = [
     "Schema",
     # Functions
     "aggregate_nondestructive",
-    "detect_outliers",
+    "select_outliers",
     "is_integer_series",
     "get_integer_cols",
     "make_dataframe",
@@ -30,10 +30,10 @@ from pandas.api.typing import NAType
 from scipy import stats
 
 from tsdm.backend.pandas import (
-    detect_outliers_dataframe,
-    detect_outliers_series,
     remove_outliers_dataframe,
     remove_outliers_series,
+    select_outliers_dataframe,
+    select_outliers_series,
     strip_whitespace_dataframe,
     strip_whitespace_series,
 )
@@ -149,13 +149,13 @@ def strip_whitespace[T: pa.Array | pa.Table | Series | DataFrame](
 
 # region overloads ---------------------------------------------------------------------
 @overload
-def detect_outliers(s: Series, limits: BoundaryInformation, /) -> Series: ...
+def select_outliers(s: Series, limits: BoundaryInformation, /) -> Series: ...
 @overload
-def detect_outliers(
+def select_outliers(
     df: DataFrame, limits: DataFrame | Mapping[str, BoundaryInformation], /
 ) -> DataFrame: ...
 @overload
-def detect_outliers(
+def select_outliers(
     s: Series,
     /,
     *,
@@ -165,7 +165,7 @@ def detect_outliers(
     upper_inclusive: bool,
 ) -> Series: ...
 @overload
-def detect_outliers[Key](
+def select_outliers[Key](
     df: DataFrame,
     /,
     *,
@@ -175,7 +175,7 @@ def detect_outliers[Key](
     upper_inclusive: Mapping[Key, bool],
 ) -> DataFrame: ...
 # endregion overloads ------------------------------------------------------------------
-def detect_outliers[T: Series | DataFrame](
+def select_outliers[T: Series | DataFrame](
     obj: T,
     limits: Any = NotImplemented,
     /,
@@ -208,9 +208,9 @@ def detect_outliers[T: Series | DataFrame](
 
     match obj:
         case Series() as s:
-            return detect_outliers_series(s, **opts)  # type: ignore[arg-type]
+            return select_outliers_series(s, **opts)  # type: ignore[arg-type]
         case DataFrame() as df:
-            return detect_outliers_dataframe(df, **opts)  # type: ignore[arg-type]
+            return select_outliers_dataframe(df, **opts)  # type: ignore[arg-type]
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
 

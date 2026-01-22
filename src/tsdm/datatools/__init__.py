@@ -30,7 +30,7 @@ __all__ = [
     # data - arrow
     # data
     "aggregate_nondestructive",
-    "detect_outliers",
+    "select_outliers",
     "is_integer_series",
     "get_integer_cols",
     "make_dataframe",
@@ -42,11 +42,11 @@ from tsdm.datatools._data import (
     InlineTable,
     MaybeNA,
     aggregate_nondestructive,
-    detect_outliers,
     get_integer_cols,
     is_integer_series,
     make_dataframe,
     remove_outliers,
+    select_outliers,
     strip_whitespace,
 )
 from tsdm.datatools.dataloaders import (
