@@ -16,6 +16,7 @@ __all__ = [
 
 import logging
 import os
+from enum import StrEnum
 from functools import cached_property
 from importlib import import_module
 from itertools import chain
@@ -107,50 +108,70 @@ class Config:
     r"""Logger for the class."""
     GENERATING_DOCS: ClassVar[bool] = bool(os.environ.get("TSDM_DOCS"))
     r"""Whether the documentation is being generated."""
-
-    BASEDIR: Path
+    DEFAULT_HASH_METHOD = "sha256"
+    r"""Default hash method for file integrity checks."""
+    ROOT_DIR: Path
     r"""Root directory for tsdm storage."""
-    LOGDIR: Path
+    LOG_DIR: Path
     r"""Path where logfiles are stored."""
-    MODELDIR: Path
+    MODEL_DIR: Path
     r"""Path where imported models are stored."""
-    DATASETDIR: Path
-    r"""Path where preprocessed dataset are stored."""
-    RAWDATADIR: Path
-    r"""Path where raw imported dataset are stored."""
+    DATASET_DIR: Path
+    r"""Path where imported dataset are stored."""
+
+    class DATASET_KEYS(StrEnum):
+        r"""Keys for dataset schema."""
+
+        RAWDATA = "raw"
+        r"""Raw data directory."""
+        STORAGE = "processed"
+        r"""Processed data directory."""
+        METADATA = "metadata"
+        r"""Metadata directory."""
+        TMP = "tmp"
+        r"""Temporary files directory."""
 
     @cached_property
-    def CONFIG_FILE(self) -> dict[str, Any]:
+    def DEFAULT_CONFIG(self) -> dict[str, Any]:
         r"""Return dictionary containing basic configuration of TSDM."""
+        # dataset schema:
+        # ~/.tsdm/datasets/<dataset>/raw/<version>/... = immutable downloads (as received)
+        # ~/.tsdm/datasets/<dataset>/processed/<version>/... = reproducible cleaned artifacts (e.g. parquet)
+        # ~/.tsdm/datasets/<dataset>/meta/<version>/... = hashes, manifests, schemas, logs (optional but useful)
+        # ~/.tsdm/datasets/<dataset>/tmp/ = scratch space (safe to delete)
         return {
-            "basedir"    : "~/.tsdm",
-            "logdir"     : "logs",
-            "modeldir"   : "models",
-            "datasetdir" : "datasets",
-            "rawdatadir" : "rawdata",
-            "folders"    : ["datasets", "models", "logs", "rawdata"],
+            "root_dir"    : "~/.tsdm",
+            "log_dir"     : "logs",
+            "model_dir"   : "models",
+            "dataset_dir" : "datasets",
+            "dataset_schema": {
+                self.DATASET_KEYS.RAWDATA : "raw",
+                self.DATASET_KEYS.STORAGE : "processed",
+                self.DATASET_KEYS.METADATA    : "meta",
+                self.DATASET_KEYS.TMP     : "tmp",
+            },
+            "folders"    : ["datasets", "models", "logs"],
             "autojit"    : True,
         }  # fmt: skip
 
     def __init__(self) -> None:
         r"""Initialize the configuration."""
         # TODO: Should be initialized by an init/toml file.
-        self.autojit = self.CONFIG_FILE["autojit"]
+        self.autojit = self.DEFAULT_CONFIG["autojit"]
 
-        self.BASEDIR = Path(self.CONFIG_FILE["basedir"])
+        self.ROOT_DIR = Path(self.DEFAULT_CONFIG["root_dir"])
         if not self.GENERATING_DOCS:
-            self.BASEDIR = self.BASEDIR.expanduser().absolute()
+            self.ROOT_DIR = self.ROOT_DIR.expanduser().absolute()
 
-        self.LOGDIR = self.BASEDIR / self.CONFIG_FILE["logdir"]
-        self.MODELDIR = self.BASEDIR / self.CONFIG_FILE["modeldir"]
-        self.DATASETDIR = self.BASEDIR / self.CONFIG_FILE["datasetdir"]
-        self.RAWDATADIR = self.BASEDIR / self.CONFIG_FILE["rawdatadir"]
+        self.LOG_DIR = self.ROOT_DIR / self.DEFAULT_CONFIG["log_dir"]
+        self.MODEL_DIR = self.ROOT_DIR / self.DEFAULT_CONFIG["model_dir"]
+        self.DATASET_DIR = self.ROOT_DIR / self.DEFAULT_CONFIG["dataset_dir"]
 
         # further initialization
-        self.LOGDIR.mkdir(parents=True, exist_ok=True)
+        self.LOG_DIR.mkdir(parents=True, exist_ok=True)
         self.LOGGER.debug("Initializing folder structure")
-        generate_folders(self.CONFIG_FILE["folders"], parent=self.BASEDIR)
-        self.LOGGER.debug("Created folder structure in %s", self.BASEDIR)
+        generate_folders(self.DEFAULT_CONFIG["folders"], parent=self.ROOT_DIR)
+        self.LOGGER.debug("Created folder structure in %s", self.ROOT_DIR)
 
     @property
     def autojit(self) -> bool:

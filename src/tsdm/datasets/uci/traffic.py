@@ -52,7 +52,7 @@ from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.utils import replace
@@ -72,9 +72,9 @@ class Traffic(DatasetBase[Key, DataFrame]):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # noqa: E501, W505
 
-    SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
+    SOURCE_URL = r"https://archive.ics.uci.edu/static/public/204/"
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
+    INFO_URL = r"https://archive.ics.uci.edu/dataset/204/pems+sf"
     r"""HTTP address containing additional information about the dataset."""
 
     table_names = [
@@ -83,9 +83,9 @@ class Traffic(DatasetBase[Key, DataFrame]):
         "randperm",
         "invperm",
     ]  # pyright: ignore[reportAssignmentType]
-    rawdata_files = ["PEMS-SF.zip"]
+    rawdata_files = ["pems+sf.zip"]
     rawdata_hashes = {
-        "PEMS-SF.zip": (
+        "pems+sf.zip": (
             "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
         )
     }
@@ -152,22 +152,22 @@ class Traffic(DatasetBase[Key, DataFrame]):
         else:
             dates = pd.date_range("2008-01-01", "2009-03-30", freq="d", name="day")
             anomalies = pd.DatetimeIndex({
-                "Jan. 1, 2008": "New Year’s Day",
-                "Jan. 21, 2008": "Martin Luther King Jr. Day",
-                "Feb. 18, 2008": "Washington’s Birthday",
-                "Mar. 9, 2008": "Anomaly day",
-                "May 26, 2008": "Memorial Day",
-                "Jul. 4, 2008": "Independence Day",
-                "Sep. 1, 2008": "Labor Day",
-                "Oct. 13, 2008": "Columbus Day",
-                "Nov. 11, 2008": "Veterans Day",
-                "Nov. 27, 2008": "Thanksgiving",
-                "Dec. 25, 2008": "Christmas Day",
-                "Jan. 1, 2009": "New Year’s Day",
-                "Jan. 19, 2009": "Martin Luther King Jr. Day",
-                "Feb. 16, 2009": "Washington’s Birthday",
-                "Mar. 8, 2009": "Anomaly day",
-            })
+                "Jan.  1, 2008" : "New Year’s Day",
+                "Jan. 21, 2008" : "Martin Luther King Jr. Day",
+                "Feb. 18, 2008" : "Washington’s Birthday",
+                "Mar.  9, 2008" : "Anomaly day",
+                "May  26, 2008" : "Memorial Day",
+                "Jul.  4, 2008" : "Independence Day",
+                "Sep.  1, 2008" : "Labor Day",
+                "Oct. 13, 2008" : "Columbus Day",
+                "Nov. 11, 2008" : "Veterans Day",
+                "Nov. 27, 2008" : "Thanksgiving",
+                "Dec. 25, 2008" : "Christmas Day",
+                "Jan.  1, 2009" : "New Year’s Day",
+                "Jan. 19, 2009" : "Martin Luther King Jr. Day",
+                "Feb. 16, 2009" : "Washington’s Birthday",
+                "Mar.  8, 2009" : "Anomaly day",
+            })  # fmt: skip
         # remove anomalies
         dates = dates[~dates.isin(anomalies)]
 
@@ -239,13 +239,14 @@ class Traffic(DatasetBase[Key, DataFrame]):
         Each time checking when the first date was when `labels[invperm].map(weekdays)`
         didn't match with `dates.day_name()`
         """
-        shuffled_dates = self.dates[self.randperm]
+        randperm: Series = self.randperm.squeeze()
+        shuffled_dates = self.dates[randperm]
 
         time = pd.timedelta_range("0:00:00", "23:59:59", freq="10min", name="time")
         if len(time) != 144:
             raise ValueError("Expected 144 timestamps per day (10 minutes interval)!")
 
-        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
+        with ZipFile(self.rawdata_paths["pems+sf.zip"]) as archive:
             with archive.open("stations_list") as file:
                 content = file.read().decode("utf8")
                 content = replace(content, {"[": "", "]": "", " ": "\n"})
@@ -288,9 +289,12 @@ class Traffic(DatasetBase[Key, DataFrame]):
     def clean_labels(self) -> DataFrame:
         r"""Clean the labels of the PEMS-SF dataset."""
         # Shuffle the dates according to the permutation the authors applied.
-        shuffled_dates = self.dates[self.randperm]
+        rawdata_path = self.rawdata_paths["pems+sf.zip"]
+        randperm: Series = self.randperm.squeeze()
+        invperm: Series = self.invperm.squeeze()
+        shuffled_dates = self.dates[randperm]
 
-        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
+        with ZipFile(rawdata_path) as archive:
             with archive.open("PEMS_trainlabels") as file:
                 content = file.read().decode("utf8")
                 content = replace(content, {"[": "", "]": "\n", " ": "\n"})
@@ -319,7 +323,7 @@ class Traffic(DatasetBase[Key, DataFrame]):
 
         labels = pd.concat([trainlabels, testlabels]).rename("labels")
 
-        matches = labels.iloc[self.invperm].map(self.weekdays) == self.dates.day_name()
+        matches = labels.iloc[invperm].map(self.weekdays) == self.dates.day_name()
         if all(matches):
             self.LOGGER.info("All encoded labels match with the day name!")
         else:
@@ -333,7 +337,7 @@ class Traffic(DatasetBase[Key, DataFrame]):
 
     def clean_randperm(self) -> None:
         with (
-            ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive,
+            ZipFile(self.rawdata_paths["pems+sf.zip"]) as archive,
             archive.open("randperm") as file,
         ):
             content = file.read().decode("utf8")
@@ -343,7 +347,7 @@ class Traffic(DatasetBase[Key, DataFrame]):
                 names=["randperm"],
                 dtype="uint16",
             ).squeeze()
-            randperm -= 1  # we use 0-based indexing
+            randperm = randperm - 1  # we use 0-based indexing
             invperm = randperm.copy().argsort()
             invperm.name = "invperm"
             if any(randperm[invperm] != np.arange(len(randperm))):

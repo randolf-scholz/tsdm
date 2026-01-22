@@ -79,33 +79,26 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.schemas import DEFAULT_METADATA_SCHEMA
 from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
 from tsdm.types.aliases import TS, TS_meta
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
-        ("PM2.5",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
-        ("PM10" ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
-        ("SO2"  ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
-        ("NO2"  ,    0, None, True, True, "μg/m³", "NO2 concentration"  ),
-        ("CO"   ,    0, None, True, True, "μg/m³", "CO concentration"   ),
-        ("O3"   ,    0, None, True, True, "μg/m³", "O3 concentration"   ),
-        ("TEMP" , None, None, True, True, "℃"   , "temperature"        ),
-        ("PRES" ,    0, None, True, True, "hPa"  , "pressure"           ),
-        ("DEWP" , None, None, True, True, "℃"   , "dew point"          ),
-        ("RAIN" ,    0, None, True, True, "mm"   , "precipitation"      ),
-        ("wd"   , None, None, True, True, None   , "wind direction"     ),
-        ("WSPM" ,    0, None, True, True, "m/s"  , "wind speed"         ),
+        ("PM2.5", "float32[pyarrow]",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
+        ("PM10" , "float32[pyarrow]",    0, None, True, True, "μg/m³", "PM10 concentration" ),
+        ("SO2"  , "float32[pyarrow]",    0, None, True, True, "μg/m³", "SO2 concentration"  ),
+        ("NO2"  , "float32[pyarrow]",    0, None, True, True, "μg/m³", "NO2 concentration"  ),
+        ("CO"   , "float32[pyarrow]",    0, None, True, True, "μg/m³", "CO concentration"   ),
+        ("O3"   , "float32[pyarrow]",    0, None, True, True, "μg/m³", "O3 concentration"   ),
+        ("TEMP" , "float32[pyarrow]", None, None, True, True, "℃"    , "temperature"        ),
+        ("PRES" , "float32[pyarrow]",    0, None, True, True, "hPa"  , "pressure"           ),
+        ("DEWP" , "float32[pyarrow]", None, None, True, True, "℃"    , "dew point"          ),
+        ("RAIN" , "float32[pyarrow]",    0, None, True, True, "mm"   , "precipitation"      ),
+        ("wd"   , "category"        , None, None, True, True, None   , "wind direction"     ),
+        ("WSPM" , "float32[pyarrow]",    0, None, True, True, "m/s"  , "wind speed"         ),
     ],
-    "schema": {
-        "variable"        : "string[pyarrow]",
-        "lower_bound"     : "float32[pyarrow]",
-        "upper_bound"     : "float32[pyarrow]",
-        "lower_inclusive" : "bool[pyarrow]",
-        "upper_inclusive" : "bool[pyarrow]",
-        "unit"            : "string[pyarrow]",
-        "description"     : "string[pyarrow]",
-    },
+    "schema": DEFAULT_METADATA_SCHEMA,
     "index": ["variable"],
 }  # fmt: skip
 
@@ -122,39 +115,42 @@ class BeijingAirQuality(DatasetBase[TS | TS_meta, DataFrame]):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # noqa: E501, W505
 
-    SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
+    SOURCE_URL = r"https://archive.ics.uci.edu/static/public/501/"
     r"""HTTP address from where the dataset can be downloaded."""
 
     INFO_URL = (
-        r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
+        r"https://archive.ics.uci.edu/dataset/501/beijing+multi+site+air+quality+data"
     )
     r"""HTTP address containing additional information about the dataset."""
 
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
-    rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
+    rawdata_files = ["beijing+multi+site+air+quality+data.zip"]
 
     rawdata_hashes = {
-        "PRSA2017_Data_20130301-20170228.zip": "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
-    }
-    rawdata_schema = {
-        "No"      : "uint16[pyarrow]",
-        "year"    : "uint16[pyarrow]",
-        "month"   : "uint8[pyarrow]",
-        "day"     : "uint8[pyarrow]",
-        "hour"    : "uint8[pyarrow]",
-        "PM2.5"   : "float32[pyarrow]",
-        "PM10"    : "float32[pyarrow]",
-        "SO2"     : "float32[pyarrow]",
-        "NO2"     : "float32[pyarrow]",
-        "CO"      : "float32[pyarrow]",
-        "O3"      : "float32[pyarrow]",
-        "TEMP"    : "float32[pyarrow]",
-        "PRES"    : "float32[pyarrow]",
-        "DEWP"    : "float32[pyarrow]",
-        "RAIN"    : "float32[pyarrow]",
-        "wd"      : "string[pyarrow]",
-        "station" : "string[pyarrow]",
-        "WSPM"    : "float32[pyarrow]",
+        "beijing+multi+site+air+quality+data.zip": \
+            "sha256:b04da438b2f331ac0ffd45aebdfec0d20d2367feb5f6948c4b1f7ce1191e33c4",
+    }  # fmt: skip
+    rawdata_schemas = {
+        "timeseries": {
+            "No"      : "uint16[pyarrow]",
+            "year"    : "uint16[pyarrow]",
+            "month"   : "uint8[pyarrow]",
+            "day"     : "uint8[pyarrow]",
+            "hour"    : "uint8[pyarrow]",
+            "PM2.5"   : "float32[pyarrow]",
+            "PM10"    : "float32[pyarrow]",
+            "SO2"     : "float32[pyarrow]",
+            "NO2"     : "float32[pyarrow]",
+            "CO"      : "float32[pyarrow]",
+            "O3"      : "float32[pyarrow]",
+            "TEMP"    : "float32[pyarrow]",
+            "PRES"    : "float32[pyarrow]",
+            "DEWP"    : "float32[pyarrow]",
+            "RAIN"    : "float32[pyarrow]",
+            "wd"      : "string[pyarrow]",
+            "station" : "string[pyarrow]",
+            "WSPM"    : "float32[pyarrow]",
+        }
     }  # fmt: skip
 
     table_schemas = {
@@ -169,16 +165,23 @@ class BeijingAirQuality(DatasetBase[TS | TS_meta, DataFrame]):
             "PRES"  : "float[pyarrow]",
             "DEWP"  : "float[pyarrow]",
             "RAIN"  : "float[pyarrow]",
-            "wd"    : "string[pyarrow]",
+            "wd"    : "category",
             "WSPM"  : "float[pyarrow]",
         },
-        "timeseries_metadata": TIMESERIES_METADATA["schema"],
+        "timeseries_metadata": DEFAULT_METADATA_SCHEMA,
     }  # fmt: skip
 
     def clean_timeseries(self) -> DataFrame:
-        self.LOGGER.info("Loading Data.")
-        file = self.rawdata_paths["PRSA2017_Data_20130301-20170228.zip"]
-        with ZipFile(file) as compressed_archive:
+        rawdata_path = self.rawdata_paths["beijing+multi+site+air+quality+data.zip"]
+        archive_path = "PRSA2017_Data_20130301-20170228.zip"
+        rawdata_schema = self.rawdata_schemas["timeseries"]
+        target_schema = self.table_schemas["timeseries"]
+
+        with (
+            ZipFile(rawdata_path) as outer_archive,
+            outer_archive.open(archive_path) as inner_archive,
+            ZipFile(inner_archive) as compressed_archive,
+        ):
             stations = []
             for csv_file in compressed_archive.namelist():
                 if not csv_file.endswith(".csv"):
@@ -188,7 +191,7 @@ class BeijingAirQuality(DatasetBase[TS | TS_meta, DataFrame]):
                 with compressed_archive.open(csv_file) as compressed_file:
                     df = pd.read_csv(
                         compressed_file,
-                        dtype=self.rawdata_schema,
+                        dtype=rawdata_schema,
                         index_col=0,
                     )
                     df.columns = df.columns.astype("string[pyarrow]")
@@ -213,6 +216,17 @@ class BeijingAirQuality(DatasetBase[TS | TS_meta, DataFrame]):
         self.LOGGER.info("Dropping completely missing rows.")
         ts = ts.dropna(how="all", axis="index")
 
+        # ensure table_schema is met
+        if missing_cols := (target_schema.keys() - set(ts.columns)):
+            raise ValueError(f"Missing columns in static_covariates: {missing_cols}")
+
+        ts = ts.reindex(columns=target_schema).astype(target_schema)
+        assert set(ts["wd"].cat.categories) == {
+            "E", "ENE", "ESE",
+            "N", "NE", "NNE", "NNW", "NW",
+            "S", "SE", "SSE", "SSW", "SW",
+            "W", "WNW", "WSW",
+        }  # fmt: skip
         return ts
 
     @staticmethod

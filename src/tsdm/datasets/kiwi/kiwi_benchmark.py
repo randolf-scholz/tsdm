@@ -13,7 +13,7 @@ from tsdm.types.aliases import TS_FIELDS
 class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
-    __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
+    __version__: str = "1.0"
 
     SOURCE_URL = (
         r"https://tubcloud.tu-berlin.de/s/3CyRJMSqj5feQo2/download?path=%2F&files="
@@ -30,7 +30,7 @@ class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
     ]
     rawdata_files = ["kiwi-benchmark.zip"]
     rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:56796faff3c70371c56a373bea285e7662bdd3c8f3882e45a07405cd36c103f4"
+        "kiwi-benchmark.zip": "sha256:4157b04b348900a20641296b3960a13db44e9098a78737bae2298a9963a217ce"
     }
 
     def clean_table(self, key: str) -> None:
@@ -39,7 +39,7 @@ class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
 
         with ZipFile(path, "r") as archive:
             try:
-                archive.extract(file, self.DATASET_DIR)
+                archive.extract(file, self.STORAGE_DIR)
             except KeyError as exc:
                 exc.add_note(f"Failed to extract table {key} from {path}")
                 raise

@@ -89,26 +89,27 @@ class Electricity(DatasetBase[TS, DataFrame]):
         At the given dates, replace zero with NaN.
     """  # noqa: E501, W505
 
-    SOURCE_URL = r"https://archive.ics.uci.edu/static/public/321/electricityloaddiagrams20112014.zip"
+    SOURCE_URL = r"https://archive.ics.uci.edu/static/public/321/"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = (
         r"https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014"
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    rawdata_files = ["LD2011_2014.txt.zip"]
+    rawdata_files = ["electricityloaddiagrams20112014.zip"]
     rawdata_hashes = {
-        "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
-    }
+        "electricityloaddiagrams20112014.zip": \
+            "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
+    }  # fmt: skip
     table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
     table_hashes = {"timeseries": "pandas:7114453877232760046"}
     table_shapes = {"timeseries": (140256, 370)}
 
     def clean_timeseries(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
+        rawdata_path = self.rawdata_paths["electricityloaddiagrams20112014.zip"]
         with (
-            # can't use pandas.read_csv because of the zip contains other files.
-            ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive,
+            ZipFile(rawdata_path) as archive,
             archive.open("LD2011_2014.txt") as file,
         ):
             df = read_csv(
@@ -117,7 +118,8 @@ class Electricity(DatasetBase[TS, DataFrame]):
                 decimal=",",
                 parse_dates=[0],
                 index_col=0,
-                dtype="float32",
+                dtype="float32[pyarrow]",
+                dtype_backend="pyarrow",
             )
         return df.rename_axis(index="time", columns="client")
 

@@ -87,7 +87,7 @@ class MIMIC_IV(DatasetBase[str, pd.DataFrame]):
 
     def clean_table(self, key: str) -> None: ...
 
-    def load_table(self, *, key: str) -> pd.DataFrame:
+    def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
     def download_file(self, fname: str, /) -> None:

@@ -10,9 +10,9 @@ __all__ = [
     "DatasetBase",
     "DatasetMeta",
 ]
-
 import inspect
 import logging
+import re
 import shutil
 import warnings
 import webbrowser
@@ -40,11 +40,12 @@ from tsdm.config import CONFIG
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.datatools import serialize
 from tsdm.pprint import repr_mapping
-from tsdm.testing.hashutils import (
+from tsdm.testing.validation import (
     ErrorHandler,
     ValidationError,
-    validate_file,
-    validate_table,
+    validate_file_hash,
+    validate_table_hash,
+    validate_table_schema,
 )
 from tsdm.types.aliases import FilePath
 from tsdm.utils import paths_exists, remote
@@ -103,10 +104,19 @@ class DatasetMeta(ProtocolMeta):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if "RAWDATA_DIR" not in namespace:
-            cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
+            cls.RAWDATA_DIR = (
+                CONFIG.DATASET_DIR / cls.__name__ / CONFIG.DATASET_KEYS.RAWDATA
+            )
 
-        if "DATASET_DIR" not in namespace:
-            cls.DATASET_DIR = CONFIG.RAWDATADIR / cls.__name__
+        if "STORAGE_DIR" not in namespace:
+            cls.STORAGE_DIR = (
+                CONFIG.DATASET_DIR / cls.__name__ / CONFIG.DATASET_KEYS.STORAGE
+            )
+
+        if "METADATA_DIR" not in namespace:
+            cls.METADATA_DIR = (
+                CONFIG.DATASET_DIR / cls.__name__ / CONFIG.DATASET_KEYS.METADATA
+            )
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: N805
         r"""When an instance of the class is created, this method is called."""
@@ -143,8 +153,10 @@ class DatasetBase[Key: str, T](
     r"""HTTP address containing additional information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
     r"""Location where the raw data is stored."""
-    DATASET_DIR: ClassVar[Path]
-    r"""Location where the pre-processed data is stored."""
+    STORAGE_DIR: ClassVar[Path]
+    r"""Location where the processed data is stored."""
+    METADATA_DIR: ClassVar[Path]
+    r"""Location where the metadata is stored."""
     # endregion class attributes -------------------------------------------------------
 
     # region abstract readable members -------------------------------------------------
@@ -163,7 +175,7 @@ class DatasetBase[Key: str, T](
 
     # region instance attributes -------------------------------------------------------
     # TODO: Use typing.ReadOnly (https://peps.python.org/pep-0767/)
-    __version__: Optional[str] = None
+    __version__: str = "latest"
     r"""READ-ONLY: The version of the dataset."""
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the raw dataset file(s)."""
@@ -239,18 +251,19 @@ class DatasetBase[Key: str, T](
         self.verbose = verbose
         self.initialize = initialize
 
-        # set the version
-        if self.__version__ is None and version is not None:
+        if version is not None:
+            assert version
             self.__version__ = str(version)
 
         # update the paths
-        if self.__version__ is not None:
-            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
-            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
+        self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
+        self.STORAGE_DIR /= self.__version__  # type: ignore[misc]
+        self.METADATA_DIR /= self.__version__  # type: ignore[misc]
 
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+            self.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+            self.METADATA_DIR.mkdir(parents=True, exist_ok=True)
 
     def __post_init__(self) -> None:
         r"""Initialize the dataset."""
@@ -329,7 +342,7 @@ class DatasetBase[Key: str, T](
         cls, *, version: Optional[str] = None, force: bool = False
     ) -> None:
         r"""Recreate the dataset directory."""
-        dataset_dir = cls.DATASET_DIR / (version or "")
+        dataset_dir = cls.STORAGE_DIR / (version or "")
 
         if not dataset_dir.exists():
             raise FileNotFoundError(f"{dataset_dir} does not exist!")
@@ -353,9 +366,9 @@ class DatasetBase[Key: str, T](
     @property
     def version_info(self) -> tuple[int, ...]:
         r"""Version information of the dataset."""
-        if self.__version__ is None:
+        # match digits separated by dots, e.g. "1" or "1.2.3"
+        if not re.fullmatch(r"\d+(?:\.\d+)*", self.__version__):
             return ()
-        # FIXME: preferably use packaging.version.parse or custom version parser
         return tuple(int(i) for i in self.__version__.split("."))
 
     @cached_property
@@ -370,7 +383,7 @@ class DatasetBase[Key: str, T](
     def dataset_paths(self) -> dict[Key, Path]:
         r"""Absolute paths to the raw dataset file(s)."""
         return {
-            key: self.DATASET_DIR / f"{key}.{self.DEFAULT_FILE_FORMAT}"
+            key: self.STORAGE_DIR / f"{key}.{self.DEFAULT_FILE_FORMAT}"
             for key in self.table_names
         }
 
@@ -386,7 +399,7 @@ class DatasetBase[Key: str, T](
             )
             return False
 
-        def attr_exists(obj: object, key: str) -> bool:
+        def attr_exists(obj: object, key: str, /) -> bool:
             r"""Test if attribute exists using only __getattribute__ and not __getattr__."""
             try:
                 obj.__getattribute__(key)
@@ -452,7 +465,13 @@ class DatasetBase[Key: str, T](
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
-        url = self.SOURCE_URL + fname
+        url = self.SOURCE_URL
+        if url.endswith("/"):
+            url = url + fname
+        elif len(self.rawdata_paths) > 1:
+            msg = "URL must end with '/' if multiple files are to be downloaded!"
+            raise ValueError(msg)
+
         path = self.RAWDATA_DIR / fname
         self.LOGGER.debug("Downloading %s from %s", fname, url)
         remote.download(url, path)
@@ -467,7 +486,7 @@ class DatasetBase[Key: str, T](
         r"""Download the dataset."""
         # Recurse if key is None.
         if key is None:
-            for _key in (
+            for name in (
                 pbar := tqdm(
                     self.rawdata_paths,
                     desc="Downloading files",
@@ -475,8 +494,8 @@ class DatasetBase[Key: str, T](
                     leave=False,
                 )
             ):
-                pbar.set_postfix(file=_key)
-                self.download(key=_key, force=force, validate=validate)
+                pbar.set_description(f"Downloading file {name!r}")
+                self.download(key=name, force=force, validate=validate)
             return
 
         # Check if the file already exists.
@@ -496,7 +515,7 @@ class DatasetBase[Key: str, T](
     # endregion download methods -------------------------------------------------------
 
     # region cleaning methods ----------------------------------------------------------
-    def clean_table(self, key: Key) -> Optional[T]:
+    def clean_table(self, key: Key, /) -> Optional[T]:
         r"""Create the cleaned table for the given key.
 
         By default, this method redirects to `self.clean_{key}` method.
@@ -521,6 +540,7 @@ class DatasetBase[Key: str, T](
     def clean(
         self,
         key: Optional[Key] = None,
+        /,
         *,
         force: bool = False,
         validate: bool = True,
@@ -548,7 +568,7 @@ class DatasetBase[Key: str, T](
             raise ValueError("Raw data files are not valid!")
 
         # skip if cleaned files already exist
-        if not force and self.dataset_files_exist(key=key):
+        if not force and self.dataset_files_exist(key):
             self.LOGGER.debug("Table already cleaned, skipping <%s>", key)
             return
 
@@ -562,9 +582,9 @@ class DatasetBase[Key: str, T](
                     leave=False,
                 )
             ):
-                pbar.set_postfix(table=name)
+                pbar.set_description(f"Cleaning table {name!r}")
                 self.clean(
-                    key=name,
+                    name,
                     force=force,
                     validate=validate,
                     validate_rawdata=False,
@@ -573,7 +593,7 @@ class DatasetBase[Key: str, T](
 
         # Clean the selected table
         with timer() as t:
-            df = self.clean_table(key=key)
+            df = self.clean_table(key)
         self.LOGGER.debug("Cleaned table <%s> in %s", key, t.value)
 
         if df is not None:
@@ -588,7 +608,7 @@ class DatasetBase[Key: str, T](
     # endregion cleaning methods -------------------------------------------------------
 
     # region loading methods -----------------------------------------------------------
-    def load_table(self, *, key: Key) -> T:
+    def load_table(self, key: Key, /) -> T:
         r"""Load the selected table.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -600,6 +620,7 @@ class DatasetBase[Key: str, T](
     def load(
         self,
         key: Key,
+        /,
         *,
         force: bool = ...,
         validate: bool = ...,
@@ -608,6 +629,7 @@ class DatasetBase[Key: str, T](
     @overload
     def load(
         self,
+        /,
         *,
         force: bool = ...,
         validate: bool = ...,
@@ -617,6 +639,7 @@ class DatasetBase[Key: str, T](
     def load(
         self,
         key: Optional[Key] = None,
+        /,
         *,
         force: bool = False,
         validate: bool = True,
@@ -643,8 +666,8 @@ class DatasetBase[Key: str, T](
                     leave=False,
                 )
             ):
-                pbar.set_postfix(table=name)
-                self.load(key=name, force=force, validate=validate)
+                pbar.set_description(f"Loading table {name!r}")
+                self.load(name, force=force, validate=validate)
             return self.tables
 
         # Skip if already loaded.
@@ -652,8 +675,8 @@ class DatasetBase[Key: str, T](
             return self.tables[key]
 
         # Create the pre-processed dataset file if it doesn't exist.
-        if not self.dataset_files_exist(key=key):
-            self.clean(key=key, force=force, validate=validate)
+        if not self.dataset_files_exist(key):
+            self.clean(key, force=force, validate=validate)
 
         # Validate file if hash is provided.
         if validate and self.dataset_hashes is not EMPTY_MAP:
@@ -661,7 +684,7 @@ class DatasetBase[Key: str, T](
 
         # Load the table, make sure to use the cached version if it exists.
         with timer() as t:
-            table = self.load_table(key=key)
+            table = self.load_table(key)
         self.LOGGER.info("Loaded table <%s> in %s", key, t.value)
 
         # Validate the loaded table.
@@ -689,7 +712,7 @@ class DatasetBase[Key: str, T](
         r"""Check if tables are valid."""
         return self.validate_tables()
 
-    def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
+    def rawdata_files_exist(self, key: Optional[str] = None, /) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
             return paths_exists(self.rawdata_paths)
@@ -697,7 +720,7 @@ class DatasetBase[Key: str, T](
             raise KeyError(f"{key=} not in {self.rawdata_paths=}")
         return paths_exists(self.rawdata_paths[key])
 
-    def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
+    def dataset_files_exist(self, key: Optional[Key] = None, /) -> bool:
         r"""Check if dataset files exist."""
         if key is None:
             return paths_exists(self.dataset_paths)
@@ -706,14 +729,14 @@ class DatasetBase[Key: str, T](
         return paths_exists(self.dataset_paths[key])
 
     def validate_rawdata(
-        self, key: Optional[str] = None, errors: ErrorHandler.Mode = "raise"
+        self, key: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "raise"
     ) -> bool:
         r"""Validate the rawdata files."""
         if key is None:
             self.LOGGER.debug("Validating raw data files.")
             result = True
-            exceptions = []
-            for _key in (
+            exceptions: dict[str, ValidationError] = {}
+            for name in (
                 pbar := tqdm(
                     self.rawdata_paths,
                     desc="Validating files",
@@ -721,35 +744,35 @@ class DatasetBase[Key: str, T](
                     leave=False,
                 )
             ):
-                pbar.set_postfix(file=_key)
+                pbar.set_description(f"Validating file {name!r}")
                 try:
-                    result &= self.validate_rawdata(key=_key, errors="raise")
+                    result &= self.validate_rawdata(name, errors="raise")
                 except ValidationError as exc:
                     result = False
-                    exceptions.append(exc)
+                    exceptions[name] = exc
             if exceptions:
-                failed = "\n".join(str(exc) for exc in exceptions)
+                failed = "\n".join(f"{key}: {exc}" for key, exc in exceptions.items())
                 ErrorHandler(errors).emit(
                     f"Some raw data files failed validation:\n{failed}"
                 )
             return result
 
         self.LOGGER.debug("Validating %s.", key)
-        return validate_file(
+        return validate_file_hash(
             self.rawdata_paths[key],
             self.rawdata_hashes.get(key),
             errors=errors,
         )
 
     def validate_dataset(
-        self, key: Optional[Key] = None, *, errors: ErrorHandler.Mode = "warn"
+        self, key: Optional[Key] = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         r"""Validate the dataset."""
         if key is None:
             self.LOGGER.debug("Validating dataset.")
             result = True
-            exceptions = []
-            for _key in (
+            exceptions: dict[str, ValidationError] = {}
+            for name in (
                 pbar := tqdm(
                     self.table_names,
                     desc="Validating dataset",
@@ -757,32 +780,32 @@ class DatasetBase[Key: str, T](
                     leave=False,
                 )
             ):
-                pbar.set_postfix(table=_key)
+                pbar.set_description(f"Validating table {name!r}")
                 try:
-                    result &= self.validate_dataset(key=_key, errors="raise")
+                    result &= self.validate_dataset(name, errors="raise")
                 except ValidationError as exc:
                     result = False
-                    exceptions.append(exc)
+                    exceptions[name] = exc
             if exceptions:
-                failed = "\n".join(str(exc) for exc in exceptions)
+                failed = "\n".join(f"{key}: {exc}" for key, exc in exceptions.items())
                 ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
             return result
 
         self.LOGGER.debug("Validating %s.", key)
-        return validate_file(
+        return validate_file_hash(
             self.dataset_paths[key],
             self.dataset_hashes.get(key),
             errors=errors,
         )
 
     def validate_tables(
-        self, key: Optional[Key] = None, *, errors: ErrorHandler.Mode = "warn"
+        self, key: Optional[Key] = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         if key is None:
             self.LOGGER.debug("Validating tables.")
             result = True
-            exceptions = []
-            for _key in (
+            exceptions: dict[str, ValidationError] = {}
+            for name in (
                 pbar := tqdm(
                     self.table_names,
                     desc="Validating tables",
@@ -790,22 +813,32 @@ class DatasetBase[Key: str, T](
                     leave=False,
                 )
             ):
-                pbar.set_postfix(table=_key)
+                pbar.set_description(f"Validating table {name!r}")
                 try:
-                    result &= self.validate_tables(key=_key, errors="raise")
+                    result &= self.validate_tables(name, errors="raise")
                 except ValidationError as exc:
                     result = False
-                    exceptions.append(exc)
+                    exceptions[name] = exc
             if exceptions:
-                failed = "\n".join(str(exc) for exc in exceptions)
+                failed = "\n".join(f"{key}: {exc}" for key, exc in exceptions.items())
                 ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
             return result
 
-        self.LOGGER.debug("Validating %s.", key)
-        return validate_table(
+        self.LOGGER.debug(f"{key=} Validating table schema")
+        schema_matches = validate_table_schema(
             self.tables[key],
-            self.table_hashes.get(key),
+            expected_shape=self.table_shapes.get(key),
+            expected_shema=self.table_schemas.get(key),
             errors=errors,
         )
+
+        self.LOGGER.debug(f"{key=} Validating table hash")
+        hash_matches = validate_table_hash(
+            self.tables[key],
+            expected_hash=self.table_hashes.get(key),
+            skipif_no_reference=True,
+            errors=errors,
+        )
+        return schema_matches and hash_matches
 
     # endregion validation methods -----------------------------------------------------

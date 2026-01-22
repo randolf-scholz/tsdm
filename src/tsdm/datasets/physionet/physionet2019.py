@@ -165,6 +165,8 @@ __all__ = [
     "PhysioNet2019",
 ]
 
+import re
+from pathlib import Path
 from typing import Literal, Optional
 from zipfile import ZipFile
 
@@ -175,6 +177,9 @@ from tqdm.auto import tqdm
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
+from tsdm.testing.hashutils import hash_zip_contents
+from tsdm.testing.validation import ErrorHandler, validate_hash
+from tsdm.utils import remote
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
@@ -291,9 +296,9 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
     indicate that there was no recorded measurement of a variable at the time interval.
     """
 
-    SOURCE_URL = r"https://archive.physionet.org/users/shared/challenge-2019/"
+    SOURCE_URL = r"https://physionet.org/files/challenge-2019/1.0.0/training/"
     r"""HTTP address from where the dataset can be downloaded"""
-    INFO_URL = r"https://physionet.org/content/challenge-2019/"
+    INFO_URL = r"https://physionet.org/content/challenge-2019/1.0.0/"
     r"""HTTP address containing additional information about the dataset"""
 
     rawdata_files = ["training_setA.zip", "training_setB.zip"]
@@ -307,8 +312,12 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
     ]
 
     rawdata_hashes = {
-        "training_setA.zip": "sha256:c0def317798312e4facc0f33ac0202b3a34f412052d9096e8b122b4d3ecb7935",
-        "training_setB.zip": "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc",
+        "training_setA.zip": None,
+        "training_setB.zip": None,
+    }
+    rawdata_content_hashes = {
+        "training_setA.zip": "zip:29BCB17D3200FA04172F8525A4EDBB55291949BC7D9A1FC41FB14F6D59EFA53F",
+        "training_setB.zip": "zip:8802BD13E045F622FD5F4EF8307103AEC348701CA86C669E3E91018FD8F02F73",
     }
     table_schemas = {
         "timeseries": {
@@ -418,20 +427,21 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
                 true_values=["1"],
             )
 
-    def _get_frame(self, fname: str) -> DataFrame:
+    def _get_frame(self, fname: str, /) -> DataFrame:
         with (
             ZipFile(self.rawdata_paths[fname], "r") as archive,
             tqdm(archive.namelist()) as iter_archive,
         ):
             iter_archive.set_description(f"Loading patient data from {fname}")
+            pattern = re.compile(r"^p(?P<ID>\d{6})\.psv$")
+            frames: dict[int, DataFrame] = {}
 
-            frames = {}
             for compressed_file in iter_archive:
-                if not compressed_file.endswith(".psv"):
-                    continue
-
-                record_id = compressed_file.split("/p")[-1].split(".")[0]
-                iter_archive.set_postfix(record_id=record_id)
+                match = pattern.match(compressed_file)
+                if not match:
+                    msg = f"Unexpected file in archive: {compressed_file!r}"
+                    raise ValueError(msg)
+                record_id = int(match.group("ID"))
                 with archive.open(compressed_file) as file:
                     frames[record_id] = pd.read_csv(
                         file,
@@ -491,7 +501,7 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
 
-    def clean_table(self, key: Key) -> Optional[DataFrame]:
+    def clean_table(self, key: Key, /) -> Optional[DataFrame]:
         match key:
             case "timeseries_metadata":
                 return make_dataframe(**TIMESERIES_METADATA)
@@ -512,3 +522,25 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
                 return self._clean_all_rawdatasets()
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")
+
+    def download_file(self, fname: str, /) -> None:
+        r"""Download a single rawdata file."""
+        # Map `training_setA.zip` -> `training_setA/`
+        folder = Path(fname).with_suffix("").name + "/"
+        url = f"{self.SOURCE_URL}{folder}"
+        path = self.rawdata_paths[fname]
+        self.LOGGER.info("Downloading %s from %s", fname, url)
+        remote.download_directory_to_zip(url, path, add_toplevel_dir=False)
+
+    def validate_rawdata(
+        self, key: str | None = None, *, errors: ErrorHandler.Mode = "raise"
+    ) -> bool:
+        r"""Validate a single rawdata file."""
+        if key is None:
+            return super().validate_rawdata(errors=errors)
+
+        expected_hash = self.rawdata_content_hashes.get(key, None)
+        self.LOGGER.info(f"Validating {key!r} against hash {expected_hash!s}")
+        path = self.rawdata_paths[key]
+        actual_hash = hash_zip_contents(path)
+        return validate_hash(actual_hash, expected_hash)

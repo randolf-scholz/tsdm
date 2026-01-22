@@ -9,6 +9,7 @@ __all__ = [
     "USHCN",
 ]
 
+import tarfile
 import warnings
 from typing import Literal
 
@@ -17,6 +18,7 @@ import pyarrow as pa
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.schemas import DEFAULT_METADATA_SCHEMA
 from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
 
 TIMESERIES_METADATA: InlineTable = {
@@ -27,16 +29,7 @@ TIMESERIES_METADATA: InlineTable = {
         ("TMAX", "float32[pyarrow]", -100,  150, False, False, "℉"     , "maximum temperature"),
         ("TMIN", "float32[pyarrow]", -100,  150, False, False, "℉"     , "minimum temperature"),
     ],
-    "schema": {
-        "variable"        : "string[pyarrow]",
-        "dtype"           : "string[pyarrow]",
-        "lower_bound"     : "float32[pyarrow]",
-        "upper_bound"     : "float32[pyarrow]",
-        "lower_inclusive" : "bool[pyarrow]",
-        "upper_inclusive" : "bool[pyarrow]",
-        "unit"            : "string[pyarrow]",
-        "description"     : "string[pyarrow]",
-    },
+    "schema": DEFAULT_METADATA_SCHEMA,
     "index": ["variable"],
 }  # fmt: skip
 
@@ -52,16 +45,7 @@ STATIC_COVARIATES_METADATA: InlineTable = {
         ("COMPONENT_3", "int32[pyarrow]"  ,    0,  None, True, True,  None, "station ID" ),
         ("UTC_OFFSET" , "string[pyarrow]" , None,  None, True, True,  "h" ,  "UTC offset"),
     ],
-    "schema": {
-        "variable"        : "string[pyarrow]",
-        "dtype"           : "string[pyarrow]",
-        "lower_bound"     : "float32[pyarrow]",
-        "upper_bound"     : "float32[pyarrow]",
-        "lower_inclusive" : "bool[pyarrow]",
-        "upper_inclusive" : "bool[pyarrow]",
-        "unit"            : "string[pyarrow]",
-        "description"     : "string[pyarrow]",
-    },
+    "schema": DEFAULT_METADATA_SCHEMA,
     "index": ["variable"],
 }  # fmt: skip
 
@@ -273,9 +257,14 @@ class USHCN(DatasetBase[Key, DataFrame]):
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
     """
 
-    SOURCE_URL = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    # https://www.ncei.noaa.gov/products/land-based-station/us-historical-climatology-network
+    # https://data.ess-dive.lbl.gov/view/doi:10.3334/CDIAC/CLI.NDP019
+    # https://data.ess-dive.lbl.gov/catalog/d1/mn/v2/object/ess-dive-7b1e0d7f2fc3c43-20180727T175547656
+    # "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    # "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
+    SOURCE_URL = "https://data.ess-dive.lbl.gov/catalog/d1/mn/v2/object/ess-dive-7b1e0d7f2fc3c43-20180727T175547656"
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
+    INFO_URL = "https://data.ess-dive.lbl.gov/view/doi:10.3334/CDIAC/CLI.NDP019"
     r"""HTTP address containing additional information about the dataset."""
 
     table_names = [  # pyright: ignore[reportAssignmentType]
@@ -287,18 +276,20 @@ class USHCN(DatasetBase[Key, DataFrame]):
         "raw_timeseries",
         "state_codes",
     ]
-    rawdata_files = [
-        "data_format.txt",
-        "ushcn-stations.txt",
-        "station_file_format.txt",
-        "us.txt.gz",
-    ]
+    rawdata_files = ["ushcn_daily.tar.gz"]
     rawdata_hashes = {
-        "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
-        "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
-        "station_file_format.txt": "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
-        "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
-    }
+        "ushcn_daily.tar.gz" : "sha256:a03598657a3b72c20f8ffa323d7265435243d7988b02d2dbbaab746c2ccae25f",
+    }  # fmt: skip
+    rawdata_content_hashes = {
+        "pub12/ushcn_daily/data_format.txt"        : \
+            "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
+        "pub12/ushcn_daily/ushcn-stations.txt"     : \
+            "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
+        "pub12/ushcn_daily/station_file_format.txt": \
+            "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
+        "pub12/ushcn_daily/us.txt.gz"              : \
+            "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
+    }  # fmt: skip
     rawdata_schemas = {
         "timeseries": {
             "COOP_ID" : "int32[pyarrow]",
@@ -320,16 +311,16 @@ class USHCN(DatasetBase[Key, DataFrame]):
             "COMPONENT_1" : "int32[pyarrow]",
             "COMPONENT_2" : "int32[pyarrow]",
             "COMPONENT_3" : "int32[pyarrow]",
-            "UTC_OFFSET"  : "int8[pyarrow]",
+            "UTC_OFFSET"  : "string[pyarrow]",
         },
     }  # fmt: skip
 
     table_shapes = {
-        "state_codes"                : (48, 3),
+        "timeseries"                 : (44497877, 5),
+        "timeseries_metadata"        : (5, 7),
         "static_covariates"          : (1218, 9),
-        "static_covariates_metadata" : (9, 6),
-        "timeseries"                 : (204771562, 5),
-        "timeseries_metadata"        : (8, 6),
+        "static_covariates_metadata" : (9, 7),
+        "state_codes"                : (48, 3),
     }  # fmt: skip
 
     table_schemas = {
@@ -351,24 +342,8 @@ class USHCN(DatasetBase[Key, DataFrame]):
             "COMPONENT_3" : "int32[pyarrow]",
             "UTC_OFFSET"  : "int8[pyarrow]",
         },
-        "timeseries_metadata": {
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-        },
-        "static_covariates_metadata": {
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-        },
+        "timeseries_metadata": DEFAULT_METADATA_SCHEMA,
+        "static_covariates_metadata": DEFAULT_METADATA_SCHEMA,
     }  # fmt: skip
 
     def clean_table(self, key: Key = "timeseries") -> DataFrame:
@@ -378,7 +353,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
             case "raw_timeseries":
                 return self._clean_raw_timeseries()
             case "static_covariates":
-                return self._clean_metadata()
+                return self._clean_static_covariates()
             case "state_codes":
                 return make_dataframe(**STATE_CODES)
             case "timeseries_metadata":
@@ -388,7 +363,12 @@ class USHCN(DatasetBase[Key, DataFrame]):
             case _:
                 raise KeyError(f"Unknown key: {key}")
 
-    def _clean_metadata(self) -> DataFrame:
+    def _clean_static_covariates(self) -> DataFrame:
+        rawdata_path = self.rawdata_paths["ushcn_daily.tar.gz"]
+        rawdata_schema = self.rawdata_schemas["static_covariates"]
+        target_schema = self.table_schemas["static_covariates"]
+        metadata = self.static_covariates_metadata
+
         stations_colspecs = {
             "COOP_ID":     (1, 6),
             "LATITUDE":    (8, 15),
@@ -412,28 +392,45 @@ class USHCN(DatasetBase[Key, DataFrame]):
             "COMPONENT_3": ["------"],
         }
 
-        static_covariates = pd.read_fwf(
-            self.rawdata_paths["ushcn-stations.txt"],
-            colspecs=stations_cspecs,
-            dtype=self.rawdata_schemas["static_covariates"],
-            names=stations_colspecs,
-            na_values=na_values,
-            dtype_backend="pyarrow",
-        ).set_index("COOP_ID")
+        with tarfile.open(rawdata_path, "r:gz") as archive:
+            member = archive.extractfile("pub12/ushcn_daily/ushcn-stations.txt")
+            if member is None:
+                raise FileNotFoundError
+            with member as file:
+                self.LOGGER.info("Loading stations file...")
+                static_covariates = pd.read_fwf(
+                    file,
+                    colspecs=stations_cspecs,
+                    dtype=rawdata_schema,
+                    names=stations_colspecs,
+                    na_values=na_values,
+                    dtype_backend="pyarrow",
+                ).set_index("COOP_ID")
 
         self.LOGGER.info("Removing outliers from static_covariates.")
-        static_covariates = remove_outliers(
-            static_covariates, self.static_covariates_metadata
-        )
+        static_covariates = remove_outliers(static_covariates, metadata)
 
         self.LOGGER.info("Dropping completely missing rows.")
         static_covariates = static_covariates.dropna(how="all", axis="index")
 
-        return static_covariates
+        static_covariates["UTC_OFFSET"] = (
+            static_covariates["UTC_OFFSET"]
+            .str.strip()
+            .str.removeprefix("+")
+            .replace({"": pd.NA})
+            .astype("int8[pyarrow]")
+        )
+
+        # ensure table_schema is met
+        if missing_cols := (target_schema.keys() - set(static_covariates.columns)):
+            raise ValueError(f"Missing columns in static_covariates: {missing_cols}")
+
+        return static_covariates.reindex(columns=target_schema).astype(target_schema)
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
         table = self.tables["raw_timeseries"]
+        target_schema = self.table_schemas["timeseries"]
 
         self.LOGGER.info("dropping all data with raised quality flags.")
         table = table.loc[table["QFLAG"].isna()]
@@ -451,7 +448,11 @@ class USHCN(DatasetBase[Key, DataFrame]):
         self.LOGGER.info("Dropping completely missing rows.")
         ts = ts.dropna(how="all", axis="index")
 
-        return ts
+        # ensure table_schema is met
+        if missing_cols := (target_schema.keys() - set(ts.columns)):
+            raise ValueError(f"Missing columns in timeseries: {missing_cols}")
+
+        return ts.reindex(columns=target_schema).astype(target_schema)
 
     def _clean_raw_timeseries(self) -> DataFrame:
         # FIXME: https://github.com/pola-rs/polars/issues/3151
@@ -464,6 +465,8 @@ class USHCN(DatasetBase[Key, DataFrame]):
             "\n - https://github.com/apache/arrow/issues/33404",
             stacklevel=2,
         )
+        rawdata_path = self.rawdata_paths["ushcn_daily.tar.gz"]
+        rawdata_schema = self.rawdata_schemas["timeseries"]
 
         # column schema: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
@@ -503,9 +506,10 @@ class USHCN(DatasetBase[Key, DataFrame]):
         }  # fmt: skip
 
         # dtypes but with the same index as colspec.
-        base_dtypes = self.rawdata_schemas["timeseries"]
         column_dtypes = {
-            key: base_dtypes[key[0]] if isinstance(key, tuple) else base_dtypes[key]
+            key: rawdata_schema[key[0]]
+            if isinstance(key, tuple)
+            else rawdata_schema[key]
             for key in colspecs
         }
 
@@ -513,14 +517,19 @@ class USHCN(DatasetBase[Key, DataFrame]):
         na_values = {("VALUE", k): ["-9999"] for k in range(1, 32)}
 
         self.LOGGER.info("Loading main file...")
-        ds = pd.read_fwf(
-            self.rawdata_paths["us.txt.gz"],
-            colspecs=cspec,
-            names=colspecs,
-            na_values=na_values,
-            dtype=column_dtypes,
-            compression="gzip",
-        ).rename_axis(index="ID")
+        with tarfile.open(rawdata_path, "r:gz") as archive:
+            member = archive.extractfile("pub12/ushcn_daily/us.txt.gz")
+            if member is None:
+                raise FileNotFoundError
+            with member as file:
+                ds = pd.read_fwf(
+                    file,
+                    colspecs=cspec,
+                    names=colspecs,
+                    na_values=na_values,
+                    dtype=column_dtypes,
+                    compression="gzip",
+                ).rename_axis(index="ID")
 
         self.LOGGER.info("Splitting dataframe...")
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
@@ -542,7 +551,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = (
             data
-            .stack(level="DAY", dropna=False)
+            .stack(level="DAY")
             .reset_index(level="DAY")
             .astype({  # correct dtypes after stacking operation
                 "DAY": "int8[pyarrow]",
