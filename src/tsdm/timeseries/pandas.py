@@ -6,23 +6,25 @@ __all__ = [
     "PandasTS",
     "PandasTSC",
     # Functions
+    "beijing_air_quality",
     "damped_pendulum_ansari2023",
+    "electricity",
     "etth1",
     "etth2",
     "ettm1",
     "ettm2",
-    "electricity",
     "in_silico",
     "kiwi_benchmark",
     "mimic_iii_de_brouwer2019",
     "mimic_iv_bilos2021",
-    "physio_net2012",
-    "physio_net2019",
+    "physionet2012",
+    "physionet2019",
     "traffic",
     "ushcn",
     "ushcn_de_brouwer2019",
 ]
 
+import warnings
 from collections.abc import Hashable, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, fields
 from typing import Any, ClassVar, Optional, Self, overload
@@ -122,7 +124,7 @@ class PandasTS(TimeSeries[DataFrame]):
         r"""Check if the key is in the timeindex."""
         return key in self.timeindex
 
-    def __getitem__(self, key: Any, /) -> "PandasTS":
+    def __getitem__(self, key: Any, /) -> PandasTS:
         r"""Return the subset of the timeseries at index `key`."""
         fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
         fields.update(timeseries=self.timeseries.loc[key])
@@ -197,8 +199,12 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
         r"""Create a TimeSeries from a Dataset."""
         ds = arg() if isinstance(arg, type) else arg
 
-        if bad_names := set(ds.table_names) - cls.FIELDS:
-            raise ValueError(f"The following table names: {bad_names}")
+        if superfluous_names := (set(ds.table_names) - cls.FIELDS):
+            warnings.warn(
+                f"The following tables are skipped: {superfluous_names}",
+                UserWarning,
+                stacklevel=2,
+            )
 
         return cls(
             **{k: ds.tables.get(k, None) for k in cls.FIELDS},
@@ -266,9 +272,21 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
         match self.static_covariates:
             case None: ...  # fmt: skip
             case DataFrame() as static_cov:
-                if not static_cov.index.difference(self.metaindex).empty:
-                    raise ValueError(
-                        "Static covariates index is not a subset of the metaindex."
+                superfluous_keys = static_cov.index.difference(self.metaindex)
+                missing_keys = self.metaindex.difference(static_cov.index)
+                if not superfluous_keys.empty:
+                    warnings.warn(
+                        f"The static_covariates contains unused keys:"
+                        f" {superfluous_keys.tolist()}",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                if not missing_keys.empty:
+                    warnings.warn(
+                        f"No static covariates present for some keys:"
+                        f" {missing_keys.tolist()}",
+                        UserWarning,
+                        stacklevel=2,
                     )
             case _:
                 raise TypeError(
@@ -296,80 +314,85 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
         return PandasTS(**{k: v for k, v in fields.items() if k in PandasTS.FIELDS})
 
 
-def electricity() -> PandasTS:
+def electricity() -> TimeSeries[DataFrame]:
     r"""The Electricity dataset wrapped as TimeSeriesCollection."""
     return PandasTS.from_dataset(datasets.Electricity)
 
 
-def traffic() -> PandasTS:
+def traffic() -> TimeSeries[DataFrame]:
     r"""The Traffic dataset wrapped as TimeSeriesCollection."""
     return PandasTS.from_dataset(datasets.Traffic)
 
 
-def etth1() -> PandasTS:
+def etth1() -> TimeSeries[DataFrame]:
     r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTh1"], name="ETTh1")
 
 
-def etth2() -> PandasTS:
+def etth2() -> TimeSeries[DataFrame]:
     r"""The ETTh2 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTh2"], name="ETTh2")
 
 
-def ettm1() -> PandasTS:
+def ettm1() -> TimeSeries[DataFrame]:
     r"""The ETTm1 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTm1"], name="ETTm1")
 
 
-def ettm2() -> PandasTS:
+def ettm2() -> TimeSeries[DataFrame]:
     r"""The ETTm2 dataset wrapped as TimeSeriesCollection."""
     ds = datasets.ETT()
     return PandasTS(timeseries=ds["ETTm2"], name="ETTm2")
 
 
-def in_silico() -> PandasTSC:
+def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
+    r"""The Beijing Air Quality dataset wrapped as TimeSeriesCollection."""
+    return PandasTSC.from_dataset(datasets.BeijingAirQuality)
+
+
+def in_silico() -> TimeSeriesCollection[int, DataFrame]:
     r"""The in silico dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.InSilico)
 
 
-def kiwi_benchmark() -> PandasTSC:
+def kiwi_benchmark() -> TimeSeriesCollection[tuple[int, int], DataFrame]:
     r"""The KIWI dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.KiwiBenchmark)
 
 
-def ushcn() -> PandasTSC:
+def ushcn() -> TimeSeriesCollection[int, DataFrame]:
     r"""The USHCN dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.USHCN)
 
 
-def ushcn_de_brouwer2019() -> PandasTSC:
+def ushcn_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
     r"""The USHCN_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.USHCN_DeBrouwer2019)
 
 
-def physio_net2012() -> PandasTSC:
+def physionet2012() -> TimeSeriesCollection[int, DataFrame]:
     r"""The PhysioNet2012 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.PhysioNet2012)
 
 
-def physio_net2019() -> PandasTSC:
+def physionet2019() -> TimeSeriesCollection[str, DataFrame]:
     r"""The PhysioNet2019 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.PhysioNet2019)
 
 
-def mimic_iv_bilos2021() -> PandasTSC:
-    r"""The MIMIC_IV_Bilos2021 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.MIMIC_IV_Bilos2021)
-
-
-def mimic_iii_de_brouwer2019() -> PandasTSC:
+def mimic_iii_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
     r"""The MIMIC_III_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.MIMIC_III_DeBrouwer2019)
 
 
-def damped_pendulum_ansari2023() -> PandasTSC:
+def mimic_iv_bilos2021() -> TimeSeriesCollection[int, DataFrame]:
+    r"""The MIMIC_IV_Bilos2021 dataset wrapped as TimeSeriesCollection."""
+    return PandasTSC.from_dataset(datasets.MIMIC_IV_Bilos2021)
+
+
+def damped_pendulum_ansari2023() -> TimeSeriesCollection[int, DataFrame]:
     r"""The DampedPendulum_Ansari2023 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.DampedPendulum_Ansari2023)
