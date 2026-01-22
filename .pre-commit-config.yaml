@@ -51,10 +51,14 @@ repos:
       - id: uv-export
         args: [ "--no-dev", "--frozen", "--output-file=pylock.toml" ]
   # tach
-  - repo: https://github.com/gauge-sh/tach-pre-commit
-    rev: v0.29.0
+  - repo: local
     hooks:
       - id: tach
+        name: tach
+        description: "Check that the pyproject.toml and setup.cfg versions match."
+        entry: "tach check"
+        pass_filenames: false
+        language: system
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.1.1
