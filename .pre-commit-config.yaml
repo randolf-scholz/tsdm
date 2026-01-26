@@ -1,5 +1,5 @@
 exclude: 'bugs/'
-minimum_pre_commit_version: 3.6.0
+minimum_pre_commit_version: 4.5.1
 default_language_version:
   python: '3.14'
   node: '24.13.0'
@@ -31,7 +31,7 @@ repos:
         types: [ python ]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.13
+    rev: v0.14.14
     hooks:
       - id: ruff-check
         name: ruff isort
@@ -67,7 +67,7 @@ repos:
         exclude: '^docs/'
   # personal hooks
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.3
+    rev: v0.7.12
     hooks:
       # pygrep hooks
       - id: check-separator-length-88
@@ -116,7 +116,7 @@ repos:
         name: unknown-inline-pragma
         description: "Check for unknown inline pragmas."
         language: pygrep
-        entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
+        entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|pyrefly|ty|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
         types: [ python ]
         files: '^src/|^tests/'
   # markdownlint
@@ -135,9 +135,9 @@ repos:
     hooks:
       - id: shellcheck
         args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
-  # pyright
+  # pyright-concise
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.3
+    rev: v0.7.12
     hooks:
       - id: pyright-concise
         files: '^src/|^tests/'
@@ -154,8 +154,6 @@ repos:
         exclude: '/tasks/'
         entry: mypy
         args:
-          - "--no-incremental"
-          - "--cache-dir=/dev/null"
           - "--hide-error-context"
           - "--hide-error-end"
           - "--no-pretty"
