@@ -108,8 +108,7 @@ class Config:
     r"""Logger for the class."""
     GENERATING_DOCS: ClassVar[bool] = bool(os.environ.get("TSDM_DOCS"))
     r"""Whether the documentation is being generated."""
-    DEFAULT_HASH_METHOD = "sha256"
-    r"""Default hash method for file integrity checks."""
+
     ROOT_DIR: Path
     r"""Root directory for tsdm storage."""
     LOG_DIR: Path
@@ -118,18 +117,22 @@ class Config:
     r"""Path where imported models are stored."""
     DATASET_DIR: Path
     r"""Path where imported dataset are stored."""
+    DEFAULT_HASH_METHOD = "sha256"
+    r"""Default hash method for file integrity checks."""
+    DEFAULT_CHUNK_SIZE: Final[int] = 1024 * 1024
+    r"""Default chunk size for file integrity checks."""
 
-    class DATASET_KEYS(StrEnum):
+    class DATASET_PATHS(StrEnum):
         r"""Keys for dataset schema."""
 
+        ROOT = "root"
+        r"""Root data directory."""
         RAWDATA = "raw"
         r"""Raw data directory."""
-        STORAGE = "processed"
+        PROCESSED = "processed"
         r"""Processed data directory."""
         METADATA = "metadata"
         r"""Metadata directory."""
-        TMP = "tmp"
-        r"""Temporary files directory."""
 
     @cached_property
     def DEFAULT_CONFIG(self) -> dict[str, Any]:
@@ -145,10 +148,10 @@ class Config:
             "model_dir"   : "models",
             "dataset_dir" : "datasets",
             "dataset_schema": {
-                self.DATASET_KEYS.RAWDATA : "raw",
-                self.DATASET_KEYS.STORAGE : "processed",
-                self.DATASET_KEYS.METADATA    : "meta",
-                self.DATASET_KEYS.TMP     : "tmp",
+                self.DATASET_PATHS.ROOT    : "root",
+                self.DATASET_PATHS.RAWDATA : "raw",
+                self.DATASET_PATHS.PROCESSED : "processed",
+                self.DATASET_PATHS.METADATA    : "meta",
             },
             "folders"    : ["datasets", "models", "logs"],
             "autojit"    : True,
