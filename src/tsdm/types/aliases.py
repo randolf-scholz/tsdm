@@ -1,6 +1,9 @@
 r"""Collection of Useful Type Aliases."""
 
 __all__ = [
+    # Literal collections
+    "TS_Keys",
+    "TSC_Keys",
     # Type Qualifiers
     "Fittable",
     "Derivable",
@@ -37,15 +40,6 @@ __all__ = [
     "NestedMapping",
     "NestedDict",
     "NestedBuiltin",
-    # Fields
-    "TS",
-    "TS_meta",
-    "SC",
-    "SC_meta",
-    "CS",
-    "CS_meta",
-    "TS_FIELDS",
-    "TSC_FIELDS",
 ]
 
 
@@ -60,14 +54,15 @@ from types import EllipsisType
 from typing import Annotated, Literal
 
 # region field types -------------------------------------------------------------------
-type TS = Literal["timeseries"]
-type TS_meta = Literal["timeseries_metadata"]
-type SC = Literal["static_covariates"]
-type SC_meta = Literal["static_covariates_metadata"]
-type CS = Literal["constants"]
-type CS_meta = Literal["constants_metadata"]
-type TS_FIELDS = TS | TS_meta | SC | SC_meta
-type TSC_FIELDS = TS | TS_meta | SC | SC_meta | CS | CS_meta
+type TS_Keys = Literal["timeseries", "timeseries_metadata"]
+r"""Type Alias for time series dataset keys."""
+type TSC_Keys = Literal[
+    "timeseries",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
+]
+r"""Type Alias for time series collections dataset keys."""
 # endregion ----------------------------------------------------------------------------
 
 # region type qualifiers ---------------------------------------------------------------

@@ -81,7 +81,7 @@ from pandas import DataFrame
 from tsdm.datasets.base import DatasetBase
 from tsdm.datasets.schemas import DEFAULT_METADATA_SCHEMA
 from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
-from tsdm.types.aliases import TS, TS_meta
+from tsdm.types.aliases import TS_Keys
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
@@ -103,7 +103,7 @@ TIMESERIES_METADATA: InlineTable = {
 }  # fmt: skip
 
 
-class BeijingAirQuality(DatasetBase[TS | TS_meta, DataFrame]):
+class BeijingAirQuality(DatasetBase[TS_Keys, DataFrame]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+

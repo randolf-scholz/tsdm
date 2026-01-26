@@ -7,10 +7,10 @@ from zipfile import ZipFile
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.aliases import TS_FIELDS
+from tsdm.types.aliases import TS_Keys
 
 
-class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
+class KiwiBenchmark(DatasetBase[TS_Keys, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
     __version__: str = "1.0"
@@ -39,7 +39,7 @@ class KiwiBenchmark(DatasetBase[TS_FIELDS, DataFrame]):
 
         with ZipFile(path, "r") as archive:
             try:
-                archive.extract(file, self.STORAGE_DIR)
+                archive.extract(file, self.DATASET_DIR)
             except KeyError as exc:
                 exc.add_note(f"Failed to extract table {key} from {path}")
                 raise

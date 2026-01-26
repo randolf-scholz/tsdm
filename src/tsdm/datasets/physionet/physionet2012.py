@@ -392,7 +392,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
         "static_covariates_metadata": STATIC_COVARIATES_METADATA["schema"],
     }  # fmt: skip
 
-    def _clean_single_rawdataset(self, fname: str) -> tuple[DataFrame, DataFrame]:
+    def _clean_single_rawdataset(self, fname: str, /) -> tuple[DataFrame, DataFrame]:
         with (
             tarfile.open(self.rawdata_paths[fname], "r") as archive,
             tqdm(archive.getmembers()) as progress_bar,

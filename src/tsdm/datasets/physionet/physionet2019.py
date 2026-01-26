@@ -501,7 +501,7 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
 
-    def clean_table(self, key: Key, /) -> Optional[DataFrame]:
+    def clean_table(self, key: Key) -> Optional[DataFrame]:
         match key:
             case "timeseries_metadata":
                 return make_dataframe(**TIMESERIES_METADATA)

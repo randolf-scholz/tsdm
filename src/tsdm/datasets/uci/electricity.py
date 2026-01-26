@@ -40,16 +40,17 @@ Other columns present float values with consumption in kW
 
 __all__ = ["Electricity"]
 
+from collections import defaultdict
+from typing import Literal
 from zipfile import ZipFile
 
 from matplotlib.axes import Axes
 from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.aliases import TS
 
 
-class Electricity(DatasetBase[TS, DataFrame]):
+class Electricity(DatasetBase[Literal["timeseries"], DataFrame]):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -108,6 +109,8 @@ class Electricity(DatasetBase[TS, DataFrame]):
     def clean_timeseries(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
         rawdata_path = self.rawdata_paths["electricityloaddiagrams20112014.zip"]
+        dtypes = defaultdict(lambda: "float32[pyarrow]")
+        dtypes[""] = "datetime64[s]"
         with (
             ZipFile(rawdata_path) as archive,
             archive.open("LD2011_2014.txt") as file,
@@ -118,10 +121,18 @@ class Electricity(DatasetBase[TS, DataFrame]):
                 decimal=",",
                 parse_dates=[0],
                 index_col=0,
-                dtype="float32[pyarrow]",
-                dtype_backend="pyarrow",
+                date_format="%Y-%m-%d %H:%M:%S",  # e.g. "2011-01-01 00:15:00"
             )
-        return df.rename_axis(index="time", columns="client")
+
+        df = (
+            df
+            .astype("float64[pyarrow]")
+            .rename_axis(index="time", columns="client")
+            .reset_index()
+            .astype({"time": "timestamp[ms][pyarrow]"})
+            .set_index("time")
+        )
+        return df
 
     def make_zero_plot(self) -> Axes:
         r"""Plot number of zero values per timestamp."""

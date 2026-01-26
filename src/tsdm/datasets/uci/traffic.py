@@ -57,10 +57,10 @@ from pandas import DataFrame, Series
 from tsdm.datasets.base import DatasetBase
 from tsdm.utils import replace
 
-type Key = Literal["timeseries", "labels", "randperm", "invperm"]
+type Traffic_Keys = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
-class Traffic(DatasetBase[Key, DataFrame]):
+class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+

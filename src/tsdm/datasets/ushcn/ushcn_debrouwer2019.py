@@ -2,14 +2,15 @@ r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.""
 
 __all__ = ["USHCN_DeBrouwer2019"]
 
+from typing import Literal
+
 import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.aliases import TS
 
 
-class USHCN_DeBrouwer2019(DatasetBase[TS, DataFrame]):
+class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], DataFrame]):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:

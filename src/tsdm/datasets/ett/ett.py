@@ -10,12 +10,11 @@ from typing import Literal
 from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.aliases import TS
 
-type Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+type ETT_Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
-class ETT(DatasetBase[Key, DataFrame]):
+class ETT(DatasetBase[ETT_Key, DataFrame]):
     r"""ETT dataset.
 
     This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data
@@ -68,7 +67,7 @@ class ETT(DatasetBase[Key, DataFrame]):
         "ETTm2": (69680, 7),
     }
 
-    def clean_table(self, key: Key) -> DataFrame:
+    def clean_table(self, key: ETT_Key) -> DataFrame:
         df = read_csv(
             self.rawdata_paths[f"{key}.csv"],
             parse_dates=[0],
@@ -80,7 +79,7 @@ class ETT(DatasetBase[Key, DataFrame]):
         return df
 
 
-class ETTh1(DatasetBase[TS, DataFrame]):
+class ETTh1(DatasetBase[Literal["timeseries"], DataFrame]):
     r"""ETTh1 dataset.
 
     +-------+--------------------------+
