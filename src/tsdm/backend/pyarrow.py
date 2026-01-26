@@ -166,11 +166,12 @@ def force_cast[T: AnyArray | Table](
             actual_dtype = pyarrow_lib.ensure_type(dtype)
 
             return array.cast(
-                actual_dtype,
                 options=pc.CastOptions(
+                    target_type=actual_dtype,
                     allow_float_truncate=True,
                     allow_decimal_truncate=True,
                     allow_time_truncate=True,
+                    allow_invalid_utf8=True,
                 ),
             )
 
