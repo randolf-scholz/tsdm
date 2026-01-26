@@ -65,7 +65,7 @@ class Distribution[T](RV[T], Protocol):  # +T
         r"""Differential entropy of the RV."""
         raise NotImplementedError
 
-    def moment(self, order: int) -> T:
+    def moment(self, order: int, /) -> T:
         r"""Non-central moment of order n."""
         raise NotImplementedError
 

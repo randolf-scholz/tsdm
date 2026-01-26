@@ -89,7 +89,7 @@ class SupportsBackend[X, Y](Protocol):
     def set_backend_from_data(self, x: X, /) -> None:
         self.backend = get_backend(x)
 
-    def switch_backend(self, backend: str) -> None:
+    def switch_backend(self, backend: str, /) -> None:
         r"""Switch the backend of the encoder."""
         self.backend = Backend(backend)
 

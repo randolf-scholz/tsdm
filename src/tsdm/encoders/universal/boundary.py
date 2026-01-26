@@ -139,14 +139,14 @@ class BoundaryEncoder[
             **kwargs,
         )
 
-    def lower_satisfied(self, x: Arr) -> Arr:
+    def lower_satisfied(self, x: Arr, /) -> Arr:
         r"""Return a boolean mask for the lower boundary (true: value ok)."""
         if self.lower_bound is None:
             return self.backend.true_like(x)
         r = (x >= self.lower_bound) if self.lower_included else (x > self.lower_bound)
         return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
-    def upper_satisfied(self, x: Arr) -> Arr:
+    def upper_satisfied(self, x: Arr, /) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)

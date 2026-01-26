@@ -159,7 +159,7 @@ class Hash(Protocol):
         r"""Return the internal block size of the hash in bytes."""
         ...
 
-    def update(self, data: bytes) -> None:
+    def update(self, data: bytes, /) -> None:
         r"""Update this hash object's state with the provided string."""
         ...
 

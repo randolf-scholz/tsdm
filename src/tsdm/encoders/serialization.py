@@ -39,7 +39,7 @@ def serialize(parameters: dict, *, path: Path) -> None:
         pickle.dump(parameters, f)
 
 
-def deserialize(path: Path) -> dict:
+def deserialize(path: Path, /) -> dict:
     r"""Deserialize parameters from zipfile.
 
     The file is traversed recursively, and the following rules are applied:

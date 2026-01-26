@@ -131,7 +131,7 @@ class SeriesLike[V](Protocol):
     @overload
     def __getitem__(self, key: slice, /) -> Self: ...
 
-    def equals(self, other: Self) -> bool:
+    def equals(self, other: Self, /) -> bool:
         r"""Check if the series is equal to another series."""
         ...
 

@@ -129,7 +129,7 @@ def dims_to_list(dims: int | list[int] | None, *, ndim: int) -> list[int]:
     return list(dims)
 
 
-def size_to_tuple(size: Size) -> tuple[int, ...]:
+def size_to_tuple(size: Size, /) -> tuple[int, ...]:
     r"""Convert size to tuple.
 
     Note:
@@ -142,7 +142,7 @@ def size_to_tuple(size: Size) -> tuple[int, ...]:
     return tuple(size)
 
 
-def shape_to_tuple(shape: Shape) -> tuple[int, ...]:
+def shape_to_tuple(shape: Shape, /) -> tuple[int, ...]:
     r"""Convert shape to tuple.
 
     Note:

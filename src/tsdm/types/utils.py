@@ -8,7 +8,7 @@ from typing import ClassVar, ForwardRef
 
 
 # FIXME: Use TypeForm with typing_extensions==4.13.0
-def is_classvar(tp: object) -> bool:
+def is_classvar(tp: object, /) -> bool:
     r"""Check if the type annotation is a ClassVar."""
     if tp is ClassVar:
         return True

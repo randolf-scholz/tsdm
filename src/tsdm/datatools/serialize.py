@@ -80,7 +80,7 @@ def serialize_table[T](
             raise TypeError(f"Invalid writer: {type(writer)=}")
 
 
-def _choose_default_loader(extension: str) -> Loader[Any]:
+def _choose_default_loader(extension: str, /) -> Loader[Any]:
     r"""Default loader function that uses the extension of the path."""
     if (loader := getattr(pd, f"read_{extension}", None)) is not None:
         return loader

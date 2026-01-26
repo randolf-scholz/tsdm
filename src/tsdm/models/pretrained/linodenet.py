@@ -64,7 +64,7 @@ class LinODEnet(PreTrainedBase):
         download(url, fname)
         return pd.read_excel(fname)
 
-    def predict(self, ts: DataFrame) -> DataFrame:
+    def predict(self, ts: DataFrame, /) -> DataFrame:
         r"""Predict function for LinODEnet."""
         ts = self.clean_timeseries(ts)
         return self.get_predictions(ts)
@@ -106,7 +106,7 @@ class LinODEnet(PreTrainedBase):
         return ts
 
     @torch.no_grad()
-    def get_predictions(self, ts: DataFrame) -> DataFrame:
+    def get_predictions(self, ts: DataFrame, /) -> DataFrame:
         r"""Get predictions from the model."""
         if isinstance(ts.index, MultiIndex):
             names = ts.index.names[:-1]

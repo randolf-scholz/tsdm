@@ -150,7 +150,7 @@ def regularity_coefficient(
     return coef
 
 
-def time_gcd(s: Series) -> float:
+def time_gcd(s: Series, /) -> float:
     r"""Compute the greatest common divisor of datetime64/int/float data."""
     Δt = np.diff(s)
     zero = np.array(0, dtype=Δt.dtype)
