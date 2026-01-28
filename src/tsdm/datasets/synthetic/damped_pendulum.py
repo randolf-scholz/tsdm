@@ -3,7 +3,7 @@ r"""Dataset Wrapper for the Damped Pendulum Generator."""
 __all__ = ["DampedPendulum_Ansari2023"]
 
 from functools import cached_property
-from typing import Literal, final
+from typing import final
 
 import numpy as np
 import pandas as pd
@@ -12,11 +12,13 @@ from scipy.stats import norm as univariate_normal
 from tqdm.auto import trange
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import InlineTable, make_dataframe
 from tsdm.random import generators
+from tsdm.types.aliases import TS_Keys
 
 
 @final
-class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
+class DampedPendulum_Ansari2023(DatasetBase[TS_Keys, DataFrame]):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
@@ -24,24 +26,24 @@ class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
         appendix C1.
 
     References:
-        - Neural Continuous-Discrete State Space Models
-          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
-          Proceedings of the 40th International Conference on Machine Learning
-          https://proceedings.mlr.press/v202/ansari23a.html
-          https://github.com/clear-nus/NCDSSM
-        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data
-          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt
-          ICLR 2017
-          https://openreview.net/forum?id=HyTqHL5xg
-        - Deep Rao-Blackwellised Particle Filters for Time Series Forecasting
-          Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus
-          NeurIPS 2020
-          https://proceedings.neurips.cc/paper/2020/hash/afb0b97df87090596ae7c503f60bb23f-Abstract.html
-          https://dl.acm.org/doi/10.5555/3495724.3497013
+        - | Neural Continuous-Discrete State Space Models
+          | Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
+          | Proceedings of the 40th International Conference on Machine Learning
+          | https://proceedings.mlr.press/v202/ansari23a.html
+          | https://github.com/clear-nus/NCDSSM
+        - | Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data
+          | Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt
+          | ICLR 2017
+          | https://openreview.net/forum?id=HyTqHL5xg
+        - | Deep Rao-Blackwellised Particle Filters for Time Series Forecasting
+          | Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus
+          | NeurIPS 2020
+          | https://proceedings.neurips.cc/paper/2020/hash/afb0b97df87090596ae7c503f60bb23f-Abstract.html
+          | https://dl.acm.org/doi/10.5555/3495724.3497013
     """
 
     rawdata_files = []
-    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
+    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
 
     num_sequences = 7000
     step = 0.1
@@ -49,8 +51,8 @@ class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
     t_max = 15.0
 
     @cached_property
-    def generator(self) -> generators.DampedPendulum:
-        return generators.DampedPendulum(
+    def generator(self) -> generators.DampedPendulumXY:
+        return generators.DampedPendulumXY(
             length=1.0,
             g=9.81,
             mass=1.0,
@@ -60,6 +62,27 @@ class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
             observation_noise_dist=univariate_normal(loc=0, scale=0.05),
             initial_state_dist=univariate_normal(loc=0, scale=1),
         )
+
+    @staticmethod
+    def clean_timeseries_metadata() -> DataFrame:
+        r"""Create DataFrame with metadata for the timeseries."""
+        TIMESERIES_METADATA: InlineTable = {
+            "data": [
+                ("x", -1.0, +1.0, True, True, "length", "x coordinate of the pendulum bob"),
+                ("y", -1.0, +1.0, True, True, "length", "y coordinate of the pendulum bob"),
+            ],
+            "schema": {
+                "variable"        : "string[pyarrow]",
+                "lower_bound"     : "float32[pyarrow]",
+                "upper_bound"     : "float32[pyarrow]",
+                "lower_inclusive" : "bool[pyarrow]",
+                "upper_inclusive" : "bool[pyarrow]",
+                "unit"            : "string[pyarrow]",
+                "description"     : "string[pyarrow]",
+            },
+            "index": "variable",
+        }  # fmt: skip
+        return make_dataframe(**TIMESERIES_METADATA)
 
     def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Generating data...")
@@ -77,7 +100,7 @@ class DampedPendulum_Ansari2023(DatasetBase[Literal["timeseries"], DataFrame]):
             sequences[k] = DataFrame(
                 data,
                 index=Index(t_range, name="time"),
-                columns=["theta", "omega"],
+                columns=["x", "y"],
                 dtype="float32[pyarrow]",
             )
 
