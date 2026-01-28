@@ -23,7 +23,10 @@ from tsdm.datasets import KiwiRuns, KiwiRunsTSC
 from tsdm.datatools import MappingDataset, TimeSeriesSampleGenerator
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
-from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
+from tsdm.random.samplers import (
+    HierarchicalSampler,
+    SlidingWindowSampler,
+)
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
 from tsdm.utils.decorators import pprint_repr
@@ -311,9 +314,9 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
         # construct the sampler
         subsamplers = {
-            key: SequenceSampler(
+            key: SlidingWindowSampler(
                 ds.timeseries,
-                seq_len=self.horizon,
+                horizons=self.horizon,
                 stride=1,
                 shuffle=shuffle,
             )

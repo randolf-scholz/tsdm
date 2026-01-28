@@ -24,7 +24,7 @@ from tsdm.encoders import (
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.random.samplers import SequenceSampler
+from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks._deprecated import OldBaseTask
 
 
@@ -180,9 +180,9 @@ class ETT_Zhou2021(OldBaseTask):
         ds = self.splits[key]
         tensors = self.preprocessor.encode(ds)
         dataset = TensorDataset(*tensors)
-        sampler = SequenceSampler(
+        sampler = SlidingWindowSampler(
             dataset,
-            seq_len=self.horizon,
+            horizons=self.horizon,
             stride=1,
             shuffle=shuffle,
         )

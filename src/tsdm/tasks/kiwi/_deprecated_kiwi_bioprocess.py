@@ -21,7 +21,10 @@ from tsdm.datasets import KiwiRuns
 from tsdm.datatools import MappingDataset, folds_as_frame, folds_from_groups
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
-from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
+from tsdm.random.samplers import (
+    HierarchicalSampler,
+    SlidingWindowSampler,
+)
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
 from tsdm.utils.decorators import pprint_repr
@@ -229,9 +232,9 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
         # construct the sampler
         subsamplers = {
-            key: SequenceSampler(
+            key: SlidingWindowSampler(
                 ds.timeseries,
-                seq_len=self.horizon,
+                horizons=self.horizon,
                 stride=1,
                 shuffle=shuffle,
             )

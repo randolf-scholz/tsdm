@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
 from tsdm.encoders import FittableEncoder, StandardScaler
-from tsdm.random.samplers import SequenceSampler
+from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTS
 from tsdm.utils import timedelta, timestamp
@@ -173,11 +173,11 @@ class ElectricityLim2021(TimeSeriesTask):
         encoded = self.encoder.encode(ds)
         tensor = torch.tensor(encoded.values, dtype=torch.float32)
 
-        sampler = SequenceSampler(
+        sampler = SlidingWindowSampler(
             encoded.index,
             stride="1d",
-            seq_len=self.observation_period + self.forecasting_period,
-            return_mask=True,
+            horizons=self.observation_period + self.forecasting_period,
+            mode="mask",
             shuffle=shuffle,
         )
         dataset = TensorDataset(tensor)
