@@ -4,158 +4,158 @@ default_language_version:
   python: '3.14'
   node: '24.13.0'
 repos:
-  # https://pre-commit.com/hooks.html
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-added-large-files
-      - id: check-case-conflict
-      - id: check-illegal-windows-names
-      - id: check-json
-      - id: check-executables-have-shebangs
-      - id: check-shebang-scripts-are-executable
-      - id: check-symlinks
-      - id: check-toml
-      - id: check-xml
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-  - repo: local
-    hooks:
-      - id: pandas-avoid-numpy-nullable-types
-        name: pandas-avoid-numpy-nullable-types
-        description: "Use pyarrow types instead of numpy nullable types in pandas."
-        language: pygrep
-        entry: 'dtype="(boolean|U?Int(8|16|32|64)|Float(32|64))"'
-        exclude: '^tests/'
-        types: [ python ]
-  # ruff
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
-    hooks:
-      - id: ruff-check
-        name: ruff isort
-        files: '^src/|^tests/'
-        args: [ "--select", "I", "--fix" ]
-      - id: ruff-format
-        files: '^src/|^tests/'
-      - id: ruff-check
-        files: '^src/|^tests/'
-  # uv
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.26
-    hooks:
-      - id: uv-lock
-      - id: uv-export
-        args: ["--no-dev", "--no-hashes", "--frozen", "--output-file=requirements.txt"]
-      - id: uv-export
-        args: [ "--no-dev", "--frozen", "--output-file=pylock.toml" ]
-  # tach
-  - repo: local
-    hooks:
-      - id: tach
-        name: tach
-        description: "Check that the pyproject.toml and setup.cfg versions match."
-        entry: "tach check"
-        pass_filenames: false
-        language: system
-  # nbstripout-fast
-  - repo: https://github.com/deshaw/nbstripout-fast.git
-    rev: v1.1.1
-    hooks:
-      - id: nbstripout-fast
-        exclude: '^docs/'
-  # personal hooks
-  - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.12
-    hooks:
-      # pygrep hooks
-      - id: check-separator-length-88
-      - id: numpy-rename-axes-axis
-      - id: pyarrow-timestamp-seconds
-        exclude: '/backend/'
-      - id: python-consider-using-raw-string
-      - id: python-system-exit
-      - id: python-match-case-builtins
-      - id: python-double-comment
-      # ast-based hooks
-      - id: check-direct-imports
-      - id: check-dunder-all
-        files: '^src/'
-      - id: check-typing
-        args: ["--check-no-return-union"]
-        files: '^src/|^tests/'
-        exclude: "lazydict.py"
-      - id: check-signatures
-        files: '^src/'
-        args:
-          - "--ignore-names"
-          - "forward"
-          - "predict"
-          - "--ignore-decorators"
-          - "jit.script"
-          - "jit.export"
-          - "torch.no_grad"
-          - "--"
-      # script-based hooks
-      - id: check-clean-interface
-        files: '^src/'
-        exclude: '/tests/'
-      - id: update-requirements
-      - id: check-requirements-valid
-      - id: check-requirements-maintained
-      - id: check-requirements-used
-        args: ["--known-unimported", "tensorboard", "pydantic", "--"]
-      # other hooks
-      - id: check-archived-hooks
-      - id: check-resolved-github-issues
-        files: '^src/|^tests/'
-  - repo: local
-    hooks:
-      - id: unknown-inline-pragma
-        name: unknown-inline-pragma
-        description: "Check for unknown inline pragmas."
-        language: pygrep
-        entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|pyrefly|ty|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
-        types: [ python ]
-        files: '^src/|^tests/'
-  # markdownlint
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.47.0
-    hooks:
-      - id: markdownlint
-        args:
-          - "--disable" # disable rules
-          - "MD013"     # Line length
-          - "MD033"     # Inline HTML
-          - "--"        # otherwise files are interpreted as args
-  # shellcheck
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
-    hooks:
-      - id: shellcheck
-        args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
-  # pyright-concise
-  - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.7.12
-    hooks:
-      - id: pyright-concise
-        files: '^src/|^tests/'
-        exclude: '/tasks/'
-  # mypy
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-        language: system
-        require_serial: true
-        types_or: [python, pyi]
-        files: '^src/|^tests/'
-        exclude: '/tasks/'
-        entry: mypy
-        args:
-          - "--hide-error-context"
-          - "--hide-error-end"
-          - "--no-pretty"
-          - "--show-traceback"
-          - "--"
+# https://pre-commit.com/hooks.html
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0
+  hooks:
+  - id: check-added-large-files
+  - id: check-case-conflict
+  - id: check-illegal-windows-names
+  - id: check-json
+  - id: check-executables-have-shebangs
+  - id: check-shebang-scripts-are-executable
+  - id: check-symlinks
+  - id: check-toml
+  - id: check-xml
+  - id: check-yaml
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+- repo: local
+  hooks:
+  - id: pandas-avoid-numpy-nullable-types
+    name: pandas-avoid-numpy-nullable-types
+    description: "Use pyarrow types instead of numpy nullable types in pandas."
+    language: pygrep
+    entry: 'dtype="(boolean|U?Int(8|16|32|64)|Float(32|64))"'
+    exclude: '^tests/'
+    types: [ python ]
+# ruff
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.14
+  hooks:
+  - id: ruff-check
+    name: ruff isort
+    files: '^src/|^tests/'
+    args: [ "--select", "I", "--fix" ]
+  - id: ruff-format
+    files: '^src/|^tests/'
+  - id: ruff-check
+    files: '^src/|^tests/'
+# uv
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.9.26
+  hooks:
+  - id: uv-lock
+  - id: uv-export
+    args: [ "--no-dev", "--no-hashes", "--frozen", "--output-file=requirements.txt" ]
+  - id: uv-export
+    args: [ "--no-dev", "--frozen", "--output-file=pylock.toml" ]
+# tach
+- repo: local
+  hooks:
+  - id: tach
+    name: tach
+    description: "Check that the pyproject.toml and setup.cfg versions match."
+    entry: "tach check"
+    pass_filenames: false
+    language: system
+# nbstripout-fast
+- repo: https://github.com/deshaw/nbstripout-fast.git
+  rev: v1.1.1
+  hooks:
+  - id: nbstripout-fast
+    exclude: '^docs/'
+# personal hooks
+- repo: https://github.com/randolf-scholz/assorted-hooks.git
+  rev: v0.7.12
+  hooks:
+  # pygrep hooks
+  - id: check-separator-length-88
+  - id: numpy-rename-axes-axis
+  - id: pyarrow-timestamp-seconds
+    exclude: '/backend/'
+  - id: python-consider-using-raw-string
+  - id: python-system-exit
+  - id: python-match-case-builtins
+  - id: python-double-comment
+  # ast-based hooks
+  - id: check-direct-imports
+  - id: check-dunder-all
+    files: '^src/'
+  - id: check-typing
+    args: [ "--check-no-return-union" ]
+    files: '^src/|^tests/'
+    exclude: "lazydict.py"
+  - id: check-signatures
+    files: '^src/'
+    args:
+    - "--ignore-names"
+    - "forward"
+    - "predict"
+    - "--ignore-decorators"
+    - "jit.script"
+    - "jit.export"
+    - "torch.no_grad"
+    - "--"
+  # other hooks
+  - id: check-archived-hooks
+  - id: check-resolved-github-issues
+    files: '^src/|^tests/'
+  # script-based hooks
+  - id: update-requirements
+  - id: check-requirements-valid
+  - id: check-requirements-maintained
+  - id: check-requirements-used
+    args: [ "--known-unimported", "tensorboard", "pydantic", "--" ]
+  - id: check-clean-interface
+    files: '^src/'
+    exclude: '/tests/'
+- repo: local
+  hooks:
+  - id: unknown-inline-pragma
+    name: unknown-inline-pragma
+    description: "Check for unknown inline pragmas."
+    language: pygrep
+    entry: '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|pyrefly|ty|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$'
+    types: [ python ]
+    files: '^src/|^tests/'
+# markdownlint
+- repo: https://github.com/igorshubovych/markdownlint-cli
+  rev: v0.47.0
+  hooks:
+  - id: markdownlint
+    args:
+    - "--disable" # disable rules
+    - "MD013"     # Line length
+    - "MD033"     # Inline HTML
+    - "--"        # otherwise files are interpreted as args
+# shellcheck
+- repo: https://github.com/shellcheck-py/shellcheck-py
+  rev: v0.11.0.1
+  hooks:
+  - id: shellcheck
+    args: [ "-x", "--shell=bash", "--color=always", "--format=gcc", "--" ]
+# pyright-concise
+- repo: https://github.com/randolf-scholz/assorted-hooks.git
+  rev: v0.7.12
+  hooks:
+  - id: pyright-concise
+    files: '^src/|^tests/'
+    exclude: '/tasks/'
+# mypy
+- repo: local
+  hooks:
+  - id: mypy
+    name: mypy
+    language: system
+    require_serial: true
+    types_or: [ python, pyi ]
+    files: '^src/|^tests/'
+    exclude: '/tasks/'
+    entry: mypy
+    args:
+    - "--hide-error-context"
+    - "--hide-error-end"
+    - "--no-pretty"
+    - "--show-traceback"
+    - "--"

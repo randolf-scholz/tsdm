@@ -6,7 +6,7 @@ build-backend = "uv_build"
 [project]
 requires-python = ">=3.14,<3.15"
 name = "tsdm"
-version = "0.7.0"
+version = "0.8.0"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -28,14 +28,14 @@ classifiers = [
 ]
 
 dependencies = [
+    "httpx>=0.28.1",
     "matplotlib>=3.10.8",
     "numpy>=2.4.1",
-    "pandas>=3.0.0",  # removal candidate
+    "pandas>=3.0.0",
     "polars>=1.37.1",
     "pyarrow>=23.0.0",
     "pydantic>=2.12.5",  # removal candidate
-    "pyyaml>=6.0.3",  # removal candidate
-    "requests>=2.32.5",
+    "pyyaml>=6.0.3",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.0",
     "tensorboard>=2.20.0",
@@ -58,14 +58,14 @@ dev = [
 devtools = [
     "cmake>=4.2.1",
     "ninja>=1.13.0",
-    "prek>=0.2.30",
+    "prek>=0.3.0",
     "pybadges>=3.0.1",
 ]
 debug = [
-    "ipympl>=0.9.8",
+    "ipympl>=0.10.0",
     "ipywidgets>=8.1.8",
     "jupyterlab-execute-time>=3.3.0",
-    "jupyterlab>=4.5.2",
+    "jupyterlab>=4.5.3",
     "psutil>=7.2.1",
     "torchinfo>=1.8.0",
 ]
@@ -87,14 +87,14 @@ docs = [
 ]
 linters = [
     "pre-commit>=4.5.1",
-    "prek>=0.2.30",
+    "prek>=0.3.0",
     "pylint>=3.3.9",
-    "ruff>=0.14.13",
+    "ruff>=0.14.14",
     "tach>=0.33.1",
 ]
 tests = [
-    "coverage>=7.13.1",
-    "hypothesis[numpy,pandas,pytest]>=6.150.2",
+    "coverage>=7.13.2",
+    "hypothesis[numpy,pandas,pytest]>=6.151.3",
     "psutil>=7.2.1",
     "pygal>=3.1.0",
     "pytest-benchmark[histogram]>=5.2.3",
@@ -106,9 +106,9 @@ tests = [
 ]
 typing = [
     "mypy>=1.19.1",
-    "pyrefly>=0.49.0",
+    "pyrefly>=0.50.0",
     "pyright>=1.1.408",
-    "scipy-stubs>=1.17.0.1",
+    "scipy-stubs>=1.17.0.2",
     "types-colorama>=0.4.15.20250801",
     "types-decorator>=5.2.0.20251101",
     "types-docutils>=0.22.3.20251115",
@@ -120,7 +120,7 @@ typing = [
     "types-pytz>=2025.2.0.20251108",
     "types-pyyaml>=6.0.12.20250915",
     "types-requests>=2.32.4.20260107",
-    "types-setuptools>=80.9.0.20251223",
+    "types-setuptools>=80.10.0.20260124",
     "types-six>=1.17.0.20251009",
     "types-tabulate>=0.9.0.20241207",
     "types-tqdm>=4.67.0.20250809",
@@ -128,6 +128,10 @@ typing = [
     "typing-extensions>=4.15.0",
 ]
 # endregion development dependencies ---------------------------------------------------
+
+[tool.tach]
+forbid_circular_dependencies=true
+exact=true
 
 
 # region ruff configuration ------------------------------------------------------------
@@ -333,54 +337,6 @@ replace_imports_with_any = [
     "pytest_benchmark.*",
     "sklearn.*",
 ]
-
-
-# region pylint configuration ----------------------------------------------------------
-[tool.pylint]
-[tool.pylint."MESSAGES CONTROL"]
-enable = ["useless-suppression"]
-disable = [
-    "C0103",  # invalid-name  # Ridiculous...
-    "C0144",  # non-ascii-name
-    "C0204",  # bad-mcs-classmethod-argument
-    "C0301",  # line-too-long
-    # "E0611",  # no-name-in-module
-    "E1101",  # no-member  # FIXME: too many false positives
-    "E1102",  # not-callable  # FIXME: too many false positives (torch)
-    "E1121",  # too-many-function-args  # FIXME: too many false positives
-    "E1123",  # unexpected-keyword-arg  # FIXME: too many false positives
-    "E1130",  # invalid-unary-operand-type
-    "E1139",  # invalid-metaclass  # FIXME: too many false positives
-    "R0801",  # similar lines
-    "R0902",  # too-many-instance-attributes
-    "R0903",  # too-few-public-methods
-    "R0911",  # too-many-return-statements
-    "R0913",  # too-many-arguments
-    "R0914",  # too-many-locals
-    "R0915",  # too-many-statements
-    # "W0221",  # arguments-differ
-    # "W0511",  # (fixme) (todos)
-    "W1113",  # keyword-arg-before-vararg
-    "W2301",  # unnecessary-ellipsis
-]
-fail-on = [
-    "C0116",  # missing-function-docstring
-]
-fail-under = 9.0
-
-[tool.pylint.REPORTS]
-# Set the output format. Available formats are text, parseable, colorized, JSON and
-# msvs (Visual Studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
-output-format = "colorized"
-
-[tool.pylint.FORMAT]
-max-line-length = 120
-
-[tool.pylint.TYPECHECK]
-# List of members which are set dynamically and missed by pylint inference system, and so shouldn't
-# trigger E1101 when accessed. Python regular expressions are accepted.
-generated-members = ["numpy.*", "torch.*"]
-# endregion pylint configuration -------------------------------------------------------
 
 
 # region mypy configuration ------------------------------------------------------------

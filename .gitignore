@@ -5,6 +5,7 @@ _*/
 .*/
 !.idea/
 !.vscode/
+!.github/
 
 # zip files
 *.zip

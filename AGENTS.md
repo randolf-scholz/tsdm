@@ -6,52 +6,45 @@ This file describes project conventions for automated agents contributing to `ts
 
 - **Language**: Python
 - **Packaging**: `pyproject\.toml` (PEP 621)
-- **Target runtime**: Python `>=3.14`, `<3.15`
+- **Target runtime**: Python `>=3.14`, `<3.15` on Linux
 
-## Python compatibility
+## Code Style
 
-- Use the most recent Python version: **3.14**.
-- Prefer Python 3.14 standard library features over third-party backports.
+- Prefer `match` statements over long `if-elif-else` when applicable.
+- avoid deeply nested if-else blocks
+- Use f-strings for string formatting.
+- Prefer `list`/`dict`/`set` comprehensions over `for` loops and `map`/`filter` constructs.
+- Use context managers (`with` statements) for resource management (e.g., file handling, database connections).
 
 ## Type hinting policy
 
 ### Annotation style
 
-- Type annotations are checked with `mypy` and `pyright`, with preference to `pyright` behavior in case of conflicts.
-- Use Python 3.12+ annotation syntax (PEP 695) where applicable:
-  - Prefer `type Alias = ...` over `Alias: TypeAlias = ...`.
-  - Prefer generic functions/classes using PEP 695 syntax when it improves clarity.
-- Prefer builtin generics: `list[int]`, `dict[str, int]`, etc. instead of `List[int]`, `Dict[...]`, etc.
-- Prefer `collections.abc` protocols over `typing` names when applicable.
-- Prefer **general** input types for function parameters:
-  Use `Iterable[T]`/`Sequence[T]`/`Mapping[K, V]` instead of `list[T]`/`dict[K, V]`
-  unless mutability or specific operations are required.
-- Prefer precise return types:
-  - Avoid returning `Union` types by default.
-    - Exception 1: returning `Optional[T]` is acceptable when `None` is a valid return value.
-    - Exception 2: `@overload` implementations may return unions internally,
-      but exported (public) function signatures should be as specific as possible.
+- Type annotations are checked with `pyright` and `mypy`.
+- Use Python 3.12+ annotation syntax:
+  - Use `type Alias = ...` instead of `Alias: TypeAlias = ...`.
+  - Use `collections.abc` members instead of `typing` equivalents (`Iterable`, `Sequence`, `Mapping`, etc.)
+  - Use builtin generics: `list[int]`, `dict[str, int]`, etc. instead of `List[int]`, `Dict[...]`, etc.
+  - Use `T | U` instead of `Union[T, U]` (exceptions apply to `Optional[T]`)
+- Use `Optional[T]` for optional keyword parameters that can be `None`, and for return types that may be `None`.
+  In other cases, use `T | None`.
+- Prefer loose types for function parameters:
+  - If a function argument expects a list-like input, prefer `Sequence[T]` over `list[T]`.
+  - If a function argument expects a dict-like input, prefer `Mapping[K, V]` over `dict[K, V]`.
+  - If a function argument expects a set-like input, prefer `AbstractSet[T]` over `set[T]`.
+  - Use `MutableSequence[T]`/`MutableMapping[K, V]`/`MutableSet[T]` only when mutation is required.
+- Prefer precise types for return values:
+  - If a function returns a list, use `list[T]` instead of `Sequence[T]`.
+  - Avoid returning `Union` type, except for `Optional[T]` and `@overload` implementations.
   - Abstract base classes should return general types (e.g., `Sequence[T]`),
     while concrete implementations should return specific types (e.g., `list[T]`).
 
-### Optional and `None`
-
-- For function parameters: Use `Optional[T]` for optional keyword parameters when they can be `None`, and `T | None` otherwise.
-- For return types: Prefer `Optional[T]` over `T | None` when the return value may be `None`.
-- Never use implicit optional types (like `x: int = None`).
-
-### Generics and invariance
-
-- Use `Sequence[T]` for read-only containers and `MutableSequence[T]` only when mutation is required.
-- Use `Mapping[K, V]` for read-only dict-like inputs and `MutableMapping[K, V]` only when mutation is required.
-- Be mindful of variance: choose the widest safe abstraction for parameters.
-
 ## Function signatures
 
-- Prefer at most `2` `POSITIONAL_OR_KEYWORD` parameters in public functions/methods.
-  - Additional parameters should generally be `KEYWORD_ONLY\` (use `*`).
-- If a parameter name is not semantically meaningful (i.e. the name is arbitrary and callers should not rely on it), make it `POSITION_ONLY\` (use `/`).
-- Prefer stable, descriptive keyword names for public APIs; use positional-only primarily for protocol/duck-typed parameters or to preserve API flexibility.
+- If a parameter name is not semantically meaningful prefer `POSITION_ONLY` parameters (use `/`).
+- Avoid `POSITIONAL_OR_KEYWORD` parameters for the most part. Limit their use to at most `2` parameters per function.
+- If a function expects `*args`, then no `POSITIONAL_OR_KEYWORD` arguments are allowed.
+- Additional parameters should generally be `KEYWORD_ONLY` (use `*`).
 
 ## Formatting and linting
 
