@@ -19,9 +19,9 @@ from tsdm.types.scalars import DurationScalar, TimestampScalar
 from tsdm.utils import timedelta, timestamp
 
 
-def sample_timestamps[DT: TimestampScalar[DurationScalar]](
-    start: str | DT = "today",
-    final: Optional[DT] = None,
+def sample_timestamps[TimeT: TimestampScalar[DurationScalar]](
+    start: str | TimeT = "today",
+    final: Optional[TimeT] = None,
     /,
     *,
     size: int,
