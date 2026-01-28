@@ -110,7 +110,7 @@ class Electricity(DatasetBase[Literal["timeseries"], DataFrame]):
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
         rawdata_path = self.rawdata_paths["electricityloaddiagrams20112014.zip"]
         dtypes = defaultdict(lambda: "float32[pyarrow]")
-        dtypes[""] = "datetime64[s]"
+        dtypes[""] = "timestamp[ms][pyarrow]"
         with (
             ZipFile(rawdata_path) as archive,
             archive.open("LD2011_2014.txt") as file,
