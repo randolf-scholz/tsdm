@@ -323,8 +323,8 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
     rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
-        "static_covariates",
         "timeseries_metadata",
+        "static_covariates",
         "static_covariates_metadata",
         "raw_timeseries",
         "raw_metadata",
@@ -391,17 +391,24 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
         "timeseries_metadata": TIMESERIES_METADATA["schema"],
         "static_covariates_metadata": STATIC_COVARIATES_METADATA["schema"],
     }  # fmt: skip
+    table_shapes = {
+        "timeseries"                : (898007, 37),
+        "timeseries_metadata"       :      (37, 6),
+        "static_covariates"         :   (12000, 5),
+        "static_covariates_metadata":       (5, 7),
+    }  # fmt: skip
 
     def _clean_single_rawdataset(self, fname: str, /) -> tuple[DataFrame, DataFrame]:
+        id_list: list[int] = []
+        md_list: list[DataFrame] = []
+        ts_list: list[DataFrame] = []
+
         with (
             tarfile.open(self.rawdata_paths[fname], "r") as archive,
-            tqdm(archive.getmembers()) as progress_bar,
+            tqdm(
+                archive.getmembers(), desc=f"Parsing patient data from {fname}"
+            ) as progress_bar,
         ):
-            progress_bar.set_description(f"Loading patient data from {fname}")
-            id_list = []
-            md_list = []
-            ts_list = []
-
             for member in progress_bar:
                 if not member.isfile():
                     continue
@@ -410,38 +417,43 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
                 progress_bar.set_postfix(record_id=record_id)
                 archive_item = archive.extractfile(member)
                 assert archive_item is not None
+
                 with archive_item as file:
+                    # Time, Parameter, Value
+                    # 00:00, RecordID, NUM
+                    # <actual measurements> ...
                     df = pd.read_csv(
                         file,
                         dtype=self.rawdata_schema,
                         dtype_backend="pyarrow",
                     )
-                    if record_id != int(df.iloc[0, -1]):
-                        raise ValueError("RecordID mismatch!")
+                if record_id != int(df.iloc[0, -1]):
+                    raise ValueError("RecordID mismatch!")
 
-                    df = df.iloc[1:]
+                # drop first row (redundant RecordID)
+                df = df.iloc[1:]
 
-                    # drop rows if Parameter is NaN
-                    df = df.dropna(subset=["Parameter"])
+                # drop rows if Parameter is NaN
+                df = df.dropna(subset=["Parameter"])
 
-                    # select static_covariates items
-                    md_mask = (df["Time"] == "00:00") & df["Parameter"].isin(
-                        self.table_schemas["static_covariates"]
-                    )
-                    # keep the first instance of each static_covariates item
-                    md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
-                    md_frame = df.loc[md_mask].drop(columns=["Time"])
-                    if len(md_frame) > 5:
-                        raise ValueError("Too many static_covariates items!")
+                # select static_covariates items
+                md_mask = (df["Time"] == "00:00") & df["Parameter"].isin(
+                    self.table_schemas["static_covariates"]
+                )
+                # keep the first instance of each static_covariates item
+                md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
+                md_frame = df.loc[md_mask].drop(columns=["Time"])
+                if len(md_frame) > 5:
+                    raise ValueError("Too many static_covariates items!")
 
-                    ts_frame = df.loc[~md_mask]  # remaining items
-                    if not all(
-                        ts_frame["Parameter"].isin(self.table_schemas["timeseries"])
-                    ):
-                        raise ValueError("Unknown parameter in timeseries data!")
-                    id_list.append(record_id)
-                    md_list.append(md_frame)
-                    ts_list.append(ts_frame)
+                ts_frame = df.loc[~md_mask]  # remaining items
+                if not all(
+                    ts_frame["Parameter"].isin(self.table_schemas["timeseries"])
+                ):
+                    raise ValueError("Unknown parameter in timeseries data!")
+                id_list.append(record_id)
+                md_list.append(md_frame)
+                ts_list.append(ts_frame)
 
         record_ids = pd.Series(id_list, name="RecordID")
 
