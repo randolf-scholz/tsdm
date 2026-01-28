@@ -44,7 +44,9 @@ class DampedPendulum_Ansari2023(DatasetBase[TS_Keys, DataFrame]):
 
     rawdata_files = []
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
-
+    table_hashes = {
+        "timeseries": "sha256:c2a276a84a3c82b70599b206046644a2dd208a678fd81532517db2ffdfdf76f6",
+    }
     num_sequences = 7000
     step = 0.1
     t_min = 0.0
