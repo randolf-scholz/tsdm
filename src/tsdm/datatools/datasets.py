@@ -28,7 +28,7 @@ from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checka
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex
 
-from tsdm.types.arrays import ArrayLike
+from tsdm.types.arrays import ArrayType
 from tsdm.types.mixins import SupportsGetItem, SupportsSlicing
 from tsdm.utils.decorators import pprint_repr
 
@@ -131,7 +131,7 @@ class PandasDataset[K, V](Protocol):  # K, +V
     """
 
     @property
-    def index(self) -> ArrayLike[K]: ...
+    def index(self) -> ArrayType[K]: ...
     @property
     def loc(self) -> SupportsGetItem[K, V]: ...
     @property

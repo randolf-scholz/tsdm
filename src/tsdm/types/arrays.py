@@ -53,9 +53,9 @@ Warning:
 """  # noqa: E501, W505
 
 __all__ = [
-    "ArrayLike",
-    "SeriesLike",
-    "TableLike",
+    "ArrayType",
+    "SeriesType",
+    "TableType",
 ]
 
 from collections.abc import Iterator
@@ -66,8 +66,8 @@ from numpy.typing import NDArray
 
 
 @runtime_checkable
-class ArrayLike[V](Protocol):
-    r"""An n-dimensional array of a single homogeneous data type.
+class ArrayType[V](Protocol):
+    r"""An n-dimensional container type convertible to a numpy array.
 
     Examples:
         - `numpy.ndarray`
@@ -79,9 +79,6 @@ class ArrayLike[V](Protocol):
         - `pyarrow.Array`
         - `pyarrow.Table`
         - `torch.Tensor`
-
-    Note:
-        `pyarrow` does not support element-wise comparisons.
 
     References:
         - https://docs.python.org/3/c-api/buffer.html
@@ -96,7 +93,7 @@ class ArrayLike[V](Protocol):
 
 
 @runtime_checkable
-class SeriesLike[V](Protocol):
+class SeriesType[V](Protocol):
     r"""A 1d-array of homogeneous data type.
 
     Examples:
@@ -137,7 +134,7 @@ class SeriesLike[V](Protocol):
 
 
 @runtime_checkable
-class TableLike(Protocol):
+class TableType(Protocol):
     r"""A 2d column-oriented array with heterogenous data types.
 
     That it, it is a column-oriented 2d tensor which allows heterogenous data types.
@@ -179,7 +176,7 @@ class TableLike(Protocol):
     def __array__(self) -> NDArray[np.object_]: ...
     def __dataframe__(self, *, allow_copy: bool = True) -> object: ...
     def __len__(self) -> int: ...
-    def __getitem__(self, key: str, /) -> SeriesLike: ...  # yields a column
+    def __getitem__(self, key: str, /) -> SeriesType: ...  # yields a column
 
     def equals(self, other: Self, /) -> bool:
         r"""Check if the table is equal to another table."""
