@@ -57,7 +57,7 @@ __all__ = [
     "MIMIC_IV_RAW",
     "MIMIC_IV",
     # Constants
-    "KEYS",
+    "MIMIC_IV_Key",
     "SCHEMAS",
     "TRUE_VALUES",
     "FALSE_VALUES",
@@ -102,7 +102,7 @@ from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import strip_whitespace
 from tsdm.utils import remote
 
-type KEYS = Literal[
+type MIMIC_IV_Key = Literal[
     # "CHANGELOG",
     # "LICENSE",
     # "SHA256SUMS",
@@ -219,7 +219,7 @@ NULL_VALUES = [
     # "NONE",
 ]
 
-SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
+SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
     # NOTE: /HOSP/ tables
     "admissions": {
         "subject_id"           : ID_TYPE,
@@ -629,7 +629,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
 }  # fmt: skip
 
 
-UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
+UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
     "omr": {
         "subject_id"                                   : ID_TYPE,
         "seq_num"                                      : ID_TYPE,
@@ -674,7 +674,7 @@ UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
 # endregion schema ---------------------------------------------------------------------
 
 
-class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
+class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
     r"""Raw version of the MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -688,6 +688,53 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
     and improves on numerous aspects of MIMIC-III. MIMIC-IV adopts a modular approach to data organization,
     highlighting data provenance and facilitating both individual and combined use of disparate data sources.
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
+
+
+    ## CHANGELOG
+    ## v3.1 (Oct 2024)
+
+    Tables changes (data-only):
+    `d_labitems`, `diagnoses_icd`, `drgcodes`, `labevents`, `microbiologyevents`, `omr`,
+    `transfers`, `icustays`.
+
+    ## v3.0 (Jul 23, 2024)
+
+    Tables modified (data-only): `patients`, `admissions`, `icustays`.
+
+    ## v2.2 (Jan 2023)
+
+    Tables added: `caregiver`, `provider`.
+
+    Tables modified:
+    - `chartevents`, `datetimeevents`, `ingredientevents`, `inputevents`, `outputevents`,
+      `procedureevents` (columns added: `caregiver_id`).
+    - `admissions` (columns added: `admit_provider_id`).
+    - `emar` (columns added: `enter_provider_id`).
+    - `labevents`, `microbiologyevents`, `poe`, `prescriptions` (columns added: `order_provider_id`).
+
+    ## v2.1 (Nov 16, 2022)
+
+    Tables modified:
+    - `patients`, `admissions`, `transfers`, `icustays` (removed some subject-ids)
+
+    ## v2.0 (Jun 12, 2022)
+
+    Tables added: `ingredientevents`, `omr`.
+
+    Tables modified:
+    - `admissions`, `patients`, `transfers` (schema change: moved from `core` module to `hosp` module).
+    - `inputevents` (columns deleted: `cancelreason`).
+    - `procedureevents` (columns deleted: `totalamount`, `totalamountuom`, `cancelreason`,
+      `comments_editedby`, `comments_canceledby`, `comments_date`, `secondaryordercategoryname`).
+    - `d_labitems` (columns deleted: `loinc_code`).
+    - `prescriptions` (columns added: `formulary_drug_cd`).
+
+    ## v1.0 (Mar 16, 2021)
+
+    Tables modified:
+    - `hcpcsevents` (columns added: `chartdate`).
+    - `procedures_icd` (columns added: `chartdate`; columns modified/type: `icd_code` stored as `VARCHAR` (trimmed)).
+    - `diagnoses_icd` (columns modified/type: `icd_code` stored as `VARCHAR` (trimmed)).
     """
 
     SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip"
@@ -704,23 +751,23 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
     __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @property
-    def table_names(self) -> list[KEYS]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def rawdata_files(self) -> list[str]:  # pyright: ignore[reportIncompatibleVariableOverride]
+        return [f"mimic-iv-{self.__version__}.zip"]
+
+    @property
+    def table_names(self) -> list[MIMIC_IV_Key]:  # pyright: ignore[reportIncompatibleVariableOverride]
         expected_names = list(self.filelist)
-        type_hinted_names = get_args(KEYS.__value__)
+        type_hinted_names = get_args(MIMIC_IV_Key.__value__)
         if unknown_names := set(expected_names) - set(type_hinted_names):
             raise ValueError(f"Unexpected table names: {unknown_names!r}")
         return expected_names
 
-    @property
-    def rawdata_files(self) -> list[str]:  # pyright: ignore[reportIncompatibleVariableOverride]
-        return [f"mimic-iv-{self.__version__}.zip"]
-
     @cached_property
-    def filelist(self) -> dict[KEYS, str]:
+    def filelist(self) -> dict[MIMIC_IV_Key, str]:
         r"""Mapping between table_names and contents of the zip file."""
         top = f"mimic-iv-{self.__version__}"
 
-        files: dict[KEYS, str] = {
+        files: dict[MIMIC_IV_Key, str] = {
             # "CHANGELOG"          : f"{top}/CHANGELOG.txt",
             # "LICENSE"            : f"{top}/LICENSE.txt",
             # "SHA256SUMS"         : f"{top}/SHA256SUMS.txt",
@@ -767,7 +814,6 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
                 "transfers"        : f"{top}/hosp/transfers.csv.gz",        # NOTE: changed folder
                 "ingredientevents" : f"{top}/icu/ingredientevents.csv.gz",  # NOTE: new table
                 "omr"              : f"{top}/hosp/omr.csv.gz",
-                # NOTE: new table
             }  # fmt: skip
 
         if self.version_info >= (2, 2):
@@ -778,7 +824,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
 
         return files
 
-    def clean_table(self, key: KEYS) -> pa.Table:
+    def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
         with (
             ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
             archive.open(self.filelist[key], "r") as compressed_file,
@@ -801,7 +847,7 @@ class MIMIC_IV_RAW(DatasetBase[KEYS, pa.Table]):
         return table.combine_chunks()  # <- reduces size and avoids some bugs
 
     def download_file(self, fname: str, /) -> None:
-        if self.version_info in {(1, 0), (2, 2)}:
+        if self.version_info in {(1, 0), (2, 1), (2, 2)}:
             # direct zip available
             remote.download(
                 f"{self.SOURCE_URL}/{self.__version__}/",
@@ -846,8 +892,6 @@ class MIMIC_IV(MIMIC_IV_RAW):
         - unstack on value/valueuom, convert to new column "procedure_duration"
     """
 
-    RAWDATA_DIR = MIMIC_IV_RAW.RAWDATA_DIR
-
     dataset_shapes = {
         "admissions"         : (  431231, 16),
         "d_hcpcs"            : (   89200,  4),
@@ -882,7 +926,12 @@ class MIMIC_IV(MIMIC_IV_RAW):
         "procedureevents"    : (  696092, 21),
     }  # fmt: skip
 
-    def clean_table(self, key: KEYS) -> pa.Table:
+    def __post_init__(self) -> None:
+        # reuse the same data as the raw dataset
+        self.RAWDATA_DIR = MIMIC_IV_RAW.ROOT_DIR / self.__version__ / "rawdata"
+        super().__post_init__()
+
+    def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
         table: pa.Table = super().clean_table(key)
 
         # drop data with missing `hadm_id`.
@@ -1039,6 +1088,6 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 )
                 table = table.drop_columns(["value", "valueuom"])
             case _:
-                raise ValueError(f"Unknown table name: {key}")
+                raise KeyError(f"Unknown table name: {key}")
 
         return table

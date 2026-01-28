@@ -15,22 +15,21 @@ highlighting data provenance and facilitating both individual and combined use o
 MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
 """
 
-__all__ = ["MIMIC_IV_Bilos2021"]
+__all__ = ["MIMIC_III_Bilos2021"]
 
 
 import os
 import subprocess
 from getpass import getpass
+from typing import Literal
 
-import numpy as np
+import pandas as pd
 from pandas import DataFrame
-from pyarrow import Table, csv
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.aliases import TS
 
 
-class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
+class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -46,74 +45,62 @@ class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL = r"https://physionet.org/content/mimiciv/1.0/"
+    SOURCE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
+    INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
     table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
-    rawdata_files = ["full_dataset.csv"]
+    rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
-        "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
+        "complete_tensor.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
     }
     rawdata_schemas = {
-        "full_dataset.csv": {
-            "hadm_id": "int32[pyarrow]",
-            "time_stamp": "int16[pyarrow]",
+        "complete_tensor.csv": {
+            "UNIQUE_ID"  : "int16",
+            "TIME_STAMP" : "int16",
+            "LABEL_CODE" : "int16",
+            "VALUENORM"  : "float32",
+            "MEAN"       : "float32",
+            "STD"        : "float32",
         }
-    }
+    }  # fmt: skip
 
-    rawdata_shape = (2485649, 206)
-    table_hashes = {
-        "timeseries": "pandas:-5464950709022187442",
-    }
-    table_shapes = {
-        "timeseries": (2485649, 102),
-    }
+    rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
+    table_hashes = {"timeseries": "pandas:-5464950709022187442"}
+    table_shapes = {"timeseries": (552327, 96)}
 
     def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
-        table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
+        ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
 
-        if table.shape != self.rawdata_shape:
-            raise ValueError(f"{table.shape=} does not match {self.rawdata_shape=}.")
+        # Check shape.
+        if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
+            raise ValueError(
+                f"The {ts.shape=} is not correct.Please apply the modified"
+                " preprocessing using bin_k=2, as outlined inthe appendix. The"
+                " resulting tensor should have 3082224 rows and 7 columns."
+            )
 
-        # Convert to pandas.
-        ts = (
-            table
-            .to_pandas(self_destruct=True)
-            .astype(self.rawdata_schemas["full_dataset.csv"])
-            .set_index(["hadm_id", "time_stamp"])
-            .sort_index()
-        )
-
-        # Remove mask columns, replace values with nan.
-        # Original labels: Value_label_k, Mask_label_k for k in 0, ..., 99.
-        for i, col in enumerate(ts):
-            if i % 2 == 1:
-                continue
-            if ts.columns[i + 1] != col.replace("Value", "Mask"):
-                raise ValueError("Mask column not found.")
-            ts[col] = np.where(ts.iloc[:, i + 1], ts[col], np.nan)
-
-        # Drop mask columns.
+        # Extract Original Data Table.
         ts = (
             ts
-            .drop(columns=ts.columns[1::2])
-            .dropna(how="all")
+            .astype(self.rawdata_schemas["complete_tensor.csv"])
+            .loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
+            .reset_index(drop=True)
+            .set_index(["UNIQUE_ID", "TIME_STAMP"])
+            .pivot(columns="LABEL_CODE", values="VALUENUM")
             .astype("float32")
-            .sort_index(axis="columns")
+            .sort_index()
+            .sort_index(axis=1)
         )
+        ts.columns = ts.columns.astype("string")
 
         # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
         #  over the full data slice, including test!
         # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
         ts = (ts - ts.mean()) / ts.std()
 
-        # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
-        ts = ts[(ts > -5) & (ts < 5)].dropna(axis=1, how="all").copy()
-
-        # NOTE: only numpy float types supported by torch
         return ts.astype("float32")
 
     def download_file(self, fname: str, /) -> None:
@@ -128,8 +115,8 @@ class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
 
         path = self.rawdata_paths[fname]
         cut_dirs = self.SOURCE_URL.count("/") - 3
-        user = input("MIMIC-IV username: ")
-        password = getpass(prompt="MIMIC-IV password: ", stream=None)
+        user = input("MIMIC-III username: ")
+        password = getpass(prompt="MIMIC-III password: ", stream=None)
         os.environ["PASSWORD"] = password
         subprocess.run(
             [
@@ -148,6 +135,5 @@ class MIMIC_IV_Bilos2021(DatasetBase[TS, DataFrame]):
             ],
             check=True,
         )  # fmt: skip
-
         file = self.RAWDATA_DIR / "index.html"
         file.rename(fname)

@@ -5,12 +5,16 @@ r"""Base Classes for dataset."""
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any) -> None
 
 __all__ = [
+    # Constants
+    "VERSION_REGEX",
     # ABCs & Protocols
     "Dataset",
     "DatasetBase",
     "DatasetMeta",
+    # Functions
+    "check_version_format",
+    "parse_version",
 ]
-import inspect
 import logging
 import re
 import shutil
@@ -101,22 +105,16 @@ class DatasetMeta(ProtocolMeta):
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__qualname__}")
+        assert isinstance(cls.LOGGER, logging.Logger)
 
-        if "RAWDATA_DIR" not in namespace:
-            cls.RAWDATA_DIR = (
-                CONFIG.DATASET_DIR / cls.__name__ / CONFIG.DATASET_KEYS.RAWDATA
-            )
+        if "ID" not in namespace:
+            cls.ID: str = cls.__qualname__
+        assert isinstance(cls.ID, str)
 
-        if "STORAGE_DIR" not in namespace:
-            cls.STORAGE_DIR = (
-                CONFIG.DATASET_DIR / cls.__name__ / CONFIG.DATASET_KEYS.STORAGE
-            )
-
-        if "METADATA_DIR" not in namespace:
-            cls.METADATA_DIR = (
-                CONFIG.DATASET_DIR / cls.__name__ / CONFIG.DATASET_KEYS.METADATA
-            )
+        if "ROOT_DIR" not in namespace:
+            cls.ROOT_DIR: Path = CONFIG.DATASET_DIR / cls.ID
+        assert isinstance(cls.ROOT_DIR, Path)
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: N805
         r"""When an instance of the class is created, this method is called."""
@@ -151,15 +149,13 @@ class DatasetBase[Key: str, T](
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL: ClassVar[Optional[str]] = None
     r"""HTTP address containing additional information about the dataset."""
-    RAWDATA_DIR: ClassVar[Path]
-    r"""Location where the raw data is stored."""
-    STORAGE_DIR: ClassVar[Path]
-    r"""Location where the processed data is stored."""
-    METADATA_DIR: ClassVar[Path]
-    r"""Location where the metadata is stored."""
+    ID: ClassVar[str]  # typically the class name
+    r"""READ_ONLY: Unique identifier for the dataset."""
+    ROOT_DIR: ClassVar[Path]  # on class:  ~/.tsdm/datasets/<name>/
+    r"""Location where the dataset is stored."""
     # endregion class attributes -------------------------------------------------------
 
-    # region abstract readable members -------------------------------------------------
+    # region abstract members ----------------------------------------------------------
     @property
     @abstractmethod
     def rawdata_files(self) -> Collection[str]: ...  # pyright: ignore[reportRedeclaration]
@@ -168,15 +164,26 @@ class DatasetBase[Key: str, T](
     def table_names(self) -> Collection[Key]: ...  # pyright: ignore[reportRedeclaration]
 
     rawdata_files: Collection[str]  # type: ignore[no-redef]
-    r"""READ-ONLY: The names of the raw data files that make up the dataset."""
+    r"""READ_ONLY: The names of the raw data files that make up the dataset."""
     table_names: Collection[Key]  # type: ignore[no-redef]  # pyright: ignore[reportIncompatibleMethodOverride]
-    r"""READ-ONLY: The names of the tables that make up the dataset."""
-    # endregion abstract readable members  ---------------------------------------------
+    r"""READ_ONLY: The names of the tables that make up the dataset."""
+    # endregion abstract members  ------------------------------------------------------
+
+    # region derived members -----------------------------------------------------------
+    STORAGE_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/
+    r"""READ_ONLY: Location where the dataset version is stored."""
+    RAWDATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/raw
+    r"""READ_ONLY: Location where the raw data is stored."""
+    DATASET_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/processed
+    r"""READ_ONLY:Location where the processed data is stored."""
+    METADATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/meta
+    r"""READ_ONLY:Location where the metadata is stored."""
+    # endregion derived members --------------------------------------------------------
 
     # region instance attributes -------------------------------------------------------
     # TODO: Use typing.ReadOnly (https://peps.python.org/pep-0767/)
-    __version__: str = "latest"
-    r"""READ-ONLY: The version of the dataset."""
+    __version__: str | None = None
+    r"""READ-ONLY: The version of the dataset (None=unversioned)."""
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
@@ -197,13 +204,6 @@ class DatasetBase[Key: str, T](
     table_shapes: Mapping[_Key, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
-
-    @classmethod
-    def info(cls) -> None:
-        r"""Open dataset information in browser."""
-        if cls.INFO_URL is None:
-            raise NotImplementedError("No INFO_URL provided for this dataset!")
-        webbrowser.open_new_tab(cls.INFO_URL)
 
     @cached_property
     def tables(self) -> LazyDict[Key, T]:  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -227,12 +227,44 @@ class DatasetBase[Key: str, T](
         # check for superfluous keys
         if superfluous_keys := tables.keys() - obj.keys():
             warnings.warn(
-                f"Keys {superfluous_keys} are not valid keys for {cls.__name__}!"
+                f"Keys {superfluous_keys} are not valid keys for {cls.ID}!"
                 f" They will not be added to the dataset.",
                 RuntimeWarning,
                 stacklevel=2,
             )
         return obj
+
+    @classmethod
+    def get_storage_paths(cls, version: str | None, /) -> dict[str, Path]:
+        r"""Get the storage paths for the given version."""
+        version = cls.check_version(version)
+        root_dir = cls.ROOT_DIR / (version or "")
+        return {
+            CONFIG.DATASET_PATHS.ROOT: root_dir,
+            CONFIG.DATASET_PATHS.RAWDATA: root_dir / CONFIG.DATASET_PATHS.RAWDATA,
+            CONFIG.DATASET_PATHS.PROCESSED: root_dir / CONFIG.DATASET_PATHS.PROCESSED,
+            CONFIG.DATASET_PATHS.METADATA: root_dir / CONFIG.DATASET_PATHS.METADATA,
+        }
+
+    @classmethod
+    def check_version(cls, version: str | None, /) -> str | None:
+        r"""Get the version of the dataset."""
+        if version is None:
+            return cls.__version__
+
+        version = str(version)
+        check_version_format(version)
+        return version
+
+    def set_storage_paths(self, version: str | None, /) -> None:
+        r"""Set the storage paths for the given version."""
+        storage_paths = self.get_storage_paths(version)
+        self.ROOT_DIR = storage_paths[CONFIG.DATASET_PATHS.ROOT]  # type: ignore[misc]
+        self.RAWDATA_DIR = storage_paths[CONFIG.DATASET_PATHS.RAWDATA]
+        self.DATASET_DIR = storage_paths[CONFIG.DATASET_PATHS.PROCESSED]
+        self.METADATA_DIR = storage_paths[CONFIG.DATASET_PATHS.METADATA]
+        for path in storage_paths.values():
+            path.mkdir(parents=True, exist_ok=True)
 
     def __init__(
         self,
@@ -250,20 +282,8 @@ class DatasetBase[Key: str, T](
         """
         self.verbose = verbose
         self.initialize = initialize
-
-        if version is not None:
-            assert version
-            self.__version__ = str(version)
-
-        # update the paths
-        self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
-        self.STORAGE_DIR /= self.__version__  # type: ignore[misc]
-        self.METADATA_DIR /= self.__version__  # type: ignore[misc]
-
-        if not inspect.isabstract(self):
-            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-            self.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
-            self.METADATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.__version__ = self.check_version(version)
+        self.set_storage_paths(version)
 
     def __post_init__(self) -> None:
         r"""Initialize the dataset."""
@@ -276,38 +296,14 @@ class DatasetBase[Key: str, T](
 
     # endregion constructors -----------------------------------------------------------
 
-    # region serialization methods -----------------------------------------------------
-    serialize_table = staticmethod(serialize.serialize_table)
-    deserialize_table = staticmethod(serialize.deserialize_table)
-
+    # region classmethods --------------------------------------------------------------
     @classmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self:
-        r"""Deserialize the dataset."""
-        tables: dict[Key, T] = {}
-        with ZipFile(filepath) as archive:
-            for fname in archive.namelist():
-                with archive.open(fname) as file:
-                    name = cast("Key", Path(fname).stem)
-                    extension = Path(fname).suffix[1:]
-                    tables[name] = cls.deserialize_table(file, loader=extension)
+    def info(cls) -> None:
+        r"""Open dataset information in browser."""
+        if cls.INFO_URL is None:
+            raise NotImplementedError("No INFO_URL provided for this dataset!")
+        webbrowser.open_new_tab(cls.INFO_URL)
 
-        return cls.from_tables(tables)
-
-    def serialize(self, filepath: FilePath, /) -> None:
-        r"""Serialize the dataset."""
-        path = Path(filepath)
-        if path.suffix != ".zip":
-            raise ValueError("Path must be a zip file if serializing whole dataset.")
-        with ZipFile(path, "w") as archive:
-            extension = self.DEFAULT_FILE_FORMAT
-            for name, table in self.items():
-                fname = f"{name}.{extension}"
-                with archive.open(fname, "w") as file:
-                    self.serialize_table(table, file, writer=extension)
-
-    # endregion serialization methods --------------------------------------------------
-
-    # region reset methods -------------------------------------------------------------
     @classmethod
     def reset(cls, *, version: Optional[str] = None, force: bool = False) -> None:
         r"""Reset the data folders."""
@@ -342,7 +338,7 @@ class DatasetBase[Key: str, T](
         cls, *, version: Optional[str] = None, force: bool = False
     ) -> None:
         r"""Recreate the dataset directory."""
-        dataset_dir = cls.STORAGE_DIR / (version or "")
+        dataset_dir = cls.DATASET_DIR / (version or "")
 
         if not dataset_dir.exists():
             raise FileNotFoundError(f"{dataset_dir} does not exist!")
@@ -360,16 +356,44 @@ class DatasetBase[Key: str, T](
         # else do nothing
         cls.LOGGER.debug("Dataset files not deleted.")
 
-    # endregion reset methods ----------------------------------------------------------
+    # endregion classmethods -----------------------------------------------------------
+
+    # region serialization methods -----------------------------------------------------
+    serialize_table = staticmethod(serialize.serialize_table)
+    deserialize_table = staticmethod(serialize.deserialize_table)
+
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self:
+        r"""Deserialize the dataset."""
+        tables: dict[Key, T] = {}
+        with ZipFile(filepath) as archive:
+            for fname in archive.namelist():
+                with archive.open(fname) as file:
+                    name = cast("Key", Path(fname).stem)
+                    extension = Path(fname).suffix[1:]
+                    tables[name] = cls.deserialize_table(file, loader=extension)
+
+        return cls.from_tables(tables)
+
+    def serialize(self, filepath: FilePath, /) -> None:
+        r"""Serialize the dataset."""
+        path = Path(filepath)
+        if path.suffix != ".zip":
+            raise ValueError("Path must be a zip file if serializing whole dataset.")
+        with ZipFile(path, "w") as archive:
+            extension = self.DEFAULT_FILE_FORMAT
+            for name, table in self.items():
+                fname = f"{name}.{extension}"
+                with archive.open(fname, "w") as file:
+                    self.serialize_table(table, file, writer=extension)
+
+    # endregion serialization methods --------------------------------------------------
 
     # region properties ----------------------------------------------------------------
     @property
     def version_info(self) -> tuple[int, ...]:
         r"""Version information of the dataset."""
-        # match digits separated by dots, e.g. "1" or "1.2.3"
-        if not re.fullmatch(r"\d+(?:\.\d+)*", self.__version__):
-            return ()
-        return tuple(int(i) for i in self.__version__.split("."))
+        return parse_version(self.__version__)
 
     @cached_property
     def rawdata_paths(self) -> Mapping[str, Path]:
@@ -383,7 +407,7 @@ class DatasetBase[Key: str, T](
     def dataset_paths(self) -> dict[Key, Path]:
         r"""Absolute paths to the raw dataset file(s)."""
         return {
-            key: self.STORAGE_DIR / f"{key}.{self.DEFAULT_FILE_FORMAT}"
+            key: self.DATASET_DIR / f"{key}.{self.DEFAULT_FILE_FORMAT}"
             for key in self.table_names
         }
 
@@ -446,7 +470,7 @@ class DatasetBase[Key: str, T](
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
-            raise KeyError(f"Key {key} not in {self.__class__.__name__}!")
+            raise KeyError(f"Key {key} not a member of {self.ID}!")
         return self.tables[key]
 
     def __repr__(self) -> str:
@@ -455,7 +479,7 @@ class DatasetBase[Key: str, T](
 
     # endregion dunder methods ---------------------------------------------------------
 
-    # region download methods ----------------------------------------------------------
+    # region download mechanism --------------------------------------------------------
     def download_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file.
 
@@ -512,9 +536,9 @@ class DatasetBase[Key: str, T](
         if validate and self.rawdata_hashes is not EMPTY_MAP:
             self.validate_rawdata(key)
 
-    # endregion download methods -------------------------------------------------------
+    # endregion download mechanism -----------------------------------------------------
 
-    # region cleaning methods ----------------------------------------------------------
+    # region cleaning mechanism --------------------------------------------------------
     def clean_table(self, key: Key, /) -> Optional[T]:
         r"""Create the cleaned table for the given key.
 
@@ -605,9 +629,9 @@ class DatasetBase[Key: str, T](
         if validate and self.dataset_hashes is not EMPTY_MAP:
             self.validate_dataset(key)
 
-    # endregion cleaning methods -------------------------------------------------------
+    # endregion cleaning mechanism -----------------------------------------------------
 
-    # region loading methods -----------------------------------------------------------
+    # region loading mechanism ---------------------------------------------------------
     def load_table(self, key: Key, /) -> T:
         r"""Load the selected table.
 
@@ -689,12 +713,10 @@ class DatasetBase[Key: str, T](
 
         # Validate the loaded table.
         # FIXME: infinite recursion
-        # if validate and self.table_hashes is not NotImplemented:
-        # self.validate_tables(key)
 
         return table
 
-    # endregion loading methods --------------------------------------------------------
+    # endregion loading mechanism ------------------------------------------------------
 
     # region validation methods --------------------------------------------------------
     @cached_property
@@ -842,3 +864,24 @@ class DatasetBase[Key: str, T](
         return schema_matches and hash_matches
 
     # endregion validation methods -----------------------------------------------------
+
+
+VERSION_REGEX = r"\d+(?:\.\d+)*"
+r"""Regex for version strings."""
+
+
+def check_version_format(version: str | None, /) -> None:
+    r"""Check if version string is valid."""
+    if version is not None and not re.fullmatch(VERSION_REGEX, version):
+        raise ValueError(
+            f"Version {version!r} is not valid! "
+            "Version must be of the form 'X.Y.Z' or 'latest'."
+        )
+
+
+def parse_version(version: str | None, /) -> tuple[int, ...]:
+    r"""Parse version string into a tuple of integers."""
+    check_version_format(version)
+    if version is None:
+        return ()
+    return tuple(int(part) for part in version.split("."))

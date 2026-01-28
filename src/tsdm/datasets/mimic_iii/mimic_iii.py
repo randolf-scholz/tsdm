@@ -21,7 +21,7 @@ __all__ = [
     "MIMIC_III_RAW",
     "MIMIC_III",
     # Constants
-    "KEYS",
+    "MIMIC_III_Key",
     "SCHEMAS",
     "TRUE_VALUES",
     "FALSE_VALUES",
@@ -53,7 +53,7 @@ from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import strip_whitespace
 from tsdm.utils import remote
 
-type KEYS = Literal[
+type MIMIC_III_Key = Literal[
     "ADMISSIONS",
     "CALLOUT",
     "CAREGIVERS",
@@ -125,7 +125,7 @@ NULL_VALUES = [
     "___",
 ]
 
-SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
+SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
     "ADMISSIONS": {
         "ROW_ID"               : ID_TYPE,
         "SUBJECT_ID"           : ID_TYPE,
@@ -506,7 +506,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
 # endregion schema ---------------------------------------------------------------------
 
 
-class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
+class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
     r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -536,17 +536,21 @@ class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
     INFO_URL = r"https://physionet.org/content/mimiciii/"
     HOME_URL = r"https://mimic.mit.edu/"
 
-    table_names = list(get_args(KEYS.__value__))
+    table_names = list(get_args(MIMIC_III_Key.__value__))
     rawdata_hashes = {
         "mimic-iii-clinical-database-1.4.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
     }
+
+    def __post_init__(self) -> None:
+        assert self.__version__ == "1.4"
+        super().__post_init__()
 
     @property
     def rawdata_files(self) -> list[str]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
 
     @cached_property
-    def filelist(self) -> dict[KEYS, str]:
+    def filelist(self) -> dict[MIMIC_III_Key, str]:
         r"""Mapping between table_names and contents of the zip file."""
         if not self.version_info >= (1, 4):
             raise ValueError("MIMIC-III v1.4+ is required.")
@@ -556,7 +560,7 @@ class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
             for key in self.table_names
         }
 
-    def clean_table(self, key: KEYS) -> Table:
+    def clean_table(self, key: MIMIC_III_Key) -> Table:
         # Read the table
         with (
             ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
@@ -601,9 +605,9 @@ class MIMIC_III_RAW(DatasetBase[KEYS, DataFrame]):
 class MIMIC_III(MIMIC_III_RAW):
     r"""Lightly preprocessed version of the MIMIC-III dataset."""
 
-    RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
+    # RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
 
-    def clean_table(self, key: KEYS) -> Table:
+    def clean_table(self, key: MIMIC_III_Key) -> Table:
         table: Table = super().clean_table(key)
 
         # Post-processing

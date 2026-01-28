@@ -10,14 +10,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from tsdm.datasets.mimic.mimic_iii import MIMIC_III
+from tsdm.datasets.mimic_iii.mimic_iii import MIMIC_III
 from tsdm.dtypes import map_pandas_arrowtime_numpy
 
 
 class MIMIC_III_Scholz2024(MIMIC_III):
     r"""Custom processed version of the MIMIC-III dataset."""
-
-    RAWDATA_DIR = MIMIC_III.RAWDATA_DIR
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the dataset."""
