@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Hashable, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from typing import Any, ClassVar, Optional, Protocol, Self, overload
 
 
@@ -25,19 +25,22 @@ class Metadata(Protocol):
     r"""Labels associated with the dataset."""
 
 
-class TimeSeries[T](Protocol):
-    r"""Protocol for time series objects."""
+class TimeSeries[TableT, TimeT = Any](Protocol):
+    r"""Protocol for time series objects.
+
+    Describes a single time series implemented as a Table-like object, indexed by time.
+    """
 
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series."""
 
-    timeseries: T
+    timeseries: TableT
     r"""The time series data."""
-    timeseries_metadata: Optional[T]
+    timeseries_metadata: Optional[TableT]
     r"""Data associated with the time such as measurement device, unit, etc."""
-    static_covariates: Optional[T]
+    static_covariates: Optional[TableT]
     r"""The metadata of the dataset."""
-    static_covariates_metadata: Optional[T]
+    static_covariates_metadata: Optional[TableT]
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
     metadata: Optional[Metadata]
     r"""The metadata of the dataset."""
@@ -45,30 +48,30 @@ class TimeSeries[T](Protocol):
     @abstractmethod
     def __len__(self) -> int: ...
     @abstractmethod
-    def __iter__(self) -> Iterator: ...
+    def __iter__(self) -> Iterator[TimeT]: ...
     @abstractmethod
-    def __contains__(self, key: Hashable, /) -> bool: ...
+    def __contains__(self, key: TimeT, /) -> object: ...
     @abstractmethod
-    def __getitem__(self, key: Any, /) -> Self: ...
+    def __getitem__(self, key: TimeT, /) -> Self: ...
 
 
-class TimeSeriesCollection[Key, T](Protocol):
+class TimeSeriesCollection[TableT, KeyT = Any](Protocol):
     r"""Protocol for time series collection objects."""
 
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series collection."""
 
-    timeseries: T
+    timeseries: TableT
     r"""The collection of time series data."""
-    timeseries_metadata: Optional[T] = None
+    timeseries_metadata: Optional[TableT] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    static_covariates: Optional[T] = None
+    static_covariates: Optional[TableT] = None
     r"""The static covariates associated with each timeseries."""
-    static_covariates_metadata: Optional[T] = None
+    static_covariates_metadata: Optional[TableT] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    constants: Optional[T] = None
+    constants: Optional[TableT] = None
     r"""Additional data that is independent of the metaindex."""
-    constants_metadata: Optional[T] = None
+    constants_metadata: Optional[TableT] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
     metadata: Optional[Metadata]
     r"""The metadata of the dataset."""
@@ -76,12 +79,12 @@ class TimeSeriesCollection[Key, T](Protocol):
     @abstractmethod
     def __len__(self) -> int: ...
     @abstractmethod
-    def __iter__(self) -> Iterator[Any]: ...
+    def __iter__(self) -> Iterator[KeyT]: ...
     @abstractmethod
-    def __contains__(self, item: Any, /) -> bool: ...
+    def __contains__(self, item: KeyT, /) -> object: ...
     @overload
     @abstractmethod
-    def __getitem__(self, key: slice | list[Key], /) -> Self: ...
+    def __getitem__(self, key: slice | list[KeyT], /) -> Self: ...
     @overload
     @abstractmethod
-    def __getitem__(self, key: Key, /) -> TimeSeries[T]: ...
+    def __getitem__(self, key: KeyT, /) -> TimeSeries[TableT]: ...

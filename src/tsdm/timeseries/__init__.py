@@ -15,6 +15,8 @@ __all__ = [
     "TimeSeriesSampleGenerator",
     "FixedSliceSampleGenerator",
     # classes
+    "PandasTS",
+    "PandasTSC",
     "Inputs",
     "Targets",
     "Sample",
@@ -42,14 +44,11 @@ __all__ = [
     "ushcn_de_brouwer2019",
 ]
 
-from collections.abc import Callable as Fn
-from typing import Any
-
-from pandas import DataFrame
-
 from tsdm.timeseries import base, pandas, sampling, util
 from tsdm.timeseries.base import TimeSeries, TimeSeriesCollection
 from tsdm.timeseries.pandas import (
+    TIMESERIES,
+    TIMESERIES_COLLECTIONS,
     PandasTS,
     PandasTSC,
     beijing_air_quality,
@@ -78,27 +77,3 @@ from tsdm.timeseries.sampling import (
     TimeSeriesSampleGenerator,
 )
 from tsdm.timeseries.util import PaddedBatch, TimeSeriesSample, collate_timeseries
-
-TIMESERIES: dict[str, Fn[[], TimeSeries[DataFrame]]] = {
-    "ETTh1"       : etth1,
-    "ETTh2"       : etth2,
-    "ETTm1"       : ettm1,
-    "ETTm2"       : ettm2,
-    "Electricity" : electricity,
-    "Traffic"     : traffic,
-}  # fmt: skip
-r"""Dictionary of all available time series datasets."""
-
-TIMESERIES_COLLECTIONS: dict[str, Fn[[], TimeSeriesCollection[Any, DataFrame]]] = {
-    "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
-    "InSilico"                  : in_silico,
-    "KiwiBenchmark"             : kiwi_benchmark,
-    "MIMIC_III_DeBrouwer2019"   : mimic_iii_de_brouwer2019,
-    "MIMIC_IV_Bilos2021"        : mimic_iv_bilos2021,
-    "PhysioNet2012"             : physionet2012,
-    "PhysioNet2019"             : physionet2019,
-    "USHCN"                     : ushcn,
-    "BeijingAirQuality"         : beijing_air_quality,
-    "USHCN_DeBrouwer2019"       : ushcn_de_brouwer2019,
-}  # fmt: skip
-r"""Dictionary of all available time series collections."""

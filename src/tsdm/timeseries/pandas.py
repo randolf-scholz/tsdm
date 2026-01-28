@@ -1,6 +1,9 @@
 r"""Implementation of TimeSeries and TimeSeriesCollection using Pandas DataFrames."""
 
 __all__ = [
+    # Constants
+    "TIMESERIES",
+    "TIMESERIES_COLLECTIONS",
     # Classes
     "Metadata",
     "PandasTS",
@@ -25,7 +28,7 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Hashable, Iterator, Mapping
+from collections.abc import Callable as Fn, Hashable, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, fields
 from typing import Any, ClassVar, Optional, Self, overload
 
@@ -41,7 +44,7 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass
-class PandasTS(TimeSeries[DataFrame]):
+class PandasTS[DT = Any](TimeSeries[DT, DataFrame]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -300,7 +303,7 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
     @overload
     def __getitem__(self, key: Key, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
-    def __getitem__(self, key: Any, /) -> PandasTS | Self:
+    def __getitem__(self, key: Any, /) -> PandasTS | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # only pass non-derived fields
         fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
@@ -396,3 +399,28 @@ def mimic_iv_bilos2021() -> TimeSeriesCollection[int, DataFrame]:
 def damped_pendulum_ansari2023() -> TimeSeriesCollection[int, DataFrame]:
     r"""The DampedPendulum_Ansari2023 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.DampedPendulum_Ansari2023)
+
+
+TIMESERIES: dict[str, Fn[[], TimeSeries[DataFrame]]] = {
+    "ETTh1"       : etth1,
+    "ETTh2"       : etth2,
+    "ETTm1"       : ettm1,
+    "ETTm2"       : ettm2,
+    "Electricity" : electricity,
+    "Traffic"     : traffic,
+}  # fmt: skip
+r"""Dictionary of all available time series datasets."""
+
+TIMESERIES_COLLECTIONS: dict[str, Fn[[], TimeSeriesCollection[DataFrame]]] = {
+    "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
+    "InSilico"                  : in_silico,
+    "KiwiBenchmark"             : kiwi_benchmark,
+    "MIMIC_III_DeBrouwer2019"   : mimic_iii_de_brouwer2019,
+    "MIMIC_IV_Bilos2021"        : mimic_iv_bilos2021,
+    "PhysioNet2012"             : physionet2012,
+    "PhysioNet2019"             : physionet2019,
+    "USHCN"                     : ushcn,
+    "BeijingAirQuality"         : beijing_air_quality,
+    "USHCN_DeBrouwer2019"       : ushcn_de_brouwer2019,
+}  # fmt: skip
+r"""Dictionary of all available time series collections."""
