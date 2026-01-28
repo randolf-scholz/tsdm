@@ -9,6 +9,7 @@ from typing import Any, Final, Optional, Self
 
 from torch import Tensor, jit, nn
 
+from tsdm.constants import UNDEFINED
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.models.util import autojit, initialize_from_config
 from tsdm.utils import deep_dict_update
@@ -108,10 +109,10 @@ class ResNet(nn.ModuleList):
         *,
         input_size: int,
         num_blocks: int = 5,
-        block_cfg: dict = NotImplemented,
+        block_cfg: dict = UNDEFINED,
     ) -> Self:
         r"""Create a ResNet model from hyperparameters."""
-        block_cfg = ResNetBlock.HP if block_cfg is NotImplemented else block_cfg
+        block_cfg = ResNetBlock.HP if block_cfg is UNDEFINED else block_cfg
 
         if "input_size" in block_cfg:
             block_cfg["input_size"] = input_size

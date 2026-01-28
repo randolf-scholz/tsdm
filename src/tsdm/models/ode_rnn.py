@@ -5,11 +5,13 @@ __all__ = [
     "ODE_RNN",
 ]
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import torch
 from torch import Tensor, nn
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.models.base import BaseModel
 from tsdm.utils import deep_dict_update
 from tsdm.utils.system import import_module
@@ -114,10 +116,10 @@ class ODE_RNN(BaseModel, nn.Module):
         train_classif_w_reconstr: bool = False,
         use_binary_classif: bool = False,
         # cfg args
-        DiffeqSolver_cfg: dict = NotImplemented,
-        Net_cfg: dict = NotImplemented,
-        ODEFunc_cfg: dict = NotImplemented,
-        ODE_RNN_cfg: dict = NotImplemented,
+        DiffeqSolver_cfg: Mapping[str, object] = EMPTY_MAP,
+        Net_cfg: Mapping[str, object] = EMPTY_MAP,
+        ODEFunc_cfg: Mapping[str, object] = EMPTY_MAP,
+        ODE_RNN_cfg: Mapping[str, object] = EMPTY_MAP,
     ) -> None:
         r"""Initialize the internal ODE-RNN model."""
         super().__init__()
@@ -126,12 +128,6 @@ class ODE_RNN(BaseModel, nn.Module):
         create_net = module.lib.utils.create_net
         ODEFunc = module.lib.ode_func.ODEFunc
         DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver
-        Net_cfg = {} if Net_cfg is NotImplemented else Net_cfg
-        ODEFunc_cfg = {} if ODEFunc_cfg is NotImplemented else ODEFunc_cfg
-        DiffeqSolver_cfg = (
-            {} if DiffeqSolver_cfg is NotImplemented else DiffeqSolver_cfg
-        )
-        ODE_RNN_cfg = {} if ODE_RNN_cfg is NotImplemented else ODE_RNN_cfg
 
         HP = {
             "input_dim": input_dim,
