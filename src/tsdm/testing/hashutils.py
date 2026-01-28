@@ -450,5 +450,5 @@ def hash_zip_contents(
                 hash_value=hasher.hexdigest(),
                 hash_algorithm=hasher.name,
             )
-    hash_value = tokenize_set(item_hashes.items(), hasher)
+    hash_value = tokenize_mapping(item_hashes, hasher)
     return Hash(hash_value=hash_value.hex().upper(), hash_algorithm="zip")
