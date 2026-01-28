@@ -274,8 +274,6 @@ class IVP_GeneratorBase(IVP_Generator[NDArray]):
 
     def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> NDArray:
         r"""Solve the initial value problem."""
-        if self.ivp_solver is NotImplemented or self.system is NotImplemented:
-            raise NotImplementedError
         if self.ivp_solver is scipy_solve_ivp:
             raise ValueError(
                 "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
