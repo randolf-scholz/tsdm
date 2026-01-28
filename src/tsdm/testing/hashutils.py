@@ -17,6 +17,7 @@ __all__ = [
     "to_int",
     "tokenize_array",
     "tokenize_bool",
+    "tokenize_byte_stream",
     "tokenize_bytes",
     "tokenize_collection",
     "tokenize_complex",
@@ -32,6 +33,7 @@ __all__ = [
     "tokenize_numpy",
     "tokenize_object",
     "tokenize_pandas",
+    "tokenize_polars",
     "tokenize_pyarrow",
     "tokenize_set",
     "tokenize_str",
@@ -51,7 +53,6 @@ from collections.abc import (
     Buffer,
     Callable,
     Collection,
-    Hashable,
     Iterable,
     Mapping,
     Set as AbstractSet,
@@ -70,9 +71,9 @@ from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pyarrow as pa
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
 
 from tsdm.types.aliases import FilePath
 from tsdm.types.mixins import SupportsArray
@@ -200,42 +201,42 @@ def tokenize_type(arg: type, /) -> bytes:
     return f"{arg.__module__}.{arg.__qualname__}".encode()
 
 
-def tokenize_none(x: None, /) -> bytes:
-    return tokenize_type(type(x))
+def tokenize_none(_: None, /) -> bytes:
+    return b"None"
 
 
-def tokenize_ellipsis(x: EllipsisType, /) -> bytes:
-    return tokenize_type(type(x))
+def tokenize_ellipsis(_: EllipsisType, /) -> bytes:
+    return b"..."
 
 
-def tokenize_notimplemented(x: NotImplementedType, /) -> bytes:
-    return tokenize_type(type(x))
+def tokenize_notimplemented(_: NotImplementedType, /) -> bytes:
+    return b"NotImplemented"
 
 
-def tokenize_bool(x: bool, /) -> bytes:  # noqa: FBT001
-    return b"\x01" if x else b"\x00"
+def tokenize_bool(arg: bool, /) -> bytes:  # noqa: FBT001
+    return b"\x01" if arg else b"\x00"
 
 
-def tokenize_int(x: int, /) -> bytes:
-    bits = x.bit_length() // 8 + 1
-    return x.to_bytes(bits, "little", signed=True)
+def tokenize_int(arg: int, /) -> bytes:
+    num_bytes = arg.bit_length() // 8 + 1
+    return arg.to_bytes(num_bytes, "little", signed=True)
 
 
-def tokenize_float(x: float, /) -> bytes:
+def tokenize_float(arg: float, /) -> bytes:
     # Canonicalize edge cases
-    if math.isnan(x):  # fixed NaN payload
+    if math.isnan(arg):  # fixed NaN payload
         return b"\x7f\xf8\x00\x00\x00\x00\x00\x00"  # IEEE-754 binary64 NaN
-    if x == 0.0:  # normalize -0.0 to +0.0
+    if arg == 0.0:  # normalize -0.0 to +0.0
         return struct.pack(">d", 0.0)
-    return struct.pack(">d", x)  # IEEE-754 binary64, big-endian
+    return struct.pack(">d", arg)  # IEEE-754 binary64, big-endian
 
 
-def tokenize_complex(x: complex, /) -> bytes:
-    return tokenize_float(x.real) + tokenize_float(x.imag)
+def tokenize_complex(arg: complex, /) -> bytes:
+    return tokenize_float(arg.real) + b"+" + tokenize_float(arg.imag) + b"j"
 
 
 def tokenize_str(arg: str, /) -> bytes:
-    return arg.encode("utf-8")
+    return b"'" + arg.encode("utf-8") + b"'"
 
 
 def tokenize_bytes(arg: bytes, /) -> bytes:
@@ -247,7 +248,14 @@ def tokenize_datetime(arg: dt.datetime | dt.date | dt.time, /) -> bytes:
 
 
 def tokenize_timedelta(arg: dt.timedelta, /) -> bytes:
-    return tokenize_float(arg.total_seconds())
+    return (
+        tokenize_int(arg.days)
+        + b"d"
+        + tokenize_int(arg.seconds)
+        + b"s"
+        + tokenize_int(arg.microseconds)
+        + b"us"
+    )
 
 
 _BASIC_TOKENIZERS: dict[type, Callable[[Any], bytes]] = {
@@ -272,53 +280,60 @@ def tokenize_dataclass(arg: Dataclass, hasher: str | Hasher, /) -> bytes:
     return tokenize_mapping(dataclasses.asdict(arg), hasher)
 
 
-def tokenize_mapping(x: Mapping[Any, Hashable], hasher: str | Hasher, /) -> bytes:
+def tokenize_mapping(arg: Mapping[Any, object], hasher: str | Hasher, /) -> bytes:
     r"""Hash a `Mapping` of hashable objects in a permutation invariant manner."""
-    return tokenize_set(x.items(), hasher)
+    return tokenize_set(arg.items(), hasher)
 
 
-def tokenize_set(x: Iterable[Hashable], hasher: str | Hasher, /) -> bytes:
+def tokenize_set(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
     r"""Hash an `Iterable` of hashable objects in a permutation invariant manner.
 
     Discards multiplicity of elements.
     """
-    set_of_hashes = {tokenize_object(y, hasher) for y in x}
+    set_of_hashes = {tokenize_object(y, hasher) for y in arg}
     return tokenize_collection(sorted(set_of_hashes), hasher)
 
 
-def tokenize_multiset(x: Iterable[Hashable], hasher: str | Hasher, /) -> bytes:
+def tokenize_multiset(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
     r"""Hash an `Iterable` of hashable objects in a permutation invariant manner.
 
     Takes multiplicity of elements into account.
     """
     # We use counter as a proxy for multisets, do deal with duplicates in x.
-    mdict: Counter[bytes] = Counter(tokenize_object(y, hasher) for y in x)
+    mdict: Counter[bytes] = Counter(tokenize_object(y, hasher) for y in arg)
     return tokenize_collection(sorted(mdict.elements()), hasher)
 
 
-def tokenize_collection(x: Collection[Hashable], hasher: str | Hasher, /) -> bytes:
+def tokenize_collection(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
     r"""Hash a `Collection` of hashable objects in an order-dependent manner."""
+    hash_algorithm = hasher if isinstance(hasher, str) else hasher.name
+    byte_stream = (tokenize_object(item, hashlib.new(hash_algorithm)) for item in arg)
+    return tokenize_byte_stream(byte_stream, hasher)
+
+
+def tokenize_byte_stream(arg: Iterable[bytes], hasher: str | Hasher, /) -> bytes:
+    r"""Hash a stream of bytes in an order-dependent manner."""
     # NOTE: This is the only place the hasher actually gets used.
     hash_algorithm = hasher if isinstance(hasher, str) else hasher.name
     collection_hasher = hashlib.new(hash_algorithm)
-    for item in x:
-        # hash each item individually
-        item_hasher = hashlib.new(hash_algorithm)
-        object_hash = tokenize_object(item, item_hasher)
-        collection_hasher.update(object_hash)
-
+    for item in arg:
+        collection_hasher.update(item)
     return collection_hasher.digest()
 
 
+def tokenize_numpy(arg: NDArray, hasher: str | Hasher, /) -> bytes:
+    r"""Hash a numpy array."""
+    shape = list(arg.shape)
+    items = np.asarray(arg).flatten().tolist()
+    return tokenize_collection(shape + items, hasher)
+
+
 def tokenize_pandas(
-    df: Index | Series | DataFrame,
+    arg: pd.Index | pd.Series | pd.DataFrame,
     hasher: str | Hasher,
     /,
     *,
     index: bool = True,
-    ignore_duplicates: bool = False,
-    row_invariant: bool = False,
-    col_invariant: bool = False,
 ) -> bytes:
     r"""Hash pandas object to a single number.
 
@@ -329,34 +344,41 @@ def tokenize_pandas(
 
     for permutation matrices $P$ and $Q$ respectively.
     """
-    # TODO: problem: duplicate rows ⇝ include standard index for rows/cols!
-
-    if col_invariant:
-        df = df.stack()
-
-    row_hash: Series = pd.util.hash_pandas_object(df, index=index)
-
-    hash_value = (
-        tokenize_set(row_hash, hasher)
-        if row_invariant and ignore_duplicates
-        else tokenize_multiset(row_hash, hasher)
-        if row_invariant
-        else tokenize_collection(row_hash.tolist(), hasher)
-    )
-
-    return hash_value
+    match arg:
+        case pd.Series():
+            return tokenize_collection(arg.items() if index else arg, hasher)
+        case pd.Index():
+            return tokenize_collection(arg, hasher)
+        case pd.DataFrame():
+            return tokenize_mapping(arg.to_dict(index=index), hasher)
+        case _:
+            raise TypeError(f"Cannot hash pandas object of type {type(arg)}.")
 
 
-def tokenize_numpy(array: NDArray, hasher: str | Hasher, /) -> bytes:
-    r"""Hash a numpy array."""
-    shape = list(array.shape)
-    items = np.asarray(array).flatten().tolist()
-    return tokenize_collection(shape + items, hasher)
+def tokenize_polars(arg: pl.DataFrame | pl.Series, hasher: str | Hasher, /) -> bytes:
+    r"""Hash a polars DataFrame or Series."""
+    match arg:
+        case pl.Series():
+            return tokenize_collection(arg, hasher)
+        case pl.DataFrame():
+            return tokenize_mapping(arg.to_dict(as_series=True), hasher)
+        case _:
+            raise TypeError(f"Cannot hash polars object of type {type(arg)}.")
 
 
-def tokenize_pyarrow(array: pa.Array, hasher: str | Hasher, /) -> bytes:
+def tokenize_pyarrow(
+    arg: pa.Scalar | pa.Array | pa.Table, hasher: str | Hasher, /
+) -> bytes:
     r"""Hash a pyarrow array."""
-    raise NotImplementedError(f"Can't hash {type(array)} yet.")
+    match arg:
+        case pa.Scalar():
+            return tokenize_object(arg.as_py(), hasher)
+        case pa.Array() | pa.ChunkedArray():
+            return tokenize_collection(arg.to_pylist(), hasher)
+        case pa.Table():
+            return tokenize_mapping(arg.to_pydict(), hasher)
+        case _:
+            raise TypeError(f"Cannot hash pyarrow object of type {type(arg)}.")
 
 
 def tokenize_array(array: SupportsArray, hasher: str | Hasher, /) -> bytes:
@@ -364,10 +386,12 @@ def tokenize_array(array: SupportsArray, hasher: str | Hasher, /) -> bytes:
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
 
     match array:
-        case DataFrame() | Series() | Index():
+        case pd.DataFrame() | pd.Series() | pd.Index():
             return tokenize_pandas(array, hasher)
         case pa.Table() | pa.Array() | pa.ChunkedArray():
             return tokenize_pyarrow(array, hasher)
+        case pl.DataFrame() | pl.Series():
+            return tokenize_polars(array, hasher)
         case SupportsArray():
             return tokenize_numpy(array.__array__(), hasher)
         case _:
