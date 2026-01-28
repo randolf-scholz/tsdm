@@ -146,7 +146,7 @@ type SPLIT_TYPE = Literal["train", "infer", "unknown"]
 
 
 @dataclass
-class Split[Sample]:  # +Sample
+class Split[SampleT]:  # +SampleT
     r"""Represents a split of a dataset."""
 
     name: Hashable = NotImplemented
@@ -154,9 +154,9 @@ class Split[Sample]:  # +Sample
     fold: Series = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
 
-    collate_fn: Callable[[list[Sample]], Batch] = NotImplemented
+    collate_fn: Callable[[list[SampleT]], Batch] = NotImplemented
     r"""Collate function used to create batches from samples."""
-    dataloader: DataLoader[Sample] = NotImplemented
+    dataloader: DataLoader[SampleT] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Encoder = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
