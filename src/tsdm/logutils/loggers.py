@@ -69,6 +69,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
+from tsdm.constants import UNDEFINED
 from tsdm.logutils.callbacks import (
     Callback,
     CallbackList,
@@ -178,14 +179,14 @@ class DefaultLogger(BaseLogger):
     checkpointable_objects: Optional[dict[str, Any]] = None
     r"""Objects to be checkpointed."""
     # derived from other arguments
-    writer: SummaryWriter = NotImplemented
+    writer: SummaryWriter = UNDEFINED
     r"""SummaryWriter used for logging."""
 
     def __post_init__(self) -> None:
         r"""Post-initialization steps."""
         self.writer = (
             SummaryWriter(log_dir=self.log_dir)
-            if self.writer is NotImplemented
+            if self.writer is UNDEFINED
             else self.writer
         )
 
