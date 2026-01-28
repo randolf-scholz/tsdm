@@ -10,6 +10,7 @@ __all__ = [
     "validate_hash",
     "validate_table_hash",
     "validate_table_schema",
+    "validate_table_shape",
 ]
 
 import logging
@@ -25,6 +26,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from tsdm.config import CONFIG
 from tsdm.testing.hashutils import Hash, hash_array, hash_file
 from tsdm.types.aliases import FilePath
+from tsdm.types.mixins import SupportsShape
 
 
 class ValidationError(ValueError):
@@ -279,14 +281,38 @@ def validate_table_hash(
     return validate_hash(actual_hash, expected_hash, errors=error_handler)
 
 
+def validate_table_shape(
+    table: SupportsShape,
+    /,
+    expected_shape: tuple[int, ...] | None,
+    *,
+    errors: ErrorHandler.Mode = "warn",
+) -> bool:
+    r"""Validate the shape of a table-like object, given a reference shape value."""
+    error_handler = make_error_handler(errors)
+    actual_shape = table.shape
+
+    # Validate shape.
+    match actual_shape, expected_shape:
+        case _, None:
+            msg_shape = f"No reference shape given, {actual_shape}."
+            shapes_match = True
+        case _, _:
+            if shapes_match := actual_shape == expected_shape:
+                msg_shape = "Table shape validated successfully."
+            else:
+                msg_shape = (
+                    f"Table {actual_shape=!r} does not match {expected_shape=!r}!"
+                )
+    error_handler.emit(msg_shape, valid=shapes_match)
+    return shapes_match
+
+
 def validate_table_schema(
     table: Any,
     /,
     *,
-    expected_shape: Optional[tuple[int, ...]] = None,
-    expected_shema: Optional[
-        Sequence[str] | Mapping[str, str | None] | pa.Schema
-    ] = None,
+    expected_shema: Sequence[str] | Mapping[str, str | None] | pa.Schema | None,
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
     r"""Validate the schema of a `pandas` object, given schema values from a table.
@@ -305,7 +331,6 @@ def validate_table_schema(
     """
     error_handler = make_error_handler(errors)
 
-    actual_shape: tuple[int, ...]
     actual_columns: Sequence | None
     expected_columns: Sequence | None
     actual_dtypes: Mapping | None
@@ -314,23 +339,23 @@ def validate_table_schema(
 
     # get data shape, columns and dtypes from table
     match table:
-        case MultiIndex(shape=actual_shape, names=names, dtypes=dtypes):
+        case MultiIndex(names=names, dtypes=dtypes):
             actual_columns = names
             actual_dtypes = dict(zip(names, dtypes, strict=True))
             index_columns = []
-        case Index(shape=actual_shape) as index:
+        case Index() as index:
             actual_columns = [index.name]
             actual_dtypes = {index.name: index.dtype}
             index_columns = []
-        case Series(shape=actual_shape) as series:
+        case Series() as series:
             actual_columns = [series.name]
             actual_dtypes = {series.name: series.dtype}
             index_columns = series.index.names
-        case DataFrame(shape=actual_shape) as df:
+        case DataFrame() as df:
             actual_columns = df.columns.tolist()
             actual_dtypes = df.dtypes.to_dict()
             index_columns = df.index.names
-        case pa.Table(shape=actual_shape, schema=schema):
+        case pa.Table(schema=schema):
             actual_columns = schema.names
             actual_dtypes = dict(zip(schema.names, schema.types, strict=True))
             index_columns = []
@@ -355,20 +380,6 @@ def validate_table_schema(
             expected_dtypes = None
         case _:
             raise TypeError(f"Invalid reference schema type! {type(expected_shema)=}")
-
-    # Validate shape.
-    match actual_shape, expected_shape:
-        case _, None:
-            msg_shape = "No reference shape given, skipping shape validation."
-            shapes_match = True
-        case _, _:
-            if shapes_match := actual_shape == expected_shape:
-                msg_shape = "Table shape validated successfully."
-            else:
-                msg_shape = (
-                    f"Table {actual_shape=!r} does not match {expected_shape=!r}!"
-                )
-    error_handler.emit(msg_shape, valid=shapes_match)
 
     # Validate columns.
     match actual_columns, expected_columns:
@@ -437,4 +448,4 @@ def validate_table_schema(
 
     error_handler.emit(msg_dtypes, valid=dtypes_match)
 
-    return shapes_match and columns_match and dtypes_match
+    return columns_match and dtypes_match
