@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 import math
-from collections.abc import Callable, Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping, Set as AbstractSet
 from enum import Enum
 from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
@@ -85,7 +85,7 @@ r"""Constant: Empty function, use as default in function signatures."""
 
 EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})  # FIXME: PEP 603
 r"""Constant: Immutable empty `Mapping`, use as default in function signatures."""
-EMPTY_SET: Final[frozenset[Any]] = frozenset()
+EMPTY_SET: Final[AbstractSet[Any]] = frozenset()
 r"""Constant: Immutable empty `Set`, use as default in function signatures."""
 # endregion collection constants -------------------------------------------------------
 
