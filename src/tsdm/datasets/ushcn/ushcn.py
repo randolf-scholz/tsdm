@@ -14,7 +14,6 @@ import warnings
 from typing import Literal
 
 import pandas as pd
-import pyarrow as pa
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
@@ -437,10 +436,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
 
         # convert from tall to wide with columns PRCP, SNOW, SNWD, TMAX, TMIN
         self.LOGGER.info("Performing pivot operation.")
-        # FIXME: https://github.com/pandas-dev/pandas/issues/53051
-        table = table.astype({"ELEMENT": pd.ArrowDtype(pa.string())})
         ts = table.pivot(columns="ELEMENT", values="VALUE")
-        ts.columns = ts.columns.astype("string[pyarrow]")
 
         self.LOGGER.info("Removing outliers from timeseries.")
         ts = remove_outliers(ts, self.timeseries_metadata)
