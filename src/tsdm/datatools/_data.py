@@ -3,12 +3,8 @@ r"""Utility functions that act on tabular data."""
 __all__ = [
     # types
     "MaybeNA",
-    # classes
     "BoundaryInformation",
-    "BoundaryTable",
     "InlineTable",
-    "MultipleBoundaryInformation",
-    "Schema",
     # Functions
     "aggregate_nondestructive",
     "select_outliers",
@@ -21,7 +17,7 @@ __all__ = [
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any, NamedTuple, NotRequired, Optional, Required, TypedDict, overload
+from typing import Any, NotRequired, Optional, Required, TypedDict, overload
 
 import pandas as pd
 import pyarrow as pa
@@ -38,30 +34,10 @@ from tsdm.backend.pandas import (
     strip_whitespace_series,
 )
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
+from tsdm.constants import UNDEFINED
 
 type MaybeNA[T] = T | NAType
 r"""Type Alias for nullable types (pandas-specific)."""
-
-
-class Schema(NamedTuple):
-    r"""Table schema."""
-
-    shape: Optional[tuple[int, int]] = None
-    r"""Shape of the table."""
-    columns: Optional[Sequence[str]] = None
-    r"""Column names of the table."""
-    dtypes: Optional[Sequence[str]] = None
-    r"""Data types of the columns."""
-
-
-class InlineTable[Tup: tuple](TypedDict):
-    r"""A table of data in a dictionary."""
-
-    data: Required[Sequence[Tup]]
-    columns: NotRequired[list[str]]
-    dtypes: NotRequired[list[str | type]]
-    schema: NotRequired[Mapping[str, Any]]
-    index: NotRequired[str | list[str]]
 
 
 class BoundaryInformation(TypedDict):
@@ -69,29 +45,29 @@ class BoundaryInformation(TypedDict):
 
     lower_bound: float | None
     upper_bound: float | None
-    lower_inclusive: bool
-    upper_inclusive: bool
+    lower_inclusive: bool | None
+    upper_inclusive: bool | None
 
 
-class MultipleBoundaryInformation(TypedDict):
-    r"""Information about the boundaries of multiple variables."""
+class TableMetadata(BoundaryInformation):
+    r"""Table schema."""
 
-    name: Sequence[str]
-    lower_bound: Sequence[float | None]
-    upper_bound: Sequence[float | None]
-    lower_inclusive: Sequence[bool]
-    upper_inclusive: Sequence[bool]
-    dtype: NotRequired[Sequence[str]]
+    name: str
+    dtype: str
+    unit: str | None
+    lower_bound: float | None  # type: ignore[misc]
+    upper_bound: float | None  # type: ignore[misc]
+    lower_inclusive: bool | None  # type: ignore[misc]
+    upper_inclusive: bool | None  # type: ignore[misc]
+    description: str | None
 
 
-class BoundaryTable(TypedDict):
-    r"""A table of boundary information, indexed by variable name."""
+class InlineTable[*Ts](TypedDict):
+    r"""A table of data in a dictionary."""
 
-    lower_bound: Mapping[str, float | None]
-    upper_bound: Mapping[str, float | None]
-    lower_inclusive: Mapping[str, bool]
-    upper_inclusive: Mapping[str, bool]
-    dtype: NotRequired[Mapping[str, str]]
+    data: Required[Sequence[tuple[*Ts]]]
+    schema: Mapping[str, Any]
+    index: NotRequired[str | list[str]]
 
 
 def make_dataframe(
@@ -152,18 +128,18 @@ def strip_whitespace[T: pa.Array | pa.Table | Series | DataFrame](
 def select_outliers(s: Series, limits: BoundaryInformation, /) -> Series: ...
 @overload
 def select_outliers(
-    df: DataFrame, limits: DataFrame | Mapping[str, BoundaryInformation], /
-) -> DataFrame: ...
-@overload
-def select_outliers(
     s: Series,
     /,
     *,
     lower_bound: float | None,
     upper_bound: float | None,
-    lower_inclusive: bool,
-    upper_inclusive: bool,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
 ) -> Series: ...
+@overload
+def select_outliers(
+    df: DataFrame, limits: DataFrame | Mapping[str, BoundaryInformation], /
+) -> DataFrame: ...
 @overload
 def select_outliers[Key](
     df: DataFrame,
@@ -171,19 +147,19 @@ def select_outliers[Key](
     *,
     lower_bound: Mapping[Key, float | None],
     upper_bound: Mapping[Key, float | None],
-    lower_inclusive: Mapping[Key, bool],
-    upper_inclusive: Mapping[Key, bool],
+    lower_inclusive: Mapping[Key, bool | None],
+    upper_inclusive: Mapping[Key, bool | None],
 ) -> DataFrame: ...
 # endregion overloads ------------------------------------------------------------------
 def select_outliers[T: Series | DataFrame](
     obj: T,
-    limits: Any = NotImplemented,
+    limits: Any = UNDEFINED,
     /,
     *,
-    lower_bound: Mapping[Any, float | None] | float | None = NotImplemented,
-    upper_bound: Mapping[Any, float | None] | float | None = NotImplemented,
-    lower_inclusive: Mapping[Any, bool] | bool = NotImplemented,
-    upper_inclusive: Mapping[Any, bool] | bool = NotImplemented,
+    lower_bound: Mapping[Any, float | None] | float | None = UNDEFINED,
+    upper_bound: Mapping[Any, float | None] | float | None = UNDEFINED,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
 ) -> T:
     r"""Detect outliers in a Series or DataFrame, given boundary values."""
     lims = {
@@ -192,19 +168,18 @@ def select_outliers[T: Series | DataFrame](
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
-    undef = {key: (lims[key] is NotImplemented) for key in lims}
+    undef = [val is UNDEFINED for val in lims.values()]
 
-    # check that either limits or kwargs are provided
-    if limits is NotImplemented:
-        if any(undef.values()):
-            raise AssertionError(f"Missing boundary values: {undef}")
+    if limits is UNDEFINED:
+        if all(undef):
+            raise ValueError("No boundary values provided.")
+        if any(undef):
+            raise ValueError(f"Missing boundary values: {lims}")
         opts = lims
-    elif not all(undef.values()):
-        raise AssertionError(
-            "Limits specified both as positional and keyword arguments."
-        )
-    else:
+    elif all(undef):
         opts = {key: limits[key] for key in lims}
+    else:
+        raise ValueError("Limits specified both as positional and keyword arguments.")
 
     match obj:
         case Series() as s:
@@ -227,6 +202,18 @@ def remove_outliers(
 ) -> Series: ...
 @overload
 def remove_outliers(
+    s: Series,
+    /,
+    *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+    drop: bool = ...,
+    inplace: bool = ...,
+) -> Series: ...
+@overload
+def remove_outliers(
     df: DataFrame,
     limits: DataFrame | Mapping[str, BoundaryInformation],
     /,
@@ -235,39 +222,27 @@ def remove_outliers(
     inplace: bool = ...,
 ) -> DataFrame: ...
 @overload
-def remove_outliers(
-    s: Series,
-    /,
-    *,
-    lower_bound: float | None,
-    upper_bound: float | None,
-    lower_inclusive: bool,
-    upper_inclusive: bool,
-    drop: bool = ...,
-    inplace: bool = ...,
-) -> Series: ...
-@overload
 def remove_outliers[Key](
     df: DataFrame,
     /,
     *,
     lower_bound: Mapping[Key, float | None],
     upper_bound: Mapping[Key, float | None],
-    lower_inclusive: Mapping[Key, bool],
-    upper_inclusive: Mapping[Key, bool],
+    lower_inclusive: Mapping[Key, bool | None],
+    upper_inclusive: Mapping[Key, bool | None],
     drop: bool = ...,
     inplace: bool = ...,
 ) -> DataFrame: ...
 # endregion overloads ------------------------------------------------------------------
 def remove_outliers[T: Series | DataFrame](
     obj: T,
-    limits: Any = NotImplemented,
+    limits: Any = UNDEFINED,
     /,
     *,
-    lower_bound: Mapping[Any, float | None] | float | None = NotImplemented,
-    upper_bound: Mapping[Any, float | None] | float | None = NotImplemented,
-    lower_inclusive: Mapping[Any, bool] | bool = NotImplemented,
-    upper_inclusive: Mapping[Any, bool] | bool = NotImplemented,
+    lower_bound: Mapping[Any, float | None] | float | None = UNDEFINED,
+    upper_bound: Mapping[Any, float | None] | float | None = UNDEFINED,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
     drop: bool = True,
     inplace: bool = False,
 ) -> T:
@@ -278,26 +253,23 @@ def remove_outliers[T: Series | DataFrame](
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
-    undef = {key: (lims[key] is NotImplemented) for key in lims}
+    undef = [val is UNDEFINED for val in lims.values()]
+    opts: Any
 
-    # check that either limits or kwargs are provided
-    if limits is NotImplemented:
-        if any(undef.values()):
-            raise ValueError(f"Missing boundary values: {undef}")
+    if limits is UNDEFINED:
+        if any(undef):
+            raise ValueError(f"Missing boundary values: {lims}")
         opts = lims
-    elif not all(undef.values()):
-        raise ValueError("Limits specified both as positional and keyword arguments.")
-    else:
+    elif all(undef):
         opts = {key: limits[key] for key in lims}
-
-    # apply defaults
-    kwargs: dict = {"drop": drop, "inplace": inplace} | opts
+    else:
+        raise ValueError("Limits specified both as positional and keyword arguments.")
 
     match obj:
         case Series() as s:
-            return remove_outliers_series(s, **kwargs)
+            return remove_outliers_series(s, drop=drop, inplace=inplace, **opts)
         case DataFrame() as df:
-            return remove_outliers_dataframe(df, **kwargs)
+            return remove_outliers_dataframe(df, drop=drop, inplace=inplace, **opts)
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 

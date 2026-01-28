@@ -210,8 +210,8 @@ def select_outliers_series(
     *,
     lower_bound: float | None,
     upper_bound: float | None,
-    lower_inclusive: bool,
-    upper_inclusive: bool,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
 ) -> Series:  # Series[bool]
     r"""Detect outliers in a Series, given boundary values."""
     if not pd.api.types.is_any_real_numeric_dtype(s):
@@ -260,8 +260,8 @@ def select_outliers_dataframe(
     *,
     lower_bound: Mapping[Any, float | None],
     upper_bound: Mapping[Any, float | None],
-    lower_inclusive: Mapping[Any, bool],
-    upper_inclusive: Mapping[Any, bool],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
 ) -> DataFrame:  # DataFrame[bool]
     r"""Detect outliers in a DataFrame, given boundary values."""
     given_bounds = get_joint_keys(
@@ -298,8 +298,8 @@ def remove_outliers_series(
     inplace: bool = False,
     lower_bound: float | None,
     upper_bound: float | None,
-    lower_inclusive: bool,
-    upper_inclusive: bool,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
 ) -> Series:
     r"""Remove outliers from a Series, given boundary values."""
     if s.dtype == "category":
@@ -349,8 +349,8 @@ def remove_outliers_dataframe(
     inplace: bool = False,
     lower_bound: Mapping[str, float | None],
     upper_bound: Mapping[str, float | None],
-    lower_inclusive: Mapping[str, bool],
-    upper_inclusive: Mapping[str, bool],
+    lower_inclusive: Mapping[str, bool | None],
+    upper_inclusive: Mapping[str, bool | None],
     erroron_extra_bounds: bool = False,
 ) -> DataFrame:
     r"""Remove outliers from a DataFrame, given boundary values."""
