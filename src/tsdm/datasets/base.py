@@ -50,6 +50,7 @@ from tsdm.testing.validation import (
     validate_file_hash,
     validate_table_hash,
     validate_table_schema,
+    validate_table_shape,
 )
 from tsdm.types.aliases import FilePath
 from tsdm.utils import paths_exists, remote
@@ -846,22 +847,45 @@ class DatasetBase[Key: str, T](
                 ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
             return result
 
+        excs: list[ValidationError] = []
+        self.LOGGER.debug(f"{key=} Validating table shape")
+        try:
+            shapes_match = validate_table_shape(
+                self.tables[key],  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+                expected_shape=self.table_shapes.get(key),
+                errors=errors,
+            )
+        except ValidationError as exc1:
+            shapes_match = False
+            excs.append(exc1)
+
         self.LOGGER.debug(f"{key=} Validating table schema")
-        schema_matches = validate_table_schema(
-            self.tables[key],
-            expected_shape=self.table_shapes.get(key),
-            expected_shema=self.table_schemas.get(key),
-            errors=errors,
-        )
+        try:
+            schema_matches = validate_table_schema(
+                self.tables[key],
+                expected_shema=self.table_schemas.get(key),
+                errors=errors,
+            )
+        except ValidationError as exc2:
+            schema_matches = False
+            excs.append(exc2)
 
         self.LOGGER.debug(f"{key=} Validating table hash")
-        hash_matches = validate_table_hash(
-            self.tables[key],
-            expected_hash=self.table_hashes.get(key),
-            skipif_no_reference=True,
-            errors=errors,
-        )
-        return schema_matches and hash_matches
+        try:
+            hash_matches = validate_table_hash(
+                self.tables[key],
+                expected_hash=self.table_hashes.get(key),
+                skipif_no_reference=True,
+                errors=errors,
+            )
+        except ValidationError as exc3:
+            hash_matches = False
+            excs.append(exc3)
+
+        if excs:
+            raise ValidationError from ExceptionGroup("Table validation failed", excs)
+
+        return shapes_match and schema_matches and hash_matches
 
     # endregion validation methods -----------------------------------------------------
 

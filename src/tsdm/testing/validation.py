@@ -20,6 +20,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
+import polars as pl
 import pyarrow as pa
 from pandas import DataFrame, Index, MultiIndex, Series
 
@@ -290,7 +291,12 @@ def validate_table_shape(
 ) -> bool:
     r"""Validate the shape of a table-like object, given a reference shape value."""
     error_handler = make_error_handler(errors)
-    actual_shape = table.shape
+
+    match table:
+        case SupportsShape(shape=actual_shape):
+            pass
+        case _:
+            raise TypeError(f"Cannot get shape of object of type {type(table)}!")
 
     # Validate shape.
     match actual_shape, expected_shape:
@@ -358,6 +364,10 @@ def validate_table_schema(
         case pa.Table(schema=schema):
             actual_columns = schema.names
             actual_dtypes = dict(zip(schema.names, schema.types, strict=True))
+            index_columns = []
+        case pl.DataFrame() as df:
+            actual_columns = df.columns
+            actual_dtypes = {col: df[col].dtype for col in df.columns}
             index_columns = []
         case _:
             raise NotImplementedError(
