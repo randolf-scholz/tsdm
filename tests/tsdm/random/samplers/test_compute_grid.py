@@ -15,19 +15,19 @@ from numpy import (
 )
 
 from tsdm.random.samplers import compute_grid
-from tsdm.types.scalars import DurationScalar, TimestampScalar
+from tsdm.types.numerical.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
 
 
 # FIXME: Use PEP 696 with python 3.13
-def validate_grid_results[TD: DurationScalar](
+def validate_grid_results[TD: SpanLikeScalar](
     *,
-    tmin: TimestampScalar[TD],
-    tmax: TimestampScalar[TD],
+    tmin: TimeLikeScalar[TD],
+    tmax: TimeLikeScalar[TD],
     tdelta: TD,
-    offset: TimestampScalar[TD],
+    offset: TimeLikeScalar[TD],
 ) -> None:
     result = compute_grid(tmin, tmax, tdelta, offset=offset)
     kmin, kmax = result[0], result[-1]
@@ -54,7 +54,7 @@ def validate_grid_results[TD: DurationScalar](
         raise AssertionError(f"Failed with {values=}") from E
 
 
-class GridTuple[DT: TimestampScalar, TD: DurationScalar](NamedTuple):
+class GridTuple[DT: TimeLikeScalar, TD: SpanLikeScalar](NamedTuple):
     r"""Input tuple for `compute_grid`."""
 
     tmin: DT
@@ -63,7 +63,7 @@ class GridTuple[DT: TimestampScalar, TD: DurationScalar](NamedTuple):
     timedelta: TD
 
 
-EXAMPLES: dict[str, GridTuple[TimestampScalar, DurationScalar]] = {
+EXAMPLES: dict[str, GridTuple[TimeLikeScalar, SpanLikeScalar]] = {
     "python_datetime": GridTuple(
         tmin=py_dt(2000, 1, 1),
         tmax=py_dt(2001, 1, 1),

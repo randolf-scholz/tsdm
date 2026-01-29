@@ -5,20 +5,15 @@ __all__ = [
     # Functions
     "normalize_axes",
     "deep_dict_update",
-    "dims_to_list",
+    "normalize_dimarg",
     "flatten_dict",
     "flatten_nested",
-    "get_joint_keys",
     "last",
     "timedelta",
     "timestamp",
-    "pairwise_disjoint",
-    "paths_exists",
+    "nested_paths_exist",
     "repackage_zip",
     "replace",
-    "round_relative",
-    "shape_to_tuple",
-    "size_to_tuple",
     "unflatten_dict",
 ]
 
@@ -42,7 +37,6 @@ from tempfile import TemporaryDirectory
 from typing import Any, Optional, cast, overload
 from zipfile import ZipFile
 
-import numpy as np
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from tqdm.auto import tqdm
@@ -55,8 +49,6 @@ from tsdm.types.aliases import (
     Nested,
     NestedDict,
     NestedMapping,
-    Shape,
-    Size,
 )
 
 
@@ -82,7 +74,7 @@ def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
     return ts
 
 
-def normalize_axes(axes: str | Axis, *, ndim: int) -> tuple[int, ...]:
+def normalize_axes(axes: Axis, *, ndim: int) -> tuple[int, ...]:
     r"""Convert axes to tuple.
 
     Note:
@@ -96,24 +88,13 @@ def normalize_axes(axes: str | Axis, *, ndim: int) -> tuple[int, ...]:
             return tuple(range(ndim))
         case int():
             return (axes % ndim,)
-        case "cols" | "columns":
-            return (1,)
-        case "rows" | "index":
-            return (0,)
-        case "none":
-            return ()
-        case "all":
-            return tuple(range(ndim))
-        case str(name):
-            raise ValueError(f"Unknown axis name: {name}")
-        case Iterable() as iterable:
-            return tuple(ax % ndim for ax in iterable)
+        case [*items]:
+            return tuple(ax % ndim for ax in items)
         case _:
             raise TypeError(f"Unknown type for axes: {type(axes)}")
 
 
-# NOTE: For torchscript compatibility we cannot use python 3.12 type alias.
-def dims_to_list(dims: int | list[int] | None, *, ndim: int) -> list[int]:
+def normalize_dimarg(dims: int | list[int] | None, *, ndim: int) -> list[int]:
     r"""Convert dimensions to list.
 
     Note:
@@ -127,32 +108,6 @@ def dims_to_list(dims: int | list[int] | None, *, ndim: int) -> list[int]:
     if isinstance(dims, int):
         return [dims]
     return list(dims)
-
-
-def size_to_tuple(size: Size, /) -> tuple[int, ...]:
-    r"""Convert size to tuple.
-
-    Note:
-        - `np.random.normal(size=None)` produces a scalar.
-        - `np.random.normal(size=())`   produces a 0d-array (1 element).
-        - `np.random.normal(size=k)`    produces a 1d-array (k elements).
-    """
-    if isinstance(size, int):
-        return (size,)
-    return tuple(size)
-
-
-def shape_to_tuple(shape: Shape, /) -> tuple[int, ...]:
-    r"""Convert shape to tuple.
-
-    Note:
-        - `np.ones(shape=None)` produces a 0d-array (1 element).
-        - `np.ones(shape=())`   produces a 0d-array (1 element).
-        - `np.ones(shape=k)`    produces a 1d-array (k elements).
-    """
-    if isinstance(shape, int):
-        return (shape,)
-    return tuple(shape)
 
 
 def last[T](iterable: Iterable[T], /) -> T:
@@ -192,32 +147,6 @@ def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -
     """
     replacements = dict(mapping, **strings)
     return last(s := s.replace(x, y) for x, y in replacements.items())
-
-
-def variants(s: str | list[str], /) -> list[str]:
-    r"""Return all variants of a string."""
-    if isinstance(s, str):
-        cases: list[Callable[[str], str]] = [
-            lambda x: x.lower(),
-            lambda x: x.capitalize(),
-            lambda x: x.upper(),
-        ]
-        decorations: list[Callable[[str], str]] = [
-            lambda x: x,
-            lambda x: f"#{x}",
-            lambda x: f"<{x}>",
-            lambda x: f"+{x}",
-            lambda x: f"-{x}",
-        ]
-        return [deco(case(s)) for deco in decorations for case in cases]
-    # return concatenation of all variants
-    return [j for i in (variants(s_) for s_ in s) for j in i]
-
-
-def pairwise_disjoint(sets: Iterable[set], /) -> bool:
-    r"""Check if sets are pairwise disjoint."""
-    union = set().union(*sets)
-    return len(union) == sum(len(s) for s in sets)
 
 
 def flatten_nested[H: Hashable](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
@@ -417,14 +346,6 @@ def unflatten_dict[K, K2](
     return result
 
 
-def round_relative(x: np.ndarray, /, *, decimals: int = 2) -> np.ndarray:
-    r"""Round to relative precision."""
-    order = np.where(x == 0, 0, np.floor(np.log10(x)))
-    digits = decimals - order
-    rounded = np.rint(x * 10**digits)
-    return np.true_divide(rounded, 10**digits)
-
-
 def deep_dict_update[D: MutMap](d: D, new: Mapping, /, *, inplace: bool = False) -> D:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
@@ -446,7 +367,7 @@ def deep_dict_update[D: MutMap](d: D, new: Mapping, /, *, inplace: bool = False)
     return d
 
 
-def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
+def nested_paths_exist(paths: Nested[Optional[FilePath]], /) -> bool:
     r"""Check whether the files exist.
 
     The input can be arbitrarily nested data-structure with `Path` in leaves.
@@ -459,9 +380,9 @@ def paths_exists(paths: Nested[Optional[FilePath]], /) -> bool:
         case Path() as path:
             return path.exists()
         case Mapping() as mapping:
-            return all(paths_exists(f) for f in mapping.values())
+            return all(nested_paths_exist(f) for f in mapping.values())
         case Iterable() as iterable:
-            return all(paths_exists(f) for f in iterable)
+            return all(nested_paths_exist(f) for f in iterable)
         case _:
             raise TypeError(f"Unknown type for rawdata_file: {type(paths)}")
 
@@ -506,12 +427,6 @@ def repackage_zip(filepath: FilePath, /) -> None:
                 new_archive.writestr(new_name, old_archive.read(item))
 
 
-def get_joint_keys[T](*mappings: Mapping[T, Any]) -> set[T]:
-    r"""Find joint keys in a collection of Mappings."""
-    # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
-    return set.intersection(*map(set, (d.keys() for d in mappings)))
-
-
 def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[V]]:
     r"""Fast way to 'transpose' a list of dictionaries.
 
@@ -523,18 +438,80 @@ def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[
 
     Example:
         >>> list_of_dicts = [
-        ...     {"name": "Alice", "age": 30},
-        ...     {"name": "Bob", "age": 25},
+        ...     {"name": "Alice",   "age": 30},
+        ...     {"name": "Bob",     "age": 25},
         ...     {"name": "Charlie", "age": 35},
-        ... ]
+        ... ]  # fmt: skip
         >>> transpose_list_of_dicts(list_of_dicts)
         {'name': ['Alice', 'Bob', 'Charlie'], 'age': [30, 25, 35]}
     """
     keys = next(iter(lst)).keys()
-    return dict(
-        zip(
-            keys,
-            map(list, zip(*(d.values() for d in lst), strict=True)),
-            strict=True,
+    values = map(list, zip(*(d.values() for d in lst), strict=True))
+    return dict(zip(keys, values, strict=True))
+
+
+def query_bool(question: str, /, *, default: bool) -> bool:
+    r"""Ask a yes/no question and returns answer as bool."""
+    responses = {"y": True, "yes": True, "n": False, "no": False}
+    prompt = "([y]/n)" if default else "(y/[n])"
+
+    for k in range(3):
+        msg = (
+            f"Invalid response, Please enter either of {responses}" * (k > 0)
+            + f"{question} {prompt}:"
         )
+        try:
+            choice = input(msg).lower()
+        except KeyboardInterrupt as exc:
+            exc.add_note("Operation aborted.")
+            raise
+
+        if not choice and default is not None:
+            return default
+        if choice in responses:
+            return responses[choice]
+
+    raise RuntimeError("Too many invalid responses.")
+
+
+def query_choice(
+    question: str,
+    /,
+    *,
+    choices: set[str],
+    default: Optional[str] = None,
+    pick_by_number: bool = True,
+) -> str:
+    r"""Ask the user to pick an option.
+
+    If `pick_by_number=True`, then will allow the user to pick the choice by number.
+    """
+    choices = set(choices)
+    ids: dict[int, str] = dict(enumerate(choices))
+
+    if default is not None and default not in choices:
+        raise ValueError(f"Default option {default!r} not in {choices=!r}")
+
+    options = "\n".join(
+        f"{k}. {v}" + " (default)" * (v == default) for k, v in enumerate(choices)
     )
+
+    for k in range(3):
+        msg = (
+            f"{question}\n{options}\nYour choice (int or name):"
+            if k == 0
+            else f"Please enter either of {choices}"
+        )
+
+        try:
+            choice = input(msg)
+        except KeyboardInterrupt as exc:
+            exc.add_note("Operation aborted.")
+            raise
+
+        if choice in choices:
+            return choice
+        if pick_by_number and choice.isdigit() and int(choice) in ids:
+            return ids[int(choice)]
+
+    raise RuntimeError("Too many invalid responses.")

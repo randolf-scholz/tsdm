@@ -14,7 +14,6 @@ __all__ = [
     "polars",
     "pyarrow",
     "torch",
-    "types",
     # Constants
     "BACKENDS",
     # Type aliases
@@ -27,5 +26,5 @@ __all__ = [
 ]
 
 
-from tsdm.backend import fallback, generic, numpy, pandas, polars, pyarrow, torch, types
+from tsdm.backend import fallback, generic, numpy, pandas, polars, pyarrow, torch
 from tsdm.backend.kernels import BACKENDS, Backend, BackendID, Kernels, get_backend

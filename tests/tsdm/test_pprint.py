@@ -19,8 +19,9 @@ from tsdm.pprint import (
     repr_sequence,
     repr_set,
 )
-from tsdm.types.mixins import SupportsArray
-from tsdm.types.protocols import Dataclass, NTuple
+from tsdm.types.dataclass import Dataclass
+from tsdm.types.namedtuple import NTuple
+from tsdm.types.numerical.mixins import SupportsArray
 
 INDENTATION = " " * INDENT
 
@@ -200,19 +201,19 @@ def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
-        (np.array(1.25)                         , "ndarray@cpu(1.25)"                     ),
-        (torch.tensor(1.25)                     , "Tensor@cpu(1.25)"                      ),
-        (np.array([])                           , "ndarray@cpu<0>"                        ),
-        (np.array([[]])                         , "ndarray@cpu<1,0>"                      ),
-        (np.empty((0, 0))                       , "ndarray@cpu<0,0>"                      ),
-        (np.array([1.25])                       , "ndarray@cpu<1>(1.25)"                  ),
-        (np.array([[1.25]])                     , "ndarray@cpu<1,1>(1.25)"                ),
-        (np.array([1, 2, 3])                    , "ndarray@cpu<3>[int64]"                 ),
-        (np.array([[1.4, 2.3], [3.2, 4.1]])     , "ndarray@cpu<2,2>[float64]"             ),
-        (torch.tensor([1, 2, 3])                , "Tensor@cpu<3>[torch.int64]"            ),
-        (torch.tensor([[1.4, 2.3], [3.2, 4.1]]) , "Tensor@cpu<2,2>[torch.float32]"        ),
-        (pd.DataFrame([[0, "foo", 1.25]])       , "DataFrame<1,3>[int64, object, float64]"),
-        (pd.Series([1, 2, 3])                   , "Series<3>[int64]"                      ),
+        (np.array(1.25)                         , "ndarray@cpu(1.25)"                  ),
+        (torch.tensor(1.25)                     , "Tensor@cpu(1.25)"                   ),
+        (np.array([])                           , "ndarray@cpu<0>"                     ),
+        (np.array([[]])                         , "ndarray@cpu<1,0>"                   ),
+        (np.empty((0, 0))                       , "ndarray@cpu<0,0>"                   ),
+        (np.array([1.25])                       , "ndarray@cpu<1>(1.25)"               ),
+        (np.array([[1.25]])                     , "ndarray@cpu<1,1>(1.25)"             ),
+        (np.array([1, 2, 3])                    , "ndarray@cpu<3>[int64]"              ),
+        (np.array([[1.4, 2.3], [3.2, 4.1]])     , "ndarray@cpu<2,2>[float64]"          ),
+        (torch.tensor([1, 2, 3])                , "Tensor@cpu<3>[torch.int64]"         ),
+        (torch.tensor([[1.4, 2.3], [3.2, 4.1]]) , "Tensor@cpu<2,2>[torch.float32]"     ),
+        (pd.DataFrame([[0, "foo", 1.25]])       , "DataFrame<1,3>[int64, str, float64]"),
+        (pd.Series([1, 2, 3])                   , "Series<3>[int64]"                   ),
     ],
 )  # fmt: skip
 def test_pprint_array(obj: SupportsArray, expected: str) -> None:

@@ -178,32 +178,21 @@ def irregularity_coefficient(s: ArrayLike, /, *, drop_zero: bool = True) -> floa
     Returns:
         γ(T) = \max(∆T) / \gcd(∆T)
     """
-    t = Series(np.asarray(s))
-    dt: Series = t.iloc[1:] - t.iloc[:-1]
+    t = np.asarray(s)
+    dt = t[1:] - t[:-1]
 
     if drop_zero:
-        # NOTE: use equality instead of inequality to serve nulls
-        mask = (dt == 0).fillna(value=False)
-        dt = dt[~mask]
+        dt = dt[dt != 0]
 
-    # special case floating point numbers
-    if pd.api.types.is_float_dtype(dt):
-        # convert to a numpy float
+    if np.issubdtype(dt.dtype, np.floating):
         dt_float = dt.astype(np.float64)
         return float(dt_float.max() / float_gcd(dt_float))
 
-    # special case integer numbers
-    if pd.api.types.is_integer_dtype(dt):
-        dt_int = dt
-    # otherwise convert to integer
-    else:
-        try:
-            dt_int = dt.astype("int64[pyarrow]")
-        except Exception as e:
-            e.add_note("Could not convert time differences to int64[pyarrow]")
-            raise
+    if np.issubdtype(dt.dtype, np.integer):
+        dt_int = dt.astype(np.int64)
+        return float(np.max(dt_int) / np.gcd.reduce(dt_int))
 
-    return float(np.max(dt_int) / np.gcd.reduce(dt_int))
+    raise NotImplementedError(f"Data type {dt.dtype=} not understood")
 
 
 def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
@@ -216,13 +205,11 @@ def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> floa
     Returns:
         γ(T) = σ(∆T) / μ(∆T)
     """
-    t = Series(np.asarray(s))
-    dt: Series = t.iloc[1:] - t.iloc[:-1]
+    t = np.asarray(s)
+    dt = t[1:] - t[:-1]
 
     if drop_zero:
-        # NOTE: use equality instead of inequality to serve nulls
-        mask = (dt == 0).fillna(value=False)
-        dt = dt[~mask]
+        dt = dt[dt != 0]
 
     return float(stats.variation(dt))
 
@@ -237,12 +224,11 @@ def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
     Returns:
         σ_g(T) = exp(σ(log(∆T)))
     """
-    t: Series = Series(np.asarray(s))
-    dt: Series = t.iloc[1:] - t.iloc[:-1]
+    t = np.asarray(s)
+    dt = t[1:] - t[:-1]
 
     if drop_zero:
         # NOTE: use equality instead of inequality to serve nulls
-        mask = (dt == 0).fillna(value=False)
-        dt = dt[~mask]
+        dt = dt[dt != 0]
 
     return float(stats.gstd(dt))

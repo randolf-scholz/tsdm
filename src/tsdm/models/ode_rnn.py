@@ -13,8 +13,8 @@ from torch import Tensor, nn
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.models.base import BaseModel
+from tsdm.models.util import import_module_from_path
 from tsdm.utils import deep_dict_update
-from tsdm.utils.system import import_module
 
 
 class ODE_RNN(BaseModel, nn.Module):
@@ -124,7 +124,7 @@ class ODE_RNN(BaseModel, nn.Module):
         r"""Initialize the internal ODE-RNN model."""
         super().__init__()
         # TODO: Use tsdm.home_path or something
-        module = import_module(Path.home() / ".tsdm/models/ODE-RNN")
+        module = import_module_from_path(Path.home() / ".tsdm/models/ODE-RNN")
         create_net = module.lib.utils.create_net
         ODEFunc = module.lib.ode_func.ODEFunc
         DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver

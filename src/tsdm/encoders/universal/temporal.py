@@ -14,20 +14,27 @@ from pyarrow import ArrowNotImplementedError
 
 from tsdm.backend import Backend, generic, get_backend
 from tsdm.backend.pandas import PandasDtype
-from tsdm.backend.types import NumericalSeries
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import FittableEncoder
-from tsdm.types.scalars import DurationScalar, TimestampScalar
+from tsdm.types.numerical import (
+    FloatArray,
+    SpanLikeScalar,
+    TimedeltaArray,
+    TimeLikeArray,
+    TimeLikeScalar,
+)
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
+class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
+    FittableEncoder[X, Y],
+):
     r"""Encode TimeDelta as Float."""
 
-    unit: DurationScalar = UNDEFINED
+    unit: SpanLikeScalar = UNDEFINED
     r"""The base frequency to convert timedeltas to."""
     timedelta_dtype: PandasDtype = UNDEFINED
     r"""The original dtype of the Series."""
@@ -39,13 +46,13 @@ class TimeDeltaEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
     def __init__(
         self,
         *,
-        unit: str | DurationScalar = UNDEFINED,
+        unit: str | SpanLikeScalar = UNDEFINED,
         rounding: bool = True,
     ) -> None:
         self.unit = UNDEFINED if unit is UNDEFINED else timedelta(unit)
         self.round = rounding
 
-    def fit(self, data: Arr, /) -> None:
+    def fit(self, data: X, /) -> None:
         self.backend = get_backend(data)
         self.timedelta_dtype = data.dtype
 
@@ -59,14 +66,14 @@ class TimeDeltaEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
             # convert base_freq back to time delta in the original dtype
             self.unit = self.backend.scalar(base_freq, dtype=self.timedelta_dtype)
 
-    def encode(self, x: Arr, /) -> Arr:
+    def encode(self, x: X, /) -> Y:
         try:
-            return x / self.unit
+            return x / self.unit  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
         except TypeError:
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
             return self.backend.cast(x, int) / self.backend.scalar(self.unit, int)
 
-    def decode(self, y: Arr, /) -> Arr:
+    def decode(self, y: Y, /) -> X:
         if self.round:
             y = generic.round(y)
 
@@ -81,12 +88,14 @@ class TimeDeltaEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
+class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](
+    FittableEncoder[X, Y],
+):
     r"""Encode Datetime as Float."""
 
-    offset: TimestampScalar = UNDEFINED
+    offset: TimeLikeScalar = UNDEFINED
     r"""The starting point of the timeseries."""
-    unit: DurationScalar = UNDEFINED
+    unit: SpanLikeScalar = UNDEFINED
     r"""The base frequency to convert timedeltas to."""
     datetime_dtype: Any = UNDEFINED
     r"""The original dtype of the Series."""
@@ -98,22 +107,22 @@ class DateTimeEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
     def __init__(
         self,
         *,
-        unit: str | DurationScalar = UNDEFINED,
-        offset: str | DurationScalar = UNDEFINED,
+        unit: str | SpanLikeScalar = UNDEFINED,
+        offset: str | SpanLikeScalar = UNDEFINED,
         rounding: bool = True,
     ) -> None:
         self.unit = UNDEFINED if unit is UNDEFINED else timedelta(unit)
         self.offset = UNDEFINED if offset is UNDEFINED else timestamp(offset)
         self.round = rounding
 
-    def fit(self, data: Arr, /) -> None:
+    def fit(self, data: X, /) -> None:
         # get the datetime dtype
         self.backend = get_backend(data)
         self.datetime_dtype = data.dtype
 
         # set the offset
         offset = (
-            cast("TimestampScalar", self.backend.nanmin(data))
+            cast("TimeLikeScalar", self.backend.nanmin(data))
             if self.offset is UNDEFINED
             else self.offset
         )
@@ -128,12 +137,12 @@ class DateTimeEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
             # This looks awkward but is robust.
             deltas = self.backend.drop_null(deltas)
             diffs = np.array(self.backend.cast(deltas, int))
-            unit: DurationScalar = int(np.gcd.reduce(diffs))
+            unit: SpanLikeScalar = int(np.gcd.reduce(diffs))
         else:
             unit = self.unit
         self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)
 
-    def encode(self, x: Arr, /) -> Arr:
+    def encode(self, x: X, /) -> Y:
         delta = x - self.offset
 
         try:
@@ -142,7 +151,7 @@ class DateTimeEncoder[Arr: NumericalSeries](FittableEncoder[Arr, Arr]):
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
             return self.backend.cast(delta, int) / self.backend.scalar(self.unit, int)
 
-    def decode(self, y: Arr, /) -> Arr:
+    def decode(self, y: Y, /) -> X:
         if self.round:
             y = generic.round(y)
 

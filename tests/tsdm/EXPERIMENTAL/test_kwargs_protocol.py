@@ -1,9 +1,37 @@
 r"""Tests for `tsdm.types.protocols.SupportsKwargs`."""
 
+from collections.abc import Iterable
+from typing import (
+    Protocol,
+    TypeIs,
+    _ProtocolMeta as ProtocolMeta,
+    runtime_checkable,
+)
+
 import pytest
 
-from tsdm.types.mixins import SupportsKeysAndGetItem
-from tsdm.types.protocols import SupportsKwargs
+from tsdm.types import SupportsKeysAndGetItem
+
+
+class _SupportsKwargsMeta(ProtocolMeta):
+    r"""Metaclass for `SupportsKwargs`."""
+
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[SupportsKwargs]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+        return isinstance(instance, SupportsKeysAndGetItem) and all(
+            isinstance(key, str)
+            for key in instance.keys()  # noqa: SIM118
+        )
+
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[SupportsKwargs]]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+        raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
+
+
+@runtime_checkable
+class SupportsKwargs[V](Protocol, metaclass=_SupportsKwargsMeta):  # +V
+    r"""Protocol for objects that support `**kwargs`."""
+
+    def keys(self) -> Iterable[str]: ...
+    def __getitem__(self, key: str, /) -> V: ...
 
 
 def test_supports_kwargs() -> None:

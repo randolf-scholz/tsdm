@@ -29,6 +29,6 @@ from tsdm.random.samplers.sliding_window_sampler import (
 SAMPLERS: dict[str, type[Sampler]] = {
     "HierarchicalSampler"  : HierarchicalSampler,
     "RandomSampler"        : RandomSampler,
-    "SlidingSampler"       : SlidingWindowSampler,
+    "SlidingWindowSampler" : SlidingWindowSampler,
 }  # fmt: skip
 r"""Dictionary of all available samplers."""

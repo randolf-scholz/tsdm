@@ -10,7 +10,7 @@ from collections.abc import Iterable
 from types import EllipsisType
 from typing import Optional, overload
 
-from tsdm.types.aliases import Axis, Indexer
+from tsdm.types.aliases import Axis, IndexArgND
 
 
 def get_broadcast(
@@ -76,14 +76,14 @@ def get_broadcast(
 
 
 @overload
-def reduce_axes(axis: None, selection: Indexer) -> None: ...
+def reduce_axes(axis: None, selection: IndexArgND) -> None: ...
 @overload
 def reduce_axes(
-    axis: int | tuple[int, ...], selection: str | list[str] | Indexer
+    axis: int | tuple[int, ...], selection: str | list[str] | IndexArgND
 ) -> tuple[int, ...]: ...
-
-
-def reduce_axes(axis: Axis, selection: str | list[str] | Indexer) -> Axis:
+def reduce_axes(
+    axis: Axis, selection: str | list[str] | IndexArgND
+) -> tuple[int, ...] | None:
     r"""Returns axis selection corresponding to given tensor indexing.
 
     Assuming some universal operator `op` acts in tensor `T`, that is `op(T, axis=axis)`,

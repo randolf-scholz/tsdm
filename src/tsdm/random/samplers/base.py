@@ -15,7 +15,7 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import Final, Protocol, runtime_checkable
 
 from numpy.random import Generator
 from pandas import Index
@@ -95,7 +95,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
         For Iterable-style datasets, the sampler will return random values of the iterable.
     """
 
-    data: Dataset[T]
+    data: Final[Dataset[T]]
 
     _: KW_ONLY
 

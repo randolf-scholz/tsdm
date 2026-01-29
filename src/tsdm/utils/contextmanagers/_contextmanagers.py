@@ -6,7 +6,6 @@ __all__ = [
     # Classes
     "ray_cluster",
     "system_path",
-    "timeout",
     "timer",
 ]
 
@@ -17,12 +16,11 @@ import os
 import signal
 import sys
 from contextlib import AbstractContextManager as ContextManager, ContextDecorator
-from dataclasses import KW_ONLY, dataclass
 from importlib.util import find_spec
 from pathlib import Path
 from time import perf_counter_ns
 from types import FrameType, ModuleType, TracebackType
-from typing import ClassVar, Literal, Never, Optional, Self
+from typing import ClassVar, Literal as L, Never, Optional, Self, cast, overload
 
 
 class ray_cluster(ContextDecorator):
@@ -57,7 +55,7 @@ class ray_cluster(ContextDecorator):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
         /,
-    ) -> Literal[False]:
+    ) -> L[False]:
         self.LOGGER.warning("Tearing down ray cluster.")
 
         if self.ray is not None:
@@ -92,12 +90,12 @@ class system_path(ContextDecorator):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
         /,
-    ) -> Literal[False]:
+    ) -> L[False]:
         sys.path = self.previous_path
         return False
 
 
-class timer(ContextDecorator):
+class timer[ExitT: bool](ContextDecorator):
     r"""Context manager for timing a block of code."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -108,6 +106,34 @@ class timer(ContextDecorator):
     r"""End time of the timer."""
     disable_gc: bool = False
     r"""Whether to disable garbage collection."""
+    timeout: float | None = None
+    r"""Timeout in seconds."""
+
+    @overload
+    def __init__(self: timer[L[False]], *, disable_gc: bool = ...) -> None: ...
+    @overload
+    def __init__(
+        self: timer[bool],
+        timeout: float | None,
+        *,
+        msg: str = ...,
+        disable_gc: bool = ...,
+    ) -> None: ...
+    def __init__(
+        self,
+        timeout: float | None = None,
+        *,
+        msg: str = "Execution timed out.",
+        disable_gc: bool = False,
+    ) -> None:
+        super().__init__()
+        self.disable_gc = disable_gc
+        self.timeout = timeout
+        self.exception = TimeoutError(msg)
+
+    def _timeout_handler(self, signum: int, frame: FrameType | None) -> Never:  # noqa: ARG002
+        self.exception.add_note(f"Timed out after {self.timeout} seconds.")
+        raise self.exception
 
     def __enter__(self) -> Self:
         r"""Disable garbage collection and start the timer."""
@@ -122,6 +148,14 @@ class timer(ContextDecorator):
         if self.disable_gc:
             gc.disable()
 
+        if self.timeout is not None:
+            assert self.timeout > 0  # timeout must be positive
+            # Save previous state (supports nesting reasonably well)
+            self._old_handler = signal.getsignal(signal.SIGALRM)
+            self._old_itimer = signal.getitimer(signal.ITIMER_REAL)
+            signal.signal(signal.SIGALRM, self._timeout_handler)
+            signal.setitimer(signal.ITIMER_REAL, self.timeout)
+
         # start timer
         self.start_time = perf_counter_ns()
         return self
@@ -132,14 +166,31 @@ class timer(ContextDecorator):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
         /,
-    ) -> Literal[False]:
+    ) -> ExitT:
         r"""Stop the timer and re-enable garbage collection."""
         self.end_time = perf_counter_ns()
+        if self.timeout is not None:
+            # Cancel the scheduled alarm
+            signal.setitimer(signal.ITIMER_REAL, 0.0)
+            # Restore previous signal handler and itimer
+            signal.signal(signal.SIGALRM, self._old_handler)
+            signal.setitimer(
+                signal.ITIMER_REAL,
+                self._old_itimer[0],
+                self._old_itimer[1],
+            )
 
-        # re-enable garbage collection
         if self.disable_gc:
             gc.enable()
-        return False
+
+        return cast("ExitT", exc_val is self.exception)
+
+    @property
+    def remaining_time(self) -> float | None:
+        r"""Remaining time in seconds."""
+        if self.timeout is None:
+            return None
+        return self.timeout - self.elapsed_seconds
 
     @property
     def elapsed_time(self) -> int:
@@ -147,7 +198,7 @@ class timer(ContextDecorator):
         if start_time := getattr(self, "start_time", None) is None:
             raise RuntimeError("Timer has not been started!")
         if end_time := getattr(self, "end_time", None) is None:
-            raise RuntimeError("Timer is still running!")
+            return perf_counter_ns() - start_time
         return end_time - start_time
 
     @property
@@ -158,59 +209,25 @@ class timer(ContextDecorator):
     @property
     def value(self) -> str:
         r"""Formatted elapsed time."""
-        hours, remainder = divmod(self.elapsed_time, 3_600_000_000_000)
-        minutes, remainder = divmod(remainder, 60_000_000_000)
-        seconds, remainder = divmod(remainder, 1_000_000_000)
-        milliseconds, remainder = divmod(remainder, 1_000_000)
-        microseconds = remainder // 1_000
-
-        if hours:
-            return f"{hours}h {minutes}m"
-        if minutes:
-            return f"{minutes}m {seconds}s"
-        if seconds:  # print 2 decimal places
-            return f"{seconds}.{remainder // 10**7:02d}s"
-        if milliseconds:  # print 2 decimal places
-            return f"{milliseconds}.{remainder // 10**4:02d}ms"
-        if microseconds:  # print 2 decimal places
-            return f"{microseconds}.{remainder // 10}µs"
-        return f"{remainder}ns"
+        return _format_ns(self.elapsed_time)
 
 
-@dataclass
-class timeout(ContextDecorator, ContextManager):
-    r"""Context manager for timing out a block of code."""
+def _format_ns(ns: int, /) -> str:
+    r"""Format nanoseconds into a human-readable string."""
+    hours, remainder = divmod(ns, 3_600_000_000_000)
+    minutes, remainder = divmod(remainder, 60_000_000_000)
+    seconds, remainder = divmod(remainder, 1_000_000_000)
+    milliseconds, remainder = divmod(remainder, 1_000_000)
+    microseconds = remainder // 1_000
 
-    num_seconds: int
-
-    _: KW_ONLY
-
-    suppress: bool = False
-
-    def __post_init__(self) -> None:
-        self._exception = TimeoutError("Execution timed out.")
-
-    def _timeout_handler(self, signum: int, frame: FrameType | None) -> Never:  # noqa: ARG002
-        raise self._exception
-
-    def __enter__(self) -> Self:
-        # Set the signal handler for SIGALRM (alarm signal)
-        signal.signal(signal.SIGALRM, self._timeout_handler)
-        # Schedule the alarm to go off in num_seconds seconds
-        signal.alarm(self.num_seconds)
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        exc_tb: TracebackType | None,
-        /,
-    ) -> bool:
-        # Cancel the scheduled alarm
-        signal.alarm(0)
-        # Reset the signal handler to its default behavior
-        signal.signal(signal.SIGALRM, signal.SIG_DFL)
-        if exc_type is self._exception:
-            return self.suppress
-        return False
+    if hours:
+        return f"{hours}h {minutes}m"
+    if minutes:
+        return f"{minutes}m {seconds}s"
+    if seconds:  # print 2 decimal places
+        return f"{seconds}.{remainder // 10**7:02d}s"
+    if milliseconds:  # print 2 decimal places
+        return f"{milliseconds}.{remainder // 10**4:02d}ms"
+    if microseconds:  # print 2 decimal places
+        return f"{microseconds}.{remainder // 10}µs"
+    return f"{remainder}ns"

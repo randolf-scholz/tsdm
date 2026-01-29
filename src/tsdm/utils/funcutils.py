@@ -29,7 +29,6 @@ import inspect
 from ast import AST, Name, Return, Tuple
 from collections.abc import (
     Callable as Fn,
-    Hashable,
     Iterable,
     Iterator,
     Mapping,
@@ -37,7 +36,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from dataclasses import fields
-from functools import partial, wraps
+from functools import wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Optional, overload
 
@@ -49,7 +48,7 @@ from tsdm.constants import (
     VAR_POSITIONAL,
 )
 from tsdm.types.aliases import Nested, NestedBuiltin
-from tsdm.types.protocols import Dataclass, issubclass_dataclass
+from tsdm.types.dataclass import Dataclass, issubclass_dataclass
 from tsdm.utils.frozenmap import FrozenMap
 
 
@@ -348,70 +347,60 @@ def prod_fn(*funcs: Fn[[Any], Any]) -> Fn[[tuple], tuple]:
 
 
 def recurse_on_nested_builtin[T, R](
-    x: NestedBuiltin[T],
+    arg: NestedBuiltin[T],
     /,
     *,
     leaf_fn: Fn[[T], R],
     leaf_type: type[T],
     # optional arguments
     leaf_priotizied: bool = False,
-    recursion_fn: Optional[Fn[[NestedBuiltin[T]], NestedBuiltin[R]]] = None,
 ) -> NestedBuiltin[R]:
     r"""Recursively apply a function to a nested data structures.
 
     Args:
-        x: Nested data structure to apply the function to.
+        arg: Nested data structure to apply the function to.
         leaf_fn: Function to apply to the leaf nodes.
         leaf_type: Type of the leaf nodes.
         leaf_priotizied: Whether to check for leaf-type first or last.
-        recursion_fn: Function to apply to non-leaf nodes.
 
     Returns:
         Nested data structure.
     """
-    recurse: Fn[[NestedBuiltin[T]], NestedBuiltin[R]] = (
-        recursion_fn
-        if recursion_fn is not None
-        else partial(
-            recurse_on_nested_builtin,
-            leaf_fn=leaf_fn,
-            leaf_type=leaf_type,
-            leaf_priotizied=leaf_priotizied,
-        )
-    )
 
-    match x:
-        case leaf if leaf_priotizied and isinstance(leaf, leaf_type):
-            return leaf_fn(leaf)
-        case dict(mapping):
-            return {k: recurse(v) for k, v in mapping.items()}
-        case list(seq):
-            return [recurse(obj) for obj in seq]
-        case tuple(seq):
-            return tuple(recurse(obj) for obj in seq)
-        case frozenset(items):
-            return frozenset(recurse(obj) for obj in items)
-        case set(items):
-            # FIXME: https://github.com/python/typeshed/issues/9571
-            return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
-        case leaf if isinstance(leaf, leaf_type):
-            return leaf_fn(leaf)
-        case _:
-            raise TypeError(
-                f"Unsupported type: {type(x)} not an instance of {leaf_type} or one of the builtin containers"
-                f" {dict, list, tuple, frozenset, set}."
-            )
+    def recurse(obj: NestedBuiltin[T], /) -> NestedBuiltin[R]:
+        match obj:
+            case leaf if leaf_priotizied and isinstance(leaf, leaf_type):
+                return leaf_fn(leaf)
+            case dict(mapping):
+                return {k: recurse(v) for k, v in mapping.items()}
+            case list(seq):
+                return [recurse(obj) for obj in seq]
+            case tuple(seq):
+                return tuple(recurse(obj) for obj in seq)
+            case frozenset(items):
+                return frozenset(recurse(obj) for obj in items)
+            case set(items):
+                # FIXME: https://github.com/python/typeshed/issues/9571
+                return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
+            case leaf if isinstance(leaf, leaf_type):
+                return leaf_fn(leaf)
+            case _:
+                raise TypeError(
+                    f"Unsupported type: {type(obj)} not an instance of {leaf_type} or one of the builtin containers"
+                    f" {dict, list, tuple, frozenset, set}."
+                )
+
+    return recurse(arg)
 
 
 def recurse_on_nested_generic[T, R](
-    x: Nested[T],
+    arg: Nested[T],
     /,
     *,
     leaf_fn: Fn[[T], R],
     leaf_type: type[T],
     # optional arguments
     leaf_prioritized: bool = False,
-    recursion_fn: Optional[Fn[[Nested[T]], Nested[R]]] = None,
     # factories
     mapping_factory: Fn[[dict], Mapping] = dict,
     sequence_factory: Fn[[list], Sequence] = list,
@@ -423,7 +412,7 @@ def recurse_on_nested_generic[T, R](
     r"""Recursively apply a function to a nested data structures.
 
     Args:
-        x: Nested data structure to apply the function to.
+        arg: Nested data structure to apply the function to.
         leaf_fn: Function to apply to the leaf nodes.
         leaf_type: Type of the leaf nodes.
         recursion_fn: Function to apply to non-leaf nodes.
@@ -438,38 +427,40 @@ def recurse_on_nested_generic[T, R](
     Returns:
         Nested data structure.
     """
-    recurse: Fn[[Nested[T]], Nested[R]] = (
-        recursion_fn
-        if recursion_fn is not None
-        else partial(
-            recurse_on_nested_generic,
-            leaf_fn=leaf_fn,
-            leaf_type=leaf_type,
-            leaf_prioritized=leaf_prioritized,
-        )
-    )
 
-    is_hashable = isinstance(x, Hashable)  # pyright: ignore[reportGeneralTypeIssues]
+    def recurse(obj: Nested[T], /) -> Nested[R]:
+        try:
+            hash(obj)
+        except Exception:
+            is_hashable = False
+        else:
+            is_hashable = True
 
-    match x:
-        case leaf if leaf_prioritized and isinstance(leaf, leaf_type):
-            return leaf_fn(leaf)
-        case Mapping() as mapping:
-            d = {k: recurse(v) for k, v in mapping.items()}
-            return hashable_mapping_factory(d) if is_hashable else mapping_factory(d)
-        case Sequence() as seq:
-            lst = [recurse(obj) for obj in seq]
-            return (
-                hashable_sequence_factory(lst) if is_hashable else sequence_factory(lst)
-            )
-        case AbstractSet() as items:
-            # FIXME: https://github.com/python/typeshed/issues/9571
-            col = {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
-            return hashable_set_factory(col) if is_hashable else set_factory(col)
-        case leaf if isinstance(leaf, leaf_type):
-            return leaf_fn(leaf)
-        case _:
-            raise TypeError(
-                f"Unsupported type: {type(x)} not an instance of {leaf_type} or one of the builtin containers"
-                f" {dict, list, tuple, frozenset, set}."
-            )
+        match obj:
+            case leaf if leaf_prioritized and isinstance(leaf, leaf_type):
+                return leaf_fn(leaf)
+            case Mapping() as mapping:
+                d = {k: recurse(v) for k, v in mapping.items()}
+                return (
+                    hashable_mapping_factory(d) if is_hashable else mapping_factory(d)
+                )
+            case Sequence() as seq:
+                lst = [recurse(obj) for obj in seq]
+                return (
+                    hashable_sequence_factory(lst)
+                    if is_hashable
+                    else sequence_factory(lst)
+                )
+            case AbstractSet() as items:
+                # FIXME: https://github.com/python/typeshed/issues/9571
+                col = {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
+                return hashable_set_factory(col) if is_hashable else set_factory(col)
+            case leaf if isinstance(leaf, leaf_type):
+                return leaf_fn(leaf)
+            case _:
+                raise TypeError(
+                    f"Unsupported type: {type(obj)} not an instance of {leaf_type} or one of the builtin containers"
+                    f" {dict, list, tuple, frozenset, set}."
+                )
+
+    return recurse(arg)

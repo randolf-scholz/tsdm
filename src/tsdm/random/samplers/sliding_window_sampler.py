@@ -33,19 +33,19 @@ from pandas import Interval
 from tsdm.constants import RNG
 from tsdm.datatools.datasets import SequentialDataset, get_first_sample, get_last_sample
 from tsdm.random.samplers.base import BaseSampler
-from tsdm.types.protocols import Array
-from tsdm.types.scalars import DurationScalar, TimestampScalar
+from tsdm.types.abc import Vec
+from tsdm.types.numerical.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.utils import timedelta, timestamp
 
 
 # region helper functions --------------------------------------------------------------
-def compute_grid[TD: DurationScalar](
-    tmin: str | TimestampScalar[TD],
-    tmax: str | TimestampScalar[TD],
+def compute_grid[TD: SpanLikeScalar](
+    tmin: str | TimeLikeScalar[TD],
+    tmax: str | TimeLikeScalar[TD],
     step: str | TD,
     /,
     *,
-    offset: Optional[str | TimestampScalar[TD]] = None,
+    offset: Optional[str | TimeLikeScalar[TD]] = None,
 ) -> list[int]:
     r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
@@ -138,7 +138,7 @@ type MULTI = Literal[HORIZON.MULTI]
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
 class SlidingWindowSampler[
-    DType: TimestampScalar,  # (np.integer, np.floating, np.datetime64, np.timedelta64)
+    DType: TimeLikeScalar,  # (np.integer, np.floating, np.datetime64, np.timedelta64)
     ModeVar: (B, M, S, I, P, X, UNKNOWN),
     MultiVar: (ONE, MULTI),
 ](BaseSampler):
@@ -185,8 +185,8 @@ class SlidingWindowSampler[
 
     data: NDArray[DType]  # type: ignore[type-var]  # pyright: ignore[reportInvalidTypeForm]
 
-    size: DurationScalar
-    stride: DurationScalar
+    size: SpanLikeScalar
+    stride: SpanLikeScalar
     mode: ModeVar
     multi_horizon: bool
     shuffle: bool
@@ -196,7 +196,7 @@ class SlidingWindowSampler[
     # dependent variables
     tmin: DType
     tmax: DType
-    cumulative_horizons: NDArray[DurationScalar]  # type: ignore[type-var]  # pyright: ignore[reportInvalidTypeForm]
+    cumulative_horizons: NDArray[SpanLikeScalar]  # type: ignore[type-var]  # pyright: ignore[reportInvalidTypeForm]
 
     if TYPE_CHECKING:
         # region __new__ overloads -----------------------------------------------------
@@ -429,78 +429,78 @@ class SlidingWindowSampler[
         # fmt: off
         # HORIZON=MULTI ----------------------------------------------------------------
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: Literal["mask", MODE.MASK],
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, I, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: Literal["interval", MODE.INTERVAL],
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: Literal["index", MODE.INDEX],
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: Literal["points", MODE.POINTS],
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload  # unknown mode
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, MULTI],
             data_source: SequentialDataset[DT],
             /,
             *,
             mode: MODE | Mode | str,
-            horizons: Array[str] | Array[TD],
+            horizons: Vec[str] | Vec[TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         # HORIZON=ONE ------------------------------------------------------------------
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, ONE],
             data_source: SequentialDataset[DT],
             /,
@@ -510,7 +510,7 @@ class SlidingWindowSampler[
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, ONE],
             data_source: SequentialDataset[DT],
             /,
@@ -520,7 +520,7 @@ class SlidingWindowSampler[
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, ONE],
             data_source: SequentialDataset[DT],
             /,
@@ -530,7 +530,7 @@ class SlidingWindowSampler[
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, ONE],
             data_source: SequentialDataset[DT],
             /,
@@ -540,7 +540,7 @@ class SlidingWindowSampler[
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, ONE],
             data_source: SequentialDataset[DT],
             /,
@@ -550,7 +550,7 @@ class SlidingWindowSampler[
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
-        def __init__[DT: TimestampScalar, TD: DurationScalar](
+        def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, ONE],
             data_source: SequentialDataset[DT],
             /,
@@ -562,13 +562,13 @@ class SlidingWindowSampler[
         # fmt: on
         # endregion __init__  overloads ------------------------------------------------
 
-    def __init__[DT: TimestampScalar, TD: DurationScalar](
+    def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
         self,
         data_source: SequentialDataset[DT],
         /,
         *,
         mode: ModeVar | Mode | str,
-        horizons: str | TD | Array[str] | Array[TD],
+        horizons: str | TD | Vec[str] | Vec[TD],
         stride: str | TD,
         drop_last: bool = False,
         shuffle: bool = False,
@@ -597,7 +597,7 @@ class SlidingWindowSampler[
             case str(unit):
                 self.multi_horizon = False
                 self.horizons = np.array([timedelta(unit)], dtype=td_type)
-            case DurationScalar() as td:
+            case SpanLikeScalar() as td:
                 self.multi_horizon = False
                 self.horizons = np.array([td], dtype=td_type)
             case Iterable() as vals:

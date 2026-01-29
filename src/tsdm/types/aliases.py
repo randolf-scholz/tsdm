@@ -1,37 +1,18 @@
 r"""Collection of Useful Type Aliases."""
 
 __all__ = [
-    # Literal collections
-    "TS_Keys",
-    "TSC_Keys",
-    # Type Qualifiers
-    "Fittable",
-    "Derivable",
-    "DerivedField",
-    "FittedField",
-    # Generic Type Aliases
-    "DictArg",
-    "IndexArg",
-    "Indexer",
-    "Label",
-    "LabelArg",
-    "MultiIndexer",
-    # Custom Type Aliases
-    "Axis",
-    "Dims",
+    # path types
     "DirPath",
     "FilePath",
     "PathLike",
-    "Shape",
+    # argument types
+    "DictArg",
+    "IndexArg1D",
+    "IndexArgND",
+    "Axis",
+    "DimArg",
     "Size",
-    # Scalar Type Aliases
-    "BuiltinScalar",
-    "StringScalar",
-    "NumericalScalar",
-    "TorchScalar",
-    "TimeScalar",
-    "PythonScalar",
-    # Configuration
+    # JSON-like Types
     "JSON",
     "TOML",
     "YAML",
@@ -44,86 +25,32 @@ __all__ = [
 
 
 import os
-from collections.abc import (
-    Collection,
-    Iterable,
-    Mapping,
-)
-from datetime import datetime, timedelta
+from collections.abc import Collection, Iterable, Mapping
+from datetime import datetime
 from types import EllipsisType
-from typing import Annotated, Literal
 
-# region field types -------------------------------------------------------------------
-type TS_Keys = Literal["timeseries", "timeseries_metadata"]
-r"""Type Alias for time series dataset keys."""
-type TSC_Keys = Literal[
-    "timeseries",
-    "timeseries_metadata",
-    "static_covariates",
-    "static_covariates_metadata",
-]
-r"""Type Alias for time series collections dataset keys."""
-# endregion ----------------------------------------------------------------------------
-
-# region type qualifiers ---------------------------------------------------------------
-type Fittable[T] = Annotated[T, "Fittable"]
-r"""Type Alias for fields that can be fitted."""
-type Derivable[T] = Annotated[T, "Derivable"]
-r"""Type Alias for fields that can be derived automatically."""
-type DerivedField[T] = Annotated[T, "DerivedField"]
-r"""Type Alias for fields that are derived automatically."""
-type FittedField[T] = Annotated[T, "FittedField"]
-r"""Type Alias for fields that are fitted automatically."""
-# endregion type qualifiers ------------------------------------------------------------
-
-# region custom type aliases -----------------------------------------------------------
-type Axis = None | int | tuple[int, ...]
-r"""Type Alias for axestype ."""
-type Dims = None | int | list[int]
-r"""Type Alias for dimensions compatible with torchscript."""  # FIXME: https://github.com/pytorch/pytorch/issues/64700
-type Size = int | tuple[int, ...]
-r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
-type Shape = int | tuple[int, ...]
-r"""Type Alias for shape-like objects (note: `ones(shape=None)` creates 0d-array."""
+# region function argument aliases -----------------------------------------------------
 type PathLike = str | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 type FilePath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to file."""
 type DirPath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to directory."""
-# endregion custom type aliases --------------------------------------------------------
-
-# region aliases for indexing ----------------------------------------------------------
-type IndexArg = None | int | slice | range | list[int] | list[bool] | EllipsisType
+type Axis = None | int | tuple[int, ...]
+r"""Type Alias for axestype ."""
+type Size = int | tuple[int, ...]
+r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
+type DimArg = None | int | list[int]
+r"""Type Alias for dimensions compatible with torchscript."""
+type IndexArg1D = None | int | slice | range | list[int] | list[bool] | EllipsisType
 r"""Type alias for `__getitem__` argument for tensors."""
-type MultiIndexer = IndexArg | tuple[IndexArg, ...]
+type IndexArgND = IndexArg1D | tuple[IndexArg1D, ...]
 r"""Indexer that always returns a sub-tensor."""
-type Indexer = int | tuple[int, ...] | MultiIndexer
-r"""Type hint for `__getitem__` argument for tensors."""
-type LabelArg = None | int | str | slice | range | list[int] | list[str] | EllipsisType
-r"""Type Alias for `__getitem__` argument for tabular objects."""
-type Label = LabelArg | tuple[LabelArg, ...]
-r"""Type Alias for `__getitem__` argument for tabular objects."""
-# endregion aliases for indexing -------------------------------------------------------
-
-# region Scalar Type Aliases -----------------------------------------------------------
-type BuiltinScalar = bool | int | float | complex | str | bytes
-r"""Type Alias for scalars."""
-type StringScalar = str | bytes
-r"""Type Alias for string scalars."""
-type NumericalScalar = bool | int | float | complex
-r"""Type Alias for numerical scalars."""
-type TorchScalar = bool | int | float | str
-r"""Type Alias for scalars allowed by torchscript."""
-type TimeScalar = datetime | timedelta
-r"""Type Alias for time scalars."""
-type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
-r"""Type Alias for Python scalars."""
-# endregion Scalar Type Aliases --------------------------------------------------------
-
-# region generic type aliases ----------------------------------------------------------
 type DictArg[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
 r"""Type Alias for dictionary-like arguments."""
+# endregion function argument aliases --------------------------------------------------
+
+# region generic type aliases ----------------------------------------------------------
 type Nested[T] = Mapping[str, Nested[T]] | Collection[Nested[T]] | T  # +T
 r"""Type Alias for nested types (JSON-Like)."""
 type NestedMapping[K, V] = Mapping[K, V | NestedMapping[K, V]]

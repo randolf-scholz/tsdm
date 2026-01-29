@@ -24,9 +24,10 @@ from tsdm.pprint import (
     repr_set,
     repr_shortform,
 )
-from tsdm.types.callback_protocols import IdentityMapOnCls
-from tsdm.types.mixins import SupportsArray
-from tsdm.types.protocols import Dataclass, NTuple
+from tsdm.types.callbacks import IdentityMapOnCls
+from tsdm.types.dataclass import Dataclass
+from tsdm.types.namedtuple import NTuple
+from tsdm.types.numerical.mixins import SupportsArray
 from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
 
 # region workaround mypy bug -----------------------------------------------------------

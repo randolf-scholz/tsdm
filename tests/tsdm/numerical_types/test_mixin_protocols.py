@@ -1,8 +1,6 @@
 r"""Test other protocols."""
 
 from array import array as python_array
-from collections.abc import Mapping
-from typing import assert_type
 
 import numpy as np
 import pandas as pd
@@ -11,23 +9,9 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.backend.types import (
-    MutableTensor,
-    NumericalArray,
-)
-from tsdm.types.arrays import (
-    ArrayLike,
-)
-from tsdm.types.mixins import (
-    SupportsArray,
-    SupportsArrayUfunc,
-    SupportsDtype,
-    SupportsKeysAndGetItem,
-)
-from tsdm.types.protocols import ShapeLike
+from tsdm.types.numerical.mixins import SupportsArray, SupportsArrayUfunc, SupportsDtype
 
 RNG = np.random.default_rng()
-ARRAY_PROTOCOLS = (ArrayLike, NumericalArray, MutableTensor)
 
 BOOLS = [True, False, True, False]
 STRINGS = ["a", "b", "c", "d"]
@@ -126,35 +110,6 @@ SUPPORTS_ARRAYS_UFUNC: dict[str, SupportsArrayUfunc] = {
     "pandas_table_float"  : PD_TABLE_FLOAT,
     "polars_series_int"   : PL_SERIES_INT,
 }  # fmt: skip
-
-
-def test_supportskeysgetitem() -> None:
-    r"""Test the SupportsKeysAndGetItem protocol."""
-
-    def foo[K, V](x: Mapping[K, V]) -> SupportsKeysAndGetItem[K, V]:
-        return x
-
-    assert_type(foo({"a": 1}), SupportsKeysAndGetItem[str, int])
-
-
-def test_shapelike_protocol() -> None:
-    r"""Test the Shape protocol."""
-    data = [1, 2, 3]
-    torch_tensor: torch.Tensor = torch.tensor(data)
-    numpy_ndarray: np.ndarray = np.array(data)
-    pandas_series: pd.Series = pd.Series(data)
-    pandas_index: pd.Index = pd.Index(data)
-
-    x: ShapeLike = (1, 2, 3)
-    y: ShapeLike = torch_tensor.shape
-    z: ShapeLike = numpy_ndarray.shape
-    w: ShapeLike = pandas_series.shape
-    v: ShapeLike = pandas_index.shape
-    assert isinstance(x, ShapeLike)
-    assert isinstance(y, ShapeLike)
-    assert isinstance(z, ShapeLike)
-    assert isinstance(w, ShapeLike)
-    assert isinstance(v, ShapeLike)
 
 
 @pytest.mark.parametrize("case", SUPPORTS_ARRAY)

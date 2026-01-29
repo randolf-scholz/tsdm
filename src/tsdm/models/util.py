@@ -1,14 +1,28 @@
 r"""Utilities for models."""
 
-__all__ = ["autojit", "initialize_from_config"]
+__all__ = [
+    "autojit",
+    "initialize_from_config",
+    "import_module_from_path",
+    "install_package",
+    "get_requirements",
+    "write_requirements",
+]
 
+import logging
+import subprocess
 from functools import wraps
-from importlib import import_module
-from typing import Any, Self
+from importlib.util import find_spec, module_from_spec, spec_from_file_location
+from pathlib import Path
+from types import ModuleType
+from typing import Any, Optional, Self
 
 from torch import jit, nn
 
 from tsdm.config import CONFIG
+from tsdm.types.aliases import DirPath
+from tsdm.utils._utils import query_bool
+from tsdm.utils.contextmanagers import system_path
 
 
 def autojit[M: nn.Module](base_class: type[M], /) -> type[M]:
@@ -72,7 +86,7 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     opts = {k: v for k, v in conf.items() if not k.startswith("__")}
 
     # import module and class
-    module = import_module(module_name)
+    module = import_module_from_path(module_name)
     cls = getattr(module, cls_name)
 
     # initialize class with options
@@ -83,3 +97,101 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
         raise
 
     return obj
+
+
+def import_module_from_path(
+    module_dir: DirPath, /, *, module_name: Optional[str] = None
+) -> ModuleType:
+    r"""Return python module imported from the path.
+
+    References:
+        - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+        - https://stackoverflow.com/a/41904558
+    """
+    module_path = Path(module_dir)
+    module_init = module_path / "__init__.py"
+    module_name = module_name or module_path.parts[-1]
+
+    # validate that the module has an __init__ file.
+    if not module_init.exists():
+        raise FileNotFoundError(f"Module {module_path} has no __init__ file !")
+
+    with system_path(module_path):
+        spec = spec_from_file_location(module_name, str(module_init))
+        assert spec is not None
+        assert spec.loader is not None
+        the_module = module_from_spec(spec)
+        spec.loader.exec_module(the_module)
+        return the_module
+
+
+def get_requirements(
+    package_name: str, /, *, version: Optional[str] = None
+) -> dict[str, str]:
+    r"""Return dictionary containing requirements with version numbers.
+
+    If `version=None`, then the latest version is used.
+    """
+    # get requirements as string of the form package==version\n.
+    reqs = subprocess.check_output(
+        (
+            r"johnnydep",
+            f" {package_name}" + f"=={version}" * bool(version),
+            r" --output-format",
+            r" pinned",
+        ),
+        text=True,
+    )
+    return dict(line.split("==") for line in reqs.rstrip("\n").split("\n"))
+
+
+def write_requirements(
+    path: Optional[Path] = None,
+    /,
+    *,
+    package: str,
+    version: Optional[str] = None,
+) -> None:
+    r"""Write a 'requirements'-dictionary to a `requirements.txt` file.
+
+    If `version=None`, then the latest version is used.
+    """
+    requirements: dict[str, str] = get_requirements(package, version=version)
+    # Note: the first entry is the package itself!
+    fname = f"requirements-{package}=={requirements.pop(package)}.txt"
+    path = Path("requirements") if path is None else Path(path)
+    file = path / fname
+    text = "\n".join(f"{k}=={requirements[k]}" for k in sorted(requirements))
+    file.write_text(text, encoding="utf8")
+
+
+def install_package(
+    package_name: str,
+    /,
+    *,
+    non_interactive: bool = False,
+    installer: str = "pip",
+    options: tuple[str, ...] = (),
+) -> None:
+    r"""Install a package via pip or other package manager.
+
+    Args:
+        package_name: str
+        non_interactive: If False, will generate a user prompt.
+        installer: Can also use `conda` or `mamba`
+        options: Options to pass to the installer
+    """
+    package_available = find_spec(package_name)
+    install_call = (installer, "install", package_name)
+    if not package_available:
+        if non_interactive or query_bool(
+            f"Package {package_name!r} not found. Do you want to install it?",
+            default=True,
+        ):
+            try:
+                subprocess.run(install_call + options, check=True)
+            except subprocess.CalledProcessError as exc:
+                raise RuntimeError("Execution failed with error") from exc
+    else:
+        logger = logging.getLogger(f"{__name__}/{install_package.__name__}")
+        logger.info("Package '%s' already installed.", package_name)

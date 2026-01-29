@@ -11,36 +11,35 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.backend.types import (
+from tsdm.testing import assert_protocol, check_shared_interface
+from tsdm.types.numerical import (
+    ArrayType,
+    SeriesType,
+    TableType,
+)
+from tsdm.types.numerical._array_alterantive import (
     MutableTensor,
     NumericalArray,
     NumericalSeries,
     NumericalTensor,
-    SupportsMatmul,
     SupportsMutation,
-    SupportsVectorArithmetic,
-    SupportsVectorComparison,
 )
-from tsdm.testing import assert_protocol, check_shared_interface
-from tsdm.types.arrays import (
-    ArrayLike,
-    SeriesLike,
-    TableLike,
-)
-from tsdm.types.mixins import (
+from tsdm.types.numerical.arrays import SupportsArrayComparison
+from tsdm.types.numerical.mixins import (
     SupportsArray,
     SupportsArrayUfunc,
     SupportsDataFrame,
     SupportsDevice,
     SupportsDtype,
     SupportsItem,
+    SupportsMatmul,
     SupportsNdim,
     SupportsShape,
 )
 
 __logger__ = logging.getLogger(__name__)
 RNG = np.random.default_rng()
-ARRAY_PROTOCOLS = (ArrayLike, NumericalArray, MutableTensor)
+ARRAY_PROTOCOLS = (ArrayType, NumericalArray, MutableTensor)
 
 BOOLS = [True, False, True, False]
 STRINGS = ["a", "b", "c", "d"]
@@ -66,6 +65,8 @@ PA_ARRAY_STR = pa.array(STRINGS)
 PD_INDEX_STR = pd.Index(STRINGS)
 PD_INDEX_INT = pd.Index(INTEGERS)
 PD_MULTIINDEX = pd.MultiIndex.from_tuples(zip(STRINGS, INTEGERS, strict=True))
+PD_SERIES_NOINDEX_INT = pd.Series(INTEGERS)
+PD_SERIES_NOINDEX_STR = pd.Series(STRINGS)
 PD_SERIES_INT = pd.Series(INTEGERS, index=DATETIMES)
 PD_SERIES_STR = pd.Series(STRINGS, index=DATETIMES)
 PD_ARRAY_INT = pd.Series(INTEGERS).array
@@ -85,10 +86,16 @@ PA_TABLE_FLOAT = pa.table(DICT_FLOAT)
 PA_TABLE_MIXED = pa.table(DICT_MIXED)
 PD_TABLE_FLOAT = pd.DataFrame(DICT_FLOAT, index=DATETIMES)
 PD_TABLE_MIXED = pd.DataFrame(DICT_MIXED, index=DATETIMES)
+PD_TABLE_NOINDEX_FLOAT = pd.DataFrame(DICT_FLOAT)
+PD_TABLE_NOINDEX_MIXED = pd.DataFrame(DICT_MIXED)
 PL_TABLE_FLOAT = pl.DataFrame(DICT_FLOAT)
 PL_TABLE_MIXED = pl.DataFrame(DICT_MIXED)
 
 TEST_ARRAYS = {
+    "pandas_series_noindex_int": PD_SERIES_NOINDEX_INT,
+    "pandas_series_noindex_str": PD_SERIES_NOINDEX_STR,
+    "pandas_table_noindex_float": PD_TABLE_NOINDEX_FLOAT,
+    "pandas_table_noindex_mixed": PD_TABLE_NOINDEX_MIXED,
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
     "pandas_array_int"    : PD_ARRAY_INT,
@@ -114,21 +121,23 @@ TEST_ARRAYS = {
 r"""Collection of all test arrays."""
 
 
-SERIES: dict[str, SeriesLike] = {
+SERIES: dict[str, SeriesType] = {
     "pandas_array_int"  : PD_ARRAY_INT,
     "pandas_array_str"  : PD_ARRAY_STR,
     "pandas_index_int"  : PD_INDEX_INT,
     "pandas_index_str"  : PD_INDEX_STR,
     "pandas_multiindex" : PD_MULTIINDEX,
-    "pandas_series_int" : PD_SERIES_INT,
-    "pandas_series_str" : PD_SERIES_STR,
+    "pandas_series_noindex_int" : PD_SERIES_NOINDEX_INT,
+    "pandas_series_noindex_str" : PD_SERIES_NOINDEX_STR,
     "polars_series_int" : PL_SERIES_INT,
     "polars_series_str" : PL_SERIES_STR,
     "pyarrow_array_int" : PA_ARRAY_INT,
     "pyarrow_array_str" : PA_ARRAY_STR,
 }  # fmt: skip
 
-TABLES: dict[str, TableLike] = {
+TABLES: dict[str, TableType] = {
+    "pandas_table_noindex_float": PD_TABLE_NOINDEX_FLOAT,
+    "pandas_table_noindex_mixed": PD_TABLE_NOINDEX_MIXED,
     "pandas_table_float"  : PD_TABLE_FLOAT,
     "pandas_table_mixed"  : PD_TABLE_MIXED,
     "polars_table_float"  : PL_TABLE_FLOAT,
@@ -137,7 +146,9 @@ TABLES: dict[str, TableLike] = {
     "pyarrow_table_mixed" : PA_TABLE_MIXED,
 }  # fmt: skip
 
-ARRAYS: dict[str, ArrayLike] = {
+ARRAYS: dict[str, ArrayType] = {
+    "pandas_table_noindex_float": PD_TABLE_NOINDEX_FLOAT,
+    "pandas_table_noindex_mixed": PD_TABLE_NOINDEX_MIXED,
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
     "pandas_array_int"    : PD_ARRAY_INT,
@@ -145,8 +156,8 @@ ARRAYS: dict[str, ArrayLike] = {
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_multiindex"   : PD_MULTIINDEX,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_series_int"   : PD_SERIES_NOINDEX_INT,
+    "pandas_series_str"   : PD_SERIES_NOINDEX_STR,
     "pandas_table_float"  : PD_TABLE_FLOAT,
     "pandas_table_mixed"  : PD_TABLE_MIXED,
     "polars_series_int"   : PL_SERIES_INT,
@@ -160,6 +171,10 @@ ARRAYS: dict[str, ArrayLike] = {
 }  # fmt: skip
 
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
+    "pandas_series_noindex_int": PD_SERIES_NOINDEX_INT,
+    "pandas_series_noindex_str": PD_SERIES_NOINDEX_STR,
+    "pandas_table_noindex_float": PD_TABLE_NOINDEX_FLOAT,
+    "pandas_table_noindex_mixed": PD_TABLE_NOINDEX_MIXED,
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
     "pandas_array_int"    : PD_ARRAY_INT,
@@ -167,10 +182,6 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_multiindex"   : PD_MULTIINDEX,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
-    "pandas_table_float"  : PD_TABLE_FLOAT,
-    "pandas_table_mixed"  : PD_TABLE_MIXED,
     "polars_series_int"   : PL_SERIES_INT,
     "polars_series_str"   : PL_SERIES_STR,
     "torch_tensor_1d"     : PT_TENSOR_1D,
@@ -185,8 +196,8 @@ NUMERICAL_SERIES: dict[str, NumericalSeries] = {
     "pandas_index_int"    : PD_INDEX_INT,
     "pandas_index_str"    : PD_INDEX_STR,
     "pandas_multiindex"   : PD_MULTIINDEX,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_series_noindex_int"   : PD_SERIES_NOINDEX_INT,
+    "pandas_series_noindex_str"   : PD_SERIES_NOINDEX_STR,
     "polars_series_int"   : PL_SERIES_INT,
     "polars_series_str"   : PL_SERIES_STR,
     "torch_tensor_1d"     : PT_TENSOR_1D,
@@ -198,19 +209,20 @@ x: NumericalTensor = NP_ARRAY_1D
 NUMERICAL_TENSORS: dict[str, NumericalTensor] = {
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
+    "pandas_series_noindex_int"   : PD_SERIES_NOINDEX_INT,
+    "pandas_series_noindex_str"   : PD_SERIES_NOINDEX_STR,
     "torch_tensor_1d"     : PT_TENSOR_1D,
     "torch_tensor_2d"     : PT_TENSOR_2D,
 }  # fmt: skip
 
-MUTABLE_TENSORS: dict[str, MutableTensor] = {
+MUTABLE_TENSORS: dict[str, MutableTensor] = {  # pyright: ignore[reportAssignmentType]
     "numpy_ndarray_1d"    : NP_ARRAY_1D,
     "numpy_ndarray_2d"    : NP_ARRAY_2D,
-    "pandas_series_int"   : PD_SERIES_INT,
-    "pandas_series_str"   : PD_SERIES_STR,
-    "torch_tensor_1d"     : PT_TENSOR_1D,
-    "torch_tensor_2d"     : PT_TENSOR_2D,
+    "pandas_series_noindex_int"   : PD_SERIES_NOINDEX_INT,
+    "pandas_series_noindex_str"   : PD_SERIES_NOINDEX_STR,
+    # FIXME: torch.Tensor.__ipow__ annotation is wrong
+    "torch_tensor_1d"     : PT_TENSOR_1D,  # type: ignore[dict-item]
+    "torch_tensor_2d"     : PT_TENSOR_2D,  # type: ignore[dict-item]
 }  # fmt: skip
 
 DUNDER_ARITHMETIC: frozenset[str] = frozenset({
@@ -275,9 +287,9 @@ DUNDER_ARITHMETIC: frozenset[str] = frozenset({
 r"""Dunder methods for arithmetic operations."""
 
 EXCLUDED_MEMBERS: dict[type, set[str]] = {
-    ArrayLike       : set(),
-    SeriesLike      : {"to_numpy"},
-    TableLike       : {"columns", "join", "drop", "filter"},
+    ArrayType       : set(),
+    SeriesType      : {"to_numpy"},
+    TableType       : {"columns", "join", "drop", "filter"},
     NumericalArray  : set(),
     NumericalSeries : set(),
     NumericalTensor : {
@@ -297,8 +309,8 @@ r"""Excluded members for each protocol."""
 
 EXAMPLES_BY_PROTOCOL: dict[type, dict[str, Any]] = {
     # SeriesLike      : SERIES,
-    TableLike       : TABLES,
-    ArrayLike       : ARRAYS,
+    TableType       : TABLES,
+    ArrayType       : ARRAYS,
     NumericalArray  : NUMERICAL_ARRAYS,
     NumericalSeries : NUMERICAL_SERIES,
     NumericalTensor : NUMERICAL_TENSORS,
@@ -410,19 +422,11 @@ def test_supports_item(name: str) -> None:
 def test_supports_comparison(name: str) -> None:
     r"""Test the SupportsComparison protocol."""
     obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsVectorComparison)
+    assert_protocol(obj, SupportsArrayComparison)
     try:
         _ = obj < obj
     except TypeError as exc:
         raise AssertionError(f"Comparison failed for {name}!") from exc
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_arithmetic(name: str) -> None:
-    r"""Test the SupportsArithmetic protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsVectorArithmetic)
 
 
 @pytest.mark.xfail(strict=False)
@@ -462,9 +466,9 @@ def test_series(name: str) -> None:
     cls = series.__class__
     scalar_type = int | str | np.generic | pa.Scalar
 
-    assert isinstance(series, SeriesLike)
+    assert isinstance(series, SeriesType)
 
-    attrs = set(get_protocol_members(SeriesLike)) - DUNDER_ARITHMETIC
+    attrs = set(get_protocol_members(SeriesType)) - DUNDER_ARITHMETIC
 
     assert isinstance(series.__array__(), np.ndarray)
     attrs.remove("__array__")
@@ -498,11 +502,11 @@ def test_series(name: str) -> None:
 def test_table(name: str) -> None:
     r"""Test the Table protocol."""
     table = TABLES[name]
-    assert isinstance(table, TableLike)
+    assert isinstance(table, TableType)
     # assert not isinstance(table, SeriesKind)
 
     # check methods
-    attrs = set(get_protocol_members(TableLike)) - DUNDER_ARITHMETIC
+    attrs = set(get_protocol_members(TableType)) - DUNDER_ARITHMETIC
 
     assert isinstance(table.__array__(), np.ndarray)
     attrs.remove("__array__")
@@ -519,7 +523,7 @@ def test_table(name: str) -> None:
     assert isinstance(table.shape[1], int)
     attrs.remove("shape")
 
-    assert isinstance(table["x"], SeriesLike)
+    assert isinstance(table["x"], SeriesType)
     attrs.remove("__getitem__")
 
     assert table.equals(table)
@@ -533,7 +537,7 @@ def test_table(name: str) -> None:
 def test_array(name: str) -> None:
     r"""Test the Array protocol."""
     array = ARRAYS[name]
-    assert_protocol(array, ArrayLike)
+    assert_protocol(array, ArrayType)
 
 
 @pytest.mark.parametrize("name", NUMERICAL_ARRAYS)

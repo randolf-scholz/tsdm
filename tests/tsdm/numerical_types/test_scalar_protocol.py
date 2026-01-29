@@ -8,15 +8,15 @@ import pytest
 import torch as pt
 
 from tsdm.testing import check_shared_interface
-from tsdm.types.scalars import (
+from tsdm.types.numerical.scalars import (
     AdditiveScalar,
     BoolScalar,
     ComplexScalar,
-    DurationScalar,
     FloatScalar,
     IntScalar,
     OrderedScalar,
-    TimestampScalar,
+    SpanLikeScalar,
+    TimeLikeScalar,
 )
 
 BOOL: bool = bool(1)
@@ -110,10 +110,10 @@ COMPLEX_SCALARS: dict[str, ComplexScalar] = {
 }  # fmt: skip
 r"""Complex scalars for testing."""
 
-TIMEDELTA_SCALARS: dict[str, DurationScalar] = {
+TIMEDELTA_SCALARS: dict[str, SpanLikeScalar] = {
     "np_float" : np.float64(1.0),
     "np_int"   : np.int64(1),
-    "np_time"  : np.timedelta64(1, "D"),  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
+    "np_time"  : np.timedelta64(1, "D"),
     "pd_time"  : pd.Timedelta("1D"),
     "py_float" : 1.0,
     "py_int"   : 1,
@@ -121,8 +121,8 @@ TIMEDELTA_SCALARS: dict[str, DurationScalar] = {
 }  # fmt: skip
 r"""Dictionary of timedelta scalars."""
 
-TIMESTAMP_SCALARS: dict[str, TimestampScalar] = {
-    "np_time"  : np.datetime64("2021-01-01"),  # type: ignore[dict-item] # pyright: ignore[reportAssignmentType]
+TIMESTAMP_SCALARS: dict[str, TimeLikeScalar] = {
+    "np_time"  : np.datetime64("2021-01-01"),  # type: ignore[dict-item]
     "np_float" : np.float64(1.0),
     "np_int"   : np.int64(1),
     "pd_time"  : pd.Timestamp("2021-01-01"),
@@ -137,8 +137,8 @@ TEST_TYPED_CASES: dict[type, dict] = {
     ComplexScalar   : COMPLEX_SCALARS,
     FloatScalar     : FLOAT_SCALARS,
     IntScalar       : INT_SCALARS,
-    DurationScalar  : TIMEDELTA_SCALARS,
-    TimestampScalar : TIMESTAMP_SCALARS,
+    SpanLikeScalar  : TIMEDELTA_SCALARS,
+    TimeLikeScalar : TIMESTAMP_SCALARS,
 }  # fmt: skip
 r"""Test cases for scalar types."""
 
@@ -444,7 +444,7 @@ def test_complex_scalar(name: str) -> None:
 def test_timedelta_scalar(name: str) -> None:
     value = TIMEDELTA_SCALARS[name]
     cls = type(value)
-    assert isinstance(value, DurationScalar)
+    assert isinstance(value, SpanLikeScalar)
 
     # fmt: off
     # region test unary operations
@@ -456,8 +456,8 @@ def test_timedelta_scalar(name: str) -> None:
     # test arithmetic operations (self)
     assert type(value + value) is cls               # __add__
     assert type(value - value) is cls               # __sub__
-    assert type(value % value) is cls               # __mod__
     assert isinstance(value / value, FloatScalar)   # __truediv__
+    assert type(value % value) is cls               # __mod__
     assert isinstance(value // value, FloatScalar)  # __truediv__
     # test arithmetic operations (int)
     assert type(value *  INT) is cls                # __mul__
@@ -479,13 +479,13 @@ def test_timedelta_scalar(name: str) -> None:
 def test_timestamp_scalar(name: str) -> None:
     value = TIMESTAMP_SCALARS[name]
     cls = type(value)
-    assert isinstance(value, TimestampScalar)
+    assert isinstance(value, TimeLikeScalar)
     ZERO = value - value
     # fmt: off
     # region test binary operations
     assert type(value + ZERO) is cls                  # __add__
     assert type(ZERO + value) is cls                  # __radd__
-    assert isinstance(value - value, DurationScalar)  # __sub__
+    assert isinstance(value - value, SpanLikeScalar)  # __sub__
     # endregion test binary operations
     # region test comparisons
     assert isinstance(value >  value, BoolScalar)
@@ -543,33 +543,33 @@ def type_float_scalar() -> None:
 
 def type_timestamp_assignable() -> None:
     # numpy
-    _np_0: TimestampScalar[np.int64] = np.int64(0)
-    _np_1: TimestampScalar[np.float64] = np.float64(1)
+    _np_0: TimeLikeScalar[np.int64] = np.int64(0)
+    _np_1: TimeLikeScalar[np.float64] = np.float64(1)
     # FIXME: https://github.com/numpy/numpy/issues/28257
-    _np_2: TimestampScalar[np.timedelta64] = np.datetime64("2021-01-01")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
-    _np_3: TimestampScalar[dt.timedelta] = np.datetime64("2021-01-01")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _np_2: TimeLikeScalar[np.timedelta64] = np.datetime64("2021-01-01")  # type: ignore[assignment]
+    # _np_3: TimeLikeScalar[dt.timedelta] = np.datetime64("2021-01-01")
     # python
-    _py_1: TimestampScalar[dt.timedelta] = dt.datetime(2021, 1, 1)
-    _py_2: TimestampScalar[int] = int(3)
-    _py_3: TimestampScalar[float] = float(3.0)
+    _py_1: TimeLikeScalar[dt.timedelta] = dt.datetime(2021, 1, 1)
+    _py_2: TimeLikeScalar[int] = int(3)
+    _py_3: TimeLikeScalar[float] = float(3.0)
     # pandas
-    _pd_1: TimestampScalar[dt.timedelta] = pd.Timestamp("2021-01-01")
-    _pd_2: TimestampScalar[pd.Timedelta] = pd.Timestamp("2021-01-01")
+    _pd_1: TimeLikeScalar[dt.timedelta] = pd.Timestamp("2021-01-01")
+    _pd_2: TimeLikeScalar[pd.Timedelta] = pd.Timestamp("2021-01-01")
 
 
 def type_duration_assignable() -> None:
     # numpy
-    _np_0: DurationScalar = np.int64(0)
-    _np_1: DurationScalar = np.float64(1)
+    _np_0: SpanLikeScalar = np.int64(0)
+    _np_1: SpanLikeScalar = np.float64(1)
     # FIXME: https://github.com/numpy/numpy/issues/28257
-    _np_2: DurationScalar = np.timedelta64(1, "D")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
-    _np_3: DurationScalar = np.timedelta64(1, "D")  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _np_2: SpanLikeScalar = np.timedelta64(1, "D")
+    _np_3: SpanLikeScalar = np.timedelta64(1, "D")
     # python
-    _py_1: DurationScalar = dt.timedelta(days=1)
-    _py_2: DurationScalar = int(3)
-    _py_3: DurationScalar = float(3.0)
+    _py_1: SpanLikeScalar = dt.timedelta(days=1)
+    _py_2: SpanLikeScalar = int(3)
+    _py_3: SpanLikeScalar = float(3.0)
     # pandas
-    _pd_1: DurationScalar = pd.Timedelta(days=1)
+    _pd_1: SpanLikeScalar = pd.Timedelta(days=1)
 
 
 def type_boolean_assignable() -> None:

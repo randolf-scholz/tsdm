@@ -1,9 +1,40 @@
 r"""Test other protocols."""
 
-from tsdm.types.protocols import (
-    Slotted,
-    is_slotted,
+from collections.abc import Iterable
+from typing import (
+    ClassVar,
+    Protocol,
+    TypeIs,
+    _ProtocolMeta as ProtocolMeta,
+    runtime_checkable,
 )
+
+
+class _SlottedMeta(ProtocolMeta):
+    r"""Metaclass for `Slotted`.
+
+    FIXME: https://github.com/python/cpython/issues/112319
+    This issue will make the need for metaclass obsolete.
+    """
+
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[Slotted]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+        return cls.__subclasscheck__(type(instance))
+
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Slotted]]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+        slots = getattr(subclass, "__slots__", None)
+        return isinstance(slots, str | Iterable)
+
+
+@runtime_checkable
+class Slotted(Protocol, metaclass=_SlottedMeta):
+    r"""Protocol for objects that are slotted."""
+
+    __slots__: ClassVar[tuple[str, ...]] = ()
+
+
+def is_slotted(obj: object, /) -> TypeIs[Slotted]:
+    r"""Check if the object is slotted."""
+    return hasattr(obj, "__slots__")
 
 
 class MySlotted:

@@ -127,8 +127,8 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
-from tsdm.utils import LazyDict
 from tsdm.utils.decorators import pprint_repr
+from tsdm.utils.lazydict import LazyDict
 
 SplitID = NewType("SplitID", object)
 r"""Type of a split ID."""

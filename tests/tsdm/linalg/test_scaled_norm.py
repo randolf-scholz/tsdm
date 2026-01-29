@@ -5,7 +5,7 @@ import torch
 
 from tsdm import linalg
 from tsdm.constants import ATOL, RTOL
-from tsdm.types.aliases import Dims
+from tsdm.types.aliases import DimArg
 
 
 @pytest.mark.parametrize("keepdim", [False, True], ids=lambda x: f"keepdim={x}")
@@ -36,7 +36,7 @@ from tsdm.types.aliases import Dims
     ids=lambda x: f"axis={x}",
 )
 @pytest.mark.parametrize("shape", [(1, 2, 3, 4)], ids=lambda x: f"shape={x}")
-def test_shape(*, shape: tuple[int, ...], dims: Dims, keepdim: bool) -> None:
+def test_shape(*, shape: tuple[int, ...], dims: DimArg, keepdim: bool) -> None:
     r"""Check that the output shape is correct."""
     torch.manual_seed(0)
     x = torch.randn(*shape)

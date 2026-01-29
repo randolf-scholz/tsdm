@@ -5,7 +5,7 @@ from dataclasses import fields
 import pytest
 
 from tsdm.encoders import ENCODERS
-from tsdm.types.protocols import Dataclass
+from tsdm.types.dataclass import Dataclass
 
 
 @pytest.mark.parametrize("name", ENCODERS)

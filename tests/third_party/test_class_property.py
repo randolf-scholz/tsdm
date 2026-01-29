@@ -5,7 +5,7 @@ from typing import ClassVar
 
 import pytest
 
-from tsdm.types.protocols import is_dataclass
+from tsdm.types.dataclass import is_dataclass
 
 
 class Meta(type):

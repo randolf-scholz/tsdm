@@ -53,11 +53,11 @@ from tsdm.testing.validation import (
     validate_table_shape,
 )
 from tsdm.types.aliases import FilePath
-from tsdm.utils import paths_exists, remote
+from tsdm.utils import nested_paths_exist, remote
+from tsdm.utils._utils import query_bool
 from tsdm.utils.contextmanagers import timer
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict
-from tsdm.utils.system import query_bool
 
 
 @runtime_checkable
@@ -738,18 +738,18 @@ class DatasetBase[Key: str, T](
     def rawdata_files_exist(self, key: Optional[str] = None, /) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
-            return paths_exists(self.rawdata_paths)
+            return nested_paths_exist(self.rawdata_paths)
         if key not in self.rawdata_paths:
             raise KeyError(f"{key=} not in {self.rawdata_paths=}")
-        return paths_exists(self.rawdata_paths[key])
+        return nested_paths_exist(self.rawdata_paths[key])
 
     def dataset_files_exist(self, key: Optional[Key] = None, /) -> bool:
         r"""Check if dataset files exist."""
         if key is None:
-            return paths_exists(self.dataset_paths)
+            return nested_paths_exist(self.dataset_paths)
         if key not in self.dataset_paths:
             raise KeyError(f"{key=} not in {self.dataset_paths=}")
-        return paths_exists(self.dataset_paths[key])
+        return nested_paths_exist(self.dataset_paths[key])
 
     def validate_rawdata(
         self, key: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "raise"

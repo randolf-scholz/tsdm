@@ -85,8 +85,8 @@ from tsdm.logutils.logfuncs import (
 from tsdm.logutils.utils import TargetsAndPredics, compute_metrics, save_checkpoint
 from tsdm.metrics import Metric
 from tsdm.optimizers import Optimizer
+from tsdm.types.abc import MutSeq
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.types.protocols import MutSeq
 from tsdm.utils.decorators import pprint_repr, pprint_sequence
 from tsdm.utils.funcutils import get_mandatory_kwargs
 

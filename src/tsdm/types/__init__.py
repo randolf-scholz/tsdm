@@ -3,10 +3,26 @@ r"""Generic types for type hints, etc."""
 __all__ = [
     # Submodules
     "aliases",
-    "arrays",
-    "callback_protocols",
-    "protocols",
+    "callbacks",
+    "dataclass",
+    "numerical",
     "utils",
+    "namedtuple",
+    # Protocols
+    "Orderable",
+    "SupportsBool",
+    "SupportsGetItem",
+    "SupportsKeysAndGetItem",
+    "SupportsLenAndGetItem",
+    "SupportsSlicing",
 ]
 
-from tsdm.types import aliases, arrays, callback_protocols, protocols, utils
+from tsdm.types import aliases, callbacks, dataclass, namedtuple, numerical, utils
+from tsdm.types._protocols import (
+    Orderable,
+    SupportsBool,
+    SupportsGetItem,
+    SupportsKeysAndGetItem,
+    SupportsLenAndGetItem,
+    SupportsSlicing,
+)

@@ -126,16 +126,16 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     ) -> LazyDict[T, X]: ...
     @overload  # mapping and kwargs
     @staticmethod
-    def new[X=Any](
-        items: Mapping[str, Lazy[X]] | Iterable[tuple[str, Lazy[X]]] = ..., /,
+    def new[T=Never, X=Any](
+        items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /,  # pyright: ignore[reportInvalidTypeVarUse]
         **kwargs: Lazy[X]
-    ) -> LazyDict[str, X]: ...
+    ) -> LazyDict[T | str, X]: ...
     @staticmethod
     def new[T=Never, X=Any](
         args: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = (),
         /,
         **kwargs: Lazy[X],
-    ) -> LazyDict[T, X] | LazyDict[str, X]:
+    ) -> LazyDict[T, X] | LazyDict[T | str, X]:
     # fmt: on
         r"""Create a new LazyDict."""
         self = LazyDict[Any, X]()
@@ -267,16 +267,16 @@ def lazy_dict[K=Any, V=Any](  # pyright: ignore[reportOverlappingOverload]
     items: Mapping[K, Lazy[V]] | Iterable[tuple[K, Lazy[V]]] = ..., /  # pyright: ignore[reportInvalidTypeVarUse]
 ) -> LazyDict[K, V]: ...
 @overload  # mapping and kwargs
-def lazy_dict[V=Any](
-    items: Mapping[str, Lazy[V]] | Iterable[tuple[str, Lazy[V]]] = ...,
+def lazy_dict[K=Never, V=Any](
+    items: Mapping[K, Lazy[V]] | Iterable[tuple[K, Lazy[V]]] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
     /,
     **kwargs: Lazy[V],
-) -> LazyDict[str, V]: ...
+) -> LazyDict[K | str, V]: ...
 def lazy_dict[K=Never, V=Any](
     arg: Mapping[K, Lazy[V]] | Iterable[tuple[K, Lazy[V]]] = (),
     /,
     **kwargs: Lazy[V],
-) -> LazyDict[K, V] | LazyDict[str, V]:
+) -> LazyDict[K, V] | LazyDict[K | str, V]:
     # fmt: on
     r"""Create a new LazyDict from an iterable of keys and a Lazy."""
     return LazyDict.new(arg, **kwargs)

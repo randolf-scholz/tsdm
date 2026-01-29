@@ -17,9 +17,9 @@ __all__ = [
 from math import prod
 from typing import Any, cast
 
-from tsdm.backend.types import BooleanArray, NumericalArray as Array
-from tsdm.types.mixins import SupportsShape
-from tsdm.types.scalars import FloatScalar
+from tsdm.types.numerical import BooleanArray
+from tsdm.types.numerical.arrays import FloatArray, SupportsArrayEquality
+from tsdm.types.numerical.mixins import SupportsShape
 
 
 def ndim(x: SupportsShape, /) -> int:
@@ -38,7 +38,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def is_nan(x: Array, /) -> BooleanArray:
+def is_nan(x: SupportsArrayEquality, /) -> BooleanArray:
     r"""Determines whether an element is NaN."""
     try:
         return x.isnan()  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
@@ -47,14 +47,14 @@ def is_nan(x: Array, /) -> BooleanArray:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def false_like(x: Array, /) -> BooleanArray:
+def false_like(x: SupportsArrayEquality, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x
     return z ^ z
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def true_like(x: Array, /) -> BooleanArray:
+def true_like(x: SupportsArrayEquality, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
     #   `(𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True`
@@ -63,7 +63,7 @@ def true_like(x: Array, /) -> BooleanArray:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def where[Arr: Array](mask: Any, x: Arr, y: Arr, /) -> Arr:
+def where[Arr: FloatArray](mask: Any, x: Arr, y: Arr, /) -> Arr:
     r"""Selects elements from `x` or `y` based on `m`."""
     # Note: A fundamental problem with implementing this generically is dealing
     #   with infinity and NaN values.
@@ -76,7 +76,7 @@ def where[Arr: Array](mask: Any, x: Arr, y: Arr, /) -> Arr:
     return x**m + y ** (1.0 - m) - 1.0
 
 
-def floor[Arr: Array[FloatScalar]](x: Arr, /) -> Arr:
+def floor[Arr: FloatArray](x: Arr, /) -> Arr:
     r"""Floor elements of the array to the nearest integer less than or equal to x."""
     # Note: x // 1 produces NaN when x is ±inf, instead we use x - (x % 1)
     r = x % 1  # fractional part, NaN for ±inf
@@ -84,7 +84,7 @@ def floor[Arr: Array[FloatScalar]](x: Arr, /) -> Arr:
     return where(m, x, x - r)
 
 
-def round_impl[Arr: Array[FloatScalar]](x: Arr, /, *, decimals: int = 0) -> Arr:
+def round_impl[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:
     r"""Round elements of the array to the given number of decimals."""
     # shift the decimal point to the right
     factor = 10**decimals
@@ -103,7 +103,7 @@ def round_impl[Arr: Array[FloatScalar]](x: Arr, /, *, decimals: int = 0) -> Arr:
     return y
 
 
-def round[Arr: Array[FloatScalar]](x: Arr, /, *, decimals: int = 0) -> Arr:  # noqa: A001
+def round[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # noqa: A001
     r"""Round elements of the array to the given number of decimals.
 
     Note:
@@ -120,6 +120,6 @@ def round[Arr: Array[FloatScalar]](x: Arr, /, *, decimals: int = 0) -> Arr:  # n
         https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even
     """
     try:
-        return x.round(decimals=decimals)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+        return x.round(decimals=decimals)  # type: ignore[attr-defined]
     except AttributeError:
         return round_impl(x, decimals=decimals)

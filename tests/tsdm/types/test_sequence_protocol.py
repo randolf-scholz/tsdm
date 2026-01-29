@@ -7,27 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from tsdm.types.protocols import Seq, ShapeLike
-
-
-def test_shapelike_protocol() -> None:
-    r"""Test the Shape protocol."""
-    data = [1, 2, 3]
-    torch_tensor: torch.Tensor = torch.tensor(data)
-    numpy_ndarray: np.ndarray = np.array(data)
-    pandas_series: pd.Series = pd.Series(data)
-    pandas_index: pd.Index = pd.Index(data)
-
-    x: ShapeLike = (1, 2, 3)
-    y: ShapeLike = torch_tensor.shape
-    z: ShapeLike = numpy_ndarray.shape
-    w: ShapeLike = pandas_series.shape
-    v: ShapeLike = pandas_index.shape
-    assert isinstance(x, ShapeLike)
-    assert isinstance(y, ShapeLike)
-    assert isinstance(z, ShapeLike)
-    assert isinstance(w, ShapeLike)
-    assert isinstance(v, ShapeLike)
+from tsdm.types.abc import Seq
 
 
 def test_sequence_protocol() -> None:

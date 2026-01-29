@@ -17,7 +17,7 @@ from pandas import DataFrame, Series
 from torch import Tensor, jit
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.datasets import KiwiRuns
+from tsdm.datasets import KiwiBenchmark
 from tsdm.datatools import MappingDataset, folds_as_frame, folds_from_groups
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
@@ -158,9 +158,9 @@ class Kiwi_BioProcessTask(OldBaseTask):
         return jit.script(WRMSE(w))
 
     @cached_property
-    def dataset(self) -> KiwiRuns:
-        dataset = KiwiRuns()
-        dataset.metadata.drop([482], inplace=True)
+    def dataset(self) -> KiwiBenchmark:
+        dataset = KiwiBenchmark()
+        dataset.timeseries_metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
         return dataset
 

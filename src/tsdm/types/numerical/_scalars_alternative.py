@@ -36,11 +36,9 @@ from typing import (
     SupportsInt,
     overload,
     runtime_checkable,
-    type_check_only,
 )
 
 
-@type_check_only
 class BoolOP[T](Protocol):
     # similar to numpy._FloatOP
     @overload
@@ -49,7 +47,6 @@ class BoolOP[T](Protocol):
     def __call__(self, other: T, /) -> T: ...
 
 
-@type_check_only
 class IntOP[T](Protocol):
     # similar to numpy._FloatOP
     @overload
@@ -58,7 +55,6 @@ class IntOP[T](Protocol):
     def __call__(self, other: T, /) -> T: ...
 
 
-@type_check_only
 class FloatOP[T](Protocol):
     # similar to numpy._FloatOP
     @overload
@@ -67,7 +63,6 @@ class FloatOP[T](Protocol):
     def __call__(self, other: T, /) -> T: ...
 
 
-@type_check_only
 class ComplexOP[T](Protocol):
     # similar to numpy._FloatOP
     @overload

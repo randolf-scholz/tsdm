@@ -21,7 +21,7 @@ from torch.utils.data import (
 )
 
 from tsdm.encoders import Encoder
-from tsdm.utils import LazyDict
+from tsdm.utils.lazydict import LazyDict
 
 
 @warnings.deprecated("Do not use")

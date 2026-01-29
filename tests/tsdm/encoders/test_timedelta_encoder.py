@@ -8,9 +8,9 @@ import pandas as pd
 import polars as pl
 import pytest
 
-from tsdm.backend.types import NumericalSeries
 from tsdm.encoders import TimeDeltaEncoder
 from tsdm.testing import assert_arrays_equal
+from tsdm.types.numerical._array_alterantive import NumericalSeries
 
 
 def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSeries:
@@ -19,13 +19,13 @@ def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSer
             return np.array(data, dtype="timedelta64[ms]")
         case "pandas-timedeltaindex":
             return pd.TimedeltaIndex(data)
-        case "pandas-index-arrow":
+        case "pandas[arrow]-index":
             return pd.Index(data).astype("duration[ms][pyarrow]")
-        case "pandas-index-numpy":
+        case "pandas[numpy]-index":
             return pd.Index(data).astype("timedelta64[ms]")
-        case "pandas-series-arrow":
+        case "pandas[arrow]-series":
             return pd.Series(data).astype("duration[ms][pyarrow]")
-        case "pandas-series-numpy":
+        case "pandas[numpy]-series":
             return pd.Series(data).astype("timedelta64[ms]")
         case "polars-series":
             return pl.Series(data).cast(dtype=pl.Duration())
@@ -35,10 +35,10 @@ def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSer
 
 BACKENDS = [
     "numpy",
-    "pandas-index-arrow",
-    "pandas-index-numpy",
-    "pandas-series-arrow",
-    "pandas-series-numpy",
+    "pandas[arrow]-index",
+    "pandas[numpy]-index",
+    "pandas[arrow]-series",
+    "pandas[numpy]-series",
     "pandas-timedeltaindex",
     "polars-series",
 ]
@@ -94,9 +94,9 @@ r"""Example sparse timedelta data for testing timedelta encoders."""
 # endregion timedelta sample data ------------------------------------------------------
 
 
-@pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)
-@pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
+@pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
+@pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)
 def test_timedelta_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     if sparse:

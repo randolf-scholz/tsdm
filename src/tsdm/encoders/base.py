@@ -147,7 +147,7 @@ from typing import (
     ClassVar,
     Concatenate,
     Final,
-    Literal as L,  # noqa: N817
+    Literal as L,
     Optional,
     Protocol,
     Self,
@@ -1409,7 +1409,7 @@ class Choice(StaticEncoder[tuple[Any, ...], Any]):
         >>> assert enc((1, 2, 3, 4)) in (1, 2, 3, 4)
     """
 
-    num: Final[int | None]  # type: ignore[misc]
+    num: Final[int | None] = None
     r"""The number of elements to choose from. If `None`, the encoder will not be invertible."""
 
     def __invert__(self) -> Diagonal:

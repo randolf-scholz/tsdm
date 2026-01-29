@@ -1,5 +1,6 @@
 r"""Frozen mapping type."""
 # FIXME: https://peps.python.org/pep-0603/
+# FIXME: https://peps.python.org/pep-0814/
 
 __all__ = ["FrozenMap"]
 

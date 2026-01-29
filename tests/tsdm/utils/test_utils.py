@@ -7,27 +7,24 @@ import pytest
 import torch
 from torch import jit
 
-from tsdm.types.aliases import Axis, Dims, Shape, Size
+from tsdm.types.aliases import Axis, DimArg
 from tsdm.utils import (
-    dims_to_list,
     flatten_dict,
     last,
     normalize_axes,
-    pairwise_disjoint,
+    normalize_dimarg,
     replace,
-    shape_to_tuple,
-    size_to_tuple,
     unflatten_dict,
 )
 
 
 @pytest.mark.parametrize("dims", [None, 0, 1, [], [0], [-1], [-1, -2]], ids=str)
-def test_dims_to_list(dims: Dims) -> None:
+def test_dims_to_list(dims: DimArg) -> None:
     r"""Test `tsdm.utils.dims_to_list`."""
     x = torch.randn(4, 2, 2, 1)
 
     # test
-    dims_list: list[int] = dims_to_list(dims, ndim=x.ndim)
+    dims_list: list[int] = normalize_dimarg(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
     assert type(result) is type(reference)
@@ -37,7 +34,7 @@ def test_dims_to_list(dims: Dims) -> None:
     # test with jit.script
     if dims == []:
         pytest.xfail("JIT compiler cannot determine type of empty list.")
-    f = jit.script(dims_to_list)
+    f = jit.script(normalize_dimarg)
     dims_list = f(dims, ndim=x.ndim)
     result = x.mean(dims_list)
     reference = x.mean(dim=dims)
@@ -57,30 +54,6 @@ def test_axes_to_tuple(axis: Axis) -> None:
     axes_tuple = normalize_axes(axis, ndim=x.ndim)
     result = np.mean(x, axis=axes_tuple)
     reference = np.mean(x, axis=axis)
-    assert type(result) is type(reference)
-    assert result.shape == reference.shape
-    assert (result == reference).all()
-
-
-@pytest.mark.parametrize("shape", [0, 1, (), (0,), (1,), (1, 2)], ids=str)
-def test_shape_to_tuple(shape: Shape) -> None:
-    r"""Test `tsdm.utils.shape_to_tuple`."""
-    shape_tuple = shape_to_tuple(shape)
-    result = np.ones(shape_tuple)
-    reference = np.ones(shape)
-    assert type(result) is type(reference)
-    assert result.shape == reference.shape
-    assert (result == reference).all()
-
-
-@pytest.mark.parametrize("size", [0, 1, (), (0,), (1,), (1, 2)], ids=str)
-def test_size_to_tuple(size: Size) -> None:
-    r"""Test `tsdm.utils.size_to_tuple`."""
-    sizes_tuple = size_to_tuple(size)
-    rng = np.random.default_rng(42)
-    result = rng.uniform(size=sizes_tuple)
-    rng = np.random.default_rng(42)
-    reference = rng.uniform(size=size)
     assert type(result) is type(reference)
     assert result.shape == reference.shape
     assert (result == reference).all()
@@ -215,21 +188,3 @@ def test_unflatten_dict() -> None:
     dot = {"a.b.c": 1, "a.d.e": 2, "a.f": 3, "g": 4}
     dot_result = unflatten_dict(dot, join_fn=".".join, split_fn=lambda x: x.split("."))
     assert dot_result == result
-
-
-def test_pairwise_disjoint() -> None:
-    r"""Test `tsdm.utils.pairwise_disjoint`."""
-    sets: list[set[int]] = []
-    assert pairwise_disjoint(sets) is True
-
-    sets = [{1, 2}, {3, 4}]
-    assert pairwise_disjoint(sets) is True
-
-    sets = [{1, 2}, {2, 3}]
-    assert pairwise_disjoint(sets) is False
-
-    sets = [{1, 2}, {2, 3}, {3, 4}]
-    assert pairwise_disjoint(sets) is False
-
-    sets = [{1, 2}, {3, 4}, {5, 6}]
-    assert pairwise_disjoint(sets) is True

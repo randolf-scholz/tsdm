@@ -70,7 +70,8 @@ from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.pprint import repr_mapping
 from tsdm.testing._testing import is_zipfile
 from tsdm.types.aliases import FilePath
-from tsdm.utils import LazyDict, paths_exists, repackage_zip
+from tsdm.utils import nested_paths_exist, repackage_zip
+from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.remote import import_from_url
 
 
@@ -302,7 +303,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
     def rawdata_path_exists(self) -> bool:
         r"""Check if raw data files exist."""
-        return paths_exists(self.rawdata_path)
+        return nested_paths_exist(self.rawdata_path)
 
     def get_component(self, component: str, /) -> Any:
         r"""Extract a model component."""

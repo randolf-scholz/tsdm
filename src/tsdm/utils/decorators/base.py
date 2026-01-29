@@ -25,10 +25,10 @@ from collections.abc import Callable as Fn
 from dataclasses import dataclass
 from functools import partial, wraps
 from inspect import Parameter, signature
-from typing import Any, Optional, Protocol, Self, cast, overload
+from typing import Any, Protocol, Self, cast, overload
 
 from tsdm.types.aliases import Nested
-from tsdm.types.callback_protocols import IdentityMap, IdentityMapOnCls, IdentityMapOnFn
+from tsdm.types.callbacks import IdentityMap, IdentityMapOnCls, IdentityMapOnFn
 from tsdm.utils.funcutils import recurse_on_nested_generic, rpartial
 
 
@@ -362,7 +362,6 @@ def recurse_on_container[T, R](  # T, +R
     *,
     leaf_type: type[T],
     leaf_prioritized: bool = False,
-    recursion_fn: Optional[Fn[[Nested[T]], Nested[R]]] = None,
 ) -> Fn[[Nested[T]], Nested[R]]:
     r"""Apply function to a nested iterables of a given kind.
 
@@ -370,12 +369,10 @@ def recurse_on_container[T, R](  # T, +R
         leaf_fn: A function to apply to all leave Nodes
         leaf_type: The type of the leave nodes
         leaf_prioritized: Whether to check for leaf-type first or last.
-        recursion_fn: A function to apply to all non-leave Nodes
     """
     recurse = partial(
         recurse_on_nested_generic,
         leaf_fn=leaf_fn,
-        recursion_fn=recursion_fn,
         leaf_type=leaf_type,
         leaf_prioritized=leaf_prioritized,
     )

@@ -28,8 +28,8 @@ from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checka
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex
 
-from tsdm.types.arrays import ArrayType
-from tsdm.types.mixins import SupportsGetItem, SupportsSlicing
+from tsdm.types._protocols import SupportsGetItem, SupportsSlicing
+from tsdm.types.numerical import ArrayType
 from tsdm.utils.decorators import pprint_repr
 
 # region Protocols ---------------------------------------------------------------------

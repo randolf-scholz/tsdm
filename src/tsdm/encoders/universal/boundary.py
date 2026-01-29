@@ -10,10 +10,10 @@ import pandas as pd
 
 from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
-from tsdm.backend.types import NumericalSeries
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.types.scalars import OrderedScalar
+from tsdm.types.numerical.arrays import ArraySupportsComparison
+from tsdm.types.numerical.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -21,7 +21,7 @@ from tsdm.utils.decorators import pprint_repr
 @dataclass
 class BoundaryEncoder[
     S: OrderedScalar = float,
-    Arr: NumericalSeries = NumericalSeries[S],
+    Arr: ArraySupportsComparison = ArraySupportsComparison[S],
 ](FittableEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
 

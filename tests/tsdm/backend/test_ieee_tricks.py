@@ -10,17 +10,14 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 `is_nan` can be tested via `x != x`.
 """
 
-from typing import TypeVar
-
 import numpy as np
 import pandas as pd
 import pytest
 import torch
 
 from tsdm.backend.generic import false_like, true_like
-from tsdm.types.callback_protocols import SelfMap
-
-T = TypeVar("T", pd.Series, np.ndarray, torch.Tensor)
+from tsdm.types.callbacks import SelfMap
+from tsdm.types.numerical import FloatSeries as Array
 
 DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
 TIME = np.array(DATA) * np.timedelta64(1, "s")
@@ -30,13 +27,13 @@ TIME = np.array(DATA) * np.timedelta64(1, "s")
 @pytest.mark.parametrize(
     ("data", "expected"),
     [
-        (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA))),
-        (pd.Series(DATA), pd.Series(np.ones_like(DATA))),
         (np.array(DATA), np.ones_like(DATA)),
+        (pd.Series(DATA), pd.Series(np.ones_like(DATA))),
+        (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA))),
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_make_ones_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -54,13 +51,13 @@ def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
 @pytest.mark.parametrize(
     ("data", "expected"),
     [
-        (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA))),
-        (pd.Series(DATA), pd.Series(np.zeros_like(DATA))),
         (np.array(DATA), np.zeros_like(DATA)),
+        (pd.Series(DATA), pd.Series(np.zeros_like(DATA))),
+        (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA))),
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_zeros_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -81,15 +78,15 @@ def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
 @pytest.mark.parametrize(
     ("data", "expected"),
     [
-        (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA), dtype=torch.bool)),
-        (pd.Series(DATA), pd.Series(np.ones_like(DATA, dtype=bool))),
         (np.array(DATA), np.ones_like(DATA, dtype=np.bool_)),
-        (pd.Series(TIME), pd.Series(np.ones_like(TIME, dtype=bool))),
         (np.array(TIME), np.ones_like(TIME, dtype=np.bool_)),
+        (pd.Series(DATA), pd.Series(np.ones_like(DATA, dtype=bool))),
+        (pd.Series(TIME), pd.Series(np.ones_like(TIME, dtype=bool))),
+        (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA), dtype=torch.bool)),
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_true_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
@@ -108,15 +105,15 @@ def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
 @pytest.mark.parametrize(
     ("data", "expected"),
     [
-        (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA), dtype=torch.bool)),
-        (pd.Series(DATA), pd.Series(np.zeros_like(DATA, dtype=bool))),
         (np.array(DATA), np.zeros_like(DATA, dtype=np.bool_)),
-        (pd.Series(TIME), pd.Series(np.zeros_like(TIME, dtype=bool))),
         (np.array(TIME), np.zeros_like(TIME, dtype=np.bool_)),
+        (pd.Series(DATA), pd.Series(np.zeros_like(DATA, dtype=bool))),
+        (pd.Series(TIME), pd.Series(np.zeros_like(TIME, dtype=bool))),
+        (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA), dtype=torch.bool)),
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_false_like(data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_false_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:

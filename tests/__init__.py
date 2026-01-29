@@ -37,12 +37,12 @@ class pytest_xfail(AbstractContextManager):
 
     def __init__(
         self,
-        reason: str,
+        reason: str = "",
         *,
         strict: bool = True,
         raises: Sequence[type[BaseException]] | type[BaseException] | None = None,
         defer_xfail: bool = False,
-        condition: Callable[..., bool] | None = None,
+        condition: Callable[..., bool] | bool | None = None,
     ) -> None:
         self.strict: bool = strict
         self.reason: str = reason
@@ -56,7 +56,7 @@ class pytest_xfail(AbstractContextManager):
         self.exc_type: type[BaseException] | None = None
         self.exc_value: BaseException | None = None
         self.traceback: TracebackType | None = None
-        self.condition: Callable[..., bool] | None = condition
+        self.condition: Callable[..., bool] | bool | None = condition
         self.triggered: bool = False
 
     def __call__[**P](self, func: Callable[P, None], /) -> Callable[P, None]:
@@ -64,7 +64,11 @@ class pytest_xfail(AbstractContextManager):
 
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
-            if self.condition is None or self.condition(*args, **kwargs):
+            if (
+                self.condition is None
+                or self.condition is True
+                or (callable(self.condition) and self.condition(*args, **kwargs))
+            ):
                 with self:
                     func(*args, **kwargs)
             else:
@@ -79,6 +83,9 @@ class pytest_xfail(AbstractContextManager):
         traceback: TracebackType | None,
         /,
     ) -> bool:
+        if self.condition is False:
+            return False  # do nothing
+
         self.exc_type = exc_type
         self.exc_value = exc_value
         self.traceback = traceback

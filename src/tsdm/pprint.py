@@ -84,7 +84,9 @@ from tsdm.testing import (
     is_na_value,
     is_scalar,
 )
-from tsdm.types.mixins import (
+from tsdm.types.dataclass import Dataclass
+from tsdm.types.namedtuple import NTuple
+from tsdm.types.numerical.mixins import (
     SupportsArray,
     SupportsDataFrame,
     SupportsDevice,
@@ -92,7 +94,6 @@ from tsdm.types.mixins import (
     SupportsItem,
     SupportsShape,
 )
-from tsdm.types.protocols import Dataclass, NTuple
 
 MAXITEMS: Final[int] = 20
 r"""Default maxitems for repr_funcs."""

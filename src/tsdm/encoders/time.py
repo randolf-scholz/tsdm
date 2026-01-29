@@ -59,11 +59,11 @@ class PositionalEncoder[T: (NDArray, DataFrame, Series, Index)](StaticEncoder[T,
         Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
         z = np.einsum("..., d -> ...d", x, self.scales)
-        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
+        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)  # pyright: ignore[reportReturnType]
 
     def decode(self, y: T, /) -> T:
         r""".. signature:: ``(..., 2d) -> ...``."""
-        return np.arcsin(y[..., 0])
+        return np.arcsin(y[..., 0])  # pyright: ignore[reportReturnType]
 
 
 @pprint_repr

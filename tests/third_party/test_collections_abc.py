@@ -2,7 +2,6 @@ r"""Test which builtins satisfy which protocols."""
 
 import pprint
 from collections import abc, defaultdict
-from typing import TypeVar
 
 import pytest
 
@@ -52,11 +51,7 @@ CLASSES: list[type] = [
     reversed,
 ]
 
-
-T = TypeVar("T")
-type ClsDict = dict[T, list[T]]
-
-BUILTINS: ClsDict = {
+BUILTINS: dict[type, list[type]] = {
     abc.Callable: [type],
     abc.Collection: [set, dict, frozenset, list, tuple, str, bytes, bytearray, memoryview, range],
     abc.Container: [set, dict, frozenset, list, tuple, str, bytes, bytearray, memoryview, range],

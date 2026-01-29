@@ -2,10 +2,7 @@ r"""Test other protocols."""
 
 from typing import NamedTuple, Self
 
-from tsdm.types.protocols import (
-    NTuple,
-    is_namedtuple,
-)
+from tsdm.types.namedtuple import NTuple, is_namedtuple
 
 
 class MyNamedTuple(NamedTuple):

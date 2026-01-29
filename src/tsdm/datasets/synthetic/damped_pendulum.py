@@ -14,7 +14,7 @@ from tqdm.auto import trange
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import InlineTable, make_dataframe
 from tsdm.random import generators
-from tsdm.types.aliases import TS_Keys
+from tsdm.types.timeseries import TS_Keys
 
 
 @final

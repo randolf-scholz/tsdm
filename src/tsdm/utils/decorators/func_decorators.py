@@ -19,7 +19,7 @@ from time import perf_counter_ns
 from typing import Concatenate, NamedTuple, Optional
 
 from tsdm.constants import EMPTY_FN
-from tsdm.types.protocols import NTuple
+from tsdm.types.namedtuple import NTuple
 from tsdm.utils.decorators.base import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
 

@@ -11,19 +11,19 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any, Self, cast, overload
 
 from tsdm.backend import Backend, get_backend
-from tsdm.backend.types import NumericalArray as Array
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
 from tsdm.linalg.utils import invert_axis_selection, reduce_axes
 from tsdm.types.aliases import Axis
+from tsdm.types.numerical import FloatArray
 from tsdm.utils.decorators import pprint_repr
 
 
 @overload
 def _reduce_param(param: float, selection: Any) -> float: ...
 @overload
-def _reduce_param[T: Array[float]](param: T, selection: Any) -> T: ...
-def _reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | T:
+def _reduce_param[T: FloatArray](param: T, selection: Any) -> T: ...
+def _reduce_param[T: FloatArray](param: float | T, selection: Any) -> float | T:
     r"""Perform a reduction on a parameter.
 
     For example, given tensor T, axis and selection, then this returns the slice of the tensor
@@ -43,7 +43,7 @@ def _reduce_param[T: Array[float]](param: float | T, selection: Any) -> float | 
 
 @pprint_repr
 @dataclass(init=False)
-class LinearScaler[Arr: Array](FittableEncoder[Arr, Arr]):
+class LinearScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 
     Args:
@@ -113,7 +113,7 @@ class LinearScaler[Arr: Array](FittableEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class StandardScaler[Arr: Array[float]](FittableEncoder[Arr, Arr]):
+class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     r"""Transforms data linearly x ↦ (x-μ)/σ.
 
     axis: tuple[int, ...] determines the shape of the mean and stdv.
@@ -183,7 +183,7 @@ class StandardScaler[Arr: Array[float]](FittableEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass(init=False)
-class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
+class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
 
     If x_min and/or x_max are provided at initialization, they are marked as
@@ -223,14 +223,10 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
         This might be violated due to numerical roundoff, so we need to be careful.
     """
 
-    ymin: Arr  # or ScalarType.
-    ymax: Arr  # or ScalarType.
-    xmin: Arr  # or ScalarType.
-    xmax: Arr  # or ScalarType.
-    scale: Arr  # or ScalarType.
-    r"""The scaling factor."""
-
-    _: KW_ONLY
+    ymin: Arr = UNDEFINED  # or ScalarType.
+    ymax: Arr = UNDEFINED  # or ScalarType.
+    xmin: Arr = UNDEFINED  # or ScalarType.
+    xmax: Arr = UNDEFINED  # or ScalarType.
 
     axis: Axis = ()
     r"""Over which axis to perform the scaling."""
@@ -256,21 +252,29 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
 
         self.xmin_learnable = xmin is None
         self.xmax_learnable = xmax is None
-        self.xmin = cast("Arr", UNDEFINED if xmin is None else xmin)
-        self.xmax = cast("Arr", UNDEFINED if xmax is None else xmax)
+        self.xmin = UNDEFINED if xmin is None else cast("Arr", xmin)
+        self.xmax = UNDEFINED if xmax is None else cast("Arr", xmax)
+        self.xbar: Arr = UNDEFINED  # or ScalarType.
+        self.ybar: Arr = UNDEFINED  # or ScalarType.
+        self.scale: Arr = UNDEFINED  # or ScalarType.
 
         # set derived parameters
-        if not (self.xmin_learnable or self.xmax_learnable):
-            self.xbar: Arr = (self.xmax + self.xmin) / 2
-            self.ybar: Arr = (self.ymax + self.ymin) / 2
-            self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-        else:
-            self.xbar = UNDEFINED
-            self.ybar = UNDEFINED
-            self.scale = UNDEFINED
+        self.set_derived_fields()
 
         # set initial backend
         self.switch_backend(get_backend(self.params))
+
+    def set_derived_fields(self) -> None:
+        if self.xmin is UNDEFINED or self.xmax is UNDEFINED:
+            self.xbar = UNDEFINED
+            self.ybar = UNDEFINED
+            self.scale = UNDEFINED
+        else:
+            # compute the midpoints
+            self.xbar = (self.xmax + self.xmin) / 2
+            self.ybar = (self.ymax + self.ymin) / 2
+            # compute the scale
+            self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def __getitem__(self, item: Any, /) -> Self:
         r"""Return a slice of the MinMaxScaler."""
@@ -300,21 +304,21 @@ class MinMaxScaler[Arr: Array](FittableEncoder[Arr, Arr]):
         if self.xmax_learnable:
             self.xmax = self.backend.nanmax(data, axis=axes)
 
-        self.recast_parameters()
+        self.ymin = self.backend.to_tensor(self.ymin)
+        self.ymax = self.backend.to_tensor(self.ymax)
+        self.xmin = self.backend.to_tensor(self.xmin)
+        self.xmax = self.backend.to_tensor(self.xmax)
 
         # broadcast y to the same shape as x
         self.ymin = self.ymin + 0.0 * self.xmin
         self.ymax = self.ymax + 0.0 * self.xmax
+        self.set_derived_fields()
 
-        # compute the midpoints
-        self.xbar = (self.xmax + self.xmin) / 2
-        self.ybar = (self.ymax + self.ymin) / 2
-
-        # compute the scale
         dx = self.xmax - self.xmin
         dy = self.ymax - self.ymin
         scale = dy / dx
         self.scale = self.backend.where(dx != 0, scale, scale**0)
+        self.recast_parameters()
 
     def encode(self, x: Arr, /) -> Arr:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""

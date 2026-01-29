@@ -11,19 +11,15 @@ import pytest
 import torch as pt
 
 from tests import pytest_xfail
-from tsdm.backend.types import (
+from tsdm.testing import assert_protocol
+from tsdm.types.numerical import (
     BooleanArray,
     ComplexArray,
-    DurationArray,
     FloatArray,
     IntegerArray,
-    TimestampArray,
+    SpanLikeArray,
+    TimeLikeArray,
 )
-from tsdm.testing import assert_protocol
-
-# def chk(x: NDArray[np.floating]) -> FloatArray:
-#     return x
-
 
 _pa_bool = pd.ArrowDtype(pa.bool_())
 _pa_float64 = pd.ArrowDtype(pa.float64())
@@ -62,7 +58,7 @@ INT_ARRAYS: dict[str, IntegerArray] = {
     "numpy[int]"     : np.array(_INTS, dtype=np.int64),
     "pandas[np_int]" : pd.Series(_INTS, dtype=np.int64),
     "pandas[pa_int]" : pd.Series(_INTS, dtype=_pa_int64),
-    "polars[int]"    : pl.Series(_INTS, dtype=pl.Int64()),  # pyright: ignore[reportAssignmentType]
+    "polars[int]"    : pl.Series(_INTS, dtype=pl.Int64()),
     "torch[int]"     : pt.tensor(_INTS, dtype=pt.int64),
 }  # fmt: skip
 r"""Dictionary of int arrays."""
@@ -71,7 +67,7 @@ FLOAT_ARRAYS: dict[str, FloatArray] = {
     "numpy[float]"     : np.array(_FLOATS, dtype=np.float64),
     "pd_series[np_float]" : pd.Series(_FLOATS, dtype=np.float64),
     "pd_series[pa_float]" : pd.Series(_FLOATS, dtype=_pa_float64),
-    "polars[float]"    : pl.Series(_FLOATS, dtype=pl.Float64()),  # pyright: ignore[reportAssignmentType]
+    "polars[float]"    : pl.Series(_FLOATS, dtype=pl.Float64()),
     "torch[float]"     : pt.tensor(_FLOATS, dtype=pt.float64),
 }  # fmt: skip
 r"""Dictionary of float arrays."""
@@ -83,7 +79,7 @@ COMPLEX_ARRAYS: dict[str, ComplexArray] = {
 }  # fmt: skip
 r"""Dictionary of complex arrays."""
 
-TIME_ARRAYS: dict[str, DurationArray] = {
+TIME_ARRAYS: dict[str, SpanLikeArray] = {
     "numpy[time]"     : np.array(_TIMEDELTAS, dtype="timedelta64[ns]"),
     "pandas[np_time]" : pd.Series(_TIMEDELTAS, dtype="timedelta64[ns]"),
     "pandas[pa_time]" : pd.Series(_TIMEDELTAS, dtype=_pa_duration_ns),
@@ -91,7 +87,7 @@ TIME_ARRAYS: dict[str, DurationArray] = {
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
-DATE_ARRAYS: dict[str, TimestampArray] = {
+DATE_ARRAYS: dict[str, TimeLikeArray] = {
     "numpy[date]"     : np.array(_DATETIMES, dtype="datetime64[ns]"),
     "pandas[np_date]" : pd.Series(_DATETIMES, dtype="datetime64[ns]"),
     "pandas[pa_date]" : pd.Series(_DATETIMES, dtype=_pa_timestamp_ns),
@@ -558,7 +554,7 @@ def type_float_array_assignable() -> None:
     _pandas_np_float : FloatArray = pd.Series([1.0], dtype=np.float64)
     _pandas_pa_float : FloatArray = pd.Series([1.0], dtype=_pa_float64)
     # FIXME: https://github.com/pola-rs/polars/issues/23132
-    _polars_float    : FloatArray = pl.Series([1.0], dtype=pl.Float64())  # pyright: ignore[reportAssignmentType]
+    _polars_float    : FloatArray = pl.Series([1.0], dtype=pl.Float64())
     _torch_float     : FloatArray = pt.tensor([1.0], dtype=pt.float64)
     # fmt: on
 
@@ -579,7 +575,7 @@ def type_int_array_assignable() -> None:
     _pandas_np_int : IntegerArray = pd.Series([1], dtype=np.int64)
     _pandas_pa_int : IntegerArray = pd.Series([1], dtype=_pa_int64)
     # FIXME: https://github.com/pola-rs/polars/issues/23132
-    _polars_int    : IntegerArray = pl.Series([1], dtype=pl.Int64())  # pyright: ignore[reportAssignmentType]
+    _polars_int    : IntegerArray = pl.Series([1], dtype=pl.Int64())
     _torch_int     : IntegerArray = pt.tensor([1], dtype=pt.int64)
     # fmt: on
 
@@ -594,17 +590,17 @@ def type_complex_array_assignable() -> None:
 
 def type_timedelta_array_assignable() -> None:
     # fmt: off
-    _numpy_time     : DurationArray = np.array([py_timedelta(days=1)], dtype="timedelta64[ns]")
-    _pandas_np_time : DurationArray = pd.Series([py_timedelta(days=1)], dtype="timedelta64[ns]")
-    _pandas_pa_time : DurationArray = pd.Series([py_timedelta(days=1)], dtype=_pa_duration_ns)
-    _polars_time    : DurationArray = pl.Series([py_timedelta(days=1)], dtype=pl.Time())
+    _numpy_time     : SpanLikeArray = np.array([py_timedelta(days=1)], dtype="timedelta64[ns]")
+    _pandas_np_time : SpanLikeArray = pd.Series([py_timedelta(days=1)], dtype="timedelta64[ns]")
+    _pandas_pa_time : SpanLikeArray = pd.Series([py_timedelta(days=1)], dtype=_pa_duration_ns)
+    _polars_time    : SpanLikeArray = pl.Series([py_timedelta(days=1)], dtype=pl.Time())
     # fmt: on
 
 
 def type_datetime_array_assignable() -> None:
     # fmt: off
-    _numpy_date     : TimestampArray = np.array([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
-    _pandas_np_date : TimestampArray = pd.Series([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
-    _pandas_pa_date : TimestampArray = pd.Series([py_datetime(2021, 1, 1)], dtype=_pa_timestamp_ns)
-    _polars_date    : TimestampArray = pl.Series([py_datetime(2021, 1, 1)], dtype=pl.Date())
+    _numpy_date     : TimeLikeArray = np.array([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
+    _pandas_np_date : TimeLikeArray = pd.Series([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
+    _pandas_pa_date : TimeLikeArray = pd.Series([py_datetime(2021, 1, 1)], dtype=_pa_timestamp_ns)
+    _polars_date    : TimeLikeArray = pl.Series([py_datetime(2021, 1, 1)], dtype=pl.Date())
     # fmt: on

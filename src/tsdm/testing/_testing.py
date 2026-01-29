@@ -34,7 +34,8 @@ from pandas import NA, NaT
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
 from tsdm.dtypes import DType
-from tsdm.types.aliases import FilePath, PythonScalar
+from tsdm.types.aliases import FilePath
+from tsdm.types.numerical.scalars import PythonScalar
 
 
 def assert_arrays_equal[T: Any](array: T, reference: T, /) -> None:

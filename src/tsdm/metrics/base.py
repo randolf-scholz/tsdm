@@ -91,9 +91,8 @@ class WeightedMetric(BaseMetric, Metric):
         super().__init__(axis=axis, normalize=normalize)
 
         # Set the weight tensor.
-        w = w / torch.sum(w)
-        self.weight = nn.Parameter(w, requires_grad=self.learnable)
-        self.learnable = learnable
+        self.learnable = bool(learnable)
+        self.weight = nn.Parameter(w / torch.sum(w), requires_grad=self.learnable)
 
         # Validate the axes.
         if len(self.axis) != self.weight.ndim:

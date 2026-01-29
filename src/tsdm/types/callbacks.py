@@ -2,7 +2,6 @@ r"""Callabck protocols for TSDM."""
 
 __all__ = [
     # generic callback-protocols
-    "IntMap",
     "NullMap",
     "SelfMap",
     "Lazy",
@@ -17,7 +16,6 @@ __all__ = [
     "ConcatenateProto",
     "ContractionProto",
     "FullLikeProto",
-    "IsScalarProto",
     "ScalarProto",
     "CopyLikeProto",
     "ToTensorProto",
@@ -25,7 +23,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable as Fn
-from typing import Any, Protocol, SupportsIndex
+from typing import Any, Protocol
 
 from numpy.typing import ArrayLike
 
@@ -33,6 +31,12 @@ from tsdm.types.aliases import Axis
 
 
 # region generic callback-protocols ----------------------------------------------------
+class Lazy[T](Protocol):  # +T
+    r"""A generic protocol for wrapped values."""
+
+    def __call__(self, /) -> T: ...
+
+
 class IdentityMap(Protocol):
     r"""Protocol for Identity functions."""
 
@@ -65,18 +69,6 @@ class SelfMap[T](Protocol):  # T
     def __call__(self, x: T, /) -> T: ...
 
 
-class IntMap[T](Protocol):  # +T
-    r"""A generic protocol for indexed values."""
-
-    def __call__(self, index: SupportsIndex, /) -> T: ...
-
-
-class Lazy[T](Protocol):  # +T
-    r"""A generic protocol for wrapped values."""
-
-    def __call__(self, /) -> T: ...
-
-
 # endregion generic callback protocols -------------------------------------------------
 
 
@@ -97,12 +89,6 @@ class ContractionProto[T](Protocol):  # T
     r"""Bound Protocol for contractions (support `axes` keyword argument)."""
 
     def __call__(self, x: T, /, *, axis: Axis = None) -> T: ...
-
-
-class IsScalarProto[T](Protocol):  # -T
-    r"""Bound-Protocol for `is_scalar`-function."""
-
-    def __call__(self, x: T, /) -> bool: ...
 
 
 class CopyLikeProto[T](Protocol):  # T

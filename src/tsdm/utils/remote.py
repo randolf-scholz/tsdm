@@ -30,6 +30,7 @@ from tqdm.auto import tqdm
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing.validation import validate_file_hash
 from tsdm.types.aliases import FilePath
+from tsdm.utils.contextmanagers import timer
 
 _DEFAULT_CHUNK_SIZE = 1024 * 1024
 r"""Default chunk size for downloads (1 MiB)."""
@@ -129,19 +130,20 @@ def download_from_kaggle(
     kaggle_opts = [
         item for k, v in kaggle_options.items() for item in (f"--{k}", str(v))
     ]
-    subprocess.run(
-        [  # noqa: S607
-            "kaggle",
-            "competitions",
-            "download",
-            "-p",
-            str(target_directory),
-            "-c",
-            kaggle_name,
-            *kaggle_opts,
-        ],
-        check=True,
-    )
+    with timer(timeout=timeout):
+        subprocess.run(
+            [  # noqa: S607
+                "kaggle",
+                "competitions",
+                "download",
+                "-p",
+                str(target_directory),
+                "-c",
+                kaggle_name,
+                *kaggle_opts,
+            ],
+            check=True,
+        )
 
 
 def download_from_github(url: str, fname: FilePath, /, **svn_options: Any) -> None:
@@ -283,7 +285,7 @@ def _download_io(
             Client(headers=headers, timeout=timeout)
             if client is None
             else nullcontext(client)
-        ) as client,
+        ) as client,  # noqa: PLR1704
         client.stream("GET", url, **request_options) as response,
     ):
         response.raise_for_status()

@@ -81,7 +81,7 @@ from pandas import DataFrame
 from tsdm.datasets.base import DatasetBase
 from tsdm.datasets.schemas import DEFAULT_METADATA_SCHEMA
 from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
-from tsdm.types.aliases import TS_Keys
+from tsdm.types.timeseries import TS_Keys
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [

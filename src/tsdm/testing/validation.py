@@ -27,7 +27,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from tsdm.config import CONFIG
 from tsdm.testing.hashutils import Hash, hash_array, hash_file
 from tsdm.types.aliases import FilePath
-from tsdm.types.mixins import SupportsShape
+from tsdm.types.numerical.mixins import SupportsShape
 
 
 class ValidationError(ValueError):

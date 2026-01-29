@@ -19,8 +19,8 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.datasets import KiwiRuns, KiwiRunsTSC
-from tsdm.datatools import MappingDataset, TimeSeriesSampleGenerator
+from tsdm.datasets import KiwiBenchmark
+from tsdm.datatools import MappingDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import (
@@ -28,7 +28,8 @@ from tsdm.random.samplers import (
     SlidingWindowSampler,
 )
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.timeseries import PandasTS
+from tsdm.timeseries import PandasTS, kiwi_benchmark
+from tsdm.timeseries.sampling import TimeSeriesSampleGenerator
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -57,7 +58,7 @@ class KIWI_RUNS_GENERATOR(TimeSeriesSampleGenerator):
     sample_format = ("masked", "masked")
 
     def __init__(self, **kwargs: Any) -> None:
-        ds = KiwiRunsTSC()
+        ds = kiwi_benchmark()
         super().__init__(ds, **kwargs)
 
 
@@ -200,10 +201,10 @@ class KIWI_RUNS_TASK(OldBaseTask):
         return jit.script(WRMSE(w))
 
     @cached_property
-    def dataset(self) -> KiwiRuns:
+    def dataset(self) -> KiwiBenchmark:
         r"""Return the cached dataset."""
-        dataset = KiwiRuns()
-        dataset.metadata.drop([482], inplace=True)
+        dataset = KiwiBenchmark()
+        dataset.timeseries_metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
         return dataset
 

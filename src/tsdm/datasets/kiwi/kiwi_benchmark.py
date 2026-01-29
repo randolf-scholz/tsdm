@@ -7,13 +7,13 @@ from zipfile import ZipFile
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.aliases import TS_Keys
+from tsdm.types.timeseries import TS_Keys
 
 
 class KiwiBenchmark(DatasetBase[TS_Keys, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
-    __version__: str = "1.0"
+    __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
 
     SOURCE_URL = (
         r"https://tubcloud.tu-berlin.de/s/3CyRJMSqj5feQo2/download?path=%2F&files="

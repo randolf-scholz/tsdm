@@ -7,11 +7,10 @@ from typing import Final, assert_type
 
 import pytest
 
-from tsdm.utils import LazyDict, LazyValue
+from tsdm.utils.lazydict import LazyDict, LazyValue, lazy_dict
 
 __logger__ = logging.getLogger(__name__)
 
-from tsdm.utils.lazydict import lazy_dict
 
 EMPTY_LAZYDICT: Final[LazyDict] = LazyDict()
 EMPTY_DICT: Final[dict] = {}

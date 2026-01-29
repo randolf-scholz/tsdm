@@ -1,8 +1,6 @@
 r"""Utilities for typing context."""
 
-__all__ = [
-    "is_classvar",
-]
+__all__ = ["is_classvar"]
 
 from typing import ClassVar, ForwardRef
 

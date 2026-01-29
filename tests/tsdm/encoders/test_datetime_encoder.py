@@ -8,9 +8,9 @@ import polars as pl
 import pytest
 from pandas import Series, date_range, testing
 
-from tsdm.backend.types import NumericalSeries
 from tsdm.encoders import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
+from tsdm.types.numerical._array_alterantive import NumericalSeries
 
 
 def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:
@@ -19,13 +19,13 @@ def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:
             return np.array(data, dtype="datetime64[ms]")
         case "pandas-datetimeindex":
             return pd.DatetimeIndex(data)
-        case "pandas-index-arrow":
+        case "pandas[arrow]-index":
             return pd.Index(data).astype("timestamp[ms][pyarrow]")
-        case "pandas-index-numpy":
+        case "pandas[numpy]-index":
             return pd.Index(data).astype("datetime64[ms]")
-        case "pandas-series-arrow":
+        case "pandas[arrow]-series":
             return pd.Series(data).astype("timestamp[ms][pyarrow]")
-        case "pandas-series-numpy":
+        case "pandas[numpy]-series":
             return pd.Series(data).astype("datetime64[ms]")
         case "polars-series":
             return pl.Series(data).cast(dtype=pl.Datetime())
@@ -35,10 +35,10 @@ def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:
 
 BACKENDS = [
     "numpy",
-    "pandas-index-arrow",
-    "pandas-index-numpy",
-    "pandas-series-arrow",
-    "pandas-series-numpy",
+    "pandas[arrow]-index",
+    "pandas[numpy]-index",
+    "pandas[arrow]-series",
+    "pandas[numpy]-series",
     "pandas-datetimeindex",
     "polars-series",
 ]
@@ -104,9 +104,9 @@ r"""Example data for testing datetime encoders."""
 # endregion datetime sample data -------------------------------------------------------
 
 
-@pytest.mark.parametrize("case", DT_TRAIN_ARRAYS)
-@pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
+@pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
+@pytest.mark.parametrize("case", DT_TRAIN_ARRAYS)
 def test_datetime_encoder(case, *, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     if rounding and sparse and case in {"pandas-index-arrow", "pandas-series-arrow"}:

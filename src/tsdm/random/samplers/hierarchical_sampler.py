@@ -23,10 +23,9 @@ class HierarchicalSampler[K: Hashable, K2](BaseSampler[tuple[K, K2]]):
 
     Example:
         >>> from tsdm.random.samplers import HierarchicalSampler, RandomSampler
-        >>> sampler = HierarchicalSampler({
-        >>>     "A": [1, 2, 3],
-        >>>     "B": [4, 5, 6],
-        >>> }, shuffle=False)
+        >>> sampler = HierarchicalSampler(
+        ...     {"A": [1, 2, 3], "B": [4, 5, 6]}, shuffle=False
+        ... )
         >>> list(sampler)
         [('A', 1), ('A', 2), ('A', 3), ('B', 4), ('B', 5), ('B', 6)]
 
@@ -81,7 +80,7 @@ class HierarchicalSampler[K: Hashable, K2](BaseSampler[tuple[K, K2]]):
         })
 
         # duplicate the outer keys according to the sizes of the subsamplers
-        self.partition: SeriesDataset[int, K] = Series(
+        self.partition: list[K] = list(
             chain(*([key] * min(self.sizes) for key in self.index))
             if self.early_stop
             else chain(*([key] * self.sizes[key] for key in self.index))
@@ -103,12 +102,9 @@ class HierarchicalSampler[K: Hashable, K2](BaseSampler[tuple[K, K2]]):
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
         """
+        iterators = {key: iter(sampler) for key, sampler in self.subsamplers.items()}
+
         index = self.rng.permutation(self.partition) if self.shuffle else self.partition
-
-        activate_iterators = {
-            key: iter(sampler) for key, sampler in self.subsamplers.items()
-        }
-
-        # This won't raise `StopIteration`, because the length is matched.
         for key in index:
-            yield key, next(activate_iterators[key])
+            # This won't raise `StopIteration`, because the length is matched.
+            yield key, next(iterators[key])

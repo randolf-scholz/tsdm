@@ -38,13 +38,13 @@ from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
 from tsdm.timeseries.base import Metadata, TimeSeries, TimeSeriesCollection
-from tsdm.types.scalars import TimestampScalar
+from tsdm.types.numerical.scalars import TimeLikeScalar
 from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
 @dataclass
-class PandasTS[DT = Any](TimeSeries[DT, DataFrame]):
+class PandasTS[TimeT: TimeLikeScalar = Any](TimeSeries[TimeT, DataFrame]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -119,7 +119,7 @@ class PandasTS[DT = Any](TimeSeries[DT, DataFrame]):
         r"""Return the number of timestamps."""
         return len(self.timeindex)
 
-    def __iter__(self) -> Iterator[TimestampScalar]:
+    def __iter__(self) -> Iterator[TimeT]:
         r"""Iterate over the timestamps."""
         return iter(self.timeindex)
 

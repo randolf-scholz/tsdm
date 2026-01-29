@@ -7,10 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tsdm.testing import check_shared_interface, supports_issubclass
-from tsdm.types.scalars import (
-    DurationScalar,
-    TimestampScalar,
-)
+from tsdm.types.numerical import SpanLikeScalar, TimeLikeScalar
 from tsdm.utils import timedelta, timestamp
 
 # region setup -------------------------------------------------------------------------
@@ -46,10 +43,10 @@ type TimestampKey = PY_TS | NP_TS | PD_TS
 # endregion setup ----------------------------------------------------------------------
 
 # region test data ---------------------------------------------------------------------
-TIMEDELTAS: dict[DurationKey, DurationScalar] = {
+TIMEDELTAS: dict[DurationKey, SpanLikeScalar] = {
     "numpy[float]"      : NP_FLOAT,
     "numpy[int]"        : NP_INT,
-    "numpy[timedelta]"  : NP_TIMEDELTA,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    "numpy[timedelta]"  : NP_TIMEDELTA,
     "pandas[timedelta]" : PD_TIMEDELTA,
     "python[float]"     : PY_FLOAT,
     "python[int]"       : PY_INT,
@@ -57,15 +54,15 @@ TIMEDELTAS: dict[DurationKey, DurationScalar] = {
 }  # fmt: skip
 r"""Dictionary of timedelta scalars."""
 
-DURATION_TIMEDELTAS: dict[DurationKey, DurationScalar] = {
-    "numpy[timedelta]"  : NP_TIMEDELTA,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+DURATION_TIMEDELTAS: dict[DurationKey, SpanLikeScalar] = {
+    "numpy[timedelta]"  : NP_TIMEDELTA,
     "pandas[timedelta]" : PD_TIMEDELTA,
     "python[timedelta]" : PY_TIMEDELTA,
 }  # fmt: skip
 r"""Dictionary of timedelta-like durations."""
 
-TIMESTAMPS: dict[TimestampKey, TimestampScalar] = {
-    "numpy[datetime]"  : NP_DATETIME,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+TIMESTAMPS: dict[TimestampKey, TimeLikeScalar] = {
+    "numpy[datetime]"  : NP_DATETIME,  # type: ignore[dict-item]
     "numpy[float]"     : NP_FLOAT,
     "numpy[int]"       : NP_INT,
     "pandas[datetime]" : PD_DATETIME,
@@ -75,20 +72,20 @@ TIMESTAMPS: dict[TimestampKey, TimestampScalar] = {
 }  # fmt: skip
 r"""Dictionary of timestamp scalars."""
 
-DATE_TIMESTAMPS: dict[TimestampKey, TimestampScalar[py_timedelta]] = {
+DATE_TIMESTAMPS: dict[TimestampKey, TimeLikeScalar[py_timedelta]] = {
     "numpy[datetime]"  : NP_DATETIME,   # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
     "pandas[datetime]" : PD_DATETIME,
     "python[datetime]" : PY_DATETIME,
 }  # fmt: skip
 r"""Dictionary of datetime-like timestamps."""
 
-FLOAT_TIMESTAMPS: dict[TimestampKey, TimestampScalar[float]] = {
+FLOAT_TIMESTAMPS: dict[TimestampKey, TimeLikeScalar[float]] = {
     "numpy[float]"  : NP_FLOAT,
     "python[float]" : PY_FLOAT,
 }  # fmt: skip
 r"""Dictionary of float-like timestamps."""
 
-INT_TIMESTAMPS: dict[TimestampKey, TimestampScalar[int]] = {
+INT_TIMESTAMPS: dict[TimestampKey, TimeLikeScalar[int]] = {
     "numpy[int]"  : NP_INT,  # type: ignore[dict-item]
     "python[int]" : PY_INT,
 }  # fmt: skip
@@ -98,105 +95,105 @@ r"""Dictionary of int-like timestamps."""
 
 def test_timestamp_issubclass() -> None:
     r"""Test the datetime protocol."""
-    assert supports_issubclass(TimestampScalar)
+    assert supports_issubclass(TimeLikeScalar)
 
 
 def test_timedelta_issubclass() -> None:
     r"""Test the datetime protocol."""
-    assert supports_issubclass(DurationScalar)
+    assert supports_issubclass(SpanLikeScalar)
 
 
 def test_joint_attrs_datetime() -> None:
     r"""Test the joint attributes of datetime objects."""
     check_shared_interface(
-        DATE_TIMESTAMPS.values(), TimestampScalar, raise_on_extra=False
+        DATE_TIMESTAMPS.values(), TimeLikeScalar, raise_on_extra=False
     )
 
 
 def test_joint_attrs_timestamp() -> None:
     r"""Test the joint attributes of datetime objects."""
-    check_shared_interface(TIMESTAMPS.values(), TimestampScalar, raise_on_extra=False)
+    check_shared_interface(TIMESTAMPS.values(), TimeLikeScalar, raise_on_extra=False)
 
 
 def test_joint_attrs_timedelta() -> None:
     r"""Test the joint attributes of datetime objects."""
-    check_shared_interface(TIMEDELTAS.values(), DurationScalar, raise_on_extra=False)
+    check_shared_interface(TIMEDELTAS.values(), SpanLikeScalar, raise_on_extra=False)
 
 
 def test_timestamp_assign() -> None:
-    assert isinstance(PY_FLOAT, TimestampScalar)
-    assert isinstance(PY_INT, TimestampScalar)
-    assert isinstance(NP_INT, TimestampScalar)
-    assert isinstance(NP_FLOAT, TimestampScalar)
-    assert isinstance(NP_DATETIME, TimestampScalar)
-    assert isinstance(PD_DATETIME, TimestampScalar)
-    assert isinstance(PY_DATETIME, TimestampScalar)
+    assert isinstance(PY_FLOAT, TimeLikeScalar)
+    assert isinstance(PY_INT, TimeLikeScalar)
+    assert isinstance(NP_INT, TimeLikeScalar)
+    assert isinstance(NP_FLOAT, TimeLikeScalar)
+    assert isinstance(NP_DATETIME, TimeLikeScalar)  # type: ignore[unreachable]
+    assert isinstance(PD_DATETIME, TimeLikeScalar)  # type: ignore[unreachable]
+    assert isinstance(PY_DATETIME, TimeLikeScalar)
 
 
 def test_timedelta_assign() -> None:
-    assert isinstance(PY_FLOAT, DurationScalar)
-    assert isinstance(PY_INT, DurationScalar)
-    assert isinstance(NP_TIMEDELTA, DurationScalar)  # type: ignore[unreachable]
-    assert isinstance(NP_FLOAT, DurationScalar)  # type: ignore[unreachable]
-    assert isinstance(NP_INT, DurationScalar)
-    assert isinstance(PD_TIMEDELTA, DurationScalar)
-    assert isinstance(PY_TIMEDELTA, DurationScalar)
+    assert isinstance(PY_FLOAT, SpanLikeScalar)
+    assert isinstance(PY_INT, SpanLikeScalar)
+    assert isinstance(NP_TIMEDELTA, SpanLikeScalar)
+    assert isinstance(NP_FLOAT, SpanLikeScalar)
+    assert isinstance(NP_INT, SpanLikeScalar)
+    assert isinstance(PD_TIMEDELTA, SpanLikeScalar)
+    assert isinstance(PY_TIMEDELTA, SpanLikeScalar)
 
 
 def type_assign_duration() -> None:
     r"""Test the datetime protocol."""
     # fmt: off
-    _0: DurationScalar = NP_FLOAT
-    _1: DurationScalar = NP_INT
-    _2: DurationScalar = NP_TIMEDELTA  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
-    _3: DurationScalar = PD_TIMEDELTA
-    _4: DurationScalar = PY_FLOAT
-    _5: DurationScalar = PY_INT
-    _6: DurationScalar = PY_TIMEDELTA
+    _0: SpanLikeScalar = NP_FLOAT
+    _1: SpanLikeScalar = NP_INT
+    _2: SpanLikeScalar = NP_TIMEDELTA
+    _3: SpanLikeScalar = PD_TIMEDELTA
+    _4: SpanLikeScalar = PY_FLOAT
+    _5: SpanLikeScalar = PY_INT
+    _6: SpanLikeScalar = PY_TIMEDELTA
     # fmt: on
 
 
 def type_assign_timestamp_generic() -> None:
     r"""Test the datetime protocol."""
     # fmt: off
-    _0: TimestampScalar = NP_DATETIME   # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
-    _1: TimestampScalar = NP_INT
-    _2: TimestampScalar = NP_FLOAT
-    _3: TimestampScalar = PY_DATETIME
-    _4: TimestampScalar = PY_INT
-    _5: TimestampScalar = PY_FLOAT
-    _6: TimestampScalar = PD_DATETIME
+    _0: TimeLikeScalar = NP_DATETIME  # type: ignore[assignment]
+    _1: TimeLikeScalar = NP_INT
+    _2: TimeLikeScalar = NP_FLOAT
+    _3: TimeLikeScalar = PY_DATETIME
+    _4: TimeLikeScalar = PY_INT
+    _5: TimeLikeScalar = PY_FLOAT
+    _6: TimeLikeScalar = PD_DATETIME
     # fmt: on
 
 
 def type_assign_timestamp_basic() -> None:
     # fmt: off
-    _0: TimestampScalar[float]        = PY_FLOAT
-    _1: TimestampScalar[int]          = PY_INT
-    _2: TimestampScalar[py_timedelta] = NP_DATETIME  # type:ignore[assignment]  # pyright: ignore[reportAssignmentType]
-    _3: TimestampScalar[float]        = NP_FLOAT
-    _4: TimestampScalar[int]          = NP_INT       # type: ignore[assignment]
-    _5: TimestampScalar[py_timedelta] = PD_DATETIME
-    _6: TimestampScalar[py_timedelta] = PY_DATETIME
+    _0: TimeLikeScalar[float]        = PY_FLOAT
+    _1: TimeLikeScalar[int]          = PY_INT
+    _2: TimeLikeScalar[py_timedelta] = NP_DATETIME  # type:ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    _3: TimeLikeScalar[float]        = NP_FLOAT
+    _4: TimeLikeScalar[int]          = NP_INT       # type: ignore[assignment]
+    _5: TimeLikeScalar[py_timedelta] = PD_DATETIME
+    _6: TimeLikeScalar[py_timedelta] = PY_DATETIME
     # fmt: on
 
 
 def type_assign_timestamp_concrete() -> None:
     # fmt: off
-    _0: TimestampScalar[float]        = PY_FLOAT
-    _1: TimestampScalar[int]          = PY_INT
-    _2: TimestampScalar[np_timedelta] = NP_DATETIME  # type:ignore[type-var, assignment]  # pyright: ignore[reportAssignmentType, reportInvalidTypeArguments]
-    _3: TimestampScalar[np_float]     = NP_FLOAT
-    _4: TimestampScalar[np_int]       = NP_INT
-    _5: TimestampScalar[pd_timedelta] = PD_DATETIME
-    _6: TimestampScalar[py_timedelta] = PY_DATETIME
+    _0: TimeLikeScalar[float]        = PY_FLOAT
+    _1: TimeLikeScalar[int]          = PY_INT
+    _2: TimeLikeScalar[np_timedelta] = NP_DATETIME  # type:ignore[assignment]
+    _3: TimeLikeScalar[np_float]     = NP_FLOAT
+    _4: TimeLikeScalar[np_int]       = NP_INT
+    _5: TimeLikeScalar[pd_timedelta] = PD_DATETIME
+    _6: TimeLikeScalar[py_timedelta] = PY_DATETIME
     # fmt: on
 
 
 def type_duration_inference() -> None:
     r"""Check that DurationScalar can be inferred correctly."""
 
-    def _id[TD: DurationScalar](x: TD, /) -> TD:
+    def _id[TD: SpanLikeScalar](x: TD, /) -> TD:
         return x
 
     # fmt: off
@@ -204,7 +201,7 @@ def type_duration_inference() -> None:
     assert_type( _id(PY_INT)       , int          )
     assert_type( _id(NP_FLOAT)     , np_float     )
     assert_type( _id(NP_INT)       , np_int       )
-    assert_type( _id(NP_TIMEDELTA) , np_timedelta )  # type: ignore[type-var]  # pyright: ignore[reportAssertTypeFailure,reportArgumentType]
+    assert_type( _id(NP_TIMEDELTA) , np_timedelta )
     assert_type( _id(PY_TIMEDELTA) , py_timedelta )
     assert_type( _id(PD_TIMEDELTA) , pd_timedelta )
     # fmt: on
@@ -213,7 +210,7 @@ def type_duration_inference() -> None:
 def type_timestamp_inference() -> None:
     r"""Check that TimestampScalar can be inferred correctly."""
 
-    def _id[DT: TimestampScalar](x: DT, /) -> DT:
+    def _id[DT: TimeLikeScalar](x: DT, /) -> DT:
         return x
 
     # fmt: off
@@ -221,7 +218,7 @@ def type_timestamp_inference() -> None:
     assert_type( _id(PY_INT)      , int         )
     assert_type( _id(NP_FLOAT)    , np_float    )
     assert_type( _id(NP_INT)      , np_int      )
-    assert_type( _id(NP_DATETIME) , np_datetime )  # type: ignore[type-var]  # pyright: ignore[reportAssertTypeFailure,reportArgumentType]
+    assert_type( _id(NP_DATETIME) , np_datetime )  # type: ignore[type-var]
     assert_type( _id(PY_DATETIME) , py_datetime )
     assert_type( _id(PD_DATETIME) , pd_datetime )
     # fmt: on
@@ -243,7 +240,7 @@ def type_timestamp_difference() -> None:
 def type_timestamp_difference_inference() -> None:
     r"""Check that differences between TimestampScalar can be inferred correctly."""
 
-    def _sub[TD: DurationScalar](x: TimestampScalar[TD]) -> TD:
+    def _sub[TD: SpanLikeScalar](x: TimeLikeScalar[TD]) -> TD:
         return x - x
 
     # fmt: off

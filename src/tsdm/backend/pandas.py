@@ -47,8 +47,8 @@ from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
-from tsdm.types.aliases import Axis, BuiltinScalar
-from tsdm.utils import get_joint_keys
+from tsdm.types.aliases import Axis
+from tsdm.types.numerical.scalars import PythonScalar
 
 __logger__ = logging.getLogger(__name__)
 
@@ -145,10 +145,14 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
 
 
 def where[T: (Index, MultiIndex, Series, DataFrame)](
-    cond: NDArray, a: T, b: BuiltinScalar | NDArray, /
+    cond: NDArray, a: T, b: PythonScalar | NDArray, /
 ) -> T:
     r"""Analogue to `numpy.where`."""
-    return a.where(cond, b)
+    try:
+        return a.where(cond, b)
+    except AttributeError:
+        # a could be a numpy array is some cases.
+        return np.where(cond, a, b)  # pyright: ignore[reportArgumentType, reportCallIssue]
 
 
 def null_like[P: PandasType](x: P, /) -> P:
@@ -264,8 +268,11 @@ def select_outliers_dataframe(
     upper_inclusive: Mapping[Any, bool | None],
 ) -> DataFrame:  # DataFrame[bool]
     r"""Detect outliers in a DataFrame, given boundary values."""
-    given_bounds = get_joint_keys(
-        lower_bound, upper_bound, lower_inclusive, upper_inclusive
+    given_bounds = set.intersection(
+        *(
+            set(d.keys())
+            for d in [lower_bound, upper_bound, lower_inclusive, upper_inclusive]
+        )
     )
     if missing_bounds := set(df.columns) - given_bounds:
         raise ValueError(f"Columns {missing_bounds} do not have bounds!")
@@ -356,9 +363,11 @@ def remove_outliers_dataframe(
     r"""Remove outliers from a DataFrame, given boundary values."""
     __logger__.info("Removing outliers from DataFrame.")
     df = df.copy() if not inplace else df
-
-    given_bounds = get_joint_keys(
-        lower_bound, upper_bound, lower_inclusive, upper_inclusive
+    given_bounds = set.intersection(
+        *(
+            set(d.keys())
+            for d in [lower_bound, upper_bound, lower_inclusive, upper_inclusive]
+        )
     )
 
     if missing_bounds := set(df.columns) - given_bounds:

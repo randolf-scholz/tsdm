@@ -163,7 +163,9 @@ def return_namedtuple[**P](
 
     # create namedtuple
     tuple_type: type[tuple] = NamedTuple(  # type: ignore[misc]
-        name, zip(field_names, type_hints, strict=True)
+        # FIXME: https://github.com/python/cpython/issues/144321
+        name,
+        list(zip(field_names, type_hints, strict=True)),
     )
 
     @wraps(func)

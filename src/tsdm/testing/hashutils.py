@@ -76,8 +76,8 @@ import pyarrow as pa
 from numpy.typing import NDArray
 
 from tsdm.types.aliases import FilePath
-from tsdm.types.mixins import SupportsArray
-from tsdm.types.protocols import Dataclass
+from tsdm.types.dataclass import Dataclass
+from tsdm.types.numerical.mixins import SupportsArray
 
 HEXDIGITS = "0123456789ABCDEF"
 r"""Upppercase hexadecimal digits."""

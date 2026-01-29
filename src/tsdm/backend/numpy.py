@@ -12,6 +12,7 @@ __all__ = [
     "drop_null",
     "copy_like",
     "apply_along_axes",
+    "round_relative",
 ]
 
 from collections.abc import Callable, Hashable
@@ -105,3 +106,16 @@ def apply_along_axes(
     result = op(*arrays)
     result = np.moveaxis(result, source, inverse_permutation)
     return result
+
+
+def round_relative(x: np.ndarray, /, *, decimals: int = 2) -> np.ndarray:
+    r"""Round to relative precision.
+
+    >>> np.set_printoptions(6, floatmode="fixed", suppress=True)
+    >>> round_relative(np.array([1234.5678, 0.12345678]), decimals=2)
+    array([1230.000000,    0.123000])
+    """
+    order = np.where(x == 0, 0, np.floor(np.log10(x)))
+    digits = decimals - order
+    rounded = np.rint(x * 10**digits)
+    return np.true_divide(rounded, 10**digits)

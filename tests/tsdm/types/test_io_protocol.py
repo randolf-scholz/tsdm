@@ -4,7 +4,7 @@ from io import IOBase
 from tempfile import TemporaryFile
 from typing import IO, get_protocol_members
 
-from tsdm.types.protocols import ReadBuffer, WriteBuffer
+from tsdm.types.abc import ReadBuffer, WriteBuffer
 
 WRITE_TYPES = {"pandas": WriteBuffer, "typing": IO}
 READ_TYPES = {"pandas": ReadBuffer, "io": IOBase, "typing": IO}

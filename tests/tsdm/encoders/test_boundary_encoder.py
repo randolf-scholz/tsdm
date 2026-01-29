@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 import torch
 
-from tsdm.backend.types import NumericalTensor
 from tsdm.encoders import BoundaryEncoder
+from tsdm.types.numerical.arrays import ArraySupportsComparison
 
 DATA_1D = [
     float("-inf"),
@@ -34,7 +34,7 @@ BOUNDS: list[tuple[float | None, float | None]] = [
     (0, float("nan")),
     (0, pd.NA),
 ]
-TENSORS: dict[str, NumericalTensor[float]] = {
+TENSORS: dict[str, ArraySupportsComparison[float]] = {
     "numpy-1D"             : np.array(DATA_1D),
     "numpy-2D"             : np.array(DATA_2D),
     "torch-1D"             : torch.tensor(DATA_1D),

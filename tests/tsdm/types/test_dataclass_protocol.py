@@ -2,10 +2,7 @@ r"""Test other protocols."""
 
 from dataclasses import dataclass
 
-from tsdm.types.protocols import (
-    Dataclass,
-    is_dataclass,
-)
+from tsdm.types.dataclass import Dataclass, is_dataclass
 
 
 @dataclass

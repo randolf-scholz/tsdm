@@ -11,22 +11,25 @@ Note:
 """
 
 __all__ = [
+    # Type Aliases
+    "PythonScalar",
     # Protocols
-    "Orderable",
-    "SupportsBool",
-    "BaseScalar",
+    "ScalarType",
     "OrderedScalar",
     "AdditiveScalar",
-    # concrete data types
     "RealScalar",
+    "SpanLikeScalar",
+    "TimeLikeScalar",
+    # concrete data types
     "BoolScalar",
-    "ComplexScalar",
-    "FloatScalar",
     "IntScalar",
-    "DurationScalar",
-    "TimestampScalar",
+    "FloatScalar",
+    "ComplexScalar",
+    "DatetimeScalar",
+    "TimedeltaScalar",
 ]
 
+from datetime import datetime, timedelta
 from typing import (
     Any,
     Protocol,
@@ -37,20 +40,15 @@ from typing import (
     runtime_checkable,
 )
 
+# region Scalar Type Aliases -----------------------------------------------------------
+type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
+r"""Type Alias for Python scalars."""
+# endregion Scalar Type Aliases --------------------------------------------------------
+
 
 # region generic scalars ---------------------------------------------------------------
 @runtime_checkable
-class Orderable(Protocol):
-    r"""Protocol for types that support ordering operations."""
-
-    def __ge__(self, other: Any, /) -> object: ...
-    def __gt__(self, other: Any, /) -> object: ...
-    def __le__(self, other: Any, /) -> object: ...
-    def __lt__(self, other: Any, /) -> object: ...
-
-
-@runtime_checkable
-class BaseScalar(Protocol):
+class ScalarType(Protocol):
     r"""Protocol for scalars.
 
     Note:
@@ -63,7 +61,7 @@ class BaseScalar(Protocol):
 
 
 @runtime_checkable
-class OrderedScalar(BaseScalar, Protocol):
+class OrderedScalar(ScalarType, Protocol):
     r"""Protocol for scalars that support inequality comparisons.
 
     Examples:
@@ -81,7 +79,7 @@ class OrderedScalar(BaseScalar, Protocol):
 
 
 @runtime_checkable
-class AdditiveScalar(BaseScalar, Protocol):
+class AdditiveScalar(ScalarType, Protocol):
     r"""Protocol for scalars that support addition and subtraction.
 
     Examples:
@@ -105,10 +103,14 @@ class AdditiveScalar(BaseScalar, Protocol):
     # - (subtraction)
     def __sub__(self, other: Self, /) -> Self: ...
     def __rsub__(self, other: Self, /) -> Self: ...
+    # * (multiplication with int)
+    def __mul__(self, other: int, /) -> Self: ...
+    def __rmul__(self, other: int, /) -> Self: ...
 
 
+@runtime_checkable
 class RealScalar(OrderedScalar, Protocol):
-    r"""Protocol for ordered scalars that support integer multiplication and division.
+    r"""Protocol for ordered scalars that support  multiplication and division.
 
     Examples:
         - `int`, `float`,`timedelta`
@@ -126,8 +128,8 @@ class RealScalar(OrderedScalar, Protocol):
     def __rsub__(self, other: Self, /) -> Self: ...
     # binary operations
     # * (multiplication)
-    def __mul__(self, other: int, /) -> Self: ...
-    def __rmul__(self, other: int, /) -> Self: ...
+    def __mul__(self, other: float, /) -> Self: ...
+    def __rmul__(self, other: float, /) -> Self: ...
     # / (division)
     def __truediv__(self, other: Self, /) -> FloatScalar: ...
     def __floordiv__(self, other: Self, /) -> FloatScalar: ...
@@ -137,13 +139,6 @@ class RealScalar(OrderedScalar, Protocol):
 
 
 # region concrete data types -----------------------------------------------------------
-@runtime_checkable
-class SupportsBool(Protocol):
-    r"""Protocol for types that support boolean operations."""
-
-    def __bool__(self) -> bool: ...
-
-
 @runtime_checkable
 class BoolScalar(OrderedScalar, Protocol):
     r"""Protocol for boolean scalars.
@@ -433,7 +428,7 @@ class FloatScalar(OrderedScalar, Protocol):
 
 
 @runtime_checkable
-class ComplexScalar(BaseScalar, Protocol):
+class ComplexScalar(ScalarType, Protocol):
     r"""Protocol for complex scalars."""
 
     # @property
@@ -518,11 +513,10 @@ class ComplexScalar(BaseScalar, Protocol):
 
 
 @runtime_checkable
-class DurationScalar(OrderedScalar, Protocol):
+class SpanLikeScalar(OrderedScalar, Protocol):
     r"""Time delta provides several arithmetical operations."""
 
     # unary operations
-    # def __bool__(self) -> bool: ...
     def __abs__(self) -> Self: ...
     def __pos__(self) -> Self: ...
     def __neg__(self) -> Self: ...
@@ -539,52 +533,93 @@ class DurationScalar(OrderedScalar, Protocol):
     def __mul__(self, other: int, /) -> Self: ...
     def __rmul__(self, other: int, /) -> Self: ...
     # / (division)
+    # NOTE: plain builtins.int only supports (int, int) -> float
+    #   therefore, annotate overload with Self | SupportsFloat
+    # NOTE: due to datetime.timedelta, this overload order is forced.
+    @overload
     def __truediv__(self, other: Self, /) -> SupportsFloat: ...
+    @overload
+    def __truediv__(self, other: int, /) -> Self | SupportsFloat: ...
 
-    # @overload
-    # def __truediv__(self, other: Self, /) -> float: ...
-    # @overload
-    # def __truediv__(self, other: float, /) -> Self: ...
-
+    # FIXME: disabled since not supported by all implementations
     # // (floor division)
+    @overload
     def __floordiv__(self, other: Self, /) -> SupportsInt: ...
-
-    # @overload
-    # def __floordiv__(self, other: Self, /) -> int: ...
-    # @overload
-    # def __floordiv__(self, other: int, /) -> Self: ...
-
+    @overload
+    def __floordiv__(self, other: int, /) -> Self: ...
     # % (modulo)
-    def __mod__(self, other: Self, /) -> Self: ...
+    def __mod__(self, other: Self, /) -> Self | Any: ...
 
-    # NOTE: __rmod__ missing on fallback pydatetime
-    # def __rmod__(self, other: Self, /) -> Self: ...
-
-    # divmod
+    # # divmod
     # def __divmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
 
-    # NOTE: __rdivmod__ missing on fallback pydatetime
-    # def __rdivmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
+    # endregion binary operations ------------------------------------------------------
+
+
+class TimedeltaScalar(SpanLikeScalar, Protocol):
+    r"""Protocol for datetime.timedelta compatible scalars."""
+
+    # region binary operations ---------------------------------------------------------
+    # + (addition)
+    def __add__(self, other: Self | timedelta, /) -> Self: ...
+    def __radd__(self, other: Self | timedelta, /) -> Self: ...
+    # - (subtraction)
+    # FIXME: broken with numpy. https://github.com/numpy/numpy/issues/28257
+    def __sub__(self, other: Self | timedelta, /) -> Self: ...
+    def __rsub__(self, other: Self | timedelta, /) -> Self: ...
+    # * (multiplication)
+    def __mul__(self, other: int, /) -> Self: ...
+    def __rmul__(self, other: int, /) -> Self: ...
+    # / (division)
+    @overload
+    def __truediv__(self, other: Self | timedelta, /) -> SupportsFloat: ...
+    @overload
+    def __truediv__(self, other: int, /) -> Self: ...
+
+    # FIXME: disabled since not supported by all implementations
+    # // (floor division)
+    # @overload
+    # def __floordiv__(self, other: int, /) -> Self: ...
+    # @overload
+    # def __floordiv__(self, other: Self | timedelta, /) -> SupportsInt: ...
+    # # % (modulo)
+    # def __mod__(self, other: Self | timedelta, /) -> Self: ...
+    # # divmod
+    # def __divmod__(self, other: Self | timedelta, /) -> tuple[SupportsInt, Self]: ...
+    # endregion binary operations ------------------------------------------------------
 
 
 @runtime_checkable
-class TimestampScalar[Dual: DurationScalar](OrderedScalar, Protocol):
+class TimeLikeScalar[DualT: SpanLikeScalar](OrderedScalar, Protocol):
     r"""TimeStamps can be compared and subtracted."""
 
-    def __add__(self, other: Dual, /) -> Self: ...
-    def __radd__(self, other: Dual, /) -> Self: ...
+    def __add__(self, other: DualT, /) -> Self: ...
+    def __radd__(self, other: DualT, /) -> Self: ...
 
     # FIXME: broken with numpy. https://github.com/numpy/numpy/issues/28257
     @overload
-    def __sub__(self, other: Self, /) -> Dual: ...
+    def __sub__(self, other: Self, /) -> DualT: ...
     @overload
-    def __sub__(self, other: Dual, /) -> Self: ...
+    def __sub__(self, other: DualT, /) -> Self: ...
 
     # FIXME: __rsub__ missing on fallback pydatetime
     # @overload
     # def __rsub__(self, other: Self, /) -> TD: ...
     # @overload
     # def __rsub__(self, other: TD, /) -> Self: ...
+
+
+class DatetimeScalar[DualT: TimedeltaScalar](TimeLikeScalar[DualT], Protocol):
+    r"""Protocol for datetime-like scalars."""
+
+    def __add__(self, other: DualT | timedelta, /) -> Self: ...
+    def __radd__(self, other: DualT | timedelta, /) -> Self: ...
+
+    # FIXME: broken with numpy. https://github.com/numpy/numpy/issues/28257
+    @overload
+    def __sub__(self, other: Self, /) -> DualT: ...
+    @overload
+    def __sub__(self, other: DualT | timedelta, /) -> Self: ...
 
 
 # endregion concrete data types --------------------------------------------------------

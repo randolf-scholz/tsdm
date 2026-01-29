@@ -12,7 +12,7 @@ import pytest
 import torch
 
 from tsdm.testing import assert_protocol
-from tsdm.types.protocols import Array
+from tsdm.types.abc import Vec
 
 EXPECTED_BUILTINS: dict[type, bool] = {
     EllipsisType       : False,
@@ -97,7 +97,7 @@ EXPECTED_3RD_PARTY: dict[type, bool] = {
     ).items(),
 )
 def test_satisfies_array_protocol(*, cls: type, expected: bool) -> None:
-    assert_protocol(cls, Array, expected=expected)
+    assert_protocol(cls, Vec, expected=expected)
 
 
 def test_array_collections_abc() -> None:
@@ -106,46 +106,46 @@ def test_array_collections_abc() -> None:
             continue
         cls = getattr(collections, name)
         if isinstance(cls, type):
-            print(f"{name}: {issubclass(cls, Array)}")
+            print(f"{name}: {issubclass(cls, Vec)}")
 
 
 def type_array_assignable() -> None:
     # builtins
     # _00: type[Array] = bytes  # ❌ __contains__
     # _01: type[Array] = dict  # ❌ __getitem__
-    _02: type[Array] = list
-    _03: type[Array] = range
+    _02: type[Vec] = list
+    _03: type[Vec] = range
     # _04: type[Array] = str  # ❌ __contains__
-    _05: type[Array] = tuple
+    _05: type[Vec] = tuple
     # collections.abc
     # _06: type[Array] = abc.Mapping  # __getitem__ does not support slicing
     # _07: type[Array] = abc.MutableMapping  # __getitem__ does not support slicing
-    _08: type[Array] = abc.MutableSequence  # type: ignore[type-abstract]
-    _09: type[Array] = abc.Sequence  # type: ignore[type-abstract]
+    _08: type[Vec] = abc.MutableSequence  # type: ignore[type-abstract]
+    _09: type[Vec] = abc.Sequence  # type: ignore[type-abstract]
     # collections
     # _10: type[Array] = collections.ChainMap  # __getitem__ does not support slicing
     # _11: type[Array] = collections.Counter  # __getitem__ does not support slicing
     # _11: type[Array] = collections.OrderedDict  # __getitem__ does not support slicing
     # _12: type[Array] = collections.UserDict  # __getitem__ does not support slicing
-    _13: type[Array] = collections.UserList
-    _14: type[Array] = collections.UserString
+    _13: type[Vec] = collections.UserList
+    _14: type[Vec] = collections.UserString
     # _15: type[Array] = collections.defaultdict  # __getitem__ does not support slicing
     # _16: type[Array] = collections.deque  # __getitem__ does not support slicing
     # 3rd party
-    _17: type[Array] = np.ndarray
-    _18: type[Array] = pa.Array
-    _19: type[Array] = pa.ChunkedArray
-    _20: type[Array] = pd.DataFrame
-    _21: type[Array] = pd.Index
-    _22: type[Array] = pd.Series
-    _23: type[Array] = pl.Series
-    _24: type[Array] = torch.Tensor
+    _17: type[Vec] = np.ndarray
+    _18: type[Vec] = pa.Array
+    _19: type[Vec] = pa.ChunkedArray
+    _20: type[Vec] = pd.DataFrame
+    _21: type[Vec] = pd.Index
+    _22: type[Vec] = pd.Series
+    _23: type[Vec] = pl.Series
+    _24: type[Vec] = torch.Tensor
     # check
 
 
 def type_integer_array_assignable() -> None:
-    _0: Array[int]
-    _1: Array[int] = (1, 2)
-    _2: Array[int] = tuple([1, 2])  # noqa: C409
-    _3: Array[int] = [1, 2]
-    _4: Array[int] = range(2)
+    _0: Vec[int]
+    _1: Vec[int] = (1, 2)
+    _2: Vec[int] = tuple([1, 2])  # noqa: C409
+    _3: Vec[int] = [1, 2]
+    _4: Vec[int] = range(2)
