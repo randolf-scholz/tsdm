@@ -12,9 +12,12 @@ Useful links:
 # ruff: line-length=100
 
 import datetime
+import inspect
+import logging
 import os
 import sys
 from importlib import metadata
+from types import ModuleType
 
 # setup path
 os.environ["GENERATING_DOCS"] = "true"
@@ -364,3 +367,27 @@ myst_enable_extensions = [
 
 
 # -- end of configuration --------------------------------------------------------------
+def get_napoleon_type_aliases(module: ModuleType, /) -> dict[str, str]:
+    r"""Automatically create type aliases for all exported functions and classes."""
+    d: dict[str, str] = {}
+    if not hasattr(module, "__all__"):
+        return d
+
+    for item in module.__all__:
+        obj = getattr(module, item)
+        if inspect.ismodule(obj):
+            d[item] = f"{obj.__name__}"
+            if not item.startswith("_"):
+                d |= get_napoleon_type_aliases(obj)
+        elif inspect.ismethod(obj) or inspect.isfunction(obj):
+            d[item] = f"{obj.__module__}.{obj.__qualname__}"
+        elif inspect.isclass(obj):
+            if issubclass(obj, Exception):
+                d[item] = f"{obj.__module__}.{obj.__qualname__}"
+            d[item] = f"{obj.__module__}.{obj.__qualname__}"
+        else:
+            d[item] = item
+
+    logger = logging.getLogger(f"{__name__}/{get_napoleon_type_aliases.__name__}")
+    logger.info("Found napoleon type aliases: %s", d)
+    return d
