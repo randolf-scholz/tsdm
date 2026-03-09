@@ -9,12 +9,14 @@ from tsdm.encoders.pandas import CSVEncoder, DTypeConverter
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-TEST_FRAME_A = DataFrame({
-    "A": [1, 2, 3],
-    "B": [4, 5, 6],
-    "C": [7, 8, 9],
-    "D": [1, 2, 3],
-})
+TEST_FRAME_A = DataFrame(
+    {
+        "A": [1, 2, 3],
+        "B": [4, 5, 6],
+        "C": [7, 8, 9],
+        "D": [1, 2, 3],
+    }
+)
 
 
 def test_csv_encoder() -> None:
@@ -33,12 +35,14 @@ def test_csv_encoder() -> None:
 
 def test_type_converter() -> None:
     # initialize encoder
-    encoder = DTypeConverter({
-        "A": "duration[ns][pyarrow]",
-        "B": "Int64",
-        "C": "Float64",
-        "D": "Float64",
-    })
+    encoder = DTypeConverter(
+        {
+            "A": "duration[ns][pyarrow]",
+            "B": "Int64",
+            "C": "Float64",
+            "D": "Float64",
+        }
+    )
 
     # fit on the test data
     assert encoder.requires_fit

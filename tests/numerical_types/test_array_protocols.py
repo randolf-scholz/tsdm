@@ -1,18 +1,12 @@
 r"""Test numerical arrays."""
 # mypy: disable-error-code="unreachable"
 
-from datetime import datetime as py_datetime, timedelta as py_timedelta
+from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
-import polars as pl
-import pyarrow as pa
 import pytest
-import torch as pt
 
-from tests import pytest_xfail
-from tsdm.testing import assert_protocol
-from tsdm.types.numerical import (
+from test_utils import pytest_xfail
+from tsdm.experimental.types import (
     BooleanArray,
     ComplexArray,
     FloatArray,
@@ -20,88 +14,67 @@ from tsdm.types.numerical import (
     SpanLikeArray,
     TimeLikeArray,
 )
+from tsdm.testing import assert_protocol
 
-_pa_bool = pd.ArrowDtype(pa.bool_())
-_pa_float64 = pd.ArrowDtype(pa.float64())
-_pa_int64 = pd.ArrowDtype(pa.int64())
-_pa_duration_ns = pd.ArrowDtype(pa.duration("ns"))
-_pa_timestamp_ns = pd.ArrowDtype(pa.timestamp("ns"))
-
-# FIXME: https://github.com/pola-rs/polars/issues/23132
-
-_BOOLS: list[bool] = [True, False, True, False]
-_INTS: list[int] = [1, 2, 3]
-_FLOATS: list[float] = [1.0, 0.0, -1.0]
-_COMPLEX: list[complex] = [1j, 0.0, -1j]
-_DATETIMES: list[py_datetime] = [
-    py_datetime(2021, 1, 1),
-    py_datetime(2021, 1, 2),
-    py_datetime(2021, 1, 3),
-]
-_TIMEDELTAS: list[py_timedelta] = [
-    py_timedelta(days=1),
-    py_timedelta(days=2),
-    py_timedelta(days=3),
-]
-
+from .fixtures import (
+    BOOL,
+    COMPLEX,
+    DATETIME,
+    FLOAT,
+    INT,
+    SERIES,
+    TIMEDELTA,
+)
 
 BOOL_ARRAYS: dict[str, BooleanArray] = {
-    "numpy[bool]"     : np.array(_BOOLS, dtype=np.bool_),
-    "pandas[np_bool]" : pd.Series(_BOOLS, dtype=bool),
-    "pandas[pa_bool]" : pd.Series(_BOOLS, dtype=_pa_bool),
-    "polars[bool]"    : pl.Series(_BOOLS, dtype=pl.Boolean()),
-    "torch[bool]"     : pt.tensor(_BOOLS, dtype=pt.bool),
+    "numpy[bool]"     : SERIES.NP.BOOL,
+    "pandas[np_bool]" : SERIES.PD_NP.BOOL,
+    "pandas[pa_bool]" : SERIES.PD_PA.BOOL,
+    "polars[bool]"    : SERIES.PL.BOOL,
+    "torch[bool]"     : SERIES.PT.BOOL,
 }  # fmt: skip
 r"""Dictionary of bool arrays."""
 
 INT_ARRAYS: dict[str, IntegerArray] = {
-    "numpy[int]"     : np.array(_INTS, dtype=np.int64),
-    "pandas[np_int]" : pd.Series(_INTS, dtype=np.int64),
-    "pandas[pa_int]" : pd.Series(_INTS, dtype=_pa_int64),
-    "polars[int]"    : pl.Series(_INTS, dtype=pl.Int64()),
-    "torch[int]"     : pt.tensor(_INTS, dtype=pt.int64),
+    "numpy[int]"     : SERIES.NP.INT,
+    "pandas[np_int]" : SERIES.PD_NP.INT,
+    "pandas[pa_int]" : SERIES.PD_PA.INT,
+    "polars[int]"    : SERIES.PL.INT,
+    "torch[int]"     : SERIES.PT.INT,
 }  # fmt: skip
 r"""Dictionary of int arrays."""
 
 FLOAT_ARRAYS: dict[str, FloatArray] = {
-    "numpy[float]"     : np.array(_FLOATS, dtype=np.float64),
-    "pd_series[np_float]" : pd.Series(_FLOATS, dtype=np.float64),
-    "pd_series[pa_float]" : pd.Series(_FLOATS, dtype=_pa_float64),
-    "polars[float]"    : pl.Series(_FLOATS, dtype=pl.Float64()),
-    "torch[float]"     : pt.tensor(_FLOATS, dtype=pt.float64),
+    "numpy[float]"     : SERIES.NP.FLOAT,
+    "pandas[np_float]" : SERIES.PD_NP.FLOAT,
+    "pandas[pa_float]" : SERIES.PD_PA.FLOAT,
+    "polars[float]"    : SERIES.PL.FLOAT,
+    "torch[float]"     : SERIES.PT.FLOAT,
 }  # fmt: skip
 r"""Dictionary of float arrays."""
 
 COMPLEX_ARRAYS: dict[str, ComplexArray] = {
-    "numpy[complex]"     : np.array(_COMPLEX, dtype=np.complex128),
-    "torch[complex]"     : pt.tensor(_COMPLEX, dtype=pt.complex128),
-    "pandas[np_complex]" : pd.Series(_COMPLEX, dtype=np.complex128),
+    "numpy[complex]"     : SERIES.NP.COMPLEX,
+    "torch[complex]"     : SERIES.PT.COMPLEX,
+    "pandas[np_complex]" : SERIES.PD_NP.COMPLEX,
 }  # fmt: skip
 r"""Dictionary of complex arrays."""
 
 TIME_ARRAYS: dict[str, SpanLikeArray] = {
-    "numpy[time]"     : np.array(_TIMEDELTAS, dtype="timedelta64[ns]"),
-    "pandas[np_time]" : pd.Series(_TIMEDELTAS, dtype="timedelta64[ns]"),
-    "pandas[pa_time]" : pd.Series(_TIMEDELTAS, dtype=_pa_duration_ns),
-    "polars[time]"    : pl.Series(_TIMEDELTAS, dtype=pl.Time()),
+    "numpy[time]"     : SERIES.NP.TIMEDELTA,
+    "pandas[np_time]" : SERIES.PD_NP.TIMEDELTA,
+    "pandas[pa_time]" : SERIES.PD_PA.TIMEDELTA,
+    "polars[time]"    : SERIES.PL.TIMEDELTA,
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
 DATE_ARRAYS: dict[str, TimeLikeArray] = {
-    "numpy[date]"     : np.array(_DATETIMES, dtype="datetime64[ns]"),
-    "pandas[np_date]" : pd.Series(_DATETIMES, dtype="datetime64[ns]"),
-    "pandas[pa_date]" : pd.Series(_DATETIMES, dtype=_pa_timestamp_ns),
-    "polars[date]"    : pl.Series(_DATETIMES, dtype=pl.Date()),
+    "numpy[date]"     : SERIES.NP.DATETIME,
+    "pandas[np_date]" : SERIES.PD_NP.DATETIME,
+    "pandas[pa_date]" : SERIES.PD_PA.DATETIME,
+    "polars[date]"    : SERIES.PL.DATETIME,
 }  # fmt: skip
 r"""Dictionary of datetime arrays."""
-
-
-BOOL: bool = bool(1)
-INT: int = int(1.0)
-FLOAT: float = float(1)
-COMPLEX: complex = complex(0 + 1j)
-DATETIME: py_datetime = py_datetime(2021, 1, 1)
-TIMEDELTA: py_timedelta = py_timedelta(days=1)
 
 
 def test_joint_interface_floatarray() -> None:
@@ -126,22 +99,23 @@ def test_bool_array(example: str) -> None:
     assert type( array != BOOL  ) is cls  # __ne__(bool)
     assert type( BOOL  != array ) is cls  # __ne__(bool)
 
-    with pytest_xfail("polars", strict=(example == "polars[bool]")):
-        assert type( array <  array ) is cls  # __lt__(self)
-        assert type( array <  BOOL  ) is cls  # __lt__(bool)
-        assert type( BOOL  <  array ) is cls  # __lt__(bool)
+    if not TYPE_CHECKING:
+        with pytest_xfail("polars", strict=(example == "polars[bool]")):
+            assert type( array <  array ) is cls  # __lt__(self)
+            assert type( array <  BOOL  ) is cls  # __lt__(bool)
+            assert type( BOOL  <  array ) is cls  # __lt__(bool)
 
-        assert type( array <= array ) is cls  # __le__(self)
-        assert type( array <= BOOL  ) is cls  # __le__(bool)
-        assert type( BOOL  <= array ) is cls  # __le__(bool)
+            assert type( array <= array ) is cls  # __le__(self)
+            assert type( array <= BOOL  ) is cls  # __le__(bool)
+            assert type( BOOL  <= array ) is cls  # __le__(bool)
 
-        assert type( array >  array ) is cls  # __gt__(self)
-        assert type( array >  BOOL  ) is cls  # __gt__(bool)
-        assert type( BOOL  >  array ) is cls  # __gt__(bool)
+            assert type( array >  array ) is cls  # __gt__(self)
+            assert type( array >  BOOL  ) is cls  # __gt__(bool)
+            assert type( BOOL  >  array ) is cls  # __gt__(bool)
 
-        assert type( array >= array ) is cls  # __ge__(self)
-        assert type( array >= BOOL  ) is cls  # __ge__(bool)
-        assert type( BOOL  >= array ) is cls  # __ge__(bool)
+            assert type( array >= array ) is cls  # __ge__(self)
+            assert type( array >= BOOL  ) is cls  # __ge__(bool)
+            assert type( BOOL  >= array ) is cls  # __ge__(bool)
 
     assert type( array &  array ) is cls  # __and__(self)
     assert type( array &  BOOL  ) is cls  # __and__(bool)
@@ -546,61 +520,3 @@ def test_generic_normalize(case: str) -> None:
         return (x - x.min()) / (x.max() - x.min())
 
     assert type(normalize(array)) is cls
-
-
-def type_float_array_assignable() -> None:
-    # fmt: off
-    _numpy_float     : FloatArray = np.array([1.0], dtype=np.float64)
-    _pandas_np_float : FloatArray = pd.Series([1.0], dtype=np.float64)
-    _pandas_pa_float : FloatArray = pd.Series([1.0], dtype=_pa_float64)
-    # FIXME: https://github.com/pola-rs/polars/issues/23132
-    _polars_float    : FloatArray = pl.Series([1.0], dtype=pl.Float64())
-    _torch_float     : FloatArray = pt.tensor([1.0], dtype=pt.float64)
-    # fmt: on
-
-
-def type_bool_array_assignable() -> None:
-    # fmt: off
-    _numpy_bool     : BooleanArray = np.array([True], dtype=np.bool_)
-    _pandas_np_bool : BooleanArray = pd.Series([True], dtype=bool)
-    _pandas_pa_bool : BooleanArray = pd.Series([True], dtype=_pa_bool)
-    _polars_bool    : BooleanArray = pl.Series([True], dtype=pl.Boolean())
-    _torch_bool     : BooleanArray = pt.tensor([True], dtype=pt.bool)
-    # fmt: on
-
-
-def type_int_array_assignable() -> None:
-    # fmt: off
-    _numpy_int     : IntegerArray = np.array([1], dtype=np.int64)
-    _pandas_np_int : IntegerArray = pd.Series([1], dtype=np.int64)
-    _pandas_pa_int : IntegerArray = pd.Series([1], dtype=_pa_int64)
-    # FIXME: https://github.com/pola-rs/polars/issues/23132
-    _polars_int    : IntegerArray = pl.Series([1], dtype=pl.Int64())
-    _torch_int     : IntegerArray = pt.tensor([1], dtype=pt.int64)
-    # fmt: on
-
-
-def type_complex_array_assignable() -> None:
-    # fmt: off
-    _numpy_complex     : ComplexArray = np.array([1 + 1j], dtype=np.complex128)
-    _torch_complex     : ComplexArray = pt.tensor([1 + 1j], dtype=pt.complex128)
-    _pandas_np_complex : ComplexArray = pd.Series([1 + 1j], dtype=np.complex128)
-    # fmt: on
-
-
-def type_timedelta_array_assignable() -> None:
-    # fmt: off
-    _numpy_time     : SpanLikeArray = np.array([py_timedelta(days=1)], dtype="timedelta64[ns]")
-    _pandas_np_time : SpanLikeArray = pd.Series([py_timedelta(days=1)], dtype="timedelta64[ns]")
-    _pandas_pa_time : SpanLikeArray = pd.Series([py_timedelta(days=1)], dtype=_pa_duration_ns)
-    _polars_time    : SpanLikeArray = pl.Series([py_timedelta(days=1)], dtype=pl.Time())
-    # fmt: on
-
-
-def type_datetime_array_assignable() -> None:
-    # fmt: off
-    _numpy_date     : TimeLikeArray = np.array([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
-    _pandas_np_date : TimeLikeArray = pd.Series([py_datetime(2021, 1, 1)], dtype="datetime64[ns]")
-    _pandas_pa_date : TimeLikeArray = pd.Series([py_datetime(2021, 1, 1)], dtype=_pa_timestamp_ns)
-    _polars_date    : TimeLikeArray = pl.Series([py_datetime(2021, 1, 1)], dtype=pl.Date())
-    # fmt: on

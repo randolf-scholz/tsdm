@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from tsdm.encoders import BoundaryEncoder
-from tsdm.types.numerical.arrays import ArraySupportsComparison
+from tsdm.experimental.types.arrays import ArraySupportsComparison
 
 DATA_1D = [
     float("-inf"),
@@ -82,37 +82,35 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
     assert encoded.dtype == data.dtype
 
     lb, ub = encoder.lower_bound, encoder.upper_bound
-    lb_given: bool = pd.notna(lb)
-    ub_given: bool = pd.notna(ub)
     lower_mask: np.ndarray | D
     upper_mask: np.ndarray | D
 
     nan_data = np.isnan(data)
     nan_encoded = np.isnan(encoded)
 
-    match lb_given, mode, lower_included:
-        case False, _, _:
+    match mode, lower_included:
+        case _ if lb is None or pd.isna(lb):
             lower_mask = np.zeros_like(data, dtype=bool)
-        case True, "clip", _:
+        case "clip", _:
             lower_mask = data <= lb
-        case True, "mask", True:
+        case "mask", True:
             lower_mask = data < lb
-        case True, "mask", False:
+        case "mask", False:
             lower_mask = data <= lb
         case _:
-            raise ValueError(f"Unexpected combination: {lb=} {mode=} {lower_included=}")
+            raise ValueError(f"Unexpected combination: {mode=} {lower_included=}")
 
-    match ub_given, mode, upper_included:
-        case False, _, _:
+    match mode, upper_included:
+        case _ if ub is None or pd.isna(ub):
             upper_mask = np.zeros_like(data, dtype=bool)
-        case True, "clip", _:
+        case "clip", _:
             upper_mask = data >= ub
-        case True, "mask", True:
+        case "mask", True:
             upper_mask = data > ub
-        case True, "mask", False:
+        case "mask", False:
             upper_mask = data >= ub
         case _:
-            raise ValueError(f"Unexpected combination: {ub=} {mode=} {upper_included=}")
+            raise ValueError(f"Unexpected combination: {mode=} {upper_included=}")
 
     match mode:
         case "clip":

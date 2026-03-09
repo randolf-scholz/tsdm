@@ -5,7 +5,7 @@ import datetime as dt
 import pandas as pd
 import polars as pl
 
-from tests import pytest_xfail
+from test_utils import pytest_xfail
 
 
 def test_timestamp_to_float() -> None:

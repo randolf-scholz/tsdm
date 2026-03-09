@@ -11,31 +11,21 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.testing import assert_protocol, check_shared_interface
-from tsdm.types.numerical import (
+from tsdm.experimental.types import (
     ArrayType,
     SeriesType,
     TableType,
 )
-from tsdm.types.numerical._array_alterantive import (
+from tsdm.experimental.types._array_alterantive import (
     MutableTensor,
     NumericalArray,
     NumericalSeries,
     NumericalTensor,
-    SupportsMutation,
 )
-from tsdm.types.numerical.arrays import SupportsArrayComparison
-from tsdm.types.numerical.mixins import (
-    SupportsArray,
-    SupportsArrayUfunc,
-    SupportsDataFrame,
-    SupportsDevice,
-    SupportsDtype,
-    SupportsItem,
-    SupportsMatmul,
-    SupportsNdim,
+from tsdm.experimental.types.mixins import (
     SupportsShape,
 )
+from tsdm.testing import assert_protocol, check_shared_interface
 
 __logger__ = logging.getLogger(__name__)
 RNG = np.random.default_rng()
@@ -52,7 +42,7 @@ DICT_FLOAT = {
 }
 DICT_MIXED = {
     "label": ["a", "b", "c", "d"],
-    "x": [1.1, 2.2, 3.3, 4.4],
+    "x": [111, 222, 333, 444],
     "y": [5.5, 6.6, 7.7, 8.8],
 }
 DATETIMES = pd.date_range("2021-01-01", periods=4)
@@ -225,65 +215,67 @@ MUTABLE_TENSORS: dict[str, MutableTensor] = {  # pyright: ignore[reportAssignmen
     "torch_tensor_2d"     : PT_TENSOR_2D,  # type: ignore[dict-item]
 }  # fmt: skip
 
-DUNDER_ARITHMETIC: frozenset[str] = frozenset({
-    # comparisons
-    "__eq__",
-    "__ge__",
-    "__gt__",
-    "__le__",
-    "__lt__",
-    "__ne__",
-    # unary ops
-    "__hash__",
-    "__invert__",
-    "__abs__",
-    "__pos__",
-    "__neg__",
-    # binary ops
-    "__add__",
-    "__and__",
-    "__divmod__",
-    "__floordiv__",
-    "__lshift__",
-    "__matmul__",
-    "__mod__",
-    "__mul__",
-    "__or__",
-    "__pow__",
-    "__sub__",
-    "__truediv__",
-    "__xor__",
-    # inplace ops
-    "__iadd__",
-    "__iand__",
-    "__ifloordiv__",
-    "__ilshift__",
-    "__imatmul__",
-    "__imod__",
-    "__imul__",
-    "__ior__",
-    "__ipow__",
-    "__irshift__",
-    "__isub__",
-    "__itruediv__",
-    "__ixor__",
-    # r-ops
-    "__radd__",
-    "__rand__",
-    "__rdivmod__",
-    "__rfloordiv__",
-    "__rlshift__",
-    "__rmatmul__",
-    "__rmod__",
-    "__rmul__",
-    "__ror__",
-    "__rpow__",
-    "__rrshift__",
-    "__rshift__",
-    "__rsub__",
-    "__rtruediv__",
-    "__rxor__",
-})
+DUNDER_ARITHMETIC: frozenset[str] = frozenset(
+    {
+        # comparisons
+        "__eq__",
+        "__ge__",
+        "__gt__",
+        "__le__",
+        "__lt__",
+        "__ne__",
+        # unary ops
+        "__hash__",
+        "__invert__",
+        "__abs__",
+        "__pos__",
+        "__neg__",
+        # binary ops
+        "__add__",
+        "__and__",
+        "__divmod__",
+        "__floordiv__",
+        "__lshift__",
+        "__matmul__",
+        "__mod__",
+        "__mul__",
+        "__or__",
+        "__pow__",
+        "__sub__",
+        "__truediv__",
+        "__xor__",
+        # inplace ops
+        "__iadd__",
+        "__iand__",
+        "__ifloordiv__",
+        "__ilshift__",
+        "__imatmul__",
+        "__imod__",
+        "__imul__",
+        "__ior__",
+        "__ipow__",
+        "__irshift__",
+        "__isub__",
+        "__itruediv__",
+        "__ixor__",
+        # r-ops
+        "__radd__",
+        "__rand__",
+        "__rdivmod__",
+        "__rfloordiv__",
+        "__rlshift__",
+        "__rmatmul__",
+        "__rmod__",
+        "__rmul__",
+        "__ror__",
+        "__rpow__",
+        "__rrshift__",
+        "__rshift__",
+        "__rsub__",
+        "__rtruediv__",
+        "__rxor__",
+    }
+)
 r"""Dunder methods for arithmetic operations."""
 
 EXCLUDED_MEMBERS: dict[type, set[str]] = {
@@ -322,141 +314,6 @@ r"""Examples by protocol."""
 def is_admissable(name: str) -> bool:
     r"""Check if the name is admissable."""
     return name in DUNDER_ARITHMETIC or not name.startswith("_")
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_array(name: str) -> None:
-    r"""Test the SupportsArray protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsArray)
-    assert issubclass(obj.__class__, SupportsArray)
-    assert isinstance(obj.__array__(), np.ndarray)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_len(name: str) -> None:
-    r"""Test the SupportsLen protocol."""
-    obj = TEST_ARRAYS[name]
-    assert hasattr(obj, "__len__")
-    result = len(obj)
-    assert isinstance(result, int)
-    assert result == 4
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_array_ufunc(name: str) -> None:
-    r"""Test the SupportsArrayUfunc protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsArrayUfunc)
-    assert issubclass(obj.__class__, SupportsArrayUfunc)
-
-    result = np.exp(obj)
-    assert isinstance(result, type(obj))
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_dataframe(name: str) -> None:
-    r"""Test the SupportsDataFrame protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsDataFrame)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_dtype(name: str) -> None:
-    r"""Test the SupportsDtype protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsDtype)
-    assert isinstance(obj.dtype, object)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_shape(name: str) -> None:
-    r"""Test the SupportsShape protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsShape)
-    assert isinstance(obj.shape, tuple)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_ndim(name: str) -> None:
-    r"""Test the SupportsNdim protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsNdim)
-    assert isinstance(obj.ndim, int)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_device(name: str) -> None:
-    r"""Test the SupportsDevice protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsDevice)
-    assert isinstance(obj.device, object)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_matmul(name: str) -> None:
-    r"""Test the SupportsMatmul protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsMatmul)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_item(name: str) -> None:
-    r"""Test the SupportsShape protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsItem)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_comparison(name: str) -> None:
-    r"""Test the SupportsComparison protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsArrayComparison)
-    try:
-        _ = obj < obj
-    except TypeError as exc:
-        raise AssertionError(f"Comparison failed for {name}!") from exc
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_inplace(name: str) -> None:
-    r"""Test the SupportsInplaceArithmetic protocol."""
-    obj = TEST_ARRAYS[name]
-    assert_protocol(obj, SupportsMutation)
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_itering(name: str) -> None:
-    r"""Test if the object supports iteration."""
-    obj = TEST_ARRAYS[name]
-    try:
-        next(iter(obj))
-    except Exception:
-        raise AssertionError(f"Failed to iterate over {name}!") from None
-
-
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("name", TEST_ARRAYS)
-def test_supports_getitem_int(name: str) -> None:
-    r"""Test if the object supports integer indexing."""
-    obj = TEST_ARRAYS[name]
-    try:
-        obj[0]
-    except Exception:
-        raise AssertionError(f"Failed to index {name}!") from None
 
 
 @pytest.mark.parametrize("name", SERIES)
@@ -677,8 +534,3 @@ def test_table_manual() -> None:
     ]
     shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
     __logger__.info("\nShared members of Tables: %s", shared_attrs)
-
-
-# def type_numericalarray_covariance() -> None:
-#     def _upcast(x: NumericalArray[float]) -> NumericalArray[object]:
-#         return x

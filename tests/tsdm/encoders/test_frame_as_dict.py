@@ -6,12 +6,14 @@ from pandas.testing import assert_frame_equal, assert_index_equal
 
 from tsdm.encoders import FrameAsDict
 
-TEST_FRAME = DataFrame({
-    "ID": [11, 12, 13, 15],
-    "Mask": [True, False, True, False],
-    "X": [1.0, 2.0, 3.0, 4.0],
-    "Y": [0.1, 0.2, 0.3, 0.4],
-})
+TEST_FRAME = DataFrame(
+    {
+        "ID": [11, 12, 13, 15],
+        "Mask": [True, False, True, False],
+        "X": [1.0, 2.0, 3.0, 4.0],
+        "Y": [0.1, 0.2, 0.3, 0.4],
+    }
+)
 
 
 @pytest.mark.parametrize("df", [TEST_FRAME.set_index("ID")])

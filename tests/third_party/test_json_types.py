@@ -9,7 +9,7 @@ r"""JSON types for type hinting."""
 type JSON_SCALAR = None | bool | int | float | str
 type JSON_ARRAY[T: JSON = JSON] = list[T]
 type JSON_DICT[T: JSON = JSON] = dict[str, T]
-type JSON = JSON_SCALAR | JSON_ARRAY[JSON] | JSON_DICT
+type JSON[T: JSON] = JSON_SCALAR | JSON_ARRAY[T] | JSON_DICT[T]
 
 # no inductive types in python ...
 type JSON_TENSOR = (

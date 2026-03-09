@@ -7,12 +7,14 @@ from pandas.testing import assert_frame_equal
 
 from tsdm.encoders import FrameAsTensorDict
 
-TEST_FRAME = DataFrame({
-    "ID": [11, 12, 13, 15],
-    "Mask": [True, False, True, False],
-    "X": [1.0, 2.0, 3.0, 4.0],
-    "Y": [0.1, 0.2, 0.3, 0.4],
-})
+TEST_FRAME = DataFrame(
+    {
+        "ID": [11, 12, 13, 15],
+        "Mask": [True, False, True, False],
+        "X": [1.0, 2.0, 3.0, 4.0],
+        "Y": [0.1, 0.2, 0.3, 0.4],
+    }
+)
 
 
 @pytest.mark.parametrize("df", [TEST_FRAME, TEST_FRAME.set_index("ID")])
@@ -51,12 +53,14 @@ def test_frame_as_tensor_dict(df: DataFrame, schema: dict) -> None:
 
 def test_frame2tensordict() -> None:
     r"""Make sure that the column order is preserved."""
-    df = DataFrame({
-        "A": [1, 2, 3],
-        "B": [4, 5, 6],
-        "C": [7, 8, 9],
-        "D": [1, 2, 3],
-    })
+    df = DataFrame(
+        {
+            "A": [1, 2, 3],
+            "B": [4, 5, 6],
+            "C": [7, 8, 9],
+            "D": [1, 2, 3],
+        }
+    )
     encoder = FrameAsTensorDict(schema={"X": ["B"], "Y": ...})
     encoder.fit(df)
     encoded = encoder.encode(df)

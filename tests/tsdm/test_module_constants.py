@@ -125,7 +125,7 @@ def test_issubclass(case_name: str, item_name: str) -> None:
 
     if case.base_class is not None:
         assert isinstance(obj, type)
-        assert issubclass(obj, case.base_class)  # type: ignore[arg-type]
+        assert issubclass(obj, case.base_class)
 
 
 def test_dict_complete(case_name: str) -> None:

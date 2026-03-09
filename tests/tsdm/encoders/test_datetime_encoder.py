@@ -9,8 +9,8 @@ import pytest
 from pandas import Series, date_range, testing
 
 from tsdm.encoders import DateTimeEncoder
+from tsdm.experimental.types._array_alterantive import NumericalSeries
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.numerical._array_alterantive import NumericalSeries
 
 
 def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:

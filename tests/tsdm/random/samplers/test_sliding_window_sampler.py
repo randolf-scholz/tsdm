@@ -9,9 +9,9 @@ import pandas as pd
 import pytest
 from numpy.typing import NDArray
 
-from tests import pytest_xfail
+from test_utils import pytest_xfail
 from tsdm.constants import RNG
-from tsdm.datatools.datasets import Indexable
+from tsdm.datatools.collections import Indexable
 from tsdm.random.samplers import SlidingWindowSampler
 
 MODE = SlidingWindowSampler.MODE
@@ -1004,10 +1004,12 @@ def test_pandas_timestamps() -> None:
     r"""Test the SlidingWindowSampler."""
     timedeltas = pd.Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
-    time = pd.concat([
-        pd.Series([tmin]),
-        tmin + timedeltas.cumsum(),
-    ]).reset_index(drop=True)
+    time = pd.concat(
+        [
+            pd.Series([tmin]),
+            tmin + timedeltas.cumsum(),
+        ]
+    ).reset_index(drop=True)
     sampler = SlidingWindowSampler(
         time,
         stride="5m",

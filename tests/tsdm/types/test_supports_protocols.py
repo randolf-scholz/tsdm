@@ -3,7 +3,7 @@ r"""Tests for SupportsX type protocols."""
 from collections.abc import Mapping
 from typing import assert_type
 
-from tsdm.types._protocols import SupportsKeysAndGetItem
+from tsdm.types import SupportsKeysAndGetItem
 
 
 def test_supportskeysgetitem() -> None:

@@ -9,8 +9,8 @@ import polars as pl
 import pytest
 
 from tsdm.encoders import TimeDeltaEncoder
+from tsdm.experimental.types._array_alterantive import NumericalSeries
 from tsdm.testing import assert_arrays_equal
-from tsdm.types.numerical._array_alterantive import NumericalSeries
 
 
 def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSeries:

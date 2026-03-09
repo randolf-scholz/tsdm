@@ -16,8 +16,8 @@ import pytest
 import torch
 
 from tsdm.backend.generic import false_like, true_like
+from tsdm.experimental.types import FloatSeries as Array
 from tsdm.types.callbacks import SelfMap
-from tsdm.types.numerical import FloatSeries as Array
 
 DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
 TIME = np.array(DATA) * np.timedelta64(1, "s")

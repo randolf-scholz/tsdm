@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from tsdm.backend.generic import is_singleton
-from tsdm.types.numerical.mixins import SupportsShape
+from tsdm.experimental.types.mixins import SupportsShape
 
 CASES: dict[str, tuple[SupportsShape, bool]] = {
     "ndarray-()"       : (np.array(1)                        , True),

@@ -19,13 +19,15 @@ BINARY_DATA = np.array(["yes", "no", "no", "yes", "yes"])
 CATEGORICAL_DATA = np.array([["car"], ["bike"], ["car"], ["bike"], ["house"]])
 NUMERICAL_DATA = np.array([[-3.7], [-1.3], [0.0], [0.3], [2.1], [3.2]])
 UNIVARIATE_CAT_DATA = np.array(["car", "bike", "car", "bike", "house"])
-MULTICATEGORICAL_DATA = np.array([
-    ["car", "red"],
-    ["blue", "car"],
-    ["bike", "green"],
-    ["bike", "red"],
-    ["car", "green"],
-])
+MULTICATEGORICAL_DATA = np.array(
+    [
+        ["car", "red"],
+        ["blue", "car"],
+        ["bike", "green"],
+        ["bike", "red"],
+        ["car", "green"],
+    ]
+)
 
 SAMPLE_DATA = {
     "FunctionTransformer" : NUMERICAL_DATA,

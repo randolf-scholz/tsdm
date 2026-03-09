@@ -14,8 +14,8 @@ from numpy import (
     timedelta64 as np_td,
 )
 
+from tsdm.experimental.types.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.random.samplers import compute_grid
-from tsdm.types.numerical.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
