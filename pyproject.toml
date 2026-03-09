@@ -11,7 +11,7 @@ description = "Time-Series Datasets and Models"
 readme = "README.md"
 license-files = [ "LICENSE" ]
 urls = { repository = "https://github.com/randolf-scholz/tsdm.git" }
-import-names = ["tsdm"]
+import-names = ["tsdm", "numerical_types"]
 
 # meta-information
 keywords = ["time-series", "machine-learning"]
