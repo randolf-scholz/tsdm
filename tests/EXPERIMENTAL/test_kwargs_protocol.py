@@ -1,6 +1,6 @@
 r"""Tests for `tsdm.types.protocols.SupportsKwargs`."""
 
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from typing import (
     Protocol,
     TypeIs,
@@ -10,7 +10,12 @@ from typing import (
 
 import pytest
 
-from tsdm.types import SupportsKeysAndGetItem
+
+class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
+    r"""Protocol for objects that support `__getitem__` and `keys`."""
+
+    def keys(self) -> Collection[K]: ...
+    def __getitem__(self, key: K, /) -> V: ...
 
 
 class _SupportsKwargsMeta(ProtocolMeta):

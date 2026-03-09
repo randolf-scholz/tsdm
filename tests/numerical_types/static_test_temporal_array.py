@@ -1,6 +1,6 @@
 import datetime as dt
 
-from tsdm.experimental.types import SpanLikeArray, TimeLikeArray
+from numerical_types import SpanLikeArray, TimeLikeArray
 
 from .fixtures import SERIES
 

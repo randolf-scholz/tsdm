@@ -15,8 +15,8 @@ import pandas as pd
 import pytest
 import torch
 
+from numerical_types import FloatSeries as Array
 from tsdm.backend.generic import false_like, true_like
-from tsdm.experimental.types import FloatSeries as Array
 from tsdm.types.callbacks import SelfMap
 
 DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]

@@ -20,9 +20,9 @@ from typing import (
     runtime_checkable,
 )
 
-from tsdm.experimental.types.arrays import BaseArray
-from tsdm.experimental.types.mixins import SupportsComparison
-from tsdm.experimental.types.scalars import BoolScalar
+from numerical_types.arrays import BaseArray
+from numerical_types.mixins import SupportsComparison
+from numerical_types.scalars import BoolScalar
 
 type Axis = None | int | tuple[int, ...]
 r"""Type Alias for axestype ."""

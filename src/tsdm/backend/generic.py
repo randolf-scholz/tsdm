@@ -17,7 +17,7 @@ __all__ = [
 from math import prod
 from typing import Any, cast
 
-from tsdm.experimental.types import BooleanArray, FloatArray
+from numerical_types import BooleanArray, FloatArray
 from tsdm.types.extra import SupportsEquality, SupportsShape
 
 

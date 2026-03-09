@@ -39,7 +39,7 @@ from typing import (
     runtime_checkable,
 )
 
-from tsdm.experimental.types.mixins import (
+from numerical_types.mixins import (
     SupportsComparison,
     SupportsEquality,
 )

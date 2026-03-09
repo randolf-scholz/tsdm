@@ -820,16 +820,16 @@ DATETIME_DATA: dict[str, Indexable[Any]] = {
 }  # fmt: skip
 
 
-@pytest.mark.parametrize("mode", SlidingWindowSampler.MODE)
-@pytest.mark.parametrize("example", DATETIME_DATA)
 @pytest_xfail(
     "Interval does not support numpy.datetime",
-    condition=lambda example, mode: example == "numpy" and mode is MODE.INTERVAL,
+    condition=lambda case, mode: case == "numpy" and mode is MODE.INTERVAL,
     raises=ValueError,
 )
-def test_datetime_data(example: str, mode: MODE) -> None:
+@pytest.mark.parametrize("mode", SlidingWindowSampler.MODE)
+@pytest.mark.parametrize("case", DATETIME_DATA)
+def test_datetime_data(case: str, mode: MODE) -> None:
     r"""Test the SlidingWindowSampler with datetime/timedelta data."""
-    data = DATETIME_DATA[example]
+    data = DATETIME_DATA[case]
     sampler = SlidingWindowSampler(
         data,
         stride="8h",

@@ -30,14 +30,14 @@ from typing import (
 
 from numpy.typing import NDArray
 
-from tsdm.experimental.types.mixins import (
+from numerical_types.mixins import (
     SupportsArray,
     SupportsComparison,
     SupportsDtype,
     SupportsEquality,
     SupportsShape,
 )
-from tsdm.experimental.types.scalars import (
+from numerical_types.scalars import (
     BoolScalar,
     ComplexScalar,
     FloatScalar,

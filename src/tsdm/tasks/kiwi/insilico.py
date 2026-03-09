@@ -30,8 +30,7 @@ class InSilicoTask(TimeSeriesTask):
         observation_horizon: str = "2h",
         forecasting_horizon: str = "1h",
     ) -> None:
-        ds = in_silico()
-        dataset = PandasTSC(ds.timeseries)
+        dataset = in_silico()
         self.observation_horizon = observation_horizon
         self.forecasting_horizon = forecasting_horizon
         super().__init__(dataset)

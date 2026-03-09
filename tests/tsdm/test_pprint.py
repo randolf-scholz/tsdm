@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 import torch
 
-from tsdm.experimental.types.mixins import SupportsArray
+from numerical_types import SupportsArray
 from tsdm.pprint import (
     INDENT,
     repr_array,

@@ -4,7 +4,7 @@ r"""Tests for `tsdm.types.scalars`."""
 from datetime import datetime, timedelta
 from typing import Any, Never
 
-from tsdm.experimental.types.scalars import (
+from numerical_types.scalars import (
     BoolScalar,
     ComplexScalar,
     DatetimeScalar,

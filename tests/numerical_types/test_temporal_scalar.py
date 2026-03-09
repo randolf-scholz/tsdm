@@ -2,7 +2,7 @@ r"""Tests for time related types."""
 
 from typing import Literal
 
-from tsdm.experimental.types import SpanLikeScalar, TimeLikeScalar
+from numerical_types import SpanLikeScalar, TimeLikeScalar
 from tsdm.testing import check_shared_interface, supports_issubclass
 
 from .fixtures import SCALARS

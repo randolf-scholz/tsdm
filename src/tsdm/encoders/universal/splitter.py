@@ -30,10 +30,10 @@ __all__ = [
 
 from dataclasses import KW_ONLY, dataclass
 
+from numerical_types.arrays import BaseArray as Array
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.experimental.types.arrays import BaseArray as Array
 from tsdm.utils.decorators import pprint_repr
 
 

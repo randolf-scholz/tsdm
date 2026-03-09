@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from test_utils import pytest_xfail
-from tsdm.experimental.types import (
+from numerical_types import (
     BooleanArray,
     ComplexArray,
     FloatArray,
@@ -14,6 +13,7 @@ from tsdm.experimental.types import (
     SpanLikeArray,
     TimeLikeArray,
 )
+from test_utils import pytest_xfail
 from tsdm.testing import assert_protocol
 
 from .fixtures import (

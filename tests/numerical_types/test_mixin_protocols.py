@@ -3,7 +3,7 @@ r"""Test other protocols."""
 import numpy as np
 import pytest
 
-from tsdm.experimental.types.mixins import (
+from numerical_types import (
     SupportsArray,
     SupportsArrayUfunc,
     SupportsComparison,

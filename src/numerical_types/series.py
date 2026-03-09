@@ -23,7 +23,7 @@ from typing import Any, Protocol, Self, overload, runtime_checkable
 
 from numpy.typing import NDArray
 
-from tsdm.experimental.types.arrays import (
+from numerical_types.arrays import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,
@@ -33,7 +33,7 @@ from tsdm.experimental.types.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from tsdm.experimental.types.scalars import (
+from numerical_types.scalars import (
     BoolScalar,
     ComplexScalar,
     FloatScalar,

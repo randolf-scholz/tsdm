@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tsdm.experimental.types.scalars import (
+from numerical_types.scalars import (
     AdditiveScalar,
     BoolScalar,
     ComplexScalar,

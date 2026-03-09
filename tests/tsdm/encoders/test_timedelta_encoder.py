@@ -8,8 +8,9 @@ import pandas as pd
 import polars as pl
 import pytest
 
+from numerical_types._array_alterantive import NumericalSeries
+from test_utils import pytest_xfail
 from tsdm.encoders import TimeDeltaEncoder
-from tsdm.experimental.types._array_alterantive import NumericalSeries
 from tsdm.testing import assert_arrays_equal
 
 
@@ -94,17 +95,23 @@ r"""Example sparse timedelta data for testing timedelta encoders."""
 # endregion timedelta sample data ------------------------------------------------------
 
 
+@pytest_xfail(
+    condition=lambda case, **_: "pandas[arrow]" in case,
+    raises=TypeError,
+    reason="arrow does not implement float * datetime "
+    "(https://github.com/apache/arrow/issues/48003)",
+)
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
-@pytest.mark.parametrize("name", TD_TRAIN_ARRAYS)
-def test_timedelta_encoder(*, name: str, sparse: bool, rounding: bool) -> None:
+@pytest.mark.parametrize("case", TD_TRAIN_ARRAYS)
+def test_timedelta_encoder(case, *, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
     if sparse:
-        train_data = TD_TRAIN_ARRAYS_SPARSE[name]
-        test_data = TD_TEST_ARRAYS_SPARSE[name]
+        train_data = TD_TRAIN_ARRAYS_SPARSE[case]
+        test_data = TD_TEST_ARRAYS_SPARSE[case]
     else:
-        train_data = TD_TRAIN_ARRAYS[name]
-        test_data = TD_TEST_ARRAYS[name]
+        train_data = TD_TRAIN_ARRAYS[case]
+        test_data = TD_TEST_ARRAYS[case]
 
     encoder: TimeDeltaEncoder = TimeDeltaEncoder(rounding=rounding)
     encoder.fit(train_data)

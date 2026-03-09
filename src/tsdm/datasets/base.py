@@ -775,9 +775,8 @@ class DatasetBase[Key: str, T](
                     exceptions[name] = exc
             if exceptions:
                 failed = "\n".join(f"{key}: {exc}" for key, exc in exceptions.items())
-                ErrorHandler(errors).emit(
-                    f"Some raw data files failed validation:\n{failed}"
-                )
+                msg = f"Some raw data files failed validation:\n{failed}"
+                ErrorHandler(errors).emit(msg)
             return result
 
         self.LOGGER.debug("Validating %s.", key)

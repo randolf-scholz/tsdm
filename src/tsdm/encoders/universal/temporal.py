@@ -12,11 +12,7 @@ from typing import Any, cast
 import numpy as np
 from pyarrow import ArrowNotImplementedError
 
-from tsdm.backend import Backend, generic, get_backend
-from tsdm.backend.pandas import PandasDtype
-from tsdm.constants import UNDEFINED
-from tsdm.encoders import FittableEncoder
-from tsdm.experimental.types import (
+from numerical_types import (
     FloatArray,
     SpanLikeArray,
     SpanLikeScalar,
@@ -24,6 +20,10 @@ from tsdm.experimental.types import (
     TimeLikeArray,
     TimeLikeScalar,
 )
+from tsdm.backend import Backend, generic, get_backend
+from tsdm.backend.pandas import PandasDtype
+from tsdm.constants import UNDEFINED
+from tsdm.encoders import FittableEncoder
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 

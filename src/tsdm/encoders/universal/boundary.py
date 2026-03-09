@@ -8,12 +8,12 @@ from typing import Any, Literal, Self
 
 import pandas as pd
 
+from numerical_types.arrays import ArraySupportsComparison
+from numerical_types.scalars import OrderedScalar
 from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.experimental.types.arrays import ArraySupportsComparison
-from tsdm.experimental.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
 

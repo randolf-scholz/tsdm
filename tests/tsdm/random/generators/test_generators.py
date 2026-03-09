@@ -71,8 +71,6 @@ def test_lotka_volterra() -> None:
     ax1.plot(y[:, 0], y[:, 1], ".")
     ax1.set_title("Phase plot")
     fig.suptitle(f"Lotka-Volterra Model (generated {datetime.now()})")
-
-    # save plot
     fig.savefig(RESULT_DIR / "lotka_volterra.png")
 
 

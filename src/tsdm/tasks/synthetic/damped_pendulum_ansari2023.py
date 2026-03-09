@@ -76,7 +76,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
         # NOTE: all folds are the same due to fixed random state.
-        # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+        # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
         folds = []
         for _ in range(self.num_folds):
             # get the test split

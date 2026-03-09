@@ -8,8 +8,9 @@ import polars as pl
 import pytest
 from pandas import Series, date_range, testing
 
+from numerical_types._array_alterantive import NumericalSeries
+from test_utils import pytest_xfail
 from tsdm.encoders import DateTimeEncoder
-from tsdm.experimental.types._array_alterantive import NumericalSeries
 from tsdm.testing import assert_arrays_equal
 
 
@@ -104,14 +105,17 @@ r"""Example data for testing datetime encoders."""
 # endregion datetime sample data -------------------------------------------------------
 
 
+@pytest_xfail(
+    condition=lambda case, **_: "pandas[arrow]" in case,
+    raises=TypeError,
+    reason="arrow does not implement float * datetime "
+    "(https://github.com/apache/arrow/issues/48003)",
+)
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
 @pytest.mark.parametrize("case", DT_TRAIN_ARRAYS)
 def test_datetime_encoder(case, *, sparse: bool, rounding: bool) -> None:
     r"""Test DateTimeEncoder with different data types."""
-    if rounding and sparse and case in {"pandas-index-arrow", "pandas-series-arrow"}:
-        pytest.xfail("Overflow error: https://github.com/apache/arrow/issues/43031.")
-
     if sparse:
         train_data = DT_TRAIN_ARRAYS_SPARSE[case]
         test_data = DT_TEST_ARRAYS_SPARSE[case]

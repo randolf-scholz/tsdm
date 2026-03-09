@@ -61,7 +61,7 @@ from typing import Protocol, Self, runtime_checkable
 import numpy as np
 from numpy.typing import NDArray
 
-from tsdm.experimental.types.series import SeriesType
+from numerical_types.series import SeriesType
 
 
 @runtime_checkable

@@ -4,7 +4,7 @@ r"""Inspection tests for scalar types."""
 from datetime import datetime, timedelta
 from typing import assert_type, reveal_type
 
-from tsdm.experimental.types import (
+from numerical_types import (
     BoolScalar,
     ComplexScalar,
     DatetimeScalar,
@@ -124,9 +124,9 @@ class TestInferIdentity:
         # fmt: off
         def _id[DT: DatetimeScalar](x: DT, /) -> DT: return x
         #
-        assert_type(_id(SCALARS.DATETIME.NP), )  # type: ignore[type-var]
-        assert_type(_id(SCALARS.DATETIME.PD), )
-        assert_type(_id(SCALARS.DATETIME.PY), )
+        assert_type(_id(SCALARS.DATETIME.NP), types0d.np.datetime)  # type: ignore[type-var]
+        assert_type(_id(SCALARS.DATETIME.PD), types0d.pd.datetime)
+        assert_type(_id(SCALARS.DATETIME.PY), types0d.py.datetime)
         # fmt: on
 
     def test_timedeltascalar(self) -> None:

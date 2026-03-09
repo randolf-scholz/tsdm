@@ -3,7 +3,7 @@
 
 from typing import Never
 
-from tsdm.experimental.types.arrays import (
+from numerical_types.arrays import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,
@@ -13,7 +13,7 @@ from tsdm.experimental.types.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from tsdm.experimental.types.series import (
+from numerical_types.series import (
     BooleanSeries,
     ComplexSeries,
     DatetimeSeries,

@@ -30,13 +30,13 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import Interval
 
+from numerical_types.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.constants import RNG
 from tsdm.datatools.collections import (
     SequentialDataset,
     get_first_sample,
     get_last_sample,
 )
-from tsdm.experimental.types.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.random.samplers.base import BaseSampler
 from tsdm.types.abc import Vec
 from tsdm.utils import timedelta, timestamp

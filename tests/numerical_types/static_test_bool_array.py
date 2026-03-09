@@ -1,6 +1,6 @@
 from typing import Never, reveal_type
 
-from tsdm.experimental.types.arrays import BooleanArray
+from numerical_types.arrays import BooleanArray
 
 from .fixtures import SERIES
 

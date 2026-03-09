@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 import torch
 
+from numerical_types.arrays import ArraySupportsComparison
 from tsdm.encoders import BoundaryEncoder
-from tsdm.experimental.types.arrays import ArraySupportsComparison
 
 DATA_1D = [
     float("-inf"),

@@ -4,8 +4,8 @@ r"""Static type tests for Numerical Array assignments."""
 from datetime import datetime, timedelta
 from typing import Any, Never, reveal_type
 
-from tsdm.experimental.types import SpanLikeScalar, TimeLikeScalar
-from tsdm.experimental.types.arrays import (
+from numerical_types import SpanLikeScalar, TimeLikeScalar
+from numerical_types.arrays import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,

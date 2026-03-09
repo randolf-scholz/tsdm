@@ -11,19 +11,17 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.experimental.types import (
+from numerical_types import (
     ArrayType,
     SeriesType,
+    SupportsShape,
     TableType,
 )
-from tsdm.experimental.types._array_alterantive import (
+from numerical_types._array_alterantive import (
     MutableTensor,
     NumericalArray,
     NumericalSeries,
     NumericalTensor,
-)
-from tsdm.experimental.types.mixins import (
-    SupportsShape,
 )
 from tsdm.testing import assert_protocol, check_shared_interface
 

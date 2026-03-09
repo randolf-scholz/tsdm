@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 import pytest
 
-from test_utils import pytest_xfail
-from tsdm.experimental.types import (
+from numerical_types import (
     DatetimeArray,
     SpanLikeArray,
     SpanLikeScalar,
@@ -14,6 +13,7 @@ from tsdm.experimental.types import (
     TimeLikeArray,
     TimeLikeScalar,
 )
+from test_utils import pytest_xfail
 
 from .fixtures import SCALARS, SERIES
 
