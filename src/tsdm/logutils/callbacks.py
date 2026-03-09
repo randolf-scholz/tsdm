@@ -360,8 +360,7 @@ class EvaluationCallback(BaseCallback):
         # unoptimized...
         mask = self.history.index <= step
         best_epochs = (
-            self.history
-            .loc[mask, self._val_key]
+            self.history.loc[mask, self._val_key]
             .rolling(5, min_periods=1)
             .mean()
             .idxmin()

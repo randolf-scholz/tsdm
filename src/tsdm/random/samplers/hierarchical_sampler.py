@@ -2,7 +2,7 @@ r"""Implementation of hierarchical sampler."""
 
 __all__ = ["HierarchicalSampler"]
 
-from collections.abc import Collection, Hashable, Iterator, Mapping
+from collections.abc import Collection, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
 from itertools import chain
 
@@ -11,14 +11,14 @@ from pandas import Series
 
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.datatools import Dataset, MapDataset
-from tsdm.datatools.datasets import SeriesDataset, get_index
+from tsdm.datatools.collections import SeriesDataset, get_index
 from tsdm.random.samplers.base import BaseSampler, RandomSampler, Sampler
 from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
 @dataclass(init=False)
-class HierarchicalSampler[K: Hashable, K2](BaseSampler[tuple[K, K2]]):
+class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Draw samples from a hierarchical data source.
 
     Example:
@@ -75,9 +75,9 @@ class HierarchicalSampler[K: Hashable, K2](BaseSampler[tuple[K, K2]]):
         self.index: Collection[K] = get_index(self.data)
 
         # get the sizes of the subsamplers
-        self.sizes: SeriesDataset[K, int] = Series({
-            key: len(self.subsamplers[key]) for key in self.index
-        })
+        self.sizes: SeriesDataset[K, int] = Series(
+            {key: len(self.subsamplers[key]) for key in self.index}
+        )
 
         # duplicate the outer keys according to the sizes of the subsamplers
         self.partition: list[K] = list(
@@ -103,8 +103,9 @@ class HierarchicalSampler[K: Hashable, K2](BaseSampler[tuple[K, K2]]):
         When ``early_stop=False``, it will sample all samples.
         """
         iterators = {key: iter(sampler) for key, sampler in self.subsamplers.items()}
-
-        index = self.rng.permutation(self.partition) if self.shuffle else self.partition
-        for key in index:
+        n = len(self.partition)
+        index = self.rng.permutation(n) if self.shuffle else range(n)
+        for i in index:
+            key = self.partition[i]
             # This won't raise `StopIteration`, because the length is matched.
             yield key, next(iterators[key])

@@ -6,6 +6,7 @@ __all__ = [
     "SupportsSeriesEquality",
     # Series Protocols
     "SeriesType",
+    "SeriesSupportsComparison",
     "SpanLikeSeries",
     "TimeLikeSeries",
     # Specialized Series Protocols
@@ -22,7 +23,7 @@ from typing import Any, Protocol, Self, overload, runtime_checkable
 
 from numpy.typing import NDArray
 
-from tsdm.types.numerical.arrays import (
+from tsdm.experimental.types.arrays import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,
@@ -32,29 +33,27 @@ from tsdm.types.numerical.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from tsdm.types.numerical.scalars import (
+from tsdm.experimental.types.scalars import (
     BoolScalar,
     ComplexScalar,
     FloatScalar,
     IntScalar,
-    SpanLikeScalar,
-    TimeLikeScalar,
 )
 
 
-class SupportsSeriesEquality(Protocol):  # noqa: D101
+class SupportsSeriesEquality[ComparableT](Protocol):  # noqa: D101
     # equality ==
-    def __eq__(self, other: Any, /) -> BooleanSeries: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
     # inequality !=
-    def __ne__(self, other: Any, /) -> BooleanSeries: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __ne__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
-class SupportsSeriesComparison[ScalarT](Protocol):  # noqa: D101
+class SupportsSeriesComparison[ComparableT](Protocol):  # noqa: D101
     # comparisons (element-wise)
-    def __le__(self, other: Self | ScalarT, /) -> BooleanSeries: ...
-    def __ge__(self, other: Self | ScalarT, /) -> BooleanSeries: ...
-    def __lt__(self, other: Self | ScalarT, /) -> BooleanSeries: ...
-    def __gt__(self, other: Self | ScalarT, /) -> BooleanSeries: ...
+    def __le__(self, other: ComparableT, /) -> BooleanSeries: ...
+    def __ge__(self, other: ComparableT, /) -> BooleanSeries: ...
+    def __lt__(self, other: ComparableT, /) -> BooleanSeries: ...
+    def __gt__(self, other: ComparableT, /) -> BooleanSeries: ...
 
 
 @runtime_checkable
@@ -98,7 +97,17 @@ class SeriesType[V](Protocol):
         ...
 
 
-class BooleanSeries[BoolT: BoolScalar](
+@runtime_checkable
+class SeriesSupportsComparison[ComparableT](
+    SupportsSeriesEquality[ComparableT],
+    SupportsSeriesComparison[ComparableT],
+    Protocol,
+):
+    r"""Protocol for series-like types supporting comparison operations."""
+
+
+@runtime_checkable
+class BooleanSeries[BoolT](
     SupportsSeriesEquality,
     BooleanArray[BoolT],
     Protocol,
@@ -110,9 +119,25 @@ class BooleanSeries[BoolT: BoolScalar](
     def any(self) -> BoolScalar | Any: ...
 
 
-class FloatSeries[FloatT: FloatScalar](
+@runtime_checkable
+class IntegerSeries[IntT](
     SupportsSeriesEquality,
-    SupportsSeriesComparison[FloatT],
+    SupportsSeriesComparison,
+    IntegerArray[IntT],
+    Protocol,
+):
+    r"""Protocol for integer series-like types supporting standard arithmetic operations."""
+
+    def __iter__(self) -> Iterator[IntT]: ...
+    def min(self) -> IntScalar | Any: ...
+    def max(self) -> IntScalar | Any: ...
+    def sum(self) -> IntScalar | Any: ...
+
+
+@runtime_checkable
+class FloatSeries[FloatT](
+    SupportsSeriesEquality,
+    SupportsSeriesComparison,
     FloatArray[FloatT],
     Protocol,
 ):
@@ -128,21 +153,8 @@ class FloatSeries[FloatT: FloatScalar](
     def var(self) -> FloatScalar | Any: ...
 
 
-class IntegerSeries[IntT: IntScalar](
-    SupportsSeriesEquality,
-    SupportsSeriesComparison[IntT],
-    IntegerArray[IntT],
-    Protocol,
-):
-    r"""Protocol for integer series-like types supporting standard arithmetic operations."""
-
-    def __iter__(self) -> Iterator[IntT]: ...
-    def min(self) -> IntScalar | Any: ...
-    def max(self) -> IntScalar | Any: ...
-    def sum(self) -> IntScalar | Any: ...
-
-
-class ComplexSeries[ComplexT: ComplexScalar](
+@runtime_checkable
+class ComplexSeries[ComplexT](
     SupportsSeriesEquality,
     ComplexArray[ComplexT],
     Protocol,
@@ -156,10 +168,11 @@ class ComplexSeries[ComplexT: ComplexScalar](
     def var(self) -> FloatScalar: ...
 
 
-class SpanLikeSeries[SpanT: SpanLikeScalar](
-    SpanLikeArray[SpanT],
+@runtime_checkable
+class SpanLikeSeries[SpanT](
     SupportsSeriesEquality,
-    SupportsSeriesComparison[SpanT],
+    SupportsSeriesComparison,
+    SpanLikeArray[SpanT],
     Protocol,
 ):
     r"""Protocol for duration series-like types supporting standard duration operations."""
@@ -172,21 +185,27 @@ class SpanLikeSeries[SpanT: SpanLikeScalar](
     def __truediv__(self, other: int, /) -> Self | Any: ...
 
 
-class TimedeltaSeries[DurationT: SpanLikeScalar](
-    TimedeltaArray[DurationT],
+@runtime_checkable
+class TimedeltaSeries[SpanT](
     SupportsSeriesEquality,
-    SupportsSeriesComparison[DurationT],
+    SupportsSeriesComparison,
+    TimedeltaArray[SpanT],
     Protocol,
 ):
     r"""Protocol for timedelta series-like types supporting standard duration operations."""
 
-    def __iter__(self) -> Iterator[DurationT]: ...
+    def __iter__(self) -> Iterator[SpanT]: ...
 
 
-class TimeLikeSeries[TimeT: TimeLikeScalar, Dual: SpanLikeScalar](
+@runtime_checkable
+class TimeLikeSeries[
+    TimeT,
+    SpanT = Any,
+    DualT: SpanLikeSeries = Any,
+](
     SupportsSeriesEquality,
-    SupportsSeriesComparison[TimeT],
-    TimeLikeArray[TimeT, Dual],
+    SupportsSeriesComparison,
+    TimeLikeArray[TimeT, SpanT, DualT],
     Protocol,
 ):
     r"""Protocol for timestamp series-like types supporting standard datetime operations."""
@@ -194,10 +213,15 @@ class TimeLikeSeries[TimeT: TimeLikeScalar, Dual: SpanLikeScalar](
     def __iter__(self) -> Iterator[TimeT]: ...
 
 
-class DatetimeSeries[TimeT: TimeLikeScalar, Dual: SpanLikeScalar](
+@runtime_checkable
+class DatetimeSeries[
+    TimeT,
+    SpanT = Any,
+    DualT: TimedeltaSeries = Any,
+](
     SupportsSeriesEquality,
-    SupportsSeriesComparison[TimeT],
-    DatetimeArray[TimeT, Dual],
+    SupportsSeriesComparison,
+    DatetimeArray[TimeT, SpanT, DualT],
     Protocol,
 ):
     r"""Protocol for datetime series-like types supporting standard datetime operations."""

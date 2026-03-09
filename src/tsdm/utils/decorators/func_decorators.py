@@ -50,11 +50,13 @@ def trace[**P, R](func: Fn[P, R], /) -> Fn[P, R]:  # +R
     def __wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         logger.info(
             "%s",
-            "\n\t".join((
-                f"{func.__qualname__}: ENTERING",
-                f"args={tuple(type(arg).__name__ for arg in args)}",
-                f"kwargs={ {k: type(v).__name__ for k, v in kwargs.items()}!s}",
-            )),
+            "\n\t".join(
+                (
+                    f"{func.__qualname__}: ENTERING",
+                    f"args={tuple(type(arg).__name__ for arg in args)}",
+                    f"kwargs={ {k: type(v).__name__ for k, v in kwargs.items()}!s}",
+                )
+            ),
         )
         try:
             logger.info("%s: EXECUTING", func.__qualname__)

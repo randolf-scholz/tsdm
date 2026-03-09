@@ -23,7 +23,6 @@ import warnings
 from collections import deque
 from collections.abc import (
     Callable,
-    Hashable,
     Iterable,
     Mapping,
     MutableMapping as MutMap,
@@ -149,7 +148,7 @@ def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -
     return last(s := s.replace(x, y) for x, y in replacements.items())
 
 
-def flatten_nested[H: Hashable](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
+def flatten_nested[H](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
     r"""Flatten nested iterables of a given kind."""
     match nested:
         case None:

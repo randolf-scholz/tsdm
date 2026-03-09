@@ -13,7 +13,7 @@ __all__ = [
 
 
 import warnings
-from collections.abc import Hashable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from typing import Any, NamedTuple, Optional, Self
@@ -26,6 +26,9 @@ from tsdm.constants import UNDEFINED
 from tsdm.datatools import TorchDataset
 from tsdm.timeseries.pandas import PandasTS, PandasTSC
 from tsdm.utils.decorators import pprint_repr
+
+type Key = Any
+r"""Placeholder for the key type."""
 
 
 @pprint_repr
@@ -56,7 +59,7 @@ class Targets(NamedTuple):
 class Sample(NamedTuple):
     r"""A sample for forecasting task."""
 
-    key: Hashable
+    key: Key
     r"""The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)]."""
     inputs: Inputs
     r"""The predictors the model is allowed to base its forecast on."""
@@ -173,21 +176,21 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
                 self.metadata_observables = self.dataset.static_covariates.columns
         self.validate()
 
-    def __getitem__(self, key: Hashable, /) -> Sample:
+    def __getitem__(self, key: Key, /) -> Sample:
         return self.make_sample(
             key,
             sparse_index=self.sparse_index,
             sparse_columns=self.sparse_columns,
         )
 
-    def get_subgenerator(self, key: Hashable) -> Self:
+    def get_subgenerator(self, key: Key) -> Self:
         r"""Get a subgenerator."""
         other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
         # noinspection PyArgumentList
         return self.__class__(self.dataset[key], **other_kwargs)
 
     def make_sample(
-        self, key: Hashable, *, sparse_index: bool = False, sparse_columns: bool = False
+        self, key: Key, *, sparse_index: bool = False, sparse_columns: bool = False
     ) -> Sample:
         r"""Create a sample from a TimeSeriesCollection."""
         # extract key
@@ -198,7 +201,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
                 outer_key,
                 [observation_horizon, forecasting_horizon],
             ]:
-                tsd = tsc[outer_key]  # type: ignore[assignment]
+                tsd = tsc[outer_key]
             case PandasTS() | PandasTSC(), _:
                 raise ValueError(f"Invalid key: {key!r}")
             case _:
@@ -339,11 +342,11 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
 
     _: KW_ONLY
 
-    observables: Sequence[Hashable] = UNDEFINED
+    observables: Sequence[Key] = UNDEFINED
     r"""These columns are unmasked over the obs.-horizon in the input slice."""
-    targets: Sequence[Hashable] = UNDEFINED
+    targets: Sequence[Key] = UNDEFINED
     r"""These columns are unmasked over the pred.-horizon in the target slice."""
-    covariates: Sequence[Hashable] = ()
+    covariates: Sequence[Key] = ()
     r"""These columns are unmasked over the whole inputs slice."""
 
     def __post_init__(self) -> None:
@@ -442,7 +445,7 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
         for key in self.index:
             yield self[key]
 
-    def __getitem__(self, key: Hashable, /) -> PlainSample:
+    def __getitem__(self, key: Key, /) -> PlainSample:
         r"""Yield a single sample."""
         # select the individual time series
         ts = self.data_source.loc[key]

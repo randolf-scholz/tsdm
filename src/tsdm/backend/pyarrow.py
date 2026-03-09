@@ -183,10 +183,14 @@ def force_cast[T: AnyArray | Table](
             current_dtypes = dict(zip(schema.names, schema.types, strict=True))
             new_schema = pa.schema(current_dtypes | dtypes)
 
-            return pa.table({
-                name: force_cast(table[name], dtypes.get(name) or current_dtypes[name])
-                for name in table.column_names
-            }).cast(new_schema)
+            return pa.table(
+                {
+                    name: force_cast(
+                        table[name], dtypes.get(name) or current_dtypes[name]
+                    )
+                    for name in table.column_names
+                }
+            ).cast(new_schema)
 
         case _:
             raise TypeError(f"Expected Array or Table, got {type(x)}.")

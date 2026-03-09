@@ -113,7 +113,7 @@ __all__ = [
 import logging
 import warnings
 from abc import abstractmethod
-from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from typing import Any, ClassVar, Literal, NewType, Protocol, runtime_checkable
@@ -149,7 +149,7 @@ type SPLIT_TYPE = Literal["train", "infer", "unknown"]
 class Split[SampleT]:  # +SampleT
     r"""Represents a split of a dataset."""
 
-    name: Hashable = NotImplemented
+    name: str = NotImplemented
     r"""List of index."""
     fold: Series = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""

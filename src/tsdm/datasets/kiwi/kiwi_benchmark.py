@@ -7,10 +7,10 @@ from zipfile import ZipFile
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.timeseries import TS_Keys
+from tsdm.types.timeseries import TSC_Keys
 
 
-class KiwiBenchmark(DatasetBase[TS_Keys, DataFrame]):
+class KiwiBenchmark(DatasetBase[TSC_Keys, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
     __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]

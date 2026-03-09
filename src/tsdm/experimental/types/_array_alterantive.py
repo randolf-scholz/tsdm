@@ -10,6 +10,7 @@ __all__ = [
 
 
 from collections.abc import Iterator
+from types import EllipsisType
 from typing import (
     Any,
     Protocol,
@@ -19,9 +20,20 @@ from typing import (
     runtime_checkable,
 )
 
-from tsdm.types.aliases import Axis, IndexArgND
-from tsdm.types.numerical.arrays import BaseArray, SupportsArrayComparison
-from tsdm.types.numerical.scalars import BoolScalar
+from tsdm.experimental.types.arrays import BaseArray
+from tsdm.experimental.types.mixins import SupportsComparison
+from tsdm.experimental.types.scalars import BoolScalar
+
+type Axis = None | int | tuple[int, ...]
+r"""Type Alias for axestype ."""
+type Size = int | tuple[int, ...]
+r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
+type DimArg = None | int | list[int]
+r"""Type Alias for dimensions compatible with torchscript."""
+type IndexArg1D = None | int | slice | range | list[int] | list[bool] | EllipsisType
+r"""Type alias for `__getitem__` argument for tensors."""
+type IndexArgND = IndexArg1D | tuple[IndexArg1D, ...]
+r"""Indexer that always returns a sub-tensor."""
 
 
 @runtime_checkable
@@ -59,7 +71,7 @@ class SupportsMutation[Scalar](Protocol):
 @runtime_checkable
 class NumericalArray[Scalar](
     BaseArray,
-    SupportsArrayComparison[Scalar],
+    SupportsComparison,
     Protocol,
 ):
     r"""Subclass of `ArrayKind` that supports numerical operations.

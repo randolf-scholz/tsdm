@@ -15,7 +15,7 @@ __all__ = [
     "round_relative",
 ]
 
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
 from typing import Any, Final
 
 import numpy as np
@@ -47,11 +47,13 @@ TIME_UNITS: Final[dict[str, np.timedelta64]] = {
 r"""Time units for `numpy.timedelta64`."""
 
 
-NA_VALUES: Final[frozenset[Hashable]] = frozenset({
-    np.nan,
-    np.datetime64(None),
-    np.timedelta64(None),
-})
+NA_VALUES: Final[frozenset[object]] = frozenset(
+    {
+        np.nan,
+        np.datetime64(None),
+        np.timedelta64(None),
+    }
+)
 r"""Values that correspond to NaN."""
 
 

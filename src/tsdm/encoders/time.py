@@ -8,7 +8,7 @@ __all__ = [
     "SocialTimeEncoder",
 ]
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import ClassVar, Final
@@ -76,7 +76,7 @@ class PeriodicEncoder(FittableEncoder[Series, DataFrame]):
     # fitted fields
     freq: float = field(init=False, default=UNDEFINED)
     original_dtype: DType = field(init=False, default=UNDEFINED)
-    original_name: Hashable = field(init=False, default=UNDEFINED)
+    original_name: str = field(init=False, default=UNDEFINED)
 
     def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
@@ -123,7 +123,7 @@ class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
 
     # computed attributes
     original_dtype: DType = field(init=False, default=UNDEFINED)
-    original_name: Hashable = field(init=False, default=UNDEFINED)
+    original_name: str = field(init=False, default=UNDEFINED)
     original_type: type = field(init=False, default=UNDEFINED)
 
     levels: list[str] = field(init=False, default=UNDEFINED)
@@ -166,7 +166,7 @@ class PeriodicSocialTimeEncoder(WrappedEncoder[Series, DataFrame]):
     })  # fmt: skip
     r"""The frequencies of the used `PeriodicEncoder`."""
 
-    levels: str
+    levels: str = "YMWDhms"
     r"""The levels to encode."""
 
     def __init__(
@@ -176,6 +176,8 @@ class PeriodicSocialTimeEncoder(WrappedEncoder[Series, DataFrame]):
         frequencies: Mapping[str, int] = DEFAULT_FREQUENCIES,
     ) -> None:
         self.levels = levels
-        self.encoder = SocialTimeEncoder(levels) >> FrameEncoder({
-            level: PeriodicEncoder(period=frequencies[level]) for level in levels
-        })
+        self.frequencies = frequencies
+        encoder = SocialTimeEncoder(levels) >> FrameEncoder(
+            {level: PeriodicEncoder(period=frequencies[level]) for level in levels}
+        )
+        super().__init__(encoder=encoder)

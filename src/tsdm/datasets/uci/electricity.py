@@ -125,8 +125,7 @@ class Electricity(DatasetBase[Literal["timeseries"], DataFrame]):
             )
 
         df = (
-            df
-            .astype("float64[pyarrow]")
+            df.astype("float64[pyarrow]")
             .rename_axis(index="time", columns="client")
             .reset_index()
             .astype({"time": "timestamp[ms][pyarrow]"})

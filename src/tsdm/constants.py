@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 import math
-from collections.abc import Callable, Hashable, Mapping, Set as AbstractSet
+from collections.abc import Callable, Mapping, Set as AbstractSet
 from enum import Enum
 from inspect import Parameter
 from types import EllipsisType, MappingProxyType, NoneType, NotImplementedType
@@ -56,14 +56,16 @@ class FLOAT(float, Enum):
     ROOT_3 = math.sqrt(3)
 
 
-NA_VALUES: Final[frozenset[Hashable]] = frozenset({
-    None,
-    float("nan"),
-    np.nan,
-    pd.NA,
-    pd.NaT,
-    np.datetime64("NaT"),
-})
+NA_VALUES: Final[frozenset[object]] = frozenset(
+    {
+        None,
+        float("nan"),
+        np.nan,
+        pd.NA,
+        pd.NaT,
+        np.datetime64("NaT"),
+    }
+)
 r"""Values that correspond to NaN."""
 
 # region precision constants -----------------------------------------------------------
@@ -94,35 +96,39 @@ UNDEFINED: Final[Any] = object()
 r"""CONST: Default value for optional arguments."""
 
 
-BUILTIN_CONSTANTS: Final[frozenset[object]] = frozenset({
-    None,
-    True,
-    False,
-    Ellipsis,
-    NotImplemented,
-})
+BUILTIN_CONSTANTS: Final[frozenset[object]] = frozenset(
+    {
+        None,
+        True,
+        False,
+        Ellipsis,
+        NotImplemented,
+    }
+)
 r"""Builtin constants https://docs.python.org/3/library/constants.html."""
 
-BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
-    NoneType,
-    bool,
-    int,
-    float,
-    complex,
-    str,
-    bytes,
-    list,
-    tuple,
-    set,
-    frozenset,
-    dict,
-    type,
-    slice,
-    range,
-    object,
-    EllipsisType,
-    NotImplementedType,
-})
+BUILTIN_TYPES: Final[frozenset[type]] = frozenset(
+    {
+        NoneType,
+        bool,
+        int,
+        float,
+        complex,
+        str,
+        bytes,
+        list,
+        tuple,
+        set,
+        frozenset,
+        dict,
+        type,
+        slice,
+        range,
+        object,
+        EllipsisType,
+        NotImplementedType,
+    }
+)
 r"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
 
 # region Parameter constants------------------------------------------------------------

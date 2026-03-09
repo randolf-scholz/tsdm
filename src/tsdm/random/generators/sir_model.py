@@ -74,11 +74,13 @@ class SIR(IVP_GeneratorBase):
         S, I, R = np.moveaxis(state, -1, 0)
         assert S.shape == I.shape == R.shape, "Incompatible shapes."
 
-        x = np.stack([
-            -self.beta * I * S,
-            self.beta * I * S - self.alpha * I,
-            self.alpha * I,
-        ])
+        x = np.stack(
+            [
+                -self.beta * I * S,
+                self.beta * I * S - self.alpha * I,
+                self.alpha * I,
+            ]
+        )
         return np.einsum("..., ...d -> ...d", np.ones_like(t), x)
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:

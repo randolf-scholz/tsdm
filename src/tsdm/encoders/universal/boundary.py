@@ -2,9 +2,9 @@ r"""Encoders for ensuring bounds on the input data."""
 
 __all__ = ["BoundaryEncoder"]
 
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Literal, Optional, Self
+from typing import Any, Literal, Self
 
 import pandas as pd
 
@@ -12,15 +12,15 @@ from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.types.numerical.arrays import ArraySupportsComparison
-from tsdm.types.numerical.scalars import OrderedScalar
+from tsdm.experimental.types.arrays import ArraySupportsComparison
+from tsdm.experimental.types.scalars import OrderedScalar
 from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
-@dataclass
+@dataclass(init=False)
 class BoundaryEncoder[
-    S: OrderedScalar = float,
+    S: OrderedScalar,
     Arr: ArraySupportsComparison = ArraySupportsComparison[S],
 ](FittableEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
@@ -57,10 +57,8 @@ class BoundaryEncoder[
     type Mode = Literal["mask", "clip"]
     r"""Type Hint for clipping mode."""
 
-    lower_bound: Optional[S] = UNDEFINED
-    upper_bound: Optional[S] = UNDEFINED
-
-    _: KW_ONLY
+    lower_bound: S | None = UNDEFINED
+    upper_bound: S | None = UNDEFINED
 
     lower_included: bool = True
     upper_included: bool = True
@@ -74,8 +72,8 @@ class BoundaryEncoder[
 
     def __init__(
         self,
-        lower_bound: Optional[S] = UNDEFINED,
-        upper_bound: Optional[S] = UNDEFINED,
+        lower_bound: S | None = UNDEFINED,
+        upper_bound: S | None = UNDEFINED,
         *,
         lower_included: bool = True,
         upper_included: bool = True,

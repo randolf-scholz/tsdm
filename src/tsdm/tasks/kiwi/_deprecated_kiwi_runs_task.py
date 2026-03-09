@@ -151,26 +151,30 @@ class KIWI_RUNS_TASK(OldBaseTask):
         self.targets = targets = Series(["Base", "DOT", "Glucose", "OD600"])
         self.targets.index = self.targets.apply(ts.columns.get_loc)
 
-        self.controls = controls = Series([
-            "Cumulated_feed_volume_glucose",
-            "Cumulated_feed_volume_medium",
-            "InducerConcentration",
-            "StirringSpeed",
-            "Flow_Air",
-            "Temperature",
-            "Probe_Volume",
-        ])
+        self.controls = controls = Series(
+            [
+                "Cumulated_feed_volume_glucose",
+                "Cumulated_feed_volume_medium",
+                "InducerConcentration",
+                "StirringSpeed",
+                "Flow_Air",
+                "Temperature",
+                "Probe_Volume",
+            ]
+        )
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series([
-            "Base",
-            "DOT",
-            "Glucose",
-            "OD600",
-            "Acetate",
-            "Fluo_GFP",
-            "pH",
-        ])
+        self.observables = observables = Series(
+            [
+                "Base",
+                "DOT",
+                "Glucose",
+                "OD600",
+                "Acetate",
+                "Fluo_GFP",
+                "pH",
+            ]
+        )
         observables.index = observables.apply(ts.columns.get_loc)
 
         if (
@@ -309,9 +313,9 @@ class KIWI_RUNS_TASK(OldBaseTask):
             targets=self.targets.index,
         )
 
-        mapped_ds = MappingDataset({
-            idx: PandasTS(ts.loc[idx], metadata=md.loc[idx]) for idx in md.index
-        })
+        mapped_ds = MappingDataset(
+            {idx: PandasTS(ts.loc[idx], metadata=md.loc[idx]) for idx in md.index}
+        )
 
         # construct the sampler
         subsamplers = {

@@ -84,8 +84,7 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
 
         # Extract Original Data Table.
         ts = (
-            ts
-            .astype(self.rawdata_schemas["complete_tensor.csv"])
+            ts.astype(self.rawdata_schemas["complete_tensor.csv"])
             .loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
             .reset_index(drop=True)
             .set_index(["UNIQUE_ID", "TIME_STAMP"])

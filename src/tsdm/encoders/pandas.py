@@ -194,17 +194,18 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         df = (
-            data
-            .melt(
+            data.melt(
                 ignore_index=False,
                 var_name=self.var_name,
                 value_name=self.value_name,
             )
             .dropna(how="any")
-            .astype({
-                self.var_name: self.categories,
-                self.value_name: self.value_dtype,
-            })
+            .astype(
+                {
+                    self.var_name: self.categories,
+                    self.value_name: self.value_dtype,
+                }
+            )
             .sort_index()
         )
 
@@ -336,17 +337,18 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
 
     def decode(self, data: DataFrame, /) -> DataFrame:
         df = (
-            data
-            .melt(
+            data.melt(
                 ignore_index=False,
                 var_name=self.var_name,
                 value_name=self.value_name,
             )
             .dropna(how="any")
-            .astype({
-                self.var_name: self.categories,
-                self.value_name: self.value_dtype,
-            })
+            .astype(
+                {
+                    self.var_name: self.categories,
+                    self.value_name: self.value_dtype,
+                }
+            )
             .sort_index()
         )
 
@@ -536,8 +538,7 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
     def decode(self, data: Mapping[str, DataFrame], /) -> DataFrame:
         # Assemble the DataFrame
         return (
-            pd
-            .concat(data.values(), axis="columns")
+            pd.concat(data.values(), axis="columns")
             .astype(self.original_schema)  # restores dtypes
             .reindex(columns=self.original_schema)  # restores column order
         )
@@ -564,17 +565,21 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
     Example:
         >>> from pandas import DataFrame
         >>> from tsdm.encoders import FrameAsTensorDict
-        >>> df = DataFrame({
-        ...     "ID": [10, 21, 33],
-        ...     "mask": [True, False, False],
-        ...     "x": [-2.1, 7.3, 3.5],
-        ...     "y": [0.1, 0.2, 0.3],
-        ... }).set_index("ID")
-        >>> encoder = FrameAsTensorDict({
-        ...     "index": "ID",
-        ...     "mask": "mask",
-        ...     "features": ["x", "y"],
-        ... })
+        >>> df = DataFrame(
+        ...     {
+        ...         "ID": [10, 21, 33],
+        ...         "mask": [True, False, False],
+        ...         "x": [-2.1, 7.3, 3.5],
+        ...         "y": [0.1, 0.2, 0.3],
+        ...     }
+        ... ).set_index("ID")
+        >>> encoder = FrameAsTensorDict(
+        ...     {
+        ...         "index": "ID",
+        ...         "mask": "mask",
+        ...         "features": ["x", "y"],
+        ...     }
+        ... )
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)
         >>> assert isinstance(encoded, dict)
@@ -682,8 +687,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
         # Assemble the DataFrame
         df = (
-            pd
-            .concat(dfs, axis="columns")
+            pd.concat(dfs, axis="columns")
             # restores column order / adds missing columns
             .reindex(columns=self.original_schema)
             # restore original dtypes

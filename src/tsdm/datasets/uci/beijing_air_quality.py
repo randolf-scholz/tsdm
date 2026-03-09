@@ -203,8 +203,7 @@ class BeijingAirQuality(DatasetBase[TS_Keys, DataFrame]):
         self.LOGGER.info("Adding Time Data.")
         time_cols = ["year", "month", "day", "hour"]
         ts = (
-            table
-            .assign(time=pd.to_datetime(table[time_cols]))
+            table.assign(time=pd.to_datetime(table[time_cols]))
             .drop(columns=time_cols)
             .set_index(["station", "time"])
             .sort_index()

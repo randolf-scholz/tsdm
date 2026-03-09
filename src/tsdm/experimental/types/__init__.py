@@ -9,6 +9,8 @@ __all__ = [
     "IntScalar",
     "SpanLikeScalar",
     "TimeLikeScalar",
+    "TimedeltaScalar",
+    "DatetimeScalar",
     # arrays
     "ArrayType",
     "TimeLikeArray",
@@ -32,7 +34,7 @@ __all__ = [
 ]
 
 
-from tsdm.types.numerical.arrays import (
+from tsdm.experimental.types.arrays import (
     ArrayType,
     BooleanArray,
     ComplexArray,
@@ -43,16 +45,18 @@ from tsdm.types.numerical.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from tsdm.types.numerical.scalars import (
+from tsdm.experimental.types.scalars import (
     BoolScalar,
     ComplexScalar,
+    DatetimeScalar,
     FloatScalar,
     IntScalar,
     ScalarType,
     SpanLikeScalar,
+    TimedeltaScalar,
     TimeLikeScalar,
 )
-from tsdm.types.numerical.series import (
+from tsdm.experimental.types.series import (
     BooleanSeries,
     ComplexSeries,
     DatetimeSeries,
@@ -61,4 +65,4 @@ from tsdm.types.numerical.series import (
     SeriesType,
     TimedeltaSeries,
 )
-from tsdm.types.numerical.tables import TableType
+from tsdm.experimental.types.tables import TableType

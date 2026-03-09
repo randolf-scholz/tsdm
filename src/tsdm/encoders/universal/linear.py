@@ -13,9 +13,9 @@ from typing import Any, Self, cast, overload
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
+from tsdm.experimental.types import FloatArray
 from tsdm.linalg.utils import invert_axis_selection, reduce_axes
 from tsdm.types.aliases import Axis
-from tsdm.types.numerical import FloatArray
 from tsdm.utils.decorators import pprint_repr
 
 

@@ -21,7 +21,7 @@ from numpy.random import Generator
 from pandas import Index
 
 from tsdm.constants import RNG
-from tsdm.datatools.datasets import Dataset, PandasDataset, get_index
+from tsdm.datatools.collections import Dataset, PandasDataset, get_index
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -95,7 +95,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
         For Iterable-style datasets, the sampler will return random values of the iterable.
     """
 
-    data: Final[Dataset[T]]
+    data: Final[Dataset[T]]  # type: ignore[misc]
 
     _: KW_ONLY
 

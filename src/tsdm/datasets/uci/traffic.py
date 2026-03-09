@@ -135,20 +135,22 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
         r"""Dates of the dataset."""
         if self.use_corrected_dates:
             dates = pd.date_range("2008-01-01", "2009-03-26", freq="d", name="day")
-            anomalies = pd.DatetimeIndex({
-                "2008-01-01": "New Year’s Day",
-                "2008-01-21": "Martin Luther King Jr. Day",
-                "2008-02-18": "Washington’s Birthday",
-                "2008-03-09": "anomaly",
-                "2008-05-26": "Memorial Day",
-                "2008-07-04": "Independence Day",
-                "2008-09-01": "Labor Day",
-                "2008-10-20": "???",
-                "2008-11-17": "???",
-                "2008-12-07": "???",
-                "2009-02-23": "???",
-                # "2009-03-08": "anomaly",
-            })
+            anomalies = pd.DatetimeIndex(
+                {
+                    "2008-01-01": "New Year’s Day",
+                    "2008-01-21": "Martin Luther King Jr. Day",
+                    "2008-02-18": "Washington’s Birthday",
+                    "2008-03-09": "anomaly",
+                    "2008-05-26": "Memorial Day",
+                    "2008-07-04": "Independence Day",
+                    "2008-09-01": "Labor Day",
+                    "2008-10-20": "???",
+                    "2008-11-17": "???",
+                    "2008-12-07": "???",
+                    "2009-02-23": "???",
+                    # "2009-03-08": "anomaly",
+                }
+            )
         else:
             dates = pd.date_range("2008-01-01", "2009-03-30", freq="d", name="day")
             anomalies = pd.DatetimeIndex({
@@ -277,8 +279,7 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
         ts = pd.concat([ts_train, ts_test]).reset_index()
 
         ts = (
-            ts
-            .assign(time=ts["day"] + ts["time"])
+            ts.assign(time=ts["day"] + ts["time"])
             .drop(columns="day")
             .set_index("time")
             .astype("float32")

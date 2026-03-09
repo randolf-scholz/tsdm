@@ -29,7 +29,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex
 
 from tsdm.types._protocols import SupportsGetItem, SupportsSlicing
-from tsdm.types.numerical import ArrayType
+from tsdm.types.abc import Vec
 from tsdm.utils.decorators import pprint_repr
 
 # region Protocols ---------------------------------------------------------------------
@@ -131,7 +131,7 @@ class PandasDataset[K, V](Protocol):  # K, +V
     """
 
     @property
-    def index(self) -> ArrayType[K]: ...
+    def index(self) -> Vec[K]: ...
     @property
     def loc(self) -> SupportsGetItem[K, V]: ...
     @property

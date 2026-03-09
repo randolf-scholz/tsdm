@@ -9,18 +9,18 @@ __all__ = [
     # Classes
 ]
 
-from collections.abc import Collection, Hashable, Iterable, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from typing import Optional
 
 import numpy as np
 from pandas import DataFrame, Index, MultiIndex, Series
 
 
-def is_partition(
-    partition: Iterable[Collection[Hashable]],
+def is_partition[T](
+    partition: Iterable[Collection[T]],
     /,
     *,
-    union: Optional[Collection[Hashable]] = None,
+    union: Optional[Collection[T]] = None,
 ) -> bool:
     r"""Check if partition is a valid partition of union."""
     sets = (set(p) for p in partition)

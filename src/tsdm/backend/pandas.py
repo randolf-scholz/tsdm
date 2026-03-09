@@ -33,13 +33,14 @@ __all__ = [
     "strip_whitespace_dataframe",
 ]
 
+import datetime
 import logging
 import operator
 import warnings
-from collections.abc import Hashable, Mapping
+from collections.abc import Mapping
 from contextlib import suppress
 from functools import reduce
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, cast as type_cast
 
 import numpy as np
 import pandas as pd
@@ -47,8 +48,7 @@ from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
-from tsdm.types.aliases import Axis
-from tsdm.types.numerical.scalars import PythonScalar
+from tsdm.types.aliases import Axis, PythonScalar
 
 __logger__ = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ r"""Type Alias for `pandas` objects."""
 type PANDAS_TYPE = Index | Series | DataFrame
 r"""A type alias for pandas objects."""
 
-NA_VALUES: Final[frozenset[Hashable]] = frozenset({NA, NaT})
+NA_VALUES: Final[frozenset[object]] = frozenset({NA, NaT})
 r"""Values that correspond to NaN."""
 
 
@@ -152,7 +152,13 @@ def where[T: (Index, MultiIndex, Series, DataFrame)](
         return a.where(cond, b)
     except AttributeError:
         # a could be a numpy array is some cases.
-        return np.where(cond, a, b)  # pyright: ignore[reportArgumentType, reportCallIssue]
+        if isinstance(b, datetime.datetime):
+            other = np.datetime64(b)
+        elif isinstance(b, datetime.timedelta):
+            other = np.timedelta64(b)
+        else:
+            other = b
+        return type_cast("T", np.where(cond, a, other))
 
 
 def null_like[P: PandasType](x: P, /) -> P:
@@ -190,9 +196,9 @@ def strip_whitespace_series[S: Series](series: S, /) -> S:
 
 def strip_whitespace_dataframe[DF: DataFrame](frame: DF, /, *cols: str) -> DF:
     r"""Strip whitespace from selected columns in a DataFrame."""
-    return frame.assign(**{
-        col: strip_whitespace_series(frame[col]) for col in (cols or frame)
-    })
+    return frame.assign(
+        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
+    )
 
 
 def strip_whitespace[P: PandasType](x: P, /) -> P:

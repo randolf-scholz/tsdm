@@ -1071,8 +1071,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                     name="time",
                 )
                 duration = (
-                    table
-                    .to_pandas(types_mapper=pd.ArrowDtype)
+                    table.to_pandas(types_mapper=pd.ArrowDtype)
                     .pivot(
                         index=["orderid"],
                         columns="valueuom",  # "None", "min", "day", or "hour"

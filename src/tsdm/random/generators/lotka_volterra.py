@@ -91,10 +91,12 @@ class LotkaVolterra(IVP_GeneratorBase):
         x = state[..., 0]
         y = state[..., 1]
         xy = x * y
-        new_state = np.stack([
-            self.alpha * x - self.beta * xy,
-            self.delta * xy - self.gamma * y,
-        ])
+        new_state = np.stack(
+            [
+                self.alpha * x - self.beta * xy,
+                self.delta * xy - self.gamma * y,
+            ]
+        )
         return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:

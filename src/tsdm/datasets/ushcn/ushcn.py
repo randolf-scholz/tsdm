@@ -537,25 +537,28 @@ class USHCN(DatasetBase[Key, DataFrame]):
         self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
         data.columns = pd.MultiIndex.from_frame(
-            DataFrame(data_cols, columns=["VAR", "DAY"]).astype({
-                "VAR": "string[pyarrow]",
-                "DAY": "int8[pyarrow]",
-            })
+            DataFrame(data_cols, columns=["VAR", "DAY"]).astype(
+                {
+                    "VAR": "string[pyarrow]",
+                    "DAY": "int8[pyarrow]",
+                }
+            )
         )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = (
-            data
-            .stack(level="DAY")
+            data.stack(level="DAY")
             .reset_index(level="DAY")
-            .astype({  # correct dtypes after stacking operation
-                "DAY": "int8[pyarrow]",
-                "VALUE": VALUES_DTYPE,
-                "MFLAG": MFLAGS_DTYPE,
-                "QFLAG": QFLAGS_DTYPE,
-                "SFLAG": SFLAGS_DTYPE,
-            })
+            .astype(
+                {  # correct dtypes after stacking operation
+                    "DAY": "int8[pyarrow]",
+                    "VALUE": VALUES_DTYPE,
+                    "MFLAG": MFLAGS_DTYPE,
+                    "QFLAG": QFLAGS_DTYPE,
+                    "SFLAG": SFLAGS_DTYPE,
+                }
+            )
         )
 
         self.LOGGER.info("Merging on ID columns...")
@@ -567,16 +570,14 @@ class USHCN(DatasetBase[Key, DataFrame]):
             "date32[pyarrow]"
         )
         data = (
-            data
-            .assign(DATE=dates)
+            data.assign(DATE=dates)
             .drop(columns=date_cols)
             .dropna(subset=["DATE", "VALUE"])
         )
 
         self.LOGGER.info("Set index and sort...")
         data = (
-            data
-            .set_index(["COOP_ID", "DATE"])
+            data.set_index(["COOP_ID", "DATE"])
             .reindex(columns=["ELEMENT", "MFLAG", "QFLAG", "SFLAG", "VALUE"])
             .sort_values(by=["COOP_ID", "DATE", "ELEMENT"])
         )

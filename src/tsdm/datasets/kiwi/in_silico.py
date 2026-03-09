@@ -48,8 +48,7 @@ class InSilico(DatasetBase[KEY, DataFrame]):
 
         # Set index, dtype and sort.
         ts = (
-            pd
-            .concat(dfs, names=["run_id"])
+            pd.concat(dfs, names=["run_id"])
             .reset_index()
             .set_index(["run_id", "time"])
             .sort_index()

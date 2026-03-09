@@ -16,8 +16,9 @@ from tsdm.backend import Backend, generic, get_backend
 from tsdm.backend.pandas import PandasDtype
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import FittableEncoder
-from tsdm.types.numerical import (
+from tsdm.experimental.types import (
     FloatArray,
+    SpanLikeArray,
     SpanLikeScalar,
     TimedeltaArray,
     TimeLikeArray,
@@ -68,7 +69,7 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
 
     def encode(self, x: X, /) -> Y:
         try:
-            return x / self.unit  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+            return cast("Y", x / self.unit)
         except TypeError:
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
             return self.backend.cast(x, int) / self.backend.scalar(self.unit, int)
@@ -143,10 +144,10 @@ class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](
         self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)
 
     def encode(self, x: X, /) -> Y:
-        delta = x - self.offset
+        delta: SpanLikeArray = x - self.offset
 
         try:
-            return delta / self.unit
+            return cast("Y", delta / self.unit)
         except TypeError:
             # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
             return self.backend.cast(delta, int) / self.backend.scalar(self.unit, int)

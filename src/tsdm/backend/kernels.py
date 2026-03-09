@@ -41,7 +41,7 @@ from tsdm.types.callbacks import (
     ToTensorProto,
     WhereProto,
 )
-from tsdm.types.numerical.mixins import SupportsArray
+from tsdm.types.extra import SupportsArray
 
 type BackendID = Literal["generic", "arrow", "numpy", "pandas", "polars", "torch"]
 r"""A type alias for the supported backends."""

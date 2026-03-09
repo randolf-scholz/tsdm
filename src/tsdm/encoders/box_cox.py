@@ -27,7 +27,7 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import FLOAT, UNDEFINED
-from tsdm.encoders.base import FittableEncoder
+from tsdm.encoders.base import FittableEncoder, StaticEncoder
 from tsdm.utils.decorators import pprint_repr
 
 
@@ -242,7 +242,7 @@ def construct_wasserstein_loss_logit_normal(
 
 @pprint_repr
 @dataclass(init=False)
-class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
+class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
@@ -313,13 +313,13 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode(self, data: NPC, /) -> NPC:
+    def encode(self, data: Arr, /) -> Arr:
         return np.log(data + self.offset)  # pyright: ignore[reportReturnType]
 
-    def decode(self, data: NPC, /) -> NPC:
+    def decode(self, data: Arr, /) -> Arr:
         return np.maximum(np.exp(data) - self.offset, 0)  # pyright: ignore[reportReturnType]
 
-    def fit(self, data: NPC, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         if not all((data >= 0) | np.isnan(data)):
             raise ValueError("Data must be in [0, ∞) or NaN.")
 
@@ -348,7 +348,7 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
                     bounds=[self.bounds],
                     options={"disp": self.verbose},
                 )
-                offset = sol.x.squeeze()
+                offset = sol.x
             case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_boxcox_normal(data)
                 x0 = np.float64(self.offset_guess)
@@ -359,16 +359,16 @@ class BoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
                     bounds=[self.bounds],
                     options={"disp": self.verbose},
                 )
-                offset = sol.x.squeeze()
+                offset = sol.x
             case other:
                 assert_never(other)
 
-        self.offset = float(np.array(offset).item())
+        self.offset = float(np.asarray(offset).item())
 
 
 @pprint_repr
 @dataclass
-class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC]):
+class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
     r"""Encode data from the interval [0,1] with a logit transform.
 
     An offset c is added/subtracted to avoid log(0) and division by zero.
@@ -436,15 +436,15 @@ class LogitBoxCoxEncoder[NPC: (NDArray, Index, Series)](FittableEncoder[NPC, NPC
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode(self, data: NPC, /) -> NPC:
+    def encode(self, data: Arr, /) -> Arr:
         return np.log((data + self.offset) / (1 - (data - self.offset)))  # pyright: ignore[reportReturnType]
 
-    def decode(self, data: NPC, /) -> NPC:
+    def decode(self, data: Arr, /) -> Arr:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
         return np.clip(r, 0, 1)  # pyright: ignore[reportReturnType]
 
-    def fit(self, data: NPC, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
@@ -529,7 +529,7 @@ class LogEncoder(FittableEncoder[NDArray, NDArray]):
         return result
 
 
-class LogitEncoder(FittableEncoder[NDArray, NDArray]):
+class LogitEncoder(StaticEncoder[NDArray, NDArray]):
     r"""Logit encoder."""
 
     def encode(self, data: DataFrame, /) -> DataFrame:

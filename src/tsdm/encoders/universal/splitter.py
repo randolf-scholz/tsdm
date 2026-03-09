@@ -33,7 +33,7 @@ from dataclasses import KW_ONLY, dataclass
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.types.numerical.arrays import BaseArray as Array
+from tsdm.experimental.types.arrays import BaseArray as Array
 from tsdm.utils.decorators import pprint_repr
 
 

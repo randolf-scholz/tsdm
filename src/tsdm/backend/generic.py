@@ -17,9 +17,8 @@ __all__ = [
 from math import prod
 from typing import Any, cast
 
-from tsdm.types.numerical import BooleanArray
-from tsdm.types.numerical.arrays import FloatArray, SupportsArrayEquality
-from tsdm.types.numerical.mixins import SupportsShape
+from tsdm.experimental.types import BooleanArray, FloatArray
+from tsdm.types.extra import SupportsEquality, SupportsShape
 
 
 def ndim(x: SupportsShape, /) -> int:
@@ -38,7 +37,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def is_nan(x: SupportsArrayEquality, /) -> BooleanArray:
+def is_nan(x: SupportsEquality, /) -> BooleanArray:
     r"""Determines whether an element is NaN."""
     try:
         return x.isnan()  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
@@ -47,14 +46,14 @@ def is_nan(x: SupportsArrayEquality, /) -> BooleanArray:
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def false_like(x: SupportsArrayEquality, /) -> BooleanArray:
+def false_like(x: SupportsEquality, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x
     return z ^ z
 
 
 # FIXME: https://github.com/python/typing/issues/548
-def true_like(x: SupportsArrayEquality, /) -> BooleanArray:
+def true_like(x: SupportsEquality, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
     #   `(𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True`
@@ -120,6 +119,6 @@ def round[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # noqa: A00
         https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even
     """
     try:
-        return x.round(decimals=decimals)  # type: ignore[attr-defined]
+        return x.round(decimals=decimals)
     except AttributeError:
         return round_impl(x, decimals=decimals)

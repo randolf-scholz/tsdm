@@ -175,36 +175,42 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         self.metadata = self.metadata.rename(columns={self.target: "target_value"})
 
         # Construct the dataset object
-        self.DS = MappingDataset({
-            key: PandasTS(
-                self.timeseries.loc[key],
-                metadata=self.metadata.loc[key],
-            )
-            for key in self.metadata.index
-        })
+        self.DS = MappingDataset(
+            {
+                key: PandasTS(
+                    self.timeseries.loc[key],
+                    metadata=self.metadata.loc[key],
+                )
+                for key in self.metadata.index
+            }
+        )
 
-        self.controls = controls = Series([
-            "Cumulated_feed_volume_glucose",
-            "Cumulated_feed_volume_medium",
-            "InducerConcentration",
-            "StirringSpeed",
-            "Flow_Air",
-            "Temperature",
-            "Probe_Volume",
-        ])
+        self.controls = controls = Series(
+            [
+                "Cumulated_feed_volume_glucose",
+                "Cumulated_feed_volume_medium",
+                "InducerConcentration",
+                "StirringSpeed",
+                "Flow_Air",
+                "Temperature",
+                "Probe_Volume",
+            ]
+        )
         # get reverse index
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series([
-            "Base",
-            "DOT",
-            "Glucose",
-            "OD600",
-            "Acetate",
-            "Fluo_GFP",
-            "Volume",
-            "pH",
-        ])
+        self.observables = observables = Series(
+            [
+                "Base",
+                "DOT",
+                "Glucose",
+                "OD600",
+                "Acetate",
+                "Fluo_GFP",
+                "Volume",
+                "pH",
+            ]
+        )
         # get reverse index
         observables.index = observables.apply(ts.columns.get_loc)
 
@@ -300,13 +306,15 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
 
-        mapped_ds = MappingDataset({
-            idx: PandasTS(
-                ts.loc[idx],
-                metadata=(md.loc[idx], self.final_value.loc[idx]),
-            )
-            for idx in md.index
-        })
+        mapped_ds = MappingDataset(
+            {
+                idx: PandasTS(
+                    ts.loc[idx],
+                    metadata=(md.loc[idx], self.final_value.loc[idx]),
+                )
+                for idx in md.index
+            }
+        )
 
         # construct the sampler
         subsamplers = {}

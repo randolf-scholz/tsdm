@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Callable as Fn, Hashable, Iterator, Mapping
+from collections.abc import Callable as Fn, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, fields
 from typing import Any, ClassVar, Optional, Self, overload
 
@@ -38,13 +38,12 @@ from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
 from tsdm.timeseries.base import Metadata, TimeSeries, TimeSeriesCollection
-from tsdm.types.numerical.scalars import TimeLikeScalar
 from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
 @dataclass
-class PandasTS[TimeT: TimeLikeScalar = Any](TimeSeries[TimeT, DataFrame]):
+class PandasTS[TimeT = Any](TimeSeries[TimeT, DataFrame]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -53,12 +52,14 @@ class PandasTS[TimeT: TimeLikeScalar = Any](TimeSeries[TimeT, DataFrame]):
     For a given time-index, the time series data is a vector of measurements.
     """
 
-    FIELDS: ClassVar[frozenset[str]] = frozenset({
-        "timeseries",
-        "timeseries_metadata",
-        "static_covariates",
-        "static_covariates_metadata",
-    })
+    FIELDS: ClassVar[frozenset[str]] = frozenset(
+        {
+            "timeseries",
+            "timeseries_metadata",
+            "static_covariates",
+            "static_covariates_metadata",
+        }
+    )
     r"""The essential fields of the time series collection."""
 
     _: KW_ONLY
@@ -123,7 +124,7 @@ class PandasTS[TimeT: TimeLikeScalar = Any](TimeSeries[TimeT, DataFrame]):
         r"""Iterate over the timestamps."""
         return iter(self.timeindex)
 
-    def __contains__(self, key: Hashable, /) -> bool:
+    def __contains__(self, key: object, /) -> bool:
         r"""Check if the key is in the timeindex."""
         return key in self.timeindex
 
@@ -161,14 +162,16 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
     `Equimodal` means that all time series share the same schema (i.e. subset of variables).
     """
 
-    FIELDS: ClassVar[frozenset[str]] = frozenset({
-        "timeseries",
-        "timeseries_metadata",
-        "static_covariates",
-        "static_covariates_metadata",
-        "constants",
-        "constants_metadata",
-    })
+    FIELDS: ClassVar[frozenset[str]] = frozenset(
+        {
+            "timeseries",
+            "timeseries_metadata",
+            "static_covariates",
+            "static_covariates_metadata",
+            "constants",
+            "constants_metadata",
+        }
+    )
     r"""The essential fields of the time series collection."""
 
     _: KW_ONLY

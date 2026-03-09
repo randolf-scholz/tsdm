@@ -7,6 +7,7 @@ __all__ = [
     "sample_timedeltas",
 ]
 
+import datetime as dt
 from typing import Optional
 
 import numpy as np
@@ -15,17 +16,16 @@ from pandas import date_range, timedelta_range
 
 from tsdm.backend.numpy import TIME_UNITS
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
-from tsdm.types.numerical.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.utils import timedelta, timestamp
 
 
-def sample_timestamps[TimeT: TimeLikeScalar[SpanLikeScalar]](
-    start: str | TimeT = "today",
-    final: Optional[TimeT] = None,
+def sample_timestamps(
+    start: str | dt.datetime = "today",
+    final: Optional[dt.datetime] = None,
     /,
     *,
     size: int,
-    freq: str | SpanLikeScalar = "1s",
+    freq: str | dt.timedelta = "1s",
     replace: bool = False,
     include_start: bool = True,
     include_final: bool = False,
@@ -67,7 +67,7 @@ def sample_timestamps[TimeT: TimeLikeScalar[SpanLikeScalar]](
     return timestamps.astype(f"datetime64[{base_unit}]")
 
 
-def sample_timedeltas[TD: SpanLikeScalar](
+def sample_timedeltas[TD: dt.timedelta](
     low: str | TD = "0s",
     high: str | TD = "1h",
     size: int = 1,

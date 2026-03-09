@@ -1,6 +1,7 @@
 r"""Collection of Useful Type Aliases."""
 
 __all__ = [
+    "PythonScalar",
     # path types
     "DirPath",
     "FilePath",
@@ -26,8 +27,11 @@ __all__ = [
 
 import os
 from collections.abc import Collection, Iterable, Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
 from types import EllipsisType
+
+type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
+r"""Type Alias for Python scalars."""
 
 # region function argument aliases -----------------------------------------------------
 type PathLike = str | os.PathLike[str]

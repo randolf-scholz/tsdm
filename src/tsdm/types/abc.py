@@ -190,6 +190,8 @@ class MutSeq[T](Seq[T], Protocol):
 class Map[K, V](Collection[K], Protocol):  # K, +V
     r"""Protocol version of `collections.abc.Mapping`."""
 
+    def __len__(self) -> int: ...
+
     @abstractmethod
     def __getitem__(self, key: K, /) -> V: ...
 

@@ -31,10 +31,14 @@ from numpy.typing import NDArray
 from pandas import Interval
 
 from tsdm.constants import RNG
-from tsdm.datatools.datasets import SequentialDataset, get_first_sample, get_last_sample
+from tsdm.datatools.collections import (
+    SequentialDataset,
+    get_first_sample,
+    get_last_sample,
+)
+from tsdm.experimental.types.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.random.samplers.base import BaseSampler
 from tsdm.types.abc import Vec
-from tsdm.types.numerical.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.utils import timedelta, timestamp
 
 
@@ -675,11 +679,11 @@ class SlidingWindowSampler[
         data = self.data
         sample_fns: dict[MODE, Callable[[DType, DType], Any]] = {
             MODE.BOUNDS   : lambda start, stop: (start, stop),
-            MODE.MASK     : lambda start, stop: (start <= data) & (data < stop),  # pyright: ignore[reportOperatorIssue]
+            MODE.MASK     : lambda start, stop: (start <= data) & (data < stop),
             MODE.SLICE    : lambda start, stop: slice(start, stop),
             MODE.INTERVAL : lambda start, stop: Interval(start, stop, closed="left"),
-            MODE.POINTS   : lambda start, stop: data[(start <= data) & (data < stop)],  # type: ignore[call-overload]  # pyright: ignore[reportOperatorIssue]
-            MODE.INDEX    : lambda start, stop: np.where((start <= data) & (data < stop))[0],  # type: ignore[call-overload]  # pyright: ignore[reportOperatorIssue]
+            MODE.POINTS   : lambda start, stop: data[(start <= data) & (data < stop)],  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
+            MODE.INDEX    : lambda start, stop: np.where((start <= data) & (data < stop))[0],  # type: ignore[call-overload]  # pyright: ignore[reportArgumentType]
         }  # fmt: skip
         sample_fn = sample_fns[self.mode]
 

@@ -183,9 +183,9 @@ def select_outliers[T: Series | DataFrame](
 
     match obj:
         case Series() as s:
-            return select_outliers_series(s, **opts)  # type: ignore[arg-type]
+            return select_outliers_series(s, **opts)
         case DataFrame() as df:
-            return select_outliers_dataframe(df, **opts)  # type: ignore[arg-type]
+            return select_outliers_dataframe(df, **opts)
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
 

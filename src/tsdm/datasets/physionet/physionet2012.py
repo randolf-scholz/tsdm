@@ -481,8 +481,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
 
         self.LOGGER.info("%s: Performing non-aggregating pivot.", fname)
         ts = (
-            ts
-            .reset_index()
+            ts.reset_index()
             .set_index(
                 ts.groupby(["RecordID", "Time", "Parameter"]).cumcount().rename("count")
             )

@@ -77,7 +77,7 @@ from numpy.typing import NDArray
 
 from tsdm.types.aliases import FilePath
 from tsdm.types.dataclass import Dataclass
-from tsdm.types.numerical.mixins import SupportsArray
+from tsdm.types.extra import SupportsArray
 
 HEXDIGITS = "0123456789ABCDEF"
 r"""Upppercase hexadecimal digits."""
