@@ -3,8 +3,7 @@
 import pandas as pd
 
 df = (
-    pd
-    .DataFrame([("A", 1), ("B", 2), ("C", 3)], columns=["var", "val"])
+    pd.DataFrame([("A", 1), ("B", 2), ("C", 3)], columns=["var", "val"])
     .astype({"var": "string", "val": "float32"})
     .astype({"var": "category", "val": "float32"})
 )
