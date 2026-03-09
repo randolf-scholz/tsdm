@@ -101,5 +101,5 @@ path = "tsdm.encoders.universal"
 depends_on = ["tsdm.encoders", "tsdm.types", "tsdm.backend", "tsdm.linalg", "tsdm.backend.types"]
 
 [[modules ]]
-path = "tsdm.backend.types"
-depends_on = ["tsdm.types"]
+path = "tsdm.experimental"
+depends_on = []
