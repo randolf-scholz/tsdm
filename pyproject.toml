@@ -4,29 +4,29 @@ build-backend = "uv_build"
 
 # region project configuration ---------------------------------------------------------
 [project]
-requires-python = ">=3.14,<3.15"
+authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 name = "tsdm"
 version = "0.8.0"
-authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
-
-# package content
-license = { file = "LICENSE" }
 readme = "README.md"
+license-files = [ "LICENSE" ]
+urls = { repository = "https://github.com/randolf-scholz/tsdm.git" }
+import-names = ["tsdm"]
 
 # meta-information
 keywords = ["time-series", "machine-learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 12.8",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
+    "Environment :: GPU :: NVIDIA CUDA",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
 
+requires-python = ">=3.14,<3.15"
 dependencies = [
     "httpx>=0.28.1",
     "matplotlib>=3.10.8",
@@ -43,9 +43,6 @@ dependencies = [
     "tqdm>=4.67.3",
     "typing-extensions>=4.15.0",
 ]
-
-[project.urls]
-repository = "https://github.com/randolf-scholz/tsdm.git"
 # endregion project configuration ------------------------------------------------------
 
 
@@ -107,6 +104,7 @@ typing = [
     "pyrefly>=0.55.0",
     "pyright>=1.1.408",
     "scipy-stubs>=1.17.1.1",
+    "ty>=0.0.21",
     "types-colorama>=0.4.15.20250801",
     "types-decorator>=5.2.0.20251101",
     "types-docutils>=0.22.3.20260223",
@@ -139,6 +137,49 @@ indent-width = 4
 line-length = 88
 target-version = "py314"
 output-format = "concise"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.per-file-ignores]
+"src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
+"src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
+"src/tsdm/models/*" = ["N803"]
+"src/tsdm/types/*" = ["ERA001"]
+"**/test*" = [
+    "D100",
+    "D101",
+    "D104",
+    "D106",
+    "S101",
+    "SIM300",
+    "T20",
+    "UP018",
+    "RUF046"
+]
+
+[tool.ruff.lint.pylint]
+allow-dunder-method-names = ["__array__", "__array_ufunc__", "__dataframe__", "_repr_html_"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 120
+max-line-length = 120
+ignore-overlong-task-comments = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
 
 [tool.ruff.lint]
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -240,7 +281,7 @@ ignore = [
     "PD011",    # pandas-use-of-dot-values
     "PD013",    # pandas-use-of-dot-stack
     "PD101",    # pandas-nunique-constant-series-check
-    # pylint-convention
+    # pylint
     "PLC2401",  # non-ascii-name
     "PLC2801",  # unnecessary-dunder-call
     "PLR0124",  # Name compared with itself
@@ -286,52 +327,19 @@ ignore = [
     # pyupgrade
     "UP045",    # Use `X | Y` for type annotations
 ]
-
-[tool.ruff.lint.per-file-ignores]
-"**/test*" = ["D101", "S101", "SIM300", "T20", "UP018", "RUF046"]
-"src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
-"src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
-"src/tsdm/models/*" = ["N803"]
-"src/tsdm/types/*" = ["ERA001"]
-
-[tool.ruff.lint.pylint]
-allow-dunder-method-names = ["__array__", "__array_ufunc__", "__dataframe__", "_repr_html_"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.pycodestyle]
-max-doc-length = 120
-max-line-length = 120
-ignore-overlong-task-comments = true
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = false
-mark-parentheses = false
-
-[tool.ruff.lint.isort]
-combine-as-imports = true
-
-[tool.ruff.format]
-preview = true
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-docstring-code-format = true
-docstring-code-line-length = "dynamic"
 # endregion ruff configuration ---------------------------------------------------------
 
-
+[tool.ty]
 [tool.ty.environment]
 python-version = "3.14"
-
 
 [tool.ty.terminal]
 output-format = "concise"
 
 [tool.pyrefly]
 python_version = "3.14"
+search-path = ["src/", "tests/"]
+project-includes = ["src/**/*.py", "tests/**/*.py"]
 replace_imports_with_any = [
     "pandas.*",
     "pyarrow.*",
@@ -348,13 +356,12 @@ files = ["src/", "tests/"]
 platform = "linux"
 plugins = []
 python_version = "3.14"
-exclude = ["test_json_types.py"]  # FIXME: https://github.com/python/mypy/issues/20135
-
 disable_error_code = [
     "func-returns-value", # SEE: https://github.com/python/mypy/issues/6549
     "method-assign",      # SEE: https://github.com/python/mypy/issues/2427#issuecomment-1419206807
     "no-overload-impl",   # SEE: https://github.com/python/mypy/issues/17618
     # "overload-overlap",   # SEE: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
+    "no-untyped-def",     # using ruff for this instead.
 ]
 
 # warnings
@@ -387,7 +394,8 @@ implicit_reexport = false
 #enable_error_code =[]
 #disable_error_code = []
 allow_untyped_globals = false
-allow_redefinition = false
+allow_redefinition_new = true
+local_partial_types = true
 
 # configuring error messages
 color_output = true
@@ -427,7 +435,7 @@ venvPath = ".venv"
 pythonVersion = "3.14"
 pythonPlatform = "Linux"
 #executionEnvironments = []
-useLibraryCodeForTypes = false  # `pandas` has way too many false positives
+useLibraryCodeForTypes = false
 
 # Type Check Diagnostics Settings
 typeCheckingMode = "standard"  # "off", "basic", "strict", "standard"
@@ -461,7 +469,7 @@ reportDuplicateImport = "error"  # default: "none"
 #reportGeneralTypeIssues = "error"  # default: "error"
 #reportImplicitOverride = "none"  # default: "none"
 #reportImplicitStringConcatenation = "none"  # default: "none"
-reportImportCycles = "error"  # default: "none"
+#reportImportCycles = "error"  # default: "none"
 #reportIncompatibleMethodOverride = "error"  # default: "error"
 #reportIncompatibleVariableOverride = "error"  # default: "error"
 #reportIncompleteStub = "none"  # default: "none"
@@ -533,28 +541,9 @@ reportWildcardImportFromLibrary = "error"  # default: "warning"
 
 # region pytest configuration ----------------------------------------------------------
 [tool.pytest]
-xfail_strict = true
-minversion = "9.0"
+minversion = "9.0.2"
 testpaths = ["src/", "tests/"]
-addopts = [
-    "-p", "no:tach",  # FIXME: https://github.com/tach-org/tach/issues/903
-    "--doctest-modules",
-    # "--junit-xml=reports/pytest.xml",
-    # rerunfailures options
-    #    "--reruns=",          # number of times to re-run failed tests (default 0)
-    #    "--reruns-delay=",    # add time (seconds) delay between reruns.
-    #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
-    # xdists options
-    "--numprocesses=0",  # number of parallel processes
-    # coverage options
-    "--cov=tsdm",
-    "--cov-report=term:skip-covered",
-    "--cov-report=xml:reports/coverage.xml",
-    #    "--cov-report=annotate:reports/coverage",
-    # benchmark options
-    "--benchmark-group-by=func",
-    "--benchmark-sort=mean",
-]
+xfail_strict = true
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
@@ -565,5 +554,27 @@ required_plugins = [
     "pytest-repeat",
     "pytest-rerunfailures",
     "pytest-xdist",
+]
+addopts = [
+    "-p", "no:tach",  # FIXME: https://github.com/tach-org/tach/issues/903
+    "--doctest-modules",
+    # "--junit-xml=.reports/pytest.xml",
+    # rerunfailures options
+    #    "--reruns=",          # number of times to re-run failed tests (default 0)
+    #    "--reruns-delay=",    # add time (seconds) delay between reruns.
+    #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
+    # xdists options
+    "--numprocesses=0",  # number of parallel processes
+    "--dist=loadfile",   # distribute tests by scope (module or class)
+    # coverage options
+    "--cov=tsdm",
+    "--cov-report=term:skip-covered",
+    "--cov-report=xml:reports/coverage.xml",
+    #    "--cov-report=annotate:reports/coverage",
+    # benchmark options
+    "--benchmark-group-by=group",
+    "--benchmark-autosave",
+    "--benchmark-compare",
+    "--benchmark-sort=mean",
 ]
 # endregion pytest configuration -------------------------------------------------------

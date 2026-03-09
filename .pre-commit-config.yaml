@@ -142,16 +142,28 @@ repos:
   - id: pyright-concise
     files: '^src/|^tests/'
     exclude: '/tasks/'
-# mypy
 - repo: local
   hooks:
+  - id: pyrefly
+    name: pyrefly
+    language: system
+    require_serial: true
+    types_or: [ python, pyi ]
+    files: '^src/|^tests/'
+    exclude: '.*/tasks/.*'
+    entry: pyrefly
+    stages: [ manual ]
+    args:
+    - "check"
+    - "--output-format=min-text"
+    - "--"
   - id: mypy
     name: mypy
     language: system
     require_serial: true
     types_or: [ python, pyi ]
     files: '^src/|^tests/'
-    exclude: '/tasks/'
+    exclude: '.*/tasks/.*'
     entry: mypy
     args:
     - "--hide-error-context"
