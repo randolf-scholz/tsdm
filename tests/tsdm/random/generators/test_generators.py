@@ -82,7 +82,8 @@ def test_damped_pendulum() -> None:
     y = DampedPendulum().rvs(t)
 
     # generate plot
-    colors = iter(plt.colormaps["tab10"].colors)  # type: ignore[attr-defined]
+    cmap = plt.colormaps["tab10"]
+    colors = iter(cmap(k) for k in range(cmap.N))
     ax0: Axes
     ax1: Axes
     fig, [[ax0, ax1]] = plt.subplots(
