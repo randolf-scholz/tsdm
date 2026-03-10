@@ -141,7 +141,7 @@ repos:
   hooks:
   - id: pyright-concise
     files: '^src/|^tests/'
-    exclude: '/tasks/|^tests/test_numerical_types'
+    exclude: '/tasks/|^tests/(test_numerical_types|third_party)'
 - repo: local
   hooks:
   - id: pyrefly
@@ -150,7 +150,7 @@ repos:
     require_serial: true
     types_or: [ python, pyi ]
     files: '^src/|^tests/'
-    exclude: '/tasks/|^tests/test_numerical_types'
+    exclude: '/tasks/|^tests/(test_numerical_types|third_party)'
     entry: pyrefly
     stages: [ manual ]
     args:
@@ -163,7 +163,7 @@ repos:
     require_serial: true
     types_or: [ python, pyi ]
     files: '^src/|^tests/'
-    exclude: '/tasks/|^tests/test_numerical_types'
+    exclude: '/tasks/|^tests/(test_numerical_types|third_party)'
     entry: mypy
     args:
     - "--hide-error-context"
