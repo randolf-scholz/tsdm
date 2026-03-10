@@ -86,7 +86,7 @@ def test_map_data_a() -> None:
     data: MapDataset[str, int] = {"x": 0, "y": 1}
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[int])
-    # check that we can iterate over the index
+    # check that we can iterate over the values
     for val in sampler:
         assert isinstance(val, int)
 
@@ -95,7 +95,7 @@ def test_map_data_b() -> None:
     data: MapDataset[int, str] = {10: "foo", 11: "bar"}
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[str])
-    # check that we can iterate over the index
+    # check that we can iterate over the values
     for val in sampler:
         assert isinstance(val, str)
 
@@ -104,7 +104,7 @@ def test_map_data_c() -> None:
     data: MapDataset[str, int] = {"a": 10, "b": 11, "c": 12}
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[int])
-    # check that we can iterate over the index
+    # check that we can iterate over the values
     for val in sampler:
         assert isinstance(val, int)
 
@@ -113,7 +113,7 @@ def test_map_data_no_typehint() -> None:
     data = {10: "foo", 11: "bar"}
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[str])
-    # check that we can iterate over the index
+    # check that we can iterate over the values
     for val in sampler:
         assert isinstance(val, str)
 
@@ -122,7 +122,7 @@ def test_seq_data() -> None:
     data: Indexable[str] = ["foo", "bar"]
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[str])
-    # check that we can iterate over the index
+    # check that we can iterate over the values
     for val in sampler:
         assert isinstance(val, str)
 
@@ -131,15 +131,16 @@ def test_seq_data_no_hint() -> None:
     data = ["foo", "bar"]
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[str])
-    # check that we can iterate over the index
+    # check that we can iterate over the values
     for val in sampler:
         assert isinstance(val, str)
 
 
 def test_numpy_data() -> None:
     data = np.array(["1", "2", "3"], dtype=np.str_)
-    sampler = RandomSampler(data)
-    assert_type(sampler, RandomSampler[np.str_])  # type: ignore[assert-type]
-    # check that we can iterate over the index
+    sampler = RandomSampler[np.str_](data)
+    assert_type(sampler, RandomSampler[np.str_])
+    # check that we can iterate over the values
     for val in sampler:
+        assert_type(val, np.str_)
         assert isinstance(val, np.str_)
