@@ -6,8 +6,8 @@ from typing import Protocol, Self, assert_type, overload
 
 import numpy as np
 
-type np_datetime = np.datetime64[dt.datetime]  # noqa: PYI042
-type np_timedelta = np.timedelta64[dt.timedelta]  # noqa: PYI042
+type np_datetime = np.datetime64[dt.datetime]
+type np_timedelta = np.timedelta64[dt.timedelta]
 
 py_date = dt.date(year=2025, month=1, day=31)
 py_dt = dt.datetime(year=2025, month=1, day=31, hour=1, minute=23, second=45)
