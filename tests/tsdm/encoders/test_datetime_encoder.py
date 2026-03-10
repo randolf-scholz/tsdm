@@ -8,13 +8,12 @@ import polars as pl
 import pytest
 from pandas import Series, date_range, testing
 
-from numerical_types._array_alterantive import NumericalSeries
-from test_utils import pytest_xfail
+from tests.test_utils import pytest_xfail
 from tsdm.encoders import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
 
 
-def make_dtarray(data: Sequence[str | None], backend: str) -> NumericalSeries:
+def make_dtarray(data: Sequence[str | None], backend: str):
     match backend:
         case "numpy":
             return np.array(data, dtype="datetime64[ms]")

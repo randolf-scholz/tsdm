@@ -89,9 +89,7 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
 
 @pprint_repr
 @dataclass(init=False)
-class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](
-    FittableEncoder[X, Y],
-):
+class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode Datetime as Float."""
 
     offset: TimeLikeScalar = UNDEFINED

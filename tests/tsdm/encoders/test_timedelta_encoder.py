@@ -8,13 +8,12 @@ import pandas as pd
 import polars as pl
 import pytest
 
-from numerical_types._array_alterantive import NumericalSeries
-from test_utils import pytest_xfail
+from tests.test_utils import pytest_xfail
 from tsdm.encoders import TimeDeltaEncoder
 from tsdm.testing import assert_arrays_equal
 
 
-def make_tdarray(data: Sequence[timedelta | None], backend: str) -> NumericalSeries:
+def make_tdarray(data: Sequence[timedelta | None], backend: str):
     match backend:
         case "numpy":
             return np.array(data, dtype="timedelta64[ms]")

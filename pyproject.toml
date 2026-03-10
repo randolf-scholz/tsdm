@@ -363,6 +363,7 @@ disable_error_code = [
     "no-overload-impl",   # SEE: https://github.com/python/mypy/issues/17618
     # "overload-overlap",   # SEE: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
     "no-untyped-def",     # using ruff for this instead.
+    "var-annotated",      # stupid rule.
 ]
 
 # warnings
