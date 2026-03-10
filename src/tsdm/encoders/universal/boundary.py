@@ -19,10 +19,9 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass(init=False)
-class BoundaryEncoder[
-    S: OrderedScalar,
-    Arr: ArraySupportsComparison = ArraySupportsComparison[S],
-](FittableEncoder[Arr, Arr]):
+class BoundaryEncoder[S: OrderedScalar](
+    FittableEncoder[ArraySupportsComparison[S], ArraySupportsComparison[S]]
+):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -137,21 +136,21 @@ class BoundaryEncoder[
             **kwargs,
         )
 
-    def lower_satisfied(self, x: Arr, /) -> Arr:
+    def lower_satisfied[Arr: ArraySupportsComparison](self, x: Arr, /) -> Arr:
         r"""Return a boolean mask for the lower boundary (true: value ok)."""
         if self.lower_bound is None:
             return self.backend.true_like(x)
         r = (x >= self.lower_bound) if self.lower_included else (x > self.lower_bound)
         return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
-    def upper_satisfied(self, x: Arr, /) -> Arr:
+    def upper_satisfied[Arr: ArraySupportsComparison](self, x: Arr, /) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)
         r = (x <= self.upper_bound) if self.upper_included else (x < self.upper_bound)
         return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
-    def fit(self, data: Arr, /) -> None:
+    def fit(self, data: ArraySupportsComparison, /) -> None:
         # select the backend
         self.backend: Backend = get_backend(data)
 
@@ -187,11 +186,11 @@ class BoundaryEncoder[
         else:
             raise NotImplementedError
 
-    def encode(self, data: Arr, /) -> Arr:
+    def encode[Arr: ArraySupportsComparison](self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode(self, data: Arr, /) -> Arr:
+    def decode[Arr: ArraySupportsComparison](self, data: Arr, /) -> Arr:
         return data
