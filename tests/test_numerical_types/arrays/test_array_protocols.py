@@ -13,66 +13,65 @@ from numerical_types import (
     SpanLikeArray,
     TimeLikeArray,
 )
-from test_utils import pytest_xfail
-from tsdm.testing import assert_protocol
-
-from .fixtures import (
+from test_numerical_types.fixtures import (
+    ARRAYS1D,
     BOOL,
     COMPLEX,
     DATETIME,
     FLOAT,
     INT,
-    SERIES,
     TIMEDELTA,
 )
+from test_utils import pytest_xfail
+from tsdm.testing import assert_protocol
 
 BOOL_ARRAYS: dict[str, BooleanArray] = {
-    "numpy[bool]"     : SERIES.NP.BOOL,
-    "pandas[np_bool]" : SERIES.PD_NP.BOOL,
-    "pandas[pa_bool]" : SERIES.PD_PA.BOOL,
-    "polars[bool]"    : SERIES.PL.BOOL,
-    "torch[bool]"     : SERIES.PT.BOOL,
+    "numpy[bool]"     : ARRAYS1D.NP.BOOL,
+    "pandas[np_bool]" : ARRAYS1D.PD_NP.BOOL,
+    "pandas[pa_bool]" : ARRAYS1D.PD_PA.BOOL,
+    "polars[bool]"    : ARRAYS1D.PL.BOOL,
+    "torch[bool]"     : ARRAYS1D.PT.BOOL,
 }  # fmt: skip
 r"""Dictionary of bool arrays."""
 
 INT_ARRAYS: dict[str, IntegerArray] = {
-    "numpy[int]"     : SERIES.NP.INT,
-    "pandas[np_int]" : SERIES.PD_NP.INT,
-    "pandas[pa_int]" : SERIES.PD_PA.INT,
-    "polars[int]"    : SERIES.PL.INT,
-    "torch[int]"     : SERIES.PT.INT,
+    "numpy[int]"     : ARRAYS1D.NP.INT,
+    "pandas[np_int]" : ARRAYS1D.PD_NP.INT,
+    "pandas[pa_int]" : ARRAYS1D.PD_PA.INT,
+    "polars[int]"    : ARRAYS1D.PL.INT,
+    "torch[int]"     : ARRAYS1D.PT.INT,
 }  # fmt: skip
 r"""Dictionary of int arrays."""
 
 FLOAT_ARRAYS: dict[str, FloatArray] = {
-    "numpy[float]"     : SERIES.NP.FLOAT,
-    "pandas[np_float]" : SERIES.PD_NP.FLOAT,
-    "pandas[pa_float]" : SERIES.PD_PA.FLOAT,
-    "polars[float]"    : SERIES.PL.FLOAT,
-    "torch[float]"     : SERIES.PT.FLOAT,
+    "numpy[float]"     : ARRAYS1D.NP.FLOAT,
+    "pandas[np_float]" : ARRAYS1D.PD_NP.FLOAT,
+    "pandas[pa_float]" : ARRAYS1D.PD_PA.FLOAT,
+    "polars[float]"    : ARRAYS1D.PL.FLOAT,
+    "torch[float]"     : ARRAYS1D.PT.FLOAT,
 }  # fmt: skip
 r"""Dictionary of float arrays."""
 
 COMPLEX_ARRAYS: dict[str, ComplexArray] = {
-    "numpy[complex]"     : SERIES.NP.COMPLEX,
-    "torch[complex]"     : SERIES.PT.COMPLEX,
-    "pandas[np_complex]" : SERIES.PD_NP.COMPLEX,
+    "numpy[complex]"     : ARRAYS1D.NP.COMPLEX,
+    "torch[complex]"     : ARRAYS1D.PT.COMPLEX,
+    "pandas[np_complex]" : ARRAYS1D.PD_NP.COMPLEX,
 }  # fmt: skip
 r"""Dictionary of complex arrays."""
 
 TIME_ARRAYS: dict[str, SpanLikeArray] = {
-    "numpy[time]"     : SERIES.NP.TIMEDELTA,
-    "pandas[np_time]" : SERIES.PD_NP.TIMEDELTA,
-    "pandas[pa_time]" : SERIES.PD_PA.TIMEDELTA,
-    "polars[time]"    : SERIES.PL.TIMEDELTA,
+    "numpy[time]"     : ARRAYS1D.NP.TIMEDELTA,
+    "pandas[np_time]" : ARRAYS1D.PD_NP.TIMEDELTA,
+    "pandas[pa_time]" : ARRAYS1D.PD_PA.TIMEDELTA,
+    "polars[time]"    : ARRAYS1D.PL.TIMEDELTA,
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
 DATE_ARRAYS: dict[str, TimeLikeArray] = {
-    "numpy[date]"     : SERIES.NP.DATETIME,
-    "pandas[np_date]" : SERIES.PD_NP.DATETIME,
-    "pandas[pa_date]" : SERIES.PD_PA.DATETIME,
-    "polars[date]"    : SERIES.PL.DATETIME,
+    "numpy[date]"     : ARRAYS1D.NP.DATETIME,
+    "pandas[np_date]" : ARRAYS1D.PD_NP.DATETIME,
+    "pandas[pa_date]" : ARRAYS1D.PD_PA.DATETIME,
+    "polars[date]"    : ARRAYS1D.PL.DATETIME,
 }  # fmt: skip
 r"""Dictionary of datetime arrays."""
 

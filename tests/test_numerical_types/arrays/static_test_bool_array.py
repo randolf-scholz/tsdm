@@ -1,8 +1,7 @@
 from typing import Never, reveal_type
 
 from numerical_types.arrays import BooleanArray
-
-from .fixtures import SERIES
+from test_numerical_types.fixtures import ARRAYS1D
 
 
 class TestInspection:
@@ -14,11 +13,11 @@ class TestInspection:
         def _view[T](_: BooleanArray[T]) -> T: ...
 
         # fmt: off
-        reveal_type(_view(SERIES.NP.BOOL))
-        reveal_type(_view(SERIES.PT.BOOL))
-        reveal_type(_view(SERIES.PD_NP.BOOL))
-        reveal_type(_view(SERIES.PD_PA.BOOL))
-        reveal_type(_view(SERIES.PL.BOOL))
+        reveal_type(_view(ARRAYS1D.NP.BOOL))
+        reveal_type(_view(ARRAYS1D.PT.BOOL))
+        reveal_type(_view(ARRAYS1D.PD_NP.BOOL))
+        reveal_type(_view(ARRAYS1D.PD_PA.BOOL))
+        reveal_type(_view(ARRAYS1D.PL.BOOL))
         # fmt: on
 
     reveal_type(BooleanArray.__or__)

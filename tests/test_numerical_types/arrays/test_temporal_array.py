@@ -13,9 +13,8 @@ from numerical_types import (
     TimeLikeArray,
     TimeLikeScalar,
 )
+from test_numerical_types.fixtures import ARRAYS1D, SCALARS
 from test_utils import pytest_xfail
-
-from .fixtures import SCALARS, SERIES
 
 # region setup -------------------------------------------------------------------------
 type KEY_NP = Literal["numpy[np_float]", "numpy[np_int]", "numpy[np_time]"]
@@ -33,20 +32,20 @@ TEST_CASES: list[KEY] = [
 
 # region test data ---------------------------------------------------------------------
 DURATION_ARRAYS: dict[KEY, SpanLikeArray] = {
-    "numpy[np_float]"  : SERIES.NP.FLOAT,
-    "numpy[np_int]"    : SERIES.NP.INT,
-    "numpy[np_time]"   : SERIES.NP.TIMEDELTA,
-    "pandas[np_float]" : SERIES.PD_NP.FLOAT,
-    "pandas[np_int]"   : SERIES.PD_NP.INT,
-    "pandas[np_time]"  : SERIES.PD_NP.TIMEDELTA,
-    "pandas[pa_float]" : SERIES.PD_PA.FLOAT,
-    "pandas[pa_int]"   : SERIES.PD_PA.INT,
-    "pandas[pa_time]"  : SERIES.PD_PA.TIMEDELTA,
-    "polars[pa_float]" : SERIES.PL.FLOAT,
-    "polars[pa_int]"   : SERIES.PL.INT,
-    "polars[pa_time]"  : SERIES.PL.TIMEDELTA,
-    "torch[float]"     : SERIES.PT.FLOAT,
-    "torch[int]"       : SERIES.PT.INT,
+    "numpy[np_float]"  : ARRAYS1D.NP.FLOAT,
+    "numpy[np_int]"    : ARRAYS1D.NP.INT,
+    "numpy[np_time]"   : ARRAYS1D.NP.TIMEDELTA,
+    "pandas[np_float]" : ARRAYS1D.PD_NP.FLOAT,
+    "pandas[np_int]"   : ARRAYS1D.PD_NP.INT,
+    "pandas[np_time]"  : ARRAYS1D.PD_NP.TIMEDELTA,
+    "pandas[pa_float]" : ARRAYS1D.PD_PA.FLOAT,
+    "pandas[pa_int]"   : ARRAYS1D.PD_PA.INT,
+    "pandas[pa_time]"  : ARRAYS1D.PD_PA.TIMEDELTA,
+    "polars[pa_float]" : ARRAYS1D.PL.FLOAT,
+    "polars[pa_int]"   : ARRAYS1D.PL.INT,
+    "polars[pa_time]"  : ARRAYS1D.PL.TIMEDELTA,
+    "torch[float]"     : ARRAYS1D.PT.FLOAT,
+    "torch[int]"       : ARRAYS1D.PT.INT,
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
@@ -69,10 +68,10 @@ DURATION_SCALARS: dict[KEY, SpanLikeScalar] = {
 r"""Dictionary of compatible python timedelta values for each timedelta."""
 
 TIMEDELTA_ARRAYS: dict[KEY, TimedeltaArray] = {
-    "numpy[np_time]"  : SERIES.NP.TIMEDELTA,
-    "pandas[np_time]" : SERIES.PD_NP.TIMEDELTA,
-    "pandas[pa_time]" : SERIES.PD_PA.TIMEDELTA,
-    "polars[pa_time]" : SERIES.PL.TIMEDELTA,
+    "numpy[np_time]"  : ARRAYS1D.NP.TIMEDELTA,
+    "pandas[np_time]" : ARRAYS1D.PD_NP.TIMEDELTA,
+    "pandas[pa_time]" : ARRAYS1D.PD_PA.TIMEDELTA,
+    "polars[pa_time]" : ARRAYS1D.PL.TIMEDELTA,
 }  # fmt: skip
 r"""Dictionary of timedelta arrays."""
 
@@ -85,26 +84,26 @@ TIMEDELTA_SCALARS: dict[KEY, TimedeltaArray] = {
 r"""Dictionary of compatible python timedelta values for each timedelta."""
 
 TIMESTAMP_ARRAYS: dict[KEY, TimeLikeArray] = {
-    "numpy[np_float]"  : SERIES.NP.FLOAT,
-    "numpy[np_int]"    : SERIES.NP.INT,
-    "numpy[np_time]"   : SERIES.NP.DATETIME,
-    "pandas[np_time]"  : SERIES.PD_NP.DATETIME,
-    "pandas[np_float]" : SERIES.PD_NP.FLOAT,
-    "pandas[np_int]"   : SERIES.PD_NP.INT,
-    "pandas[pa_time]"  : SERIES.PD_PA.DATETIME,
-    "pandas[pa_float]" : SERIES.PD_PA.FLOAT,
-    "pandas[pa_int]"   : SERIES.PD_PA.INT,
-    "polars[pa_time]"  : SERIES.PL.DATETIME,
-    "polars[pa_float]" : SERIES.PL.FLOAT,
-    "polars[pa_int]"   : SERIES.PL.INT,
+    "numpy[np_float]"  : ARRAYS1D.NP.FLOAT,
+    "numpy[np_int]"    : ARRAYS1D.NP.INT,
+    "numpy[np_time]"   : ARRAYS1D.NP.DATETIME,
+    "pandas[np_time]"  : ARRAYS1D.PD_NP.DATETIME,
+    "pandas[np_float]" : ARRAYS1D.PD_NP.FLOAT,
+    "pandas[np_int]"   : ARRAYS1D.PD_NP.INT,
+    "pandas[pa_time]"  : ARRAYS1D.PD_PA.DATETIME,
+    "pandas[pa_float]" : ARRAYS1D.PD_PA.FLOAT,
+    "pandas[pa_int]"   : ARRAYS1D.PD_PA.INT,
+    "polars[pa_time]"  : ARRAYS1D.PL.DATETIME,
+    "polars[pa_float]" : ARRAYS1D.PL.FLOAT,
+    "polars[pa_int]"   : ARRAYS1D.PL.INT,
 }  # fmt: skip
 r"""Dictionary of timestamp arrays."""
 
 DATETIME_ARRAYS: dict[KEY, DatetimeArray] = {
-    "numpy[np_time]"   : SERIES.NP.DATETIME,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
-    "pandas[np_time]"  : SERIES.PD_NP.DATETIME,
-    "pandas[pa_time]"  : SERIES.PD_PA.DATETIME,
-    "polars[pa_time]"  : SERIES.PL.DATETIME,
+    "numpy[np_time]"   : ARRAYS1D.NP.DATETIME,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    "pandas[np_time]"  : ARRAYS1D.PD_NP.DATETIME,
+    "pandas[pa_time]"  : ARRAYS1D.PD_PA.DATETIME,
+    "polars[pa_time]"  : ARRAYS1D.PL.DATETIME,
 }  # fmt: skip
 r"""Dictionary of datetime arrays."""
 
@@ -130,28 +129,28 @@ class TestDurationArrayProtocol:
     r"""Test the duration array protocol."""
 
     DURATION_INT_ARRAYS: dict[KEY, SpanLikeArray[int]] = {
-        "numpy[np_int]"  : SERIES.INT.NP,
-        "pandas[np_int]" : SERIES.INT.PD_NP,
-        "pandas[pa_int]" : SERIES.INT.PD_PA,
-        "polars[pa_int]" : SERIES.INT.PL,
-        "torch[int]"     : SERIES.INT.PT,
+        "numpy[np_int]"  : ARRAYS1D.INT.NP,
+        "pandas[np_int]" : ARRAYS1D.INT.PD_NP,
+        "pandas[pa_int]" : ARRAYS1D.INT.PD_PA,
+        "polars[pa_int]" : ARRAYS1D.INT.PL,
+        "torch[int]"     : ARRAYS1D.INT.PT,
     }  # fmt: skip
     r"""Dictionary of int arrays."""
 
     DURATION_FLOAT_ARRAYS: dict[KEY, SpanLikeArray[float]] = {
-        "numpy[np_float]"  : SERIES.FLOAT.NP,
-        "pandas[np_float]" : SERIES.FLOAT.PD_NP,
-        "pandas[pa_float]" : SERIES.FLOAT.PD_PA,
-        "polars[pa_float]" : SERIES.FLOAT.PL,
-        "torch[float]"     : SERIES.FLOAT.PT,
+        "numpy[np_float]"  : ARRAYS1D.FLOAT.NP,
+        "pandas[np_float]" : ARRAYS1D.FLOAT.PD_NP,
+        "pandas[pa_float]" : ARRAYS1D.FLOAT.PD_PA,
+        "polars[pa_float]" : ARRAYS1D.FLOAT.PL,
+        "torch[float]"     : ARRAYS1D.FLOAT.PT,
     }  # fmt: skip
     r"""Dictionary of float arrays."""
 
     DURATION_TIMEDELTA_ARRAYS: dict[KEY, SpanLikeArray[dt.timedelta]] = {
-        "numpy[np_time]" : SERIES.TIMEDELTA.NP,
-        "pandas[np_time]": SERIES.TIMEDELTA.PD_NP,
-        "pandas[pa_time]": SERIES.TIMEDELTA.PD_PA,
-        "polars[pa_time]": SERIES.TIMEDELTA.PL,
+        "numpy[np_time]" : ARRAYS1D.TIMEDELTA.NP,
+        "pandas[np_time]": ARRAYS1D.TIMEDELTA.PD_NP,
+        "pandas[pa_time]": ARRAYS1D.TIMEDELTA.PD_PA,
+        "polars[pa_time]": ARRAYS1D.TIMEDELTA.PL,
     }  # fmt: skip
     r"""Dictionary of timedelta arrays."""
 
@@ -282,26 +281,26 @@ class TestTimestampArrayProtocol:
     r"""Test the timestamp array protocol."""
 
     TIMESTAMP_FLOAT_ARRAYS: dict[KEY, TimeLikeArray[float]] = {
-        "numpy[np_float]" : SERIES.FLOAT.NP,
-        "pandas[np_float]": SERIES.FLOAT.PD_NP,
-        "pandas[pa_float]": SERIES.FLOAT.PD_PA,
-        "polars[pa_float]": SERIES.FLOAT.PL,
-        "torch[float]"    : SERIES.FLOAT.PT,
+        "numpy[np_float]" : ARRAYS1D.FLOAT.NP,
+        "pandas[np_float]": ARRAYS1D.FLOAT.PD_NP,
+        "pandas[pa_float]": ARRAYS1D.FLOAT.PD_PA,
+        "polars[pa_float]": ARRAYS1D.FLOAT.PL,
+        "torch[float]"    : ARRAYS1D.FLOAT.PT,
     }  # fmt: skip
     r"""Dictionary of float arrays."""
     TIMESTAMP_INT_ARRAYS: dict[KEY, TimeLikeArray[int]] = {
-        "numpy[np_int]" : SERIES.INT.NP,
-        "pandas[np_int]": SERIES.INT.PD_NP,
-        "pandas[pa_int]": SERIES.INT.PD_PA,
-        "polars[pa_int]": SERIES.INT.PL,
-        "torch[int]"    : SERIES.INT.PT,
+        "numpy[np_int]" : ARRAYS1D.INT.NP,
+        "pandas[np_int]": ARRAYS1D.INT.PD_NP,
+        "pandas[pa_int]": ARRAYS1D.INT.PD_PA,
+        "polars[pa_int]": ARRAYS1D.INT.PL,
+        "torch[int]"    : ARRAYS1D.INT.PT,
     }  # fmt: skip
     r"""Dictionary of int arrays."""
     TIMESTAMP_PYDATETIME_ARRAYS: dict[KEY, TimeLikeArray[dt.datetime]] = {
-        "numpy[np_time]" : SERIES.DATETIME.NP,
-        "pandas[np_time]": SERIES.DATETIME.PD_NP,
-        "pandas[pa_time]": SERIES.DATETIME.PD_PA,
-        "polars[pa_time]": SERIES.DATETIME.PL,
+        "numpy[np_time]" : ARRAYS1D.DATETIME.NP,
+        "pandas[np_time]": ARRAYS1D.DATETIME.PD_NP,
+        "pandas[pa_time]": ARRAYS1D.DATETIME.PD_PA,
+        "polars[pa_time]": ARRAYS1D.DATETIME.PL,
     }  # fmt: skip
     r"""Dictionary of datetime arrays."""
 
