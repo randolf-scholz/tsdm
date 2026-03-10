@@ -152,7 +152,6 @@ class KiwiBenchmark(TimeSeriesTask):
 
         dataset = kiwi_benchmark()
         dataset.timeseries = dataset.timeseries.astype("float32")
-
         super().__init__(dataset=dataset)
 
     def make_folds(self, /, **kwargs: Any) -> DataFrame:

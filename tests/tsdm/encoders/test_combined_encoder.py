@@ -67,8 +67,8 @@ def encoder() -> FittableEncoder:
     # construct the encoder
     encoder = (
         FrameEncoder(
-            column_encoders,
-            elapsed_time=DateTimeEncoder(rounding=False) >> MinMaxScaler(),
+            column_encoders
+            | {"elapsed_time": DateTimeEncoder(rounding=False) >> MinMaxScaler()},
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(

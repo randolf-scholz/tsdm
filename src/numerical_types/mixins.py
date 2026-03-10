@@ -184,14 +184,14 @@ class SupportsRound(Protocol):
     def round(self, *, decimals: int) -> Self: ...
 
 
-class SupportsEquality[ResultT](Protocol):
+class SupportsEquality[ComparableT = Any, ResultT = Any](Protocol):
     # Note: really no good choice for the argument type here,
     #   as most built-ins will require object argument, but DSLs will restrict to their own type.
     #   so just use Any.
     # equality ==
-    def __eq__(self, other: Any, /) -> ResultT: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: ComparableT, /) -> ResultT: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
     # inequality !=
-    def __ne__(self, other: Any, /) -> ResultT: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __ne__(self, other: ComparableT, /) -> ResultT: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 class SupportsComparison[ComparableT = Any, ResultT = Any](Protocol):

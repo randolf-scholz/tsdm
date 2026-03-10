@@ -4,6 +4,7 @@ __all__ = [
     # Comparison Protocols
     # Generic Protocols
     "BaseArray",
+    "ArraySupportsEquality",
     "ArraySupportsComparison",
     "ArrayType",
     "TimeLikeArray",
@@ -75,11 +76,10 @@ class ArrayType[V](Protocol):
 
 
 @runtime_checkable
-class BaseArray[BoolA: BooleanArray](
+class BaseArray(
     SupportsArray,
     SupportsDtype,
     SupportsShape,
-    SupportsEquality[BoolA],
     Protocol,
 ):
     r"""Protocol for a ND-array of homogeneous data type."""
@@ -95,12 +95,25 @@ class BaseArray[BoolA: BooleanArray](
 
 
 @runtime_checkable
-class ArraySupportsComparison[
-    ComparableT,
-    BoolT: BooleanArray = BooleanArray,
+class ArraySupportsEquality[
+    ComparableT,  # contravariant
+    BoolA: BooleanArray = BooleanArray,  # type: ignore[misc]
 ](
-    BaseArray[BoolT],
-    SupportsComparison[ComparableT, BoolT],
+    BaseArray,
+    SupportsEquality[ComparableT, BoolA],
+    Protocol,
+):
+    r"""Protocol for array-like types supporting standard equality operations."""
+
+
+@runtime_checkable
+class ArraySupportsComparison[
+    ComparableT,  # contravariant
+    BoolA: BooleanArray = BooleanArray,  # type: ignore[misc]
+](
+    BaseArray,
+    SupportsEquality[ComparableT, BoolA],
+    SupportsComparison[ComparableT, BoolA],
     Protocol,
 ):
     r"""Protocol for array-like types supporting standard comparison operations."""
@@ -108,13 +121,13 @@ class ArraySupportsComparison[
 
 @runtime_checkable
 class BooleanArray[BoolT](
-    BaseArray,
+    ArraySupportsEquality,
     Protocol,
 ):
     r"""Protocol for boolean array-like types supporting standard boolean operations."""
 
-    def __eq__(self, other: Any, /) -> Self: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
-    def __ne__(self, other: Any, /) -> Self: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: Any, /) -> Self | Any: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __ne__(self, other: Any, /) -> Self | Any: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __invert__(self) -> Self: ...
     def all(self) -> Self | BoolScalar | Any: ...
@@ -211,7 +224,7 @@ class BooleanArray[BoolT](
 
 
 @runtime_checkable
-class IntegerArray[IntT](
+class IntegerArray[IntT, CompatT = Any](
     ArraySupportsComparison[float],
     Protocol,
 ):
@@ -284,8 +297,12 @@ class IntegerArray[IntT](
 
 
 @runtime_checkable
-class FloatArray[FloatT](
-    ArraySupportsComparison[float],
+class FloatArray[
+    FloatT,  # (invariant): the float type of the array elements
+    CompatT = Any,  # (contra): the compatible type for binary operations
+    # we artificially lower bound CompaT to float by always using "CompatT | float"
+](
+    ArraySupportsComparison[CompatT | float],
     Protocol,
 ):
     r"""Protocol for floating-point array-like types supporting standard arithmetic operations."""
@@ -297,12 +314,12 @@ class FloatArray[FloatT](
     def clip(self, lower: Any, upper: Any, /) -> Self: ...
 
     # aggregations
-    def min(self) -> Self | FloatScalar | Any: ...
-    def max(self) -> Self | FloatScalar | Any: ...
-    def mean(self) -> Self | FloatScalar | Any: ...
-    def sum(self) -> Self | FloatScalar | Any: ...
-    def std(self) -> Self | FloatScalar | Any: ...
-    def var(self) -> Self | FloatScalar | Any: ...
+    def min(self) -> Self | FloatT | Any: ...
+    def max(self) -> Self | FloatT | Any: ...
+    def mean(self) -> Self | FloatT | Any: ...
+    def sum(self) -> Self | FloatT | Any: ...
+    def std(self) -> Self | FloatT | Any: ...
+    def var(self) -> Self | FloatT | Any: ...
 
     # + (positive)
     def __pos__(self) -> Self: ...
@@ -313,26 +330,26 @@ class FloatArray[FloatT](
 
     # region binary operations ---------------------------------------------------------
     # + (addition)
-    def __add__(self, other: Self | FloatT | float, /) -> Self: ...
-    def __radd__(self, other: Self | FloatT | float, /) -> Self: ...
+    def __add__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __radd__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
     # - (subtraction)
-    def __sub__(self, other: Self | FloatT | float, /) -> Self: ...
-    def __rsub__(self, other: Self | FloatT | float, /) -> Self: ...
+    def __sub__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __rsub__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
     # * (multiplication)
-    def __mul__(self, other: Self | FloatT | float, /) -> Self: ...
-    def __rmul__(self, other: Self | FloatT | float, /) -> Self: ...
+    def __mul__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __rmul__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
     # ** (power)
-    def __pow__(self, exponent: Self | FloatT | float, /) -> Self: ...
-    def __rpow__(self, base: Self | FloatT | float, /) -> Self: ...
+    def __pow__(self, exponent: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __rpow__(self, base: Self | FloatT | CompatT | float, /) -> Self: ...
     # / (true division)
-    def __truediv__(self, other: Self | FloatT | float, /) -> Self: ...
-    def __rtruediv__(self, other: Self | FloatT | float, /) -> Self: ...
+    def __truediv__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __rtruediv__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
     # // (floor division)
-    def __floordiv__(self, other: Self | FloatT | float, /) -> Self: ...
-    def __rfloordiv__(self, other: Self | FloatT | float, /) -> Self: ...
+    def __floordiv__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __rfloordiv__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
     # % (modulo)
-    def __mod__(self, other: Self | FloatT | float, /) -> Self: ...
-    def __rmod__(self, other: Self | FloatT | float, /) -> Self: ...
+    def __mod__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
+    def __rmod__(self, other: Self | FloatT | CompatT | float, /) -> Self: ...
 
     # endregion binary operations ------------------------------------------------------
 

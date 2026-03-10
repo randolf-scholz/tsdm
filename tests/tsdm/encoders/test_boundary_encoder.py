@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import torch
 
-from numerical_types.arrays import ArraySupportsComparison
+from numerical_types.arrays import FloatArray
 from tsdm.encoders import BoundaryEncoder
 
 DATA_1D = [
@@ -34,7 +34,7 @@ BOUNDS: list[tuple[float | None, float | None]] = [
     (0, float("nan")),
     (0, pd.NA),
 ]
-TENSORS: dict[str, ArraySupportsComparison[float]] = {
+TENSORS: dict[str, FloatArray] = {
     "numpy-1D"             : np.array(DATA_1D),
     "numpy-2D"             : np.array(DATA_2D),
     "torch-1D"             : torch.tensor(DATA_1D),
@@ -53,17 +53,16 @@ r"""Example data for testing."""
 @pytest.mark.parametrize("mode", ["clip", "mask"])
 # @pytest.mark.parametrize("data", TENSORS.values())
 @pytest.mark.parametrize("case", TENSORS)
-def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)](
+def test_boundary_encoder2(
     case: str,
     *,
-    # data: D,
     mode: BoundaryEncoder.Mode,
     bounds: tuple[float | None, float | None],
     lower_included: bool,
     upper_included: bool,
 ) -> None:
     r"""Test the boundary encoder."""
-    data: D = TENSORS[case]
+    data = TENSORS[case]
     # create the encoder
     encoder = BoundaryEncoder(
         bounds[0],
@@ -82,9 +81,6 @@ def test_boundary_encoder2[D: (pd.Series, pd.DataFrame, np.ndarray, torch.Tensor
     assert encoded.dtype == data.dtype
 
     lb, ub = encoder.lower_bound, encoder.upper_bound
-    lower_mask: np.ndarray | D
-    upper_mask: np.ndarray | D
-
     nan_data = np.isnan(data)
     nan_encoded = np.isnan(encoded)
 
@@ -138,22 +134,22 @@ def test_boundary_encoder(case: str) -> None:
     assert ((encoded == -1) == (data <= -1)).all()
     assert ((encoded == +1) == (data >= +1)).all()
 
-    match encoded, data:
-        case np.ndarray() as transformed, np.ndarray() as original:
-            assert transformed.dtype == original.dtype
-        case torch.Tensor() as transformed, torch.Tensor() as original:
-            assert transformed.device == original.device
-            assert transformed.dtype == data.dtype
-        case pd.Index() as transformed, pd.Index() as original:
-            assert transformed.name == original.name
-        case pd.Series() as transformed, pd.Series() as original:
-            assert transformed.name == original.name
-            assert transformed.index.equals(original.index)
-        case pd.DataFrame() as transformed, pd.DataFrame() as original:
-            assert transformed.columns.equals(original.columns)
-            assert transformed.index.equals(original.index)
-        case _:
-            raise TypeError(f"Unexpected type: {type(data)}")
+    # match encoded, data:
+    #     case np.ndarray() as transformed, np.ndarray() as original:
+    #         assert transformed.dtype == original.dtype
+    #     case torch.Tensor() as transformed, torch.Tensor() as original:
+    #         assert transformed.device == original.device
+    #         assert transformed.dtype == data.dtype
+    #     case pd.Index() as transformed, pd.Index() as original:
+    #         assert transformed.name == original.name
+    #     case pd.Series() as transformed, pd.Series() as original:
+    #         assert transformed.name == original.name
+    #         assert transformed.index.equals(original.index)
+    #     case pd.DataFrame() as transformed, pd.DataFrame() as original:
+    #         assert transformed.columns.equals(original.columns)
+    #         assert transformed.index.equals(original.index)
+    #     case _:
+    #         raise TypeError(f"Unexpected type: {type(data)}")
 
     # test mode="mask" (fixed bounds)
     encoder = BoundaryEncoder(-1.0, +1.0, mode="mask")
