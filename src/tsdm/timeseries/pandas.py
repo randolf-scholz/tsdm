@@ -302,18 +302,25 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
 
     # fmt: off
     @overload
-    def __getitem__(self, key: Index | Series | slice | list[Key], /) -> Self: ...
+    def __getitem__(self, key: Index | Series | slice | list[Key] | Mapping[Key, bool], /) -> Self: ...
     @overload
     def __getitem__(self, key: Key, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
     def __getitem__(self, key: Any, /) -> PandasTS | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         r"""Get the timeseries and metadata of the dataset at index `key`."""
-        # only pass non-derived fields
-        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+        if isinstance(key, Series | Mapping):
+            # assume boolean mask, select keys where mask is True
+            key = [k for k, mask in dict(key).items() if mask]
+
         ts = self.timeseries.loc[key]
         cov = self.static_covariates
         cov = cov if cov is None else cov.loc[key]
-        fields.update(timeseries=ts, static_covariates=cov)
+
+        # only pass non-derived fields
+        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS} | {
+            "timeseries": ts,
+            "static_covariates": cov,
+        }
 
         if isinstance(ts.index, MultiIndex):
             return self.__class__(**fields)

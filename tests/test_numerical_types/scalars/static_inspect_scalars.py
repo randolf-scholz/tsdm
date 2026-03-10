@@ -14,8 +14,7 @@ from numerical_types import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-
-from .fixtures import SCALARS, types0d
+from tests.test_numerical_types.fixtures import SCALARS, types0d
 
 type np_float = types0d.np.float
 type np_int = types0d.np.int

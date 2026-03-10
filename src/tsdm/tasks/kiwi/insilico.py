@@ -42,12 +42,14 @@ class InSilicoTask(TimeSeriesTask):
                 tsd.timeindex,
                 horizons=["2h", "1h"],
                 stride="1h",
-                mode="masks",
+                mode="mask",
             )
             for key, tsd in split.items()
         }
         sampler = HierarchicalSampler(
-            split, subsamplers, shuffle=self.split_type(key) == "training"
+            split,
+            subsamplers,
+            shuffle=self.split_type(key) == "training",
         )
         return sampler
 

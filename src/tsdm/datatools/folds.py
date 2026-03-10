@@ -10,10 +10,13 @@ __all__ = [
 ]
 
 from collections.abc import Collection, Iterable, Mapping, Sequence
-from typing import Optional
+from typing import Optional, SupportsIndex
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
+
+from tsdm.types.abc import Vec
 
 
 def is_partition[T](
@@ -83,7 +86,7 @@ def folds_as_frame(
     folds: Sequence[Mapping[str, Series]],
     /,
     *,
-    index: Optional[Index] = None,
+    index: Vec[SupportsIndex] | None = None,
     sparse: bool = False,
 ) -> DataFrame:
     r"""Create a table holding the fold information.
@@ -117,13 +120,17 @@ def folds_as_frame(
     # test if the indices are given as boolean masks or as indices
     first_fold = next(iter(folds))
     first_split = next(iter(first_fold.values()))
-    is_mask = first_split.dtype == bool
+    is_mask = pd.api.types.is_bool_dtype(np.array(first_split))
 
     if index is None and not is_mask:
-        raise ValueError("Please provide `index` if `folds` are not boolean masks.")
+        # infer the index from the union of all indices in the folds
+        # TODO: Python 3.15: use PEP798
+        splits = [np.array(split) for split in first_fold.values()]
+        indices = np.concatenate(splits)
+        index = np.unique(indices)
 
     idx = (
-        index
+        Index(index)
         if index is not None
         else (
             first_split.index
@@ -140,12 +147,12 @@ def folds_as_frame(
         for k, fold in enumerate(folds):
             for key, split in fold.items():
                 # NOTE: where cond is false is replaces with key
-                splits[k].where(~split, key, inplace=True)
+                splits[k] = splits[k].where(~np.asarray(split), key)
     else:
         for k, fold in enumerate(folds):
             for key, split in fold.items():
                 # NOTE: where cond is false is replaces with key
-                splits[k].where(~idx.isin(split), key, inplace=True)
+                splits[k] = splits[k].where(~idx.isin(split), key)
 
     if not sparse:
         return splits

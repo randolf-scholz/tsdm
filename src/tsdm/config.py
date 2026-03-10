@@ -248,7 +248,7 @@ class Project:
     @cached_property
     def TEST_RESULTS_PATH(self) -> Path:
         r"""Return the test `results` directory."""
-        return self.TESTS_PATH / "results"
+        return self.TESTS_PATH / ".results"
 
     @cached_property
     def RESULTS_DIR(self) -> dict[str | Path, Path]:

@@ -18,7 +18,6 @@ from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from typing import Any, NamedTuple, Optional, Self
 
-import numpy as np
 from pandas import NA, DataFrame, Index, Series
 
 from tsdm import constants as const
@@ -190,9 +189,20 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
         return self.__class__(self.dataset[key], **other_kwargs)
 
     def make_sample(
-        self, key: Key, *, sparse_index: bool = False, sparse_columns: bool = False
+        self,
+        key: Key,
+        *,
+        sparse_index: bool = False,
+        sparse_columns: bool = False,
     ) -> Sample:
-        r"""Create a sample from a TimeSeriesCollection."""
+        r"""Create a sample from a TimeSeriesCollection.
+
+        Args:
+            key: The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)].
+            sparse_index: Whether to drop rows that contain only NAN values.
+            sparse_columns: Whether to drop columns that contain only NAN values.
+
+        """
         # extract key
         match self.dataset, key:
             case PandasTS() as tsd, [observation_horizon, forecasting_horizon]:
@@ -207,56 +217,44 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
             case _:
                 raise TypeError(f"Invalid dataset type: {type(self.dataset)=}")
 
-        if not isinstance(tsd, PandasTS):
-            raise TypeError(f"Expected TimeSeriesDataset, got {type(tsd)=}")
+        assert isinstance(tsd, PandasTS)
 
-        # NOTE: observation horizon and forecasting horizon might be given in different formats
-        # (1) slices  (2) indices (3) boolean masks
-
-        # NOTE: Currently there is a bug with pandas indexing using [pyarrow] timestamps.
-        # This means only boolean masks are supported.
-        # https://github.com/pandas-dev/pandas/issues/53644 (fixed)
-        # https://github.com/pandas-dev/pandas/issues/53645 (closed)
-        # https://github.com/pandas-dev/pandas/issues/53154
-        # https://github.com/apache/arrow/issues/36047 (closed)
-
-        # timeseries
-        ts_observed: DataFrame = tsd[observation_horizon]
-        ts_forecast: DataFrame = tsd[forecasting_horizon]
+        # extract the relevant time series and their joint index
+        ts_observed: DataFrame = tsd[observation_horizon].timeseries
+        ts_forecast: DataFrame = tsd[forecasting_horizon].timeseries
         joint_horizon_index = ts_observed.index.union(ts_forecast.index)
 
-        # FIXME: this is a workaround for the bug above.
-        # FIXME: ArrowNOT_GIVENError: Function 'is_in' has no kernel matching input types (duration[ns])
-
-        # NOTE: Using numpy since isin is broken for pyarrow timestamps.
-        joint_horizon_mask = np.isin(tsd.timeindex, joint_horizon_index)
+        joint_horizon_mask = tsd.timeindex.isin(joint_horizon_index)
         ts = tsd[joint_horizon_mask].timeseries
-        ts_observed_mask = np.isin(ts.index, ts_observed.index)
-        ts_forecast_mask = np.isin(ts.index, ts_forecast.index)
-
-        u: Optional[DataFrame] = None
+        ts_observed_mask = ts.index.isin(ts_observed.index)
+        ts_forecast_mask = ts.index.isin(ts_forecast.index)
 
         if sparse_columns:
             x = ts[self.observables].copy()
-            x.loc[ts_forecast_mask] = NA
-
             y = ts[self.targets].copy()
+            covariates = ts[self.covariates].copy()
+
+            x.loc[ts_forecast_mask] = NA
             y.loc[ts_observed_mask] = NA
 
-            u = ts[self.covariates].copy()
         else:
             x = ts.copy()
-            # mask everything except covariates and observables
-            columns = ts.columns.difference(self.covariates)
-            x.loc[ts_observed_mask, columns.difference(self.observables)] = NA
-            x.loc[ts_forecast_mask, columns] = NA
-
             y = ts.copy()
-            # mask everything except targets in the forecasting horizon
-            y.loc[ts_observed_mask] = NA
-            y.loc[ts_forecast_mask, ts.columns.difference(self.targets)] = NA
+            covariates = None
 
-        # t_target
+            # SEC: mask everything except covariates and observables
+            non_covariate_mask = ts.columns.difference(self.covariates)
+            non_predictor_mask = ts.columns.difference(
+                self.observables + self.covariates
+            )
+            x.loc[ts_observed_mask, non_predictor_mask] = NA
+            x.loc[ts_forecast_mask, non_covariate_mask] = NA
+
+            # SEC: mask everything except targets in the forecasting horizon
+            non_target_mask = ts.columns.difference(self.targets)
+            y.loc[ts_observed_mask] = NA
+            y.loc[ts_forecast_mask, non_target_mask] = NA
+
         t_target = y.index.to_series().copy()
 
         # metadata
@@ -269,7 +267,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
             md = md.drop(columns=self.metadata_targets)
 
         # assemble sample
-        inputs = Inputs(q=t_target, x=x, u=u, metadata=md)
+        inputs = Inputs(q=t_target, x=x, u=covariates, metadata=md)
         targets = Targets(y=y, metadata=md_targets)
         sample = Sample(key=key, inputs=inputs, targets=targets, rawdata=ts)
 

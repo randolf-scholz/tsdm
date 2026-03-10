@@ -19,15 +19,14 @@ from numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-from tsdm.testing import check_shared_interface
-
-from .fixtures import (
+from tests.test_numerical_types.fixtures import (
     BOOL as PY_BOOL,
     COMPLEX as PY_COMPLEX,
     FLOAT as PY_FLOAT,
     INT as PY_INT,
     SCALARS,
 )
+from tsdm.testing import check_shared_interface
 
 ORDERED_SCALARS: dict[str, OrderedScalar] = {
     "np_bool"      : SCALARS.NP.BOOL,
@@ -148,9 +147,9 @@ r"""Test cases for scalar types."""
 
 
 class TestAbstractScalars:
-    @pytest.mark.parametrize("name", ORDERED_SCALARS)
-    def test_ordered_scalar(self, name: str) -> None:
-        value = ORDERED_SCALARS[name]
+    @pytest.mark.parametrize("case", ORDERED_SCALARS)
+    def test_ordered_scalar(self, case: str) -> None:
+        value = ORDERED_SCALARS[case]
         assert isinstance(value, OrderedScalar)
 
         # fmt: off
@@ -170,18 +169,18 @@ class TestAbstractScalars:
         assert not (value < value)
         # fmt: on
 
-    @pytest.mark.parametrize("name", ADDITIVE_SCALARS)
-    def test_additive_scalar(self, name: str) -> None:
-        value = ADDITIVE_SCALARS[name]
+    @pytest.mark.parametrize("case", ADDITIVE_SCALARS)
+    def test_additive_scalar(self, case: str) -> None:
+        value = ADDITIVE_SCALARS[case]
         cls = type(value)
         assert isinstance(value, AdditiveScalar)
 
         assert type(value + value) is cls  # __add__
         assert type(value - value) is cls  # __sub__
 
-    @pytest.mark.parametrize("name", SPANLIKE_SCALARS)
-    def test_spanlike_scalar(self, name: str) -> None:
-        value = SPANLIKE_SCALARS[name]
+    @pytest.mark.parametrize("case", SPANLIKE_SCALARS)
+    def test_spanlike_scalar(self, case: str) -> None:
+        value = SPANLIKE_SCALARS[case]
         cls = type(value)
         assert isinstance(value, SpanLikeScalar)
 
@@ -213,9 +212,9 @@ class TestAbstractScalars:
         # endregion test comparisons
         # fmt: on
 
-    @pytest.mark.parametrize("name", TIMELIKE_SCALARS)
-    def test_timelike_scalar(self, name: str) -> None:
-        value = TIMELIKE_SCALARS[name]
+    @pytest.mark.parametrize("case", TIMELIKE_SCALARS)
+    def test_timelike_scalar(self, case: str) -> None:
+        value = TIMELIKE_SCALARS[case]
         cls = type(value)
         assert isinstance(value, TimeLikeScalar)
         ZERO = value - value
@@ -237,9 +236,9 @@ class TestAbstractScalars:
 
 
 class TestConcreteScalars:
-    @pytest.mark.parametrize("name", BOOLEAN_SCALARS)
-    def test_boolean_scalar[T: BoolScalar](self, name: str) -> None:
-        value: T = BOOLEAN_SCALARS[name]
+    @pytest.mark.parametrize("case", BOOLEAN_SCALARS)
+    def test_boolean_scalar[T: BoolScalar](self, case: str) -> None:
+        value: T = BOOLEAN_SCALARS[case]
         cls = type(value)
         assert isinstance(value, BoolScalar)
 
@@ -305,9 +304,9 @@ class TestConcreteScalars:
         # endregion test comparisons
         # fmt: on
 
-    @pytest.mark.parametrize("name", INT_SCALARS)
-    def test_int_scalar[T](self, name: str) -> None:
-        value: T = INT_SCALARS[name]
+    @pytest.mark.parametrize("case", INT_SCALARS)
+    def test_int_scalar[T](self, case: str) -> None:
+        value: T = INT_SCALARS[case]
         cls = type(value)
         assert isinstance(value, IntScalar)
 
@@ -395,9 +394,9 @@ class TestConcreteScalars:
         # endregion test comparisons
         # fmt: on
 
-    @pytest.mark.parametrize("name", FLOAT_SCALARS)
-    def test_float_scalar(self, name: str) -> None:
-        value: FloatScalar = FLOAT_SCALARS[name]
+    @pytest.mark.parametrize("case", FLOAT_SCALARS)
+    def test_float_scalar(self, case: str) -> None:
+        value: FloatScalar = FLOAT_SCALARS[case]
         cls = type(value)
         assert isinstance(value, FloatScalar)
 
@@ -576,9 +575,9 @@ class TestConcreteScalars:
             assert type(r) is span_cls
         # fmt: on
 
-    @pytest.mark.parametrize("name", TIMEDELTA_SCALARS)
-    def test_timedelta_scalar(self, name: str) -> None:
-        value = TIMEDELTA_SCALARS[name]
+    @pytest.mark.parametrize("case", TIMEDELTA_SCALARS)
+    def test_timedelta_scalar(self, case: str) -> None:
+        value = TIMEDELTA_SCALARS[case]
         assert isinstance(value, TimedeltaScalar)
         span_cls = type(value)
 
@@ -610,9 +609,9 @@ class TestConcreteScalars:
         # endregion test arithmetic operations
         # fmt: on
 
-    @pytest.mark.parametrize("name", TIMELIKE_SCALARS)
-    def test_timelike_scalar[T: TimeLikeScalar](self, name: str) -> None:
-        value: T = TIMELIKE_SCALARS[name]
+    @pytest.mark.parametrize("case", TIMELIKE_SCALARS)
+    def test_timelike_scalar[T: TimeLikeScalar](self, case: str) -> None:
+        value: T = TIMELIKE_SCALARS[case]
         span = value - value
         assert isinstance(value, TimeLikeScalar)
         assert isinstance(span, TimeLikeScalar)
@@ -636,9 +635,9 @@ class TestConcreteScalars:
         # endregion test comparisons
         # fmt: on
 
-    @pytest.mark.parametrize("name", DATETIME_SCALARS)
-    def test_datetime_scalar(self, name: str) -> None:
-        value = DATETIME_SCALARS[name]
+    @pytest.mark.parametrize("case", DATETIME_SCALARS)
+    def test_datetime_scalar(self, case: str) -> None:
+        value = DATETIME_SCALARS[case]
         assert isinstance(value, DatetimeScalar)
         assert isinstance(value - value, TimedeltaScalar)
         time_cls = type(value)

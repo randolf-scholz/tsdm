@@ -1,6 +1,19 @@
-# Remove all Python __pycache__ directories
-clean-pyc:
-	find . -type d -name '__pycache__' -prune -print -exec rm -rf {} +
+export GIT_ROOT := `git rev-parse --show-toplevel`
+export GIT_PREFIX := `git rev-parse --show-prefix`
+export TEST_DIR := GIT_ROOT / "tests"
+
+clean:
+    pyclean . --debris
+    find {{TEST_DIR}} -type d -name reports -exec rm -rf {} +
+    find {{TEST_DIR}} -type d -name results -exec rm -rf {} +
+
+show-ignored target=TEST_DIR:
+    #!/usr/bin/env bash
+    git -C "{{target}}" ls-files -z --others -i --exclude-standard \
+      --directory -- |
+    while IFS= read -r -d '' p; do
+      printf '%s\n' "${p#$prefix}"
+    done
 
 
 setup-remote:

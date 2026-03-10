@@ -15,8 +15,7 @@ from numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-
-from .fixtures import SCALARS, types0d as t
+from test_numerical_types.fixtures import SCALARS, types0d as t
 
 
 class TestBooleanAssignable:

@@ -608,10 +608,7 @@ class ComplexScalar[ComplexT](ScalarType, Protocol):
 
 
 @runtime_checkable
-class SpanLikeScalar[SpanT](
-    OrderedScalar[SpanT],
-    Protocol,
-):
+class SpanLikeScalar[SpanT](OrderedScalar[SpanT], Protocol):
     r"""Time delta provides several arithmetical operations."""
 
     # unary operations
@@ -687,9 +684,9 @@ class TimedeltaScalar[SpanT](
 
 @runtime_checkable
 class TimeLikeScalar[
-    TimeT,  # The compatible time type(s)
-    SpanT = Any,  # The compatible span type(s)
-    DualT: SpanLikeScalar = Any,  # The concrete dual type.
+    TimeT,  # contra, The compatible time type(s)
+    SpanT = Any,  # contra, The compatible span type(s)
+    DualT: SpanLikeScalar = Any,  # invariant, The concrete dual type.
 ](
     OrderedScalar[TimeT],
     Protocol,

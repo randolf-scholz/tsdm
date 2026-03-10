@@ -11,6 +11,7 @@ from typing import (
 import pytest
 
 
+@runtime_checkable
 class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
     r"""Protocol for objects that support `__getitem__` and `keys`."""
 

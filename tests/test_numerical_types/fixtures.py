@@ -1,5 +1,5 @@
 r"""Module defining various scalar and array types for different backends."""
-# ruff: noqa: PYI042, A003
+# ruff: noqa: A003
 
 import datetime as dt
 from abc import ABC, abstractmethod
@@ -279,9 +279,9 @@ FLOAT_1D     : types1d.py.float     = [1.1, 2.2, 3.3, 4.4]
 COMPLEX_1D   : types1d.py.complex   = [1.0 + 2.0j, 3.0 + 4.0j, 5.0 + 6.0j, 7.0 + 8.0j]
 STRING_1D    : types1d.py.string    = ["a", "b", "c", "d"]
 BYTES_1D     : types1d.py.bytes     = [b"a", b"b", b"c", b"d"]
-DATE_1D      : types1d.py.date      = [dt.date(2021, 1, 1), dt.date(2021, 1, 2), dt.date(2021, 1, 3), dt.date(2021, 1, 4)]
-DATETIME_1D  : types1d.py.datetime  = [dt.datetime(2021, 1, 1, 0, 0, 0), dt.datetime(2021, 1, 2, 12, 0, 0), dt.datetime(2021, 1, 3, 18, 30, 0), dt.datetime(2021, 1, 4, 23, 59, 59)]
-TIMEDELTA_1D : types1d.py.timedelta = [dt.timedelta(days=1), dt.timedelta(days=2, hours=3), dt.timedelta(hours=5, minutes=30), dt.timedelta(weeks=1)]
+DATE_1D      : types1d.py.date      = [dt.date(2021, 1, 1), dt.date(2021, 1, 2), dt.date(2021, 1, 3), dt.date(2021, 1, 4)]  # noqa: E501
+DATETIME_1D  : types1d.py.datetime  = [dt.datetime(2021, 1, 1, 0, 0, 0), dt.datetime(2021, 1, 2, 12, 0, 0), dt.datetime(2021, 1, 3, 18, 30, 0), dt.datetime(2021, 1, 4, 23, 59, 59)]  # noqa: E501
+TIMEDELTA_1D : types1d.py.timedelta = [dt.timedelta(days=1), dt.timedelta(days=2, hours=3), dt.timedelta(hours=5, minutes=30), dt.timedelta(weeks=1)]  # noqa: E501
 # 2d data
 NONE_2D      : types2d.py.none      = [NONE_1D     , NONE_1D     , NONE_1D     , NONE_1D     ]
 BOOL_2D      : types2d.py.bool      = [BOOL_1D     , BOOL_1D     , BOOL_1D     , BOOL_1D     ]

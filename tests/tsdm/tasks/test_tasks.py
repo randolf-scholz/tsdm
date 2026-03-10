@@ -57,7 +57,7 @@ def test_time_series_sample_generator() -> None:
             ds.timeseries.index,
             horizons=["2h", "1h"],
             stride="1h",
-            mode="masks",
+            mode="mask",
         )
         for key, ds in TSC.items()
     }

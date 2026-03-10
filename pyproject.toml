@@ -156,11 +156,12 @@ docstring-code-line-length = "dynamic"
     "D101",
     "D104",
     "D106",
+    "PYI042",
+    "RUF046",
     "S101",
     "SIM300",
     "T20",
     "UP018",
-    "RUF046"
 ]
 
 [tool.ruff.lint.pylint]
@@ -339,7 +340,7 @@ output-format = "concise"
 [tool.pyrefly]
 python_version = "3.14"
 search-path = ["src/", "tests/"]
-project-includes = ["src/**/*.py", "tests/**/*.py"]
+project-includes = ["src/", "tests/"]
 replace_imports_with_any = [
     "pandas.*",
     "pyarrow.*",
@@ -569,8 +570,8 @@ addopts = [
     # coverage options
     "--cov=tsdm",
     "--cov-report=term:skip-covered",
-    "--cov-report=xml:reports/coverage.xml",
-    #    "--cov-report=annotate:reports/coverage",
+    "--cov-report=xml:.reports/coverage.xml",
+    #    "--cov-report=annotate:.reports/coverage",
     # benchmark options
     "--benchmark-group-by=group",
     "--benchmark-autosave",
