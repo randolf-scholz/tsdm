@@ -258,6 +258,11 @@ class TestDurationArrayProtocol:
         # comparisons
         assert type(td_array < SCALARS.PY.INT) is cls
 
+    @pytest_xfail(
+        condition=lambda _, case: case == "numpy[np_time]",
+        reason="numpy does not support addition of timedelta arrays with datetime scalars",
+        strict=True,
+    )
     @pytest.mark.parametrize("case", DURATION_TIMEDELTA_ARRAYS)
     def test_duration_timedelta_arrays(self, case: str) -> None:
         td_array = self.DURATION_TIMEDELTA_ARRAYS[case]
@@ -340,6 +345,11 @@ class TestTimestampArrayProtocol:
             with pytest_xfail(condition=case == "numpy[np_time]", defer_xfail=True):
                 assert type(ts_array - SCALARS.PY.TIMEDELTA) is cls
 
+    @pytest_xfail(
+        condition=lambda _, case: case == "numpy[np_time]",
+        reason="numpy does not support addition of timedelta arrays with datetime scalars",
+        strict=True,
+    )
     @pytest.mark.parametrize("case", TIMESTAMP_PYDATETIME_ARRAYS)
     def test_timestamp_datetime_arrays(self, case: str) -> None:
         ts_array = self.TIMESTAMP_PYDATETIME_ARRAYS[case]

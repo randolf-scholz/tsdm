@@ -19,6 +19,7 @@ from numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
+from test_utils import pytest_xfail
 from tests.test_numerical_types.fixtures import (
     BOOL as PY_BOOL,
     COMPLEX as PY_COMPLEX,
@@ -597,16 +598,18 @@ class TestConcreteScalars:
         assert isinstance(SCALARS.PY.TIMEDELTA >= value, BoolScalar)
         assert isinstance(SCALARS.PY.TIMEDELTA <= value, BoolScalar)
         # region test arithmetic operations
-        # addition with timedelta
-        assert type(value + SCALARS.PY.TIMEDELTA) is span_cls  # __add__
-        assert type(SCALARS.PY.TIMEDELTA + value) is span_cls  # __radd__
-        # subtraction with timedelta
-        assert type(SCALARS.PY.TIMEDELTA - value) is span_cls  # __rsub__
-        assert type(value - SCALARS.PY.TIMEDELTA) is span_cls  # __sub__
-        # division with timedelta
-        assert isinstance(value / SCALARS.PY.TIMEDELTA, FloatScalar)  # __truediv__
-        assert isinstance(SCALARS.PY.TIMEDELTA / value, FloatScalar)  # __rtruediv__
-        # endregion test arithmetic operations
+        with pytest_xfail(condition=case == "np_time"):
+            # FIXME: https://github.com/numpy/numpy/issues/30985
+            # addition with timedelta
+            assert type(value + SCALARS.PY.TIMEDELTA) is span_cls  # __add__
+            assert type(SCALARS.PY.TIMEDELTA + value) is span_cls  # __radd__
+            # subtraction with timedelta
+            assert type(SCALARS.PY.TIMEDELTA - value) is span_cls  # __rsub__
+            assert type(value - SCALARS.PY.TIMEDELTA) is span_cls  # __sub__
+            # division with timedelta
+            assert isinstance(value / SCALARS.PY.TIMEDELTA, FloatScalar)  # __truediv__
+            assert isinstance(SCALARS.PY.TIMEDELTA / value, FloatScalar)  # __rtruediv__
+            # endregion test arithmetic operations
         # fmt: on
 
     @pytest.mark.parametrize("case", TIMELIKE_SCALARS)
@@ -658,12 +661,14 @@ class TestConcreteScalars:
         assert isinstance(SCALARS.PY.DATETIME >= value, BoolScalar)
         assert isinstance(SCALARS.PY.DATETIME <= value, BoolScalar)
         # region test arithmetic operations
-        # addition with timedelta
-        assert type(value + SCALARS.PY.TIMEDELTA) is time_cls  # __add__
-        assert type(SCALARS.PY.TIMEDELTA + value) is time_cls  # __radd__
-        # subtraction with timedelta
-        assert type(value - SCALARS.PY.TIMEDELTA) is time_cls  # __sub__
-        # endregion test arithmetic operations
+        with pytest_xfail(condition=case == "np_time"):
+            # FIXME: https://github.com/numpy/numpy/issues/30985
+            # addition with timedelta
+            assert type(value + SCALARS.PY.TIMEDELTA) is time_cls  # __add__
+            assert type(SCALARS.PY.TIMEDELTA + value) is time_cls  # __radd__
+            # subtraction with timedelta
+            assert type(value - SCALARS.PY.TIMEDELTA) is time_cls  # __sub__
+            # endregion test arithmetic operations
         # fmt: on
 
 

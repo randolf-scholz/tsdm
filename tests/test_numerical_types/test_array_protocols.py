@@ -139,7 +139,7 @@ def test_int_array(case: str) -> None:
 
     # test interface
     assert array.min() == 1
-    assert array.max() == 3
+    assert array.max() == 4
     assert type(array.clip(-1, 1)) is cls
 
     # fmt: off
@@ -243,11 +243,11 @@ def test_float_array(case: str) -> None:
     assert_protocol(array, FloatArray)
 
     # test interface
-    assert array.min() == -1
-    assert array.max() == 1
-    assert array.mean() == 0
-    assert array.std() <= 1  # different results due to ddof
-    assert array.var() <= 1  # different results due to ddof
+    assert array.min() == 1.1
+    assert array.max() == 4.4
+    assert array.mean() == 2.75
+    assert array.std() > 0
+    assert array.var() > 0
     assert type(array.round()) is cls
     assert type(array.clip(-1, 1)) is cls
 
@@ -344,14 +344,14 @@ def test_complex_array(case: str) -> None:
     cls = type(array)
 
     # test interface
-    assert array.sum() == 0
-    assert array.mean() == 0
+    assert array.sum() == 16 + 20j
+    assert array.mean() == 4 + 5j
 
     with pytest_xfail(
         "pandas/#61646", strict=(case == "pandas[complex]"), defer_xfail=True
     ) as chk:
-        assert array.std() <= 1  # different results due to ddof
-        assert array.var() <= 1  # different results due to ddof
+        assert array.std() > 0
+        assert array.var() > 0
 
     # fmt: off
     assert type( abs(array) ) is cls          # __abs__
