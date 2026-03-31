@@ -31,7 +31,7 @@ repos:
     types: [ python ]
 # ruff
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.5
+  rev: v0.15.8
   hooks:
   - id: ruff-check
     name: ruff isort
@@ -43,7 +43,7 @@ repos:
     files: '^src/|^tests/'
 # uv
 - repo: https://github.com/astral-sh/uv-pre-commit
-  rev: 0.10.9
+  rev: 0.11.2
   hooks:
   - id: uv-lock
   - id: uv-export
@@ -61,13 +61,13 @@ repos:
     language: system
 # nbstripout-fast
 - repo: https://github.com/deshaw/nbstripout-fast.git
-  rev: v1.1.1
+  rev: v1.1.2
   hooks:
   - id: nbstripout-fast
     exclude: '^docs/'
 # personal hooks
 - repo: https://github.com/randolf-scholz/assorted-hooks.git
-  rev: v0.7.19
+  rev: v0.7.22
   hooks:
   # pygrep hooks
   - id: check-separator-length-88
@@ -137,7 +137,7 @@ repos:
     args: [ "-x", "--shell=bash", "--color=always", "--format=gcc", "--" ]
 # pyright-concise
 - repo: https://github.com/randolf-scholz/assorted-hooks.git
-  rev: v0.7.19
+  rev: v0.7.22
   hooks:
   - id: pyright-concise
     files: '^src/|^tests/'
