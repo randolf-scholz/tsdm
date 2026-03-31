@@ -339,6 +339,7 @@ output-format = "concise"
 
 [tool.pyrefly]
 python_version = "3.14"
+output-format="min-text"
 search-path = ["src/", "tests/"]
 project-includes = ["src/", "tests/"]
 replace_imports_with_any = [
