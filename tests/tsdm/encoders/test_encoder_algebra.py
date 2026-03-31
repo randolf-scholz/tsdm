@@ -13,26 +13,39 @@ from tsdm.encoders import (
 )
 
 
+def test_encoder_covariant() -> None:
+    r"""Test that we can upcast to a more general type."""
+
+    def _[X, Y](enc: BaseEncoder[X, Y]) -> Encoder[X, Y]:
+        return enc
+
+    def _upcast_any(enc: BaseEncoder) -> Encoder:
+        return enc
+
+
 def test_encoderlist_covariant() -> None:
+    r"""Test that we can upcast to a more general type."""
+
     def _[X, Y](
-        x: EncoderList[X, Y, BaseEncoder[X, Y]],
+        enc: EncoderList[X, Y, BaseEncoder[X, Y]],
     ) -> EncoderList[X, Y, Encoder[X, Y]]:
-        r"""Test that we can upcast to a more general type."""
-        return x
+        return enc
 
 
 def test_encoderdict_covariant() -> None:
+    r"""Test that we can upcast to a more general type."""
+
     def _[X, Y, K](
-        x: EncoderDict[X, Y, K, BaseEncoder],
+        enc: EncoderDict[X, Y, K, BaseEncoder],
     ) -> EncoderDict[X, Y, K, Encoder]:
-        r"""Test that we can upcast to a more general type."""
-        return x
+        return enc
 
 
 def test_compose_covariant() -> None:
-    def _[X, Y](x: Compose[X, Y, BaseEncoder]) -> Compose[X, Y, Encoder]:
-        r"""Test that we can upcast to a more general type."""
-        return x
+    r"""Test that we can upcast to a more general type."""
+
+    def _[X, Y](enc: Compose[X, Y, BaseEncoder]) -> Compose[X, Y, Encoder]:
+        return enc
 
 
 class TestDuplicate(unittest.TestCase):
