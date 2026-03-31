@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.9.2,<0.10.0"]
+requires = ["uv_build>=0.11.0,<0.12"]
 build-backend = "uv_build"
 
 # region project configuration ---------------------------------------------------------
@@ -64,7 +64,6 @@ debug = [
     "jupyterlab-execute-time>=3.3.0",
     "jupyterlab>=4.5.5",
     "psutil>=7.2.2",
-    "torchinfo>=1.8.0",
 ]
 docs = [
     "docutils>=0.22.4",
@@ -126,8 +125,8 @@ typing = [
 # endregion development dependencies ---------------------------------------------------
 
 [tool.tach]
-forbid_circular_dependencies=true
-exact=true
+forbid_circular_dependencies = true
+exact = true
 
 
 # region ruff configuration ------------------------------------------------------------
@@ -162,6 +161,7 @@ docstring-code-line-length = "dynamic"
     "SIM300",
     "T20",
     "UP018",
+    "RUF046"
 ]
 
 [tool.ruff.lint.pylint]
@@ -330,6 +330,11 @@ ignore = [
 ]
 # endregion ruff configuration ---------------------------------------------------------
 
+[tool.uv]
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
 [tool.ty]
 [tool.ty.environment]
 python-version = "3.14"
@@ -337,17 +342,24 @@ python-version = "3.14"
 [tool.ty.terminal]
 output-format = "concise"
 
+[tool.ty.analysis]
+respect-type-ignore-comments = false
+
+# region pyrefly configuration ---------------------------------------------------------
 [tool.pyrefly]
-python_version = "3.14"
+python-version = "3.14"
 output-format="min-text"
-search-path = ["src/", "tests/"]
-project-includes = ["src/", "tests/"]
+search-path = ["src/", "."]
 replace_imports_with_any = [
     "pandas.*",
     "pyarrow.*",
     "pytest_benchmark.*",
     "sklearn.*",
 ]
+
+[tool.pyrefly.errors]
+invalid-overload = false
+# endregion pyrefly configuration ------------------------------------------------------
 
 
 # region mypy configuration ------------------------------------------------------------
@@ -364,14 +376,14 @@ disable_error_code = [
     "no-overload-impl",   # SEE: https://github.com/python/mypy/issues/17618
     # "overload-overlap",   # SEE: https://mypy.readthedocs.io/en/stable/more_types.html#type-checking-the-variants
     "no-untyped-def",     # using ruff for this instead.
-    "var-annotated",      # stupid rule.
+    "var-annotated",      # prevents gradual typing.
 ]
 
 # warnings
 warn_no_return = true
 warn_redundant_casts = true
 warn_return_any = false
-warn_unreachable = true
+warn_unreachable = false  # unreliable
 warn_unused_configs = true
 warn_unused_ignores = true
 
@@ -430,7 +442,7 @@ include = ["src/", "tests/"]
 exclude = []
 strict = []
 #extends = ""
-defineConstant = {"__debug__" = true}
+defineConstant = { "__debug__" = true }
 #typeshedPath = ""
 #stubPath = ""
 venvPath = ".venv"
@@ -550,6 +562,8 @@ xfail_strict = true
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
+    "interactive",
+    "flaky: mark tests that may be retried when pytest-rerunfailures is installed",
 ]
 required_plugins = [
     "pytest-benchmark",
