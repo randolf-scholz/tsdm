@@ -1,4 +1,4 @@
-exclude: 'bugs/'
+exclude: '.idea/|.vscode/|bugs/|dev/'
 minimum_pre_commit_version: 4.5.1
 default_language_version:
   python: '3.14'
@@ -64,7 +64,7 @@ repos:
   rev: v1.1.2
   hooks:
   - id: nbstripout-fast
-    exclude: '^docs/'
+    exclude: '^docs/|^experiments/'
 # personal hooks
 - repo: https://github.com/randolf-scholz/assorted-hooks.git
   rev: v0.7.22
@@ -97,19 +97,20 @@ repos:
     - "jit.export"
     - "torch.no_grad"
     - "--"
+  - id: use-relative-imports
+    files: '^src/|^tests/'
+  # script-based hooks
+  - id: check-clean-interface
+    files: '^src/'
+    exclude: '^tests/|/tests/'
+  - id: update-requirements
+  - id: check-requirements-valid
+  - id: check-requirements-maintained
+  - id: check-requirements-used
   # other hooks
   - id: check-archived-hooks
   - id: check-resolved-github-issues
     files: '^src/|^tests/'
-  # script-based hooks
-  - id: update-requirements
-  - id: check-requirements-valid
-  - id: check-requirements-maintained
-  # - id: check-requirements-used
-  # args: [ "--known-unimported", "tensorboard", "pydantic", "--" ]
-  - id: check-clean-interface
-    files: '^src/'
-    exclude: '/tests/'
 - repo: local
   hooks:
   - id: unknown-inline-pragma
@@ -128,6 +129,7 @@ repos:
     - "--disable" # disable rules
     - "MD013"     # Line length
     - "MD033"     # Inline HTML
+    - "MD010"     # Hard tabs
     - "--"        # otherwise files are interpreted as args
 # shellcheck
 - repo: https://github.com/shellcheck-py/shellcheck-py
