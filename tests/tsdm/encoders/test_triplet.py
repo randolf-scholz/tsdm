@@ -204,7 +204,7 @@ def test_triplet_encoder(
     assert not encoder.requires_fit
 
     # compare encoded test data with expected
-    encoded = encoder.encode(test_data)
+    encoded = encoder.encode(test_data)  # type: ignore[unreachable]
     assert_frame_equal(encoded, expected)
 
     # compare decoded with original test data
@@ -242,7 +242,7 @@ def test_triplet_decoder(
     assert not encoder.requires_fit
 
     # compare encoded test data with expected
-    encoded = encoder.encode(test_data)
+    encoded = encoder.encode(test_data)  # type: ignore[unreachable]
     assert_frame_equal(encoded, expected)
 
     # compare decoded with original test data

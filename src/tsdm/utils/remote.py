@@ -276,7 +276,7 @@ def _download_io(
     request_options: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     r"""Download a file from a URL to an IO stream using httpx."""
-    request_options = {
+    request_opts: Mapping[str, Any] = {
         "headers": headers,
         "auth": None if username is None else (username, password),
         "timeout": timeout,
@@ -286,8 +286,8 @@ def _download_io(
             Client(headers=headers, timeout=timeout)
             if client is None
             else nullcontext(client)
-        ) as client,  # noqa: PLR1704
-        client.stream("GET", url, **request_options) as response,
+        ) as c,
+        c.stream("GET", url, **request_opts) as response,
     ):
         response.raise_for_status()
         with tqdm(

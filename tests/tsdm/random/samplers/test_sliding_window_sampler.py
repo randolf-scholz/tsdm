@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from numpy.typing import NDArray
 
-from test_utils import pytest_xfail
+from tests.test_utils import pytest_xfail
 from tsdm.constants import RNG
 from tsdm.datatools.collections import Indexable
 from tsdm.random.samplers import SlidingWindowSampler

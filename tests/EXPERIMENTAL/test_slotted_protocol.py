@@ -68,7 +68,7 @@ def test_slotted_no_match() -> None:
         case Slotted():
             raise AssertionError
         case _:
-            pass
+            pass  # type: ignore[unreachable]
 
 
 def test_slotted_types() -> None:

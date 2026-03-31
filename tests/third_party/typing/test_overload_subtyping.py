@@ -3,6 +3,8 @@
 
 from typing import Protocol, overload
 
+from typing_extensions import disjoint_base
+
 
 def test_mutually_exclusive_signatures() -> None:
     class X: ...
@@ -93,7 +95,6 @@ def test_mutually_exclusive_types() -> None:
 
 
 def test_mutually_exclusive_custom_types() -> None:
-    from typing_extensions import disjoint_base
 
     @disjoint_base
     class X: ...
