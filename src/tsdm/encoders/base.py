@@ -337,15 +337,17 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # we offer pre- and post- hooks for fit, encode, and decode methods.
     # as well as a general post-init hook
     # hooks must be registered on the class-level as lists of callables.
-    post_init_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    pre_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    post_fit_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    pre_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    post_encode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    pre_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    post_decode_hooks: ClassVar[list[Fn[[Self], None]]] = []  # type: ignore[misc]
-    pre_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}  # type: ignore[misc]
-    post_hooks: ClassVar[dict[str, list[Fn[[Self], None]]]] = {}  # type: ignore[misc]
+    # FIXME: https://github.com/python/mypy/pull/19466
+    # Due to incorrect variance inference with mypy, we annotate these with `Any` instead of `Fn[[Self], None]`.
+    post_init_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    pre_fit_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    post_fit_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    pre_encode_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    post_encode_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    pre_decode_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    post_decode_hooks: ClassVar[list[Fn[[Any], None]]] = []
+    pre_hooks: ClassVar[dict[str, list[Fn[[Any], None]]]] = {}
+    post_hooks: ClassVar[dict[str, list[Fn[[Any], None]]]] = {}
 
     def __init_subclass__(cls) -> None:
         r"""Initialize subclass hooks."""
@@ -872,7 +874,7 @@ class EncoderList[
 
     #  region abstract implementation --------------------------------------------------
     def __init__(self, encoders: Iterable[E] = (), /) -> None:
-        self._encoders: Final[Sequence[E]] = [wrap(e) for e in encoders]  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+        self._encoders: Final[Sequence[E]] = list(encoders)
 
     def __len__(self) -> int:
         return len(self._encoders)
@@ -897,12 +899,11 @@ class EncoderList[
 
 
 @pprint_mapping(recursive=2)
-@dataclass(init=False)
 class EncoderDict[
     X,  # invariant
     Y,  # invariant
     K,  # invariant
-    E: Encoder = Encoder,  # covariant
+    E: Encoder,  # covariant
 ](FittableEncoder[X, Y], Mapping[K, E]):
     r"""Wraps dictionary of encoders."""
 
