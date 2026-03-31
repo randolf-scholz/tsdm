@@ -15,7 +15,7 @@ from torch import optim
 from torch.optim import Optimizer as TorchOptimizer, lr_scheduler
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 
-from tsdm.optimizers.base import LRScheduler, Optimizer
+from .base import LRScheduler, Optimizer
 
 OPTIMIZERS: dict[str, type[TorchOptimizer]] = {
     "ASGD"       : optim.ASGD,

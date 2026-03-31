@@ -48,14 +48,12 @@ __all__ = [
     "save_checkpoint",
 ]
 
-from tsdm.logutils import callbacks, logfuncs, loggers, utils
-from tsdm.logutils.callbacks import (
-    # ABCs & Protocols & Structural classes
+from . import callbacks, logfuncs, loggers, utils
+from .callbacks import (
     BaseCallback,
     Callback,
     CallbackList,
     CallbackSequence,
-    # Callbacks
     CheckpointCallback,
     ConfigCallback,
     EvaluationCallback,
@@ -68,13 +66,10 @@ from tsdm.logutils.callbacks import (
     ScalarsCallback,
     TableCallback,
     WrapCallback,
-    # Functions
     is_callback,
 )
-from tsdm.logutils.logfuncs import (
-    # Protocols
+from .logfuncs import (
     LogFunction,
-    # Functions
     is_logfunc,
     log_config,
     log_kernel,
@@ -86,8 +81,8 @@ from tsdm.logutils.logfuncs import (
     log_table,
     log_values,
 )
-from tsdm.logutils.loggers import BaseLogger, DefaultLogger, Logger
-from tsdm.logutils.utils import save_checkpoint
+from .loggers import BaseLogger, DefaultLogger, Logger
+from .utils import save_checkpoint
 
 CALLBACKS: dict[str, type[Callback]] = {
     "CallbackList"        : CallbackList,

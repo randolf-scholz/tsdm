@@ -5,7 +5,7 @@ NOTE: We use `/tests/tsdm/...` layout to ensure that the tests are not imported.
 
 import pytest
 
-from tests.test_utils import pytest_xfail
+from . import pytest_xfail
 
 # pytest does not publicly expose the XFailed exception type, so we capture it here.
 try:

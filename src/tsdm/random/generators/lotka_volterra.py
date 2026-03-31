@@ -14,8 +14,9 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
 
 from tsdm.random.distributions import RV
-from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.types.aliases import Size
+
+from .base import IVP_GeneratorBase
 
 
 @dataclass

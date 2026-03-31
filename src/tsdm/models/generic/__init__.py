@@ -13,9 +13,9 @@ __all__ = [
     "ScaledDotProductAttention",
 ]
 
-from tsdm.models.generic.conv1d import ConvBlock
-from tsdm.models.generic.deepset import DeepSet, DeepSetReZero
-from tsdm.models.generic.mlp import MLP
-from tsdm.models.generic.resnet import ResNet, ResNetBlock
-from tsdm.models.generic.rezero import ReZero, ReZeroMLP
-from tsdm.models.generic.scaled_dot_product_attention import ScaledDotProductAttention
+from .conv1d import ConvBlock
+from .deepset import DeepSet, DeepSetReZero
+from .mlp import MLP
+from .resnet import ResNet, ResNetBlock
+from .rezero import ReZero, ReZeroMLP
+from .scaled_dot_product_attention import ScaledDotProductAttention

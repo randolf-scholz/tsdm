@@ -20,9 +20,10 @@ from pandas import DataFrame, Index, Series
 
 from tsdm.constants import UNDEFINED
 from tsdm.dtypes import DType
-from tsdm.encoders.base import FittableEncoder, StaticEncoder, WrappedEncoder
-from tsdm.encoders.pandas import FrameEncoder
 from tsdm.utils.decorators import pprint_repr
+
+from .base import FittableEncoder, StaticEncoder, WrappedEncoder
+from .pandas import FrameEncoder
 
 
 # TODO: this should have signature [T: SupportsArrayUFunc](T -> T)

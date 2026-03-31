@@ -27,8 +27,9 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import FLOAT, UNDEFINED
-from tsdm.encoders.base import FittableEncoder, StaticEncoder
 from tsdm.utils.decorators import pprint_repr
+
+from .base import FittableEncoder, StaticEncoder
 
 
 def construct_wasserstein_loss_boxcox_uniform(

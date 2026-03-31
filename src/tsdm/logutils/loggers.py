@@ -70,7 +70,11 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import UNDEFINED
-from tsdm.logutils.callbacks import (
+from tsdm.metrics import Metric
+from tsdm.types.aliases import JSON, FilePath
+from tsdm.utils.decorators import pprint_mapping, pprint_repr
+
+from .callbacks import (
     Callback,
     CallbackList,
     CallbackSequence,
@@ -83,9 +87,6 @@ from tsdm.logutils.callbacks import (
     ModelCallback,
     OptimizerCallback,
 )
-from tsdm.metrics import Metric
-from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 
 @runtime_checkable

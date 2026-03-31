@@ -30,7 +30,8 @@ from tqdm.auto import tqdm
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing.validation import validate_file_hash
 from tsdm.types.aliases import FilePath
-from tsdm.utils.contextmanagers import timer
+
+from .contextmanagers import timer
 
 _DEFAULT_CHUNK_SIZE = 1024 * 1024
 r"""Default chunk size for downloads (1 MiB)."""

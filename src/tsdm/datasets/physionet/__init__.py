@@ -11,5 +11,5 @@ __all__ = [
     "PhysioNet2019",
 ]
 
-from tsdm.datasets.physionet.physionet2012 import PhysioNet2012
-from tsdm.datasets.physionet.physionet2019 import PhysioNet2019
+from .physionet2012 import PhysioNet2012
+from .physionet2019 import PhysioNet2019

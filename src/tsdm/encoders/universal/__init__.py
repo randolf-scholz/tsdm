@@ -9,6 +9,6 @@ __all__ = [
     "TensorConcatenator",
 ]
 
-from tsdm.encoders.universal.boundary import BoundaryEncoder
-from tsdm.encoders.universal.linear import LinearScaler, MinMaxScaler, StandardScaler
-from tsdm.encoders.universal.splitter import TensorConcatenator, TensorSplitter
+from .boundary import BoundaryEncoder
+from .linear import LinearScaler, MinMaxScaler, StandardScaler
+from .splitter import TensorConcatenator, TensorSplitter

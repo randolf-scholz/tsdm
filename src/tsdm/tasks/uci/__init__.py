@@ -10,11 +10,11 @@ __all__ = [
     "TrafficTRMF",
 ]
 
-from tsdm.tasks.uci.electricity import (
+from .electricity import (
     ElectricityDeepAR,
     ElectricityDeepState,
     ElectricityELBMBTTF,
     ElectricityTRMF,
 )
-from tsdm.tasks.uci.electricity_lim2021 import ElectricityLim2021
-from tsdm.tasks.uci.traffic import TrafficTFT, TrafficTRMF
+from .electricity_lim2021 import ElectricityLim2021
+from .traffic import TrafficTFT, TrafficTRMF

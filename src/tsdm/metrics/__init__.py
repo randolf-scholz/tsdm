@@ -90,8 +90,8 @@ __all__ = [
 ]
 
 
-from tsdm.metrics import functional, modular, timeseries
-from tsdm.metrics._torch_imports import (
+from . import functional, modular, timeseries
+from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
     TORCH_LOSSES,
@@ -99,10 +99,10 @@ from tsdm.metrics._torch_imports import (
     TORCH_SPECIAL_LOSSES,
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
-from tsdm.metrics.base import BaseMetric, Metric, NN_Metric, WeightedMetric
-from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
-from tsdm.metrics.modular import MAE, MSE, RMSE, WMAE, WMSE, WRMSE
-from tsdm.metrics.timeseries import (
+from .base import BaseMetric, Metric, NN_Metric, WeightedMetric
+from .functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
+from .modular import MAE, MSE, RMSE, WMAE, WMSE, WRMSE
+from .timeseries import (
     ND,
     NRMSE,
     Q_Quantile,

@@ -26,7 +26,7 @@ __all__ = [
     "solve_ivp",
 ]
 
-from tsdm.random.generators.base import (
+from .base import (
     ODE,
     FrozenIVPSolver,
     IVP_Generator,
@@ -35,10 +35,10 @@ from tsdm.random.generators.base import (
     ScipyIVPSolver,
     solve_ivp,
 )
-from tsdm.random.generators.bouncing_ball import BouncingBall
-from tsdm.random.generators.dampened_pendulum import DampedPendulum, DampedPendulumXY
-from tsdm.random.generators.lotka_volterra import LotkaVolterra
-from tsdm.random.generators.sir_model import SIR
+from .bouncing_ball import BouncingBall
+from .dampened_pendulum import DampedPendulum, DampedPendulumXY
+from .lotka_volterra import LotkaVolterra
+from .sir_model import SIR
 
 GENERATORS: dict[str, type[IVP_Generator]] = {
     "BouncingBall"     : BouncingBall,

@@ -166,11 +166,10 @@ __all__ = [
     "wrap",
 ]
 
-from tsdm.encoders import time, torch, universal
-from tsdm.encoders.base import (
+from . import time, torch, universal
+from .base import (
     ID,
     BaseEncoder,
-    # constants
     Choice,
     Compose,
     DeepcopyEncoder,
@@ -195,7 +194,6 @@ from tsdm.encoders.base import (
     TupleWrapper,
     WrappedEncoder,
     choice,
-    # functions
     compose,
     duplicate,
     fold,
@@ -208,13 +206,8 @@ from tsdm.encoders.base import (
     replicate,
     wrap,
 )
-from tsdm.encoders.box_cox import (
-    BoxCoxEncoder,
-    LogEncoder,
-    LogitBoxCoxEncoder,
-    LogitEncoder,
-)
-from tsdm.encoders.pandas import (
+from .box_cox import BoxCoxEncoder, LogEncoder, LogitBoxCoxEncoder, LogitEncoder
+from .pandas import (
     CSVEncoder,
     DTypeConverter,
     FrameAsDict,
@@ -224,14 +217,14 @@ from tsdm.encoders.pandas import (
     TripletDecoder,
     TripletEncoder,
 )
-from tsdm.encoders.protocols import SupportsBackend, SupportsSerialization
-from tsdm.encoders.time import (
+from .protocols import SupportsBackend, SupportsSerialization
+from .time import (
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
     PositionalEncoder,
     SocialTimeEncoder,
 )
-from tsdm.encoders.universal import (
+from .universal import (
     BoundaryEncoder,
     LinearScaler,
     MinMaxScaler,
@@ -239,7 +232,7 @@ from tsdm.encoders.universal import (
     TensorConcatenator,
     TensorSplitter,
 )
-from tsdm.encoders.universal.temporal import DateTimeEncoder, TimeDeltaEncoder
+from .universal.temporal import DateTimeEncoder, TimeDeltaEncoder
 
 ENCODERS: dict[str, type[BaseEncoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,

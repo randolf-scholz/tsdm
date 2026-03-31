@@ -27,7 +27,7 @@ from typing import Any, Protocol
 
 from numpy.typing import ArrayLike
 
-from tsdm.types.aliases import Axis
+from .aliases import Axis
 
 
 # region generic callback-protocols ----------------------------------------------------

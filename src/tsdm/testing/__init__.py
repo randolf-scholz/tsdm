@@ -25,8 +25,8 @@ __all__ = [
     "supports_issubclass",
 ]
 
-from tsdm.testing import data, hashutils
-from tsdm.testing._testing import (
+from . import data, hashutils
+from ._testing import (
     assert_arrays_close,
     assert_arrays_equal,
     assert_protocol,
@@ -43,8 +43,4 @@ from tsdm.testing._testing import (
     is_zipfile,
     supports_issubclass,
 )
-from tsdm.testing.data import (
-    series_is_boolean,
-    series_is_int,
-    series_numeric_is_boolean,
-)
+from .data import series_is_boolean, series_is_int, series_numeric_is_boolean

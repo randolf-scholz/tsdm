@@ -36,12 +36,8 @@ __all__ = [
     "tensor_norm",
 ]
 
-from tsdm.linalg._logical_operators import (
-    cumulative_and,
-    cumulative_or,
-    cumulative_xor,
-)
-from tsdm.linalg._matrix_functions import (
+from ._logical_operators import cumulative_and, cumulative_or, cumulative_xor
+from ._matrix_functions import (
     closest_diagonal,
     closest_orthogonal,
     closest_skew,
@@ -63,7 +59,7 @@ from tsdm.linalg._matrix_functions import (
     spectral_radius,
     stiffness_ratio,
 )
-from tsdm.linalg._tensor_functions import (
+from ._tensor_functions import (
     geometric_mean,
     grad_norm,
     multi_norm,

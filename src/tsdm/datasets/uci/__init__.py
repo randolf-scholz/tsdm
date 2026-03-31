@@ -10,6 +10,6 @@ __all__ = [
     "BeijingAirQuality",
 ]
 
-from tsdm.datasets.uci.beijing_air_quality import BeijingAirQuality
-from tsdm.datasets.uci.electricity import Electricity
-from tsdm.datasets.uci.traffic import Traffic
+from .beijing_air_quality import BeijingAirQuality
+from .electricity import Electricity
+from .traffic import Traffic

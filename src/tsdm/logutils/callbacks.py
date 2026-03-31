@@ -71,7 +71,14 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.logutils.logfuncs import (
+from tsdm.metrics import Metric
+from tsdm.optimizers import Optimizer
+from tsdm.types.abc import MutSeq
+from tsdm.types.aliases import JSON, FilePath
+from tsdm.utils.decorators import pprint_repr, pprint_sequence
+from tsdm.utils.funcutils import get_mandatory_kwargs
+
+from .logfuncs import (
     log_config,
     log_kernel,
     log_lr_scheduler,
@@ -82,13 +89,7 @@ from tsdm.logutils.logfuncs import (
     log_table,
     log_values,
 )
-from tsdm.logutils.utils import TargetsAndPredics, compute_metrics, save_checkpoint
-from tsdm.metrics import Metric
-from tsdm.optimizers import Optimizer
-from tsdm.types.abc import MutSeq
-from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.decorators import pprint_repr, pprint_sequence
-from tsdm.utils.funcutils import get_mandatory_kwargs
+from .utils import TargetsAndPredics, compute_metrics, save_checkpoint
 
 
 @runtime_checkable

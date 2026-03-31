@@ -27,8 +27,8 @@ from typing import (
     overload,
 )
 
-from tsdm.utils.decorators import pprint_repr
-from tsdm.utils.funcutils import get_return_typehint
+from .decorators import pprint_repr
+from .funcutils import get_return_typehint
 
 type Lazy[V] = Callable[[], V]
 

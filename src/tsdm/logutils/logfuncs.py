@@ -55,12 +55,13 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.logutils.utils import compute_metrics
 from tsdm.metrics import Metric
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON
 from tsdm.utils import transpose_list_of_dicts
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
+
+from .utils import compute_metrics
 
 
 @runtime_checkable

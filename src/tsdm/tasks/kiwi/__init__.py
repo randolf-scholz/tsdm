@@ -6,5 +6,5 @@ __all__ = [
 ]
 
 
-from tsdm.tasks.kiwi.insilico import InSilicoTask
-from tsdm.tasks.kiwi.kiwi_benchmark import KiwiBenchmark
+from .insilico import InSilicoTask
+from .kiwi_benchmark import KiwiBenchmark

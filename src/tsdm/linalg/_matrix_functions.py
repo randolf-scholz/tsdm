@@ -27,7 +27,7 @@ __all__ = [
 import torch
 from torch import Tensor, jit
 
-from tsdm.linalg._tensor_functions import geometric_mean, tensor_norm
+from ._tensor_functions import geometric_mean, tensor_norm
 
 
 @jit.script

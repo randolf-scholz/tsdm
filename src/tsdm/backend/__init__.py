@@ -26,5 +26,5 @@ __all__ = [
 ]
 
 
-from tsdm.backend import fallback, generic, numpy, pandas, polars, pyarrow, torch
-from tsdm.backend.kernels import BACKENDS, Backend, BackendID, Kernels, get_backend
+from . import fallback, generic, numpy, pandas, polars, pyarrow, torch
+from .kernels import BACKENDS, Backend, BackendID, Kernels, get_backend

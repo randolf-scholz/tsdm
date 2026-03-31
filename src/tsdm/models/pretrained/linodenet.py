@@ -16,10 +16,11 @@ from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.models.pretrained.base import PreTrainedBase
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.types.aliases import FilePath
 from tsdm.utils.remote import download
+
+from .base import PreTrainedBase
 
 
 class LinODEnet(PreTrainedBase):

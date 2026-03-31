@@ -23,14 +23,10 @@ __all__ = [
     "GroupedSetFuncTS",
 ]
 
-from tsdm.models import activations, generic, pretrained
-from tsdm.models.base import (
-    BaseModel,
-    ForecastingModel,
-    StateSpaceForecastingModel,
-)
-from tsdm.models.ode_rnn import ODE_RNN
-from tsdm.models.set_function_for_timeseries import GroupedSetFuncTS, SetFuncTS
+from . import activations, generic, pretrained
+from .base import BaseModel, ForecastingModel, StateSpaceForecastingModel
+from .ode_rnn import ODE_RNN
+from .set_function_for_timeseries import GroupedSetFuncTS, SetFuncTS
 
 MODELS: dict[str, type[BaseModel]] = {
     "ODE_RNN": ODE_RNN,

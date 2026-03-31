@@ -32,7 +32,7 @@ except metadata.PackageNotFoundError:
 finally:
     del metadata
 
-from tsdm import (
+from . import (
     backend,
     datasets,
     datatools,

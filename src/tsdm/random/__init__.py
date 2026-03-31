@@ -11,5 +11,5 @@ __all__ = [
     "sample_timedeltas",
 ]
 
-from tsdm.random import generators, samplers, stats
-from tsdm.random._random import random_data, sample_timedeltas, sample_timestamps
+from . import generators, samplers, stats
+from ._random import random_data, sample_timedeltas, sample_timestamps

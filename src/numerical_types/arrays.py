@@ -31,14 +31,14 @@ from typing import (
 
 from numpy.typing import NDArray
 
-from numerical_types.mixins import (
+from .mixins import (
     SupportsArray,
     SupportsComparison,
     SupportsDtype,
     SupportsEquality,
     SupportsShape,
 )
-from numerical_types.scalars import (
+from .scalars import (
     BoolScalar,
     ComplexScalar,
     FloatScalar,

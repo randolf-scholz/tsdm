@@ -39,10 +39,7 @@ from typing import (
     runtime_checkable,
 )
 
-from numerical_types.mixins import (
-    SupportsComparison,
-    SupportsEquality,
-)
+from .mixins import SupportsComparison, SupportsEquality
 
 # region Scalar Type Aliases -----------------------------------------------------------
 type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta

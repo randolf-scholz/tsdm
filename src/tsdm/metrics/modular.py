@@ -22,8 +22,9 @@ from typing import Final
 import torch
 from torch import Tensor, jit
 
-from tsdm.metrics.base import BaseMetric, WeightedMetric
 from tsdm.types.aliases import Axis
+
+from .base import BaseMetric, WeightedMetric
 
 
 class MAE(BaseMetric):

@@ -40,7 +40,7 @@ from sklearn.preprocessing import (
     scale,
 )
 
-from tsdm.encoders.transforms._transforms import (
+from ._transforms import (
     Transform,
     make_dense_triplets,
     make_masked_format,

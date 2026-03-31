@@ -31,15 +31,15 @@ __all__ = [
     "get_activation",
 ]
 
-from tsdm.models.activations import base, functional, modular
-from tsdm.models.activations._torch_imports import (
+from . import base, functional, modular
+from ._torch_imports import (
     TORCH_ACTIVATIONS,
     TORCH_FUNCTIONAL_ACTIVATIONS,
     TORCH_MODULAR_ACTIVATIONS,
 )
-from tsdm.models.activations.base import Activation, ActivationABC
-from tsdm.models.activations.functional import geglu, hard_bend, reglu
-from tsdm.models.activations.modular import HardBend
+from .base import Activation, ActivationABC
+from .functional import geglu, hard_bend, reglu
+from .modular import HardBend
 
 FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
     **TORCH_FUNCTIONAL_ACTIVATIONS,

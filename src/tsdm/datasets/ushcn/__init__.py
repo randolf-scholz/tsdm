@@ -9,5 +9,5 @@ __all__ = [
     "USHCN_DeBrouwer2019",
 ]
 
-from tsdm.datasets.ushcn.ushcn import USHCN
-from tsdm.datasets.ushcn.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
+from .ushcn import USHCN
+from .ushcn_debrouwer2019 import USHCN_DeBrouwer2019

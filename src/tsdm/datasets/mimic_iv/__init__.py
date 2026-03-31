@@ -10,5 +10,5 @@ __all__ = [
     "MIMIC_IV_Bilos2021",
 ]
 
-from tsdm.datasets.mimic_iv.mimic_iv import MIMIC_IV, MIMIC_IV_RAW
-from tsdm.datasets.mimic_iv.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
+from .mimic_iv import MIMIC_IV, MIMIC_IV_RAW
+from .mimic_iv_bilos2021 import MIMIC_IV_Bilos2021

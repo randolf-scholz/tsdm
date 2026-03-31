@@ -49,7 +49,8 @@ from tsdm.constants import (
 )
 from tsdm.types.aliases import Nested, NestedBuiltin
 from tsdm.types.dataclass import Dataclass, issubclass_dataclass
-from tsdm.utils.frozenmap import FrozenMap
+
+from .frozenmap import FrozenMap
 
 
 def rpartial[**P, R](  # +R

@@ -38,7 +38,7 @@ __all__ = [
     "strip_whitespace",
 ]
 
-from tsdm.datatools._datatools import (
+from ._datatools import (
     InlineTable,
     MaybeNA,
     aggregate_nondestructive,
@@ -49,7 +49,7 @@ from tsdm.datatools._datatools import (
     select_outliers,
     strip_whitespace,
 )
-from tsdm.datatools.collections import (
+from .collections import (
     DataFrame2Dataset,
     Dataset,
     Indexable,
@@ -59,13 +59,8 @@ from tsdm.datatools.collections import (
     PandasDataset,
     TorchDataset,
 )
-from tsdm.datatools.dataloaders import (
-    collate_packed,
-    collate_padded,
-    unpack_sequence,
-    unpad_sequence,
-)
-from tsdm.datatools.folds import (
+from .dataloaders import collate_packed, collate_padded, unpack_sequence, unpad_sequence
+from .folds import (
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,

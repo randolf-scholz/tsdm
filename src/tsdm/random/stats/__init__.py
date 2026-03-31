@@ -11,8 +11,8 @@ __all__ = [
     "time_gcd",
 ]
 
-from tsdm.random.stats._stats import data_overview
-from tsdm.random.stats.regularity_tests import (
+from ._stats import data_overview
+from .regularity_tests import (
     approx_float_gcd,
     float_gcd,
     is_quasiregular,

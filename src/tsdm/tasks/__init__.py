@@ -61,20 +61,13 @@ __all__ = [
     "KiwiBenchmark",
 ]
 
-from tsdm.tasks import base, kiwi, mimic, synthetic, uci, ushcn
-from tsdm.tasks.base import ForecastingTask, TimeSeriesTask
-from tsdm.tasks.ett.ett_zhou2021 import ETT_Zhou2021
-from tsdm.tasks.kiwi import (
-    InSilicoTask,
-    KiwiBenchmark,
-)
-from tsdm.tasks.mimic import (
-    MIMIC_III_Bilos2021,
-    MIMIC_III_DeBrouwer2019,
-    MIMIC_IV_Bilos2021,
-)
-from tsdm.tasks.synthetic import DampedPendulum_Ansari2023
-from tsdm.tasks.uci import (
+from . import base, kiwi, mimic, synthetic, uci, ushcn
+from .base import ForecastingTask, TimeSeriesTask
+from .ett.ett_zhou2021 import ETT_Zhou2021
+from .kiwi import InSilicoTask, KiwiBenchmark
+from .mimic import MIMIC_III_Bilos2021, MIMIC_III_DeBrouwer2019, MIMIC_IV_Bilos2021
+from .synthetic import DampedPendulum_Ansari2023
+from .uci import (
     ElectricityDeepAR,
     ElectricityDeepState,
     ElectricityELBMBTTF,
@@ -83,7 +76,7 @@ from tsdm.tasks.uci import (
     TrafficTFT,
     TrafficTRMF,
 )
-from tsdm.tasks.ushcn import USHCN_DeBrouwer2019
+from .ushcn import USHCN_DeBrouwer2019
 
 TASKS: dict[str, type[ForecastingTask]] = {
     "KiwiBenchmark"             : KiwiBenchmark,

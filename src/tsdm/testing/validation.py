@@ -25,9 +25,10 @@ import pyarrow as pa
 from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.config import CONFIG
-from tsdm.testing.hashutils import Hash, hash_array, hash_file
 from tsdm.types.aliases import FilePath
 from tsdm.types.extra import SupportsShape
+
+from .hashutils import Hash, hash_array, hash_file
 
 
 class ValidationError(ValueError):

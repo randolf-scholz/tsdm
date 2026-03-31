@@ -12,9 +12,10 @@ import torch
 from torch import Tensor, nn
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.models.base import BaseModel
-from tsdm.models.util import import_module_from_path
 from tsdm.utils import deep_dict_update
+
+from .base import BaseModel
+from .util import import_module_from_path
 
 
 class ODE_RNN(BaseModel, nn.Module):

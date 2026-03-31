@@ -161,17 +161,18 @@ from typing import (
 from warnings import deprecated
 
 from tsdm.constants import UNDEFINED
-from tsdm.encoders.protocols import (
+from tsdm.types.aliases import DictArg, FilePath, NestedBuiltin
+from tsdm.types.utils import is_classvar
+from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
+from tsdm.utils.funcutils import recurse_on_nested_builtin
+
+from .protocols import (
     Reduction,
     SupportsDecode,
     SupportsEncode,
     SupportsFit,
     SupportSimplify,
 )
-from tsdm.types.aliases import DictArg, FilePath, NestedBuiltin
-from tsdm.types.utils import is_classvar
-from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
-from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 
 @runtime_checkable

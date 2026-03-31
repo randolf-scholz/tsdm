@@ -36,7 +36,7 @@ from typing import (
     runtime_checkable,
 )
 
-from tsdm.types._protocols import SupportsKeysAndGetItem
+from ._protocols import SupportsKeysAndGetItem
 
 
 @runtime_checkable

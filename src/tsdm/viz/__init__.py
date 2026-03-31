@@ -13,11 +13,11 @@ __all__ = [
     "visualize_distribution",
 ]
 
-from tsdm.viz._image import kernel_heatmap, rasterize
-from tsdm.viz._plotting import (
+from ._image import kernel_heatmap, rasterize
+from ._plotting import (
     center_axes,
     plot_spectrum,
     shared_grid_plot,
     visualize_distribution,
 )
-from tsdm.viz._setup import MATPLOTLIB_CONFIG, enable_latex_plotting
+from ._setup import MATPLOTLIB_CONFIG, enable_latex_plotting

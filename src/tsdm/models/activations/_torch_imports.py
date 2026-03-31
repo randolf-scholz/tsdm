@@ -9,7 +9,7 @@ __all__ = [
 
 from torch import nn
 
-from tsdm.models.activations.base import Activation, GenericActivation
+from .base import Activation, GenericActivation
 
 TORCH_FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
     "relu": nn.functional.relu,

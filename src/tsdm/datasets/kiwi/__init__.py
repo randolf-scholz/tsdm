@@ -9,5 +9,5 @@ __all__ = [
     "KiwiBenchmark",
 ]
 
-from tsdm.datasets.kiwi.in_silico import InSilico
-from tsdm.datasets.kiwi.kiwi_benchmark import KiwiBenchmark
+from .in_silico import InSilico
+from .kiwi_benchmark import KiwiBenchmark

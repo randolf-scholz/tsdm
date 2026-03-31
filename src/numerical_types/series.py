@@ -23,7 +23,7 @@ from typing import Any, Protocol, Self, overload, runtime_checkable
 
 from numpy.typing import NDArray
 
-from numerical_types.arrays import (
+from .arrays import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,
@@ -33,12 +33,7 @@ from numerical_types.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from numerical_types.scalars import (
-    BoolScalar,
-    ComplexScalar,
-    FloatScalar,
-    IntScalar,
-)
+from .scalars import BoolScalar, ComplexScalar, FloatScalar, IntScalar
 
 
 class SupportsSeriesEquality[ComparableT](Protocol):  # noqa: D101

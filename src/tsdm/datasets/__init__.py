@@ -58,40 +58,21 @@ __all__ = [
 ]
 
 
-from tsdm.datasets import (
-    base,
-    kiwi,
-    mimic_iii,
-    mimic_iv,
-    physionet,
-    synthetic,
-    uci,
-    ushcn,
-)
-from tsdm.datasets.base import (
-    Dataset,
-    DatasetBase,
-)
-from tsdm.datasets.ett import ETT
-from tsdm.datasets.kiwi import (
-    InSilico,
-    KiwiBenchmark,
-)
-from tsdm.datasets.mimic_iii import (
+from . import base, kiwi, mimic_iii, mimic_iv, physionet, synthetic, uci, ushcn
+from .base import Dataset, DatasetBase
+from .ett import ETT
+from .kiwi import InSilico, KiwiBenchmark
+from .mimic_iii import (
     MIMIC_III,
     MIMIC_III_RAW,
     MIMIC_III_Bilos2021,
     MIMIC_III_DeBrouwer2019,
 )
-from tsdm.datasets.mimic_iv import (
-    MIMIC_IV,
-    MIMIC_IV_RAW,
-    MIMIC_IV_Bilos2021,
-)
-from tsdm.datasets.physionet import PhysioNet2012, PhysioNet2019
-from tsdm.datasets.synthetic import DampedPendulum_Ansari2023
-from tsdm.datasets.uci import BeijingAirQuality, Electricity, Traffic
-from tsdm.datasets.ushcn import USHCN, USHCN_DeBrouwer2019
+from .mimic_iv import MIMIC_IV, MIMIC_IV_RAW, MIMIC_IV_Bilos2021
+from .physionet import PhysioNet2012, PhysioNet2019
+from .synthetic import DampedPendulum_Ansari2023
+from .uci import BeijingAirQuality, Electricity, Traffic
+from .ushcn import USHCN, USHCN_DeBrouwer2019
 
 DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality"         : BeijingAirQuality,

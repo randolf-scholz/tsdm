@@ -19,12 +19,9 @@ __all__ = [
     "compute_grid",
 ]
 
-from tsdm.random.samplers.base import BaseSampler, RandomSampler, Sampler
-from tsdm.random.samplers.hierarchical_sampler import HierarchicalSampler
-from tsdm.random.samplers.sliding_window_sampler import (
-    SlidingWindowSampler,
-    compute_grid,
-)
+from .base import BaseSampler, RandomSampler, Sampler
+from .hierarchical_sampler import HierarchicalSampler
+from .sliding_window_sampler import SlidingWindowSampler, compute_grid
 
 SAMPLERS: dict[str, type[Sampler]] = {
     "HierarchicalSampler"  : HierarchicalSampler,

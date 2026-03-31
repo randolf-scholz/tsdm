@@ -9,8 +9,9 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from tsdm.random.distributions import Dirichlet
-from tsdm.random.generators.base import IVP_GeneratorBase
 from tsdm.types.aliases import Size
+
+from .base import IVP_GeneratorBase
 
 
 @dataclass

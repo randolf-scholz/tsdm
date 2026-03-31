@@ -23,8 +23,9 @@ from pandas import NA, DataFrame, Index, Series
 from tsdm import constants as const
 from tsdm.constants import UNDEFINED
 from tsdm.datatools import TorchDataset
-from tsdm.timeseries.pandas import PandasTS, PandasTSC
 from tsdm.utils.decorators import pprint_repr
+
+from .pandas import PandasTS, PandasTSC
 
 type Key = Any
 r"""Placeholder for the key type."""

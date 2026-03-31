@@ -18,8 +18,8 @@ __all__ = [
 ]
 
 
-from tsdm.models.pretrained.base import PreTrained, PreTrainedBase
-from tsdm.models.pretrained.linodenet import LinODEnet
+from .base import PreTrained, PreTrainedBase
+from .linodenet import LinODEnet
 
 MODELS: dict[str, type[PreTrainedBase]] = {
     "LinODEnet": LinODEnet,

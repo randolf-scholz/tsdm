@@ -14,7 +14,7 @@ from collections.abc import Callable
 
 from torch import Tensor, nn
 
-from tsdm.metrics.base import Metric, NN_Metric
+from .base import Metric, NN_Metric
 
 TORCH_LOSSES_FUNCTIONAL: dict[str, Metric] = {
     "binary_cross_entropy"             : nn.functional.binary_cross_entropy,

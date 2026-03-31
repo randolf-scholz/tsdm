@@ -10,8 +10,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from tsdm.datasets.mimic_iii.mimic_iii import MIMIC_III
 from tsdm.dtypes import map_pandas_arrowtime_numpy
+
+from .mimic_iii import MIMIC_III
 
 
 class MIMIC_III_Scholz2024(MIMIC_III):

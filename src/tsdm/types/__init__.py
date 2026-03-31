@@ -16,8 +16,8 @@ __all__ = [
     "SupportsSlicing",
 ]
 
-from tsdm.types import aliases, callbacks, dataclass, namedtuple, utils
-from tsdm.types._protocols import (
+from . import aliases, callbacks, dataclass, namedtuple, utils
+from ._protocols import (
     Orderable,
     SupportsBool,
     SupportsGetItem,

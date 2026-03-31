@@ -4,7 +4,7 @@ __all__ = ["MIMIC_IV_Scholz2024"]
 
 from typing import Any
 
-from tsdm.datasets.mimic_iv import MIMIC_IV
+from . import MIMIC_IV
 
 
 class MIMIC_IV_Scholz2024(MIMIC_IV):

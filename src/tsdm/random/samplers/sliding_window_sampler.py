@@ -37,9 +37,10 @@ from tsdm.datatools.collections import (
     get_first_sample,
     get_last_sample,
 )
-from tsdm.random.samplers.base import BaseSampler
 from tsdm.types.abc import Vec
 from tsdm.utils import timedelta, timestamp
+
+from .base import BaseSampler
 
 
 # region helper functions --------------------------------------------------------------

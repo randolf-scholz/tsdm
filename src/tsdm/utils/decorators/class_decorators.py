@@ -28,7 +28,8 @@ from tsdm.types.callbacks import IdentityMapOnCls
 from tsdm.types.dataclass import Dataclass
 from tsdm.types.extra import SupportsArray
 from tsdm.types.namedtuple import NTuple
-from tsdm.utils.decorators.base import PolymorphicClassDecorator, decorator
+
+from .base import PolymorphicClassDecorator, decorator
 
 # region workaround mypy bug -----------------------------------------------------------
 # FIXME: https://github.com/python/mypy/issues/17191

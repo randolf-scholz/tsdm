@@ -26,7 +26,7 @@ from typing import (
     overload,
 )
 
-from tsdm.utils.decorators.base import DecoratorError, decorator
+from .base import DecoratorError, decorator
 
 
 class _AttrMeta(type):

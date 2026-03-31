@@ -7,7 +7,7 @@ from dataclasses import KW_ONLY, dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from tsdm.random.generators.base import IVP_GeneratorBase
+from .base import IVP_GeneratorBase
 
 
 @dataclass

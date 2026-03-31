@@ -12,14 +12,9 @@ import torch
 from torch import Tensor, jit, nn
 
 from tsdm.encoders.torch import PositionalEncoding, Time2Vec
-from tsdm.models.generic import (
-    MLP,
-    DeepSet,
-    DeepSetReZero,
-    ReZeroMLP,
-    ScaledDotProductAttention,
-)
-from tsdm.models.util import autojit
+
+from .generic import MLP, DeepSet, DeepSetReZero, ReZeroMLP, ScaledDotProductAttention
+from .util import autojit
 
 
 @autojit

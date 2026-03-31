@@ -44,9 +44,9 @@ __all__ = [
     "ushcn_de_brouwer2019",
 ]
 
-from tsdm.timeseries import base, pandas, sampling, util
-from tsdm.timeseries.base import TimeSeries, TimeSeriesCollection
-from tsdm.timeseries.pandas import (
+from . import base, pandas, sampling, util
+from .base import TimeSeries, TimeSeriesCollection
+from .pandas import (
     TIMESERIES,
     TIMESERIES_COLLECTIONS,
     PandasTS,
@@ -68,7 +68,7 @@ from tsdm.timeseries.pandas import (
     ushcn,
     ushcn_de_brouwer2019,
 )
-from tsdm.timeseries.sampling import (
+from .sampling import (
     FixedSliceSampleGenerator,
     Inputs,
     PlainSample,
@@ -76,4 +76,4 @@ from tsdm.timeseries.sampling import (
     Targets,
     TimeSeriesSampleGenerator,
 )
-from tsdm.timeseries.util import PaddedBatch, TimeSeriesSample, collate_timeseries
+from .util import PaddedBatch, TimeSeriesSample, collate_timeseries

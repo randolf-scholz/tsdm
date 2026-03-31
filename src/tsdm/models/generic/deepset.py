@@ -11,9 +11,10 @@ from typing import Optional
 import torch
 from torch import Tensor, nn
 
-from tsdm.models.generic.mlp import MLP
-from tsdm.models.generic.rezero import ReZeroMLP
 from tsdm.models.util import autojit
+
+from .mlp import MLP
+from .rezero import ReZeroMLP
 
 
 @autojit

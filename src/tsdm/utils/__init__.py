@@ -27,15 +27,8 @@ __all__ = [
     "unflatten_dict",
 ]
 
-from tsdm.utils import (
-    contextmanagers,
-    decorators,
-    frozenmap,
-    funcutils,
-    lazydict,
-    remote,
-)
-from tsdm.utils._utils import (
+from . import contextmanagers, decorators, frozenmap, funcutils, lazydict, remote
+from ._utils import (
     deep_dict_update,
     flatten_dict,
     flatten_nested,

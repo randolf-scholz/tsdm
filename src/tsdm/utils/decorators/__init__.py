@@ -34,7 +34,7 @@ __all__ = [
 ]
 
 
-from tsdm.utils.decorators.base import (
+from .base import (
     ClassDecorator,
     ClassDecoratorFactory,
     Decorator,
@@ -47,7 +47,7 @@ from tsdm.utils.decorators.base import (
     decorator,
     recurse_on_container,
 )
-from tsdm.utils.decorators.class_decorators import (
+from .class_decorators import (
     implements,
     pprint_dataclass,
     pprint_mapping,
@@ -56,7 +56,7 @@ from tsdm.utils.decorators.class_decorators import (
     pprint_sequence,
     pprint_set,
 )
-from tsdm.utils.decorators.func_decorators import (
+from .func_decorators import (
     debug,
     return_namedtuple,
     timefun,

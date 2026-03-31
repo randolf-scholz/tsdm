@@ -37,8 +37,9 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
-from tsdm.timeseries.base import Metadata, TimeSeries, TimeSeriesCollection
 from tsdm.utils.decorators import pprint_repr
+
+from .base import Metadata, TimeSeries, TimeSeriesCollection
 
 
 @pprint_repr

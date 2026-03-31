@@ -20,8 +20,9 @@ from typing import Concatenate, NamedTuple, Optional
 
 from tsdm.constants import EMPTY_FN
 from tsdm.types.namedtuple import NTuple
-from tsdm.utils.decorators.base import DecoratorError, decorator
 from tsdm.utils.funcutils import get_exit_point_names
+
+from .base import DecoratorError, decorator
 
 
 # region without @decorator ------------------------------------------------------------

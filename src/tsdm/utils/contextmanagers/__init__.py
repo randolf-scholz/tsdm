@@ -10,12 +10,7 @@ __all__ = [
     "timer",
 ]
 
-from tsdm.utils.contextmanagers._contextmanagers import (
-    ContextManager,
-    ray_cluster,
-    system_path,
-    timer,
-)
+from ._contextmanagers import ContextManager, ray_cluster, system_path, timer
 
 CONTEXT_MANAGERS: dict[str, type[ContextManager]] = {
     "add_to_path" : system_path,

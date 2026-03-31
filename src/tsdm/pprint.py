@@ -75,8 +75,8 @@ import pyarrow as pa
 from pandas import ArrowDtype, DataFrame, MultiIndex
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 
-from tsdm.dtypes import TYPESTRINGS, DType
-from tsdm.testing import (
+from .dtypes import TYPESTRINGS, DType
+from .testing import (
     is_builtin,
     is_builtin_constant,
     is_builtin_type,
@@ -84,8 +84,8 @@ from tsdm.testing import (
     is_na_value,
     is_scalar,
 )
-from tsdm.types.dataclass import Dataclass
-from tsdm.types.extra import (
+from .types.dataclass import Dataclass
+from .types.extra import (
     SupportsArray,
     SupportsDataFrame,
     SupportsDevice,
@@ -93,7 +93,7 @@ from tsdm.types.extra import (
     SupportsItem,
     SupportsShape,
 )
-from tsdm.types.namedtuple import NTuple
+from .types.namedtuple import NTuple
 
 MAXITEMS: Final[int] = 20
 r"""Default maxitems for repr_funcs."""
