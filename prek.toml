@@ -10,79 +10,79 @@ default_language_version = { python = "3.14", node = "24.13.0" }
 repo = "https://github.com/pre-commit/pre-commit-hooks"
 rev = "v6.0.0"
 hooks = [
-  { id = "check-added-large-files" },
-  { id = "check-case-conflict" },
-  { id = "check-illegal-windows-names" },
-  { id = "check-json" },
-  { id = "check-executables-have-shebangs" },
-  { id = "check-shebang-scripts-are-executable" },
-  { id = "check-symlinks" },
-  { id = "check-toml" },
-  { id = "check-xml" },
-  { id = "check-yaml" },
-  { id = "end-of-file-fixer" },
-  { id = "trailing-whitespace" }
+    { id = "check-added-large-files" },
+    { id = "check-case-conflict" },
+    { id = "check-illegal-windows-names" },
+    { id = "check-json" },
+    { id = "check-executables-have-shebangs" },
+    { id = "check-shebang-scripts-are-executable" },
+    { id = "check-symlinks" },
+    { id = "check-toml" },
+    { id = "check-xml" },
+    { id = "check-yaml" },
+    { id = "end-of-file-fixer" },
+    { id = "trailing-whitespace" }
 ]
 
 [[repos]]
 repo = "local"
 hooks = [
-  {
-    id = "pandas-avoid-numpy-nullable-types",
-    name = "pandas-avoid-numpy-nullable-types",
-    description = "Use pyarrow types instead of numpy nullable types in pandas.",
-    language = "pygrep",
-    entry = 'dtype="(boolean|U?Int(8|16|32|64)|Float(32|64))"',
-    exclude = "^tests/",
-    types = ["python"]
-  }
+    {
+        id = "pandas-avoid-numpy-nullable-types",
+        name = "pandas-avoid-numpy-nullable-types",
+        description = "Use pyarrow types instead of numpy nullable types in pandas.",
+        language = "pygrep",
+        entry = 'dtype="(boolean|U?Int(8|16|32|64)|Float(32|64))"',
+        exclude = "^tests/",
+        types = ["python"]
+    }
 ]
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
 rev = "v0.15.12"
 hooks = [
-  {
-    id = "ruff-check",
-    name = "ruff isort",
-    files = "^src/|^tests/",
-    args = ["--select", "I", "--fix"]
-  },
-  { id = "ruff-format", files = "^src/|^tests/" },
-  { id = "ruff-check", files = "^src/|^tests/" }
+    {
+        id = "ruff-check",
+        name = "ruff isort",
+        files = "^src/|^tests/",
+        args = ["--select", "I", "--fix"]
+    },
+    { id = "ruff-format", files = "^src/|^tests/" },
+    { id = "ruff-check", files = "^src/|^tests/" }
 ]
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
 rev = "0.11.14"
 hooks = [
-  { id = "uv-lock" },
-  {
-    id = "uv-export",
-    args = [
-      "--no-dev",
-      "--no-hashes",
-      "--frozen",
-      "--output-file=requirements.txt"
-    ]
-  },
-  {
-    id = "uv-export",
-    args = ["--no-dev", "--frozen", "--output-file=pylock.toml"]
-  }
+    { id = "uv-lock" },
+    {
+        id = "uv-export",
+        args = [
+            "--no-dev",
+            "--no-hashes",
+            "--frozen",
+            "--output-file=requirements.txt"
+        ]
+    },
+    {
+        id = "uv-export",
+        args = ["--no-dev", "--frozen", "--output-file=pylock.toml"]
+    }
 ]
 
 [[repos]]
 repo = "local"
 hooks = [
-  {
-    id = "tach",
-    name = "tach",
-    description = "Check that the pyproject.toml and setup.cfg versions match.",
-    entry = "tach check",
-    pass_filenames = false,
-    language = "system"
-  }
+    {
+        id = "tach",
+        name = "tach",
+        description = "Check that the pyproject.toml and setup.cfg versions match.",
+        entry = "tach check",
+        pass_filenames = false,
+        language = "system"
+    }
 ]
 
 [[repos]]
@@ -94,123 +94,123 @@ hooks = [{ id = "nbstripout-fast", exclude = "^docs/|^experiments/" }]
 repo = "https://github.com/randolf-scholz/assorted-hooks.git"
 rev = "v0.7.22"
 hooks = [
-  { id = "check-separator-length-88" },
-  { id = "numpy-rename-axes-axis" },
-  { id = "pyarrow-timestamp-seconds", exclude = "/backend/" },
-  { id = "python-consider-using-raw-string" },
-  { id = "python-system-exit" },
-  { id = "python-match-case-builtins" },
-  { id = "check-direct-imports" },
-  { id = "check-dunder-all", files = "^src/" },
-  {
-    id = "check-typing",
-    args = ["--check-no-return-union"],
-    files = "^src/|^tests/",
-    exclude = "lazydict.py"
-  },
-  {
-    id = "check-signatures",
-    files = "^src/",
-    args = [
-      "--ignore-names",
-      "forward",
-      "predict",
-      "--ignore-decorators",
-      "jit.script",
-      "jit.export",
-      "torch.no_grad",
-      "--"
-    ]
-  },
-  { id = "use-relative-imports", files = "^src/|^tests/" },
-  {
-    id = "check-clean-interface",
-    files = "^src/",
-    exclude = "^tests/|/tests/"
-  },
-  { id = "update-requirements" },
-  { id = "check-requirements-valid" },
-  { id = "check-requirements-maintained" },
-  { id = "check-requirements-used" },
-  { id = "check-archived-hooks" },
-  { id = "check-resolved-github-issues", files = "^src/|^tests/" }
+    { id = "check-separator-length-88" },
+    { id = "numpy-rename-axes-axis" },
+    { id = "pyarrow-timestamp-seconds", exclude = "/backend/" },
+    { id = "python-consider-using-raw-string" },
+    { id = "python-system-exit" },
+    { id = "python-match-case-builtins" },
+    { id = "check-direct-imports" },
+    { id = "check-dunder-all", files = "^src/" },
+    {
+        id = "check-typing",
+        args = ["--check-no-return-union"],
+        files = "^src/|^tests/",
+        exclude = "lazydict.py"
+    },
+    {
+        id = "check-signatures",
+        files = "^src/",
+        args = [
+            "--ignore-names",
+            "forward",
+            "predict",
+            "--ignore-decorators",
+            "jit.script",
+            "jit.export",
+            "torch.no_grad",
+            "--"
+        ]
+    },
+    { id = "use-relative-imports", files = "^src/|^tests/" },
+    {
+        id = "check-clean-interface",
+        files = "^src/",
+        exclude = "^tests/|/tests/"
+    },
+    { id = "update-requirements" },
+    { id = "check-requirements-valid" },
+    { id = "check-requirements-maintained" },
+    { id = "check-requirements-used" },
+    { id = "check-archived-hooks" },
+    { id = "check-resolved-github-issues", files = "^src/|^tests/" }
 ]
 
 [[repos]]
 repo = "local"
 hooks = [
-  {
-    id = "unknown-inline-pragma",
-    name = "unknown-inline-pragma",
-    description = "Check for unknown inline pragmas.",
-    language = "pygrep",
-    entry = '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|pyrefly|ty|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$',
-    types = ["python"],
-    files = "^src/|^tests/"
-  }
+    {
+        id = "unknown-inline-pragma",
+        name = "unknown-inline-pragma",
+        description = "Check for unknown inline pragmas.",
+        language = "pygrep",
+        entry = '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|pyrefly|ty|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$',
+        types = ["python"],
+        files = "^src/|^tests/"
+    }
 ]
 
 [[repos]]
 repo = "https://github.com/igorshubovych/markdownlint-cli"
 rev = "v0.48.0"
 hooks = [
-  {
-    id = "markdownlint",
-    args = ["--disable", "MD013", "MD033", "MD010", "--"]
-  }
+    {
+        id = "markdownlint",
+        args = ["--disable", "MD013", "MD033", "MD010", "--"]
+    }
 ]
 
 [[repos]]
 repo = "https://github.com/shellcheck-py/shellcheck-py"
 rev = "v0.11.0.1"
 hooks = [
-  {
-    id = "shellcheck",
-    args = ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
-  }
+    {
+        id = "shellcheck",
+        args = ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
+    }
 ]
 
 [[repos]]
 repo = "https://github.com/randolf-scholz/assorted-hooks.git"
 rev = "v0.7.22"
 hooks = [
-  {
-    id = "pyright-concise",
-    files = "^src/|^tests/",
-    exclude = "/tasks/|^tests/(test_numerical_types|third_party)"
-  }
+    {
+        id = "pyright-concise",
+        files = "^src/|^tests/",
+        exclude = "/tasks/|^tests/(test_numerical_types|third_party)"
+    }
 ]
 
 [[repos]]
 repo = "local"
 hooks = [
-  {
-    id = "pyrefly",
-    name = "pyrefly",
-    language = "system",
-    require_serial = true,
-    types_or = ["python", "pyi"],
-    files = "^src/|^tests/",
-    exclude = "/tasks/|^tests/(test_numerical_types|third_party)",
-    entry = "pyrefly",
-    stages = ["manual"],
-    args = ["check", "--output-format=min-text", "--"]
-  },
-  {
-    id = "mypy",
-    name = "mypy",
-    language = "system",
-    require_serial = true,
-    types_or = ["python", "pyi"],
-    files = "^src/|^tests/",
-    exclude = "/tasks/|^tests/(test_numerical_types|third_party)",
-    entry = "mypy",
-    args = [
-      "--hide-error-context",
-      "--hide-error-end",
-      "--no-pretty",
-      "--show-traceback",
-      "--"
-    ]
-  }
+    {
+        id = "pyrefly",
+        name = "pyrefly",
+        language = "system",
+        require_serial = true,
+        types_or = ["python", "pyi"],
+        files = "^src/|^tests/",
+        exclude = "/tasks/|^tests/(test_numerical_types|third_party)",
+        entry = "pyrefly",
+        args = ["check", "--output-format=min-text", "--"]
+    },
+    {
+        id = "mypy",
+        name = "mypy",
+        language = "system",
+        require_serial = true,
+        types_or = ["python", "pyi"],
+        files = "^src/|^tests/",
+        exclude = "/tasks/|^tests/(test_numerical_types|third_party)",
+        entry = "mypy",
+        stages = ["manual"],
+        args = [
+            "--hide-error-context",
+            "--hide-error-end",
+            "--no-pretty",
+            "--show-traceback",
+            "--"
+        ]
+    }
 ]
