@@ -884,7 +884,7 @@ class EncoderList[
     def __getitem__(self, index: int, /) -> E: ...
     @overload
     def __getitem__(self, index: slice, /) -> EncoderList[Any, Any, E]: ...
-    def __getitem__(self, index: int | slice, /) -> E | EncoderList[Any, Any, E]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: int | slice, /) -> E | EncoderList[Any, Any, E]:
         if isinstance(index, slice):
             result = self.new(encoders=self._encoders[index])
             if type(result) is not type(self):
@@ -1466,7 +1466,7 @@ class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def new[E2: Encoder](cls, *, encoders: Iterable[E2]) -> Compose[Any, Any, E2]:
         return Compose(encoders)
 
-    def __invert__(self) -> Compose[Y, X]:  # type: ignore[override]
+    def __invert__(self) -> Compose[Y, X]:
         return compose(*map(invert, reversed(self)))
 
     def fit(self, x: X, /) -> None:
@@ -1573,7 +1573,7 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     def get_slice(self, arg: slice, /) -> Pipe:
         return Pipe(self.encoders[arg])
 
-    def __invert__(self) -> Pipe[Y, X]:  # type: ignore[override]
+    def __invert__(self) -> Pipe[Y, X]:
         return pipe(*map(invert, reversed(self)))
 
     def fit(self, x: X, /) -> None:
