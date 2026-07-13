@@ -97,7 +97,7 @@ class TestInferIdentity:
         # fmt: off
         def _id[DT: TimeLikeScalar](x: DT, /) -> DT: return x
         #
-        assert_type(_id(SCALARS.DATETIME.NP), np_datetime)  # type: ignore[type-var]
+        assert_type(_id(SCALARS.DATETIME.NP), np_datetime)
         assert_type(_id(SCALARS.DATETIME.PD), pd_datetime)
         assert_type(_id(SCALARS.DATETIME.PY), datetime)
         assert_type(_id(SCALARS.FLOAT.NP), np_float)

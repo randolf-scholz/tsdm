@@ -45,7 +45,7 @@ DURATION_TIMEDELTAS: dict[DurationKey, SpanLikeScalar] = {
 r"""Dictionary of timedelta-like durations."""
 
 TIMESTAMPS: dict[TimestampKey, TimeLikeScalar] = {
-    "numpy[datetime]"          : SCALARS.NP.DATETIME,  # type: ignore[dict-item]
+    "numpy[datetime]"          : SCALARS.NP.DATETIME,
     "numpy[types0d.py.float]"  : SCALARS.NP.FLOAT,
     "numpy[types0d.py.int]"    : SCALARS.NP.INT,
     "pandas[datetime]"         : SCALARS.PD.DATETIME,
@@ -108,8 +108,8 @@ def test_timestamp_assign() -> None:
     assert isinstance(SCALARS.PY.INT, TimeLikeScalar)
     assert isinstance(SCALARS.NP.INT, TimeLikeScalar)
     assert isinstance(SCALARS.NP.FLOAT, TimeLikeScalar)
-    assert isinstance(SCALARS.NP.DATETIME, TimeLikeScalar)  # type: ignore[unreachable]
-    assert isinstance(SCALARS.PD.DATETIME, TimeLikeScalar)  # type: ignore[unreachable]
+    assert isinstance(SCALARS.NP.DATETIME, TimeLikeScalar)
+    assert isinstance(SCALARS.PD.DATETIME, TimeLikeScalar)
     assert isinstance(SCALARS.PY.DATETIME, TimeLikeScalar)
 
 

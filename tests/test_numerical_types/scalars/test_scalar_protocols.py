@@ -126,7 +126,7 @@ SPANLIKE_SCALARS: dict[str, SpanLikeScalar] = {
 r"""Dictionary of timedelta scalars."""
 
 TIMELIKE_SCALARS: dict[str, TimeLikeScalar] = {
-    "np_time"  : np.datetime64("2021-01-01"),  # type: ignore[dict-item]
+    "np_time"  : np.datetime64("2021-01-01"),
     "np_float" : np.float64(1.0),
     "np_int"   : np.int64(1),
     "pd_time"  : pd.Timestamp("2021-01-01"),

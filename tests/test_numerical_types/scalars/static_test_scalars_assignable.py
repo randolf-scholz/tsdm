@@ -201,7 +201,7 @@ class TestTimeLikeAssignable:
     def test_self_generic(self) -> None:
         # fmt: off
         # FIXME: https://github.com/numpy/numpy/issues/28257
-        _numpy_0 : TimeLikeScalar[t.np.datetime] = SCALARS.NP.DATETIME  # type: ignore[assignment]
+        _numpy_0 : TimeLikeScalar[t.np.datetime] = SCALARS.NP.DATETIME
         _numpy_1 : TimeLikeScalar[t.np.int     ] = SCALARS.NP.INT
         _numpy_2 : TimeLikeScalar[t.np.float   ] = SCALARS.NP.FLOAT
         _python_0: TimeLikeScalar[t.py.datetime] = SCALARS.PY.DATETIME
