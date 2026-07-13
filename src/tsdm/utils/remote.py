@@ -24,7 +24,7 @@ from typing import IO, Any, Optional
 from urllib.parse import unquote, urljoin, urlparse
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from httpx import Client, Response
+from httpx2 import Client, Response
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP

@@ -6,11 +6,7 @@ absl-py==2.5.0
 annotated-types==0.7.0
     # via pydantic
 anyio==4.14.2
-    # via httpx
-certifi==2026.6.17
-    # via
-    #   httpcore
-    #   httpx
+    # via httpx2
 colorama==0.4.6 ; sys_platform == 'win32'
     # via tqdm
 contourpy==1.3.3
@@ -32,15 +28,15 @@ fsspec==2026.6.0
 grpcio==1.82.1
     # via tensorboard
 h11==0.16.0
-    # via httpcore
-httpcore==1.0.9
-    # via httpx
-httpx==0.28.1
+    # via httpcore2
+httpcore2==2.5.0
+    # via httpx2
+httpx2==2.5.0
     # via tsdm
 idna==3.18
     # via
     #   anyio
-    #   httpx
+    #   httpx2
 jinja2==3.1.6
     # via torch
 joblib==1.5.3
@@ -167,6 +163,10 @@ tqdm==4.68.4
     # via tsdm
 triton==3.7.1 ; sys_platform == 'linux'
     # via torch
+truststore==0.10.4
+    # via
+    #   httpcore2
+    #   httpx2
 typing-extensions==4.16.0
     # via
     #   grpcio
