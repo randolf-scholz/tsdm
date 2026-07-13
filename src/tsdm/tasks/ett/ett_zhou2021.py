@@ -155,10 +155,10 @@ class ETT_Zhou2021(OldBaseTask):
     @cached_property
     def splits(self) -> dict[KeyType, DataFrame]:
         splits: dict[Any, DataFrame] = {
-            "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore[misc]
-            "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore[misc]
-            "joint": self.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore[misc]
-            "trial": self.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore[misc]
+            "train": self.dataset.loc["2016-07-01":"2017-06-30"],
+            "valid": self.dataset.loc["2017-07-01":"2017-10-31"],
+            "joint": self.dataset.loc["2016-07-01":"2017-10-31"],
+            "trial": self.dataset.loc["2017-11-01":"2018-02-28"],
             "whole": self.dataset,
         }
         splits["test"] = splits["trial"]  # alias
