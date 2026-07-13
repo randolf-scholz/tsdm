@@ -1,5 +1,7 @@
 # region custom ------------------------------------------------------------------------
-
+# temporary files / directories
+tmp*.py
+tmp*/
 # private/hidden directories
 _*/
 .*/
