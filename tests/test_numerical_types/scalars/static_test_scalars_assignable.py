@@ -166,7 +166,7 @@ class TestTimeLikeAssignable:
     def test_no_generic(self) -> None:
         # fmt: off
         # FIXME: https://github.com/numpy/numpy/issues/28257
-        _numpy_0 : TimeLikeScalar = SCALARS.NP.DATETIME  # type: ignore[assignment]
+        _numpy_0 : TimeLikeScalar = SCALARS.NP.DATETIME
         _numpy_1 : TimeLikeScalar = SCALARS.NP.INT
         _numpy_2 : TimeLikeScalar = SCALARS.NP.FLOAT
         _python_0: TimeLikeScalar = SCALARS.PY.DATETIME
@@ -178,7 +178,7 @@ class TestTimeLikeAssignable:
     def test_any_generic(self) -> None:
         # fmt: off
         # FIXME: https://github.com/numpy/numpy/issues/28257
-        _numpy_0 : TimeLikeScalar[Any] = SCALARS.NP.DATETIME  # type: ignore[assignment]
+        _numpy_0 : TimeLikeScalar[Any] = SCALARS.NP.DATETIME
         _numpy_1 : TimeLikeScalar[Any] = SCALARS.NP.INT
         _numpy_2 : TimeLikeScalar[Any] = SCALARS.NP.FLOAT
         _python_0: TimeLikeScalar[Any] = SCALARS.PY.DATETIME

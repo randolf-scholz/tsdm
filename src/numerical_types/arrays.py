@@ -97,7 +97,7 @@ class BaseArray(
 @runtime_checkable
 class ArraySupportsEquality[
     ComparableT,  # contravariant
-    BoolA: BooleanArray = BooleanArray,  # type: ignore[misc]
+    BoolA: BooleanArray = BooleanArray,
 ](
     BaseArray,
     SupportsEquality[ComparableT, BoolA],
@@ -109,7 +109,7 @@ class ArraySupportsEquality[
 @runtime_checkable
 class ArraySupportsComparison[
     ComparableT,  # contravariant
-    BoolA: BooleanArray = BooleanArray,  # type: ignore[misc]
+    BoolA: BooleanArray = BooleanArray,
 ](
     BaseArray,
     SupportsEquality[ComparableT, BoolA],
