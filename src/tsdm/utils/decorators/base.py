@@ -73,8 +73,10 @@ class PolymorphicClassDecorator[**P](Protocol):
     """
 
     # fmt: off
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(cls, *args, **kwargs)
     def __call__[Cls: type](self, cls: Cls, /, **kwargs: P.kwargs) -> Cls: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
     def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnCls: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
@@ -120,8 +122,10 @@ class PolymorphicFunctionDecorator[**P](Protocol):
     r"""Polymorphic Function Decorator Protocol."""
 
     # fmt: off
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(fn, *args, **kwargs)
     def __call__[F: Fn](self, fn: F, /, **kwargs: P.kwargs) -> F: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
     def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnFn: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
@@ -147,8 +151,10 @@ class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
     r"""Parametrized Function Decorator Protocol that preserves type."""
 
     # fmt: off
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(fn, *args, **kwargs)
     def __call__(self, fn: F_in, /, **kwargs: P.kwargs) -> F_out: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
     def __call__(self, /, **kwargs: P.kwargs) -> Fn[[F_in], F_out]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
@@ -164,8 +170,10 @@ class PolymorphicDecorator[**P](Protocol):
     r"""Polymorphic Decorator Protocol."""
 
     # fmt: off
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
     def __call__[T](self, obj: T, /, **kwargs: P.kwargs) -> T: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
     def __call__[T](self, /, **kwargs: P.kwargs) -> IdentityMap: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
@@ -201,8 +209,10 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     __annotations__: dict[str, Any]
 
     # fmt: off
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
     def __call__(self, obj: T_in, /, **kwargs: P.kwargs) -> T_out: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
     def __call__(self, /, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     # fmt: on
@@ -335,8 +345,10 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
                 pass
 
     # FIXME: Instead of inner function, return instance of ParametrizedDecorator
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
     def _deco(obj: X, /, **kwargs: P.kwargs) -> Y: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
     def _deco(**kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
     @wraps(deco)
@@ -353,7 +365,7 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
         logger.debug("@decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
-    return _deco
+    return _deco  # pyrefly: ignore[bad-return]
 
 
 def recurse_on_container[T, R](  # T, +R
@@ -376,4 +388,4 @@ def recurse_on_container[T, R](  # T, +R
         leaf_type=leaf_type,
         leaf_prioritized=leaf_prioritized,
     )
-    return wraps(leaf_fn)(recurse)
+    return wraps(leaf_fn)(recurse)  # pyrefly: ignore[bad-return]

@@ -145,6 +145,7 @@ def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -
         https://stackoverflow.com/a/64500851
     """
     replacements = dict(mapping, **strings)
+    # pyrefly: ignore[unbound-name]
     return last(s := s.replace(x, y) for x, y in replacements.items())
 
 
