@@ -100,7 +100,7 @@ TIMESTAMP_ARRAYS: dict[KEY, TimeLikeArray] = {
 r"""Dictionary of timestamp arrays."""
 
 DATETIME_ARRAYS: dict[KEY, DatetimeArray] = {
-    "numpy[np_time]"   : ARRAYS1D.NP.DATETIME,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    "numpy[np_time]"   : ARRAYS1D.NP.DATETIME,  # pyright: ignore[reportAssignmentType]
     "pandas[np_time]"  : ARRAYS1D.PD_NP.DATETIME,
     "pandas[pa_time]"  : ARRAYS1D.PD_PA.DATETIME,
     "polars[pa_time]"  : ARRAYS1D.PL.DATETIME,
@@ -110,7 +110,7 @@ r"""Dictionary of datetime arrays."""
 TIMESTAMP_SCALARS: dict[KEY, TimeLikeScalar] = {
     "numpy[np_float]"  : SCALARS.NP.FLOAT,
     "numpy[np_int]"    : SCALARS.NP.INT,
-    "numpy[np_time]"   : SCALARS.NP.DATETIME,  # type: ignore[dict-item]
+    "numpy[np_time]"   : SCALARS.NP.DATETIME,
     "pandas[np_time]"  : SCALARS.PY.DATETIME,
     "pandas[np_float]" : SCALARS.PY.FLOAT,
     "pandas[np_int]"   : SCALARS.PY.INT,
