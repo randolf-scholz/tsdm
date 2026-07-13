@@ -55,10 +55,10 @@ class TableMetadata(BoundaryInformation):
     name: str
     dtype: str
     unit: str | None
-    lower_bound: float | None  # type: ignore[misc]
-    upper_bound: float | None  # type: ignore[misc]
-    lower_inclusive: bool | None  # type: ignore[misc]
-    upper_inclusive: bool | None  # type: ignore[misc]
+    lower_bound: float | None
+    upper_bound: float | None
+    lower_inclusive: bool | None
+    upper_inclusive: bool | None
     description: str | None
 
 
@@ -168,24 +168,22 @@ def select_outliers[T: Series | DataFrame](
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
-    undef = [val is UNDEFINED for val in lims.values()]
+    undefined = [val is UNDEFINED for val in lims.values()]
 
     if limits is UNDEFINED:
-        if all(undef):
-            raise ValueError("No boundary values provided.")
-        if any(undef):
+        if any(undefined):
             raise ValueError(f"Missing boundary values: {lims}")
-        opts = lims
-    elif all(undef):
-        opts = {key: limits[key] for key in lims}
+        options = lims
+    elif all(undefined):
+        options = {key: limits[key] for key in lims}
     else:
         raise ValueError("Limits specified both as positional and keyword arguments.")
 
     match obj:
         case Series() as s:
-            return select_outliers_series(s, **opts)
+            return select_outliers_series(s, **options)
         case DataFrame() as df:
-            return select_outliers_dataframe(df, **opts)
+            return select_outliers_dataframe(df, **options)
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
 
@@ -253,23 +251,23 @@ def remove_outliers[T: Series | DataFrame](
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
-    undef = [val is UNDEFINED for val in lims.values()]
-    opts: Any
+    undefined = [val is UNDEFINED for val in lims.values()]
+    options: Any
 
     if limits is UNDEFINED:
-        if any(undef):
+        if any(undefined):
             raise ValueError(f"Missing boundary values: {lims}")
-        opts = lims
-    elif all(undef):
-        opts = {key: limits[key] for key in lims}
+        options = lims
+    elif all(undefined):
+        options = {key: limits[key] for key in lims}
     else:
         raise ValueError("Limits specified both as positional and keyword arguments.")
 
     match obj:
         case Series() as s:
-            return remove_outliers_series(s, drop=drop, inplace=inplace, **opts)
+            return remove_outliers_series(s, drop=drop, inplace=inplace, **options)
         case DataFrame() as df:
-            return remove_outliers_dataframe(df, drop=drop, inplace=inplace, **opts)
+            return remove_outliers_dataframe(df, drop=drop, inplace=inplace, **options)
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
