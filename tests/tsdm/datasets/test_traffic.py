@@ -2,4 +2,5 @@ from tsdm.datasets import Traffic
 
 
 def test_traffic() -> None:
-    Traffic()
+    ds = Traffic(initialize=False)
+    ds.clean(force=True)
