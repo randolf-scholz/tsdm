@@ -241,7 +241,7 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
         Each time checking when the first date was when `labels[invperm].map(weekdays)`
         didn't match with `dates.day_name()`
         """
-        randperm: Series = self.randperm.squeeze()
+        randperm: Series = self.randperm["randperm"]
         shuffled_dates = self.dates[randperm]
 
         time = pd.timedelta_range("0:00:00", "23:59:59", freq="10min", name="time")
@@ -254,15 +254,18 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 content = replace(content, {"[": "", "]": "", " ": "\n"})
                 stations = pd.read_csv(
                     StringIO(content), names=["station"], dtype="category"
-                ).squeeze()
+                ).pop("station")
 
             with archive.open("PEMS_train") as file:
                 train_dfs = []
                 for line in file:
                     content = line.decode("utf8")
                     content = replace(content, {"[": "", "]": "", ";": "\n", " ": ","})
-                    df = pd.read_csv(StringIO(content), header=None).squeeze()
-                    df = DataFrame(df.values, index=stations, columns=time)
+                    df = (
+                        pd.read_csv(StringIO(content), header=None)
+                        .set_axis(stations, axis="index")
+                        .set_axis(time, axis="columns")
+                    )
                     train_dfs.append(df.T)
                 ts_train = pd.concat(train_dfs, keys=shuffled_dates[: len(train_dfs)])
 
@@ -271,8 +274,11 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 for line in file:
                     content = line.decode("utf8")
                     content = replace(content, {"[": "", "]": "", ";": "\n", " ": ","})
-                    df = pd.read_csv(StringIO(content), header=None).squeeze()
-                    df = DataFrame(df.values, index=stations, columns=time)
+                    df = (
+                        pd.read_csv(StringIO(content), header=None)
+                        .set_axis(stations, axis="index")
+                        .set_axis(time, axis="columns")
+                    )
                     test_dfs.append(df.T)
                 ts_test = pd.concat(test_dfs, keys=shuffled_dates[len(train_dfs) :])
 
@@ -291,8 +297,8 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
         r"""Clean the labels of the PEMS-SF dataset."""
         # Shuffle the dates according to the permutation the authors applied.
         rawdata_path = self.rawdata_paths["pems+sf.zip"]
-        randperm: Series = self.randperm.squeeze()
-        invperm: Series = self.invperm.squeeze()
+        randperm: Series = self.randperm["randperm"]
+        invperm: Series = self.invperm["invperm"]
         shuffled_dates = self.dates[randperm]
 
         with ZipFile(rawdata_path) as archive:
@@ -301,12 +307,13 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 content = replace(content, {"[": "", "]": "\n", " ": "\n"})
                 trainlabels = pd.read_csv(
                     StringIO(content), names=["label"], dtype="uint8"
-                ).squeeze()
+                ).pop("label")
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
+                assert isinstance(trainlabels.index, pd.DatetimeIndex)
 
             # Check that the labels match with the actual weekdays
-            if any(trainlabels.index.day_name() != trainlabels.map(self.weekdays)):
+            if any(trainlabels.index.day_name() != trainlabels.map(self.weekdays)):  # pyright: ignore[reportAttributeAccessIssue]
                 raise ValueError("Labels do not match with dates!")
 
             with archive.open("PEMS_testlabels") as file:
@@ -314,12 +321,13 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 content = replace(content, {"[": "", "]": "", " ": "\n"})
                 testlabels = pd.read_csv(
                     StringIO(content), names=["label"], dtype="uint8"
-                ).squeeze()
+                ).pop("label")
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
+                assert isinstance(testlabels.index, pd.DatetimeIndex)
 
             # Check that the labels match with the actual weekdays
-            if any(testlabels.index.day_name() != testlabels.map(self.weekdays)):
+            if any(testlabels.index.day_name() != testlabels.map(self.weekdays)):  # pyright: ignore[reportAttributeAccessIssue]
                 raise ValueError("Labels do not match with dates!")
 
         labels = pd.concat([trainlabels, testlabels]).rename("labels")
@@ -347,15 +355,15 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 StringIO(content),
                 names=["randperm"],
                 dtype="uint16",
-            ).squeeze()
+            ).pop("randperm")
             randperm = randperm - 1  # we use 0-based indexing
             invperm = randperm.copy().argsort()
             invperm.name = "invperm"
             if any(randperm[invperm] != np.arange(len(randperm))):
                 raise ValueError("Inverse permutation does not match!")
 
-        DataFrame(randperm).to_parquet(self.dataset_paths["randperm"])
-        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"])
+        randperm.to_frame().to_parquet(self.dataset_paths["randperm"])
+        invperm.to_frame().to_parquet(self.dataset_paths["invperm"])
 
     def clean_invperm(self) -> None:
         return self.clean_randperm()
