@@ -17,9 +17,9 @@ from enum import StrEnum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Final,
     Literal,
     Optional,
-    TypeAlias,
     cast,
     overload,
 )
@@ -182,8 +182,8 @@ class SlidingWindowSampler[
     """
 
     # NOTE: type checkers seem to break if we do not use 'TypeAlias' here.
-    MODE: TypeAlias = MODE  # noqa: UP040
-    HORIZON: TypeAlias = HORIZON  # noqa: UP040
+    MODE: Final = MODE
+    HORIZON: Final = HORIZON
 
     type Mode = Literal["slice", "mask", "bounds", "interval", "points", "index"]
     r"""Type hint for the mode."""
@@ -637,13 +637,13 @@ class SlidingWindowSampler[
     @overload
     def __iter__(self: SlidingWindowSampler[DType, B, MULTI], /) -> Iterator[list[tuple[DType, DType]]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, I, MULTI], /) -> Iterator[list[Interval[DType]]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, I, MULTI], /) -> Iterator[list[Interval[DType]]]: ...  # pyright: ignore[reportInvalidTypeArguments]
     @overload
     def __iter__(self: SlidingWindowSampler[DType, M, MULTI], /) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
     def __iter__(self: SlidingWindowSampler[DType, X, MULTI], /) -> Iterator[list[NDArray[np.integer]]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, P, MULTI], /) -> Iterator[list[NDArray]]: ...  # type: ignore[type-var,unused-ignore]
+    def __iter__(self: SlidingWindowSampler[DType, P, MULTI], /) -> Iterator[list[NDArray]]: ...
     @overload  # fallback mode=str
     def __iter__(self: SlidingWindowSampler[DType, Any, MULTI], /) -> Iterator[list[Any]]: ...
     @overload
@@ -651,13 +651,13 @@ class SlidingWindowSampler[
     @overload
     def __iter__(self: SlidingWindowSampler[DType, B, ONE], /) -> Iterator[tuple[DType, DType]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, I, ONE], /) -> Iterator[Interval[DType]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, I, ONE], /) -> Iterator[Interval[DType]]: ...  # pyright: ignore[reportInvalidTypeArguments]
     @overload
     def __iter__(self: SlidingWindowSampler[DType, X, ONE], /) -> Iterator[NDArray[np.integer]]: ...
     @overload
     def __iter__(self: SlidingWindowSampler[DType, M, ONE], /) -> Iterator[NDArray[np.bool_]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, P, ONE], /) -> Iterator[NDArray]: ...  # type: ignore[type-var,unused-ignore]
+    def __iter__(self: SlidingWindowSampler[DType, P, ONE], /) -> Iterator[NDArray]: ...
     @overload  # fallback mode=str
     def __iter__(self: SlidingWindowSampler[DType, Any, ONE], /) -> Iterator[Any]: ...
     @overload  # fallback
@@ -678,13 +678,13 @@ class SlidingWindowSampler[
         stride = self.stride
         grid = self.grid
         data = self.data
-        sample_fns: dict[MODE, Callable[[DType, DType], Any]] = {
+        sample_fns: dict[MODE, Callable] = {
             MODE.BOUNDS   : lambda start, stop: (start, stop),
             MODE.MASK     : lambda start, stop: (start <= data) & (data < stop),
-            MODE.SLICE    : lambda start, stop: slice(start, stop),
+            MODE.SLICE    : lambda start, stop: slice(start, stop),  # noqa: PLW0108
             MODE.INTERVAL : lambda start, stop: Interval(start, stop, closed="left"),
-            MODE.POINTS   : lambda start, stop: data[(start <= data) & (data < stop)],  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
-            MODE.INDEX    : lambda start, stop: np.where((start <= data) & (data < stop))[0],  # type: ignore[call-overload]  # pyright: ignore[reportArgumentType]
+            MODE.POINTS   : lambda start, stop: data[(start <= data) & (data < stop)],
+            MODE.INDEX    : lambda start, stop: np.where((start <= data) & (data < stop))[0],
         }  # fmt: skip
         sample_fn = sample_fns[self.mode]
 
