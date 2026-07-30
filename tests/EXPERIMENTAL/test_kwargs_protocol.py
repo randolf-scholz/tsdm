@@ -22,13 +22,13 @@ class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
 class _SupportsKwargsMeta(ProtocolMeta):
     r"""Metaclass for `SupportsKwargs`."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs[SupportsKwargs]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[SupportsKwargs]:  # noqa: N805
         return isinstance(instance, SupportsKeysAndGetItem) and all(
             isinstance(key, str)
             for key in instance.keys()  # noqa: SIM118
         )
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[SupportsKwargs]]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[SupportsKwargs]]:  # noqa: N805
         raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
 
 

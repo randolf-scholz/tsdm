@@ -17,10 +17,10 @@ class _SlottedMeta(ProtocolMeta):
     This issue will make the need for metaclass obsolete.
     """
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs[Slotted]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[Slotted]:  # noqa: N805
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Slotted]]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Slotted]]:  # noqa: N805
         slots = getattr(subclass, "__slots__", None)
         return isinstance(slots, str | Iterable)
 

@@ -37,10 +37,10 @@ class _NTupleMeta(ProtocolMeta):
     _fields: ClassVar[tuple[str, ...]] = ()
     r"""The fields of the namedtuple."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs[NTuple]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[NTuple]:  # noqa: N805
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[NTuple]]:  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[NTuple]]:  # noqa: N805
         if ABCMeta.__subclasscheck__(cls, subclass):
             return True
         bases = get_original_bases(subclass)

@@ -305,7 +305,7 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
     @overload
     def __getitem__(self, key: Index | Series | slice | list[Key] | Mapping[Key, bool], /) -> Self: ...
     @overload
-    def __getitem__(self, key: Key, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
+    def __getitem__(self, key: Key, /) -> PandasTS: ...
     # fmt: on
     def __getitem__(self, key: Any, /) -> PandasTS | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         r"""Get the timeseries and metadata of the dataset at index `key`."""

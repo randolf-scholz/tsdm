@@ -27,6 +27,6 @@ class MyEstimator:
         return self.transform(X)
 
 
-@parametrize_with_checks([MinMaxScaler(), StandardScaler()])  # pyright: ignore[reportUntypedFunctionDecorator]
+@parametrize_with_checks([MinMaxScaler(), StandardScaler()])
 def test_sklearn_compatibility(estimator, check):
     check(estimator)

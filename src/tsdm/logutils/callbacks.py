@@ -200,7 +200,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     def __getitem__(self, index: int, /) -> Callback: ...
     @overload
     def __getitem__(self, index: slice, /) -> Self: ...
-    def __getitem__(self, index: int | slice, /) -> Callback | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, index: int | slice, /) -> Callback | Self:
         if isinstance(index, SupportsIndex):
             return self.callbacks[index]
         return self.__class__(self.callbacks[index])
@@ -209,14 +209,14 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     def __setitem__(self, index: int, value: Callback, /) -> None: ...
     @overload
     def __setitem__(self, index: slice, value: Iterable[Callback], /) -> None: ...
-    def __setitem__(self, index: int | slice, value: Any, /) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __setitem__(self, index: int | slice, value: Any, /) -> None:
         self.callbacks[index] = value
 
     @overload
     def __delitem__(self, index: int, /) -> None: ...
     @overload
     def __delitem__(self, index: slice, /) -> None: ...
-    def __delitem__(self, index: int | slice, /) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __delitem__(self, index: int | slice, /) -> None:
         del self.callbacks[index]
 
     def __call__(self, step: int, /, **state_dict: Any) -> None:

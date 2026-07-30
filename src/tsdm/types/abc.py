@@ -75,7 +75,7 @@ class Buffer[io: (str, bytes)](ReadBuffer[io], WriteBuffer[io], Protocol):
 
 
 class _VecMeta(ProtocolMeta):
-    def __subclasscheck__(cls, other: type, /) -> TypeIs[type[Vec]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __subclasscheck__(cls, other: type, /) -> TypeIs[type[Vec]]:
         if issubclass(other, str | bytes | Mapping):
             return False
         return super().__subclasscheck__(other)
