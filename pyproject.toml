@@ -1,12 +1,12 @@
 [build-system]
-requires = ["uv_build>=0.11.0,<0.12"]
+requires = ["uv_build>=0.12.0,<0.13"]
 build-backend = "uv_build"
 
 # region project configuration ---------------------------------------------------------
 [project]
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 name = "tsdm"
-version = "0.8.0"
+version = "0.8.1"
 description = "Time-Series Datasets and Models"
 readme = "README.md"
 license-files = ["LICENSE"]
@@ -18,7 +18,6 @@ keywords = ["time-series", "machine-learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Environment :: GPU :: NVIDIA CUDA",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.14",
@@ -28,11 +27,11 @@ classifiers = [
 
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "httpx2>=2.5.0",
-    "matplotlib>=3.11.0",
+    "httpx2>=2.9.1",
+    "matplotlib>=3.11.1",
     "numpy>=2.5.1",
-    "pandas>=3.0.3",
-    "polars>=1.42.1",
+    "pandas>=3.0.5",
+    "polars>=1.43.1",
     "pyarrow>=25.0.0",
     "pydantic>=2.13.4", # removal candidate
     "pyyaml>=6.0.3",
@@ -40,7 +39,7 @@ dependencies = [
     "scipy>=1.18.0",
     "tensorboard>=2.21.0",
     "torch>=2.13.0",
-    "tqdm>=4.68.4",
+    "tqdm>=4.70.0",
     "typing-extensions>=4.16.0",
 ]
 # endregion project configuration ------------------------------------------------------
@@ -49,20 +48,24 @@ dependencies = [
 # region development dependencies ------------------------------------------------------
 [dependency-groups]
 dev = [
-    { include-group = "devtools" }, { include-group = "docs" }, { include-group = "debug" },
-    { include-group = "linters" }, { include-group = "tests" }, { include-group = "typing" },
+    { include-group = "debug" },
+    { include-group = "devtools" },
+    { include-group = "docs" },
+    { include-group = "linters" },
+    { include-group = "tests" },
+    { include-group = "typing" },
 ]
 devtools = [
     "cmake>=4.4.0",
     "ninja>=1.13.0",
-    "prek>=0.4.9",
+    "prek>=0.4.11",
     "pybadges>=3.0.1",
 ]
 debug = [
     "ipympl>=0.10.0",
     "ipywidgets>=8.1.8",
     "jupyterlab-execute-time>=3.3.0",
-    "jupyterlab>=4.6.1",
+    "jupyterlab>=4.6.2",
     "psutil>=7.2.2",
 ]
 docs = [
@@ -82,13 +85,13 @@ docs = [
     "sphinx>=9.1.0",
 ]
 linters = [
-    "prek>=0.4.9",
-    "ruff>=0.15.21",
+    "prek>=0.4.11",
+    "ruff>=0.16.0",
     "tach>=0.35.0",
 ]
 tests = [
-    "coverage>=7.15.1",
-    "hypothesis[numpy,pandas,pytest]>=6.156.6",
+    "coverage>=7.15.2",
+    "hypothesis[numpy,pandas,pytest]>=6.163.1",
     "psutil>=7.2.2",
     "pygal>=3.1.3",
     "pytest-benchmark[histogram]>=5.2.3",
@@ -103,20 +106,20 @@ typing = [
     "pyrefly>=1.1.1",
     "pyright>=1.1.411",
     "scipy-stubs>=1.18.0.1",
-    "ty>=0.0.59",
+    "ty>=0.0.65",
     "types-colorama>=0.4.15.20260508",
     "types-defusedxml>=0.7.0.20260504",
-    "types-gevent>=26.4.0.20260518",
+    "types-gevent>=26.7.0.20260724",
     "types-jsonschema>=4.26.0.20260518",
-    "types-networkx>=3.6.1.20260624",
+    "types-networkx>=3.6.1.20260728",
     "types-pexpect>=4.9.0.20260518",
     "types-protobuf>=7.34.1.20260518",
-    "types-pygments>=2.20.0.20260518",
-    "types-pytz>=2026.2.0.20260518",
-    "types-pyyaml>=6.0.12.20260518",
-    "types-setuptools>=83.0.0.20260706",
+    "types-pygments>=2.20.0.20260728",
+    "types-pytz>=2026.3.1.20260727",
+    "types-pyyaml>=6.0.12.20260724",
+    "types-setuptools>=83.0.0.20260724",
     "types-tabulate>=0.10.0.20260508",
-    "types-tqdm>=4.68.0.20260608",
+    "types-tqdm>=4.70.0.20260730",
     "typing-extensions>=4.16.0",
 ]
 # endregion development dependencies ---------------------------------------------------
@@ -125,6 +128,9 @@ typing = [
 forbid_circular_dependencies = true
 exact = true
 
+[tool.tombi]
+[tool.tombi.format.rules]
+indent-width = 4
 
 # region ruff configuration ------------------------------------------------------------
 [tool.ruff]
@@ -162,7 +168,12 @@ docstring-code-line-length = "dynamic"
 ]
 
 [tool.ruff.lint.pylint]
-allow-dunder-method-names = ["__array__", "__array_ufunc__", "__dataframe__", "_repr_html_"]
+allow-dunder-method-names = [
+    "__array__",
+    "__array_ufunc__",
+    "__dataframe__",
+    "_repr_html_"
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -340,7 +351,7 @@ python-version = "3.14"
 output-format = "concise"
 
 [tool.ty.analysis]
-respect-type-ignore-comments = false
+respect-type-ignore-comments = true
 
 # region pyrefly configuration ---------------------------------------------------------
 [tool.pyrefly]
@@ -356,6 +367,7 @@ replace_imports_with_any = [
 
 [tool.pyrefly.errors]
 invalid-overload = false
+unused-ignore = true
 # endregion pyrefly configuration ------------------------------------------------------
 
 
@@ -400,11 +412,11 @@ disallow_untyped_decorators = false
 disallow_untyped_defs = true
 
 # strictness flags
-#strict = false
-#strict_equality = false
+# strict = false
+# strict_equality = false
 implicit_reexport = false
-#enable_error_code =[]
-#disable_error_code = []
+# enable_error_code =[]
+# disable_error_code = []
 allow_untyped_globals = false
 allow_redefinition_new = true
 local_partial_types = true
@@ -438,16 +450,16 @@ ignore_missing_imports = true
 include = ["src/", "tests/"]
 exclude = []
 strict = []
-#extends = ""
+# extends = ""
 defineConstant = { "__debug__" = true }
-#typeshedPath = ""
-#stubPath = ""
+# typeshedPath = ""
+# stubPath = ""
 venvPath = ".venv"
-#venv = ".venv"
+# venv = ".venv"
 pythonVersion = "3.14"
 pythonPlatform = "Linux"
-#executionEnvironments = []
-useLibraryCodeForTypes = false
+# executionEnvironments = []
+useLibraryCodeForTypes = true
 
 # Type Check Diagnostics Settings
 typeCheckingMode = "standard"  # "off", "basic", "strict", "standard"
@@ -466,85 +478,85 @@ enableExperimentalFeatures = false
 disableBytesTypePromotions = true
 
 # Type Check Rule Overrides
-#reportAbstractUsage = "error"  # default: "error"
-#reportArgumentType = "error"  # default: "error"
-#reportAssertAlwaysTrue = "warning"  # default: "warning"
-#reportAssertTypeFailure = "error"  # default: "error"
-#reportAssignmentType = "error"  # default: "error"
-#reportAttributeAccessIssue = "error"  # default: "error"
-#reportCallInDefaultInitializer = "none"  # default: "none"
-#reportCallIssue = "error"  # default: "error"
-#reportConstantRedefinition = "none"  # default: "none"
-#reportDeprecated = "none"  # default: "none"
+# reportAbstractUsage = "error"  # default: "error"
+# reportArgumentType = "error"  # default: "error"
+# reportAssertAlwaysTrue = "warning"  # default: "warning"
+# reportAssertTypeFailure = "error"  # default: "error"
+# reportAssignmentType = "error"  # default: "error"
+# reportAttributeAccessIssue = "error"  # default: "error"
+# reportCallInDefaultInitializer = "none"  # default: "none"
+# reportCallIssue = "error"  # default: "error"
+# reportConstantRedefinition = "none"  # default: "none"
+# reportDeprecated = "none"  # default: "none"
 reportDuplicateImport = "error"  # default: "none"
-#reportFunctionMemberAccess = "error"  # default: "error"
-#reportGeneralTypeIssues = "error"  # default: "error"
-#reportImplicitOverride = "none"  # default: "none"
-#reportImplicitStringConcatenation = "none"  # default: "none"
-#reportImportCycles = "error"  # default: "none"
-#reportIncompatibleMethodOverride = "error"  # default: "error"
-#reportIncompatibleVariableOverride = "error"  # default: "error"
-#reportIncompleteStub = "none"  # default: "none"
-#reportInconsistentConstructor = "none"  # default: "none"
-#reportInconsistentOverload = "error"  # default: "error"
-#reportIndexIssue = "error"  # default: "error"
-#reportInvalidStringEscapeSequence = "warning"  # default: "warning"
-#reportInvalidStubStatement = "none"  # default: "none"
-#reportInvalidTypeArguments = "error"  # default: "error"
-#reportInvalidTypeForm = "error"  # default: "error"
-#reportInvalidTypeVarUse = "warning"  # default: "warning"
+# reportFunctionMemberAccess = "error"  # default: "error"
+# reportGeneralTypeIssues = "error"  # default: "error"
+# reportImplicitOverride = "none"  # default: "none"
+# reportImplicitStringConcatenation = "none"  # default: "none"
+# reportImportCycles = "error"  # default: "none"
+# reportIncompatibleMethodOverride = "error"  # default: "error"
+# reportIncompatibleVariableOverride = "error"  # default: "error"
+# reportIncompleteStub = "none"  # default: "none"
+# reportInconsistentConstructor = "none"  # default: "none"
+# reportInconsistentOverload = "error"  # default: "error"
+# reportIndexIssue = "error"  # default: "error"
+# reportInvalidStringEscapeSequence = "warning"  # default: "warning"
+# reportInvalidStubStatement = "none"  # default: "none"
+# reportInvalidTypeArguments = "error"  # default: "error"
+# reportInvalidTypeForm = "error"  # default: "error"
+# reportInvalidTypeVarUse = "warning"  # default: "warning"
 reportMatchNotExhaustive = "error"  # default: "none"
-#reportMissingImports = "error"  # default: "error"
-#reportMissingModuleSource = "warning"  # default: "warning"
-#reportMissingParameterType = "none"  # default: "none"
-#reportMissingSuperCall = "none"  # default: "none"
-#reportMissingTypeArgument = "none"  # default: "none"
-#reportMissingTypeStubs = "none"  # default: "none"
+# reportMissingImports = "error"  # default: "error"
+# reportMissingModuleSource = "warning"  # default: "warning"
+# reportMissingParameterType = "none"  # default: "none"
+# reportMissingSuperCall = "none"  # default: "none"
+# reportMissingTypeArgument = "none"  # default: "none"
+# reportMissingTypeStubs = "none"  # default: "none"
 reportNoOverloadImplementation = "none"  # default: "error"
-#reportOperatorIssue = "error"  # default: "error"
-#reportOptionalCall = "error"  # default: "error"
-#reportOptionalContextManager = "error"  # default: "error"
-#reportOptionalIterable = "error"  # default: "error"
-#reportOptionalMemberAccess = "error"  # default: "error"
-#reportOptionalOperand = "error"  # default: "error"
-#reportOptionalSubscript = "error"  # default: "error"
-#reportOverlappingOverload = "error"  # default: "error"
-#reportPossiblyUnboundVariable = "error"  # default: "error"
-#reportPrivateImportUsage = "error"  # default: "error"
-#reportPrivateUsage = "none"  # default: "none"
-#reportPropertyTypeMismatch = "none"  # default: "none"
-#reportRedeclaration = "error"  # default: "error"
-#reportReturnType = "error"  # default: "error"
-#reportSelfClsParameterName = "warning"  # default: "warning"
-#reportShadowedImports = "none"  # default: "none"
-#reportTypeCommentUsage = "none"  # default: "none"
-#reportTypedDictNotRequiredAccess = "error"  # default: "error"
-#reportUnboundVariable = "error"  # default: "error"
-#reportUndefinedVariable = "error"  # default: "error"
-#reportUnhashable = "error"  # default: "error"
-#reportUninitializedInstanceVariable = "none"  # default: "none"
-#reportUnknownArgumentType = "none"  # default: "none"
-#reportUnknownLambdaType = "none"  # default: "none"
-#reportUnknownMemberType = "none"  # default: "none"
-#reportUnknownParameterType = "none"  # default: "none"
-#reportUnknownVariableType = "none"  # default: "none"
+# reportOperatorIssue = "error"  # default: "error"
+# reportOptionalCall = "error"  # default: "error"
+# reportOptionalContextManager = "error"  # default: "error"
+# reportOptionalIterable = "error"  # default: "error"
+# reportOptionalMemberAccess = "error"  # default: "error"
+# reportOptionalOperand = "error"  # default: "error"
+# reportOptionalSubscript = "error"  # default: "error"
+# reportOverlappingOverload = "error"  # default: "error"
+# reportPossiblyUnboundVariable = "error"  # default: "error"
+reportPrivateImportUsage = "none"  # default: "error"
+# reportPrivateUsage = "none"  # default: "none"
+# reportPropertyTypeMismatch = "none"  # default: "none"
+# reportRedeclaration = "error"  # default: "error"
+# reportReturnType = "error"  # default: "error"
+# reportSelfClsParameterName = "warning"  # default: "warning"
+# reportShadowedImports = "none"  # default: "none"
+# reportTypeCommentUsage = "none"  # default: "none"
+# reportTypedDictNotRequiredAccess = "error"  # default: "error"
+# reportUnboundVariable = "error"  # default: "error"
+# reportUndefinedVariable = "error"  # default: "error"
+# reportUnhashable = "error"  # default: "error"
+# reportUninitializedInstanceVariable = "none"  # default: "none"
+# reportUnknownArgumentType = "none"  # default: "none"
+# reportUnknownLambdaType = "none"  # default: "none"
+# reportUnknownMemberType = "none"  # default: "none"
+# reportUnknownParameterType = "none"  # default: "none"
+# reportUnknownVariableType = "none"  # default: "none"
 reportUnnecessaryCast = "error"  # default: "none"
-#reportUnnecessaryComparison = "none"  # default: "none"
-#reportUnnecessaryContains = "none"  # default: "none"
-#reportUnnecessaryIsInstance = "none"  # default: "none"
+# reportUnnecessaryComparison = "none"  # default: "none"
+# reportUnnecessaryContains = "none"  # default: "none"
+# reportUnnecessaryIsInstance = "none"  # default: "none"
 reportUnnecessaryTypeIgnoreComment = "error"  # default: "none"
-#reportUnreachable = "none"  # default: "none"
-#reportUnsupportedDunderAll = "warning"  # default: "warning"
+# reportUnreachable = "none"  # default: "none"
+# reportUnsupportedDunderAll = "warning"  # default: "warning"
 reportUntypedBaseClass = "error"  # default: "none"
 reportUntypedClassDecorator = "error"  # default: "none"
 reportUntypedFunctionDecorator = "error"  # default: "none"
 reportUntypedNamedTuple = "error"  # default: "none"
-#reportUnusedCallResult = "none"  # default: "none"
+# reportUnusedCallResult = "none"  # default: "none"
 reportUnusedClass = "error"  # default: "none"
-#reportUnusedCoroutine = "error"  # default: "error"
-#reportUnusedExcept = "error"  # default: "error"
-#reportUnusedExpression = "none"  # default: "none"
-reportUnusedFunction = "error"  # default: "none"
+# reportUnusedCoroutine = "error"  # default: "error"
+# reportUnusedExcept = "error"  # default: "error"
+# reportUnusedExpression = "none"  # default: "none"
+# reportUnusedFunction = "none"  # default: "none"
 reportUnusedImport = "error"  # default: "none"
 reportUnusedVariable = "error"  # default: "none"
 reportWildcardImportFromLibrary = "error"  # default: "warning"
