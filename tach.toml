@@ -6,100 +6,151 @@ exclude = [
     "**/tests",
     "**/venv",
 ]
-source_roots = [ "src"]
+source_roots = ["src"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm"
-depends_on = ["tsdm.logutils", "tsdm.metrics", "tsdm.tasks", "tsdm.timeseries", "tsdm.linalg", "tsdm.backend", "tsdm.encoders", "tsdm.optimizers", "tsdm.viz", "tsdm.datasets", "tsdm.types", "tsdm.models", "tsdm.random", "tsdm.datatools"]
+depends_on = [
+    "tsdm.backend",
+    "tsdm.datasets",
+    "tsdm.datatools",
+    "tsdm.encoders",
+    "tsdm.linalg",
+    "tsdm.logutils",
+    "tsdm.metrics",
+    "tsdm.models",
+    "tsdm.optimizers",
+    "tsdm.random",
+    "tsdm.tasks",
+    "tsdm.timeseries",
+    "tsdm.types",
+    "tsdm.viz",
+]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.config"
 depends_on = []
 utility = true
 
-[[modules ]]
+[[modules]]
 path = "tsdm.constants"
 depends_on = []
 utility = true
 
-[[modules ]]
+[[modules]]
 path = "tsdm.types"
 depends_on = []
 
-[[modules ]]
+[[modules]]
 path = "tsdm.testing"
-depends_on = [ "tsdm.types", "tsdm.dtypes"]
+depends_on = ["tsdm.types", "tsdm.dtypes"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.pprint"
 depends_on = ["tsdm.types", "tsdm.testing", "tsdm.dtypes"]
 utility = true
 
-[[modules ]]
+[[modules]]
 path = "tsdm.utils"
 depends_on = ["tsdm.types", "tsdm.testing"]
 utility = true
 
-[[modules ]]
+[[modules]]
 path = "tsdm.backend"
-depends_on = [ "tsdm.types", "numerical_types"]
+depends_on = ["tsdm.types", "numerical_types"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.viz"
 depends_on = []
 
-[[modules ]]
+[[modules]]
 path = "tsdm.optimizers"
 depends_on = []
 
-[[modules ]]
+[[modules]]
 path = "tsdm.metrics"
-depends_on = [ "tsdm.types"]
+depends_on = ["tsdm.types"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.random"
-depends_on = ["tsdm.types", "tsdm.backend", "tsdm.datatools", "numerical_types"]
+depends_on = ["tsdm.types", "tsdm.datatools"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.encoders"
-depends_on = ["tsdm.types", "tsdm.backend", "tsdm.encoders.universal", "tsdm.dtypes"]
+depends_on = [
+    "tsdm.types",
+    "tsdm.backend",
+    "tsdm.encoders.universal",
+    "tsdm.dtypes"
+]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.linalg"
 depends_on = ["tsdm.types"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.timeseries"
-depends_on = [ "tsdm.datasets", "tsdm.datatools"]
+depends_on = ["tsdm.datasets", "tsdm.datatools"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.logutils"
-depends_on = [ "tsdm.types", "tsdm.metrics", "tsdm.viz", "tsdm.optimizers", "tsdm.linalg"]
+depends_on = [
+    "tsdm.types",
+    "tsdm.metrics",
+    "tsdm.viz",
+    "tsdm.optimizers",
+    "tsdm.linalg"
+]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.datasets"
-depends_on = [ "tsdm.testing", "tsdm.backend", "tsdm.types", "tsdm.random", "tsdm.datatools", "tsdm.dtypes"]
+depends_on = [
+    "tsdm.backend",
+    "tsdm.datatools",
+    "tsdm.dtypes",
+    "tsdm.random",
+    "tsdm.testing",
+    "tsdm.types",
+]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.models"
-depends_on = ["tsdm.types", "tsdm.optimizers", "tsdm.testing", "tsdm.encoders"]
+depends_on = [
+    "tsdm.types",
+    "tsdm.optimizers",
+    "tsdm.testing",
+    "tsdm.encoders",
+]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.tasks"
-depends_on = ["tsdm.timeseries", "tsdm.random", "tsdm.metrics", "tsdm.encoders", "tsdm.datasets", "tsdm.datatools"]
+depends_on = [
+    "tsdm.datasets",
+    "tsdm.datatools",
+    "tsdm.encoders",
+    "tsdm.metrics",
+    "tsdm.random",
+    "tsdm.timeseries",
+]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.dtypes"
 depends_on = []
 
-[[modules ]]
+[[modules]]
 path = "tsdm.datatools"
 depends_on = ["tsdm.types", "tsdm.linalg", "tsdm.backend"]
 
-[[modules ]]
+[[modules]]
 path = "tsdm.encoders.universal"
-depends_on = ["tsdm.encoders", "tsdm.types", "tsdm.backend", "tsdm.linalg", "numerical_types"]
+depends_on = [
+    "numerical_types",
+    "tsdm.backend",
+    "tsdm.encoders",
+    "tsdm.linalg",
+    "tsdm.types",
+]
 
-[[modules ]]
+[[modules]]
 path = "numerical_types"
 depends_on = []
