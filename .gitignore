@@ -1,4 +1,6 @@
 # region custom ------------------------------------------------------------------------
+# local files
+*.local.*
 # temporary files / directories
 tmp*.py
 tmp*/
