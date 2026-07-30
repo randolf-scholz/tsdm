@@ -57,7 +57,7 @@ utility = true
 
 [[modules]]
 path = "tsdm.backend"
-depends_on = ["tsdm.types", "numerical_types"]
+depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.viz"
