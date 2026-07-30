@@ -14,8 +14,12 @@ import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import date_range, timedelta_range
 
-from tsdm.backend.numpy import TIME_UNITS
-from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
+from tsdm.constants import (
+    EXAMPLE_BOOLS,
+    EXAMPLE_EMOJIS,
+    EXAMPLE_STRINGS,
+    NUMPY_TIME_UNITS,
+)
 from tsdm.utils import timedelta, timestamp
 
 
@@ -63,7 +67,7 @@ def sample_timestamps(
         timestamps = np.insert(timestamps, -1, final_dt)
 
     # Convert to base unit based on freq
-    base_unit = next(u for u, val in TIME_UNITS.items() if freq_td >= val)
+    base_unit = next(u for u, val in NUMPY_TIME_UNITS.items() if freq_td >= val)
     return timestamps.astype(f"datetime64[{base_unit}]")
 
 
@@ -85,7 +89,7 @@ def sample_timedeltas[TD: dt.timedelta](
     rng = np.random.default_rng()
     timedeltas = timedelta_range(low_dt, high_dt, freq=freq_dt)
     # convert to numpy
-    base_unit = next(u for u, val in TIME_UNITS.items() if freq_dt >= val)
+    base_unit = next(u for u, val in NUMPY_TIME_UNITS.items() if freq_dt >= val)
     numpy_timedeltas = np.asarray(timedeltas, dtype=base_unit)
     sampled_timedeltas = rng.choice(numpy_timedeltas, size=size)
     return sampled_timedeltas

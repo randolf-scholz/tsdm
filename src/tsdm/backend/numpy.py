@@ -4,9 +4,6 @@ __all__ = [
     # types
     "NumpyDtype",
     "NumpyDtypeArg",
-    # Constants
-    "TIME_UNITS",
-    "NA_VALUES",
     # Functions
     "scalar",
     "drop_null",
@@ -16,7 +13,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Any, Final
+from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -28,33 +25,6 @@ r"""Type Alias for `numpy` dtypes."""
 
 type NumpyDtypeArg = str | type | NumpyDtype
 r"""Type Alias for `numpy` dtype arguments."""
-
-# NOTE: We rely on dict preserving insertion order (Python 3.7+)
-TIME_UNITS: Final[dict[str, np.timedelta64]] = {
-    "Y": np.timedelta64(1, "Y"),
-    "M": np.timedelta64(1, "M"),
-    "W": np.timedelta64(1, "W"),
-    "D": np.timedelta64(1, "D"),
-    "h": np.timedelta64(1, "h"),
-    "m": np.timedelta64(1, "m"),
-    "s": np.timedelta64(1, "s"),
-    "us": np.timedelta64(1, "us"),
-    "ns": np.timedelta64(1, "ns"),
-    "ps": np.timedelta64(1, "ps"),
-    "fs": np.timedelta64(1, "fs"),
-    "as": np.timedelta64(1, "as"),
-}
-r"""Time units for `numpy.timedelta64`."""
-
-
-NA_VALUES: Final[frozenset[object]] = frozenset(
-    {
-        np.nan,
-        np.datetime64(None),
-        np.timedelta64(None),
-    }
-)
-r"""Values that correspond to NaN."""
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:

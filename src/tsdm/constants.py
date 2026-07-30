@@ -19,6 +19,7 @@ __all__ = [
     "KEYWORD_ONLY",
     "NA_STRINGS",
     "NA_VALUES",
+    "NUMPY_TIME_UNITS",
     "UNDEFINED",
     "NULL_VALUES",
     "POSITIONAL_ONLY",
@@ -244,3 +245,20 @@ EXAMPLE_CATEGORIES: Final[list[tuple[str, str]]] = [
 r"""List of example categorical objects."""
 
 # endregion example collections---------------------------------------------------------
+
+# NOTE: We rely on dict preserving insertion order (Python 3.7+)
+NUMPY_TIME_UNITS: Final[dict[str, np.timedelta64]] = {
+    "Y": np.timedelta64(1, "Y"),
+    "M": np.timedelta64(1, "M"),
+    "W": np.timedelta64(1, "W"),
+    "D": np.timedelta64(1, "D"),
+    "h": np.timedelta64(1, "h"),
+    "m": np.timedelta64(1, "m"),
+    "s": np.timedelta64(1, "s"),
+    "us": np.timedelta64(1, "us"),
+    "ns": np.timedelta64(1, "ns"),
+    "ps": np.timedelta64(1, "ps"),
+    "fs": np.timedelta64(1, "fs"),
+    "as": np.timedelta64(1, "as"),
+}
+r"""Time units for `numpy.timedelta64`."""
