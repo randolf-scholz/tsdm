@@ -5,16 +5,12 @@ r"""Base Classes for dataset."""
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any) -> None
 
 __all__ = [
-    # Constants
-    "VERSION_REGEX",
     # ABCs & Protocols
     "Dataset",
     "DatasetBase",
     "DatasetMeta",
-    # Functions
-    "check_version_format",
-    "parse_version",
 ]
+
 import logging
 import re
 import shutil
@@ -70,6 +66,11 @@ class Dataset[Key, T](Protocol):  # +T
     and covers only methods that should be used at call sites, that is, methods
     from an already instantiated object.
     """
+
+    @property
+    def __version__(self) -> str | None:
+        r"""READ-ONLY: The version of the dataset (None=unversioned)."""
+        return None
 
     @property
     @abstractmethod
@@ -182,9 +183,6 @@ class DatasetBase[Key: str, T](
     # endregion derived members --------------------------------------------------------
 
     # region instance attributes -------------------------------------------------------
-    # TODO: Use typing.ReadOnly (https://peps.python.org/pep-0767/)
-    __version__: str | None = None
-    r"""READ-ONLY: The version of the dataset (None=unversioned)."""
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
@@ -235,11 +233,9 @@ class DatasetBase[Key: str, T](
             )
         return obj
 
-    @classmethod
-    def get_storage_paths(cls, version: str | None, /) -> dict[str, Path]:
+    def get_storage_paths(self, /) -> dict[str, Path]:
         r"""Get the storage paths for the given version."""
-        version = cls.check_version(version)
-        root_dir = cls.ROOT_DIR / (version or "")
+        root_dir = self.ROOT_DIR / (self.__version__ or "")
         return {
             CONFIG.DATASET_PATHS.ROOT: root_dir,
             CONFIG.DATASET_PATHS.RAWDATA: root_dir / CONFIG.DATASET_PATHS.RAWDATA,
@@ -247,19 +243,9 @@ class DatasetBase[Key: str, T](
             CONFIG.DATASET_PATHS.METADATA: root_dir / CONFIG.DATASET_PATHS.METADATA,
         }
 
-    @classmethod
-    def check_version(cls, version: str | None, /) -> str | None:
-        r"""Get the version of the dataset."""
-        if version is None:
-            return cls.__version__
-
-        version = str(version)
-        check_version_format(version)
-        return version
-
-    def set_storage_paths(self, version: str | None, /) -> None:
+    def init_storage_paths(self, /) -> None:
         r"""Set the storage paths for the given version."""
-        storage_paths = self.get_storage_paths(version)
+        storage_paths = self.get_storage_paths()
         self.ROOT_DIR = storage_paths[CONFIG.DATASET_PATHS.ROOT]  # type: ignore[misc]
         self.RAWDATA_DIR = storage_paths[CONFIG.DATASET_PATHS.RAWDATA]
         self.DATASET_DIR = storage_paths[CONFIG.DATASET_PATHS.PROCESSED]
@@ -283,8 +269,8 @@ class DatasetBase[Key: str, T](
         """
         self.verbose = verbose
         self.initialize = initialize
-        self.__version__ = self.check_version(version)
-        self.set_storage_paths(version)
+        object.__setattr__(self, "__version__", version)
+        self.init_storage_paths()
 
     def __post_init__(self) -> None:
         r"""Initialize the dataset."""
@@ -394,7 +380,15 @@ class DatasetBase[Key: str, T](
     @property
     def version_info(self) -> tuple[int, ...]:
         r"""Version information of the dataset."""
-        return parse_version(self.__version__)
+        version = self.__version__
+        if version is None:
+            return ()
+        if not re.fullmatch(r"\d+(?:\.\d+)*", version):
+            raise ValueError(
+                f"Version {version!r} is not valid! "
+                "Version must be of the form 'X.Y.Z' or 'latest'."
+            )
+        return tuple(int(part) for part in version.split("."))
 
     @cached_property
     def rawdata_paths(self) -> Mapping[str, Path]:
@@ -887,24 +881,3 @@ class DatasetBase[Key: str, T](
         return shapes_match and schema_matches and hash_matches
 
     # endregion validation methods -----------------------------------------------------
-
-
-VERSION_REGEX = r"\d+(?:\.\d+)*"
-r"""Regex for version strings."""
-
-
-def check_version_format(version: str | None, /) -> None:
-    r"""Check if version string is valid."""
-    if version is not None and not re.fullmatch(VERSION_REGEX, version):
-        raise ValueError(
-            f"Version {version!r} is not valid! "
-            "Version must be of the form 'X.Y.Z' or 'latest'."
-        )
-
-
-def parse_version(version: str | None, /) -> tuple[int, ...]:
-    r"""Parse version string into a tuple of integers."""
-    check_version_format(version)
-    if version is None:
-        return ()
-    return tuple(int(part) for part in version.split("."))
