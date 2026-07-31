@@ -20,7 +20,8 @@ __all__ = [
 
 from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
 from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
-from typing import Any, TypeGuard, TypeIs, get_protocol_members, is_protocol
+from types import EllipsisType, NoneType, NotImplementedType
+from typing import Any, Final, TypeGuard, TypeIs, get_protocol_members, is_protocol
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -32,7 +33,6 @@ import torch
 import torch.testing
 from pandas import NA, NaT
 
-from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES, NA_VALUES
 from tsdm.dtypes import DType
 from tsdm.types.aliases import FilePath, PythonScalar
 
@@ -124,11 +124,36 @@ def get_descriptors_and_callables(cls: type, /) -> set[str]:
     }
 
 
+_BUILTIN_TYPES: Final[frozenset[type]] = frozenset(
+    {
+        bool,
+        int,
+        float,
+        complex,
+        str,
+        bytes,
+        list,
+        tuple,
+        set,
+        frozenset,
+        dict,
+        type,
+        slice,
+        range,
+        object,
+        NoneType,
+        EllipsisType,
+        NotImplementedType,
+    }
+)
+r"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
+
+
 # NOTE: We ought to use TypeGuard here. see https://peps.python.org/pep-0742/#typeis-and-typeguard
 def is_builtin_type(obj: object, /) -> TypeGuard[type]:
     r"""Check if the object is a builtin type."""
     try:
-        return obj in BUILTIN_TYPES
+        return obj in _BUILTIN_TYPES
     except TypeError:
         return False
 
@@ -143,7 +168,8 @@ def is_dtype(arg: object, /) -> TypeIs[DType]:
 def is_builtin_constant(obj: object, /) -> bool:
     r"""Check if the object is a builtin constant."""
     try:
-        return obj in BUILTIN_CONSTANTS
+        # Builtin constants https://docs.python.org/3/library/constants.html
+        return obj in {None, True, False, Ellipsis, NotImplemented}
     except TypeError:
         return False
 
@@ -156,7 +182,7 @@ def is_builtin(obj: object, /) -> bool:
 def is_na_value(obj: object, /) -> bool:
     r"""Check if the object is a NA value."""
     try:
-        return obj in NA_VALUES
+        return bool((np.isscalar(obj) and np.isnan(obj)) or pd.isna(obj))
     except TypeError:
         return False
 
@@ -166,6 +192,7 @@ def is_scalar(obj: object, /) -> bool:
     return (
         is_builtin_constant(obj)
         or isinstance(obj, PythonScalar.__value__)
+        or np.isscalar(obj)
         or obj is NA
         or obj is NaT
     )

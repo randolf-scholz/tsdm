@@ -4,7 +4,6 @@ import pytest
 import torch
 
 from tsdm import linalg
-from tsdm.constants import ATOL, RTOL
 from tsdm.types.aliases import DimArg
 
 
@@ -66,5 +65,5 @@ def test_shape(*, shape: tuple[int, ...], dims: DimArg, keepdim: bool) -> None:
     tensor_norm = linalg.tensor_norm(x, p=2, axis=dims, keepdim=keepdim)
     assert scaled_norm.shape == reference_shape
     assert tensor_norm.shape == reference_shape
-    assert torch.allclose(tensor_norm, reference_norm, atol=ATOL, rtol=RTOL)
-    assert torch.allclose(scaled_norm, reference_scaled_norm, atol=ATOL, rtol=RTOL)
+    assert torch.allclose(tensor_norm, reference_norm, atol=1e-6, rtol=1e-6)
+    assert torch.allclose(scaled_norm, reference_scaled_norm, atol=1e-6, rtol=1e-6)

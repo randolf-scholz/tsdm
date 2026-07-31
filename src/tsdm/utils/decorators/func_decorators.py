@@ -18,7 +18,6 @@ from functools import wraps
 from time import perf_counter_ns
 from typing import Concatenate, NamedTuple, Optional
 
-from tsdm.constants import EMPTY_FN
 from tsdm.types.namedtuple import NTuple
 from tsdm.utils.funcutils import get_exit_point_names
 
@@ -132,12 +131,12 @@ def wrap_func[**P, R](  # +R
     logger.debug("Wrapping function")
 
     pre_func: Fn[..., None] = (
-        EMPTY_FN
+        (lambda *_, **__: None)
         if before is None
         else (before if pass_args else lambda *_, **__: before())
     )
     post_func: Fn[..., None] = (
-        EMPTY_FN
+        (lambda *_, **__: None)
         if after is None
         else (after if pass_args else lambda *_, **__: after())
     )
@@ -166,13 +165,13 @@ def wrap_method[**P, T, R](  # T, +R
     logger.debug("Wrapping method")
 
     pre_func: Fn[Concatenate[T, ...], None] = (
-        EMPTY_FN
+        (lambda *_, **__: None)
         if before is None
         else (before if pass_args else lambda self, *_, **__: before(self))
     )
 
     post_func: Fn[Concatenate[T, ...], None] = (
-        EMPTY_FN
+        (lambda *_, **__: None)
         if after is None
         else (after if pass_args else lambda self, *_, **__: after(self))
     )
@@ -222,7 +221,8 @@ def return_namedtuple[**P, T](
 
     # create namedtuple
     tuple_type: type[NTuple] = NamedTuple(  # type: ignore[misc]
-        name, zip(field_names, type_hints, strict=True)
+        name,
+        zip(field_names, type_hints, strict=True),  # pyrefly: ignore[bad-argument-count]
     )
 
     @wraps(func)

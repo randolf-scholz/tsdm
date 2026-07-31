@@ -1,6 +1,11 @@
 r"""Utility functions relating to function arguments and return values."""
 
 __all__ = [
+    "KEYWORD_ONLY",
+    "POSITIONAL_ONLY",
+    "POSITIONAL_OR_KEYWORD",
+    "VAR_KEYWORD",
+    "VAR_POSITIONAL",
     # Functions
     "accepts_varkwargs",
     "dataclass_args_kwargs",
@@ -38,19 +43,18 @@ from collections.abc import (
 from dataclasses import fields
 from functools import wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
-from typing import Any, Optional, overload
+from typing import Any, Final, Optional, overload
 
-from tsdm.constants import (
-    KEYWORD_ONLY,
-    POSITIONAL_ONLY,
-    POSITIONAL_OR_KEYWORD,
-    VAR_KEYWORD,
-    VAR_POSITIONAL,
-)
 from tsdm.types.aliases import Nested, NestedBuiltin
 from tsdm.types.dataclass import Dataclass, issubclass_dataclass
 
 from .frozenmap import FrozenMap
+
+KEYWORD_ONLY: Final = Parameter.KEYWORD_ONLY
+POSITIONAL_ONLY: Final = Parameter.POSITIONAL_ONLY
+POSITIONAL_OR_KEYWORD: Final = Parameter.POSITIONAL_OR_KEYWORD
+VAR_KEYWORD: Final = Parameter.VAR_KEYWORD
+VAR_POSITIONAL: Final = Parameter.VAR_POSITIONAL
 
 
 def rpartial[**P, R](  # +R

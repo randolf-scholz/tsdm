@@ -1,6 +1,7 @@
 r"""Test functions for data (pandas/numpy/polars/pyarrow/etc.)."""
 
 __all__ = [
+    "BOOLEAN_PAIRS",
     # functions
     "compare_dataframes",
     "get_uniques",
@@ -11,12 +12,23 @@ __all__ = [
 ]
 
 
-from typing import Optional, cast
+from typing import Final, Optional, cast
 
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tsdm.constants import BOOLEAN_PAIRS
+BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
+    {"f"     : False, "t"    : True},
+    {"false" : False, "true" : True},
+    {"n"     : False, "y"    : True},
+    {"no"    : False, "yes"  : True},
+    {"-"     : False, "+"    : True},
+    {0       : False, 1      : True},
+    {-1      : False, +1     : True},
+    {0.0     : False, 1.0    : True},
+    {-1.0    : False, +1.0   : True},
+]  # fmt: skip
+r"""Matched pairs of values that correspond to booleans."""
 
 
 def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:

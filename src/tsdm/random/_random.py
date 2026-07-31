@@ -1,6 +1,7 @@
 r"""Utility functions for random number generation."""
 
 __all__ = [
+    "NUMPY_TIME_UNITS",
     # Functions
     "random_data",
     "sample_timestamps",
@@ -8,24 +9,35 @@ __all__ = [
 ]
 
 import datetime as dt
-from typing import Optional
+from typing import Final, Optional
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import date_range, timedelta_range
 
-from tsdm.constants import (
-    EXAMPLE_BOOLS,
-    EXAMPLE_EMOJIS,
-    EXAMPLE_STRINGS,
-    NUMPY_TIME_UNITS,
-)
 from tsdm.utils import timedelta, timestamp
+
+# NOTE: We rely on dict preserving insertion order (Python 3.7+)
+NUMPY_TIME_UNITS: Final[dict[str, np.timedelta64]] = {
+    "Y": np.timedelta64(1, "Y"),
+    "M": np.timedelta64(1, "M"),
+    "W": np.timedelta64(1, "W"),
+    "D": np.timedelta64(1, "D"),
+    "h": np.timedelta64(1, "h"),
+    "m": np.timedelta64(1, "m"),
+    "s": np.timedelta64(1, "s"),
+    "us": np.timedelta64(1, "us"),
+    "ns": np.timedelta64(1, "ns"),
+    "ps": np.timedelta64(1, "ps"),
+    "fs": np.timedelta64(1, "fs"),
+    "as": np.timedelta64(1, "as"),
+}
+r"""Time units for `numpy.timedelta64`."""
 
 
 def sample_timestamps(
     start: str | dt.datetime = "today",
-    final: Optional[dt.datetime] = None,
+    stop: Optional[dt.datetime] = None,
     /,
     *,
     size: int,
@@ -38,7 +50,7 @@ def sample_timestamps(
 
     Args:
         start: TimeStampLike, default <today>
-        final: TimeStampLike, default <today>+<24h>
+        stop: TimeStampLike, default <today>+<24h>
         size: Number of timestamps to sample.
         freq: The smallest possible timedelta between distinct timestamps.
         replace: Whether the sample is with or without replacement.
@@ -46,9 +58,9 @@ def sample_timestamps(
         include_final: If `True`, then `final` will always be the final sampled timestamp.
     """
     start_dt = timestamp(start)
-    final_dt = start_dt + timedelta("24h") if final is None else timestamp(final)
+    final_dt = start_dt + timedelta("24h") if stop is None else timestamp(stop)
     freq_td = timedelta(freq)
-    start_dt, final_dt = start_dt.round(freq_td), final_dt.round(freq_td)
+    start_dt, final_dt = start_dt.round(freq_td), final_dt.round(freq_td)  # pyright: ignore[reportArgumentType]
 
     # randomly sample timestamps
     rng = np.random.default_rng()
@@ -83,7 +95,7 @@ def sample_timedeltas[TD: dt.timedelta](
     low_dt = timedelta(low)
     high_dt = timedelta(high)
     freq_dt = timedelta(freq)
-    low_dt, high_dt = low_dt.round(freq_dt), high_dt.round(freq_dt)
+    low_dt, high_dt = low_dt.round(freq_dt), high_dt.round(freq_dt)  # pyright: ignore[reportArgumentType]
 
     # randomly sample timedeltas
     rng = np.random.default_rng()
@@ -93,6 +105,40 @@ def sample_timedeltas[TD: dt.timedelta](
     numpy_timedeltas = np.asarray(timedeltas, dtype=base_unit)
     sampled_timedeltas = rng.choice(numpy_timedeltas, size=size)
     return sampled_timedeltas
+
+
+_EXAMPLE_BOOLS: Final[list[bool]] = [True, False]
+r"""List of example bool objects."""
+
+_EXAMPLE_STRINGS: Final[list[str]] = [
+    "Alfa",
+    "Bravo",
+    "Charlie",
+    "Delta",
+    "Echo",
+    "Foxtrot",
+    "Golf",
+    "Hotel",
+    "India",
+    "Juliett",
+    "Kilo",
+    "Lima",
+    "Mike",
+    "November",
+    "Oscar",
+    "Papa",
+    "Quebec",
+    "Romeo",
+    "Sierra",
+    "Tango",
+    "Uniform",
+    "Victor",
+    "Whiskey",
+    "X-ray",
+    "Yankee",
+    "Zulu",
+]
+r"""List of example string objects."""
 
 
 def random_data(
@@ -105,20 +151,18 @@ def random_data(
     dtype = np.dtype(dtype)
     rng = np.random.default_rng()
     if np.issubdtype(dtype, np.integer):
-        iinfo = np.iinfo(dtype)
+        iinfo = np.iinfo(dtype)  # pyrefly: ignore[no-matching-overload]
         data = rng.integers(low=iinfo.min, high=iinfo.max, size=size)
         result = data.astype(dtype)
     elif np.issubdtype(dtype, np.floating):
-        finfo = np.finfo(dtype)
+        finfo = np.finfo(dtype)  # pyrefly: ignore[no-matching-overload]
         exp = rng.integers(low=finfo.minexp, high=finfo.maxexp, size=size)
         mant = rng.uniform(low=-2, high=+2, size=size)
         result = (mant * 2**exp).astype(dtype)
     elif np.issubdtype(dtype, np.bool_):
-        result = rng.choice(EXAMPLE_BOOLS, size=size)
+        result = rng.choice(_EXAMPLE_BOOLS, size=size)
     elif np.issubdtype(dtype, np.str_):
-        result = rng.choice(EXAMPLE_EMOJIS, size=size)
-    elif np.issubdtype(dtype, np.bytes_):
-        result = rng.choice(EXAMPLE_STRINGS, size=size)
+        result = rng.choice(_EXAMPLE_STRINGS, size=size)
     else:
         raise NotImplementedError
 
