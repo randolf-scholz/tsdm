@@ -14,7 +14,6 @@ __all__ = [
     "hash_zip_contents",
     "to_alphanumeric",
     "to_base",
-    "to_int",
     "tokenize_array",
     "tokenize_bool",
     "tokenize_byte_stream",
@@ -133,33 +132,30 @@ class Hash(NamedTuple):
                 raise TypeError(f"Cannot create Hash from {type(arg)}.")
 
     def to_int(self, *, base: Optional[int] = None) -> int:
-        return to_int(self.hash_value, base=base)
+        r"""Convert a string to an integer, autodetecting the base if necessary."""
+        value = self.hash_value
+        # if only decimals:
+        if base is None:
+            if all(c in "01" for c in value):  # binary
+                base = 2
+            elif all(c in string.octdigits for c in value):  # octal
+                base = 8
+            elif all(c in string.digits for c in value):  # decimal
+                base = 10
+            elif all(c in string.hexdigits for c in value):  # hexadecimal
+                base = 16
+            elif all(
+                c in string.ascii_lowercase + string.digits for c in value
+            ):  # alphanumeric
+                base = 36
+            else:
+                raise ValueError(f"Could not autodetect base for {value!r}.")
+        return int(value, base=base)
 
     def __str__(self) -> str:
         if self.hash_algorithm is None:
             return self.hash_value
         return f"{self.hash_algorithm}:{self.hash_value}"
-
-
-def to_int(value: str, /, *, base: Optional[int] = None) -> int:
-    r"""Convert a string to an integer, autodetecting the base if necessary."""
-    # if only decimals:
-    if base is None:
-        if all(c in "01" for c in value):  # binary
-            base = 2
-        elif all(c in string.octdigits for c in value):  # octal
-            base = 8
-        elif all(c in string.digits for c in value):  # decimal
-            base = 10
-        elif all(c in string.hexdigits for c in value):  # hexadecimal
-            base = 16
-        elif all(
-            c in string.ascii_lowercase + string.digits for c in value
-        ):  # alphanumeric
-            base = 36
-        else:
-            raise ValueError(f"Could not autodetect base for {value!r}.")
-    return int(value, base=base)
 
 
 def to_alphanumeric(n: int, /, *, chars: str = HEXDIGITS) -> str:
@@ -392,7 +388,7 @@ def tokenize_array(array: SupportsArray, hasher: str | Hasher, /) -> bytes:
             return tokenize_pyarrow(array, hasher)
         case pl.DataFrame() | pl.Series():
             return tokenize_polars(array, hasher)
-        case SupportsArray():
+        case SupportsArray():  # pyrefly: ignore[unsafe-overlap]
             return tokenize_numpy(array.__array__(), hasher)
         case _:
             raise TypeError(f"Cannot hash array of type {type(array)}.")
