@@ -2,8 +2,8 @@ r"""Utilities for testing and validation."""
 
 __all__ = [
     # Submodules
-    "data",
     "hashutils",
+    "validation",
     # Functions
     "assert_arrays_close",
     "assert_arrays_equal",
@@ -19,13 +19,10 @@ __all__ = [
     "is_private",
     "is_scalar",
     "is_zipfile",
-    "series_is_boolean",
-    "series_is_int",
-    "series_numeric_is_boolean",
     "supports_issubclass",
 ]
 
-from . import data, hashutils
+from . import hashutils, validation
 from ._testing import (
     assert_arrays_close,
     assert_arrays_equal,
@@ -43,4 +40,3 @@ from ._testing import (
     is_zipfile,
     supports_issubclass,
 )
-from .data import series_is_boolean, series_is_int, series_numeric_is_boolean
