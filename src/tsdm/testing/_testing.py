@@ -11,14 +11,13 @@ __all__ = [
     "is_builtin_type",
     "is_dunder",
     "is_private",
-    "is_flattened",
     "is_na_value",
     "is_scalar",
     "is_zipfile",
     "supports_issubclass",
 ]
 
-from collections.abc import Iterable, Mapping, Sequence, Set as AbstractSet
+from collections.abc import Iterable, Sequence, Set as AbstractSet
 from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
 from types import EllipsisType, NoneType, NotImplementedType
 from typing import Any, Final, TypeGuard, TypeIs, get_protocol_members, is_protocol
@@ -158,13 +157,6 @@ def is_builtin_type(obj: object, /) -> TypeGuard[type]:
         return False
 
 
-def is_dtype(arg: object, /) -> TypeIs[DType]:
-    r"""Check if a string is a valid dtype."""
-    return isinstance(
-        arg, np.dtype | torch.dtype | pa.DataType | pd.api.extensions.ExtensionDtype
-    )
-
-
 def is_builtin_constant(obj: object, /) -> bool:
     r"""Check if the object is a builtin constant."""
     try:
@@ -177,6 +169,13 @@ def is_builtin_constant(obj: object, /) -> bool:
 def is_builtin(obj: object, /) -> bool:
     r"""Check if the object is a builtin constant."""
     return isbuiltin(obj) or is_builtin_constant(obj) or is_builtin_type(obj)
+
+
+def is_dtype(arg: object, /) -> TypeIs[DType]:
+    r"""Check if a string is a valid dtype."""
+    return isinstance(
+        arg, np.dtype | torch.dtype | pa.DataType | pd.api.extensions.ExtensionDtype
+    )
 
 
 def is_na_value(obj: object, /) -> bool:
@@ -195,16 +194,6 @@ def is_scalar(obj: object, /) -> bool:
         or np.isscalar(obj)
         or obj is NA
         or obj is NaT
-    )
-
-
-def is_flattened(
-    d: Mapping, /, *, key_type: type = object, val_type: type = Mapping
-) -> bool:
-    r"""Check if mapping is flattened."""
-    return all(
-        isinstance(key, key_type) and not isinstance(val, val_type)
-        for key, val in d.items()
     )
 
 
