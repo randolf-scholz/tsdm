@@ -2,7 +2,6 @@ r"""Utility functions that act on tabular data."""
 
 __all__ = [
     # types
-    "MaybeNA",
     "BoundaryInformation",
     "InlineTable",
     # Functions
@@ -22,7 +21,6 @@ from typing import Any, NotRequired, Optional, Required, TypedDict, overload
 import pandas as pd
 import pyarrow as pa
 from pandas import DataFrame, Series
-from pandas.api.typing import NAType
 from scipy import stats
 
 from tsdm.backend.pandas import (
@@ -35,9 +33,6 @@ from tsdm.backend.pandas import (
 )
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
 from tsdm.constants import UNDEFINED
-
-type MaybeNA[T] = T | NAType
-r"""Type Alias for nullable types (pandas-specific)."""
 
 
 class BoundaryInformation(TypedDict):
@@ -162,7 +157,7 @@ def select_outliers[T: Series | DataFrame](
     upper_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
 ) -> T:
     r"""Detect outliers in a Series or DataFrame, given boundary values."""
-    lims = {
+    lims: Mapping[str, Any] = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
         "lower_inclusive": lower_inclusive,
@@ -245,14 +240,13 @@ def remove_outliers[T: Series | DataFrame](
     inplace: bool = False,
 ) -> T:
     r"""Remove outliers from a DataFrame, given boundary values."""
-    lims = {
+    lims: Mapping[str, Any] = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
         "lower_inclusive": lower_inclusive,
         "upper_inclusive": upper_inclusive,
     }
     undefined = [val is UNDEFINED for val in lims.values()]
-    options: Any
 
     if limits is UNDEFINED:
         if any(undefined):

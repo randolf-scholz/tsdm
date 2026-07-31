@@ -22,8 +22,9 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit, nn
 from torch.utils.data import DataLoader, Dataset
 
+from tsdm.backend.pandas import MaybeNA
 from tsdm.datasets import KiwiBenchmark
-from tsdm.datatools import MappingDataset, MaybeNA
+from tsdm.datatools import MappingDataset
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS

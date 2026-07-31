@@ -3,8 +3,6 @@ r"""Subclasses of `torch.util.data.Dataset`."""
 __all__ = [
     # Modules
     # "timeseries",
-    # Types
-    "MaybeNA",
     # Protocols
     "TorchDataset",
     "MapDataset",
@@ -40,7 +38,6 @@ __all__ = [
 
 from ._datatools import (
     InlineTable,
-    MaybeNA,
     aggregate_nondestructive,
     get_integer_cols,
     is_integer_series,

@@ -5,6 +5,7 @@ __all__ = [
     "PandasDTypeArg",
     "PandasDtype",
     "PandasType",
+    "MaybeNA",
     # Constants
     "NA_VALUES",
     # Functions
@@ -46,9 +47,13 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
+from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.aliases import Axis, PythonScalar
+
+type MaybeNA[T] = T | NAType
+r"""Type Alias for nullable types (pandas-specific)."""
 
 __logger__ = logging.getLogger(__name__)
 
@@ -303,8 +308,8 @@ def select_outliers_dataframe(
     return mask
 
 
-def remove_outliers_series(
-    s: Series,
+def remove_outliers_series[S: Series](
+    s: S,
     /,
     *,
     drop: bool = True,
@@ -313,7 +318,7 @@ def remove_outliers_series(
     upper_bound: float | None,
     lower_inclusive: bool | None,
     upper_inclusive: bool | None,
-) -> Series:
+) -> S:
     r"""Remove outliers from a Series, given boundary values."""
     if s.dtype == "category":
         __logger__.info("Skipping categorical column.")
@@ -354,8 +359,8 @@ def remove_outliers_series(
     return s
 
 
-def remove_outliers_dataframe(
-    df: DataFrame,
+def remove_outliers_dataframe[F: DataFrame](
+    df: F,
     /,
     *,
     drop: bool = True,
@@ -365,7 +370,7 @@ def remove_outliers_dataframe(
     lower_inclusive: Mapping[str, bool | None],
     upper_inclusive: Mapping[str, bool | None],
     erroron_extra_bounds: bool = False,
-) -> DataFrame:
+) -> F:
     r"""Remove outliers from a DataFrame, given boundary values."""
     __logger__.info("Removing outliers from DataFrame.")
     df = df.copy() if not inplace else df
