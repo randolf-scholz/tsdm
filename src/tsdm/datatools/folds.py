@@ -6,7 +6,6 @@ __all__ = [
     "folds_as_frame",
     "folds_as_sparse_frame",
     "folds_from_groups",
-    # Classes
 ]
 
 from collections.abc import Collection, Iterable, Mapping, Sequence
@@ -61,7 +60,7 @@ def folds_from_groups(
 
     unique_groups = groups.unique()
     generator = np.random.default_rng(seed)
-    shuffled = generator.permutation(unique_groups)
+    shuffled = generator.permutation(unique_groups)  # pyright: ignore[reportCallIssue, reportArgumentType]
     chunks = np.array(np.array_split(shuffled, num_chunks), dtype=object)
 
     slices, a, b = {}, 0, 0
@@ -164,7 +163,7 @@ def folds_as_sparse_frame(df: DataFrame, /) -> DataFrame:
     r"""Create a sparse table holding the fold information."""
     # TODO: simplify this code. It should just be pd.concat(folds)
     # get categoricals
-    categories = {col: s.astype("category").dtype.categories for col, s in df.items()}
+    categories = {col: s.astype("category").cat.categories for col, s in df.items()}
 
     match df.columns:
         case MultiIndex() as multi_index:
