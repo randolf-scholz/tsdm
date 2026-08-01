@@ -530,7 +530,8 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
         so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
-    __version__: str = "1.4"  # pyright: ignore[reportIncompatibleVariableOverride]
+    DEFAULT_VERSION = "1.4"
+    __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     SOURCE_URL = r"https://physionet.org/content/mimiciii/get-zip/"
     INFO_URL = r"https://physionet.org/content/mimiciii/"
@@ -546,7 +547,7 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
         super().__post_init__()
 
     @property
-    def rawdata_files(self) -> list[str]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def rawdata_files(self) -> list[str]:  # type: ignore[override]  # pyright: ignore[reportIncompatibleVariableOverride]
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
 
     @cached_property

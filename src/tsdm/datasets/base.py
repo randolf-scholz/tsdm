@@ -17,7 +17,7 @@ import shutil
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -142,7 +142,8 @@ class DatasetBase[Key: str, T](
     """
 
     # region class attributes ----------------------------------------------------------
-    # Abstract members: table_names, clean_table
+    DEFAULT_VERSION: ClassVar[str | None] = None
+    r"""Version selected when the caller does not provide one."""
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
@@ -153,26 +154,19 @@ class DatasetBase[Key: str, T](
     r"""HTTP address containing additional information about the dataset."""
     ID: ClassVar[str]  # typically the class name
     r"""READ_ONLY: Unique identifier for the dataset."""
-    ROOT_DIR: ClassVar[Path]  # on class:  ~/.tsdm/datasets/<name>/
+    DATASET_ROOT_DIR: ClassVar[Path]  # on class:  ~/.tsdm/datasets/<name>/
     r"""Location where the dataset is stored."""
     # endregion class attributes -------------------------------------------------------
 
-    # region abstract members ----------------------------------------------------------
-    @property
-    @abstractmethod
-    def rawdata_files(self) -> Collection[str]: ...  # pyright: ignore[reportRedeclaration]
-    @property
-    @abstractmethod
-    def table_names(self) -> Collection[Key]: ...  # pyright: ignore[reportRedeclaration]
-
-    rawdata_files: Collection[str]  # type: ignore[no-redef]
+    # region dataset metadata ----------------------------------------------------------
+    rawdata_files: Sequence[str]
     r"""READ_ONLY: The names of the raw data files that make up the dataset."""
-    table_names: Collection[Key]  # type: ignore[no-redef]  # pyright: ignore[reportIncompatibleMethodOverride]
+    table_names: Collection[Key]  # pyright: ignore[reportIncompatibleMethodOverride]
     r"""READ_ONLY: The names of the tables that make up the dataset."""
-    # endregion abstract members  ------------------------------------------------------
+    # endregion dataset metadata  ------------------------------------------------------
 
     # region derived members -----------------------------------------------------------
-    STORAGE_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/
+    ROOT_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/
     r"""READ_ONLY: Location where the dataset version is stored."""
     RAWDATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/raw
     r"""READ_ONLY: Location where the raw data is stored."""
@@ -235,7 +229,7 @@ class DatasetBase[Key: str, T](
 
     def get_storage_paths(self, /) -> dict[str, Path]:
         r"""Get the storage paths for the given version."""
-        root_dir = self.ROOT_DIR / (self.__version__ or "")
+        root_dir = self.DATASET_ROOT_DIR / (self.__version__ or "")
         return {
             CONFIG.DATASET_PATHS.ROOT: root_dir,
             CONFIG.DATASET_PATHS.RAWDATA: root_dir / CONFIG.DATASET_PATHS.RAWDATA,
@@ -246,7 +240,7 @@ class DatasetBase[Key: str, T](
     def init_storage_paths(self, /) -> None:
         r"""Set the storage paths for the given version."""
         storage_paths = self.get_storage_paths()
-        self.ROOT_DIR = storage_paths[CONFIG.DATASET_PATHS.ROOT]  # type: ignore[misc]
+        self.ROOT_DIR = storage_paths[CONFIG.DATASET_PATHS.ROOT]
         self.RAWDATA_DIR = storage_paths[CONFIG.DATASET_PATHS.RAWDATA]
         self.DATASET_DIR = storage_paths[CONFIG.DATASET_PATHS.PROCESSED]
         self.METADATA_DIR = storage_paths[CONFIG.DATASET_PATHS.METADATA]
@@ -258,18 +252,18 @@ class DatasetBase[Key: str, T](
         *,
         initialize: bool = True,
         verbose: bool = True,
-        version: Optional[str] = None,
+        version: str | None = None,
     ) -> None:
         r"""Initialize the dataset.
 
         Args:
             initialize: Whether to initialize the dataset.
-            version: Version of the dataset. Leave empty for unversioned dataset.
+            version: Version of the dataset. If omitted, use ``default_version()``.
             verbose: Whether to print verbose output.
         """
         self.verbose = verbose
         self.initialize = initialize
-        object.__setattr__(self, "__version__", version)
+        self._version = version or self.DEFAULT_VERSION
         self.init_storage_paths()
 
     def __post_init__(self) -> None:
@@ -377,6 +371,11 @@ class DatasetBase[Key: str, T](
     # endregion serialization methods --------------------------------------------------
 
     # region properties ----------------------------------------------------------------
+    @property
+    def __version__(self) -> str | None:
+        r"""The selected dataset version; ``None`` denotes an unversioned dataset."""
+        return self._version
+
     @property
     def version_info(self) -> tuple[int, ...]:
         r"""Version information of the dataset."""

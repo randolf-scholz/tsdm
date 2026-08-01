@@ -13,7 +13,8 @@ from tsdm.types.timeseries import TSC_Keys
 class KiwiBenchmark(DatasetBase[TSC_Keys, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
-    __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
+    DEFAULT_VERSION = "1.0"
+    __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     SOURCE_URL = (
         r"https://tubcloud.tu-berlin.de/s/3CyRJMSqj5feQo2/download?path=%2F&files="

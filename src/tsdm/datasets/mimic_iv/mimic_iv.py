@@ -737,6 +737,9 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
     - `diagnoses_icd` (columns modified/type: `icd_code` stored as `VARCHAR` (trimmed)).
     """
 
+    DEFAULT_VERSION = "1.0"
+    __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
+
     SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip"
     CONTENT_URL = r"https://physionet.org/files/mimiciv"
     HOME_URL = r"https://mimic.mit.edu/"
@@ -748,14 +751,12 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
         "mimic-iv-2.2.zip": "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74",
     }
 
-    __version__: str = "1.0"  # pyright: ignore[reportIncompatibleVariableOverride]
-
     @property
-    def rawdata_files(self) -> list[str]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def rawdata_files(self) -> list[str]:  # type: ignore[override]  # pyright: ignore[reportIncompatibleVariableOverride]
         return [f"mimic-iv-{self.__version__}.zip"]
 
     @property
-    def table_names(self) -> list[MIMIC_IV_Key]:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def table_names(self) -> list[MIMIC_IV_Key]:  # type: ignore[override]  # pyright: ignore[reportIncompatibleVariableOverride]
         expected_names = list(self.filelist)
         type_hinted_names = get_args(MIMIC_IV_Key.__value__)
         if unknown_names := set(expected_names) - set(type_hinted_names):
@@ -808,7 +809,7 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
         }  # fmt: skip
 
         if self.version_info >= (2, 0):
-            files |= {
+            files |= {  # pyrefly: ignore[bad-assignment]
                 "admissions"       : f"{top}/hosp/admissions.csv.gz",       # NOTE: changed folder
                 "patients"         : f"{top}/hosp/patients.csv.gz",         # NOTE: changed folder
                 "transfers"        : f"{top}/hosp/transfers.csv.gz",        # NOTE: changed folder
@@ -817,7 +818,7 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
             }  # fmt: skip
 
         if self.version_info >= (2, 2):
-            files |= {
+            files |= {  # pyrefly: ignore[bad-assignment]
                 "caregiver"        : f"{top}/icu/caregiver.csv.gz",  # NOTE: new table
                 "provider"         : f"{top}/hosp/provider.csv.gz",  # NOTE: new table
             }  # fmt: skip
@@ -928,7 +929,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
 
     def __post_init__(self) -> None:
         # reuse the same data as the raw dataset
-        self.RAWDATA_DIR = MIMIC_IV_RAW.ROOT_DIR / self.__version__ / "rawdata"
+        self.RAWDATA_DIR = MIMIC_IV_RAW.DATASET_ROOT_DIR / self.__version__ / "rawdata"
         super().__post_init__()
 
     def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
@@ -986,7 +987,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 table = table.set_column(
                     table.column_names.index("result_value"),
                     "result_value",
-                    pc.split_pattern(table["result_value"], "/"),
+                    pc.split_pattern(table["result_value"], "/"),  # pyright: ignore[reportAttributeAccessIssue]
                 )
 
                 # convert to pandas. Now each column contains NaN or list of floats.a
