@@ -5,7 +5,6 @@ __all__ = [
     "PandasDTypeArg",
     "PandasDtype",
     "PandasType",
-    "MaybeNA",
     # Constants
     "NA_VALUES",
     # Functions
@@ -47,13 +46,9 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
-from pandas.api.typing import NAType
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.aliases import Axis, PythonScalar
-
-type MaybeNA[T] = T | NAType
-r"""Type Alias for nullable types (pandas-specific)."""
 
 __logger__ = logging.getLogger(__name__)
 

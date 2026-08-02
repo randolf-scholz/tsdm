@@ -18,11 +18,11 @@ from warnings import deprecated
 
 import pandas as pd
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
+from pandas.api.typing import NAType
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit, nn
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.backend.pandas import MaybeNA
 from tsdm.datasets import KiwiBenchmark
 from tsdm.datatools import MappingDataset
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
@@ -42,7 +42,7 @@ class Sample(NamedTuple):
     originals: Optional[tuple[DataFrame, DataFrame]] = None
 
 
-def get_induction_time(s: Series, /) -> MaybeNA[Timestamp]:
+def get_induction_time(s: Series, /) -> Timestamp | NAType:
     r"""Compute the induction time."""
     inducer = s["InducerConcentration"]
     total_induction = inducer[-1] - inducer[0]
@@ -55,9 +55,9 @@ def get_induction_time(s: Series, /) -> MaybeNA[Timestamp]:
     inductions = inducer[mask]
 
     if len(inductions) == 0:
-        raise ValueError("No Induction occured!")
+        raise ValueError("No Induction occurred!")
     if len(inductions) > 1:
-        raise ValueError("Multiple Inductions occured!")
+        raise ValueError("Multiple Inductions occurred!")
 
     return inductions.first_valid_index()
 
