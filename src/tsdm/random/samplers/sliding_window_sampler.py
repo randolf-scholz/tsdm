@@ -30,7 +30,6 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import Interval
 
-from numerical_types.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.constants import RNG
 from tsdm.datatools.collections import (
     SequentialDataset,
@@ -41,6 +40,10 @@ from tsdm.types.abc import Vec
 from tsdm.utils import timedelta, timestamp
 
 from .base import BaseSampler
+
+# TODO: consider using numerical_types.scalars.{SpanLikeScalar, TimeLikeScalar}
+type TimeLikeScalar[SpanT] = Any
+type SpanLikeScalar = Any
 
 
 # region helper functions --------------------------------------------------------------
@@ -143,7 +146,7 @@ type MULTI = Literal[HORIZON.MULTI]
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
 class SlidingWindowSampler[
-    DType: TimeLikeScalar,  # (np.integer, np.floating, np.datetime64, np.timedelta64)
+    DType: np.number | np.datetime64 | np.timedelta64,
     ModeVar: (B, M, S, I, P, X, UNKNOWN),
     MultiVar: (ONE, MULTI),
 ](BaseSampler):
@@ -188,7 +191,7 @@ class SlidingWindowSampler[
     type Mode = Literal["slice", "mask", "bounds", "interval", "points", "index"]
     r"""Type hint for the mode."""
 
-    data: NDArray[DType]  # type: ignore[type-var]  # pyright: ignore[reportInvalidTypeForm]
+    data: NDArray[DType]  # type: ignore[type-var]
 
     size: SpanLikeScalar
     stride: SpanLikeScalar
@@ -201,7 +204,7 @@ class SlidingWindowSampler[
     # dependent variables
     tmin: DType
     tmax: DType
-    cumulative_horizons: NDArray[SpanLikeScalar]  # type: ignore[type-var]  # pyright: ignore[reportInvalidTypeForm]
+    cumulative_horizons: NDArray[SpanLikeScalar]  # type: ignore[type-var]
 
     if TYPE_CHECKING:
         # region __new__ overloads -----------------------------------------------------
@@ -584,7 +587,7 @@ class SlidingWindowSampler[
         # region set basic attributes --------------------------------------------------
         self.tmin = cast("DType", get_first_sample(data_source))
         self.tmax = cast("DType", get_last_sample(data_source))
-        zero_td = cast("Any", self.tmin - self.tmin)  # timedelta of the correct type
+        zero_td = cast("Any", self.tmin - self.tmin)  # pyrefly: ignore[unsupported-operation]  # pyright: ignore[reportOperatorIssue]
         dt_type: type[DType] = type(self.tmin)
         td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)
@@ -602,17 +605,15 @@ class SlidingWindowSampler[
             case str(unit):
                 self.multi_horizon = False
                 self.horizons = np.array([timedelta(unit)], dtype=td_type)
-            case SpanLikeScalar() as td:
-                self.multi_horizon = False
-                self.horizons = np.array([td], dtype=td_type)
             case Iterable() as vals:
                 self.multi_horizon = True
                 self.horizons = np.array(
                     [(timedelta(td) if isinstance(td, str) else td) for td in vals],
                     dtype=td_type,
                 )
-            case _:
-                raise TypeError(f"Invalid type {type(horizons)} for {horizons=}")
+            case td_scalar:
+                self.multi_horizon = False
+                self.horizons = np.array([td_scalar], dtype=td_type)
 
         zero = np.array([zero_td], dtype=td_type)
         self.cumulative_horizons = np.cumsum(np.concatenate([zero, self.horizons]))
