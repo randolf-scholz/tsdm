@@ -89,7 +89,7 @@ from .logfuncs import (
     log_table,
     log_values,
 )
-from .utils import TargetsAndPredics, compute_metrics, save_checkpoint
+from .utils import TargetsAndPredictions, compute_metrics, save_checkpoint
 
 
 @runtime_checkable
@@ -351,7 +351,7 @@ class EvaluationCallback(BaseCallback):
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
             scalars = compute_metrics(
-                self.metrics, targets=result.targets, predics=result.predics
+                self.metrics, targets=result.targets, predics=result.predictions
             )
             for metric, value in scalars.items():
                 self.history.loc[step, (key, metric)] = value.cpu().item()
@@ -372,7 +372,7 @@ class EvaluationCallback(BaseCallback):
                 self.best_epoch.loc[step, (key, metric)] = best_value
 
     @torch.no_grad()
-    def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
+    def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredictions:
         r"""Return the targets and predictions for the given dataloader."""
         targets_list: list[Tensor] = []
         predics_list: list[Tensor] = []
@@ -388,13 +388,13 @@ class EvaluationCallback(BaseCallback):
             padding_value=torch.nan,
         ).squeeze()
 
-        predics = torch.nn.utils.rnn.pad_sequence(
+        predictions = torch.nn.utils.rnn.pad_sequence(
             list(chain.from_iterable(predics_list)),
             batch_first=True,
             padding_value=torch.nan,
         ).squeeze()
 
-        return TargetsAndPredics(targets=targets, predics=predics)
+        return TargetsAndPredictions(targets=targets, predictions=predictions)
 
 
 @dataclass

@@ -1,8 +1,7 @@
 r"""Utilities for logging."""
 
 __all__ = [
-    "AdamState",
-    "TargetsAndPredics",
+    "TargetsAndPredictions",
     # Functions
     "compute_metrics",
     "eval_metric",
@@ -13,7 +12,7 @@ __all__ = [
 import pickle
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, TypedDict
+from typing import Any, NamedTuple
 
 import torch
 import yaml
@@ -25,14 +24,6 @@ from tsdm.metrics import LOSSES, Metric
 from tsdm.types.aliases import FilePath
 
 
-class AdamState(TypedDict):
-    r"""Adam optimizer state."""
-
-    step: Tensor
-    exp_avg: Tensor
-    exp_avg_sq: Tensor
-
-
 def yield_optimizer_params(optimizer: Optimizer, /) -> Iterator[nn.Parameter]:
     r"""Yield the parameters registered to an optimizer."""
     for group in optimizer.param_groups:
@@ -41,11 +32,11 @@ def yield_optimizer_params(optimizer: Optimizer, /) -> Iterator[nn.Parameter]:
                 yield param
 
 
-class TargetsAndPredics(NamedTuple):
+class TargetsAndPredictions(NamedTuple):
     r"""Targets and predictions."""
 
     targets: Tensor
-    predics: Tensor
+    predictions: Tensor
 
 
 @torch.no_grad()
