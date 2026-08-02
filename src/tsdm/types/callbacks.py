@@ -86,9 +86,9 @@ class ClipProto[T](Protocol):  # T
 
 
 class ContractionProto[T](Protocol):  # T
-    r"""Bound Protocol for contractions (support `axes` keyword argument)."""
+    r"""Bound Protocol for contractions (support `axis` keyword argument)."""
 
-    def __call__(self, x: T, /, *, axis: Axis = None) -> T: ...
+    def __call__(self, x: T, /, *, axis: Axis = None) -> T | Any: ...
 
 
 class CopyLikeProto[T](Protocol):  # T
