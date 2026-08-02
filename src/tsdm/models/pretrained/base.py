@@ -32,6 +32,9 @@ __all__ = [
     "PreTrained",
     "PreTrainedBase",
     "PreTrainedMetaClass",
+    # functions
+    "initialize_from_config",
+    "import_module_from_path",
 ]
 
 import inspect
@@ -40,10 +43,13 @@ import logging
 import pickle
 import warnings
 import webbrowser
+from _frozen_importlib import module_from_spec
+from _frozen_importlib_external import spec_from_file_location
 from collections.abc import Collection, Mapping
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
+from types import ModuleType
 from typing import (
     IO,
     Any,
@@ -58,6 +64,7 @@ from zipfile import ZipFile
 
 import torch
 import yaml
+from torch import nn
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
@@ -65,12 +72,12 @@ from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from tsdm.config import CONFIG
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
-from tsdm.models.util import initialize_from_config
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.pprint import repr_mapping
 from tsdm.testing._testing import is_zipfile
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import DirPath, FilePath
 from tsdm.utils import nested_paths_exist, repackage_zip
+from tsdm.utils.contextmanagers import system_path
 from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.remote import import_from_url
 
@@ -435,3 +442,52 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
             "TorchLRScheduler",
             self.__load_torch_component(file, component="lr_scheduler"),
         )
+
+
+def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
+    r"""Initialize `nn.Module` from a config object."""
+    conf = config.copy()
+    cls_name: str = conf.pop("__name__")
+    module_name: str = conf.pop("__module__")
+
+    # drop other dunder keys
+    opts = {k: v for k, v in conf.items() if not k.startswith("__")}
+
+    # import module and class
+    module = import_module_from_path(module_name)
+    cls = getattr(module, cls_name)
+
+    # initialize class with options
+    try:
+        obj = cls(**opts)
+    except Exception as exc:
+        exc.add_note(f"Failed to initialize {cls_name} with {opts}.")
+        raise
+
+    return obj
+
+
+def import_module_from_path(
+    module_dir: DirPath, /, *, module_name: Optional[str] = None
+) -> ModuleType:
+    r"""Return python module imported from the path.
+
+    References:
+        - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+        - https://stackoverflow.com/a/41904558
+    """
+    module_path = Path(module_dir)
+    module_init = module_path / "__init__.py"
+    module_name = module_name or module_path.parts[-1]
+
+    # validate that the module has an __init__ file.
+    if not module_init.exists():
+        raise FileNotFoundError(f"Module {module_path} has no __init__ file !")
+
+    with system_path(module_path):
+        spec = spec_from_file_location(module_name, str(module_init))
+        assert spec is not None
+        assert spec.loader is not None
+        the_module = module_from_spec(spec)
+        spec.loader.exec_module(the_module)
+        return the_module
