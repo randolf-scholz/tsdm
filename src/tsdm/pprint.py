@@ -925,7 +925,7 @@ def repr_array(
             vals = [repr_dtype(dtype) for dtype in table.schema.types]
         case pl.DataFrame(dtypes=dtypes):
             vals = [repr_dtype(dtype) for dtype in dtypes]
-        case SupportsDataFrame() as supports_frame:  # pyrefly: ignore[unsafe-overlap]
+        case SupportsDataFrame() as supports_frame:
             frame: DataFrame = supports_frame.__dataframe__()
             vals = [repr_dtype(dtype) for dtype in frame.dtypes]
         # Tensor-like
@@ -933,7 +933,7 @@ def repr_array(
             vals = [repr_dtype(dtype)]
         case SupportsDtype(dtype=dtype):
             vals = [repr_dtype(dtype)]
-        case SupportsArray() as array:  # pyrefly: ignore[unsafe-overlap]
+        case SupportsArray() as array:
             vals = [repr_dtype(array.__array__().dtype)]
         case _:
             raise TypeError(f"Unsupported object type {type(obj)}.")

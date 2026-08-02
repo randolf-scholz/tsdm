@@ -388,7 +388,7 @@ def tokenize_array(array: SupportsArray, hasher: str | Hasher, /) -> bytes:
             return tokenize_pyarrow(array, hasher)
         case pl.DataFrame() | pl.Series():
             return tokenize_polars(array, hasher)
-        case SupportsArray():  # pyrefly: ignore[unsafe-overlap]
+        case SupportsArray():
             return tokenize_numpy(array.__array__(), hasher)
         case _:
             raise TypeError(f"Cannot hash array of type {type(array)}.")

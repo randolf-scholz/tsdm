@@ -365,7 +365,7 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
         logger.debug("@decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
-    return _deco  # pyrefly: ignore[bad-return]
+    return _deco
 
 
 def recurse_on_container[T, R](  # T, +R
@@ -388,4 +388,4 @@ def recurse_on_container[T, R](  # T, +R
         leaf_type=leaf_type,
         leaf_prioritized=leaf_prioritized,
     )
-    return wraps(leaf_fn)(recurse)  # pyrefly: ignore[bad-return]
+    return wraps(leaf_fn)(recurse)
