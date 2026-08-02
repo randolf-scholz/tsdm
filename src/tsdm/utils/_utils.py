@@ -168,7 +168,7 @@ def flatten_nested[H](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
 
 
 @overload
-def flatten_dict(
+def flatten_dict(  # pyrefly: ignore[inconsistent-overload-default]
     d: NestedMapping[str, Any],
     /,
     *,
@@ -266,7 +266,7 @@ def flatten_dict[K, K2](
 
 
 @overload
-def unflatten_dict(
+def unflatten_dict(  # pyrefly: ignore[inconsistent-overload-default]
     d: Mapping[str, Any],
     /,
     *,
