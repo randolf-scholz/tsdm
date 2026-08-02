@@ -152,7 +152,7 @@ __all__ = [
 ]
 
 import tarfile
-from typing import Literal, Optional
+from typing import Literal, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -487,6 +487,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
             )
             .set_index(["RecordID", "Time", "Parameter"], append=True)
             .unstack(level="Parameter")
+            .pipe(lambda arg: cast("DataFrame", arg))  # type check only
             .reset_index("count", drop=True)
             .droplevel(0, axis="columns")
             .sort_index()
