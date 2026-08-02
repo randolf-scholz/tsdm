@@ -31,7 +31,7 @@ dependencies = [
     "matplotlib>=3.11.1",
     "numpy>=2.5.1",
     "pandas>=3.0.5",
-    "polars>=1.43.1",
+    "polars>=1.43.2",
     "pyarrow>=25.0.0",
     "pydantic>=2.13.4", # removal candidate
     "pyyaml>=6.0.3",
@@ -86,12 +86,12 @@ docs = [
 ]
 linters = [
     "prek>=0.4.11",
-    "ruff>=0.16.0",
+    "ruff>=0.16.1",
     "tach>=0.35.0",
 ]
 tests = [
     "coverage>=7.15.2",
-    "hypothesis[numpy,pandas,pytest]>=6.163.1",
+    "hypothesis[numpy,pandas,pytest]>=6.165.0",
     "psutil>=7.2.2",
     "pygal>=3.1.3",
     "pytest-benchmark[histogram]>=5.2.3",
@@ -103,7 +103,7 @@ tests = [
 ]
 typing = [
     "mypy>=2.3.0",
-    "pyrefly>=1.1.1",
+    "pyrefly>=1.2.0",
     "pyright>=1.1.411",
     "scipy-stubs>=1.18.0.1",
     "ty>=0.0.65",
@@ -119,7 +119,7 @@ typing = [
     "types-pyyaml>=6.0.12.20260724",
     "types-setuptools>=83.0.0.20260724",
     "types-tabulate>=0.10.0.20260508",
-    "types-tqdm>=4.70.0.20260730",
+    "types-tqdm>=4.70.0.20260731",
     "typing-extensions>=4.16.0",
 ]
 # endregion development dependencies ---------------------------------------------------

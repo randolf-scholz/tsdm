@@ -43,7 +43,7 @@ joblib==1.5.3
     # via scikit-learn
 kiwisolver==1.5.0
     # via matplotlib
-markdown==3.10.2
+markdown==3.10.3
     # via tensorboard
 markupsafe==3.0.3
     # via
@@ -117,9 +117,9 @@ pillow==12.3.0
     # via
     #   matplotlib
     #   tensorboard
-polars==1.43.1
+polars==1.43.2
     # via tsdm
-polars-runtime-32==1.43.1
+polars-runtime-32==1.43.2
     # via polars
 protobuf==7.35.1
     # via tensorboard
