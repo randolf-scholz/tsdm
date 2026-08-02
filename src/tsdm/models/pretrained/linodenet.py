@@ -93,7 +93,7 @@ class LinODEnet(PreTrainedBase):
         ts.loc[:, miss_columns] = float("nan")
 
         # correctly order columns
-        ts = ts[list(encoder_cols)].copy()
+        ts = ts.reindex(columns=list(encoder_cols)).copy()
 
         # fixing timestamp_type
         ts = ts.reset_index("elapsed_time")

@@ -199,7 +199,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         return repr_mapping(self.components, wrapped=self, identifier="PreTrainedModel")
 
     @classmethod
-    def available_checkpoints(cls) -> None:
+    def available_checkpoints(cls) -> Any:
         r"""Return a dictionary of available checkpoints."""
         if cls.CHECKPOINT_URL is None:
             raise NotImplementedError(
