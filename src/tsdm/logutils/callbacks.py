@@ -63,8 +63,9 @@ from typing import (
 import torch
 import yaml
 from matplotlib.figure import Figure
-from pandas import DataFrame, MultiIndex
+from pandas import DataFrame, MultiIndex, Series
 from torch import Tensor, nn
+from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -72,7 +73,6 @@ from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.metrics import Metric
-from tsdm.optimizers import Optimizer
 from tsdm.types.abc import MutSeq
 from tsdm.types.aliases import JSON, FilePath
 from tsdm.utils.decorators import pprint_repr, pprint_sequence
@@ -460,7 +460,7 @@ class HParamCallback(BaseCallback):
     @property
     def scores(self) -> dict[str, dict[str, float]]:
         r"""Return the current scores."""
-        best_epochs = self.history.rolling(5, center=True).mean().idxmin()
+        best_epochs: Series = self.history.rolling(5, center=True).mean().idxmin()
 
         return {
             split: {

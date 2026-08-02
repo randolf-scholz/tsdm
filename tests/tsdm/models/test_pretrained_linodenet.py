@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from tsdm.encoders import FittableEncoder
-from tsdm.models.pretrained import LinODEnet
+from tsdm.pretrained import LinODEnet
 
 __logger__ = logging.getLogger(__name__)
 

@@ -72,7 +72,6 @@ from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from tsdm.config import CONFIG
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
-from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.pprint import repr_mapping
 from tsdm.testing._testing import is_zipfile
 from tsdm.types.aliases import DirPath, FilePath
@@ -149,8 +148,6 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     __component_files: dict[str, FilePath]
 
     __component_aliases: dict[str, Collection[str]] = {
-        "optimizer": OPTIMIZERS,
-        "lr_scheduler": LR_SCHEDULERS,
         "model": ["model", "Model", "LinODEnet"],
         "encoder": ["encoder", "Encoder"],
         "hyperparameters": ["hyperparameters", "hparams", "hyperparameter", "hparam"],

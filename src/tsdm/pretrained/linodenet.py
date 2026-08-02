@@ -16,7 +16,6 @@ from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.types.aliases import FilePath
 from tsdm.utils.remote import download
 
@@ -41,8 +40,6 @@ class LinODEnet(PreTrainedBase):
     }
 
     component_aliases: dict[str, Collection[str]] = {
-        "optimizer": OPTIMIZERS,
-        "lr_scheduler": LR_SCHEDULERS,
         "model": ["model", "Model", "LinODEnet"],
         "encoder": ["encoder", "Encoder"],
         "hyperparameters": ["hyperparameters", "hparams", "hyperparameter", "hparam"],
