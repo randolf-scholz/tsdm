@@ -37,8 +37,7 @@ def _reduce_param[T: FloatArray](param: float | T, selection: Any) -> float | T:
         case scalar if len(scalar.shape) == 0:
             return scalar
         case tensor:
-            sliced = tensor[selection]
-            return sliced
+            return tensor[selection]
 
 
 @pprint_repr
