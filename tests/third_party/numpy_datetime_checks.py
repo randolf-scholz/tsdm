@@ -55,7 +55,7 @@ def test_runtime_subtraction_types() -> None:
     # np_date
     assert type(np_dt_date - py_date)    is dt.timedelta
     # assert type(np_dt_date - py_dt)      is dt.timedelta
-    assert type(np_dt_date - py_td)      is dt.date  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]
+    assert type(np_dt_date - py_td)      is dt.date  # type: ignore[operator]
     assert type(np_dt_date - np_dt)      is np.timedelta64
     assert type(np_dt_date - np_dt_date) is np.timedelta64
     assert type(np_dt_date - np_dt_int)  is np.timedelta64
@@ -66,7 +66,7 @@ def test_runtime_subtraction_types() -> None:
     # np_dt
     # assert type(np_dt - py_date)    is dt.timedelta
     assert type(np_dt - py_dt)      is dt.timedelta
-    assert type(np_dt - py_td)      is dt.datetime  # type: ignore[operator]  # pyright: ignore[reportOperatorIssue]
+    assert type(np_dt - py_td)      is dt.datetime  # type: ignore[operator]
     assert type(np_dt - np_dt)      is np.timedelta64
     assert type(np_dt - np_dt_date) is np.timedelta64
     assert type(np_dt - np_dt_int)  is np.timedelta64
@@ -194,9 +194,9 @@ def static_check_protocols() -> None:
 
     # w/o generic
     _5: Timestamp = py_dt  # ✅️
-    _6: Timestamp = np_dt  # type: ignore[assignment]
+    _6: Timestamp = np_dt
     # w/ generic
     _7: Timestamp[dt.timedelta] = py_dt  # ✅️
-    _8: Timestamp[np_timedelta] = np_dt  # type: ignore[assignment]
+    _8: Timestamp[np_timedelta] = np_dt
     # w/ nested generic
-    _9: Timestamp[np_timedelta] = np_dt  # type: ignore[assignment]
+    _9: Timestamp[np_timedelta] = np_dt

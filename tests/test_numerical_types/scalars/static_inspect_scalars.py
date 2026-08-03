@@ -27,7 +27,7 @@ type pd_datetime = types0d.pd.datetime
 class TestInferGenericType:
     def test_booleanscalar(self) -> None:
         # fmt: off
-        def _view[T](_: BoolScalar[T]) -> T: ...  # type: ignore[empty-body]
+        def _view[T](_: BoolScalar[T]) -> T: ...
         #
         reveal_type( _view(SCALARS.BOOL.PY) )
         reveal_type( _view(SCALARS.BOOL.NP) )
@@ -36,7 +36,7 @@ class TestInferGenericType:
 
     def test_intscalar(self) -> None:
         # fmt: off
-        def _view[T](_: IntScalar[T]) -> T: ...  # type: ignore[empty-body]
+        def _view[T](_: IntScalar[T]) -> T: ...
         #
         reveal_type( _view(SCALARS.INT.PY) )
         reveal_type( _view(SCALARS.INT.NP) )
@@ -45,7 +45,7 @@ class TestInferGenericType:
 
     def test_floatscalar(self) -> None:
         # fmt: off
-        def _view[T](_: FloatScalar[T]) -> T: ...  # type: ignore[empty-body]
+        def _view[T](_: FloatScalar[T]) -> T: ...
         #
         reveal_type( _view(SCALARS.FLOAT.PY) )
         reveal_type( _view(SCALARS.FLOAT.NP) )
@@ -54,7 +54,7 @@ class TestInferGenericType:
 
     def test_complexscalar(self) -> None:
         # fmt: off
-        def _view[T](_: ComplexScalar[T]) -> T: ...  # type: ignore[empty-body]
+        def _view[T](_: ComplexScalar[T]) -> T: ...
         #
         reveal_type( _view(SCALARS.COMPLEX.PY) )
         reveal_type( _view(SCALARS.COMPLEX.NP) )
@@ -63,7 +63,7 @@ class TestInferGenericType:
 
     def test_spanlikescalar(self) -> None:
         # fmt: off
-        def _view[SpanT](_: SpanLikeScalar[SpanT]) -> SpanT: ...  # type: ignore[empty-body]
+        def _view[SpanT](_: SpanLikeScalar[SpanT]) -> SpanT: ...
         #
         reveal_type( _view(SCALARS.FLOAT.NP)     )
         reveal_type( _view(SCALARS.FLOAT.PY)     )
@@ -76,7 +76,7 @@ class TestInferGenericType:
 
     def test_timelikescalar(self) -> None:
         # fmt: off
-        def _view[  # type: ignore[empty-body]
+        def _view[
             TimeT,
             SpanT,
             DualT: SpanLikeScalar,

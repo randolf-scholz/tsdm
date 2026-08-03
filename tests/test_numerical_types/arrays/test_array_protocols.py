@@ -93,7 +93,7 @@ def test_bool_array(example: str) -> None:
 
     assert type( array == array ) is cls  # __eq__(self)
     assert type( array == BOOL  ) is cls  # __eq__(bool)
-    assert type( BOOL  == array ) is cls  # __eq__(bool)  # type: ignore[unreachable]
+    assert type( BOOL  == array ) is cls  # __eq__(bool)
     assert type( array != array ) is cls  # __ne__(self)
     assert type( array != BOOL  ) is cls  # __ne__(bool)
     assert type( BOOL  != array ) is cls  # __ne__(bool)

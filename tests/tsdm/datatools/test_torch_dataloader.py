@@ -22,7 +22,7 @@ def test_dataloader() -> None:
     dataset = Dataset()
     sampler = Sampler()
     dataloader = DataLoader(
-        dataset,  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+        dataset,  # type: ignore[arg-type]
         sampler=sampler,
         batch_size=5,
     )

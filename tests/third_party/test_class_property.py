@@ -13,7 +13,7 @@ class Meta(type):
     def FIELDS(cls) -> set[str]:  # noqa: N802
         r"""Return the fields of the class."""
         if is_dataclass(cls):
-            return {f.name for f in fields(cls)}  # type: ignore[unreachable]
+            return {f.name for f in fields(cls)}
         return set()
 
 
