@@ -155,8 +155,8 @@ class BoolScalar[BoolT](ScalarType, Protocol):
         The `__invert__` method is not included, as `~True` is `-2`, which is not a boolean.
     """
 
-    def __eq__(self, other: Any, /) -> Self: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
-    def __ne__(self, other: Any, /) -> Self: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: Any, /) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: Any, /) -> Self: ...  # type: ignore[override]
 
     # conversion to python scalar
     def __bool__(self) -> bool: ...

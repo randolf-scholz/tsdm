@@ -126,8 +126,8 @@ class BooleanArray[BoolT](
 ):
     r"""Protocol for boolean array-like types supporting standard boolean operations."""
 
-    def __eq__(self, other: Any, /) -> Self | Any: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
-    def __ne__(self, other: Any, /) -> Self | Any: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: Any, /) -> Self | Any: ...  # type: ignore[override]
+    def __ne__(self, other: Any, /) -> Self | Any: ...  # type: ignore[override]
 
     def __invert__(self) -> Self: ...
     def all(self) -> Self | BoolScalar | Any: ...

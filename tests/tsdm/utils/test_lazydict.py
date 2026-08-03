@@ -80,7 +80,7 @@ def test_lazy_dict_new() -> None:
     no0 = LazyDict.new()
     no1 = LazyDict[int, float].new()
     assert_type(no0, LazyDict)
-    assert_type(no1, LazyDict[int, float])  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure]
+    assert_type(no1, LazyDict[int, float])  # type: ignore[assert-type]
 
     # positional arguments
     po0 = LazyDict.new({1: lazy_float})
@@ -103,16 +103,16 @@ def test_lazy_dict_new() -> None:
     # mixed value types
     mix_v0 = LazyDict.new({"x": lazy_float}, foo=lazy_str)
     mix_v1 = LazyDict[str, str | float].new({"x": lazy_float}, foo=lazy_str)
-    assert_type(mix_v0, LazyDict[str, str | float])  # type: ignore[assert-type]
-    assert_type(mix_v1, LazyDict[str, str | float])  # type: ignore[assert-type]
+    assert_type(mix_v0, LazyDict[str, str | float])
+    assert_type(mix_v1, LazyDict[str, str | float])
 
     # mixed key and value types
     mix_kv0 = LazyDict.new({"x": lazy_float, 1: lazy_str}, foo=lazy_float)
     mix_kv1 = LazyDict[str | int, str | float].new(
         {"x": lazy_float, 1: lazy_str}, foo=lazy_float
     )
-    assert_type(mix_kv0, LazyDict[str | int, str | float])  # type: ignore[assert-type]
-    assert_type(mix_kv1, LazyDict[str | int, str | float])  # type: ignore[assert-type]
+    assert_type(mix_kv0, LazyDict[str | int, str | float])
+    assert_type(mix_kv1, LazyDict[str | int, str | float])
 
 
 def test_lazydict_init() -> None:
@@ -221,14 +221,14 @@ def test_fromkeys() -> None:
 def test_get() -> None:
     r"""Test the `get` method of `LazyDict`."""
     # get should return non-lazy values
-    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)  # type: ignore[misc]
+    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)
     assert ld.get(1) == 0
 
 
 def test_get_lazy() -> None:
     r"""Test the `get` method of `LazyDict` with lazy values."""
     # get should return lazy values
-    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)  # type: ignore[misc]
+    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)
 
     assert isinstance(ld.get_lazy(2), LazyValue)
     assert ld.get_lazy(5, "foo") == "foo"
@@ -239,7 +239,7 @@ def test_from_func() -> None:
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.fromkeys)
 
-    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)  # type: ignore[misc]
+    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)

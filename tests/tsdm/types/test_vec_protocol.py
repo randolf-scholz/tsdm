@@ -41,7 +41,7 @@ EXPECTED_COLLECTIONS_ABC: dict[type, bool] = {
     abc.AsyncIterable   : False,
     abc.AsyncIterator   : False,
     abc.Awaitable       : False,
-    abc.Callable        : False,  # type: ignore[dict-item]  # pyright: ignore[reportAssignmentType]
+    abc.Callable        : False,  # type: ignore[dict-item]
     abc.Collection      : False,
     abc.Container       : False,
     abc.Coroutine       : False,
@@ -120,8 +120,8 @@ def type_array_assignable() -> None:
     # collections.abc
     # _06: type[Array] = abc.Mapping  # __getitem__ does not support slicing
     # _07: type[Array] = abc.MutableMapping  # __getitem__ does not support slicing
-    _08: type[Vec] = abc.MutableSequence  # type: ignore[type-abstract]
-    _09: type[Vec] = abc.Sequence  # type: ignore[type-abstract]
+    _08: type[Vec] = abc.MutableSequence
+    _09: type[Vec] = abc.Sequence
     # collections
     # _10: type[Array] = collections.ChainMap  # __getitem__ does not support slicing
     # _11: type[Array] = collections.Counter  # __getitem__ does not support slicing

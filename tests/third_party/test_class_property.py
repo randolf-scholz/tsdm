@@ -35,4 +35,4 @@ def test_fields() -> None:
 
     # check that fields are read-only
     with pytest.raises(AttributeError):
-        Demo.FIELDS = {}  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+        Demo.FIELDS = {}  # type: ignore[assignment]

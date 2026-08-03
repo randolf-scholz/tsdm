@@ -38,9 +38,9 @@ from .scalars import BoolScalar, ComplexScalar, FloatScalar, IntScalar
 
 class SupportsSeriesEquality[ComparableT](Protocol):  # noqa: D101
     # equality ==
-    def __eq__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]
     # inequality !=
-    def __ne__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __ne__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]
 
 
 class SupportsSeriesComparison[ComparableT](Protocol):  # noqa: D101

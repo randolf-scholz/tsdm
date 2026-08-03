@@ -81,8 +81,8 @@ class BaseScalar(Protocol):
     """
 
     def __hash__(self) -> int: ...
-    def __eq__(self, other: object, /) -> BoolScalar: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
-    def __ne__(self, other: object, /) -> BoolScalar: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: object, /) -> BoolScalar: ...  # type: ignore[override]
+    def __ne__(self, other: object, /) -> BoolScalar: ...  # type: ignore[override]
 
 
 @runtime_checkable

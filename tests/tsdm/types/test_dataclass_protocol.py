@@ -49,8 +49,8 @@ def test_dataclass_types() -> None:
 def test_dataclass_protocol() -> None:
     r"""Test the Dataclass protocol."""
     assert isinstance(MyDataclass(1, 2), Dataclass)
-    assert issubclass(MyDataclass, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
-    assert issubclass(Dataclass, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    assert issubclass(MyDataclass, Dataclass)  # type: ignore[misc]
+    assert issubclass(Dataclass, Dataclass)  # type: ignore[misc]
 
 
 def test_is_dataclass() -> None:
@@ -60,7 +60,7 @@ def test_is_dataclass() -> None:
     assert isinstance(MyDataclass(1, 2), Dataclass)
     # check the type
     assert is_dataclass(MyDataclass)
-    assert issubclass(MyDataclass, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    assert issubclass(MyDataclass, Dataclass)  # type: ignore[misc]
 
 
 def test_not_dataclass() -> None:
@@ -70,4 +70,4 @@ def test_not_dataclass() -> None:
     assert not isinstance(NotDataclass(1, 2), Dataclass)
     # check the type
     assert not is_dataclass(NotDataclass)
-    assert not issubclass(NotDataclass, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    assert not issubclass(NotDataclass, Dataclass)  # type: ignore[misc]

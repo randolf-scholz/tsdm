@@ -28,7 +28,7 @@ class NotNamedTuple(tuple[int, int]):  # noqa: SLOT001
 
 def test_ntuple_match() -> None:
     match MyNamedTuple(1, 2):
-        case NTuple():
+        case NTuple():  # pyrefly: ignore[unsafe-overlap]
             pass
         case _:
             raise AssertionError
@@ -44,30 +44,30 @@ def test_ntuple_no_match() -> None:
 
 def test_namedtuple_types() -> None:
     r"""Test the NTuple protocol."""
-    _typ: type[NTuple] = MyNamedTuple
-    _obj: NTuple = MyNamedTuple(1, 2)
+    _typ: type[NTuple] = MyNamedTuple  # pyrefly: ignore[bad-assignment]
+    _obj: NTuple = MyNamedTuple(1, 2)  # pyrefly: ignore[bad-assignment]
 
 
 def test_namedtuple_protocol() -> None:
     r"""Test the NTuple protocol."""
     # check an instance
     assert isinstance(MyNamedTuple(1, 2), tuple)
-    assert isinstance(MyNamedTuple(1, 2), NTuple)
+    assert isinstance(MyNamedTuple(1, 2), NTuple)  # pyrefly: ignore[unsafe-overlap]
     assert issubclass(MyNamedTuple, tuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
-    assert issubclass(NTuple, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
+    assert issubclass(NTuple, NTuple)  # type: ignore[misc]
 
 
 def test_is_namedtuple() -> None:
     r"""Test the is_namedtuple utility."""
     # check an instance
     assert isinstance(MyNamedTuple(1, 2), tuple)
-    assert isinstance(MyNamedTuple(1, 2), NTuple)
+    assert isinstance(MyNamedTuple(1, 2), NTuple)  # pyrefly: ignore[unsafe-overlap]
     assert is_namedtuple(MyNamedTuple(1, 2))
     # check the type
     assert issubclass(MyNamedTuple, tuple)
     assert is_namedtuple(MyNamedTuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
 
 
 def test_not_namedtuple() -> None:
@@ -79,4 +79,4 @@ def test_not_namedtuple() -> None:
     # check the type
     assert issubclass(NotNamedTuple, tuple)
     assert not is_namedtuple(NotNamedTuple)
-    assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]

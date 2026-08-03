@@ -60,8 +60,7 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
     #   see: https://github.com/python/typing/issues/1216
     #   see: https://github.com/python/typing/issues/1273
 
-    # NOTE: Added Final to silence pyright v1.1.376 complaints.
-    _fields: Final[tuple[str, ...]]
+    _fields: Final[ClassVar[tuple[str, ...]]]  # type: ignore[misc]
     r"""The fields of the namedtuple."""
 
     def _asdict(self) -> Mapping[str, T]: ...

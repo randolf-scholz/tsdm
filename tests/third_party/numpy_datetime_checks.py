@@ -113,7 +113,7 @@ def check_subtraction_static_types() -> None:
     # np_dt
     # assert_type(np_dt - py_date,    dt.timedelta)
     assert_type(np_dt - py_dt,      dt.timedelta)
-    assert_type(np_dt - py_td,      dt.datetime)  # type: ignore[assert-type, operator]  # pyright: ignore[reportOperatorIssue]
+    assert_type(np_dt - py_td,      dt.datetime)  # type: ignore[assert-type, operator]
     assert_type(np_dt - np_dt,      "np.timedelta64[dt.timedelta]")
     assert_type(np_dt - np_dt_date, "np.timedelta64[dt.timedelta]")
     assert_type(np_dt - np_dt_int,  "np.timedelta64[int]")
@@ -124,7 +124,7 @@ def check_subtraction_static_types() -> None:
     # np_date
     assert_type(np_dt_date - py_date, "dt.timedelta")
     # assert_type(np_dt_date - py_dt,      "dt.timedelta")
-    assert_type(np_dt_date - py_td,      "dt.date")  # type: ignore[assert-type, operator]  # pyright: ignore[reportOperatorIssue]
+    assert_type(np_dt_date - py_td,      "dt.date")  # type: ignore[assert-type, operator]
     assert_type(np_dt_date - np_dt,      "np.timedelta64[dt.timedelta]")
     assert_type(np_dt_date - np_dt_date, "np.timedelta64[dt.timedelta]")
     assert_type(np_dt_date - np_dt_int,  "np.timedelta64[int]")  # type: ignore[assert-type]
