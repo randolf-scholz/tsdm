@@ -13,7 +13,7 @@ __all__ = [
 
 
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Collection, Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from typing import Any, NamedTuple, Optional, Self
@@ -434,6 +434,10 @@ class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
                 raise ValueError("Input slice must be specified, given target slice.")
             if self.input_slice.stop > self.target_slice.stop:
                 raise ValueError("Input slice stop must be before target slice stop.")
+
+    def keys(self) -> Collection[Key]:
+        r"""Yield all the keys in the dataset."""
+        return self.index
 
     def __len__(self) -> int:
         r"""Number of unique entries in the outer n-1 index levels."""

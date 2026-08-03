@@ -16,11 +16,10 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.datasets import Electricity
 from tsdm.encoders import FittableEncoder, StandardScaler
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTS
+from tsdm.timeseries import PandasTS, electricity
 from tsdm.utils import timedelta, timestamp
 from tsdm.utils.decorators import pprint_repr
 
@@ -38,7 +37,10 @@ class Batch(NamedTuple):
     y_mask: Tensor  # B×K×D: teh target mask.
 
 
-class ElectricityLim2021(TimeSeriesTask):
+type SplitID = Literal["train", "test", "valid", "joint", "whole"]
+
+
+class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
     r"""Experiments as performed by the "TFT" paper.
 
     Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
@@ -103,16 +105,13 @@ class ElectricityLim2021(TimeSeriesTask):
     +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     """
 
-    KeyType = Literal["train", "test", "valid", "joint", "whole"]
-    r"""Type Hint for index."""
-
     preprocessor: FittableEncoder
 
     # FIXME: need a different base class for this task!
     dataset: PandasTS  # type: ignore[assignment]
 
     def __init__(self) -> None:
-        ds = Electricity().table
+        ds = electricity().timeseries
         ds = ds.resample("1h").mean()
         mask = (self.boundaries["start"] <= ds.index) & (
             ds.index < self.boundaries["final"]
@@ -140,7 +139,7 @@ class ElectricityLim2021(TimeSeriesTask):
         }
 
     @cached_property
-    def masks(self) -> dict[KeyType, np.ndarray]:
+    def masks(self) -> dict[SplitID, np.ndarray]:
         r"""Masks for the training, validation and test sets."""
         return {
             "train": (self.boundaries["start"] <= self.dataset.timeindex)
@@ -161,12 +160,12 @@ class ElectricityLim2021(TimeSeriesTask):
             & (self.dataset.timeindex < self.boundaries["valid"]),
         }
 
-    def make_split(self, key: KeyType) -> Any:
+    def make_split(self, key: SplitID) -> Any:
         r"""Return the split of the dataset."""
         return self.dataset[self.masks[key]]
 
     def make_dataloader(
-        self, key: KeyType, /, *, shuffle: bool = False, **dataloader_kwargs: Any
+        self, key: SplitID, /, *, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""
         ds = self.splits[key]

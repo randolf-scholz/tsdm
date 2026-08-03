@@ -10,19 +10,25 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
-from typing import final
+from typing import Literal, final
 
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.random.samplers import RandomSampler, Sampler
-from tsdm.tasks.base import SplitID, TimeSeriesTask
-from tsdm.timeseries import FixedSliceSampleGenerator, damped_pendulum_ansari2023
+from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries import (
+    FixedSliceSampleGenerator,
+    PlainSample,
+    damped_pendulum_ansari2023,
+)
+
+type SplitID = tuple[int, Literal["train", "test", "valid"]]
 
 
 @final
-class DampedPendulum_Ansari2023(TimeSeriesTask):
+class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, int, PlainSample]):
     r"""Forecasting task on synthetic damped pendulum data.
 
     Note:

@@ -8,7 +8,7 @@ __all__ = [
 
 
 from collections.abc import Callable, Mapping
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple
 
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
@@ -33,7 +33,7 @@ from tsdm.encoders import (
 )
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
-from tsdm.tasks.base import SplitID, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator, kiwi_benchmark
 from tsdm.utils.decorators import pprint_repr
 
@@ -51,7 +51,10 @@ class Batch(NamedTuple):
     y_mask: Tensor  # B×K×D: teh target mask.
 
 
-class KiwiBenchmark(TimeSeriesTask):
+type SplitID = tuple[int, Literal["train", "test", "valid"]]
+
+
+class KiwiBenchmark(TimeSeriesTask[SplitID]):
     r"""Task for the KIWI dataset.
 
     The task is to forecast the observables inside the forecasting horizon.

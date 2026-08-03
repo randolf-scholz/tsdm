@@ -105,7 +105,7 @@ __all__ = [
     # Classes
     "Batch",
     "Split",
-    "SplitID",
+    # "SplitID",
     "TimeSeriesTask",
 ]
 
@@ -128,9 +128,6 @@ from tsdm.random.samplers import Sampler
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
 from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.lazydict import LazyDict
-
-SplitID = NewType("SplitID", object)
-r"""Type of a split ID."""
 
 Batch = NewType("Batch", object)
 r"""Type of a batch."""
@@ -201,7 +198,7 @@ class ForecastingTask[K, Sample](Protocol):  # K, +Sample
 
 @pprint_repr
 @dataclass
-class TimeSeriesTask[K, Sample]:  # K, +Sample
+class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -274,9 +271,9 @@ class TimeSeriesTask[K, Sample]:  # K, +Sample
     # split specific attributes
     dataloaders: Mapping[SplitID, DataLoader[Sample]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, TorchDataset[K, Sample]] = NotImplemented
+    generators: Mapping[SplitID, TorchDataset[SampleID, Sample]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    samplers: Mapping[SplitID, Sampler[K]] = NotImplemented
+    samplers: Mapping[SplitID, Sampler[SampleID]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
     splits: Mapping[SplitID, PandasTSC] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
@@ -394,12 +391,12 @@ class TimeSeriesTask[K, Sample]:  # K, +Sample
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[SampleID, Sample]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 
     @abstractmethod
-    def make_sampler(self, key: SplitID, /) -> Sampler[K]:
+    def make_sampler(self, key: SplitID, /) -> Sampler[SampleID]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 

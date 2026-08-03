@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 
+import datetime as dt
 from collections.abc import Callable, Iterable, Iterator
 from enum import StrEnum
 from typing import (
@@ -146,7 +147,7 @@ type MULTI = Literal[HORIZON.MULTI]
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
 class SlidingWindowSampler[
-    DType: np.number | np.datetime64 | np.timedelta64,
+    DType: int | float | dt.date | dt.datetime | dt.timedelta,
     ModeVar: (B, M, S, I, P, X, UNKNOWN),
     MultiVar: (ONE, MULTI),
 ](BaseSampler):

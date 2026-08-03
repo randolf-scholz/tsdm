@@ -5,6 +5,8 @@ __all__ = [
     "InSilicoTask",
 ]
 
+from typing import Literal
+
 from pandas import DataFrame
 
 from tsdm.datatools import (
@@ -13,16 +15,18 @@ from tsdm.datatools import (
     folds_from_groups,
 )
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
-from tsdm.tasks.base import SplitID, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator, in_silico
 
+type SplitID = tuple[int, Literal["train", "test", "valid"]]
 
-class InSilicoTask(TimeSeriesTask):
+
+class InSilicoTask(TimeSeriesTask[SplitID, int]):
     r"""Task for the KIWI dataset."""
 
     observation_horizon: str = "2h"
     r"""The number of datapoints observed during prediction."""
-    forecasting_horizon: str = "1h'"
+    forecasting_horizon: str = "1h"
     r"""The number of datapoints the model should forecast."""
 
     def __init__(
