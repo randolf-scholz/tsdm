@@ -17,16 +17,16 @@ import warnings
 from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
-from typing import Literal, assert_never
+from typing import assert_never
 
 import numpy as np
 from numpy import pi as PI
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import FLOAT, UNDEFINED
+from tsdm.types.extra import SupportsArrayUfunc
 from tsdm.utils.decorators import pprint_repr
 
 from .base import FittableEncoder, StaticEncoder
@@ -243,7 +243,7 @@ def construct_wasserstein_loss_logit_normal(
 
 @pprint_repr
 @dataclass(init=False)
-class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
+class BoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
@@ -268,11 +268,6 @@ class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
         match_normal = "match-normal"
         match_uniform = "match-uniform"
 
-    type Method = (
-        METHOD
-        | Literal["fixed", "minimum", "quartile", "match-normal", "match-uniform"]
-    )
-
     _: KW_ONLY
 
     bounds: tuple[float, float] = (0.0, 1.0)
@@ -287,7 +282,7 @@ class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
         offset_guess: float = 1.0,
-        method: Method = "match-uniform",
+        method: METHOD | str = "match-uniform",
         offset: float = UNDEFINED,
         verbose: bool = False,
     ) -> None:
@@ -314,20 +309,22 @@ class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode(self, data: Arr, /) -> Arr:
-        return np.log(data + self.offset)  # pyright: ignore[reportReturnType]
+    def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
+        return np.log(data + self.offset)  # type: ignore[return-type]
 
-    def decode(self, data: Arr, /) -> Arr:
-        return np.maximum(np.exp(data) - self.offset, 0)  # pyright: ignore[reportReturnType]
+    def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
+        return np.maximum(np.exp(data) - self.offset, 0)  # type: ignore[return-type]
 
-    def fit(self, data: Arr, /) -> None:
-        if not all((data >= 0) | np.isnan(data)):
+    def fit(self, data: SupportsArrayUfunc, /) -> None:
+        array = np.asanyarray(data)
+
+        if not all((array >= 0) | np.isnan(array)):
             raise ValueError("Data must be in [0, ∞) or NaN.")
 
-        if data.dtype != np.float64:
+        if array.dtype != np.float64:
             warnings.warn(
                 "It is not recommended to use this encoder with non-float64 data. "
-                f"But {data.dtype=}.",
+                f"But {array.dtype=}.",
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -336,11 +333,13 @@ class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
             case self.METHOD.fixed:
                 offset = self.offset_guess
             case self.METHOD.minimum:
-                offset = data[data > 0].min() / 2
+                offset = array[array > 0].min() / 2
             case self.METHOD.quartile:
-                offset = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
+                offset = (
+                    np.nanquantile(array, 0.25) / np.nanquantile(array, 0.75)
+                ) ** 2
             case self.METHOD.match_uniform:
-                fun = construct_wasserstein_loss_boxcox_uniform(data)
+                fun = construct_wasserstein_loss_boxcox_uniform(array)
                 x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
@@ -351,7 +350,7 @@ class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
                 )
                 offset = sol.x
             case self.METHOD.match_normal:
-                fun = construct_wasserstein_loss_boxcox_normal(data)
+                fun = construct_wasserstein_loss_boxcox_normal(array)
                 x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
@@ -369,7 +368,7 @@ class BoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
 
 @pprint_repr
 @dataclass
-class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr]):
+class LogitBoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
     r"""Encode data from the interval [0,1] with a logit transform.
 
     An offset c is added/subtracted to avoid log(0) and division by zero.
@@ -396,11 +395,6 @@ class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr
         match_normal = "match-normal"
         match_uniform = "match-uniform"
 
-    type Method = (
-        METHOD
-        | Literal["fixed", "minimum", "quartile", "match-normal", "match-uniform"]
-    )
-
     _: KW_ONLY
     bounds: tuple[float, float] = (0.0, 1.0)
     method: METHOD = METHOD.match_uniform
@@ -413,7 +407,7 @@ class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr
         self,
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
-        method: Method = "match-uniform",
+        method: METHOD | str = "match-uniform",
         offset: float = UNDEFINED,
         offset_guess: float = 0.1,
         verbose: bool = False,
@@ -437,22 +431,24 @@ class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr
         if not (self.bounds[0] <= self.offset <= self.bounds[1]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
-    def encode(self, data: Arr, /) -> Arr:
-        return np.log((data + self.offset) / (1 - (data - self.offset)))  # pyright: ignore[reportReturnType]
+    def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
+        return np.log((data + self.offset) / (1 - (data - self.offset)))  # type: ignore[return-value]
 
-    def decode(self, data: Arr, /) -> Arr:
+    def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
-        return np.clip(r, 0, 1)  # pyright: ignore[reportReturnType]
+        return np.clip(r, 0, 1)  # type: ignore[return-value]
 
-    def fit(self, data: Arr, /) -> None:
-        if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
+    def fit(self, data: SupportsArrayUfunc, /) -> None:
+        array = np.asanyarray(data)
+
+        if not all(np.isnan(array) | ((array >= 0) & (array <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
-        if data.dtype != np.float64:
+        if array.dtype != np.float64:
             warnings.warn(
                 "It is not recommended to use this encoder with non-float64 data. "
-                f"But {data.dtype=}.",
+                f"But {array.dtype=}.",
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -461,17 +457,18 @@ class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr
             case self.METHOD.fixed:
                 offset = self.offset_guess
             case self.METHOD.minimum:
-                lower = data[data > 0].min() / 2
-                upper = (1 - data[data < 1].max()) / 2
+                lower = array[array > 0].min() / 2
+                upper = (1 - array[array < 1].max()) / 2
                 offset = (lower + upper) / 2
             case self.METHOD.quartile:
-                lower = (np.nanquantile(data, 0.25) / np.nanquantile(data, 0.75)) ** 2
+                lower = (np.nanquantile(array, 0.25) / np.nanquantile(array, 0.75)) ** 2
                 upper = (
-                    (1 - np.nanquantile(data, 0.75)) / (1 - np.nanquantile(data, 0.25))
+                    (1 - np.nanquantile(array, 0.75))
+                    / (1 - np.nanquantile(array, 0.25))
                 ) ** 2
                 offset = (lower + upper) / 2
             case self.METHOD.match_uniform:
-                fun = construct_wasserstein_loss_logit_uniform(data)
+                fun = construct_wasserstein_loss_logit_uniform(array)
                 x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
@@ -482,7 +479,7 @@ class LogitBoxCoxEncoder[Arr: (NDArray, Index, Series)](FittableEncoder[Arr, Arr
                 )
                 offset = sol.x.squeeze()
             case self.METHOD.match_normal:
-                fun = construct_wasserstein_loss_logit_normal(data)
+                fun = construct_wasserstein_loss_logit_normal(array)
                 x0 = np.float64(self.offset_guess)
                 sol = minimize(
                     fun,
@@ -533,11 +530,11 @@ class LogEncoder(FittableEncoder[NDArray, NDArray]):
 class LogitEncoder(StaticEncoder[NDArray, NDArray]):
     r"""Logit encoder."""
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
-        if not np.all((data > 0) & (data < 1)):
+        if not np.all((data > 0) & (data < 1)):  # type: ignore[misc]
             raise ValueError("Data must be in the range (0, 1).")
-        return np.log(data / (1 - data))
+        return np.log(data / (1 - data))  # type: ignore[misc]
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        return np.clip(1 / (1 + np.exp(-data)), 0, 1)
+    def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
+        return np.clip(1 / (1 + np.exp(-data)), 0, 1)  # type: ignore[misc]
