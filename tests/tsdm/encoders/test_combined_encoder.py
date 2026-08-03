@@ -23,7 +23,6 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.tasks import KiwiBenchmark
-from tsdm.tasks.base import SplitID
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -90,7 +89,6 @@ def encoder() -> FittableEncoder:
 @pytest.mark.slow
 def test_combined_encoder(
     encoder: Encoder,
-    split: SplitID = (0, "train"),
     atol: float = 1e-5,
     rtol: float = 1e-3,
 ) -> None:
@@ -99,6 +97,8 @@ def test_combined_encoder(
     Note:
         For some samples, we may get rounding errors in the index.
     """
+    split = (0, "train")
+
     # initialize the task object
     torch.manual_seed(0)
     rng = np.random.default_rng(1)
