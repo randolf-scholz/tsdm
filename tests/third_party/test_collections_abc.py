@@ -52,7 +52,7 @@ CLASSES: list[type] = [
 ]
 
 BUILTINS: dict[type, list[type]] = {
-    abc.Callable: [type],
+    # abc.Callable: [type],
     abc.Collection: [set, dict, frozenset, list, tuple, str, bytes, bytearray, memoryview, range],
     abc.Container: [set, dict, frozenset, list, tuple, str, bytes, bytearray, memoryview, range],
     abc.Iterable: [set, dict, frozenset, list, tuple, str, bytes, bytearray, memoryview, range, map, filter, reversed],
