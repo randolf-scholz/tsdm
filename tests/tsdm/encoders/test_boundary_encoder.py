@@ -32,7 +32,6 @@ BOUNDS: list[tuple[float | None, float | None]] = [
     (0, float("inf")),
     (0, None),
     (0, float("nan")),
-    (0, pd.NA),
 ]
 TENSORS: dict[str, FloatArray] = {
     "numpy-1D"             : np.array(DATA_1D),
@@ -56,7 +55,7 @@ r"""Example data for testing."""
 def test_boundary_encoder2(
     case: str,
     *,
-    mode: BoundaryEncoder.Mode,
+    mode: str,
     bounds: tuple[float | None, float | None],
     lower_included: bool,
     upper_included: bool,

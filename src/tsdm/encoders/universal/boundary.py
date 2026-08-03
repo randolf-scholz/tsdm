@@ -2,14 +2,14 @@ r"""Encoders for ensuring bounds on the input data."""
 
 __all__ = ["BoundaryEncoder"]
 
+import math
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Literal, Self
+from typing import Any, Self
 
 import pandas as pd
 
-from numerical_types.arrays import ArraySupportsComparison
-from numerical_types.scalars import OrderedScalar
+from numerical_types.arrays import FloatArray
 from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
@@ -19,9 +19,7 @@ from tsdm.utils.decorators import pprint_repr
 
 @pprint_repr
 @dataclass(init=False)
-class BoundaryEncoder[S: OrderedScalar](
-    FittableEncoder[ArraySupportsComparison[S], ArraySupportsComparison[S]]
-):
+class BoundaryEncoder(FittableEncoder[FloatArray, FloatArray]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -53,11 +51,8 @@ class BoundaryEncoder[S: OrderedScalar](
         mask = "mask"
         clip = "clip"
 
-    type Mode = Literal["mask", "clip"]
-    r"""Type Hint for clipping mode."""
-
-    lower_bound: S | None = UNDEFINED
-    upper_bound: S | None = UNDEFINED
+    lower_bound: float | None = UNDEFINED
+    upper_bound: float | None = UNDEFINED
 
     lower_included: bool = True
     upper_included: bool = True
@@ -66,13 +61,13 @@ class BoundaryEncoder[S: OrderedScalar](
 
     # derived attributes
     backend: Backend = field(init=False, default=UNDEFINED)
-    lower_value: S = field(init=False, default=UNDEFINED)
-    upper_value: S = field(init=False, default=UNDEFINED)
+    lower_value: float = field(init=False, default=UNDEFINED)
+    upper_value: float = field(init=False, default=UNDEFINED)
 
     def __init__(
         self,
-        lower_bound: S | None = UNDEFINED,
-        upper_bound: S | None = UNDEFINED,
+        lower_bound: float | None = UNDEFINED,
+        upper_bound: float | None = UNDEFINED,
         *,
         lower_included: bool = True,
         upper_included: bool = True,
@@ -128,6 +123,7 @@ class BoundaryEncoder[S: OrderedScalar](
             "both":    (True, True),
             "neither": (False, False),
         }[interval.closed]  # fmt: skip
+
         return cls(
             lower_bound,
             upper_bound,
@@ -136,41 +132,27 @@ class BoundaryEncoder[S: OrderedScalar](
             **kwargs,
         )
 
-    def lower_satisfied[Arr: ArraySupportsComparison](self, x: Arr, /) -> Arr:
-        r"""Return a boolean mask for the lower boundary (true: value ok)."""
-        if self.lower_bound is None:
-            return self.backend.true_like(x)
-        r = (x >= self.lower_bound) if self.lower_included else (x > self.lower_bound)
-        return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
-
-    def upper_satisfied[Arr: ArraySupportsComparison](self, x: Arr, /) -> Arr:
-        r"""Return a boolean mask for the upper boundary (true: value ok)."""
-        if self.upper_bound is None:
-            return self.backend.true_like(x)
-        r = (x <= self.upper_bound) if self.upper_included else (x < self.upper_bound)
-        return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
-
-    def fit(self, data: ArraySupportsComparison, /) -> None:
+    def fit(self, data: FloatArray, /) -> None:
         # select the backend
         self.backend: Backend = get_backend(data)
 
         # set lower_bound
         if self.lower_bound is UNDEFINED:
-            self.lower_bound = self.backend.nanmin(data)
+            self.lower_bound = float(self.backend.nanmin(data))
         elif is_null_scalar(self.lower_bound):
             self.lower_bound = None
 
         # set upper_bound
         if self.upper_bound is UNDEFINED:
-            self.upper_bound = self.backend.nanmax(data)
+            self.upper_bound = float(self.backend.nanmax(data))
         elif is_null_scalar(self.upper_bound):
             self.upper_bound = None
 
         # set lower_value
         if self.lower_bound is None:
-            self.lower_value = self.backend.to_tensor(float("-inf"))
+            self.lower_value = -math.inf
         elif self.lower_mode is self.MODES.mask:
-            self.lower_value = self.backend.to_tensor(float("nan"))
+            self.lower_value = math.nan
         elif self.lower_mode is self.MODES.clip:
             self.lower_value = self.lower_bound
         else:
@@ -178,19 +160,33 @@ class BoundaryEncoder[S: OrderedScalar](
 
         # set upper_value
         if self.upper_bound is None:
-            self.upper_value = self.backend.to_tensor(float("+inf"))
+            self.upper_value = math.inf
         elif self.upper_mode is self.MODES.mask:
-            self.upper_value = self.backend.to_tensor(float("nan"))
+            self.upper_value = math.nan
         elif self.upper_mode is self.MODES.clip:
             self.upper_value = self.upper_bound
         else:
             raise NotImplementedError
 
-    def encode[Arr: ArraySupportsComparison](self, data: Arr, /) -> Arr:
+    def lower_satisfied[Arr: FloatArray](self, x: Arr, /) -> Arr:
+        r"""Return a boolean mask for the lower boundary (true: value ok)."""
+        if self.lower_bound is None:
+            return self.backend.true_like(x)
+        r = (x >= self.lower_bound) if self.lower_included else (x > self.lower_bound)
+        return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
+
+    def upper_satisfied[Arr: FloatArray](self, x: Arr, /) -> Arr:
+        r"""Return a boolean mask for the upper boundary (true: value ok)."""
+        if self.upper_bound is None:
+            return self.backend.true_like(x)
+        r = (x <= self.upper_bound) if self.upper_included else (x < self.upper_bound)
+        return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
+
+    def encode[Arr: FloatArray](self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode[Arr: ArraySupportsComparison](self, data: Arr, /) -> Arr:
+    def decode[Arr: FloatArray](self, data: Arr, /) -> Arr:
         return data
