@@ -5,8 +5,6 @@ import datetime as dt
 import pandas as pd
 import polars as pl
 
-from test_utils import pytest_xfail
-
 
 def test_timestamp_to_float() -> None:
     r"""Tests conversion from timestamps to float and back."""
@@ -29,9 +27,7 @@ def test_timestamp_to_float() -> None:
     pl_encoded = (pl_series - reference_time) / time_unit
     pl_decoded = (time_unit * pl_encoded) + reference_time
     assert all(pl_decoded == pl_series)
-
-    with pytest_xfail("https://github.com/pola-rs/polars/issues/26205"):
-        assert type(pl_decoded.dtype) is type(pl_series.dtype)
+    assert type(pl_decoded.dtype) is type(pl_series.dtype)
 
 
 def test_polars_only() -> None:
@@ -51,7 +47,5 @@ def test_polars_only() -> None:
 
     # decode float back to datetime by multiplying by time unit and adding reference time
     pl_decoded = (time_unit * pl_encoded) + reference_time
-    assert all(pl_decoded == pl_series)  # ✅️ actually still succeeds
-
-    with pytest_xfail("https://github.com/pola-rs/polars/issues/26205"):
-        assert pl_decoded.dtype.is_temporal()  # ❌️
+    assert all(pl_decoded == pl_series)  # ✅️
+    assert pl_decoded.dtype.is_temporal()  # ✅️
