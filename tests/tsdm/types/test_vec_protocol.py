@@ -11,7 +11,6 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.testing import assert_protocol
 from tsdm.types.abc import Vec
 
 EXPECTED_BUILTINS: dict[type, bool] = {
@@ -97,7 +96,10 @@ EXPECTED_3RD_PARTY: dict[type, bool] = {
     ).items(),
 )
 def test_satisfies_array_protocol(*, cls: type, expected: bool) -> None:
-    assert_protocol(cls, Vec, expected=expected)
+    if expected:
+        assert issubclass(cls, Vec)
+    else:
+        assert not issubclass(cls, Vec)
 
 
 def test_array_collections_abc() -> None:

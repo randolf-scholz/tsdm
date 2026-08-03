@@ -58,7 +58,7 @@ def test_supports_array(name: str) -> None:
     r"""Test the SupportsArray protocol."""
     obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsArray)
-    assert issubclass(obj.__class__, SupportsArray)
+    assert issubclass(obj.__class__, SupportsArray)  # pyrefly: ignore[unsafe-overlap]
     assert isinstance(obj.__array__(), np.ndarray)
 
 

@@ -234,7 +234,7 @@ def is_zipfile(path: FilePath, /) -> bool:
         return False
 
 
-def assert_protocol(obj: Any, proto: type, /, *, expected: bool = True) -> None:
+def assert_protocol(obj: object, proto: type, /) -> None:
     r"""Assert that the object is a given protocol."""
     if not is_protocol(proto):
         raise TypeError(f"{proto} is not a protocol!")
@@ -247,13 +247,11 @@ def assert_protocol(obj: Any, proto: type, /, *, expected: bool = True) -> None:
         name = obj.__class__.__name__
 
     member = "a subtype" if isinstance(obj, type) else "an instance"
-    msg = f"{name!r} is {'not' if expected else ''} {member} of {proto.__name__!r}!"
+    msg = f"{name!r} is not a {member} of {proto.__name__!r}!"
     missing_attrs = sorted(get_protocol_members(proto) - set(dir(obj)))
 
-    if expected and not match:
+    if not match:
         raise AssertionError(f"{msg}\n Missing Attributes: {missing_attrs}")
-    if match and not expected:
-        raise AssertionError(msg)
 
 
 def supports_issubclass(cls: type, /) -> bool:
