@@ -16,20 +16,20 @@ from typing import ClassVar, Final
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Series
+from pandas._typing import DtypeObj
 
 from tsdm.constants import UNDEFINED
-from tsdm.dtypes import DType
+from tsdm.types.extra import SupportsArrayUfunc
 from tsdm.utils.decorators import pprint_repr
 
 from .base import FittableEncoder, StaticEncoder, WrappedEncoder
 from .pandas import FrameEncoder
 
 
-# TODO: this should have signature [T: SupportsArrayUFunc](T -> T)
 @pprint_repr
 @dataclass(init=False)
-class PositionalEncoder[T: (NDArray, DataFrame, Series, Index)](StaticEncoder[T, T]):
+class PositionalEncoder(StaticEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
     r"""Positional encoding.
 
     .. math::
@@ -54,17 +54,17 @@ class PositionalEncoder[T: (NDArray, DataFrame, Series, Index)](StaticEncoder[T,
         if self.scales[0] != 1.0:
             raise ValueError("Initial scale must be 1.0")
 
-    def encode(self, x: T, /) -> T:
+    def encode[T: SupportsArrayUfunc](self, x: T, /) -> T:
         r""".. Signature: ``... -> (..., 2d)``.
 
         Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
         z = np.einsum("..., d -> ...d", x, self.scales)
-        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)  # pyright: ignore[reportReturnType]
+        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)  # type: ignore[misc]
 
-    def decode(self, y: T, /) -> T:
+    def decode[T: SupportsArrayUfunc](self, y: T, /) -> T:
         r""".. signature:: ``(..., 2d) -> ...``."""
-        return np.arcsin(y[..., 0])  # pyright: ignore[reportReturnType]
+        return np.arcsin(y[..., 0])  # type: ignore[misc]
 
 
 @pprint_repr
@@ -76,13 +76,13 @@ class PeriodicEncoder(FittableEncoder[Series, DataFrame]):
 
     # fitted fields
     freq: float = field(init=False, default=UNDEFINED)
-    original_dtype: DType = field(init=False, default=UNDEFINED)
+    original_dtype: DtypeObj = field(init=False, default=UNDEFINED)
     original_name: str = field(init=False, default=UNDEFINED)
 
     def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
         self.original_dtype = x.dtype
-        self.original_name = x.name
+        self.original_name = str(x.name)
 
         if self.period is UNDEFINED:
             self.period = x.max() + 1
@@ -123,19 +123,19 @@ class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
     level_codes: str = "YMWDhms"
 
     # computed attributes
-    original_dtype: DType = field(init=False, default=UNDEFINED)
+    original_dtype: DtypeObj = field(init=False, default=UNDEFINED)
     original_name: str = field(init=False, default=UNDEFINED)
     original_type: type = field(init=False, default=UNDEFINED)
 
     levels: list[str] = field(init=False, default=UNDEFINED)
-    rev_cols: list[str] = field(init=False, default=UNDEFINED)
+    level_columns: list[str] = field(init=False, default=UNDEFINED)
 
     def fit(self, x: Series, /) -> None:
         r"""Fit the encoder."""
         self.levels = [self.LEVEL_CODES[k] for k in self.level_codes]
-        self.rev_cols = [level for level in self.levels if level != "weekday"]
+        self.level_columns = [level for level in self.levels if level != "weekday"]
         self.original_type = type(x)
-        self.original_name = x.name
+        self.original_name = str(x.name)
         self.original_dtype = x.dtype
 
     def encode(self, x: Series, /) -> DataFrame:
@@ -144,9 +144,8 @@ class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
 
     def decode(self, x: DataFrame, /) -> Series:
         r"""Decode the data."""
-        x = x[self.rev_cols]
-        s = pd.to_datetime(x)
-        return self.original_type(s, name=self.original_name, dtype=self.original_dtype)
+        s = pd.to_datetime(x[self.level_columns])
+        return Series(s, name=self.original_name, dtype=self.original_dtype)
 
 
 @pprint_repr
