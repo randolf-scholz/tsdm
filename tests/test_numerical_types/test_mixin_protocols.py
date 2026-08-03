@@ -15,7 +15,7 @@ from numerical_types import (
     SupportsNdim,
     SupportsShape,
 )
-from tsdm.testing import assert_protocol
+from tsdm.types.utils import assert_protocol
 
 from .fixtures import ARRAYS1D, ARRAYS2D, SERIES, TABLES
 

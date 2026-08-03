@@ -7,7 +7,6 @@ __all__ = [
     # Functions
     "assert_arrays_close",
     "assert_arrays_equal",
-    "assert_protocol",
     "check_shared_interface",
     "is_builtin",
     "is_builtin_constant",
@@ -25,7 +24,6 @@ from . import hashutils, validation
 from ._testing import (
     assert_arrays_close,
     assert_arrays_equal,
-    assert_protocol,
     check_shared_interface,
     is_builtin,
     is_builtin_constant,

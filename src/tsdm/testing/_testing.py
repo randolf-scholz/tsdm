@@ -4,7 +4,6 @@ __all__ = [
     # functions
     "assert_arrays_close",
     "assert_arrays_equal",
-    "assert_protocol",
     "check_shared_interface",
     "is_builtin",
     "is_builtin_constant",
@@ -232,26 +231,6 @@ def is_zipfile(path: FilePath, /) -> bool:
             return True
     except BadZipFile, IsADirectoryError:
         return False
-
-
-def assert_protocol(obj: object, proto: type, /) -> None:
-    r"""Assert that the object is a given protocol."""
-    if not is_protocol(proto):
-        raise TypeError(f"{proto} is not a protocol!")
-
-    if isinstance(obj, type):
-        match = issubclass(obj, proto)
-        name = obj.__name__
-    else:
-        match = isinstance(obj, proto)
-        name = obj.__class__.__name__
-
-    member = "a subtype" if isinstance(obj, type) else "an instance"
-    msg = f"{name!r} is not a {member} of {proto.__name__!r}!"
-    missing_attrs = sorted(get_protocol_members(proto) - set(dir(obj)))
-
-    if not match:
-        raise AssertionError(f"{msg}\n Missing Attributes: {missing_attrs}")
 
 
 def supports_issubclass(cls: type, /) -> bool:

@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 
 from tsdm.datatools import MapDataset, PandasDataset
-from tsdm.testing import assert_protocol
 from tsdm.types.abc import Map
+from tsdm.types.utils import assert_protocol
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
