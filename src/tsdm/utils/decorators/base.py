@@ -75,10 +75,10 @@ class PolymorphicClassDecorator[**P](Protocol):
     # fmt: off
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(cls, *args, **kwargs)
-    def __call__[Cls: type](self, cls: Cls, /, **kwargs: P.kwargs) -> Cls: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__[Cls: type](self, cls: Cls, /, **kwargs: P.kwargs) -> Cls: ...  # type: ignore[valid-type]
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnCls: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnCls: ...  # type: ignore[valid-type]
     # fmt: on
 
 
@@ -124,10 +124,10 @@ class PolymorphicFunctionDecorator[**P](Protocol):
     # fmt: off
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(fn, *args, **kwargs)
-    def __call__[F: Fn](self, fn: F, /, **kwargs: P.kwargs) -> F: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__[F: Fn](self, fn: F, /, **kwargs: P.kwargs) -> F: ...  # type: ignore[valid-type]
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnFn: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnFn: ...  # type: ignore[valid-type]
     # fmt: on
 
 
@@ -153,10 +153,10 @@ class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
     # fmt: off
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(fn, *args, **kwargs)
-    def __call__(self, fn: F_in, /, **kwargs: P.kwargs) -> F_out: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__(self, fn: F_in, /, **kwargs: P.kwargs) -> F_out: ...  # type: ignore[valid-type]
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[F_in], F_out]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[F_in], F_out]: ...  # type: ignore[valid-type]
     # fmt: on
 
 
@@ -172,10 +172,10 @@ class PolymorphicDecorator[**P](Protocol):
     # fmt: off
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def __call__[T](self, obj: T, /, **kwargs: P.kwargs) -> T: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__[T](self, obj: T, /, **kwargs: P.kwargs) -> T: ...  # type: ignore[valid-type]
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
-    def __call__[T](self, /, **kwargs: P.kwargs) -> IdentityMap: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__[T](self, /, **kwargs: P.kwargs) -> IdentityMap: ...  # type: ignore[valid-type]
     # fmt: on
 
 
@@ -211,10 +211,10 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     # fmt: off
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def __call__(self, obj: T_in, /, **kwargs: P.kwargs) -> T_out: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__(self, obj: T_in, /, **kwargs: P.kwargs) -> T_out: ...  # type: ignore[valid-type]
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...  # type: ignore[valid-type]
     # fmt: on
 
 
@@ -347,10 +347,10 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
     # FIXME: Instead of inner function, return instance of ParametrizedDecorator
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def _deco(obj: X, /, **kwargs: P.kwargs) -> Y: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def _deco(obj: X, /, **kwargs: P.kwargs) -> Y: ...  # type: ignore[valid-type]
     # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator(*args, **kwargs)
-    def _deco(**kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore[valid-type]  # pyright: ignore[reportGeneralTypeIssues]
+    def _deco(**kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore[valid-type]
     @wraps(deco)
     def _deco(obj: X = _OBJ, /, *args: P.args, **kwargs: P.kwargs) -> Y | Fn[[X], Y]:
         if obj is _OBJ:

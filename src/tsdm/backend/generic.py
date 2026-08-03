@@ -42,7 +42,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
 def is_nan(x: SupportsEquality, /) -> BooleanArray:
     r"""Determines whether an element is NaN."""
     try:
-        return x.isnan()  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+        return x.isnan()  # type: ignore[attr-defined]
     except AttributeError:
         return x != x
 

@@ -48,7 +48,7 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_sequence, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    cls.__repr__ = partialmethod(repr_sequence, **kwds)  # type: ignore[assignment]
     return cls
 
 
@@ -58,7 +58,7 @@ def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # type: ignore[assignment]
     return cls
 
 
@@ -68,7 +68,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_set, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    cls.__repr__ = partialmethod(repr_set, **kwds)  # type: ignore[assignment]
     return cls
 
 
@@ -78,9 +78,9 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
 def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
     r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, Dataclass):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    if not issubclass(cls, Dataclass):  # type: ignore[misc]
         raise TypeError(f"Expected Sequence type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore[assignment]
     return cls
 
 
@@ -88,9 +88,9 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
 def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
     r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, NTuple):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    if not issubclass(cls, NTuple):  # type: ignore[misc]
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
-    cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore[assignment]
     return cls
 
 
@@ -103,9 +103,9 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
 
     repr_func: Callable[..., str]
 
-    if issubclass(cls, Dataclass):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    if issubclass(cls, Dataclass):  # type: ignore[misc]
         repr_func = repr_dataclass
-    elif issubclass(cls, NTuple):  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    elif issubclass(cls, NTuple):  # type: ignore[misc]
         repr_func = repr_namedtuple
     elif issubclass(cls, Mapping):
         repr_func = repr_mapping
@@ -120,7 +120,7 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore[assignment]
     return cls
 
 

@@ -29,15 +29,6 @@ from tsdm.metrics import (
     TimeSeriesBaseLoss,
     TimeSeriesLoss,
 )
-from tsdm.models import MODELS, BaseModel, ForecastingModel
-from tsdm.optimizers import (
-    LR_SCHEDULERS,
-    OPTIMIZERS,
-    LRScheduler,
-    Optimizer,
-    TorchLRScheduler,
-    TorchOptimizer,
-)
 from tsdm.random.generators import GENERATORS, IVP_Generator, IVP_GeneratorBase
 from tsdm.random.samplers import SAMPLERS, BaseSampler, Sampler
 from tsdm.utils.decorators import (
@@ -63,11 +54,11 @@ CASES: dict[str, Case] = {
     "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS            ),
     "generators"     : Case(tsdm.random.generators , IVP_Generator     , IVP_GeneratorBase  , GENERATORS          ),
     "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
-    "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
+    # "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
     "metrics     "   : Case(tsdm.metrics           , Metric            , BaseMetric         , MODULAR_LOSSES      ),
     "metrics_time"   : Case(tsdm.metrics           , TimeSeriesLoss    , TimeSeriesBaseLoss , TIMESERIES_LOSSES   ),
-    "models"         : Case(tsdm.models            , ForecastingModel  , BaseModel          , MODELS              ),
-    "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
+    # "models"         : Case(tsdm.models            , ForecastingModel  , BaseModel          , MODELS              ),
+    # "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
     "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS            ),
     "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS            ),
     "decorators_cls" : Case(tsdm.utils.decorators  , ClassDecorator    , None               , CLASS_DECORATORS    ),

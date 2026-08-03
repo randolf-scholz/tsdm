@@ -352,6 +352,9 @@ output-format = "concise"
 
 [tool.ty.analysis]
 respect-type-ignore-comments = true
+replace-imports-with-any = [
+    "pyarrow.*", ]
+allowed-unresolved-imports = ["pyarrow.compute.*", ]
 
 # region pyrefly configuration ---------------------------------------------------------
 [tool.pyrefly]
@@ -471,7 +474,7 @@ strictDictionaryInference = false
 strictSetInference = false
 analyzeUnannotatedFunctions = true
 strictParameterNoneValue = true
-enableTypeIgnoreComments = false  # disable `# type: ignore` comments (use `# pyright: ignore` instead)
+enableTypeIgnoreComments = true  # disable `# type: ignore` comments (use `# pyright: ignore` instead)
 deprecateTypingAliases = true  # deprecate `typing` aliases like `List`, `Dict`, etc.
 enableReachabilityAnalysis = true
 enableExperimentalFeatures = false

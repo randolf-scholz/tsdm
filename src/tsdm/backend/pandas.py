@@ -117,9 +117,9 @@ def clip[P: PandasType](x: P, lower: NDArray | None, upper: NDArray | None, /) -
     axis = "columns" if isinstance(x, DataFrame) else "index"
     # FIXME: https://github.com/pandas-dev/pandas/issues/59053
     with suppress(Exception):
-        lower = lower.item()  # type: ignore[union-attr]  # pyright: ignore[reportOptionalMemberAccess]
+        lower = lower.item()  # type: ignore[union-attr]
     with suppress(Exception):
-        upper = upper.item()  # type: ignore[union-attr]  # pyright: ignore[reportOptionalMemberAccess]
+        upper = upper.item()  # type: ignore[union-attr]
 
     return x.clip(lower, upper, axis=axis)
 

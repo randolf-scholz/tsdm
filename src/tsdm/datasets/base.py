@@ -114,9 +114,9 @@ class DatasetMeta(ProtocolMeta):
             cls.ID: str = cls.__qualname__
         assert isinstance(cls.ID, str)
 
-        if "ROOT_DIR" not in namespace:
-            cls.ROOT_DIR: Path = CONFIG.DATASET_DIR / cls.ID
-        assert isinstance(cls.ROOT_DIR, Path)
+        if "DATASET_ROOT_DIR" not in namespace:
+            cls.DATASET_ROOT_DIR: Path = CONFIG.DATASET_DIR / cls.ID
+        assert isinstance(cls.DATASET_ROOT_DIR, Path)
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: N805
         r"""When an instance of the class is created, this method is called."""
@@ -843,7 +843,7 @@ class DatasetBase[Key: str, T](
         self.LOGGER.debug(f"{key=} Validating table shape")
         try:
             shapes_match = validate_table_shape(
-                self.tables[key],  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+                self.tables[key],  # type: ignore[arg-type]
                 expected_shape=self.table_shapes.get(key),
                 errors=errors,
             )

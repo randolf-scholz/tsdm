@@ -177,8 +177,8 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
 
     if TYPE_CHECKING:
         # fmt: off
-        def values(self) -> ValuesView[V | LazyValue[V]]: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
-        def items(self) -> ItemsView[K, V | LazyValue[V]]: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+        def values(self) -> ValuesView[V | LazyValue[V]]: ...  # type: ignore[override]
+        def items(self) -> ItemsView[K, V | LazyValue[V]]: ...  # type: ignore[override]
         # fmt: on
 
     def __getitem__(self, key: K, /) -> V:
@@ -209,7 +209,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     ) -> None:
         r"""Set the value wrapped as LazyValue."""
         lazy_value = LazyValue(value, args=args, kwargs=kwargs)
-        super().__setitem__(key, lazy_value)  # type: ignore[assignment]  # pyright: ignore[reportArgumentType]
+        super().__setitem__(key, lazy_value)  # type: ignore[assignment]
 
     def asdict(self) -> dict[K, V]:
         r"""Return a dictionary with all values evaluated."""

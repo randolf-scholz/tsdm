@@ -59,11 +59,11 @@ class Dataclass(Protocol, metaclass=_DataclassMeta):
 
 
 def issubclass_dataclass(cls: type, /) -> TypeIs[type[Dataclass]]:
-    return issubclass(cls, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    return issubclass(cls, Dataclass)  # type: ignore[misc]
 
 
 def isinstance_dataclass(obj: object, /) -> TypeIs[Dataclass]:
-    return issubclass(type(obj), Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    return issubclass(type(obj), Dataclass)  # type: ignore[misc]
 
 
 @overload
@@ -73,5 +73,5 @@ def is_dataclass(obj: object, /) -> TypeIs[Dataclass]: ...
 def is_dataclass(obj: object, /) -> TypeIs[Dataclass] | TypeIs[type[Dataclass]]:
     r"""Check if the object is a dataclass."""
     if isinstance(obj, type):
-        return issubclass(obj, Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
-    return issubclass(type(obj), Dataclass)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+        return issubclass(obj, Dataclass)  # type: ignore[misc]
+    return issubclass(type(obj), Dataclass)  # type: ignore[misc]

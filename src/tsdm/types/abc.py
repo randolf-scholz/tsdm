@@ -225,7 +225,7 @@ class Map[K, V](Collection[K], Protocol):  # K, +V
 
     def __contains__(self, key: object, /) -> bool:
         try:
-            self[key]  # type: ignore[index]  # pyright: ignore[reportArgumentType]
+            self[key]  # type: ignore[index]
         except KeyError:
             return False
         return True

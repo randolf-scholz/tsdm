@@ -191,9 +191,9 @@ class SupportsEquality[ResultT](Protocol):
     #   as most built-ins will require object argument, but DSLs will restrict to their own type.
     #   so just use Any.
     # equality ==
-    def __eq__(self, other: Any, /) -> ResultT: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __eq__(self, other: Any, /) -> ResultT: ...  # type: ignore[override]
     # inequality !=
-    def __ne__(self, other: Any, /) -> ResultT: ...  # type: ignore[override]  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __ne__(self, other: Any, /) -> ResultT: ...  # type: ignore[override]
 
 
 class SupportsComparison[ComparableT, ResultT](Protocol):

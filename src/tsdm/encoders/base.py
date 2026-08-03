@@ -1790,12 +1790,12 @@ class Parallel[
             encoder.fit(x)
 
     def encode(self, xs: TupleIn, /) -> TupleOut:
-        return tuple(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return tuple(  # type: ignore[return-value]
             encoder.encode(x) for encoder, x in zip(self, xs, strict=True)
         )
 
     def decode(self, ys: TupleOut, /) -> TupleIn:
-        return tuple(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return tuple(  # type: ignore[return-value]
             encoder.decode(x) for encoder, x in zip(self, ys, strict=True)
         )
 
@@ -1805,13 +1805,13 @@ class Parallel[
         #   Cannot annotate return type as Self!
         match self:
             case []:
-                return wrap(  # pyright: ignore[reportReturnType]
+                return wrap(
                     encoder=lambda _: (),  # type: ignore[arg-type, return-value]
                     decoder=lambda _: (),  # type: ignore[arg-type, return-value]
                 )
 
             case [encoder]:
-                return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return simplify(  # type: ignore[return-value]
                     UNWRAP_TUPLE  # [x] -> x
                     >> simplify(encoder)  # x -> y
                     >> WRAP_TUPLE  # y -> [y]
@@ -1902,8 +1902,8 @@ class Replicate[
 
         new = Replicate.__new__(Replicate)
         super(Replicate, new).__init__(encoders)
-        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
-        new.num = len(encoders)  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]
+        new.num = len(encoders)  # type: ignore[misc]
         return new
 
     def get_slice[U, V](
@@ -1913,26 +1913,26 @@ class Replicate[
 
     def __invert__(self) -> Replicate[TupleOut, TupleIn]:
         # FIXME: https://github.com/python/mypy/issues/20336
-        return Replicate.new(encoders=map(invert, self))  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return Replicate.new(encoders=map(invert, self))  # type: ignore[return-value]
 
     def simplify(self) -> BaseEncoder[TupleIn, TupleOut]:
         r"""Simplify the replicate encoder."""
         match self:
             case []:
-                return wrap(  # pyright: ignore[reportReturnType]
+                return wrap(
                     encoder=lambda _: (),  # type: ignore[arg-type, return-value]
                     decoder=lambda _: (),  # type: ignore[arg-type, return-value]
                 )
 
             case [encoder]:
-                return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return simplify(  # type: ignore[return-value]
                     UNWRAP_TUPLE  # [x] -> x
                     >> simplify(encoder)  # x -> y
                     >> WRAP_TUPLE  # y -> [y]
                 )
 
             case _:
-                return Replicate.new(encoders=map(simplify, self))  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return Replicate.new(encoders=map(simplify, self))  # type: ignore[return-value]
 
 
 # fmt: off
@@ -2062,7 +2062,7 @@ class Fork[
         *encoders: Encoder[X, Any],  # *(Encoder[X, Y] for Y in Ys),
         reduction: Reduction[tuple[X, ...], X] = random.choice,
     ) -> None:
-        super().__init__(encoders)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+        super().__init__(encoders)  # type: ignore[arg-type]
         # self.expansion = diagonal(len(encoders)) >> parallel(*encoders)
         self.reduction: Final[Reduction[tuple[X, ...], X]] = reduction
 
@@ -2082,7 +2082,7 @@ class Fork[
             encoder.fit(x)
 
     def encode(self, x: X, /) -> TupleOut:
-        return tuple(e.encode(x) for e in self)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return tuple(e.encode(x) for e in self)  # type: ignore[return-value]
 
     def decode(self, ys: TupleOut, /) -> X:
         decoded_vals = tuple(e.decode(y) for e, y in zip(self, ys, strict=True))
@@ -2091,7 +2091,7 @@ class Fork[
     def simplify(self) -> BaseEncoder[X, TupleOut]:
         match self:
             case []:  # encode[any X -> ()], decode[() -> some x] (depends on reduction)
-                return simplify(  # pyright: ignore[reportReturnType]
+                return simplify(
                     wrap(
                         encoder=lambda _: (),  # type: ignore[return-value]
                         decoder=self.reduction,
@@ -2099,7 +2099,7 @@ class Fork[
                 )
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return simplify(  # type: ignore[return-value]
                     cast("Encoder[X, Any]", encoder)
                     >> wrap(
                         encoder=WRAP_TUPLE,
@@ -2121,7 +2121,7 @@ def fork[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, reduction: Red
 @overload  # n>2
 def fork[X, Y](*es: Encoder[X, Y], reduction: Reduction[tuple[X, ...], X] = ...) -> Fork[X, tuple[Y, ...]]: ...
 # fmt: on
-def fork[X, Y](  # type: ignore[misc]  # pyright: ignore[reportInconsistentOverload]
+def fork[X, Y](  # type: ignore[misc]
     *encoders: Encoder[X, Y],
     reduction: Reduction[tuple[X, ...], X] = random.choice,
 ) -> Fork[X, tuple[Y, ...]]:
@@ -2173,7 +2173,7 @@ class Duplicate[
     """
 
     num: Final[int]
-    reduction: Final[Reduction[tuple[X, ...], X]]  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    reduction: Final[Reduction[tuple[X, ...], X]]  # type: ignore[misc]
 
     # fmt: off
     # @overload  # n=0
@@ -2213,26 +2213,26 @@ class Duplicate[
 
         new = Duplicate.__new__(Duplicate)
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
-        new.num = len(encoders)  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+        new.num = len(encoders)  # type: ignore[misc]
         return new
 
     def get_slice[U, V](self: Duplicate[U, tuple[V, ...]], arg: slice, /) -> Duplicate[U, tuple[V, ...]]:  # fmt: skip
         return Duplicate.new(encoders=self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> Fold[Ys, X]:
-        return Fold.new(encoders=map(invert, self), reduction=self.reduction)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return Fold.new(encoders=map(invert, self), reduction=self.reduction)  # type: ignore[return-value]
 
     def simplify(self) -> BaseEncoder[X, Ys]:
         r"""Simplify the duplicate encoder."""
         match self:
             case []:  # encode[any x -> ()], decode[() -> some x] (depends on reduction)
-                return wrap(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return wrap(  # type: ignore[return-value]
                     encoder=lambda _: (),
                     decoder=self.reduction,
                 ).simplify()
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                return (  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return (  # type: ignore[return-value]
                     cast("Encoder[X, Any]", encoder)
                     >> wrap(
                         encoder=WRAP_TUPLE,
@@ -2241,7 +2241,7 @@ class Duplicate[
                 ).simplify()
 
             case _:
-                return Duplicate.new(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return Duplicate.new(  # type: ignore[return-value]
                     encoders=map(simplify, self),
                     reduction=self.reduction,
                 )
@@ -2393,7 +2393,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         *encoders: Encoder[Any, Y],  # *(Encoder[X, Y] for X in Xs)
         reduction: Reduction[tuple[Y, ...], Y] = random.choice,
     ) -> None:
-        super().__init__(encoders)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+        super().__init__(encoders)  # type: ignore[arg-type]
         self.reduction: Final[Reduction[tuple[Y, ...], Y]] = reduction
 
     # FIXME: possibly incorrect for inhomogeneous reductions
@@ -2417,7 +2417,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         return self.reduction(encoded_vals)
 
     def decode(self, y: Y, /) -> TupleIn:
-        return tuple(e.decode(y) for e in self)  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+        return tuple(e.decode(y) for e in self)  # type: ignore[return-value]
 
     def simplify(self) -> BaseEncoder[TupleIn, Y]:
         r"""Simplify the joint encoder."""
@@ -2426,13 +2426,13 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
 
         match self:
             case []:  # encode[() -> some x], decode[any x -> ()]  (depends on reduction)
-                return wrap(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return wrap(  # type: ignore[return-value]
                     encoder=self.reduction,
                     decoder=lambda _: (),
                 ).simplify()
 
             case [encoder]:  # encode[[x] -> f(reduce([x])], decode[y -> [f⁻¹y]))]
-                return simplify(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return simplify(  # type: ignore[return-value]
                     wrap(
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
@@ -2507,7 +2507,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
     kind: Final[type[Encoder[Any, Y]]]  # type: ignore[misc]
     num: Final[int]
-    reduction: Final[Reduction[tuple[Y, ...], Y]]  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    reduction: Final[Reduction[tuple[Y, ...], Y]]  # type: ignore[misc]
 
     def __init__[U, V](
         self: Fold[tuple[U, ...], V],
@@ -2538,8 +2538,8 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
         new = Fold.__new__(Fold)
         super(Fold, new).__init__(*encoders, reduction=reduction)
-        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
-        new.num = len(encoders)  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]
+        new.num = len(encoders)  # type: ignore[misc]
         return new
 
     def get_slice[U, V](self: Fold[tuple[U, ...], V], arg: slice, /) -> Fold[tuple[U, ...], V]:  # fmt: skip
@@ -2555,14 +2555,14 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         r"""Simplify the fold encoder."""
         match self:
             case []:
-                return wrap(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return wrap(  # type: ignore[return-value]
                     encoder=self.reduction,
                     decoder=lambda _: (),
                 ).simplify()
 
             case [encoder]:
                 encoder = cast("Encoder[Any, Y]", encoder)
-                return (  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return (  # type: ignore[return-value]
                     wrap(
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
@@ -2571,7 +2571,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
                 ).simplify()
 
             case _:
-                return Fold.new(  # type: ignore[return-value]  # pyright: ignore[reportReturnType]
+                return Fold.new(  # type: ignore[return-value]
                     encoders=map(simplify, self),
                     reduction=self.reduction,
                 )

@@ -88,11 +88,11 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
 
 
 def issubclass_namedtuple(cls: type, /) -> TypeIs[type[NTuple]]:
-    return issubclass(cls, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    return issubclass(cls, NTuple)  # type: ignore[misc]
 
 
 def isinstance_namedtuple(obj: object, /) -> TypeIs[NTuple]:
-    return issubclass(type(obj), NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+    return issubclass(type(obj), NTuple)  # type: ignore[misc]
 
 
 @overload
@@ -102,5 +102,5 @@ def is_namedtuple(obj: object, /) -> TypeIs[NTuple]: ...
 def is_namedtuple(obj: object, /) -> TypeIs[NTuple] | TypeIs[type[NTuple]]:
     r"""Check if the object is a namedtuple."""
     if isinstance(obj, type):
-        return issubclass(obj, NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
-    return issubclass(type(obj), NTuple)  # type: ignore[misc]  # pyright: ignore[reportGeneralTypeIssues]
+        return issubclass(obj, NTuple)  # type: ignore[misc]
+    return issubclass(type(obj), NTuple)  # type: ignore[misc]

@@ -547,7 +547,7 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
         super().__post_init__()
 
     @property
-    def rawdata_files(self) -> list[str]:  # type: ignore[override]  # pyright: ignore[reportIncompatibleVariableOverride]
+    def rawdata_files(self) -> list[str]:  # type: ignore[override]
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
 
     @cached_property
