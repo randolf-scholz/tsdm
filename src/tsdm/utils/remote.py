@@ -70,7 +70,7 @@ def download_directory_to_zip(
     )
     with (
         _delete_if_failed(zipfile_path),
-        ZipFile(zipfile_path, **zip_options) as archive,  # type: ignore[call-overload]
+        ZipFile(zipfile_path, **zip_options) as archive,  # pyrefly: ignore[no-matching-overload]
         ThreadPoolExecutor(max_workers=max_workers) as pool,
         Client(auth=auth, headers=headers, timeout=timeout) as client,
     ):

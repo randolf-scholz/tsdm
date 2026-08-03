@@ -191,7 +191,7 @@ class SlidingWindowSampler[
     type Mode = Literal["slice", "mask", "bounds", "interval", "points", "index"]
     r"""Type hint for the mode."""
 
-    data: NDArray[DType]  # type: ignore[type-var]
+    data: NDArray[DType]
 
     size: SpanLikeScalar
     stride: SpanLikeScalar
@@ -204,7 +204,7 @@ class SlidingWindowSampler[
     # dependent variables
     tmin: DType
     tmax: DType
-    cumulative_horizons: NDArray[SpanLikeScalar]  # type: ignore[type-var]
+    cumulative_horizons: NDArray[SpanLikeScalar]
 
     if TYPE_CHECKING:
         # region __new__ overloads -----------------------------------------------------
@@ -587,7 +587,7 @@ class SlidingWindowSampler[
         # region set basic attributes --------------------------------------------------
         self.tmin = cast("DType", get_first_sample(data_source))
         self.tmax = cast("DType", get_last_sample(data_source))
-        zero_td = cast("Any", self.tmin - self.tmin)  # pyrefly: ignore[unsupported-operation]
+        zero_td = cast("Any", self.tmin - self.tmin)  # type: ignore[operator]
         dt_type: type[DType] = type(self.tmin)
         td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)

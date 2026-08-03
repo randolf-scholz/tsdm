@@ -128,7 +128,7 @@ def get_exit_point_names(func: Fn, /) -> list[tuple[str, ...]]:
     return var_names
 
 
-@decorator  # type: ignore[arg-type]
+@decorator
 def return_namedtuple[**P](
     func: Fn[P, tuple],
     /,
@@ -162,10 +162,10 @@ def return_namedtuple[**P](
         raise ValueError("Number of names does not match number of return values.")
 
     # create namedtuple
-    tuple_type: type[tuple] = NamedTuple(  # type: ignore[misc]
+    tuple_type: type[tuple] = NamedTuple(  # pyrefly: ignore[bad-assignment]
         # FIXME: https://github.com/python/cpython/issues/144321
         name,
-        list(zip(field_names, type_hints, strict=True)),
+        list(zip(field_names, type_hints, strict=True)),  # pyrefly: ignore[bad-argument-count]
     )
 
     @wraps(func)

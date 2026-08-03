@@ -446,7 +446,7 @@ class DatasetBase[Key: str, T](
             return list(super().__dir__()) + list(self.table_names)
         return list(super().__dir__())
 
-    def __getattr__(self, key: Key, /) -> T:  # type: ignore[misc]
+    def __getattr__(self, key: Key, /) -> T:
         r"""Get attribute."""
         if self._enable_key_attributes and key in self.table_names:
             return self.tables[key]

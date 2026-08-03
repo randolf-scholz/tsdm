@@ -25,7 +25,7 @@ class FrozenMap[K, V](Mapping[K, V]):
         **kwargs: V
     ) -> None: ...
     # fmt: on
-    def __init__(  # type: ignore[misc]
+    def __init__(
         self, items: Mapping[K, V] | Iterable[tuple[K, V]] = (), /, **kwargs: V
     ) -> None:
         self._values: dict[K, V] = dict(items, **kwargs)

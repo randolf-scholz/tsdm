@@ -220,7 +220,7 @@ def return_namedtuple[**P, T](
         )
 
     # create namedtuple
-    tuple_type: type[NTuple] = NamedTuple(  # type: ignore[misc]
+    tuple_type: type[NTuple] = NamedTuple(  # pyrefly: ignore[bad-assignment]
         name,
         zip(field_names, type_hints, strict=True),  # pyrefly: ignore[bad-argument-count]
     )

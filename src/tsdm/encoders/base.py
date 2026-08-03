@@ -313,7 +313,7 @@ class EncoderMeta(ProtocolMeta):
             namespace["FIELDS"] = cls.FIELDS
 
         new_type = super().__new__(cls, name, bases, namespace, **kwds)
-        new_type.__annotations__["FIELDS"] = ClassVar[frozenset[str]]
+        new_type.__annotations__["FIELDS"] = ClassVar[frozenset[str]]  # pyrefly: ignore[invalid-annotation]
         return new_type
 
 
@@ -845,7 +845,7 @@ class EncoderList[
 
     @classmethod
     def new[E2: Encoder](
-        cls: type[EncoderList], *, encoders: Iterable[E2]
+        cls: type[EncoderList], /, *, encoders: Iterable[E2]
     ) -> EncoderList[Any, Any, E2]:
         r"""Create a new instance with the given values."""
         try:
@@ -974,12 +974,12 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
                 assert e is not None
                 self.encode = e.encode if isinstance(e, SupportsEncode) else e
                 if isinstance(e, SupportsDecode):
-                    self.decode = e.decode  # type: ignore[unreachable]
+                    self.decode = e.decode
             case None, d:
                 assert d is not None
                 self.decode = d.encode if isinstance(d, SupportsEncode) else d
                 if isinstance(d, SupportsDecode):
-                    self.encode = d.decode  # type: ignore[unreachable]
+                    self.encode = d.decode
 
             # ambiguous cases
             case SupportsEncode() as e, SupportsEncode() as d:
@@ -1108,7 +1108,7 @@ class MappedEncoder[
 
     def simplify(self) -> MappedEncoder[MappingIn, MappingOut]:
         r"""Simplify the encoders."""
-        return MappedEncoder[MappingIn, MappingOut](super().simplify())  # type: ignore[return-value]
+        return MappedEncoder[MappingIn, MappingOut](super().simplify())
 
 
 def map_encoders[X, Y](
@@ -1463,7 +1463,7 @@ class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     """
 
     @classmethod
-    def new[E2: Encoder](cls, *, encoders: Iterable[E2]) -> Compose[Any, Any, E2]:
+    def new[E2: Encoder](cls, /, *, encoders: Iterable[E2]) -> Compose[Any, Any, E2]:
         return Compose(encoders)
 
     def __invert__(self) -> Compose[Y, X]:
@@ -1526,7 +1526,7 @@ def compose[X, Y](*es: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, 
 @overload  # fallback
 def compose(*es: Encoder) -> Compose: ...
 # fmt: on
-@deprecated("Use `pipe` instead.")  # type: ignore[misc]
+@deprecated("Use `pipe` instead.")
 def compose(*encoders: Encoder) -> Compose:
     r"""Chain encoders.
 
@@ -1672,7 +1672,7 @@ def pipe[X, Y](*es: *tuple[Encoder[X, Any], *tuple[Encoder, ...], Encoder[Any, Y
 @overload  # fallback
 def pipe(*es: Encoder) -> Pipe: ...
 # fmt: on
-def pipe(*es: Encoder) -> Pipe:  # type: ignore[misc]
+def pipe(*es: Encoder) -> Pipe:
     r"""Pipe encoders.
 
     See Also: `Pipe`
@@ -1805,9 +1805,9 @@ class Parallel[
         #   Cannot annotate return type as Self!
         match self:
             case []:
-                return wrap(
+                return wrap(  # pyrefly: ignore[bad-return]
                     encoder=lambda _: (),  # type: ignore[arg-type, return-value]
-                    decoder=lambda _: (),  # type: ignore[arg-type, return-value]
+                    decoder=lambda _: (),
                 )
 
             case [encoder]:
@@ -1886,11 +1886,11 @@ class Replicate[
         if num < 0:
             raise ValueError(f"n must be non-negative, got {num}")
         super().__init__([deepcopy(encoder) for _ in range(num)])
-        self.kind = type(self[0]) if self else Encoder
+        self.kind = type(self[0]) if self else Encoder  # pyrefly: ignore[bad-assignment]
         self.num = len(self)
 
     @classmethod
-    def new[X, Y](  # type: ignore[override]
+    def new[X, Y](  # pyrefly: ignore[bad-override]
         cls: type[Replicate], /, *, encoders: Iterable[Encoder[X, Y]]
     ) -> Replicate[tuple[X, ...], tuple[Y, ...]]:
         if cls is not Replicate:
@@ -1919,9 +1919,9 @@ class Replicate[
         r"""Simplify the replicate encoder."""
         match self:
             case []:
-                return wrap(
+                return wrap(  # pyrefly: ignore[bad-return]
                     encoder=lambda _: (),  # type: ignore[arg-type, return-value]
-                    decoder=lambda _: (),  # type: ignore[arg-type, return-value]
+                    decoder=lambda _: (),
                 )
 
             case [encoder]:
@@ -1945,7 +1945,7 @@ def replicate[X, Y](e: Encoder[X, Y], num: L[2], /) -> Replicate[tuple[X, X], tu
 @overload  # n variable
 def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], tuple[Y, ...]]: ...
 # fmt: on
-def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], tuple[Y, ...]]:  # type: ignore[misc]  # fmt: skip
+def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], tuple[Y, ...]]:  # fmt: skip
     r"""Create copies of an Encoder in parallel.
 
         x₁ ────▶ f(x₁)
@@ -2091,7 +2091,7 @@ class Fork[
     def simplify(self) -> BaseEncoder[X, TupleOut]:
         match self:
             case []:  # encode[any X -> ()], decode[() -> some x] (depends on reduction)
-                return simplify(
+                return simplify(  # pyrefly: ignore[bad-return]
                     wrap(
                         encoder=lambda _: (),  # type: ignore[return-value]
                         decoder=self.reduction,
@@ -2113,9 +2113,9 @@ class Fork[
 
 # fmt: off
 @overload  # n=0
-def fork[X=Any](*, reduction: Reduction[tuple[()], X] = ...) -> Fork[X, tuple[()]]: ...  # pyright: ignore[reportInvalidTypeVarUse]
+def fork[X=Any](*, reduction: Reduction[tuple[()], X] = ...) -> Fork[X, tuple[()]]: ...  # type: ignore[overload]
 @overload  # n=1
-def fork[X, Y](e: Encoder[X, Y], /, *, reduction: Reduction[tuple[X, X], X] = ...) -> Fork[X, tuple[Y]]: ...
+def fork[X, Y](e: Encoder[X, Y], /, *, reduction: Reduction[tuple[X], X] = ...) -> Fork[X, tuple[Y]]: ...
 @overload  # n=2
 def fork[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, reduction: Reduction[tuple[X, X], X] = ...) -> Fork[X, tuple[Y1, Y2]]: ...
 @overload  # n>2
@@ -2197,7 +2197,7 @@ class Duplicate[
         self.num = num
 
     @classmethod
-    def new[Y](  # type: ignore[override]
+    def new[Y](  # pyrefly: ignore[bad-override]
         cls: type[Duplicate],
         /,
         *,
@@ -2211,7 +2211,7 @@ class Duplicate[
         if len({type(e) for e in encoders}) > 1:
             raise TypeError("All encoders must be of the same type.")
 
-        new = Duplicate.__new__(Duplicate)
+        new = Duplicate[X, tuple[Y, ...]].__new__(Duplicate)
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
         new.num = len(encoders)  # type: ignore[misc]
         return new
@@ -2265,7 +2265,7 @@ def duplicate[X, Y](
     e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple[X, ...], X] = ...
 ) -> Fork[X, tuple[Y, ...]]: ...
 # fmt: on
-def duplicate[X, Y](  # type: ignore[misc]
+def duplicate[X, Y](
     e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, X] = random.choice
 ) -> Fork[X, tuple[Y, ...]]:
     r"""Apply copies of a single encoder to the same input (SIMO).
@@ -2505,7 +2505,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         >>> assert enc(("a", "b", "c")) == "(a + 1)*(b + 1)*(c + 1)"
     """
 
-    kind: Final[type[Encoder[Any, Y]]]  # type: ignore[misc]
+    kind: Final[type[Encoder[Any, Y]]]
     num: Final[int]
     reduction: Final[Reduction[tuple[Y, ...], Y]]  # type: ignore[misc]
 
@@ -2522,7 +2522,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         self.num = num
 
     @classmethod
-    def new[X](  # type: ignore[override]
+    def new[X](  # pyrefly: ignore[bad-override]
         cls: type[Fold],
         /,
         *,
@@ -2593,7 +2593,7 @@ def fold[X, Y](
 def fold[X, Y](
     e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple[Y, ...], Y] = ...
 ) -> Meet[tuple[X, ...], Y]: ...
-def fold[X, Y](  # type: ignore[misc]
+def fold[X, Y](
     e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, Y] = random.choice
 ) -> Meet[tuple[X, ...], Y]:
     r"""Apply copies of a single encoder to multiple inputs and reduces (MISO).

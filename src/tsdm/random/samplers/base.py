@@ -49,7 +49,7 @@ class Sampler[T](Protocol):  # +T
         r"""Whether to shuffle the indices."""
         ...
 
-    shuffle: bool  # type: ignore[no-redef]
+    shuffle: bool
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @property
@@ -58,7 +58,7 @@ class Sampler[T](Protocol):  # +T
         r"""The random number generator."""
         ...
 
-    rng: Generator  # type: ignore[no-redef]
+    rng: Generator
     # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
 
@@ -95,7 +95,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
         For Iterable-style datasets, the sampler will return random values of the iterable.
     """
 
-    data: Final[Dataset[T]]  # type: ignore[misc]
+    data: Final[Dataset[T]]
 
     _: KW_ONLY
 
