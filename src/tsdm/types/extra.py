@@ -96,7 +96,7 @@ class SupportsDtype[DTypeT = Any](Protocol):
 
 
 @runtime_checkable
-class SupportsArray(Protocol):
+class SupportsArray[ScalarT: np.generic](Protocol):
     r"""Protocol for objects that support `__array__`.
 
     References:
@@ -104,7 +104,7 @@ class SupportsArray(Protocol):
     """
 
     @abstractmethod
-    def __array__(self) -> NDArray[np.object_]:
+    def __array__(self) -> NDArray[ScalarT]:
         r"""Return the array of the tensor."""
         ...
 
