@@ -138,13 +138,13 @@ class BoundaryEncoder(FittableEncoder[FloatArray, FloatArray]):
 
         # set lower_bound
         if self.lower_bound is UNDEFINED:
-            self.lower_bound = float(self.backend.nanmin(data))
+            self.lower_bound = float(self.backend.nanmin(data))  # pyrefly: ignore[bad-argument-type]
         elif is_null_scalar(self.lower_bound):
             self.lower_bound = None
 
         # set upper_bound
         if self.upper_bound is UNDEFINED:
-            self.upper_bound = float(self.backend.nanmax(data))
+            self.upper_bound = float(self.backend.nanmax(data))  # pyrefly: ignore[bad-argument-type]
         elif is_null_scalar(self.upper_bound):
             self.upper_bound = None
 
