@@ -20,8 +20,9 @@ __logger__ = logging.getLogger(__name__)
 # FIXME: broken test! this mask is incorrect!
 @pytest.mark.slow
 @pytest.mark.skip(reason="This test is broken.")
-def test_kiwi_task(split_id: tuple[int, str] = (0, "train")) -> None:
+def test_kiwi_task() -> None:
     r"""Test the KiwiTask."""
+    split_id = (0, "train")
     LOGGER = __logger__.getChild(KiwiBenchmark.__name__)
     LOGGER.info("Testing.")
     task = KiwiBenchmark()

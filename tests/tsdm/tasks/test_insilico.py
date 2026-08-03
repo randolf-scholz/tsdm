@@ -8,8 +8,9 @@ from tsdm.tasks import InSilicoTask
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
 
 
-def test_insilico_task(split_id: tuple[int, str] = (0, "train")) -> None:
+def test_insilico_task() -> None:
     r"""Test the TimeSeriesDatasetTask."""
+    split_id = (0, "train")
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
