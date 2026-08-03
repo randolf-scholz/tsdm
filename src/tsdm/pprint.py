@@ -248,7 +248,7 @@ def repr_generic(
             return repr_array(array, **kwargs)
         case Dataclass() as dtc:  # pyrefly: ignore[unsafe-overlap]
             return repr_dataclass(dtc, **kwargs)
-        case NTuple() as ntuple:
+        case NTuple() as ntuple:  # pyrefly: ignore[unsafe-overlap]
             return repr_namedtuple(ntuple, **kwargs)
         case Mapping() as mapping:
             return repr_mapping(mapping, **kwargs)
