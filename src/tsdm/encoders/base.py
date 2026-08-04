@@ -1869,17 +1869,19 @@ class Replicate[
     kind: Final[type[Encoder]]
     num: Final[int]
 
-    # @overload  # n=0
-    # def __init__[X, Y](self: "Replicate[tuple[()], tuple[()]]", e: Encoder[X, Y], num: L[0], /) -> None: ...
-    # @overload  # n=1
-    # def __init__[X, Y](self: "Replicate[tuple[X], tuple[Y]]", e: Encoder[X, Y], num: L[1], /) -> None: ...
-    # @overload  # n=2
-    # def __init__[X, Y](self: "Replicate[tuple[X, X], tuple[Y, Y]]", e: Encoder[X, Y], num: L[2], /) -> None: ...
-    # @overload  # n variable
-    # def __init__[X, Y](self: "Replicate[tuple[X, ...], tuple[Y, ...]]", e: Encoder[X, Y], num: int, /) -> None: ...
-    def __init__[X, Y](
-        self: Replicate[tuple[X, ...], tuple[Y, ...]],
-        encoder: Encoder[X, Y],
+    # fmt: off
+    @overload  # n=0
+    def __init__[U, V](self: Replicate[tuple[()], tuple[()]], e: Encoder[U, V], num: L[0], /) -> None: ...
+    @overload  # n=1
+    def __init__[U, V](self: Replicate[tuple[U], tuple[V]], e: Encoder[U, V], num: L[1], /) -> None: ...
+    @overload  # n=2
+    def __init__[U, V](self: Replicate[tuple[U, U], tuple[V, V]], e: Encoder[U, V], num: L[2], /) -> None: ...
+    @overload  # n variable
+    def __init__[U, V](self: Replicate[tuple[U, ...], tuple[V, ...]], e: Encoder[U, V], num: int, /) -> None: ...
+    # fmt: on
+    def __init__[U, V](
+        self: Replicate[tuple[U, ...], tuple[V, ...]],
+        encoder: Encoder[U, V],
         num: int,
         /,
     ) -> None:
@@ -1945,7 +1947,7 @@ def replicate[X, Y](e: Encoder[X, Y], num: L[2], /) -> Replicate[tuple[X, X], tu
 @overload  # n variable
 def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], tuple[Y, ...]]: ...
 # fmt: on
-def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], tuple[Y, ...]]:  # fmt: skip
+def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple, tuple]:
     r"""Create copies of an Encoder in parallel.
 
         x₁ ────▶ f(x₁)
@@ -2044,27 +2046,27 @@ class Fork[
         >>> assert enc("a") == ("a + 1", "2 * a")
     """
 
+    reduction: Final[Reduction[tuple[X, ...], X]]
+
     # NOTE: Need to use different variable names than the class-scoped parameters!
     # fmt: off
-    # @overload  # n=0
-    # def __init__[T](self: "Fork[T, tuple[()]]", *, reduction: Reduction[tuple[()], T] = ...) -> None: ...
-    # @overload  # n=1
-    # def __init__[T, Y=Any](self: "Fork[T, tuple[Y]]", e: Encoder[T, Y], /, *, reduction: Reduction[tuple[T], T] = ...) -> None: ...
-    # @overload  # n=2
-    # def __init__[T, Y1, Y2](self: "Fork[T, tuple[Y1, Y2]]", e1: Encoder[T, Y1], e2: Encoder[T, Y2], /, *, reduction: Reduction[tuple[T, T], T] = ...) -> None: ...
-    # @overload  # n>2 same output type
-    # def __init__[T, Y=Any](self: "Fork[T, tuple[Y, ...]]", *es: Encoder[T, Y], reduction: Reduction[tuple[T, ...], T] = ...) -> None: ...
-    # @overload  # n>2 different output types
-    # def __init__[T, Vs: tuple](self: "Fork[T, Vs]", *encoders: Encoder[T, Any], reduction: Reduction[Vs, T] = ...) -> None: ...
+    @overload  # n=0
+    def __init__[U](self: Fork[U, tuple[()]], /, *, reduction: Reduction[tuple[()], U] = ...) -> None: ...
+    @overload  # n=1
+    def __init__[U, V](self: Fork[U, tuple[V]], e: Encoder[U, V], /, *, reduction: Reduction[tuple[U], U] = ...) -> None: ...
+    @overload  # n=2
+    def __init__[U, V1, V2](self: Fork[U, tuple[V1, V2]], e1: Encoder[U, V1], e2: Encoder[U, V2], /, *, reduction: Reduction[tuple[U, U], U] = ...) -> None: ...
+    @overload  # n>2 different output types
+    def __init__[U, V](self: Fork[U, tuple[V, ...]], /, *encoders: Encoder[U, V], reduction: Reduction[tuple[U, ...], U] = ...) -> None: ...
     # fmt: on
-    def __init__(
-        self,
-        *encoders: Encoder[X, Any],  # *(Encoder[X, Y] for Y in Ys),
-        reduction: Reduction[tuple[X, ...], X] = random.choice,
+    def __init__[U, V](
+        self: Fork[U, tuple[V, ...]],
+        /,
+        *encoders: Encoder[U, V],  # *(Encoder[X, Y] for Y in Ys),
+        reduction: Reduction[tuple, U] = random.choice,
     ) -> None:
-        super().__init__(encoders)  # type: ignore[arg-type]
-        # self.expansion = diagonal(len(encoders)) >> parallel(*encoders)
-        self.reduction: Final[Reduction[tuple[X, ...], X]] = reduction
+        super().__init__(encoders)  # pyrefly: ignore[bad-argument-type]
+        self.reduction = reduction
 
     # FIXME: possibly incorrect for inhomogeneous reductions
     def get_slice[U, V](self: Fork[U, tuple[V, ...]], arg: slice, /) -> Fork[U, tuple[V, ...]]:  # fmt: skip
@@ -2108,23 +2110,20 @@ class Fork[
                 )
 
             case _:
-                return Fork(*map(simplify, self))
+                return Fork(*map(simplify, self))  # type: ignore[return-type]
 
 
 # fmt: off
 @overload  # n=0
-def fork[X=Any](*, reduction: Reduction[tuple[()], X] = ...) -> Fork[X, tuple[()]]: ...  # type: ignore[overload]
+def fork[X=Any]() -> Fork[X, tuple[()]]: ...
 @overload  # n=1
-def fork[X, Y](e: Encoder[X, Y], /, *, reduction: Reduction[tuple[X], X] = ...) -> Fork[X, tuple[Y]]: ...
+def fork[X, Y](e: Encoder[X, Y], /) -> Fork[X, tuple[Y]]: ...
 @overload  # n=2
-def fork[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /, *, reduction: Reduction[tuple[X, X], X] = ...) -> Fork[X, tuple[Y1, Y2]]: ...
+def fork[X, Y1, Y2](e1: Encoder[X, Y1], e2: Encoder[X, Y2], /) -> Fork[X, tuple[Y1, Y2]]: ...
 @overload  # n>2
-def fork[X, Y](*es: Encoder[X, Y], reduction: Reduction[tuple[X, ...], X] = ...) -> Fork[X, tuple[Y, ...]]: ...
+def fork[X, Y](*es: Encoder[X, Y]) -> Fork[X, tuple[Y, ...]]: ...
 # fmt: on
-def fork[X, Y](  # type: ignore[misc]
-    *encoders: Encoder[X, Y],
-    reduction: Reduction[tuple[X, ...], X] = random.choice,
-) -> Fork[X, tuple[Y, ...]]:
+def fork[X, Y](*encoders: Encoder[X, Y]) -> Fork[X, tuple]:
     r"""Apply multiple encoders to the same input (SIMO).
 
               ┌────▶ f₁(x)
@@ -2134,7 +2133,7 @@ def fork[X, Y](  # type: ignore[misc]
 
     See Also:  `Fork`
     """
-    return Fork(*encoders, reduction=reduction)
+    return Fork(*encoders)
 
 
 @pprint_repr
@@ -2173,17 +2172,16 @@ class Duplicate[
     """
 
     num: Final[int]
-    reduction: Final[Reduction[tuple[X, ...], X]]  # type: ignore[misc]
 
     # fmt: off
-    # @overload  # n=0
-    # def __init__[T, Y](self: "Duplicate[T, tuple[()]]", e: Encoder[T, Y], num: L[0], /, *, reduction: Reduction[tuple[()], T] = ...) -> None: ...
-    # @overload  # n=1
-    # def __init__[T, Y](self: "Duplicate[T, tuple[Y]]", e:  Encoder[T, Y], num: L[1], /, *, reduction: Reduction[tuple[T], T] = ...) -> None: ...
-    # @overload  # n=2
-    # def __init__[T, Y](self: "Duplicate[T, tuple[Y, Y]]", e:  Encoder[T, Y], num: L[2], /, *, reduction: Reduction[tuple[T, T], T] = ...) -> None: ...
-    # @overload  # n>2
-    # def __init__[T, Y](self: "Duplicate[T, tuple[Y, ...]]", e:  Encoder[T, Y], num: int, /, *, reduction: Reduction[tuple[T, ...], T] = ...) -> None: ...
+    @overload  # n=0
+    def __init__[U, V](self: Duplicate[U, tuple[()]], e: Encoder[U, V], num: L[0], /, *, reduction: Reduction[tuple[()], U] = ...) -> None: ...
+    @overload  # n=1
+    def __init__[U, V](self: Duplicate[U, tuple[V]], e:  Encoder[U, V], num: L[1], /, *, reduction: Reduction[tuple[U], U] = ...) -> None: ...
+    @overload  # n=2
+    def __init__[U, V](self: Duplicate[U, tuple[V, V]], e:  Encoder[U, V], num: L[2], /, *, reduction: Reduction[tuple[U, U], U] = ...) -> None: ...
+    @overload  # n>2
+    def __init__[U, V](self: Duplicate[U, tuple[V, ...]], e:  Encoder[U, V], num: int, /, *, reduction: Reduction[tuple[U, ...], U] = ...) -> None: ...
     # fmt: on
     def __init__[U, V](
         self: Duplicate[U, tuple[V, ...]],
@@ -2191,9 +2189,12 @@ class Duplicate[
         num: int,
         /,
         *,
-        reduction: Reduction[tuple[U, ...], U] = random.choice,
+        reduction: Reduction[tuple, U] = random.choice,
     ) -> None:
-        super().__init__(*(deepcopy(encoder) for _ in range(num)), reduction=reduction)
+        super().__init__(  # type: ignore[return-type]
+            *(deepcopy(encoder) for _ in range(num)),
+            reduction=reduction,
+        )
         self.num = num
 
     @classmethod
@@ -2211,7 +2212,7 @@ class Duplicate[
         if len({type(e) for e in encoders}) > 1:
             raise TypeError("All encoders must be of the same type.")
 
-        new = Duplicate[X, tuple[Y, ...]].__new__(Duplicate)
+        new = object.__new__(Duplicate)
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
         new.num = len(encoders)  # type: ignore[misc]
         return new
@@ -2241,7 +2242,7 @@ class Duplicate[
                 ).simplify()
 
             case _:
-                return Duplicate.new(  # type: ignore[return-value]
+                return Duplicate[X, Ys].new(  # type: ignore[return-value]
                     encoders=map(simplify, self),
                     reduction=self.reduction,
                 )
@@ -2249,25 +2250,21 @@ class Duplicate[
 
 # fmt: off
 @overload  # n=0
-def duplicate[X, Y](
-    e: Encoder[X, Y], num: L[0], /, *, reduction: Reduction[tuple[()], X] = ...
-) -> Fork[X, tuple[()]]: ...
+def duplicate[X, Y](e: Encoder[X, Y], num: L[0], /, *, reduction: Reduction[tuple[()], X] = ...) -> Fork[X, tuple[()]]: ...
 @overload  # n=1
-def duplicate[X, Y](
-    e: Encoder[X, Y], num: L[1], /, *, reduction: Reduction[tuple[X], X] = ...
-) -> Fork[X, tuple[Y]]: ...
+def duplicate[X, Y](e: Encoder[X, Y], num: L[1], /, *, reduction: Reduction[tuple[X], X] = ...) -> Fork[X, tuple[Y]]: ...
 @overload  # n=2
-def duplicate[X, Y](
-    e: Encoder[X, Y], num: L[2], /, *, reduction: Reduction[tuple[X, X], X] = ...
-) -> Fork[X, tuple[Y, Y]]: ...
+def duplicate[X, Y](e: Encoder[X, Y], num: L[2], /, *, reduction: Reduction[tuple[X, X], X] = ...) -> Fork[X, tuple[Y, Y]]: ...
 @overload  # n>2
-def duplicate[X, Y](
-    e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple[X, ...], X] = ...
-) -> Fork[X, tuple[Y, ...]]: ...
+def duplicate[X, Y](e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple[X, ...], X] = ...) -> Fork[X, tuple[Y, ...]]: ...
 # fmt: on
 def duplicate[X, Y](
-    e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, X] = random.choice
-) -> Fork[X, tuple[Y, ...]]:
+    e: Encoder[X, Y],
+    num: int,
+    /,
+    *,
+    reduction: Reduction[tuple, X] = random.choice,
+) -> Fork[X, tuple]:
     r"""Apply copies of a single encoder to the same input (SIMO).
 
               ┌────▶ f(x)
@@ -2377,24 +2374,27 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         - `stack`, `concat` for tensor data
     """
 
+    reduction: Final[Reduction[tuple[Y, ...], Y]]
+
     # NOTE: Need to use different variable names than the class-scoped parameters!
     # fmt: off
-    # @overload  # n=0
-    # def __init__[Z](self: "Reduce[tuple[()], Z]", *, aggregate_fn: Agg[Z] = ...) -> None: ...
-    # @overload  # n=1
-    # def __init__[X, Z](self: "Reduce[tuple[X], Z]", e: Encoder[X, Z], /, *, aggregate_fn: Agg[Z] = ...) -> None: ...
-    # @overload  # n=2
-    # def __init__[X1, X2, Z](self: "Reduce[tuple[X1, X2], Z]", e1: Encoder[X1, Z], e2: Encoder[X2, Z], /, *, aggregate_fn: Agg[Z] = ...) -> None: ...
-    # @overload  # n>2
-    # def __init__[X, Z](self: "Reduce[tuple[X, ...], Z]", *es: Encoder[X, Z], aggregate_fn: Agg[Z] = ...) -> None: ...
+    @overload  # n=0
+    def __init__[V](self: Meet[tuple[()], V], /, *, reduction: Reduction[tuple[()], V] = ...) -> None: ...
+    @overload  # n=1
+    def __init__[U, V](self: Meet[tuple[U], V], e1: Encoder[U, V], /, *, reduction: Reduction[tuple[V], V] = ...) -> None: ...
+    @overload  # n=2
+    def __init__[U1, U2, V](self: Meet[tuple[U1, U2], V], e1: Encoder[U1, V], e2: Encoder[U2, V], /, *, reduction: Reduction[tuple[V, V], V] = ...) -> None: ...
+    @overload  # n>2
+    def __init__[U, V](self: Meet[tuple[U, ...], V], /, *es: Encoder[U, V], reduction: Reduction[tuple[V, ...], V] = ...) -> None: ...
     # fmt: on
-    def __init__(
-        self,
-        *encoders: Encoder[Any, Y],  # *(Encoder[X, Y] for X in Xs)
-        reduction: Reduction[tuple[Y, ...], Y] = random.choice,
+    def __init__[U, V](
+        self: Meet[tuple[U, ...], V],
+        /,
+        *encoders: Encoder[U, V],  # *(Encoder[X, Y] for X in Xs)
+        reduction: Reduction[tuple, V] = random.choice,
     ) -> None:
-        super().__init__(encoders)  # type: ignore[arg-type]
-        self.reduction: Final[Reduction[tuple[Y, ...], Y]] = reduction
+        super().__init__(encoders)  # pyrefly: ignore[bad-argument-type]
+        self.reduction = reduction
 
     # FIXME: possibly incorrect for inhomogeneous reductions
     def get_slice[U, V](
@@ -2403,9 +2403,9 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         return Meet(*self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> Fork[Y, TupleIn]:
-        return cast(
-            "Fork[Y, TupleIn]",
-            fork(*map(invert, self), reduction=self.reduction),
+        return Fork(  # type: ignore[return-type]
+            *map(invert, self),
+            reduction=self.reduction,
         )
 
     def fit(self, xs: TupleIn, /) -> None:
@@ -2441,22 +2441,25 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
                 )
 
             case _:
-                return Meet(*map(simplify, self), reduction=self.reduction)
+                return Meet(  # type: ignore[return-type]
+                    *map(simplify, self),
+                    reduction=self.reduction,
+                )
 
 
 # fmt: off
 @overload  # n=0
-def meet[Y = Any](
+def meet[Y](
     *, reduction: Reduction[tuple[()], Y] = ...  # pyright: ignore[reportInvalidTypeVarUse]
 ) -> Meet[tuple[()], Y]: ...
 @overload  # n=1
-def meet[X, Y](
-    e: Encoder[X, Y], /, *, reduction: Reduction[tuple[Y], Y] = ...
-) -> Meet[tuple[X], Y]: ...
+def meet[X1, Y](
+    e: Encoder[X1, Y], /, *, reduction: Reduction[tuple[Y], Y] = ...
+) -> Meet[tuple[X1], Y]: ...
 @overload  # n=2
-def meet[X, X2, Y](
-    e1: Encoder[X, Y], e2: Encoder[X2, Y], /,  *, reduction: Reduction[tuple[Y, Y], Y] = ...,
-) -> Meet[tuple[X, X2], Y]: ...
+def meet[X1, X2, Y](
+    e1: Encoder[X1, Y], e2: Encoder[X2, Y], /,  *, reduction: Reduction[tuple[Y, Y], Y] = ...,
+) -> Meet[tuple[X1, X2], Y]: ...
 @overload  # n>2
 def meet[X, Y](
     *es: Encoder[X, Y], reduction: Reduction[tuple[Y, ...], Y] = ...
@@ -2509,16 +2512,30 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
     num: Final[int]
     reduction: Final[Reduction[tuple[Y, ...], Y]]  # type: ignore[misc]
 
+    # fmt: off
+    @overload  # n=0
+    def __init__[U, V](self: Fold[tuple[()], V], e: Encoder[U, V], num: L[0], /, *, reduction: Reduction[tuple[()], V] = ...) -> None: ...
+    @overload  # n=1
+    def __init__[U, V](self: Fold[tuple[U], V], e: Encoder[U, V], num: L[1], /, *, reduction: Reduction[tuple[V], V] = ...) -> None: ...
+    @overload  # n=2
+    def __init__[U, V](self: Fold[tuple[U, U], V], e: Encoder[U, V], num: L[2], /, *, reduction: Reduction[tuple[V, V], V] = ...) -> None: ...
+    @overload  # n>2
+    def __init__[U, V](self: Fold[tuple[U, ...], V], e: Encoder[U, V], num: int, /, *, reduction: Reduction[tuple[V, ...], V] = ...) -> None: ...
+    # fmt: on
     def __init__[U, V](
         self: Fold[tuple[U, ...], V],
         encoder: Encoder[U, V],
         num: int,
         /,
         *,
-        reduction: Reduction[tuple[V, ...], V] = random.choice,
+        reduction: Reduction[tuple, V] = random.choice,
     ) -> None:
-        super().__init__(*(deepcopy(encoder) for _ in range(num)), reduction=reduction)
-        self.kind = type(self[0]) if self else Encoder
+        Meet[tuple[U, ...], V].__init__(
+            self,
+            *(deepcopy(encoder) for _ in range(num)),
+            reduction=reduction,
+        )
+        self.kind = type(self[0]) if self else Encoder  # pyrefly: ignore[bad-assignment]
         self.num = num
 
     @classmethod
@@ -2595,7 +2612,7 @@ def fold[X, Y](
 ) -> Meet[tuple[X, ...], Y]: ...
 def fold[X, Y](
     e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, Y] = random.choice
-) -> Meet[tuple[X, ...], Y]:
+) -> Meet[tuple, Y]:
     r"""Apply copies of a single encoder to multiple inputs and reduces (MISO).
 
         x₁ ────┐

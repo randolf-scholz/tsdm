@@ -94,8 +94,7 @@ class TestDuplicate(unittest.TestCase):
         assert decoded_result == "max(a, a)"
 
     def test_duplicate_int(self) -> None:
-        reduceN = " | ".join
-        result = duplicate(self.encoder, int(3), reduction=reduceN)
+        result = duplicate(self.encoder, 3, reduction=" | ".join)
         duplicated_encoder = wrap(result)
 
         # encode
