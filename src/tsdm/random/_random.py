@@ -74,9 +74,9 @@ def sample_timestamps(
 
     # add boundary if requested
     if include_start:
-        timestamps = np.insert(timestamps, 0, start_dt)
+        timestamps = np.insert(timestamps, 0, start_dt)  # pyright: ignore[reportCallIssue, reportArgumentType]
     if include_final:
-        timestamps = np.insert(timestamps, -1, final_dt)
+        timestamps = np.insert(timestamps, -1, final_dt)  # pyright: ignore[reportCallIssue, reportArgumentType]
 
     # Convert to base unit based on freq
     base_unit = next(u for u, val in NUMPY_TIME_UNITS.items() if freq_td >= val)
