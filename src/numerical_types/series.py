@@ -5,7 +5,6 @@ __all__ = [
     "SupportsSeriesComparison",
     "SupportsSeriesEquality",
     # Series Protocols
-    "SeriesType",
     "SeriesSupportsComparison",
     "SpanLikeSeries",
     "TimeLikeSeries",
@@ -20,8 +19,6 @@ __all__ = [
 
 from collections.abc import Iterator
 from typing import Any, Protocol, Self, overload, runtime_checkable
-
-from numpy.typing import NDArray
 
 from .arrays import (
     BooleanArray,
@@ -49,47 +46,6 @@ class SupportsSeriesComparison[ComparableT](Protocol):  # noqa: D101
     def __ge__(self, other: ComparableT, /) -> BooleanSeries: ...
     def __lt__(self, other: ComparableT, /) -> BooleanSeries: ...
     def __gt__(self, other: ComparableT, /) -> BooleanSeries: ...
-
-
-@runtime_checkable
-class SeriesType[V](Protocol):
-    r"""A 1d-array of homogeneous data type.
-
-    Examples:
-        - `pandas.Index`
-        - `pandas.Series`
-        - `polars.Series`
-        - `pandas.extensions.ExtensionArray`
-        - `pyarrow.Array`
-
-    Counter-Examples:
-        - `numpy.ndarray`     lacks `equals`
-        - `pandas.DataFrame`  lacks `equals`
-        - `polars.DataFrame`  lacks `equals`
-        - `pyarrow.Table`     lacks `equals`
-        - `torch.Tensor`      lacks `equals`
-
-    NOTE: Many methods have subtle differences between backends:
-     - `diff`: gives discrete differences for polars and pandas, but not for pyarrow
-     - `value_counts`: polars returns a DataFrame, pandas a Series, pyarrow a StructArray
-     - `unique`: polars and pyarrow return `Self`, pandas returns `np.ndarray` or ExtensionArray.
-     - `to_numpy`: is superfluous.
-
-    References:
-        - https://numpy.org/devdocs/user/basics.interoperability.html
-    """
-
-    def __array__(self) -> NDArray: ...
-    def __len__(self) -> int: ...
-    def __iter__(self) -> Iterator[V]: ...
-    @overload
-    def __getitem__(self, key: int, /) -> V: ...
-    @overload
-    def __getitem__(self, key: slice, /) -> Self: ...
-
-    def equals(self, other: Self, /) -> bool:
-        r"""Check if the series is equal to another series."""
-        ...
 
 
 @runtime_checkable
