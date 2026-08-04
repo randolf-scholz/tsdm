@@ -51,7 +51,7 @@ from ._transforms import (
 
 SKLEARN_TRANSFORMS: dict[str, Transform] = {
     "binarize"           : binarize,
-    "label_binarize"     : label_binarize,
+    # "label_binarize"     : label_binarize,
     "maxabs_scale"       : maxabs_scale,
     "minmax_scale"       : minmax_scale,
     "normalize"          : normalize,
