@@ -69,7 +69,7 @@ from pandas import DataFrame, Index, MultiIndex
 from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.datatools import is_partition
@@ -111,7 +111,7 @@ class Batch(NamedTuple):
 
 @pprint_repr
 @dataclass
-class USHCN_SampleGenerator(Dataset):
+class USHCN_SampleGenerator:
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
