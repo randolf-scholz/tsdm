@@ -192,7 +192,7 @@ class SlidingWindowSampler[
     type Mode = Literal["slice", "mask", "bounds", "interval", "points", "index"]
     r"""Type hint for the mode."""
 
-    data: NDArray[DType]
+    data: NDArray
 
     size: SpanLikeScalar
     stride: SpanLikeScalar
@@ -205,7 +205,7 @@ class SlidingWindowSampler[
     # dependent variables
     tmin: DType
     tmax: DType
-    cumulative_horizons: NDArray[SpanLikeScalar]
+    cumulative_horizons: NDArray
 
     if TYPE_CHECKING:
         # region __new__ overloads -----------------------------------------------------
