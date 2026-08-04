@@ -79,10 +79,16 @@ class CastProto[T](Protocol):  # T
     def __call__(self, x: T, /, dtype: Any) -> T: ...
 
 
-class ClipProto[T](Protocol):  # T
+class ClipProto[ArrayT, ScalarT = float](Protocol):  # T
     r"""Bound-Protocol for `clip`-function."""
 
-    def __call__(self, x: T, lower: T | None, upper: T | None, /) -> T: ...
+    def __call__(
+        self,
+        x: ArrayT,
+        lower: ArrayT | ScalarT | None,
+        upper: ArrayT | ScalarT | None,
+        /,
+    ) -> ArrayT: ...
 
 
 class ContractionProto[T](Protocol):  # T
@@ -103,10 +109,12 @@ class ToTensorProto[T](Protocol):  # +T
     def __call__(self, x: ArrayLike, /) -> T: ...
 
 
-class WhereProto[T](Protocol):  # T
+class WhereProto[ArrayT, ScalarT = Any](Protocol):  # T
     r"""Bound-Protocol for `where`-function."""
 
-    def __call__(self, cond: Any, x: T, y: T, /) -> T: ...
+    def __call__(
+        self, cond: Any, x: ArrayT | ScalarT, y: ArrayT | ScalarT, /
+    ) -> ArrayT: ...
 
 
 class ApplyAlongAxes[T](Protocol):  # T

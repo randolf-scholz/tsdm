@@ -144,21 +144,29 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
-def where[T: (Index, MultiIndex, Series, DataFrame)](
-    cond: NDArray, a: T, b: PythonScalar | NDArray, /
-) -> T:
+def where[
+    T: (Index, MultiIndex, Series, DataFrame),
+](cond: T | Any, a: T | Any, b: T | Any, /) -> T:
     r"""Analogue to `numpy.where`."""
-    try:
+    if isinstance(a, DataFrame):
+        return a.where(cond, b, axis=0)
+    if isinstance(b, DataFrame):
+        return b.where(~cond, a, axis=0)
+    if isinstance(cond, DataFrame):
+        return cond.where(cond, a, axis=0).where(~cond, b, axis=0)
+    if isinstance(a, Series):
         return a.where(cond, b)
-    except AttributeError:
-        # a could be a numpy array is some cases.
-        if isinstance(b, datetime.datetime):
-            other = np.datetime64(b)
-        elif isinstance(b, datetime.timedelta):
-            other = np.timedelta64(b)
-        else:
-            other = b
-        return type_cast("T", np.where(cond, a, other))
+    if isinstance(b, Series):
+        return b.where(~cond, a)
+    if isinstance(cond, Series):
+        return cond.where(cond, a).where(~cond, b)
+    if isinstance(a, Index):
+        return a.where(cond, b)
+    if isinstance(b, Index):
+        return b.where(~cond, a)
+    if isinstance(cond, Index):
+        return cond.where(cond, a).where(~cond, b)
+    return np.where(cond, a, b)
 
 
 def null_like[P: PandasType](x: P, /) -> P:
