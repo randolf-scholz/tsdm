@@ -696,7 +696,7 @@ class SlidingWindowSampler[
         if self.multi_horizon:
             for horizons in (window + k * stride for k in grid):
                 yield [
-                    sample_fn(start, stop)
+                    sample_fn(start.item(), stop.item())
                     for start, stop in sliding_window_view(horizons, 2)
                 ]
         else:
