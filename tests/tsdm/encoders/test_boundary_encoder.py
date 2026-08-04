@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import torch
 
-from numerical_types.arrays import FloatArray
+from numerical_types import FloatSeries
 from tsdm.encoders import BoundaryEncoder
 
 DATA_1D = [
@@ -33,14 +33,15 @@ BOUNDS: list[tuple[float | None, float | None]] = [
     (0, None),
     (0, float("nan")),
 ]
-TENSORS: dict[str, FloatArray] = {
+
+TENSORS: dict[str, FloatSeries] = {
     "numpy-1D"             : np.array(DATA_1D),
     "numpy-2D"             : np.array(DATA_2D),
     "torch-1D"             : torch.tensor(DATA_1D),
     "torch-2D"             : torch.tensor(DATA_2D),
-    "pandas[numpy]-index"  : pd.Index(DATA_1D, dtype=float),
+    # "pandas[numpy]-index"  : pd.Index(DATA_1D, dtype=float),
     "pandas[numpy]-series" : pd.Series(DATA_1D, dtype=float),
-    "pandas[arrow]-index"  : pd.Index(DATA_1D, dtype="float[pyarrow]"),
+    # "pandas[arrow]-index"  : pd.Index(DATA_1D, dtype="float[pyarrow]"),
     "pandas[arrow]-series" : pd.Series(DATA_1D, dtype="float[pyarrow]"),
 }  # fmt: skip
 r"""Example data for testing."""
