@@ -5,7 +5,6 @@ __all__ = [
     "remote",
     "funcutils",
     "lazydict",
-    "frozenmap",
     # Constants
     # Classes
     "timer",
@@ -25,7 +24,7 @@ __all__ = [
     "unflatten_dict",
 ]
 
-from . import frozenmap, funcutils, lazydict, remote
+from . import funcutils, lazydict, remote
 from ._utils import (
     deep_dict_update,
     flatten_dict,

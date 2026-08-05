@@ -24,30 +24,19 @@ __all__ = [
     "is_variadic_arg",
     "prod_fn",
     "recurse_on_nested_builtin",
-    "recurse_on_nested_generic",
     "yield_return_nodes",
 ]
 
 import ast
 import inspect
 from ast import AST, Name, Return, Tuple
-from collections.abc import (
-    Callable as Fn,
-    Iterable,
-    Iterator,
-    Mapping,
-    Sequence,
-    Set as AbstractSet,
-)
+from collections.abc import Callable as Fn, Iterable, Iterator, Sequence
 from dataclasses import fields
-from functools import partial, wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Final, Optional, overload
 
-from tsdm.types.aliases import Nested, NestedBuiltin
+from tsdm.types.aliases import NestedBuiltin
 from tsdm.types.dataclass import Dataclass, issubclass_dataclass
-
-from .frozenmap import FrozenMap
 
 KEYWORD_ONLY: Final = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY: Final = Parameter.POSITIONAL_ONLY
@@ -377,98 +366,3 @@ def recurse_on_nested_builtin[T, R](
                 )
 
     return recurse(arg)
-
-
-def recurse_on_nested_generic[T, R](
-    arg: Nested[T],
-    /,
-    *,
-    leaf_fn: Fn[[T], R],
-    leaf_type: type[T],
-    # optional arguments
-    leaf_prioritized: bool = False,
-    # factories
-    mapping_factory: Fn[[dict], Mapping] = dict,
-    sequence_factory: Fn[[list], Sequence] = list,
-    set_factory: Fn[[set], AbstractSet] = set,
-    hashable_set_factory: Fn[[set], AbstractSet] = frozenset,
-    hashable_sequence_factory: Fn[[list], Sequence] = tuple,
-    hashable_mapping_factory: Fn[[dict], Mapping] = FrozenMap,
-) -> Nested[R]:
-    r"""Recursively apply a function to a nested data structures.
-
-    Args:
-        arg: Nested data structure to apply the function to.
-        leaf_fn: Function to apply to the leaf nodes.
-        leaf_type: Type of the leaf nodes.
-        leaf_prioritized: Whether to check for leaf-type first or last.
-        mapping_factory: Factory function for mappings.
-        sequence_factory: Factory function for sequences.
-        set_factory: Factory function for sets.
-        hashable_set_factory: Factory function for hashable sets.
-        hashable_sequence_factory: Factory function for hashable sequences.
-        hashable_mapping_factory: Factory function for hashable mappings.
-
-    Returns:
-        Nested data structure.
-    """
-
-    def recurse(obj: Nested[T], /) -> Nested[R]:
-        try:
-            hash(obj)
-        except Exception:
-            is_hashable = False
-        else:
-            is_hashable = True
-
-        match obj:
-            case leaf if leaf_prioritized and isinstance(leaf, leaf_type):
-                return leaf_fn(leaf)
-            case Mapping() as mapping:
-                d = {k: recurse(v) for k, v in mapping.items()}
-                return (
-                    hashable_mapping_factory(d) if is_hashable else mapping_factory(d)
-                )
-            case Sequence() as seq:
-                lst = [recurse(obj) for obj in seq]
-                return (
-                    hashable_sequence_factory(lst)
-                    if is_hashable
-                    else sequence_factory(lst)
-                )
-            case AbstractSet() as items:
-                # FIXME: https://github.com/python/typeshed/issues/9571
-                col = {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
-                return hashable_set_factory(col) if is_hashable else set_factory(col)
-            case leaf if isinstance(leaf, leaf_type):
-                return leaf_fn(leaf)
-            case _:
-                raise TypeError(
-                    f"Unsupported type: {type(obj)} not an instance of {leaf_type} or one of the builtin containers"
-                    f" {dict, list, tuple, frozenset, set}."
-                )
-
-    return recurse(arg)
-
-
-def recurse_on_container[T, R](  # T, +R
-    leaf_fn: Fn[[T], R],
-    /,
-    *,
-    leaf_type: type[T],
-    leaf_prioritized: bool = False,
-) -> Fn[[Nested[T]], Nested[R]]:
-    r"""Apply function to a nested iterables of a given kind.
-
-    Args:
-        leaf_fn: A function to apply to all leave Nodes
-        leaf_type: The type of the leave nodes
-        leaf_prioritized: Whether to check for leaf-type first or last.
-    """
-    recurse = partial(
-        recurse_on_nested_generic,
-        leaf_fn=leaf_fn,
-        leaf_type=leaf_type,
-        leaf_prioritized=leaf_prioritized,
-    )
-    return wraps(leaf_fn)(recurse)
