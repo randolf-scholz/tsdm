@@ -5,13 +5,12 @@ __all__ = [
     "SKLEARN_TRANSFORMS",
     "SKLEARN_ENCODERS",
     # ABCs & Protocols
-    "InvertibleSklearnTransform",
     "SklearnEncoder",
     "SklearnTransform",
 ]
 
 from abc import abstractmethod
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from sklearn import preprocessing as sk_preprocessing
 
@@ -22,33 +21,16 @@ class SklearnTransform[X, Y](Protocol):  # -X, +Y
     r"""Protocol for transformers."""
 
     @abstractmethod
-    def fit(self, x: X, /) -> None: ...
+    def fit(self, x: X, /) -> Any | None: ...
     @abstractmethod
     def transform(self, x: X, /) -> Y: ...
 
 
 @runtime_checkable
-class InvertibleSklearnTransform[X, Y](SklearnTransform[X, Y], Protocol):
-    r"""Protocol for invertible transformers."""
-
-    @abstractmethod
-    def inverse_transform(self, y: Y, /) -> X: ...
-
-
-@runtime_checkable
-class SklearnEncoder[X, Y](Protocol):
+class SklearnEncoder[X, Y](SklearnTransform[X, Y], Protocol):
     r"""Protocol for scikit-learn transformers."""
 
-    def transform(self, x: X, /) -> Y: ...
     def inverse_transform(self, x: Y, /) -> X: ...
-
-    def fit(self, x: X, /, y: Optional[Y] = None) -> None: ...
-    def fit_transform(self, x: X, y: Optional[Y] = None, **fit_params: Any) -> None: ...
-
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]: ...
-    def set_params(self, **params: Any) -> None: ...
-    def __setstate__(self, state: dict[str, Any], /) -> None: ...
-    def __getstate__(self) -> dict[str, Any]: ...
 
 
 # endregion sklearn protocols ----------------------------------------------------------
