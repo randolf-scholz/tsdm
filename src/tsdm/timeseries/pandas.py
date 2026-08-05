@@ -131,9 +131,9 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
 
     def __getitem__(self, key: Any, /) -> PandasTS:
         r"""Return the subset of the timeseries at index `key`."""
-        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
-        fields.update(timeseries=self.timeseries.loc[key])
-        return PandasTS(**fields)
+        _fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+        _fields.update(timeseries=self.timeseries.loc[key])
+        return PandasTS(**_fields)
 
     def _infer_name(self) -> str | None:
         r"""Get the name of the collection."""
