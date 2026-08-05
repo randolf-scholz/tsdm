@@ -57,7 +57,7 @@ from tsdm.utils.lazydict import LazyDict
 
 
 @runtime_checkable
-class Dataset[Key, T](Protocol):  # +T
+class Dataset[Key, TableT](Protocol):  # +T
     r"""Protocol for Dataset.
 
     A dataset is a collection of table-like objects indexed by keys.
@@ -74,7 +74,7 @@ class Dataset[Key, T](Protocol):  # +T
 
     @property
     @abstractmethod
-    def tables(self) -> Mapping[Key, T]:
+    def tables(self) -> Mapping[Key, TableT]:
         r"""READ-ONLY: The tables that make up the dataset."""
 
     @property
@@ -88,7 +88,7 @@ class Dataset[Key, T](Protocol):  # +T
 
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[Key]: ...
-    def __getitem__(self, key: Key, /) -> T: ...
+    def __getitem__(self, key: Key, /) -> TableT: ...
     def __contains__(self, key: object, /) -> bool: ...
 
 
