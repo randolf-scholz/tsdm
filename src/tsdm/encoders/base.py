@@ -460,7 +460,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         return invert(self)
 
     # region SISO ----------------------------------------------------------------------
-    def __rshift__[Z](self, other: Encoder[Y, Z], /) -> Pipe[X, Z]:
+    def __rshift__[U, V, W](self: Encoder[U, V], other: Encoder[V, W], /) -> Pipe[U, W]:
         r"""Apply encoders in order (``>>``).
 
             x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
@@ -469,7 +469,9 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         """
         return pipe(self, other)
 
-    def __rrshift__[T](self, other: Encoder[T, X], /) -> Pipe[T, Y]:
+    def __rrshift__[U, V, W](
+        self: Encoder[V, W], other: Encoder[U, V], /
+    ) -> Pipe[U, W]:
         r"""Apply encoders in order (``>>``).
 
             x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
