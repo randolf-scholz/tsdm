@@ -56,9 +56,9 @@ dev = [
     { include-group = "typing" },
 ]
 devtools = [
-    "cmake>=4.4.0",
+    "cmake>=4.4.2",
     "ninja>=1.13.0",
-    "prek>=0.4.11",
+    "prek>=0.4.12",
     "pybadges>=3.0.1",
 ]
 debug = [
@@ -85,13 +85,13 @@ docs = [
     "sphinx>=9.1.0",
 ]
 linters = [
-    "prek>=0.4.11",
+    "prek>=0.4.12",
     "ruff>=0.16.1",
     "tach>=0.35.0",
 ]
 tests = [
-    "coverage>=7.15.2",
-    "hypothesis[numpy,pandas,pytest]>=6.165.0",
+    "coverage>=7.15.3",
+    "hypothesis[numpy,pandas,pytest]>=6.165.1",
     "psutil>=7.2.2",
     "pygal>=3.1.3",
     "pytest-benchmark[histogram]>=5.2.3",
@@ -119,7 +119,7 @@ typing = [
     "types-pyyaml>=6.0.12.20260724",
     "types-setuptools>=83.0.0.20260724",
     "types-tabulate>=0.10.0.20260508",
-    "types-tqdm>=4.70.0.20260731",
+    "types-tqdm>=4.70.0.20260805",
     "typing-extensions>=4.16.0",
 ]
 # endregion development dependencies ---------------------------------------------------
