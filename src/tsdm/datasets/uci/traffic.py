@@ -313,7 +313,7 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 assert isinstance(trainlabels.index, pd.DatetimeIndex)
 
             # Check that the labels match with the actual weekdays
-            if any(trainlabels.index.day_name() != trainlabels.map(self.weekdays)):  # pyright: ignore[reportAttributeAccessIssue]
+            if any(trainlabels.index.day_name() != trainlabels.map(self.weekdays)):
                 raise ValueError("Labels do not match with dates!")
 
             with archive.open("PEMS_testlabels") as file:
@@ -327,7 +327,7 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 assert isinstance(testlabels.index, pd.DatetimeIndex)
 
             # Check that the labels match with the actual weekdays
-            if any(testlabels.index.day_name() != testlabels.map(self.weekdays)):  # pyright: ignore[reportAttributeAccessIssue]
+            if any(testlabels.index.day_name() != testlabels.map(self.weekdays)):
                 raise ValueError("Labels do not match with dates!")
 
         labels = pd.concat([trainlabels, testlabels]).rename("labels")

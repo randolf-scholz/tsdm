@@ -987,7 +987,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 table = table.set_column(
                     table.column_names.index("result_value"),
                     "result_value",
-                    pc.split_pattern(table["result_value"], "/"),  # pyright: ignore[reportAttributeAccessIssue]
+                    pc.split_pattern(table["result_value"], "/"),
                 )
 
                 # convert to pandas. Now each column contains NaN or list of floats.a

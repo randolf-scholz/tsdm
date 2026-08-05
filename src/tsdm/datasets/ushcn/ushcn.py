@@ -416,7 +416,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
             static_covariates["UTC_OFFSET"]
             .str.strip()
             .str.removeprefix("+")
-            .replace({"": pd.NA})  # pyright: ignore[reportArgumentType]
+            .replace({"": pd.NA})
             .astype("int8[pyarrow]")
         )
 

@@ -60,7 +60,7 @@ def sample_timestamps(
     start_dt = timestamp(start)
     final_dt = start_dt + timedelta("24h") if stop is None else timestamp(stop)
     freq_td = timedelta(freq)
-    start_dt, final_dt = start_dt.round(freq_td), final_dt.round(freq_td)  # pyright: ignore[reportArgumentType]
+    start_dt, final_dt = start_dt.round(freq_td), final_dt.round(freq_td)
 
     # randomly sample timestamps
     rng = np.random.default_rng()
@@ -74,9 +74,9 @@ def sample_timestamps(
 
     # add boundary if requested
     if include_start:
-        timestamps = np.insert(timestamps, 0, start_dt)  # pyright: ignore[reportCallIssue, reportArgumentType]
+        timestamps = np.insert(timestamps, 0, start_dt)
     if include_final:
-        timestamps = np.insert(timestamps, -1, final_dt)  # pyright: ignore[reportCallIssue, reportArgumentType]
+        timestamps = np.insert(timestamps, -1, final_dt)
 
     # Convert to base unit based on freq
     base_unit = next(u for u, val in NUMPY_TIME_UNITS.items() if freq_td >= val)
@@ -95,7 +95,7 @@ def sample_timedeltas[TD: dt.timedelta](
     low_dt = timedelta(low)
     high_dt = timedelta(high)
     freq_dt = timedelta(freq)
-    low_dt, high_dt = low_dt.round(freq_dt), high_dt.round(freq_dt)  # pyright: ignore[reportArgumentType]
+    low_dt, high_dt = low_dt.round(freq_dt), high_dt.round(freq_dt)
 
     # randomly sample timedeltas
     rng = np.random.default_rng()

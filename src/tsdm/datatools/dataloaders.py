@@ -93,4 +93,4 @@ def unpad_sequence(
         lengths = (~masked_timestamps).sum(dim=1)  # (B,)
 
     # FIXME: Why does pyright infer Unknown | Tensor | None?
-    return [x[:n] for x, n in zip(padded_seq, lengths, strict=True)]  # pyright: ignore[reportArgumentType]
+    return [x[:n] for x, n in zip(padded_seq, lengths, strict=True)]

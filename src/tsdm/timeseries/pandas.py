@@ -268,7 +268,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
         index = self.timeseries.index.copy()
         if not isinstance(index, MultiIndex):
             raise TypeError("Expected a timeseries with MultiIndex.")
-        return index.unique()  # pyright: ignore[reportReturnType]
+        return index.unique()
 
     def _infer_metaindex(self) -> Index:
         r"""Get the metaindex."""
@@ -307,7 +307,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     @overload
     def __getitem__(self, key: KeyT, /) -> PandasTS: ...
     # fmt: on
-    def __getitem__(self, key: Any, /) -> PandasTS | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getitem__(self, key: Any, /) -> PandasTS | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         if isinstance(key, Series | Mapping):
             # assume boolean mask, select keys where mask is True

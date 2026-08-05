@@ -464,7 +464,7 @@ venvPath = ".venv"
 pythonVersion = "3.14"
 pythonPlatform = "Linux"
 # executionEnvironments = []
-useLibraryCodeForTypes = true
+useLibraryCodeForTypes = false  # pandas and pyarrow lack proper type hints
 
 # Type Check Diagnostics Settings
 typeCheckingMode = "standard"  # "off", "basic", "strict", "standard"

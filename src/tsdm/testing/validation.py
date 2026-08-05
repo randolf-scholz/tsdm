@@ -418,7 +418,7 @@ def validate_table_schema(
                 if missing_columns:
                     msg += f"\n\tMissing columns: {sorted(missing_columns)!r}"
                 if superfluous_columns:
-                    msg += f"\n\tSuperfluous columns: {sorted(superfluous_columns)!r}"  # pyright: ignore[reportArgumentType]
+                    msg += f"\n\tSuperfluous columns: {sorted(superfluous_columns)!r}"
     error_handler.emit(msg, valid=columns_match)
 
     # Validate dtypes (for matching columns only).

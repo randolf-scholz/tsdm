@@ -60,7 +60,7 @@ def folds_from_groups(
 
     unique_groups = groups.unique()
     generator = np.random.default_rng(seed)
-    shuffled = generator.permutation(unique_groups)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    shuffled = generator.permutation(unique_groups)
     chunks = np.array(np.array_split(shuffled, num_chunks), dtype=object)
 
     slices, a, b = {}, 0, 0

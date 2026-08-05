@@ -200,7 +200,7 @@ class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
         """
         if levels is not None:
             min_index = df.index.to_frame()
-            sub_index = MultiIndex.from_frame(min_index[levels])  # pyright: ignore[reportArgumentType]
+            sub_index = MultiIndex.from_frame(min_index[levels])
             index = sub_index.unique()
         else:
             index = df.index
