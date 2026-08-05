@@ -31,10 +31,10 @@ def get_broadcast(
 
     >>> import numpy as np
     >>> arr = np.random.randn(1, 2, 3, 4, 5)
-    >>> axis = (1, -1)
-    >>> broadcast = get_broadcast(arr.shape, axis=axis)
-    >>> m = np.mean(arr, axis)
-    >>> m_ref = np.mean(arr, axis=axis, keepdims=True)
+    >>> ax = (1, -1)
+    >>> broadcast = get_broadcast(arr.shape, axis=ax)
+    >>> m = np.mean(arr, ax)
+    >>> m_ref = np.mean(arr, axis=ax, keepdims=True)
     >>> m[broadcast].shape == m_ref.shape
     True
 

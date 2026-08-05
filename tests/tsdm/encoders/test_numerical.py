@@ -108,9 +108,9 @@ def test_get_broadcast(shape: tuple[int, ...], axis: Axis) -> None:
         pytest.skip(f"Invalid shape axis combination: {shape=} {axis=}")
 
     broadcast = get_broadcast(arr.shape, axis=axis)
-    m: np.ndarray = np.mean(arr, axis=axis)
-    m_ref = np.mean(arr, axis=axis, keepdims=True)
-    assert m[broadcast].shape == m_ref.shape
+    actual_mean = np.asarray(np.mean(arr, axis=axis))
+    expected_mean = np.mean(arr, axis=axis, keepdims=True)
+    assert actual_mean[broadcast].shape == expected_mean.shape
 
     # test with keep_axis:
     kept_axis = axis
@@ -124,9 +124,9 @@ def test_get_broadcast(shape: tuple[int, ...], axis: Axis) -> None:
             contracted_axes = tuple(
                 set(range(arr.ndim)) - {a % arr.ndim for a in kept_axis}
             )
-    m = np.mean(arr, axis=contracted_axes)
-    m_ref = np.mean(arr, axis=contracted_axes, keepdims=True)
-    assert m[broadcast].shape == m_ref.shape
+    actual_mean = np.asarray(np.mean(arr, axis=contracted_axes))
+    expected_mean = np.mean(arr, axis=contracted_axes, keepdims=True)
+    assert actual_mean[broadcast].shape == expected_mean.shape
 
 
 @pytest.mark.parametrize(
