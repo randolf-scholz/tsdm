@@ -165,7 +165,7 @@ def where[
         return b.where(~cond, a)
     if isinstance(cond, Index):
         return cond.where(cond, a).where(~cond, b)
-    return np.where(cond, a, b)
+    return np.where(cond, a, b)  # pyright: ignore[reportReturnType]
 
 
 def null_like[P: PandasType](x: P, /) -> P:
