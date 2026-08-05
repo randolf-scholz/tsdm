@@ -16,7 +16,7 @@ from typing import Any, NamedTuple
 
 import torch
 import yaml
-from torch import Tensor, jit, nn
+from torch import Tensor, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
@@ -106,8 +106,8 @@ def save_checkpoint(step: int, path: FilePath, *, objects: Mapping[str, Any]) ->
         match obj:
             case None:
                 pass
-            case jit.ScriptModule():
-                jit.save(obj, path / name)
+            case torch.jit.ScriptModule():
+                torch.jit.save(obj, path / name)
             case nn.Module():
                 torch.save(obj, path / name)
             case Optimizer():

@@ -20,7 +20,7 @@ import pandas as pd
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
 from pandas.api.typing import NAType
 from sklearn.model_selection import ShuffleSplit
-from torch import Tensor, jit, nn
+from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import KiwiBenchmark
@@ -225,7 +225,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        return jit.script(nn.MSELoss())
+        return nn.MSELoss()
 
     @cached_property
     def split_idx(self) -> DataFrame:

@@ -92,7 +92,6 @@ class TaskDataset(Dataset):
         return f"{self.__class__.__name__}"
 
 
-# @torch.jit.script  # seems to break things
 def mimic_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 

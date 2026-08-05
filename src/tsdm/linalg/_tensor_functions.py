@@ -169,17 +169,20 @@ def multi_norm(
 
     If `normalize=True`, the sums are replaced with averages.
     """
-    tesnors_: list[Tensor] = []
-    for tensor in tensors:
-        if tensor.numel() > 0:
-            tesnors_.append(tensor)  # noqa: PERF401 (jit no support list comprehension)
-    tensors = tesnors_
+    if not tensors:
+        raise ValueError(
+            "Input list of tensors is empty. Please provide at least one tensor."
+        )
 
-    if len(tensors) == 0:
-        return torch.tensor(0.0)
+    first = tensors[0]
 
-    x = tensors[0]
-    s = tensor_norm(x, p=p, scaled=scaled) ** q
+    # filter empty tensors
+    tensors = [t for t in tensors if t.numel() > 0]
+
+    if not tensors:
+        return first.new_zeros(())
+
+    s = tensor_norm(tensors[0], p=p, scaled=scaled) ** q
     for x in tensors[1:]:
         s += tensor_norm(x, p=p, scaled=scaled) ** q
     return (s / (1 + int(scaled) * len(tensors))) ** (1 / q)

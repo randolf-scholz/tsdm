@@ -16,7 +16,7 @@ from warnings import deprecated
 import torch
 from pandas import DataFrame, MultiIndex, Series
 from sklearn.model_selection import ShuffleSplit
-from torch import Tensor, jit
+from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import KiwiBenchmark
@@ -202,7 +202,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
         weights["normalized"] = weights["weight"] / weights["weight"].sum()
         weights.index.name = "col"
         w = torch.tensor(weights["weight"])
-        return jit.script(WRMSE(w))
+        return WRMSE(w)
 
     @cached_property
     def dataset(self) -> KiwiBenchmark:

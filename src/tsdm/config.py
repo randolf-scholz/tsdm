@@ -154,14 +154,11 @@ class Config:
                 self.DATASET_PATHS.METADATA    : "meta",
             },
             "folders"    : ["datasets", "models", "logs"],
-            "autojit"    : True,
         }  # fmt: skip
 
     def __init__(self) -> None:
         r"""Initialize the configuration."""
         # TODO: Should be initialized by an init/toml file.
-        self.autojit = self.DEFAULT_CONFIG["autojit"]
-
         self.ROOT_DIR = Path(self.DEFAULT_CONFIG["root_dir"])
         if not self.GENERATING_DOCS:
             self.ROOT_DIR = self.ROOT_DIR.expanduser().absolute()
@@ -175,18 +172,6 @@ class Config:
         self.LOGGER.debug("Initializing folder structure")
         generate_folders(self.DEFAULT_CONFIG["folders"], parent=self.ROOT_DIR)
         self.LOGGER.debug("Created folder structure in %s", self.ROOT_DIR)
-
-    @property
-    def autojit(self) -> bool:
-        r"""Whether to automatically jit-compile the models."""
-        if getattr(self, "_autojit", None) is None:
-            self._autojit = False
-        return self._autojit
-
-    @autojit.setter
-    def autojit(self, value: bool, /) -> None:
-        self._autojit = bool(value)
-        os.environ["TSDM_AUTOJIT"] = str(value)
 
 
 @final

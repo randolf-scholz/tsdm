@@ -16,11 +16,11 @@ __all__ = [
 
 
 import torch
-from torch import Tensor, jit
+from torch import Tensor
 
 
-@jit.script
-def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
+@torch.compile(fullgraph=True)
+def nd(x: Tensor, xhat: Tensor, /, *, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑_{tk} |x̂_{tk} - x_{tk}|}{∑_{tk} |x_{tk}|}
@@ -42,8 +42,8 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-@jit.script
-def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
+@torch.compile(fullgraph=True)
+def nrmse(x: Tensor, xhat: Tensor, /, *, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑_{tk}|x̂_{tk} - x_{tk}|^2}}{∑_{tk}|x_{tk}|}
@@ -60,8 +60,8 @@ def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-@jit.script
-def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
+@torch.compile(fullgraph=True)
+def q_quantile(x: Tensor, xhat: Tensor, /, *, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile.
 
     .. math:: 𝖯_q(x，x̂) ≔ \begin{cases}\hfill q⋅|x-x̂|:& x≥x̂ \\ (1-q)⋅|x-x̂|:& x≤x̂ \end{cases}
@@ -77,8 +77,8 @@ def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     return torch.max((q - 1) * residual, q * residual)  # simplified formula
 
 
-@jit.script
-def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
+@torch.compile(fullgraph=True)
+def q_quantile_loss(x: Tensor, xhat: Tensor, /, *, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile loss.
 
     .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑_{tk}𝖯_q(x_{tk}，x̂_{tk})}{∑_{tk}|x_{tk}|}
@@ -90,11 +90,11 @@ def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
           | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
-    return 2 * torch.sum(q_quantile(x, xhat, q)) / torch.sum(torch.abs(x))
+    return 2 * torch.sum(q_quantile(x, xhat, q=q)) / torch.sum(torch.abs(x))
 
 
-@jit.script
-def rmse(x: Tensor, xhat: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def rmse(x: Tensor, xhat: Tensor, /) -> Tensor:
     r"""Compute the RMSE.
 
     .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖^2]}
