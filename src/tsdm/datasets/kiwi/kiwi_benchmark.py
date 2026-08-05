@@ -2,15 +2,22 @@ r"""The KIWI Benchmark Dataset."""
 
 __all__ = ["KiwiBenchmark"]
 
+from typing import Literal
 from zipfile import ZipFile
 
 from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.types.timeseries import TSC_Keys
+
+type Key = Literal[
+    "timeseries",
+    "timeseries_metadata",
+    "static_covariates",
+    "static_covariates_metadata",
+]
 
 
-class KiwiBenchmark(DatasetBase[TSC_Keys, DataFrame]):
+class KiwiBenchmark(DatasetBase[Key, DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
     DEFAULT_VERSION = "1.0"
@@ -34,7 +41,7 @@ class KiwiBenchmark(DatasetBase[TSC_Keys, DataFrame]):
         "kiwi-benchmark.zip": "sha256:4157b04b348900a20641296b3960a13db44e9098a78737bae2298a9963a217ce"
     }
 
-    def clean_table(self, key: str) -> None:
+    def clean_table(self, key: Key) -> None:
         path = self.rawdata_paths["kiwi-benchmark.zip"]
         file = f"{key}.parquet"
 

@@ -345,7 +345,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
         "static_covariates_metadata": DEFAULT_METADATA_SCHEMA,
     }  # fmt: skip
 
-    def clean_table(self, key: Key = "timeseries") -> DataFrame:
+    def clean_table(self, key: Key) -> DataFrame:
         match key:
             case "timeseries":
                 return self._clean_timeseries()
@@ -416,7 +416,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
             static_covariates["UTC_OFFSET"]
             .str.strip()
             .str.removeprefix("+")
-            .replace({"": pd.NA})
+            .replace({"": pd.NA})  # pyright: ignore[reportArgumentType]
             .astype("int8[pyarrow]")
         )
 
@@ -424,7 +424,9 @@ class USHCN(DatasetBase[Key, DataFrame]):
         if missing_cols := (target_schema.keys() - set(static_covariates.columns)):
             raise ValueError(f"Missing columns in static_covariates: {missing_cols}")
 
-        return static_covariates.reindex(columns=target_schema).astype(target_schema)
+        return static_covariates.reindex(columns=list(target_schema)).astype(
+            target_schema
+        )
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
@@ -448,7 +450,7 @@ class USHCN(DatasetBase[Key, DataFrame]):
         if missing_cols := (target_schema.keys() - set(ts.columns)):
             raise ValueError(f"Missing columns in timeseries: {missing_cols}")
 
-        return ts.reindex(columns=target_schema).astype(target_schema)
+        return ts.reindex(columns=list(target_schema)).astype(target_schema)
 
     def _clean_raw_timeseries(self) -> DataFrame:
         # FIXME: https://github.com/pola-rs/polars/issues/3151

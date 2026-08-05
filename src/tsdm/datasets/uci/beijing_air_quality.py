@@ -73,6 +73,7 @@ __all__ = [
     "BeijingAirQuality",
 ]
 
+from typing import Literal
 from zipfile import ZipFile
 
 import pandas as pd
@@ -81,7 +82,6 @@ from pandas import DataFrame
 from tsdm.datasets.base import DatasetBase
 from tsdm.datasets.schemas import DEFAULT_METADATA_SCHEMA
 from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
-from tsdm.types.timeseries import TS_Keys
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
@@ -102,8 +102,10 @@ TIMESERIES_METADATA: InlineTable = {
     "index": ["variable"],
 }  # fmt: skip
 
+type Key = Literal["timeseries", "timeseries_metadata"]
 
-class BeijingAirQuality(DatasetBase[TS_Keys, DataFrame]):
+
+class BeijingAirQuality(DatasetBase[Key, DataFrame]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
