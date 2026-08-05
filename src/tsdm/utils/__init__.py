@@ -10,10 +10,12 @@ __all__ = [
     "timer",
     # utils
     "flatten_dict",
-    "timestamp",
-    "timedelta",
     "nested_paths_exist",
+    "prompt_choice",
+    "prompt_yes_no",
     "replace",
+    "timedelta",
+    "timestamp",
     "transpose_list_of_dicts",
     "unflatten_dict",
 ]
@@ -22,6 +24,8 @@ from . import funcutils, lazydict, remote
 from ._utils import (
     flatten_dict,
     nested_paths_exist,
+    prompt_choice,
+    prompt_yes_no,
     replace,
     timedelta,
     timestamp,

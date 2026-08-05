@@ -11,11 +11,7 @@ __all__ = [
     "unflatten_dict",
 ]
 
-from collections.abc import (
-    Callable,
-    Iterable,
-    Mapping,
-)
+from collections.abc import Callable, Iterable, Mapping
 from functools import wraps
 from pathlib import Path
 from typing import Any, Optional, cast, overload
@@ -24,12 +20,7 @@ from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.types.aliases import (
-    FilePath,
-    Nested,
-    NestedDict,
-    NestedMapping,
-)
+from tsdm.types.aliases import FilePath, Nested, NestedDict, NestedMapping
 
 
 @wraps(Timedelta)
@@ -288,7 +279,7 @@ def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[
     return dict(zip(keys, values, strict=True))
 
 
-def query_bool(question: str, /, *, default: bool) -> bool:
+def prompt_yes_no(question: str, /, *, default: bool) -> bool:
     r"""Ask a yes/no question and returns answer as bool."""
     responses = {"y": True, "yes": True, "n": False, "no": False}
     prompt = "([y]/n)" if default else "(y/[n])"
@@ -312,7 +303,7 @@ def query_bool(question: str, /, *, default: bool) -> bool:
     raise RuntimeError("Too many invalid responses.")
 
 
-def query_choice(
+def prompt_choice(
     question: str,
     /,
     *,

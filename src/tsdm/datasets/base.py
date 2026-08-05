@@ -49,8 +49,7 @@ from tsdm.testing.validation import (
     validate_table_shape,
 )
 from tsdm.types.aliases import FilePath
-from tsdm.utils import nested_paths_exist, remote
-from tsdm.utils._utils import query_bool
+from tsdm.utils import nested_paths_exist, prompt_yes_no, remote
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.timer import timer
@@ -301,7 +300,7 @@ class DatasetBase[Key: str, T](
         if not rawdata_dir.exists():
             raise FileNotFoundError(f"{rawdata_dir} does not exist!")
 
-        if force or query_bool(f"Delete {rawdata_dir}?", default=False):
+        if force or prompt_yes_no(f"Delete {rawdata_dir}?", default=False):
             try:  # remove the rawdata directory
                 shutil.rmtree(rawdata_dir)
             except Exception as exc:
@@ -324,7 +323,7 @@ class DatasetBase[Key: str, T](
         if not dataset_dir.exists():
             raise FileNotFoundError(f"{dataset_dir} does not exist!")
 
-        if force or query_bool(f"Delete {dataset_dir}?", default=False):
+        if force or prompt_yes_no(f"Delete {dataset_dir}?", default=False):
             try:  # remove the dataset directory
                 shutil.rmtree(dataset_dir)
             except Exception as exc:
