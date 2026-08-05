@@ -111,9 +111,9 @@ def strip_whitespace[T: pa.Array | pa.Table | Series | DataFrame](
         case Series() as series:
             if cols:
                 raise ValueError("Cannot specify columns for a Series.")
-            return strip_whitespace_series(series)
+            return strip_whitespace_series(series)  # pyright: ignore[reportReturnType]
         case DataFrame() as frame:
-            return strip_whitespace_dataframe(frame, *cols)
+            return strip_whitespace_dataframe(frame, *cols)  # pyright: ignore[reportReturnType]
         case _:
             raise TypeError(f"Unsupported type: {type(table)}")
 

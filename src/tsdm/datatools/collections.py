@@ -12,7 +12,6 @@ __all__ = [
     "TabularDataset",
     "TorchDataset",
     # Classes
-    "DataFrame2Dataset",
     "MappingDataset",
     # Functions
     "get_first_sample",
@@ -22,7 +21,6 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Collection, Iterator, Mapping
-from dataclasses import KW_ONLY, dataclass
 from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checkable
 
 from numpy.typing import NDArray
@@ -150,31 +148,6 @@ r"""Type alias for a sequential dataset."""
 type Dataset[V] = MapDataset[Any, V] | Indexable[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
-
-
-@pprint_repr
-@dataclass
-class DataFrame2Dataset[K](MapDataset[K, DataFrame]):
-    r"""Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting ``.loc``.
-
-    It is assumed that the DataFrame has a MultiIndex.
-    """
-
-    data: DataFrame
-
-    _: KW_ONLY
-
-    def __post_init__(self) -> None:
-        self.index = self.data.index.copy().droplevel(-1).unique()
-
-    def __len__(self) -> int:
-        return len(self.index)
-
-    def keys(self) -> Index:
-        return self.index
-
-    def __getitem__(self, key: K, /) -> DataFrame:
-        return self.data.loc[key]
 
 
 @pprint_repr

@@ -13,7 +13,6 @@ __all__ = [
     # Classes
     "MappingDataset",
     "InlineTable",
-    "DataFrame2Dataset",
     # folds
     "is_partition",
     "folds_as_frame",
@@ -47,7 +46,6 @@ from ._datatools import (
     strip_whitespace,
 )
 from .collections import (
-    DataFrame2Dataset,
     Dataset,
     Indexable,
     IterableDataset,
