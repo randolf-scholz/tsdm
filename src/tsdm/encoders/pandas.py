@@ -267,7 +267,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
 
     categories: pd.CategoricalDtype = UNDEFINED
     r"""The stored categories."""
-    original_schema: Series = UNDEFINED
+    original_schema: Mapping[str, Any] = UNDEFINED
     r"""The original dtypes."""
 
     def __init__(
@@ -291,9 +291,9 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
         if self.sparse is UNDEFINED:
             self.sparse = len(data.columns) > 2
         if self.var_name is UNDEFINED:
-            self.var_name = "variable" if self.sparse else data.columns[0]
+            self.var_name = "variable" if self.sparse else str(data.columns[0])
         if self.value_name is UNDEFINED:
-            self.value_name = data.columns[-1]
+            self.value_name = str(data.columns[-1])
 
         self.categories = (
             self.categories
@@ -304,7 +304,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
         )
 
         self.value_dtype = data[self.value_name].dtype
-        self.original_schema = data.dtypes
+        self.original_schema = data.dtypes.to_dict()
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         if self.sparse:
@@ -364,9 +364,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
             # move value column to the end
             df = df[df.columns[1:].union(df.columns[:1])]
 
-        return df.reindex(columns=self.original_schema.index).astype(
-            self.original_schema
-        )
+        return df.reindex(columns=self.original_schema).astype(self.original_schema)
 
 
 @pprint_repr
@@ -464,7 +462,7 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
     r"""The default dtype."""
     device: Optional[str | torch.device] = None
     r"""The device the tensors are stored in."""
-    original_schema: dict[str, Any] = UNDEFINED
+    original_schema: Mapping[str, Any] = UNDEFINED
     r"""The original schema."""
 
     def fit(self, data: DataFrame, /) -> None:
@@ -477,8 +475,9 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
 
     def decode(self, data: Tensor, /) -> DataFrame:
         array = data.detach().cpu().numpy()
-        frame = DataFrame(array, columns=self.original_schema)
-        return frame.astype(self.original_schema)
+        return DataFrame(array, columns=self.original_schema).astype(
+            self.original_schema
+        )
 
 
 @pprint_repr
@@ -496,8 +495,8 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
     r"""The schema for grouping the columns (group-name -> col-name(s))."""
 
     # Fitted attributes
-    original_schema: dict[str, Any] = UNDEFINED  # cols -> dtype
-    target_schema: dict[str, list[str]] = UNDEFINED
+    original_schema: Mapping[str, Any] = UNDEFINED  # cols -> dtype
+    target_schema: Mapping[str, list[str]] = UNDEFINED
 
     def __init__(
         self,
@@ -589,7 +588,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
     """
 
     # Attributes (type hints represent post-fit attributes)
-    schema: dict[str, list[str] | EllipsisType]
+    schema: Mapping[str, list[str] | EllipsisType]
     r"""The schema for grouping the columns (group-name -> col-name(s))."""
     device: dict[str | EllipsisType, None | str | torch.device]
     r"""The device for each group (group-name -> device)."""
@@ -598,8 +597,8 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
     # Fitted attributes
     original_index: list[str] = UNDEFINED
-    original_schema: dict[str, Any] = UNDEFINED  # cols -> dtype
-    target_schema: dict[str, list[str]] = UNDEFINED
+    original_schema: Mapping[str, Any] = UNDEFINED  # cols -> dtype
+    target_schema: Mapping[str, list[str]] = UNDEFINED
 
     def __init__(
         self,
