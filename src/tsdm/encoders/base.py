@@ -93,13 +93,11 @@ __all__ = [
     "DeepcopyEncoder",
     "IdentityEncoder",
     "MappedEncoder",
-    "NestedEncoder",
     "TupleUnwrapper",
     "TupleWrapper",
     "WrappedEncoder",
     # functions
     "map_encoders",
-    "nest_encoder",
     "simplify",
     "wrap",
     # ALGEBRA SUBMODULE
@@ -139,7 +137,7 @@ from abc import abstractmethod
 from collections.abc import Callable as Fn, Iterable, Iterator, Mapping, Sequence
 from contextlib import suppress
 from copy import deepcopy
-from dataclasses import KW_ONLY, dataclass, fields, is_dataclass
+from dataclasses import dataclass, fields, is_dataclass
 from functools import cached_property, wraps
 from pathlib import Path
 from typing import (
@@ -161,10 +159,9 @@ from typing import (
 from warnings import deprecated
 
 from tsdm.constants import UNDEFINED
-from tsdm.types.aliases import DictArg, FilePath, NestedBuiltin
+from tsdm.types.aliases import DictArg, FilePath
 from tsdm.types.utils import is_classvar
 from tsdm.utils.decorators import pprint_mapping, pprint_repr, pprint_sequence
-from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 from .protocols import (
     Reduction,
@@ -1126,71 +1123,6 @@ def map_encoders[X, Y](
     See Also: `MappedEncoder`
     """
     return MappedEncoder(encoders)
-
-
-@pprint_repr
-@dataclass
-class NestedEncoder[X, Y](FittableEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
-    r"""Apply an encoder recursively to nested data structure.
-
-    Any instances of the leaf type will be encoded using the encoder.
-    Containers in the standard library will be recursed into
-    (applies to `list`, `tuple`, `dict`, `set` and `frozenset`).
-    Other types will raise `TypeError`.
-
-    TODO: add support to pass other types as-is.
-    """
-
-    encoder: Encoder[X, Y]
-    r"""The encoder to apply nested."""
-
-    _: KW_ONLY
-
-    leaf_type: type[X]
-    r"""The type of the leaf elements."""
-    output_leaf_type: type[Y]
-    r"""The type of the output elements."""
-
-    # FIXME: https://github.com/python/typing/issues/548
-    def __invert__(self) -> NestedEncoder[Y, X]:
-        return nest_encoder(
-            invert(self.encoder),
-            leaf_type=self.output_leaf_type,
-            output_leaf_type=self.leaf_type,
-        )
-
-    def fit(self, x: NestedBuiltin[X], /) -> None:
-        pass
-
-    def encode(self, x: NestedBuiltin[X], /) -> NestedBuiltin[Y]:
-        return recurse_on_nested_builtin(
-            x,
-            leaf_type=self.leaf_type,
-            leaf_fn=self.encoder.encode,
-        )
-
-    def decode(self, y: NestedBuiltin[Y], /) -> NestedBuiltin[X]:
-        return recurse_on_nested_builtin(
-            y,
-            leaf_type=self.output_leaf_type,
-            leaf_fn=self.encoder.decode,
-        )
-
-    def simplify(self) -> NestedEncoder[X, Y]:
-        return NestedEncoder(
-            simplify(self.encoder),
-            leaf_type=self.leaf_type,
-            output_leaf_type=self.output_leaf_type,
-        )
-
-
-def nest_encoder[X, Y](
-    encoder: Encoder[X, Y], /, *, leaf_type: type[X], output_leaf_type: type[Y]
-) -> NestedEncoder[X, Y]:
-    r"""Create a nested encoder that applies the given encoder recursively."""
-    return NestedEncoder(
-        encoder, leaf_type=leaf_type, output_leaf_type=output_leaf_type
-    )
 
 
 ########################################################################################
