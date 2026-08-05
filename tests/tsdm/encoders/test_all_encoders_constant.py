@@ -14,6 +14,6 @@ def test_fields_classvar(name: str) -> None:
     cls = ENCODERS[name]
 
     actual_fields = cls.FIELDS
-    if issubclass(cls, Dataclass):  # type: ignore[misc]
+    if issubclass(cls, Dataclass):  # type: ignore
         expected_fields = {f.name for f in fields(cls)}
         assert actual_fields == expected_fields

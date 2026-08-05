@@ -60,7 +60,7 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
     #   see: https://github.com/python/typing/issues/1216
     #   see: https://github.com/python/typing/issues/1273
 
-    _fields: Final[ClassVar[tuple[str, ...]]]  # type: ignore[misc]
+    _fields: Final[ClassVar[tuple[str, ...]]]  # type: ignore
     r"""The fields of the namedtuple."""
 
     def _asdict(self) -> Mapping[str, T]: ...
@@ -87,11 +87,11 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
 
 
 def issubclass_namedtuple(cls: type, /) -> TypeIs[type[NTuple]]:
-    return issubclass(cls, NTuple)  # type: ignore[misc]
+    return issubclass(cls, NTuple)  # type: ignore
 
 
 def isinstance_namedtuple(obj: object, /) -> TypeIs[NTuple]:
-    return issubclass(type(obj), NTuple)  # type: ignore[misc]
+    return issubclass(type(obj), NTuple)  # type: ignore
 
 
 @overload
@@ -101,5 +101,5 @@ def is_namedtuple(obj: object, /) -> TypeIs[NTuple]: ...
 def is_namedtuple(obj: object, /) -> TypeIs[NTuple] | TypeIs[type[NTuple]]:
     r"""Check if the object is a namedtuple."""
     if isinstance(obj, type):
-        return issubclass(obj, NTuple)  # type: ignore[misc]
-    return issubclass(type(obj), NTuple)  # type: ignore[misc]
+        return issubclass(obj, NTuple)  # type: ignore
+    return issubclass(type(obj), NTuple)  # type: ignore

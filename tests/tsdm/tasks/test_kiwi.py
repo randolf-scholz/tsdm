@@ -38,7 +38,7 @@ def test_kiwi_task() -> None:
     assert callable(task.collate_fns[split_id])
 
     # validate generator
-    generator: TimeSeriesSampleGenerator = task.generators[split_id]  # type: ignore[assignment]
+    generator: TimeSeriesSampleGenerator = task.generators[split_id]  # type: ignore
     assert isinstance(generator, torch.utils.data.Dataset)
 
     # make sample

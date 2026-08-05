@@ -71,12 +71,12 @@ class Helix(IVP_GeneratorBase):
     @property
     def initial_state_dist(self) -> RV:
         r"""Noise distribution."""
-        return multivariate_normal(mean=np.zeros(3), cov=0.1)  # type: ignore[return-value]
+        return multivariate_normal(mean=np.zeros(3), cov=0.1)  # type: ignore
 
     @property
     def observation_noise_dist(self) -> RV:
         r"""Noise distribution."""
-        return multivariate_normal(mean=np.zeros(3), cov=0.1)  # type: ignore[return-value]
+        return multivariate_normal(mean=np.zeros(3), cov=0.1)  # type: ignore
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
         p = self.initial_state_dist

@@ -54,8 +54,8 @@ def test_namedtuple_protocol() -> None:
     assert isinstance(MyNamedTuple(1, 2), tuple)
     assert isinstance(MyNamedTuple(1, 2), NTuple)  # pyrefly: ignore[unsafe-overlap]
     assert issubclass(MyNamedTuple, tuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
-    assert issubclass(NTuple, NTuple)  # type: ignore[misc]
+    assert issubclass(MyNamedTuple, NTuple)  # type: ignore
+    assert issubclass(NTuple, NTuple)  # type: ignore
 
 
 def test_is_namedtuple() -> None:
@@ -67,7 +67,7 @@ def test_is_namedtuple() -> None:
     # check the type
     assert issubclass(MyNamedTuple, tuple)
     assert is_namedtuple(MyNamedTuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore[misc]
+    assert issubclass(MyNamedTuple, NTuple)  # type: ignore
 
 
 def test_not_namedtuple() -> None:
@@ -79,4 +79,4 @@ def test_not_namedtuple() -> None:
     # check the type
     assert issubclass(NotNamedTuple, tuple)
     assert not is_namedtuple(NotNamedTuple)
-    assert not issubclass(NotNamedTuple, NTuple)  # type: ignore[misc]
+    assert not issubclass(NotNamedTuple, NTuple)  # type: ignore

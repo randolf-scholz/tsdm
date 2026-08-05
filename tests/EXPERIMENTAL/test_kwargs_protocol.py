@@ -43,12 +43,12 @@ class SupportsKwargs[V](Protocol, metaclass=_SupportsKwargsMeta):  # +V
 def test_supports_kwargs() -> None:
     d_int = {0: 1, 1: 2}
     with pytest.raises(NotImplementedError):
-        issubclass(d_int, SupportsKwargs)  # type: ignore[arg-type]
+        issubclass(d_int, SupportsKwargs)  # type: ignore
     assert isinstance(d_int, SupportsKwargs) is False  # pyrefly: ignore[unsafe-overlap]
 
     d_str = {"a": 1, "b": 2}
     with pytest.raises(NotImplementedError):
-        issubclass(d_str, SupportsKwargs)  # type: ignore[arg-type]
+        issubclass(d_str, SupportsKwargs)  # type: ignore
     assert isinstance(d_str, SupportsKwargs) is True
 
 

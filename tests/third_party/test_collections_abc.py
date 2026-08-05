@@ -13,7 +13,7 @@ ABCS: list[type] = [
     abc.Generator,
     abc.Reversible,
     abc.Sized,
-    abc.Callable,  # type: ignore[list-item]
+    abc.Callable,  # type: ignore
     abc.Collection,
     abc.Sequence,
     abc.MutableSequence,

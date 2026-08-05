@@ -67,27 +67,27 @@ class Kernels:  # TODO: how to make this more elegant?
     }
 
     nanmin: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanmin,  # type: ignore[dict-item]
+        "numpy": np.nanmin,  # type: ignore
         "pandas": B.pandas.nanmin,
         "polars": B.polars.nanmin,
         "torch": B.torch.nanmin,
     }
 
     nanmax: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanmax,  # type: ignore[dict-item]
+        "numpy": np.nanmax,  # type: ignore
         "pandas": B.pandas.nanmax,
         "polars": B.polars.nanmax,
         "torch": B.torch.nanmax,
     }
 
     nanmean: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanmean,  # type: ignore[dict-item]
+        "numpy": np.nanmean,  # type: ignore
         "pandas": B.pandas.nanmean,
         "torch": cast("ContractionProto[Tensor]", pt.nanmean),
     }
 
     nanstd: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanstd,  # type: ignore[dict-item]
+        "numpy": np.nanstd,  # type: ignore
         "pandas": B.pandas.nanstd,
         "torch": B.torch.nanstd,
     }

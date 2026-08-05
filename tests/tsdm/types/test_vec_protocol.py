@@ -40,7 +40,7 @@ EXPECTED_COLLECTIONS_ABC: dict[type, bool] = {
     abc.AsyncIterable   : False,
     abc.AsyncIterator   : False,
     abc.Awaitable       : False,
-    abc.Callable        : False,  # type: ignore[dict-item]
+    abc.Callable        : False,  # type: ignore
     abc.Collection      : False,
     abc.Container       : False,
     abc.Coroutine       : False,

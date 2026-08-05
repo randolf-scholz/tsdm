@@ -35,9 +35,9 @@ from .scalars import BoolScalar, ComplexScalar, FloatScalar, IntScalar
 
 class SupportsSeriesEquality[ComparableT](Protocol):  # noqa: D101
     # equality ==
-    def __eq__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]
+    def __eq__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore
     # inequality !=
-    def __ne__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore[override]
+    def __ne__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore
 
 
 class SupportsSeriesComparison[ComparableT](Protocol):  # noqa: D101

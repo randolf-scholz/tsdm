@@ -383,7 +383,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
             kwargs["collate_fn"] = lambda x: x
 
         kwargs |= dataloader_kwargs
-        return DataLoader(dataset, **kwargs)  # type: ignore[arg-type]
+        return DataLoader(dataset, **kwargs)  # type: ignore
 
     @abstractmethod
     def make_folds(self, /) -> Mapping[SplitID, Series]:

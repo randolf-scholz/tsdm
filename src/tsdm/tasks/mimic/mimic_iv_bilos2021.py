@@ -230,7 +230,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor["time_stamp"]
-        self.observation_time /= index_encoder.params.xmax  # type: ignore[attr-defined]
+        self.observation_time /= index_encoder.params.xmax  # type: ignore
 
         return ts.astype("float32")
 

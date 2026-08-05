@@ -588,11 +588,11 @@ class SlidingWindowSampler[
         # region set basic attributes --------------------------------------------------
         self.tmin = cast("DType", get_first_sample(data_source))
         self.tmax = cast("DType", get_last_sample(data_source))
-        zero_td = cast("Any", self.tmin - self.tmin)  # type: ignore[operator]
+        zero_td = cast("Any", self.tmin - self.tmin)  # type: ignore
         dt_type: type[DType] = type(self.tmin)
         td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)
-        self.mode = self.MODE(mode)  # type: ignore[assignment]
+        self.mode = self.MODE(mode)  # type: ignore
         self.drop_last = drop_last
         self.stride = timedelta(stride) if isinstance(stride, str) else stride
 

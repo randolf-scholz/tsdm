@@ -752,11 +752,11 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
     }
 
     @property
-    def rawdata_files(self) -> list[str]:  # type: ignore[override]
+    def rawdata_files(self) -> list[str]:  # type: ignore
         return [f"mimic-iv-{self.__version__}.zip"]
 
     @property
-    def table_names(self) -> list[MIMIC_IV_Key]:  # type: ignore[override]
+    def table_names(self) -> list[MIMIC_IV_Key]:  # type: ignore
         expected_names = list(self.filelist)
         type_hinted_names = get_args(MIMIC_IV_Key.__value__)
         if unknown_names := set(expected_names) - set(type_hinted_names):

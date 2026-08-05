@@ -85,7 +85,7 @@ def visualize_distribution(
         high = np.quantile(x, 1 - 0.01)
         bins = np.linspace(low, high, num=num_bins)
 
-    ax.hist(x, bins=bins, density=True)  # type: ignore[arg-type]
+    ax.hist(x, bins=bins, density=True)  # type: ignore
 
     if print_stats:
         stats = {

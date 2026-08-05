@@ -108,7 +108,7 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
     preprocessor: FittableEncoder
 
     # FIXME: need a different base class for this task!
-    dataset: PandasTS  # type: ignore[assignment]
+    dataset: PandasTS  # type: ignore
 
     def __init__(self) -> None:
         ds = electricity().timeseries

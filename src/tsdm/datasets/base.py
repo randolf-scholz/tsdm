@@ -843,7 +843,7 @@ class DatasetBase[Key: str, T](
         self.LOGGER.debug(f"{key=} Validating table shape")
         try:
             shapes_match = validate_table_shape(
-                self.tables[key],  # type: ignore[arg-type]
+                self.tables[key],  # type: ignore
                 expected_shape=self.table_shapes.get(key),
                 errors=errors,
             )

@@ -71,7 +71,7 @@ def serialize_table[T](
         # try to determine the extension from the path
         case None:
             try:
-                path = Path(path_or_buf)  # type: ignore[arg-type]
+                path = Path(path_or_buf)  # type: ignore
             except Exception as exc:
                 exc.add_note(f"Cannot determine writer from {path_or_buf}")
                 raise
@@ -109,7 +109,7 @@ def deserialize_table[T = pd.DataFrame](
         # determine the extension from the path
         case None:
             try:
-                path = Path(path_or_buf)  # type: ignore[arg-type]
+                path = Path(path_or_buf)  # type: ignore
             except Exception as exc:
                 exc.add_note(f"Cannot determine loader from {path_or_buf}")
                 raise

@@ -127,7 +127,7 @@ def test_can_self_overloaded_protocol() -> None:
 
         _z0: CanSelfOP_Union = a_impl
         _z1: CanSelfOP_Union = a_self
-        _z2: CanSelfOP_Union = b_impl  # type: ignore[assignment] # ❌️: mypy, pyright, pyrefly, ty
-        _z3: CanSelfOP_Union = b_self  # type: ignore[assignment] # ❌️: mypy, pyright, pyrefly, ty
-        _z4: CanSelfOP_Union = c_impl  # type: ignore[assignment] # ❌️: mypy, pyright, pyrefly, ty
-        _z5: CanSelfOP_Union = c_self  # type: ignore[assignment] # ❌️: mypy, pyright, pyrefly, ty
+        _z2: CanSelfOP_Union = b_impl  # type: ignore # ❌️: mypy, pyright, pyrefly, ty
+        _z3: CanSelfOP_Union = b_self  # type: ignore # ❌️: mypy, pyright, pyrefly, ty
+        _z4: CanSelfOP_Union = c_impl  # type: ignore # ❌️: mypy, pyright, pyrefly, ty
+        _z5: CanSelfOP_Union = c_self  # type: ignore # ❌️: mypy, pyright, pyrefly, ty

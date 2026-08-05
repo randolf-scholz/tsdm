@@ -33,14 +33,13 @@ __all__ = [
     "strip_whitespace_dataframe",
 ]
 
-import datetime
 import logging
 import operator
 import warnings
 from collections.abc import Mapping
 from contextlib import suppress
 from functools import reduce
-from typing import Any, Final, Literal, cast as type_cast
+from typing import Any, Final, Literal
 
 import numpy as np
 import pandas as pd
@@ -48,7 +47,7 @@ from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
-from tsdm.types.aliases import Axis, PythonScalar
+from tsdm.types.aliases import Axis
 
 __logger__ = logging.getLogger(__name__)
 
@@ -117,9 +116,9 @@ def clip[P: PandasType](x: P, lower: NDArray | None, upper: NDArray | None, /) -
     axis = "columns" if isinstance(x, DataFrame) else "index"
     # FIXME: https://github.com/pandas-dev/pandas/issues/59053
     with suppress(Exception):
-        lower = lower.item()  # type: ignore[union-attr]
+        lower = lower.item()  # type: ignore
     with suppress(Exception):
-        upper = upper.item()  # type: ignore[union-attr]
+        upper = upper.item()  # type: ignore
 
     return x.clip(lower, upper, axis=axis)
 

@@ -60,11 +60,11 @@ class PositionalEncoder(StaticEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
         Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
         z = np.einsum("..., d -> ...d", x, self.scales)
-        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)  # type: ignore[misc]
+        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)  # type: ignore
 
     def decode[T: SupportsArrayUfunc](self, y: T, /) -> T:
         r""".. signature:: ``(..., 2d) -> ...``."""
-        return np.arcsin(y[..., 0])  # type: ignore[misc]
+        return np.arcsin(y[..., 0])  # type: ignore
 
 
 @pprint_repr

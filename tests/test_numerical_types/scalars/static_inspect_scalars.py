@@ -123,7 +123,7 @@ class TestInferIdentity:
         # fmt: off
         def _id[DT: DatetimeScalar](x: DT, /) -> DT: return x
         #
-        assert_type(_id(SCALARS.DATETIME.NP), types0d.np.datetime)  # type: ignore[type-var]
+        assert_type(_id(SCALARS.DATETIME.NP), types0d.np.datetime)  # type: ignore
         assert_type(_id(SCALARS.DATETIME.PD), types0d.pd.datetime)
         assert_type(_id(SCALARS.DATETIME.PY), types0d.py.datetime)
         # fmt: on
@@ -132,7 +132,7 @@ class TestInferIdentity:
         # fmt: off
         def _id[TD: TimedeltaScalar](x: TD, /) -> TD: return x
         #
-        assert_type(_id(SCALARS.TIMEDELTA.NP), types0d.np.timedelta)  # type: ignore[type-var]
+        assert_type(_id(SCALARS.TIMEDELTA.NP), types0d.np.timedelta)  # type: ignore
         assert_type(_id(SCALARS.TIMEDELTA.PD), types0d.pd.timedelta)
         assert_type(_id(SCALARS.TIMEDELTA.PY), types0d.py.timedelta)
         # fmt: on

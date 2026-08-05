@@ -120,9 +120,9 @@ class MinMaxScaler(FittableEncoder[FloatSeries, FloatSeries]):
         backend = get_backend(data)
 
         if self.xmin_learnable:
-            self.xmin = float(backend.nanmin(data))  # type: ignore[arg-type]
+            self.xmin = float(backend.nanmin(data))  # type: ignore
         if self.xmax_learnable:
-            self.xmax = float(backend.nanmax(data))  # type: ignore[arg-type]
+            self.xmax = float(backend.nanmax(data))  # type: ignore
 
         self.xbar = (self.xmax + self.xmin) / 2
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)

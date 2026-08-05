@@ -80,7 +80,7 @@ def test_lazy_dict_new() -> None:
     no0 = LazyDict.new()
     no1 = LazyDict[int, float].new()
     assert_type(no0, LazyDict)
-    assert_type(no1, LazyDict[int, float])  # type: ignore[assert-type]
+    assert_type(no1, LazyDict[int, float])  # type: ignore
 
     # positional arguments
     po0 = LazyDict.new({1: lazy_float})

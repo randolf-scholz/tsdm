@@ -310,10 +310,10 @@ class BoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
     def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
-        return np.log(data + self.offset)  # type: ignore[return-type]
+        return np.log(data + self.offset)  # type: ignore
 
     def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
-        return np.maximum(np.exp(data) - self.offset, 0)  # type: ignore[return-type]
+        return np.maximum(np.exp(data) - self.offset, 0)  # type: ignore
 
     def fit(self, data: SupportsArrayUfunc, /) -> None:
         array = np.asanyarray(data)
@@ -432,12 +432,12 @@ class LogitBoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]
             raise ValueError(f"{self.offset=} not in bounds {self.bounds}")
 
     def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
-        return np.log((data + self.offset) / (1 - (data - self.offset)))  # type: ignore[return-value]
+        return np.log((data + self.offset) / (1 - (data - self.offset)))  # type: ignore
 
     def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
-        return np.clip(r, 0, 1)  # type: ignore[return-value]
+        return np.clip(r, 0, 1)  # type: ignore
 
     def fit(self, data: SupportsArrayUfunc, /) -> None:
         array = np.asanyarray(data)
@@ -532,9 +532,9 @@ class LogitEncoder(StaticEncoder[NDArray, NDArray]):
 
     def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
-        if not np.all((data > 0) & (data < 1)):  # type: ignore[misc]
+        if not np.all((data > 0) & (data < 1)):  # type: ignore
             raise ValueError("Data must be in the range (0, 1).")
-        return np.log(data / (1 - data))  # type: ignore[misc]
+        return np.log(data / (1 - data))  # type: ignore
 
     def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
-        return np.clip(1 / (1 + np.exp(-data)), 0, 1)  # type: ignore[misc]
+        return np.clip(1 / (1 + np.exp(-data)), 0, 1)  # type: ignore

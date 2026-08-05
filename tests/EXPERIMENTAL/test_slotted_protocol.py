@@ -68,7 +68,7 @@ def test_slotted_no_match() -> None:
         case Slotted():
             raise AssertionError
         case _:
-            pass  # type: ignore[unreachable]
+            pass  # type: ignore
 
 
 def test_slotted_types() -> None:
@@ -80,8 +80,8 @@ def test_slotted_types() -> None:
 def test_slotted_protocol() -> None:
     r"""Test the Slotted protocol."""
     assert isinstance(MySlotted(1, 2), Slotted)  # pyrefly: ignore[unsafe-overlap]
-    assert issubclass(MySlotted, Slotted)  # type: ignore[arg-type]
-    assert issubclass(Slotted, Slotted)  # type: ignore[arg-type]
+    assert issubclass(MySlotted, Slotted)  # type: ignore
+    assert issubclass(Slotted, Slotted)  # type: ignore
 
 
 def test_is_slotted() -> None:
@@ -91,7 +91,7 @@ def test_is_slotted() -> None:
     assert isinstance(MySlotted(1, 2), Slotted)  # pyrefly: ignore[unsafe-overlap]
     # check the type
     assert is_slotted(MySlotted)
-    assert issubclass(MySlotted, Slotted)  # type: ignore[arg-type]
+    assert issubclass(MySlotted, Slotted)  # type: ignore
 
 
 def test_not_slotted() -> None:
@@ -101,4 +101,4 @@ def test_not_slotted() -> None:
     assert not isinstance(NotSlotted(1, 2), Slotted)
     # check the type
     assert not is_slotted(NotSlotted)
-    assert not issubclass(NotSlotted, Slotted)  # type: ignore[unreachable]
+    assert not issubclass(NotSlotted, Slotted)  # type: ignore

@@ -1007,7 +1007,7 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
         r"""Fit the encoder if it is a `FittableEncoder`."""
         match self.encoder:
             case SupportsFit() as fittable:
-                fittable.fit(x)  # type: ignore[unreachable]
+                fittable.fit(x)  # type: ignore
             case _:
                 pass
 
@@ -1792,12 +1792,12 @@ class Parallel[
             encoder.fit(x)
 
     def encode(self, xs: TupleIn, /) -> TupleOut:
-        return tuple(  # type: ignore[return-value]
+        return tuple(  # type: ignore
             encoder.encode(x) for encoder, x in zip(self, xs, strict=True)
         )
 
     def decode(self, ys: TupleOut, /) -> TupleIn:
-        return tuple(  # type: ignore[return-value]
+        return tuple(  # type: ignore
             encoder.decode(x) for encoder, x in zip(self, ys, strict=True)
         )
 
@@ -1808,12 +1808,12 @@ class Parallel[
         match self:
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
-                    encoder=lambda _: (),  # type: ignore[arg-type, return-value]
+                    encoder=lambda _: (),  # type: ignore
                     decoder=lambda _: (),
                 )
 
             case [encoder]:
-                return simplify(  # type: ignore[return-value]
+                return simplify(  # type: ignore
                     UNWRAP_TUPLE  # [x] -> x
                     >> simplify(encoder)  # x -> y
                     >> WRAP_TUPLE  # y -> [y]
@@ -1906,8 +1906,8 @@ class Replicate[
 
         new = Replicate.__new__(Replicate)
         super(Replicate, new).__init__(encoders)
-        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]
-        new.num = len(encoders)  # type: ignore[misc]
+        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore
+        new.num = len(encoders)  # type: ignore
         return new
 
     def get_slice[U, V](
@@ -1917,26 +1917,26 @@ class Replicate[
 
     def __invert__(self) -> Replicate[TupleOut, TupleIn]:
         # FIXME: https://github.com/python/mypy/issues/20336
-        return Replicate.new(encoders=map(invert, self))  # type: ignore[return-value]
+        return Replicate.new(encoders=map(invert, self))  # type: ignore
 
     def simplify(self) -> BaseEncoder[TupleIn, TupleOut]:
         r"""Simplify the replicate encoder."""
         match self:
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
-                    encoder=lambda _: (),  # type: ignore[arg-type, return-value]
+                    encoder=lambda _: (),  # type: ignore
                     decoder=lambda _: (),
                 )
 
             case [encoder]:
-                return simplify(  # type: ignore[return-value]
+                return simplify(  # type: ignore
                     UNWRAP_TUPLE  # [x] -> x
                     >> simplify(encoder)  # x -> y
                     >> WRAP_TUPLE  # y -> [y]
                 )
 
             case _:
-                return Replicate.new(encoders=map(simplify, self))  # type: ignore[return-value]
+                return Replicate.new(encoders=map(simplify, self))  # type: ignore
 
 
 # fmt: off
@@ -2086,7 +2086,7 @@ class Fork[
             encoder.fit(x)
 
     def encode(self, x: X, /) -> TupleOut:
-        return tuple(e.encode(x) for e in self)  # type: ignore[return-value]
+        return tuple(e.encode(x) for e in self)  # type: ignore
 
     def decode(self, ys: TupleOut, /) -> X:
         decoded_vals = tuple(e.decode(y) for e, y in zip(self, ys, strict=True))
@@ -2097,13 +2097,13 @@ class Fork[
             case []:  # encode[any X -> ()], decode[() -> some x] (depends on reduction)
                 return simplify(  # pyrefly: ignore[bad-return]
                     wrap(
-                        encoder=lambda _: (),  # type: ignore[return-value]
+                        encoder=lambda _: (),  # type: ignore
                         decoder=self.reduction,
                     )
                 )
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                return simplify(  # type: ignore[return-value]
+                return simplify(  # type: ignore
                     cast("Encoder[X, Any]", encoder)
                     >> wrap(
                         encoder=WRAP_TUPLE,
@@ -2112,7 +2112,7 @@ class Fork[
                 )
 
             case _:
-                return Fork(*map(simplify, self))  # type: ignore[return-type]
+                return Fork(*map(simplify, self))  # type: ignore
 
 
 # fmt: off
@@ -2193,7 +2193,7 @@ class Duplicate[
         *,
         reduction: Reduction[tuple, U] = random.choice,
     ) -> None:
-        super().__init__(  # type: ignore[return-type]
+        super().__init__(  # type: ignore
             *(deepcopy(encoder) for _ in range(num)),
             reduction=reduction,
         )
@@ -2216,26 +2216,26 @@ class Duplicate[
 
         new = object.__new__(Duplicate)
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
-        new.num = len(encoders)  # type: ignore[misc]
+        new.num = len(encoders)  # type: ignore
         return new
 
     def get_slice[U, V](self: Duplicate[U, tuple[V, ...]], arg: slice, /) -> Duplicate[U, tuple[V, ...]]:  # fmt: skip
         return Duplicate.new(encoders=self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> Fold[Ys, X]:
-        return Fold.new(encoders=map(invert, self), reduction=self.reduction)  # type: ignore[return-value]
+        return Fold.new(encoders=map(invert, self), reduction=self.reduction)  # type: ignore
 
     def simplify(self) -> BaseEncoder[X, Ys]:
         r"""Simplify the duplicate encoder."""
         match self:
             case []:  # encode[any x -> ()], decode[() -> some x] (depends on reduction)
-                return wrap(  # type: ignore[return-value]
+                return wrap(  # type: ignore
                     encoder=lambda _: (),
                     decoder=self.reduction,
                 ).simplify()
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
-                return (  # type: ignore[return-value]
+                return (  # type: ignore
                     cast("Encoder[X, Any]", encoder)
                     >> wrap(
                         encoder=WRAP_TUPLE,
@@ -2244,7 +2244,7 @@ class Duplicate[
                 ).simplify()
 
             case _:
-                return Duplicate[X, Ys].new(  # type: ignore[return-value]
+                return Duplicate[X, Ys].new(  # type: ignore
                     encoders=map(simplify, self),
                     reduction=self.reduction,
                 )
@@ -2405,7 +2405,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         return Meet(*self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> Fork[Y, TupleIn]:
-        return Fork(  # type: ignore[return-type]
+        return Fork(  # type: ignore
             *map(invert, self),
             reduction=self.reduction,
         )
@@ -2419,7 +2419,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
         return self.reduction(encoded_vals)
 
     def decode(self, y: Y, /) -> TupleIn:
-        return tuple(e.decode(y) for e in self)  # type: ignore[return-value]
+        return tuple(e.decode(y) for e in self)  # type: ignore
 
     def simplify(self) -> BaseEncoder[TupleIn, Y]:
         r"""Simplify the joint encoder."""
@@ -2428,13 +2428,13 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
 
         match self:
             case []:  # encode[() -> some x], decode[any x -> ()]  (depends on reduction)
-                return wrap(  # type: ignore[return-value]
+                return wrap(  # type: ignore
                     encoder=self.reduction,
                     decoder=lambda _: (),
                 ).simplify()
 
             case [encoder]:  # encode[[x] -> f(reduce([x])], decode[y -> [f⁻¹y]))]
-                return simplify(  # type: ignore[return-value]
+                return simplify(  # type: ignore
                     wrap(
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
@@ -2443,7 +2443,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
                 )
 
             case _:
-                return Meet(  # type: ignore[return-type]
+                return Meet(  # type: ignore
                     *map(simplify, self),
                     reduction=self.reduction,
                 )
@@ -2512,7 +2512,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
     kind: Final[type[Encoder[Any, Y]]]
     num: Final[int]
-    reduction: Final[Reduction[tuple[Y, ...], Y]]  # type: ignore[misc]
+    reduction: Final[Reduction[tuple[Y, ...], Y]]  # type: ignore
 
     # fmt: off
     @overload  # n=0
@@ -2557,8 +2557,8 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
         new = Fold.__new__(Fold)
         super(Fold, new).__init__(*encoders, reduction=reduction)
-        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore[misc]
-        new.num = len(encoders)  # type: ignore[misc]
+        new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore
+        new.num = len(encoders)  # type: ignore
         return new
 
     def get_slice[U, V](self: Fold[tuple[U, ...], V], arg: slice, /) -> Fold[tuple[U, ...], V]:  # fmt: skip
@@ -2574,14 +2574,14 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         r"""Simplify the fold encoder."""
         match self:
             case []:
-                return wrap(  # type: ignore[return-value]
+                return wrap(  # type: ignore
                     encoder=self.reduction,
                     decoder=lambda _: (),
                 ).simplify()
 
             case [encoder]:
                 encoder = cast("Encoder[Any, Y]", encoder)
-                return (  # type: ignore[return-value]
+                return (  # type: ignore
                     wrap(
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
@@ -2590,7 +2590,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
                 ).simplify()
 
             case _:
-                return Fold.new(  # type: ignore[return-value]
+                return Fold.new(  # type: ignore
                     encoders=map(simplify, self),
                     reduction=self.reduction,
                 )
