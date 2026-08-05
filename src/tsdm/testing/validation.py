@@ -138,6 +138,8 @@ def validate_hash(
             msg = "⚠️  No reference hash given, skipping validation."
             hashes_match = False
         case _, _:
+            assert actual_hash is not None  # needed for type checker
+            assert expected_hash is not None  # needed for type checker
             algs_match = actual_hash.hash_algorithm == expected_hash.hash_algorithm
             hashes_match = actual_hash.hash_value == expected_hash.hash_value
 
@@ -404,6 +406,8 @@ def validate_table_schema(
             msg = "No columns in actual table, but reference columns given!"
             columns_match = False
         case _, _:
+            assert actual_columns is not None  # needed for type checker
+            assert expected_columns is not None  # needed for type checker
             missing_columns = set(expected_columns) - set(actual_columns)
             missing_columns = missing_columns - set(index_columns)
             superfluous_columns = set(actual_columns) - set(expected_columns)
@@ -414,7 +418,7 @@ def validate_table_schema(
                 if missing_columns:
                     msg += f"\n\tMissing columns: {sorted(missing_columns)!r}"
                 if superfluous_columns:
-                    msg += f"\n\tSuperfluous columns: {sorted(superfluous_columns)!r}"
+                    msg += f"\n\tSuperfluous columns: {sorted(superfluous_columns)!r}"  # pyright: ignore[reportArgumentType]
     error_handler.emit(msg, valid=columns_match)
 
     # Validate dtypes (for matching columns only).
@@ -429,6 +433,8 @@ def validate_table_schema(
             msg_dtypes = "No dtypes in actual table, but reference dtypes given!"
             dtypes_match = False
         case _, _:
+            assert actual_dtypes is not None  # needed for type checker
+            assert expected_dtypes is not None  # needed for type checker
             bad_dtypes = {}
             for actual_col, actual_dtype in actual_dtypes.items():
                 if actual_col not in expected_dtypes:
