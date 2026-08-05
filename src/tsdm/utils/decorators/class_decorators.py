@@ -29,17 +29,7 @@ from tsdm.types.dataclass import Dataclass
 from tsdm.types.extra import SupportsArray
 from tsdm.types.namedtuple import NTuple
 
-from .base import PolymorphicClassDecorator, decorator
-
-# region workaround mypy bug -----------------------------------------------------------
-# FIXME: https://github.com/python/mypy/issues/17191
-pprint_sequence: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
-pprint_mapping: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
-pprint_set: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
-pprint_dataclass: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
-pprint_namedtuple: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
-pprint_repr: PolymorphicClassDecorator[...]  # pyright: ignore[reportRedeclaration]
-# endregion workaround mypy bug --------------------------------------------------------
+from .base import decorator
 
 
 @decorator
