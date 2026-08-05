@@ -25,13 +25,13 @@ __all__ = [
 ]
 
 import torch
-from torch import Tensor, jit
+from torch import Tensor
 
 from ._tensor_functions import geometric_mean, tensor_norm
 
 
-@jit.script
-def erank(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def erank(x: Tensor, /) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
     .. signature:: ``(..., m, n) -> ...``
@@ -55,8 +55,8 @@ def erank(x: Tensor) -> Tensor:
     return torch.exp(entropy)
 
 
-@jit.script
-def relerank(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def relerank(x: Tensor, /) -> Tensor:
     r"""Compute the relative effective rank of a matrix.
 
     .. signature:: ``(..., m, n) -> ...``
@@ -66,8 +66,8 @@ def relerank(x: Tensor) -> Tensor:
     return erank(x) / min(x.shape[-2:])
 
 
-@jit.script
-def col_corr(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def col_corr(x: Tensor, /) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     .. signature:: ``(..., m, n) -> ...``
@@ -83,8 +83,8 @@ def col_corr(x: Tensor) -> Tensor:
     return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
 
 
-@jit.script
-def row_corr(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def row_corr(x: Tensor, /) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     .. signature:: ``(..., m, n) -> ...``
@@ -100,8 +100,8 @@ def row_corr(x: Tensor) -> Tensor:
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
 
 
-@jit.script
-def closest_symmetric(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
+@torch.compile(fullgraph=True)
+def closest_symmetric(x: Tensor, /, *, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Symmetric part of square matrix.
 
     .. signature:: ``(..., n, n) -> (..., n, n)``
@@ -112,8 +112,8 @@ def closest_symmetric(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     return (x + x.swapaxes(rowdim, coldim)) / 2
 
 
-@jit.script
-def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
+@torch.compile(fullgraph=True)
+def closest_skew(x: Tensor, /, *, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Skew-Symmetric part of a matrix.
 
     .. signature:: ``(..., n, n) -> (..., n, n)``
@@ -124,8 +124,8 @@ def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     return (x - x.swapaxes(rowdim, coldim)) / 2
 
 
-@jit.script
-def closest_orthogonal(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def closest_orthogonal(x: Tensor, /) -> Tensor:
     r"""Orthogonal part of a square matrix.
 
     .. signature:: ``(..., n, n) -> (..., n, n)``
@@ -137,8 +137,8 @@ def closest_orthogonal(x: Tensor) -> Tensor:
     return Q
 
 
-@jit.script
-def closest_diagonal(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def closest_diagonal(x: Tensor, /) -> Tensor:
     r"""Diagonal part of a square matrix.
 
     .. math:: \argmin_{X: X⊙𝕀 = X} ‖A-X‖
@@ -149,8 +149,8 @@ def closest_diagonal(x: Tensor) -> Tensor:
     return torch.diag_embed(d)
 
 
-@jit.script
-def reldist(x: Tensor, y: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def reldist(x: Tensor, y: Tensor, /) -> Tensor:
     r"""Relative distance between two matrices.
 
     .. signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
@@ -163,8 +163,8 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
     return torch.where(yy != 0, r / yy, zero)
 
 
-@jit.script
-def reldist_diagonal(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def reldist_diagonal(x: Tensor, /) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -174,8 +174,8 @@ def reldist_diagonal(x: Tensor) -> Tensor:
     return reldist(closest_diagonal(x), x)
 
 
-@jit.script
-def reldist_symmetric(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def reldist_symmetric(x: Tensor, /) -> Tensor:
     r"""Relative magnitude of closest_symm part.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -183,8 +183,8 @@ def reldist_symmetric(x: Tensor) -> Tensor:
     return reldist(closest_symmetric(x), x)
 
 
-@jit.script
-def reldist_skew(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def reldist_skew(x: Tensor, /) -> Tensor:
     r"""Relative magnitude of skew-closest_symm part.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -192,8 +192,8 @@ def reldist_skew(x: Tensor) -> Tensor:
     return reldist(closest_skew(x), x)
 
 
-@jit.script
-def reldist_orthogonal(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def reldist_orthogonal(x: Tensor, /) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -203,8 +203,8 @@ def reldist_orthogonal(x: Tensor) -> Tensor:
     return reldist(closest_orthogonal(x), x)
 
 
-@jit.script
-def stiffness_ratio(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def stiffness_ratio(x: Tensor, /) -> Tensor:
     r"""Compute the stiffness ratio of a matrix.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -226,8 +226,8 @@ def stiffness_ratio(x: Tensor) -> Tensor:
     return torch.where(maxvals < 0, minvals / maxvals, float("nan"))
 
 
-@jit.script
-def spectral_radius(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def spectral_radius(x: Tensor, /) -> Tensor:
     r"""Return $\max_i | λ_i | $.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -236,8 +236,8 @@ def spectral_radius(x: Tensor) -> Tensor:
     return λ.abs().amax(dim=-1)
 
 
-@jit.script
-def spectral_abscissa(x: Tensor) -> Tensor:
+@torch.compile(fullgraph=True)
+def spectral_abscissa(x: Tensor, /) -> Tensor:
     r"""Return $\max_i \Re(λ_i)$.
 
     .. signature:: ``(..., n, n) -> ...``
@@ -246,8 +246,10 @@ def spectral_abscissa(x: Tensor) -> Tensor:
     return λ.real.amax(dim=-1)
 
 
-@jit.script
-def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool = False) -> Tensor:
+@torch.compile(fullgraph=True)
+def apply_keepdim(
+    x: Tensor, /, *, dim: tuple[int, int], keepdim: bool = False
+) -> Tensor:
     r"""Insert dimensions in the right places.
 
     We assume x was some tensor to which a reduction was applied, such that
@@ -266,9 +268,11 @@ def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool = False) -> Ten
     return x
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def logarithmic_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2.0,
     dim: tuple[int, int] = (-2, -1),
     keepdim: bool = False,
@@ -313,13 +317,13 @@ def logarithmic_norm(
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         λ = torch.linalg.eigvals(x)
         r = λ.real.amax(dim=-1)
-        return apply_keepdim(r, dim, keepdim)
+        return apply_keepdim(r, dim=dim, keepdim=keepdim)
     if p == -2:
         x = closest_symmetric(x, dim=dim)
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         λ = torch.linalg.eigvals(x)
         r = λ.real.amin(dim=-1)
-        return apply_keepdim(r, dim, keepdim)
+        return apply_keepdim(r, dim=dim, keepdim=keepdim)
 
     m = torch.eye(N, dtype=torch.bool, device=x.device)
     x = torch.where(m, x.real, x.abs())
@@ -342,9 +346,11 @@ def logarithmic_norm(
     raise NotImplementedError("Currently only p=±1,±2,±inf are supported.")
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def schatten_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2.0,
     dim: tuple[int, int] = (-2, -1),
     keepdim: bool = False,
@@ -385,18 +391,18 @@ def schatten_norm(
             result = geometric_mean(σ, axis=-1)
         else:
             result = m.sum(dim=-1)
-        return apply_keepdim(result, dim, keepdim)
+        return apply_keepdim(result, dim=dim, keepdim=keepdim)
 
     if p == float("+inf"):
         σ = torch.where(m, σ, float("-inf"))
         maxvals = σ.amax(dim=-1)
         maxvals = torch.where(maxvals == float("-inf"), float("nan"), maxvals)
-        return apply_keepdim(maxvals, dim, keepdim)
+        return apply_keepdim(maxvals, dim=dim, keepdim=keepdim)
     if p == float("-inf"):
         σ = torch.where(m, σ, float("+inf"))
         minvals = σ.amin(dim=-1)
         minvals = torch.where(minvals == float("+inf"), float("nan"), minvals)
-        return apply_keepdim(minvals, dim, keepdim)
+        return apply_keepdim(minvals, dim=dim, keepdim=keepdim)
 
     σ = torch.where(m, σ, float("-inf"))
     σ_max = σ.amax(dim=-1)
@@ -408,12 +414,14 @@ def schatten_norm(
         if scaled
         else σ.pow(p).nansum(dim=-1).pow(1 / p)
     )
-    return apply_keepdim(result, dim, keepdim)
+    return apply_keepdim(result, dim=dim, keepdim=keepdim)
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def matrix_norm(
     x: Tensor,
+    /,
+    *,
     dim: tuple[int, int] = (-2, -1),
     p: float = 2.0,
     q: float = 2.0,
@@ -448,9 +456,11 @@ def matrix_norm(
     return x
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def operator_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2.0,
     dim: tuple[int, int] = (-2, -1),
     keepdim: bool = True,
@@ -498,12 +508,12 @@ def operator_norm(
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         σ = torch.linalg.svdvals(x)
         r = σ.amax(dim=-1)
-        return c * apply_keepdim(r, dim, keepdim)
+        return c * apply_keepdim(r, dim=dim, keepdim=keepdim)
     if p == -2:
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         σ = torch.linalg.svdvals(x)
         r = σ.amin(dim=-1)
-        return c * apply_keepdim(r, dim, keepdim)
+        return c * apply_keepdim(r, dim=dim, keepdim=keepdim)
 
     x = x.abs()
     shift = int(coldim < rowdim) * int(keepdim)

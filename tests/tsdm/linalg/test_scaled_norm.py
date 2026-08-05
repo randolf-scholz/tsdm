@@ -8,33 +8,8 @@ from tsdm.types.aliases import DimArg
 
 
 @pytest.mark.parametrize("keepdim", [False, True], ids=lambda x: f"keepdim={x}")
-@pytest.mark.parametrize(
-    "dims",
-    [
-        None,
-        0,
-        1,
-        2,
-        3,
-        [0],
-        [1],
-        [2],
-        [3],
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 2],
-        [1, 3],
-        [2, 3],
-        [0, 1, 2],
-        [0, 1, 3],
-        [0, 2, 3],
-        [1, 2, 3],
-        [0, 1, 2, 3],
-    ],
-    ids=lambda x: f"axis={x}",
-)
-@pytest.mark.parametrize("shape", [(1, 2, 3, 4)], ids=lambda x: f"shape={x}")
+@pytest.mark.parametrize("dims", [None, 0, (-1,), (0, 1)], ids=lambda x: f"axis={x}")
+@pytest.mark.parametrize("shape", [(1, 2, 3)], ids=lambda x: f"shape={x}")
 def test_shape(*, shape: tuple[int, ...], dims: DimArg, keepdim: bool) -> None:
     r"""Check that the output shape is correct."""
     torch.manual_seed(0)

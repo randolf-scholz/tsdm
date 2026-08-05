@@ -45,7 +45,7 @@ def test_cumulative_or(x: Tensor, dim: int, device: str, expected: Tensor) -> No
     dev = torch.device(device)
     x = x.to(dev)
     expected = expected.to(dev)
-    result = cumulative_or(x, dim)
+    result = cumulative_or(x, dim=dim)
     assert torch.all(result == expected)
 
 
@@ -85,7 +85,7 @@ def test_cumulative_and(x: Tensor, dim: int, device: str, expected: Tensor) -> N
     dev = torch.device(device)
     x = x.to(dev)
     expected = expected.to(dev)
-    result = cumulative_and(x, dim)
+    result = cumulative_and(x, dim=dim)
     assert torch.all(result == expected)
 
 
@@ -125,5 +125,5 @@ def test_cumulative_xor(x: Tensor, dim: int, device: str, expected: Tensor) -> N
     dev = torch.device(device)
     x = x.to(dev)
     expected = expected.to(dev)
-    result = cumulative_xor(x, dim)
+    result = cumulative_xor(x, dim=dim)
     assert torch.all(result == expected)

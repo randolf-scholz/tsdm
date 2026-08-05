@@ -6,43 +6,20 @@ __all__ = [
     "grad_norm",
     "multi_norm",
     "norm",
-    "relative_error",
     "scaled_norm",
     "tensor_norm",
 ]
 
 
 import torch
-from torch import Tensor, jit
+from torch import Tensor
 
 
-@jit.script
-def relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
-    r"""Element-wise relative error of `xhat` w.r.t. `x_true`.
-
-    .. signature:: ``[(..., n), (..., n)] -> (..., n)``
-
-    Note:
-        Automatically adds a small epsilon to the denominator to avoid division by zero.
-    """
-    EPS: dict[torch.dtype, float] = {
-        torch.float16: 1e-3,
-        torch.float32: 1e-6,
-        torch.float64: 1e-15,
-        # complex floats
-        torch.complex32: 1e-3,
-        torch.complex64: 1e-6,
-        torch.complex128: 1e-15,
-        # other floats
-        torch.bfloat16: 1e-2,
-    }
-    eps = EPS[xhat.dtype]
-    return torch.abs(xhat - x_true) / (torch.abs(x_true) + eps)
-
-
-@jit.script
+@torch.compile(fullgraph=True)
 def geometric_mean(
     x: Tensor,
+    /,
+    *,
     axis: None | int | list[int] = None,
     keepdim: bool = False,
 ) -> Tensor:
@@ -60,9 +37,11 @@ def geometric_mean(
     return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def scaled_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2.0,
     axis: None | int | list[int] = None,
     keepdim: bool = False,
@@ -81,9 +60,9 @@ def scaled_norm(
     else:
         dim = axis
 
-    if p == float("inf"):
+    if p == torch.inf:
         return x.amax(dim=dim, keepdim=keepdim)
-    if p == -float("inf"):
+    if p == -torch.inf:
         return x.amin(dim=dim, keepdim=keepdim)
     if p == 0:
         return geometric_mean(x, axis=dim, keepdim=keepdim)
@@ -94,9 +73,11 @@ def scaled_norm(
     return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2.0,
     axis: None | int | list[int] = None,
     keepdim: bool = False,
@@ -119,9 +100,9 @@ def norm(
     )
 
     # non-scaled
-    if p == float("inf"):
+    if p == torch.inf:
         return x.amax(dim=dim, keepdim=keepdim)
-    if p == -float("inf"):
+    if p == -torch.inf:
         return x.amin(dim=dim, keepdim=keepdim)
     if p == 0:
         return (x != 0).sum(dim=dim, keepdim=keepdim)
@@ -132,9 +113,11 @@ def norm(
     return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def tensor_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2.0,
     axis: None | int | list[int] = None,
     keepdim: bool = False,
@@ -169,9 +152,11 @@ def tensor_norm(
     )
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def multi_norm(
     tensors: list[Tensor],
+    /,
+    *,
     p: float = 2,
     q: float = 2,
     scaled: bool = True,
@@ -200,9 +185,11 @@ def multi_norm(
     return (s / (1 + int(scaled) * len(tensors))) ** (1 / q)
 
 
-@jit.script
+@torch.compile(fullgraph=True)
 def grad_norm(
     tensors: list[Tensor],
+    /,
+    *,
     p: float = 2,
     q: float = 2,
     scaled: bool = True,

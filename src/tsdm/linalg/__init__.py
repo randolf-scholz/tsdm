@@ -31,7 +31,6 @@ __all__ = [
     "grad_norm",
     "multi_norm",
     "norm",
-    "relative_error",
     "scaled_norm",
     "tensor_norm",
 ]
@@ -64,7 +63,6 @@ from ._tensor_functions import (
     grad_norm,
     multi_norm,
     norm,
-    relative_error,
     scaled_norm,
     tensor_norm,
 )

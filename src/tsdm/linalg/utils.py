@@ -134,11 +134,11 @@ def reduce_axes(
             raise TypeError(f"Unknown type {type(selection)}")
 
 
-def _slice_size(slc: slice, /) -> Optional[int]:
+def _slice_size(s: slice, /) -> Optional[int]:
     r"""Get the size of a slice."""
-    if slc.stop is None or slc.start is None:
+    if s.stop is None or s.start is None:
         return None
-    return slc.stop - slc.start
+    return s.stop - s.start
 
 
 def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:
