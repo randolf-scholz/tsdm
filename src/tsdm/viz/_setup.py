@@ -11,8 +11,10 @@ __all__ = [
 
 import shutil
 import warnings
+from typing import Any
 
 import matplotlib as mpl
+from matplotlib.typing import RcKeyType
 
 PGF_PREAMBLE = r"""
 \usepackage{fontspec}
@@ -30,7 +32,7 @@ LATEX_PREAMBLE = r"""
 \usepackage{amssymb}
 """
 
-MATPLOTLIB_CONFIG = {
+MATPLOTLIB_CONFIG: dict[RcKeyType, Any] = {
     # "mathtext.fontset": "stix",
     # "font.family": "STIXGeneral",
     # "svg.fonttype": "none",
