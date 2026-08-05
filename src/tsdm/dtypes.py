@@ -67,6 +67,10 @@ __all__ = [
     "TYPESTRINGS",
     # Functions
     "map_pandas_arrowtime_numpy",
+    # Types
+    "PandasDType",
+    "DType",
+    "DTypeArg",
 ]
 
 from datetime import datetime, timedelta
@@ -81,12 +85,12 @@ from pandas import ArrowDtype
 from pandas.api.extensions import ExtensionDtype
 
 # region Dtype Aliases -----------------------------------------------------------------
+type PandasDType = np.dtype | ExtensionDtype
+r"""Type Alias for Pandas Dtypes"""
 type DType = np.dtype | torch.dtype | ExtensionDtype | pa.DataType
 r"""Type Alias for dtypes."""
 type DTypeArg = str | type
 r"""Type Alias for dtype arguments."""
-type AnyDtype = np.dtype | torch.dtype | ExtensionDtype | pa.DataType
-r"""Type Alias for any dtype."""
 # endregion Dtype Aliases --------------------------------------------------------------
 
 
@@ -598,7 +602,7 @@ r"""Dictionary of converting pyarrow to polars."""
 # endregion dtype conversion -----------------------------------------------------------
 
 
-TYPESTRINGS: Final[dict[type | torch.dtype, str]] = (
+TYPESTRINGS: Final[dict[DType, str]] = (
     PANDAS_TYPESTRINGS | NUMPY_TYPESTRINGS | TORCH_TYPESTRINGS
 )
 r"""Dictionary of all type strings."""
