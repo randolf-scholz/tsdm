@@ -21,13 +21,13 @@ from tsdm.datasets import KiwiBenchmark
 from tsdm.datatools import MappingDataset, folds_as_frame, folds_from_groups
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
+from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
     HierarchicalSampler,
     SlidingWindowSampler,
 )
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
-from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

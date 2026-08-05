@@ -20,8 +20,8 @@ from pandas import DataFrame, Series
 from pandas._typing import DtypeObj
 
 from tsdm.constants import UNDEFINED
+from tsdm.pprint import pprint_repr
 from tsdm.types.extra import SupportsArrayUfunc
-from tsdm.utils.decorators import pprint_repr
 
 from .base import FittableEncoder, StaticEncoder, WrappedEncoder
 from .pandas import FrameEncoder

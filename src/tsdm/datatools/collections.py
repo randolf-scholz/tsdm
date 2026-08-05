@@ -26,9 +26,9 @@ from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checka
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex
 
+from tsdm.pprint import pprint_repr
 from tsdm.types._protocols import SupportsGetItem, SupportsSlicing
 from tsdm.types.abc import Vec
-from tsdm.utils.decorators import pprint_repr
 
 # region Protocols ---------------------------------------------------------------------
 

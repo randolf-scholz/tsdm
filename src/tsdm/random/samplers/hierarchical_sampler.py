@@ -12,7 +12,7 @@ from pandas import Series
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.datatools import Dataset, MapDataset
 from tsdm.datatools.collections import SeriesDataset, get_index
-from tsdm.utils.decorators import pprint_repr
+from tsdm.pprint import pprint_repr
 
 from .base import BaseSampler, RandomSampler, Sampler
 

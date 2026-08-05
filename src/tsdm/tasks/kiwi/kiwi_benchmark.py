@@ -32,10 +32,10 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.metrics import TimeSeriesMSE
+from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator, kiwi_benchmark
-from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

@@ -41,19 +41,22 @@ import inspect
 import json
 import logging
 import pickle
+import sys
 import warnings
 import webbrowser
 from _frozen_importlib import module_from_spec
 from _frozen_importlib_external import spec_from_file_location
 from collections.abc import Collection, Mapping
+from contextlib import ContextDecorator
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, TracebackType
 from typing import (
     IO,
     Any,
     ClassVar,
+    Literal as L,
     Optional,
     Protocol,
     Self,
@@ -76,7 +79,6 @@ from tsdm.pprint import repr_mapping
 from tsdm.testing._testing import is_zipfile
 from tsdm.types.aliases import DirPath, FilePath
 from tsdm.utils import nested_paths_exist, repackage_zip
-from tsdm.utils.contextmanagers import system_path
 from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.remote import import_from_url
 
@@ -488,3 +490,34 @@ def import_module_from_path(
         the_module = module_from_spec(spec)
         spec.loader.exec_module(the_module)
         return the_module
+
+
+class system_path(ContextDecorator):
+    r"""Prepends a path to environment variable `$PATH`.
+
+    References:
+        - https://stackoverflow.com/a/41904558
+    """
+
+    path: Path
+    previous_path: list[str]
+
+    def __init__(self, path: str | Path) -> None:
+        self.path = Path(path)
+        if not self.path.exists():
+            raise FileNotFoundError(f"Path {self.path} does not exist.")
+
+    def __enter__(self) -> Self:
+        self.previous_path = sys.path.copy()
+        sys.path.insert(0, str(self.path))
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+        /,
+    ) -> L[False]:
+        sys.path = self.previous_path
+        return False

@@ -31,12 +31,6 @@ from tsdm.metrics import (
 )
 from tsdm.random.generators import GENERATORS, IVP_Generator, IVP_GeneratorBase
 from tsdm.random.samplers import SAMPLERS, BaseSampler, Sampler
-from tsdm.utils.decorators import (
-    CLASS_DECORATORS,
-    FUNCTION_DECORATORS,
-    ClassDecorator,
-    FunctionDecorator,
-)
 
 
 class Case(NamedTuple):
@@ -61,8 +55,8 @@ CASES: dict[str, Case] = {
     # "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
     "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS            ),
     "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS            ),
-    "decorators_cls" : Case(tsdm.utils.decorators  , ClassDecorator    , None               , CLASS_DECORATORS    ),
-    "decorators_fun" : Case(tsdm.utils.decorators  , FunctionDecorator , None               , FUNCTION_DECORATORS ),
+    # "decorators_cls" : Case(tsdm.utils.decorators  , ClassDecorator    , None               , CLASS_DECORATORS    ),
+    # "decorators_fun" : Case(tsdm.utils.decorators  , FunctionDecorator , None               , FUNCTION_DECORATORS ),
     "metrics_fun"    : Case(tsdm.metrics           , Metric            , None               , FUNCTIONAL_LOSSES   ),
 }  # fmt: skip
 r"""Dictionary of all available cases."""

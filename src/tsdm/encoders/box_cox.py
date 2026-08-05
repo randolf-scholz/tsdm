@@ -26,8 +26,8 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import FLOAT, UNDEFINED
+from tsdm.pprint import pprint_repr
 from tsdm.types.extra import SupportsArrayUfunc
-from tsdm.utils.decorators import pprint_repr
 
 from .base import FittableEncoder, StaticEncoder
 

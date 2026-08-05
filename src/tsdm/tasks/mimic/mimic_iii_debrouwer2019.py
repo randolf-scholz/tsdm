@@ -69,8 +69,8 @@ from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
 from tsdm.datatools import is_partition
+from tsdm.pprint import pprint_repr
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

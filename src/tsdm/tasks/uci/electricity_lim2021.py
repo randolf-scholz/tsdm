@@ -17,11 +17,11 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.encoders import FittableEncoder, StandardScaler
+from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTS, electricity
 from tsdm.utils import timedelta, timestamp
-from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

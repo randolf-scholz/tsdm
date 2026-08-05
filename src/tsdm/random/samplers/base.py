@@ -22,7 +22,7 @@ from pandas import Index
 
 from tsdm.constants import RNG
 from tsdm.datatools.collections import Dataset, PandasDataset, get_index
-from tsdm.utils.decorators import pprint_repr
+from tsdm.pprint import pprint_repr
 
 
 @runtime_checkable

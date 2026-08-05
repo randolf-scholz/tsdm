@@ -4,7 +4,7 @@ from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
 from typing import NamedTuple, Self, assert_type, overload
 
-from tsdm.utils.decorators import (
+from tsdm.pprint import (
     pprint_dataclass,
     pprint_mapping,
     pprint_namedtuple,

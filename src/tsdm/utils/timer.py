@@ -1,98 +1,15 @@
-r"""Context managers for use in decorators."""
+r"""A timer context manager."""
 
-__all__ = [
-    # Protocol
-    "ContextManager",
-    # Classes
-    "ray_cluster",
-    "system_path",
-    "timer",
-]
+__all__ = ["timer"]
 
 import gc
-import importlib
 import logging
-import os
 import signal
 import sys
-from contextlib import AbstractContextManager as ContextManager, ContextDecorator
-from importlib.util import find_spec
-from pathlib import Path
+from contextlib import ContextDecorator
 from time import perf_counter_ns
-from types import FrameType, ModuleType, TracebackType
-from typing import ClassVar, Literal as L, Never, Optional, Self, cast, overload
-
-
-class ray_cluster(ContextDecorator):
-    r"""Context manager for starting and stopping a ray cluster."""
-
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
-    r"""Logger for this class."""
-    ray: ModuleType | None = None
-    r"""Ray module."""
-    num_cpus: int
-    r"""Number of CPUs to use for the ray cluster."""
-
-    def __init__(self, *, num_cpus: Optional[int] = None) -> None:
-        super().__init__()
-        self.num_cpus = (
-            max(1, ((os.cpu_count() or 0) * 4) // 5) if num_cpus is None else num_cpus
-        )
-
-    def __enter__(self) -> Self:
-        if find_spec("ray") is not None:
-            self.ray = importlib.import_module("ray")
-            # Only use 80% of the available CPUs.
-            self.LOGGER.warning("Starting ray cluster with num_cpus=%s.", self.num_cpus)
-            self.ray.init(num_cpus=self.num_cpus)
-        else:
-            self.LOGGER.warning("Ray not found, skipping ray cluster.")
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-        /,
-    ) -> L[False]:
-        self.LOGGER.warning("Tearing down ray cluster.")
-
-        if self.ray is not None:
-            self.LOGGER.warning("Tearing down ray cluster.")
-            self.ray.shutdown()
-        return False
-
-
-class system_path(ContextDecorator):
-    r"""Prepends a path to environment variable `$PATH`.
-
-    References:
-        - https://stackoverflow.com/a/41904558
-    """
-
-    path: Path
-    previous_path: list[str]
-
-    def __init__(self, path: str | Path) -> None:
-        self.path = Path(path)
-        if not self.path.exists():
-            raise FileNotFoundError(f"Path {self.path} does not exist.")
-
-    def __enter__(self) -> Self:
-        self.previous_path = sys.path.copy()
-        sys.path.insert(0, str(self.path))
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-        /,
-    ) -> L[False]:
-        sys.path = self.previous_path
-        return False
+from types import FrameType, TracebackType
+from typing import ClassVar, Literal as L, Never, Self, cast, overload
 
 
 class timer[ExitT: bool](ContextDecorator):

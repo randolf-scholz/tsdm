@@ -1,9 +1,6 @@
 r"""Provides utility functions."""
 
 __all__ = [
-    # Sub-Packages
-    "decorators",
-    "contextmanagers",
     # Sub-Modules
     "remote",
     "funcutils",
@@ -11,6 +8,7 @@ __all__ = [
     "frozenmap",
     # Constants
     # Classes
+    "timer",
     # utils
     "normalize_axes",
     "deep_dict_update",
@@ -27,7 +25,7 @@ __all__ = [
     "unflatten_dict",
 ]
 
-from . import contextmanagers, decorators, frozenmap, funcutils, lazydict, remote
+from . import frozenmap, funcutils, lazydict, remote
 from ._utils import (
     deep_dict_update,
     flatten_dict,
@@ -43,3 +41,4 @@ from ._utils import (
     transpose_list_of_dicts,
     unflatten_dict,
 )
+from .timer import timer

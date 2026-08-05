@@ -51,9 +51,9 @@ from tsdm.testing.validation import (
 from tsdm.types.aliases import FilePath
 from tsdm.utils import nested_paths_exist, remote
 from tsdm.utils._utils import query_bool
-from tsdm.utils.contextmanagers import timer
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict
+from tsdm.utils.timer import timer
 
 
 @runtime_checkable

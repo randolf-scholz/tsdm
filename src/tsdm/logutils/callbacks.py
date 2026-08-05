@@ -73,9 +73,9 @@ from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.metrics import Metric
+from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types.abc import MutSeq
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.decorators import pprint_repr, pprint_sequence
 from tsdm.utils.funcutils import get_mandatory_kwargs
 
 from .logfuncs import (

@@ -34,7 +34,7 @@ from numerical_types.arrays import BaseArray as Array
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.utils.decorators import pprint_repr
+from tsdm.pprint import pprint_repr
 
 
 @pprint_repr

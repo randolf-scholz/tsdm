@@ -23,6 +23,7 @@ from tsdm.datasets import KiwiBenchmark
 from tsdm.datatools import MappingDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
+from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
     HierarchicalSampler,
     SlidingWindowSampler,
@@ -30,7 +31,6 @@ from tsdm.random.samplers import (
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS, kiwi_benchmark
 from tsdm.timeseries.sampling import TimeSeriesSampleGenerator
-from tsdm.utils.decorators import pprint_repr
 
 
 class KIWI_RUNS_GENERATOR(TimeSeriesSampleGenerator):

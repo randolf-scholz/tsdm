@@ -124,9 +124,9 @@ from torch.utils.data import DataLoader
 from tsdm.datatools import MapDataset, TorchDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
+from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
-from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.lazydict import LazyDict
 
 Batch = NewType("Batch", object)

@@ -13,7 +13,7 @@ from numerical_types import FloatSeries
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
-from tsdm.utils.decorators import pprint_repr
+from tsdm.pprint import pprint_repr
 
 
 @pprint_repr

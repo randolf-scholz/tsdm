@@ -45,9 +45,9 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.integrate import solve_ivp as scipy_solve_ivp
 
 from tsdm.constants import RNG
+from tsdm.pprint import pprint_repr
 from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
-from tsdm.utils.decorators import pprint_repr
 
 
 @runtime_checkable

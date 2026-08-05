@@ -15,8 +15,8 @@ from tsdm.backend import get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
 from tsdm.linalg.utils import invert_axis_selection, reduce_axes
+from tsdm.pprint import pprint_repr
 from tsdm.types.aliases import Axis
-from tsdm.utils.decorators import pprint_repr
 
 
 @overload

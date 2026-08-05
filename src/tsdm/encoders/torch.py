@@ -19,8 +19,8 @@ from numpy.typing import NDArray
 from torch import Tensor, jit, nn
 
 from tsdm.constants import UNDEFINED
+from tsdm.pprint import pprint_repr
 from tsdm.types.aliases import NestedBuiltin
-from tsdm.utils.decorators import pprint_repr
 from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 from .base import StaticEncoder

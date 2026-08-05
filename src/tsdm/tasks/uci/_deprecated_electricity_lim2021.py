@@ -19,10 +19,10 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
 from tsdm.encoders import Encoder, StandardScaler
+from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils import timedelta, timestamp
-from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr

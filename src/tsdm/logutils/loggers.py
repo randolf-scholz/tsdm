@@ -71,8 +71,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import UNDEFINED
 from tsdm.metrics import Metric
+from tsdm.pprint import pprint_mapping, pprint_repr
 from tsdm.types.aliases import JSON, FilePath
-from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 from .callbacks import (
     Callback,

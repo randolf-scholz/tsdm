@@ -15,7 +15,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.utils.decorators import pprint_repr
+from tsdm.pprint import pprint_repr
 
 
 @pprint_repr

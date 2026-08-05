@@ -25,7 +25,6 @@ __all__ = [
     "prod_fn",
     "recurse_on_nested_builtin",
     "recurse_on_nested_generic",
-    "rpartial",
     "yield_return_nodes",
 ]
 
@@ -41,7 +40,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from dataclasses import fields
-from functools import wraps
+from functools import partial, wraps
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Final, Optional, overload
 
@@ -55,24 +54,6 @@ POSITIONAL_ONLY: Final = Parameter.POSITIONAL_ONLY
 POSITIONAL_OR_KEYWORD: Final = Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD: Final = Parameter.VAR_KEYWORD
 VAR_POSITIONAL: Final = Parameter.VAR_POSITIONAL
-
-
-def rpartial[**P, R](  # +R
-    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Fn[..., R]:
-    r"""Apply positional arguments from the right.
-
-    References:
-        - https://docs.python.org/3/library/functools.html#functools.partial
-        - https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129
-    """
-
-    @wraps(func)
-    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
-        # FIXME: https://github.com/python/typeshed/issues/8703
-        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
-
-    return __wrapper
 
 
 def accepts_varkwargs(func: Fn[..., Any], /) -> bool:
@@ -420,7 +401,6 @@ def recurse_on_nested_generic[T, R](
         arg: Nested data structure to apply the function to.
         leaf_fn: Function to apply to the leaf nodes.
         leaf_type: Type of the leaf nodes.
-        recursion_fn: Function to apply to non-leaf nodes.
         leaf_prioritized: Whether to check for leaf-type first or last.
         mapping_factory: Factory function for mappings.
         sequence_factory: Factory function for sequences.
@@ -469,3 +449,26 @@ def recurse_on_nested_generic[T, R](
                 )
 
     return recurse(arg)
+
+
+def recurse_on_container[T, R](  # T, +R
+    leaf_fn: Fn[[T], R],
+    /,
+    *,
+    leaf_type: type[T],
+    leaf_prioritized: bool = False,
+) -> Fn[[Nested[T]], Nested[R]]:
+    r"""Apply function to a nested iterables of a given kind.
+
+    Args:
+        leaf_fn: A function to apply to all leave Nodes
+        leaf_type: The type of the leave nodes
+        leaf_prioritized: Whether to check for leaf-type first or last.
+    """
+    recurse = partial(
+        recurse_on_nested_generic,
+        leaf_fn=leaf_fn,
+        leaf_type=leaf_type,
+        leaf_prioritized=leaf_prioritized,
+    )
+    return wraps(leaf_fn)(recurse)

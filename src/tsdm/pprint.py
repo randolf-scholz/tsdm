@@ -60,12 +60,20 @@ __all__ = [
     "repr_sequence",
     "repr_set",
     "repr_shortform",
+    # decorators
+    "pprint_dataclass",
+    "pprint_mapping",
+    "pprint_namedtuple",
+    "pprint_repr",
+    "pprint_sequence",
+    "pprint_set",
 ]
 
 
 import dataclasses
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
+from functools import partialmethod
 from math import prod
 from types import FunctionType
 from typing import Any, Final, Optional, Protocol
@@ -75,6 +83,7 @@ import pyarrow as pa
 from pandas import ArrowDtype, DataFrame, MultiIndex
 from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 
+from .decorator import decorator
 from .dtypes import TYPESTRINGS, DType
 from .testing import (
     is_builtin,
@@ -1003,3 +1012,83 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     repr_sequence,
     repr_shortform,
 ]
+
+
+@decorator
+def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
+    # def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, Sequence):
+        raise TypeError(f"Expected Sequence type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_sequence, **kwds)  # type: ignore
+    return cls
+
+
+@decorator
+def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
+    # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, Mapping):
+        raise TypeError(f"Expected Mapping type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # type: ignore
+    return cls
+
+
+@decorator
+def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
+    # def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, AbstractSet):
+        raise TypeError(f"Expected Set type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_set, **kwds)  # type: ignore
+    return cls
+
+
+@decorator
+def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
+    # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, Dataclass):  # type: ignore
+        raise TypeError(f"Expected Sequence type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore
+    return cls
+
+
+@decorator
+def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
+    # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
+    r"""Add appropriate __repr__ to class."""
+    if not issubclass(cls, NTuple):  # type: ignore
+        raise TypeError(f"Expected NamedTuple type, got {cls}.")
+    cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore
+    return cls
+
+
+@decorator
+def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
+    # def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
+    r"""Add appropriate __repr__ to class."""
+    if not isinstance(cls, type):
+        raise TypeError("Must be a class!")
+
+    repr_func: Callable[..., str]
+
+    if issubclass(cls, Dataclass):  # type: ignore
+        repr_func = repr_dataclass
+    elif issubclass(cls, NTuple):  # type: ignore
+        repr_func = repr_namedtuple
+    elif issubclass(cls, Mapping):
+        repr_func = repr_mapping
+    elif issubclass(cls, SupportsArray):
+        repr_func = repr_array
+    elif issubclass(cls, Sequence):
+        repr_func = repr_sequence
+    elif issubclass(cls, AbstractSet):
+        repr_func = repr_set
+    elif issubclass(cls, type):
+        repr_func = repr_shortform
+    else:
+        raise TypeError(f"Unsupported type {cls}.")
+
+    cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore
+    return cls

@@ -14,7 +14,7 @@ from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.utils.decorators import pprint_repr
+from tsdm.pprint import pprint_repr
 
 
 @pprint_repr

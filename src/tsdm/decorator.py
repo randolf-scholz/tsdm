@@ -17,19 +17,17 @@ __all__ = [
     "PolymorphicFunctionDecorator",
     # Functions
     "decorator",
-    "recurse_on_container",
+    "rpartial",
 ]
 
 import logging
 from collections.abc import Callable as Fn
 from dataclasses import dataclass
-from functools import partial, wraps
+from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Protocol, Self, cast, overload
 
-from tsdm.types.aliases import Nested
 from tsdm.types.callbacks import IdentityMap, IdentityMapOnCls, IdentityMapOnFn
-from tsdm.utils.funcutils import recurse_on_nested_generic, rpartial
 
 
 @dataclass
@@ -368,24 +366,19 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
     return _deco
 
 
-def recurse_on_container[T, R](  # T, +R
-    leaf_fn: Fn[[T], R],
-    /,
-    *,
-    leaf_type: type[T],
-    leaf_prioritized: bool = False,
-) -> Fn[[Nested[T]], Nested[R]]:
-    r"""Apply function to a nested iterables of a given kind.
+def rpartial[**P, R](  # +R
+    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Fn[..., R]:
+    r"""Apply positional arguments from the right.
 
-    Args:
-        leaf_fn: A function to apply to all leave Nodes
-        leaf_type: The type of the leave nodes
-        leaf_prioritized: Whether to check for leaf-type first or last.
+    References:
+        - https://docs.python.org/3/library/functools.html#functools.partial
+        - https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129
     """
-    recurse = partial(
-        recurse_on_nested_generic,
-        leaf_fn=leaf_fn,
-        leaf_type=leaf_type,
-        leaf_prioritized=leaf_prioritized,
-    )
-    return wraps(leaf_fn)(recurse)
+
+    @wraps(func)
+    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
+        # FIXME: https://github.com/python/typeshed/issues/8703
+        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
+
+    return __wrapper

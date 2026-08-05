@@ -38,8 +38,8 @@ from torch import Tensor
 
 from tsdm.backend.pandas import PandasDtype, PandasDTypeArg
 from tsdm.constants import EMPTY_MAP, UNDEFINED
+from tsdm.pprint import pprint_mapping, pprint_repr
 from tsdm.types.aliases import DictArg, FilePath
-from tsdm.utils.decorators import pprint_mapping, pprint_repr
 
 from .base import Encoder, EncoderDict, FittableEncoder, StaticEncoder
 

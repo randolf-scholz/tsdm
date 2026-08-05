@@ -24,8 +24,8 @@ from tsdm.backend import Backend, generic, get_backend
 from tsdm.backend.pandas import PandasDtype
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import FittableEncoder
+from tsdm.pprint import pprint_repr
 from tsdm.utils import timedelta, timestamp
-from tsdm.utils.decorators import pprint_repr
 
 
 @pprint_repr
