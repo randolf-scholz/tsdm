@@ -37,7 +37,6 @@ import logging
 import operator
 import warnings
 from collections.abc import Mapping
-from contextlib import suppress
 from functools import reduce
 from typing import Any, Final, Literal
 
@@ -111,15 +110,11 @@ def infer_axes(
     return "columns" if axis % len(x.shape) else "index"
 
 
-def clip[P: PandasType](x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
+def clip[P: PandasType](
+    x: P, /, lower: NDArray | float | None, upper: NDArray | float | None
+) -> P:
     r"""Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
-    # FIXME: https://github.com/pandas-dev/pandas/issues/59053
-    with suppress(Exception):
-        lower = lower.item()  # type: ignore
-    with suppress(Exception):
-        upper = upper.item()  # type: ignore
-
     return x.clip(lower, upper, axis=axis)
 
 
