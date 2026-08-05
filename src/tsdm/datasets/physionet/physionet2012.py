@@ -427,7 +427,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
                         dtype=self.rawdata_schema,
                         dtype_backend="pyarrow",
                     )
-                if record_id != int(df.iloc[0, -1]):
+                if record_id != df.iloc[0, -1]:
                     raise ValueError("RecordID mismatch!")
 
                 # drop first row (redundant RecordID)
@@ -475,7 +475,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
             Time=ts["Time"]
             .str.split(":", expand=True)
             .astype(int)
-            .dot([3600, 60])
+            .dot(pd.Series([3600, 60]))
             .mul(np.timedelta64(1, "s"))
         )
 
@@ -491,7 +491,7 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
             .reset_index("count", drop=True)
             .droplevel(0, axis="columns")
             .sort_index()
-            .reindex(columns=self.table_schemas["timeseries"])
+            .reindex(columns=list(self.table_schemas["timeseries"]))
         )
         return ts, md
 
