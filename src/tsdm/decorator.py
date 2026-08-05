@@ -2,19 +2,10 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
-    "ClassDecorator",
-    "ClassDecoratorFactory",
     "Decorator",
     "DecoratorError",
-    "DecoratorFactory",
-    "FunctionDecorator",
-    "FunctionDecoratorFactory",
-    "ParametrizedClassDecorator",
     "ParametrizedDecorator",
-    "ParametrizedFunctionDecorator",
-    "PolymorphicDecorator",
-    "PolymorphicClassDecorator",
-    "PolymorphicFunctionDecorator",
+    "ParametrizedPolymorphism",
     # Functions
     "decorator",
     "rpartial",
@@ -27,7 +18,25 @@ from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Protocol, Self, cast, overload
 
-from tsdm.types.callbacks import IdentityMap, IdentityMapOnCls, IdentityMapOnFn
+from .types.callbacks import Polymorphism
+
+
+def rpartial[**P, R](  # +R
+    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Fn[..., R]:
+    r"""Apply positional arguments from the right.
+
+    References:
+        - https://docs.python.org/3/library/functools.html#functools.partial
+        - https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129
+    """
+
+    @wraps(func)
+    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
+        # FIXME: https://github.com/python/typeshed/issues/8703
+        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
+
+    return __wrapper
 
 
 @dataclass
@@ -61,140 +70,10 @@ class DecoratorError(Exception):
         return super().__str__() + "\n" + "\n".join(default_message)
 
 
-# region ClassDecorator ----------------------------------------------------------------
-
-
-class PolymorphicClassDecorator[**P](Protocol):
-    r"""Polymorphic Class Decorator Protocol.
-
-    Note: Only supports identity decorators, i.e. those that return the same class.
-    """
-
-    # fmt: off
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator / decorator(cls, *args, **kwargs)
-    def __call__[Cls: type](self, cls: Cls, /, **kwargs: P.kwargs) -> Cls: ...  # type: ignore
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnCls: ...  # type: ignore
-    # fmt: on
-
-
-class ClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):  # -F_in, +F_out
-    r"""Function Decorator Protocol that preserves type."""
-
-    # fmt: off
-    # @decorator / decorator(cls, *args, **kwargs)
-    def __call__(self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs) -> Cls_out: ...
-    # fmt: on
-
-
-class ClassDecoratorFactory[Cls_in: type, Cls_out: type, **P](Protocol):
-    r"""Function Decorator Factory Protocol that preserves type."""
-
-    # fmt: off
-    # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> ClassDecorator[Cls_in, Cls_out, P]: ...
-    # fmt: on
-
-
-class ParametrizedClassDecorator[Cls_in: type, Cls_out: type, **P](Protocol):
-    r"""Parametrized Function Decorator Protocol that preserves type."""
-
-    # fmt: off
-    @overload  # @decorator / decorator(cls, *args, **kwargs)
-    def __call__(self, cls: Cls_in, /, *args: P.args, **kwargs: P.kwargs) -> Cls_out: ...
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Fn[[Cls_in], Cls_out]: ...
-    # fmt: on
-
-
-# endregion ClassDecorator -------------------------------------------------------------
-
-
-# region FunctionDecorator -------------------------------------------------------------
-# FIXME: use Identity[Fn] once bounding T-vars by other T-vars is supported
-
-
-class PolymorphicFunctionDecorator[**P](Protocol):
-    r"""Polymorphic Function Decorator Protocol."""
-
-    # fmt: off
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator / decorator(fn, *args, **kwargs)
-    def __call__[F: Fn](self, fn: F, /, **kwargs: P.kwargs) -> F: ...  # type: ignore
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> IdentityMapOnFn: ...  # type: ignore
-    # fmt: on
-
-
-class FunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):  # -F_in, +F_out
-    r"""Function Decorator Protocol that preserves type."""
-
-    # @decorator / decorator(fn, *args, **kwargs)
-    def __call__(self, fn: F_in, /, *args: P.args, **kwargs: P.kwargs) -> F_out: ...
-
-
-class FunctionDecoratorFactory[F_in: Fn, F_out: Fn, **P](Protocol):
-    r"""Function Decorator Factory Protocol that preserves type."""
-
-    # fmt: off
-    # @decorator(*args, **kwargs)
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> FunctionDecorator[F_in, F_out, P]: ...
-    # fmt: on
-
-
-class ParametrizedFunctionDecorator[F_in: Fn, F_out: Fn, **P](Protocol):
-    r"""Parametrized Function Decorator Protocol that preserves type."""
-
-    # fmt: off
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator / decorator(fn, *args, **kwargs)
-    def __call__(self, fn: F_in, /, **kwargs: P.kwargs) -> F_out: ...  # type: ignore
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[F_in], F_out]: ...  # type: ignore
-    # fmt: on
-
-
-# endregion FunctionDecorator ----------------------------------------------------------
-
-
-# region general decorators ------------------------------------------------------------
-
-
-class PolymorphicDecorator[**P](Protocol):
-    r"""Polymorphic Decorator Protocol."""
-
-    # fmt: off
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def __call__[T](self, obj: T, /, **kwargs: P.kwargs) -> T: ...  # type: ignore
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator(*args, **kwargs)
-    def __call__[T](self, /, **kwargs: P.kwargs) -> IdentityMap: ...  # type: ignore
-    # fmt: on
-
-
 class Decorator[T_in, T_out, **P](Protocol):
     r"""Protocol for decorators."""
 
-    # shared attributes with classes `type` and `function`
-    __name__: str
-    __module__: str
-    __qualname__: str
-    __annotations__: dict[str, Any]
-
     def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
-
-
-class DecoratorFactory[T_in, T_out, **P](Protocol):
-    r"""Protocol for parametrized decorators."""
-
-    # fmt: off
-    def __call__(self, /, *args: P.args, **kwargs: P.kwargs) -> Decorator[T_in, T_out, P]: ...
-    # fmt: on
 
 
 class ParametrizedDecorator[T_in, T_out, **P](Protocol):
@@ -207,83 +86,38 @@ class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     __annotations__: dict[str, Any]
 
     # fmt: off
-    # pyrefly: ignore[invalid-param-spec]
     @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def __call__(self, obj: T_in, /, **kwargs: P.kwargs) -> T_out: ...  # type: ignore
-    # pyrefly: ignore[invalid-param-spec]
+    def __call__(self, obj: T_in, /, *arg: P.args, **kwargs: P.kwargs) -> T_out: ...
     @overload  # @decorator(*args, **kwargs)
-    def __call__(self, /, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...  # type: ignore
+    def __call__(self, /, *arg: P.args, **kwargs: P.kwargs) -> Fn[[T_in], T_out]: ...
     # fmt: on
 
 
-# endregion general decorators ---------------------------------------------------------
+class ParametrizedPolymorphism[**P](Protocol):
+    r"""Polymorphic Decorator Protocol."""
 
-# |                     |                      |                 | pyright | mypy |
-# |---------------------|----------------------|-----------------|---------|------|
-# | protocol[Cls: type] | decorator[Cls: type] | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | Y       | N    |
-# |                     | decorator[type[T]]   | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | O       | A    |
-# |                     | decorator[T]         | pprint[Cls]     | O       | N    |
-# |                     |                      | pprint[type[T]] | O       | N    |
-# | protocol[type[T]]   | decorator[Cls: type] | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | Y       | N    |
-# |                     | decorator[type[T]]   | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | O       | N    |
-# |                     | decorator[T]         | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | O       | A    |
-# | protocol[T]         | decorator[Cls: type] | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | Y       | N    |
-# |                     | decorator[type[T]]   | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | O       | A    |
-# |                     | decorator[T]         | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | Y       | N    |
+    # shared attributes with classes `type` and `function`
+    __name__: str
+    __module__: str
+    __qualname__: str
+    __annotations__: dict[str, Any]
 
+    # fmt: off
+    @overload  # @decorator / decorator(obj, *args, **kwargs)
+    def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
+    @overload  # @decorator(*args, **kwargs)
+    def __call__(self, /, *arg: P.args, **kwargs: P.kwargs) -> Polymorphism: ...
+    # fmt: on
 
-# |                     |                      |                 | pyright | mypy |
-# |---------------------|----------------------|-----------------|---------|------|
-# | protocol[T]         | decorator[Cls: type] | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | Y       | N    |
-# |                     | decorator[type[T]]   | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | O       | A    |
-# |                     | decorator[T]         | pprint[Cls]     | Y       | N    |
-# |                     |                      | pprint[type[T]] | Y       | N    |
-
-# FIXME: https://github.com/python/mypy/issues/17191
-#   Somehow broken in mypy...
-# NOTE: Type hinting is severely limited because HKTs are not supported.
-#   The lack of an explicit FunctionType is a problem.
-# @overload  # class-decorator
-# def decorator[Cls: type, **P](
-#     deco: ClassDecorator[Cls, P], /
-# ) -> ParametrizedClassDecorator[Cls, P]: ...
-# def decorator[T, **P](
-#     deco: ClassDecorator[type[T], P], /
-# ) -> ParametrizedClassDecorator[type[T], P]: ...
-# def decorator[T, **P](
-#     deco: ClassDecorator[T, P], /
-# ) -> ParametrizedClassDecorator[T, P]: ...
-# @overload  # class decoration
-# def decorator[Cls_in: type, Cls_out: type, **P](
-#     deco: ClassDecorator[Cls_in, Cls_out, P], /
-# ) -> ParametrizedClassDecorator[Cls_in, Cls_out, P]: ...
-# def decorator[T_in, T_out, **P](
-#     deco: Decorator[type[T_in], type[T_out], P], /
-# ) -> ParametrizedDecorator[type[T_in], type[T_out], P]: ...
-# def decorator[T_in, T_out, **P](
-#     deco: Decorator[T_in, T_out, P], /
-# ) -> ParametrizedDecorator[T_in, T_out, P]: ...
-# @overload  # function-decorator
-# def decorator[F_in: Fn, F_out: Fn, **P](
-#     deco: FunctionDecorator[F_in, F_out, P], /
-# ) -> ParametrizedFunctionDecorator[F_in, F_out, P]: ...
-# def decorator(deco, /):
 
 _OBJ = cast("Any", object())
 r"""Sentinel object for distinguishing between BARE and FUNCTIONAL mode."""
 
 
-def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X, Y, P]:
+# FIXME: https://github.com/facebook/pyrefly/issues/4461
+# @overload
+# def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X, Y, P]: ...
+def decorator[**P](deco: Polymorphism[P], /) -> ParametrizedPolymorphism[P]:
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -315,7 +149,7 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
 
     That is, it must hat exactly one positional argument: the object to be decorated.
     """
-    logger = logging.getLogger(f"@decorator/{deco.__name__}")
+    logger = logging.getLogger(f"@decorator/{deco.__name__}")  # type: ignore
     logger.debug("Creating @decorator.")
 
     deco_sig = signature(deco)
@@ -342,15 +176,8 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
             case Parameter.VAR_KEYWORD | Parameter.KEYWORD_ONLY:
                 pass
 
-    # FIXME: Instead of inner function, return instance of ParametrizedDecorator
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator / decorator(obj, *args, **kwargs)
-    def _deco(obj: X, /, **kwargs: P.kwargs) -> Y: ...  # type: ignore
-    # pyrefly: ignore[invalid-param-spec]
-    @overload  # @decorator(*args, **kwargs)
-    def _deco(**kwargs: P.kwargs) -> Fn[[X], Y]: ...  # type: ignore
     @wraps(deco)
-    def _deco(obj: X = _OBJ, /, *args: P.args, **kwargs: P.kwargs) -> Y | Fn[[X], Y]:
+    def _deco(obj=_OBJ, /, *args, **kwargs):
         if obj is _OBJ:
             logger.debug(
                 "@decorator used in BRACKET mode.\n"
@@ -363,22 +190,4 @@ def decorator[X, Y, **P](deco: Decorator[X, Y, P], /) -> ParametrizedDecorator[X
         logger.debug("@decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
-    return _deco
-
-
-def rpartial[**P, R](  # +R
-    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Fn[..., R]:
-    r"""Apply positional arguments from the right.
-
-    References:
-        - https://docs.python.org/3/library/functools.html#functools.partial
-        - https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129
-    """
-
-    @wraps(func)
-    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
-        # FIXME: https://github.com/python/typeshed/issues/8703
-        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
-
-    return __wrapper
+    return _deco  # pyright: ignore[reportReturnType]

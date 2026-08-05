@@ -46,7 +46,7 @@ depends_on = ["tsdm.types", "tsdm.dtypes"]
 
 [[modules]]
 path = "tsdm.pprint"
-depends_on = ["tsdm.types", "tsdm.testing", "tsdm.dtypes"]
+depends_on = ["tsdm.types", "tsdm.testing", "tsdm.dtypes", "tsdm.decorator"]
 utility = true
 
 [[modules]]
@@ -76,7 +76,6 @@ depends_on = [
     "tsdm.types",
     "tsdm.backend",
     "tsdm.encoders.universal",
-    "tsdm.dtypes"
 ]
 
 [[modules]]
@@ -138,3 +137,7 @@ depends_on = []
 [[modules]]
 path = "tsdm.pretrained"
 depends_on = ["tsdm.testing", "tsdm.encoders", "tsdm.types"]
+
+[[modules]]
+path = "tsdm.decorator"
+depends_on = ["tsdm.types"]

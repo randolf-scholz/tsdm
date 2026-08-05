@@ -5,9 +5,7 @@ __all__ = [
     "NullMap",
     "SelfMap",
     "Lazy",
-    "IdentityMap",
-    "IdentityMapOnFn",
-    "IdentityMapOnCls",
+    "Polymorphism",
     # callback-protocols
     "ApplyAlongAxes",
     "ArraySplitProto",
@@ -37,24 +35,10 @@ class Lazy[T](Protocol):  # +T
     def __call__(self, /) -> T: ...
 
 
-class IdentityMap(Protocol):
+class Polymorphism[**P = []](Protocol):
     r"""Protocol for Identity functions."""
 
-    def __call__[T](self, obj: T, /) -> T: ...
-
-
-# FIXME: use IdentityMap[type] once bounding T-vars by other T-vars is supported
-class IdentityMapOnCls(Protocol):
-    r"""Protocol for class decorators that return the same class."""
-
-    def __call__[Cls: type](self, cls: Cls, /) -> Cls: ...
-
-
-# FIXME: use IdentityMap[Fn] once bounding T-vars by other T-vars is supported
-class IdentityMapOnFn(Protocol):
-    r"""Protocol for function decorators that return the same function."""
-
-    def __call__[F: Fn](self, fn: F, /) -> F: ...
+    def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
 
 
 class NullMap[T](Protocol):  # -T

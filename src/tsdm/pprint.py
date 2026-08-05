@@ -1014,7 +1014,7 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
 ]
 
 
-@decorator
+@decorator  # pyrefly: ignore[bad-argument-type]
 def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     # def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
     r"""Add appropriate __repr__ to class."""
@@ -1024,7 +1024,7 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     return cls
 
 
-@decorator
+@decorator  # pyrefly: ignore[bad-argument-type]
 def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
     r"""Add appropriate __repr__ to class."""
@@ -1034,7 +1034,7 @@ def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     return cls
 
 
-@decorator
+@decorator  # pyrefly: ignore[bad-argument-type]
 def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     # def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
     r"""Add appropriate __repr__ to class."""
@@ -1044,7 +1044,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     return cls
 
 
-@decorator
+@decorator  # pyrefly: ignore[bad-argument-type]
 def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
     r"""Add appropriate __repr__ to class."""
@@ -1054,7 +1054,7 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     return cls
 
 
-@decorator
+@decorator  # pyrefly: ignore[bad-argument-type]
 def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
     r"""Add appropriate __repr__ to class."""
@@ -1064,7 +1064,7 @@ def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     return cls
 
 
-@decorator
+@decorator  # pyrefly: ignore[bad-argument-type]
 def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
     # def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""

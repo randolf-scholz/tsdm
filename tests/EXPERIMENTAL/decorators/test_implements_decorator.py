@@ -1,7 +1,7 @@
-from tsdm.types.callbacks import IdentityMapOnCls
+from tsdm.types.callbacks import Polymorphism
 
 
-def implements(*protocols: type) -> IdentityMapOnCls:
+def implements(*protocols: type) -> Polymorphism:
     r"""Check if class implements a set of protocols."""
 
     def __wrapper[Cls: type](cls: Cls, /) -> Cls:
