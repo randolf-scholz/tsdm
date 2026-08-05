@@ -3,47 +3,28 @@ r"""Utility functions."""
 __all__ = [
     # Classes
     # Functions
-    "normalize_axes",
-    "deep_dict_update",
-    "normalize_dimarg",
     "flatten_dict",
-    "flatten_nested",
-    "last",
     "timedelta",
     "timestamp",
     "nested_paths_exist",
-    "repackage_zip",
     "replace",
     "unflatten_dict",
 ]
 
-import logging
-import shutil
-import warnings
-from collections import deque
 from collections.abc import (
     Callable,
     Iterable,
     Mapping,
-    MutableMapping as MutMap,
-    Reversible,
-    Sequence,
 )
-from copy import deepcopy
 from functools import wraps
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Optional, cast, overload
-from zipfile import ZipFile
 
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
-from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.testing import is_zipfile
 from tsdm.types.aliases import (
-    Axis,
     FilePath,
     Nested,
     NestedDict,
@@ -73,98 +54,17 @@ def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
     return ts
 
 
-def normalize_axes(axes: Axis, *, ndim: int) -> tuple[int, ...]:
-    r"""Convert axes to tuple.
-
-    Note:
-        - `ndarray.mean(axis=None)` contracts over all axes, returns scalar.
-        - `ndarray.mean(axis=[])`   contracts over no axes, returns copy.
-        - `ndarray.mean(axis=k)`    contracts over the k-th axis.
-        - `ndarray.mean(axis=tuple(range(ndim)))` contracts over all axes, returns scalar.
-    """
-    match axes:
-        case None:
-            return tuple(range(ndim))
-        case int():
-            return (axes % ndim,)
-        case [*items]:
-            return tuple(ax % ndim for ax in items)
-        case _:
-            raise TypeError(f"Unknown type for axes: {type(axes)}")
-
-
-def normalize_dimarg(dims: int | list[int] | None, *, ndim: int) -> list[int]:
-    r"""Convert dimensions to list.
-
-    Note:
-        - `tensor.mean(dim=None)` contracts over all dims, returns 1d-tensor (1 element).
-        - `tensor.mean(dim=[])`   contracts over all dims, returns 1d-tensor (1 element).
-        - `tensor.mean(dim=k)`    contracts over the k-th dimension.
-        - `tensor.mean(dim=list(range(ndim)))` contracts over all dims, returns 1d-tensor (1 element).
-    """
-    if dims is None:
-        return list(range(ndim))
-    if isinstance(dims, int):
-        return [dims]
-    return list(dims)
-
-
-def last[T](iterable: Iterable[T], /) -> T:
-    r"""Return the last element of an `Iterable`.
-
-    Raises:
-        ValueError: if iterable is empty.
-    """
-    match iterable:
-        # fast-path for sequences
-        case Sequence() as seq:
-            try:
-                return seq[-1]
-            except IndexError as exc:
-                raise ValueError("Sequence is empty!") from exc
-
-        # fast-path for reversible iterables
-        case Reversible() as rev:
-            try:
-                return next(reversed(rev))
-            except StopIteration as exc:
-                raise ValueError("Reversible is empty!") from exc
-
-        # fallback for general iterables
-        case _:
-            try:
-                return deque(iterable, maxlen=1).pop()
-            except IndexError as exc:
-                raise ValueError("Iterable is empty!") from exc
-
-
 def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -> str:
     r"""Replace multiple substrings via dict.
 
     References:
         https://stackoverflow.com/a/64500851
     """
-    replacements = dict(mapping, **strings)
-    return last(s := s.replace(x, y) for x, y in replacements.items())
-
-
-def flatten_nested[H](nested: Any, /, *, leaf_type: type[H]) -> set[H]:
-    r"""Flatten nested iterables of a given kind."""
-    match nested:
-        case None:
-            return set()
-        case leaf if isinstance(leaf, leaf_type):
-            return {leaf}
-        case Mapping() as mapping:
-            return set.union(
-                *(flatten_nested(v, leaf_type=leaf_type) for v in mapping.values())
-            )
-        case Iterable() as iterable:
-            return set.union(
-                *(flatten_nested(v, leaf_type=leaf_type) for v in iterable)
-            )
-        case _:
-            raise TypeError(f"{type(nested)=} not understood")
+    for x, y in mapping.items():
+        s = s.replace(x, y)
+    for x, y in strings.items():
+        s = s.replace(x, y)
+    return s
 
 
 @overload
@@ -345,27 +245,6 @@ def unflatten_dict[K, K2](
     return result
 
 
-def deep_dict_update[D: MutMap](d: D, new: Mapping, /, *, inplace: bool = False) -> D:
-    r"""Update nested dictionary recursively in-place with new dictionary.
-
-    References:
-        - https://stackoverflow.com/a/30655448
-    """
-    if not inplace:
-        d = deepcopy(d)
-
-    for key, value in new.items():
-        match value:
-            # recurse on non-empty mapping
-            case Mapping() as mapping if mapping:  # non-empty mapping
-                subdict = d.get(key, {})
-                d[key] = deep_dict_update(subdict, mapping, inplace=True)
-            # update value for the given key
-            case _:
-                d[key] = value
-    return d
-
-
 def nested_paths_exist(paths: Nested[Optional[FilePath]], /) -> bool:
     r"""Check whether the files exist.
 
@@ -384,46 +263,6 @@ def nested_paths_exist(paths: Nested[Optional[FilePath]], /) -> bool:
             return all(nested_paths_exist(f) for f in iterable)
         case _:
             raise TypeError(f"Unknown type for rawdata_file: {type(paths)}")
-
-
-def repackage_zip(filepath: FilePath, /) -> None:
-    r"""Remove the leading directory from a zip file."""
-    original_path = Path(filepath)
-
-    if not is_zipfile(original_path):
-        warnings.warn(f"{original_path} is not a zip file.", stacklevel=2)
-        return
-
-    # guard clause: check if requirements are met
-    with ZipFile(original_path, "r") as original_archive:
-        contents = original_archive.namelist()
-        top = contents[0]
-
-        requirements = (
-            top.endswith("/")
-            # zip file name must match top directory name
-            and original_path.stem == top[:-1]
-            # all items must start with top directory name
-            and all(item.startswith(top) for item in contents)
-        )
-
-        if not requirements:
-            logger = logging.getLogger(f"{__name__}/{repackage_zip.__name__}")
-            logger.info("Skipping repackage_zip for %s", original_path)
-            return
-
-    # create a temporary directory
-    with TemporaryDirectory() as temp_dir:
-        # move the zip file to the temporary directory
-        temp_path = Path(temp_dir) / original_path.name
-        shutil.move(original_path, temp_path)
-        # create a new zipfile with the modified contents:
-        with ZipFile(temp_path) as old_archive, ZipFile(filepath, "w") as new_archive:
-            contents = old_archive.namelist()
-            top = contents[0]
-            for item in tqdm(contents[1:], desc="Repackaging zip file"):
-                _, new_name = item.split(top, 1)
-                new_archive.writestr(new_name, old_archive.read(item))
 
 
 def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[V]]:

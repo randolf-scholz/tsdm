@@ -41,6 +41,7 @@ import inspect
 import json
 import logging
 import pickle
+import shutil
 import sys
 import warnings
 import webbrowser
@@ -51,6 +52,7 @@ from contextlib import ContextDecorator
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import ModuleType, TracebackType
 from typing import (
     IO,
@@ -71,14 +73,15 @@ from torch import nn
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
+from tqdm.asyncio import tqdm
 
 from tsdm.config import CONFIG
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
 from tsdm.pprint import repr_mapping
-from tsdm.testing._testing import is_zipfile
+from tsdm.testing import is_zipfile
 from tsdm.types.aliases import DirPath, FilePath
-from tsdm.utils import nested_paths_exist, repackage_zip
+from tsdm.utils import nested_paths_exist
 from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.remote import import_from_url
 
@@ -187,7 +190,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
                 self.rawdata_path.mkdir(parents=True, exist_ok=True)
             if initialize and self.download_url is not None:
                 self.download()
-                repackage_zip(self.rawdata_path)
+                _strip_leading_dir_from_zip(self.rawdata_path)
 
         self.component_files = self.autodetect_component_files()
         self.components = LazyDict.from_func(self.component_files, self.get_component)
@@ -483,7 +486,7 @@ def import_module_from_path(
     if not module_init.exists():
         raise FileNotFoundError(f"Module {module_path} has no __init__ file !")
 
-    with system_path(module_path):
+    with _insert_system_path(module_path):
         spec = spec_from_file_location(module_name, str(module_init))
         assert spec is not None
         assert spec.loader is not None
@@ -492,7 +495,7 @@ def import_module_from_path(
         return the_module
 
 
-class system_path(ContextDecorator):
+class _insert_system_path(ContextDecorator):
     r"""Prepends a path to environment variable `$PATH`.
 
     References:
@@ -521,3 +524,45 @@ class system_path(ContextDecorator):
     ) -> L[False]:
         sys.path = self.previous_path
         return False
+
+
+def _strip_leading_dir_from_zip(filepath: FilePath, /) -> None:
+    r"""Remove the leading directory from a zip file."""
+    original_path = Path(filepath)
+
+    if not is_zipfile(original_path):
+        warnings.warn(f"{original_path} is not a zip file.", stacklevel=2)
+        return
+
+    # guard clause: check if requirements are met
+    with ZipFile(original_path, "r") as original_archive:
+        contents = original_archive.namelist()
+        top = contents[0]
+
+        requirements = (
+            top.endswith("/")
+            # zip file name must match top directory name
+            and original_path.stem == top[:-1]
+            # all items must start with top directory name
+            and all(item.startswith(top) for item in contents)
+        )
+
+        if not requirements:
+            logger = logging.getLogger(
+                f"{__name__}/{_strip_leading_dir_from_zip.__name__}"
+            )
+            logger.info("Skipping repackage_zip for %s", original_path)
+            return
+
+    # create a temporary directory
+    with TemporaryDirectory() as temp_dir:
+        # move the zip file to the temporary directory
+        temp_path = Path(temp_dir) / original_path.name
+        shutil.move(original_path, temp_path)
+        # create a new zipfile with the modified contents:
+        with ZipFile(temp_path) as old_archive, ZipFile(filepath, "w") as new_archive:
+            contents = old_archive.namelist()
+            top = contents[0]
+            for item in tqdm(contents[1:], desc="Repackaging zip file"):
+                _, new_name = item.split(top, 1)
+                new_archive.writestr(new_name, old_archive.read(item))

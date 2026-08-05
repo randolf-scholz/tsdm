@@ -2,88 +2,9 @@ r"""Test `module.class`."""
 
 from typing import Any
 
-import numpy as np
 import pytest
-import torch
-from torch import jit
 
-from tsdm.types.aliases import Axis, DimArg
-from tsdm.utils import (
-    flatten_dict,
-    last,
-    normalize_axes,
-    normalize_dimarg,
-    replace,
-    unflatten_dict,
-)
-
-
-@pytest.mark.parametrize("dims", [None, 0, 1, [], [0], [-1], [-1, -2]], ids=str)
-def test_dims_to_list(dims: DimArg) -> None:
-    r"""Test `tsdm.utils.dims_to_list`."""
-    x = torch.randn(4, 2, 2, 1)
-
-    # test
-    dims_list: list[int] = normalize_dimarg(dims, ndim=x.ndim)
-    result = x.mean(dims_list)
-    reference = x.mean(dim=dims)
-    assert type(result) is type(reference)
-    assert result.shape == reference.shape
-    assert (result == reference).all()
-
-    # test with jit.script
-    if dims == []:
-        pytest.xfail("JIT compiler cannot determine type of empty list.")
-    f = jit.script(normalize_dimarg)
-    dims_list = f(dims, ndim=x.ndim)
-    result = x.mean(dims_list)
-    reference = x.mean(dim=dims)
-    assert type(result) is type(reference)
-    assert result.shape == reference.shape
-    assert (result == reference).all()
-
-
-@pytest.mark.parametrize(
-    "axis", [None, 0, 1, (), (0,), (-1,), (-1, -2), (0, 1, 2, 3)], ids=str
-)
-def test_axes_to_tuple(axis: Axis) -> None:
-    r"""Test `tsdm.utils.axes_to_tuple`."""
-    rng = np.random.default_rng()
-    x = rng.uniform(size=(4, 2, 2, 1))
-
-    axes_tuple = normalize_axes(axis, ndim=x.ndim)
-    result = np.mean(x, axis=axes_tuple)
-    reference = np.mean(x, axis=axis)
-    assert type(result) is type(reference)
-    assert result.shape == reference.shape
-    assert (result == reference).all()
-
-
-def test_last() -> None:
-    r"""Test `tsdm.utils.last`."""
-    # test with Sequence.
-    seq = [1, 2, 3]
-    assert last(seq) == 3
-
-    # test with dictionary
-    mapping = {1: 1, 2: 2, 3: 3}
-    assert last(mapping) == 3
-
-    # test with generator
-    gen = (i for i in range(3))
-    assert last(gen) == 2
-
-
-def test_last_empty() -> None:
-    r"""Test `tsdm.utils.last` with empty input."""
-    with pytest.raises(ValueError, match="Sequence is empty!"):
-        last([])
-
-    with pytest.raises(ValueError, match="Reversible is empty!"):
-        last({})
-
-    with pytest.raises(ValueError, match="Iterable is empty!"):
-        last(i for i in range(0))
+from tsdm.utils import flatten_dict, replace, unflatten_dict
 
 
 def test_replace() -> None:
