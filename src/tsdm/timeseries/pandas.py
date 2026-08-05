@@ -305,7 +305,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     @overload
     def __getitem__(self, key: Index | Series | slice | list[KeyT] | Mapping[KeyT, bool], /) -> Self: ...
     @overload
-    def __getitem__(self, key: KeyT, /) -> PandasTS: ...
+    def __getitem__(self, key: KeyT, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
     # fmt: on
     def __getitem__(self, key: Any, /) -> PandasTS | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
@@ -318,14 +318,14 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
         cov = cov if cov is None else cov.loc[key]
 
         # only pass non-derived fields
-        fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS} | {
+        _fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS} | {
             "timeseries": ts,
             "static_covariates": cov,
         }
 
         if isinstance(ts.index, MultiIndex):
-            return self.__class__(**fields)
-        return PandasTS(**{k: v for k, v in fields.items() if k in PandasTS.FIELDS})
+            return self.__class__(**_fields)
+        return PandasTS(**{k: v for k, v in _fields.items() if k in PandasTS.FIELDS})
 
 
 def electricity() -> TimeSeries[DataFrame]:
