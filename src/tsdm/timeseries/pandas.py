@@ -44,7 +44,7 @@ from .base import Metadata, TimeSeries, TimeSeriesCollection
 
 @pprint_repr
 @dataclass
-class PandasTS[TimeT = Any](TimeSeries[TimeT, DataFrame]):
+class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -156,7 +156,7 @@ class PandasTS[TimeT = Any](TimeSeries[TimeT, DataFrame]):
 
 @pprint_repr
 @dataclass
-class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]):
+class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataFrame]):
     r"""Class for **equimodal** TimeSeriesCollections.
 
     A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
@@ -268,7 +268,7 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
         index = self.timeseries.index.copy()
         if not isinstance(index, MultiIndex):
             raise TypeError("Expected a timeseries with MultiIndex.")
-        return index.unique()
+        return index.unique()  # pyright: ignore[reportReturnType]
 
     def _infer_metaindex(self) -> Index:
         r"""Get the metaindex."""
@@ -303,9 +303,9 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
 
     # fmt: off
     @overload
-    def __getitem__(self, key: Index | Series | slice | list[Key] | Mapping[Key, bool], /) -> Self: ...
+    def __getitem__(self, key: Index | Series | slice | list[KeyT] | Mapping[KeyT, bool], /) -> Self: ...
     @overload
-    def __getitem__(self, key: Key, /) -> PandasTS: ...
+    def __getitem__(self, key: KeyT, /) -> PandasTS: ...
     # fmt: on
     def __getitem__(self, key: Any, /) -> PandasTS | Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         r"""Get the timeseries and metadata of the dataset at index `key`."""
@@ -330,12 +330,14 @@ class PandasTSC[Key](TimeSeriesCollection[Key, PandasTS], Mapping[Key, PandasTS]
 
 def electricity() -> TimeSeries[DataFrame]:
     r"""The Electricity dataset wrapped as TimeSeriesCollection."""
-    return PandasTS.from_dataset(datasets.Electricity)
+    ds = datasets.Electricity()
+    return PandasTS(timeseries=ds.timeseries, name="Electricity")
 
 
 def traffic() -> TimeSeries[DataFrame]:
     r"""The Traffic dataset wrapped as TimeSeriesCollection."""
-    return PandasTS.from_dataset(datasets.Traffic)
+    ds = datasets.Traffic()
+    return PandasTS(timeseries=ds.timeseries, name="Traffic")
 
 
 def etth1() -> TimeSeries[DataFrame]:
@@ -422,7 +424,7 @@ TIMESERIES: dict[str, Fn[[], TimeSeries[DataFrame]]] = {
 }  # fmt: skip
 r"""Dictionary of all available time series datasets."""
 
-TIMESERIES_COLLECTIONS: dict[str, Fn[[], TimeSeriesCollection[DataFrame]]] = {
+TIMESERIES_COLLECTIONS: dict[str, Fn[[], TimeSeriesCollection[Any, DataFrame]]] = {
     "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
     "InSilico"                  : in_silico,
     "KiwiBenchmark"             : kiwi_benchmark,

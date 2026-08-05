@@ -55,7 +55,7 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
     def __getitem__(self, key: TimeT, /) -> Self: ...
 
 
-class TimeSeriesCollection[TableT, KeyT = Any](Protocol):
+class TimeSeriesCollection[KeyT, TableT](Protocol):
     r"""Protocol for time series collection objects."""
 
     FIELDS: ClassVar[frozenset[str]]
