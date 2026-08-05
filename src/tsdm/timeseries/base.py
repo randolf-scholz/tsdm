@@ -36,13 +36,13 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
 
     timeseries: TableT
     r"""The time series data."""
-    timeseries_metadata: Optional[TableT]
+    timeseries_metadata: TableT | None
     r"""Data associated with the time such as measurement device, unit, etc."""
-    static_covariates: Optional[TableT]
+    static_covariates: TableT | None
     r"""The metadata of the dataset."""
-    static_covariates_metadata: Optional[TableT]
+    static_covariates_metadata: TableT | None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    metadata: Optional[Metadata]
+    metadata: TableT | None
     r"""The metadata of the dataset."""
 
     @abstractmethod
@@ -63,17 +63,17 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
 
     timeseries: TableT
     r"""The collection of time series data."""
-    timeseries_metadata: Optional[TableT] = None
+    timeseries_metadata: TableT | None
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    static_covariates: Optional[TableT] = None
+    static_covariates: TableT | None
     r"""The static covariates associated with each timeseries."""
-    static_covariates_metadata: Optional[TableT] = None
+    static_covariates_metadata: TableT | None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    constants: Optional[TableT] = None
+    constants: TableT | None
     r"""Additional data that is independent of the metaindex."""
-    constants_metadata: Optional[TableT] = None
+    constants_metadata: TableT | None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-    metadata: Optional[Metadata]
+    metadata: TableT | None
     r"""The metadata of the dataset."""
 
     @abstractmethod
