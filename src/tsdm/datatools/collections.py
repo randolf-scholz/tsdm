@@ -30,7 +30,14 @@ from tsdm.pprint import pprint_repr
 from tsdm.types._protocols import SupportsGetItem, SupportsSlicing
 from tsdm.types.abc import Vec
 
-# region Protocols ---------------------------------------------------------------------
+type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
+r"""Type alias for a "tabular" dataset."""
+
+type SequentialDataset[V] = Indexable[V] | PandasDataset[Any, V]  # +V
+r"""Type alias for a sequential dataset."""
+
+type Dataset[V] = MapDataset[Any, V] | Indexable[V] | PandasDataset[Any, V]  # +V
+r"""Type alias for a generic dataset."""
 
 
 @runtime_checkable
@@ -139,17 +146,6 @@ class PandasDataset[K, V](Protocol):  # K, +V
     def __len__(self) -> int: ...
 
 
-type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
-r"""Type alias for a "tabular" dataset."""
-
-type SequentialDataset[V] = Indexable[V] | PandasDataset[Any, V]  # +V
-r"""Type alias for a sequential dataset."""
-
-type Dataset[V] = MapDataset[Any, V] | Indexable[V] | PandasDataset[Any, V]  # +V
-r"""Type alias for a generic dataset."""
-# endregion Protocol -------------------------------------------------------------------
-
-
 @pprint_repr
 class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
     r"""Represents a ``Mapping[Key, Dataset]``.
@@ -204,7 +200,7 @@ class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
         """
         if levels is not None:
             min_index = df.index.to_frame()
-            sub_index = MultiIndex.from_frame(min_index[levels])
+            sub_index = MultiIndex.from_frame(min_index[levels])  # pyright: ignore[reportArgumentType]
             index = sub_index.unique()
         else:
             index = df.index
