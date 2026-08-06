@@ -5,19 +5,17 @@ __all__ = [
     "Metadata",
     "TimeSeries",
     "TimeSeriesCollection",
-    # Classes
-    # NamedTuples
 ]
 
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping
-from typing import Any, ClassVar, Optional, Protocol, Self, overload
+from typing import Any, ClassVar, Protocol, Self, TypedDict, overload
 
 
-class Metadata(Protocol):
+class Metadata(TypedDict, total=False):
     r"""Protocol for metadata objects."""
 
-    name: Optional[str]
+    name: str
     r"""The name of the dataset."""
     tags: frozenset[str]
     r"""Tags associated with the dataset."""

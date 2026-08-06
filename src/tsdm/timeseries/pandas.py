@@ -140,7 +140,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     def _infer_name(self) -> str | None:
         r"""Get the name of the collection."""
         if self.metadata is not None:
-            return self.metadata.name
+            return self.metadata.get("name")
         if (name := getattr(self.timeseries, "name", None)) is not None:
             return str(name)
         return None
@@ -196,7 +196,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     constants_metadata: DataFrame | None = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
-    metadata: Mapping | None = None
+    metadata: Metadata | None = None
     r"""The metadata of the dataset."""
 
     # derived fields
