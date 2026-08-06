@@ -9,14 +9,12 @@ __all__ = [
     "SupportSimplify",
     "SupportsParameters",
     "SupportsSerialization",
-    "SupportsBackend",
 ]
 
 from abc import abstractmethod
 from collections.abc import Mapping
 from typing import Any, Protocol, Self, runtime_checkable
 
-from tsdm.backend import Backend, get_backend
 from tsdm.types.aliases import FilePath
 
 
@@ -79,25 +77,3 @@ class SupportsSerialization(Protocol):
     @classmethod
     @abstractmethod
     def deserialize(cls, filepath: FilePath, /) -> Self: ...
-
-
-class SupportsBackend[X, Y](Protocol):
-    r"""Encoder equipped with a backend."""
-
-    backend: Backend
-
-    def set_backend_from_data(self, x: X, /) -> None:
-        self.backend = get_backend(x)
-
-    def switch_backend(self, backend: str, /) -> None:
-        r"""Switch the backend of the encoder."""
-        self.backend = Backend(backend)
-
-        # recast the parameters
-        self.recast_parameters()
-
-    def recast_parameters(self) -> None:
-        r"""Recast the parameters to the current backend."""
-        raise NotImplementedError
-
-    # pre_fit_hooks: ClassVar[list[Fn]] = [set_backend_from_data]

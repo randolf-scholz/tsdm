@@ -3,7 +3,7 @@ r"""Implement `pandas`-backend for tsdm."""
 __all__ = [
     # types
     "PandasDTypeArg",
-    "PandasDtype",
+    "PandasDType",
     "PandasType",
     # Constants
     "NA_VALUES",
@@ -50,9 +50,9 @@ from tsdm.types.aliases import Axis
 
 __logger__ = logging.getLogger(__name__)
 
-PandasDtype = ExtensionDtype | np.dtype
+PandasDType = ExtensionDtype | np.dtype
 r"""Type Alias for `pandas` dtype."""
-PandasDTypeArg = str | type | PandasDtype
+PandasDTypeArg = str | type | PandasDType
 r"""Type Alias for `pandas` dtype arguments."""
 type PandasType = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""

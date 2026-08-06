@@ -33,15 +33,18 @@ import numpy as np
 import pandas as pd
 import torch
 from pandas import DataFrame, MultiIndex, Series
+from pandas.core.dtypes.base import ExtensionDtype
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
-from tsdm.backend.pandas import PandasDtype, PandasDTypeArg
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.pprint import pprint_mapping, pprint_repr
 from tsdm.types.aliases import DictArg, FilePath
 
 from .base import Encoder, EncoderDict, FittableEncoder, StaticEncoder
+
+type PandasDType = ExtensionDtype | np.dtype
+type PandasDTypeArg = str | type | PandasDType
 
 
 def get_ellipsis_cols[T](
@@ -164,7 +167,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
     r"""The name of the variable column."""
     value_name: str = "value"
     r"""The name of the value column."""
-    value_dtype: PandasDtype = UNDEFINED
+    value_dtype: PandasDType = UNDEFINED
     r"""The dtype of the variable column."""
 
     original_schema: Series = UNDEFINED
@@ -262,7 +265,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
     r"""The name of the value column."""
     var_name: str = UNDEFINED
     r"""The name of the variable column."""
-    value_dtype: PandasDtype = UNDEFINED
+    value_dtype: PandasDType = UNDEFINED
     r"""The dtype of the variable column."""
 
     categories: pd.CategoricalDtype = UNDEFINED

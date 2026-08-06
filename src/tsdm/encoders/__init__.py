@@ -100,7 +100,6 @@ __all__ = [
     "ID",
     "ENCODERS",
     # ABCs & Protocols
-    "SupportsBackend",
     "FittableEncoder",
     "Encoder",
     "EncoderDict",
@@ -108,7 +107,6 @@ __all__ = [
     "EncoderProtocol",
     "BaseEncoder",
     "ParametrizedEncoder",
-    "SupportsSerialization",
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
@@ -217,7 +215,6 @@ from .pandas import (
     TripletDecoder,
     TripletEncoder,
 )
-from .protocols import SupportsBackend, SupportsSerialization
 from .time import (
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
