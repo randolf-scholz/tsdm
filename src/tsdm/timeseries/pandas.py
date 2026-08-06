@@ -5,7 +5,6 @@ __all__ = [
     "TIMESERIES",
     "TIMESERIES_COLLECTIONS",
     # Classes
-    "Metadata",
     "PandasTS",
     "PandasTSC",
     # Functions
@@ -39,7 +38,7 @@ from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
 from tsdm.pprint import pprint_repr
 
-from .base import Metadata, TimeSeries, TimeSeriesCollection
+from .base import TimeSeries, TimeSeriesCollection
 
 
 @pprint_repr
@@ -63,7 +62,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     )
     r"""The essential fields of the time series collection."""
 
-    name: str | None = UNDEFINED
+    name: str | None = None
     r"""The name of the dataset."""
 
     _: KW_ONLY
@@ -77,9 +76,6 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     r"""The metadata of the dataset."""
     static_covariates_metadata: DataFrame | None = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-
-    metadata: Metadata | None = None
-    r"""The metadata of the dataset."""
 
     # derived fields
     timeindex: Index = UNDEFINED
@@ -108,16 +104,13 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
                 f" got {type(self.timeseries)}."
             )
 
-        if self.name is UNDEFINED:
-            self.name = self._infer_name()
-
         if self.timeindex is UNDEFINED:
             self.timeindex = self._infer_timeindex()
 
         # ensure no dataclass fields are undefined
-        for field in fields(self):
-            if getattr(self, field.name, UNDEFINED) is UNDEFINED:
-                raise ValueError(f"The field '{field.name}' is undefined.")
+        for f in fields(self):
+            if getattr(self, f.name, UNDEFINED) is UNDEFINED:
+                raise ValueError(f"The field '{f.name}' is undefined.")
 
     def __len__(self) -> int:
         r"""Return the number of timestamps."""
@@ -136,14 +129,6 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
         _fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
         _fields.update(timeseries=self.timeseries.loc[key])
         return PandasTS(**_fields)
-
-    def _infer_name(self) -> str | None:
-        r"""Get the name of the collection."""
-        if self.metadata is not None:
-            return self.metadata.get("name")
-        if (name := getattr(self.timeseries, "name", None)) is not None:
-            return str(name)
-        return None
 
     def _infer_timeindex(self) -> Index:
         r"""Get the timeindex."""
@@ -177,7 +162,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     )
     r"""The essential fields of the time series collection."""
 
-    name: str | None = UNDEFINED
+    name: str | None = None
     r"""The name of the collection."""
 
     _: KW_ONLY
@@ -195,9 +180,6 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     r"""Additional data that is independent of the metaindex."""
     constants_metadata: DataFrame | None = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-
-    metadata: Metadata | None = None
-    r"""The metadata of the dataset."""
 
     # derived fields
     timeindex: MultiIndex = UNDEFINED
@@ -217,10 +199,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
                 stacklevel=2,
             )
 
-        return cls(
-            **{k: ds.tables.get(k, None) for k in cls.FIELDS},
-            name=ds.__class__.__name__,
-        )
+        return cls(ds.name, **{k: ds.tables.get(k, None) for k in cls.FIELDS})
 
     def __post_init__(self) -> None:
         r"""Post init."""
@@ -229,9 +208,6 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
                 f"Expected timeseries to be a pandas DataFrame,"
                 f" got {type(self.timeseries)}."
             )
-
-        if self.name is UNDEFINED:
-            self.name = self._infer_name()
 
         if self.timeindex is UNDEFINED:
             self.timeindex = self._infer_timeindex()
@@ -243,9 +219,9 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
         self._validate_static_covariates()
 
         # ensure no dataclass fields are undefined
-        for field in fields(self):
-            if getattr(self, field.name, UNDEFINED) is UNDEFINED:
-                raise ValueError(f"The field '{field.name}' is undefined.")
+        for f in fields(self):
+            if getattr(self, f.name, UNDEFINED) is UNDEFINED:
+                raise ValueError(f"The field '{f.name}' is undefined.")
 
     def __len__(self) -> int:
         r"""Get the number of timeseries in the collection."""
@@ -258,14 +234,6 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     def __contains__(self, key: object, /) -> bool:
         r"""Check if the key is in the metaindex."""
         return key in self.metaindex
-
-    def _infer_name(self) -> str | None:
-        r"""Get the name of the collection."""
-        if self.metadata is not None:
-            return self.metadata.get("name")
-        if (name := getattr(self.timeseries, "name", None)) is not None:
-            return str(name)
-        return None
 
     def _infer_timeindex(self) -> MultiIndex:
         r"""Get the timeindex."""
@@ -334,43 +302,48 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
 
 def electricity() -> TimeSeries[DataFrame]:
     r"""The Electricity dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.Electricity()
-    return PandasTS(timeseries=ds.timeseries, name="Electricity")
+    ds = datasets.Electricity(initialize=False)
+    return PandasTS(ds.name, timeseries=ds.timeseries)
 
 
 def traffic() -> TimeSeries[DataFrame]:
     r"""The Traffic dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.Traffic()
-    return PandasTS(timeseries=ds.timeseries, name="Traffic")
+    ds = datasets.Traffic(initialize=False)
+    return PandasTS(ds.name, timeseries=ds.timeseries)
 
 
 def etth1() -> TimeSeries[DataFrame]:
     r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT()
-    return PandasTS(timeseries=ds["ETTh1"], name="ETTh1")
+    ds = datasets.ETT(initialize=False)
+    return PandasTS("ETTh1", timeseries=ds["ETTh1"])
 
 
 def etth2() -> TimeSeries[DataFrame]:
     r"""The ETTh2 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT()
-    return PandasTS(timeseries=ds["ETTh2"], name="ETTh2")
+    ds = datasets.ETT(initialize=False)
+    return PandasTS("ETTh2", timeseries=ds["ETTh2"])
 
 
 def ettm1() -> TimeSeries[DataFrame]:
     r"""The ETTm1 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT()
-    return PandasTS(timeseries=ds["ETTm1"], name="ETTm1")
+    ds = datasets.ETT(initialize=False)
+    return PandasTS("ETTm1", timeseries=ds["ETTm1"])
 
 
 def ettm2() -> TimeSeries[DataFrame]:
     r"""The ETTm2 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT()
-    return PandasTS(timeseries=ds["ETTm2"], name="ETTm2")
+    ds = datasets.ETT(initialize=False)
+    return PandasTS("ETTm2", timeseries=ds["ETTm2"])
 
 
 def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
     r"""The Beijing Air Quality dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.BeijingAirQuality)
+    ds = datasets.BeijingAirQuality(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries,
+        timeseries_metadata=ds.timeseries_metadata,
+    )
 
 
 def in_silico() -> TimeSeriesCollection[int, DataFrame]:

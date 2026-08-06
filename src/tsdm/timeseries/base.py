@@ -2,25 +2,13 @@ r"""Timeseries data structures and functions."""
 
 __all__ = [
     # Protocols
-    "Metadata",
     "TimeSeries",
     "TimeSeriesCollection",
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping
-from typing import Any, ClassVar, Protocol, Self, TypedDict, overload
-
-
-class Metadata(TypedDict, total=False):
-    r"""Protocol for metadata objects."""
-
-    name: str
-    r"""The name of the dataset."""
-    tags: frozenset[str]
-    r"""Tags associated with the dataset."""
-    lables: Mapping[str, Any]
-    r"""Labels associated with the dataset."""
+from collections.abc import Iterator
+from typing import Any, ClassVar, Protocol, Self, overload
 
 
 class TimeSeries[TableT, TimeT = Any](Protocol):
@@ -40,8 +28,6 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
     r"""The metadata of the dataset."""
     static_covariates_metadata: TableT | None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    metadata: TableT | None
-    r"""The metadata of the dataset."""
 
     @abstractmethod
     def __len__(self) -> int: ...
@@ -71,8 +57,6 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
     r"""Additional data that is independent of the metaindex."""
     constants_metadata: TableT | None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-    metadata: TableT | None
-    r"""The metadata of the dataset."""
 
     @abstractmethod
     def __len__(self) -> int: ...
