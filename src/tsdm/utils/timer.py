@@ -9,10 +9,10 @@ import sys
 from contextlib import ContextDecorator
 from time import perf_counter_ns
 from types import FrameType, TracebackType
-from typing import ClassVar, Literal as L, Never, Self, cast, overload
+from typing import ClassVar, Never, Self, cast, overload
 
 
-class timer[ExitT: bool](ContextDecorator):
+class timer[ExitT: bool | None = None](ContextDecorator):
     r"""Context manager for timing a block of code."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -27,14 +27,12 @@ class timer[ExitT: bool](ContextDecorator):
     r"""Timeout in seconds."""
 
     @overload
-    def __init__(self: timer[L[False]], *, disable_gc: bool = ...) -> None: ...
+    def __init__(
+        self: timer[None], timeout: None = ..., *, disable_gc: bool = ...
+    ) -> None: ...
     @overload
     def __init__(
-        self: timer[bool],
-        timeout: float | None,
-        *,
-        msg: str = ...,
-        disable_gc: bool = ...,
+        self: timer[bool], timeout: float, *, msg: str = ..., disable_gc: bool = ...
     ) -> None: ...
     def __init__(
         self,
@@ -48,7 +46,7 @@ class timer[ExitT: bool](ContextDecorator):
         self.timeout = timeout
         self.exception = TimeoutError(msg)
 
-    def _timeout_handler(self, signum: int, frame: FrameType | None) -> Never:  # noqa: ARG002
+    def _timeout_handler(self, signum: int, frame: FrameType | None, /) -> Never:  # noqa: ARG002
         self.exception.add_note(f"Timed out after {self.timeout} seconds.")
         raise self.exception
 
@@ -86,6 +84,7 @@ class timer[ExitT: bool](ContextDecorator):
     ) -> ExitT:
         r"""Stop the timer and re-enable garbage collection."""
         self.end_time = perf_counter_ns()
+
         if self.timeout is not None:
             # Cancel the scheduled alarm
             signal.setitimer(signal.ITIMER_REAL, 0.0)
@@ -100,7 +99,9 @@ class timer[ExitT: bool](ContextDecorator):
         if self.disable_gc:
             gc.enable()
 
-        return cast("ExitT", exc_val is self.exception)
+        return cast(
+            "ExitT", None if self.timeout is None else (exc_val is self.exception)
+        )
 
     @property
     def remaining_time(self) -> float | None:

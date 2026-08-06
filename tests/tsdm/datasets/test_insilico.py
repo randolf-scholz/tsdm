@@ -2,8 +2,8 @@ r"""Testing of In Silico dataset, as a token for the whole BaseDataset architect
 
 import logging
 
-from EXPERIMENTAL.decorators.test_timing_decorator import timefun
 from tsdm.datasets import Dataset, DatasetBase, InSilico
+from tsdm.utils import timer
 
 __logger__ = logging.getLogger(__name__)
 
@@ -15,8 +15,16 @@ def test_caching() -> None:
     LOGGER.info("Testing caching.")
 
     ds = InSilico(initialize=False)
-    _, pre_cache_time = timefun(lambda: ds.timeseries)()
-    _, post_cache_time = timefun(lambda: ds.timeseries)()
+
+    with timer() as t:
+        _ = ds.timeseries
+
+    pre_cache_time = t.elapsed_time
+
+    with timer() as t:
+        _ = ds.timeseries
+
+    post_cache_time = t.elapsed_time
 
     LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
 
