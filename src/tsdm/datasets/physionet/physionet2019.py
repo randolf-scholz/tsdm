@@ -185,7 +185,7 @@ TIMESERIES_METADATA: InlineTable = {
     "data": [
         ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
         ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
-        ("Temp",             0,    None, True, True, "℃",      "Temperature"                                ),
+        ("Temp",             0,    None, True, True, "℃",       "Temperature"                                ),
         ("SBP",              0,    None, True, True, "mm Hg",   "Systolic BP"                                ),
         ("MAP",              0,    None, True, True, "mm Hg",   "Mean arterial pressure"                     ),
         ("DBP",              0,    None, True, True, "mm Hg",   "Diastolic BP"                               ),
@@ -221,8 +221,8 @@ TIMESERIES_METADATA: InlineTable = {
         # Outcome (column 41)
         (
             "SepsisLabel",      None, None, True, True, "bool",
-            "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6"
-            " and 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0."
+            ("For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6"
+            " and 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0.")
         ),
     ],
     "schema": {
