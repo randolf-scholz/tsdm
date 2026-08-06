@@ -28,7 +28,7 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable as Fn, Iterator, Mapping
-from dataclasses import KW_ONLY, asdict, dataclass, fields
+from dataclasses import KW_ONLY, asdict, dataclass, field, fields
 from typing import Any, ClassVar, Self, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -78,10 +78,8 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
     # derived fields
-    timeindex: Index = UNDEFINED
+    timeindex: Index = field(init=False)
     r"""The time-index of the dataset."""
-    timeindex_metadata: DataFrame | None = UNDEFINED
-    r"""Data associated with the time such as measurement device, unit, etc."""
 
     @classmethod
     def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
@@ -104,8 +102,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
                 f" got {type(self.timeseries)}."
             )
 
-        if self.timeindex is UNDEFINED:
-            self.timeindex = self._infer_timeindex()
+        self.timeindex = self._infer_timeindex()
 
         # ensure no dataclass fields are undefined
         for f in fields(self):
@@ -182,9 +179,9 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
     # derived fields
-    timeindex: MultiIndex = UNDEFINED
+    timeindex: MultiIndex = field(init=False)
     r"""The time-index of the collection."""
-    metaindex: Index = UNDEFINED
+    metaindex: Index = field(init=False)
     r"""The index of the collection."""
 
     @classmethod
@@ -209,11 +206,8 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
                 f" got {type(self.timeseries)}."
             )
 
-        if self.timeindex is UNDEFINED:
-            self.timeindex = self._infer_timeindex()
-
-        if self.metaindex is UNDEFINED:
-            self.metaindex = self._infer_metaindex()
+        self.timeindex = self._infer_timeindex()
+        self.metaindex = self._infer_metaindex()
 
         # ensure that the index of the static covariates is a subset of the metaindex
         self._validate_static_covariates()
@@ -244,7 +238,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
 
     def _infer_metaindex(self) -> Index:
         r"""Get the metaindex."""
-        return self.timeindex.copy().droplevel(-1).unique()
+        return self.timeindex.droplevel(-1).unique()
 
     def _validate_static_covariates(self) -> None:
         r"""Ensure that the static covariates index is a subset of the metaindex."""
