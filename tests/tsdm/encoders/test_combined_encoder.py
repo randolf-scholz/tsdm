@@ -87,17 +87,15 @@ def encoder() -> FittableEncoder:
 
 
 @pytest.mark.slow
-def test_combined_encoder(
-    encoder: Encoder,
-    atol: float = 1e-5,
-    rtol: float = 1e-3,
-) -> None:
+def test_combined_encoder(encoder: Encoder) -> None:
     r"""Test complicated combined encoder.
 
     Note:
         For some samples, we may get rounding errors in the index.
     """
     split = (0, "train")
+    atol: float = 1e-5
+    rtol: float = 1e-3
 
     # initialize the task object
     torch.manual_seed(0)
