@@ -52,8 +52,8 @@ class StandardScaler[T: FloatArray](FittableEncoder[T, T]):
         # switch the backend
         backend: Backend = get_backend(data)
 
-        self.mean = backend.nanmean(data)
-        self.stdv = backend.nanstd(data)
+        self.mean = float(backend.nanmean(data))
+        self.stdv = float(backend.nanstd(data))
 
     def encode[S: FloatArray](self, data: S, /) -> S:
         return (cast("Any", data) - self.mean) / self.stdv
