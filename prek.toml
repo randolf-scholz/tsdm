@@ -177,7 +177,7 @@ hooks = [
     {
         id = "pyright-concise",
         files = "^src/|^tests/",
-        exclude = "/tasks/|^tests/(test_numerical_types|third_party)"
+        exclude = "/tasks/|^tests/(numerical_types|third_party)"
     }
 ]
 
@@ -191,7 +191,7 @@ hooks = [
         require_serial = true,
         types_or = ["python", "pyi"],
         files = "^src/|^tests/",
-        exclude = "/tasks/|^tests/(test_numerical_types|third_party)",
+        exclude = "/tasks/|^tests/(numerical_types|third_party)",
         entry = "pyrefly",
         args = ["check", "--output-format=min-text", "--"]
     },
@@ -202,7 +202,7 @@ hooks = [
         require_serial = true,
         types_or = ["python", "pyi"],
         files = "^src/|^tests/",
-        exclude = "/tasks/|^tests/(test_numerical_types|third_party)",
+        exclude = "/tasks/|^tests/(numerical_types|third_party)",
         entry = "mypy",
         stages = ["manual"],
         args = [

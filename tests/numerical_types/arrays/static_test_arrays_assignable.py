@@ -15,7 +15,7 @@ from numerical_types.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from test_numerical_types.fixtures import ARRAYS1D, types0d
+from tests.numerical_types.fixtures import ARRAYS1D, types0d
 
 
 class TestContravariance:

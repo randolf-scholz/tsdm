@@ -13,7 +13,7 @@ from numerical_types import (
     SpanLikeArray,
     TimeLikeArray,
 )
-from test_numerical_types.fixtures import (
+from tests.numerical_types.fixtures import (
     ARRAYS1D,
     BOOL,
     COMPLEX,
@@ -22,7 +22,7 @@ from test_numerical_types.fixtures import (
     INT,
     TIMEDELTA,
 )
-from test_utils import pytest_xfail
+from tests.test_utils import pytest_xfail
 from tsdm.types.utils import assert_protocol
 
 BOOL_ARRAYS: dict[str, BooleanArray] = {

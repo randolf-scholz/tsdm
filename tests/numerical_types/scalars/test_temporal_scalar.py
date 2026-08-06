@@ -3,7 +3,7 @@ r"""Tests for time related types."""
 from typing import Literal
 
 from numerical_types import SpanLikeScalar, TimeLikeScalar
-from tests.test_numerical_types.fixtures import SCALARS
+from tests.numerical_types.fixtures import SCALARS
 from tsdm.testing import check_shared_interface, supports_issubclass
 
 # region setup -------------------------------------------------------------------------

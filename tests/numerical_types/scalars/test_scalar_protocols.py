@@ -19,14 +19,14 @@ from numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-from test_utils import pytest_xfail
-from tests.test_numerical_types.fixtures import (
+from tests.numerical_types.fixtures import (
     BOOL as PY_BOOL,
     COMPLEX as PY_COMPLEX,
     FLOAT as PY_FLOAT,
     INT as PY_INT,
     SCALARS,
 )
+from tests.test_utils import pytest_xfail
 from tsdm.testing import check_shared_interface
 
 ORDERED_SCALARS: dict[str, OrderedScalar] = {

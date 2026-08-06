@@ -1,7 +1,7 @@
 from typing import Never, reveal_type
 
 from numerical_types.arrays import BooleanArray
-from test_numerical_types.fixtures import ARRAYS1D
+from tests.numerical_types.fixtures import ARRAYS1D
 
 
 class TestInspection:
