@@ -8,7 +8,6 @@ import polars as pl
 import pytest
 from pandas import Series, date_range, testing
 
-from tests.test_utils import pytest_xfail
 from tsdm.encoders import DateTimeEncoder
 from tsdm.testing import assert_arrays_equal
 
@@ -104,12 +103,6 @@ r"""Example data for testing datetime encoders."""
 # endregion datetime sample data -------------------------------------------------------
 
 
-@pytest_xfail(
-    condition=lambda case, **_: "pandas[arrow]" in case,
-    raises=TypeError,
-    reason="arrow does not implement float * datetime "
-    "(https://github.com/apache/arrow/issues/48003)",
-)
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
 @pytest.mark.parametrize("case", DT_TRAIN_ARRAYS)
@@ -128,6 +121,10 @@ def test_datetime_encoder(case, *, sparse: bool, rounding: bool) -> None:
     # evaluate on train data
     train_encoded = encoder.encode(train_data)
     train_decoded = encoder.decode(train_encoded)
+
+    assert type(train_decoded) is type(train_data)
+    assert train_decoded.dtype == train_data.dtype
+
     if rounding:
         assert encoder.backend.nanmax(abs(train_data - train_decoded)) <= encoder.unit
     else:
@@ -136,6 +133,10 @@ def test_datetime_encoder(case, *, sparse: bool, rounding: bool) -> None:
     # evaluate on test data
     test_encoded = encoder.encode(test_data)
     test_decoded = encoder.decode(test_encoded)
+
+    assert type(test_decoded) is type(train_data)
+    assert test_decoded.dtype == train_data.dtype
+
     if rounding:
         assert encoder.backend.nanmax(abs(test_decoded - test_decoded)) <= encoder.unit
     else:

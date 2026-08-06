@@ -8,7 +8,6 @@ import pandas as pd
 import polars as pl
 import pytest
 
-from tests.test_utils import pytest_xfail
 from tsdm.encoders import TimeDeltaEncoder
 from tsdm.testing import assert_arrays_equal
 
@@ -94,12 +93,6 @@ r"""Example sparse timedelta data for testing timedelta encoders."""
 # endregion timedelta sample data ------------------------------------------------------
 
 
-@pytest_xfail(
-    condition=lambda case, **_: "pandas[arrow]" in case,
-    raises=TypeError,
-    reason="arrow does not implement float * datetime "
-    "(https://github.com/apache/arrow/issues/48003)",
-)
 @pytest.mark.parametrize("rounding", [False, True], ids=["no_rounding", "rounding"])
 @pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
 @pytest.mark.parametrize("case", TD_TRAIN_ARRAYS)
@@ -118,6 +111,10 @@ def test_timedelta_encoder(case, *, sparse: bool, rounding: bool) -> None:
     # evaluate on train data
     encoded = encoder.encode(train_data)
     decoded = encoder.decode(encoded)
+
+    assert type(decoded) is type(train_data)
+    assert decoded.dtype == train_data.dtype
+
     if rounding:
         assert encoder.backend.nanmax(abs(train_data - decoded)) <= encoder.unit
     else:
@@ -126,6 +123,10 @@ def test_timedelta_encoder(case, *, sparse: bool, rounding: bool) -> None:
     # evaluate on test data
     encoded = encoder.encode(test_data)
     decoded = encoder.decode(encoded)
+
+    assert type(decoded) is type(test_data)
+    assert decoded.dtype == test_data.dtype
+
     if rounding:
         assert encoder.backend.nanmax(abs(test_data - decoded)) <= encoder.unit
     else:
