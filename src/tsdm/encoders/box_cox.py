@@ -332,12 +332,15 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         match self.METHOD(self.method):
             case self.METHOD.fixed:
                 offset = self.offset_guess
+
             case self.METHOD.minimum:
                 offset = array[array > 0].min() / 2
+
             case self.METHOD.quartile:
                 offset = (
                     np.nanquantile(array, 0.25) / np.nanquantile(array, 0.75)
                 ) ** 2
+
             case self.METHOD.match_uniform:
                 fun = construct_wasserstein_loss_boxcox_uniform(array)
                 x0 = np.float64(self.offset_guess)
@@ -349,6 +352,7 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
                     options={"disp": self.verbose},
                 )
                 offset = sol.x
+
             case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_boxcox_normal(array)
                 x0 = np.float64(self.offset_guess)
@@ -360,6 +364,7 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
                     options={"disp": self.verbose},
                 )
                 offset = sol.x
+
             case other:
                 assert_never(other)
 
@@ -457,10 +462,12 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         match self.method:
             case self.METHOD.fixed:
                 offset = self.offset_guess
+
             case self.METHOD.minimum:
                 lower = array[array > 0].min() / 2
                 upper = (1 - array[array < 1].max()) / 2
                 offset = (lower + upper) / 2
+
             case self.METHOD.quartile:
                 lower = (np.nanquantile(array, 0.25) / np.nanquantile(array, 0.75)) ** 2
                 upper = (
@@ -468,6 +475,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
                     / (1 - np.nanquantile(array, 0.25))
                 ) ** 2
                 offset = (lower + upper) / 2
+
             case self.METHOD.match_uniform:
                 fun = construct_wasserstein_loss_logit_uniform(array)
                 x0 = np.float64(self.offset_guess)
@@ -479,6 +487,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
                     options={"disp": False},
                 )
                 offset = sol.x.squeeze()
+
             case self.METHOD.match_normal:
                 fun = construct_wasserstein_loss_logit_normal(array)
                 x0 = np.float64(self.offset_guess)
@@ -490,6 +499,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
                     options={"disp": False},
                 )
                 offset = sol.x.squeeze()
+
             case other:
                 assert_never(other)
 
