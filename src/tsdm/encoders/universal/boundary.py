@@ -18,7 +18,7 @@ from tsdm.pprint import pprint_repr
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass(init=False, slots=True)
 class BoundaryEncoder(FittableEncoder[FloatSeries, FloatSeries]):
     r"""Clip or mask values outside a given range.
 
