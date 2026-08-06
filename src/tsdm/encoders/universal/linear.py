@@ -8,9 +8,8 @@ __all__ = [
 ]
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, overload
+from typing import Any, cast
 
-from numerical_types import FloatArray
 from tsdm.backend import get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
@@ -18,12 +17,10 @@ from tsdm.linalg.utils import invert_axis_selection, reduce_axes
 from tsdm.pprint import pprint_repr
 from tsdm.types.aliases import Axis
 
+type FloatArray = Any
 
-@overload
-def _reduce_param(param: float, selection: Any) -> float: ...
-@overload
-def _reduce_param[T: FloatArray](param: T, selection: Any) -> T: ...
-def _reduce_param[T: FloatArray](param: float | T, selection: Any) -> float | T:
+
+def _reduce_param(param: Any, selection: Any) -> Any:
     r"""Perform a reduction on a parameter.
 
     For example, given tensor T, axis and selection, then this returns the slice of the tensor
@@ -52,8 +49,8 @@ class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
             shapes that can be broadcasted to the shape of the data along these axes.
     """
 
-    loc: Arr | float = 0.0
-    scale: Arr | float = 1.0
+    loc: Any = 0.0
+    scale: Any = 1.0
     r"""The scaling factor."""
 
     _: KW_ONLY
@@ -86,10 +83,10 @@ class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
         return LinearScaler(loc=loc, scale=scale, axis=axis)
 
     def encode(self, data: Arr, /) -> Arr:
-        return data * self.scale + self.loc
+        return cast("Arr", cast("Any", data) * self.scale + self.loc)
 
     def decode(self, data: Arr, /) -> Arr:
-        return (data - self.loc) / self.scale
+        return cast("Arr", (cast("Any", data) - self.loc) / self.scale)
 
 
 @pprint_repr
@@ -100,9 +97,9 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     axis: tuple[int, ...] determines the shape of the mean and stdv.
     """
 
-    mean: Arr | float = UNDEFINED
+    mean: Any = UNDEFINED
     r"""The mean value."""
-    stdv: Arr | float = UNDEFINED
+    stdv: Any = UNDEFINED
     r"""The standard-deviation."""
 
     _: KW_ONLY
@@ -127,7 +124,7 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     def fit(self, data: Arr, /) -> None:
         backend = get_backend(data)
 
-        axes = invert_axis_selection(self.axis, ndim=len(data.shape))
+        axes = invert_axis_selection(self.axis, ndim=len(cast("Any", data).shape))
 
         if self.mean_learnable:
             self.mean = backend.nanmean(data, axis=axes)
@@ -139,13 +136,13 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
         # TODO: consider adding broadcasting
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return (data - self.mean[broadcast]) / self.stdv[broadcast]
-        return (data - self.mean) / self.stdv
+        return cast("Arr", (cast("Any", data) - self.mean) / self.stdv)
 
     def decode(self, data: Arr, /) -> Arr:
         # TODO: consider adding broadcasting
         #   1. broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         #   2. return data * self.stdv[broadcast] + self.mean[broadcast]
-        return data * self.stdv + self.mean
+        return cast("Arr", cast("Any", data) * self.stdv + self.mean)
 
 
 @pprint_repr
@@ -190,22 +187,22 @@ class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
         This might be violated due to numerical roundoff, so we need to be careful.
     """
 
-    ymin: Arr | float = 0.0
-    ymax: Arr | float = 1.0
+    ymin: Any = 0.0
+    ymax: Any = 1.0
 
     _: KW_ONLY
 
-    xmin: Arr | float = UNDEFINED
-    xmax: Arr | float = UNDEFINED
+    xmin: Any = UNDEFINED
+    xmax: Any = UNDEFINED
 
     axis: Axis = ()
     r"""Over which axis to perform the scaling."""
     safe_computation: bool = True
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
 
-    xbar: Arr | float = field(init=False, default=UNDEFINED)
-    ybar: Arr | float = field(init=False, default=UNDEFINED)
-    scale: Arr | float = field(init=False, default=UNDEFINED)
+    xbar: Any = field(init=False, default=UNDEFINED)
+    ybar: Any = field(init=False, default=UNDEFINED)
+    scale: Any = field(init=False, default=UNDEFINED)
     xmin_learnable: bool = field(init=False)
     xmax_learnable: bool = field(init=False)
 
@@ -235,7 +232,7 @@ class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
         backend = get_backend(data)
 
         # invert axes selection
-        axes = invert_axis_selection(self.axis, ndim=len(data.shape))
+        axes = invert_axis_selection(self.axis, ndim=len(cast("Any", data).shape))
         if self.xmin_learnable:
             self.xmin = backend.nanmin(data, axis=axes)
         if self.xmax_learnable:
@@ -253,22 +250,24 @@ class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
 
     def encode(self, x: Arr, /) -> Arr:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
-        y = (x - self.xbar) * self.scale + self.ybar
+        x_any = cast("Any", x)
+        y = (x_any - self.xbar) * self.scale + self.ybar
         if self.safe_computation:
             # x < x_min, set y to y_min, x > x_max, set y to y_max
             backend = get_backend(x)
-            y = backend.where(x < self.xmin, self.ymin, y)
-            y = backend.where(x > self.xmax, self.ymax, y)
+            y = backend.where(x_any < self.xmin, self.ymin, y)
+            y = backend.where(x_any > self.xmax, self.ymax, y)
             y = backend.clip(y, self.ymin, self.ymax)
-        return y
+        return cast("Arr", y)
 
     def decode(self, y: Arr, /) -> Arr:
         r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
-        x = (y - self.ybar) / self.scale + self.xbar
+        y_any = cast("Any", y)
+        x = (y_any - self.ybar) / self.scale + self.xbar
         if self.safe_computation:
             # y < y_min, set x to x_min, y > y_max, set x to x_max
             backend = get_backend(y)
-            x = backend.where(y < self.ymin, self.xmin, x)
-            x = backend.where(y > self.ymax, self.xmax, x)
+            x = backend.where(y_any < self.ymin, self.xmin, x)
+            x = backend.where(y_any > self.ymax, self.xmax, x)
             x = backend.clip(x, self.xmin, self.xmax)
-        return x
+        return cast("Arr", x)

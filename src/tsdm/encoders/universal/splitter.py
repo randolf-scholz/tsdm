@@ -29,12 +29,14 @@ __all__ = [
 ]
 
 from dataclasses import KW_ONLY, dataclass
+from typing import Any
 
-from numerical_types.arrays import BaseArray as Array
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
 from tsdm.pprint import pprint_repr
+
+type Array = Any
 
 
 @pprint_repr
@@ -79,7 +81,7 @@ class TensorConcatenator[Arr: Array](FittableEncoder[list[Arr], Arr]):
 
     def fit(self, x: list[Arr], /) -> None:
         self.backend = get_backend(x)
-        self.indices = [arr.shape[self.axis] for arr in x]
+        self.indices = [arr.shape[self.axis] for arr in x]  # pyrefly: ignore[missing-attribute]
 
     def encode(self, x: list[Arr], /) -> Arr:
         return self.backend.concatenate(x, axis=self.axis)

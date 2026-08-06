@@ -1,11 +1,12 @@
 r"""Tests for Boundary Encoders."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import pytest
 import torch
 
-from numerical_types import FloatSeries
 from tsdm.encoders import BoundaryEncoder
 
 DATA_1D = [
@@ -20,12 +21,6 @@ DATA_1D = [
     +1.5,
     float("+inf"),
 ]
-DATA_2D = [
-    [-2.0, -1.1, -1.0, -0.9],
-    [ 0.0,  0.3,  0.5,  1.0],
-    [ 1.5,  2.0,  2.5,  3.0],
-]  # fmt: skip
-
 BOUNDS: list[tuple[float | None, float | None]] = [
     (-1, +1),
     (0, 1),
@@ -34,17 +29,34 @@ BOUNDS: list[tuple[float | None, float | None]] = [
     (0, float("nan")),
 ]
 
-TENSORS: dict[str, FloatSeries] = {
+TENSORS: dict[str, Any] = {
     "numpy-1D"             : np.array(DATA_1D),
-    "numpy-2D"             : np.array(DATA_2D),
     "torch-1D"             : torch.tensor(DATA_1D),
-    "torch-2D"             : torch.tensor(DATA_2D),
     # "pandas[numpy]-index"  : pd.Index(DATA_1D, dtype=float),
     "pandas[numpy]-series" : pd.Series(DATA_1D, dtype=float),
     # "pandas[arrow]-index"  : pd.Index(DATA_1D, dtype="float[pyarrow]"),
     "pandas[arrow]-series" : pd.Series(DATA_1D, dtype="float[pyarrow]"),
 }  # fmt: skip
 r"""Example data for testing."""
+
+
+@pytest.mark.parametrize(
+    ("valid", "invalid"),
+    [
+        (np.array(DATA_1D), np.array([[0.0, 1.0], [2.0, 3.0]])),
+        (pd.Series(DATA_1D), pd.DataFrame([[0.0, 1.0], [2.0, 3.0]])),
+        (torch.tensor(DATA_1D), torch.tensor([[0.0, 1.0], [2.0, 3.0]])),
+    ],
+    ids=["numpy", "pandas", "torch"],
+)
+def test_boundary_encoder_rejects_non_1d(valid: Any, invalid: Any) -> None:
+    r"""Test that BoundaryEncoder rejects non-one-dimensional data."""
+    encoder = BoundaryEncoder()
+
+    with pytest.raises(ValueError, match="expected one-dimensional data"):
+        encoder.fit(invalid)
+
+    encoder.fit(valid)
 
 
 @pytest.mark.parametrize("upper_included", [True, False])

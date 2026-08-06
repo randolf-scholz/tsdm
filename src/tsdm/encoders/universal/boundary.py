@@ -9,17 +9,18 @@ from typing import Any, Self
 
 import pandas as pd
 
-from numerical_types import FloatSeries
 from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
 from tsdm.pprint import pprint_repr
 
+type FloatArray = Any
+
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class BoundaryEncoder(FittableEncoder[FloatSeries, FloatSeries]):
+class BoundaryEncoder(FittableEncoder[Any, Any]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -132,19 +133,23 @@ class BoundaryEncoder(FittableEncoder[FloatSeries, FloatSeries]):
             **kwargs,
         )
 
-    def fit(self, data: FloatSeries, /) -> None:
+    def fit(self, data: FloatArray, /) -> None:
+        if len(data.shape) != 1:
+            raise ValueError(
+                f"BoundaryEncoder expected one-dimensional data, got shape {data.shape}."
+            )
         # select the backend
         self.backend: Backend = get_backend(data)
 
         # set lower_bound
         if self.lower_bound is UNDEFINED:
-            self.lower_bound = float(self.backend.nanmin(data))  # pyrefly: ignore[bad-argument-type]
+            self.lower_bound = float(self.backend.nanmin(data))
         elif is_null_scalar(self.lower_bound):
             self.lower_bound = None
 
         # set upper_bound
         if self.upper_bound is UNDEFINED:
-            self.upper_bound = float(self.backend.nanmax(data))  # pyrefly: ignore[bad-argument-type]
+            self.upper_bound = float(self.backend.nanmax(data))
         elif is_null_scalar(self.upper_bound):
             self.upper_bound = None
 
@@ -168,25 +173,25 @@ class BoundaryEncoder(FittableEncoder[FloatSeries, FloatSeries]):
         else:
             raise NotImplementedError
 
-    def lower_satisfied[Arr: FloatSeries](self, x: Arr, /) -> Arr:
+    def lower_satisfied[Arr: FloatArray](self, x: Arr, /) -> Arr:
         r"""Return a boolean mask for the lower boundary (true: value ok)."""
         if self.lower_bound is None:
             return self.backend.true_like(x)
         r = (x >= self.lower_bound) if self.lower_included else (x > self.lower_bound)
         return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
-    def upper_satisfied[Arr: FloatSeries](self, x: Arr, /) -> Arr:
+    def upper_satisfied[Arr: FloatArray](self, x: Arr, /) -> Arr:
         r"""Return a boolean mask for the upper boundary (true: value ok)."""
         if self.upper_bound is None:
             return self.backend.true_like(x)
         r = (x <= self.upper_bound) if self.upper_included else (x < self.upper_bound)
         return self.backend.where(self.backend.is_null(x), self.backend.true_like(x), r)
 
-    def encode[Arr: FloatSeries](self, data: Arr, /) -> Arr:
+    def encode[Arr: FloatArray](self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode[Arr: FloatSeries](self, data: Arr, /) -> Arr:
+    def decode[Arr: FloatArray](self, data: Arr, /) -> Arr:
         return data

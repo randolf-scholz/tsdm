@@ -8,17 +8,19 @@ __all__ = [
 ]
 
 from dataclasses import KW_ONLY, dataclass, field
+from typing import Any, cast
 
-from numerical_types import FloatSeries
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
 from tsdm.pprint import pprint_repr
 
+type FloatArray = Any
+
 
 @pprint_repr
 @dataclass(frozen=True, slots=True)
-class LinearScaler(StaticEncoder[FloatSeries, FloatSeries]):
+class LinearScaler[T: FloatArray](StaticEncoder[T, T]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 
     Args:
@@ -29,16 +31,16 @@ class LinearScaler(StaticEncoder[FloatSeries, FloatSeries]):
     loc: float = 0.0
     scale: float = 1.0
 
-    def encode[S: FloatSeries](self, data: S, /) -> S:
-        return data * self.scale + self.loc
+    def encode[S: FloatArray](self, data: S, /) -> S:
+        return cast("Any", data) * self.scale + self.loc
 
-    def decode[S: FloatSeries](self, data: S, /) -> S:
-        return (data - self.loc) / self.scale
+    def decode[S: FloatArray](self, data: S, /) -> S:
+        return (cast("Any", data) - self.loc) / self.scale
 
 
 @pprint_repr
 @dataclass(slots=True)
-class StandardScaler(FittableEncoder[FloatSeries, FloatSeries]):
+class StandardScaler[T: FloatArray](FittableEncoder[T, T]):
     r"""Transforms data linearly $x ↦ (x-μ)/σ$."""
 
     mean: float = UNDEFINED
@@ -46,23 +48,23 @@ class StandardScaler(FittableEncoder[FloatSeries, FloatSeries]):
     stdv: float = UNDEFINED
     r"""The standard-deviation."""
 
-    def fit(self, data: FloatSeries, /) -> None:
+    def fit(self, data: Any, /) -> None:
         # switch the backend
         backend: Backend = get_backend(data)
 
         self.mean = backend.nanmean(data)
         self.stdv = backend.nanstd(data)
 
-    def encode[S: FloatSeries](self, data: S, /) -> S:
-        return (data - self.mean) / self.stdv
+    def encode[S: FloatArray](self, data: S, /) -> S:
+        return (cast("Any", data) - self.mean) / self.stdv
 
-    def decode[S: FloatSeries](self, data: S, /) -> S:
-        return data * self.stdv + self.mean
+    def decode[S: FloatArray](self, data: S, /) -> S:
+        return cast("Any", data) * self.stdv + self.mean
 
 
 @pprint_repr
 @dataclass(slots=True)
-class MinMaxScaler(FittableEncoder[FloatSeries, FloatSeries]):
+class MinMaxScaler[T: FloatArray](FittableEncoder[T, T]):
     r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
 
     If x_min and/or x_max are provided at initialization, they are marked as
@@ -116,35 +118,37 @@ class MinMaxScaler(FittableEncoder[FloatSeries, FloatSeries]):
         self.xmin_learnable = self.xmin is UNDEFINED
         self.xmax_learnable = self.xmax is UNDEFINED
 
-    def fit(self, data: FloatSeries, /) -> None:
+    def fit(self, data: Any, /) -> None:
         backend = get_backend(data)
 
         if self.xmin_learnable:
-            self.xmin = float(backend.nanmin(data))  # type: ignore
+            self.xmin = float(backend.nanmin(data))
         if self.xmax_learnable:
-            self.xmax = float(backend.nanmax(data))  # type: ignore
+            self.xmax = float(backend.nanmax(data))
 
         self.xbar = (self.xmax + self.xmin) / 2
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
-    def encode[S: FloatSeries](self, x: S, /) -> S:
+    def encode[S: FloatArray](self, x: S, /) -> S:
         r"""Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
-        y = (x - self.xbar) * self.scale + self.ybar
+        x_any = cast("Any", x)
+        y = (x_any - self.xbar) * self.scale + self.ybar
         if self.safe_computation:
             # x < x_min, set y to y_min, x > x_max, set y to y_max
-            backend = get_backend(x)
-            y = backend.where(x < self.xmin, self.ymin, y)
-            y = backend.where(x > self.xmax, self.ymax, y)
+            backend = get_backend(x_any)
+            y = backend.where(x_any < self.xmin, self.ymin, y)
+            y = backend.where(x_any > self.xmax, self.ymax, y)
             y = backend.clip(y, self.ymin, self.ymax)
-        return y
+        return cast("S", y)
 
-    def decode[S: FloatSeries](self, y: S, /) -> S:
+    def decode[S: FloatArray](self, y: S, /) -> S:
         r"""Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
-        x = (y - self.ybar) / self.scale + self.xbar
+        y_any = cast("Any", y)
+        x = (y_any - self.ybar) / self.scale + self.xbar
         if self.safe_computation:
             # y < y_min, set x to x_min, y > y_max, set x to x_max
-            backend = get_backend(y)
-            x = backend.where(y < self.ymin, self.xmin, x)
-            x = backend.where(y > self.ymax, self.xmax, x)
+            backend = get_backend(y_any)
+            x = backend.where(y_any < self.ymin, self.xmin, x)
+            x = backend.where(y_any > self.ymax, self.xmax, x)
             x = backend.clip(x, self.xmin, self.xmax)
-        return x
+        return cast("S", x)

@@ -12,31 +12,25 @@ from typing import Any, cast
 import numpy as np
 from pyarrow import ArrowNotImplementedError
 
-from numerical_types import (
-    FloatArray,
-    SpanLikeScalar,
-    TimedeltaArray,
-    TimeLikeArray,
-    TimeLikeScalar,
-)
 from tsdm.backend import Backend, get_backend
-from tsdm.backend.pandas import PandasDtype
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import FittableEncoder
 from tsdm.pprint import pprint_repr
 from tsdm.utils import timedelta, timestamp
 
+type DateTimeArray = Any
+type TimeDeltaArray = Any
+type FloatArray = Any
+
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
-    FittableEncoder[X, Y],
-):
+class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode TimeDelta as Float."""
 
-    unit: SpanLikeScalar = UNDEFINED
+    unit: Any = UNDEFINED
     r"""The base frequency to convert timedeltas to."""
-    timedelta_dtype: PandasDtype = UNDEFINED
+    timedelta_dtype: Any = UNDEFINED
     r"""The original dtype of the Series."""
     round: bool = True
     r"""Whether to round to the next unit."""
@@ -46,7 +40,7 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
     def __init__(
         self,
         *,
-        unit: str | SpanLikeScalar = UNDEFINED,
+        unit: Any = UNDEFINED,
         rounding: bool = True,
     ) -> None:
         self.unit = UNDEFINED if unit is UNDEFINED else timedelta(unit)
@@ -54,7 +48,7 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
 
     def fit(self, data: X, /) -> None:
         self.backend = get_backend(data)
-        self.timedelta_dtype = data.dtype
+        self.timedelta_dtype = data.dtype  # pyrefly: ignore[missing-attribute]
 
         if self.unit is UNDEFINED:
             # This looks awkward but is robust.
@@ -70,7 +64,7 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
 
     def decode(self, y: Y, /) -> X:
         if self.round:
-            y = y.round()
+            y = y.round()  # pyrefly: ignore[missing-attribute]
 
         try:
             return cast("X", y * self.unit)
@@ -83,12 +77,12 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
+class DateTimeEncoder[X: DateTimeArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode Datetime as Float."""
 
-    offset: TimeLikeScalar = UNDEFINED
+    offset: Any = UNDEFINED
     r"""The starting point of the timeseries."""
-    unit: SpanLikeScalar = UNDEFINED
+    unit: Any = UNDEFINED
     r"""The base frequency to convert timedeltas to."""
     datetime_dtype: Any = UNDEFINED
     r"""The original dtype of the Series."""
@@ -98,8 +92,8 @@ class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
     def __init__(
         self,
         *,
-        unit: str | SpanLikeScalar = UNDEFINED,
-        offset: str | SpanLikeScalar = UNDEFINED,
+        unit: Any = UNDEFINED,
+        offset: Any = UNDEFINED,
         rounding: bool = True,
     ) -> None:
         self.unit = UNDEFINED if unit is UNDEFINED else timedelta(unit)
@@ -108,27 +102,23 @@ class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
 
     def fit(self, data: X, /) -> None:
         # get the datetime dtype
-        self.backend = get_backend(data)
-        self.datetime_dtype = data.dtype
+        self.backend: Backend[Any] = get_backend(data)
+        self.datetime_dtype = data.dtype  # pyrefly: ignore[missing-attribute]
 
         # set the offset
-        offset = (
-            cast("TimeLikeScalar", self.backend.nanmin(data))
-            if self.offset is UNDEFINED
-            else self.offset
-        )
+        offset = self.backend.nanmin(data) if self.offset is UNDEFINED else self.offset
         self.offset = self.backend.scalar(offset, dtype=self.datetime_dtype)
 
         # get the timedelta dtype
         deltas = self.backend.drop_null(data - self.offset)
-        self.timedelta_dtype = deltas.dtype
+        self.timedelta_dtype = deltas.dtype  # pyrefly: ignore[missing-attribute]
 
         if self.unit is UNDEFINED:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
             deltas = self.backend.drop_null(deltas)
             diffs = np.array(self.backend.cast(deltas, int))
-            unit: SpanLikeScalar = int(np.gcd.reduce(diffs))
+            unit = int(np.gcd.reduce(diffs))
         else:
             unit = self.unit
 
@@ -139,7 +129,7 @@ class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
 
     def decode(self, y: Y, /) -> X:
         if self.round:
-            y = y.round()
+            y = y.round()  # pyrefly: ignore[missing-attribute]
 
         try:
             return cast("X", y * self.unit + self.offset)
