@@ -32,8 +32,8 @@ class KiwiBenchmark(DatasetBase[Key, DataFrame]):
 
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
-        "static_covariates",
         "timeseries_metadata",
+        "static_covariates",
         "static_covariates_metadata",
     ]
     rawdata_files = ["kiwi-benchmark.zip"]
