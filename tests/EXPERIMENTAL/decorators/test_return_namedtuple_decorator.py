@@ -28,7 +28,7 @@ def get_exit_point_names(func: Fn, /) -> list[tuple[str, ...]]:
     return var_names
 
 
-@decorator
+@decorator  # type: ignore
 def return_namedtuple[**P](
     func: Fn[P, tuple],
     /,
