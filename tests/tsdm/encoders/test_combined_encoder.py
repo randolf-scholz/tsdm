@@ -9,6 +9,7 @@ import torch
 from pandas import DataFrame
 
 from tsdm.config import PROJECT
+from tsdm.datasets import InSilico
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -17,12 +18,11 @@ from tsdm.encoders import (
     FittableEncoder,
     FrameAsTensorDict,
     FrameEncoder,
-    IdentityEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.tasks import KiwiBenchmark
+from tsdm.tasks import InSilicoTask
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -30,24 +30,25 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 @pytest.fixture(scope="session")
 def encoder() -> FittableEncoder:
     # initialize the task object
-    task = KiwiBenchmark()
-    descr = task.dataset.timeseries_metadata[["kind", "lower_bound", "upper_bound"]]
+    dataset = InSilico()
+    descr = dataset.timeseries_metadata[["unit", "lower_bound", "upper_bound"]]
 
     # select encoding scheme
     column_encoders: dict[str, Encoder] = {}
-    for col, scale, lower, upper in descr.itertuples():
+    for col, unit, lower, upper in descr.itertuples():
         xmin = None if pd.isna(lower) else float(lower)
         xmax = None if pd.isna(upper) else float(upper)
 
-        match scale:
-            case "percent" | "fraction":
+        match unit:
+            case "%":
                 assert (xmin, xmax) != (None, None)
                 column_encoders[col] = (
                     BoundaryEncoder(xmin, xmax, mode="clip")
-                    >> MinMaxScaler(0, 1, xmin=xmin, xmax=xmax)
+                    >> MinMaxScaler(0, 1, xmin=0, xmax=100)
                     >> LogitBoxCoxEncoder()
                 )
-            case "absolute":
+
+            case _:
                 if xmax is not None and xmax < np.inf:
                     column_encoders[col] = (
                         BoundaryEncoder(xmin, xmax, mode="clip")
@@ -58,29 +59,23 @@ def encoder() -> FittableEncoder:
                     column_encoders[col] = (
                         BoundaryEncoder(xmin, xmax, mode="clip") >> BoxCoxEncoder()
                     )
-            case "linear":
-                column_encoders[col] = IdentityEncoder()
-            case _:
-                raise ValueError(f"{scale=} unknown")
 
     # construct the encoder
     encoder = (
         FrameEncoder(
             column_encoders
-            | {"elapsed_time": DateTimeEncoder(rounding=False) >> MinMaxScaler()},
+            | {"time": DateTimeEncoder(rounding=False) >> MinMaxScaler()},
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(
-            schema={"T": ["elapsed_time"], "X": ...},
+            schema={"T": ["time"], "X": ...},
             dtypes={"T": torch.float32, "X": torch.float32},
         )
     )
 
     # fit encoder to the whole dataset
-    ts = task.dataset.timeseries
-    train_data = ts.iloc[:20_000].reset_index(
-        level=["run_id", "experiment_id"], drop=True
-    )
+    ts = dataset.timeseries
+    train_data = ts.iloc[:20_000].reset_index(level=["run_id"], drop=True)
     encoder.fit(train_data)
 
     return encoder
@@ -100,11 +95,11 @@ def test_combined_encoder(encoder: Encoder) -> None:
     # initialize the task object
     torch.manual_seed(0)
     rng = np.random.default_rng(1)
-    task = KiwiBenchmark(sampler_kwargs={"rng": rng})
+    task = InSilicoTask()
 
     # prepare train data
     ts = task.dataset.timeseries.iloc[:20_000]
-    train_data = ts.reset_index(level=["run_id", "experiment_id"], drop=True)
+    train_data = ts.reset_index(level=["run_id"], drop=True)
 
     # prepare test data
     sampler = task.samplers[split]
@@ -116,7 +111,7 @@ def test_combined_encoder(encoder: Encoder) -> None:
     test_data = sample.inputs.x
 
     # check that sampling was deterministic
-    assert key[0] == (525, 17197)
+    assert key[0] == 16130
 
     # fit encoder to the whole dataset
     encoder.fit(train_data)
@@ -128,6 +123,7 @@ def test_combined_encoder(encoder: Encoder) -> None:
 
     # check NaN-pattern and standardization
     xhat_train = DataFrame(train_encoded["X"], dtype="float32")
+    assert xhat_train.shape == train_data.shape
     assert (xhat_train.isna().to_numpy() == train_data.isna().to_numpy()).all(), (
         "NaN pattern mismatch"
     )
@@ -170,15 +166,15 @@ def test_combined_encoder(encoder: Encoder) -> None:
 
 
 def test_bounds(encoder: Encoder) -> None:
-    task = KiwiBenchmark()
-    descr = task.dataset.timeseries_metadata[["kind", "lower_bound", "upper_bound"]]
+    dataset = InSilico()
+    descr = dataset.timeseries_metadata[["unit", "lower_bound", "upper_bound"]]
 
-    nrows, ncols = task.dataset.timeseries.shape
+    nrows, ncols = dataset.timeseries.shape
 
     # check that decoding random values satisfies bounds
     rng_data = {
-        "X": 20 * torch.randn(nrows, ncols, dtype=torch.float32),
         "T": torch.randn(nrows, 1),
+        "X": 20 * torch.randn(nrows, ncols, dtype=torch.float32),
     }
     rng_decoded = encoder.decode(rng_data)
 
@@ -189,19 +185,12 @@ def test_bounds(encoder: Encoder) -> None:
         keys=["lower", "upper"],
     )
     for col, lower, upper in bounds.itertuples():
-        match scale := descr.loc[col, "kind"]:
-            case "percent":
+        match scale := descr.loc[col, "unit"]:
+            case "%":
                 assert lower == 0, f"Lower bound violated {lower=}"
                 assert upper == 100, f"Upper bound violated {upper=}"
-            case "fraction":
-                assert lower == 0, f"Lower bound violated {lower=}"
-                assert upper == 1, f"Upper bound violated {upper=}"
-            case "absolute":
-                assert lower == 0, f"Lower bound violated {lower=}"
-            case "linear":
-                pass
             case _:
-                raise ValueError(f"{scale=} unknown")
+                assert lower == 0, f"Lower bound violated {lower=}"
 
 
 def test_serialization(encoder: Encoder) -> None:

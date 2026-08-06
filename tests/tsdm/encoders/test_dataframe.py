@@ -4,7 +4,7 @@ from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
 from tsdm.config import PROJECT
-from tsdm.encoders.pandas import CSVEncoder, DTypeConverter
+from tsdm.encoders import CSVEncoder, FrameDTypeConverter
 
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -35,7 +35,7 @@ def test_csv_encoder() -> None:
 
 def test_type_converter() -> None:
     # initialize encoder
-    encoder = DTypeConverter(
+    encoder = FrameDTypeConverter(
         {
             "A": "duration[ns][pyarrow]",
             "B": "Int64",

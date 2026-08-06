@@ -93,9 +93,10 @@ See Also:
 
 __all__ = [
     # Sub-Packages & Modules
-    "torch",
+    "positional",
     "universal",
-    "time",
+    "torch",
+    "pandas",
     # Constants
     "ID",
     "ENCODERS",
@@ -113,7 +114,7 @@ __all__ = [
     "CSVEncoder",
     "Choice",
     "Compose",
-    "DTypeConverter",
+    "FrameDTypeConverter",
     "DateTimeEncoder",
     "DeepcopyEncoder",
     "Diagonal",
@@ -164,7 +165,7 @@ __all__ = [
     "wrap",
 ]
 
-from . import time, torch, universal
+from . import pandas, positional, torch, universal
 from .base import (
     ID,
     BaseEncoder,
@@ -205,31 +206,32 @@ from .base import (
     wrap,
 )
 from .box_cox import BoxCoxEncoder, LogEncoder, LogitBoxCoxEncoder, LogitEncoder
-from .pandas import (
-    CSVEncoder,
-    DTypeConverter,
+from .converters import (
     FrameAsDict,
     FrameAsTensor,
     FrameAsTensorDict,
+    FrameDTypeConverter,
+)
+from .pandas import (
+    CSVEncoder,
     FrameEncoder,
+    PeriodicEncoder,
+    PeriodicSocialTimeEncoder,
+    SocialTimeEncoder,
     TripletDecoder,
     TripletEncoder,
 )
-from .time import (
-    PeriodicEncoder,
-    PeriodicSocialTimeEncoder,
-    PositionalEncoder,
-    SocialTimeEncoder,
-)
+from .positional import PositionalEncoder
 from .universal import (
     BoundaryEncoder,
+    DateTimeEncoder,
     LinearScaler,
     MinMaxScaler,
     StandardScaler,
     TensorConcatenator,
     TensorSplitter,
+    TimeDeltaEncoder,
 )
-from .universal.temporal import DateTimeEncoder, TimeDeltaEncoder
 
 ENCODERS: dict[str, type[BaseEncoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,
@@ -237,7 +239,7 @@ ENCODERS: dict[str, type[BaseEncoder]] = {
     "CSVEncoder"                : CSVEncoder,
     "Choice"                    : Choice,
     "Compose"                   : Compose,
-    "DTypeConverter"            : DTypeConverter,
+    "DTypeConverter"            : FrameDTypeConverter,
     "DateTimeEncoder"           : DateTimeEncoder,
     "DeepcopyEncoder"           : DeepcopyEncoder,
     "Diagonal"                  : Diagonal,

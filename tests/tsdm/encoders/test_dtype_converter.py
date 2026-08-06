@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from tsdm.encoders.pandas import DTypeConverter
+from tsdm.encoders import FrameDTypeConverter
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def df() -> pd.DataFrame:
 
 # TODO: consider trying hypothesis
 def test_dtype_converter(df: pd.DataFrame) -> None:
-    encoder = DTypeConverter(
+    encoder = FrameDTypeConverter(
         {
             "A": "duration[ns][pyarrow]",
             "B": "Int64",

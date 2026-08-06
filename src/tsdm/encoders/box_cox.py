@@ -422,7 +422,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
             raise ValueError(f"{method=} unknown. Available: {', '.join(self.METHOD)}")
 
         self.bounds = bounds
-        self.inital_value = offset_guess
+        self.offset_guess = offset_guess
         self.method = self.METHOD(method)
         self.offset = offset
         self.verbose = verbose

@@ -17,9 +17,9 @@ from torch.utils.data import DataLoader, TensorDataset
 from tsdm.datasets import ETT
 from tsdm.encoders import (
     DateTimeEncoder,
-    DTypeConverter,
     Encoder,
     FrameAsTensor,
+    FrameDTypeConverter,
     FrameEncoder,
     MinMaxScaler,
     StandardScaler,
@@ -134,7 +134,7 @@ class ETT_Zhou2021(OldBaseTask):
         self.accumulation_function = nn.Identity()
 
         self.preprocessor = (
-            DTypeConverter(float)
+            FrameDTypeConverter(float)
             >> StandardScaler()
             >> FrameEncoder(date=DateTimeEncoder() >> MinMaxScaler())
             >> FrameAsTensor()

@@ -181,7 +181,7 @@ def is_na_value(obj: object, /) -> bool:
     r"""Check if the object is a NA value."""
     try:
         return bool((np.isscalar(obj) and np.isnan(obj)) or pd.isna(obj))
-    except TypeError:
+    except ValueError:
         return False
 
 

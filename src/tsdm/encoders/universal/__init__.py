@@ -7,8 +7,11 @@ __all__ = [
     "StandardScaler",
     "TensorSplitter",
     "TensorConcatenator",
+    "DateTimeEncoder",
+    "TimeDeltaEncoder",
 ]
 
 from .boundary import BoundaryEncoder
 from .linear import LinearScaler, MinMaxScaler, StandardScaler
 from .splitter import TensorConcatenator, TensorSplitter
+from .temporal import DateTimeEncoder, TimeDeltaEncoder

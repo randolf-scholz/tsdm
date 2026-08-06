@@ -19,9 +19,10 @@ from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator, in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
+type SampleID = tuple[int, list[list[bool]]]
 
 
-class InSilicoTask(TimeSeriesTask[SplitID, int]):
+class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
     r"""Task for the KIWI dataset."""
 
     observation_horizon: str = "2h"
