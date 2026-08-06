@@ -72,6 +72,12 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
         return None
 
     @property
+    def name(self) -> str:
+        r"""READ-ONLY: The name of the dataset."""
+        version = self.__version__
+        return f"{self.__class__.__name__}{f'@v{version}' if version else ''}"
+
+    @property
     @abstractmethod
     def tables(self) -> Mapping[KeyT, TableT]:
         r"""READ-ONLY: The tables that make up the dataset."""
@@ -183,17 +189,16 @@ class DatasetBase[Key: str, T](
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes for the raw dataset tables(s)."""
 
-    # FIXME: Hack due to lack of ReadOnly attributes.
-    # We can't use Key, as that would screw up covariance.
-    type _Key = str
     r"""Type alias for the key of the dataset."""
     dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[_Key, str | None] = EMPTY_MAP
+    # FIXME: Hack due to lack of ReadOnly attributes,
+    #   we can't use Key, as that would screw up covariance.
+    table_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[_Key, Mapping[str, str]] = EMPTY_MAP
+    table_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
     r"""READ-ONLY: Schemas of the in-memory cleaned dataset table(s)."""
-    table_shapes: Mapping[_Key, tuple[int, ...]] = EMPTY_MAP
+    table_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 
