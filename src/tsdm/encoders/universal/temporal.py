@@ -14,13 +14,12 @@ from pyarrow import ArrowNotImplementedError
 
 from numerical_types import (
     FloatArray,
-    SpanLikeArray,
     SpanLikeScalar,
     TimedeltaArray,
     TimeLikeArray,
     TimeLikeScalar,
 )
-from tsdm.backend import Backend, generic, get_backend
+from tsdm.backend import Backend, get_backend
 from tsdm.backend.pandas import PandasDtype
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import FittableEncoder
@@ -58,7 +57,6 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
         self.timedelta_dtype = data.dtype
 
         if self.unit is UNDEFINED:
-            # FIXME: https://github.com/pandas-dev/pandas/issues/58403
             # This looks awkward but is robust.
             data = self.backend.drop_null(data)
             diffs = np.array(self.backend.cast(data, int))
@@ -68,19 +66,15 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
             self.unit = self.backend.scalar(base_freq, dtype=self.timedelta_dtype)
 
     def encode(self, x: X, /) -> Y:
-        try:
-            return cast("Y", x / self.unit)
-        except TypeError:
-            # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
-            return self.backend.cast(x, int) / self.backend.scalar(self.unit, int)
+        return cast("Y", x / self.unit)
 
     def decode(self, y: Y, /) -> X:
         if self.round:
-            y = generic.round(y)
+            y = y.round()
 
         try:
-            return self.backend.cast(y * self.unit, self.timedelta_dtype)
-        except ArrowNotImplementedError:
+            return cast("X", y * self.unit)
+        except TypeError, ArrowNotImplementedError:
             # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             y = self.backend.cast(y, float) * self.unit
@@ -88,7 +82,7 @@ class TimeDeltaEncoder[X: TimedeltaArray, Y: FloatArray](
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass(init=False, slots=True)
 class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode Datetime as Float."""
 
@@ -100,8 +94,6 @@ class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""The original dtype of the Series."""
     timedelta_dtype: Any = UNDEFINED
     r"""The dtype of the timedelta."""
-
-    backend: Backend = field(init=False, default=UNDEFINED)
 
     def __init__(
         self,
@@ -139,24 +131,19 @@ class DateTimeEncoder[X: TimeLikeArray, Y: FloatArray](FittableEncoder[X, Y]):
             unit: SpanLikeScalar = int(np.gcd.reduce(diffs))
         else:
             unit = self.unit
+
         self.unit = self.backend.scalar(unit, dtype=self.timedelta_dtype)
 
     def encode(self, x: X, /) -> Y:
-        delta: SpanLikeArray = x - self.offset
-
-        try:
-            return cast("Y", delta / self.unit)
-        except TypeError:
-            # FIXME: pyarrow: "first cast to integer before dividing date-like dtypes"
-            return self.backend.cast(delta, int) / self.backend.scalar(self.unit, int)
+        return cast("Y", (x - self.offset) / self.unit)
 
     def decode(self, y: Y, /) -> X:
         if self.round:
-            y = generic.round(y)
+            y = y.round()
 
         try:
-            return self.backend.cast(y * self.unit + self.offset, self.datetime_dtype)
-        except ArrowNotImplementedError:
+            return cast("X", y * self.unit + self.offset)
+        except ArrowNotImplementedError, TypeError:
             # Function 'multiply_checked' has no kernel matching input types (double, duration[ms])
             # FIXME: https://github.com/apache/arrow/issues/39233#issuecomment-2070756267
             z = self.backend.cast(y, float) * self.unit + self.offset
