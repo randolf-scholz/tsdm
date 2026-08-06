@@ -30,7 +30,7 @@ __all__ = [
 import warnings
 from collections.abc import Callable as Fn, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, fields
-from typing import Any, ClassVar, Optional, Self, overload
+from typing import Any, ClassVar, Self, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
 
@@ -63,27 +63,29 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     )
     r"""The essential fields of the time series collection."""
 
-    _: KW_ONLY
-
-    # Header
-    name: Optional[str] = UNDEFINED
+    name: str | None = UNDEFINED
     r"""The name of the dataset."""
+
+    _: KW_ONLY
 
     # Main Attributes
     timeseries: DataFrame
     r"""The time series data."""
-    timeseries_metadata: Optional[DataFrame] = None
+    timeseries_metadata: DataFrame | None = None
     r"""Data associated with the time such as measurement device, unit, etc."""
-    static_covariates: Optional[DataFrame] = None
+    static_covariates: DataFrame | None = None
     r"""The metadata of the dataset."""
-    static_covariates_metadata: Optional[DataFrame] = None
+    static_covariates_metadata: DataFrame | None = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    timeindex: Index = UNDEFINED  # derived field
-    r"""The time-index of the dataset."""
-    timeindex_metadata: Optional[DataFrame] = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
-    metadata: Optional[Metadata] = None
+
+    metadata: Metadata | None = None
     r"""The metadata of the dataset."""
+
+    # derived fields
+    timeindex: Index = UNDEFINED
+    r"""The time-index of the dataset."""
+    timeindex_metadata: DataFrame | None = UNDEFINED
+    r"""Data associated with the time such as measurement device, unit, etc."""
 
     @classmethod
     def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
@@ -175,31 +177,33 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     )
     r"""The essential fields of the time series collection."""
 
-    _: KW_ONLY
-
-    # Header
-    name: Optional[str] = UNDEFINED
+    name: str | None = UNDEFINED
     r"""The name of the collection."""
+
+    _: KW_ONLY
 
     # Main attributes
     timeseries: DataFrame
     r"""The collection of time series data."""
-    timeseries_metadata: Optional[DataFrame] = None
+    timeseries_metadata: DataFrame | None = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    static_covariates: Optional[DataFrame] = None
+    static_covariates: DataFrame | None = None
     r"""The static covariates associated with each timeseries."""
-    static_covariates_metadata: Optional[DataFrame] = None
+    static_covariates_metadata: DataFrame | None = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    constants: Optional[DataFrame] = None
+    constants: DataFrame | None = None
     r"""Additional data that is independent of the metaindex."""
-    constants_metadata: Optional[DataFrame] = None
+    constants_metadata: DataFrame | None = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-    timeindex: MultiIndex = UNDEFINED  # derived field
-    r"""The time-index of the collection."""
-    metaindex: Index = UNDEFINED  # derived field
-    r"""The index of the collection."""
-    metadata: Optional[Metadata] = None
+
+    metadata: Mapping | None = None
     r"""The metadata of the dataset."""
+
+    # derived fields
+    timeindex: MultiIndex = UNDEFINED
+    r"""The time-index of the collection."""
+    metaindex: Index = UNDEFINED
+    r"""The index of the collection."""
 
     @classmethod
     def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
@@ -258,7 +262,7 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     def _infer_name(self) -> str | None:
         r"""Get the name of the collection."""
         if self.metadata is not None:
-            return self.metadata.name
+            return self.metadata.get("name")
         if (name := getattr(self.timeseries, "name", None)) is not None:
             return str(name)
         return None
