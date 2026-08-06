@@ -242,8 +242,8 @@ def construct_wasserstein_loss_logit_normal(
 
 
 @pprint_repr
-@dataclass(init=False)
-class BoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
+@dataclass(init=False, slots=True)
+class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
@@ -367,8 +367,8 @@ class BoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
 
 
 @pprint_repr
-@dataclass
-class LogitBoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]):
+@dataclass(init=False, slots=True)
+class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     r"""Encode data from the interval [0,1] with a logit transform.
 
     An offset c is added/subtracted to avoid log(0) and division by zero.
@@ -396,6 +396,7 @@ class LogitBoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]
         match_uniform = "match-uniform"
 
     _: KW_ONLY
+
     bounds: tuple[float, float] = (0.0, 1.0)
     method: METHOD = METHOD.match_uniform
     offset: float = UNDEFINED
@@ -407,7 +408,7 @@ class LogitBoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]
         self,
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
-        method: METHOD | str = "match-uniform",
+        method: METHOD | str = METHOD.match_uniform,
         offset: float = UNDEFINED,
         offset_guess: float = 0.1,
         verbose: bool = False,
@@ -496,15 +497,17 @@ class LogitBoxCoxEncoder(FittableEncoder[SupportsArrayUfunc, SupportsArrayUfunc]
         self.validate_params()
 
 
-@dataclass
+@dataclass(slots=True)
 class LogEncoder(FittableEncoder[NDArray, NDArray]):
     r"""Encode data on a logarithmic scale.
+
+    Values below the threshold are replaced with a constant value to avoid -inf and NaN values.
 
     Uses base 2 by default for lower numerical error and fast computation.
     """
 
-    threshold: NDArray
-    replacement: NDArray
+    threshold: NDArray = UNDEFINED
+    replacement: NDArray = UNDEFINED
 
     def fit(self, data: NDArray, /) -> None:
         if np.any(data < 0):
@@ -514,20 +517,20 @@ class LogEncoder(FittableEncoder[NDArray, NDArray]):
         self.threshold = data[~mask].min()
         self.replacement = np.log2(self.threshold / 2)
 
-    def encode(self, data: NDArray, /) -> NDArray:
+    def encode[Arr: NDArray](self, data: Arr, /) -> Arr:
         result = data.copy()
         mask = data <= 0
         result[:] = np.where(mask, self.replacement, np.log2(data))
         return result
 
-    def decode(self, data: NDArray, /) -> NDArray:
+    def decode[Arr: NDArray](self, data: Arr, /) -> Arr:
         result = 2**data
         mask = result < self.threshold
         result[:] = np.where(mask, 0, result)
-        return result
+        return result  # type: ignore
 
 
-class LogitEncoder(StaticEncoder[NDArray, NDArray]):
+class LogitEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
     r"""Logit encoder."""
 
     def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
