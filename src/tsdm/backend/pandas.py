@@ -141,26 +141,42 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
 def where[
     T: (Index, MultiIndex, Series, DataFrame),
 ](cond: T | Any, a: T | Any, b: T | Any, /) -> T:
-    r"""Analogue to `numpy.where`."""
+    r"""Analogue to `numpy.where` with null conditions treated as false.
+
+    Nulls propagate from ``a`` where ``cond`` is true and from ``b`` otherwise.
+    """
+    mask = pd.isna(cond)
+    if isinstance(cond, DataFrame | Series):
+        cond = cond.mask(mask, other=False).astype(bool)
+    elif np.ndim(mask) == 0:
+        cond = False if mask else cond
+    else:
+        cond = np.asarray(
+            np.where(mask, np.zeros_like(mask, dtype=bool), cond), dtype=bool
+        )
+
     if isinstance(a, DataFrame):
-        return a.where(cond, b, axis=0)
-    if isinstance(b, DataFrame):
-        return b.where(~cond, a, axis=0)
-    if isinstance(cond, DataFrame):
-        return cond.where(cond, a, axis=0).where(~cond, b, axis=0)
-    if isinstance(a, Series):
-        return a.where(cond, b)
-    if isinstance(b, Series):
-        return b.where(~cond, a)
-    if isinstance(cond, Series):
-        return cond.where(cond, a).where(~cond, b)
-    if isinstance(a, Index):
-        return a.where(cond, b)
-    if isinstance(b, Index):
-        return b.where(~cond, a)
-    if isinstance(cond, Index):
-        return cond.where(cond, a).where(~cond, b)
-    return np.where(cond, a, b)  # pyright: ignore[reportReturnType]
+        result = a.where(cond, b, axis=0)
+    elif isinstance(b, DataFrame):
+        result = b.where(~cond, a, axis=0)
+    elif isinstance(cond, DataFrame):
+        result = cond.where(cond, b, axis=0).where(~cond, a, axis=0)
+    elif isinstance(a, Series):
+        result = a.where(cond, b)
+    elif isinstance(b, Series):
+        result = b.where(~cond, a)
+    elif isinstance(cond, Series):
+        result = cond.where(cond, b).where(~cond, a)
+    elif isinstance(a, Index):
+        result = a.where(cond, b)
+    elif isinstance(b, Index):
+        result = b.where(~cond, a)
+    elif isinstance(cond, Index):
+        result = cond.where(cond, b).where(~cond, a)
+    else:
+        return np.where(cond, a, b)  # pyright: ignore[reportReturnType]
+
+    return result
 
 
 def null_like[P: PandasType](x: P, /) -> P:

@@ -228,6 +228,18 @@ def test_scaler[
     LOGGER.info("Testing finished!")
 
 
+def test_minmax_scaler_preserves_nullable_pandas_missing_values() -> None:
+    r"""Check that safe bounds computation does not replace missing values."""
+    data = pd.Series([0.0, pd.NA, 100.0], dtype="float64[pyarrow]")
+    encoder = MinMaxScaler(0.0, 1.0, xmin=0.0, xmax=100.0)
+
+    encoded = encoder.encode(data)
+
+    pd.testing.assert_series_equal(encoded.isna(), data.isna())
+    assert encoded.iloc[0] == 0.0
+    assert encoded.iloc[2] == 1.0
+
+
 @pytest.mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_dataframe[
     E: (StandardScaler, MinMaxScaler),
