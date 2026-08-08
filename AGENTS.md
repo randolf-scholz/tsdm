@@ -55,3 +55,10 @@ This file describes project conventions for automated agents contributing to `ts
 
 - Docstrings should align with the configured convention (Google style).
 - When behavior is subtle, document invariants and edge cases alongside the type signature.
+
+## Editing files
+
+- Prefer `apply_patch` for modifying existing source files. If that fails, fall back to using `git apply` or `patch`.
+- Do not use `perl -pi`, `sed -i`, Python scripts, or similar shell-based rewriting for normal source-code edits.
+- Use shell-based rewriting only when `apply_patch` is unsuitable or unavailable.
+- Run tests and linters as separate commands after editing.
