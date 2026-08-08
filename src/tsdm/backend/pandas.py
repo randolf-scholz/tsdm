@@ -138,6 +138,13 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
     return x.std(axis=infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
+def _where[P: PandasType](cond: Any, x: P, other: Any, /) -> P:
+    r"""Apply ``where`` while preserving DataFrame's row-wise alignment."""
+    if isinstance(x, DataFrame):
+        return x.where(cond, other, axis=0)
+    return x.where(cond, other)
+
+
 def where[
     T: (Index, MultiIndex, Series, DataFrame),
 ](cond: T | Any, a: T | Any, b: T | Any, /) -> T:
@@ -157,28 +164,14 @@ def where[
             np.where(mask, np.zeros_like(mask, dtype=bool), cond), dtype=bool
         )
 
-    if isinstance(a, DataFrame):
-        result = a.where(cond, b, axis=0)
-    elif isinstance(b, DataFrame):
-        result = b.where(~cond, a, axis=0)
-    elif isinstance(cond, DataFrame):
-        result = cond.where(cond, b, axis=0).where(~cond, a, axis=0)
-    elif isinstance(a, Series):
-        result = a.where(cond, b)
-    elif isinstance(b, Series):
-        result = b.where(~cond, a)
-    elif isinstance(cond, Series):
-        result = cond.where(cond, b).where(~cond, a)
-    elif isinstance(a, Index):
-        result = a.where(cond, b)
-    elif isinstance(b, Index):
-        result = b.where(~cond, a)
-    elif isinstance(cond, Index):
-        result = cond.where(cond, b).where(~cond, a)
-    else:
-        return np.where(cond, a, b)  # pyright: ignore[reportReturnType]
-
-    return result
+    for pandas_type in (DataFrame, Series, Index):
+        if isinstance(a, pandas_type):
+            return _where(cond, a, b)
+        if isinstance(b, pandas_type):
+            return _where(~cond, b, a)
+        if isinstance(cond, pandas_type):
+            return _where(~cond, _where(cond, cond, b), a)
+    return np.where(cond, a, b)  # pyright: ignore[reportReturnType]
 
 
 def null_like[P: PandasType](x: P, /) -> P:

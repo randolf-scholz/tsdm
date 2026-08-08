@@ -37,4 +37,38 @@ def test_where_propagates_nulls_from_selected_argument(
 
     result = where(operands["cond"], operands["a"], operands["b"])
     expected = np.where(cond_values & ~cond_missing, np.isnan(a_data), np.isnan(b_data))
-    np.testing.assert_array_equal(pd.isna(result), expected)
+    pd.testing.assert_frame_equal(
+        pd.DataFrame(pd.isna(result)),
+        pd.DataFrame(expected),
+    )
+
+
+def test_where_preserves_string_dataframe_metadata() -> None:
+    r"""Check that a boolean condition container need not store branch values."""
+    index = pd.Index(["first", "second"], name="row")
+    columns = pd.Index(["left", "right"], name="side")
+    cond = pd.DataFrame(
+        [[True, pd.NA], [False, True]], index=index, columns=columns, dtype="boolean"
+    )
+    a = pd.DataFrame(
+        [["a00", "a01"], ["a10", "a11"]],
+        index=index,
+        columns=columns,
+        dtype=pd.StringDtype(),
+    )
+    b = pd.DataFrame(
+        [["b00", "b01"], ["b10", "b11"]],
+        index=index,
+        columns=columns,
+        dtype=pd.StringDtype(),
+    )
+    expected = pd.DataFrame(
+        [["a00", "b01"], ["b10", "a11"]],
+        index=index,
+        columns=columns,
+        dtype=pd.StringDtype(),
+    )
+
+    result = where(cond, a, b)
+
+    pd.testing.assert_frame_equal(result, expected)
