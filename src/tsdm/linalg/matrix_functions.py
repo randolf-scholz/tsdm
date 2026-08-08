@@ -27,7 +27,7 @@ __all__ = [
 import torch
 from torch import Tensor
 
-from ._tensor_functions import geometric_mean, tensor_norm
+from .tensor_functions import geometric_mean, tensor_norm
 
 
 @torch.compile(fullgraph=True)
@@ -247,7 +247,7 @@ def spectral_abscissa(x: Tensor, /) -> Tensor:
 
 
 @torch.compile(fullgraph=True)
-def apply_keepdim(
+def _apply_keepdim(
     x: Tensor, /, *, dim: tuple[int, int], keepdim: bool = False
 ) -> Tensor:
     r"""Insert dimensions in the right places.
@@ -317,13 +317,13 @@ def logarithmic_norm(
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         λ = torch.linalg.eigvals(x)
         r = λ.real.amax(dim=-1)
-        return apply_keepdim(r, dim=dim, keepdim=keepdim)
+        return _apply_keepdim(r, dim=dim, keepdim=keepdim)
     if p == -2:
         x = closest_symmetric(x, dim=dim)
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         λ = torch.linalg.eigvals(x)
         r = λ.real.amin(dim=-1)
-        return apply_keepdim(r, dim=dim, keepdim=keepdim)
+        return _apply_keepdim(r, dim=dim, keepdim=keepdim)
 
     m = torch.eye(N, dtype=torch.bool, device=x.device)
     x = torch.where(m, x.real, x.abs())
@@ -391,18 +391,18 @@ def schatten_norm(
             result = geometric_mean(σ, axis=-1)
         else:
             result = m.sum(dim=-1)
-        return apply_keepdim(result, dim=dim, keepdim=keepdim)
+        return _apply_keepdim(result, dim=dim, keepdim=keepdim)
 
     if p == float("+inf"):
         σ = torch.where(m, σ, float("-inf"))
         maxvals = σ.amax(dim=-1)
         maxvals = torch.where(maxvals == float("-inf"), float("nan"), maxvals)
-        return apply_keepdim(maxvals, dim=dim, keepdim=keepdim)
+        return _apply_keepdim(maxvals, dim=dim, keepdim=keepdim)
     if p == float("-inf"):
         σ = torch.where(m, σ, float("+inf"))
         minvals = σ.amin(dim=-1)
         minvals = torch.where(minvals == float("+inf"), float("nan"), minvals)
-        return apply_keepdim(minvals, dim=dim, keepdim=keepdim)
+        return _apply_keepdim(minvals, dim=dim, keepdim=keepdim)
 
     σ = torch.where(m, σ, float("-inf"))
     σ_max = σ.amax(dim=-1)
@@ -414,7 +414,7 @@ def schatten_norm(
         if scaled
         else σ.pow(p).nansum(dim=-1).pow(1 / p)
     )
-    return apply_keepdim(result, dim=dim, keepdim=keepdim)
+    return _apply_keepdim(result, dim=dim, keepdim=keepdim)
 
 
 @torch.compile(fullgraph=True)
@@ -508,12 +508,12 @@ def operator_norm(
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         σ = torch.linalg.svdvals(x)
         r = σ.amax(dim=-1)
-        return c * apply_keepdim(r, dim=dim, keepdim=keepdim)
+        return c * _apply_keepdim(r, dim=dim, keepdim=keepdim)
     if p == -2:
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         σ = torch.linalg.svdvals(x)
         r = σ.amin(dim=-1)
-        return c * apply_keepdim(r, dim=dim, keepdim=keepdim)
+        return c * _apply_keepdim(r, dim=dim, keepdim=keepdim)
 
     x = x.abs()
     shift = int(coldim < rowdim) * int(keepdim)

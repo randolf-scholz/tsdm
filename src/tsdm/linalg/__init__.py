@@ -40,8 +40,9 @@ __all__ = [
     "unpack_sequence",
 ]
 
-from ._logical_operators import cumulative_and, cumulative_or, cumulative_xor
-from ._matrix_functions import (
+from .collate import collate_packed, collate_padded, unpack_sequence, unpad_sequence
+from .logical_operators import cumulative_and, cumulative_or, cumulative_xor
+from .matrix_functions import (
     closest_diagonal,
     closest_orthogonal,
     closest_skew,
@@ -63,7 +64,7 @@ from ._matrix_functions import (
     spectral_radius,
     stiffness_ratio,
 )
-from ._tensor_functions import (
+from .tensor_functions import (
     geometric_mean,
     grad_norm,
     multi_norm,
@@ -71,4 +72,3 @@ from ._tensor_functions import (
     scaled_norm,
     tensor_norm,
 )
-from .collate import collate_packed, collate_padded, unpack_sequence, unpad_sequence

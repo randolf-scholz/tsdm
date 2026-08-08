@@ -27,7 +27,7 @@ from torch.nn.utils.rnn import (
     pad_sequence,
 )
 
-from ._logical_operators import cumulative_and
+from .logical_operators import cumulative_and
 
 
 def collate_packed(batch: list[Tensor], /) -> PackedSequence:
