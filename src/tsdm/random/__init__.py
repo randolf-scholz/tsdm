@@ -4,12 +4,9 @@ __all__ = [
     # Sub-Packages
     "generators",
     "samplers",
-    "stats",
-    # Functions
-    "random_data",
-    "sample_timestamps",
-    "sample_timedeltas",
+    "regularity_tests",
+    "distributions",
 ]
 
-from . import generators, samplers, stats
-from ._random import random_data, sample_timedeltas, sample_timestamps
+
+from . import distributions, generators, regularity_tests, samplers

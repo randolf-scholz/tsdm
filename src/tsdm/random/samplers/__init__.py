@@ -6,6 +6,8 @@ Note:
 """
 
 __all__ = [
+    # submodules
+    "functional",
     # Constants
     "SAMPLERS",
     # ABC & Protocols
@@ -19,6 +21,8 @@ __all__ = [
     "compute_grid",
 ]
 
+
+from . import functional
 from .base import BaseSampler, RandomSampler, Sampler
 from .hierarchical_sampler import HierarchicalSampler
 from .sliding_window_sampler import SlidingWindowSampler, compute_grid
