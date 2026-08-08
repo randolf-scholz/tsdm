@@ -1,4 +1,4 @@
-r"""Infrastructure for sampling time series data."""
+r"""Infrastructure for sampling time slices from time series and time series collections."""
 
 __all__ = [
     # NamedTuples

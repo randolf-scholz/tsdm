@@ -30,7 +30,7 @@ from tsdm.random.samplers import (
 )
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS, kiwi_benchmark
-from tsdm.timeseries.sampling import TimeSeriesSampleGenerator
+from tsdm.timeseries.sample_generators import TimeSeriesSampleGenerator
 
 
 class KIWI_RUNS_GENERATOR(TimeSeriesSampleGenerator):
