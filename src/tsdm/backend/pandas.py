@@ -143,6 +143,8 @@ def where[
 ](cond: T | Any, a: T | Any, b: T | Any, /) -> T:
     r"""Analogue to `numpy.where` with null conditions treated as false.
 
+    At least one argument must be  a pandas type, the other two can be array-like.
+
     Nulls propagate from ``a`` where ``cond`` is true and from ``b`` otherwise.
     """
     mask = pd.isna(cond)
