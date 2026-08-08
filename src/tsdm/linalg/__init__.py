@@ -33,6 +33,11 @@ __all__ = [
     "norm",
     "scaled_norm",
     "tensor_norm",
+    # rnn
+    "collate_packed",
+    "collate_padded",
+    "unpad_sequence",
+    "unpack_sequence",
 ]
 
 from ._logical_operators import cumulative_and, cumulative_or, cumulative_xor
@@ -66,3 +71,4 @@ from ._tensor_functions import (
     scaled_norm,
     tensor_norm,
 )
+from .collate import collate_packed, collate_padded, unpack_sequence, unpad_sequence

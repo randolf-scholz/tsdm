@@ -38,7 +38,7 @@ from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.datatools import serialize
+from tsdm.datatools.serialize import deserialize_table, serialize_table
 from tsdm.pprint import repr_mapping
 from tsdm.testing.validation import (
     ErrorHandler,
@@ -345,8 +345,8 @@ class DatasetBase[Key: str, T](
     # endregion classmethods -----------------------------------------------------------
 
     # region serialization methods -----------------------------------------------------
-    serialize_table = staticmethod(serialize.serialize_table)
-    deserialize_table = staticmethod(serialize.deserialize_table)
+    serialize_table = staticmethod(serialize_table)
+    deserialize_table = staticmethod(deserialize_table)
 
     @classmethod
     def deserialize(cls, filepath: FilePath, /) -> Self:
