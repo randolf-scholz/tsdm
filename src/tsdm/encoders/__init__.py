@@ -239,7 +239,7 @@ ENCODERS: dict[str, type[BaseEncoder]] = {
     "CSVEncoder"                : CSVEncoder,
     "Choice"                    : Choice,
     "Compose"                   : Compose,
-    "DTypeConverter"            : FrameDTypeConverter,
+    "FrameDTypeConverter"       : FrameDTypeConverter,
     "DateTimeEncoder"           : DateTimeEncoder,
     "DeepcopyEncoder"           : DeepcopyEncoder,
     "Diagonal"                  : Diagonal,
