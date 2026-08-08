@@ -55,7 +55,3 @@ This file describes project conventions for automated agents contributing to `ts
 
 - Docstrings should align with the configured convention (Google style).
 - When behavior is subtle, document invariants and edge cases alongside the type signature.
-
-## running tests
-
-- export `PYTHONPATH=src` to run tests: `PYTHONPATH=src .venv/bin/python -m pytest <tests>`.
