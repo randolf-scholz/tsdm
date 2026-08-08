@@ -2,6 +2,8 @@ r"""The KIWI Benchmark Dataset."""
 
 __all__ = ["KiwiBenchmark"]
 
+import shutil
+from importlib import resources
 from typing import Literal
 from zipfile import ZipFile
 
@@ -23,12 +25,8 @@ class KiwiBenchmark(DatasetBase[Key, DataFrame]):
     DEFAULT_VERSION = "1.0"
     __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
-    SOURCE_URL = (
-        r"https://tubcloud.tu-berlin.de/s/3CyRJMSqj5feQo2/download?path=%2F&files="
-    )
-    INFO_URL = r"https://kiwi-biolab.de/"
-    HOME_URL = r"https://kiwi-biolab.de/"
-    GITHUB_URL = r"https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/kiwi-dataset"
+    INFO_URL = r"https://www.tu.berlin/bioprocess/einrichtungen-associates/arbeitsgruppen/kiwi-biolab"
+    HOME_URL = r"https://www.tu.berlin/bioprocess/einrichtungen-associates/arbeitsgruppen/kiwi-biolab"
 
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
@@ -38,7 +36,7 @@ class KiwiBenchmark(DatasetBase[Key, DataFrame]):
     ]
     rawdata_files = ["kiwi-benchmark.zip"]
     rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:4157b04b348900a20641296b3960a13db44e9098a78737bae2298a9963a217ce"
+        "kiwi-benchmark.zip": "sha256:f5af65bbf922aa21bb05b1e3adf68579dc53db8ccf12862fa2a575fbe6fc2652"
     }
 
     def clean_table(self, key: Key) -> None:
@@ -51,3 +49,11 @@ class KiwiBenchmark(DatasetBase[Key, DataFrame]):
             except KeyError as exc:
                 exc.add_note(f"Failed to extract table {key} from {path}")
                 raise
+
+    def download_file(self, fname: str, /) -> None:
+        r"""Copy the bundled dataset archive to the raw-data directory."""
+        self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
+        if __package__ is None:
+            raise ValueError(f"Unexpected package: {__package__=}")
+        with resources.path(__package__, fname) as path:
+            shutil.copy(path, self.rawdata_paths[fname])

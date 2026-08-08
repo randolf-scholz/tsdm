@@ -300,8 +300,8 @@ class DatasetBase[Key: str, T](
         cls, *, version: Optional[str] = None, force: bool = False
     ) -> None:
         r"""Recreate the rawdata directory."""
-        rawdata_dir = cls.RAWDATA_DIR / (version or "")
-
+        self = cls(initialize=False, version=version)
+        rawdata_dir = self.RAWDATA_DIR
         if not rawdata_dir.exists():
             raise FileNotFoundError(f"{rawdata_dir} does not exist!")
 
@@ -323,7 +323,8 @@ class DatasetBase[Key: str, T](
         cls, *, version: Optional[str] = None, force: bool = False
     ) -> None:
         r"""Recreate the dataset directory."""
-        dataset_dir = cls.DATASET_DIR / (version or "")
+        self = cls(initialize=False, version=version)
+        dataset_dir = self.DATASET_DIR
 
         if not dataset_dir.exists():
             raise FileNotFoundError(f"{dataset_dir} does not exist!")
