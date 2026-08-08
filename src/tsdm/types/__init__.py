@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 from . import aliases, callbacks, dataclass, namedtuple, utils
-from ._protocols import (
+from .protocols import (
     Orderable,
     SupportsBool,
     SupportsGetItem,

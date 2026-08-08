@@ -27,8 +27,8 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex
 
 from tsdm.pprint import pprint_repr
-from tsdm.types._protocols import SupportsGetItem, SupportsSlicing
 from tsdm.types.abc import Vec
+from tsdm.types.protocols import SupportsGetItem, SupportsSlicing
 
 type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
 r"""Type alias for a "tabular" dataset."""

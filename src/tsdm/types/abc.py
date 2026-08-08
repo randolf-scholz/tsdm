@@ -36,7 +36,7 @@ from typing import (
     runtime_checkable,
 )
 
-from ._protocols import SupportsKeysAndGetItem
+from .protocols import SupportsKeysAndGetItem
 
 
 @runtime_checkable
