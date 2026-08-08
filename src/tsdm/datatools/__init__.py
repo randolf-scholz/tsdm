@@ -30,16 +30,6 @@ __all__ = [
     "strip_whitespace",
 ]
 
-from ._datatools import (
-    InlineTable,
-    aggregate_nondestructive,
-    get_integer_cols,
-    is_integer_series,
-    make_dataframe,
-    remove_outliers,
-    select_outliers,
-    strip_whitespace,
-)
 from .collections import (
     Dataset,
     Indexable,
@@ -55,3 +45,12 @@ from .folds import (
     folds_from_groups,
     is_partition,
 )
+from .preprocessing import (
+    aggregate_nondestructive,
+    get_integer_cols,
+    is_integer_series,
+    remove_outliers,
+    select_outliers,
+    strip_whitespace,
+)
+from .serialize import InlineTable, make_dataframe
