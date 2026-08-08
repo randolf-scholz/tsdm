@@ -56,6 +56,11 @@ This file describes project conventions for automated agents contributing to `ts
 - Docstrings should align with the configured convention (Google style).
 - When behavior is subtle, document invariants and edge cases alongside the type signature.
 
+## Running tests, formatting, and linting
+
+- use `uv run <tool>` for all project-local Python commands, including `python`, `pytest`, `ruff`, `pyrefly`, and
+  `pyright`.
+
 ## Shell commands and approvals
 
 - Run read-only inspection commands separately rather than combining them with
