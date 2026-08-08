@@ -81,7 +81,6 @@ def encoder() -> FittableEncoder:
     return encoder
 
 
-@pytest.mark.slow
 def test_combined_encoder(encoder: Encoder) -> None:
     r"""Test complicated combined encoder.
 
@@ -124,9 +123,8 @@ def test_combined_encoder(encoder: Encoder) -> None:
     # check NaN-pattern and standardization
     xhat_train = DataFrame(train_encoded["X"], dtype="float32")
     assert xhat_train.shape == train_data.shape
-    assert (xhat_train.isna().to_numpy() == train_data.isna().to_numpy()).all(), (
-        "NaN pattern mismatch"
-    )
+    # NaN pattern should persist after encoding
+    assert (xhat_train.isna().to_numpy() == train_data.isna().to_numpy()).all()
     assert np.allclose(xhat_train.mean().dropna(), 0.0, atol=atol)
     assert np.allclose(xhat_train.std(ddof=0).dropna(), 1.0, atol=atol)
 
