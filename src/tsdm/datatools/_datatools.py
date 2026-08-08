@@ -44,19 +44,6 @@ class BoundaryInformation(TypedDict):
     upper_inclusive: bool | None
 
 
-class TableMetadata(BoundaryInformation):
-    r"""Table schema."""
-
-    name: str
-    dtype: str
-    unit: str | None
-    lower_bound: float | None
-    upper_bound: float | None
-    lower_inclusive: bool | None
-    upper_inclusive: bool | None
-    description: str | None
-
-
 class InlineTable[*Ts](TypedDict):
     r"""A table of data in a dictionary."""
 
@@ -429,16 +416,3 @@ def describe(
         },
         index=[s.name],
     )
-
-
-def aggregate_set[T](data: tuple[T, ...], /) -> T:
-    r"""Coerces multiple values if they are identical."""
-    try:
-        vals = set(data)
-    except TypeError as exc:
-        exc.add_note("Data not hashable, please provide an aggregate_fn.")
-        raise
-
-    if len(vals) != 1:
-        raise ValueError("Data not constant, please provide an aggregate_fn.")
-    return vals.pop()
