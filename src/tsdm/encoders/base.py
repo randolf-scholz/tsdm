@@ -89,6 +89,10 @@ __all__ = [
     "FittableEncoder",
     "ParametrizedEncoder",
     "StaticEncoder",
+    "SupportsDecode",
+    "SupportsEncode",
+    "SupportsFit",
+    "SupportSimplify",
     # classes
     "DeepcopyEncoder",
     "IdentityEncoder",
@@ -163,13 +167,39 @@ from tsdm.pprint import pprint_mapping, pprint_repr, pprint_sequence
 from tsdm.types.aliases import DictArg, FilePath
 from tsdm.types.utils import is_classvar
 
-from .protocols import (
-    Reduction,
-    SupportsDecode,
-    SupportsEncode,
-    SupportsFit,
-    SupportSimplify,
-)
+
+class Reduction[Xs: tuple, Y](Protocol):
+    r"""Protocol for objects that support reduction."""
+
+    def __call__(self, xs: Xs, /) -> Y: ...
+
+
+@runtime_checkable
+class SupportsEncode[X, Y](Protocol):
+    r"""Protocol for objects that support encoding."""
+
+    def encode(self, x: X, /) -> Y: ...
+
+
+@runtime_checkable
+class SupportsDecode[X, Y](Protocol):
+    r"""Protocol for objects that support decoding."""
+
+    def decode(self, y: Y, /) -> X: ...
+
+
+@runtime_checkable
+class SupportsFit[X](Protocol):
+    r"""Protocol for objects that support fitting."""
+
+    def fit(self, x: X, /) -> None: ...
+
+
+@runtime_checkable
+class SupportSimplify(Protocol):  # Encoder[X, Y]
+    r"""Protocol for objects that support simplification."""
+
+    def simplify(self) -> Any: ...
 
 
 @runtime_checkable
