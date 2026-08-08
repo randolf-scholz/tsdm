@@ -71,7 +71,7 @@ from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
+from tsdm.datasets import USHCN_DeBrouwer2019 as ushcn
 from tsdm.datatools import is_partition
 from tsdm.pprint import pprint_repr
 from tsdm.tasks._deprecated import OldBaseTask
@@ -208,7 +208,8 @@ class USHCN_DeBrouwer2019(OldBaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ts = USHCN_DeBrouwer2019_Dataset().table
+        ds = ushcn()
+        ts = ds.timeseries
 
         if self.normalize_time:
             ts = ts.reset_index()
