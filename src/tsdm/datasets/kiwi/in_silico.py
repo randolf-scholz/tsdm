@@ -83,7 +83,7 @@ class InSilico(DatasetBase[KEY, DataFrame]):
         }  # fmt: skip
         return make_dataframe(**TIMESERIES_METADATA)
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download the dataset."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
         if __package__ is None:

@@ -124,7 +124,7 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
 
         return ts.astype("float32")
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():
             raise RuntimeError(
                 "Please manually apply the preprocessing code found at"

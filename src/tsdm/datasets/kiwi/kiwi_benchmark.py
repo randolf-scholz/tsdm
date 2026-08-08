@@ -50,7 +50,7 @@ class KiwiBenchmark(DatasetBase[Key, DataFrame]):
                 exc.add_note(f"Failed to extract table {key} from {path}")
                 raise
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         r"""Copy the bundled dataset archive to the raw-data directory."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
         if __package__ is None:

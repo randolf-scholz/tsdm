@@ -584,7 +584,7 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
 
         return table.combine_chunks()  # <- reduces size and avoids some bugs
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""
         if tuple(map(int, self.__version__.split("."))) < (1, 4):  # noqa: RUF048
             raise ValueError(

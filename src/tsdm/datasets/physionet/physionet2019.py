@@ -521,7 +521,7 @@ class PhysioNet2019(DatasetBase[Key, DataFrame]):
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file."""
         # Map `training_setA.zip` -> `training_setA/`
         folder = Path(fname).with_suffix("").name + "/"

@@ -479,7 +479,7 @@ class DatasetBase[Key: str, T](
     # endregion dunder methods ---------------------------------------------------------
 
     # region download mechanism --------------------------------------------------------
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file.
 
         Override this method for custom download logic.
@@ -499,7 +499,7 @@ class DatasetBase[Key: str, T](
         self.LOGGER.debug("Downloading %s from %s", fname, url)
         remote.download(url, path)
 
-    def download(
+    def get_rawdata(
         self,
         *,
         key: Optional[str] = None,
@@ -518,7 +518,7 @@ class DatasetBase[Key: str, T](
                 )
             ):
                 pbar.set_description(f"Downloading file {name!r}")
-                self.download(key=name, force=force, validate=validate)
+                self.get_rawdata(key=name, force=force, validate=validate)
             return
 
         # Check if the file already exists.
@@ -528,7 +528,7 @@ class DatasetBase[Key: str, T](
 
         # Download the file.
         with timer() as t:
-            self.download_file(key)
+            self.get_rawdata_file(key)
         self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
 
         # Validate the file.
@@ -580,7 +580,7 @@ class DatasetBase[Key: str, T](
         # download raw data files if they don't exist
         if validate_rawdata and not self.rawdata_files_exist():
             self.LOGGER.debug("Raw files missing, fetching them now!")
-            self.download(force=force, validate=validate)
+            self.get_rawdata(force=force, validate=validate)
 
         # validate the raw data files
         if (

@@ -114,7 +114,7 @@ class MIMIC_IV_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
         # NOTE: only numpy float types supported by torch
         return ts.astype("float32")
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():
             raise RuntimeError(
                 "Please manually apply the preprocessing code found at"

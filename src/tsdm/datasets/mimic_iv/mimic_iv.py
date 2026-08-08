@@ -847,7 +847,7 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
 
         return table.combine_chunks()  # <- reduces size and avoids some bugs
 
-    def download_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, fname: str, /) -> None:
         if self.version_info in {(1, 0), (2, 1), (2, 2)}:
             # direct zip available
             remote.download(
