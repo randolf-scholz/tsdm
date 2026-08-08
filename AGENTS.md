@@ -26,8 +26,8 @@ This file describes project conventions for automated agents contributing to `ts
   - Use `collections.abc` members instead of `typing` equivalents (`Iterable`, `Sequence`, `Mapping`, etc.)
   - Use builtin generics: `list[int]`, `dict[str, int]`, etc. instead of `List[int]`, `Dict[...]`, etc.
   - Use `T | U` instead of `Union[T, U]` (exceptions apply to `Optional[T]`)
-- Use `Optional[T]` for optional keyword parameters that can be `None`, and for return types that may be `None`.
-  In other cases, use `T | None`.
+- Use `Optional[T]` for optional keyword parameters that can be `None`, and for return types that may be `None`. In
+  other cases, use `T | None`.
 - Prefer loose types for function parameters:
   - If a function argument expects a list-like input, prefer `Sequence[T]` over `list[T]`.
   - If a function argument expects a dict-like input, prefer `Mapping[K, V]` over `dict[K, V]`.
@@ -36,8 +36,8 @@ This file describes project conventions for automated agents contributing to `ts
 - Prefer precise types for return values:
   - If a function returns a list, use `list[T]` instead of `Sequence[T]`.
   - Avoid returning `Union` type, except for `Optional[T]` and `@overload` implementations.
-  - Abstract base classes should return general types (e.g., `Sequence[T]`),
-    while concrete implementations should return specific types (e.g., `list[T]`).
+  - Abstract base classes should return general types (e.g., `Sequence[T]`), while concrete implementations should
+    return specific types (e.g., `list[T]`).
 
 ## Function signatures
 
@@ -55,3 +55,7 @@ This file describes project conventions for automated agents contributing to `ts
 
 - Docstrings should align with the configured convention (Google style).
 - When behavior is subtle, document invariants and edge cases alongside the type signature.
+
+## running tests
+
+- export `PYTHONPATH=src` to run tests: `PYTHONPATH=src .venv/bin/python -m pytest <tests>`.
