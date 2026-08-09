@@ -72,7 +72,11 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
 
     def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
-        ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
+        ts = pd.read_csv(
+            self.rawdata_paths["complete_tensor.csv"],
+            index_col=0,
+            dtype_backend="pyarrow",
+        )
 
         # Check shape.
         if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
@@ -89,18 +93,18 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
             .reset_index(drop=True)
             .set_index(["UNIQUE_ID", "TIME_STAMP"])
             .pivot(columns="LABEL_CODE", values="VALUENUM")
-            .astype("float32")
+            .astype("float32[pyarrow]")
             .sort_index()
             .sort_index(axis=1)
         )
-        ts.columns = ts.columns.astype("string")
+        ts.columns = ts.columns.astype("string[pyarrow]")
 
         # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
         #  over the full data slice, including test!
         # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
         ts = (ts - ts.mean()) / ts.std()
 
-        return ts.astype("float32")
+        return ts
 
     def get_rawdata_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():

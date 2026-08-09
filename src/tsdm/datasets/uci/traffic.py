@@ -89,12 +89,6 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
             "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
         )
     }
-    dataset_hashes = {  # pyright: ignore[reportAssignmentType]
-        "timeseries" : "sha256:acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62",
-        "labels"     : "sha256:c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf",
-        "randperm"   : "sha256:4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
-        "invperm"    : "sha256:2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
-    }  # fmt: skip
 
     timeseries: DataFrame
     labels: DataFrame
@@ -253,7 +247,10 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 content = file.read().decode("utf8")
                 content = replace(content, {"[": "", "]": "", " ": "\n"})
                 stations = pd.read_csv(
-                    StringIO(content), names=["station"], dtype="category"
+                    StringIO(content),
+                    names=["station"],
+                    dtype="category",
+                    dtype_backend="pyarrow",
                 ).pop("station")
 
             with archive.open("PEMS_train") as file:
@@ -262,7 +259,11 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                     content = line.decode("utf8")
                     content = replace(content, {"[": "", "]": "", ";": "\n", " ": ","})
                     df = (
-                        pd.read_csv(StringIO(content), header=None)
+                        pd.read_csv(
+                            StringIO(content),
+                            header=None,
+                            dtype_backend="pyarrow",
+                        )
                         .set_axis(stations, axis="index")
                         .set_axis(time, axis="columns")
                     )
@@ -275,7 +276,11 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                     content = line.decode("utf8")
                     content = replace(content, {"[": "", "]": "", ";": "\n", " ": ","})
                     df = (
-                        pd.read_csv(StringIO(content), header=None)
+                        pd.read_csv(
+                            StringIO(content),
+                            header=None,
+                            dtype_backend="pyarrow",
+                        )
                         .set_axis(stations, axis="index")
                         .set_axis(time, axis="columns")
                     )
@@ -288,9 +293,9 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
             ts.assign(time=ts["day"] + ts["time"])
             .drop(columns="day")
             .set_index("time")
-            .astype("float32")
+            .astype("float32[pyarrow]")
         )
-        ts.columns = ts.columns.astype("string")
+        ts.columns = ts.columns.astype("string[pyarrow]")
         return ts
 
     def clean_labels(self) -> DataFrame:
@@ -306,7 +311,10 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 content = file.read().decode("utf8")
                 content = replace(content, {"[": "", "]": "\n", " ": "\n"})
                 trainlabels = pd.read_csv(
-                    StringIO(content), names=["label"], dtype="uint8"
+                    StringIO(content),
+                    names=["label"],
+                    dtype="uint8[pyarrow]",
+                    dtype_backend="pyarrow",
                 ).pop("label")
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
@@ -320,7 +328,10 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
                 content = file.read().decode("utf8")
                 content = replace(content, {"[": "", "]": "", " ": "\n"})
                 testlabels = pd.read_csv(
-                    StringIO(content), names=["label"], dtype="uint8"
+                    StringIO(content),
+                    names=["label"],
+                    dtype="uint8[pyarrow]",
+                    dtype_backend="pyarrow",
                 ).pop("label")
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
@@ -354,7 +365,8 @@ class Traffic(DatasetBase[Traffic_Keys, DataFrame]):
             randperm = pd.read_csv(
                 StringIO(content),
                 names=["randperm"],
-                dtype="uint16",
+                dtype="uint16[pyarrow]",
+                dtype_backend="pyarrow",
             ).pop("randperm")
             randperm = randperm - 1  # we use 0-based indexing
             invperm = randperm.copy().argsort()

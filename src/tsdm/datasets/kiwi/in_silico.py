@@ -43,7 +43,13 @@ class InSilico(DatasetBase[KEY, DataFrame]):
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
                 with files.open(fname) as file:
-                    df = pd.read_csv(file, index_col=0, parse_dates=[0], dayfirst=True)
+                    df = pd.read_csv(
+                        file,
+                        index_col=0,
+                        parse_dates=[0],
+                        dayfirst=True,
+                        dtype_backend="pyarrow",
+                    )
                     dfs[key] = df.rename_axis(index="time")
 
         # Set index, dtype and sort.

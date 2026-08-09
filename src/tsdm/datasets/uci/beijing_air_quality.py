@@ -187,13 +187,14 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
             stations = []
             for csv_file in compressed_archive.namelist():
                 if not csv_file.endswith(".csv"):
-                    self.LOGGER.warning("Skipping '%s': is not a csv-file!", csv_file)
+                    self.LOGGER.warning("\nSkipping '%s': is not a csv-file!", csv_file)
                     continue
 
                 with compressed_archive.open(csv_file) as compressed_file:
                     df = pd.read_csv(
                         compressed_file,
                         dtype=rawdata_schema,
+                        dtype_backend="pyarrow",
                         index_col=0,
                     )
                     df.columns = df.columns.astype("string[pyarrow]")

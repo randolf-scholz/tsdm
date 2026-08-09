@@ -37,18 +37,18 @@ class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], DataFrame]):
     }
     rawdata_schemas = {
         "small_chunked_sporadic.csv": {
-            "ID": "int16",
-            "Time": "float32",
-            "Value_0": "float32",
-            "Value_1": "float32",
-            "Value_2": "float32",
-            "Value_3": "float32",
-            "Value_4": "float32",
-            "Mask_0": "bool",
-            "Mask_1": "bool",
-            "Mask_2": "bool",
-            "Mask_3": "bool",
-            "Mask_4": "bool",
+            "ID": "int16[pyarrow]",
+            "Time": "float32[pyarrow]",
+            "Value_0": "float32[pyarrow]",
+            "Value_1": "float32[pyarrow]",
+            "Value_2": "float32[pyarrow]",
+            "Value_3": "float32[pyarrow]",
+            "Value_4": "float32[pyarrow]",
+            "Mask_0": "bool[pyarrow]",
+            "Mask_1": "bool[pyarrow]",
+            "Mask_2": "bool[pyarrow]",
+            "Mask_3": "bool[pyarrow]",
+            "Mask_4": "bool[pyarrow]",
         }
     }
     table_shapes = {"timeseries": (350665, 5)}
@@ -57,7 +57,11 @@ class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], DataFrame]):
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
         fname = "small_chunked_sporadic.csv"
         file = self.rawdata_paths[fname]
-        df = pd.read_csv(file, dtype=self.rawdata_schemas[fname])
+        df = pd.read_csv(
+            file,
+            dtype=self.rawdata_schemas[fname],
+            dtype_backend="pyarrow",
+        )
 
         # replace missing values with NaN, using the mask
         channels = {}

@@ -5,6 +5,7 @@ r"""Electricity Transformer Dataset (ETDataset).
 
 __all__ = ["ETT", "ETTh1"]
 
+from collections import defaultdict
 from typing import Literal
 
 from pandas import DataFrame, read_csv
@@ -54,6 +55,18 @@ class ETT(DatasetBase[ETT_Key, DataFrame]):
         "ETTm1.csv": "sha256:6ce1759b1a18e3328421d5d75fadcb316c449fcd7cec32820c8dafda71986c9e",
         "ETTm2.csv": "sha256:db973ca252c6410a30d0469b13d696cf919648d0f3fd588c60f03fdbdbadd1fd",
     }
+    rawdata_schemas = defaultdict(
+        lambda: {
+            "date": "timestamp[ms][pyarrow]",
+            "HUFL": "float32[pyarrow]",
+            "HULL": "float32[pyarrow]",
+            "MUFL": "float32[pyarrow]",
+            "MULL": "float32[pyarrow]",
+            "LUFL": "float32[pyarrow]",
+            "LULL": "float32[pyarrow]",
+            "OT": "float32[pyarrow]",
+        }
+    )
     dataset_hashes = {  # pyright: ignore[reportAssignmentType]
         "ETTh1": "sha256:b56abe3a5a0ac54428be73a37249d549440a7512fce182adcafba9ee43a03694",
         "ETTh2": "sha256:0607d0f59341e87f2ab0f520fb885ad6983aa5b17b058fc802ebd87c51f75387",
@@ -70,9 +83,8 @@ class ETT(DatasetBase[ETT_Key, DataFrame]):
     def clean_table(self, key: ETT_Key) -> DataFrame:
         df = read_csv(
             self.rawdata_paths[f"{key}.csv"],
-            parse_dates=[0],
             index_col=0,
-            dtype="float32",
+            dtype=self.rawdata_schemas[f"{key}.csv"],
             dtype_backend="pyarrow",
         )
         df.columns = df.columns.astype("string")
@@ -123,7 +135,7 @@ class ETTh1(DatasetBase[Literal["timeseries"], DataFrame]):
             self.rawdata_paths["ETTh1.csv"],
             parse_dates=[0],
             index_col=0,
-            dtype="float32",
+            dtype="float32[pyarrow]",
             dtype_backend="pyarrow",
         )
         df.columns = df.columns.astype("string")

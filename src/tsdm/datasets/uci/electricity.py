@@ -121,6 +121,7 @@ class Electricity(DatasetBase[Literal["timeseries"], DataFrame]):
                 decimal=",",
                 parse_dates=[0],
                 index_col=0,
+                dtype_backend="pyarrow",
                 date_format="%Y-%m-%d %H:%M:%S",  # e.g. "2011-01-01 00:15:00"
             )
 
