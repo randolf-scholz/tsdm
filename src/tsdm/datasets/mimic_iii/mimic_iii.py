@@ -45,8 +45,7 @@ from typing import Literal, get_args
 from zipfile import ZipFile
 
 import pyarrow as pa
-from pandas import DataFrame
-from pyarrow import Table, csv
+from pyarrow import csv
 
 from tsdm.backend.pyarrow import cast_columns, filter_nulls, set_nulls
 from tsdm.datasets.base import DatasetBase
@@ -506,7 +505,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
 # endregion schema ---------------------------------------------------------------------
 
 
-class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
+class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pa.Table]):
     r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -561,7 +560,7 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
             for key in self.table_names
         }
 
-    def clean_table(self, key: MIMIC_III_Key) -> Table:
+    def clean_table(self, key: MIMIC_III_Key) -> pa.Table:
         # Read the table
         with (
             ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
@@ -608,8 +607,8 @@ class MIMIC_III(MIMIC_III_RAW):
 
     # RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
 
-    def clean_table(self, key: MIMIC_III_Key) -> Table:
-        table: Table = super().clean_table(key)
+    def clean_table(self, key: MIMIC_III_Key) -> pa.Table:
+        table: pa.Table = super().clean_table(key)
 
         # Post-processing
         match key:

@@ -88,7 +88,6 @@ import pandas as pd
 import polars as pl
 import pyarrow as pa
 import pyarrow.compute as pc
-from pandas import DataFrame
 from pyarrow import csv
 from tqdm.auto import tqdm
 
@@ -1012,7 +1011,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                         else [col]
                     )
                     dtype = "float[pyarrow]" if col != "eGFR" else "string[pyarrow]"
-                    frame = DataFrame(
+                    frame = pd.DataFrame(
                         s.to_list(), columns=columns, index=s.index, dtype=dtype
                     )
                     df[columns] = frame
