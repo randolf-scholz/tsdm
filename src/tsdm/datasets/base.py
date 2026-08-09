@@ -87,7 +87,8 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
     def table_names(self) -> Collection[KeyT]:
         r"""READ-ONLY: The names of the tables that make up the dataset."""
 
-    def deserialize(self, filepath: FilePath, /) -> Self: ...
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self: ...
     def serialize(self, filepath: FilePath, /) -> None: ...
 
     def __len__(self) -> int: ...
@@ -347,16 +348,17 @@ class DatasetBase[Key: str, T](
     serialize_table: Callable[[T, Any], None] = staticmethod(serialize_table)
     deserialize_table: Callable[[Any], T] = staticmethod(deserialize_table)
 
-    def deserialize(self, filepath: FilePath, /) -> Self:
+    @classmethod
+    def deserialize(cls, filepath: FilePath, /) -> Self:
         r"""Deserialize the dataset."""
         tables: dict[Key, T] = {}
         with ZipFile(filepath) as archive:
             for fname in archive.namelist():
                 with archive.open(fname) as file:
                     name = cast("Key", Path(fname).stem)
-                    tables[name] = self.deserialize_table(file)
+                    tables[name] = cls.deserialize_table(file)
 
-        return self.from_tables(tables)
+        return cls.from_tables(tables)
 
     def serialize(self, filepath: FilePath, /) -> None:
         r"""Serialize the dataset."""

@@ -92,9 +92,6 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
         "timeseries_metadata": (9, 7),
     }
 
-    serialize_table = staticmethod(pl.DataFrame.write_parquet)
-    deserialize_table = staticmethod(pl.read_parquet)
-
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Create the timeseries table as a Polars DataFrame."""
         rawdata_schema = self.rawdata_schemas["timeseries"]
