@@ -352,7 +352,20 @@ def in_silico() -> TimeSeriesCollection[int, DataFrame]:
 
 def kiwi_benchmark() -> TimeSeriesCollection[tuple[int, int], DataFrame]:
     r"""The KIWI dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.KiwiBenchmark)
+    ds = datasets.KiwiBenchmark(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(
+            ["run_id", "experiment_id", "elapsed_time"]
+        ),
+        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("name"),
+        static_covariates=ds.static_covariates.to_pandas().set_index(
+            ["run_id", "experiment_id"]
+        ),
+        static_covariates_metadata=ds.static_covariates_metadata.to_pandas().set_index(
+            "name"
+        ),
+    )
 
 
 def ushcn() -> TimeSeriesCollection[int, DataFrame]:
