@@ -1,6 +1,11 @@
 r"""In silico experiments."""
 
-__all__ = ["InSilico"]
+__all__ = [
+    "TIMESERIES_METADATA",
+    "TIMESERIES_METADATA_SCHEMA",
+    "TIMESERIES_SCHEMA",
+    "InSilico",
+]
 
 import shutil
 from importlib import resources
@@ -10,31 +15,42 @@ from zipfile import ZipFile
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import InlineTable, remove_outliers
+from tsdm.datatools import remove_outliers
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
 _TIMESERIES_VALUE_SCHEMA = {}
-TIMESERIES_METADATA: InlineTable = {
-    "data": [
-        ("Biomass"  , 0, None, True, True, "g/L", None),
-        ("Substrate", 0, None, True, True, "g/L", None),
-        ("Acetate"  , 0, None, True, True, "g/L", None),
-        ("DOTm"     , 0, 100,  True, True, "%",   None),
-        ("Product"  , 0, None, True, True, "g/L", None),
-        ("Volume"   , 0, None, True, True, "L",   None),
-        ("Feed"     , 0, None, True, True, "μL",  None),
-    ],
-    "schema": {
-        "variable"       : pl.String,
-        "lower_bound"    : pl.Float32,
-        "upper_bound"    : pl.Float32,
-        "lower_inclusive": pl.Boolean,
-        "upper_inclusive": pl.Boolean,
-        "unit"           : pl.String,
-        "description"    : pl.String,
-    },
+
+
+TIMESERIES_SCHEMA = {
+    "run_id"    : pl.UInt16,
+    "time"      : pl.Datetime(time_unit="us"),
+    "Biomass"   : pl.Float32,
+    "Substrate" : pl.Float32,
+    "Acetate"   : pl.Float32,
+    "DOTm"      : pl.Float32,
+    "Product"   : pl.Float32,
+    "Volume"    : pl.Float32,
+    "Feed"      : pl.Float32,
 }  # fmt: skip
+TIMESERIES_METADATA_SCHEMA = {
+    "variable"       : pl.String,
+    "lower_bound"    : pl.Float32,
+    "upper_bound"    : pl.Float32,
+    "lower_inclusive": pl.Boolean,
+    "upper_inclusive": pl.Boolean,
+    "unit"           : pl.String,
+    "description"    : pl.String,
+}  # fmt: skip
+TIMESERIES_METADATA = [
+    ("Biomass", 0, None, True, True, "g/L", None),
+    ("Substrate", 0, None, True, True, "g/L", None),
+    ("Acetate", 0, None, True, True, "g/L", None),
+    ("DOTm", 0, 100, True, True, "%", None),
+    ("Product", 0, None, True, True, "g/L", None),
+    ("Volume", 0, None, True, True, "L", None),
+    ("Feed", 0, None, True, True, "μL", None),
+]
 
 
 class InSilico(DatasetBase[KEY, pl.DataFrame]):
@@ -69,18 +85,8 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
         }
     }  # fmt: skip
     table_schemas = {
-        "timeseries": {
-            "run_id"    : pl.UInt16,
-            "time"      : pl.Datetime(time_unit="us"),
-            "Biomass"   : pl.Float32,
-            "Substrate" : pl.Float32,
-            "Acetate"   : pl.Float32,
-            "DOTm"      : pl.Float32,
-            "Product"   : pl.Float32,
-            "Volume"    : pl.Float32,
-            "Feed"      : pl.Float32,
-        },
-        "timeseries_metadata": TIMESERIES_METADATA["schema"],
+        "timeseries": TIMESERIES_SCHEMA,
+        "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
     }  # fmt: skip
     table_shapes = {
         "timeseries": (5206, 9),
@@ -116,8 +122,8 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
     def clean_timeseries_metadata() -> pl.DataFrame:
         r"""Create metadata for the timeseries."""
         return pl.DataFrame(
-            TIMESERIES_METADATA["data"],
-            schema=TIMESERIES_METADATA["schema"],
+            TIMESERIES_METADATA,
+            schema=TIMESERIES_METADATA_SCHEMA,
             orient="row",
         )
 
