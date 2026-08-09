@@ -3,7 +3,7 @@ import polars as pl
 from tsdm.datasets import ETT
 
 
-def test_ett():
+def test_ett_preprocessing() -> None:
     ETT.reset_dataset_files(force=True)
     ds = ETT()
 

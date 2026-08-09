@@ -2,10 +2,21 @@ r"""Testing of In Silico dataset, as a token for the whole BaseDataset architect
 
 import logging
 
+import polars as pl
+
 from tsdm.datasets import Dataset, DatasetBase, InSilico
 from tsdm.utils import timer
 
 __logger__ = logging.getLogger(__name__)
+
+
+def test_insilico_preprocessing() -> None:
+    InSilico.reset_dataset_files(force=True)
+    ds = InSilico()
+
+    for key in InSilico.table_names:
+        assert isinstance(ds[key], pl.DataFrame)
+        assert dict(ds[key].schema) == InSilico.table_schemas[key]
 
 
 def test_caching() -> None:
