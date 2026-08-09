@@ -406,9 +406,24 @@ def physionet2012() -> TimeSeriesCollection[int, DataFrame]:
     )
 
 
-def physionet2019() -> TimeSeriesCollection[str, DataFrame]:
+def physionet2019() -> TimeSeriesCollection[int, DataFrame]:
     r"""The PhysioNet2019 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.PhysioNet2019)
+    ds = datasets.PhysioNet2019(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["patient", "time"]),
+        timeseries_metadata=(
+            ds.timeseries_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index=["patient", "time"])
+        ),
+        static_covariates=ds.static_covariates.to_pandas().set_index("patient"),
+        static_covariates_metadata=(
+            ds.static_covariates_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index="patient")
+        ),
+    )
 
 
 def mimic_iii_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
