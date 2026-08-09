@@ -365,13 +365,18 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
     ) -> pl.DataFrame:
         r"""Read a single patient file from the archive."""
         with archive.open(compressed_file) as file:
-            return pl.read_csv(
-                file,
-                separator="|",
-                schema=self.rawdata_schema,
-            ).with_columns(
-                pl.col(column).cast(pl.Boolean).alias(column)
-                for column in ("Gender", "Unit1", "Unit2", "SepsisLabel")
+            return (
+                pl.read_csv(
+                    file,
+                    separator="|",
+                    schema=self.rawdata_schema,
+                    null_values={"Unit1": "NaN", "Unit2": "NaN"},
+                )
+                .fill_nan(None)
+                .with_columns(
+                    pl.col(column).cast(pl.Boolean).alias(column)
+                    for column in ("Gender", "Unit1", "Unit2", "SepsisLabel")
+                )
             )
 
     def _get_frame(self, fname: str, /) -> pl.DataFrame:

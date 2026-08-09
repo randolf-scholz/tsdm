@@ -1,10 +1,12 @@
 r"""Test PhysioNet 2019."""
 
 import polars as pl
+import pytest
 
 from tsdm.datasets import PhysioNet2019
 
 
+@pytest.mark.manual
 def test_physionet_2019_preprocessing() -> None:
     PhysioNet2019.reset_dataset_files(force=True)
     ds = PhysioNet2019()

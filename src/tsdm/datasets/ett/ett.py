@@ -80,7 +80,7 @@ class ETT(DatasetBase[ETT_Key, pl.DataFrame]):
         return pl.read_csv(
             self.rawdata_paths[f"{key}.csv"],
             schema=self.rawdata_schemas[f"{key}.csv"],
-        )
+        ).fill_nan(None)
 
     def load_table(self, key: ETT_Key, /) -> pl.DataFrame:
         r"""Load a cleaned ETT table as a Polars DataFrame."""

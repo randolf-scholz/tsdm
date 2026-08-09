@@ -211,7 +211,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
                             compressed_file,
                             schema=rawdata_schema,
                             null_values="NA",
-                        )
+                        ).fill_nan(None)
                     )
 
         self.LOGGER.info("Merging Tables.")

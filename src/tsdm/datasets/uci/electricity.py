@@ -131,7 +131,7 @@ class Electricity(DatasetBase[Literal["timeseries"], pl.DataFrame]):
                 separator=";",
                 decimal_comma=True,
                 schema=rawdata_schema,
-            )
+            ).fill_nan(None)
 
         return ts
 

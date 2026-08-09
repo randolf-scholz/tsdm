@@ -17,7 +17,7 @@ import shutil
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -87,8 +87,7 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
     def table_names(self) -> Collection[KeyT]:
         r"""READ-ONLY: The names of the tables that make up the dataset."""
 
-    @classmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self: ...
+    def deserialize(self, filepath: FilePath, /) -> Self: ...
     def serialize(self, filepath: FilePath, /) -> None: ...
 
     def __len__(self) -> int: ...
@@ -345,21 +344,19 @@ class DatasetBase[Key: str, T](
     # endregion classmethods -----------------------------------------------------------
 
     # region serialization methods -----------------------------------------------------
-    serialize_table = staticmethod(serialize_table)
-    deserialize_table = staticmethod(deserialize_table)
+    serialize_table: Callable[[T, Any], None] = staticmethod(serialize_table)
+    deserialize_table: Callable[[Any], T] = staticmethod(deserialize_table)
 
-    @classmethod
-    def deserialize(cls, filepath: FilePath, /) -> Self:
+    def deserialize(self, filepath: FilePath, /) -> Self:
         r"""Deserialize the dataset."""
         tables: dict[Key, T] = {}
         with ZipFile(filepath) as archive:
             for fname in archive.namelist():
                 with archive.open(fname) as file:
                     name = cast("Key", Path(fname).stem)
-                    extension = Path(fname).suffix[1:]
-                    tables[name] = cls.deserialize_table(file, loader=extension)
+                    tables[name] = self.deserialize_table(file)
 
-        return cls.from_tables(tables)
+        return self.from_tables(tables)
 
     def serialize(self, filepath: FilePath, /) -> None:
         r"""Serialize the dataset."""
@@ -369,9 +366,8 @@ class DatasetBase[Key: str, T](
         with ZipFile(path, "w") as archive:
             extension = self.DEFAULT_FILE_FORMAT
             for name, table in self.items():
-                fname = f"{name}.{extension}"
-                with archive.open(fname, "w") as file:
-                    self.serialize_table(table, file, writer=extension)
+                with archive.open(f"{name}.{extension}", "w") as file:
+                    self.serialize_table(table, file)
 
     # endregion serialization methods --------------------------------------------------
 
