@@ -225,12 +225,12 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         ds = MIMIC_IV_Dataset()
 
         # we additionally min-max scale time axis
-        ts = ds.table
-        self.preprocessor = FrameEncoder(time_stamp=MinMaxScaler())
+        ts = ds.timeseries
+        self.preprocessor = FrameEncoder({"time_stamp": MinMaxScaler()})
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor["time_stamp"]
-        self.observation_time /= index_encoder.params.xmax  # type: ignore
+        self.observation_time /= index_encoder.params["xmax"]  # type: ignore
 
         return ts.astype("float32")
 
