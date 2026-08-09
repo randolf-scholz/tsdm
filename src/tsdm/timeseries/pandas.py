@@ -335,8 +335,8 @@ def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
     ds = datasets.BeijingAirQuality(initialize=False)
     return PandasTSC(
         ds.name,
-        timeseries=ds.timeseries,
-        timeseries_metadata=ds.timeseries_metadata,
+        timeseries=ds.timeseries.to_pandas().set_index(["station", "time"]),
+        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
     )
 
 

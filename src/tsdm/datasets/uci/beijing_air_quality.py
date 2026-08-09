@@ -76,36 +76,42 @@ __all__ = [
 from typing import Literal
 from zipfile import ZipFile
 
-import pandas as pd
-from pandas import DataFrame
+import polars as pl
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datasets.schemas import DEFAULT_METADATA_SCHEMA
-from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
+from tsdm.datatools import InlineTable, remove_outliers
 
 TIMESERIES_METADATA: InlineTable = {
     "data": [
-        ("PM2.5", "float32[pyarrow]",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
-        ("PM10" , "float32[pyarrow]",    0, None, True, True, "μg/m³", "PM10 concentration" ),
-        ("SO2"  , "float32[pyarrow]",    0, None, True, True, "μg/m³", "SO2 concentration"  ),
-        ("NO2"  , "float32[pyarrow]",    0, None, True, True, "μg/m³", "NO2 concentration"  ),
-        ("CO"   , "float32[pyarrow]",    0, None, True, True, "μg/m³", "CO concentration"   ),
-        ("O3"   , "float32[pyarrow]",    0, None, True, True, "μg/m³", "O3 concentration"   ),
-        ("TEMP" , "float32[pyarrow]", None, None, True, True, "℃"    , "temperature"        ),
-        ("PRES" , "float32[pyarrow]",    0, None, True, True, "hPa"  , "pressure"           ),
-        ("DEWP" , "float32[pyarrow]", None, None, True, True, "℃"    , "dew point"          ),
-        ("RAIN" , "float32[pyarrow]",    0, None, True, True, "mm"   , "precipitation"      ),
-        ("wd"   , "category"        , None, None, True, True, None   , "wind direction"     ),
-        ("WSPM" , "float32[pyarrow]",    0, None, True, True, "m/s"  , "wind speed"         ),
+        ("PM2.5", "Float32"    ,    0, None, True, True, "μg/m³", "PM2.5 concentration"),
+        ("PM10" , "Float32"    ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
+        ("SO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
+        ("NO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "NO2 concentration"  ),
+        ("CO"   , "Float32"    ,    0, None, True, True, "μg/m³", "CO concentration"   ),
+        ("O3"   , "Float32"    ,    0, None, True, True, "μg/m³", "O3 concentration"   ),
+        ("TEMP" , "Float32"    , None, None, True, True, "℃"    , "temperature"        ),
+        ("PRES" , "Float32"    ,    0, None, True, True, "hPa"  , "pressure"           ),
+        ("DEWP" , "Float32"    , None, None, True, True, "℃"    , "dew point"          ),
+        ("RAIN" , "Float32"    ,    0, None, True, True, "mm"   , "precipitation"      ),
+        ("wd"   , "Categorical", None, None, True, True, None   , "wind direction"     ),
+        ("WSPM" , "Float32"    ,    0, None, True, True, "m/s"  , "wind speed"         ),
     ],
-    "schema": DEFAULT_METADATA_SCHEMA,
-    "index": ["variable"],
+    "schema": {
+        "variable"        : pl.String,
+        "dtype"           : pl.String,
+        "lower_bound"     : pl.Float64,
+        "upper_bound"     : pl.Float64,
+        "lower_inclusive" : pl.Boolean,
+        "upper_inclusive" : pl.Boolean,
+        "unit"            : pl.String,
+        "description"     : pl.String,
+    },
 }  # fmt: skip
 
 type Key = Literal["timeseries", "timeseries_metadata"]
 
 
-class BeijingAirQuality(DatasetBase[Key, DataFrame]):
+class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -134,46 +140,48 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
     }  # fmt: skip
     rawdata_schemas = {
         "timeseries": {
-            "No"      : "uint16[pyarrow]",
-            "year"    : "uint16[pyarrow]",
-            "month"   : "uint8[pyarrow]",
-            "day"     : "uint8[pyarrow]",
-            "hour"    : "uint8[pyarrow]",
-            "PM2.5"   : "float32[pyarrow]",
-            "PM10"    : "float32[pyarrow]",
-            "SO2"     : "float32[pyarrow]",
-            "NO2"     : "float32[pyarrow]",
-            "CO"      : "float32[pyarrow]",
-            "O3"      : "float32[pyarrow]",
-            "TEMP"    : "float32[pyarrow]",
-            "PRES"    : "float32[pyarrow]",
-            "DEWP"    : "float32[pyarrow]",
-            "RAIN"    : "float32[pyarrow]",
-            "wd"      : "string[pyarrow]",
-            "station" : "string[pyarrow]",
-            "WSPM"    : "float32[pyarrow]",
+            "No"      : pl.UInt16,
+            "year"    : pl.UInt16,
+            "month"   : pl.UInt8,
+            "day"     : pl.UInt8,
+            "hour"    : pl.UInt8,
+            "PM2.5"   : pl.Float32,
+            "PM10"    : pl.Float32,
+            "SO2"     : pl.Float32,
+            "NO2"     : pl.Float32,
+            "CO"      : pl.Float32,
+            "O3"      : pl.Float32,
+            "TEMP"    : pl.Float32,
+            "PRES"    : pl.Float32,
+            "DEWP"    : pl.Float32,
+            "RAIN"    : pl.Float32,
+            "wd"      : pl.String,
+            "station" : pl.String,
+            "WSPM"    : pl.Float32,
         }
     }  # fmt: skip
 
     table_schemas = {
         "timeseries": {
-            "PM2.5" : "float[pyarrow]",
-            "PM10"  : "float[pyarrow]",
-            "SO2"   : "float[pyarrow]",
-            "NO2"   : "float[pyarrow]",
-            "CO"    : "float[pyarrow]",
-            "O3"    : "float[pyarrow]",
-            "TEMP"  : "float[pyarrow]",
-            "PRES"  : "float[pyarrow]",
-            "DEWP"  : "float[pyarrow]",
-            "RAIN"  : "float[pyarrow]",
-            "wd"    : "category",
-            "WSPM"  : "float[pyarrow]",
+            "station": pl.String,
+            "time"   : pl.Datetime(time_unit="us"),
+            "PM2.5"  : pl.Float32,
+            "PM10"   : pl.Float32,
+            "SO2"    : pl.Float32,
+            "NO2"    : pl.Float32,
+            "CO"     : pl.Float32,
+            "O3"     : pl.Float32,
+            "TEMP"   : pl.Float32,
+            "PRES"   : pl.Float32,
+            "DEWP"   : pl.Float32,
+            "RAIN"   : pl.Float32,
+            "wd"     : pl.Categorical,
+            "WSPM"   : pl.Float32,
         },
-        "timeseries_metadata": DEFAULT_METADATA_SCHEMA,
+        "timeseries_metadata": TIMESERIES_METADATA["schema"],
     }  # fmt: skip
 
-    def clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> pl.DataFrame:
         rawdata_path = self.rawdata_paths["beijing+multi+site+air+quality+data.zip"]
         archive_path = "PRSA2017_Data_20130301-20170228.zip"
         rawdata_schema = self.rawdata_schemas["timeseries"]
@@ -184,46 +192,54 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
             outer_archive.open(archive_path) as inner_archive,
             ZipFile(inner_archive) as compressed_archive,
         ):
-            stations = []
+            stations: list[pl.DataFrame] = []
             for csv_file in compressed_archive.namelist():
                 if not csv_file.endswith(".csv"):
                     self.LOGGER.warning("\nSkipping '%s': is not a csv-file!", csv_file)
                     continue
 
                 with compressed_archive.open(csv_file) as compressed_file:
-                    df = pd.read_csv(
-                        compressed_file,
-                        dtype=rawdata_schema,
-                        dtype_backend="pyarrow",
-                        index_col=0,
+                    stations.append(
+                        pl.read_csv(
+                            compressed_file,
+                            schema_overrides=rawdata_schema,
+                            null_values="NA",
+                        )
                     )
-                    df.columns = df.columns.astype("string[pyarrow]")
-                    stations.append(df)
 
         self.LOGGER.info("Merging Tables.")
-        table = pd.concat(stations, ignore_index=True)
+        table = pl.concat(stations)
 
         self.LOGGER.info("Adding Time Data.")
         time_cols = ["year", "month", "day", "hour"]
         ts = (
-            table.assign(time=pd.to_datetime(table[time_cols]))
-            .drop(columns=time_cols)
-            .set_index(["station", "time"])
-            .sort_index()
+            table.drop("No")
+            .with_columns(
+                pl.datetime(*(pl.col(column) for column in time_cols)).alias("time")
+            )
+            .drop(time_cols)
+            .sort("station", "time")
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_metadata)
+        value_columns = list(target_schema)[2:]
+        cleaned_values = remove_outliers(
+            ts.select(value_columns), self.timeseries_metadata, drop=False
+        )
+        ts = ts.with_columns(cleaned_values.get_columns())
 
         self.LOGGER.info("Dropping completely missing rows.")
-        ts = ts.dropna(how="all", axis="index")
+        ts = ts.filter(pl.any_horizontal(pl.col(value_columns).is_not_null()))
 
         # ensure table_schema is met
         if missing_cols := (target_schema.keys() - set(ts.columns)):
-            raise ValueError(f"Missing columns in static_covariates: {missing_cols}")
+            raise ValueError(f"Missing columns in timeseries: {missing_cols}")
 
-        ts = ts.reindex(columns=target_schema).astype(target_schema)
-        assert set(ts["wd"].cat.categories) == {
+        ts = ts.select(
+            pl.col(column).cast(dtype).alias(column)
+            for column, dtype in target_schema.items()
+        )
+        assert set(ts.get_column("wd").drop_nulls().unique().to_list()) == {
             "E", "ENE", "ESE",
             "N", "NE", "NNE", "NNW", "NW",
             "S", "SE", "SSE", "SSW", "SW",
@@ -232,6 +248,14 @@ class BeijingAirQuality(DatasetBase[Key, DataFrame]):
         return ts
 
     @staticmethod
-    def clean_timeseries_metadata() -> DataFrame:
+    def clean_timeseries_metadata() -> pl.DataFrame:
         r"""Create DataFrame with metadata for all 12 stations."""
-        return make_dataframe(**TIMESERIES_METADATA)
+        return pl.DataFrame(
+            TIMESERIES_METADATA["data"],
+            schema=TIMESERIES_METADATA["schema"],
+            orient="row",
+        )
+
+    def load_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Load a cleaned dataset table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])
