@@ -40,17 +40,17 @@ Other columns present float values with consumption in kW
 
 __all__ = ["Electricity"]
 
-from collections import defaultdict
 from typing import Literal
 from zipfile import ZipFile
 
+import matplotlib.pyplot as plt
+import polars as pl
 from matplotlib.axes import Axes
-from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import DatasetBase
 
 
-class Electricity(DatasetBase[Literal["timeseries"], DataFrame]):
+class Electricity(DatasetBase[Literal["timeseries"], pl.DataFrame]):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -103,38 +103,49 @@ class Electricity(DatasetBase[Literal["timeseries"], DataFrame]):
             "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
     }  # fmt: skip
     table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
-    table_hashes = {"timeseries": "pandas:7114453877232760046"}
-    table_shapes = {"timeseries": (140256, 370)}
+    rawdata_schemas = {
+        "timeseries": {
+            "": pl.Datetime(time_unit="us"),
+            **{f"MT_{client:03d}": pl.Float64 for client in range(1, 371)},
+        }
+    }
+    table_schemas = {
+        "timeseries": {
+            "time": pl.Datetime(time_unit="us"),
+            **{f"MT_{client:03d}": pl.Float64 for client in range(1, 371)},
+        }
+    }
+    table_shapes = {"timeseries": (140256, 371)}
 
-    def clean_timeseries(self) -> DataFrame:
-        r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
+    def clean_timeseries(self) -> pl.DataFrame:
+        r"""Create a Polars DataFrame with one column per client."""
         rawdata_path = self.rawdata_paths["electricityloaddiagrams20112014.zip"]
-        dtypes = defaultdict(lambda: "float32[pyarrow]")
-        dtypes[""] = "timestamp[ms][pyarrow]"
+        rawdata_schema = self.rawdata_schemas["timeseries"]
         with (
             ZipFile(rawdata_path) as archive,
             archive.open("LD2011_2014.txt") as file,
         ):
-            df = read_csv(
+            ts = pl.read_csv(
                 file,
-                sep=";",
-                decimal=",",
-                parse_dates=[0],
-                index_col=0,
-                dtype_backend="pyarrow",
-                date_format="%Y-%m-%d %H:%M:%S",  # e.g. "2011-01-01 00:15:00"
+                new_columns=["time"],
+                separator=";",
+                decimal_comma=True,
+                schema=rawdata_schema,
             )
 
-        df = (
-            df.astype("float64[pyarrow]")
-            .rename_axis(index="time", columns="client")
-            .reset_index()
-            .astype({"time": "timestamp[ms][pyarrow]"})
-            .set_index("time")
-        )
-        return df
+        return ts
+
+    def load_table(self, key: Literal["timeseries"], /) -> pl.DataFrame:
+        r"""Load a cleaned dataset table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])
 
     def make_zero_plot(self) -> Axes:
         r"""Plot number of zero values per timestamp."""
         ts = self.timeseries
-        return ts.where(ts > 0).isna().sum(axis=1).plot(ylabel="zero-values")
+        zero_counts = ts.select(
+            pl.sum_horizontal(pl.exclude("time").le(0)).alias("zero-values")
+        ).to_series()
+        _, axes = plt.subplots()
+        axes.plot(ts.get_column("time").to_numpy(), zero_counts.to_numpy())
+        axes.set_ylabel("zero-values")
+        return axes
