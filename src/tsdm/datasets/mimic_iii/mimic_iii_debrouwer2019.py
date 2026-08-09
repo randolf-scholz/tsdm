@@ -72,34 +72,33 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
     rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
     rawdata_schemas = {
         "complete_tensor.csv": {
-            "UNIQUE_ID"  : "int16",
-            "TIME_STAMP" : "int16",
-            "LABEL_CODE" : "int16",
-            "VALUENORM"  : "float32",
-            "MEAN"       : "float32",
-            "STD"        : "float32",
+            "UNIQUE_ID"  : "int16[pyarrow]",
+            "TIME_STAMP" : "int16[pyarrow]",
+            "LABEL_CODE" : "int16[pyarrow]",
+            "VALUENORM"  : "float32[pyarrow]",
+            "MEAN"       : "float32[pyarrow]",
+            "STD"        : "float32[pyarrow]",
         }
     }  # fmt: skip
-    dataset_hashes = {  # pyright: ignore[reportAssignmentType]
-        "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
-        "static_covariates": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
-    }
     table_shapes = {
         "timeseries": (552327, 96),
         "static_covariates": (96, 3),
     }
 
-    KEYS = ["timeseries", "static_covariates"]
-
     timeseries: DataFrame
     static_covariates: DataFrame
 
-    def clean_static_covariavtes(self) -> DataFrame:
-        return self.timeseries.describe().T.astype("float32")
+    def clean_static_covariates(self) -> DataFrame:
+        return self.timeseries.describe().T.astype("float32[pyarrow]")
 
     def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
-        ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
+        ts = pd.read_csv(
+            self.rawdata_paths["complete_tensor.csv"],
+            dtype=self.rawdata_schemas["complete_tensor.csv"],
+            index_col=0,
+            dtype_backend="pyarrow",
+        )
 
         # Check shape.
         if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
@@ -111,18 +110,17 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
 
         # Extract Original Data Table.
         ts = (
-            ts.astype(self.rawdata_schemas["complete_tensor.csv"])
-            .loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
+            ts.loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
             .reset_index(drop=True)
             .set_index(["UNIQUE_ID", "TIME_STAMP"])
             .pivot(columns="LABEL_CODE", values="VALUENUM")
-            .astype("float32")
+            .astype("float32[pyarrow]")
             .sort_index()
             .sort_index(axis=1)
         )
-        ts.columns = ts.columns.astype("string")
+        ts = ts.set_axis(ts.columns.astype("string[pyarrow]"), axis="columns")
 
-        return ts.astype("float32")
+        return ts
 
     def get_rawdata_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():
