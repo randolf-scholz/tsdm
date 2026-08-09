@@ -184,7 +184,7 @@ class DatasetBase[Key: str, T](
     # region instance attributes -------------------------------------------------------
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the raw dataset file(s)."""
-    rawdata_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
+    rawdata_schemas: Mapping[str, Mapping[str, Any]] = EMPTY_MAP
     r"""READ-ONLY: Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes for the raw dataset tables(s)."""
@@ -196,7 +196,7 @@ class DatasetBase[Key: str, T](
     #   we can't use Key, as that would screw up covariance.
     table_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[str, Mapping[str, str]] = EMPTY_MAP
+    table_schemas: Mapping[str, Mapping[str, Any]] = EMPTY_MAP
     r"""READ-ONLY: Schemas of the in-memory cleaned dataset table(s)."""
     table_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""

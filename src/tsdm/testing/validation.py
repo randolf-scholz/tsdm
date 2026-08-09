@@ -321,7 +321,7 @@ def validate_table_schema(
     table: Any,
     /,
     *,
-    expected_shema: Sequence[str] | Mapping[str, str | None] | pa.Schema | None,
+    expected_shema: Sequence[str] | Mapping[str, Any] | pa.Schema | None,
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
     r"""Validate the schema of a `pandas` object, given schema values from a table.
