@@ -297,13 +297,13 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
 def electricity() -> TimeSeries[DataFrame]:
     r"""The Electricity dataset wrapped as TimeSeriesCollection."""
     ds = datasets.Electricity(initialize=False)
-    return PandasTS(ds.name, timeseries=ds.timeseries)
+    return PandasTS(ds.name, timeseries=ds.timeseries.to_pandas().set_index("time"))
 
 
 def traffic() -> TimeSeries[DataFrame]:
     r"""The Traffic dataset wrapped as TimeSeriesCollection."""
     ds = datasets.Traffic(initialize=False)
-    return PandasTS(ds.name, timeseries=ds.timeseries)
+    return PandasTS(ds.name, timeseries=ds.timeseries.to_pandas().set_index("time"))
 
 
 def etth1() -> TimeSeries[DataFrame]:
