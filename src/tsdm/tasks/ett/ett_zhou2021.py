@@ -6,29 +6,35 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable
-from functools import cached_property
-from typing import Any, Literal
+from collections.abc import Callable, Mapping
+from typing import Any, Literal, cast
 
-from pandas import DataFrame
+import torch
+from pandas import Series
 from torch import Tensor, nn
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import TensorDataset, default_collate
 
 from tsdm.datasets import ETT
 from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
-    FrameAsTensor,
     FrameDTypeConverter,
     FrameEncoder,
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.random.samplers import SlidingWindowSampler
-from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.random.samplers import Sampler, SlidingWindowSampler
+from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
+from tsdm.timeseries import PandasTS, PandasTSC
+
+type SplitID = Literal["train", "test", "valid", "joint", "trial", "whole"]
+
+type Target = Literal["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+
+type DatasetID = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
-class ETT_Zhou2021(OldBaseTask):
+class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
     r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
 
     Paper
@@ -85,10 +91,20 @@ class ETT_Zhou2021(OldBaseTask):
     TODO: add results
     """
 
-    KeyType = Literal["train", "test", "valid", "joint", "trial", "whole"]
-    r"""Type Hint for index."""
-    index: list[KeyType] = ["train", "test", "valid", "joint", "trial"]
-    r"""Available index."""
+    train_patterns = ("train", "training")
+    r"""Patterns that identify splits used for training."""
+    infer_patterns = (
+        "test",
+        "testing",
+        "val",
+        "valid",
+        "validation",
+        "trial",
+        "joint",
+        "whole",
+    )
+    r"""Patterns that identify splits used for evaluation."""
+
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
 
@@ -98,29 +114,27 @@ class ETT_Zhou2021(OldBaseTask):
     r"""Default batch size when evaluating."""
 
     # additional attributes
+    dataset: PandasTS  # type: ignore[reportIncompatibleVariableOverride]
     preprocessor: Encoder
     r"""Encoder for the observations."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24
     r"""The number of datapoints the model should forecast."""
-    TARGET = Literal["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
-    r"""Type hint available targets."""
-    target: TARGET = "OT"
+    target: Target = "OT"
     r"""One of "HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"."""
-    dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+    dataset_id: DatasetID
 
     def __init__(
         self,
-        dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"],
+        dataset_id: DatasetID,
         *,
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
-        target: TARGET = "OT",
+        target: Target = "OT",
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
-    ):
-        super().__init__()
+    ) -> None:
         self.target = target
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
@@ -128,63 +142,89 @@ class ETT_Zhou2021(OldBaseTask):
         self.train_batch_size = train_batch_size
 
         self.dataset_id = dataset_id
-        self.dataset.name = dataset_id
-
+        timeseries = ETT().tables[dataset_id]
+        dataset = PandasTS(dataset_id, timeseries=timeseries)
         self.horizon = self.observation_horizon + self.forecasting_horizon
+        self.frequency = dataset.timeindex[1] - dataset.timeindex[0]
         self.accumulation_function = nn.Identity()
-
-        self.preprocessor = (
-            FrameDTypeConverter(float)
-            >> StandardScaler()
-            >> FrameEncoder(date=DateTimeEncoder() >> MinMaxScaler())
-            >> FrameAsTensor()
+        super().__init__(
+            dataset=cast("PandasTSC", dataset),
+            train_patterns=self.train_patterns,
+            infer_patterns=self.infer_patterns,
         )
+        self.preprocessor = self.encoders["train"]
 
-        # Fit the Preprocessors
-        self.preprocessor.fit(self.splits["train"])
+    def make_folds(self, /) -> Mapping[SplitID, Series]:
+        r"""Create timestamp masks for the prescribed ETT partitions."""
+        timeseries = self.dataset.timeseries
+        index = timeseries.index
 
-    @cached_property
-    def dataset(self) -> DataFrame:
-        ds = ETT()
-        return ds.tables[self.dataset_id]
+        def mask(start: str, end: str, /) -> Series:
+            return Series(
+                index.isin(timeseries.loc[start:end].index),
+                index=index,
+            )
 
-    @cached_property
-    def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
-        return nn.MSELoss()
-
-    @cached_property
-    def splits(self) -> dict[KeyType, DataFrame]:
-        splits: dict[Any, DataFrame] = {
-            "train": self.dataset.loc["2016-07-01":"2017-06-30"],
-            "valid": self.dataset.loc["2017-07-01":"2017-10-31"],
-            "joint": self.dataset.loc["2016-07-01":"2017-10-31"],
-            "trial": self.dataset.loc["2017-11-01":"2018-02-28"],
-            "whole": self.dataset,
+        trial = mask("2017-11-01", "2018-02-28")
+        return {
+            "train": mask("2016-07-01", "2017-06-30"),
+            "valid": mask("2017-07-01", "2017-10-31"),
+            "joint": mask("2016-07-01", "2017-10-31"),
+            "trial": trial,
+            "test": trial.copy(),
+            "whole": Series(data=True, index=index),
         }
-        splits["test"] = splits["trial"]  # alias
-        return splits
 
-    def make_dataloader(
-        self,
-        key: KeyType,
-        /,
-        *,
-        shuffle: bool = True,
-        **dataloader_kwargs: Any,
-    ) -> DataLoader:
-        if key == "test" and shuffle:
-            raise ValueError("Don't shuffle when evaluating test-dataset!")
-        if key == "test" and dataloader_kwargs.get("drop_last"):
-            raise ValueError("Don't drop when evaluating test-dataset!")
+    @property
+    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
+        r"""Return split-aware configuration for the data loaders."""
+        return {
+            key: {
+                "batch_size": (
+                    self.train_batch_size
+                    if self.is_train_split(key)
+                    else self.eval_batch_size
+                ),
+                "drop_last": self.is_train_split(key),
+                "pin_memory": True,
+            }
+            for key in self
+        }
 
-        ds = self.splits[key]
-        tensors = self.preprocessor.encode(ds)
-        dataset = TensorDataset(*tensors)
-        sampler = SlidingWindowSampler(
-            dataset,
-            horizons=self.horizon,
-            stride=1,
-            shuffle=shuffle,
+    def make_collate_fn(
+        self, _key: SplitID, /
+    ) -> Callable[[list[tuple[Tensor, ...]]], BaseBatch]:
+        r"""Return PyTorch's default collate function."""
+        return cast("Callable[[list[tuple[Tensor, ...]]], BaseBatch]", default_collate)
+
+    def make_encoder(self, key: SplitID, /) -> Encoder:
+        r"""Create and fit the preprocessing encoder for the specified split."""
+        encoder = (
+            FrameDTypeConverter(float)
+            >> StandardScaler(axis=-1)
+            >> FrameEncoder({"date": DateTimeEncoder() >> MinMaxScaler()})
+        )
+        train_split = self.splits[self.train_split[key]]
+        encoder.fit(train_split.timeseries)
+        return encoder
+
+    def make_generator(self, key: SplitID, /) -> TensorDataset:
+        r"""Create the encoded tensor dataset for the specified split."""
+        encoded = self.encoders[key].encode(self.splits[key].timeseries).reset_index()
+        tensor = torch.tensor(encoded.values, dtype=torch.float32)
+        return TensorDataset(tensor)
+
+    def make_sampler(self, key: SplitID, /) -> Sampler:
+        r"""Create full-length sliding windows for the specified split."""
+        return SlidingWindowSampler(
+            self.splits[key].timeindex,
+            horizons=self.horizon * self.frequency,
+            stride=self.frequency,
+            mode="index",
+            drop_last=True,
+            shuffle=self.is_train_split(key),
         )
 
-        return DataLoader(dataset, sampler=sampler, **dataloader_kwargs)
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
+        r"""Return the evaluation metric."""
+        return nn.MSELoss()
