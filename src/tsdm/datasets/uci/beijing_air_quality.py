@@ -68,6 +68,7 @@ Attribute Information
 
 __all__ = [
     # Constants
+    "RAWDATA_SCHEMA",
     "TIMESERIES_METADATA",
     "TIMESERIES_SCHEMA",
     "TIMESERIES_METADATA_SCHEMA",
@@ -83,6 +84,26 @@ import polars as pl
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import remove_outliers
 
+RAWDATA_SCHEMA =  {
+    "No"      : pl.UInt16,
+    "year"    : pl.UInt16,
+    "month"   : pl.UInt8,
+    "day"     : pl.UInt8,
+    "hour"    : pl.UInt8,
+    "PM2.5"   : pl.Float32,
+    "PM10"    : pl.Float32,
+    "SO2"     : pl.Float32,
+    "NO2"     : pl.Float32,
+    "CO"      : pl.Float32,
+    "O3"      : pl.Float32,
+    "TEMP"    : pl.Float32,
+    "PRES"    : pl.Float32,
+    "DEWP"    : pl.Float32,
+    "RAIN"    : pl.Float32,
+    "wd"      : pl.String,
+    "WSPM"    : pl.Float32,
+    "station" : pl.String,
+}  # fmt: skip
 TIMESERIES_SCHEMA =  {
     "station": pl.String,
     "time"   : pl.Datetime(time_unit="us"),
@@ -156,33 +177,12 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
         "beijing+multi+site+air+quality+data.zip": \
             "sha256:b04da438b2f331ac0ffd45aebdfec0d20d2367feb5f6948c4b1f7ce1191e33c4",
     }  # fmt: skip
-    rawdata_schemas = {
-        "timeseries": {
-            "No"      : pl.UInt16,
-            "year"    : pl.UInt16,
-            "month"   : pl.UInt8,
-            "day"     : pl.UInt8,
-            "hour"    : pl.UInt8,
-            "PM2.5"   : pl.Float32,
-            "PM10"    : pl.Float32,
-            "SO2"     : pl.Float32,
-            "NO2"     : pl.Float32,
-            "CO"      : pl.Float32,
-            "O3"      : pl.Float32,
-            "TEMP"    : pl.Float32,
-            "PRES"    : pl.Float32,
-            "DEWP"    : pl.Float32,
-            "RAIN"    : pl.Float32,
-            "wd"      : pl.String,
-            "WSPM"    : pl.Float32,
-            "station" : pl.String,
-        }
-    }  # fmt: skip
+    rawdata_schemas = {"timeseries": RAWDATA_SCHEMA}
 
     table_schemas = {
         "timeseries": TIMESERIES_SCHEMA,
         "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
-    }  # fmt: skip
+    }
     table_shapes = {
         "timeseries": (420_768, 14),
         "timeseries_metadata": (14, 8),
