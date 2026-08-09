@@ -350,9 +350,6 @@ class Traffic(DatasetBase[Traffic_Keys, pl.DataFrame]):
                 pl.DataFrame({"day": test_dates, "label": testlabels}),
             ],
             rechunk=True,
-        ).select(
-            pl.col(column).cast(dtype).alias(column)
-            for column, dtype in self.table_schemas["labels"].items()
         )
 
         unshuffled_labels = labels.get_column("label").gather(invperm)

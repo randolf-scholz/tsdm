@@ -455,7 +455,7 @@ class PhysioNet2012(DatasetBase[Key, pl.DataFrame]):
                 aggregate_function="first",
             )
             .select(
-                pl.col(column).cast(dtype, strict=False).alias(column)
+                pl.col(column).cast(dtype, strict=False)
                 for column, dtype in STATIC_COVARIATES_SCHEMA.items()
             )
             .sort("RecordID")
@@ -487,10 +487,7 @@ class PhysioNet2012(DatasetBase[Key, pl.DataFrame]):
                 aggregate_function="first",
             )
             .drop("count")
-            .select(
-                pl.col(column).cast(dtype).alias(column)
-                for column, dtype in TIMESERIES_SCHEMA.items()
-            )
+            .select(*TIMESERIES_SCHEMA)
             .sort("RecordID", "Time")
         )
         return ts, md

@@ -374,7 +374,7 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
                 )
                 .fill_nan(None)
                 .with_columns(
-                    pl.col(column).cast(pl.Boolean).alias(column)
+                    pl.col(column).cast(pl.Boolean)
                     for column in ("Gender", "Unit1", "Unit2", "SepsisLabel")
                 )
             )
@@ -412,10 +412,7 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
                 .cast(pl.Duration(time_unit="ms"))
                 .alias("time")
             )
-            .select(
-                pl.col(column).cast(dtype).alias(column)
-                for column, dtype in TIMESERIES_SCHEMA.items()
-            )
+            .select(*TIMESERIES_SCHEMA)
             .sort("patient", "time")
         )
 
@@ -435,10 +432,7 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
                 raise ValueError(f"Column {column} is not constant for each patient.")
         md = (
             table.group_by("patient", maintain_order=True)
-            .agg(
-                pl.col(column).drop_nulls().first().alias(column)
-                for column in static_columns
-            )
+            .agg(pl.col(column).drop_nulls().first() for column in static_columns)
             .sort("patient")
         )
 
@@ -448,20 +442,14 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
         self.LOGGER.info("Finalizing static_covariates table.")
         md = (
             md.with_columns(
-                (pl.col("HospAdmTime") * 3_600_000)
-                .cast(pl.Duration(time_unit="ms"))
-                .alias("HospAdmTime"),
+                (pl.col("HospAdmTime") * 3_600_000).cast(pl.Duration(time_unit="ms")),
                 pl.when(pl.col("Gender").is_null())
-                .then(pl.lit(None, dtype=pl.String))
+                .then(None)
                 .when(pl.col("Gender"))
                 .then(pl.lit("male"))
-                .otherwise(pl.lit("female"))
-                .alias("Gender"),
+                .otherwise(pl.lit("female")),
             )
-            .select(
-                pl.col(column).cast(dtype).alias(column)
-                for column, dtype in STATIC_COVARIATES_SCHEMA.items()
-            )
+            .select(*STATIC_COVARIATES_SCHEMA)
             .sort("patient")
         )
 

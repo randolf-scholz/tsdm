@@ -137,8 +137,7 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
                 aggregate_function="first",
             )
             .select(
-                pl.col(column).cast(dtype).alias(column)
-                for column, dtype in target_schema.items()
+                pl.col(column).cast(dtype) for column, dtype in target_schema.items()
             )
             .sort(pl.col("LABEL_CODE").cast(pl.Int16))
         )
@@ -169,10 +168,7 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
                 values="VALUENUM",
                 aggregate_function="first",
             )
-            .select(
-                pl.col(column).cast(dtype).alias(column)
-                for column, dtype in target_schema.items()
-            )
+            .select(*target_schema)
             .sort("UNIQUE_ID", "TIME_STAMP")
         )
 

@@ -235,10 +235,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
         if missing_cols := (target_schema.keys() - set(ts.columns)):
             raise ValueError(f"Missing columns in timeseries: {missing_cols}")
 
-        ts = ts.select(
-            pl.col(column).cast(dtype).alias(column)
-            for column, dtype in target_schema.items()
-        )
+        ts = ts.with_columns(pl.col("wd").cast(pl.Categorical)).select(*target_schema)
         assert set(ts.get_column("wd").drop_nulls().unique().to_list()) == {
             "E", "ENE", "ESE",
             "N", "NE", "NNE", "NNW", "NW",

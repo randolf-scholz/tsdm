@@ -69,16 +69,14 @@ class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], pl.DataFrame]):
         table = pl.read_csv(self.rawdata_paths[fname], schema=rawdata_schema)
 
         return table.select(
-            pl.col("ID").cast(target_schema["ID"]).alias("ID"),
+            pl.col("ID").cast(target_schema["ID"]),
             pl.col("Time"),
             *(
                 (
                     pl.when(pl.col(f"Mask_{index}").eq(1))
                     .then(pl.col(f"Value_{index}"))
-                    .otherwise(pl.lit(None, dtype=pl.Float32))
+                    .otherwise(None)
                 )
-                .cast(target_schema[f"Value_{index}"])
-                .alias(f"Value_{index}")
                 for index in range(5)
             ),
         ).sort("ID", "Time")

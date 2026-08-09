@@ -102,7 +102,7 @@ class MIMIC_IV_Bilos2021(DatasetBase[Literal["timeseries"], pl.DataFrame]):
         masked = (
             table.lazy()
             .select(
-                pl.col("hadm_id").cast(pl.Int32).alias("hadm_id"),
+                pl.col("hadm_id").cast(pl.Int32),
                 pl.col("time_stamp"),
                 *(
                     pl.when(pl.col(f"Mask_label_{k}").eq(1))
