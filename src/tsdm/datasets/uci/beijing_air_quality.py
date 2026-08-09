@@ -110,18 +110,20 @@ TIMESERIES_METADATA_SCHEMA = {
     "description"     : pl.String,
 }  # fmt: skip
 TIMESERIES_METADATA = [
-    ("PM2.5", "Float32"    ,    0, None, True, True, "μg/m³", "PM2.5 concentration"),
-    ("PM10" , "Float32"    ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
-    ("SO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
-    ("NO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "NO2 concentration"  ),
-    ("CO"   , "Float32"    ,    0, None, True, True, "μg/m³", "CO concentration"   ),
-    ("O3"   , "Float32"    ,    0, None, True, True, "μg/m³", "O3 concentration"   ),
-    ("TEMP" , "Float32"    , None, None, True, True, "℃"    , "temperature"        ),
-    ("PRES" , "Float32"    ,    0, None, True, True, "hPa"  , "pressure"           ),
-    ("DEWP" , "Float32"    , None, None, True, True, "℃"    , "dew point"          ),
-    ("RAIN" , "Float32"    ,    0, None, True, True, "mm"   , "precipitation"      ),
-    ("wd"   , "Categorical", None, None, True, True, None   , "wind direction"     ),
-    ("WSPM" , "Float32"    ,    0, None, True, True, "m/s"  , "wind speed"         ),
+    ("station", "String"     , None, None, None, None,    None, "station name"         ),
+    ("time"   , "Datetime"   , None, None, None, None,   "UTC", "Measurement timestamp"),
+    ("PM2.5"  , "Float32"    ,    0, None, True, True, "μg/m³", "PM2.5 concentration"  ),
+    ("PM10"   , "Float32"    ,    0, None, True, True, "μg/m³", "PM10 concentration"   ),
+    ("SO2"    , "Float32"    ,    0, None, True, True, "μg/m³", "SO2 concentration"    ),
+    ("NO2"    , "Float32"    ,    0, None, True, True, "μg/m³", "NO2 concentration"    ),
+    ("CO"     , "Float32"    ,    0, None, True, True, "μg/m³", "CO concentration"     ),
+    ("O3"     , "Float32"    ,    0, None, True, True, "μg/m³", "O3 concentration"     ),
+    ("TEMP"   , "Float32"    , None, None, True, True,     "℃", "temperature"          ),
+    ("PRES"   , "Float32"    ,    0, None, True, True,   "hPa", "pressure"             ),
+    ("DEWP"   , "Float32"    , None, None, True, True,     "℃", "dew point"            ),
+    ("RAIN"   , "Float32"    ,    0, None, True, True,    "mm", "precipitation"        ),
+    ("wd"     , "Categorical", None, None, True, True,    None, "wind direction"       ),
+    ("WSPM"   , "Float32"    ,    0, None, True, True,   "m/s", "wind speed"           ),
 ]  # fmt: skip
 
 type Key = Literal["timeseries", "timeseries_metadata"]
@@ -181,6 +183,10 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
         "timeseries": TIMESERIES_SCHEMA,
         "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
     }  # fmt: skip
+    table_shapes = {
+        "timeseries": (420_768, 14),
+        "timeseries_metadata": (14, 8),
+    }
 
     def clean_timeseries(self) -> pl.DataFrame:
         rawdata_path = self.rawdata_paths["beijing+multi+site+air+quality+data.zip"]
@@ -223,14 +229,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        value_columns = list(target_schema)[2:]
-        cleaned_values = remove_outliers(
-            ts.select(value_columns), self.timeseries_metadata, drop=False
-        )
-        ts = ts.with_columns(cleaned_values.get_columns())
-
-        self.LOGGER.info("Dropping completely missing rows.")
-        ts = ts.filter(pl.any_horizontal(pl.col(value_columns).is_not_null()))
+        ts = remove_outliers(ts, self.timeseries_metadata)
 
         # ensure table_schema is met
         if missing_cols := (target_schema.keys() - set(ts.columns)):

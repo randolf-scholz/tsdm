@@ -18,6 +18,8 @@ def test_insilico_preprocessing() -> None:
         assert isinstance(ds[key], pl.DataFrame)
         assert dict(ds[key].schema) == InSilico.table_schemas[key]
 
+    assert ds.timeseries_metadata.height == ds.timeseries.width
+
 
 def test_caching() -> None:
     r"""Test the caching of the dataset."""

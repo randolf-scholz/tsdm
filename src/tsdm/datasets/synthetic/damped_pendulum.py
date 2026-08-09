@@ -36,8 +36,10 @@ TIMESERIES_METADATA_SCHEMA = {
     "description"     : pl.String,
 }  # fmt: skip
 TIMESERIES_METADATA = [
-        ("x", -1.0, +1.0, True, True, "length", "x coordinate of the pendulum bob"),
-        ("y", -1.0, +1.0, True, True, "length", "y coordinate of the pendulum bob"),
+    ("sequence_id", None, None, None, None, None, "trajectory ID"),
+    ("time",        None, None, None, None,  "s", "Elapsed time" ),
+    ("x", -1.0, +1.0, True, True, "length", "x coordinate of the pendulum bob"),
+    ("y", -1.0, +1.0, True, True, "length", "y coordinate of the pendulum bob"),
 ]  # fmt: skip
 
 
@@ -74,7 +76,7 @@ class DampedPendulum_Ansari2023(DatasetBase[Key, pl.DataFrame]):
     }
     table_shapes = {
         "timeseries": (1_057_000, 4),
-        "timeseries_metadata": (2, 7),
+        "timeseries_metadata": (4, 7),
     }
     num_sequences = 7000
     step = 0.1

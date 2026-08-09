@@ -19,9 +19,6 @@ from tsdm.datatools import remove_outliers
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
-_TIMESERIES_VALUE_SCHEMA = {}
-
-
 TIMESERIES_SCHEMA = {
     "run_id"    : pl.UInt16,
     "time"      : pl.Datetime(time_unit="us"),
@@ -43,14 +40,16 @@ TIMESERIES_METADATA_SCHEMA = {
     "description"    : pl.String,
 }  # fmt: skip
 TIMESERIES_METADATA = [
-    ("Biomass", 0, None, True, True, "g/L", None),
-    ("Substrate", 0, None, True, True, "g/L", None),
-    ("Acetate", 0, None, True, True, "g/L", None),
-    ("DOTm", 0, 100, True, True, "%", None),
-    ("Product", 0, None, True, True, "g/L", None),
-    ("Volume", 0, None, True, True, "L", None),
-    ("Feed", 0, None, True, True, "μL", None),
-]
+    ("run_id"    , None , None , None , None , None, "time series ID"       ),
+    ("time"      , None , None , None , None , None, "Measurement timestamp"),
+    ("Biomass"   , 0    , None , True , True , "g/L", None                  ),
+    ("Substrate" , 0    , None , True , True , "g/L", None                  ),
+    ("Acetate"   , 0    , None , True , True , "g/L", None                  ),
+    ("DOTm"      , 0    ,  100 , True , True ,   "%", None                  ),
+    ("Product"   , 0    , None , True , True , "g/L", None                  ),
+    ("Volume"    , 0    , None , True , True ,   "L", None                  ),
+    ("Feed"      , 0    , None , True , True ,  "μL", None                  ),
+]  # fmt: skip
 
 
 class InSilico(DatasetBase[KEY, pl.DataFrame]):
@@ -90,7 +89,7 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
     }  # fmt: skip
     table_shapes = {
         "timeseries": (5206, 9),
-        "timeseries_metadata": (7, 7),
+        "timeseries_metadata": (9, 7),
     }
 
     def clean_timeseries(self) -> pl.DataFrame:
@@ -111,12 +110,7 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
                     )
 
         ts = pl.concat(runs).sort("run_id", "time")
-        cleaned_values = remove_outliers(
-            ts.select(_TIMESERIES_VALUE_SCHEMA.keys()),
-            self.timeseries_metadata,
-            drop=False,
-        )
-        return ts.with_columns(cleaned_values.get_columns())
+        return remove_outliers(ts, self.timeseries_metadata)
 
     @staticmethod
     def clean_timeseries_metadata() -> pl.DataFrame:

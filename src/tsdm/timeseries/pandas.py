@@ -339,7 +339,7 @@ def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
         timeseries_metadata=(
             ds.timeseries_metadata.to_pandas()
             .set_index("variable")
-            .drop(index=["RecordID", "Time"])
+            .drop(index=["station", "time"])
         ),
     )
 
@@ -350,7 +350,11 @@ def in_silico() -> TimeSeriesCollection[int, DataFrame]:
     return PandasTSC(
         ds.name,
         timeseries=ds.timeseries.to_pandas().set_index(["run_id", "time"]),
-        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+        timeseries_metadata=(
+            ds.timeseries_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index=["run_id", "time"])
+        ),
     )
 
 
@@ -388,7 +392,11 @@ def physionet2012() -> TimeSeriesCollection[int, DataFrame]:
     return PandasTSC(
         ds.name,
         timeseries=ds.timeseries.to_pandas().set_index(["RecordID", "Time"]),
-        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+        timeseries_metadata=(
+            ds.timeseries_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index=["RecordID", "Time"])
+        ),
         static_covariates=ds.static_covariates.to_pandas().set_index("RecordID"),
         static_covariates_metadata=(
             ds.static_covariates_metadata.to_pandas()
@@ -419,7 +427,11 @@ def damped_pendulum_ansari2023() -> TimeSeriesCollection[int, DataFrame]:
     return PandasTSC(
         ds.name,
         timeseries=ds.timeseries.to_pandas().set_index(["sequence_id", "time"]),
-        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+        timeseries_metadata=(
+            ds.timeseries_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index=["sequence_id", "time"])
+        ),
     )
 
 
