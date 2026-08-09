@@ -114,7 +114,7 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
 
         path = self.rawdata_paths[fname]
         cut_dirs = self.SOURCE_URL.count("/") - 3
-        user = input("MIMIC-III username: ")
+        user = input("\nMIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)
         os.environ["PASSWORD"] = password
         subprocess.run(

@@ -595,7 +595,7 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, DataFrame]):
         remote.download(
             self.SOURCE_URL + f"{self.__version__}/",
             self.rawdata_paths[fname],
-            username=input("MIMIC-III username: "),
+            username=input("\nMIMIC-III username: "),
             password=getpass(prompt="MIMIC-III password: ", stream=None),
             headers={
                 "User-Agent": "Wget/1.21.2"
