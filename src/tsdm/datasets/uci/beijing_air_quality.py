@@ -156,8 +156,8 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
             "DEWP"    : pl.Float32,
             "RAIN"    : pl.Float32,
             "wd"      : pl.String,
-            "station" : pl.String,
             "WSPM"    : pl.Float32,
+            "station" : pl.String,
         }
     }  # fmt: skip
 
@@ -202,7 +202,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
                     stations.append(
                         pl.read_csv(
                             compressed_file,
-                            schema_overrides=rawdata_schema,
+                            schema=rawdata_schema,
                             null_values="NA",
                         )
                     )
