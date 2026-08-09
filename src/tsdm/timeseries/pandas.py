@@ -342,7 +342,12 @@ def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
 
 def in_silico() -> TimeSeriesCollection[int, DataFrame]:
     r"""The in silico dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.InSilico)
+    ds = datasets.InSilico(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["run_id", "time"]),
+        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+    )
 
 
 def kiwi_benchmark() -> TimeSeriesCollection[tuple[int, int], DataFrame]:

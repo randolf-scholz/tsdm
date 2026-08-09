@@ -3,7 +3,7 @@ r"""Test Serialization Datasets."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pandas as pd
+import polars.testing as pl_testing
 
 from tsdm.datasets import InSilico
 
@@ -17,4 +17,4 @@ def test_serialize() -> None:
         ds2 = InSilico.deserialize(path)
 
     for key in ds:
-        pd.testing.assert_frame_equal(ds[key], ds2[key])
+        pl_testing.assert_frame_equal(ds[key], ds2[key])

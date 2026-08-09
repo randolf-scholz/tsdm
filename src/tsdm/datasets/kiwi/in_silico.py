@@ -7,16 +7,37 @@ from importlib import resources
 from typing import Literal
 from zipfile import ZipFile
 
-import pandas as pd
-from pandas import DataFrame
+import polars as pl
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
+from tsdm.datatools import InlineTable, remove_outliers
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
+_TIMESERIES_VALUE_SCHEMA = {}
+TIMESERIES_METADATA: InlineTable = {
+    "data": [
+        ("Biomass"  , 0, None, True, True, "g/L", None),
+        ("Substrate", 0, None, True, True, "g/L", None),
+        ("Acetate"  , 0, None, True, True, "g/L", None),
+        ("DOTm"     , 0, 100,  True, True, "%",   None),
+        ("Product"  , 0, None, True, True, "g/L", None),
+        ("Volume"   , 0, None, True, True, "L",   None),
+        ("Feed"     , 0, None, True, True, "μL",  None),
+    ],
+    "schema": {
+        "variable"       : pl.String,
+        "lower_bound"    : pl.Float32,
+        "upper_bound"    : pl.Float32,
+        "lower_inclusive": pl.Boolean,
+        "upper_inclusive": pl.Boolean,
+        "unit"           : pl.String,
+        "description"    : pl.String,
+    },
+}  # fmt: skip
 
-class InSilico(DatasetBase[KEY, DataFrame]):
+
+class InSilico(DatasetBase[KEY, pl.DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -35,59 +56,74 @@ class InSilico(DatasetBase[KEY, DataFrame]):
         "in_silico.zip": "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba",
     }
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
-    table_shapes = {"timeseries": (5206, 7)}
+    rawdata_schemas = {
+        "timeseries": {
+            "index"     : pl.Datetime(time_unit="us"),
+            "Biomass"   : pl.Float32,
+            "Substrate" : pl.Float32,
+            "Acetate"   : pl.Float32,
+            "DOTm"      : pl.Float32,
+            "Product"   : pl.Float32,
+            "Volume"    : pl.Float32,
+            "Feed"      : pl.Float32,
+        }
+    }  # fmt: skip
+    table_schemas = {
+        "timeseries": {
+            "run_id"    : pl.UInt16,
+            "time"      : pl.Datetime(time_unit="us"),
+            "Biomass"   : pl.Float32,
+            "Substrate" : pl.Float32,
+            "Acetate"   : pl.Float32,
+            "DOTm"      : pl.Float32,
+            "Product"   : pl.Float32,
+            "Volume"    : pl.Float32,
+            "Feed"      : pl.Float32,
+        },
+        "timeseries_metadata": TIMESERIES_METADATA["schema"],
+    }  # fmt: skip
+    table_shapes = {
+        "timeseries": (5206, 9),
+        "timeseries_metadata": (7, 7),
+    }
 
-    def clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> pl.DataFrame:
+        r"""Create the timeseries table as a Polars DataFrame."""
+        rawdata_schema = self.rawdata_schemas["timeseries"]
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
-            dfs = {}
+            runs: list[pl.DataFrame] = []
             for fname in files.namelist():
-                key = int(fname.split(".csv")[0])
+                run_id = int(fname.removesuffix(".csv"))
                 with files.open(fname) as file:
-                    df = pd.read_csv(
-                        file,
-                        index_col=0,
-                        parse_dates=[0],
-                        dayfirst=True,
-                        dtype_backend="pyarrow",
+                    runs.append(
+                        pl.read_csv(
+                            file,
+                            schema=rawdata_schema,
+                        )
+                        .rename({"index": "time"})
+                        .with_columns(pl.lit(run_id, dtype=pl.UInt16).alias("run_id"))
                     )
-                    dfs[key] = df.rename_axis(index="time")
 
-        # Set index, dtype and sort.
-        ts = (
-            pd.concat(dfs, names=["run_id"])
-            .reset_index()
-            .set_index(["run_id", "time"])
-            .sort_index()
-            .astype("float32[pyarrow]")
+        ts = pl.concat(runs).sort("run_id", "time")
+        cleaned_values = remove_outliers(
+            ts.select(_TIMESERIES_VALUE_SCHEMA.keys()),
+            self.timeseries_metadata,
+            drop=False,
         )
-        ts = remove_outliers(ts, self.timeseries_metadata)
-        return ts
+        return ts.with_columns(cleaned_values.get_columns())
 
     @staticmethod
-    def clean_timeseries_metadata() -> DataFrame:
-        r"""Create DataFrame with metadata for the timeseries."""
-        TIMESERIES_METADATA: InlineTable = {
-            "data": [
-                ("Biomass"  , 0, None, True, True, "g/L", None),
-                ("Substrate", 0, None, True, True, "g/L", None),
-                ("Acetate"  , 0, None, True, True, "g/L", None),
-                ("DOTm"     , 0, 100,  True, True, "%",   None),
-                ("Product"  , 0, None, True, True, "g/L", None),
-                ("Volume"   , 0, None, True, True, "L",   None),
-                ("Feed"     , 0, None, True, True, "μL",  None),
-            ],
-            "schema": {
-                "variable"       : "string[pyarrow]",
-                "lower_bound"    : "float32[pyarrow]",
-                "upper_bound"    : "float32[pyarrow]",
-                "lower_inclusive": "bool[pyarrow]",
-                "upper_inclusive": "bool[pyarrow]",
-                "unit"           : "string[pyarrow]",
-                "description"    : "string[pyarrow]",
-            },
-            "index": "variable",
-        }  # fmt: skip
-        return make_dataframe(**TIMESERIES_METADATA)
+    def clean_timeseries_metadata() -> pl.DataFrame:
+        r"""Create metadata for the timeseries."""
+        return pl.DataFrame(
+            TIMESERIES_METADATA["data"],
+            schema=TIMESERIES_METADATA["schema"],
+            orient="row",
+        )
+
+    def load_table(self, key: KEY, /) -> pl.DataFrame:
+        r"""Load a cleaned table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download the dataset."""
