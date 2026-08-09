@@ -13,10 +13,11 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any, TypedDict, overload
 
 import pandas as pd
+import polars as pl
 import pyarrow as pa
 
 import tsdm.backend as B
@@ -32,10 +33,102 @@ class BoundaryInformation(TypedDict):
     upper_inclusive: bool | None
 
 
+def _limits_from_columns(
+    columns: Mapping[str, Sequence[Any]], keys: Sequence[str], /
+) -> dict[str, dict[Any, Any]]:
+    r"""Create per-variable limit mappings from a metadata table."""
+    variables = columns["variable"]
+    return {key: dict(zip(variables, columns[key], strict=True)) for key in keys}
+
+
+# pyrefly: ignore[bad-return]
+def _extract_limits(limits: Any, keys: Sequence[str], /) -> Mapping[str, Any]:
+    r"""Extract outlier-limit mappings from a backend-specific table."""
+    match limits:
+        case pl.DataFrame() as frame:
+            return _limits_from_columns(frame.to_dict(as_series=False), keys)
+        case pa.Table() as table:
+            return _limits_from_columns(table.to_pydict(), keys)
+        case pd.DataFrame() as frame:
+            match "variable" in frame:
+                case True:
+                    return _limits_from_columns(
+                        {column: frame[column].to_list() for column in frame}, keys
+                    )
+                case False:
+                    return {key: frame[key] for key in keys}
+        case Mapping() as mapping:
+            match set(keys).issubset(mapping):
+                case True:
+                    return {key: mapping[key] for key in keys}
+                case False:
+                    return {
+                        key: {
+                            variable: bounds[key]
+                            for variable, bounds in mapping.items()
+                        }
+                        for key in keys
+                    }
+        case _:
+            return {key: limits[key] for key in keys}
+
+
+def _get_outlier_options(
+    limits: Any,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None] | float | None,
+    upper_bound: Mapping[Any, float | None] | float | None,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None,
+) -> Mapping[str, Any]:
+    r"""Validate and normalize outlier bounds for all supported backends."""
+    lims: Mapping[str, Any] = {
+        "lower_bound": lower_bound,
+        "upper_bound": upper_bound,
+        "lower_inclusive": lower_inclusive,
+        "upper_inclusive": upper_inclusive,
+    }
+    undefined = [value is UNDEFINED for value in lims.values()]
+
+    if limits is UNDEFINED:
+        if any(undefined):
+            raise ValueError(f"Missing boundary values: {lims}")
+        return lims
+    if all(undefined):
+        return _extract_limits(limits, list(lims))
+    raise ValueError("Limits specified both as positional and keyword arguments.")
+
+
+# TODO: return type not entirely honest (generic type changes from e.g. float to bool)
 @overload
-def select_outliers(s: pd.Series, limits: BoundaryInformation, /) -> pd.Series: ...
+def select_outliers(s: pl.Series, limits: BoundaryInformation, /) -> pl.Series: ...
+@overload
+def select_outliers(s: pa.Array, limits: BoundaryInformation, /) -> pa.Array: ...
+@overload
+def select_outliers(s: pd.Series, limits: BoundaryInformation, /) -> pd.Series: ...  # pyright: ignore[reportOverlappingOverload]
 @overload
 def select_outliers(
+    s: pl.Series,
+    /,
+    *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+) -> pl.Series: ...
+@overload
+def select_outliers(
+    s: pa.Array,
+    /,
+    *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+) -> pa.Array: ...
+@overload
+def select_outliers(  # pyright: ignore[reportOverlappingOverload]
     s: pd.Series,
     /,
     *,
@@ -46,20 +139,48 @@ def select_outliers(
 ) -> pd.Series: ...
 @overload
 def select_outliers(
+    df: pl.DataFrame, limits: pl.DataFrame | Mapping[str, BoundaryInformation], /
+) -> pl.DataFrame: ...
+@overload
+def select_outliers(
+    df: pa.Table, limits: pa.Table | Mapping[str, BoundaryInformation], /
+) -> pa.Table: ...
+@overload
+def select_outliers(  # pyright: ignore[reportOverlappingOverload]
     df: pd.DataFrame, limits: pd.DataFrame | Mapping[str, BoundaryInformation], /
 ) -> pd.DataFrame: ...
 @overload
-def select_outliers[Key](
+def select_outliers(
+    df: pl.DataFrame,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
+) -> pl.DataFrame: ...
+@overload
+def select_outliers(
+    df: pa.Table,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
+) -> pa.Table: ...
+@overload
+def select_outliers(  # pyright: ignore[reportOverlappingOverload]
     df: pd.DataFrame,
     /,
     *,
-    lower_bound: Mapping[Key, float | None],
-    upper_bound: Mapping[Key, float | None],
-    lower_inclusive: Mapping[Key, bool | None],
-    upper_inclusive: Mapping[Key, bool | None],
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
 ) -> pd.DataFrame: ...
-def select_outliers[T: pd.Series | pd.DataFrame](
-    obj: T,
+def select_outliers(
+    obj: pa.Array | pa.Table | pd.Series | pd.DataFrame | pl.Series | pl.DataFrame,
     limits: Any = UNDEFINED,
     /,
     *,
@@ -67,46 +188,45 @@ def select_outliers[T: pd.Series | pd.DataFrame](
     upper_bound: Mapping[Any, float | None] | float | None = UNDEFINED,
     lower_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
     upper_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
-) -> T:
-    r"""Detect outliers in a pd.Series or pd.DataFrame, given boundary values."""
-    lims: Mapping[str, Any] = {
-        "lower_bound": lower_bound,
-        "upper_bound": upper_bound,
-        "lower_inclusive": lower_inclusive,
-        "upper_inclusive": upper_inclusive,
-    }
-    undefined = [val is UNDEFINED for val in lims.values()]
-
-    if limits is UNDEFINED:
-        if any(undefined):
-            raise ValueError(f"Missing boundary values: {lims}")
-        options = lims
-    elif all(undefined):
-        options = {key: limits[key] for key in lims}
-    else:
-        raise ValueError("Limits specified both as positional and keyword arguments.")
+) -> pa.Array | pa.Table | pd.Series | pd.DataFrame | pl.Series | pl.DataFrame:
+    r"""Detect outliers in a supported series or table, given boundary values."""
+    options = _get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
 
     match obj:
+        case pl.Series() as s:
+            return B.polars.select_outliers_series(s, **options)
+        case pl.DataFrame() as df:
+            return B.polars.select_outliers_dataframe(df, **options)
+        case pa.Array() as array:
+            return B.pyarrow.select_outliers_array(array, **options)
+        case pa.Table() as table:
+            return B.pyarrow.select_outliers_table(table, **options)
         case pd.Series() as s:
             return B.pandas.select_outliers_series(s, **options)
         case pd.DataFrame() as df:
             return B.pandas.select_outliers_dataframe(df, **options)
         case _:
-            raise TypeError(f"Unsupported type: {type(obj)}")
+            raise TypeError(f"Expected a supported series or table, got {type(obj)}")
 
 
 @overload
-def remove_outliers(
-    s: pd.Series,
+def remove_outliers[T: pa.Array | pd.Series | pl.Series](
+    s: T,
     limits: BoundaryInformation,
     /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
-) -> pd.Series: ...
+) -> T: ...
 @overload
-def remove_outliers(
-    s: pd.Series,
+def remove_outliers[T: pa.Array | pd.Series | pl.Series](
+    s: T,
     /,
     *,
     lower_bound: float | None,
@@ -115,29 +235,31 @@ def remove_outliers(
     upper_inclusive: bool | None,
     drop: bool = ...,
     inplace: bool = ...,
-) -> pd.Series: ...
+) -> T: ...
 @overload
-def remove_outliers(
-    df: pd.DataFrame,
-    limits: pd.DataFrame | Mapping[str, BoundaryInformation],
+def remove_outliers[T: pa.Table | pd.DataFrame | pl.DataFrame](
+    df: T,
+    limits: pa.Table | pd.DataFrame | pl.DataFrame | Mapping[str, BoundaryInformation],
     /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
-) -> pd.DataFrame: ...
+) -> T: ...
 @overload
-def remove_outliers[Key](
-    df: pd.DataFrame,
+def remove_outliers[T: pa.Table | pd.DataFrame | pl.DataFrame](
+    df: T,
     /,
     *,
-    lower_bound: Mapping[Key, float | None],
-    upper_bound: Mapping[Key, float | None],
-    lower_inclusive: Mapping[Key, bool | None],
-    upper_inclusive: Mapping[Key, bool | None],
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
     drop: bool = ...,
     inplace: bool = ...,
-) -> pd.DataFrame: ...
-def remove_outliers[T: pd.Series | pd.DataFrame](
+) -> T: ...
+def remove_outliers[
+    T: pa.Array | pa.Table | pd.Series | pd.DataFrame | pl.Series | pl.DataFrame
+](
     obj: T,
     limits: Any = UNDEFINED,
     /,
@@ -149,25 +271,32 @@ def remove_outliers[T: pd.Series | pd.DataFrame](
     drop: bool = True,
     inplace: bool = False,
 ) -> T:
-    r"""Remove outliers from a pd.DataFrame, given boundary values."""
-    lims: Mapping[str, Any] = {
-        "lower_bound": lower_bound,
-        "upper_bound": upper_bound,
-        "lower_inclusive": lower_inclusive,
-        "upper_inclusive": upper_inclusive,
-    }
-    undefined = [val is UNDEFINED for val in lims.values()]
-
-    if limits is UNDEFINED:
-        if any(undefined):
-            raise ValueError(f"Missing boundary values: {lims}")
-        options = lims
-    elif all(undefined):
-        options = {key: limits[key] for key in lims}
-    else:
-        raise ValueError("Limits specified both as positional and keyword arguments.")
+    r"""Remove outliers from a supported series or table, given boundary values."""
+    options = _get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
 
     match obj:
+        case pl.Series() as s:
+            return B.polars.remove_outliers_series(  # pyright: ignore[reportReturnType]
+                s, drop=drop, inplace=inplace, **options
+            )
+        case pl.DataFrame() as df:
+            return B.polars.remove_outliers_dataframe(  # pyright: ignore[reportReturnType]  # pyrefly: ignore[bad-return]
+                df, drop=drop, inplace=inplace, **options
+            )
+        case pa.Array() as array:
+            return B.pyarrow.remove_outliers_array(
+                array, drop=drop, inplace=inplace, **options
+            )
+        case pa.Table() as table:
+            return B.pyarrow.remove_outliers_table(
+                table, drop=drop, inplace=inplace, **options
+            )
         case pd.Series() as s:
             return B.pandas.remove_outliers_series(
                 s, drop=drop, inplace=inplace, **options
@@ -176,8 +305,9 @@ def remove_outliers[T: pd.Series | pd.DataFrame](
             return B.pandas.remove_outliers_dataframe(
                 df, drop=drop, inplace=inplace, **options
             )
+
         case _:
-            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
+            raise TypeError(f"Expected a supported series or table, got {type(obj)}")
 
 
 def strip_whitespace[T: pa.Array | pa.Table | pd.Series | pd.DataFrame](

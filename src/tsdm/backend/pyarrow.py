@@ -17,7 +17,11 @@ __all__ = [
     "is_string_array",
     "null_like",
     "or_",
+    "remove_outliers_table",
+    "remove_outliers_array",
     "scalar",
+    "select_outliers_table",
+    "select_outliers_array",
     "set_nulls",
     "set_nulls_series",
     "strip_whitespace",
@@ -30,8 +34,8 @@ __all__ = [
     "strip_whitespace_array",
 ]
 
-from collections.abc import Iterable, Sequence
-from typing import Any, Literal, Optional, overload
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Literal, Optional, cast, overload
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -55,6 +59,7 @@ TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
 
 type AnyArray = Array | ChunkedArray
+type BooleanAnyArray = BooleanArray | ChunkedArray
 type Mask = bool | list[bool] | BooleanArray | BooleanScalar
 
 
@@ -146,6 +151,188 @@ def where[T: AnyArray](mask: Mask, x: T | Scalar, y: T | Scalar = NA, /) -> T:
     arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).
     """
     return pc.replace_with_mask(x, mask, y)
+
+
+def _is_real_numeric_array(arr: AnyArray, /) -> bool:
+    r"""Check whether an Arrow array contains real numeric values."""
+    return (
+        pa.types.is_integer(arr.type)
+        or pa.types.is_floating(arr.type)
+        or pa.types.is_decimal(arr.type)
+    )
+
+
+def select_outliers_array(
+    s: AnyArray,
+    /,
+    *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+) -> BooleanAnyArray:
+    r"""Detect outliers in an Arrow array, given boundary values."""
+    if not _is_real_numeric_array(s):
+        return false_like(s)
+
+    values = pc.cast(s, pa.float64())
+    false = pa.scalar(value=False)
+    match lower_bound, lower_inclusive:
+        case None, _:
+            mask_lower = false_like(s)
+        case _, True:
+            mask_lower = pc.fill_null(pc.less(values, lower_bound), false)
+        case _, False:
+            mask_lower = pc.fill_null(pc.less_equal(values, lower_bound), false)
+        case _:
+            raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
+
+    match upper_bound, upper_inclusive:
+        case None, _:
+            mask_upper = false_like(s)
+        case _, True:
+            mask_upper = pc.fill_null(pc.greater(values, upper_bound), false)
+        case _, False:
+            mask_upper = pc.fill_null(pc.greater_equal(values, upper_bound), false)
+        case _:
+            raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
+
+    return pc.or_(mask_lower, mask_upper)
+
+
+def select_outliers_table(
+    df: Table,
+    /,
+    *,
+    lower_bound: Mapping[str, float | None],
+    upper_bound: Mapping[str, float | None],
+    lower_inclusive: Mapping[str, bool | None],
+    upper_inclusive: Mapping[str, bool | None],
+) -> Table:
+    r"""Detect outliers in an Arrow table, given boundary values."""
+    given_bounds = set.intersection(
+        *(
+            set(bounds)
+            for bounds in (lower_bound, upper_bound, lower_inclusive, upper_inclusive)
+        )
+    )
+    if missing_bounds := set(df.column_names) - given_bounds:
+        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
+
+    return pa.table(
+        {
+            column: select_outliers_array(
+                df[column],
+                lower_bound=lower_bound[column],
+                upper_bound=upper_bound[column],
+                lower_inclusive=lower_inclusive[column],
+                upper_inclusive=upper_inclusive[column],
+            )
+            for column in df.column_names
+        }
+    )
+
+
+def remove_outliers_array[A: AnyArray](
+    s: A,
+    /,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+) -> A:
+    r"""Remove outliers from an Arrow array, given boundary values.
+
+    ``inplace`` is accepted for API compatibility. Arrow arrays are immutable.
+    """
+    del inplace
+    if lower_bound is None and upper_bound is None:
+        return s
+    if isinstance(s, ChunkedArray):
+        result = remove_outliers_array(
+            s.combine_chunks(),
+            drop=drop,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+        return cast("A", pa.chunked_array([result]))
+    if (
+        lower_bound is not None
+        and upper_bound is not None
+        and lower_bound > upper_bound
+    ):
+        raise ValueError(
+            f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
+        )
+
+    mask = select_outliers_array(
+        s,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    result = pc.replace_with_mask(s, mask, pa.scalar(None, type=s.type))
+    return pc.filter(result, pc.invert(mask)) if drop else result
+
+
+def remove_outliers_table(
+    df: Table,
+    /,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+    lower_bound: Mapping[str, float | None],
+    upper_bound: Mapping[str, float | None],
+    lower_inclusive: Mapping[str, bool | None],
+    upper_inclusive: Mapping[str, bool | None],
+    erroron_extra_bounds: bool = False,
+) -> Table:
+    r"""Remove outliers from an Arrow table, given boundary values.
+
+    ``inplace`` is accepted for API compatibility. Arrow tables are immutable.
+    """
+    del inplace
+    given_bounds = set.intersection(
+        *(
+            set(bounds)
+            for bounds in (lower_bound, upper_bound, lower_inclusive, upper_inclusive)
+        )
+    )
+    if missing_bounds := set(df.column_names) - given_bounds:
+        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
+    if erroron_extra_bounds and (extra_bounds := given_bounds - set(df.column_names)):
+        raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
+
+    mask = select_outliers_table(
+        df,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    result = df
+    for column in df.column_names:
+        result = result.set_column(
+            result.column_names.index(column),
+            column,
+            pc.replace_with_mask(
+                df[column].combine_chunks(),
+                mask[column].combine_chunks(),
+                pa.scalar(None, type=df[column].type),
+            ),
+        )
+
+    if not drop:
+        return result
+
+    row_mask = and_(mask[column].combine_chunks() for column in mask.column_names)
+    return result.filter(pc.invert(row_mask))
 
 
 @overload
