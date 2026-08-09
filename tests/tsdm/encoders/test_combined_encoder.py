@@ -9,7 +9,6 @@ import torch
 from pandas import DataFrame
 
 from tsdm.config import PROJECT
-from tsdm.datasets import InSilico
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -23,6 +22,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.tasks import InSilicoTask
+from tsdm.timeseries import in_silico
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -30,7 +30,7 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 @pytest.fixture(scope="session")
 def encoder() -> FittableEncoder:
     # initialize the task object
-    dataset = InSilico()
+    dataset = in_silico()
     descr = dataset.timeseries_metadata[["unit", "lower_bound", "upper_bound"]]
 
     # select encoding scheme
@@ -164,7 +164,7 @@ def test_combined_encoder(encoder: Encoder) -> None:
 
 
 def test_bounds(encoder: Encoder) -> None:
-    dataset = InSilico()
+    dataset = in_silico()
     descr = dataset.timeseries_metadata[["unit", "lower_bound", "upper_bound"]]
 
     nrows, ncols = dataset.timeseries.shape

@@ -6,7 +6,6 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
-from tsdm.datasets import InSilico
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import (
     MIMIC_III_Bilos2021,
@@ -19,6 +18,7 @@ from tsdm.timeseries import (
     PandasTSC,
     Sample,
     TimeSeriesSampleGenerator,
+    in_silico,
 )
 
 __logger__ = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ def test_time_series_sample_generator() -> None:
     LOGGER.info("Testing.")
 
     # make dataset
-    dataset = InSilico()
+    dataset = in_silico()
     TSC = PandasTSC(
         timeseries=dataset.timeseries,
     )
