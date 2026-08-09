@@ -70,6 +70,8 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
     Paper
     -----
     - | Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting
+      | Lim et al.
+      | International Journal of Forecasting 2021
       | https://www.sciencedirect.com/science/article/pii/S0169207021000637
 
     Evaluation Protocol

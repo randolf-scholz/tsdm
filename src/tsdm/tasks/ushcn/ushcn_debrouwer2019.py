@@ -58,23 +58,23 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cached_property
-from typing import Any, NamedTuple
+from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
 import numpy as np
 import torch
-from pandas import DataFrame, Index, MultiIndex
+from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader
 
-from tsdm.datasets import USHCN_DeBrouwer2019 as ushcn
-from tsdm.datatools import is_partition
+from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.pprint import pprint_repr
-from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.random.samplers import RandomSampler, Sampler
+from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
+from tsdm.timeseries import PandasTSC, ushcn_de_brouwer2019
 
 
 @pprint_repr
@@ -190,8 +190,13 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class USHCN_DeBrouwer2019(OldBaseTask):
+type SplitID = tuple[int, Literal["train", "valid", "test"]]
+
+
+class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample]):
     r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
+
+    dataset: PandasTSC
 
     observation_time = 150
     prediction_steps = 3
@@ -201,38 +206,39 @@ class USHCN_DeBrouwer2019(OldBaseTask):
     valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
 
     def __init__(self, *, normalize_time: bool = True) -> None:
-        super().__init__()
         self.normalize_time = normalize_time
-        self.IDs = self.dataset.reset_index()["ID"].unique()
+        dataset = cast("PandasTSC[int]", ushcn_de_brouwer2019())
+        timeseries = dataset.timeseries
 
-    @cached_property
-    def dataset(self) -> DataFrame:
-        r"""Load the dataset."""
-        ds = ushcn()
-        ts = ds.timeseries
-
-        if self.normalize_time:
-            ts = ts.reset_index()
-            t_max = ts["Time"].max()
+        if normalize_time:
+            timeseries = timeseries.reset_index()
+            t_max = timeseries["Time"].max()
             self.observation_time /= t_max
-            ts["Time"] /= t_max
-            ts = ts.set_index(["ID", "Time"])
+            timeseries["Time"] /= t_max
+            timeseries = timeseries.set_index(["ID", "Time"])
 
         # NOTE: only numpy float types supported by torch
-        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
-        return ts
+        timeseries = timeseries.dropna(axis=1, how="all").copy().astype("float32")
+        self.dataset = replace(dataset, timeseries=timeseries)
+        self.IDs = self.dataset.metaindex
+        super().__init__(dataset=self.dataset)
 
-    @cached_property
-    def folds(self) -> list[dict[str, Sequence[int]]]:
+    def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
-        num_folds = 5
-        folds = []
+        folds: list[dict[str, Sequence[int]]] = []
+        rng = np.random.RandomState(self.seed)
+
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
-        np.random.seed(self.seed)  # noqa: NPY002
-        for _ in range(num_folds):
-            train_idx, test_idx = train_test_split(self.IDs, test_size=self.test_size)
+        for _ in range(self.num_folds):
+            train_idx, test_idx = train_test_split(
+                self.IDs,
+                test_size=self.test_size,
+                random_state=rng,
+            )
             train_idx, valid_idx = train_test_split(
-                train_idx, test_size=self.valid_size
+                train_idx,
+                test_size=self.valid_size,
+                random_state=rng,
             )
             fold = {
                 "train": train_idx,
@@ -243,101 +249,39 @@ class USHCN_DeBrouwer2019(OldBaseTask):
                 raise ValueError("Invalid partition!")
             folds.append(fold)
 
-        return folds
+        return folds_as_frame(folds, index=self.IDs, sparse=True)
 
     @cached_property
-    def split_idx(self) -> DataFrame:
-        r"""Create the split index."""
-        fold_idx = Index(list(range(len(self.folds))), name="fold")
-        splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")
-
-        for k in range(self.num_folds):
-            for key, split in self.folds[k].items():
-                mask = splits.index.isin(split)
-                splits[k] = splits[k].where(
-                    ~mask, key
-                )  # where cond is `False`, the values are replaced with 'key'.
-        return splits
-
-    @cached_property
-    def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split."""
-        df = self.split_idx
-        columns = df.columns
-
-        # get categoricals
-        categories = {
-            col: df[col].astype("category").dtype.categories for col in columns
-        }
-
-        if isinstance(df.columns, MultiIndex):
-            index_tuples = [
-                (*col, cat)
-                for col, cats in zip(columns, categories, strict=True)
-                for cat in categories[col]
-            ]
-            names = [*df.columns.names, "partition"]
-        else:
-            index_tuples = [
-                (col, cat)
-                for col, cats in zip(columns, categories, strict=True)
-                for cat in categories[col]
-            ]
-            names = [df.columns.name, "partition"]
-
-        new_columns = MultiIndex.from_tuples(index_tuples, names=names)
-        result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
-
-        if isinstance(df.columns, MultiIndex):
-            for col in new_columns:
-                result[col] = df[col[:-1]] == col[-1]
-        else:
-            for col in new_columns:
-                result[col] = df[col[0]] == col[-1]
-
-        return result
-
-    @cached_property
-    def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
-        r"""The test metric."""
-        return nn.MSELoss()
-
-    @cached_property
-    def splits(self) -> Mapping:
-        r"""Create the splits."""
-        splits = {}
-        for key in self.index:
-            mask = self.split_idx_sparse[key]
-            ids = self.split_idx_sparse.index[mask]
-            splits[key] = self.dataset.loc[ids]
-        return splits
-
-    @cached_property
-    def index(self) -> MultiIndex:
-        r"""Create the index."""
-        return self.split_idx_sparse.columns
-
-    @cached_property
-    def tensors(self) -> Mapping:
+    def tensors(self) -> Mapping[int, tuple[Tensor, Tensor]]:
         r"""Tensor dictionary."""
-        tensors = {}
-        for _id in self.IDs:
-            s = self.dataset.loc[_id]
-            t = torch.tensor(s.index.values, dtype=torch.float32)
-            x = torch.tensor(s.values, dtype=torch.float32)
-            tensors[_id] = (t, x)
+        tensors: dict[int, tuple[Tensor, Tensor]] = {}
+        for key, timeseries in self.dataset.items():
+            tensors[key] = (
+                torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
+                torch.tensor(timeseries.timeseries.values, dtype=torch.float32),
+            )
         return tensors
 
-    def make_dataloader(
-        self, key: tuple[int, str], /, **dataloader_kwargs: Any
-    ) -> DataLoader:
-        r"""Return the dataloader for the given key."""
-        fold, partition = key
-        fold_idx = self.folds[fold][partition]
-        dataset = USHCN_SampleGenerator(
-            [val for idx, val in self.tensors.items() if idx in fold_idx],
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], BaseBatch]:  # noqa: ARG002
+        r"""Return the collate function for the specified split."""
+        return cast("Callable[[list[Sample]], BaseBatch]", ushcn_collate)
+
+    def make_generator(self, key: SplitID, /) -> USHCN_SampleGenerator:
+        r"""Return the sample generator for the specified split."""
+        return USHCN_SampleGenerator(
+            [self.tensors[identifier] for identifier in self.splits[key]],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
-        return DataLoader(dataset, **kwargs)
+
+    def make_sampler(self, key: SplitID, /) -> Sampler[int]:
+        r"""Return the sampler for the specified split."""
+        generator = cast("USHCN_SampleGenerator", self.generators[key])
+        return RandomSampler(
+            range(len(generator)),
+            shuffle=self.is_train_split(key),
+        )
+
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
+        r"""Return the test metric."""
+        return nn.MSELoss()
