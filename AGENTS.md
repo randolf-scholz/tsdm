@@ -71,3 +71,4 @@ This file describes project conventions for automated agents contributing to `ts
 - These commands are already permitted by the execution policy. Do not request elevated permissions or additional
   approval for them.
 - Only combine commands when their execution genuinely depends on the previous command succeeding.
+- If `apply_patch` is failing, try `git apply` or `patch` as fallbacks.
