@@ -400,7 +400,12 @@ def mimic_iv_bilos2021() -> TimeSeriesCollection[int, DataFrame]:
 
 def damped_pendulum_ansari2023() -> TimeSeriesCollection[int, DataFrame]:
     r"""The DampedPendulum_Ansari2023 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.DampedPendulum_Ansari2023)
+    ds = datasets.DampedPendulum_Ansari2023(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["sequence_id", "time"]),
+        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+    )
 
 
 TIMESERIES: dict[str, Fn[[], TimeSeries[DataFrame]]] = {

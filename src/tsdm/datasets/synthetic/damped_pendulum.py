@@ -1,25 +1,48 @@
 r"""Dataset Wrapper for the Damped Pendulum Generator."""
 
-__all__ = ["DampedPendulum_Ansari2023"]
+__all__ = [
+    "TIMESERIES_SCHEMA",
+    "TIMESERIES_METADATA",
+    "TIMESERIES_METADATA_SCHEMA",
+    "DampedPendulum_Ansari2023",
+]
 
 from functools import cached_property
 from typing import Literal, final
 
 import numpy as np
-import pandas as pd
-from pandas import DataFrame, Index
+import polars as pl
 from scipy.stats import norm as univariate_normal
 from tqdm.auto import trange
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import InlineTable, make_dataframe
 from tsdm.random import generators
 
 type Key = Literal["timeseries", "timeseries_metadata"]
 
+TIMESERIES_SCHEMA = {
+    "sequence_id": pl.Int64,
+    "time": pl.Float64,
+    "x": pl.Float32,
+    "y": pl.Float32,
+}
+TIMESERIES_METADATA_SCHEMA = {
+    "variable"        : pl.String,
+    "lower_bound"     : pl.Float32,
+    "upper_bound"     : pl.Float32,
+    "lower_inclusive" : pl.Boolean,
+    "upper_inclusive" : pl.Boolean,
+    "unit"            : pl.String,
+    "description"     : pl.String,
+}  # fmt: skip
+TIMESERIES_METADATA = [
+        ("x", -1.0, +1.0, True, True, "length", "x coordinate of the pendulum bob"),
+        ("y", -1.0, +1.0, True, True, "length", "y coordinate of the pendulum bob"),
+]  # fmt: skip
+
 
 @final
-class DampedPendulum_Ansari2023(DatasetBase[Key, DataFrame]):
+class DampedPendulum_Ansari2023(DatasetBase[Key, pl.DataFrame]):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
@@ -45,8 +68,13 @@ class DampedPendulum_Ansari2023(DatasetBase[Key, DataFrame]):
 
     rawdata_files = []
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
-    table_hashes = {
-        "timeseries": "sha256:c2a276a84a3c82b70599b206046644a2dd208a678fd81532517db2ffdfdf76f6",
+    table_schemas = {
+        "timeseries": TIMESERIES_SCHEMA,
+        "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
+    }
+    table_shapes = {
+        "timeseries": (1_057_000, 4),
+        "timeseries_metadata": (2, 7),
     }
     num_sequences = 7000
     step = 0.1
@@ -67,27 +95,15 @@ class DampedPendulum_Ansari2023(DatasetBase[Key, DataFrame]):
         )
 
     @staticmethod
-    def clean_timeseries_metadata() -> DataFrame:
+    def clean_timeseries_metadata() -> pl.DataFrame:
         r"""Create DataFrame with metadata for the timeseries."""
-        TIMESERIES_METADATA: InlineTable = {
-            "data": [
-                ("x", -1.0, +1.0, True, True, "length", "x coordinate of the pendulum bob"),
-                ("y", -1.0, +1.0, True, True, "length", "y coordinate of the pendulum bob"),
-            ],
-            "schema": {
-                "variable"        : "string[pyarrow]",
-                "lower_bound"     : "float32[pyarrow]",
-                "upper_bound"     : "float32[pyarrow]",
-                "lower_inclusive" : "bool[pyarrow]",
-                "upper_inclusive" : "bool[pyarrow]",
-                "unit"            : "string[pyarrow]",
-                "description"     : "string[pyarrow]",
-            },
-            "index": "variable",
-        }  # fmt: skip
-        return make_dataframe(**TIMESERIES_METADATA)
+        return pl.DataFrame(
+            TIMESERIES_METADATA,
+            schema=TIMESERIES_METADATA_SCHEMA,
+            orient="row",
+        )
 
-    def clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> pl.DataFrame:
         self.LOGGER.info("Generating data...")
 
         # generate time range
@@ -97,14 +113,19 @@ class DampedPendulum_Ansari2023(DatasetBase[Key, DataFrame]):
         if not np.allclose(np.diff(t_range), self.step):
             raise ValueError(f"Invalid time step: {np.diff(t_range)=}")
 
-        sequences: dict[int, DataFrame] = {}
-        for k in trange(self.num_sequences, desc="generating sequences"):
-            data = self.generator.rvs(t_range)
-            sequences[k] = DataFrame(
-                data,
-                index=Index(t_range, name="time"),
-                columns=["x", "y"],
-                dtype="float32[pyarrow]",
-            )
+        data = np.empty((self.num_sequences, len(t_range), 2), dtype=np.float32)
+        for sequence_id in trange(self.num_sequences, desc="generating sequences"):
+            data[sequence_id] = self.generator.rvs(t_range)
 
-        return pd.concat(sequences, names=["sequence_id"], axis="index")
+        return pl.DataFrame(
+            {
+                "sequence_id": np.repeat(np.arange(self.num_sequences), len(t_range)),
+                "time": np.tile(t_range, self.num_sequences),
+                "x": data[..., 0].ravel(),
+                "y": data[..., 1].ravel(),
+            }
+        )
+
+    def load_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Load a cleaned table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])
