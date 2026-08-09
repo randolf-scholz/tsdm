@@ -18,17 +18,8 @@ from typing import Any, TypedDict, overload
 
 import pandas as pd
 import pyarrow as pa
-from pandas import DataFrame, Series
 
-from tsdm.backend.pandas import (
-    remove_outliers_dataframe,
-    remove_outliers_series,
-    select_outliers_dataframe,
-    select_outliers_series,
-    strip_whitespace_dataframe,
-    strip_whitespace_series,
-)
-from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
+import tsdm.backend as B
 from tsdm.constants import UNDEFINED
 
 
@@ -42,32 +33,32 @@ class BoundaryInformation(TypedDict):
 
 
 @overload
-def select_outliers(s: Series, limits: BoundaryInformation, /) -> Series: ...
+def select_outliers(s: pd.Series, limits: BoundaryInformation, /) -> pd.Series: ...
 @overload
 def select_outliers(
-    s: Series,
+    s: pd.Series,
     /,
     *,
     lower_bound: float | None,
     upper_bound: float | None,
     lower_inclusive: bool | None,
     upper_inclusive: bool | None,
-) -> Series: ...
+) -> pd.Series: ...
 @overload
 def select_outliers(
-    df: DataFrame, limits: DataFrame | Mapping[str, BoundaryInformation], /
-) -> DataFrame: ...
+    df: pd.DataFrame, limits: pd.DataFrame | Mapping[str, BoundaryInformation], /
+) -> pd.DataFrame: ...
 @overload
 def select_outliers[Key](
-    df: DataFrame,
+    df: pd.DataFrame,
     /,
     *,
     lower_bound: Mapping[Key, float | None],
     upper_bound: Mapping[Key, float | None],
     lower_inclusive: Mapping[Key, bool | None],
     upper_inclusive: Mapping[Key, bool | None],
-) -> DataFrame: ...
-def select_outliers[T: Series | DataFrame](
+) -> pd.DataFrame: ...
+def select_outliers[T: pd.Series | pd.DataFrame](
     obj: T,
     limits: Any = UNDEFINED,
     /,
@@ -77,7 +68,7 @@ def select_outliers[T: Series | DataFrame](
     lower_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
     upper_inclusive: Mapping[Any, bool | None] | bool | None = UNDEFINED,
 ) -> T:
-    r"""Detect outliers in a Series or DataFrame, given boundary values."""
+    r"""Detect outliers in a pd.Series or pd.DataFrame, given boundary values."""
     lims: Mapping[str, Any] = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
@@ -96,26 +87,26 @@ def select_outliers[T: Series | DataFrame](
         raise ValueError("Limits specified both as positional and keyword arguments.")
 
     match obj:
-        case Series() as s:
-            return select_outliers_series(s, **options)
-        case DataFrame() as df:
-            return select_outliers_dataframe(df, **options)
+        case pd.Series() as s:
+            return B.pandas.select_outliers_series(s, **options)
+        case pd.DataFrame() as df:
+            return B.pandas.select_outliers_dataframe(df, **options)
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
 
 
 @overload
 def remove_outliers(
-    s: Series,
+    s: pd.Series,
     limits: BoundaryInformation,
     /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
-) -> Series: ...
+) -> pd.Series: ...
 @overload
 def remove_outliers(
-    s: Series,
+    s: pd.Series,
     /,
     *,
     lower_bound: float | None,
@@ -124,19 +115,19 @@ def remove_outliers(
     upper_inclusive: bool | None,
     drop: bool = ...,
     inplace: bool = ...,
-) -> Series: ...
+) -> pd.Series: ...
 @overload
 def remove_outliers(
-    df: DataFrame,
-    limits: DataFrame | Mapping[str, BoundaryInformation],
+    df: pd.DataFrame,
+    limits: pd.DataFrame | Mapping[str, BoundaryInformation],
     /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
-) -> DataFrame: ...
+) -> pd.DataFrame: ...
 @overload
 def remove_outliers[Key](
-    df: DataFrame,
+    df: pd.DataFrame,
     /,
     *,
     lower_bound: Mapping[Key, float | None],
@@ -145,8 +136,8 @@ def remove_outliers[Key](
     upper_inclusive: Mapping[Key, bool | None],
     drop: bool = ...,
     inplace: bool = ...,
-) -> DataFrame: ...
-def remove_outliers[T: Series | DataFrame](
+) -> pd.DataFrame: ...
+def remove_outliers[T: pd.Series | pd.DataFrame](
     obj: T,
     limits: Any = UNDEFINED,
     /,
@@ -158,7 +149,7 @@ def remove_outliers[T: Series | DataFrame](
     drop: bool = True,
     inplace: bool = False,
 ) -> T:
-    r"""Remove outliers from a DataFrame, given boundary values."""
+    r"""Remove outliers from a pd.DataFrame, given boundary values."""
     lims: Mapping[str, Any] = {
         "lower_bound": lower_bound,
         "upper_bound": upper_bound,
@@ -177,42 +168,46 @@ def remove_outliers[T: Series | DataFrame](
         raise ValueError("Limits specified both as positional and keyword arguments.")
 
     match obj:
-        case Series() as s:
-            return remove_outliers_series(s, drop=drop, inplace=inplace, **options)
-        case DataFrame() as df:
-            return remove_outliers_dataframe(df, drop=drop, inplace=inplace, **options)
+        case pd.Series() as s:
+            return B.pandas.remove_outliers_series(
+                s, drop=drop, inplace=inplace, **options
+            )
+        case pd.DataFrame() as df:
+            return B.pandas.remove_outliers_dataframe(
+                df, drop=drop, inplace=inplace, **options
+            )
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
 
-def strip_whitespace[T: pa.Array | pa.Table | Series | DataFrame](
+def strip_whitespace[T: pa.Array | pa.Table | pd.Series | pd.DataFrame](
     table: T, /, *cols: str
 ) -> T:
     r"""Strip whitespace from all string columns in a table or frame."""
     match table:
         case pa.Table() as table:
-            return strip_whitespace_table(table, *cols)
+            return B.pyarrow.strip_whitespace_table(table, *cols)
         case pa.Array() as array:
             if cols:
                 raise ValueError("Cannot specify columns for an Array.")
-            return strip_whitespace_array(array)
-        case Series() as series:
+            return B.pyarrow.strip_whitespace_array(array)
+        case pd.Series() as series:
             if cols:
-                raise ValueError("Cannot specify columns for a Series.")
-            return strip_whitespace_series(series)
-        case DataFrame() as frame:
-            return strip_whitespace_dataframe(frame, *cols)
+                raise ValueError("Cannot specify columns for a pd.Series.")
+            return B.pandas.strip_whitespace_series(series)
+        case pd.DataFrame() as frame:
+            return B.pandas.strip_whitespace_dataframe(frame, *cols)
         case _:
             raise TypeError(f"Unsupported type: {type(table)}")
 
 
-def is_integer_series(s: Series, /) -> bool:
+def is_integer_series(s: pd.Series, /) -> bool:
     r"""Check if all float values are integral."""
     mask = pd.notna(s)
     return s[mask].apply(float.is_integer).all().item()
 
 
-def get_integer_cols(table: DataFrame, /) -> set[str]:
+def get_integer_cols(table: pd.DataFrame, /) -> set[str]:
     r"""Get all columns that contain only integers."""
     logger = logging.getLogger(f"{__name__}/get_integer_cols")
 
@@ -227,10 +222,10 @@ def get_integer_cols(table: DataFrame, /) -> set[str]:
     return cols
 
 
-def aggregate_nondestructive(df: DataFrame, /) -> DataFrame:
+def aggregate_nondestructive(df: pd.DataFrame, /) -> pd.DataFrame:
     r"""Aggregate multiple simulataneous measurements in a non-destructive way.
 
-    Given a `DataFrame` of size $m×k$, this will construct a new DataFrame of size $m'×k$,
+    Given a `pd.DataFrame` of size $m×k$, this will construct a new pd.DataFrame of size $m'×k$,
     where `m' = max(df.notna().sum())` is the maximal number of measured not-null values.
 
     For example::
@@ -257,7 +252,7 @@ def aggregate_nondestructive(df: DataFrame, /) -> DataFrame:
     mask = df.notna()
     nitems = mask.sum()
     nrows = nitems.max()
-    result = DataFrame(index=df.index[:nrows], columns=df.columns)
+    result = pd.DataFrame(index=df.index[:nrows], columns=df.columns)
     result = result.astype(df.dtypes)
 
     for col in result.columns:
