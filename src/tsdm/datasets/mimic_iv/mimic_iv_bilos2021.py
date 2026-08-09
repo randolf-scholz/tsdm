@@ -15,22 +15,36 @@ highlighting data provenance and facilitating both individual and combined use o
 MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
 """
 
-__all__ = ["MIMIC_IV_Bilos2021"]
+__all__ = ["RAWDATA_SCHEMA", "TARGET_SCHEMA", "MIMIC_IV_Bilos2021"]
 
 
 import os
 import subprocess
 from getpass import getpass
+from itertools import product
 from typing import Literal
 
-import numpy as np
-from pandas import DataFrame
-from pyarrow import Table, csv
+import polars as pl
 
 from tsdm.datasets.base import DatasetBase
 
+RAWDATA_SCHEMA = {
+    "hadm_id": pl.Float64,
+    "time_stamp": pl.Int16,
+    **{
+        f"{kind}_label_{label}": pl.Float32
+        for label, kind in product(range(102), ("Value", "Mask"))
+    },
+}
+TARGET_SCHEMA = {
+    "hadm_id": pl.Int32,
+    "time_stamp": pl.Int16,
+    # The 5σ outlier filter removes every observation from labels 37 and 71.
+    **{f"Value_{label}": pl.Float32 for label in range(102) if label not in (37, 71)},
+}
 
-class MIMIC_IV_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
+
+class MIMIC_IV_Bilos2021(DatasetBase[Literal["timeseries"], pl.DataFrame]):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -56,63 +70,84 @@ class MIMIC_IV_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
     rawdata_hashes = {
         "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
     }
-    rawdata_schemas = {
-        "full_dataset.csv": {
-            "hadm_id": "int32[pyarrow]",
-            "time_stamp": "int16[pyarrow]",
-        }
-    }
+    rawdata_schemas = {"full_dataset.csv": RAWDATA_SCHEMA}
+    rawdata_shapes = {"full_dataset.csv": (2_485_649, 206)}
+    table_schemas = {"timeseries": TARGET_SCHEMA}
+    table_shapes = {"timeseries": (2_485_649, 102)}
 
-    rawdata_shape = (2485649, 206)
-    table_hashes = {
-        "timeseries": "pandas:-5464950709022187442",
-    }
-    table_shapes = {
-        "timeseries": (2485649, 102),
-    }
-
-    def clean_timeseries(self) -> DataFrame:
+    def clean_timeseries(self) -> pl.DataFrame:
         self.LOGGER.info("Loading main file.")
-        table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
+        fname = "full_dataset.csv"
+        rawdata_schema = self.rawdata_schemas[fname]
+        rawdata_shape = self.rawdata_shapes[fname]
+        table = pl.read_csv(
+            self.rawdata_paths[fname],
+            schema=rawdata_schema,
+        ).fill_nan(None)
 
-        if table.shape != self.rawdata_shape:
-            raise ValueError(f"{table.shape=} does not match {self.rawdata_shape=}.")
+        if table.shape != rawdata_shape:
+            raise ValueError(f"{table.shape=} does not match {rawdata_shape=}.")
 
-        # Convert to pandas.
-        ts = (
-            table.to_pandas(self_destruct=True)
-            .astype(self.rawdata_schemas["full_dataset.csv"])
-            .set_index(["hadm_id", "time_stamp"])
-            .sort_index()
-        )
+        value_columns = [f"Value_label_{label}" for label in range(102)]
+        mask_columns = [f"Mask_label_{label}" for label in range(102)]
+        target_columns = [f"Value_{label}" for label in range(102)]
 
-        # Remove mask columns, replace values with nan.
-        # Original labels: Value_label_k, Mask_label_k for k in 0, ..., 99.
-        for i, col in enumerate(ts):
-            if i % 2 == 1:
-                continue
-            if ts.columns[i + 1] != col.replace("Value", "Mask"):
-                raise ValueError("Mask column not found.")
-            ts[col] = np.where(ts.iloc[:, i + 1], ts[col], np.nan)
+        if missing_values := set(value_columns) - set(table.columns):
+            raise ValueError(f"Value columns not found: {missing_values}")
 
-        # Drop mask columns.
-        ts = (
-            ts.drop(columns=ts.columns[1::2])
-            .dropna(how="all")
-            .astype("float32")
-            .sort_index(axis="columns")
+        if missing_masks := set(mask_columns) - set(table.columns):
+            raise ValueError(f"Mask columns not found: {missing_masks}")
+
+        # fold masks into value column and rename.
+        masked = (
+            table.lazy()
+            .select(
+                pl.col("hadm_id").cast(pl.Int32).alias("hadm_id"),
+                pl.col("time_stamp"),
+                *(
+                    pl.when(pl.col(f"Mask_label_{k}").eq(1))
+                    .then(pl.col(f"Value_label_{k}"))
+                    .otherwise(None)
+                    .alias(f"Value_{k}")
+                    for k in range(102)
+                ),
+            )
+            .filter(
+                pl.any_horizontal(
+                    pl.col(column).is_not_null() for column in target_columns
+                )
+            )
         )
 
         # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
         #  over the full data slice, including test!
         # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
-        ts = (ts - ts.mean()) / ts.std()
+        normalized = masked.select(
+            "hadm_id",
+            "time_stamp",
+            *(
+                ((pl.col(column) - pl.col(column).mean()) / pl.col(column).std(ddof=1))
+                for column in target_columns
+            ),
+        )
 
         # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
-        ts = ts[(ts > -5) & (ts < 5)].dropna(axis=1, how="all").copy()
+        table = normalized.select(
+            "hadm_id",
+            "time_stamp",
+            *(
+                pl.when(pl.col(column).is_between(-5, 5, closed="none"))
+                .then(pl.col(column))
+                .otherwise(None)
+                for column in target_columns
+            ),
+        ).collect()
 
-        # NOTE: only numpy float types supported by torch
-        return ts.astype("float32")
+        return table.select(*TARGET_SCHEMA).sort("hadm_id", "time_stamp")
+
+    def load_table(self, key: Literal["timeseries"], /) -> pl.DataFrame:
+        r"""Load a cleaned table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():
