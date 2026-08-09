@@ -16,7 +16,12 @@ very large population of ICU patients; and it contains highly granular data, inc
 vital signs, laboratory results, and medications.
 """
 
-__all__ = ["MIMIC_III_DeBrouwer2019"]
+__all__ = [
+    "RAWDATA_SCHEMA",
+    "STATIC_COVARIATES_SCHEMA",
+    "TIMESERIES_SCHEMA",
+    "MIMIC_III_DeBrouwer2019",
+]
 
 
 import os
@@ -24,18 +29,43 @@ import subprocess
 from getpass import getpass
 from typing import Literal
 
-import pandas as pd
+import polars as pl
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
-from pandas import DataFrame
 
 from tsdm.datasets.base import DatasetBase
+
+RAWDATA_SCHEMA = {
+    "UNIQUE_ID": pl.Int16,
+    "TIME_STAMP": pl.Int16,
+    "LABEL_CODE": pl.Int16,
+    "VALUENUM": pl.Float32,
+    "MEAN": pl.Float32,
+    "STD": pl.Float32,
+    "VALUENORM": pl.Float32,
+}
+TIMESERIES_SCHEMA = {
+    "UNIQUE_ID": pl.Int16,
+    "TIME_STAMP": pl.Int16,
+    **{str(label): pl.Float32 for label in range(96)},
+}
+STATIC_COVARIATES_SCHEMA = {
+    "LABEL_CODE": pl.String,
+    "count": pl.Float32,
+    "mean": pl.Float32,
+    "std": pl.Float32,
+    "min": pl.Float32,
+    "25%": pl.Float32,
+    "50%": pl.Float32,
+    "75%": pl.Float32,
+    "max": pl.Float32,
+}
 
 type Key = Literal["timeseries", "static_covariates"]
 
 
-class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
+class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -70,57 +100,85 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
         "complete_tensor.csv": "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2",
     }
     rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
-    rawdata_schemas = {
-        "complete_tensor.csv": {
-            "UNIQUE_ID"  : "int16[pyarrow]",
-            "TIME_STAMP" : "int16[pyarrow]",
-            "LABEL_CODE" : "int16[pyarrow]",
-            "VALUENORM"  : "float32[pyarrow]",
-            "MEAN"       : "float32[pyarrow]",
-            "STD"        : "float32[pyarrow]",
-        }
-    }  # fmt: skip
+    rawdata_schemas = {"complete_tensor.csv": RAWDATA_SCHEMA}
+    table_schemas = {
+        "timeseries": TIMESERIES_SCHEMA,
+        "static_covariates": STATIC_COVARIATES_SCHEMA,
+    }
     table_shapes = {
-        "timeseries": (552327, 96),
-        "static_covariates": (96, 3),
+        "timeseries": (552_327, 98),
+        "static_covariates": (96, 9),
     }
 
-    timeseries: DataFrame
-    static_covariates: DataFrame
+    timeseries: pl.DataFrame
+    static_covariates: pl.DataFrame
 
-    def clean_static_covariates(self) -> DataFrame:
-        return self.timeseries.describe().T.astype("float32[pyarrow]")
+    def clean_static_covariates(self) -> pl.DataFrame:
+        r"""Create per-channel summary statistics."""
+        target_schema = self.table_schemas["static_covariates"]
+        statistics = list(target_schema)[1:]
+        table = self.timeseries.drop("UNIQUE_ID", "TIME_STAMP")
 
-    def clean_timeseries(self) -> DataFrame:
-        self.LOGGER.info("Loading main file.")
-        ts = pd.read_csv(
-            self.rawdata_paths["complete_tensor.csv"],
-            dtype=self.rawdata_schemas["complete_tensor.csv"],
-            index_col=0,
-            dtype_backend="pyarrow",
+        return (
+            table.describe(
+                percentiles=[0.25, 0.5, 0.75],
+                interpolation="linear",
+            )
+            .filter(pl.col("statistic").is_in(statistics))
+            .unpivot(
+                index="statistic",
+                variable_name="LABEL_CODE",
+                value_name="value",
+            )
+            .pivot(
+                on="statistic",
+                index="LABEL_CODE",
+                values="value",
+                aggregate_function="first",
+            )
+            .select(
+                pl.col(column).cast(dtype).alias(column)
+                for column, dtype in target_schema.items()
+            )
+            .sort(pl.col("LABEL_CODE").cast(pl.Int16))
         )
 
+    def clean_timeseries(self) -> pl.DataFrame:
+        self.LOGGER.info("Loading main file.")
+        rawdata_schema = self.rawdata_schemas["complete_tensor.csv"]
+        target_schema = self.table_schemas["timeseries"]
+        table = pl.read_csv(
+            self.rawdata_paths["complete_tensor.csv"],
+            schema_overrides=rawdata_schema,
+        ).select(*rawdata_schema)
+
         # Check shape.
-        if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
+        if table.shape != self.rawdata_shapes["complete_tensor.csv"]:
             raise ValueError(
-                f"The {ts.shape=} is not correct.Please apply the modified"
+                f"The {table.shape=} is not correct. Please apply the modified"
                 " preprocessing using bin_k=2, as outlined inthe appendix. The"
                 " resulting tensor should have 3082224 rows and 7 columns."
             )
 
         # Extract Original Data Table.
-        ts = (
-            ts.loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
-            .reset_index(drop=True)
-            .set_index(["UNIQUE_ID", "TIME_STAMP"])
-            .pivot(columns="LABEL_CODE", values="VALUENUM")
-            .astype("float32[pyarrow]")
-            .sort_index()
-            .sort_index(axis=1)
+        return (
+            table.select("UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM")
+            .pivot(
+                on="LABEL_CODE",
+                index=["UNIQUE_ID", "TIME_STAMP"],
+                values="VALUENUM",
+                aggregate_function="first",
+            )
+            .select(
+                pl.col(column).cast(dtype).alias(column)
+                for column, dtype in target_schema.items()
+            )
+            .sort("UNIQUE_ID", "TIME_STAMP")
         )
-        ts = ts.set_axis(ts.columns.astype("string[pyarrow]"), axis="columns")
 
-        return ts
+    def load_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Load a cleaned table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():
@@ -170,8 +228,14 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, DataFrame]):
             squeeze=False,
         )
 
-        for col, ax in zip(self.timeseries, axes.flatten(), strict=True):
-            self.timeseries[col].hist(ax=ax, density=True, log=True, bins=20)
+        ts = self.timeseries.drop("UNIQUE_ID", "TIME_STAMP")
+        for column, ax in zip(ts.columns, axes.flatten(), strict=True):
+            ax.hist(
+                ts.get_column(column).drop_nulls().to_numpy(),
+                density=True,
+                log=True,
+                bins=20,
+            )
             ax.set_ylim(10**-6, 1)
 
         return fig, axes

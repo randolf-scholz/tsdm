@@ -432,7 +432,12 @@ def physionet2019() -> TimeSeriesCollection[int, DataFrame]:
 
 def mimic_iii_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
     r"""The MIMIC_III_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.MIMIC_III_DeBrouwer2019)
+    ds = datasets.MIMIC_III_DeBrouwer2019(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["UNIQUE_ID", "TIME_STAMP"]),
+        timeseries_metadata=ds.static_covariates.to_pandas().set_index("LABEL_CODE"),
+    )
 
 
 def mimic_iv_bilos2021() -> TimeSeriesCollection[int, DataFrame]:
