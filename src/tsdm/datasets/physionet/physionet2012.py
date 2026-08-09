@@ -145,97 +145,119 @@ Given these definitions and constraints,
 
 __all__ = [
     # Constants
-    "TIMESERIES_METADATA",
+    "RAWDATA_SCHEMA",
     "STATIC_COVARIATES_METADATA",
+    "STATIC_COVARIATES_METADATA_SCHEMA",
+    "STATIC_COVARIATES_SCHEMA",
+    "TIMESERIES_METADATA",
+    "TIMESERIES_METADATA_SCHEMA",
+    "TIMESERIES_SCHEMA",
     # Classes
     "PhysioNet2012",
 ]
 
 import tarfile
-from typing import Literal, Optional, cast
+from typing import Literal, Optional
 
-import numpy as np
-import pandas as pd
-from pandas import DataFrame
+import polars as pl
 from tqdm.auto import tqdm
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import InlineTable, make_dataframe, remove_outliers
+from tsdm.datatools import remove_outliers
 
-TIMESERIES_METADATA: InlineTable = {
-    "data": [
-        # variable, lower, upper, lower_included, upper_included, unit, description
-        ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
-        ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
-        ("ALT"        , 0,    None, False, True, "IU/L",     "Alanine transaminase"                          ),
-        ("AST"        , 0,    None, False, True, "IU/L",     "Aspartate transaminase"                        ),
-        ("Bilirubin"  , 0,    None, False, True, "mg/dL",    "Bilirubin"                                     ),
-        ("BUN"        , 0,    None, False, True, "mg/dL",    "BUN"                                           ),
-        ("Cholesterol", 0,    None, False, True, "mg/dL",    None                                            ),
-        ("Creatinine" , 0,    None, False, True, "mg/dL",    "Serum creatinine"                              ),
-        ("DiasABP"    , 0,    None, False, True, "mmHg",     "Invasive diastolic arterial blood pressure"    ),
-        ("FiO2"       , 0,    1,    True,  True, "0-1",      "Fractional inspired O2"                        ),
-        ("GCS"        , 3,    15,   True,  True, "3-15",     "Glasgow Coma Score "                           ),
-        ("Glucose"    , 0,    None, False, True, "mg/dL",    "Serum glucose"                                 ),
-        ("HCO3"       , 0,    None, False, True, "mmol/L",   "Serum bicarbonate"                             ),
-        ("HCT"        , 0,    100,  True,  True, "%",        "Hematocrit"                                    ),
-        ("HR"         , 0,    None, True,  True, "bpm",      "Heart rate"                                    ),
-        ("K"          , 0,    None, False, True, "mEq/L",    "Serum potassium"                               ),
-        ("Lactate"    , 0,    None, False, True, "mmol/L",   None                                            ),
-        ("Mg"         , 0,    None, False, True, "mmol/L",   "Serum magnesium"                               ),
-        ("MAP"        , 0,    None, False, True, "mmHg",     "Invasive mean arterial blood pressure"         ),
-        ("MechVent"   , None, None, True,  True, "bool",     "Mechanical ventilation respiration"            ),
-        ("Na"         , 0,    None, False, True, "mEq/L",    "Serum sodium"                                  ),
-        ("NIDiasABP"  , 0,    None, False, True, "mmHg",     "Non-invasive diastolic arterial blood pressure"),
-        ("NIMAP"      , 0,    None, False, True, "mmHg",     "Non-invasive mean arterial blood pressure"     ),
-        ("NISysABP"   , 0,    None, False, True, "mmHg",     "Non-invasive systolic arterial blood pressure" ),
-        ("PaCO2"      , 0,    None, False, True, "mmHg",     "partial pressure of arterial CO2"              ),
-        ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
-        ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
-        ("Platelets"  , 0,    None, False, True, "cells/nL", None                                            ),
-        ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
-        ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
-        ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
-        ("Temp"       , 0,    None, False, True, "℃",       "Temperature"                                   ),
-        ("TroponinI"  , 0,    None, False, True, "μg/L",     "Troponin-I"                                    ),
-        ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
-        ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
-        ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
-        ("Weight"     , 20,   None, True,  True, "kg",       None                                            ),
-    ],
-    "schema": {
-        "name"            : "string[pyarrow]",
-        "lower_bound"     : "float32[pyarrow]",
-        "upper_bound"     : "float32[pyarrow]",
-        "lower_inclusive" : "bool[pyarrow]",
-        "upper_inclusive" : "bool[pyarrow]",
-        "unit"            : "string[pyarrow]",
-        "description"     : "string[pyarrow]",
-    },
-    "index": ["name"],
+TIMESERIES_METADATA = [
+    # variable, lower, upper, lower_included, upper_included, unit, description
+    ("RecordID"   , None, None, None,  None, None,       "Unique patient admission identifier"           ),
+    ("Time"       , None, None, None,  None, "minutes",  "Elapsed time since ICU admission"              ),
+    ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
+    ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
+    ("ALT"        , 0,    None, False, True, "IU/L",     "Alanine transaminase"                          ),
+    ("AST"        , 0,    None, False, True, "IU/L",     "Aspartate transaminase"                        ),
+    ("Bilirubin"  , 0,    None, False, True, "mg/dL",    "Bilirubin"                                     ),
+    ("BUN"        , 0,    None, False, True, "mg/dL",    "BUN"                                           ),
+    ("Cholesterol", 0,    None, False, True, "mg/dL",    None                                            ),
+    ("Creatinine" , 0,    None, False, True, "mg/dL",    "Serum creatinine"                              ),
+    ("DiasABP"    , 0,    None, False, True, "mmHg",     "Invasive diastolic arterial blood pressure"    ),
+    ("FiO2"       , 0,    1,    True,  True, "0-1",      "Fractional inspired O2"                        ),
+    ("GCS"        , 3,    15,   True,  True, "3-15",     "Glasgow Coma Score "                           ),
+    ("Glucose"    , 0,    None, False, True, "mg/dL",    "Serum glucose"                                 ),
+    ("HCO3"       , 0,    None, False, True, "mmol/L",   "Serum bicarbonate"                             ),
+    ("HCT"        , 0,    100,  True,  True, "%",        "Hematocrit"                                    ),
+    ("HR"         , 0,    None, True,  True, "bpm",      "Heart rate"                                    ),
+    ("K"          , 0,    None, False, True, "mEq/L",    "Serum potassium"                               ),
+    ("Lactate"    , 0,    None, False, True, "mmol/L",   None                                            ),
+    ("Mg"         , 0,    None, False, True, "mmol/L",   "Serum magnesium"                               ),
+    ("MAP"        , 0,    None, False, True, "mmHg",     "Invasive mean arterial blood pressure"         ),
+    ("MechVent"   , None, None, True,  True, "bool",     "Mechanical ventilation respiration"            ),
+    ("Na"         , 0,    None, False, True, "mEq/L",    "Serum sodium"                                  ),
+    ("NIDiasABP"  , 0,    None, False, True, "mmHg",     "Non-invasive diastolic arterial blood pressure"),
+    ("NIMAP"      , 0,    None, False, True, "mmHg",     "Non-invasive mean arterial blood pressure"     ),
+    ("NISysABP"   , 0,    None, False, True, "mmHg",     "Non-invasive systolic arterial blood pressure" ),
+    ("PaCO2"      , 0,    None, False, True, "mmHg",     "partial pressure of arterial CO2"              ),
+    ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
+    ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
+    ("Platelets"  , 0,    None, False, True, "cells/nL", None                                            ),
+    ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
+    ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
+    ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
+    ("Temp"       , 0,    None, False, True, "℃",        "Temperature"                                   ),
+    ("TroponinI"  , 0,    None, False, True, "μg/L",     "Troponin-I"                                    ),
+    ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
+    ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
+    ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
+    ("Weight"     , 20,   None, True,  True, "kg",       None                                            ),
+]  # fmt: skip
+TIMESERIES_METADATA_SCHEMA = {
+    "variable"        : pl.String,
+    "lower_bound"     : pl.Float32,
+    "upper_bound"     : pl.Float32,
+    "lower_inclusive" : pl.Boolean,
+    "upper_inclusive" : pl.Boolean,
+    "unit"            : pl.String,
+    "description"     : pl.String,
 }  # fmt: skip
-
-STATIC_COVARIATES_METADATA: InlineTable = {
-    "data": [
-        ("Age"    , "uint8[pyarrow]"  , 0   , 100 , True, True, "years"   , None                           ),
-        ("Gender" , "int8[pyarrow]"   , None, None, True, True, "category", "0: female, 1: male, -1: other"),
-        ("Height" , "float32[pyarrow]", 20  , 270 , True, True, "cm"      , None                           ),
-        ("Weight" , "float32[pyarrow]", 20  , None, True, True, "kg"      , None                           ),
-        ("ICUType", "uint8[pyarrow]"  , 1   , 4   , True, True, "category",
+STATIC_COVARIATES_METADATA = [
+        ("RecordID", "Int64" , None, None, None, None, None      , "Unique patient admission identifier"),
+        ("Age"    , "UInt8"  , 0   , 100 , True, True, "years"   , None                                 ),
+        ("Gender" , "Int8"   , None, None, True, True, "category", "0: female, 1: male, -1: other"      ),
+        ("Height" , "Float32", 20  , 270 , True, True, "cm"      , None                                 ),
+        ("Weight" , "Float32", 20  , None, True, True, "kg"      , None                                 ),
+        ("ICUType", "UInt8"  , 1   , 4   , True, True, "category",
             "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
-    ],
-    "schema": {
-        "name"            : "string[pyarrow]",
-        "dtype"           : "string[pyarrow]",
-        "lower_bound"     : "float32[pyarrow]",
-        "upper_bound"     : "float32[pyarrow]",
-        "lower_inclusive" : "bool[pyarrow]",
-        "upper_inclusive" : "bool[pyarrow]",
-        "unit"            : "string[pyarrow]",
-        "description"     : "string[pyarrow]",
-    },
-    "index": ["name"],
+]  # fmt: skip
+STATIC_COVARIATES_METADATA_SCHEMA = {
+    "variable"        : pl.String,
+    "dtype"           : pl.String,
+    "lower_bound"     : pl.Float32,
+    "upper_bound"     : pl.Float32,
+    "lower_inclusive" : pl.Boolean,
+    "upper_inclusive" : pl.Boolean,
+    "unit"            : pl.String,
+    "description"     : pl.String,
 }  # fmt: skip
+
+RAWDATA_SCHEMA = {
+    "Time": pl.String,
+    "Parameter": pl.String,
+    "Value": pl.Float32,
+}
+TIMESERIES_SCHEMA = {
+    "RecordID": pl.Int64,
+    "Time": pl.Duration(time_unit="ms"),
+    **{
+        name: pl.Float32
+        for name, *_ in TIMESERIES_METADATA
+        if name not in {"RecordID", "Time"}
+    },
+}
+STATIC_COVARIATES_SCHEMA = {
+    "RecordID": pl.Int64,
+    "Age": pl.UInt8,
+    "Gender": pl.Int8,
+    "Height": pl.Float32,
+    "ICUType": pl.UInt8,
+    "Weight": pl.Float32,
+}
 
 type Key = Literal[
     "timeseries",
@@ -247,7 +269,7 @@ type Key = Literal[
 ]
 
 
-class PhysioNet2012(DatasetBase[Key, DataFrame]):
+class PhysioNet2012(DatasetBase[Key, pl.DataFrame]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.
@@ -336,72 +358,29 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
         "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
     }
 
-    rawdata_schema = {
-        "Time": "string[pyarrow]",
-        "Parameter": "string[pyarrow]",
-        "Value": "float32[pyarrow]",
-    }
+    rawdata_schema = RAWDATA_SCHEMA
     table_schemas = {
-        "timeseries": {
-            "Albumin"     : "float32[pyarrow]",
-            "ALP"         : "float32[pyarrow]",
-            "ALT"         : "float32[pyarrow]",
-            "AST"         : "float32[pyarrow]",
-            "Bilirubin"   : "float32[pyarrow]",
-            "BUN"         : "float32[pyarrow]",
-            "Cholesterol" : "float32[pyarrow]",
-            "Creatinine"  : "float32[pyarrow]",
-            "DiasABP"     : "float32[pyarrow]",
-            "FiO2"        : "float32[pyarrow]",
-            "GCS"         : "float32[pyarrow]",
-            "Glucose"     : "float32[pyarrow]",
-            "HCO3"        : "float32[pyarrow]",
-            "HCT"         : "float32[pyarrow]",
-            "HR"          : "float32[pyarrow]",
-            "K"           : "float32[pyarrow]",
-            "Lactate"     : "float32[pyarrow]",
-            "MAP"         : "float32[pyarrow]",
-            "MechVent"    : "float32[pyarrow]",
-            "Mg"          : "float32[pyarrow]",
-            "Na"          : "float32[pyarrow]",
-            "NIDiasABP"   : "float32[pyarrow]",
-            "NIMAP"       : "float32[pyarrow]",
-            "NISysABP"    : "float32[pyarrow]",
-            "PaCO2"       : "float32[pyarrow]",
-            "PaO2"        : "float32[pyarrow]",
-            "pH"          : "float32[pyarrow]",
-            "Platelets"   : "float32[pyarrow]",
-            "RespRate"    : "float32[pyarrow]",
-            "SaO2"        : "float32[pyarrow]",
-            "SysABP"      : "float32[pyarrow]",
-            "Temp"        : "float32[pyarrow]",
-            "TroponinI"   : "float32[pyarrow]",
-            "TroponinT"   : "float32[pyarrow]",
-            "Urine"       : "float32[pyarrow]",
-            "WBC"         : "float32[pyarrow]",
-            "Weight"      : "float32[pyarrow]",
-        },
-        "static_covariates": {
-            "Age"     : "uint8[pyarrow]",
-            "Gender"  : "int8[pyarrow]",
-            "Height"  : "float32[pyarrow]",
-            "ICUType" : "uint8[pyarrow]",
-            "Weight"  : "float32[pyarrow]",
-        },
-        "timeseries_metadata": TIMESERIES_METADATA["schema"],
-        "static_covariates_metadata": STATIC_COVARIATES_METADATA["schema"],
+        "timeseries": TIMESERIES_SCHEMA,
+        "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
+        "static_covariates": STATIC_COVARIATES_SCHEMA,
+        "static_covariates_metadata": STATIC_COVARIATES_METADATA_SCHEMA,
+        "raw_timeseries": TIMESERIES_SCHEMA,
+        "raw_metadata": STATIC_COVARIATES_SCHEMA,
     }  # fmt: skip
     table_shapes = {
-        "timeseries"                : (898007, 37),
-        "timeseries_metadata"       :      (37, 6),
-        "static_covariates"         :   (12000, 5),
-        "static_covariates_metadata":       (5, 7),
+        "timeseries"                : (898007, 39),
+        "timeseries_metadata"       :      (39, 7),
+        "static_covariates"         :   (12000, 6),
+        "static_covariates_metadata":       (6, 8),
     }  # fmt: skip
 
-    def _clean_single_rawdataset(self, fname: str, /) -> tuple[DataFrame, DataFrame]:
-        id_list: list[int] = []
-        md_list: list[DataFrame] = []
-        ts_list: list[DataFrame] = []
+    def _clean_single_rawdataset(
+        self, fname: str, /
+    ) -> tuple[pl.DataFrame, pl.DataFrame]:
+        static_columns = list(STATIC_COVARIATES_SCHEMA)[1:]
+        timeseries_columns = list(TIMESERIES_SCHEMA)[2:]
+        static_frames: list[pl.DataFrame] = []
+        timeseries_frames: list[pl.DataFrame] = []
 
         with (
             tarfile.open(self.rawdata_paths[fname], "r") as archive,
@@ -422,111 +401,145 @@ class PhysioNet2012(DatasetBase[Key, DataFrame]):
                     # Time, Parameter, Value
                     # 00:00, RecordID, NUM
                     # <actual measurements> ...
-                    df = pd.read_csv(
-                        file,
-                        dtype=self.rawdata_schema,
-                        dtype_backend="pyarrow",
-                    )
-                if record_id != df.iloc[0, -1]:
+                    df = pl.read_csv(file, schema=self.rawdata_schema)
+                if record_id != df.item(0, "Value"):
                     raise ValueError("RecordID mismatch!")
 
                 # drop first row (redundant RecordID)
-                df = df.iloc[1:]
-
-                # drop rows if Parameter is NaN
-                df = df.dropna(subset=["Parameter"])
-
-                # select static_covariates items
-                md_mask = (df["Time"] == "00:00") & df["Parameter"].isin(
-                    self.table_schemas["static_covariates"]
+                df = (
+                    df.slice(1)
+                    .filter(pl.col("Parameter").is_not_null())
+                    .with_row_index("row_nr")
                 )
+                # select static_covariates items
+                static_mask = pl.col("Time").eq("00:00") & pl.col("Parameter").is_in(
+                    static_columns
+                )
+                static_candidates = df.filter(static_mask)
                 # keep the first instance of each static_covariates item
-                md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
-                md_frame = df.loc[md_mask].drop(columns=["Time"])
-                if len(md_frame) > 5:
+                static_frame = static_candidates.unique(
+                    subset="Parameter", keep="first", maintain_order=True
+                )
+                if static_frame.height > len(static_columns):
                     raise ValueError("Too many static_covariates items!")
 
-                ts_frame = df.loc[~md_mask]  # remaining items
-                if not all(
-                    ts_frame["Parameter"].isin(self.table_schemas["timeseries"])
+                timeseries_frame = df.join(
+                    static_frame.select("row_nr"), on="row_nr", how="anti"
+                ).drop("row_nr")
+                if unknown_parameters := (
+                    set(timeseries_frame.get_column("Parameter").unique())
+                    - set(timeseries_columns)
                 ):
-                    raise ValueError("Unknown parameter in timeseries data!")
-                id_list.append(record_id)
-                md_list.append(md_frame)
-                ts_list.append(ts_frame)
-
-        record_ids = pd.Series(id_list, name="RecordID")
+                    raise ValueError(
+                        f"Unknown parameter in timeseries data: {unknown_parameters}"
+                    )
+                static_frames.append(
+                    static_frame.select("Parameter", "Value").with_columns(
+                        pl.lit(record_id, dtype=pl.Int64).alias("RecordID")
+                    )
+                )
+                timeseries_frames.append(
+                    timeseries_frame.with_columns(
+                        pl.lit(record_id, dtype=pl.Int64).alias("RecordID")
+                    )
+                )
 
         self.LOGGER.info("%s: Combining static_covariates.", fname)
-        md = pd.concat(md_list, axis=0, keys=record_ids).reset_index(
-            level=-1, drop=True
-        )
-
         self.LOGGER.info("%s: Performing pivot on static_covariates.", fname)
-        md = md.pivot(columns="Parameter", values="Value").astype(
-            self.table_schemas["static_covariates"]
+        md = (
+            pl.concat(static_frames)
+            .pivot(
+                on="Parameter",
+                index="RecordID",
+                values="Value",
+                aggregate_function="first",
+            )
+            .select(
+                pl.col(column).cast(dtype, strict=False).alias(column)
+                for column, dtype in STATIC_COVARIATES_SCHEMA.items()
+            )
+            .sort("RecordID")
         )
 
         self.LOGGER.info("%s: Combining timeseries data.", fname)
-        ts = pd.concat(ts_list, axis=0, keys=record_ids).reset_index(
-            level=-1, drop=True
-        )
-        ts = ts.assign(  # from "hh:mm" to timedelta64
-            Time=ts["Time"]
-            .str.split(":", expand=True)
-            .astype(int)
-            .dot(pd.Series([3600, 60]))
-            .mul(np.timedelta64(1, "s"))
+        time_parts = pl.col("Time").str.split_exact(":", 1)
+        ts = pl.concat(timeseries_frames).with_columns(
+            (
+                time_parts.struct.field("field_0").cast(pl.Int64) * 3_600_000
+                + time_parts.struct.field("field_1").cast(pl.Int64) * 60_000
+            )
+            .cast(pl.Duration(time_unit="ms"))
+            .alias("Time")
         )
 
         self.LOGGER.info("%s: Performing non-aggregating pivot.", fname)
         ts = (
-            ts.reset_index()
-            .set_index(
-                ts.groupby(["RecordID", "Time", "Parameter"]).cumcount().rename("count")
+            ts.with_columns(
+                pl.col("Parameter")
+                .cum_count()
+                .over(["RecordID", "Time", "Parameter"])
+                .alias("count")
             )
-            .set_index(["RecordID", "Time", "Parameter"], append=True)
-            .unstack(level="Parameter")
-            .pipe(lambda arg: cast("DataFrame", arg))  # type check only
-            .reset_index("count", drop=True)
-            .droplevel(0, axis="columns")
-            .sort_index()
-            .reindex(columns=list(self.table_schemas["timeseries"]))
+            .pivot(
+                on="Parameter",
+                index=["RecordID", "Time", "count"],
+                values="Value",
+                aggregate_function="first",
+            )
+            .drop("count")
+            .select(
+                pl.col(column).cast(dtype).alias(column)
+                for column, dtype in TIMESERIES_SCHEMA.items()
+            )
+            .sort("RecordID", "Time")
         )
         return ts, md
 
     def _clean_all_rawdatasets(self) -> None:
-        ts_list = []
-        md_list = []
+        timeseries_frames: list[pl.DataFrame] = []
+        static_frames: list[pl.DataFrame] = []
         for fname in self.rawdata_files:
             ts, md = self._clean_single_rawdataset(fname)
-            ts_list.append(ts)
-            md_list.append(md)
-        ts = pd.concat(ts_list)
-        md = pd.concat(md_list)
+            timeseries_frames.append(ts)
+            static_frames.append(md)
+        ts = pl.concat(timeseries_frames)
+        md = pl.concat(static_frames)
         # NOTE: TS is missing a few records, since no time series data was available
         # For tasks, it is recommended to drop records with less than 24 observations
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
 
-    def clean_table(self, key: Key) -> Optional[DataFrame]:
+    def clean_table(self, key: Key, /) -> Optional[pl.DataFrame]:
         match key:
             case "timeseries_metadata":
-                return make_dataframe(**TIMESERIES_METADATA)
+                return pl.DataFrame(
+                    TIMESERIES_METADATA,
+                    schema=TIMESERIES_METADATA_SCHEMA,
+                    orient="row",
+                )
             case "static_covariates_metadata":
-                return make_dataframe(**STATIC_COVARIATES_METADATA)
+                return pl.DataFrame(
+                    STATIC_COVARIATES_METADATA,
+                    schema=STATIC_COVARIATES_METADATA_SCHEMA,
+                    orient="row",
+                )
             case "timeseries":
                 self.LOGGER.info("Removing outliers from timeseries.")
-                ts = remove_outliers(self.raw_timeseries, self.timeseries_metadata)
-                self.LOGGER.info("Dropping completely missing rows.")
-                ts = ts.dropna(how="all", axis="index")
-                return ts
+                return remove_outliers(
+                    self.raw_timeseries,
+                    self.timeseries_metadata,
+                )
             case "static_covariates":
                 self.LOGGER.info("Removing outliers from static_covariates.")
                 return remove_outliers(
-                    self.raw_metadata, self.static_covariates_metadata
+                    self.raw_metadata,
+                    self.static_covariates_metadata,
                 )
             case "raw_timeseries" | "raw_metadata":
                 return self._clean_all_rawdatasets()
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")
+
+    def load_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Load a cleaned table as a Polars DataFrame."""
+        return pl.read_parquet(self.dataset_paths[key])

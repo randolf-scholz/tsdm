@@ -336,7 +336,11 @@ def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
     return PandasTSC(
         ds.name,
         timeseries=ds.timeseries.to_pandas().set_index(["station", "time"]),
-        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+        timeseries_metadata=(
+            ds.timeseries_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index=["RecordID", "Time"])
+        ),
     )
 
 
@@ -380,7 +384,18 @@ def ushcn_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
 
 def physionet2012() -> TimeSeriesCollection[int, DataFrame]:
     r"""The PhysioNet2012 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.PhysioNet2012)
+    ds = datasets.PhysioNet2012(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["RecordID", "Time"]),
+        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("variable"),
+        static_covariates=ds.static_covariates.to_pandas().set_index("RecordID"),
+        static_covariates_metadata=(
+            ds.static_covariates_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index="RecordID")
+        ),
+    )
 
 
 def physionet2019() -> TimeSeriesCollection[str, DataFrame]:
