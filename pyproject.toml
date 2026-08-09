@@ -599,9 +599,9 @@ addopts = [
     "--numprocesses=0", # number of parallel processes
     "--dist=loadfile", # distribute tests by scope (module or class)
     # coverage options
-    "--cov=tsdm",
-    "--cov-report=term:skip-covered",
-    "--cov-report=xml:.reports/coverage.xml",
+    #    "--cov=tsdm",
+    #    "--cov-report=term:skip-covered",
+    #    "--cov-report=xml:.reports/coverage.xml",
     #    "--cov-report=annotate:.reports/coverage",
     # benchmark options
     "--benchmark-group-by=group",
