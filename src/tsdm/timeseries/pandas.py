@@ -383,7 +383,11 @@ def ushcn() -> TimeSeriesCollection[int, DataFrame]:
 
 def ushcn_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
     r"""The USHCN_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.USHCN_DeBrouwer2019)
+    ds = datasets.USHCN_DeBrouwer2019(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["ID", "Time"]),
+    )
 
 
 def physionet2012() -> TimeSeriesCollection[int, DataFrame]:

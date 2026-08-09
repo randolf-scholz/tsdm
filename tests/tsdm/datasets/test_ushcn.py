@@ -3,7 +3,16 @@ r"""Test tsdm.datasets.USHCN."""
 import polars as pl
 import pytest
 
-from tsdm.datasets import USHCN
+from tsdm.datasets import USHCN, USHCN_DeBrouwer2019
+
+
+def test_ushcn_debrouwer2019_preprocessing() -> None:
+    USHCN_DeBrouwer2019.reset_dataset_files(force=True)
+    ds = USHCN_DeBrouwer2019()
+
+    for key in USHCN_DeBrouwer2019.table_names:
+        assert isinstance(ds[key], pl.DataFrame)
+        assert dict(ds[key].schema) == USHCN_DeBrouwer2019.table_schemas[key]
 
 
 def test_ushcn_preprocessing() -> None:
