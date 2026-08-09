@@ -3,7 +3,7 @@ r"""Electricity Transformer Dataset (ETDataset).
 **Source:** https://github.com/zhouhaoyi/ETDataset
 """
 
-__all__ = ["ETT", "ETTh1"]
+__all__ = ["ETT"]
 
 from collections import defaultdict
 from typing import Literal
@@ -85,57 +85,6 @@ class ETT(DatasetBase[ETT_Key, DataFrame]):
             self.rawdata_paths[f"{key}.csv"],
             index_col=0,
             dtype=self.rawdata_schemas[f"{key}.csv"],
-            dtype_backend="pyarrow",
-        )
-        df.columns = df.columns.astype("string")
-        return df
-
-
-class ETTh1(DatasetBase[Literal["timeseries"], DataFrame]):
-    r"""ETTh1 dataset.
-
-    +-------+--------------------------+
-    | Field | Description              |
-    +=======+==========================+
-    | date  | The recorded date        |
-    +-------+--------------------------+
-    | HUFL  | High UseFul Load         |
-    +-------+--------------------------+
-    | HULL  | High UseLess Load        |
-    +-------+--------------------------+
-    | MUFL  | Middle UseFul Load       |
-    +-------+--------------------------+
-    | MULL  | Middle UseLess Load      |
-    +-------+--------------------------+
-    | LUFL  | Low UseFul Load          |
-    +-------+--------------------------+
-    | LULL  | Low UseLess Load         |
-    +-------+--------------------------+
-    | OT    | Oil Temperature (target) |
-    +-------+--------------------------+
-    """
-
-    SOURCE_URL = r"https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/"
-    r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
-    r"""HTTP address containing additional information about the dataset."""
-
-    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
-    rawdata_files = ["ETTh1.csv"]
-    rawdata_hashes = {
-        "ETTh1.csv": "sha256:f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066"
-    }
-    dataset_hashes = {  # pyright: ignore[reportAssignmentType]
-        "timeseries": "sha256:b56abe3a5a0ac54428be73a37249d549440a7512fce182adcafba9ee43a03694"
-    }
-    table_shapes = {"timeseries": (17420, 7)}
-
-    def clean_timeseries(self) -> DataFrame:
-        df = read_csv(
-            self.rawdata_paths["ETTh1.csv"],
-            parse_dates=[0],
-            index_col=0,
-            dtype="float32[pyarrow]",
             dtype_backend="pyarrow",
         )
         df.columns = df.columns.astype("string")
