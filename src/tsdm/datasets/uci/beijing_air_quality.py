@@ -69,6 +69,8 @@ Attribute Information
 __all__ = [
     # Constants
     "TIMESERIES_METADATA",
+    "TIMESERIES_SCHEMA",
+    "TIMESERIES_METADATA_SCHEMA",
     # Classes
     "BeijingAirQuality",
 ]
@@ -79,34 +81,48 @@ from zipfile import ZipFile
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import InlineTable, remove_outliers
+from tsdm.datatools import remove_outliers
 
-TIMESERIES_METADATA: InlineTable = {
-    "data": [
-        ("PM2.5", "Float32"    ,    0, None, True, True, "μg/m³", "PM2.5 concentration"),
-        ("PM10" , "Float32"    ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
-        ("SO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
-        ("NO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "NO2 concentration"  ),
-        ("CO"   , "Float32"    ,    0, None, True, True, "μg/m³", "CO concentration"   ),
-        ("O3"   , "Float32"    ,    0, None, True, True, "μg/m³", "O3 concentration"   ),
-        ("TEMP" , "Float32"    , None, None, True, True, "℃"    , "temperature"        ),
-        ("PRES" , "Float32"    ,    0, None, True, True, "hPa"  , "pressure"           ),
-        ("DEWP" , "Float32"    , None, None, True, True, "℃"    , "dew point"          ),
-        ("RAIN" , "Float32"    ,    0, None, True, True, "mm"   , "precipitation"      ),
-        ("wd"   , "Categorical", None, None, True, True, None   , "wind direction"     ),
-        ("WSPM" , "Float32"    ,    0, None, True, True, "m/s"  , "wind speed"         ),
-    ],
-    "schema": {
-        "variable"        : pl.String,
-        "dtype"           : pl.String,
-        "lower_bound"     : pl.Float64,
-        "upper_bound"     : pl.Float64,
-        "lower_inclusive" : pl.Boolean,
-        "upper_inclusive" : pl.Boolean,
-        "unit"            : pl.String,
-        "description"     : pl.String,
-    },
+TIMESERIES_SCHEMA =  {
+    "station": pl.String,
+    "time"   : pl.Datetime(time_unit="us"),
+    "PM2.5"  : pl.Float32,
+    "PM10"   : pl.Float32,
+    "SO2"    : pl.Float32,
+    "NO2"    : pl.Float32,
+    "CO"     : pl.Float32,
+    "O3"     : pl.Float32,
+    "TEMP"   : pl.Float32,
+    "PRES"   : pl.Float32,
+    "DEWP"   : pl.Float32,
+    "RAIN"   : pl.Float32,
+    "wd"     : pl.Categorical,
+    "WSPM"   : pl.Float32,
 }  # fmt: skip
+TIMESERIES_METADATA_SCHEMA = {
+    "variable"        : pl.String,
+    "dtype"           : pl.String,
+    "lower_bound"     : pl.Float64,
+    "upper_bound"     : pl.Float64,
+    "lower_inclusive" : pl.Boolean,
+    "upper_inclusive" : pl.Boolean,
+    "unit"            : pl.String,
+    "description"     : pl.String,
+}  # fmt: skip
+TIMESERIES_METADATA = [
+    ("PM2.5", "Float32"    ,    0, None, True, True, "μg/m³", "PM2.5 concentration"),
+    ("PM10" , "Float32"    ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
+    ("SO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
+    ("NO2"  , "Float32"    ,    0, None, True, True, "μg/m³", "NO2 concentration"  ),
+    ("CO"   , "Float32"    ,    0, None, True, True, "μg/m³", "CO concentration"   ),
+    ("O3"   , "Float32"    ,    0, None, True, True, "μg/m³", "O3 concentration"   ),
+    ("TEMP" , "Float32"    , None, None, True, True, "℃"    , "temperature"        ),
+    ("PRES" , "Float32"    ,    0, None, True, True, "hPa"  , "pressure"           ),
+    ("DEWP" , "Float32"    , None, None, True, True, "℃"    , "dew point"          ),
+    ("RAIN" , "Float32"    ,    0, None, True, True, "mm"   , "precipitation"      ),
+    ("wd"   , "Categorical", None, None, True, True, None   , "wind direction"     ),
+    ("WSPM" , "Float32"    ,    0, None, True, True, "m/s"  , "wind speed"         ),
+]  # fmt: skip
 
 type Key = Literal["timeseries", "timeseries_metadata"]
 
@@ -162,23 +178,8 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
     }  # fmt: skip
 
     table_schemas = {
-        "timeseries": {
-            "station": pl.String,
-            "time"   : pl.Datetime(time_unit="us"),
-            "PM2.5"  : pl.Float32,
-            "PM10"   : pl.Float32,
-            "SO2"    : pl.Float32,
-            "NO2"    : pl.Float32,
-            "CO"     : pl.Float32,
-            "O3"     : pl.Float32,
-            "TEMP"   : pl.Float32,
-            "PRES"   : pl.Float32,
-            "DEWP"   : pl.Float32,
-            "RAIN"   : pl.Float32,
-            "wd"     : pl.Categorical,
-            "WSPM"   : pl.Float32,
-        },
-        "timeseries_metadata": TIMESERIES_METADATA["schema"],
+        "timeseries": TIMESERIES_SCHEMA,
+        "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
     }  # fmt: skip
 
     def clean_timeseries(self) -> pl.DataFrame:
@@ -251,8 +252,8 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
     def clean_timeseries_metadata() -> pl.DataFrame:
         r"""Create DataFrame with metadata for all 12 stations."""
         return pl.DataFrame(
-            TIMESERIES_METADATA["data"],
-            schema=TIMESERIES_METADATA["schema"],
+            TIMESERIES_METADATA,
+            schema=TIMESERIES_METADATA_SCHEMA,
             orient="row",
         )
 
