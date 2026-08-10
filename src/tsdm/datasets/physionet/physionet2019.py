@@ -242,7 +242,7 @@ STATIC_COVARIATES_METADATA = [
     ("patient"    , None, None,  None, None  , None   , "Patient identifier"                        ),
     # Demographics (columns 35-40)
     ("Age"        ,    0,  100, False, True  , "years", "Years (100 for patients 90 or above)"      ),
-    ("Gender"     , None, None, True , True  , "bool" , "Female (0) or Male (1)"                    ),
+    ("Gender"     , None, None, True , True  ,  "cat" , "Female (0) or Male (1)"                    ),
     ("Unit1"      ,    0,    1, True , True  , "MICU" , "Administrative identifier for ICU unit"    ),
     ("Unit2"      ,    0,    1, True , True  , "SICU" , "Administrative identifier for ICU unit"    ),
     ("HospAdmTime", None, None, True , False , "h"    , "Hours between hospital admit and ICU admit"),
@@ -268,7 +268,7 @@ TIMESERIES_SCHEMA = {
 STATIC_COVARIATES_SCHEMA = {
     "patient"     : pl.Int64,
     "Age"         : pl.Float32,
-    "Gender"      : pl.String,
+    "Gender"      : pl.Categorical,
     "Unit1"       : pl.Boolean,
     "Unit2"       : pl.Boolean,
     "HospAdmTime" : pl.Duration(time_unit="ms"),
@@ -280,7 +280,7 @@ RAWDATA_SCHEMA = {
         if name not in {"patient", "time", "SepsisLabel"}
     },
     "Age"         : pl.Float32,
-    "Gender"      : pl.Int8,
+    "Gender"      : pl.Categorical,
     "Unit1"       : pl.Int8,
     "Unit2"       : pl.Int8,
     "HospAdmTime" : pl.Float32,
@@ -376,7 +376,7 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
                 .fill_nan(None)
                 .with_columns(
                     pl.col(column).cast(pl.Boolean)
-                    for column in ("Gender", "Unit1", "Unit2", "SepsisLabel")
+                    for column in ("Unit1", "Unit2", "SepsisLabel")
                 )
             )
 
@@ -444,11 +444,9 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
         md = (
             md.with_columns(
                 (pl.col("HospAdmTime") * 3_600_000).cast(pl.Duration(time_unit="ms")),
-                pl.when(pl.col("Gender").is_null())
-                .then(None)
-                .when(pl.col("Gender"))
-                .then(pl.lit("male"))
-                .otherwise(pl.lit("female")),
+                pl.col("Gender").replace_strict(
+                    {"0": "female", "1": "male"}, return_dtype=pl.Categorical
+                ),
             )
             .select(*STATIC_COVARIATES_SCHEMA)
             .sort("patient")
