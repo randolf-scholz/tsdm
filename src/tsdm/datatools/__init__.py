@@ -28,6 +28,7 @@ __all__ = [
     "make_dataframe",
     "remove_outliers",
     "strip_whitespace",
+    "validate_schema",
 ]
 
 from .collections import (
@@ -54,3 +55,4 @@ from .preprocessing import (
     strip_whitespace,
 )
 from .serialize import InlineTable, make_dataframe
+from .utils import validate_schema

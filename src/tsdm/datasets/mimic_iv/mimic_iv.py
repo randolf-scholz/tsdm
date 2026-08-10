@@ -78,19 +78,15 @@ __all__ = [
 ]
 
 import gzip
-from collections.abc import Mapping
 from functools import cached_property
 from getpass import getpass
-from os import PathLike
-from typing import IO, Literal, get_args
+from typing import Literal, get_args
 from zipfile import ZipFile
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 import pyarrow.compute as pc
-import pyarrow.parquet as pq
-from pyarrow import csv
 from tqdm.auto import tqdm
 
 from tsdm.backend.pyarrow import (
@@ -100,8 +96,7 @@ from tsdm.backend.pyarrow import (
     unsafe_cast_columns,
 )
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import strip_whitespace
-from tsdm.types.aliases import FilePath
+from tsdm.datatools import strip_whitespace, validate_schema
 from tsdm.utils import remote
 
 type MIMIC_IV_Key = Literal[
@@ -724,60 +719,6 @@ SCHEMA_OVERRIDE = {
 
 
 NULL_SCHEMA = {"emar_detail": {"product_amount_given": "*NEW*"}}
-
-
-def validate_schema(
-    file: FilePath | IO[str] | IO[bytes],
-    schema: Mapping[str, pl.DataType | type[pl.DataType]],
-    /,
-) -> None:
-    r"""Validate that a CSV header exactly matches a schema.
-
-    Args:
-        file: CSV path or seekable file-like object.
-        schema: Expected column names and data types, in CSV order.
-
-    Raises:
-        ValueError: If the file is not seekable or its header does not match the
-            schema's columns and order.
-    """
-    match file:
-        case str() | PathLike():
-            actual_columns = pl.read_csv(
-                file, has_header=True, infer_schema=False, n_rows=0
-            ).columns
-        case stream:
-            if not stream.seekable():
-                raise ValueError(
-                    "Cannot validate the header of a non-seekable CSV stream."
-                )
-
-            position = stream.tell()
-            try:
-                actual_columns = pl.read_csv(
-                    stream, has_header=True, infer_schema=False, n_rows=0
-                ).columns
-            finally:
-                stream.seek(position)
-                assert stream.tell() == position
-
-    expected_columns = list(schema)
-    missing_cols = set(actual_columns) - set(expected_columns)
-    superfluous_cols = set(expected_columns) - set(actual_columns)
-    if missing_cols or superfluous_cols:
-        raise ValueError(
-            "CSV header does not match schema: "
-            f"\n\t    missing: {sorted(missing_cols)!r}"
-            f"\n\tsuperfluous: {sorted(superfluous_cols)!r}"
-        )
-    assert len(actual_columns) == len(expected_columns)
-
-    if actual_columns != expected_columns:
-        raise ValueError(
-            "CSV header and schema columns are in different orders: "
-            f"\n\texpected: {expected_columns!r}"
-            f"\n\t  actual: {actual_columns!r}"
-        )
 
 
 class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):

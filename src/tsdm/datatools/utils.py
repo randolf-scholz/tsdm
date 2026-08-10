@@ -1,12 +1,21 @@
 r"""Generic data utilities."""
 
-__all__ = ["describe", "data_overview"]
+__all__ = [
+    "describe",
+    "data_overview",
+    "validate_schema",
+]
 
-from typing import Optional
+from collections.abc import Mapping
+from os import PathLike
+from typing import IO, Any, Optional
 
 import pandas as pd
+import polars as pl
 from pandas import DataFrame, Series
 from scipy import stats
+
+from tsdm.types.aliases import FilePath
 
 
 def describe(
@@ -155,3 +164,53 @@ def data_overview(
             freq[col] = Series(time).diff().mean()
         overview["freq"] = Series(freq)
     return overview
+
+
+def validate_schema(file: FilePath | IO[bytes], schema: Mapping[str, Any], /) -> None:
+    r"""Validate that a CSV header exactly matches a schema.
+
+    Args:
+        file: CSV path or seekable file-like object.
+        schema: Expected column names and data types, in CSV order.
+
+    Raises:
+        ValueError: If the file is not seekable or its header does not match the
+            schema's columns and order.
+    """
+    match file:
+        case str() | PathLike():
+            actual_columns = pl.read_csv(
+                file, has_header=True, infer_schema=False, n_rows=0
+            ).columns
+        case stream:
+            if not stream.seekable():
+                raise ValueError(
+                    "Cannot validate the header of a non-seekable CSV stream."
+                )
+
+            position = stream.tell()
+            try:
+                actual_columns = pl.read_csv(
+                    stream, has_header=True, infer_schema=False, n_rows=0
+                ).columns
+            finally:
+                stream.seek(position)
+                assert stream.tell() == position
+
+    expected_columns = list(schema)
+    missing_cols = set(actual_columns) - set(expected_columns)
+    superfluous_cols = set(expected_columns) - set(actual_columns)
+    if missing_cols or superfluous_cols:
+        raise ValueError(
+            "CSV header does not match schema: "
+            f"\n\t    missing: {sorted(missing_cols)!r}"
+            f"\n\tsuperfluous: {sorted(superfluous_cols)!r}"
+        )
+    assert len(actual_columns) == len(expected_columns)
+
+    if actual_columns != expected_columns:
+        raise ValueError(
+            "CSV header and schema columns are in different orders: "
+            f"\n\texpected: {expected_columns!r}"
+            f"\n\t  actual: {actual_columns!r}"
+        )
