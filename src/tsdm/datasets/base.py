@@ -604,12 +604,16 @@ class DatasetBase[Key: str, T](
                 )
             ):
                 pbar.set_description(f"Cleaning table {name!r}")
-                self.clean(
-                    name,
-                    force=force,
-                    validate=validate,
-                    validate_rawdata=False,
-                )
+                try:
+                    self.clean(
+                        name,
+                        force=force,
+                        validate=validate,
+                        validate_rawdata=False,
+                    )
+                except BaseException:
+                    pbar.leave = True
+                    raise
             return
 
         # Clean the selected table
@@ -688,7 +692,11 @@ class DatasetBase[Key: str, T](
                 )
             ):
                 pbar.set_description(f"Loading table {name!r}")
-                self.load(name, force=force, validate=validate)
+                try:
+                    self.load(name, force=force, validate=validate)
+                except BaseException:
+                    pbar.leave = True
+                    raise
             return self.tables
 
         # Skip if already loaded.
