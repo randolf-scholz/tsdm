@@ -7,6 +7,7 @@ from typing import Literal
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import validate_schema
 
 RAWDATA_SCHEMA = {
     "ID": pl.Float32,
@@ -66,7 +67,9 @@ class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], pl.DataFrame]):
         fname = self.rawdata_files[0]
         rawdata_schema = self.rawdata_schemas[fname]
         target_schema = self.table_schemas["timeseries"]
-        table = pl.read_csv(self.rawdata_paths[fname], schema=rawdata_schema)
+        rawdata_path = self.rawdata_paths[fname]
+        validate_schema(rawdata_path, rawdata_schema)
+        table = pl.read_csv(rawdata_path, schema=rawdata_schema)
 
         return table.select(
             pl.col("ID").cast(target_schema["ID"]),

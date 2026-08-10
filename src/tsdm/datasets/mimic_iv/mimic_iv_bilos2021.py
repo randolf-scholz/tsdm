@@ -27,6 +27,7 @@ from typing import Literal
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import validate_schema
 
 RAWDATA_SCHEMA = {
     "hadm_id": pl.Float64,
@@ -80,8 +81,10 @@ class MIMIC_IV_Bilos2021(DatasetBase[Literal["timeseries"], pl.DataFrame]):
         fname = "full_dataset.csv"
         rawdata_schema = self.rawdata_schemas[fname]
         rawdata_shape = self.rawdata_shapes[fname]
+        rawdata_path = self.rawdata_paths[fname]
+        validate_schema(rawdata_path, rawdata_schema)
         table = pl.read_csv(
-            self.rawdata_paths[fname],
+            rawdata_path,
             schema=rawdata_schema,
         ).fill_nan(None)
 

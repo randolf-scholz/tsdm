@@ -179,7 +179,7 @@ import polars as pl
 from tqdm.auto import tqdm
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import remove_outliers
+from tsdm.datatools import remove_outliers, validate_schema
 from tsdm.testing.hashutils import hash_zip_contents
 from tsdm.testing.validation import ErrorHandler, validate_hash
 from tsdm.utils import remote
@@ -365,6 +365,7 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
     ) -> pl.DataFrame:
         r"""Read a single patient file from the archive."""
         with archive.open(compressed_file) as file:
+            validate_schema(file, self.rawdata_schema, separator="|")
             return (
                 pl.read_csv(
                     file,

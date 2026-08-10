@@ -163,7 +163,7 @@ import polars as pl
 from tqdm.auto import tqdm
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import remove_outliers
+from tsdm.datatools import remove_outliers, validate_schema
 
 TIMESERIES_METADATA = [
     # variable, lower, upper, lower_included, upper_included, unit, description
@@ -401,6 +401,7 @@ class PhysioNet2012(DatasetBase[Key, pl.DataFrame]):
                     # Time, Parameter, Value
                     # 00:00, RecordID, NUM
                     # <actual measurements> ...
+                    validate_schema(file, self.rawdata_schema)
                     df = pl.read_csv(file, schema=self.rawdata_schema).fill_nan(None)
                 if record_id != df.item(0, "Value"):
                     raise ValueError("RecordID mismatch!")

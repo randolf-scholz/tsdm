@@ -35,6 +35,7 @@ from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import validate_schema
 
 RAWDATA_SCHEMA = {
     "UNIQUE_ID": pl.Int16,
@@ -146,9 +147,11 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
         self.LOGGER.info("Loading main file.")
         rawdata_schema = self.rawdata_schemas["complete_tensor.csv"]
         target_schema = self.table_schemas["timeseries"]
+        rawdata_path = self.rawdata_paths["complete_tensor.csv"]
+        validate_schema(rawdata_path, rawdata_schema)
         table = pl.read_csv(
-            self.rawdata_paths["complete_tensor.csv"],
-            schema_overrides=rawdata_schema,
+            rawdata_path,
+            schema=rawdata_schema,
         ).select(*rawdata_schema)
 
         # Check shape.

@@ -10,6 +10,7 @@ from typing import Literal
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
+from tsdm.datatools import validate_schema
 
 type ETT_Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
@@ -77,9 +78,12 @@ class ETT(DatasetBase[ETT_Key, pl.DataFrame]):
 
     def clean_table(self, key: ETT_Key, /) -> pl.DataFrame:
         r"""Load an ETT CSV file as a Polars DataFrame."""
+        rawdata_path = self.rawdata_paths[f"{key}.csv"]
+        rawdata_schema = self.rawdata_schemas[f"{key}.csv"]
+        validate_schema(rawdata_path, rawdata_schema)
         return pl.read_csv(
-            self.rawdata_paths[f"{key}.csv"],
-            schema=self.rawdata_schemas[f"{key}.csv"],
+            rawdata_path,
+            schema=rawdata_schema,
         ).fill_nan(None)
 
     def load_table(self, key: ETT_Key, /) -> pl.DataFrame:

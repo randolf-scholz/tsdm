@@ -82,7 +82,7 @@ from zipfile import ZipFile
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import remove_outliers
+from tsdm.datatools import remove_outliers, validate_schema
 
 RAWDATA_SCHEMA =  {
     "No"      : pl.UInt16,
@@ -206,6 +206,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
                     continue
 
                 with compressed_archive.open(csv_file) as compressed_file:
+                    validate_schema(compressed_file, rawdata_schema)
                     stations.append(
                         pl.read_csv(
                             compressed_file,

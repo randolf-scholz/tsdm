@@ -201,7 +201,7 @@ class Traffic(DatasetBase[Traffic_Keys, pl.DataFrame]):
             ),
             has_header=False,
             new_columns=time_columns,
-            schema_overrides=dict.fromkeys(time_columns, pl.Float32),
+            schema=dict.fromkeys(time_columns, pl.Float32),
         ).transpose(column_names=stations)
         timestamps = pl.datetime_range(
             day,

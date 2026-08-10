@@ -15,7 +15,7 @@ from zipfile import ZipFile
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import remove_outliers
+from tsdm.datatools import remove_outliers, validate_schema
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
@@ -100,6 +100,7 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
             for fname in files.namelist():
                 run_id = int(fname.removesuffix(".csv"))
                 with files.open(fname) as file:
+                    validate_schema(file, rawdata_schema)
                     runs.append(
                         pl.read_csv(
                             file,

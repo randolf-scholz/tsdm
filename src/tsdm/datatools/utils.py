@@ -7,7 +7,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
-from os import PathLike
+from os import PathLike, fspath
 from typing import IO, Any, Optional
 
 import pandas as pd
@@ -166,12 +166,15 @@ def data_overview(
     return overview
 
 
-def validate_schema(file: FilePath | IO[bytes], schema: Mapping[str, Any], /) -> None:
+def validate_schema(
+    file: FilePath | IO[bytes], schema: Mapping[str, Any], /, *, separator: str = ","
+) -> None:
     r"""Validate that a CSV header exactly matches a schema.
 
     Args:
         file: CSV path or seekable file-like object.
         schema: Expected column names and data types, in CSV order.
+        separator: CSV field separator.
 
     Raises:
         ValueError: If the file is not seekable or its header does not match the
@@ -180,7 +183,11 @@ def validate_schema(file: FilePath | IO[bytes], schema: Mapping[str, Any], /) ->
     match file:
         case str() | PathLike():
             actual_columns = pl.read_csv(
-                file, has_header=True, infer_schema=False, n_rows=0
+                fspath(file),
+                has_header=True,
+                infer_schema=False,
+                n_rows=0,
+                separator=separator,
             ).columns
         case stream:
             if not stream.seekable():
@@ -191,7 +198,11 @@ def validate_schema(file: FilePath | IO[bytes], schema: Mapping[str, Any], /) ->
             position = stream.tell()
             try:
                 actual_columns = pl.read_csv(
-                    stream, has_header=True, infer_schema=False, n_rows=0
+                    stream,
+                    has_header=True,
+                    infer_schema=False,
+                    n_rows=0,
+                    separator=separator,
                 ).columns
             finally:
                 stream.seek(position)
