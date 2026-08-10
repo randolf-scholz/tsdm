@@ -14,11 +14,11 @@ def test_insilico_preprocessing() -> None:
     InSilico.reset_dataset_files(force=True)
     ds = InSilico()
 
+    assert ds.timeseries_metadata.height == ds.timeseries.width
+
     for key in InSilico.table_names:
         assert isinstance(ds[key], pl.DataFrame)
         assert dict(ds[key].schema) == InSilico.table_schemas[key]
-
-    assert ds.timeseries_metadata.height == ds.timeseries.width
 
 
 def test_caching() -> None:

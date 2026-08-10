@@ -378,7 +378,22 @@ def kiwi_benchmark() -> TimeSeriesCollection[tuple[int, int], DataFrame]:
 
 def ushcn() -> TimeSeriesCollection[int, DataFrame]:
     r"""The USHCN dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.USHCN)
+    ds = datasets.USHCN(initialize=False)
+    return PandasTSC(
+        ds.name,
+        timeseries=ds.timeseries.to_pandas().set_index(["COOP_ID", "DATE"]),
+        timeseries_metadata=(
+            ds.timeseries_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index=["COOP_ID", "DATE"])
+        ),
+        static_covariates=ds.static_covariates.to_pandas().set_index("COOP_ID"),
+        static_covariates_metadata=(
+            ds.static_covariates_metadata.to_pandas()
+            .set_index("variable")
+            .drop(index="COOP_ID")
+        ),
+    )
 
 
 def ushcn_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:

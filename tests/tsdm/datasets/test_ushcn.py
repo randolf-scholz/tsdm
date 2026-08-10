@@ -15,9 +15,12 @@ def test_ushcn_debrouwer2019_preprocessing() -> None:
         assert dict(ds[key].schema) == USHCN_DeBrouwer2019.table_schemas[key]
 
 
+@pytest.mark.manual
 def test_ushcn_preprocessing() -> None:
     USHCN.reset_dataset_files(force=True)
     ds = USHCN()
+
+    assert ds.timeseries_metadata.height == ds.timeseries.width
 
     for key in USHCN.table_names:
         assert isinstance(ds[key], pl.DataFrame)
