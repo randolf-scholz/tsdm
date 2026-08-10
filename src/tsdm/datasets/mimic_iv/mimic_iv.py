@@ -71,23 +71,25 @@ __all__ = [
     "DATE_TYPE",
     "BOOL_TYPE",
     "STRING_TYPE",
-    "DICT_TYPE",
+    "CAT_TYPE",
     "NULL_TYPE",
     "TEXT_TYPE",
     "INT8_TYPE",
 ]
 
-
 import gzip
+from collections.abc import Mapping
 from functools import cached_property
 from getpass import getpass
-from typing import Literal, get_args
+from os import PathLike
+from typing import IO, Literal, get_args
 from zipfile import ZipFile
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 import pyarrow.compute as pc
+import pyarrow.parquet as pq
 from pyarrow import csv
 from tqdm.auto import tqdm
 
@@ -99,6 +101,7 @@ from tsdm.backend.pyarrow import (
 )
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import strip_whitespace
+from tsdm.types.aliases import FilePath
 from tsdm.utils import remote
 
 type MIMIC_IV_Key = Literal[
@@ -141,7 +144,7 @@ type MIMIC_IV_Key = Literal[
 # region schema ------------------------------------------------------------------------
 BAD_NAN_COLUMNS = {
     "admissions"         : ["admit_provider_id"],
-    "d_hcpcs"            : (..., ["code", "short_description"]),
+    "d_hcpcs"            : ["code", "short_description"],
     "d_icd_diagnoses"    : [],
     "d_icd_procedures"   : [],
     "d_labitems"         : [],
@@ -173,21 +176,39 @@ BAD_NAN_COLUMNS = {
     "procedureevents"    : [],
 }  # fmt: skip
 
-ID_TYPE = pa.uint32()
-VALUE_TYPE = pa.float64()
-TIME_TYPE = pa.timestamp("ms")
-DATE_TYPE = pa.date32()
-BOOL_TYPE = pa.bool_()
-STRING_TYPE = pa.string()
-DICT_TYPE = pa.dictionary(pa.int32(), pa.string())
-NULL_TYPE = pa.null()
-TEXT_TYPE = pa.large_utf8()
-INT8_TYPE = pa.int8()
+
+if False:
+    ID_TYPE = pa.uint32()
+    VALUE_TYPE = pa.float32()
+    TIME_TYPE = pa.timestamp("ms")
+    DATE_TYPE = pa.date32()
+    BOOL_TYPE = pa.bool_()
+    STRING_TYPE = pa.string()
+    STRING_ID_TYPE = pa.dictionary(pa.uint32(), pa.string())
+    CAT_TYPE = pa.dictionary(pa.int32(), pa.string())
+    NULL_TYPE = pa.null()
+    TEXT_TYPE = pa.large_utf8()
+    INT8_TYPE = pa.int8()
+else:
+    ID_TYPE = pl.UInt32
+    VALUE_TYPE = pl.Float32
+    TIME_TYPE = pl.Datetime("ms")
+    DATE_TYPE = pl.Date
+    BOOL_TYPE = pl.Boolean
+    STRING_TYPE = pl.Utf8
+    STRING_ID_TYPE = pl.Categorical
+    CAT_TYPE = pl.Categorical
+    NULL_TYPE = pl.Null
+    TEXT_TYPE = pl.Utf8
+    INT8_TYPE = pl.Int8
 
 # special values
 TRUE_VALUES = ["Y", "Yes", "1", "T"]
 FALSE_VALUES = ["N", "No", "0", "F"]
 NULL_VALUES = [
+    "NaN",
+    "NA",
+    "*NEW*",
     "",
     " ",
     "  ",
@@ -226,67 +247,68 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "admittime"            : TIME_TYPE,
         "dischtime"            : TIME_TYPE,
         "deathtime"            : TIME_TYPE,
-        "admission_type"       : DICT_TYPE,
-        "admit_provider_id"    : DICT_TYPE,
-        "admission_location"   : DICT_TYPE,
-        "discharge_location"   : DICT_TYPE,
-        "insurance"            : DICT_TYPE,
-        "language"             : DICT_TYPE,
-        "marital_status"       : DICT_TYPE,
-        "race"                 : DICT_TYPE,
+        "admission_type"       : CAT_TYPE,
+        # "admit_provider_id"    : CAT_TYPE,  # v2.2
+        "admission_location"   : CAT_TYPE,
+        "discharge_location"   : CAT_TYPE,
+        "insurance"            : CAT_TYPE,
+        "language"             : CAT_TYPE,
+        "marital_status"       : CAT_TYPE,
+        "ethnicity"            : CAT_TYPE,
         "edregtime"            : TIME_TYPE,
         "edouttime"            : TIME_TYPE,
-        "hospital_expire_flag" : BOOL_TYPE,
+        "hospital_expire_flag" : INT8_TYPE,
     },
     "d_hcpcs": {
         "code"              : STRING_TYPE,
         "category"          : INT8_TYPE,
         "long_description"  : TEXT_TYPE,
-        "short_description" : DICT_TYPE,
+        "short_description" : CAT_TYPE,
     },
     "d_icd_diagnoses": {
-        "icd_code"    : STRING_TYPE,
-        "icd_version" : ID_TYPE,
+        "icd_code"    : CAT_TYPE,
+        "icd_version" : CAT_TYPE,
         "long_title"  : STRING_TYPE,
     },
     "d_icd_procedures": {
-        "icd_code"    : STRING_TYPE,
+        "icd_code"    : CAT_TYPE,
         "icd_version" : ID_TYPE,
         "long_title"  : STRING_TYPE,
     },
     "d_labitems": {
         "itemid"   : ID_TYPE,
         "label"    : STRING_TYPE,
-        "fluid"    : DICT_TYPE,
-        "category" : DICT_TYPE,
+        "fluid"    : CAT_TYPE,
+        "category" : CAT_TYPE,
+        "loinc_code" : STRING_TYPE,  # \d+-\d
     },
     "diagnoses_icd": {
         "subject_id"  : ID_TYPE,
         "hadm_id"     : ID_TYPE,
         "seq_num"     : ID_TYPE,
-        "icd_code"    : DICT_TYPE,
+        "icd_code"    : CAT_TYPE,
         "icd_version" : ID_TYPE,
     },
     "drgcodes": {
         "subject_id"    : ID_TYPE,
         "hadm_id"       : ID_TYPE,
-        "drg_type"      : DICT_TYPE,
-        "drg_code"      : DICT_TYPE,
-        "description"   : DICT_TYPE,
+        "drg_type"      : CAT_TYPE,
+        "drg_code"      : CAT_TYPE,
+        "description"   : CAT_TYPE,
         "drg_severity"  : INT8_TYPE,
         "drg_mortality" : INT8_TYPE,
     },
     "emar": {
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,  # NOTE: filter NULLS
-        "emar_id"           : STRING_TYPE,
+        "emar_id"           : STRING_TYPE,  # range-like
         "emar_seq"          : ID_TYPE,
-        "poe_id"            : STRING_TYPE,
+        "poe_id"            : STRING_TYPE,  # range-like
         "pharmacy_id"       : ID_TYPE,
-        "enter_provider_id" : DICT_TYPE,
+        # "enter_provider_id" : CAT_TYPE,  # v2.2
         "charttime"         : TIME_TYPE,
-        "medication"        : DICT_TYPE,
-        "event_txt"         : DICT_TYPE,
+        "medication"        : CAT_TYPE,
+        "event_txt"         : CAT_TYPE,
         "scheduletime"      : TIME_TYPE,
         "storetime"         : TIME_TYPE,
     },
@@ -294,44 +316,44 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"                           : ID_TYPE,
         "emar_id"                              : STRING_TYPE,
         "emar_seq"                             : ID_TYPE,
-        "parent_field_ordinal"                 : DICT_TYPE,
-        "administration_type"                  : DICT_TYPE,
+        "parent_field_ordinal"                 : CAT_TYPE,
+        "administration_type"                  : CAT_TYPE,
         "pharmacy_id"                          : ID_TYPE,
-        "barcode_type"                         : DICT_TYPE,
+        "barcode_type"                         : CAT_TYPE,
         "reason_for_no_barcode"                : TEXT_TYPE,
-        "complete_dose_not_given"              : BOOL_TYPE,
+        "complete_dose_not_given"              : CAT_TYPE,
         "dose_due"                             : STRING_TYPE,  # NOTE: cast float (range)
-        "dose_due_unit"                        : DICT_TYPE,
+        "dose_due_unit"                        : CAT_TYPE,
         "dose_given"                           : STRING_TYPE,  # NOTE: cast float (range)
-        "dose_given_unit"                      : DICT_TYPE,
-        "will_remainder_of_dose_be_given"      : BOOL_TYPE,
-        "product_amount_given"                 : STRING_TYPE,  # ✔ NOTE: cast float (easy)
-        "product_unit"                         : DICT_TYPE,
-        "product_code"                         : DICT_TYPE,
-        "product_description"                  : DICT_TYPE,
-        "product_description_other"            : DICT_TYPE,
+        "dose_given_unit"                      : CAT_TYPE,
+        "will_remainder_of_dose_be_given"      : CAT_TYPE,
+        "product_amount_given"                 : STRING_TYPE,  # NOTE: cast float (drop other)
+        "product_unit"                         : CAT_TYPE,
+        "product_code"                         : CAT_TYPE,
+        "product_description"                  : CAT_TYPE,
+        "product_description_other"            : CAT_TYPE,
         "prior_infusion_rate"                  : STRING_TYPE,  # NOTE: cast float (range)
         "infusion_rate"                        : STRING_TYPE,  # NOTE: cast float (range)
-        "infusion_rate_adjustment"             : DICT_TYPE,
-        "infusion_rate_adjustment_amount"      : STRING_TYPE,  # ✔ NOTE: cast float (easy)
-        "infusion_rate_unit"                   : DICT_TYPE,
-        "route"                                : DICT_TYPE,
-        "infusion_complete"                    : BOOL_TYPE,
-        "completion_interval"                  : DICT_TYPE,
-        "new_iv_bag_hung"                      : BOOL_TYPE,
-        "continued_infusion_in_other_location" : BOOL_TYPE,
-        "restart_interval"                     : DICT_TYPE,
-        "side"                                 : DICT_TYPE,
-        "site"                                 : DICT_TYPE,
-        "non_formulary_visual_verification"    : BOOL_TYPE,
+        "infusion_rate_adjustment"             : CAT_TYPE,
+        "infusion_rate_adjustment_amount"      : STRING_TYPE,  # NOTE: cast float (drop other)
+        "infusion_rate_unit"                   : CAT_TYPE,
+        "route"                                : CAT_TYPE,
+        "infusion_complete"                    : CAT_TYPE,
+        "completion_interval"                  : CAT_TYPE,
+        "new_iv_bag_hung"                      : CAT_TYPE,
+        "continued_infusion_in_other_location" : CAT_TYPE,
+        "restart_interval"                     : CAT_TYPE,
+        "side"                                 : CAT_TYPE,
+        "site"                                 : CAT_TYPE,
+        "non_formulary_visual_verification"    : CAT_TYPE,
     },
     "hcpcsevents": {
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "chartdate"         : DATE_TYPE,
-        "hcpcs_cd"          : DICT_TYPE,
+        "hcpcs_cd"          : CAT_TYPE,
         "seq_num"           : ID_TYPE,
-        "short_description" : DICT_TYPE,
+        "short_description" : CAT_TYPE,
     },
     "labevents": {
         "labevent_id"       : ID_TYPE,
@@ -339,16 +361,16 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "hadm_id"           : ID_TYPE,  # NOTE: DROP MISSING ?
         "specimen_id"       : ID_TYPE,
         "itemid"            : ID_TYPE,
-        "order_provider_id" : DICT_TYPE,
+        # "order_provider_id" : STRING_ID_TYPE,  # v2.2
         "charttime"         : TIME_TYPE,
         "storetime"         : TIME_TYPE,
-        "value"             : DICT_TYPE,  # NOTE: cast Float32
-        "valuenum"          : VALUE_TYPE,
-        "valueuom"          : DICT_TYPE,  # NOTE: unstack
+        "value"             : STRING_TYPE,
+        "valuenum"          : VALUE_TYPE,  # NOTE: cast Float32
+        "valueuom"          : STRING_TYPE,
         "ref_range_lower"   : VALUE_TYPE,
         "ref_range_upper"   : VALUE_TYPE,
-        "flag"              : DICT_TYPE,
-        "priority"          : DICT_TYPE,
+        "flag"              : CAT_TYPE,
+        "priority"          : CAT_TYPE,
         "comments"          : TEXT_TYPE,
     },
     "microbiologyevents": {
@@ -356,41 +378,41 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"          : ID_TYPE,
         "hadm_id"             : ID_TYPE,
         "micro_specimen_id"   : ID_TYPE,
-        "order_provider_id"   : DICT_TYPE,
+        # "order_provider_id"   : STRING_ID_TYPE,  # v2.2
         "chartdate"           : TIME_TYPE,
         "charttime"           : TIME_TYPE,
         "spec_itemid"         : ID_TYPE,
-        "spec_type_desc"      : DICT_TYPE,
+        "spec_type_desc"      : CAT_TYPE,
         "test_seq"            : ID_TYPE,
         "storedate"           : TIME_TYPE,
         "storetime"           : TIME_TYPE,
         "test_itemid"         : ID_TYPE,
-        "test_name"           : DICT_TYPE,
+        "test_name"           : CAT_TYPE,
         "org_itemid"          : ID_TYPE,
-        "org_name"            : DICT_TYPE,
+        "org_name"            : CAT_TYPE,
         "isolate_num"         : INT8_TYPE,
-        "quantity"            : DICT_TYPE,
+        "quantity"            : CAT_TYPE,
         "ab_itemid"           : ID_TYPE,
-        "ab_name"             : DICT_TYPE,
-        "dilution_text"       : DICT_TYPE,  # NOTE: comparison+value
-        "dilution_comparison" : DICT_TYPE,
+        "ab_name"             : CAT_TYPE,
+        "dilution_text"       : CAT_TYPE,  # NOTE: comparison+value
+        "dilution_comparison" : CAT_TYPE,
         "dilution_value"      : VALUE_TYPE,
-        "interpretation"      : DICT_TYPE,
+        "interpretation"      : CAT_TYPE,
         "comments"            : TEXT_TYPE,
     },
     "omr": {
         "subject_id"   : ID_TYPE,
         "chartdate"    : DATE_TYPE,
         "seq_num"      : ID_TYPE,
-        "result_name"  : DICT_TYPE,  # NOTE: unstack
+        "result_name"  : CAT_TYPE,  # NOTE: unstack
         "result_value" : STRING_TYPE,  # NOTE: split blood pressure into systolic/diastolic.
     },
     "patients": {
         "subject_id"        : ID_TYPE,
-        "gender"            : DICT_TYPE,
+        "gender"            : CAT_TYPE,
         "anchor_age"        : ID_TYPE,
         "anchor_year"       : ID_TYPE,
-        "anchor_year_group" : DICT_TYPE,
+        "anchor_year_group" : CAT_TYPE,
         "dod"               : DATE_TYPE,
     },
     "pharmacy": {
@@ -401,26 +423,26 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "starttime"         :  TIME_TYPE,
         "stoptime"          :  TIME_TYPE,
         "medication"        :  TEXT_TYPE,
-        "proc_type"         :  DICT_TYPE,
-        "status"            :  DICT_TYPE,
+        "proc_type"         :  CAT_TYPE,
+        "status"            :  CAT_TYPE,
         "entertime"         :  TIME_TYPE,
         "verifiedtime"      :  TIME_TYPE,
-        "route"             :  DICT_TYPE,
-        "frequency"         :  DICT_TYPE,
-        "disp_sched"        :  DICT_TYPE,
-        "infusion_type"     :  DICT_TYPE,
-        "sliding_scale"     :  BOOL_TYPE,
-        "lockout_interval"  :  DICT_TYPE,
+        "route"             :  CAT_TYPE,
+        "frequency"         :  CAT_TYPE,
+        "disp_sched"        :  CAT_TYPE,
+        "infusion_type"     :  CAT_TYPE,
+        "sliding_scale"     :  CAT_TYPE,  # cast bool {"Y", "N"}
+        "lockout_interval"  :  CAT_TYPE,
         "basal_rate"        :  VALUE_TYPE,
-        "one_hr_max"        :  DICT_TYPE,  # NOTE: cast float ??? (range)
+        "one_hr_max"        :  CAT_TYPE,  # NOTE: cast float ??? (range)
         "doses_per_24_hrs"  :  VALUE_TYPE,
         "duration"          :  VALUE_TYPE,
-        "duration_interval" :  DICT_TYPE,
+        "duration_interval" :  CAT_TYPE,
         "expiration_value"  :  VALUE_TYPE,
-        "expiration_unit"   :  DICT_TYPE,
+        "expiration_unit"   :  CAT_TYPE,
         "expirationdate"    :  TIME_TYPE,
-        "dispensation"      :  DICT_TYPE,
-        "fill_quantity"     :  DICT_TYPE,
+        "dispensation"      :  CAT_TYPE,
+        "fill_quantity"     :  CAT_TYPE,
     },
     "poe": {
         "poe_id"                 : STRING_TYPE,
@@ -428,68 +450,66 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"             : ID_TYPE,
         "hadm_id"                : ID_TYPE,
         "ordertime"              : TIME_TYPE,
-        "order_type"             : DICT_TYPE,
-        "order_subtype"          : DICT_TYPE,
-        "transaction_type"       : DICT_TYPE,
+        "order_type"             : CAT_TYPE,
+        "order_subtype"          : CAT_TYPE,
+        "transaction_type"       : CAT_TYPE,
         "discontinue_of_poe_id"  : STRING_TYPE,
         "discontinued_by_poe_id" : STRING_TYPE,
-        "order_provider_id"      : DICT_TYPE,
-        "order_status"           : DICT_TYPE,
+        # "order_provider_id"      : CAT_TYPE,  # v2.2
+        "order_status"           : CAT_TYPE,
     },
     "poe_detail": {
         "poe_id"      : STRING_TYPE,
         "poe_seq"     : ID_TYPE,
         "subject_id"  : ID_TYPE,
-        "field_name"  : DICT_TYPE,  # NOTE: unstack column
+        "field_name"  : CAT_TYPE,  # NOTE: unstack column
         "field_value" : STRING_TYPE,
     },
     "prescriptions": {
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "pharmacy_id"       : ID_TYPE,
-        "poe_id"            : STRING_TYPE,
-        "poe_seq"           : ID_TYPE,
-        "order_provider_id" : DICT_TYPE,
+        # "order_provider_id" : CAT_TYPE,  # v2.2
         "starttime"         : TIME_TYPE,
         "stoptime"          : TIME_TYPE,
-        "drug_type"         : DICT_TYPE,
-        "drug"              : DICT_TYPE,
-        "formulary_drug_cd" : DICT_TYPE,
-        "gsn"               : DICT_TYPE,
-        "ndc"               : DICT_TYPE,
-        "prod_strength"     : DICT_TYPE,
-        "form_rx"           : DICT_TYPE,
+        "drug_type"         : CAT_TYPE,
+        "drug"              : CAT_TYPE,
+        # "formulary_drug_cd" : CAT_TYPE,  # v2.0
+        "gsn"               : CAT_TYPE,
+        "ndc"               : CAT_TYPE,
+        "prod_strength"     : CAT_TYPE,
+        "form_rx"           : CAT_TYPE,
         "dose_val_rx"       : STRING_TYPE,  # NOTE: cast float (range)
-        "dose_unit_rx"      : DICT_TYPE,
+        "dose_unit_rx"      : CAT_TYPE,
         "form_val_disp"     : STRING_TYPE,  # NOTE: cast float (range)
-        "form_unit_disp"    : DICT_TYPE,
+        "form_unit_disp"    : CAT_TYPE,
         "doses_per_24_hrs"  : VALUE_TYPE,
-        "route"             : DICT_TYPE,
+        "route"             : CAT_TYPE,
     },
     "procedures_icd": {
         "subject_id"  : ID_TYPE,
         "hadm_id"     : ID_TYPE,
         "seq_num"     : ID_TYPE,
         "chartdate"   : DATE_TYPE,
-        "icd_code"    : DICT_TYPE,
+        "icd_code"    : CAT_TYPE,
         "icd_version" : ID_TYPE,
     },
-    "provider": {
+    "provider": {  # v2.2
         "provider_id" : STRING_TYPE,
     },
     "services": {
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "transfertime" : TIME_TYPE,
-        "prev_service" : DICT_TYPE,
-        "curr_service" : DICT_TYPE,
+        "prev_service" : CAT_TYPE,
+        "curr_service" : CAT_TYPE,
     },
     "transfers": {
         "subject_id"  : ID_TYPE,
         "hadm_id"     : ID_TYPE,
         "transfer_id" : ID_TYPE,
-        "eventtype"   : DICT_TYPE,
-        "careunit"    : DICT_TYPE,
+        "eventtype"   : CAT_TYPE,
+        "careunit"    : CAT_TYPE,
         "intime"      : TIME_TYPE,
         "outtime"     : TIME_TYPE,
     },
@@ -501,23 +521,23 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
-        "caregiver_id" : ID_TYPE,
+        # "caregiver_id" : ID_TYPE,  # v2.2
         "itemid"       : ID_TYPE,
         "charttime"    : TIME_TYPE,
         "storetime"    : TIME_TYPE,
-        "value"        : STRING_TYPE,  # NOTE: cast float
+        "value"        : VALUE_TYPE,
         "valuenum"     : VALUE_TYPE,
-        "valueuom"     : DICT_TYPE,
+        "valueuom"     : VALUE_TYPE,
         "warning"      : BOOL_TYPE,
     },
     "d_items": {
         "itemid"          : ID_TYPE,
         "label"           : STRING_TYPE,
         "abbreviation"    : STRING_TYPE,
-        "linksto"         : DICT_TYPE,
-        "category"        : DICT_TYPE,
-        "unitname"        : DICT_TYPE,
-        "param_type"      : DICT_TYPE,
+        "linksto"         : CAT_TYPE,
+        "category"        : CAT_TYPE,
+        "unitname"        : CAT_TYPE,
+        "param_type"      : CAT_TYPE,
         "lownormalvalue"  : VALUE_TYPE,
         "highnormalvalue" : VALUE_TYPE,
     },
@@ -530,15 +550,15 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "storetime"    : TIME_TYPE,
         "itemid"       : ID_TYPE,
         "value"        : TIME_TYPE,
-        "valueuom"     : DICT_TYPE,  # NOTE: unstack?
+        "valueuom"     : CAT_TYPE,  # NOTE: unstack?
         "warning"      : BOOL_TYPE,
     },
     "icustays": {
         "subject_id"     : ID_TYPE,
         "hadm_id"        : ID_TYPE,
         "stay_id"        : ID_TYPE,
-        "first_careunit" : DICT_TYPE,
-        "last_careunit"  : DICT_TYPE,
+        "first_careunit" : CAT_TYPE,
+        "last_careunit"  : CAT_TYPE,
         "intime"         : TIME_TYPE,
         "outtime"        : TIME_TYPE,
         "los"            : VALUE_TYPE,
@@ -547,18 +567,18 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "stay_id"           : ID_TYPE,
-        "caregiver_id"      : ID_TYPE,
+        # "caregiver_id"      : ID_TYPE,  # v2.2
         "starttime"         : TIME_TYPE,
         "endtime"           : TIME_TYPE,
         "storetime"         : TIME_TYPE,
         "itemid"            : ID_TYPE,
         "amount"            : VALUE_TYPE,
-        "amountuom"         : DICT_TYPE,
+        "amountuom"         : CAT_TYPE,
         "rate"              : VALUE_TYPE,
-        "rateuom"           : DICT_TYPE,
+        "rateuom"           : CAT_TYPE,
         "orderid"           : ID_TYPE,
         "linkorderid"       : ID_TYPE,
-        "statusdescription" : DICT_TYPE,
+        "statusdescription" : CAT_TYPE,
         "originalamount"    : VALUE_TYPE,
         "originalrate"      : VALUE_TYPE,
     },
@@ -566,27 +586,27 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"                    : ID_TYPE,
         "hadm_id"                       : ID_TYPE,
         "stay_id"                       : ID_TYPE,
-        "caregiver_id"                  : ID_TYPE,
+        # "caregiver_id"                  : ID_TYPE,  # v2.2
         "starttime"                     : TIME_TYPE,
         "endtime"                       : TIME_TYPE,
         "storetime"                     : TIME_TYPE,
         "itemid"                        : ID_TYPE,  # NOTE: unstack, but high-dim.
         "amount"                        : VALUE_TYPE,
-        "amountuom"                     : DICT_TYPE,
+        "amountuom"                     : CAT_TYPE,
         "rate"                          : VALUE_TYPE,
-        "rateuom"                       : DICT_TYPE,
+        "rateuom"                       : CAT_TYPE,
         "orderid"                       : ID_TYPE,
         "linkorderid"                   : ID_TYPE,
-        "ordercategoryname"             : DICT_TYPE,
-        "secondaryordercategoryname"    : DICT_TYPE,
-        "ordercomponenttypedescription" : DICT_TYPE,
-        "ordercategorydescription"      : DICT_TYPE,
+        "ordercategoryname"             : CAT_TYPE,
+        "secondaryordercategoryname"    : CAT_TYPE,
+        "ordercomponenttypedescription" : CAT_TYPE,
+        "ordercategorydescription"      : CAT_TYPE,
         "patientweight"                 : VALUE_TYPE,
         "totalamount"                   : VALUE_TYPE,
-        "totalamountuom"                : DICT_TYPE,
+        "totalamountuom"                : CAT_TYPE,
         "isopenbag"                     : BOOL_TYPE,
         "continueinnextdept"            : BOOL_TYPE,
-        "statusdescription"             : DICT_TYPE,
+        "statusdescription"             : CAT_TYPE,
         "originalamount"                : VALUE_TYPE,
         "originalrate"                  : VALUE_TYPE,
     },
@@ -594,34 +614,34 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
-        "caregiver_id" : ID_TYPE,
+        # "caregiver_id" : ID_TYPE,  # v2.2
         "charttime"    : TIME_TYPE,
         "storetime"    : TIME_TYPE,
         "itemid"       : ID_TYPE,
         "value"        : VALUE_TYPE,
-        "valueuom"     : DICT_TYPE,
+        "valueuom"     : CAT_TYPE,
     },
     "procedureevents": {
         "subject_id"               : ID_TYPE,
         "hadm_id"                  : ID_TYPE,
         "stay_id"                  : ID_TYPE,
-        "caregiver_id"             : ID_TYPE,
+        # "caregiver_id"             : ID_TYPE,  # v2.2
         "starttime"                : TIME_TYPE,
         "endtime"                  : TIME_TYPE,
         "storetime"                : pa.timestamp("ms"),  # NOTE: cast to seconds
         "itemid"                   : ID_TYPE,
         "value"                    : VALUE_TYPE,  # NOTE: duration of procedure
-        "valueuom"                 : DICT_TYPE,  # NOTE: unstack
-        "location"                 : DICT_TYPE,
-        "locationcategory"         : DICT_TYPE,
+        "valueuom"                 : CAT_TYPE,  # NOTE: unstack
+        "location"                 : CAT_TYPE,
+        "locationcategory"         : CAT_TYPE,
         "orderid"                  : ID_TYPE,
         "linkorderid"              : ID_TYPE,
-        "ordercategoryname"        : DICT_TYPE,
-        "ordercategorydescription" : DICT_TYPE,
+        "ordercategoryname"        : CAT_TYPE,
+        "ordercategorydescription" : CAT_TYPE,
         "patientweight"            : VALUE_TYPE,
         "isopenbag"                : BOOL_TYPE,
         "continueinnextdept"       : BOOL_TYPE,
-        "statusdescription"        : DICT_TYPE,
+        "statusdescription"        : CAT_TYPE,
         "originalamount"           : VALUE_TYPE,
         "originalrate"             : BOOL_TYPE,
     },
@@ -650,30 +670,117 @@ UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "Weight"                                       : VALUE_TYPE,
         "Blood Pressure Standing (systolic)"           : VALUE_TYPE,
         "Blood Pressure Standing (diastolic)"          : VALUE_TYPE,
-        "eGFR"                                         : DICT_TYPE,
+        "eGFR"                                         : CAT_TYPE,
         "Height"                                       : VALUE_TYPE,
     },
     "poe_detail": {
         "poe_id"              : STRING_TYPE,
         "poe_seq"             : ID_TYPE,
         "subject_id"          : ID_TYPE,
-        "Admit category"      : DICT_TYPE,
-        "Admit to"            : DICT_TYPE,
-        "Code status"         : DICT_TYPE,
-        "Consult Status"      : DICT_TYPE,
+        "Admit category"      : CAT_TYPE,
+        "Admit to"            : CAT_TYPE,
+        "Code status"         : CAT_TYPE,
+        "Consult Status"      : CAT_TYPE,
         "Consult Status Time" : TIME_TYPE,
-        "Discharge Planning"  : DICT_TYPE,
-        "Discharge When"      : DICT_TYPE,
-        "Indication"          : DICT_TYPE,
-        "Level of Urgency"    : DICT_TYPE,
-        "Transfer to"         : DICT_TYPE,
-        "Tubes & Drains type" : DICT_TYPE,
+        "Discharge Planning"  : CAT_TYPE,
+        "Discharge When"      : CAT_TYPE,
+        "Indication"          : CAT_TYPE,
+        "Level of Urgency"    : CAT_TYPE,
+        "Transfer to"         : CAT_TYPE,
+        "Tubes & Drains type" : CAT_TYPE,
     },
 }  # fmt: skip
 # endregion schema ---------------------------------------------------------------------
 
+BOOL_VALUES = {
+    "admissions": {
+        "hospital_expire_flag": {0: False, 1: True},
+    },
+    "emar_detail": {
+        "complete_dose_not_given": {"No": False, "Yes": True},
+        "will_remainder_of_dose_be_given": {"No": False, "Yes": True},
+        "infusion_complete": {"N": False, "Y": True},
+        "new_iv_bag_hung": {"N": False, "Y": True},
+        "continued_infusion_in_other_location": {"N": False, "Y": True},
+        "non_formulary_visual_verification": {"N": False, "Y": True},
+    },
+    "pharmacy": {
+        "sliding_scale": {"N": False, "Y": True},
+    },
+}
 
-class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
+
+SCHEMA_OVERRIDE = {
+    "admissions": {"edouttime": BOOL_TYPE},
+    "emar_detail": {
+        "complete_dose_not_given": BOOL_TYPE,
+        "will_remainder_of_dose_be_given": BOOL_TYPE,
+        "infusion_complete": BOOL_TYPE,
+        "new_iv_bag_hung": BOOL_TYPE,
+        "continued_infusion_in_other_location": BOOL_TYPE,
+        "non_formulary_visual_verification": BOOL_TYPE,
+    },
+}
+
+
+NULL_SCHEMA = {"emar_detail": {"product_amount_given": "*NEW*"}}
+
+
+def validate_schema(
+    file: FilePath | IO[str] | IO[bytes],
+    schema: Mapping[str, pl.DataType | type[pl.DataType]],
+    /,
+) -> None:
+    r"""Validate that a CSV header exactly matches a schema.
+
+    Args:
+        file: CSV path or seekable file-like object.
+        schema: Expected column names and data types, in CSV order.
+
+    Raises:
+        ValueError: If the file is not seekable or its header does not match the
+            schema's columns and order.
+    """
+    match file:
+        case str() | PathLike():
+            actual_columns = pl.read_csv(
+                file, has_header=True, infer_schema=False, n_rows=0
+            ).columns
+        case stream:
+            if not stream.seekable():
+                raise ValueError(
+                    "Cannot validate the header of a non-seekable CSV stream."
+                )
+
+            position = stream.tell()
+            try:
+                actual_columns = pl.read_csv(
+                    stream, has_header=True, infer_schema=False, n_rows=0
+                ).columns
+            finally:
+                stream.seek(position)
+                assert stream.tell() == position
+
+    expected_columns = list(schema)
+    missing_cols = set(actual_columns) - set(expected_columns)
+    superfluous_cols = set(expected_columns) - set(actual_columns)
+    if missing_cols or superfluous_cols:
+        raise ValueError(
+            "CSV header does not match schema: "
+            f"\n\t    missing: {sorted(missing_cols)!r}"
+            f"\n\tsuperfluous: {sorted(superfluous_cols)!r}"
+        )
+    assert len(actual_columns) == len(expected_columns)
+
+    if actual_columns != expected_columns:
+        raise ValueError(
+            "CSV header and schema columns are in different orders: "
+            f"\n\texpected: {expected_columns!r}"
+            f"\n\t  actual: {actual_columns!r}"
+        )
+
+
+class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):
     r"""Raw version of the MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -824,27 +931,82 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pa.Table]):
 
         return files
 
-    def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
+    def get_schema(self, key) -> dict:
+        schema = SCHEMAS[key].copy()
+
+        if self.version_info >= (2, 0):
+            schema["prescriptions"] |= {"formulary_drug_cd": CAT_TYPE}
+
+        if self.version_info >= (2, 2):
+            # icu module
+            schema["caregiver"] |= {"caregiver_id": ID_TYPE}
+            schema["chartevents"] |= {"caregiver_id": ID_TYPE}
+            schema["ingredientevents"] |= {"caregiver_id": ID_TYPE}
+            schema["inputevents"] |= {"caregiver_id": ID_TYPE}
+            schema["outputevents"] |= {"caregiver_id": ID_TYPE}
+            schema["procedureevents"] |= {"caregiver_id": ID_TYPE}
+            # hosp module
+            schema["admissions"] |= {"admit_provider_id": CAT_TYPE}
+            schema["provider"] |= {"provider_id": CAT_TYPE}
+            schema["emar"] |= {"enter_provider_id": CAT_TYPE}
+            schema["labevents"] |= {"order_provider_id": CAT_TYPE}
+            schema["microbiologyevents"] |= {"order_provider_id": CAT_TYPE}
+            schema["poe"] |= {"order_provider_id": CAT_TYPE}
+            schema["prescriptions"] |= {"order_provider_id": CAT_TYPE}
+
+        return schema
+
+    def clean_table(self, key: MIMIC_IV_Key) -> None:
         with (
             ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
             archive.open(self.filelist[key], "r") as compressed_file,
             gzip.open(compressed_file, "r") as file,
         ):
-            table = csv.read_csv(
+            schema = self.get_schema(key)
+            validate_schema(file, schema)
+            table = pl.read_csv(
                 file,
-                convert_options=csv.ConvertOptions(
-                    column_types=SCHEMAS[key],
-                    strings_can_be_null=True,
-                    null_values=NULL_VALUES,
-                    true_values=TRUE_VALUES,
-                    false_values=FALSE_VALUES,
-                ),
-                parse_options=csv.ParseOptions(
-                    newlines_in_values=(key == "NOTEEVENTS"),
-                ),
+                schema=schema,
+                # null_values=NULL_SCHEMA.get(key, {}),
             )
 
-        return table.combine_chunks()  # <- reduces size and avoids some bugs
+        # preprocessing
+        if bool_values := BOOL_VALUES.get(key, {}):
+            # bool_values is dict[str, dict[str, bool]] that tells us which
+            # columns to cast to boolean dtype
+            for column, values in bool_values.items():
+                try:
+                    table = table.with_columns(
+                        pl.col(column).replace_strict(values, return_dtype=BOOL_TYPE)
+                    )
+                except Exception:
+                    # show unique values
+                    print(table.select(column).unique())
+                    raise
+
+        # sanity checks
+        # check that the last column is not all null (can happen if too many columns in schema)
+        assert table.to_series(-1).null_count() < table.height
+
+        table.write_parquet(self.dataset_paths[key])
+        # table = csv.read_csv(
+        #     file,
+        #     convert_options=csv.ConvertOptions(
+        #         column_types=self.get_schema(key),
+        #         strings_can_be_null=True,
+        #         null_values=NULL_VALUES,
+        #         true_values=TRUE_VALUES,
+        #         false_values=FALSE_VALUES,
+        #     ),
+        #     parse_options=csv.ParseOptions(
+        #         newlines_in_values=(key == "NOTEEVENTS"),
+        #     ),
+        # ).combine_chunks()  # <- reduces size and avoids some bugs
+
+        # return pq.write_table(table, self.dataset_paths[key])
+
+    def load_table(self, key: MIMIC_IV_Key, /) -> pl.DataFrame:
+        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         if self.version_info in {(1, 0), (2, 1), (2, 2)}:
@@ -928,7 +1090,9 @@ class MIMIC_IV(MIMIC_IV_RAW):
 
     def __post_init__(self) -> None:
         # reuse the same data as the raw dataset
-        self.RAWDATA_DIR = MIMIC_IV_RAW.DATASET_ROOT_DIR / self.__version__ / "rawdata"
+        base = MIMIC_IV_RAW(version=self.version, initialize=False)
+        self.RAWDATA_DIR = base.RAWDATA_DIR
+        del base
         super().__post_init__()
 
     def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
@@ -966,14 +1130,14 @@ class MIMIC_IV(MIMIC_IV_RAW):
                     "infusion_rate_adjustment_amount",
                 ]
                 table = strip_whitespace(table, *cols)
-                table = force_cast(table, **{col: pa.float64() for col in cols})
+                table = force_cast(table, **{col: pa.float32() for col in cols})
             case "hcpcsevents":
                 pass
             case "labevents":
                 table = filter_nulls(table, "storetime")
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
                 table = strip_whitespace(table)
-                table = cast_columns(table, value="float64")
+                table = cast_columns(table, value=pa.float32())
                 if table["value"] != table["valuenum"]:
                     raise AssertionError("value != valuenum")
                 table = table.drop_columns("valuenum")
