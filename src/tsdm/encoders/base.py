@@ -88,6 +88,8 @@ __all__ = [
     "EncoderProtocol",
     "FittableEncoder",
     "ParametrizedEncoder",
+    # types
+    "Reduction",
     "StaticEncoder",
     "SupportsDecode",
     "SupportsEncode",
