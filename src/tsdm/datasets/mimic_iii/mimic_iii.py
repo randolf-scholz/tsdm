@@ -18,13 +18,10 @@ vital signs, laboratory results, and medications.
 
 __all__ = [
     # Classes
-    "MIMIC_III_RAW",
     "MIMIC_III",
     # Constants
     "MIMIC_III_Key",
     "SCHEMAS",
-    "NULL_VALUES",
-    "BOOL_VALUES",
     # Types
     "ID_TYPE",
     "VALUE_TYPE",
@@ -40,17 +37,14 @@ __all__ = [
 from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
-from typing import Any, Literal, get_args
+from typing import Literal, get_args
 from zipfile import ZipFile
 
 import polars as pl
-import pyarrow as pa
-import pyarrow.parquet as pq
 from polars.datatypes import DataType, DataTypeClass
 
-from tsdm.backend.pyarrow import cast_columns, filter_nulls, set_nulls
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import strip_whitespace, validate_schema
+from tsdm.datatools import validate_schema
 from tsdm.utils import remote
 
 type MIMIC_III_Key = Literal[
@@ -81,10 +75,8 @@ type MIMIC_III_Key = Literal[
     "SERVICES",
     "TRANSFERS",
 ]
-type PolarsDataType = DataType | DataTypeClass
 
 
-# region schema ------------------------------------------------------------------------
 ID_TYPE = pl.UInt32
 VALUE_TYPE = pl.Float32
 TIME_TYPE = pl.Datetime("ms")
@@ -95,36 +87,8 @@ DICT_TYPE = pl.Categorical
 TEXT_TYPE = pl.Utf8
 INT8_TYPE = pl.Int8
 
-# special values
-NULL_VALUES = [
-    "",
-    " ",
-    "  ",
-    "   ",
-    "    ",
-    "     ",
-    "      ",
-    "       ",
-    "        ",
-    "-",
-    "---",
-    "----",
-    "-----",
-    "-------",
-    "?",
-    "UNABLE TO OBTAIN",
-    "UNKNOWN",
-    "Unknown",
-    "unknown",
-    ".",
-    ".*.",
-    "___.",
-    "_",
-    "__",
-    "___",
-]
 
-SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
+SCHEMAS: dict[MIMIC_III_Key, dict[str, DataType | DataTypeClass]] = {
     "ADMISSIONS": {
         "ROW_ID"               : ID_TYPE,
         "SUBJECT_ID"           : ID_TYPE,
@@ -502,44 +466,9 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
         "LOS"           : VALUE_TYPE,
     },
 }  # fmt: skip
-# endregion schema ---------------------------------------------------------------------
-
-BOOL_VALUES: dict[MIMIC_III_Key, dict[str, dict[Any, bool]]] = {
-    "ADMISSIONS": {
-        "HOSPITAL_EXPIRE_FLAG": {0: False, 1: True},
-        "HAS_CHARTEVENTS_DATA": {0: False, 1: True},
-    },
-    "CALLOUT": {
-        "REQUEST_TELE": {0: False, 1: True},
-        "REQUEST_RESP": {0: False, 1: True},
-        "REQUEST_CDIFF": {0: False, 1: True},
-        "REQUEST_MRSA": {0: False, 1: True},
-        "REQUEST_VRE": {0: False, 1: True},
-    },
-    "CHARTEVENTS": {
-        "WARNING": {0: False, 1: True},
-        "ERROR": {0: False, 1: True},
-    },
-    "DATETIMEEVENTS": {
-        "WARNING": {0: False, 1: True},
-        "ERROR": {0: False, 1: True},
-    },
-    "D_CPT": {"CODESUFFIX": {"F": False, "T": True}},
-    "INPUTEVENTS_CV": {"NEWBOTTLE": {0: False, 1: True}},
-    "INPUTEVENTS_MV": {
-        "ISOPENBAG": {0: False, 1: True},
-        "CONTINUEINNEXTDEPT": {0: False, 1: True},
-    },
-    "NOTEEVENTS": {"ISERROR": {0: False, 1: True}},
-    "PATIENTS": {"EXPIRE_FLAG": {0: False, 1: True}},
-    "PROCEDUREEVENTS_MV": {
-        "ISOPENBAG": {0: False, 1: True},
-        "CONTINUEINNEXTDEPT": {0: False, 1: True},
-    },
-}
 
 
-class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
+class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
     r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -636,98 +565,3 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
                 "User-Agent": "Wget/1.21.2"
             },  # NOTE: MIMIC only allows wget for some reason...
         )
-
-
-class MIMIC_III(MIMIC_III_RAW):
-    r"""Lightly preprocessed version of the MIMIC-III dataset."""
-
-    def __post_init__(self) -> None:
-        # Reuse the raw data and lazily materialized raw tables.
-        self.raw_dataset = MIMIC_III_RAW(
-            version=self.__version__, initialize=False, verbose=self.verbose
-        )
-        self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
-        super().__post_init__()
-
-    def clean_table(self, key: MIMIC_III_Key) -> pa.Table:
-        self.raw_dataset.clean(key, validate_rawdata=False)
-        table = self.raw_dataset.load_table(key).collect().to_arrow()
-
-        # Post-processing
-        match key:
-            case "ADMISSIONS":
-                table = set_nulls(
-                    table,
-                    ETHNICITY=["UNKNOWN/NOT SPECIFIED"],
-                    RELIGION=["NOT SPECIFIED", "UNOBTAINABLE"],
-                    MARITAL_STATUS=["UNKNOWN (DEFAULT)"],
-                )
-            case "CALLOUT":
-                pass
-            case "CAREGIVERS":
-                pass
-            case "CHARTEVENTS":
-                table = filter_nulls(
-                    table, "ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"
-                )
-                table = cast_columns(table, VALUE="float64")
-            case "CPTEVENTS":
-                table = cast_columns(table, CHARTDATE="date32")
-            case "DATETIMEEVENTS":
-                pass
-            case "DIAGNOSES_ICD":
-                pass
-            case "DRGCODES":
-                pass
-            case "D_CPT":
-                pass
-            case "D_ICD_DIAGNOSES":
-                pass
-            case "D_ICD_PROCEDURES":
-                pass
-            case "D_ITEMS":
-                pass
-            case "D_LABITEMS":
-                pass
-            case "ICUSTAYS":
-                pass
-            case "INPUTEVENTS_CV":
-                pass
-            case "INPUTEVENTS_MV":
-                pass
-            case "LABEVENTS":
-                table = filter_nulls(table, "VALUE", "VALUENUM", "VALUEUOM")
-                table = strip_whitespace(table)
-                table = cast_columns(table, VALUE="float64")
-            case "MICROBIOLOGYEVENTS":
-                table = cast_columns(table, CHARTDATE="date32")
-            case "NOTEEVENTS":
-                pass
-            case "OUTPUTEVENTS":
-                table = filter_nulls(table, "VALUE", "VALUEUOM")
-                table = cast_columns(table, VALUE="float64")
-            case "PATIENTS":
-                table = cast_columns(
-                    table,
-                    DOB="date32",
-                    DOD="date32",
-                    DOD_HOSP="date32",
-                    DOD_SSN="date32",
-                )
-            case "PRESCRIPTIONS":
-                table = cast_columns(table, STARTDATE="date32", ENDDATE="date32")
-            case "PROCEDUREEVENTS_MV":
-                pass
-            case "PROCEDURES_ICD":
-                pass
-            case "SERVICES":
-                pass
-            case "TRANSFERS":
-                pass
-            case _:
-                raise ValueError(f"Unknown table name: {key}")
-
-        return table
-
-    def load_table(self, key: MIMIC_III_Key, /) -> pa.Table:
-        return pq.read_table(self.dataset_paths[key])

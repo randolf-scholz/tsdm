@@ -44,9 +44,9 @@ __all__ = [
     "InSilico",
     "KiwiBenchmark",
     "MIMIC_III",
-    "MIMIC_III_RAW",
     "MIMIC_III_Bilos2021",
     "MIMIC_III_DeBrouwer2019",
+    "MIMIC_III_Scholz2026",
     "MIMIC_IV",
     "MIMIC_IV_RAW",
     "MIMIC_IV_Bilos2021",
@@ -58,15 +58,24 @@ __all__ = [
 ]
 
 
-from . import base, kiwi, mimic_iii, mimic_iv, physionet, synthetic, uci, ushcn
+from . import (
+    base,
+    kiwi,
+    mimic_iii,
+    mimic_iv,
+    physionet,
+    synthetic,
+    uci,
+    ushcn,
+)
 from .base import Dataset, DatasetBase
 from .ett import ETT
 from .kiwi import InSilico, KiwiBenchmark
 from .mimic_iii import (
     MIMIC_III,
-    MIMIC_III_RAW,
     MIMIC_III_Bilos2021,
     MIMIC_III_DeBrouwer2019,
+    MIMIC_III_Scholz2026,
 )
 from .mimic_iv import MIMIC_IV, MIMIC_IV_RAW, MIMIC_IV_Bilos2021
 from .physionet import PhysioNet2012, PhysioNet2019
@@ -84,7 +93,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "MIMIC_III"                 : MIMIC_III,
     "MIMIC_III_Bilos2021"       : MIMIC_III_Bilos2021,
     "MIMIC_III_DeBrouwer2019"   : MIMIC_III_DeBrouwer2019,
-    "MIMIC_III_RAW"             : MIMIC_III_RAW,
+    "MIMIC_III_RAW"             : MIMIC_III,
     "MIMIC_IV"                  : MIMIC_IV,
     "MIMIC_IV_Bilos2021"        : MIMIC_IV_Bilos2021,
     "MIMIC_IV_RAW"              : MIMIC_IV_RAW,

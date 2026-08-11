@@ -4,12 +4,12 @@ from zipfile import ZipFile
 import polars as pl
 import pyarrow as pa
 
-from tsdm.datasets import MIMIC_III, MIMIC_III_RAW, MIMIC_III_DeBrouwer2019
+from tsdm.datasets import MIMIC_III, MIMIC_III_DeBrouwer2019
 
 
 def test_mimic_iii_raw_preprocessing(tmp_path, monkeypatch) -> None:
-    monkeypatch.setattr(MIMIC_III_RAW, "DATASET_ROOT_DIR", tmp_path)
-    ds = MIMIC_III_RAW(initialize=False, verbose=False)
+    monkeypatch.setattr(MIMIC_III, "DATASET_ROOT_DIR", tmp_path)
+    ds = MIMIC_III(initialize=False, verbose=False)
     schema = ds.get_schema("CALLOUT")
     values = dict.fromkeys(schema, "")
     values |= {
