@@ -74,8 +74,12 @@ __all__ = [
     "NULL_TYPE",
     "TEXT_TYPE",
     "INT8_TYPE",
+    # functions
+    "rename_key",
+    "insert_item",
 ]
 
+from collections.abc import Mapping
 from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
@@ -135,41 +139,58 @@ type MIMIC_IV_Key = Literal[
     "procedureevents",
 ]
 
-# region schema ------------------------------------------------------------------------
-BAD_NAN_COLUMNS = {
-    "admissions"         : ["admit_provider_id"],
-    "d_hcpcs"            : ["code", "short_description"],
-    "d_icd_diagnoses"    : [],
-    "d_icd_procedures"   : [],
-    "d_labitems"         : [],
-    "diagnoses_icd"      : [],
-    "drgcodes"           : ["drg_severity", "drg_mortality"],
-    "emar"               : ["pharmacy_id", "enter_provider_id"],
-    "emar_detail"        : ...,
-    "hcpcsevents"        : [],
-    "labevents"          : ["storetime"],
-    "microbiologyevents" : ["storedate", "storetime", "spec_type_desc"],
-    "omr"                : [],
-    "patients"           : [],
-    "pharmacy"           : [],
-    "poe"                : ["order_provider_id"],
-    "poe_detail"         : [],
-    "prescriptions"      : [],
-    "procedures_icd"     : [],
-    "provider"           : [],
-    "services"           : [],
-    "transfers"          : [],
-    "caregiver"          : [],
-    "chartevents"        : ["valueuom"],
-    "d_items"            : [],
-    "datetimeevents"     : [],
-    "icustays"           : [],
-    "ingredientevents"   : [],
-    "inputevents"        : [],
-    "outputevents"       : [],
-    "procedureevents"    : [],
-}  # fmt: skip
 
+def rename_key[K, V](items: dict[K, V], old_key: K, new_key: K, /) -> dict[K, V]:
+    r"""Return a copy with ``old_key`` renamed to ``new_key`` in the same position."""
+    if old_key not in items:
+        raise KeyError(old_key)
+    if new_key != old_key and new_key in items:
+        raise KeyError(new_key)
+
+    return {new_key if key == old_key else key: value for key, value in items.items()}
+
+
+def insert_item[K, V](
+    items: Mapping[K, V],
+    key: K,
+    value: V,
+    /,
+    *,
+    before: K | None = None,
+    after: K | None = None,
+    at: int | None = None,
+) -> dict[K, V]:
+    r"""Return a copy with an item inserted at an explicit position.
+
+    Exactly one of ``before``, ``after``, and ``at`` must be provided.
+    """
+    if sum(position is not None for position in (before, after, at)) != 1:
+        raise ValueError("Specify exactly one of 'before', 'after', or 'at'.")
+    if key in items:
+        raise KeyError(key)
+
+    keys = list(items)
+    if at is not None:
+        index = at
+    elif before is not None:
+        try:
+            index = keys.index(before)
+        except ValueError as error:
+            raise KeyError(before) from error
+    elif after is not None:
+        try:
+            index = keys.index(after) + 1
+        except ValueError as error:
+            raise KeyError(after) from error
+    else:
+        raise AssertionError("Invalid insertion position.")
+
+    entries = list(items.items())
+    entries.insert(index, (key, value))
+    return dict(entries)
+
+
+# region schema ------------------------------------------------------------------------
 
 if False:
     ID_TYPE = pa.uint32()
@@ -194,41 +215,8 @@ else:
     TEXT_TYPE = pl.Utf8
     INT8_TYPE = pl.Int8
 
-# special values
-NULL_VALUES = [
-    "NaN",
-    "NA",
-    "*NEW*",
-    "",
-    " ",
-    "  ",
-    "   ",
-    "    ",
-    "     ",
-    "      ",
-    "       ",
-    "        ",
-    "-",
-    "---",
-    "----",
-    "-----",
-    "-------",
-    "?",
-    "UNABLE TO OBTAIN",
-    "UNKNOWN",
-    "Unknown",
-    "unknown",
-    ".",
-    ".*.",
-    "___.",
-    "_",
-    "__",
-    "___",
-    # "none",
-    # "None",
-    # "NONE",
-]
 
+# based on version 1.0
 SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
     # NOTE: /HOSP/ tables
     "admissions": {
@@ -238,13 +226,13 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "dischtime"            : TIME_TYPE,
         "deathtime"            : TIME_TYPE,
         "admission_type"       : CAT_TYPE,
-        # "admit_provider_id"    : CAT_TYPE,  # v2.2
+        # "admit_provider_id"    : CAT_TYPE,  # added in v2.2
         "admission_location"   : CAT_TYPE,
         "discharge_location"   : CAT_TYPE,
         "insurance"            : CAT_TYPE,
         "language"             : CAT_TYPE,
         "marital_status"       : CAT_TYPE,
-        "ethnicity"            : CAT_TYPE,
+        "ethnicity"            : CAT_TYPE,  # renamed to race in v2.0
         "edregtime"            : TIME_TYPE,
         "edouttime"            : TIME_TYPE,
         "hospital_expire_flag" : INT8_TYPE,
@@ -270,7 +258,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "label"    : STRING_TYPE,
         "fluid"    : CAT_TYPE,
         "category" : CAT_TYPE,
-        "loinc_code" : STRING_TYPE,  # \d+-\d
+        "loinc_code" : STRING_TYPE,  # removed in v2.0
     },
     "diagnoses_icd": {
         "subject_id"  : ID_TYPE,
@@ -295,7 +283,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "emar_seq"          : ID_TYPE,
         "poe_id"            : STRING_TYPE,  # range-like
         "pharmacy_id"       : ID_TYPE,
-        # "enter_provider_id" : CAT_TYPE,  # v2.2
+        # "enter_provider_id" : CAT_TYPE,  # added in v2.2
         "charttime"         : TIME_TYPE,
         "medication"        : CAT_TYPE,
         "event_txt"         : CAT_TYPE,
@@ -351,7 +339,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "hadm_id"           : ID_TYPE,  # NOTE: DROP MISSING ?
         "specimen_id"       : ID_TYPE,
         "itemid"            : ID_TYPE,
-        # "order_provider_id" : STRING_ID_TYPE,  # v2.2
+        # "order_provider_id" : STRING_ID_TYPE,  # added in v2.2
         "charttime"         : TIME_TYPE,
         "storetime"         : TIME_TYPE,
         "value"             : STRING_TYPE,
@@ -368,7 +356,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"          : ID_TYPE,
         "hadm_id"             : ID_TYPE,
         "micro_specimen_id"   : ID_TYPE,
-        # "order_provider_id"   : STRING_ID_TYPE,  # v2.2
+        # "order_provider_id"   : STRING_ID_TYPE,  # added in v2.2
         "chartdate"           : TIME_TYPE,
         "charttime"           : TIME_TYPE,
         "spec_itemid"         : ID_TYPE,
@@ -445,7 +433,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "transaction_type"       : CAT_TYPE,
         "discontinue_of_poe_id"  : STRING_TYPE,
         "discontinued_by_poe_id" : STRING_TYPE,
-        # "order_provider_id"      : CAT_TYPE,  # v2.2
+        # "order_provider_id"      : CAT_TYPE,  # added in v2.2
         "order_status"           : CAT_TYPE,
     },
     "poe_detail": {
@@ -459,12 +447,12 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "pharmacy_id"       : ID_TYPE,
-        # "order_provider_id" : CAT_TYPE,  # v2.2
+        # "order_provider_id" : CAT_TYPE,  # added in v2.2
         "starttime"         : TIME_TYPE,
         "stoptime"          : TIME_TYPE,
         "drug_type"         : CAT_TYPE,
         "drug"              : CAT_TYPE,
-        # "formulary_drug_cd" : CAT_TYPE,  # v2.0
+        # "formulary_drug_cd" : CAT_TYPE,  # added in v2.0
         "gsn"               : CAT_TYPE,
         "ndc"               : CAT_TYPE,
         "prod_strength"     : CAT_TYPE,
@@ -511,7 +499,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
-        # "caregiver_id" : ID_TYPE,  # v2.2
+        # "caregiver_id" : ID_TYPE,  # added in v2.2
         "charttime"    : TIME_TYPE,
         "storetime"    : TIME_TYPE,
         "itemid"       : ID_TYPE,
@@ -557,7 +545,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "stay_id"           : ID_TYPE,
-        # "caregiver_id"      : ID_TYPE,  # v2.2
+        # "caregiver_id"      : ID_TYPE,  # added in v2.2
         "starttime"         : TIME_TYPE,
         "endtime"           : TIME_TYPE,
         "storetime"         : TIME_TYPE,
@@ -576,7 +564,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"                    : ID_TYPE,
         "hadm_id"                       : ID_TYPE,
         "stay_id"                       : ID_TYPE,
-        # "caregiver_id"                  : ID_TYPE,  # v2.2
+        # "caregiver_id"                  : ID_TYPE,  # added in v2.2
         "starttime"                     : TIME_TYPE,
         "endtime"                       : TIME_TYPE,
         "storetime"                     : TIME_TYPE,
@@ -605,7 +593,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
-        # "caregiver_id" : ID_TYPE,  # v2.2
+        # "caregiver_id" : ID_TYPE,  # added in v2.2
         "charttime"    : TIME_TYPE,
         "storetime"    : TIME_TYPE,
         "itemid"       : ID_TYPE,
@@ -643,74 +631,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
     },
 }  # fmt: skip
 
-
-UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
-    "omr": {
-        "subject_id"                                   : ID_TYPE,
-        "seq_num"                                      : ID_TYPE,
-        "chartdate"                                    : DATE_TYPE,
-        "Blood Pressure (systolic)"                    : VALUE_TYPE,
-        "Blood Pressure (diastolic)"                   : VALUE_TYPE,
-        "Weight (Lbs)"                                 : VALUE_TYPE,
-        "BMI (kg/m2)"                                  : VALUE_TYPE,
-        "Height (Inches)"                              : VALUE_TYPE,
-        "Blood Pressure Sitting (systolic)"            : VALUE_TYPE,
-        "Blood Pressure Sitting (diastolic)"           : VALUE_TYPE,
-        "Blood Pressure Standing (1 min) (systolic)"   : VALUE_TYPE,
-        "Blood Pressure Standing (1 min) (diastolic)"  : VALUE_TYPE,
-        "Blood Pressure Lying (systolic)"              : VALUE_TYPE,
-        "Blood Pressure Lying (diastolic)"             : VALUE_TYPE,
-        "Blood Pressure Standing (3 mins) (systolic)"  : VALUE_TYPE,
-        "Blood Pressure Standing (3 mins) (diastolic)" : VALUE_TYPE,
-        "BMI"                                          : VALUE_TYPE,
-        "Weight"                                       : VALUE_TYPE,
-        "Blood Pressure Standing (systolic)"           : VALUE_TYPE,
-        "Blood Pressure Standing (diastolic)"          : VALUE_TYPE,
-        "eGFR"                                         : CAT_TYPE,
-        "Height"                                       : VALUE_TYPE,
-    },
-    "poe_detail": {
-        "poe_id"              : STRING_TYPE,
-        "poe_seq"             : ID_TYPE,
-        "subject_id"          : ID_TYPE,
-        "Admit category"      : CAT_TYPE,
-        "Admit to"            : CAT_TYPE,
-        "Code status"         : CAT_TYPE,
-        "Consult Status"      : CAT_TYPE,
-        "Consult Status Time" : TIME_TYPE,
-        "Discharge Planning"  : CAT_TYPE,
-        "Discharge When"      : CAT_TYPE,
-        "Indication"          : CAT_TYPE,
-        "Level of Urgency"    : CAT_TYPE,
-        "Transfer to"         : CAT_TYPE,
-        "Tubes & Drains type" : CAT_TYPE,
-    },
-}  # fmt: skip
 # endregion schema ---------------------------------------------------------------------
-
-BOOL_VALUES = {
-    "admissions": {"hospital_expire_flag": {0: False, 1: True}},
-    "emar_detail": {
-        "complete_dose_not_given": {"No": False, "Yes": True},
-        "will_remainder_of_dose_be_given": {"No": False, "Yes": True},
-        "infusion_complete": {"N": False, "Y": True},
-        "new_iv_bag_hung": {"N": False, "Y": True},
-        "continued_infusion_in_other_location": {"N": False, "Y": True},
-        "non_formulary_visual_verification": {"N": False, "Y": True},
-    },
-    "pharmacy": {"sliding_scale": {"N": False, "Y": True}},
-    "chartevents": {"warning": {0: False, 1: True}},
-    "datetimeevents": {"warning": {0: False, 1: True}},
-    "inputevents": {
-        "isopenbag": {0: False, 1: True},
-        "continueinnextdept": {0: False, 1: True},
-    },
-    "procedureevents": {
-        "isopenbag": {0: False, 1: True},
-        "continueinnextdept": {0: False, 1: True},
-        "originalrate": {0: False, 1: True},
-    },
-}
 
 
 class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
@@ -866,34 +787,79 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
 
     def get_schema(self, key) -> dict:
         schema = SCHEMAS[key].copy()
-
         if self.version_info >= (2, 0):
-            schema["prescriptions"] |= {"formulary_drug_cd": CAT_TYPE}
-            del schema["inputevents"]["cancelreason"]
-            del schema["procedureevents"]["totalamount"]
-            del schema["procedureevents"]["totalamountuom"]
-            del schema["procedureevents"]["cancelreason"]
-            del schema["procedureevents"]["comments_editedby"]
-            del schema["procedureevents"]["comments_canceledby"]
-            del schema["procedureevents"]["comments_date"]
-            del schema["procedureevents"]["secondaryordercategoryname"]
+            match key:
+                case "admissions":
+                    # ethnicity got renamed to race in v2.0
+                    schema = rename_key(schema, "ethnicity", "race")
+                case "d_labitems":
+                    del schema["loinc_code"]
+                case "prescriptions":
+                    schema = insert_item(
+                        schema, "formulary_drug_cd", CAT_TYPE, after="drug"
+                    )
+                    schema = insert_item(
+                        schema, "poe_id", STRING_TYPE, after="pharmacy_id"
+                    )
+                    schema = insert_item(schema, "poe_seq", STRING_TYPE, after="poe_id")
+                case "inputevents":
+                    del schema["cancelreason"]
+                case "procedureevents":
+                    del schema["totalamount"]
+                    del schema["totalamountuom"]
+                    del schema["cancelreason"]
+                    del schema["comments_editedby"]
+                    del schema["comments_canceledby"]
+                    del schema["comments_date"]
+                    del schema["secondaryordercategoryname"]
+                case _:
+                    pass
 
         if self.version_info >= (2, 2):
-            # icu module
-            schema["caregiver"] |= {"caregiver_id": ID_TYPE}
-            schema["chartevents"] |= {"caregiver_id": ID_TYPE}
-            schema["ingredientevents"] |= {"caregiver_id": ID_TYPE}
-            schema["inputevents"] |= {"caregiver_id": ID_TYPE}
-            schema["outputevents"] |= {"caregiver_id": ID_TYPE}
-            schema["procedureevents"] |= {"caregiver_id": ID_TYPE}
-            # hosp module
-            schema["admissions"] |= {"admit_provider_id": CAT_TYPE}
-            schema["provider"] |= {"provider_id": CAT_TYPE}
-            schema["emar"] |= {"enter_provider_id": CAT_TYPE}
-            schema["labevents"] |= {"order_provider_id": CAT_TYPE}
-            schema["microbiologyevents"] |= {"order_provider_id": CAT_TYPE}
-            schema["poe"] |= {"order_provider_id": CAT_TYPE}
-            schema["prescriptions"] |= {"order_provider_id": CAT_TYPE}
+            match key:
+                case (
+                    "chartevents"
+                    | "datetimeevents"
+                    | "ingredientevents"
+                    | "inputevents"
+                    | "outputevents"
+                    | "procedureevents"
+                ):
+                    schema = insert_item(
+                        schema, "caregiver_id", ID_TYPE, after="stay_id"
+                    )
+                case "admissions":
+                    schema = insert_item(
+                        schema, "admit_provider_id", CAT_TYPE, after="admission_type"
+                    )
+                case "emar":
+                    schema = insert_item(
+                        schema, "enter_provider_id", CAT_TYPE, after="pharmacy_id"
+                    )
+                case "labevents":
+                    schema = insert_item(
+                        schema, "order_provider_id", CAT_TYPE, after="itemid"
+                    )
+                case "microbiologyevents":
+                    schema = insert_item(
+                        schema,
+                        "order_provider_id",
+                        CAT_TYPE,
+                        after="micro_specimen_id",
+                    )
+                case "poe":
+                    schema = insert_item(
+                        schema,
+                        "order_provider_id",
+                        CAT_TYPE,
+                        after="discontinued_by_poe_id",
+                    )
+                case "prescriptions":
+                    schema = insert_item(
+                        schema, "order_provider_id", CAT_TYPE, after="pharmacy_id"
+                    )
+                case _:
+                    pass
 
         return schema
 
@@ -950,6 +916,74 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
                 password=getpass(prompt="MIMIC-IV password: ", stream=None),
                 headers={"User-Agent": "Wget/1.21.2"},
             )
+
+
+UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
+    "omr": {
+        "subject_id"                                   : ID_TYPE,
+        "seq_num"                                      : ID_TYPE,
+        "chartdate"                                    : DATE_TYPE,
+        "Blood Pressure (systolic)"                    : VALUE_TYPE,
+        "Blood Pressure (diastolic)"                   : VALUE_TYPE,
+        "Weight (Lbs)"                                 : VALUE_TYPE,
+        "BMI (kg/m2)"                                  : VALUE_TYPE,
+        "Height (Inches)"                              : VALUE_TYPE,
+        "Blood Pressure Sitting (systolic)"            : VALUE_TYPE,
+        "Blood Pressure Sitting (diastolic)"           : VALUE_TYPE,
+        "Blood Pressure Standing (1 min) (systolic)"   : VALUE_TYPE,
+        "Blood Pressure Standing (1 min) (diastolic)"  : VALUE_TYPE,
+        "Blood Pressure Lying (systolic)"              : VALUE_TYPE,
+        "Blood Pressure Lying (diastolic)"             : VALUE_TYPE,
+        "Blood Pressure Standing (3 mins) (systolic)"  : VALUE_TYPE,
+        "Blood Pressure Standing (3 mins) (diastolic)" : VALUE_TYPE,
+        "BMI"                                          : VALUE_TYPE,
+        "Weight"                                       : VALUE_TYPE,
+        "Blood Pressure Standing (systolic)"           : VALUE_TYPE,
+        "Blood Pressure Standing (diastolic)"          : VALUE_TYPE,
+        "eGFR"                                         : CAT_TYPE,
+        "Height"                                       : VALUE_TYPE,
+    },
+    "poe_detail": {
+        "poe_id"              : STRING_TYPE,
+        "poe_seq"             : ID_TYPE,
+        "subject_id"          : ID_TYPE,
+        "Admit category"      : CAT_TYPE,
+        "Admit to"            : CAT_TYPE,
+        "Code status"         : CAT_TYPE,
+        "Consult Status"      : CAT_TYPE,
+        "Consult Status Time" : TIME_TYPE,
+        "Discharge Planning"  : CAT_TYPE,
+        "Discharge When"      : CAT_TYPE,
+        "Indication"          : CAT_TYPE,
+        "Level of Urgency"    : CAT_TYPE,
+        "Transfer to"         : CAT_TYPE,
+        "Tubes & Drains type" : CAT_TYPE,
+    },
+}  # fmt: skip
+
+BOOL_VALUES = {
+    "admissions": {"hospital_expire_flag": {0: False, 1: True}},
+    "emar_detail": {
+        "complete_dose_not_given": {"No": False, "Yes": True},
+        "will_remainder_of_dose_be_given": {"No": False, "Yes": True},
+        "infusion_complete": {"N": False, "Y": True},
+        "new_iv_bag_hung": {"N": False, "Y": True},
+        "continued_infusion_in_other_location": {"N": False, "Y": True},
+        "non_formulary_visual_verification": {"N": False, "Y": True},
+    },
+    "pharmacy": {"sliding_scale": {"N": False, "Y": True}},
+    "chartevents": {"warning": {0: False, 1: True}},
+    "datetimeevents": {"warning": {0: False, 1: True}},
+    "inputevents": {
+        "isopenbag": {0: False, 1: True},
+        "continueinnextdept": {0: False, 1: True},
+    },
+    "procedureevents": {
+        "isopenbag": {0: False, 1: True},
+        "continueinnextdept": {0: False, 1: True},
+        "originalrate": {0: False, 1: True},
+    },
+}
 
 
 class MIMIC_IV(MIMIC_IV_RAW):
@@ -1176,3 +1210,73 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 raise KeyError(f"Unknown table name: {key}")
 
         return table
+
+
+BAD_NAN_COLUMNS = {
+    "admissions"         : ["admit_provider_id"],
+    "d_hcpcs"            : ["code", "short_description"],
+    "d_icd_diagnoses"    : [],
+    "d_icd_procedures"   : [],
+    "d_labitems"         : [],
+    "diagnoses_icd"      : [],
+    "drgcodes"           : ["drg_severity", "drg_mortality"],
+    "emar"               : ["pharmacy_id", "enter_provider_id"],
+    "emar_detail"        : ...,
+    "hcpcsevents"        : [],
+    "labevents"          : ["storetime"],
+    "microbiologyevents" : ["storedate", "storetime", "spec_type_desc"],
+    "omr"                : [],
+    "patients"           : [],
+    "pharmacy"           : [],
+    "poe"                : ["order_provider_id"],
+    "poe_detail"         : [],
+    "prescriptions"      : [],
+    "procedures_icd"     : [],
+    "provider"           : [],
+    "services"           : [],
+    "transfers"          : [],
+    "caregiver"          : [],
+    "chartevents"        : ["valueuom"],
+    "d_items"            : [],
+    "datetimeevents"     : [],
+    "icustays"           : [],
+    "ingredientevents"   : [],
+    "inputevents"        : [],
+    "outputevents"       : [],
+    "procedureevents"    : [],
+}  # fmt: skip
+
+# special values
+NULL_VALUES = [
+    "NaN",
+    "NA",
+    "*NEW*",
+    "",
+    " ",
+    "  ",
+    "   ",
+    "    ",
+    "     ",
+    "      ",
+    "       ",
+    "        ",
+    "-",
+    "---",
+    "----",
+    "-----",
+    "-------",
+    "?",
+    "UNABLE TO OBTAIN",
+    "UNKNOWN",
+    "Unknown",
+    "unknown",
+    ".",
+    ".*.",
+    "___.",
+    "_",
+    "__",
+    "___",
+    # "none",
+    # "None",
+    # "NONE",
+]
