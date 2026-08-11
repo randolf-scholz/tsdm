@@ -525,7 +525,11 @@ class DatasetBase[Key: str, T](
             return
 
         # Download the file.
-        with timer() as t:
+        with (
+            # Allow implementations to write or prompt without corrupting active bars.
+            tqdm.external_write_mode(),
+            timer() as t,
+        ):
             self.get_rawdata_file(key)
         self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
 
@@ -617,7 +621,11 @@ class DatasetBase[Key: str, T](
             return
 
         # Clean the selected table
-        with timer() as t:
+        with (
+            # Allow implementations to write or prompt without corrupting active bars.
+            tqdm.external_write_mode(),
+            timer() as t,
+        ):
             df = self.clean_table(key)
         self.LOGGER.debug("Cleaned table <%s> in %s", key, t.value)
 
@@ -712,7 +720,11 @@ class DatasetBase[Key: str, T](
             self.validate_dataset(key)
 
         # Load the table, make sure to use the cached version if it exists.
-        with timer() as t:
+        with (
+            # Allow implementations to write or prompt without corrupting active bars.
+            tqdm.external_write_mode(),
+            timer() as t,
+        ):
             table = self.load_table(key)
         self.LOGGER.info("Loaded table <%s> in %s", key, t.value)
 
