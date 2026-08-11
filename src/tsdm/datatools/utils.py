@@ -7,6 +7,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
+from io import IOBase
 from os import PathLike, fspath
 from typing import IO, Any, Optional
 
@@ -167,7 +168,11 @@ def data_overview(
 
 
 def validate_schema(
-    file: FilePath | IO[bytes], schema: Mapping[str, Any], /, *, separator: str = ","
+    file: FilePath | IO[bytes] | IOBase,
+    schema: Mapping[str, Any],
+    /,
+    *,
+    separator: str = ",",
 ) -> None:
     r"""Validate that a CSV header exactly matches a schema.
 
@@ -198,7 +203,7 @@ def validate_schema(
             position = stream.tell()
             try:
                 actual_columns = pl.read_csv(
-                    stream,
+                    stream,  # type: ignore
                     has_header=True,
                     infer_schema=False,
                     n_rows=0,
