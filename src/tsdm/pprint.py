@@ -78,10 +78,9 @@ from math import prod
 from types import FunctionType
 from typing import Any, Final, Optional, Protocol
 
+import pandas as pd
 import polars as pl
 import pyarrow as pa
-from pandas import ArrowDtype, DataFrame, MultiIndex
-from pyarrow import Array as PyArrowArray, Table as PyArrowTable
 
 from .decorator import decorator
 from .dtypes import TYPESTRINGS, DType
@@ -253,6 +252,8 @@ def repr_generic(
             return cls.__name__
         case basic if is_scalar(basic):  # scalars, strings, etc.
             return repr(basic)
+        case pl.LazyFrame() as frame:
+            return repr_array(frame, **kwargs)
         case SupportsArray() as array:
             return repr_array(array, **kwargs)
         case Dataclass() as dtc:  # pyrefly: ignore[unsafe-overlap]
@@ -884,7 +885,7 @@ def repr_namedtuple(
 
 
 def repr_array(
-    obj: SupportsArray,
+    obj: SupportsArray | pl.LazyFrame,
     /,
     *,
     modifier: Optional[str] = None,
@@ -901,6 +902,20 @@ def repr_array(
 
     # get the type-repr
     type_repr = str(title) if title is not None else cls.__name__
+
+    if isinstance(obj, pl.LazyFrame):
+        schema = obj.collect_schema()
+        shape_repr = f"<*,{len(schema)}>" if identifier is None else str(identifier)
+        vals = [repr_dtype(dtype) for dtype in schema.values()]
+
+        if len(set(vals)) <= 1:
+            vals = vals[:1]
+        if len(vals) > maxitems:
+            vals = [*vals[: maxitems // 2], "...", *vals[-maxitems // 2 :]]
+
+        dtype_repr = str(vals).replace("'", "")
+        modifier_repr = f"@{modifier}" if modifier is not None else ""
+        return f"{type_repr}{modifier_repr}{shape_repr}{dtype_repr}"
 
     # set identifier = shape
     # if multidimensional: <dim1, dim2, ...>
@@ -928,17 +943,17 @@ def repr_array(
     # Tensor-like:
     match obj:
         # DataFrame-like
-        case DataFrame(dtypes=dtypes) | MultiIndex(dtypes=dtypes):
+        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):
             vals = [repr_dtype(dtype) for dtype in dtypes]
-        case PyArrowTable() as table:
+        case pa.Table() as table:
             vals = [repr_dtype(dtype) for dtype in table.schema.types]
         case pl.DataFrame(dtypes=dtypes):
             vals = [repr_dtype(dtype) for dtype in dtypes]
         case SupportsDataFrame() as supports_frame:
-            frame: DataFrame = supports_frame.__dataframe__()
+            frame: pd.DataFrame = supports_frame.__dataframe__()
             vals = [repr_dtype(dtype) for dtype in frame.dtypes]
         # Tensor-like
-        case PyArrowArray(type=dtype):
+        case pa.Array(type=dtype):
             vals = [repr_dtype(dtype)]
         case SupportsDtype(dtype=dtype):
             vals = [repr_dtype(dtype)]
@@ -992,7 +1007,7 @@ def repr_dtype(
         case str(string):
             return string
         # These are too verbose.
-        case ArrowDtype() as wrapped_arrow_dtype:
+        case pd.ArrowDtype() as wrapped_arrow_dtype:
             return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
         # Some special casing for dictionary types.
         case pa.DictionaryType(index_type=index_type, value_type=value_type):

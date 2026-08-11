@@ -6,6 +6,7 @@ from typing import Any, NamedTuple
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 import torch
 
@@ -221,3 +222,12 @@ def test_pprint_array(obj: SupportsArray, expected: str) -> None:
     result = repr_array(obj)
     expected = expected.replace("\t", INDENTATION)
     assert result == expected
+
+
+def test_pprint_lazy_frame() -> None:
+    r"""Pretty-print lazy frames without materializing their rows."""
+    frame = pl.LazyFrame({"a": [1, 2], "b": ["x", "y"]})
+    expected = "LazyFrame<*,2>[Int64, String]"
+
+    assert repr_array(frame) == expected
+    assert repr_generic(frame) == expected
