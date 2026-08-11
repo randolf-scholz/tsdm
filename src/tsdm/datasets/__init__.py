@@ -48,8 +48,8 @@ __all__ = [
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_III_Scholz2026",
     "MIMIC_IV",
-    "MIMIC_IV_RAW",
     "MIMIC_IV_Bilos2021",
+    "MIMIC_IV_Scholz2026",
     "PhysioNet2019",
     "PhysioNet2012",
     "Traffic",
@@ -77,7 +77,7 @@ from .mimic_iii import (
     MIMIC_III_DeBrouwer2019,
     MIMIC_III_Scholz2026,
 )
-from .mimic_iv import MIMIC_IV, MIMIC_IV_RAW, MIMIC_IV_Bilos2021
+from .mimic_iv import MIMIC_IV, MIMIC_IV_Bilos2021, MIMIC_IV_Scholz2026
 from .physionet import PhysioNet2012, PhysioNet2019
 from .synthetic import DampedPendulum_Ansari2023
 from .uci import BeijingAirQuality, Electricity, Traffic
@@ -93,10 +93,10 @@ DATASETS: dict[str, type[Dataset]] = {
     "MIMIC_III"                 : MIMIC_III,
     "MIMIC_III_Bilos2021"       : MIMIC_III_Bilos2021,
     "MIMIC_III_DeBrouwer2019"   : MIMIC_III_DeBrouwer2019,
-    "MIMIC_III_RAW"             : MIMIC_III,
+    "MIMIC_III_Scholz2026"      : MIMIC_III_Scholz2026,
     "MIMIC_IV"                  : MIMIC_IV,
     "MIMIC_IV_Bilos2021"        : MIMIC_IV_Bilos2021,
-    "MIMIC_IV_RAW"              : MIMIC_IV_RAW,
+    "MIMIC_IV_Scholz2026"       : MIMIC_IV_Scholz2026,
     "PhysioNet2012"             : PhysioNet2012,
     "PhysioNet2019"             : PhysioNet2019,
     "Traffic"                   : Traffic,
