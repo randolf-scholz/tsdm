@@ -23,9 +23,8 @@ __all__ = [
     # Constants
     "MIMIC_III_Key",
     "SCHEMAS",
-    "TRUE_VALUES",
-    "FALSE_VALUES",
     "NULL_VALUES",
+    "BOOL_VALUES",
     # Types
     "ID_TYPE",
     "VALUE_TYPE",
@@ -36,20 +35,23 @@ __all__ = [
     "DICT_TYPE",
     "NULL_TYPE",
     "TEXT_TYPE",
+    "INT8_TYPE",
 ]
 
-import gzip
+from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
 from typing import Literal, get_args
 from zipfile import ZipFile
 
+import polars as pl
 import pyarrow as pa
-from pyarrow import csv
+import pyarrow.parquet as pq
+from polars.datatypes import DataType, DataTypeClass
 
 from tsdm.backend.pyarrow import cast_columns, filter_nulls, set_nulls
 from tsdm.datasets.base import DatasetBase
-from tsdm.datatools import strip_whitespace
+from tsdm.datatools import strip_whitespace, validate_schema
 from tsdm.utils import remote
 
 type MIMIC_III_Key = Literal[
@@ -80,22 +82,22 @@ type MIMIC_III_Key = Literal[
     "SERVICES",
     "TRANSFERS",
 ]
+type PolarsDataType = DataType | DataTypeClass
 
 
 # region schema ------------------------------------------------------------------------
-ID_TYPE = pa.uint32()
-VALUE_TYPE = pa.float32()
-TIME_TYPE = pa.timestamp("ms")
-DATE_TYPE = pa.date32()
-BOOL_TYPE = pa.bool_()
-STRING_TYPE = pa.string()
-DICT_TYPE = pa.dictionary(pa.int32(), pa.string())
-NULL_TYPE = pa.null()
-TEXT_TYPE = pa.large_utf8()
+ID_TYPE = pl.UInt32
+VALUE_TYPE = pl.Float32
+TIME_TYPE = pl.Datetime("ms")
+DATE_TYPE = pl.Date
+BOOL_TYPE = pl.Boolean
+STRING_TYPE = pl.Utf8
+DICT_TYPE = pl.Categorical
+NULL_TYPE = pl.Null
+TEXT_TYPE = pl.Utf8
+INT8_TYPE = pl.Int8
 
 # special values
-TRUE_VALUES = ["Y", "Yes", "1", "T"]
-FALSE_VALUES = ["N", "No", "0", "F"]
 NULL_VALUES = [
     "",
     " ",
@@ -124,7 +126,7 @@ NULL_VALUES = [
     "___",
 ]
 
-SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
+SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
     "ADMISSIONS": {
         "ROW_ID"               : ID_TYPE,
         "SUBJECT_ID"           : ID_TYPE,
@@ -143,8 +145,8 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "EDREGTIME"            : TIME_TYPE,
         "EDOUTTIME"            : TIME_TYPE,
         "DIAGNOSIS"            : STRING_TYPE,
-        "HOSPITAL_EXPIRE_FLAG" : BOOL_TYPE,
-        "HAS_CHARTEVENTS_DATA" : BOOL_TYPE,
+        "HOSPITAL_EXPIRE_FLAG" : INT8_TYPE,  # cast to bool
+        "HAS_CHARTEVENTS_DATA" : INT8_TYPE,  # cast to bool
     },
     "CALLOUT": {
         "ROW_ID"                 : ID_TYPE,
@@ -156,11 +158,11 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "CURR_CAREUNIT"          : DICT_TYPE,
         "CALLOUT_WARDID"         : ID_TYPE,
         "CALLOUT_SERVICE"        : DICT_TYPE,
-        "REQUEST_TELE"           : BOOL_TYPE,
-        "REQUEST_RESP"           : BOOL_TYPE,
-        "REQUEST_CDIFF"          : BOOL_TYPE,
-        "REQUEST_MRSA"           : BOOL_TYPE,
-        "REQUEST_VRE"            : BOOL_TYPE,
+        "REQUEST_TELE"           : INT8_TYPE,  # cast to bool
+        "REQUEST_RESP"           : INT8_TYPE,  # cast to bool
+        "REQUEST_CDIFF"          : INT8_TYPE,  # cast to bool
+        "REQUEST_MRSA"           : INT8_TYPE,  # cast to bool
+        "REQUEST_VRE"            : INT8_TYPE,  # cast to bool
         "CALLOUT_STATUS"         : DICT_TYPE,
         "CALLOUT_OUTCOME"        : DICT_TYPE,
         "DISCHARGE_WARDID"       : ID_TYPE,
@@ -190,8 +192,8 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "VALUE"        : STRING_TYPE,  # FIXME: CAST FLOAT32
         "VALUENUM"     : VALUE_TYPE,  # FIXME: FILTER NULLS
         "VALUEUOM"     : DICT_TYPE,
-        "WARNING"      : BOOL_TYPE,
-        "ERROR"        : BOOL_TYPE,
+        "WARNING"      : INT8_TYPE,  # cast to bool
+        "ERROR"        : INT8_TYPE,  # cast to bool
         "RESULTSTATUS" : DICT_TYPE,
         "STOPPED"      : DICT_TYPE,
     },
@@ -220,8 +222,8 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "CGID"         : ID_TYPE,
         "VALUE"        : TIME_TYPE,
         "VALUEUOM"     : DICT_TYPE,
-        "WARNING"      : BOOL_TYPE,
-        "ERROR"        : BOOL_TYPE,
+        "WARNING"      : INT8_TYPE,  # cast to bool
+        "ERROR"        : INT8_TYPE,  # cast to bool
         "RESULTSTATUS" : DICT_TYPE,
         "STOPPED"      : DICT_TYPE,
     },
@@ -232,7 +234,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "SECTIONHEADER"       : DICT_TYPE,
         "SUBSECTIONRANGE"     : STRING_TYPE,
         "SUBSECTIONHEADER"    : STRING_TYPE,
-        "CODESUFFIX"          : BOOL_TYPE,
+        "CODESUFFIX"          : INT8_TYPE,  # cast to bool
         "MINCODEINSUBSECTION" : ID_TYPE,
         "MAXCODEINSUBSECTION" : ID_TYPE,
     },
@@ -315,7 +317,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "ORDERID"           : ID_TYPE,
         "LINKORDERID"       : ID_TYPE,
         "STOPPED"           : DICT_TYPE,
-        "NEWBOTTLE"         : BOOL_TYPE,
+        "NEWBOTTLE"         : INT8_TYPE,  # cast to bool
         "ORIGINALAMOUNT"    : VALUE_TYPE,
         "ORIGINALAMOUNTUOM" : DICT_TYPE,
         "ORIGINALROUTE"     : DICT_TYPE,
@@ -346,8 +348,8 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "PATIENTWEIGHT"                 : VALUE_TYPE,
         "TOTALAMOUNT"                   : VALUE_TYPE,
         "TOTALAMOUNTUOM"                : DICT_TYPE,
-        "ISOPENBAG"                     : BOOL_TYPE,
-        "CONTINUEINNEXTDEPT"            : BOOL_TYPE,
+        "ISOPENBAG"                     : INT8_TYPE,  # cast to bool
+        "CONTINUEINNEXTDEPT"            : INT8_TYPE,  # cast to bool
         "CANCELREASON"                  : ID_TYPE,
         "STATUSDESCRIPTION"             : DICT_TYPE,
         "COMMENTS_EDITEDBY"             : DICT_TYPE,
@@ -395,7 +397,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "CATEGORY"    : DICT_TYPE,
         "DESCRIPTION" : DICT_TYPE,
         "CGID"        : ID_TYPE,
-        "ISERROR"     : BOOL_TYPE,
+        "ISERROR"     : INT8_TYPE,  # cast to bool
         "TEXT"        : TEXT_TYPE,
     },
     "OUTPUTEVENTS": {
@@ -421,7 +423,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "DOD"         : TIME_TYPE,  # FIXME: cast DATE_TYPE
         "DOD_HOSP"    : TIME_TYPE,  # FIXME: cast DATE_TYPE
         "DOD_SSN"     : TIME_TYPE,  # FIXME: cast DATE_TYPE
-        "EXPIRE_FLAG" : BOOL_TYPE,
+        "EXPIRE_FLAG" : INT8_TYPE,  # cast to bool
     },
     "PRESCRIPTIONS": {
         "ROW_ID"            : ID_TYPE,
@@ -463,8 +465,8 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
         "ORDERCATEGORYNAME"          : DICT_TYPE,
         "SECONDARYORDERCATEGORYNAME" : NULL_TYPE,
         "ORDERCATEGORYDESCRIPTION"   : DICT_TYPE,
-        "ISOPENBAG"                  : BOOL_TYPE,
-        "CONTINUEINNEXTDEPT"         : BOOL_TYPE,
+        "ISOPENBAG"                  : INT8_TYPE,  # cast to bool
+        "CONTINUEINNEXTDEPT"         : INT8_TYPE,  # cast to bool
         "CANCELREASON"               : ID_TYPE,
         "STATUSDESCRIPTION"          : DICT_TYPE,
         "COMMENTS_EDITEDBY"          : DICT_TYPE,
@@ -504,8 +506,42 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pa.DataType]] = {
 }  # fmt: skip
 # endregion schema ---------------------------------------------------------------------
 
+BOOL_VALUES: dict[MIMIC_III_Key, dict[str, dict[int, bool]]] = {
+    "ADMISSIONS": {
+        "HOSPITAL_EXPIRE_FLAG": {0: False, 1: True},
+        "HAS_CHARTEVENTS_DATA": {0: False, 1: True},
+    },
+    "CALLOUT": {
+        "REQUEST_TELE": {0: False, 1: True},
+        "REQUEST_RESP": {0: False, 1: True},
+        "REQUEST_CDIFF": {0: False, 1: True},
+        "REQUEST_MRSA": {0: False, 1: True},
+        "REQUEST_VRE": {0: False, 1: True},
+    },
+    "CHARTEVENTS": {
+        "WARNING": {0: False, 1: True},
+        "ERROR": {0: False, 1: True},
+    },
+    "DATETIMEEVENTS": {
+        "WARNING": {0: False, 1: True},
+        "ERROR": {0: False, 1: True},
+    },
+    "D_CPT": {"CODESUFFIX": {0: False, 1: True}},
+    "INPUTEVENTS_CV": {"NEWBOTTLE": {0: False, 1: True}},
+    "INPUTEVENTS_MV": {
+        "ISOPENBAG": {0: False, 1: True},
+        "CONTINUEINNEXTDEPT": {0: False, 1: True},
+    },
+    "NOTEEVENTS": {"ISERROR": {0: False, 1: True}},
+    "PATIENTS": {"EXPIRE_FLAG": {0: False, 1: True}},
+    "PROCEDUREEVENTS_MV": {
+        "ISOPENBAG": {0: False, 1: True},
+        "CONTINUEINNEXTDEPT": {0: False, 1: True},
+    },
+}
 
-class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pa.Table]):
+
+class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
     r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -560,28 +596,43 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pa.Table]):
             for key in self.table_names
         }
 
-    def clean_table(self, key: MIMIC_III_Key) -> pa.Table:
-        # Read the table
+    def get_schema(self, key: MIMIC_III_Key, /) -> dict[str, PolarsDataType]:
+        r"""Return a schema compatible with Polars' CSV parser."""
+        return {
+            column: STRING_TYPE if dtype == NULL_TYPE else dtype
+            for column, dtype in SCHEMAS[key].items()
+        }
+
+    def clean_table(self, key: MIMIC_III_Key) -> None:
         with (
             ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
             archive.open(self.filelist[key], "r") as compressed_file,
-            gzip.open(compressed_file, "r") as file,
         ):
-            table = csv.read_csv(
-                file,
-                convert_options=csv.ConvertOptions(
-                    column_types=SCHEMAS[key],
-                    strings_can_be_null=True,
-                    null_values=NULL_VALUES,
-                    true_values=TRUE_VALUES,
-                    false_values=FALSE_VALUES,
-                ),
-                parse_options=csv.ParseOptions(
-                    newlines_in_values=(key == "NOTEEVENTS"),
-                ),
+            schema = self.get_schema(key)
+            validate_schema(compressed_file, schema)
+            table = pl.scan_csv(
+                compressed_file,
+                schema=schema,
             )
 
-        return table.combine_chunks()  # <- reduces size and avoids some bugs
+            table = table.with_columns(
+                pl.col(column).cast(NULL_TYPE)
+                for column, dtype in SCHEMAS[key].items()
+                if dtype == NULL_TYPE
+            )
+
+            try:
+                table.sink_parquet(self.dataset_paths[key], engine="streaming")
+            except BaseException:
+                # Delete partial files if streaming fails.
+                with suppress(FileNotFoundError):
+                    self.dataset_paths[key].unlink()
+                raise
+
+    def load_table(self, key: MIMIC_III_Key, /) -> pl.LazyFrame:
+        table = pl.scan_parquet(self.dataset_paths[key])
+        table.collect_schema()
+        return table
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""
@@ -605,10 +656,17 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pa.Table]):
 class MIMIC_III(MIMIC_III_RAW):
     r"""Lightly preprocessed version of the MIMIC-III dataset."""
 
-    # RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
+    def __post_init__(self) -> None:
+        # Reuse the raw data and lazily materialized raw tables.
+        self.raw_dataset = MIMIC_III_RAW(
+            version=self.__version__, initialize=False, verbose=self.verbose
+        )
+        self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
+        super().__post_init__()
 
     def clean_table(self, key: MIMIC_III_Key) -> pa.Table:
-        table: pa.Table = super().clean_table(key)
+        self.raw_dataset.clean(key, validate_rawdata=False)
+        table = self.raw_dataset.load_table(key).collect().to_arrow()
 
         # Post-processing
         match key:
@@ -685,3 +743,6 @@ class MIMIC_III(MIMIC_III_RAW):
                 raise ValueError(f"Unknown table name: {key}")
 
         return table
+
+    def load_table(self, key: MIMIC_III_Key, /) -> pa.Table:
+        return pq.read_table(self.dataset_paths[key])
