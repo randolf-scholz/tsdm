@@ -33,7 +33,6 @@ __all__ = [
     "BOOL_TYPE",
     "STRING_TYPE",
     "DICT_TYPE",
-    "NULL_TYPE",
     "TEXT_TYPE",
     "INT8_TYPE",
 ]
@@ -41,7 +40,7 @@ __all__ = [
 from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
-from typing import Literal, get_args
+from typing import Any, Literal, get_args
 from zipfile import ZipFile
 
 import polars as pl
@@ -93,7 +92,6 @@ DATE_TYPE = pl.Date
 BOOL_TYPE = pl.Boolean
 STRING_TYPE = pl.Utf8
 DICT_TYPE = pl.Categorical
-NULL_TYPE = pl.Null
 TEXT_TYPE = pl.Utf8
 INT8_TYPE = pl.Int8
 
@@ -234,7 +232,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
         "SECTIONHEADER"       : DICT_TYPE,
         "SUBSECTIONRANGE"     : STRING_TYPE,
         "SUBSECTIONHEADER"    : STRING_TYPE,
-        "CODESUFFIX"          : INT8_TYPE,  # cast to bool
+        "CODESUFFIX"          : DICT_TYPE,  # cast to bool
         "MINCODEINSUBSECTION" : ID_TYPE,
         "MAXCODEINSUBSECTION" : ID_TYPE,
     },
@@ -267,7 +265,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
         "CATEGORY"     : DICT_TYPE,
         "UNITNAME"     : DICT_TYPE,
         "PARAM_TYPE"   : DICT_TYPE,
-        "CONCEPTID"    : NULL_TYPE,
+        "CONCEPTID"    : STRING_TYPE,  # All Null
     },
     "D_LABITEMS": {
         "ROW_ID"     : ID_TYPE,
@@ -411,9 +409,9 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
         "VALUEUOM"   : DICT_TYPE,  # FIXME: FILTER NULLS
         "STORETIME"  : TIME_TYPE,
         "CGID"       : ID_TYPE,
-        "STOPPED"    : NULL_TYPE,
-        "NEWBOTTLE"  : NULL_TYPE,
-        "ISERROR"    : NULL_TYPE,
+        "STOPPED"    : STRING_TYPE,  # All Null
+        "NEWBOTTLE"  : STRING_TYPE,  # All Null
+        "ISERROR"    : STRING_TYPE,  # All Null
     },
     "PATIENTS": {
         "ROW_ID"      : ID_TYPE,
@@ -463,7 +461,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
         "ORDERID"                    : ID_TYPE,
         "LINKORDERID"                : ID_TYPE,
         "ORDERCATEGORYNAME"          : DICT_TYPE,
-        "SECONDARYORDERCATEGORYNAME" : NULL_TYPE,
+        "SECONDARYORDERCATEGORYNAME" : STRING_TYPE,  # All Null
         "ORDERCATEGORYDESCRIPTION"   : DICT_TYPE,
         "ISOPENBAG"                  : INT8_TYPE,  # cast to bool
         "CONTINUEINNEXTDEPT"         : INT8_TYPE,  # cast to bool
@@ -506,7 +504,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, PolarsDataType]] = {
 }  # fmt: skip
 # endregion schema ---------------------------------------------------------------------
 
-BOOL_VALUES: dict[MIMIC_III_Key, dict[str, dict[int, bool]]] = {
+BOOL_VALUES: dict[MIMIC_III_Key, dict[str, dict[Any, bool]]] = {
     "ADMISSIONS": {
         "HOSPITAL_EXPIRE_FLAG": {0: False, 1: True},
         "HAS_CHARTEVENTS_DATA": {0: False, 1: True},
@@ -526,7 +524,7 @@ BOOL_VALUES: dict[MIMIC_III_Key, dict[str, dict[int, bool]]] = {
         "WARNING": {0: False, 1: True},
         "ERROR": {0: False, 1: True},
     },
-    "D_CPT": {"CODESUFFIX": {0: False, 1: True}},
+    "D_CPT": {"CODESUFFIX": {"F": False, "T": True}},
     "INPUTEVENTS_CV": {"NEWBOTTLE": {0: False, 1: True}},
     "INPUTEVENTS_MV": {
         "ISOPENBAG": {0: False, 1: True},
@@ -596,29 +594,16 @@ class MIMIC_III_RAW(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
             for key in self.table_names
         }
 
-    def get_schema(self, key: MIMIC_III_Key, /) -> dict[str, PolarsDataType]:
-        r"""Return a schema compatible with Polars' CSV parser."""
-        return {
-            column: STRING_TYPE if dtype == NULL_TYPE else dtype
-            for column, dtype in SCHEMAS[key].items()
-        }
-
     def clean_table(self, key: MIMIC_III_Key) -> None:
         with (
             ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
             archive.open(self.filelist[key], "r") as compressed_file,
         ):
-            schema = self.get_schema(key)
+            schema = SCHEMAS[key]
             validate_schema(compressed_file, schema)
             table = pl.scan_csv(
                 compressed_file,
                 schema=schema,
-            )
-
-            table = table.with_columns(
-                pl.col(column).cast(NULL_TYPE)
-                for column, dtype in SCHEMAS[key].items()
-                if dtype == NULL_TYPE
             )
 
             try:
