@@ -83,7 +83,7 @@ from collections.abc import Mapping
 from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
-from typing import Literal, get_args
+from typing import Any, Literal, get_args
 from zipfile import ZipFile
 
 import pandas as pd
@@ -808,8 +808,6 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
                     del schema["totalamount"]
                     del schema["totalamountuom"]
                     del schema["cancelreason"]
-                    del schema["comments_editedby"]
-                    del schema["comments_canceledby"]
                     del schema["comments_date"]
                     del schema["secondaryordercategoryname"]
                 case _:
@@ -856,7 +854,7 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
                     )
                 case "prescriptions":
                     schema = insert_item(
-                        schema, "order_provider_id", CAT_TYPE, after="pharmacy_id"
+                        schema, "order_provider_id", CAT_TYPE, after="poe_seq"
                     )
                 case _:
                     pass
@@ -874,14 +872,6 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
                 compressed_file,
                 schema=schema,
             )
-
-            # bool_values maps column names to their string-to-boolean values.
-            bool_values = BOOL_VALUES.get(key, {})
-            if bool_values:
-                table = table.with_columns(
-                    pl.col(column).replace_strict(values, return_dtype=BOOL_TYPE)
-                    for column, values in bool_values.items()
-                )
 
             try:
                 table.sink_parquet(self.dataset_paths[key], engine="streaming")
@@ -961,7 +951,7 @@ UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
     },
 }  # fmt: skip
 
-BOOL_VALUES = {
+BOOL_VALUES: dict[str, dict[str, dict[Any, bool]]] = {
     "admissions": {"hospital_expire_flag": {0: False, 1: True}},
     "emar_detail": {
         "complete_dose_not_given": {"No": False, "Yes": True},
@@ -1046,13 +1036,22 @@ class MIMIC_IV(MIMIC_IV_RAW):
 
     def __post_init__(self) -> None:
         # reuse the same data as the raw dataset
-        base = MIMIC_IV_RAW(version=self.__version__, initialize=False)
-        self.RAWDATA_DIR = base.RAWDATA_DIR
-        del base
+        self.raw_dataset = MIMIC_IV_RAW(version=self.__version__, initialize=False)
+        self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
         super().__post_init__()
 
     def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
-        table: pa.Table = super().clean_table(key)
+        dataset_path = self.raw_dataset.dataset_path[key]
+        table = pl.scan_parquet(dataset_path)
+
+        # bool_values maps column names to their string-to-boolean values.
+        if bool_values := BOOL_VALUES.get(key):
+            table = table.with_columns(
+                pl.col(column).replace_strict(values, return_dtype=BOOL_TYPE)
+                for column, values in bool_values.items()
+            )
+
+        # below: old pandas code!
 
         # drop data with missing `hadm_id`.
         if "hadm_id" in table.column_names:
