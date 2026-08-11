@@ -192,28 +192,17 @@ def insert_item[K, V](
 
 # region schema ------------------------------------------------------------------------
 
-if False:
-    ID_TYPE = pa.uint32()
-    VALUE_TYPE = pa.float32()
-    TIME_TYPE = pa.timestamp("ms")
-    DATE_TYPE = pa.date32()
-    BOOL_TYPE = pa.bool_()
-    STRING_TYPE = pa.string()
-    CAT_TYPE = pa.dictionary(pa.int32(), pa.string())
-    NULL_TYPE = pa.null()
-    TEXT_TYPE = pa.large_utf8()
-    INT8_TYPE = pa.int8()
-else:
-    ID_TYPE = pl.UInt32
-    VALUE_TYPE = pl.Float32
-    TIME_TYPE = pl.Datetime("ms")
-    DATE_TYPE = pl.Date
-    BOOL_TYPE = pl.Boolean
-    STRING_TYPE = pl.Utf8
-    CAT_TYPE = pl.Categorical
-    NULL_TYPE = pl.Null
-    TEXT_TYPE = pl.Utf8
-    INT8_TYPE = pl.Int8
+
+ID_TYPE = pl.UInt32
+VALUE_TYPE = pl.Float32
+TIME_TYPE = pl.Datetime("ms")
+DATE_TYPE = pl.Date
+BOOL_TYPE = pl.Boolean
+STRING_TYPE = pl.Utf8
+CAT_TYPE = pl.Categorical
+NULL_TYPE = pl.Null
+TEXT_TYPE = pl.Utf8
+INT8_TYPE = pl.Int8
 
 
 # based on version 1.0
