@@ -24,7 +24,7 @@ from typing import IO, Any, Optional
 from urllib.parse import unquote, urljoin, urlparse
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from httpx2 import Client, Response
+from httpx2 import Client, Response, Timeout
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
@@ -35,8 +35,15 @@ from .timer import timer
 
 _DEFAULT_CHUNK_SIZE = 1024 * 1024
 r"""Default chunk size for downloads (1 MiB)."""
-_DEFAULT_TIMEOUT = 10
-r"""Default timeout for requests (connect, read)."""
+_DEFAULT_TIMEOUT_SECONDS = 10
+r"""Default timeout in seconds for non-streaming request operations."""
+_DEFAULT_TIMEOUT = Timeout(_DEFAULT_TIMEOUT_SECONDS, read=None)
+r"""Default timeout for downloads.
+
+Connections, writes, and connection-pool acquisition time out after 10 seconds. Read
+timeouts are disabled so a download is not aborted while the server continues to
+stream a large file slowly.
+"""
 
 
 def download_directory_to_zip(
@@ -52,7 +59,7 @@ def download_directory_to_zip(
     username: Optional[str] = None,
     password: Optional[str] = None,
     headers: Mapping[str, str] = EMPTY_MAP,
-    timeout: Optional[float] = _DEFAULT_TIMEOUT,
+    timeout: Timeout | float | None = _DEFAULT_TIMEOUT,
     # auxiliary request options
     chunk_size: int = _DEFAULT_CHUNK_SIZE,
     request_options: Mapping[str, Any] = EMPTY_MAP,
@@ -107,7 +114,7 @@ def download_from_kaggle(
     url: str,
     fname: FilePath,
     /,
-    timeout: Optional[float] = _DEFAULT_TIMEOUT,
+    timeout: Optional[float] = _DEFAULT_TIMEOUT_SECONDS,
     **kaggle_options: Any,
 ) -> None:
     r"""Import a dataset from Kaggle."""
@@ -271,7 +278,7 @@ def _download_io(
     password: Optional[str] = None,
     # auxiliary request options
     headers: Mapping[str, str] = EMPTY_MAP,
-    timeout: Optional[float] = _DEFAULT_TIMEOUT,
+    timeout: Timeout | float | None = _DEFAULT_TIMEOUT,
     chunk_size: int = _DEFAULT_CHUNK_SIZE,
     request_options: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
