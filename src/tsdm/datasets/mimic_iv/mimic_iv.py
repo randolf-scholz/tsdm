@@ -62,6 +62,7 @@ __all__ = [
     "TRUE_VALUES",
     "FALSE_VALUES",
     "NULL_VALUES",
+    "BOOL_VALUES",
     "UNSTACKED_SCHEMAS",
     "BAD_NAN_COLUMNS",
     # Types
@@ -179,7 +180,6 @@ if False:
     DATE_TYPE = pa.date32()
     BOOL_TYPE = pa.bool_()
     STRING_TYPE = pa.string()
-    STRING_ID_TYPE = pa.dictionary(pa.uint32(), pa.string())
     CAT_TYPE = pa.dictionary(pa.int32(), pa.string())
     NULL_TYPE = pa.null()
     TEXT_TYPE = pa.large_utf8()
@@ -191,7 +191,6 @@ else:
     DATE_TYPE = pl.Date
     BOOL_TYPE = pl.Boolean
     STRING_TYPE = pl.Utf8
-    STRING_ID_TYPE = pl.Categorical
     CAT_TYPE = pl.Categorical
     NULL_TYPE = pl.Null
     TEXT_TYPE = pl.Utf8
@@ -705,22 +704,6 @@ BOOL_VALUES = {
 }
 
 
-SCHEMA_OVERRIDE = {
-    "admissions": {"edouttime": BOOL_TYPE},
-    "emar_detail": {
-        "complete_dose_not_given": BOOL_TYPE,
-        "will_remainder_of_dose_be_given": BOOL_TYPE,
-        "infusion_complete": BOOL_TYPE,
-        "new_iv_bag_hung": BOOL_TYPE,
-        "continued_infusion_in_other_location": BOOL_TYPE,
-        "non_formulary_visual_verification": BOOL_TYPE,
-    },
-}
-
-
-NULL_SCHEMA = {"emar_detail": {"product_amount_given": "*NEW*"}}
-
-
 class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):
     r"""Raw version of the MIMIC-IV Clinical Database.
 
@@ -906,7 +889,7 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):
             schema = self.get_schema(key)
             validate_schema(file, schema)
             table = pl.read_csv(
-                file,
+                file,  # type: ignore
                 schema=schema,
                 # null_values=NULL_SCHEMA.get(key, {}),
             )
@@ -1031,7 +1014,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
 
     def __post_init__(self) -> None:
         # reuse the same data as the raw dataset
-        base = MIMIC_IV_RAW(version=self.version, initialize=False)
+        base = MIMIC_IV_RAW(version=self.__version__, initialize=False)
         self.RAWDATA_DIR = base.RAWDATA_DIR
         del base
         super().__post_init__()
