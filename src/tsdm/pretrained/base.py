@@ -80,7 +80,7 @@ from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
 from tsdm.pprint import repr_mapping
 from tsdm.testing import is_zipfile
-from tsdm.types.aliases import DirPath, FilePath
+from tsdm.types.aliases import DirPath, FilePath, FileStream
 from tsdm.utils import nested_paths_exist
 from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.remote import import_from_url
@@ -364,7 +364,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         raise ValueError(f"{component=} is not supported!")
 
     def __load_torch_component(
-        self, file: str | Path | IO[bytes], /, *, component: str, **kwargs: Any
+        self, file: FilePath | FileStream, /, *, component: str, **kwargs: Any
     ) -> TorchModule:
         r"""Load a torch component."""
         logger = self.LOGGER.getChild(component)
@@ -407,7 +407,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         module.load_state_dict(state_dict)
         return module
 
-    def __load_torch_jit_model(self, file: str | Path | IO[bytes], /) -> TorchModule:
+    def __load_torch_jit_model(self, file: FilePath | FileStream, /) -> TorchModule:
         r"""Load a TorchScript model."""
         try:
             # load on CPU
@@ -423,11 +423,11 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
             )
         return model
 
-    def __load_torch_model(self, file: str | Path | IO[bytes], /) -> TorchModule:
+    def __load_torch_model(self, file: FilePath | FileStream, /) -> TorchModule:
         r"""Load a torch model."""
         return self.__load_torch_component(file, component="model")
 
-    def __load_torch_optimizer(self, file: str | Path | IO[bytes], /) -> TorchOptimizer:
+    def __load_torch_optimizer(self, file: FilePath | FileStream, /) -> TorchOptimizer:
         r"""Load a torch optimizer."""
         return cast(
             "TorchOptimizer",
@@ -437,7 +437,7 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
         )
 
     def __load_torch_lr_scheduler(
-        self, file: str | Path | IO[bytes], /
+        self, file: FilePath | FileStream, /
     ) -> TorchLRScheduler:
         r"""Load a torch learning rate scheduler."""
         return cast(

@@ -29,7 +29,7 @@ from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.testing.validation import validate_file_hash
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, FileStream
 
 from .timer import timer
 
@@ -182,7 +182,7 @@ def download_from_github(url: str, fname: FilePath, /, **svn_options: Any) -> No
 
 def download(
     url: str,
-    fname: Optional[FilePath | IO[bytes]] = None,
+    fname: Optional[FilePath | FileStream] = None,
     *,
     # request options
     username: Optional[str] = None,
@@ -264,7 +264,7 @@ def import_from_url(
 
 def _download_io(
     url: str,
-    file: IO[bytes],
+    file: FileStream,
     *,
     client: Optional[Client] = None,
     username: Optional[str] = None,

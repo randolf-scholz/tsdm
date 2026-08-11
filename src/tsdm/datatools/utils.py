@@ -7,16 +7,15 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
-from io import IOBase
 from os import PathLike, fspath
-from typing import IO, Any, Optional
+from typing import Any, Optional
 
 import pandas as pd
 import polars as pl
 from pandas import DataFrame, Series
 from scipy import stats
 
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, FileStream
 
 
 def describe(
@@ -168,7 +167,7 @@ def data_overview(
 
 
 def validate_schema(
-    file: FilePath | IO[bytes] | IOBase,
+    file: FilePath | FileStream,
     schema: Mapping[str, Any],
     /,
     *,
@@ -203,7 +202,7 @@ def validate_schema(
             position = stream.tell()
             try:
                 actual_columns = pl.read_csv(
-                    stream,  # type: ignore
+                    stream,
                     has_header=True,
                     infer_schema=False,
                     n_rows=0,

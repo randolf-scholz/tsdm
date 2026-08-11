@@ -887,7 +887,7 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):
             gzip.open(compressed_file, "r") as file,
         ):
             schema = self.get_schema(key)
-            validate_schema(file, schema)
+            validate_schema(file, schema)  # type: ignore
             table = pl.read_csv(
                 file,  # type: ignore
                 schema=schema,

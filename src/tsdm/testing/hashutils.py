@@ -58,7 +58,6 @@ from collections.abc import (
 )
 from types import EllipsisType, NoneType, NotImplementedType
 from typing import (
-    IO,
     Any,
     Final,
     NamedTuple,
@@ -74,7 +73,7 @@ import polars as pl
 import pyarrow as pa
 from numpy.typing import NDArray
 
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, FileStream
 from tsdm.types.dataclass import Dataclass
 from tsdm.types.extra import SupportsArray
 
@@ -442,7 +441,7 @@ def hash_file(
 
 
 def hash_zip_contents(
-    file: FilePath | IO[bytes],
+    file: FilePath | FileStream,
     hasher: str | Hasher = "sha256",
     /,
     *,

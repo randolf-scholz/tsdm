@@ -9,17 +9,17 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import IO, Any, Concatenate, NotRequired, Optional, Required, TypedDict
+from typing import Any, Concatenate, NotRequired, Optional, Required, TypedDict
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 from pyarrow import parquet as pyarrow_parquet
 
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, FileStream
 
 type Writer[T] = Callable[Concatenate[T, ...], None]
-type Loader[T] = Callable[Concatenate[FilePath | IO[bytes], ...], T]
+type Loader[T] = Callable[Concatenate[FilePath | FileStream, ...], T]
 
 
 def _choose_default_writer[T: pa.Table | pd.DataFrame | pl.DataFrame](
@@ -44,7 +44,7 @@ def _choose_default_writer[T: pa.Table | pd.DataFrame | pl.DataFrame](
 
 def serialize_table[T](
     table: T,
-    path_or_buf: FilePath | IO[bytes],
+    path_or_buf: FilePath | FileStream,
     /,
     *,
     writer: Optional[str | Writer[T]] = None,
@@ -91,7 +91,7 @@ def _choose_default_loader(extension: str, /) -> Loader[Any]:
 
 
 def deserialize_table[T = pd.DataFrame](
-    path_or_buf: FilePath | IO[bytes],
+    path_or_buf: FilePath | FileStream,
     /,
     *,
     loader: Optional[str | Loader[T]] = None,

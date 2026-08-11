@@ -5,7 +5,7 @@ __all__ = [
     # path types
     "DirPath",
     "FilePath",
-    "PathLike",
+    "FileStream",
     # argument types
     "DictArg",
     "IndexArg1D",
@@ -24,20 +24,20 @@ __all__ = [
     "NestedBuiltin",
 ]
 
-
 import os
 from collections.abc import Collection, Iterable, Mapping
 from datetime import datetime, timedelta
 from types import EllipsisType
+from typing import IO
 
 type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
 r"""Type Alias for Python scalars."""
 
 # region function argument aliases -----------------------------------------------------
-type PathLike = str | os.PathLike[str]
-r"""Type Alias for path-like objects."""
 type FilePath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to file."""
+type FileStream = IO[bytes]
+r"""Type Alias for file-like objects."""
 type DirPath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to directory."""
 type Axis = None | int | tuple[int, ...]

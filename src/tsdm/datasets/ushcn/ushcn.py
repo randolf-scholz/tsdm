@@ -20,12 +20,13 @@ import gzip
 import tarfile
 import warnings
 from collections.abc import Mapping, Sequence
-from typing import IO, Literal, Optional, cast
+from typing import Literal, Optional
 
 import polars as pl
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import remove_outliers
+from tsdm.types.aliases import FilePath, FileStream
 
 METADATA_SCHEMA = {
     "variable"        : pl.String,
@@ -168,7 +169,7 @@ STATIC_COVARIATES_SCHEMA = {
 
 
 def _read_fwf(
-    source: IO[bytes],
+    source: FilePath | FileStream,
     /,
     *,
     colspecs: Mapping[str, tuple[int, int]],
@@ -192,7 +193,7 @@ def _read_fwf(
         "\n - https://github.com/apache/arrow/issues/33404",
         stacklevel=2,
     )
-    rows = pl.scan_lines(source, name="line")
+    rows = pl.scan_lines(source, name="line")  # type: ignore
 
     nulls = null_values or {}
     columns = []
@@ -598,7 +599,7 @@ class USHCN(DatasetBase[Key, pl.DataFrame]):
                 self.LOGGER.info("Expanding daily observations...")
                 data = (
                     _read_fwf(
-                        cast("IO[bytes]", gzip_file),
+                        gzip_file,  # type: ignore
                         colspecs=colspecs,
                         schema=column_dtypes,
                         null_values=na_values,
