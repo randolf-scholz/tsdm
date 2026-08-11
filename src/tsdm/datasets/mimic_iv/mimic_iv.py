@@ -887,23 +887,26 @@ class MIMIC_IV_RAW(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         return table
 
     def get_rawdata_file(self, fname: str, /) -> None:
-        if self.version_info in {(1, 0), (2, 1), (2, 2)}:
+        username = input("MIMIC-IV username: ")
+        password = getpass(prompt="MIMIC-IV password: ", stream=None)
+
+        if self.version_info == (2, 0):
+            # zip file is not directly downloadable for 2.0
+            remote.download_directory_to_zip(
+                f"{self.CONTENT_URL}/{self.__version__}/",
+                self.rawdata_paths[fname],
+                username=username,
+                password=password,
+                headers={"User-Agent": "Wget/1.21.2"},
+            )
+        else:
             # direct zip available
             remote.download(
                 f"{self.SOURCE_URL}/{self.__version__}/",
                 self.rawdata_paths[fname],
-                username=input("MIMIC-IV username: "),
-                password=getpass(prompt="MIMIC-IV password: ", stream=None),
+                username=username,
+                password=password,
                 # NOTE: MIMIC only allows wget for some reason...
-                headers={"User-Agent": "Wget/1.21.2"},
-            )
-        else:
-            # zip file is not directly downloadable for other versions.
-            remote.download_directory_to_zip(
-                f"{self.CONTENT_URL}/{self.__version__}/",
-                self.rawdata_paths[fname],
-                username=input("MIMIC-IV username: "),
-                password=getpass(prompt="MIMIC-IV password: ", stream=None),
                 headers={"User-Agent": "Wget/1.21.2"},
             )
 
