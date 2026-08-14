@@ -111,7 +111,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
 
     - LazyFunction
     - Callable that takes exactly 0 mandatory args
-    - Callable that takes axactly 1 mandatory positional arg and no mandatory kwargs
+    - Callable that takes exactly 1 mandatory positional arg and no mandatory kwargs
       - In this case, the key will be used as the first argument
     - tuple of the form tuple[Callable] as above
     - tuple of the form tuple[Callable, tuple]
@@ -119,25 +119,25 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     - tuple of the form tuple[Callable, tuple, dict]
     """
 
-    # fmt: off
     @overload
     @staticmethod
-    def new[T=Any, X=Any](  # pyright: ignore[reportOverlappingOverload]
-        items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /  # pyright: ignore[reportInvalidTypeVarUse]
+    def new[T = Any, X = Any](  # pyright: ignore[reportOverlappingOverload]
+        items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
+        /,
     ) -> LazyDict[T, X]: ...
     @overload  # mapping and kwargs
     @staticmethod
-    def new[T=Never, X=Any](
-        items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ..., /,  # pyright: ignore[reportInvalidTypeVarUse]
-        **kwargs: Lazy[X]
+    def new[T = Never, X = Any](
+        items: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = ...,  # pyright: ignore[reportInvalidTypeVarUse]
+        /,
+        **kwargs: Lazy[X],
     ) -> LazyDict[T | str, X]: ...
     @staticmethod
-    def new[T=Never, X=Any](
+    def new[T = Never, X = Any](
         args: Mapping[T, Lazy[X]] | Iterable[tuple[T, Lazy[X]]] = (),
         /,
         **kwargs: Lazy[X],
     ) -> LazyDict[T, X] | LazyDict[T | str, X]:
-    # fmt: on
         r"""Create a new LazyDict."""
         self = LazyDict[Any, X]()
 
@@ -148,7 +148,6 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
             self.set_lazy(str_key, value)
 
         return self
-
 
     @staticmethod
     def from_func(
@@ -171,10 +170,14 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
         """
         type_hint = get_return_typehint(func) if type_hint is None else type_hint
 
-        return LazyDict.new({
-            key: LazyValue(func, args=(key, *args), kwargs=kwargs, type_hint=type_hint)
-            for key in iterable
-        })
+        return LazyDict.new(
+            {
+                key: LazyValue(
+                    func, args=(key, *args), kwargs=kwargs, type_hint=type_hint
+                )
+                for key in iterable
+            }
+        )
 
     if TYPE_CHECKING:
         # fmt: off
