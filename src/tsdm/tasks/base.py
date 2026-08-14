@@ -343,11 +343,11 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         r"""Return the number of splits."""
         return len(self.index)
 
-    def make_encoder(self, key: SplitID, /) -> Encoder:  # noqa: ARG002
+    def make_encoder(self, key: SplitID, /) -> Encoder:  # ruff: ignore[ARG002]
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # noqa: ARG002
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # ruff: ignore[ARG002]
         r"""Return the collate function which combines samples into a batch.
 
         Note:
@@ -404,7 +404,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
         r"""Return the test metric."""
         return NotImplemented
 

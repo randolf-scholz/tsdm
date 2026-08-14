@@ -1,5 +1,5 @@
 r"""TSDM Configuration."""
-# ruff: noqa: N802
+# ruff: file-ignore[N802]
 
 __all__ = [
     # Classes

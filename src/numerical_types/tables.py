@@ -50,7 +50,7 @@ Warning:
     - return the same as `series.loc[int]` and `series.loc[list[int]]` if the series is indexed by integers.
 
     `polars` and `pyarrow` are strict by demanding that rows are indexed by indices, and columns by labels (strings).
-"""  # noqa: E501, W505
+"""  # ruff: ignore[E501, W505]
 
 __all__ = [
     "SeriesType",

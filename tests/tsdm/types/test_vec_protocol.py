@@ -148,6 +148,6 @@ def type_array_assignable() -> None:
 def type_integer_array_assignable() -> None:
     _0: Vec[int]
     _1: Vec[int] = (1, 2)
-    _2: Vec[int] = tuple([1, 2])  # noqa: C409
+    _2: Vec[int] = tuple([1, 2])  # ruff: ignore[C409]
     _3: Vec[int] = [1, 2]
     _4: Vec[int] = range(2)

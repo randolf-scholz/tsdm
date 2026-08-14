@@ -140,7 +140,7 @@ def download_from_kaggle(
     ]
     with timer(timeout=timeout):
         subprocess.run(
-            [  # noqa: S607
+            [  # ruff: ignore[S607]
                 "kaggle",
                 "competitions",
                 "download",

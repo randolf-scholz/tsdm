@@ -610,7 +610,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""
-        if tuple(map(int, self.__version__.split("."))) < (1, 4):  # noqa: RUF048
+        if tuple(map(int, self.__version__.split("."))) < (1, 4):  # ruff: ignore[RUF048]
             raise ValueError(
                 "MIMIC-III v1.4+ is required. At the time of writing, the website"
                 " does not provide legacy versions of the MIMIC-III dataset."

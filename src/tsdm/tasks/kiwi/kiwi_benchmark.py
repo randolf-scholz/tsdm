@@ -309,7 +309,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
             covariates=covariates,
         )
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
         r"""By default, weight channels inversely proportial to missing rate.
 
         This ensures the model fits on all channels instead of underfitting on sparse

@@ -46,7 +46,7 @@ class timer[ExitT: bool | None = None](ContextDecorator):
         self.timeout = timeout
         self.exception = TimeoutError(msg)
 
-    def _timeout_handler(self, signum: int, frame: FrameType | None, /) -> Never:  # noqa: ARG002
+    def _timeout_handler(self, signum: int, frame: FrameType | None, /) -> Never:  # ruff: ignore[ARG002]
         self.exception.add_note(f"Timed out after {self.timeout} seconds.")
         raise self.exception
 

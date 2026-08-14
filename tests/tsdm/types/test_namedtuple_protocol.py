@@ -12,7 +12,7 @@ class MyNamedTuple(NamedTuple):
     y: int
 
 
-class NotNamedTuple(tuple[int, int]):  # noqa: SLOT001
+class NotNamedTuple(tuple[int, int]):  # ruff: ignore[SLOT001]
     r"""Dummy class that's a `tuple`, but not a `NamedTuple`."""
 
     x: int

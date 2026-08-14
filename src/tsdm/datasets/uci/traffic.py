@@ -40,7 +40,7 @@ Each attribute describes the measurement of the occupancy rate (between 0 and 1)
 Relevant Papers
 ---------------
 M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference on Machine Learning 2011.
-"""  # noqa: E501, W505
+"""  # ruff: ignore[E501, W505]
 
 __all__ = ["Traffic"]
 
@@ -70,7 +70,7 @@ class Traffic(DatasetBase[Traffic_Keys, pl.DataFrame]):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**           | Classification            | **Missing Values?**       | N/A    | **Number of Web Hits:** | 79749      |
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    """  # noqa: E501, W505
+    """  # ruff: ignore[E501, W505]
 
     SOURCE_URL = r"https://archive.ics.uci.edu/static/public/204/"
     r"""HTTP address from where the dataset can be downloaded."""

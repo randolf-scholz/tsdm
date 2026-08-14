@@ -262,7 +262,7 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample]):
             )
         return tensors
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], BaseBatch]:  # noqa: ARG002
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], BaseBatch]:  # ruff: ignore[ARG002]
         r"""Return the collate function for the specified split."""
         return cast("Callable[[list[Sample]], BaseBatch]", ushcn_collate)
 
@@ -282,6 +282,6 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample]):
             shuffle=self.is_train_split(key),
         )
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
         r"""Return the test metric."""
         return nn.MSELoss()

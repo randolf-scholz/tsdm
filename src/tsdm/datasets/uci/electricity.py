@@ -36,7 +36,7 @@ Attribute Information
 Data set were saved as txt using csv format, using semi colon (;).
 First column present date and time as a string with the following format 'yyyy-mm-dd hh:mm:ss'
 Other columns present float values with consumption in kW
-"""  # noqa: E501, W505
+"""  # ruff: ignore[E501, W505]
 
 __all__ = ["Electricity"]
 
@@ -89,7 +89,7 @@ class Electricity(DatasetBase[Literal["timeseries"], pl.DataFrame]):
 
     Recommendation:
         At the given dates, replace zero with NaN.
-    """  # noqa: E501, W505
+    """  # ruff: ignore[E501, W505]
 
     SOURCE_URL = r"https://archive.ics.uci.edu/static/public/321/"
     r"""HTTP address from where the dataset can be downloaded."""

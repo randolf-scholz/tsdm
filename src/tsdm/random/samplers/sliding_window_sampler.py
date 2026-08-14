@@ -635,7 +635,7 @@ class SlidingWindowSampler[
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, S, MULTI], /) -> Iterator[list["slice[DType, DType]"]]: ...  # noqa: UP037
+    def __iter__(self: SlidingWindowSampler[DType, S, MULTI], /) -> Iterator[list["slice[DType, DType]"]]: ...  # ruff: ignore[UP037]
     @overload
     def __iter__(self: SlidingWindowSampler[DType, B, MULTI], /) -> Iterator[list[tuple[DType, DType]]]: ...
     @overload
@@ -649,7 +649,7 @@ class SlidingWindowSampler[
     @overload  # fallback mode=str
     def __iter__(self: SlidingWindowSampler[DType, Any, MULTI], /) -> Iterator[list[Any]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, S, ONE], /) -> Iterator["slice[DType, DType]"]: ...  # noqa: UP037
+    def __iter__(self: SlidingWindowSampler[DType, S, ONE], /) -> Iterator["slice[DType, DType]"]: ...  # ruff: ignore[UP037]
     @overload
     def __iter__(self: SlidingWindowSampler[DType, B, ONE], /) -> Iterator[tuple[DType, DType]]: ...
     @overload
@@ -683,7 +683,7 @@ class SlidingWindowSampler[
         sample_fns: dict[MODE, Callable] = {
             MODE.BOUNDS   : lambda start, stop: (start, stop),
             MODE.MASK     : lambda start, stop: (start <= data) & (data < stop),
-            MODE.SLICE    : lambda start, stop: slice(start, stop),  # noqa: PLW0108
+            MODE.SLICE    : lambda start, stop: slice(start, stop),  # ruff: ignore[PLW0108]
             MODE.INTERVAL : lambda start, stop: Interval(start, stop, closed="left"),
             MODE.POINTS   : lambda start, stop: data[(start <= data) & (data < stop)],
             MODE.INDEX    : lambda start, stop: np.where((start <= data) & (data < stop))[0],

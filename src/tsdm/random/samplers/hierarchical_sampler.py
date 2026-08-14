@@ -69,7 +69,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
             if subsamplers is not EMPTY_MAP
             else {
                 key: RandomSampler(self.data[key], shuffle=self.shuffle)
-                for key in self.data.keys()  # noqa: SIM118
+                for key in self.data.keys()  # ruff: ignore[SIM118]
             }
         )
 

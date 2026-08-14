@@ -10,11 +10,11 @@ __all__ = [
 ]
 
 from . import arrays, mixins, scalars, series, tables
-from .arrays import *  # noqa: F403
-from .mixins import *  # noqa: F403
-from .scalars import *  # noqa: F403
-from .series import *  # noqa: F403
-from .tables import *  # noqa: F403
+from .arrays import *  # ruff: ignore[F403]
+from .mixins import *  # ruff: ignore[F403]
+from .scalars import *  # ruff: ignore[F403]
+from .series import *  # ruff: ignore[F403]
+from .tables import *  # ruff: ignore[F403]
 
 __all__ += arrays.__all__
 __all__ += mixins.__all__

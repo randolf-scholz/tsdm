@@ -165,7 +165,7 @@ class TestAbstractScalars:
         assert value == value
         assert value <= value
         assert value >= value
-        assert not (value != value)  # noqa: SIM202
+        assert not (value != value)  # ruff: ignore[SIM202]
         assert not (value > value)
         assert not (value < value)
         # fmt: on

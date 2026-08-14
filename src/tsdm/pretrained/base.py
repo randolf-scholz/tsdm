@@ -97,7 +97,7 @@ class PreTrainedMetaClass(ProtocolMeta):
     r"""Metaclass for PreTrained."""
 
     def __init__(
-        cls,  # noqa: N805
+        cls,  # ruff: ignore[N805]
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],

@@ -42,7 +42,7 @@ from typing import (
 class BoolOP[T](Protocol):
     # similar to numpy._FloatOP
     @overload
-    def __call__(self, other: bool, /) -> T: ...  # noqa: FBT001
+    def __call__(self, other: bool, /) -> T: ...  # ruff: ignore[FBT001]
     @overload
     def __call__(self, other: T, /) -> T: ...
 

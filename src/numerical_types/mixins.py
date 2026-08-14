@@ -1,6 +1,6 @@
 r"""Protocols for operator overloading support."""
 
-# ruff: noqa: D101
+# ruff: file-ignore[D101]
 __all__ = [
     # Unary arithmetic
     "SupportsUnaryArithmetic",

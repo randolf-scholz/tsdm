@@ -304,7 +304,7 @@ class ParametrizedEncoder[X, Y](EncoderProtocol[X, Y], Protocol):
         params = self.params
         return any(params[key] is UNDEFINED for key in self.required_params)
 
-    def get_params(self, *, deep: bool = True) -> dict[str, Any]:  # noqa: ARG002
+    def get_params(self, *, deep: bool = True) -> dict[str, Any]:  # ruff: ignore[ARG002]
         r"""Alias for `self.params`."""
         return self.params
 
@@ -317,7 +317,7 @@ class EncoderMeta(ProtocolMeta):
     LOGGER: logging.Logger = logging.getLogger(__name__)
 
     @property
-    def FIELDS(cls) -> frozenset[str]:  # noqa: N802
+    def FIELDS(cls) -> frozenset[str]:  # ruff: ignore[N802]
         r"""Fields that are considered for the encoder."""
         if is_dataclass(cls):
             return frozenset({f.name for f in fields(cls)})
@@ -846,7 +846,7 @@ class StaticEncoder[X, Y](BaseEncoder[X, Y]):
     provided/determined at initialization time.
     """
 
-    requires_fit: Final[L[False]] = False  # pyright: ignore[reportIncompatibleVariableOverride]  # noqa: PYI064
+    requires_fit: Final[L[False]] = False  # pyright: ignore[reportIncompatibleVariableOverride]  # ruff: ignore[PYI064]
     post_fit_hooks = [BaseEncoder.validate_params]
 
     @final

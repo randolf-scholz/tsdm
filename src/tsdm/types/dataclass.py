@@ -39,10 +39,10 @@ r"""Type Alias for fields that are fitted automatically."""
 class _DataclassMeta(ProtocolMeta):
     r"""Metaclass for `Dataclass`."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs[Dataclass]:  # noqa: N805
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[Dataclass]:  # ruff: ignore[N805]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Dataclass]]:  # noqa: N805
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Dataclass]]:  # ruff: ignore[N805]
         fields = getattr(subclass, "__dataclass_fields__", None)
         return isinstance(fields, dict)
 

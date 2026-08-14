@@ -33,7 +33,7 @@ class MyBool:
 
 
 def test_and_ndarray() -> None:
-    a = MyBool(True)  # noqa: FBT003
+    a = MyBool(True)  # ruff: ignore[FBT003]
     b = np.array([True, False, True])
     # the values of result are MyBool, not builtins.bool:
     assert all(isinstance(x, MyBool) for x in a & b)  # type: ignore

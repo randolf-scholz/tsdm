@@ -208,7 +208,7 @@ def tokenize_notimplemented(_: NotImplementedType, /) -> bytes:
     return b"NotImplemented"
 
 
-def tokenize_bool(arg: bool, /) -> bytes:  # noqa: FBT001
+def tokenize_bool(arg: bool, /) -> bytes:  # ruff: ignore[FBT001]
     return b"\x01" if arg else b"\x00"
 
 

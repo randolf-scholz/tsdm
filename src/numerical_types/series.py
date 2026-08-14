@@ -33,14 +33,14 @@ from .arrays import (
 from .scalars import BoolScalar, ComplexScalar, FloatScalar, IntScalar
 
 
-class SupportsSeriesEquality[ComparableT](Protocol):  # noqa: D101
+class SupportsSeriesEquality[ComparableT](Protocol):  # ruff: ignore[D101]
     # equality ==
     def __eq__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore
     # inequality !=
     def __ne__(self, other: ComparableT, /) -> BooleanSeries: ...  # type: ignore
 
 
-class SupportsSeriesComparison[ComparableT](Protocol):  # noqa: D101
+class SupportsSeriesComparison[ComparableT](Protocol):  # ruff: ignore[D101]
     # comparisons (element-wise)
     def __le__(self, other: ComparableT, /) -> BooleanSeries: ...
     def __ge__(self, other: ComparableT, /) -> BooleanSeries: ...

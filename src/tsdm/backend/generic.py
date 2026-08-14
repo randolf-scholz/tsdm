@@ -104,7 +104,7 @@ def round_impl[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:
     return y
 
 
-def round[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # noqa: A001
+def round[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # ruff: ignore[A001]
     r"""Round elements of the array to the given number of decimals.
 
     Note:

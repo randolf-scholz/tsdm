@@ -1,5 +1,5 @@
 r"""Protocol variants of common ABCs."""
-# ruff: noqa: N805
+# ruff: file-ignore[N805]
 
 __all__ = [
     "BaseBuffer",

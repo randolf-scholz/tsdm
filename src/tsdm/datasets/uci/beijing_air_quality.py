@@ -64,7 +64,7 @@ Attribute Information
 +---------+-----------------------------------------+
 | station | name of the air-quality monitoring site |
 +---------+-----------------------------------------+
-"""  # noqa: E501, W505
+"""  # ruff: ignore[E501, W505]
 
 __all__ = [
     # Constants
@@ -160,7 +160,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**          | Regression                | **Missing Values?**       | Yes    | **Number of Web Hits:** | 68746      |
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    """  # noqa: E501, W505
+    """  # ruff: ignore[E501, W505]
 
     SOURCE_URL = r"https://archive.ics.uci.edu/static/public/501/"
     r"""HTTP address from where the dataset can be downloaded."""

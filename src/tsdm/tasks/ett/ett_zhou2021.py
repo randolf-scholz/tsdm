@@ -225,6 +225,6 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
             shuffle=self.is_train_split(key),
         )
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # noqa: ARG002
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
         r"""Return the evaluation metric."""
         return nn.MSELoss()

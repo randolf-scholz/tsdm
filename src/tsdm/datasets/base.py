@@ -101,7 +101,7 @@ class DatasetMeta(ProtocolMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls,  # noqa: N805
+        cls,  # ruff: ignore[N805]
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -123,7 +123,7 @@ class DatasetMeta(ProtocolMeta):
             cls.DATASET_ROOT_DIR: Path = CONFIG.DATASET_DIR / cls.ID
         assert isinstance(cls.DATASET_ROOT_DIR, Path)
 
-    def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: N805
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # ruff: ignore[N805]
         r"""When an instance of the class is created, this method is called."""
         obj = super().__call__(*args, **kwargs)
         obj.__post_init__()

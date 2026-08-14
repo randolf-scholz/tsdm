@@ -8,13 +8,13 @@ from sklearn.utils.estimator_checks import parametrize_with_checks
 class MyEstimator:
     r"""Dummy estimator."""
 
-    def get_params(self, *, deep=True):  # noqa: ARG002
+    def get_params(self, *, deep=True):  # ruff: ignore[ARG002]
         return {}
 
     def set_params(self, **kwargs):
         pass
 
-    def fit(self, X, y=None):  # noqa: ARG002
+    def fit(self, X, y=None):  # ruff: ignore[ARG002]
         return self
 
     def fit_transform(self, X, y=None):

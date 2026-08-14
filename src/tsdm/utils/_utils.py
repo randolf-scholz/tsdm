@@ -80,8 +80,8 @@ def flatten_dict[K, K2](
     d: NestedMapping[K, Any],
     /,
     *,
-    join_fn: Callable[[Iterable[K]], K2] = cast("Any", ".".join),  # noqa: B008
-    split_fn: Callable[[K2], Iterable[K]] = cast("Any", lambda s: s.split(".")),  # noqa: B008
+    join_fn: Callable[[Iterable[K]], K2] = cast("Any", ".".join),  # ruff: ignore[B008]
+    split_fn: Callable[[K2], Iterable[K]] = cast("Any", lambda s: s.split(".")),  # ruff: ignore[B008]
     recursive: bool | int = True,
 ) -> dict[K2, Any]:
     r"""Flatten dictionaries recursively.
@@ -179,8 +179,8 @@ def unflatten_dict[K, K2](
     /,
     *,
     recursive: bool | int = True,
-    join_fn: Callable[[Iterable[K]], K2] = cast("Any", ".".join),  # noqa: B008
-    split_fn: Callable[[K2], Iterable[K]] = cast("Any", lambda s: s.split(".")),  # noqa: B008
+    join_fn: Callable[[Iterable[K]], K2] = cast("Any", ".".join),  # ruff: ignore[B008]
+    split_fn: Callable[[K2], Iterable[K]] = cast("Any", lambda s: s.split(".")),  # ruff: ignore[B008]
 ) -> NestedDict[K, Any]:
     r"""Unflatten dictionaries recursively.
 
