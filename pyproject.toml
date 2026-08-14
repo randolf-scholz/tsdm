@@ -576,6 +576,7 @@ testpaths = ["src/", "tests/"]
 xfail_strict = true
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "manual: marks tests that only run individually",
     "serial",
     "interactive",
     "flaky: mark tests that may be retried when pytest-rerunfailures is installed",

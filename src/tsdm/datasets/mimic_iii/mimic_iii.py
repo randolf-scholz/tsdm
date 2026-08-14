@@ -45,9 +45,12 @@ from polars.datatypes import DataType, DataTypeClass
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import validate_schema
+from tsdm.testing.validation import validate_file_hash
 from tsdm.utils import remote
 
 type MIMIC_III_Key = Literal[
+    "SHA256SUMS",
+    "LICENSE",
     "ADMISSIONS",
     "CALLOUT",
     "CAREGIVERS",
@@ -89,6 +92,11 @@ INT8_TYPE = pl.Int8
 
 
 SCHEMAS: dict[MIMIC_III_Key, dict[str, DataType | DataTypeClass]] = {
+    "SHA256SUMS": {
+        "value": STRING_TYPE,
+        "filename": STRING_TYPE,
+    },
+    "LICENSE": {"text": TEXT_TYPE},
     "ADMISSIONS": {
         "ROW_ID"               : ID_TYPE,
         "SUBJECT_ID"           : ID_TYPE,
@@ -514,10 +522,38 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
         if not self.version_info >= (1, 4):
             raise ValueError("MIMIC-III v1.4+ is required.")
 
+        prefix = f"mimic-iii-clinical-database-{self.__version__}"
+
         return {
-            key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"
-            for key in self.table_names
-        }
+            "SHA256SUMS"         : f"{prefix}/SHA256SUMS.txt",
+            "LICENSE"            : f"{prefix}/LICENSE.txt",
+            "ADMISSIONS"         : f"{prefix}/ADMISSIONS.csv.gz",
+            "CALLOUT"            : f"{prefix}/CALLOUT.csv.gz",
+            "CAREGIVERS"         : f"{prefix}/CAREGIVERS.csv.gz",
+            "CHARTEVENTS"        : f"{prefix}/CHARTEVENTS.csv.gz",
+            "CPTEVENTS"          : f"{prefix}/CPTEVENTS.csv.gz",
+            "DATETIMEEVENTS"     : f"{prefix}/DATETIMEEVENTS.csv.gz",
+            "D_CPT"              : f"{prefix}/D_CPT.csv.gz",
+            "DIAGNOSES_ICD"      : f"{prefix}/DIAGNOSES_ICD.csv.gz",
+            "D_ICD_DIAGNOSES"    : f"{prefix}/D_ICD_DIAGNOSES.csv.gz",
+            "D_ICD_PROCEDURES"   : f"{prefix}/D_ICD_PROCEDURES.csv.gz",
+            "D_ITEMS"            : f"{prefix}/D_ITEMS.csv.gz",
+            "D_LABITEMS"         : f"{prefix}/D_LABITEMS.csv.gz",
+            "DRGCODES"           : f"{prefix}/DRGCODES.csv.gz",
+            "ICUSTAYS"           : f"{prefix}/ICUSTAYS.csv.gz",
+            "INPUTEVENTS_CV"     : f"{prefix}/INPUTEVENTS_CV.csv.gz",
+            "INPUTEVENTS_MV"     : f"{prefix}/INPUTEVENTS_MV.csv.gz",
+            "LABEVENTS"          : f"{prefix}/LABEVENTS.csv.gz",
+            "MICROBIOLOGYEVENTS" : f"{prefix}/MICROBIOLOGYEVENTS.csv.gz",
+            "NOTEEVENTS"         : f"{prefix}/NOTEEVENTS.csv.gz",
+            "OUTPUTEVENTS"       : f"{prefix}/OUTPUTEVENTS.csv.gz",
+            "PATIENTS"           : f"{prefix}/PATIENTS.csv.gz",
+            "PRESCRIPTIONS"      : f"{prefix}/PRESCRIPTIONS.csv.gz",
+            "PROCEDUREEVENTS_MV" : f"{prefix}/PROCEDUREEVENTS_MV.csv.gz",
+            "PROCEDURES_ICD"     : f"{prefix}/PROCEDURES_ICD.csv.gz",
+            "SERVICES"           : f"{prefix}/SERVICES.csv.gz",
+            "TRANSFERS"          : f"{prefix}/TRANSFERS.csv.gz",
+        }  # fmt: skip
 
     def clean_table(self, key: MIMIC_III_Key) -> None:
         with (
@@ -525,11 +561,39 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
             archive.open(self.filelist[key], "r") as compressed_file,
         ):
             schema = SCHEMAS[key]
-            validate_schema(compressed_file, schema)
-            table = pl.scan_csv(
-                compressed_file,
-                schema=schema,
-            )
+
+            match key:
+                case "LICENSE":
+                    table = pl.scan_lines(compressed_file, name="text")
+                case "SHA256SUMS":
+                    table = pl.scan_csv(
+                        compressed_file,
+                        schema=schema,
+                        separator=" ",
+                        has_header=False,
+                        missing_columns="insert",
+                    )
+                case _:
+                    filename = self.filelist[key].removeprefix(
+                        f"mimic-iii-clinical-database-{self.__version__}/"
+                    )
+                    expected_hash = (
+                        self.SHA256SUMS.filter(pl.col("filename") == filename)
+                        .select("value")
+                        .collect()
+                        .item()
+                    )
+                    validate_file_hash(
+                        compressed_file,
+                        expected_hash,
+                        hash_algorithm="sha256",
+                    )
+                    validate_schema(compressed_file, schema)
+                    table = pl.scan_csv(
+                        compressed_file,
+                        schema=schema,
+                        has_header=True,
+                    )
 
             try:
                 table.sink_parquet(self.dataset_paths[key], engine="streaming")
