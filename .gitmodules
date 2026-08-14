@@ -1,3 +1,9 @@
 [submodule "third_party/neural-flows-experiments"]
 	path = third_party/neural-flows-experiments
 	url = git@github.com:mbilos/neural-flows-experiments.git
+	ignore = dirty
+
+[submodule "third_party/gru_ode_bayes"]
+	path = third_party/gru_ode_bayes
+	url = git@github.com:edebrouwer/gru_ode_bayes.git
+	ignore = dirty
