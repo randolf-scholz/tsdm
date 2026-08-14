@@ -10,19 +10,9 @@ __all__ = [
 
 from typing import Any
 
-import pandas as pd
 import polars as pl
-import pyarrow as pa
-from pyarrow import compute as pc
-from tqdm.asyncio import tqdm
 
-from tsdm.backend.pyarrow import (
-    cast_columns,
-    filter_nulls,
-    force_cast,
-    unsafe_cast_columns,
-)
-from tsdm.datatools import strip_whitespace
+from tsdm.datasets.base import DatasetBase
 
 from .mimic_iv import (
     BOOL_TYPE,
@@ -36,7 +26,7 @@ from .mimic_iv import (
     MIMIC_IV_Key,
 )
 
-UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
+UNSTACKED_SCHEMAS: dict[MIMIC_IV_Key, dict[Any, Any]] = {
     "omr": {
         "subject_id"                                   : ID_TYPE,
         "seq_num"                                      : ID_TYPE,
@@ -169,7 +159,24 @@ NULL_VALUES = [
 ]
 
 
-class MIMIC_IV_Scholz2026(MIMIC_IV):
+def _strip_whitespace(table: pl.DataFrame, /, *columns: str) -> pl.DataFrame:
+    r"""Strip whitespace from selected columns, or every string column by default."""
+    expressions = (
+        pl.col(*columns).str.strip_chars()
+        if columns
+        else pl.col(pl.String).str.strip_chars()
+    )
+    return table.with_columns(expressions)
+
+
+def _assert_columns_equal(table: pl.DataFrame, /, *, left: str, right: str) -> None:
+    r"""Raise an error unless two non-null columns contain identical values."""
+    equal = table.select((pl.col(left) == pl.col(right)).all()).item()
+    if not equal:
+        raise AssertionError(f"{left} != {right}")
+
+
+class MIMIC_IV_Scholz2026(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):
     r"""Lightly preprocessed version of the MIMIC-IV dataset.
 
     The following preprocessing steps are applied:
@@ -232,9 +239,9 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
         self.raw_dataset = MIMIC_IV(version=self.version, initialize=False)
         self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
 
-    def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
+    def clean_table(self, key: MIMIC_IV_Key) -> pl.DataFrame:
         dataset_path = self.raw_dataset.dataset_path[key]
-        table = pl.scan_parquet(dataset_path)
+        table = pl.read_parquet(dataset_path)
 
         # bool_values maps column names to their string-to-boolean values.
         if bool_values := BOOL_VALUES.get(key):
@@ -243,11 +250,9 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
                 for column, values in bool_values.items()
             )
 
-        # below: old pandas code!
-
         # drop data with missing `hadm_id`.
-        if "hadm_id" in table.column_names:
-            table = filter_nulls(table, "hadm_id")
+        if "hadm_id" in table.columns:
+            table = table.filter(pl.col("hadm_id").is_not_null())
 
         # post processing
         match key:
@@ -276,58 +281,66 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
                     "infusion_rate",
                     "infusion_rate_adjustment_amount",
                 ]
-                table = strip_whitespace(table, *cols)
-                table = force_cast(table, **{col: pa.float32() for col in cols})
+                table = _strip_whitespace(table, *cols).with_columns(
+                    pl.col(column).cast(pl.Float32, strict=False) for column in cols
+                )
             case "hcpcsevents":
                 pass
             case "labevents":
-                table = filter_nulls(table, "storetime")
-                table = filter_nulls(table, "value", "valuenum", "valueuom")
-                table = strip_whitespace(table)
-                table = cast_columns(table, value=pa.float32())
-                if table["value"] != table["valuenum"]:
-                    raise AssertionError("value != valuenum")
-                table = table.drop_columns("valuenum")
+                table = table.filter(
+                    pl.col("storetime").is_not_null()
+                    & pl.all_horizontal(
+                        pl.col("value", "valuenum", "valueuom").is_not_null()
+                    )
+                )
+                table = _strip_whitespace(table).with_columns(
+                    pl.col("value").cast(pl.Float32)
+                )
+                _assert_columns_equal(table, left="value", right="valuenum")
+                table = table.drop("valuenum")
             case "microbiologyevents":
                 pass
             case "omr":
                 # We pivot this table. This is complicated by the fact that the
                 # value column contains both floats and tuples of floats of the form
                 # (systolic, diastolic) for blood pressure measurements.
-                table = table.set_column(
-                    table.column_names.index("result_value"),
-                    "result_value",
-                    pc.split_pattern(table["result_value"], "/"),
+                table = table.with_columns(pl.col("result_value").str.split("/"))
+                index = ["subject_id", "seq_num", "chartdate"]
+                table = table.pivot(
+                    on="result_name", index=index, values="result_value"
                 )
 
-                # convert to pandas. Now each column contains NaN or list of floats.a
-                df = table.to_pandas().pivot(
-                    index=["subject_id", "seq_num", "chartdate"],
-                    columns="result_name",
-                    values="result_value",
-                )
+                expressions: list[pl.Expr] = [pl.col(column) for column in index]
+                for column in table.columns:
+                    if column in index:
+                        continue
 
-                for col in (pbar := tqdm(df.columns, desc="Fixing columns")):
-                    pbar.set_postfix(column=f"{col!r}")
-
-                    # Replace NaN with empty lists
-                    s = df.pop(col).copy()
-                    mask = s.isna()
-                    s.loc[mask] = [[]] * mask.sum()  # list of empty lists
-
-                    # blood pressure is a special case and results in 2 columns
-                    columns = (
-                        [f"{col} (systolic)", f"{col} (diastolic)"]
-                        if "blood pressure" in col.lower()
-                        else [col]
-                    )
-                    dtype = "float[pyarrow]" if col != "eGFR" else "string[pyarrow]"
-                    frame = pd.DataFrame(
-                        s.to_list(), columns=columns, index=s.index, dtype=dtype
-                    )
-                    df[columns] = frame
-                table = pa.Table.from_pandas(df.reset_index())
-                table = cast_columns(table, **UNSTACKED_SCHEMAS[key])
+                    values = pl.col(column)
+                    match column:
+                        case _ if "blood pressure" in column.lower():
+                            expressions.extend(
+                                (
+                                    values.list.get(0, null_on_oob=True)
+                                    .cast(pl.Float32)
+                                    .alias(f"{column} (systolic)"),
+                                    values.list.get(1, null_on_oob=True)
+                                    .cast(pl.Float32)
+                                    .alias(f"{column} (diastolic)"),
+                                )
+                            )
+                        case "eGFR":
+                            expressions.append(
+                                values.list.get(0, null_on_oob=True)
+                                .cast(pl.Utf8)
+                                .alias(column)
+                            )
+                        case _:
+                            expressions.append(
+                                values.list.get(0, null_on_oob=True)
+                                .cast(pl.Float32)
+                                .alias(column)
+                            )
+                table = table.select(expressions).cast(UNSTACKED_SCHEMAS[key])
             case "patients":
                 pass
             case "pharmacy":
@@ -335,15 +348,11 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
             case "poe":
                 pass
             case "poe_detail":
-                # NOTE: we use polars because pandas is too slow.
-                pl_frame = pl.from_arrow(table)
-                assert isinstance(pl_frame, pl.DataFrame)
-                table = pl_frame.pivot(
-                    "field_name",
+                table = table.pivot(
+                    on="field_name",
                     index=["poe_id", "poe_seq", "subject_id"],
                     values="field_value",
-                ).to_arrow()
-                table = cast_columns(table, **UNSTACKED_SCHEMAS[key])
+                ).cast(UNSTACKED_SCHEMAS[key])
             case "prescriptions":
                 pass
             case "procedures_icd":
@@ -357,10 +366,12 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
             case "caregiver":
                 pass
             case "chartevents":
-                table = filter_nulls(table, "value", "valuenum", "valueuom")
-                table = cast_columns(table, value="float64")
-                if table["value"] != table["valuenum"]:
-                    raise AssertionError("value != valuenum")
+                table = table.filter(
+                    pl.all_horizontal(
+                        pl.col("value", "valuenum", "valueuom").is_not_null()
+                    )
+                ).with_columns(pl.col("value").cast(pl.Float64))
+                _assert_columns_equal(table, left="value", right="valuenum")
                 table = table.drop("valuenum")
             case "d_items":
                 pass
@@ -375,28 +386,29 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
             case "outputevents":
                 pass
             case "procedureevents":
-                table = unsafe_cast_columns(table, storetime="timestamp[s]")
-                time_conversion = pd.Series(
-                    {"None": 0, "min": 60, "day": 60 * 60 * 24, "hour": 60 * 60},
-                    dtype="duration[s][pyarrow]",
-                    name="time",
+                table = table.with_columns(
+                    pl.col("storetime").dt.truncate("1s").cast(pl.Datetime("ms"))
                 )
-                duration = (
-                    table.to_pandas(types_mapper=pd.ArrowDtype)
-                    .pivot(
-                        index=["orderid"],
-                        columns="valueuom",  # "None", "min", "day", or "hour"
-                        values="value",
+                seconds_per_unit = (
+                    pl.col("valueuom")
+                    .cast(pl.Utf8)
+                    .replace_strict(
+                        {"None": 0, "min": 60, "hour": 60 * 60, "day": 60 * 60 * 24},
+                        return_dtype=pl.Int64,
                     )
-                    .fillna(0)
-                    .dot(time_conversion)
                 )
-                table = table.set_column(
-                    len(table.column_names),  # <- append to end
-                    "procedure_duration",
-                    pa.Array.from_pandas(duration, type="duration[s]", safe=False),
+                duration = table.group_by("orderid").agg(
+                    (pl.col("value").fill_null(0) * seconds_per_unit)
+                    .sum()
+                    .mul(1_000)
+                    .round()
+                    .cast(pl.Int64)
+                    .cast(pl.Duration("ms"))
+                    .alias("procedure_duration")
                 )
-                table = table.drop_columns(["value", "valueuom"])
+                table = table.drop("value", "valueuom").join(
+                    duration, on="orderid", how="left"
+                )
             case _:
                 raise KeyError(f"Unknown table name: {key}")
 
