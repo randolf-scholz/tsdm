@@ -123,9 +123,11 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
 
     def __getitem__(self, key: Any, /) -> PandasTS:
         r"""Return the subset of the timeseries at index `key`."""
-        _fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS}
-        _fields.update(timeseries=self.timeseries.loc[key])
-        return PandasTS(**_fields)
+        sliced = (  # formatting
+            {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+            | {"timeseries": self.timeseries.loc[key]}
+        )
+        return PandasTS(**sliced)
 
     def _infer_timeindex(self) -> Index:
         r"""Get the timeindex."""
@@ -284,14 +286,14 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
         cov = cov if cov is None else cov.loc[key]
 
         # only pass non-derived fields
-        _fields = {k: v for k, v in asdict(self).items() if k in self.FIELDS} | {
-            "timeseries": ts,
-            "static_covariates": cov,
-        }
+        sliced = (  # formatting
+            {k: v for k, v in asdict(self).items() if k in self.FIELDS}
+            | {"timeseries": ts, "static_covariates": cov}
+        )
 
         if isinstance(ts.index, MultiIndex):
-            return self.__class__(**_fields)
-        return PandasTS(**{k: v for k, v in _fields.items() if k in PandasTS.FIELDS})
+            return self.__class__(**sliced)
+        return PandasTS(**{k: v for k, v in sliced.items() if k in PandasTS.FIELDS})
 
 
 def electricity() -> TimeSeries[DataFrame]:

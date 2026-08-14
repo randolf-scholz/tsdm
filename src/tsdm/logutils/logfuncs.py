@@ -417,8 +417,8 @@ def log_values(
 ) -> None:
     r"""Log multiple metrics at once."""
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
-    for _id, scalar in scalars.items():
-        writer.add_scalar(f"{identifier}:{_id}/{key}", scalar, step)
+    for ident, scalar in scalars.items():
+        writer.add_scalar(f"{identifier}:{ident}/{key}", scalar, step)
 
 
 def log_table(

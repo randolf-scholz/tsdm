@@ -340,11 +340,11 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
     def tensors(self) -> Mapping:
         r"""Tensor dictionary."""
         tensors = {}
-        for _id in self.IDs:
-            s = self.dataset.loc[_id]
+        for ident in self.IDs:
+            s = self.dataset.loc[ident]
             t = torch.tensor(s.index.values, dtype=torch.float32)
             x = torch.tensor(s.values, dtype=torch.float32)
-            tensors[_id] = (t, x)
+            tensors[ident] = (t, x)
         return tensors
 
     def make_dataloader(
