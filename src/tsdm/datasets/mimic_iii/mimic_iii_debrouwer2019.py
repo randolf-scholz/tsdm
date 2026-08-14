@@ -100,7 +100,7 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
     rawdata_hashes = {
         "complete_tensor.csv": "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2",
     }
-    rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
+    rawdata_shapes = {"complete_tensor.csv": (3_082_224, 7)}
     rawdata_schemas = {"complete_tensor.csv": RAWDATA_SCHEMA}
     table_schemas = {
         "timeseries": TIMESERIES_SCHEMA,

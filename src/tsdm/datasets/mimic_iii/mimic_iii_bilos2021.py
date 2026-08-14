@@ -66,9 +66,9 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
         }
     }  # fmt: skip
 
-    rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
+    rawdata_shapes = {"complete_tensor.csv": (3_082_224, 7)}
     table_hashes = {"timeseries": "pandas:-5464950709022187442"}
-    table_shapes = {"timeseries": (552327, 96)}
+    table_shapes = {"timeseries": (552_327, 96)}
 
     def clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
