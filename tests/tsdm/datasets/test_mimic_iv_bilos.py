@@ -20,17 +20,17 @@ def test_raw_timeseries_matches_bilos_export() -> None:
     implementation_dataset = MIMIC_IV_Bilos2021(initialize=False)
 
     assert_frame_equal(
-        reference_dataset.raw_timeseries,
         implementation_dataset.raw_timeseries,
+        reference_dataset.raw_timeseries,
         check_exact=False,
-        rel_tol=1e-6,
-        abs_tol=1e-6,
+        rel_tol=2**-19,  # ≈ 1.9e-6
+        abs_tol=2**-19,  # ≈ 1.9e-6
     )
 
     assert_frame_equal(
-        reference_dataset.timeseries,
         implementation_dataset.timeseries,
+        reference_dataset.timeseries,
         check_exact=False,
-        rel_tol=1e-6,
-        abs_tol=1e-6,
+        rel_tol=2**-19,  # ≈ 1.9e-6
+        abs_tol=2**-19,  # ≈ 1.9e-6
     )

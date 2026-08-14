@@ -136,61 +136,7 @@ class MIMIC_IV_Bilos2021_FromPreprocessed(DatasetBase[Key, pl.DataFrame]):
 
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Apply the masking, normalization, and 5σ filtering from Bilos et al."""
-        if not self.dataset_files_exist("raw_timeseries"):
-            self.clean("raw_timeseries")
-        table = pl.scan_parquet(self.dataset_paths["raw_timeseries"]).fill_nan(None)
-
-        value_columns = [f"Value_label_{label}" for label in range(102)]
-        mask_columns = [f"Mask_label_{label}" for label in range(102)]
-        target_columns = [f"Value_{label}" for label in range(102)]
-        columns = table.collect_schema().names()
-
-        if missing_values := set(value_columns) - set(columns):
-            raise ValueError(f"Value columns not found: {missing_values}")
-
-        if missing_masks := set(mask_columns) - set(columns):
-            raise ValueError(f"Mask columns not found: {missing_masks}")
-
-        # fold masks into value column and rename.
-        masked = table.select(
-            pl.col("hadm_id").cast(pl.Int32),
-            pl.col("time_stamp"),
-            *(
-                pl.when(pl.col(f"Mask_label_{k}").eq(1))
-                .then(pl.col(f"Value_label_{k}"))
-                .otherwise(None)
-                .alias(f"Value_{k}")
-                for k in range(102)
-            ),
-        ).filter(
-            pl.any_horizontal(pl.col(column).is_not_null() for column in target_columns)
-        )
-
-        # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
-        #  over the full data slice, including test!
-        # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
-        normalized = masked.select(
-            "hadm_id",
-            "time_stamp",
-            *(
-                ((pl.col(column) - pl.col(column).mean()) / pl.col(column).std(ddof=1))
-                for column in target_columns
-            ),
-        )
-
-        # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
-        table = normalized.select(
-            "hadm_id",
-            "time_stamp",
-            *(
-                pl.when(pl.col(column).is_between(-5, 5, closed="none"))
-                .then(pl.col(column))
-                .otherwise(None)
-                for column in target_columns
-            ),
-        ).collect()
-
-        return table.select(*TARGET_SCHEMA).sort("hadm_id", "time_stamp")
+        return _clean_timeseries_table(self.raw_timeseries)
 
     def load_table(
         self, key: Literal["raw_timeseries", "timeseries"], /
@@ -772,57 +718,66 @@ class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
 
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Apply the masking, normalization, and 5σ filtering from Bilos et al."""
-        wide = self.raw_timeseries
-        value_columns = [f"Value_label_{label}" for label in range(102)]
-        mask_columns = [f"Mask_label_{label}" for label in range(102)]
-        target_columns = [f"Value_{label}" for label in range(102)]
-        masked = wide.select(
-            pl.col("hadm_id").cast(pl.Int32),
-            pl.col("time_stamp").cast(pl.Int16),
-            *(
-                pl.when(pl.col(mask_column).eq(1))
-                .then(pl.col(value_column))
-                .otherwise(None)
-                .alias(target_column)
-                for value_column, mask_column, target_column in zip(
-                    value_columns, mask_columns, target_columns, strict=True
-                )
-            ),
-        ).filter(
-            pl.any_horizontal(pl.col(column).is_not_null() for column in target_columns)
-        )
-        normalized = masked.select(
-            "hadm_id",
-            "time_stamp",
-            *(
-                ((pl.col(column) - pl.col(column).mean()) / pl.col(column).std())
-                .cast(pl.Float32)
-                .alias(column)
-                for column in target_columns
-            ),
-        )
-        return (
-            normalized.select(
-                "hadm_id",
-                "time_stamp",
-                *(
-                    pl.when(pl.col(column).is_between(-5, 5, closed="none"))
-                    .then(pl.col(column))
-                    .otherwise(None)
-                    .cast(pl.Float32)
-                    .alias(column)
-                    for column in target_columns
-                ),
-            )
-            .select(*TARGET_SCHEMA)
-            .sort("hadm_id", "time_stamp")
-        )
+        return _clean_timeseries_table(self.raw_timeseries)
 
     def load_table(
         self, key: Literal["raw_timeseries", "timeseries"], /
     ) -> pl.DataFrame:
         r"""Load the materialized time-series table."""
         return pl.read_parquet(self.dataset_paths[key])
+
+
+def _clean_timeseries_table(raw_timeseries: pl.DataFrame, /) -> pl.DataFrame:
+    r"""Fold masks, standardize variables, and remove 5σ outliers."""
+    value_columns = [f"Value_label_{label}" for label in range(102)]
+    mask_columns = [f"Mask_label_{label}" for label in range(102)]
+    target_columns = [f"Value_{label}" for label in range(102)]
+
+    if missing_values := set(value_columns) - set(raw_timeseries.columns):
+        raise ValueError(f"Value columns not found: {missing_values}")
+
+    if missing_masks := set(mask_columns) - set(raw_timeseries.columns):
+        raise ValueError(f"Mask columns not found: {missing_masks}")
+
+    masked = raw_timeseries.select(
+        pl.col("hadm_id").cast(pl.Int32),
+        pl.col("time_stamp"),
+        *(
+            pl.when(pl.col(f"Mask_label_{label}").eq(1))
+            .then(pl.col(f"Value_label_{label}"))
+            .otherwise(None)
+            .alias(f"Value_{label}")
+            for label in range(102)
+        ),
+    ).filter(
+        pl.any_horizontal(pl.col(column).is_not_null() for column in target_columns)
+    )
+
+    # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
+    #  over the full data slice, including test!
+    # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
+    normalized = masked.select(
+        "hadm_id",
+        "time_stamp",
+        *(
+            ((pl.col(column) - pl.col(column).mean()) / pl.col(column).std(ddof=1))
+            for column in target_columns
+        ),
+    )
+
+    # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
+    raw_timeseries = normalized.select(
+        "hadm_id",
+        "time_stamp",
+        *(
+            pl.when(pl.col(column).is_between(-5, 5, closed="none"))
+            .then(pl.col(column))
+            .otherwise(None)
+            for column in target_columns
+        ),
+    )
+
+    return raw_timeseries.select(*TARGET_SCHEMA).sort("hadm_id", "time_stamp")
 
 
 def _keep_matching_units(
