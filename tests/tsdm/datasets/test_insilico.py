@@ -23,7 +23,6 @@ def test_insilico_preprocessing() -> None:
 
 def test_caching() -> None:
     r"""Test the caching of the dataset."""
-    # NOTE: this test must be executed first!!!
     LOGGER = __logger__.getChild(InSilico.__name__)
     LOGGER.info("Testing caching.")
 
