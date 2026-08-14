@@ -3,21 +3,20 @@ r"""Manual regression tests for the Bilos et al. MIMIC-IV preprocessing."""
 import pytest
 from polars.testing import assert_frame_equal
 
-from tsdm.datasets.mimic_iv import (
-    MIMIC_IV_Bilos2021,
-    MIMIC_IV_Bilos2021_FromPreprocessed,
-)
+from tsdm.datasets.mimic_iv import MIMIC_IV_Bilos2021
 
 
 @pytest.mark.manual
-def test_raw_timeseries_matches_bilos_export() -> None:
+def test_matches_from_processed() -> None:
     r"""Check that the Polars pipeline recreates ``full_dataset.csv``.
 
     This test requires both the original Bilos export and the parquet source
     tables produced by :class:`MIMIC_IV`, so it is deliberately manual.
     """
-    reference_dataset = MIMIC_IV_Bilos2021_FromPreprocessed(initialize=False)
-    implementation_dataset = MIMIC_IV_Bilos2021(initialize=False)
+    MIMIC_IV_Bilos2021.reset_dataset_files(force=True)
+    reference_dataset = MIMIC_IV_Bilos2021.from_processed()
+    MIMIC_IV_Bilos2021.reset_dataset_files(force=True)
+    implementation_dataset = MIMIC_IV_Bilos2021()
 
     assert_frame_equal(
         implementation_dataset.raw_timeseries,

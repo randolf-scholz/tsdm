@@ -48,7 +48,6 @@ __all__ = [
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_III_Scholz2026",
     "MIMIC_IV",
-    "MIMIC_IV_Bilos2021_FromPreprocessed",
     "MIMIC_IV_Bilos2021",
     "MIMIC_IV_Scholz2026",
     "PhysioNet2019",
@@ -81,7 +80,6 @@ from .mimic_iii import (
 from .mimic_iv import (
     MIMIC_IV,
     MIMIC_IV_Bilos2021,
-    MIMIC_IV_Bilos2021_FromPreprocessed,
     MIMIC_IV_Scholz2026,
 )
 from .physionet import PhysioNet2012, PhysioNet2019

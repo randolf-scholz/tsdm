@@ -18,7 +18,6 @@ MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad se
 __all__ = [
     "RAWDATA_SCHEMA",
     "TARGET_SCHEMA",
-    "MIMIC_IV_Bilos2021_FromPreprocessed",
     "LAB_LABELS",
     "PRESCRIPTION_LABELS",
     "LABEL_NAMES",
@@ -28,7 +27,7 @@ __all__ = [
 ]
 
 
-from typing import Literal
+from typing import Literal, Self
 
 import polars as pl
 
@@ -61,96 +60,6 @@ TARGET_SCHEMA = {
     # The 5σ outlier filter removes every observation from labels 37 and 71.
     **{f"Value_{label}": pl.Float32 for label in range(102) if label not in (37, 71)},
 }
-
-type Key = Literal["raw_timeseries", "timeseries"]
-
-
-class MIMIC_IV_Bilos2021_FromPreprocessed(DatasetBase[Key, pl.DataFrame]):
-    r"""MIMIC-IV Clinical Database.
-
-    Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
-    algorithm development. Broad reuse of medical data is desirable for the greatest public good, but data sharing must
-    be done in a manner which protects patient privacy. The Medical Information Mart for Intensive Care (MIMIC)-III
-    database provided critical care data for over 40,000 patients admitted to intensive care units at the
-    Beth Israel Deaconess Medical Center (BIDMC). Importantly, MIMIC-III was deidentified, and patient identifiers
-    were removed according to the Health Insurance Portability and Accountability Act (HIPAA) Safe Harbor provision.
-    MIMIC-III has been integral in driving large amounts of research in clinical informatics, epidemiology,
-    and machine learning. Here we present MIMIC-IV, an update to MIMIC-III, which incorporates contemporary data
-    and improves on numerous aspects of MIMIC-III. MIMIC-IV adopts a modular approach to data organization,
-    highlighting data provenance and facilitating both individual and combined use of disparate data sources.
-    MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
-
-    Attributes:
-        raw_timeseries: The original Bilos et al. ``full_dataset.csv`` export,
-            converted to parquet with its value and mask columns intact.
-        timeseries: ``raw_timeseries`` with masks folded into the value columns,
-            empty rows dropped, every variable standardized over the full dataset,
-            and 5σ outliers removed.
-
-    References:
-        - | Neural Flows: Efficient Alternative to Neural ODEs
-          | Biloš et al.
-          | NeurIPS 2021
-          | https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html
-    """
-
-    SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL = r"https://physionet.org/content/mimiciv/1.0/"
-    HOME_URL = r"https://mimic.mit.edu/"
-    GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-
-    table_names = ["raw_timeseries", "timeseries"]  # pyright: ignore[reportAssignmentType]
-    rawdata_files = ["full_dataset.csv"]
-    rawdata_hashes = {
-        "full_dataset.csv": "sha256:bf0f7cecd6b0eb81fb2cce2094c8454fbe19ac1b103d86705610fe972a14c1f0"
-    }
-    rawdata_schemas = {"full_dataset.csv": RAWDATA_SCHEMA}
-    rawdata_shapes = {"full_dataset.csv": (2_485_649, 206)}
-    table_schemas = {
-        "raw_timeseries": RAWDATA_SCHEMA,
-        "timeseries": TARGET_SCHEMA,
-    }
-    table_shapes = {
-        "raw_timeseries": (2_485_649, 206),
-        "timeseries": (2_485_649, 102),
-    }
-
-    def clean_raw_timeseries(self) -> pl.DataFrame:
-        r"""Convert the Bilos et al. ``full_dataset.csv`` export to parquet."""
-        fname = "full_dataset.csv"
-        rawdata_schema = self.rawdata_schemas[fname]
-        rawdata_shape = self.rawdata_shapes[fname]
-        rawdata_path = self.rawdata_paths[fname]
-        validate_schema(rawdata_path, rawdata_schema)
-        csv_schema = {**rawdata_schema, "hadm_id": pl.Float64}
-        table = (
-            pl.read_csv(rawdata_path, schema=csv_schema)
-            .with_columns(pl.col("hadm_id").cast(pl.UInt32))
-            .fill_nan(None)
-        )
-
-        if table.shape != rawdata_shape:
-            raise ValueError(f"{table.shape=} does not match {rawdata_shape=}.")
-
-        return table
-
-    def clean_timeseries(self) -> pl.DataFrame:
-        r"""Apply the masking, normalization, and 5σ filtering from Bilos et al."""
-        return _clean_timeseries_table(self.raw_timeseries)
-
-    def load_table(
-        self, key: Literal["raw_timeseries", "timeseries"], /
-    ) -> pl.DataFrame:
-        r"""Load a cleaned table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])
-
-    def get_rawdata_file(self, _: str, /) -> None:
-        fname = self.rawdata_files[0]
-        if not self.rawdata_files_exist():
-            raise RuntimeError(
-                "Please manually apply the preprocessing code found at"
-                f" {self.GITHUB_URL}.\nPut the resulting file {fname!r} in {self.RAWDATA_DIR}."
-            )
 
 
 # Labels indexed by the feature code that was assigned in Bilos et al.'s
@@ -336,6 +245,8 @@ PRESCRIPTION_LABELS = {
     "Pantoprazole",
 }
 
+type Key = Literal["raw_timeseries", "timeseries"]
+
 
 class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
     r"""Polars reimplementation of the MIMIC-IV preprocessing by Bilos et al.
@@ -379,6 +290,34 @@ class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
         self.raw_dataset = MIMIC_IV(
             version="1.0", initialize=False, verbose=self.verbose
         )
+
+    @classmethod
+    def from_processed(cls) -> Self:
+        r"""Create the dataset from a local Bilos ``full_dataset.csv`` export.
+
+        The CSV must be present in this class's :attr:`RAWDATA_DIR`.
+        """
+        dataset = cls(initialize=False)
+        source_path = dataset.RAWDATA_DIR / "full_dataset.csv"
+
+        if not source_path.is_file():
+            raise FileNotFoundError(
+                f"Expected the Bilos export at {source_path}. "
+                "Place 'full_dataset.csv' in this dataset's raw-data directory."
+            )
+
+        # read the pre-processed CSV file.
+        validate_schema(source_path, RAWDATA_SCHEMA)
+        csv_schema = {**RAWDATA_SCHEMA, "hadm_id": pl.Float64}
+        raw_timeseries = (
+            pl.read_csv(source_path, schema=csv_schema)
+            .with_columns(pl.col("hadm_id").cast(pl.UInt32))
+            .fill_nan(None)
+        )
+
+        dataset.tables["raw_timeseries"] = raw_timeseries
+        dataset.clean("timeseries", force=True)
+        return dataset
 
     def preprocess_admissions(self) -> pl.DataFrame:
         r"""Select the admissions retained by ``admissions.ipynb``.
@@ -718,66 +657,62 @@ class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
 
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Apply the masking, normalization, and 5σ filtering from Bilos et al."""
-        return _clean_timeseries_table(self.raw_timeseries)
+        r"""Fold masks, standardize variables, and remove 5σ outliers."""
+        value_columns = [f"Value_label_{label}" for label in range(102)]
+        mask_columns = [f"Mask_label_{label}" for label in range(102)]
+        target_columns = [f"Value_{label}" for label in range(102)]
+
+        if missing_values := set(value_columns) - set(self.raw_timeseries.columns):
+            raise ValueError(f"Value columns not found: {missing_values}")
+
+        if missing_masks := set(mask_columns) - set(self.raw_timeseries.columns):
+            raise ValueError(f"Mask columns not found: {missing_masks}")
+
+        masked = self.raw_timeseries.select(
+            pl.col("hadm_id").cast(pl.Int32),
+            pl.col("time_stamp"),
+            *(
+                pl.when(pl.col(f"Mask_label_{label}").eq(1))
+                .then(pl.col(f"Value_label_{label}"))
+                .otherwise(None)
+                .alias(f"Value_{label}")
+                for label in range(102)
+            ),
+        ).filter(
+            pl.any_horizontal(pl.col(column).is_not_null() for column in target_columns)
+        )
+
+        # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
+        #  over the full data slice, including test!
+        # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
+        normalized = masked.select(
+            "hadm_id",
+            "time_stamp",
+            *(
+                ((pl.col(column) - pl.col(column).mean()) / pl.col(column).std(ddof=1))
+                for column in target_columns
+            ),
+        )
+
+        # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
+        timeseries = normalized.select(
+            "hadm_id",
+            "time_stamp",
+            *(
+                pl.when(pl.col(column).is_between(-5, 5, closed="none"))
+                .then(pl.col(column))
+                .otherwise(None)
+                for column in target_columns
+            ),
+        )
+
+        return timeseries.select(*TARGET_SCHEMA).sort("hadm_id", "time_stamp")
 
     def load_table(
         self, key: Literal["raw_timeseries", "timeseries"], /
     ) -> pl.DataFrame:
         r"""Load the materialized time-series table."""
         return pl.read_parquet(self.dataset_paths[key])
-
-
-def _clean_timeseries_table(raw_timeseries: pl.DataFrame, /) -> pl.DataFrame:
-    r"""Fold masks, standardize variables, and remove 5σ outliers."""
-    value_columns = [f"Value_label_{label}" for label in range(102)]
-    mask_columns = [f"Mask_label_{label}" for label in range(102)]
-    target_columns = [f"Value_{label}" for label in range(102)]
-
-    if missing_values := set(value_columns) - set(raw_timeseries.columns):
-        raise ValueError(f"Value columns not found: {missing_values}")
-
-    if missing_masks := set(mask_columns) - set(raw_timeseries.columns):
-        raise ValueError(f"Mask columns not found: {missing_masks}")
-
-    masked = raw_timeseries.select(
-        pl.col("hadm_id").cast(pl.Int32),
-        pl.col("time_stamp"),
-        *(
-            pl.when(pl.col(f"Mask_label_{label}").eq(1))
-            .then(pl.col(f"Value_label_{label}"))
-            .otherwise(None)
-            .alias(f"Value_{label}")
-            for label in range(102)
-        ),
-    ).filter(
-        pl.any_horizontal(pl.col(column).is_not_null() for column in target_columns)
-    )
-
-    # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
-    #  over the full data slice, including test!
-    # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
-    normalized = masked.select(
-        "hadm_id",
-        "time_stamp",
-        *(
-            ((pl.col(column) - pl.col(column).mean()) / pl.col(column).std(ddof=1))
-            for column in target_columns
-        ),
-    )
-
-    # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
-    raw_timeseries = normalized.select(
-        "hadm_id",
-        "time_stamp",
-        *(
-            pl.when(pl.col(column).is_between(-5, 5, closed="none"))
-            .then(pl.col(column))
-            .otherwise(None)
-            for column in target_columns
-        ),
-    )
-
-    return raw_timeseries.select(*TARGET_SCHEMA).sort("hadm_id", "time_stamp")
 
 
 def _keep_matching_units(
