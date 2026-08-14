@@ -84,7 +84,7 @@ class BaseTask[K]:
     @property
     @abstractmethod
     def dataset(self) -> Any:
-        r"""Return the cached dataset associated with the task."""
+        r"""Cached dataset associated with the task."""
 
     def split_type(self, key: K | Sequence[K]) -> Literal["train", "infer", "unknown"]:
         r"""Return the type of split."""
@@ -155,7 +155,7 @@ class BaseTask[K]:
 
     @cached_property
     def dataloader_configs(self) -> dict[str, dict[str, Any]]:
-        r"""Return dataloader configuration."""
+        r"""Dataloader configuration."""
         return {
             "train": self.dataloader_config_train,
             "eval": self.dataloader_config_infer,
@@ -168,7 +168,7 @@ class BaseTask[K]:
 
     @cached_property
     def samplers(self) -> Mapping[K, TorchSampler]:
-        r"""Return a dictionary of samplers for each split."""
+        r"""Dictionary of samplers for each split."""
         return LazyDict.from_func(self, self.make_sampler)
 
     @cached_property
@@ -224,7 +224,7 @@ class OldBaseTask[K]:
     @property
     @abstractmethod
     def dataset(self) -> Any:
-        r"""Return the cached dataset associated with the task."""
+        r"""Cached dataset associated with the task."""
         ...
 
     @property

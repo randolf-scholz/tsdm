@@ -170,7 +170,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
     @cached_property
     def folds(self) -> DataFrame:
-        r"""Return the folds."""
+        r"""Folds."""
         md = self.dataset.metadata
         groups = md.groupby(["run_id", "color"], sort=False).ngroup()
         folds = folds_from_groups(
@@ -197,7 +197,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
     @cached_property
     def dataloader_kwargs(self) -> dict:
-        r"""Return the kwargs for the dataloader."""
+        r"""Dataloader keyword arguments."""
         return {
             "batch_size": 1,
             "shuffle": False,

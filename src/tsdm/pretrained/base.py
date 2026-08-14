@@ -252,27 +252,27 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
     @cached_property
     def model(self) -> torch.nn.Module:
-        r"""Return the model."""
+        r"""Model."""
         return self.components.get("model", NotImplemented)
 
     @cached_property
     def optimizer(self) -> torch.optim.Optimizer:
-        r"""Return the optimizer."""
+        r"""Optimizer."""
         return self.components.get("optimizer", NotImplemented)
 
     @cached_property
     def hyperparameters(self) -> dict[str, Any]:
-        r"""Return the hyperparameters."""
+        r"""Hyperparameters."""
         return self.components.get("hyperparameters", NotImplemented)
 
     @cached_property
     def encoder(self, /) -> Encoder:
-        r"""Return the encoder."""
+        r"""Encoder."""
         return self.components.get("encoder", NotImplemented)
 
     @cached_property
     def lr_scheduler(self) -> TorchLRScheduler:
-        r"""Return the learning rate scheduler."""
+        r"""Learning rate scheduler."""
         return self.components.get("lr_scheduler", NotImplemented)
 
     def autodetect_component_files(self) -> dict[str, str]:

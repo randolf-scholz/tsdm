@@ -404,7 +404,7 @@ class DatasetBase[Key: str, T](
 
     @cached_property
     def rawdata_paths(self) -> Mapping[str, Path]:
-        r"""Return mapping from filenames to paths to the rawdata files."""
+        r"""Mapping from rawdata filenames to paths."""
         return {
             str(fname): (self.RAWDATA_DIR / fname).absolute()
             for fname in self.rawdata_files

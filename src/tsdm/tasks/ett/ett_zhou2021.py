@@ -177,7 +177,7 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
 
     @property
     def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
-        r"""Return split-aware configuration for the data loaders."""
+        r"""Split-aware configuration for the data loaders."""
         return {
             key: {
                 "batch_size": (

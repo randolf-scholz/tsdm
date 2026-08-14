@@ -459,7 +459,7 @@ class HParamCallback(BaseCallback):
 
     @property
     def scores(self) -> dict[str, dict[str, float]]:
-        r"""Return the current scores."""
+        r"""Current scores."""
         best_epochs: Series = self.history.rolling(5, center=True).mean().idxmin()
 
         return {

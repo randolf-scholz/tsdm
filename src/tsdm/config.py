@@ -136,7 +136,7 @@ class Config:
 
     @cached_property
     def DEFAULT_CONFIG(self) -> dict[str, Any]:
-        r"""Return dictionary containing basic configuration of TSDM."""
+        r"""Dictionary containing basic configuration of TSDM."""
         # dataset schema:
         # ~/.tsdm/datasets/<dataset>/raw/<version>/... = immutable downloads (as received)
         # ~/.tsdm/datasets/<dataset>/processed/<version>/... = reproducible cleaned artifacts (e.g. parquet)
@@ -180,12 +180,12 @@ class Project:
 
     @cached_property
     def NAME(self) -> str:
-        r"""Get project name."""
+        r"""Project name."""
         return self.ROOT_PACKAGE.__name__
 
     @cached_property
     def ROOT_PACKAGE(self) -> ModuleType:
-        r"""Get project root package."""
+        r"""Project root package."""
         if __package__ is None:
             raise ValueError(f"Unexpected package: {__package__=}")
         hierarchy = __package__.split(".")
@@ -193,7 +193,7 @@ class Project:
 
     @cached_property
     def ROOT_PATH(self) -> Path:
-        r"""Return the root directory."""
+        r"""Root directory."""
         if len(self.ROOT_PACKAGE.__path__) != 1:
             raise ValueError(f"Unexpected path: {self.ROOT_PACKAGE.__path__=}")
 
@@ -208,7 +208,7 @@ class Project:
 
     @cached_property
     def DOCS_PATH(self) -> Path:
-        r"""Return the `docs` directory."""
+        r"""`docs` directory."""
         docs_path = self.ROOT_PATH / "docs"
         if not docs_path.exists():
             raise ValueError(f"Docs directory {docs_path} does not exist!")
@@ -216,7 +216,7 @@ class Project:
 
     @cached_property
     def SOURCE_PATH(self) -> Path:
-        r"""Return the source directory."""
+        r"""Source directory."""
         source_path = self.ROOT_PATH / "src"
         if not source_path.exists():
             raise ValueError(f"Source directory {source_path} does not exist!")
@@ -224,7 +224,7 @@ class Project:
 
     @cached_property
     def TESTS_PATH(self) -> Path:
-        r"""Return the test directory."""
+        r"""Test directory."""
         tests_path = self.ROOT_PATH / "tests"
         if not tests_path.exists():
             raise ValueError(f"Tests directory {tests_path} does not exist!")
@@ -232,12 +232,12 @@ class Project:
 
     @cached_property
     def TEST_RESULTS_PATH(self) -> Path:
-        r"""Return the test `results` directory."""
+        r"""Test `results` directory."""
         return self.TESTS_PATH / ".results"
 
     @cached_property
     def RESULTS_DIR(self) -> dict[str | Path, Path]:
-        r"""Return the `results` directory."""
+        r"""`results` directory."""
 
         class ResultsDir(dict):
             r"""Results directory."""

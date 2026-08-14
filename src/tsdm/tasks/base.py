@@ -441,7 +441,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
 
     @property
     def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
-        r"""Return dataloader configuration."""
+        r"""Dataloader configuration."""
         return {
             key: {
                 "batch_size": 32,
@@ -453,7 +453,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
 
     @cached_property
     def train_split(self) -> Mapping[SplitID, SplitID]:
-        r"""Return the matching train partition for the given key."""
+        r"""Matching train partition for the given key."""
         match self.folds:
             case Series() | DataFrame():
                 split_index = self.folds.T.index

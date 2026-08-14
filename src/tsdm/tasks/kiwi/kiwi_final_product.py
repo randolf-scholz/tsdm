@@ -229,7 +229,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def split_idx(self) -> DataFrame:
-        r"""Return table with indices for each split."""
+        r"""Table with indices for each split."""
         splitter = ShuffleSplit(n_splits=5, random_state=0, test_size=0.25)
         groups = self.metadata.groupby(["color", "run_id"])
         group_idx = groups.ngroup()
@@ -243,7 +243,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split."""
+        r"""Sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 

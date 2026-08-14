@@ -206,7 +206,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def dataset(self) -> KiwiBenchmark:
-        r"""Return the cached dataset."""
+        r"""Cached dataset."""
         dataset = KiwiBenchmark()
         dataset.timeseries_metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
@@ -214,7 +214,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def split_idx(self) -> DataFrame:
-        r"""Return table with indices for each split."""
+        r"""Table with indices for each split."""
         splitter = ShuffleSplit(n_splits=5, random_state=0, test_size=0.25)
         groups = self.metadata.groupby(["color", "run_id"])
         group_idx = groups.ngroup()
@@ -228,7 +228,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split."""
+        r"""Sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -266,7 +266,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split."""
+        r"""Data subset corresponding to the split."""
         splits = {}
         for key in self.index:
             if key not in self.index:
@@ -283,7 +283,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def dataloader_kwargs(self) -> dict:
-        r"""Return the kwargs for the dataloader."""
+        r"""Dataloader keyword arguments."""
         return {
             "batch_size": 1,
             "shuffle": False,

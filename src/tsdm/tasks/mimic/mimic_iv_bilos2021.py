@@ -280,7 +280,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split."""
+        r"""Sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 

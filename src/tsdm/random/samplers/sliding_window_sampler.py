@@ -622,7 +622,7 @@ class SlidingWindowSampler[
 
     @property
     def grid(self) -> NDArray[np.integer]:
-        r"""Return the grid of indices."""
+        r"""Grid of indices."""
         # NOTE: we use a property so that if drop_last is changed, the grid is recomputed correctly...
         return np.array(
             compute_grid(
