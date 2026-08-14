@@ -44,10 +44,7 @@ class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], pl.DataFrame]):
           | `Advances in Neural Information Processing Systems 2019<https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    SOURCE_URL = (
-        r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
-        r"master/gru_ode_bayes/datasets/Climate/"
-    )
+    SOURCE_URL = r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/master/gru_ode_bayes/datasets/Climate/"
     r"""HTTP address from where the dataset can be downloaded."""
 
     INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
