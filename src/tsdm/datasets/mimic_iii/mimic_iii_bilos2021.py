@@ -18,9 +18,6 @@ MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad se
 __all__ = ["MIMIC_III_Bilos2021"]
 
 
-import os
-import subprocess
-from getpass import getpass
 from typing import Literal
 
 import pandas as pd
@@ -106,7 +103,7 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
 
         return ts
 
-    def get_rawdata_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, _: str, /) -> None:
         if not self.rawdata_files_exist():
             raise RuntimeError(
                 "Please manually apply the preprocessing code found at"
@@ -115,28 +112,3 @@ class MIMIC_III_Bilos2021(DatasetBase[Literal["timeseries"], DataFrame]):
                 " package because the original.\nauthors did not provide a license"
                 " for it."
             )
-
-        path = self.rawdata_paths[fname]
-        cut_dirs = self.SOURCE_URL.count("/") - 3
-        user = input("\nMIMIC-III username: ")
-        password = getpass(prompt="MIMIC-III password: ", stream=None)
-        os.environ["PASSWORD"] = password
-        subprocess.run(
-            [
-                "/usr/bin/wget",
-                "--user", user,
-                "--password", "$PASSWORD",
-                "--cut-dirs", str(cut_dirs),  # ignore the first 3 directories
-                "-P", str(self.RAWDATA_DIR),  # directory prefix
-                "-O", str(path),  # output document (zip file)
-                "-c",   # continue
-                "-r",   # recursive
-                "-np",  # don't ascend to the parent directory
-                "-nH",  # don't create host directories
-                "-N",   # don't re-retrieve files unless newer than local
-                self.SOURCE_URL,
-            ],
-            check=True,
-        )  # fmt: skip
-        file = self.RAWDATA_DIR / "index.html"
-        file.rename(fname)

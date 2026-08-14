@@ -24,9 +24,6 @@ __all__ = [
 ]
 
 
-import os
-import subprocess
-from getpass import getpass
 from typing import Literal
 
 import polars as pl
@@ -179,7 +176,7 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
         r"""Load a cleaned table as a Polars DataFrame."""
         return pl.read_parquet(self.dataset_paths[key])
 
-    def get_rawdata_file(self, fname: str, /) -> None:
+    def get_rawdata_file(self, _: str, /) -> None:
         if not self.rawdata_files_exist():
             raise RuntimeError(
                 "Please manually apply the preprocessing code found at"
@@ -188,32 +185,6 @@ class MIMIC_III_DeBrouwer2019(DatasetBase[Key, pl.DataFrame]):
                 " package because the original.\nauthors did not provide a license"
                 " for it."
             )
-
-        path = self.rawdata_paths[fname]
-
-        cut_dirs = self.SOURCE_URL.count("/") - 3
-        user = input("\nMIMIC-III username: ")
-        password = getpass(prompt="MIMIC-III password: ", stream=None)
-        os.environ["PASSWORD"] = password
-        subprocess.run(
-            [
-                "/usr/bin/wget",
-                "--user", user,
-                "--password", "$PASSWORD",
-                "--cut-dirs", str(cut_dirs),  # ignore the first 3 directories
-                "-P", str(self.RAWDATA_DIR),  # directory prefix
-                "-O", str(path),  # output document (zip file)
-                "-c",   # continue
-                "-r",   # recursive
-                "-np",  # don't ascend to the parent directory
-                "-nH",  # don't create host directories
-                "-N",   # don't re-retrieve files unless newer than local
-                self.SOURCE_URL,
-            ],
-            check=True,
-        )  # fmt: skip
-        file = self.RAWDATA_DIR / "index.html"
-        file.rename(fname)
 
     # FIXME: https://github.com/numpy/numpy/issues/24738
     def make_histograms(self) -> tuple[Figure, NDArray]:
