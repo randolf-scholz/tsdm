@@ -123,8 +123,10 @@ class MIMIC_IV_Bilos2021_FromPreprocessed(DatasetBase[Key, pl.DataFrame]):
         rawdata_path = self.rawdata_paths[fname]
         validate_schema(rawdata_path, rawdata_schema)
         csv_schema = {**rawdata_schema, "hadm_id": pl.Float64}
-        table = pl.read_csv(rawdata_path, schema=csv_schema).with_columns(
-            pl.col("hadm_id").cast(pl.UInt32)
+        table = (
+            pl.read_csv(rawdata_path, schema=csv_schema)
+            .with_columns(pl.col("hadm_id").cast(pl.UInt32))
+            .fill_nan(None)
         )
 
         if table.shape != rawdata_shape:
@@ -761,13 +763,16 @@ class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
                 for label, mask_column in enumerate(mask_columns)
             ),
         )
-        return wide.collect().select(*RAWDATA_SCHEMA).sort("hadm_id", "time_stamp")
+        return (
+            wide.collect()
+            .select(*RAWDATA_SCHEMA)
+            .sort("hadm_id", "time_stamp")
+            .fill_nan(None)
+        )
 
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Apply the masking, normalization, and 5σ filtering from Bilos et al."""
-        if not self.dataset_files_exist("raw_timeseries"):
-            self.clean("raw_timeseries")
-        wide = pl.scan_parquet(self.dataset_paths["raw_timeseries"]).fill_nan(None)
+        wide = self.raw_timeseries
         value_columns = [f"Value_label_{label}" for label in range(102)]
         mask_columns = [f"Mask_label_{label}" for label in range(102)]
         target_columns = [f"Value_{label}" for label in range(102)]
@@ -809,7 +814,6 @@ class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
                     for column in target_columns
                 ),
             )
-            .collect()
             .select(*TARGET_SCHEMA)
             .sort("hadm_id", "time_stamp")
         )
