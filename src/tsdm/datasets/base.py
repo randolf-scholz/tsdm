@@ -67,14 +67,14 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
     """
 
     @property
-    def __version__(self) -> str | None:
+    def version(self) -> str | None:
         r"""READ-ONLY: The version of the dataset (None=unversioned)."""
         return None
 
     @property
     def name(self) -> str:
         r"""READ-ONLY: The name of the dataset."""
-        version = self.__version__
+        version = self.version
         return f"{self.__class__.__name__}{f'@v{version}' if version else ''}"
 
     @property
@@ -249,7 +249,7 @@ class DatasetBase[Key: str, T](
 
     def get_storage_paths(self, /) -> dict[str, Path]:
         r"""Get the storage paths for the given version."""
-        root_dir = self.DATASET_ROOT_DIR / (self.__version__ or "")
+        root_dir = self.DATASET_ROOT_DIR / (self.version or "")
         return {
             CONFIG.DATASET_PATHS.ROOT: root_dir,
             CONFIG.DATASET_PATHS.RAWDATA: root_dir / CONFIG.DATASET_PATHS.RAWDATA,
@@ -385,14 +385,14 @@ class DatasetBase[Key: str, T](
 
     # region properties ----------------------------------------------------------------
     @property
-    def __version__(self) -> str | None:
+    def version(self) -> str | None:
         r"""The selected dataset version; ``None`` denotes an unversioned dataset."""
         return self._version
 
     @property
     def version_info(self) -> tuple[int, ...]:
         r"""Version information of the dataset."""
-        version = self.__version__
+        version = self.version
         if version is None:
             return ()
         if not re.fullmatch(r"\d+(?:\.\d+)*", version):
@@ -482,7 +482,7 @@ class DatasetBase[Key: str, T](
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
-        return repr_mapping(self.tables, wrapped=self, modifier=self.__version__)
+        return repr_mapping(self.tables, wrapped=self, modifier=self.version)
 
     # endregion dunder methods ---------------------------------------------------------
 

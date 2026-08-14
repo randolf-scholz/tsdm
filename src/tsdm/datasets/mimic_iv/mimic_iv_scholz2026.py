@@ -229,7 +229,7 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
 
     def __post_init__(self) -> None:
         # reuse the same data as the raw dataset
-        self.raw_dataset = MIMIC_IV(version=self.__version__, initialize=False)
+        self.raw_dataset = MIMIC_IV(version=self.version, initialize=False)
         self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
 
     def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:

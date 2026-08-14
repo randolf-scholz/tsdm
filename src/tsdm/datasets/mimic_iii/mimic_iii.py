@@ -501,7 +501,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
     """
 
     DEFAULT_VERSION = "1.4"
-    __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    version: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     SOURCE_URL = r"https://physionet.org/content/mimiciii/get-zip/"
     INFO_URL = r"https://physionet.org/content/mimiciii/"
@@ -514,7 +514,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
 
     @property
     def rawdata_files(self) -> list[str]:  # type: ignore
-        return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
+        return [f"mimic-iii-clinical-database-{self.version}.zip"]
 
     @cached_property
     def filelist(self) -> dict[MIMIC_III_Key, str]:
@@ -522,7 +522,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
         if not self.version_info >= (1, 4):
             raise ValueError("MIMIC-III v1.4+ is required.")
 
-        prefix = f"mimic-iii-clinical-database-{self.__version__}"
+        prefix = f"mimic-iii-clinical-database-{self.version}"
 
         return {
             "SHA256SUMS"         : f"{prefix}/SHA256SUMS.txt",
@@ -575,7 +575,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
                     )
                 case _:
                     filename = self.filelist[key].removeprefix(
-                        f"mimic-iii-clinical-database-{self.__version__}/"
+                        f"mimic-iii-clinical-database-{self.version}/"
                     )
                     expected_hash = (
                         self.SHA256SUMS.filter(pl.col("filename") == filename)
@@ -610,14 +610,14 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""
-        if tuple(map(int, self.__version__.split("."))) < (1, 4):  # ruff: ignore[RUF048]
+        if tuple(map(int, self.version.split("."))) < (1, 4):  # ruff: ignore[RUF048]
             raise ValueError(
                 "MIMIC-III v1.4+ is required. At the time of writing, the website"
                 " does not provide legacy versions of the MIMIC-III dataset."
             )
 
         remote.download(
-            self.SOURCE_URL + f"{self.__version__}/",
+            self.SOURCE_URL + f"{self.version}/",
             self.rawdata_paths[fname],
             username=input("\nMIMIC-III username: "),
             password=getpass(prompt="MIMIC-III password: ", stream=None),

@@ -679,7 +679,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
     - `diagnoses_icd` (columns modified/type: `icd_code` stored as `VARCHAR` (trimmed)).
     """
 
-    __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    version: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip"
     CONTENT_URL = r"https://physionet.org/files/mimiciv"
@@ -693,12 +693,12 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
     }
 
     def __post_init__(self) -> None:
-        if self.__version__ is None:
+        if self.version is None:
             raise ValueError("Version must be specified.")
 
     @property
     def rawdata_files(self) -> list[str]:  # type: ignore
-        return [f"mimic-iv-{self.__version__}.zip"]
+        return [f"mimic-iv-{self.version}.zip"]
 
     @property
     def table_names(self) -> list[MIMIC_IV_Key]:  # type: ignore
@@ -711,7 +711,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
     @cached_property
     def filelist(self) -> dict[MIMIC_IV_Key, str]:
         r"""Mapping between table_names and contents of the zip file."""
-        top = f"mimic-iv-{self.__version__}"
+        top = f"mimic-iv-{self.version}"
 
         files: dict[MIMIC_IV_Key, str] = {
             "LICENSE"            : f"{top}/LICENSE.txt",
@@ -866,7 +866,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
                     )
                 case _:
                     filename = self.filelist[key].removeprefix(
-                        f"mimic-iv-{self.__version__}/"
+                        f"mimic-iv-{self.version}/"
                     )
                     expected_hash = (
                         self.SHA256SUMS.filter(pl.col("filename") == filename)
@@ -906,7 +906,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         if self.version_info == (2, 0):
             # zip file is not directly downloadable for 2.0
             remote.download_directory_to_zip(
-                f"{self.CONTENT_URL}/{self.__version__}/",
+                f"{self.CONTENT_URL}/{self.version}/",
                 self.rawdata_paths[fname],
                 username=username,
                 password=password,
@@ -915,7 +915,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         else:
             # direct zip available
             remote.download(
-                f"{self.SOURCE_URL}/{self.__version__}/",
+                f"{self.SOURCE_URL}/{self.version}/",
                 self.rawdata_paths[fname],
                 username=username,
                 password=password,

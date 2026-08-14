@@ -149,7 +149,7 @@ class MIMIC_III_Scholz2026(MIMIC_III):
     def __post_init__(self) -> None:
         # Reuse the raw data and lazily materialized raw tables.
         self.raw_dataset = MIMIC_III(
-            version=self.__version__, initialize=False, verbose=self.verbose
+            version=self.version, initialize=False, verbose=self.verbose
         )
         self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
 

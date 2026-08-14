@@ -99,7 +99,7 @@ class KiwiBenchmark(DatasetBase[Key, pl.DataFrame]):
     r"""KIWI Benchmark Dataset."""
 
     DEFAULT_VERSION = "1.0"
-    __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    version: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     INFO_URL = r"https://www.tu.berlin/bioprocess/einrichtungen-associates/arbeitsgruppen/kiwi-biolab"
     HOME_URL = r"https://www.tu.berlin/bioprocess/einrichtungen-associates/arbeitsgruppen/kiwi-biolab"
