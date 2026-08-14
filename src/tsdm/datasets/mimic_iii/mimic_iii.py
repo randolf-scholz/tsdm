@@ -504,10 +504,6 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
         "mimic-iii-clinical-database-1.4.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
     }
 
-    def __post_init__(self) -> None:
-        assert self.__version__ == "1.4"
-        super().__post_init__()
-
     @property
     def rawdata_files(self) -> list[str]:  # type: ignore
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
