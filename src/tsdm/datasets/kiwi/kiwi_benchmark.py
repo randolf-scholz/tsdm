@@ -18,6 +18,9 @@ import polars as pl
 from tsdm.datasets.base import DatasetBase
 
 TIMESERIES_SCHEMA = {
+    "run_id"                        : pl.UInt64,
+    "experiment_id"                 : pl.UInt64,
+    "elapsed_time"                  : pl.Duration(time_unit="ms"),
     "Acetate"                       : pl.Float32,
     "Base"                          : pl.Float32,
     "Cumulated_feed_volume_glucose" : pl.Float32,
@@ -32,9 +35,6 @@ TIMESERIES_SCHEMA = {
     "StirringSpeed"                 : pl.Float32,
     "Temperature"                   : pl.Float32,
     "InducerConcentration"          : pl.Float32,
-    "run_id"                        : pl.Int64,
-    "experiment_id"                 : pl.Int64,
-    "elapsed_time"                  : pl.Duration(time_unit="ms"),
 }  # fmt: skip
 TIMESERIES_METADATA_SCHEMA = {
     "dtype"          : pl.String,
@@ -49,6 +49,8 @@ TIMESERIES_METADATA_SCHEMA = {
     "name"           : pl.String,
 }  # fmt: skip
 STATIC_COVARIATES_SCHEMA = {
+    "run_id"                 : pl.UInt64,
+    "experiment_id"          : pl.UInt64,
     "start_time"             : pl.Datetime(time_unit="ms"),
     "end_time"               : pl.Datetime(time_unit="ms"),
     "bioreactor_type_name"   : pl.String,
@@ -71,8 +73,6 @@ STATIC_COVARIATES_SCHEMA = {
     "ph_Ki"                  : pl.Float32,
     "ph_Kp"                  : pl.Float32,
     "ph_Tolerance"           : pl.Float32,
-    "run_id"                 : pl.Int64,
-    "experiment_id"          : pl.Int64,
 }  # fmt: skip
 STATIC_COVARIATES_METADATA_SCHEMA = {
     "dtype"          : pl.String,
@@ -112,7 +112,7 @@ class KiwiBenchmark(DatasetBase[Key, pl.DataFrame]):
     ]
     rawdata_files = ["kiwi-benchmark.zip"]
     rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:f5af65bbf922aa21bb05b1e3adf68579dc53db8ccf12862fa2a575fbe6fc2652"
+        "kiwi-benchmark.zip": "sha256:c2c6171a4da720cd8801aed48c4199b4002adaf73a82976500c863b1dd0677b7"
     }
     table_schemas = {
         "timeseries": TIMESERIES_SCHEMA,
