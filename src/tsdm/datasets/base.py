@@ -127,7 +127,23 @@ class DatasetMeta(ProtocolMeta):
         r"""When an instance of the class is created, this method is called."""
         obj = super().__call__(*args, **kwargs)
         obj.__post_init__()
+        cls._initialize(obj)
         return obj
+
+    @staticmethod
+    def _initialize(obj: DatasetBase, /) -> None:
+        r"""Initialize a dataset instance after post-initialization."""
+        if not (hasattr(obj, "verbose") and hasattr(obj, "initialize")):
+            raise RuntimeError(
+                "Did you forget to call super().__init__() in your subclass?"
+            )
+
+        if obj.initialize:
+            # NOTE: We call clean first for memory efficiency.
+            #  Preprocessing can take lots of resources, so we should only load tables
+            #  on a need-to-know basis.
+            obj.clean()
+            obj.load(initializing=True)
 
 
 class DatasetBase[Key: str, T](
@@ -271,13 +287,7 @@ class DatasetBase[Key: str, T](
         self.init_storage_paths()
 
     def __post_init__(self) -> None:
-        r"""Initialize the dataset."""
-        if self.initialize:
-            # NOTE: We call clean first for memory efficiency.
-            #  Preprocessing can take lots of resources, so we should only load tables
-            #  on a need-to-know basis.
-            self.clean()
-            self.load(initializing=True)
+        r"""Extra Validation code can go here."""
 
     # endregion constructors -----------------------------------------------------------
 
