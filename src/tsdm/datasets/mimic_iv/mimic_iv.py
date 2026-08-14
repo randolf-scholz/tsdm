@@ -86,12 +86,13 @@ import pyarrow as pa
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import validate_schema
+from tsdm.testing.validation import validate_file_hash
 from tsdm.utils import remote
 
 type MIMIC_IV_Key = Literal[
-    # "CHANGELOG",
-    # "LICENSE",
-    # "SHA256SUMS",
+    "CHANGELOG",
+    "LICENSE",
+    "SHA256SUMS",
     "admissions",
     "d_hcpcs",
     "d_icd_diagnoses",
@@ -193,6 +194,12 @@ INT8_TYPE = pl.Int8
 
 # based on version 1.0
 SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
+    "SHA256SUMS": {
+        "value": STRING_TYPE,
+        "filename": STRING_TYPE,
+    },
+    "LICENSE": {"text": TEXT_TYPE},
+    "CHANGELOG": {"text": TEXT_TYPE},
     # NOTE: /HOSP/ tables
     "admissions": {
         "subject_id"           : ID_TYPE,
@@ -672,7 +679,6 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
     - `diagnoses_icd` (columns modified/type: `icd_code` stored as `VARCHAR` (trimmed)).
     """
 
-    DEFAULT_VERSION = "1.0"
     __version__: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip"
@@ -685,6 +691,10 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         "mimic-iv-2.0.zip": "sha256:e11e9a56d234f2899714fb1712255abe0616dfcc6cba314178e8055b8765b3b9",
         "mimic-iv-2.2.zip": "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74",
     }
+
+    def __post_init__(self) -> None:
+        if self.__version__ is None:
+            raise ValueError("Version must be specified.")
 
     @property
     def rawdata_files(self) -> list[str]:  # type: ignore
@@ -704,9 +714,8 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         top = f"mimic-iv-{self.__version__}"
 
         files: dict[MIMIC_IV_Key, str] = {
-            # "CHANGELOG"          : f"{top}/CHANGELOG.txt",
-            # "LICENSE"            : f"{top}/LICENSE.txt",
-            # "SHA256SUMS"         : f"{top}/SHA256SUMS.txt",
+            "LICENSE"            : f"{top}/LICENSE.txt",
+            "SHA256SUMS"         : f"{top}/SHA256SUMS.txt",
             # core
             "admissions"         : f"{top}/core/admissions.csv.gz",
             "patients"           : f"{top}/core/patients.csv.gz",
@@ -745,6 +754,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
 
         if self.version_info >= (2, 0):
             files |= {  # pyrefly: ignore[bad-assignment]
+                "CHANGELOG"        : f"{top}/CHANGELOG.txt",
                 "admissions"       : f"{top}/hosp/admissions.csv.gz",       # NOTE: changed folder
                 "patients"         : f"{top}/hosp/patients.csv.gz",         # NOTE: changed folder
                 "transfers"        : f"{top}/hosp/transfers.csv.gz",        # NOTE: changed folder
@@ -842,11 +852,39 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
             archive.open(self.filelist[key], "r") as compressed_file,
         ):
             schema = self.get_schema(key)
-            validate_schema(compressed_file, schema)
-            table = pl.scan_csv(
-                compressed_file,
-                schema=schema,
-            )
+
+            match key:
+                case "LICENSE" | "CHANGELOG":
+                    table = pl.scan_lines(compressed_file, name="text")
+                case "SHA256SUMS":
+                    table = pl.scan_csv(
+                        compressed_file,
+                        schema=schema,
+                        separator=" ",
+                        has_header=False,
+                        missing_columns="insert",
+                    )
+                case _:
+                    filename = self.filelist[key].removeprefix(
+                        f"mimic-iv-{self.__version__}/"
+                    )
+                    expected_hash = (
+                        self.SHA256SUMS.filter(pl.col("filename") == filename)
+                        .select("value")
+                        .collect()
+                        .item()
+                    )
+                    validate_file_hash(
+                        compressed_file,
+                        expected_hash,
+                        hash_algorithm="sha256",
+                    )
+                    validate_schema(compressed_file, schema)
+                    table = pl.scan_csv(
+                        compressed_file,
+                        schema=schema,
+                        has_header=True,
+                    )
 
             try:
                 table.sink_parquet(self.dataset_paths[key], engine="streaming")
