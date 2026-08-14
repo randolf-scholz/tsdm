@@ -13,10 +13,12 @@ __all__ = [
     "validate_table_shape",
 ]
 
+import hashlib
 import logging
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import StrEnum
+from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
@@ -25,7 +27,7 @@ import pyarrow as pa
 from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.config import CONFIG
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, FileStream
 from tsdm.types.extra import SupportsShape
 
 from .hashutils import Hash, hash_array, hash_file
@@ -166,7 +168,7 @@ def validate_hash(
 
 
 def validate_file_hash(
-    filepath: FilePath,
+    path_or_stream: FilePath | FileStream,
     /,
     expected_hash: Hash | str | None,
     *,
@@ -177,7 +179,8 @@ def validate_file_hash(
     r"""Validate file(s), given reference hash value(s).
 
     Args:
-        filepath: The file to validate.
+        path_or_stream: The file or binary stream to validate. Streams are hashed from the
+            beginning and returned to their original position afterwards.
         expected_hash: The reference hash value.
         hash_algorithm: The hash algorithm to use.
         errors: How to handle errors. Can be "warn", "raise", "log" or "ignore". (default: "warn")
@@ -190,11 +193,18 @@ def validate_file_hash(
         ValidationError: If errors="raise" and the table hash does not match the reference hash.
     """
     # region input validation ----------------------------------------------------------
-    file = Path(filepath)
-    error_handler = make_error_handler(errors, prefix=f"{file!s}: ")
+    match path_or_stream:
+        case str() | PathLike():
+            file = Path(path_or_stream)
+            error_handler = make_error_handler(errors, prefix=f"{file!s}: ")
+        case stream:
+            file = None
+            error_handler = make_error_handler(
+                errors, prefix=f"<{type(stream).__name__}>: "
+            )
     expected_hash = Hash.from_value(expected_hash)
 
-    if file.suffix == ".parquet":
+    if file is not None and file.suffix == ".parquet":
         msg = f"{file!s}: ⚠️ refusing to hash, parquet is not binary stable!"
         error_handler.emit(msg)
         return False
@@ -219,11 +229,21 @@ def validate_file_hash(
             raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 
     # Compute the hash
-    actual_hash = (
-        None
-        if expected_hash is None and skipif_no_reference
-        else hash_file(file, hash_alg)
-    )
+    match path_or_stream:
+        case _ if expected_hash is None and skipif_no_reference:
+            actual_hash = None
+        case str() | PathLike():
+            actual_hash = hash_file(path_or_stream, hash_alg)
+        case stream:
+            position = stream.tell()
+            hasher = hashlib.new(hash_alg)
+            try:
+                stream.seek(0)
+                for byte_block in iter(lambda: stream.read(65536), b""):
+                    hasher.update(byte_block)
+            finally:
+                stream.seek(position)
+            actual_hash = Hash(hasher.hexdigest(), hasher.name)
     return validate_hash(actual_hash, expected_hash, errors=error_handler)
 
 

@@ -27,6 +27,7 @@ __all__ = [
 import os
 from collections.abc import Collection, Iterable, Mapping
 from datetime import datetime, timedelta
+from io import BytesIO
 from types import EllipsisType
 from typing import IO
 
@@ -36,7 +37,7 @@ r"""Type Alias for Python scalars."""
 # region function argument aliases -----------------------------------------------------
 type FilePath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to file."""
-type FileStream = IO[bytes]
+type FileStream = IO[bytes] | BytesIO
 r"""Type Alias for file-like objects."""
 type DirPath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to directory."""
