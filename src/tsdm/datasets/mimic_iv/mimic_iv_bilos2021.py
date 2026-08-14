@@ -58,7 +58,7 @@ TARGET_SCHEMA = {
     "hadm_id": pl.UInt32,
     "time_stamp": pl.Int16,
     # The 5σ outlier filter removes every observation from labels 37 and 71.
-    **{f"Value_{label}": pl.Float32 for label in range(102) if label not in (37, 71)},
+    **{f"Value_{label}": pl.Float32 for label in range(102) if label not in {37, 71}},
 }
 
 

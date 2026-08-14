@@ -100,7 +100,7 @@ def test_name(case_name: str, item_name: str) -> None:
     name = getattr(obj, "__name__", None)
     # fallback for jit.ScriptFunction
     fallback_name = getattr(obj, "name", None)
-    assert item_name in (name, fallback_name)
+    assert item_name in {name, fallback_name}
 
 
 def test_issubclass(case_name: str, item_name: str) -> None:

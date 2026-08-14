@@ -418,6 +418,6 @@ def _sanitize_zip_path(filepath: FilePath, /) -> PurePosixPath:
         raise ValueError(f"Backslashes are not allowed in zip paths: {path!r}")
     if path.is_absolute():
         raise ValueError(f"Absolute paths are not allowed in zip files: {path!r}")
-    if any(part in ("", ".", "..") for part in path.parts):
+    if any(part in {"", ".", ".."} for part in path.parts):
         raise ValueError(f"Unsafe path segments in zip path: {path!r}")
     return path
