@@ -231,7 +231,6 @@ class MIMIC_IV_Scholz2026(MIMIC_IV):
         # reuse the same data as the raw dataset
         self.raw_dataset = MIMIC_IV(version=self.__version__, initialize=False)
         self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
-        super().__post_init__()
 
     def clean_table(self, key: MIMIC_IV_Key) -> pa.Table:
         dataset_path = self.raw_dataset.dataset_path[key]

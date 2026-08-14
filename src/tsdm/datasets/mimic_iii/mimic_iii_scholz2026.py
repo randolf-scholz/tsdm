@@ -152,7 +152,6 @@ class MIMIC_III_Scholz2026(MIMIC_III):
             version=self.__version__, initialize=False, verbose=self.verbose
         )
         self.RAWDATA_DIR = self.raw_dataset.RAWDATA_DIR
-        super().__post_init__()
 
     def clean_table(self, key: MIMIC_III_Key) -> pa.Table:
         self.raw_dataset.clean(key, validate_rawdata=False)
