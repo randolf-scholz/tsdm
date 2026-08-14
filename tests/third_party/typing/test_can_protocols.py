@@ -73,7 +73,7 @@ def test_can_self_overloaded_protocol() -> None:
     class CanSelfOP_Union(Protocol):  # (X | Self) -> Self
         def __op__(self, other: X | Self, /) -> Self: ...
 
-    class A:  #  (A | X) -> A
+    class A:  # (A | X) -> A
         def __op__(self, other: A | X, /) -> A: ...
 
     class A_Self:  # (Self | X) -> Self
