@@ -174,7 +174,7 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
     rawdata_files = ["beijing+multi+site+air+quality+data.zip"]
 
     rawdata_hashes = {
-        "beijing+multi+site+air+quality+data.zip": \
+        "beijing+multi+site+air+quality+data.zip":
             "sha256:b04da438b2f331ac0ffd45aebdfec0d20d2367feb5f6948c4b1f7ce1191e33c4",
     }  # fmt: skip
     rawdata_schemas = {"timeseries": RAWDATA_SCHEMA}

@@ -386,13 +386,13 @@ class USHCN(DatasetBase[Key, pl.DataFrame]):
         "ushcn_daily.tar.gz" : "sha256:a03598657a3b72c20f8ffa323d7265435243d7988b02d2dbbaab746c2ccae25f",
     }  # fmt: skip
     rawdata_content_hashes = {
-        "pub12/ushcn_daily/data_format.txt"        : \
+        "pub12/ushcn_daily/data_format.txt":
             "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
-        "pub12/ushcn_daily/ushcn-stations.txt"     : \
+        "pub12/ushcn_daily/ushcn-stations.txt":
             "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
-        "pub12/ushcn_daily/station_file_format.txt": \
+        "pub12/ushcn_daily/station_file_format.txt":
             "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
-        "pub12/ushcn_daily/us.txt.gz"              : \
+        "pub12/ushcn_daily/us.txt.gz":
             "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }  # fmt: skip
     rawdata_schemas = {

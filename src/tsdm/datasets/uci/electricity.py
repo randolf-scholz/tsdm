@@ -100,7 +100,7 @@ class Electricity(DatasetBase[Literal["timeseries"], pl.DataFrame]):
 
     rawdata_files = ["electricityloaddiagrams20112014.zip"]
     rawdata_hashes = {
-        "electricityloaddiagrams20112014.zip": \
+        "electricityloaddiagrams20112014.zip":
             "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
     }  # fmt: skip
     table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
