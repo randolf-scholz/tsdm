@@ -1055,19 +1055,17 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
         return self.encoder if isinstance(self.encoder, FittableEncoder) else self
 
 
-# fmt: off
 @overload  # yield BaseEncoder as-is
 def wrap[T: FittableEncoder](encoder: T, /) -> T: ...
 @overload
-def wrap[X=Any, Y=Any](
+def wrap[X = Any, Y = Any](
     encoder: SupportsEncode[X, Y] | Fn[[X], Y] | None = ...,  # pyright: ignore[reportInvalidTypeVarUse]
     decoder: SupportsEncode[Y, X] | Fn[[Y], X] | None = ...,
 ) -> BaseEncoder[X, Y]: ...
-# fmt: on
-def wrap[X=Any, Y=Any](
+def wrap[X = Any, Y = Any](
     encoder: SupportsEncode[X, Y] | Fn[[X], Y] | None = None,
     decoder: SupportsEncode[Y, X] | Fn[[Y], X] | None = None,
-) -> BaseEncoder[X, Y]:  # fmt: skip
+) -> BaseEncoder[X, Y]:
     r"""Wrap a (pair of) function as an encoder.
 
     This will create a `WrappedEncoder` that calls the function `fn` on the input data.
