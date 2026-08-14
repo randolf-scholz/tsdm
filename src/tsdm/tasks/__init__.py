@@ -49,8 +49,6 @@ __all__ = [
     "ElectricityELBMBTTF",
     "ElectricityLim2021",
     "ElectricityTRMF",
-    "MIMIC_III_Bilos2021",
-    "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV_Bilos2021",
     "TrafficTFT",
     "TrafficTRMF",
@@ -65,7 +63,7 @@ from . import base, kiwi, mimic, synthetic, uci, ushcn
 from .base import ForecastingTask, TimeSeriesTask
 from .ett.ett_zhou2021 import ETT_Zhou2021
 from .kiwi import InSilicoTask, KiwiBenchmark
-from .mimic import MIMIC_III_Bilos2021, MIMIC_III_DeBrouwer2019, MIMIC_IV_Bilos2021
+from .mimic import MIMIC_IV_Bilos2021
 from .synthetic import DampedPendulum_Ansari2023
 from .uci import (
     ElectricityDeepAR,

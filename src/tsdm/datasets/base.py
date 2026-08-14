@@ -595,12 +595,8 @@ class DatasetBase[Key: str, T](
             self.get_rawdata(force=force, validate=validate)
 
         # validate the raw data files
-        if (
-            validate_rawdata
-            and self.rawdata_hashes is not EMPTY_MAP
-            and not self.rawdata_valid
-        ):
-            raise ValueError("Raw data files are not valid!")
+        if validate_rawdata and self.rawdata_hashes is not EMPTY_MAP:
+            self.validate_rawdata(key)
 
         # skip if cleaned files already exist
         if not force and self.dataset_files_exist(key):
@@ -770,7 +766,7 @@ class DatasetBase[Key: str, T](
         return nested_paths_exist(self.dataset_paths[key])
 
     def validate_rawdata(
-        self, key: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "raise"
+        self, key: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         r"""Validate the rawdata files."""
         if key is None:
@@ -787,7 +783,7 @@ class DatasetBase[Key: str, T](
             ):
                 pbar.set_description(f"Validating file {name!r}")
                 try:
-                    result &= self.validate_rawdata(name, errors="raise")
+                    result &= self.validate_rawdata(name, errors="warn")
                 except ValidationError as exc:
                     result = False
                     exceptions[name] = exc

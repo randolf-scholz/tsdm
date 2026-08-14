@@ -7,12 +7,7 @@ import numpy as np
 import pytest
 
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
-from tsdm.tasks import (
-    MIMIC_III_Bilos2021,
-    MIMIC_III_DeBrouwer2019,
-    MIMIC_IV_Bilos2021,
-    USHCN_DeBrouwer2019,
-)
+from tsdm.tasks import MIMIC_IV_Bilos2021, USHCN_DeBrouwer2019
 from tsdm.timeseries import (
     PandasTS,
     PandasTSC,
@@ -24,8 +19,6 @@ from tsdm.timeseries import (
 __logger__ = logging.getLogger(__name__)
 
 TASKS = {
-    "MIMIC_III_Bilos2021": MIMIC_III_Bilos2021,
-    "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }

@@ -44,9 +44,6 @@ __all__ = [
     "InSilico",
     "KiwiBenchmark",
     "MIMIC_III",
-    "MIMIC_III_Bilos2021",
-    "MIMIC_III_DeBrouwer2019",
-    "MIMIC_III_Scholz2026",
     "MIMIC_IV",
     "MIMIC_IV_Bilos2021",
     "MIMIC_IV_Scholz2026",
@@ -71,17 +68,8 @@ from . import (
 from .base import Dataset, DatasetBase
 from .ett import ETT
 from .kiwi import InSilico, KiwiBenchmark
-from .mimic_iii import (
-    MIMIC_III,
-    MIMIC_III_Bilos2021,
-    MIMIC_III_DeBrouwer2019,
-    MIMIC_III_Scholz2026,
-)
-from .mimic_iv import (
-    MIMIC_IV,
-    MIMIC_IV_Bilos2021,
-    MIMIC_IV_Scholz2026,
-)
+from .mimic_iii import MIMIC_III
+from .mimic_iv import MIMIC_IV, MIMIC_IV_Bilos2021, MIMIC_IV_Scholz2026
 from .physionet import PhysioNet2012, PhysioNet2019
 from .synthetic import DampedPendulum_Ansari2023
 from .uci import BeijingAirQuality, Electricity, Traffic
@@ -95,9 +83,6 @@ DATASETS: dict[str, type[Dataset]] = {
     "InSilico"                  : InSilico,
     "KiwiBenchmark"             : KiwiBenchmark,
     "MIMIC_III"                 : MIMIC_III,
-    "MIMIC_III_Bilos2021"       : MIMIC_III_Bilos2021,
-    "MIMIC_III_DeBrouwer2019"   : MIMIC_III_DeBrouwer2019,
-    "MIMIC_III_Scholz2026"      : MIMIC_III_Scholz2026,
     "MIMIC_IV"                  : MIMIC_IV,
     "MIMIC_IV_Bilos2021"        : MIMIC_IV_Bilos2021,
     "MIMIC_IV_Scholz2026"       : MIMIC_IV_Scholz2026,

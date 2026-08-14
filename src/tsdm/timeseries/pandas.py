@@ -17,7 +17,6 @@ __all__ = [
     "ettm2",
     "in_silico",
     "kiwi_benchmark",
-    "mimic_iii_de_brouwer2019",
     "mimic_iv_bilos2021",
     "physionet2012",
     "physionet2019",
@@ -447,16 +446,6 @@ def physionet2019() -> TimeSeriesCollection[int, DataFrame]:
     )
 
 
-def mimic_iii_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The MIMIC_III_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.MIMIC_III_DeBrouwer2019(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["UNIQUE_ID", "TIME_STAMP"]),
-        timeseries_metadata=ds.static_covariates.to_pandas().set_index("LABEL_CODE"),
-    )
-
-
 def mimic_iv_bilos2021() -> TimeSeriesCollection[int, DataFrame]:
     r"""The MIMIC_IV_Bilos2021 dataset wrapped as TimeSeriesCollection."""
     return PandasTSC.from_dataset(datasets.MIMIC_IV_Bilos2021)
@@ -490,7 +479,6 @@ TIMESERIES_COLLECTIONS: dict[str, Fn[[], TimeSeriesCollection[Any, DataFrame]]] 
     "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
     "InSilico"                  : in_silico,
     "KiwiBenchmark"             : kiwi_benchmark,
-    "MIMIC_III_DeBrouwer2019"   : mimic_iii_de_brouwer2019,
     "MIMIC_IV_Bilos2021"        : mimic_iv_bilos2021,
     "PhysioNet2012"             : physionet2012,
     "PhysioNet2019"             : physionet2019,
