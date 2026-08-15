@@ -42,7 +42,7 @@ def _choose_default_writer[T: pa.Table | pd.DataFrame | pl.DataFrame](
             )
 
 
-def serialize_table[T](
+def serialize_table[T: pa.Array | pl.DataFrame | pd.DataFrame | Any](
     table: T,
     path_or_buf: FilePath | FileStream,
     /,

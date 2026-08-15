@@ -35,13 +35,13 @@ import torch
 import yaml
 from matplotlib.figure import Figure
 from matplotlib.pyplot import close as close_figure
-from pandas import DataFrame
 from torch import Tensor, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import EMPTY_MAP
+from tsdm.datatools.serialize import serialize_table
 from tsdm.linalg import (
     col_corr,
     erank,
@@ -425,7 +425,7 @@ def log_table(
     step: int,
     writer: SummaryWriter | Path,
     /,
-    table: DataFrame,
+    table: object,
     *,
     options: Optional[dict[str, Any]] = None,
     filetype: str = "parquet",
@@ -437,21 +437,8 @@ def log_table(
     options = {} if options is None else options
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path /= f"{identifier + '-' * bool(identifier)}{step}"
-
-    match filetype:
-        case "parquet":
-            table.to_parquet(f"{path}.parquet", **options)
-        case "csv":
-            table.to_csv(f"{path}.csv", **options)
-        case "feather":
-            table.to_feather(f"{path}.feather", **options)
-        case "json":
-            table.to_json(f"{path}.json", **options)
-        case "pickle":
-            table.to_pickle(f"{path}.pickle", **options)
-        case _:
-            raise ValueError(f"Unknown {filetype=!r}!")
+    path /= f"{identifier + '-' * bool(identifier)}{step}.{filetype}"
+    serialize_table(table, path, **options)
 
 
 def log_plot(

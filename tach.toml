@@ -87,14 +87,12 @@ depends_on = ["tsdm.datasets", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.logutils"
-depends_on = ["tsdm.types", "tsdm.metrics", "tsdm.viz", "tsdm.linalg"]
+depends_on = ["tsdm.types", "tsdm.metrics", "tsdm.viz", "tsdm.linalg", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.datasets"
 depends_on = [
-    "tsdm.backend",
     "tsdm.datatools",
-    "tsdm.dtypes",
     "tsdm.random",
     "tsdm.testing",
     "tsdm.types",
@@ -117,12 +115,11 @@ depends_on = []
 
 [[modules]]
 path = "tsdm.datatools"
-depends_on = ["tsdm.types", "tsdm.linalg", "tsdm.backend"]
+depends_on = ["tsdm.types", "tsdm.backend"]
 
 [[modules]]
 path = "tsdm.encoders.universal"
 depends_on = [
-    "numerical_types",
     "tsdm.backend",
     "tsdm.encoders",
     "tsdm.linalg",
