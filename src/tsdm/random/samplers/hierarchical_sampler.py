@@ -5,14 +5,13 @@ __all__ = ["HierarchicalSampler", "MappingDataset"]
 from collections.abc import Collection, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
 from itertools import chain
-from typing import Any, Optional, Self, cast, overload
+from typing import Any, cast, overload
 
 from numpy.random import Generator
-from pandas import DataFrame, MultiIndex, Series
 
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.datatools import Dataset, MapDataset, TorchDataset
-from tsdm.datatools.collections import SeriesDataset, get_index
+from tsdm.datatools.collections import get_index
 from tsdm.pprint import pprint_repr
 
 from .base import BaseSampler, RandomSampler, Sampler
@@ -42,7 +41,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
 
     _: KW_ONLY
 
-    subsamplers: dict[K, Sampler[K2]]
+    subsamplers: Mapping[K, Sampler[K2]]
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
@@ -77,13 +76,13 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
         self.index: Collection[K] = get_index(self.data)
 
         # get the sizes of the subsamplers
-        self.sizes: SeriesDataset[K, int] = Series(
-            {key: len(self.subsamplers[key]) for key in self.index}
-        )
+        self.sizes: Mapping[K, int] = {
+            key: len(self.subsamplers[key]) for key in self.index
+        }
 
         # duplicate the outer keys according to the sizes of the subsamplers
         self.partition: list[K] = list(
-            chain(*([key] * min(self.sizes) for key in self.index))
+            chain(*([key] * min(self.sizes.values()) for key in self.index))
             if self.early_stop
             else chain(*([key] * self.sizes[key] for key in self.index))
         )
@@ -91,8 +90,8 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     def __len__(self) -> int:
         r"""Return the maximum allowed index."""
         if self.early_stop:
-            return min(self.sizes) * len(self.subsamplers)
-        return sum(self.sizes)
+            return min(self.sizes.values()) * len(self.subsamplers)
+        return sum(self.sizes.values())
 
     def __getitem__(self, key: K, /) -> Sampler[K2]:
         r"""Return the subsampler for the given key."""
@@ -156,20 +155,3 @@ class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
                 return dataset[inner_key]
             case _:
                 raise KeyError(key)
-
-    @classmethod
-    def from_dataframe(
-        cls, df: DataFrame, /, *, levels: Optional[list[str]] = None
-    ) -> Self:
-        r"""Create a `MappingDataset` from a `DataFrame`.
-
-        If `levels` are given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.
-        """
-        if levels is not None:
-            min_index = df.index.to_frame()
-            sub_index = MultiIndex.from_frame(min_index[levels])
-            index = sub_index.unique()
-        else:
-            index = df.index
-
-        return cls({idx: df.loc[idx] for idx in index})

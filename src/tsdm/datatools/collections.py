@@ -33,7 +33,7 @@ r"""Type alias for a "tabular" dataset."""
 type SequentialDataset[V] = Indexable[V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a sequential dataset."""
 
-type Dataset[V] = MapDataset[Any, V] | Indexable[V] | PandasDataset[Any, V]  # +V
+type Dataset[V] = Indexable[V] | MapDataset[Any, V] | PandasDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
 
 
@@ -143,7 +143,11 @@ class PandasDataset[K, V](Protocol):  # K, +V
     def __len__(self) -> int: ...
 
 
-def get_index[T](dataset: Dataset[T], /) -> list[T]:
+@overload
+def get_index[K, V](dataset: TabularDataset[K, V], /) -> list[K]: ...  # pyright: ignore[reportOverlappingOverload]
+@overload
+def get_index[V](dataset: SequentialDataset[V], /) -> list[int]: ...
+def get_index(dataset: Dataset, /) -> list:
     r"""Return an index object for the dataset.
 
     We support the following data types:
@@ -158,7 +162,7 @@ def get_index[T](dataset: Dataset[T], /) -> list[T]:
         case MapDataset() as map_dataset:
             return list(map_dataset.keys())
         case Indexable() as iterable_dataset:
-            return list(range(len(iterable_dataset)))  # type: ignore
+            return list(range(len(iterable_dataset)))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
 
