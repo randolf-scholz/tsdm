@@ -178,7 +178,7 @@ from zipfile import ZipFile
 import polars as pl
 from tqdm.auto import tqdm
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers, validate_schema
 from tsdm.testing.hashutils import hash_zip_contents
 from tsdm.testing.validation import ErrorHandler, validate_hash
@@ -298,7 +298,7 @@ type Key = Literal[
 ]
 
 
-class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
+class PhysioNet2019(PolarsDataset[Key]):
     r"""Physionet Challenge 2019.
 
     Each training data file provides a table with measurements over time. Each column of the table
@@ -481,10 +481,6 @@ class PhysioNet2019(DatasetBase[Key, pl.DataFrame]):
                 return self._clean_all_rawdatasets()
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")
-
-    def load_table(self, key: Key, /) -> pl.DataFrame:
-        r"""Load a cleaned table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file."""

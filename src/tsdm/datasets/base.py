@@ -9,15 +9,17 @@ __all__ = [
     "Dataset",
     "DatasetBase",
     "DatasetMeta",
+    "PolarsDataset",
 ]
 
 import logging
+import os
 import re
 import shutil
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -34,11 +36,11 @@ from typing import (
 )
 from zipfile import ZipFile
 
+import polars as pl
 from tqdm.auto import tqdm
 
 from tsdm.config import CONFIG
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.datatools.serialize import deserialize_table, serialize_table
 from tsdm.pprint import repr_mapping
 from tsdm.testing.validation import (
     ErrorHandler,
@@ -48,7 +50,7 @@ from tsdm.testing.validation import (
     validate_table_schema,
     validate_table_shape,
 )
-from tsdm.types.aliases import FilePath
+from tsdm.types.aliases import FilePath, FileStream
 from tsdm.utils import nested_paths_exist, prompt_yes_no, remote
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict
@@ -360,8 +362,19 @@ class DatasetBase[Key: str, T](
     # endregion classmethods -----------------------------------------------------------
 
     # region serialization methods -----------------------------------------------------
-    serialize_table: Callable[[T, Any], None] = staticmethod(serialize_table)
-    deserialize_table: Callable[[Any], T] = staticmethod(deserialize_table)
+    @staticmethod
+    def serialize_table(table: T, path_or_buf: FilePath | FileStream, /) -> None:
+        r"""Serialize a table for whole-dataset archival."""
+        raise NotImplementedError(
+            f"No archive serializer is defined for {type(table)!r}."
+        )
+
+    @staticmethod
+    def deserialize_table(path_or_buf: FilePath | FileStream, /) -> T:
+        r"""Deserialize a table from a whole-dataset archive."""
+        raise NotImplementedError(
+            f"No archive deserializer is defined for {path_or_buf!r}."
+        )
 
     @classmethod
     def deserialize(cls, filepath: FilePath, /) -> Self:
@@ -638,7 +651,7 @@ class DatasetBase[Key: str, T](
 
         if df is not None:
             with timer() as t:
-                self.serialize_table(df, self.dataset_paths[key])
+                self.store_table(key, df)
             self.LOGGER.info("Serialized table <%s> in %s", key, t.value)
 
         # Validate the cleaned table
@@ -648,13 +661,18 @@ class DatasetBase[Key: str, T](
     # endregion cleaning mechanism -----------------------------------------------------
 
     # region loading mechanism ---------------------------------------------------------
+    @abstractmethod
+    def store_table(self, key: Key, table: T, /) -> None:
+        r"""Store a cleaned table at its dataset-specific storage path."""
+        raise NotImplementedError
+
+    @abstractmethod
     def load_table(self, key: Key, /) -> T:
         r"""Load the selected table.
 
-        By default, `self.deserialize` is used to load the table from disk.
-        Override this method if you want to customize loading the table from disk.
+        Subclasses define the on-disk representation and the in-memory table type.
         """
-        return self.deserialize_table(self.dataset_paths[key])
+        raise NotImplementedError
 
     @overload
     def load(
@@ -952,3 +970,33 @@ class DatasetBase[Key: str, T](
         return shapes_match and schema_matches and hash_matches
 
     # endregion validation methods -----------------------------------------------------
+
+
+class PolarsDataset[Key: str](DatasetBase[Key, pl.DataFrame]):
+    r"""Dataset base class storing eager Polars tables as parquet files."""
+
+    @staticmethod
+    def serialize_table(
+        table: pl.DataFrame, path_or_buf: FilePath | FileStream, /
+    ) -> None:
+        r"""Serialize a Polars DataFrame to parquet."""
+        target = (
+            Path(path_or_buf) if isinstance(path_or_buf, os.PathLike) else path_or_buf
+        )
+        table.write_parquet(target)
+
+    @staticmethod
+    def deserialize_table(path_or_buf: FilePath | FileStream, /) -> pl.DataFrame:
+        r"""Deserialize a Polars DataFrame from parquet."""
+        source = (
+            Path(path_or_buf) if isinstance(path_or_buf, os.PathLike) else path_or_buf
+        )
+        return pl.read_parquet(source)
+
+    def store_table(self, key: Key, table: pl.DataFrame, /) -> None:
+        r"""Store a cleaned Polars DataFrame as parquet."""
+        self.serialize_table(table, self.dataset_paths[key])
+
+    def load_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Load a cleaned Polars DataFrame from parquet."""
+        return self.deserialize_table(self.dataset_paths[key])

@@ -9,7 +9,7 @@ from typing import Literal
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import validate_schema
 
 type ETT_Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
@@ -27,7 +27,7 @@ _ETT_SCHEMA = {
 }
 
 
-class ETT(DatasetBase[ETT_Key, pl.DataFrame]):
+class ETT(PolarsDataset[ETT_Key]):
     r"""ETT dataset.
 
     This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data
@@ -85,7 +85,3 @@ class ETT(DatasetBase[ETT_Key, pl.DataFrame]):
             rawdata_path,
             schema=rawdata_schema,
         ).fill_nan(None)
-
-    def load_table(self, key: ETT_Key, /) -> pl.DataFrame:
-        r"""Load a cleaned ETT table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])

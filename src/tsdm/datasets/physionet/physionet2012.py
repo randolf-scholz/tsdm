@@ -162,7 +162,7 @@ from typing import Literal, Optional
 import polars as pl
 from tqdm.auto import tqdm
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers, validate_schema
 
 TIMESERIES_METADATA = [
@@ -269,7 +269,7 @@ type Key = Literal[
 ]
 
 
-class PhysioNet2012(DatasetBase[Key, pl.DataFrame]):
+class PhysioNet2012(PolarsDataset[Key]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.
@@ -537,7 +537,3 @@ class PhysioNet2012(DatasetBase[Key, pl.DataFrame]):
                 return self._clean_all_rawdatasets()
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")
-
-    def load_table(self, key: Key, /) -> pl.DataFrame:
-        r"""Load a cleaned table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])

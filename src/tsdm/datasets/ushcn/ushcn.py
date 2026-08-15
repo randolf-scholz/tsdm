@@ -24,7 +24,7 @@ from typing import Literal, Optional
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers
 from tsdm.types.aliases import FilePath, FileStream
 
@@ -222,7 +222,7 @@ type Key = Literal[
 ]
 
 
-class USHCN(DatasetBase[Key, pl.DataFrame]):
+class USHCN(PolarsDataset[Key]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -631,7 +631,3 @@ class USHCN(DatasetBase[Key, pl.DataFrame]):
         self.LOGGER.info("Created raw timeseries table.")
 
         return data
-
-    def load_table(self, key: Key, /) -> pl.DataFrame:
-        r"""Load a cleaned USHCN table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])

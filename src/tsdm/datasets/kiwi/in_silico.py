@@ -14,7 +14,7 @@ from zipfile import ZipFile
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers, validate_schema
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
@@ -52,7 +52,7 @@ TIMESERIES_METADATA = [
 ]  # fmt: skip
 
 
-class InSilico(DatasetBase[KEY, pl.DataFrame]):
+class InSilico(PolarsDataset[KEY]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -122,10 +122,6 @@ class InSilico(DatasetBase[KEY, pl.DataFrame]):
             schema=TIMESERIES_METADATA_SCHEMA,
             orient="row",
         )
-
-    def load_table(self, key: KEY, /) -> pl.DataFrame:
-        r"""Load a cleaned table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download the dataset."""

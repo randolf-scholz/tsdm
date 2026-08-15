@@ -6,7 +6,7 @@ from typing import Literal
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import validate_schema
 
 RAWDATA_SCHEMA = {
@@ -34,7 +34,7 @@ TIMESERIES_SCHEMA = {
 }  # fmt: skip
 
 
-class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], pl.DataFrame]):
+class USHCN_DeBrouwer2019(PolarsDataset[Literal["timeseries"]]):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:
@@ -80,7 +80,3 @@ class USHCN_DeBrouwer2019(DatasetBase[Literal["timeseries"], pl.DataFrame]):
                 for index in range(5)
             ),
         ).sort("ID", "Time")
-
-    def load_table(self, key: Literal["timeseries"], /) -> pl.DataFrame:
-        r"""Load the cleaned USHCN subset as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])

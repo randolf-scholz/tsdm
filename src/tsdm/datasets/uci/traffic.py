@@ -55,12 +55,12 @@ from zipfile import ZipFile
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 
 type Traffic_Keys = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
-class Traffic(DatasetBase[Traffic_Keys, pl.DataFrame]):
+class Traffic(PolarsDataset[Traffic_Keys]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+

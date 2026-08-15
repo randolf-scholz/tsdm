@@ -36,6 +36,7 @@ __all__ = [
     # ABCs & Protocols
     "Dataset",
     "DatasetBase",
+    "PolarsDataset",
     # Classes
     "DampedPendulum_Ansari2023",
     "BeijingAirQuality",
@@ -65,7 +66,7 @@ from . import (
     uci,
     ushcn,
 )
-from .base import Dataset, DatasetBase
+from .base import Dataset, DatasetBase, PolarsDataset
 from .ett import ETT
 from .kiwi import InSilico, KiwiBenchmark
 from .mimic_iii import MIMIC_III

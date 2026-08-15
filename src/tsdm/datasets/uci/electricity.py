@@ -47,11 +47,11 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.axes import Axes
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import validate_schema
 
 
-class Electricity(DatasetBase[Literal["timeseries"], pl.DataFrame]):
+class Electricity(PolarsDataset[Literal["timeseries"]]):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -136,10 +136,6 @@ class Electricity(DatasetBase[Literal["timeseries"], pl.DataFrame]):
             ).fill_nan(None)
 
         return ts
-
-    def load_table(self, key: Literal["timeseries"], /) -> pl.DataFrame:
-        r"""Load a cleaned dataset table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])
 
     def make_zero_plot(self) -> Axes:
         r"""Plot number of zero values per timestamp."""

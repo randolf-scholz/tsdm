@@ -15,7 +15,7 @@ import polars as pl
 from scipy.stats import norm as univariate_normal
 from tqdm.auto import trange
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.random import generators
 
 type Key = Literal["timeseries", "timeseries_metadata"]
@@ -44,7 +44,7 @@ TIMESERIES_METADATA = [
 
 
 @final
-class DampedPendulum_Ansari2023(DatasetBase[Key, pl.DataFrame]):
+class DampedPendulum_Ansari2023(PolarsDataset[Key]):
     r"""Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
@@ -127,7 +127,3 @@ class DampedPendulum_Ansari2023(DatasetBase[Key, pl.DataFrame]):
                 "y": data[..., 1].ravel(),
             }
         )
-
-    def load_table(self, key: Key, /) -> pl.DataFrame:
-        r"""Load a cleaned table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])

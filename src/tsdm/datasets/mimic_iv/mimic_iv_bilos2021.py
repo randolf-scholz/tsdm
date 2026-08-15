@@ -31,7 +31,7 @@ from typing import Literal, Self
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import validate_schema
 
 from .mimic_iv import MIMIC_IV
@@ -248,7 +248,7 @@ PRESCRIPTION_LABELS = {
 type Key = Literal["raw_timeseries", "timeseries"]
 
 
-class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
+class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
     r"""Polars reimplementation of the MIMIC-IV preprocessing by Bilos et al.
 
     The raw MIMIC-IV tables are supplied by :class:`MIMIC_IV`. They must already
@@ -707,12 +707,6 @@ class MIMIC_IV_Bilos2021(DatasetBase[Key, pl.DataFrame]):
         )
 
         return timeseries.select(*TARGET_SCHEMA).sort("hadm_id", "time_stamp")
-
-    def load_table(
-        self, key: Literal["raw_timeseries", "timeseries"], /
-    ) -> pl.DataFrame:
-        r"""Load the materialized time-series table."""
-        return pl.read_parquet(self.dataset_paths[key])
 
 
 def _keep_matching_units(

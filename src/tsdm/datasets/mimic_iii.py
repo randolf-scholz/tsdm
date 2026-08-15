@@ -593,13 +593,17 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
                         has_header=True,
                     )
 
-            try:
-                table.sink_parquet(self.dataset_paths[key], engine="streaming")
-            except BaseException:
-                # Delete partial files if streaming fails.
-                with suppress(FileNotFoundError):
-                    self.dataset_paths[key].unlink()
-                raise
+            self.store_table(key, table)
+
+    def store_table(self, key: MIMIC_III_Key, table: pl.LazyFrame, /) -> None:
+        r"""Store a lazy table as parquet using Polars' streaming engine."""
+        try:
+            table.sink_parquet(self.dataset_paths[key], engine="streaming")
+        except BaseException:
+            # Delete partial files if streaming fails.
+            with suppress(FileNotFoundError):
+                self.dataset_paths[key].unlink()
+            raise
 
     def load_table(self, key: MIMIC_III_Key, /) -> pl.LazyFrame:
         table = pl.scan_parquet(self.dataset_paths[key])

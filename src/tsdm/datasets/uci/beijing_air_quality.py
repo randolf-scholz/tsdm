@@ -81,7 +81,7 @@ from zipfile import ZipFile
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers, validate_schema
 
 RAWDATA_SCHEMA =  {
@@ -150,7 +150,7 @@ TIMESERIES_METADATA = [
 type Key = Literal["timeseries", "timeseries_metadata"]
 
 
-class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
+class BeijingAirQuality(PolarsDataset[Key]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -253,7 +253,3 @@ class BeijingAirQuality(DatasetBase[Key, pl.DataFrame]):
             schema=TIMESERIES_METADATA_SCHEMA,
             orient="row",
         )
-
-    def load_table(self, key: Key, /) -> pl.DataFrame:
-        r"""Load a cleaned dataset table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])

@@ -15,7 +15,7 @@ from zipfile import ZipFile
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 
 TIMESERIES_SCHEMA = {
     "run_id"                        : pl.UInt64,
@@ -95,7 +95,7 @@ type Key = Literal[
 ]
 
 
-class KiwiBenchmark(DatasetBase[Key, pl.DataFrame]):
+class KiwiBenchmark(PolarsDataset[Key]):
     r"""KIWI Benchmark Dataset."""
 
     DEFAULT_VERSION = "1.0"
@@ -132,10 +132,6 @@ class KiwiBenchmark(DatasetBase[Key, pl.DataFrame]):
             except KeyError as exc:
                 exc.add_note(f"Failed to extract table {key} from {path}")
                 raise
-
-    def load_table(self, key: Key, /) -> pl.DataFrame:
-        r"""Load a preprocessed table as a Polars DataFrame."""
-        return pl.read_parquet(self.dataset_paths[key])
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Copy the bundled dataset archive to the raw-data directory."""

@@ -12,7 +12,7 @@ from typing import Any
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import PolarsDataset
 
 from .mimic_iv import (
     BOOL_TYPE,
@@ -176,7 +176,7 @@ def _assert_columns_equal(table: pl.DataFrame, /, *, left: str, right: str) -> N
         raise AssertionError(f"{left} != {right}")
 
 
-class MIMIC_IV_Scholz2026(DatasetBase[MIMIC_IV_Key, pl.DataFrame]):
+class MIMIC_IV_Scholz2026(PolarsDataset[MIMIC_IV_Key]):
     r"""Lightly preprocessed version of the MIMIC-IV dataset.
 
     The following preprocessing steps are applied:
