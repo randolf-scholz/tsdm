@@ -22,9 +22,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
+import pandas as pd
 import polars as pl
 import pyarrow as pa
-from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import FilePath, FileStream
@@ -367,19 +367,19 @@ def validate_table_schema(
 
     # get data shape, columns and dtypes from table
     match table:
-        case MultiIndex(names=names, dtypes=dtypes):
+        case pd.MultiIndex(names=names, dtypes=dtypes):
             actual_columns = names
             actual_dtypes = dict(zip(names, dtypes, strict=True))
             index_columns = []
-        case Index() as index:
+        case pd.Index() as index:
             actual_columns = [index.name]
             actual_dtypes = {index.name: index.dtype}
             index_columns = []
-        case Series() as series:
+        case pd.Series() as series:
             actual_columns = [series.name]
             actual_dtypes = {series.name: series.dtype}
             index_columns = series.index.names
-        case DataFrame() as df:
+        case pd.DataFrame() as df:
             actual_columns = df.columns.tolist()
             actual_dtypes = df.dtypes.to_dict()
             index_columns = df.index.names
