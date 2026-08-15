@@ -17,9 +17,7 @@ import warnings
 from typing import cast
 
 import numpy as np
-import pandas as pd
 from numpy.typing import ArrayLike
-from pandas import DataFrame, Series
 from scipy import stats
 
 
@@ -99,15 +97,13 @@ def float_gcd(x: ArrayLike, /) -> float:
     return cast("float", gcd)
 
 
-def is_quasiregular(s: Series | DataFrame, /) -> bool:
+def is_quasiregular(a: ArrayLike, /) -> bool:
     r"""Test if time series is quasi-regular.
 
     By definition, this is the case if all timedeltas are
     integer multiples of the minimal, non-zero timedelta of the series.
     """
-    if isinstance(s, DataFrame):
-        return is_quasiregular(Series(s.index))
-
+    s = np.asarray(a)
     Δt = np.diff(s)
     zero = np.array(0, dtype=Δt.dtype)
     Δt_min = np.min(Δt[Δt > zero])
@@ -115,18 +111,14 @@ def is_quasiregular(s: Series | DataFrame, /) -> bool:
     return np.allclose(z, np.rint(z))
 
 
-def is_regular(s: Series | DataFrame) -> bool:
+def is_regular(a: ArrayLike) -> bool:
     r"""Test if time series is regular, i.e. iff $Δt_i$ is constant."""
-    if isinstance(s, DataFrame):
-        return is_regular(Series(s.index))
-
+    s = np.asarray(a)
     Δt = np.diff(s)
     return bool(np.all(Δt == np.min(Δt)))
 
 
-def regularity_coefficient(
-    s: Series | DataFrame, /, *, ignore_duplicates: bool = True
-) -> float:
+def regularity_coefficient(a: ArrayLike, /, *, ignore_duplicates: bool = True) -> float:
     r"""Compute the regularity coefficient of a time series.
 
     The regularity coefficient is equal to the ratio of length of the smallest regular time-series
@@ -138,9 +130,7 @@ def regularity_coefficient(
     To make the time-series regular, one would have to insert additional
     :math:`(κ(𝐭)-1) | 𝐭 |`-many data-points.
     """
-    if isinstance(s, DataFrame):
-        return regularity_coefficient(Series(s.index))
-
+    s = np.asarray(a)
     gcd = time_gcd(s)
     Δt = np.diff(s)
     if ignore_duplicates:
@@ -150,35 +140,36 @@ def regularity_coefficient(
     return coef
 
 
-def time_gcd(s: Series, /) -> float:
+def time_gcd(a: ArrayLike, /) -> float:
     r"""Compute the greatest common divisor of datetime64/int/float data."""
+    s = np.asarray(a)
     Δt = np.diff(s)
     zero = np.array(0, dtype=Δt.dtype)
     Δt = Δt[Δt > zero]
 
-    if pd.api.types.is_timedelta64_dtype(Δt):
+    if np.issubdtype(Δt.dtype, np.datetime64):
         Δt = Δt.astype("timedelta64[ns]").astype(int)
         gcd = np.gcd.reduce(Δt)
         return gcd.astype("timedelta64[ns]")
-    if pd.api.types.is_integer_dtype(Δt):
+    if np.issubdtype(Δt.dtype, np.integer):
         return np.gcd.reduce(Δt)
-    if pd.api.types.is_float_dtype(Δt):
+    if np.issubdtype(Δt.dtype, np.floating):
         return float_gcd(Δt)
 
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
 
 
-def irregularity_coefficient(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
+def irregularity_coefficient(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
     r"""Compute the irregularity coefficient of a time differences.
 
     Args:
-        s: Sequence of time stamps
+        a: Sequence of time stamps
         drop_zero: Whether to drop zero time differences (default: True)
 
     Returns:
         γ(T) = \max(∆T) / \gcd(∆T)
     """
-    t = np.asarray(s)
+    t = np.asarray(a)
     dt = t[1:] - t[:-1]
 
     if drop_zero:
