@@ -9,13 +9,24 @@ from tsdm.datasets.base import DatasetBase
 from tsdm.testing.validation import ErrorHandler, ValidationError
 
 
+class DummyDataset(DatasetBase[str, object]):
+    r"""Concrete dataset implementation for raw-data validation tests."""
+
+    table_names: Collection[str] = ()
+
+    def store_table(self, key: str, table: object, /) -> None:
+        pass
+
+    def load_table(self, _key: str, /) -> object:
+        return object()
+
+
 def test_rawdata_without_hash_passes_when_file_exists(tmp_path: Path) -> None:
     r"""A raw file without a reference hash is valid when it exists."""
 
-    class RawDataset(DatasetBase[str, object]):
+    class RawDataset(DummyDataset):
         DATASET_ROOT_DIR = tmp_path
         rawdata_files = ["raw.bin"]
-        table_names: Collection[str] = ()
 
     dataset = RawDataset(initialize=False)
     dataset.rawdata_paths["raw.bin"].write_bytes(b"raw data")
@@ -26,10 +37,9 @@ def test_rawdata_without_hash_passes_when_file_exists(tmp_path: Path) -> None:
 def test_rawdata_without_hash_fails_when_file_is_missing(tmp_path: Path) -> None:
     r"""Skipping a hash reference does not skip the existence check."""
 
-    class RawDataset(DatasetBase[str, object]):
+    class RawDataset(DummyDataset):
         DATASET_ROOT_DIR = tmp_path
         rawdata_files = ["raw.bin"]
-        table_names: Collection[str] = ()
 
     dataset = RawDataset(initialize=False)
 
@@ -40,11 +50,10 @@ def test_rawdata_without_hash_fails_when_file_is_missing(tmp_path: Path) -> None
 def test_rawdata_hash_mismatch_raises(tmp_path: Path) -> None:
     r"""Configured raw-data hashes remain strict."""
 
-    class RawDataset(DatasetBase[str, object]):
+    class RawDataset(DummyDataset):
         DATASET_ROOT_DIR = tmp_path
         rawdata_files = ["raw.bin"]
         rawdata_hashes = {"raw.bin": "sha256:" + "0" * 64}
-        table_names: Collection[str] = ()
 
     dataset = RawDataset(initialize=False)
     dataset.rawdata_paths["raw.bin"].write_bytes(b"raw data")
@@ -56,10 +65,9 @@ def test_rawdata_hash_mismatch_raises(tmp_path: Path) -> None:
 def test_download_uses_custom_rawdata_validation_without_hashes(tmp_path: Path) -> None:
     r"""Custom validation is invoked even when no byte hash is configured."""
 
-    class RawDataset(DatasetBase[str, object]):
+    class RawDataset(DummyDataset):
         DATASET_ROOT_DIR = tmp_path
         rawdata_files = ["raw.bin"]
-        table_names: Collection[str] = ()
         validation_was_called = False
 
         def get_rawdata_file(self, fname: str, /) -> None:
