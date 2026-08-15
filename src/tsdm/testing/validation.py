@@ -341,15 +341,14 @@ def validate_table_schema(
     table: Any,
     /,
     *,
-    expected_shema: Sequence[str] | Mapping[str, Any] | pa.Schema | None,
+    expected_schema: Sequence[str] | Mapping[str, Any] | pa.Schema | None,
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
     r"""Validate the schema of a `pandas` object, given schema values from a table.
 
     Args:
         table: The table to validate.
-        expected_shape: Checks if the shape of the table matches the reference schema.
-        expected_shema: Checks if the columns and dtypes of the table match the reference schema.
+        expected_schema: Checks if the columns and dtypes of the table match the reference schema.
         errors: How to handle errors, one of "ignore", "log", "warn", "raise".
 
     Returns:
@@ -398,7 +397,7 @@ def validate_table_schema(
             )
 
     # get reference columns and dtypes
-    match expected_shema:
+    match expected_schema:
         case pa.Schema() as schema:
             expected_columns = schema.names
             expected_dtypes = dict(zip(schema.names, schema.types, strict=True))
@@ -412,7 +411,7 @@ def validate_table_schema(
             expected_columns = None
             expected_dtypes = None
         case _:
-            raise TypeError(f"Invalid reference schema type! {type(expected_shema)=}")
+            raise TypeError(f"Invalid reference schema type! {type(expected_schema)=}")
 
     # Validate columns.
     match actual_columns, expected_columns:

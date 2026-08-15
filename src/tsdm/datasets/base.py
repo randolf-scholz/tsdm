@@ -788,7 +788,7 @@ class DatasetBase[Key: str, T](
             ):
                 pbar.set_description(f"Validating file {name!r}")
                 try:
-                    result &= self.validate_rawdata(name, errors="raise")
+                    result &= self.validate_rawdata_file(name, errors="raise")
                 except ValidationError as exc:
                     result = False
                     exceptions[name] = exc
@@ -845,7 +845,7 @@ class DatasetBase[Key: str, T](
             ):
                 pbar.set_description(f"Validating table {name!r}")
                 try:
-                    result &= self.validate_dataset(name, errors="raise")
+                    result &= self.validate_dataset_file(name, errors=errors)
                 except ValidationError as exc:
                     result = False
                     exceptions[name] = exc
@@ -854,11 +854,29 @@ class DatasetBase[Key: str, T](
                 ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
             return result
 
+        return self.validate_dataset_file(key, errors=errors)
+
+    def validate_dataset_file(
+        self, key: Key, /, *, errors: ErrorHandler.Mode = "warn"
+    ) -> bool:
+        r"""Validate one dataset file."""
         self.LOGGER.debug("Validating %s.", key)
+
+        if key not in self.dataset_paths:
+            raise KeyError(f"{key=} not in {self.dataset_paths=}")
+
+        path = self.dataset_paths[key]
+        if not path.exists():
+            ErrorHandler(errors).emit(
+                f"Dataset file does not exist: {path!s}", valid=False
+            )
+            return False
+
         return validate_file_hash(
-            self.dataset_paths[key],
+            path,
             self.dataset_hashes.get(key),
             errors=errors,
+            skipif_no_reference=True,
         )
 
     def validate_tables(
@@ -878,7 +896,7 @@ class DatasetBase[Key: str, T](
             ):
                 pbar.set_description(f"Validating table {name!r}")
                 try:
-                    result &= self.validate_tables(name, errors="raise")
+                    result &= self.validate_table(name, errors="raise")
                 except ValidationError as exc:
                     result = False
                     exceptions[name] = exc
@@ -887,6 +905,12 @@ class DatasetBase[Key: str, T](
                 ErrorHandler(errors).emit(f"Some tables failed validation:\n{failed}")
             return result
 
+        return self.validate_table(key, errors=errors)
+
+    def validate_table(
+        self, key: Key, /, *, errors: ErrorHandler.Mode = "warn"
+    ) -> bool:
+        r"""Validate one table."""
         excs: list[ValidationError] = []
         self.LOGGER.debug(f"{key=} Validating table shape")
         try:
@@ -903,7 +927,7 @@ class DatasetBase[Key: str, T](
         try:
             schema_matches = validate_table_schema(
                 self.tables[key],
-                expected_shema=self.table_schemas.get(key),
+                expected_schema=self.table_schemas.get(key),
                 errors=errors,
             )
         except ValidationError as exc2:
