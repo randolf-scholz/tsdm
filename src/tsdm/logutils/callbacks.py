@@ -673,7 +673,7 @@ class ScalarsCallback(BaseCallback):
 class TableCallback(BaseCallback):
     r"""Callback to log a table to disk."""
 
-    table: DataFrame
+    table: Any
 
     _: KW_ONLY
 

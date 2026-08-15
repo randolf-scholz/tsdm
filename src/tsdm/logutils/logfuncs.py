@@ -425,7 +425,7 @@ def log_table(
     step: int,
     writer: SummaryWriter | Path,
     /,
-    table: object,
+    table: Any,
     *,
     options: Optional[dict[str, Any]] = None,
     filetype: str = "parquet",
