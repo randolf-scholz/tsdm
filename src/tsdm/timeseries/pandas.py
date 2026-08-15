@@ -28,20 +28,20 @@ __all__ = [
 import warnings
 from collections.abc import Callable as Fn, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, field, fields
-from typing import Any, ClassVar, Self, overload
+from typing import Any, ClassVar, Self, cast, overload
 
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex
 
 from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
 from tsdm.pprint import pprint_repr
 
-from .base import TimeSeries, TimeSeriesCollection
+from .base import RangeSelector, TimeSeries, TimeSeriesCollection
 
 
 @pprint_repr
-@dataclass
+@dataclass(frozen=True)
 class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
@@ -101,7 +101,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
                 f" got {type(self.timeseries)}."
             )
 
-        self.timeindex = self._infer_timeindex()
+        object.__setattr__(self, "timeindex", self._infer_timeindex())
 
         # ensure no dataclass fields are undefined
         for f in fields(self):
@@ -120,13 +120,55 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
         r"""Check if the key is in the timeindex."""
         return key in self.timeindex
 
-    def __getitem__(self, key: Any, /) -> PandasTS:
+    def __getitem__(self, key: TimeT | RangeSelector[TimeT], /) -> Self:
         r"""Return the subset of the timeseries at index `key`."""
+        match key:
+            case slice() as s:
+                labels = self._select_slice(s)
+                self._check_keys(labels)
+                timeseries = self.timeseries.loc[labels]
+
+            case list(items):
+                if items and all(isinstance(k, bool) for k in items):
+                    if len(items) != self.timeseries.shape[0]:
+                        raise ValueError(
+                            "Expected boolean mask to have one entry per timeseries row,"
+                            f" got {len(items)} and {self.timeseries.shape[0]}."
+                        )
+                    timeseries = self.timeseries.loc[items]
+                else:
+                    labels = cast("list[TimeT]", items)
+                    self._check_keys(labels)
+                    timeseries = self.timeseries.loc[labels]
+
+            case scalar:
+                labels = [scalar]
+                self._check_keys(labels)
+                timeseries = self.timeseries.loc[labels]
+
         sliced = (  # formatting
             {k: v for k, v in asdict(self).items() if k in self.FIELDS}
-            | {"timeseries": self.timeseries.loc[key]}
+            | {"timeseries": timeseries}
         )
-        return PandasTS(**sliced)
+        return self.__class__(**sliced)
+
+    def _check_keys(self, keys: list[TimeT] | Index, /) -> None:
+        r"""Raise ``KeyError`` when a label is not present in the time index."""
+        if missing_keys := [key for key in keys if key not in self.timeindex]:
+            raise KeyError(missing_keys)
+
+    def _select_slice(self, key: slice, /) -> Index:
+        r"""Resolve a label slice against an index, including its stop label."""
+        index = self.timeindex
+        start = 0 if key.start is None else index.get_indexer_for([key.start]).item()
+        stop = (
+            len(index) - 1
+            if key.stop is None
+            else index.get_indexer_for([key.stop]).item()
+        )
+        if start == -1 or stop == -1:
+            raise KeyError(key)
+        return index[slice(start, stop + 1, key.step)]
 
     def _infer_timeindex(self) -> Index:
         r"""Get the timeindex."""
@@ -140,7 +182,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
 
 
 @pprint_repr
-@dataclass
+@dataclass(frozen=True)
 class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataFrame]):
     r"""Class for **equimodal** TimeSeriesCollections.
 
@@ -207,8 +249,8 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
                 f" got {type(self.timeseries)}."
             )
 
-        self.timeindex = self._infer_timeindex()
-        self.metaindex = self._infer_metaindex()
+        object.__setattr__(self, "timeindex", self._infer_timeindex())
+        object.__setattr__(self, "metaindex", self._infer_metaindex())
 
         # ensure that the index of the static covariates is a subset of the metaindex
         self._validate_static_covariates()
@@ -268,31 +310,75 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
                     f" got {type(self.static_covariates)}."
                 )
 
-    # fmt: off
     @overload
-    def __getitem__(self, key: Index | Series | slice | list[KeyT] | Mapping[KeyT, bool], /) -> Self: ...
+    def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
-    def __getitem__(self, key: KeyT, /) -> PandasTS: ...  # pyright: ignore[reportOverlappingOverload]
-    # fmt: on
-    def __getitem__(self, key: Any, /) -> PandasTS | Self:
+    def __getitem__[TimeT = Any](self, key: KeyT, /) -> PandasTS[TimeT]: ...
+    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PandasTS[Any] | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
-        if isinstance(key, Series | Mapping):
-            # assume boolean mask, select keys where mask is True
-            key = [k for k, mask in dict(key).items() if mask]
+        match key:
+            case slice() as s:
+                labels = self._select_slice(s)
+                return self._subset(labels)
 
-        ts = self.timeseries.loc[key]
-        cov = self.static_covariates
-        cov = cov if cov is None else cov.loc[key]
+            case list(items):
+                if items and all(isinstance(k, bool) for k in items):
+                    if len(items) != len(self.metaindex):
+                        raise ValueError(
+                            "Expected boolean mask to have one entry per collection,"
+                            f" got {len(items)} and {len(self.metaindex)}."
+                        )
+                    return self._subset(self.metaindex[items])
+                labels = cast("list[KeyT]", items)
+                return self._subset(labels)
 
-        # only pass non-derived fields
+            case scalar:
+                labels = [scalar]
+                self._check_keys(labels)
+                timeseries = self.timeseries.loc[scalar]
+                return PandasTS(
+                    name=self.name,
+                    timeseries=timeseries,
+                    timeseries_metadata=self.timeseries_metadata,
+                    static_covariates=self._static_covariates_for(labels),
+                    static_covariates_metadata=self.static_covariates_metadata,
+                )
+
+    def _check_keys(self, keys: list[Any] | Index, /) -> None:
+        r"""Raise ``KeyError`` when a label is not present in the meta index."""
+        if missing_keys := [key for key in keys if key not in self.metaindex]:
+            raise KeyError(missing_keys)
+
+    def _static_covariates_for(self, keys: list[KeyT] | Index, /) -> DataFrame | None:
+        r"""Select static covariates corresponding to collection identifiers."""
+        if self.static_covariates is None:
+            return None
+        return self.static_covariates.loc[keys]
+
+    def _subset(self, keys: list[KeyT] | Index, /) -> Self:
+        r"""Return the collection restricted to ``keys``."""
+        self._check_keys(keys)
         sliced = (  # formatting
             {k: v for k, v in asdict(self).items() if k in self.FIELDS}
-            | {"timeseries": ts, "static_covariates": cov}
+            | {
+                "timeseries": self.timeseries.loc[keys],
+                "static_covariates": self._static_covariates_for(keys),
+            }
         )
+        return self.__class__(**sliced)
 
-        if isinstance(ts.index, MultiIndex):
-            return self.__class__(**sliced)
-        return PandasTS(**{k: v for k, v in sliced.items() if k in PandasTS.FIELDS})
+    def _select_slice(self, key: slice, /) -> Index:
+        r"""Resolve a label slice against an index, including its stop label."""
+        index = self.metaindex
+        start = 0 if key.start is None else index.get_indexer_for([key.start]).item()
+        stop = (
+            len(index) - 1
+            if key.stop is None
+            else index.get_indexer_for([key.stop]).item()
+        )
+        if start == -1 or stop == -1:
+            raise KeyError(key)
+        return index[slice(start, stop + 1, key.step)]
 
 
 def electricity() -> TimeSeries[DataFrame]:

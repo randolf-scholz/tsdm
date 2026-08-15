@@ -4,6 +4,7 @@ __all__ = [
     # submodules:
     "base",
     "pandas",
+    "polars",
     "sample_generators",
     "util",
     # Constants
@@ -17,6 +18,8 @@ __all__ = [
     # classes
     "PandasTS",
     "PandasTSC",
+    "PolarsTS",
+    "PolarsTSC",
     "Inputs",
     "Targets",
     "Sample",
@@ -43,7 +46,7 @@ __all__ = [
     "ushcn_de_brouwer2019",
 ]
 
-from . import base, pandas, sample_generators, util
+from . import base, pandas, polars, sample_generators, util
 from .base import TimeSeries, TimeSeriesCollection
 from .pandas import (
     TIMESERIES,
@@ -66,6 +69,7 @@ from .pandas import (
     ushcn,
     ushcn_de_brouwer2019,
 )
+from .polars import PolarsTS, PolarsTSC
 from .sample_generators import (
     FixedSliceSampleGenerator,
     Inputs,

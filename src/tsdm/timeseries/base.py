@@ -10,6 +10,9 @@ from abc import abstractmethod
 from collections.abc import Iterator
 from typing import Any, ClassVar, Protocol, Self, overload
 
+# TODO: Use generic slice in 3.15
+type RangeSelector[T] = slice | list[T] | list[bool]
+
 
 class TimeSeries[TableT, TimeT = Any](Protocol):
     r"""Protocol for time series objects.
@@ -29,6 +32,9 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
     static_covariates_metadata: TableT | None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
+    timeindex: Any
+    r"""The time index of the time series."""
+
     @abstractmethod
     def __len__(self) -> int: ...
     @abstractmethod
@@ -36,7 +42,7 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
     @abstractmethod
     def __contains__(self, key: TimeT, /) -> object: ...
     @abstractmethod
-    def __getitem__(self, key: TimeT, /) -> Self: ...
+    def __getitem__(self, key: TimeT | RangeSelector[TimeT], /) -> Self: ...
 
 
 class TimeSeriesCollection[KeyT, TableT](Protocol):
@@ -52,11 +58,16 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
     static_covariates: TableT | None
     r"""The static covariates associated with each timeseries."""
     static_covariates_metadata: TableT | None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    r"""Data associated with each metadata such as measurement device, unit, etc."""
     constants: TableT | None
     r"""Additional data that is independent of the metaindex."""
     constants_metadata: TableT | None
-    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+    r"""Data associated with each global metadata such as measurement device, unit, etc."""
+
+    timeindex: Any
+    r"""The time index of the time series."""
+    metaindex: Any
+    r"""The meta index of the time series collection."""
 
     @abstractmethod
     def __len__(self) -> int: ...
@@ -66,7 +77,7 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
     def __contains__(self, item: KeyT, /) -> object: ...
     @overload
     @abstractmethod
-    def __getitem__(self, key: slice | list[KeyT], /) -> Self: ...
+    def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
     @abstractmethod
-    def __getitem__(self, key: KeyT, /) -> TimeSeries[TableT]: ...
+    def __getitem__[TimeT = Any](self, key: KeyT, /) -> TimeSeries[TableT, TimeT]: ...
