@@ -2,8 +2,6 @@ r"""Utilities for testing and validation."""
 
 __all__ = [
     # functions
-    "assert_arrays_close",
-    "assert_arrays_equal",
     "check_shared_interface",
     "is_builtin",
     "is_builtin_constant",
@@ -16,101 +14,21 @@ __all__ = [
     "supports_issubclass",
 ]
 
-from collections.abc import Iterable, Sequence, Set as AbstractSet
+from collections.abc import Iterable, Set as AbstractSet
 from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import Any, Final, TypeGuard, TypeIs, get_protocol_members, is_protocol
+from typing import Final, TypeGuard, TypeIs, get_protocol_members, is_protocol
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas as pd
 import polars as pl
-import polars.testing as pl_testing
 import pyarrow as pa
 import torch
-import torch.testing
 from pandas import NA, NaT
 
 from tsdm.dtypes import DType
 from tsdm.types.aliases import FilePath, PythonScalar
-
-
-def assert_arrays_equal[T: Any](array: T, reference: T, /) -> None:
-    r"""Assert that the arrays are equal."""
-    if type(array) is not type(reference):
-        raise AssertionError(f"{type(array)=} != {type(reference)=}")
-
-    match array:
-        case pd.Series():
-            pd.testing.assert_series_equal(array, reference)
-        case pd.Index():
-            pd.testing.assert_index_equal(array, reference)
-        case pd.DataFrame():
-            pd.testing.assert_frame_equal(array, reference)
-        case np.ndarray():
-            np.testing.assert_array_equal(array, reference)
-        case pl.Series():
-            pl_testing.assert_series_equal(array, reference)
-        case pl.DataFrame():
-            pl_testing.assert_frame_equal(array, reference)
-        case torch.Tensor():
-            torch.testing.assert_close(array, reference, rtol=0, atol=0)
-        case Sequence() as seq:
-            if len(array) != len(reference):
-                raise AssertionError(f"{len(array)=} != {len(reference)=}")
-            if any(a != b for a, b in zip(seq, reference, strict=True)):
-                raise AssertionError(f"{array=} != {reference=}")
-        case _:
-            raise TypeError(f"Unsupported {type(array)=}")
-
-
-def assert_arrays_close[T: Any](
-    array: T,
-    reference: T,
-    /,
-    *,
-    atol: float = 1e-8,
-    rtol: float = 1e-5,
-) -> None:
-    r"""Assert that the arrays are close within tolerance."""
-    if type(array) is not type(reference):
-        raise AssertionError(f"{type(array)=} != {type(reference)=}")
-
-    match array:
-        case pd.Series():
-            pd.testing.assert_series_equal(
-                array, reference, check_exact=False, atol=atol, rtol=rtol
-            )
-        case pd.Index():
-            pd.testing.assert_index_equal(
-                array, reference, check_exact=False, atol=atol, rtol=rtol
-            )
-        case pd.DataFrame():
-            pd.testing.assert_frame_equal(
-                array, reference, check_exact=False, atol=atol, rtol=rtol
-            )
-        case np.ndarray():
-            np.testing.assert_allclose(array, reference, atol=atol, rtol=rtol)
-        case pl.Series():
-            pl_testing.assert_series_equal(
-                array, reference, check_exact=False, abs_tol=atol, rel_tol=rtol
-            )
-        case pl.DataFrame():
-            pl_testing.assert_frame_equal(
-                array, reference, check_exact=False, abs_tol=atol, rel_tol=rtol
-            )
-        case torch.Tensor() as tensor:
-            torch.testing.assert_close(tensor, reference, atol=atol, rtol=rtol)
-        case Sequence() as seq:
-            if len(array) != len(reference):
-                raise AssertionError(f"{len(array)=} != {len(reference)=}")
-            if any(
-                abs(a - b) > atol + rtol * abs(b)
-                for a, b in zip(seq, reference, strict=True)
-            ):
-                raise AssertionError(f"{array=} != {reference=}")
-        case _:
-            raise TypeError(f"Unsupported {type(array)=}")
 
 
 def get_descriptors_and_callables(cls: type, /) -> set[str]:
@@ -173,8 +91,13 @@ def is_builtin(obj: object, /) -> bool:
 def is_dtype(arg: object, /) -> TypeIs[DType]:
     r"""Check if a string is a valid dtype."""
     return isinstance(
-        arg, np.dtype | torch.dtype | pa.DataType | pd.api.extensions.ExtensionDtype
-    )
+        arg,
+        np.dtype
+        | torch.dtype
+        | pa.DataType
+        | pd.api.extensions.ExtensionDtype
+        | pl.DataType,
+    ) or (isinstance(arg, type) and issubclass(arg, pl.DataType))
 
 
 def is_na_value(obj: object, /) -> bool:

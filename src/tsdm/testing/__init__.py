@@ -5,8 +5,6 @@ __all__ = [
     "hashutils",
     "validation",
     # Functions
-    "assert_arrays_close",
-    "assert_arrays_equal",
     "check_shared_interface",
     "is_builtin",
     "is_builtin_constant",
@@ -22,8 +20,6 @@ __all__ = [
 
 from . import hashutils, validation
 from ._testing import (
-    assert_arrays_close,
-    assert_arrays_equal,
     check_shared_interface,
     is_builtin,
     is_builtin_constant,

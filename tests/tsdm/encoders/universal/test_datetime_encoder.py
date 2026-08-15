@@ -8,8 +8,8 @@ import polars as pl
 import pytest
 from pandas import Series, date_range, testing
 
+from tests.test_utils.assertions import assert_arrays_equal
 from tsdm.encoders import DateTimeEncoder
-from tsdm.testing import assert_arrays_equal
 
 
 def make_dtarray(data: Sequence[str | None], backend: str):

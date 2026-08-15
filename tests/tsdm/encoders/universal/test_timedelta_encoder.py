@@ -8,8 +8,8 @@ import pandas as pd
 import polars as pl
 import pytest
 
+from tests.test_utils.assertions import assert_arrays_equal
 from tsdm.encoders import TimeDeltaEncoder
-from tsdm.testing import assert_arrays_equal
 
 
 def make_tdarray(data: Sequence[timedelta | None], backend: str):
