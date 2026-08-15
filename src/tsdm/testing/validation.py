@@ -204,6 +204,9 @@ def validate_file_hash(
             )
     expected_hash = Hash.from_value(expected_hash)
 
+    if expected_hash is None and skipif_no_reference:
+        return True
+
     if file is not None and file.suffix == ".parquet":
         msg = f"{file!s}: ⚠️ refusing to hash, parquet is not binary stable!"
         error_handler.emit(msg)
@@ -230,8 +233,6 @@ def validate_file_hash(
 
     # Compute the hash
     match path_or_stream:
-        case _ if expected_hash is None and skipif_no_reference:
-            actual_hash = None
         case str() | PathLike():
             actual_hash = hash_file(path_or_stream, hash_alg)
         case stream:
@@ -277,6 +278,9 @@ def validate_table_hash(
     expected_hash = Hash.from_value(expected_hash)
     error_handler = make_error_handler(errors, prefix=f"{name!s}: ")
 
+    if expected_hash is None and skipif_no_reference:
+        return True
+
     # Determine the hash algorithm
     match hash_algorithm:
         case str(hash_alg):
@@ -297,11 +301,7 @@ def validate_table_hash(
             raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 
     # Compute the hash.
-    actual_hash = (
-        None
-        if expected_hash is None and skipif_no_reference
-        else hash_array(table, hash_alg)
-    )
+    actual_hash = hash_array(table, hash_alg)
     return validate_hash(actual_hash, expected_hash, errors=error_handler)
 
 

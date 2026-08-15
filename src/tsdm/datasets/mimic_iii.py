@@ -509,9 +509,6 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
 
     table_names = list(get_args(MIMIC_III_Key.__value__))
-    rawdata_hashes = {
-        "mimic-iii-clinical-database-1.4.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
-    }
 
     @property
     def rawdata_files(self) -> list[str]:  # type: ignore
@@ -611,7 +608,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a file from the MIMIC-III website."""
-        if tuple(map(int, self.version.split("."))) < (1, 4):  # ruff: ignore[RUF048]
+        if tuple(map(int, self.version.split("."))) < (1, 4):
             raise ValueError(
                 "MIMIC-III v1.4+ is required. At the time of writing, the website"
                 " does not provide legacy versions of the MIMIC-III dataset."

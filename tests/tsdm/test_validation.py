@@ -1,5 +1,6 @@
 r"""Tests for :mod:`tsdm.testing.validation`."""
 
+import warnings
 from hashlib import sha256
 from io import BytesIO
 
@@ -27,3 +28,12 @@ def test_validate_file_hash_stream_restores_position_on_failure() -> None:
         validate_file_hash(stream, "sha256:deadbeef")
 
     assert stream.tell() == 4
+
+
+def test_validate_file_hash_skips_missing_reference(tmp_path) -> None:
+    r"""Skipping a missing reference neither hashes nor warns."""
+    path = tmp_path / "missing.bin"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert validate_file_hash(path, None, skipif_no_reference=True)

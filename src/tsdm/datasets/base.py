@@ -199,7 +199,12 @@ class DatasetBase[Key: str, T](
 
     # region instance attributes -------------------------------------------------------
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
-    r"""READ-ONLY: Hashes of the raw dataset file(s)."""
+    r"""READ-ONLY: Optional hashes of the raw dataset file(s).
+
+    Files without a mapping entry, or whose entry is ``None``, are checked only
+    for existence. Subclasses can override :meth:`validate_rawdata_file` for
+    content-aware validation.
+    """
     rawdata_schemas: Mapping[str, Mapping[str, Any]] = EMPTY_MAP
     r"""READ-ONLY: Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
@@ -544,8 +549,8 @@ class DatasetBase[Key: str, T](
         self.LOGGER.debug("Downloaded file <%s> in %s", key, t.value)
 
         # Validate the file.
-        if validate and self.rawdata_hashes is not EMPTY_MAP:
-            self.validate_rawdata(key)
+        if validate:
+            self.validate_rawdata(key, errors="raise")
 
     # endregion download mechanism -----------------------------------------------------
 
@@ -595,8 +600,8 @@ class DatasetBase[Key: str, T](
             self.get_rawdata(force=force, validate=validate)
 
         # validate the raw data files
-        if validate_rawdata and self.rawdata_hashes is not EMPTY_MAP:
-            self.validate_rawdata(key)
+        if validate_rawdata:
+            self.validate_rawdata(key, errors="raise")
 
         # skip if cleaned files already exist
         if not force and self.dataset_files_exist(key):
@@ -736,7 +741,7 @@ class DatasetBase[Key: str, T](
     # region validation methods --------------------------------------------------------
     @cached_property
     def rawdata_valid(self) -> bool:
-        r"""Check if raw data files exist."""
+        r"""Check that raw data files exist and pass validation."""
         return self.validate_rawdata()
 
     @cached_property
@@ -783,7 +788,7 @@ class DatasetBase[Key: str, T](
             ):
                 pbar.set_description(f"Validating file {name!r}")
                 try:
-                    result &= self.validate_rawdata(name, errors="warn")
+                    result &= self.validate_rawdata(name, errors="raise")
                 except ValidationError as exc:
                     result = False
                     exceptions[name] = exc
@@ -793,11 +798,33 @@ class DatasetBase[Key: str, T](
                 ErrorHandler(errors).emit(msg)
             return result
 
+        return self.validate_rawdata_file(key, errors=errors)
+
+    def validate_rawdata_file(
+        self, key: str, /, *, errors: ErrorHandler.Mode = "warn"
+    ) -> bool:
+        r"""Validate one raw data file.
+
+        The default implementation requires the file to exist and validates its
+        byte hash only when the subclass provides a reference hash. Override
+        this method for content-aware validation, such as an archive manifest.
+        """
+        if key not in self.rawdata_paths:
+            raise KeyError(f"{key=} not in {self.rawdata_paths=}")
+
+        path = self.rawdata_paths[key]
+        if not path.exists():
+            ErrorHandler(errors).emit(
+                f"Raw data file does not exist: {path!s}", valid=False
+            )
+            return False
+
         self.LOGGER.debug("Validating %s.", key)
         return validate_file_hash(
-            self.rawdata_paths[key],
+            path,
             self.rawdata_hashes.get(key),
             errors=errors,
+            skipif_no_reference=True,
         )
 
     def validate_dataset(

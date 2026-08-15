@@ -686,12 +686,6 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
     INFO_URL = r"https://physionet.org/content/mimiciv/"
 
-    rawdata_hashes = {
-        "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d",
-        "mimic-iv-2.0.zip": "sha256:e11e9a56d234f2899714fb1712255abe0616dfcc6cba314178e8055b8765b3b9",
-        "mimic-iv-2.2.zip": "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74",
-    }
-
     def __post_init__(self) -> None:
         if self.version is None:
             raise ValueError("Version must be specified.")
