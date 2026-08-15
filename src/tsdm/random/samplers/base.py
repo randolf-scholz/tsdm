@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from typing import (
     Final,
@@ -22,7 +22,6 @@ from typing import (
 )
 
 from numpy.random import Generator
-from pandas import Index
 
 from tsdm.constants import RNG
 from tsdm.datatools.collections import Dataset, PandasDataset, get_index
@@ -108,7 +107,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
     rng: Generator = RNG
     r"""The random number generator."""
 
-    index: Index = field(init=False)
+    index: Sequence[T] = field(init=False)
     size: int = field(init=False)
 
     def __post_init__(self) -> None:
@@ -116,12 +115,14 @@ class RandomSampler[T](BaseSampler[T]):  # +T
         self.size = len(self.index)
 
     def __iter__(self) -> Iterator[T]:
-        n = self.size
-        index = self.index[self.rng.permutation(n)] if self.shuffle else self.index
+        perm = self.rng.permutation(self.size) if self.shuffle else range(self.size)
+
         # avoids attribute lookup in the loop
         data = self.data.loc if isinstance(self.data, PandasDataset) else self.data
-        for key in index:
-            yield data[key]
+        index = self.index
+
+        for n in perm:
+            yield data[index[n]]  # type: ignore
 
     def __len__(self) -> int:
         return self.size

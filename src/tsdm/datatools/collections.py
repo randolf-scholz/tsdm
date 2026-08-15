@@ -22,7 +22,6 @@ from abc import abstractmethod
 from collections.abc import Collection, Iterator
 from typing import Any, Protocol, overload, runtime_checkable
 
-import pandas as pd
 from numpy.typing import NDArray
 
 from tsdm.types.abc import Vec
@@ -144,7 +143,7 @@ class PandasDataset[K, V](Protocol):  # K, +V
     def __len__(self) -> int: ...
 
 
-def get_index(dataset: Dataset, /) -> pd.Index:
+def get_index[T](dataset: Dataset[T], /) -> list[T]:
     r"""Return an index object for the dataset.
 
     We support the following data types:
@@ -155,11 +154,11 @@ def get_index(dataset: Dataset, /) -> pd.Index:
     match dataset:
         # NOTE: Series and DataFrame satisfy the MapDataset protocol.
         case PandasDataset() as pandas_dataset:
-            return pd.Index(pandas_dataset.index)
+            return list(pandas_dataset.index)
         case MapDataset() as map_dataset:
-            return pd.Index(map_dataset.keys())
+            return list(map_dataset.keys())
         case Indexable() as iterable_dataset:
-            return pd.Index(range(len(iterable_dataset)))
+            return list(range(len(iterable_dataset)))  # type: ignore
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
 
