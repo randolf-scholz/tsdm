@@ -11,7 +11,6 @@ __all__ = [
     "Indexable",
     "Dataset",
     # Classes
-    "MappingDataset",
     "InlineTable",
     # folds
     "is_partition",
@@ -24,6 +23,7 @@ __all__ = [
     "aggregate_nondestructive",
     "select_outliers",
     "is_integer_series",
+    "get_schema",
     "get_integer_cols",
     "make_dataframe",
     "remove_outliers",
@@ -36,7 +36,6 @@ from .collections import (
     Indexable,
     IterableDataset,
     MapDataset,
-    MappingDataset,
     PandasDataset,
     TorchDataset,
 )
@@ -55,4 +54,4 @@ from .preprocessing import (
     strip_whitespace,
 )
 from .serialize import InlineTable, make_dataframe
-from .utils import validate_schema
+from .utils import get_schema, validate_schema

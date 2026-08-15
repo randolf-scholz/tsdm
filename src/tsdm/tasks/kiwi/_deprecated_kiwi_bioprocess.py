@@ -18,12 +18,13 @@ from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import KiwiBenchmark
-from tsdm.datatools import MappingDataset, folds_as_frame, folds_from_groups
+from tsdm.datatools import folds_as_frame, folds_from_groups
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
     HierarchicalSampler,
+    MappingDataset,
     SlidingWindowSampler,
 )
 from tsdm.tasks._deprecated import OldBaseTask

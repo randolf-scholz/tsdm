@@ -3,6 +3,7 @@ r"""Generic data utilities."""
 __all__ = [
     "describe",
     "data_overview",
+    "get_schema",
     "validate_schema",
 ]
 
@@ -12,20 +13,55 @@ from typing import Any, Optional
 
 import pandas as pd
 import polars as pl
-from pandas import DataFrame, Series
+import pyarrow as pa
 from scipy import stats
 
 from tsdm.types.aliases import FilePath, FileStream
 
 
+def get_schema(
+    table: pd.MultiIndex
+    | pd.Index
+    | pd.Series
+    | pd.DataFrame
+    | pa.Table
+    | pl.DataFrame,
+    /,
+) -> tuple[list[Any], dict[Any, Any], list[Any]]:
+    r"""Get the columns, dtypes, and index columns of a table-like object.
+
+    Returns:
+        A tuple containing the column names, a mapping of column names to dtypes,
+        and the index column names.
+
+    Raises:
+        NotImplementedError: If the table type is not supported.
+    """
+    match table:
+        case pd.MultiIndex(names=names, dtypes=dtypes):
+            return names, dict(zip(names, dtypes, strict=True)), []
+        case pd.Index() as index:
+            return [index.name], {index.name: index.dtype}, []
+        case pd.Series() as series:
+            return [series.name], {series.name: series.dtype}, series.index.names
+        case pd.DataFrame() as df:
+            return df.columns.tolist(), df.dtypes.to_dict(), df.index.names
+        case pa.Table(schema=schema):
+            return schema.names, dict(zip(schema.names, schema.types, strict=True)), []
+        case pl.DataFrame() as df:
+            return df.columns, {col: df[col].dtype for col in df.columns}, []
+        case _:
+            raise NotImplementedError(f"Cannot get schema for {type(table)} objects!")
+
+
 def describe(
-    s: Series | DataFrame,
+    s: pd.Series | pd.DataFrame,
     /,
     *,
     quantiles: tuple[float, ...] = (0, 0.01, 0.5, 0.99, 1),
-) -> DataFrame:
+) -> pd.DataFrame:
     r"""Describe a DataFrame on a per column basis."""
-    if isinstance(s, DataFrame):
+    if isinstance(s, pd.DataFrame):
         df = s
         return pd.concat([describe(df[col]) for col in df])
 
@@ -84,9 +120,9 @@ def describe(
     try:
         quantile_values = s.quantile(quantiles)
     except Exception:
-        quantile_values = Series([float("nan")] * len(quantiles))
+        quantile_values = pd.Series([float("nan")] * len(quantiles))
 
-    return DataFrame(
+    return pd.DataFrame(
         {
             # stats
             ("stats", "entropy"): entropy,
@@ -125,10 +161,10 @@ def describe(
 
 
 def data_overview(
-    df: DataFrame, /, *, index_col: Optional[int | str] = None, digits: int = 2
-) -> DataFrame:
+    df: pd.DataFrame, /, *, index_col: Optional[int | str] = None, digits: int = 2
+) -> pd.DataFrame:
     r"""Get a summary of the data."""
-    overview = DataFrame(index=df.columns)
+    overview = pd.DataFrame(index=df.columns)
     null_values = df.isna()
     numerical_cols = df.select_dtypes(include="number").columns
 
@@ -161,8 +197,8 @@ def data_overview(
         for col in df.columns:
             mask = pd.notna(df[col].squeeze())
             time = df.index.get_level_values(index_col)[mask]
-            freq[col] = Series(time).diff().mean()
-        overview["freq"] = Series(freq)
+            freq[col] = pd.Series(time).diff().mean()
+        overview["freq"] = pd.Series(freq)
     return overview
 
 

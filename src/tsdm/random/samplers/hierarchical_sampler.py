@@ -1,16 +1,17 @@
 r"""Implementation of hierarchical sampler."""
 
-__all__ = ["HierarchicalSampler"]
+__all__ = ["HierarchicalSampler", "MappingDataset"]
 
 from collections.abc import Collection, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
 from itertools import chain
+from typing import Any, Optional, Self, cast, overload
 
 from numpy.random import Generator
-from pandas import Series
+from pandas import DataFrame, MultiIndex, Series
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.datatools import Dataset, MapDataset
+from tsdm.datatools import Dataset, MapDataset, TorchDataset
 from tsdm.datatools.collections import SeriesDataset, get_index
 from tsdm.pprint import pprint_repr
 
@@ -110,3 +111,65 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
             key = self.partition[i]
             # This won't raise `StopIteration`, because the length is matched.
             yield key, next(iterators[key])
+
+
+@pprint_repr
+class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
+    r"""Represents a ``Mapping[Key, Dataset]``.
+
+    ``ds[key]`` returns the dataset for the given key.
+    If the key is a tuple, try to divert to the nested dataset.
+
+    ``ds[(key, subkey)]=ds[key][subkey]``
+    """
+
+    datasets: Mapping[K, DS]
+    index: list[K]
+
+    def __init__(self, datasets: Mapping[K, DS], /) -> None:
+        super().__init__()
+        self.index = list(datasets.keys())
+        self.datasets = datasets
+
+    def __iter__(self) -> Iterator[K]:
+        r"""Iterate over the keys."""
+        return iter(self.index)
+
+    def __len__(self) -> int:
+        r"""Length of the dataset."""
+        return len(self.index)
+
+    @overload
+    def __getitem__(self, key: K, /) -> DS: ...
+    @overload
+    def __getitem__(self, key: tuple[K, Any], /) -> Any: ...
+    def __getitem__(self, key: K | tuple[K, Any], /) -> Any:
+        r"""Get the dataset for the given key.
+
+        If the key is a tuple, try to divert to the nested dataset.
+        """
+        match key:
+            case k if key in self:
+                return self.datasets[cast("K", k)]
+            case [outer_key, inner_key]:
+                dataset = self.datasets[outer_key]
+                return dataset[inner_key]
+            case _:
+                raise KeyError(key)
+
+    @classmethod
+    def from_dataframe(
+        cls, df: DataFrame, /, *, levels: Optional[list[str]] = None
+    ) -> Self:
+        r"""Create a `MappingDataset` from a `DataFrame`.
+
+        If `levels` are given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.
+        """
+        if levels is not None:
+            min_index = df.index.to_frame()
+            sub_index = MultiIndex.from_frame(min_index[levels])
+            index = sub_index.unique()
+        else:
+            index = df.index
+
+        return cls({idx: df.loc[idx] for idx in index})

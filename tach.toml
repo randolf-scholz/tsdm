@@ -42,7 +42,7 @@ depends_on = []
 
 [[modules]]
 path = "tsdm.testing"
-depends_on = ["tsdm.types", "tsdm.dtypes"]
+depends_on = ["tsdm.types", "tsdm.dtypes", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.pprint"

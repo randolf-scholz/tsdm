@@ -15,7 +15,11 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Final, Protocol, runtime_checkable
+from typing import (
+    Final,
+    Protocol,
+    runtime_checkable,
+)
 
 from numpy.random import Generator
 from pandas import Index

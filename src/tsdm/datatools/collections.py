@@ -12,7 +12,6 @@ __all__ = [
     "TabularDataset",
     "TorchDataset",
     # Classes
-    "MappingDataset",
     # Functions
     "get_first_sample",
     "get_index",
@@ -20,13 +19,12 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping
-from typing import Any, Optional, Protocol, Self, cast, overload, runtime_checkable
+from collections.abc import Collection, Iterator
+from typing import Any, Protocol, overload, runtime_checkable
 
+import pandas as pd
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, MultiIndex
 
-from tsdm.pprint import pprint_repr
 from tsdm.types.abc import Vec
 from tsdm.types.protocols import SupportsGetItem, SupportsSlicing
 
@@ -146,69 +144,7 @@ class PandasDataset[K, V](Protocol):  # K, +V
     def __len__(self) -> int: ...
 
 
-@pprint_repr
-class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
-    r"""Represents a ``Mapping[Key, Dataset]``.
-
-    ``ds[key]`` returns the dataset for the given key.
-    If the key is a tuple, try to divert to the nested dataset.
-
-    ``ds[(key, subkey)]=ds[key][subkey]``
-    """
-
-    datasets: Mapping[K, DS]
-    index: list[K]
-
-    def __init__(self, datasets: Mapping[K, DS], /) -> None:
-        super().__init__()
-        self.index = list(datasets.keys())
-        self.datasets = datasets
-
-    def __iter__(self) -> Iterator[K]:
-        r"""Iterate over the keys."""
-        return iter(self.index)
-
-    def __len__(self) -> int:
-        r"""Length of the dataset."""
-        return len(self.index)
-
-    @overload
-    def __getitem__(self, key: K, /) -> DS: ...
-    @overload
-    def __getitem__(self, key: tuple[K, Any], /) -> Any: ...
-    def __getitem__(self, key: K | tuple[K, Any], /) -> Any:
-        r"""Get the dataset for the given key.
-
-        If the key is a tuple, try to divert to the nested dataset.
-        """
-        match key:
-            case k if key in self:
-                return self.datasets[cast("K", k)]
-            case [outer_key, inner_key]:
-                dataset = self.datasets[outer_key]
-                return dataset[inner_key]
-            case _:
-                raise KeyError(key)
-
-    @classmethod
-    def from_dataframe(
-        cls, df: DataFrame, /, *, levels: Optional[list[str]] = None
-    ) -> Self:
-        r"""Create a `MappingDataset` from a `DataFrame`.
-
-        If `levels` are given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.
-        """
-        if levels is not None:
-            min_index = df.index.to_frame()
-            sub_index = MultiIndex.from_frame(min_index[levels])
-            index = sub_index.unique()
-        else:
-            index = df.index
-
-        return cls({idx: df.loc[idx] for idx in index})
-
-
-def get_index(dataset: Dataset, /) -> Index:
+def get_index(dataset: Dataset, /) -> pd.Index:
     r"""Return an index object for the dataset.
 
     We support the following data types:
@@ -219,11 +155,11 @@ def get_index(dataset: Dataset, /) -> Index:
     match dataset:
         # NOTE: Series and DataFrame satisfy the MapDataset protocol.
         case PandasDataset() as pandas_dataset:
-            return Index(pandas_dataset.index)
+            return pd.Index(pandas_dataset.index)
         case MapDataset() as map_dataset:
-            return Index(map_dataset.keys())
+            return pd.Index(map_dataset.keys())
         case Indexable() as iterable_dataset:
-            return Index(range(len(iterable_dataset)))
+            return pd.Index(range(len(iterable_dataset)))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
 

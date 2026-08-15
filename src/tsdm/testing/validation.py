@@ -22,11 +22,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
-import pandas as pd
-import polars as pl
-import pyarrow as pa
-
 from tsdm.config import CONFIG
+from tsdm.datatools import get_schema
 from tsdm.types.aliases import FilePath, FileStream
 from tsdm.types.extra import SupportsShape
 
@@ -344,7 +341,7 @@ def validate_table_schema(
     expected_schema: Sequence[str] | Mapping[str, Any] | None,
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
-    r"""Validate the schema of a `pandas` object, given schema values from a table.
+    r"""Validate the schema of a table object, given schema values from a table.
 
     Args:
         table: The table to validate.
@@ -365,42 +362,10 @@ def validate_table_schema(
     expected_dtypes: Mapping | None
     index_columns: Sequence
 
-    # get data shape, columns and dtypes from table
-    match table:
-        case pd.MultiIndex(names=names, dtypes=dtypes):
-            actual_columns = names
-            actual_dtypes = dict(zip(names, dtypes, strict=True))
-            index_columns = []
-        case pd.Index() as index:
-            actual_columns = [index.name]
-            actual_dtypes = {index.name: index.dtype}
-            index_columns = []
-        case pd.Series() as series:
-            actual_columns = [series.name]
-            actual_dtypes = {series.name: series.dtype}
-            index_columns = series.index.names
-        case pd.DataFrame() as df:
-            actual_columns = df.columns.tolist()
-            actual_dtypes = df.dtypes.to_dict()
-            index_columns = df.index.names
-        case pa.Table(schema=schema):
-            actual_columns = schema.names
-            actual_dtypes = dict(zip(schema.names, schema.types, strict=True))
-            index_columns = []
-        case pl.DataFrame() as df:
-            actual_columns = df.columns
-            actual_dtypes = {col: df[col].dtype for col in df.columns}
-            index_columns = []
-        case _:
-            raise NotImplementedError(
-                f"Cannot validate schema for {type(table)} objects!"
-            )
+    actual_columns, actual_dtypes, index_columns = get_schema(table)
 
     # get reference columns and dtypes
     match expected_schema:
-        case pa.Schema() as schema:
-            expected_columns = schema.names
-            expected_dtypes = dict(zip(schema.names, schema.types, strict=True))
         case Mapping() as mapping:
             expected_columns = list(mapping.keys())
             expected_dtypes = mapping
