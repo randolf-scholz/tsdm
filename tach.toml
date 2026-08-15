@@ -68,7 +68,7 @@ depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.random"
-depends_on = ["tsdm.types", "tsdm.datatools"]
+depends_on = ["tsdm.types", "tsdm.datatools", "tsdm.interval"]
 
 [[modules]]
 path = "tsdm.encoders"
@@ -137,3 +137,7 @@ depends_on = ["tsdm.testing", "tsdm.encoders", "tsdm.types"]
 [[modules]]
 path = "tsdm.decorator"
 depends_on = ["tsdm.types"]
+
+[[modules]]
+path = "tsdm.interval"
+depends_on = []

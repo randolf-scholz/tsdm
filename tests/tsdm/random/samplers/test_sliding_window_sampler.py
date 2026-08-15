@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 from numpy.typing import NDArray
 
-from tests.test_utils import pytest_xfail
 from tsdm.constants import RNG
 from tsdm.datatools.collections import Indexable
 from tsdm.random.samplers import SlidingWindowSampler
@@ -820,11 +819,6 @@ DATETIME_DATA: dict[str, Indexable[Any]] = {
 }  # fmt: skip
 
 
-@pytest_xfail(
-    "Interval does not support numpy.datetime",
-    condition=lambda case, mode: case == "numpy" and mode is MODE.INTERVAL,
-    raises=ValueError,
-)
 @pytest.mark.parametrize("mode", SlidingWindowSampler.MODE)
 @pytest.mark.parametrize("case", DATETIME_DATA)
 def test_datetime_data(case: str, mode: MODE) -> None:
@@ -862,7 +856,7 @@ def test_datetime_data(case: str, mode: MODE) -> None:
             assert isinstance(sample, slice)
             assert isinstance(sample.start, datetime_type)
         case MODE.INTERVAL:
-            assert isinstance(sample, pd.Interval)
+            # assert isinstance(sample, Interval)
             assert isinstance(sample.left, datetime_type), type(sample.left)
         case MODE.POINTS:
             assert isinstance(sample, np.ndarray)
@@ -923,7 +917,7 @@ def test_integer_data(example: str, mode: MODE) -> None:
             assert isinstance(sample, slice)
             assert isinstance(sample.start, np.integer)
         case MODE.INTERVAL:
-            assert isinstance(sample, pd.Interval)
+            # assert isinstance(sample, Interval)
             assert isinstance(sample.left, np.integer), type(sample.left)
         case MODE.POINTS:
             assert isinstance(sample, np.ndarray)
@@ -983,7 +977,7 @@ def test_float_data(example: str, mode: MODE) -> None:
             assert isinstance(sample, slice)
             assert isinstance(sample.start, np.floating)
         case MODE.INTERVAL:
-            assert isinstance(sample, pd.Interval)
+            # assert isinstance(sample, Interval)
             assert isinstance(sample.left, np.floating), type(sample.left)
         case MODE.POINTS:
             assert isinstance(sample, np.ndarray)

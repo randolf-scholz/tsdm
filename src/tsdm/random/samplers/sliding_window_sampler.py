@@ -29,7 +29,6 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.random import Generator
 from numpy.typing import NDArray
-from pandas import Interval
 
 from tsdm.constants import RNG
 from tsdm.datatools.collections import (
@@ -37,6 +36,7 @@ from tsdm.datatools.collections import (
     get_first_sample,
     get_last_sample,
 )
+from tsdm.interval import HalfOpenInterval, Interval
 from tsdm.types.abc import Vec
 from tsdm.utils import timedelta, timestamp
 
@@ -639,7 +639,7 @@ class SlidingWindowSampler[
     @overload
     def __iter__(self: SlidingWindowSampler[DType, B, MULTI], /) -> Iterator[list[tuple[DType, DType]]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, I, MULTI], /) -> Iterator[list[Interval[DType]]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, I, MULTI], /) -> Iterator[list[HalfOpenInterval[DType]]]: ...
     @overload
     def __iter__(self: SlidingWindowSampler[DType, M, MULTI], /) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
@@ -653,7 +653,7 @@ class SlidingWindowSampler[
     @overload
     def __iter__(self: SlidingWindowSampler[DType, B, ONE], /) -> Iterator[tuple[DType, DType]]: ...
     @overload
-    def __iter__(self: SlidingWindowSampler[DType, I, ONE], /) -> Iterator[Interval[DType]]: ...
+    def __iter__(self: SlidingWindowSampler[DType, I, ONE], /) -> Iterator[HalfOpenInterval[DType]]: ...
     @overload
     def __iter__(self: SlidingWindowSampler[DType, X, ONE], /) -> Iterator[NDArray[np.integer]]: ...
     @overload
@@ -684,7 +684,7 @@ class SlidingWindowSampler[
             MODE.BOUNDS   : lambda start, stop: (start, stop),
             MODE.MASK     : lambda start, stop: (start <= data) & (data < stop),
             MODE.SLICE    : lambda start, stop: slice(start, stop),  # ruff: ignore[PLW0108]
-            MODE.INTERVAL : lambda start, stop: Interval(start, stop, closed="left"),
+            MODE.INTERVAL : lambda start, stop: Interval(start, stop, left_closed=True, right_closed=False),
             MODE.POINTS   : lambda start, stop: data[(start <= data) & (data < stop)],
             MODE.INDEX    : lambda start, stop: np.where((start <= data) & (data < stop))[0],
         }  # fmt: skip
