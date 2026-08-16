@@ -37,6 +37,7 @@ __all__ = [
 from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
+from sys import stderr
 from typing import Literal, get_args
 from zipfile import ZipFile
 
@@ -617,6 +618,16 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
                 "MIMIC-III v1.4+ is required. At the time of writing, the website"
                 " does not provide legacy versions of the MIMIC-III dataset."
             )
+
+        print(
+            "\n\t\033[1;33mWARNING\033[0m"
+            "\n\tDownloading MIMIC-III requires a PhysioNet account and signing the"
+            "\n\tuser agreement for each version of the dataset."
+            "\n\tThe download can be very slow and may fail due to network issues."
+            "\n\tIt is recommended to manually download the dataset and paste the"
+            f"\n\t{fname!r} file into {str(self.RAWDATA_DIR)!r}.\n",
+            file=stderr,
+        )
 
         remote.download(
             self.SOURCE_URL + f"{self.version}/",

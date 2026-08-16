@@ -78,6 +78,7 @@ from collections.abc import Mapping
 from contextlib import suppress
 from functools import cached_property
 from getpass import getpass
+from sys import stderr
 from typing import Literal, get_args
 from zipfile import ZipFile
 
@@ -898,6 +899,16 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         return table
 
     def get_rawdata_file(self, fname: str, /) -> None:
+        print(
+            "\n\t\033[1;33mWARNING\033[0m"
+            "\n\tDownloading MIMIC-IV requires a PhysioNet account and signing the"
+            "\n\tuser agreement for each version of the dataset."
+            "\n\tThe download can be very slow and may fail due to network issues."
+            "\n\tIt is recommended to manually download the dataset and paste the"
+            f"\n\t{fname!r} file into {str(self.RAWDATA_DIR)!r}.\n",
+            file=stderr,
+        )
+
         username = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)
 
