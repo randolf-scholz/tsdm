@@ -22,7 +22,7 @@ from scipy import stats
 
 
 def approx_float_gcd(
-    x: ArrayLike, /, *, rtol: float = 1e-05, atol: float = 1e-08
+    a: ArrayLike, /, *, rtol: float = 1e-05, atol: float = 1e-08
 ) -> float:
     r"""Compute approximate GCD of multiple floats.
 
@@ -38,6 +38,7 @@ def approx_float_gcd(
         RuntimeWarning,
         stacklevel=2,
     )
+    x = np.asanyarray(a)
     x = np.abs(x).flatten()
 
     def _float_gcd(z: np.ndarray) -> float:
@@ -58,14 +59,14 @@ def approx_float_gcd(
     return _float_gcd(x)
 
 
-def float_gcd(x: ArrayLike, /) -> float:
+def float_gcd(a: ArrayLike, /) -> float:
     r"""Compute the greatest common divisor (GCD) of a list of floats.
 
     Note:
         Since floats are rational numbers, this is a well-defined operation.
         We simply convert them to rational numbers and use the standard method.
     """
-    x = np.asanyarray(x)
+    x = np.asanyarray(a)
 
     if not np.issubdtype(x.dtype, np.floating):
         raise TypeError("Input is not float!")
@@ -104,18 +105,18 @@ def is_quasiregular(a: ArrayLike, /) -> bool:
     integer multiples of the minimal, non-zero timedelta of the series.
     """
     s = np.asarray(a)
-    Δt = np.diff(s)
-    zero = np.array(0, dtype=Δt.dtype)
-    Δt_min = np.min(Δt[Δt > zero])
-    z = Δt / Δt_min
+    dt = np.diff(s)
+    zero = np.array(0, dtype=dt.dtype)
+    Δt_min = np.min(dt[dt > zero])
+    z = dt / Δt_min
     return np.allclose(z, np.rint(z))
 
 
 def is_regular(a: ArrayLike) -> bool:
     r"""Test if time series is regular, i.e. iff $Δt_i$ is constant."""
-    s = np.asarray(a)
-    Δt = np.diff(s)
-    return bool(np.all(Δt == np.min(Δt)))
+    t = np.asanyarray(a)
+    dt = np.diff(t)
+    return bool(np.all(dt == np.min(dt)))
 
 
 def regularity_coefficient(a: ArrayLike, /, *, ignore_duplicates: bool = True) -> float:
@@ -130,33 +131,33 @@ def regularity_coefficient(a: ArrayLike, /, *, ignore_duplicates: bool = True) -
     To make the time-series regular, one would have to insert additional
     :math:`(κ(𝐭)-1) | 𝐭 |`-many data-points.
     """
-    s = np.asarray(a)
+    s = np.asanyarray(a)
     gcd = time_gcd(s)
-    Δt = np.diff(s)
+    dt = np.diff(s)
     if ignore_duplicates:
-        zero = np.array(0, dtype=Δt.dtype)
-        Δt = Δt[Δt > zero]
-    coef: float = ((np.max(s) - np.min(s)) / gcd) / len(Δt)
+        zero = np.array(0, dtype=dt.dtype)
+        dt = dt[dt > zero]
+    coef: float = ((np.max(s) - np.min(s)) / gcd) / len(dt)
     return coef
 
 
 def time_gcd(a: ArrayLike, /) -> float:
     r"""Compute the greatest common divisor of datetime64/int/float data."""
-    s = np.asarray(a)
-    Δt = np.diff(s)
-    zero = np.array(0, dtype=Δt.dtype)
-    Δt = Δt[Δt > zero]
+    t = np.asanyarray(a)
+    dt = np.diff(t)
+    zero = np.array(0, dtype=dt.dtype)
+    dt = dt[dt > zero]
 
-    if np.issubdtype(Δt.dtype, np.datetime64):
-        Δt = Δt.astype("timedelta64[ns]").astype(int)
-        gcd = np.gcd.reduce(Δt)
+    if np.issubdtype(dt.dtype, np.datetime64):
+        dt = dt.astype("timedelta64[ns]").astype(int)
+        gcd = np.gcd.reduce(dt)
         return gcd.astype("timedelta64[ns]")
-    if np.issubdtype(Δt.dtype, np.integer):
-        return np.gcd.reduce(Δt)
-    if np.issubdtype(Δt.dtype, np.floating):
-        return float_gcd(Δt)
+    if np.issubdtype(dt.dtype, np.integer):
+        return np.gcd.reduce(dt)
+    if np.issubdtype(dt.dtype, np.floating):
+        return float_gcd(dt)
 
-    raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
+    raise NotImplementedError(f"Data type {dt.dtype=} not understood")
 
 
 def irregularity_coefficient(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
@@ -169,8 +170,8 @@ def irregularity_coefficient(a: ArrayLike, /, *, drop_zero: bool = True) -> floa
     Returns:
         γ(T) = \max(∆T) / \gcd(∆T)
     """
-    t = np.asarray(a)
-    dt = t[1:] - t[:-1]
+    t = np.asanyarray(a)
+    dt = np.diff(t)
 
     if drop_zero:
         dt = dt[dt != 0]
@@ -186,18 +187,18 @@ def irregularity_coefficient(a: ArrayLike, /, *, drop_zero: bool = True) -> floa
     raise NotImplementedError(f"Data type {dt.dtype=} not understood")
 
 
-def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
+def coefficient_of_variation(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
     r"""Compute the coefficient of variation of a time differences.
 
     Args:
-        s: Sequence of time stamps
+        a: Sequence of time stamps
         drop_zero: Whether to drop zero time differences (default: True)
 
     Returns:
         γ(T) = σ(∆T) / μ(∆T)
     """
-    t = np.asarray(s)
-    dt = t[1:] - t[:-1]
+    t = np.asanyarray(a)
+    dt = np.diff(t)
 
     if drop_zero:
         dt = dt[dt != 0]
@@ -205,17 +206,17 @@ def coefficient_of_variation(s: ArrayLike, /, *, drop_zero: bool = True) -> floa
     return float(stats.variation(dt))
 
 
-def geometric_std(s: ArrayLike, /, *, drop_zero: bool = True) -> float:
+def geometric_std(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
     r"""Compute the geometric standard deviation of a time differences.
 
     Args:
-        s: Sequence of time stamps
+        a: Sequence of time stamps
         drop_zero: Whether to drop zero time differences (default: True)
 
     Returns:
         σ_g(T) = exp(σ(log(∆T)))
     """
-    t = np.asarray(s)
+    t = np.asanyarray(a)
     dt = t[1:] - t[:-1]
 
     if drop_zero:
