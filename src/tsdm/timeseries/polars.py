@@ -5,8 +5,8 @@ __all__ = [
     "PolarsTSC",
 ]
 
-from collections.abc import Iterator
-from dataclasses import KW_ONLY, dataclass, fields
+from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import KW_ONLY, dataclass, field, fields
 from functools import cached_property
 from typing import Any, ClassVar, Self, cast, overload
 
@@ -23,10 +23,9 @@ from .base import RangeSelector, TimeSeries, TimeSeriesCollection
 class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
     r"""A single time series backed by a Polars DataFrame.
 
-    Polars does not have a dedicated row index. ``timeindex`` is therefore a
-    row-aligned Series that carries the timestamps for ``timeseries``. It is
-    intentionally kept separate from the data frame, although applications may
-    also retain a timestamp column in ``timeseries``.
+    Polars does not have a dedicated row index. ``time_column`` identifies the
+    timestamp column contained in ``timeseries``; ``timeindex`` is inferred
+    from that row-aligned column.
     """
 
     FIELDS: ClassVar[frozenset[str]] = frozenset(
@@ -45,15 +44,18 @@ class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
     _: KW_ONLY
 
     timeseries: pl.DataFrame
-    r"""The time series values."""
-    timeindex: pl.Series
-    r"""The row-aligned time index."""
+    r"""The time series table, including its timestamp columns."""
+    time_column: str
+    r"""The timestamp column in ``timeseries``."""
     timeseries_metadata: pl.DataFrame | None = None
     r"""Data associated with the time series variables."""
     static_covariates: pl.DataFrame | None = None
     r"""Static covariates associated with the time series."""
     static_covariates_metadata: pl.DataFrame | None = None
     r"""Metadata associated with the static covariates."""
+
+    timeindex: pl.Series = field(init=False)
+    r"""The row-aligned timestamp column inferred from ``timeseries``."""
 
     @cached_property
     def unique_timeindex(self) -> pl.Series:
@@ -67,15 +69,8 @@ class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
                 "Expected timeseries to be a polars DataFrame,"
                 f" got {type(self.timeseries)}."
             )
-        if not isinstance(self.timeindex, pl.Series):
-            raise TypeError(
-                f"Expected timeindex to be a polars Series, got {type(self.timeindex)}."
-            )
-        if self.timeseries.height != self.timeindex.len():
-            raise ValueError(
-                "Expected timeseries and timeindex to have the same length,"
-                f" got {self.timeseries.height} and {self.timeindex.len()}."
-            )
+
+        object.__setattr__(self, "timeindex", self._infer_timeindex())
 
         for f in fields(self):
             if getattr(self, f.name, UNDEFINED) is UNDEFINED:
@@ -105,7 +100,7 @@ class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
             case slice() as s:
                 labels = self._select_slice(s)
                 self._check_keys(labels)
-                mask = self.timeindex.is_in(labels)
+                mask = self.timeindex.is_in(labels.implode())
 
             case list(items):
                 if items and all(isinstance(k, bool) for k in items):
@@ -116,22 +111,26 @@ class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
                         )
                     mask = pl.Series("mask", items)
                 else:
-                    labels = cast("list[TimeT]", items)
+                    labels = pl.Series(items)
                     self._check_keys(labels)
-                    mask = self.timeindex.is_in(labels)
+                    mask = self.timeindex.is_in(labels.implode())
 
             case scalar:
-                labels = [scalar]
+                labels = pl.Series([scalar])
                 self._check_keys(labels)
-                mask = self.timeindex.is_in(labels)
+                mask = self.timeindex.is_in(labels.implode())
 
         sliced = {name: getattr(self, name) for name in self.FIELDS - {"timeseries"}}
         return self.__class__(
             name=self.name,
             timeseries=self.timeseries.filter(mask),
-            timeindex=self.timeindex.filter(mask),
+            time_column=self.time_column,
             **sliced,
         )
+
+    def _infer_timeindex(self) -> pl.Series:
+        r"""Infer the row-aligned timestamp column from ``timeseries``."""
+        return self.timeseries.get_column(self.time_column)
 
     def _check_keys(self, keys: list[TimeT] | pl.Series, /) -> None:
         r"""Raise ``KeyError`` when a label is not present in an index."""
@@ -150,12 +149,15 @@ class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
 
 @pprint_repr
 @dataclass(frozen=True)
-class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
+class PolarsTSC[KeyT](
+    TimeSeriesCollection[KeyT, pl.DataFrame], Mapping[KeyT, PolarsTS[Any]]
+):
     r"""A collection of time series backed by a Polars DataFrame.
 
-    ``timeindex`` and ``metaindex`` are row-aligned with ``timeseries``. The
-    former contains timestamps and the latter contains collection identifiers.
-    Their pairing replaces Pandas' two-level ``MultiIndex``.
+    Polars does not have a dedicated row index. ``time_column`` and
+    ``meta_columns`` identify the row-aligned timestamp and collection-key
+    columns contained in ``timeseries``. Their pairing replaces Pandas'
+    two-level ``MultiIndex``.
     """
 
     FIELDS: ClassVar[frozenset[str]] = frozenset(
@@ -176,11 +178,11 @@ class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
     _: KW_ONLY
 
     timeseries: pl.DataFrame
-    r"""The collection's time series values."""
-    timeindex: pl.Series
-    r"""The row-aligned timestamps."""
-    metaindex: pl.Series
-    r"""The row-aligned collection identifiers."""
+    r"""The collection's time series table, including its index columns."""
+    time_column: str
+    r"""The timestamp column in ``timeseries``."""
+    meta_columns: list[str]
+    r"""The collection-key columns in ``timeseries``."""
     timeseries_metadata: pl.DataFrame | None = None
     r"""Data associated with the time series variables."""
     static_covariates: pl.DataFrame | None = None
@@ -192,42 +194,50 @@ class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
     constants_metadata: pl.DataFrame | None = None
     r"""Metadata associated with the constants."""
 
+    timeindex: pl.Series = field(init=False)
+    r"""The row-aligned timestamps inferred from ``timeseries``."""
+    metaindex: pl.DataFrame = field(init=False)
+    r"""The distinct collection identifiers inferred from ``timeseries``."""
+
     @cached_property
     def unique_timeindex(self) -> pl.Series:
         r"""Return distinct timestamps in order of appearance."""
         return self.timeindex.unique(maintain_order=True)
 
-    @cached_property
-    def unique_metaindex(self) -> pl.Series:
-        r"""Return distinct collection identifiers in order of appearance."""
-        return self.metaindex.unique(maintain_order=True)
-
     def __post_init__(self) -> None:
-        r"""Validate that the data and its two index Series are aligned."""
+        r"""Validate collection columns and infer its derived indices."""
         if not isinstance(self.timeseries, pl.DataFrame):
             raise TypeError(
                 "Expected timeseries to be a polars DataFrame,"
                 f" got {type(self.timeseries)}."
             )
-        if not isinstance(self.timeindex, pl.Series):
+
+        if not isinstance(self.time_column, str):
             raise TypeError(
-                f"Expected timeindex to be a polars Series, got {type(self.timeindex)}."
-            )
-        if not isinstance(self.metaindex, pl.Series):
-            raise TypeError(
-                f"Expected metaindex to be a polars Series, got {type(self.metaindex)}."
+                f"Expected time_column to be a string, got {self.time_column!r}."
             )
 
-        lengths = {
-            "timeseries": self.timeseries.height,
-            "timeindex": self.timeindex.len(),
-            "metaindex": self.metaindex.len(),
-        }
-        if len(set(lengths.values())) != 1:
-            raise ValueError(
-                "Expected timeseries, timeindex, and metaindex to have the same"
-                f" length, got {lengths}."
+        if (
+            not isinstance(self.meta_columns, list)
+            or not self.meta_columns
+            or not all(isinstance(column, str) for column in self.meta_columns)
+            or len(set(self.meta_columns)) != len(self.meta_columns)
+            or set(self.meta_columns).intersection({self.time_column})
+        ):
+            raise TypeError(
+                f"Expected meta_columns to be a non-empty list of unique strings,"
+                f" disjoint from time_column {self.time_column!r},"
+                f" got {self.meta_columns!r}."
             )
+
+        object.__setattr__(
+            self, "timeindex", self.timeseries.get_column(self.time_column)
+        )
+        object.__setattr__(
+            self,
+            "metaindex",
+            self.timeseries.select(*self.meta_columns).unique(maintain_order=True),
+        )
 
         if self.static_covariates is not None:
             if not isinstance(self.static_covariates, pl.DataFrame):
@@ -240,6 +250,13 @@ class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
                     "Expected static_covariates to have one row per collection,"
                     f" got {self.static_covariates.height} and {len(self)}."
                 )
+            if any(
+                col not in self.static_covariates.columns for col in self.meta_columns
+            ):
+                raise ValueError(
+                    "Expected static_covariates to contain all meta_columns"
+                    f" {self.meta_columns}, got {self.static_covariates.columns}."
+                )
 
         for f in fields(self):
             if getattr(self, f.name, UNDEFINED) is UNDEFINED:
@@ -247,15 +264,23 @@ class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
 
     def __len__(self) -> int:
         r"""Return the number of distinct collection identifiers."""
-        return self.unique_metaindex.len()
+        return self.metaindex.height
 
     def __iter__(self) -> Iterator[KeyT]:
         r"""Iterate over distinct collection identifiers in order of appearance."""
-        return iter(self.unique_metaindex)
+        match self.metaindex.width:
+            case 1:
+                return iter(self.metaindex.to_series())
+            case _:
+                return cast("Iterator[KeyT]", iter(self.metaindex.iter_rows()))
 
     def __contains__(self, key: object, /) -> bool:
         r"""Check whether a collection identifier is present."""
-        return key in self.unique_metaindex
+        match self.metaindex.width:
+            case 1:
+                return key in self.metaindex.to_series()
+            case _:
+                return any(key == value for value in self.metaindex.iter_rows())
 
     @overload
     def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
@@ -276,13 +301,17 @@ class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
             case list(items):
                 if items and all(isinstance(k, bool) for k in items):
                     # mask branch.
-                    if len(items) != self.unique_metaindex.len():
+                    if len(items) != len(self):
                         raise ValueError(
                             "Expected boolean mask to have one entry per collection,"
-                            f" got {len(items)} and {self.unique_metaindex.len()}."
+                            f" got {len(items)} and {len(self)}."
                         )
                     return self._subset(
-                        self.unique_metaindex.filter(pl.Series("mask", items))
+                        [
+                            label
+                            for label, selected in zip(self, items, strict=True)
+                            if selected
+                        ]
                     )
                 labels = cast("list[KeyT]", items)
                 return self._subset(labels)
@@ -290,50 +319,71 @@ class PolarsTSC[KeyT](TimeSeriesCollection[KeyT, pl.DataFrame]):
             case scalar:
                 labels = [scalar]
                 self._check_keys(labels)
-                mask = self.metaindex.is_in(labels)
+                keys = self._key_frame(labels)
                 return PolarsTS(
                     name=self.name,
-                    timeseries=self.timeseries.filter(mask),
-                    timeindex=self.timeindex.filter(mask),
+                    timeseries=self.timeseries.join(
+                        keys, on=self.meta_columns, how="semi"
+                    ),
+                    time_column=self.time_column,
                     timeseries_metadata=self.timeseries_metadata,
                     static_covariates=self._static_covariates_for(labels),
                     static_covariates_metadata=self.static_covariates_metadata,
                 )
 
-    def _check_keys(self, keys: list[Any] | pl.Series, /) -> None:
+    def _check_keys(self, keys: Sequence[KeyT] | pl.Series, /) -> None:
         r"""Raise ``KeyError`` when a label is not present in an index."""
-        if missing_keys := [key for key in keys if key not in self.unique_metaindex]:
+        if missing_keys := [key for key in keys if key not in self]:
             raise KeyError(missing_keys)
 
     def _static_covariates_for(
-        self, keys: list[KeyT] | pl.Series, /
+        self, keys: Sequence[KeyT] | pl.Series, /
     ) -> pl.DataFrame | None:
         r"""Select static covariates corresponding to collection identifiers."""
         if self.static_covariates is None:
             return None
-        mask = self.unique_metaindex.is_in(pl.Series(keys).implode())
+        mask = pl.Series("mask", [key in keys for key in self])
         return self.static_covariates.filter(mask)
 
-    def _subset(self, keys: list[KeyT] | pl.Series, /) -> Self:
+    def _subset(self, keys: Sequence[KeyT] | pl.Series, /) -> Self:
         r"""Return the collection restricted to ``keys``."""
         self._check_keys(keys)
-        mask = self.metaindex.is_in(pl.Series(keys).implode())
+        key_frame = self._key_frame(keys)
         sliced = {
             name: getattr(self, name)
             for name in self.FIELDS - {"timeseries", "static_covariates"}
         }
         return self.__class__(
             name=self.name,
-            timeseries=self.timeseries.filter(mask),
-            timeindex=self.timeindex.filter(mask),
-            metaindex=self.metaindex.filter(mask),
+            timeseries=self.timeseries.join(
+                key_frame, on=self.meta_columns, how="semi"
+            ),
+            time_column=self.time_column,
+            meta_columns=self.meta_columns,
             static_covariates=self._static_covariates_for(keys),
             **sliced,
         )
 
+    def _key_frame(self, keys: Sequence[KeyT] | pl.Series, /) -> pl.DataFrame:
+        r"""Convert collection keys to a table indexed by ``meta_columns``."""
+        if not len(keys):
+            return self.metaindex.head(0)
+        match self.metaindex.width:
+            case 1:
+                return pl.DataFrame(
+                    {self.meta_columns[0]: keys}, schema=self.metaindex.schema
+                )
+            case _:
+                return pl.DataFrame(keys, schema=self.metaindex.schema, orient="row")
+
     def _select_slice(self, key: slice, /) -> pl.Series:
         r"""Resolve a label slice against an index, including its stop label."""
-        index = self.unique_metaindex
+        if self.metaindex.width != 1:
+            raise ValueError(
+                "Cannot slice a multi-column metaindex. Use a list of keys instead."
+            )
+
+        index = self.metaindex.to_series()
         start = 0 if key.start is None else index.index_of(key.start)
         stop = len(index) if key.stop is None else index.index_of(key.stop)
         if start is None or stop is None:

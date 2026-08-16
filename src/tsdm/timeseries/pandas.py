@@ -30,7 +30,7 @@ from collections.abc import Callable as Fn, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, field, fields
 from typing import Any, ClassVar, Self, cast, overload
 
-from pandas import DataFrame, Index, MultiIndex
+from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm import datasets
 from tsdm.constants import UNDEFINED
@@ -77,8 +77,8 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
     # derived fields
-    timeindex: Index = field(init=False)
-    r"""The time-index of the dataset."""
+    timeindex: Series = field(init=False)
+    r"""The timestamps that index the time series."""
 
     @classmethod
     def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
@@ -159,7 +159,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
 
     def _select_slice(self, key: slice, /) -> Index:
         r"""Resolve a label slice against an index, including its stop label."""
-        index = self.timeindex
+        index = self.timeindex.index
         start = 0 if key.start is None else index.get_indexer_for([key.start]).item()
         stop = (
             len(index) - 1
@@ -170,20 +170,22 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
             raise KeyError(key)
         return index[slice(start, stop + 1, key.step)]
 
-    def _infer_timeindex(self) -> Index:
-        r"""Get the timeindex."""
+    def _infer_timeindex(self) -> Series:
+        r"""Get timestamps indexed by the canonical time index."""
         index = self.timeseries.index.copy()
         if isinstance(index, MultiIndex):
             raise TypeError(
                 "Tried to create a TimeSeries from a DataFrame with MultiIndex."
                 "\n    Are you sure this is not a TimeSeriesCollection?"
             )
-        return index.unique()
+        return Series(index, index=index, name=index.name)
 
 
 @pprint_repr
 @dataclass(frozen=True)
-class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataFrame]):
+class PandasTSC[KeyT](
+    TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, PandasTS[Any]]
+):
     r"""Class for **equimodal** TimeSeriesCollections.
 
     A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
@@ -222,8 +224,8 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
     # derived fields
-    timeindex: MultiIndex = field(init=False)
-    r"""The time-index of the collection."""
+    timeindex: Series = field(init=False)
+    r"""The row-aligned timestamps indexed by their collection keys."""
     metaindex: Index = field(init=False)
     r"""The index of the collection."""
 
@@ -272,16 +274,20 @@ class PandasTSC[KeyT](TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, DataF
         r"""Check if the key is in the metaindex."""
         return key in self.metaindex
 
-    def _infer_timeindex(self) -> MultiIndex:
-        r"""Get the timeindex."""
+    def _infer_timeindex(self) -> Series:
+        r"""Get timestamps indexed by row-aligned collection keys."""
         index = self.timeseries.index.copy()
         if not isinstance(index, MultiIndex):
             raise TypeError("Expected a timeseries with MultiIndex.")
-        return index.unique()
+        return Series(
+            index.get_level_values(-1),
+            index=index.droplevel(-1),
+            name=index.names[-1],
+        )
 
     def _infer_metaindex(self) -> Index:
         r"""Get the metaindex."""
-        return self.timeindex.droplevel(-1).unique()
+        return self.timeindex.index.unique()
 
     def _validate_static_covariates(self) -> None:
         r"""Ensure that the static covariates index is a subset of the metaindex."""

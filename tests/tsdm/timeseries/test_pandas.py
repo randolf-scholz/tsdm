@@ -1,6 +1,8 @@
+from collections.abc import Mapping
+
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
 from tsdm.timeseries.pandas import PandasTS, PandasTSC, beijing_air_quality
 
@@ -38,7 +40,14 @@ def test_timeseries_getitem(
     actual = ts[key]
 
     assert isinstance(actual, PandasTS)
-    assert actual.timeindex.tolist() == expected_index
+    assert_series_equal(
+        actual.timeindex,
+        pd.Series(
+            expected_index,
+            index=pd.Index(expected_index, name="time"),
+            name="time",
+        ),
+    )
     assert_frame_equal(actual.timeseries, timeseries.loc[expected_index])
 
     with pytest.raises(KeyError):
@@ -69,6 +78,9 @@ def test_timeseries_collection_getitem(
             {"offset": [100, 200]}, index=pd.Index(["a", "b"], name="series")
         ),
     )
+    assert isinstance(collection, Mapping)
+    assert list(collection.keys()) == ["a", "b"]
+    assert all(isinstance(value, PandasTS) for value in collection.values())
 
     actual = collection[key]
 
@@ -79,9 +91,43 @@ def test_timeseries_collection_getitem(
     assert actual.static_covariates is not None
     assert actual.static_covariates.index.tolist() == expected_series
     if isinstance(actual, PandasTS):
-        assert actual.timeindex.tolist() == [1, 2]
+        assert_series_equal(
+            actual.timeindex,
+            pd.Series([1, 2], index=pd.Index([1, 2], name="time"), name="time"),
+        )
     else:
+        assert_series_equal(
+            actual.timeindex,
+            pd.Series(
+                [1, 2] * len(expected_series),
+                index=pd.Index(
+                    [series for series in expected_series for _ in range(2)],
+                    name="series",
+                ),
+                name="time",
+            ),
+        )
         assert actual.metaindex.tolist() == expected_series
 
     with pytest.raises(KeyError):
         collection["missing"]
+
+
+def test_timeseries_collection_timeindex_uses_row_metaindex() -> None:
+    index = pd.MultiIndex.from_tuples(
+        [(1, 1, 1), (1, 1, 2), (1, 2, 1)],
+        names=["batch", "series", "time"],
+    )
+    collection = PandasTSC(
+        timeseries=pd.DataFrame({"value": [10, 20, 30]}, index=index)
+    )
+    expected_timeindex = pd.Series(
+        [1, 2, 1],
+        index=pd.MultiIndex.from_tuples(
+            [(1, 1), (1, 1), (1, 2)], names=["batch", "series"]
+        ),
+        name="time",
+    )
+
+    assert_series_equal(collection.timeindex, expected_timeindex)
+    assert_index_equal(collection.metaindex, expected_timeindex.index.unique())
