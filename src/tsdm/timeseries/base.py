@@ -8,7 +8,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Iterator
-from typing import Any, ClassVar, Protocol, Self, overload
+from typing import Any, ClassVar, Protocol, ReadOnly, Self, overload
 
 # TODO: Use generic slice in 3.15
 type RangeSelector[T] = slice | list[T] | list[bool]
@@ -23,16 +23,16 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series."""
 
-    timeseries: TableT
+    timeseries: ReadOnly[TableT]  # type: ignore
     r"""The time series data."""
-    timeseries_metadata: TableT | None
+    timeseries_metadata: ReadOnly[TableT | None]  # type: ignore
     r"""Data associated with the time such as measurement device, unit, etc."""
-    static_covariates: TableT | None
+    static_covariates: ReadOnly[TableT | None]  # type: ignore
     r"""The metadata of the dataset."""
-    static_covariates_metadata: TableT | None
+    static_covariates_metadata: ReadOnly[TableT | None]  # type: ignore
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
-    timeindex: Any
+    timeindex: ReadOnly[Any]  # type: ignore
     r"""The time index of the time series."""
 
     @abstractmethod
@@ -51,22 +51,22 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series collection."""
 
-    timeseries: TableT
+    timeseries: ReadOnly[TableT]  # type: ignore
     r"""The collection of time series data."""
-    timeseries_metadata: TableT | None
+    timeseries_metadata: ReadOnly[TableT | None]  # type: ignore
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    static_covariates: TableT | None
-    r"""The static covariates associated with each timeseries."""
-    static_covariates_metadata: TableT | None
+    static_covariates: ReadOnly[TableT | None]  # type: ignore
+    r"""The static covariates associated with each t  # pyrefly: ignore[invalid-annotation]imeseries."""
+    static_covariates_metadata: ReadOnly[TableT | None]  # type: ignore
     r"""Data associated with each metadata such as measurement device, unit, etc."""
-    constants: TableT | None
+    constants: ReadOnly[TableT | None]  # type: ignore
     r"""Additional data that is independent of the metaindex."""
-    constants_metadata: TableT | None
+    constants_metadata: ReadOnly[TableT | None]  # type: ignore
     r"""Data associated with each global metadata such as measurement device, unit, etc."""
 
-    timeindex: Any
+    timeindex: ReadOnly[Any]  # type: ignore
     r"""The time index of the time series."""
-    metaindex: Any
+    metaindex: ReadOnly[Any]  # type: ignore
     r"""The meta index of the time series collection."""
 
     @abstractmethod
