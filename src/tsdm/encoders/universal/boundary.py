@@ -5,9 +5,7 @@ __all__ = ["BoundaryEncoder"]
 import math
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Self
-
-import pandas as pd
+from typing import Any
 
 from tsdm.backend import Backend, get_backend
 from tsdm.backend.fallback import is_null_scalar
@@ -112,26 +110,6 @@ class BoundaryEncoder(FittableEncoder[Any, Any]):
             raise ValueError(
                 "Incompatible combination: upper_included=True and upper_mode='clip'."
             )
-
-    @classmethod
-    def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
-        r"""Create a BoundaryEncoder from a pandas Interval."""
-        lower_bound = interval.left
-        upper_bound = interval.right
-        lower_included, upper_included = {
-            "left":    (True, False),
-            "right":   (False, True),
-            "both":    (True, True),
-            "neither": (False, False),
-        }[interval.closed]  # fmt: skip
-
-        return cls(
-            lower_bound,
-            upper_bound,
-            lower_included=lower_included,
-            upper_included=upper_included,
-            **kwargs,
-        )
 
     def fit(self, data: FloatArray, /) -> None:
         if len(data.shape) != 1:
