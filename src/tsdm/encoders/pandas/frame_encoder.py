@@ -9,7 +9,6 @@ import pandas as pd
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import Encoder, EncoderDict
 from tsdm.pprint import pprint_mapping
-from tsdm.types.aliases import DictArg
 
 
 @pprint_mapping
@@ -27,10 +26,6 @@ class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
 
     - [ ] Add support for groups of column-encoders
     """
-
-    @classmethod
-    def new(cls, *, encoders: DictArg) -> EncoderDict:
-        return cls(encoders)
 
     # fitted attributes
     original_index: pd.Index = field(init=False, default=UNDEFINED)

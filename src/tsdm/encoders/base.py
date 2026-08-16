@@ -934,14 +934,17 @@ class EncoderList[
 class EncoderDict[
     X,  # invariant
     Y,  # invariant
-    K,  # invariant
-    E: Encoder,  # covariant
+    K = str,  # invariant
+    E: Encoder = Encoder,  # covariant
 ](FittableEncoder[X, Y], Mapping[K, E]):
     r"""Wraps dictionary of encoders."""
 
     @classmethod
-    @abstractmethod
-    def new(cls, *, encoders: DictArg) -> EncoderDict: ...
+    def new[K2, E2: Encoder](
+        cls, *, encoders: DictArg[K2, E2]
+    ) -> EncoderDict[Any, Any, K2, E2]:
+        return cls(encoders)  # pyright: ignore[reportReturnType, reportArgumentType]
+
     @abstractmethod
     def encode(self, x: X, /) -> Y: ...
     @abstractmethod
@@ -950,12 +953,26 @@ class EncoderDict[
     def fit(self, x: X, /) -> None: ...
 
     # region abstract implementation ---------------------------------------------------
+    @overload
     def __init__[K2, E2: Encoder](
         self: EncoderDict[Any, Any, K2, E2],
-        encs: DictArg[K2, E2] = (),
+        encs: DictArg[K2, E2] = ...,
         /,
+    ) -> None: ...
+    @overload
+    def __init__[K2: str, E2: Encoder](
+        self: EncoderDict[Any, Any, K2, E2],
+        encs: DictArg[K2, E2] = ...,
+        /,
+        **kwargs: E2,
+    ) -> None: ...
+    def __init__[E2: Encoder](
+        self: EncoderDict[Any, Any, Any, E2],
+        encs: DictArg[Any, E2] = (),
+        /,
+        **kwargs: E2,
     ) -> None:
-        self._encoders: Final[Mapping[K, E]] = dict(encs)
+        self._encoders: Final[Mapping[K, E]] = dict(encs, **kwargs)
 
     # fmt: off
     def __len__(self) -> int: return len(self._encoders)
@@ -1095,21 +1112,18 @@ class MappedEncoder[
     """
 
     @classmethod
-    def new[X, Y](
+    def new[X, Y](  # type: ignore
         cls, *, encoders: DictArg[str, Encoder[X, Y]]
     ) -> MappedEncoder[Mapping[str, X], Mapping[str, Y]]:
         return MappedEncoder(encoders)
 
-    @overload
     def __init__[X, Y](
         self: MappedEncoder[Mapping[str, X], Mapping[str, Y]],
-        encoders: DictArg[str, Encoder[X, Y]] = ...,
+        encoders: DictArg[str, Encoder[X, Y]] = (),
         /,
-    ) -> None: ...
-    @overload
-    def __init__(self, encoders: DictArg[str, Encoder] = ..., /) -> None: ...
-    def __init__(self, encoders: DictArg[str, Encoder] = (), /) -> None:
-        super().__init__(encoders)
+        **kwargs: Encoder[X, Y],
+    ) -> None:
+        super().__init__(encoders, **kwargs)
 
     def __invert__(self) -> MappedEncoder[MappingOut, MappingIn]:
         # FIXME: https://github.com/python/typing/issues/548
@@ -1137,7 +1151,7 @@ class MappedEncoder[
 
     def simplify(self) -> MappedEncoder[MappingIn, MappingOut]:
         r"""Simplify the encoders."""
-        return MappedEncoder[MappingIn, MappingOut](super().simplify())
+        return MappedEncoder(super().simplify())  # type: ignore
 
 
 def map_encoders[X, Y](
