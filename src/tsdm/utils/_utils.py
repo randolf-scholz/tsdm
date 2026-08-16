@@ -9,8 +9,11 @@ __all__ = [
     "nested_paths_exist",
     "replace",
     "unflatten_dict",
+    "date_range",
+    "timedelta_range",
 ]
 
+import datetime as dt
 from collections.abc import Callable, Iterable, Mapping
 from functools import wraps
 from pathlib import Path
@@ -43,6 +46,42 @@ def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
     if isinstance(ts, NaTType):
         raise TypeError("Constructor returned NaT")
     return ts
+
+
+def date_range(
+    start: str | dt.datetime,
+    stop: str | dt.datetime,
+    *,
+    freq: str | dt.timedelta,
+    include_end: bool = True,
+) -> list[dt.datetime]:
+    t0 = timestamp(start)
+    t1 = timestamp(stop)
+    f = timedelta(freq)
+    k = (t1 - t0) // f
+    items = [t0 + i * f for i in range(k)]
+
+    if include_end and items[-1] < t1:
+        items.append(t1)
+    return items
+
+
+def timedelta_range(
+    start: str | dt.timedelta,
+    stop: str | dt.timedelta,
+    *,
+    freq: str | dt.timedelta,
+    include_end: bool = True,
+) -> list[dt.timedelta]:
+    t0 = timedelta(start)
+    t1 = timedelta(stop)
+    f = timedelta(freq)
+    k = (t1 - t0) // f
+    items = [t0 + i * f for i in range(k)]
+
+    if include_end and items[-1] < t1:
+        items.append(t1)
+    return items
 
 
 def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -> str:

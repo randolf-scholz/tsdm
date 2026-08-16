@@ -13,9 +13,8 @@ from typing import Final, Optional
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
-from pandas import date_range, timedelta_range
 
-from tsdm.utils import timedelta, timestamp
+from tsdm.utils import date_range, timedelta, timedelta_range, timestamp
 
 # NOTE: We rely on dict preserving insertion order (Python 3.7+)
 NUMPY_TIME_UNITS: Final[dict[str, np.timedelta64]] = {
@@ -36,16 +35,16 @@ r"""Time units for `numpy.timedelta64`."""
 
 
 def sample_timestamps(
-    start: str | dt.datetime = "today",
-    stop: Optional[dt.datetime] = None,
+    start: str | dt.datetime | np.datetime64 = "today",
+    stop: Optional[str | dt.datetime | np.datetime64] = None,
     /,
     *,
     size: int,
-    freq: str | dt.timedelta = "1s",
+    freq: str | dt.timedelta | np.timedelta64 = "1s",
     replace: bool = False,
     include_start: bool = True,
     include_final: bool = False,
-) -> NDArray:
+) -> NDArray[np.datetime64]:
     r"""Create randomly sampled timestamps.
 
     Args:
@@ -65,32 +64,34 @@ def sample_timestamps(
     # randomly sample timestamps
     rng = np.random.default_rng()
     timestamps = date_range(start_dt, final_dt, freq=freq_td)
-    timestamps = rng.choice(
-        timestamps[include_start : -include_final or None],
+    np_timestamps = np.array(timestamps)
+
+    np_timestamps = rng.choice(
+        np_timestamps[include_start : -include_final or None],
         size - include_start - include_final,
         replace=replace,
     )
-    timestamps = np.sort(timestamps)
+    np_timestamps = np.sort(np_timestamps)
 
     # add boundary if requested
     if include_start:
-        timestamps = np.insert(timestamps, 0, start_dt)
+        np_timestamps = np.insert(np_timestamps, 0, start_dt)
     if include_final:
-        timestamps = np.insert(timestamps, -1, final_dt)
+        np_timestamps = np.insert(np_timestamps, -1, final_dt)
 
     # Convert to base unit based on freq
     base_unit = next(u for u, val in NUMPY_TIME_UNITS.items() if freq_td >= val)
-    return timestamps.astype(f"datetime64[{base_unit}]")
+    return np_timestamps.astype(f"datetime64[{base_unit}]")
 
 
-def sample_timedeltas[TD: dt.timedelta](
-    low: str | TD = "0s",
-    high: str | TD = "1h",
+def sample_timedeltas(
+    low: str | dt.timedelta | np.timedelta64 = "0s",
+    high: str | dt.timedelta | np.timedelta64 = "1h",
     size: int = 1,
     /,
     *,
-    freq: str | TD = "1s",
-) -> NDArray:
+    freq: str | dt.timedelta | np.timedelta64 = "1s",
+) -> NDArray[np.timedelta64]:
     r"""Create randomly sampled timedeltas."""
     low_dt = timedelta(low)
     high_dt = timedelta(high)
