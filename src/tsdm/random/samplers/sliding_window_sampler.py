@@ -155,7 +155,7 @@ class SlidingWindowSampler[
 
     Note:
         This sampler is intended to be used with continuous time series data types,
-        such as `float`, `numpy.timedelta64`, `datetime.timedelta`, `pandas.Timestamp`, etc.
+        such as `float`, `numpy.timedelta64`, `datetime.timedelta`, `pd.Timestamp`, etc.
         For discrete time series, particularly integer types, use `DiscreteSlidingWindowSampler`.
         Otherwise, off-by-one errors may occur, for example,
         for `horizons=(3, 1)` and `stride=2`, given the data `np.arange(10)`,
@@ -602,7 +602,7 @@ class SlidingWindowSampler[
 
         # region set horizon(s) --------------------------------------------------------
         match horizons:
-            # cast to pandas.Timedelta and wrap in a numpy array
+            # cast to timedelta and wrap in a numpy array
             case str(unit):
                 self.multi_horizon = False
                 self.horizons = np.array([timedelta(unit)], dtype=td_type)
