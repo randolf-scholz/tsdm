@@ -21,6 +21,7 @@ __all__ = [
     "select_outliers",
     "is_integer_series",
     "get_schema",
+    "get_dtypes",
     "get_integer_cols",
     "make_dataframe",
     "remove_outliers",
@@ -44,4 +45,4 @@ from .preprocessing import (
     strip_whitespace,
 )
 from .serialize import InlineTable, make_dataframe
-from .utils import get_schema, validate_schema
+from .utils import get_dtypes, get_schema, validate_schema

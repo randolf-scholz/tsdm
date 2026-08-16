@@ -82,6 +82,7 @@ import pandas as pd
 import polars as pl
 import pyarrow as pa
 
+from .datatools import get_dtypes
 from .decorator import decorator
 from .dtypes import TYPESTRINGS, DType
 from .testing import (
@@ -941,26 +942,7 @@ def repr_array(
     # get the dtype-repr
     # Table-like: [dtype1, dtype2, ...]
     # Tensor-like:
-    match obj:
-        # DataFrame-like
-        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):
-            vals = [repr_dtype(dtype) for dtype in dtypes]
-        case pa.Table() as table:
-            vals = [repr_dtype(dtype) for dtype in table.schema.types]
-        case pl.DataFrame(dtypes=dtypes):
-            vals = [repr_dtype(dtype) for dtype in dtypes]
-        case SupportsDataFrame() as supports_frame:
-            frame: pd.DataFrame = supports_frame.__dataframe__()
-            vals = [repr_dtype(dtype) for dtype in frame.dtypes]
-        # Tensor-like
-        case pa.Array(type=dtype):
-            vals = [repr_dtype(dtype)]
-        case SupportsDtype(dtype=dtype):
-            vals = [repr_dtype(dtype)]
-        case SupportsArray() as array:
-            vals = [repr_dtype(array.__array__().dtype)]
-        case _:
-            raise TypeError(f"Unsupported object type {type(obj)}.")
+    vals = [repr_dtype(dtype) for dtype in get_dtypes(obj)]
 
     # if all vals are the same, show only one
     if len(set(vals)) <= 1:
