@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import pandas as pd
-from pandas import DataFrame, MultiIndex, Series
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
@@ -16,7 +15,7 @@ from tsdm.pprint import pprint_repr
 
 @pprint_repr
 @dataclass(init=False, repr=False)
-class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
+class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""Converts wide DataFrame to a tall DataFrame.
 
     Requires that all columns share the same data type.
@@ -32,7 +31,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
     value_dtype: Any = UNDEFINED
     r"""The dtype of the variable column."""
 
-    original_schema: Series = UNDEFINED
+    original_schema: pd.Series = UNDEFINED
     r"""The original schema (column -> dtype)."""
     categories: pd.CategoricalDtype = UNDEFINED
     r"""The stored categories."""
@@ -48,7 +47,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
         self.var_name = var_name
         self.value_name = value_name
 
-    def fit(self, data: DataFrame, /) -> None:
+    def fit(self, data: pd.DataFrame, /) -> None:
         self.original_schema = data.dtypes
         self.categories = pd.CategoricalDtype(data.columns)
 
@@ -58,7 +57,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
 
         self.value_dtype = variable_dtypes.pop()
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: pd.DataFrame, /) -> pd.DataFrame:
         df = (
             data.melt(
                 ignore_index=False,
@@ -88,7 +87,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
 
         return df
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: pd.DataFrame, /) -> pd.DataFrame:
         if self.sparse:
             df = data.iloc[:, :-1].stack()
             df = df[df == 1]
@@ -107,8 +106,8 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
             dropna=False,
         )
 
-        if isinstance(data.index, MultiIndex):
-            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
+        if isinstance(data.index, pd.MultiIndex):
+            df.index = pd.MultiIndex.from_tuples(df.index, names=data.index.names)
 
         # re-add missing columns
         return df.reindex(columns=self.original_schema.index).astype(
@@ -118,7 +117,7 @@ class TripletEncoder(FittableEncoder[DataFrame, DataFrame]):
 
 @pprint_repr
 @dataclass(init=False, repr=False)
-class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
+class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""Convert a tall DataFrame to a wide DataFrame."""
 
     sparse: bool = False
@@ -152,7 +151,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
             else categories
         )
 
-    def fit(self, data: DataFrame, /) -> None:
+    def fit(self, data: pd.DataFrame, /) -> None:
         if self.sparse is UNDEFINED:
             self.sparse = len(data.columns) > 2
         if self.var_name is UNDEFINED:
@@ -171,7 +170,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
         self.value_dtype = data[self.value_name].dtype
         self.original_schema = data.dtypes.to_dict()
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: pd.DataFrame, /) -> pd.DataFrame:
         if self.sparse:
             df = data.iloc[:, :-1].stack()
             df = df[df == 1]
@@ -190,8 +189,8 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
             dropna=False,
         )
 
-        if isinstance(data.index, MultiIndex):
-            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
+        if isinstance(data.index, pd.MultiIndex):
+            df.index = pd.MultiIndex.from_tuples(df.index, names=data.index.names)
 
         # re-add missing columns
         df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
@@ -201,7 +200,7 @@ class TripletDecoder(FittableEncoder[DataFrame, DataFrame]):
         result = df[self.categories.categories]  # fix column order
         return result.sort_index()
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: pd.DataFrame, /) -> pd.DataFrame:
         df = (
             data.melt(
                 ignore_index=False,

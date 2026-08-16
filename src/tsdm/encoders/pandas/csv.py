@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 import pandas as pd
-from pandas import DataFrame
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import StaticEncoder
@@ -18,13 +17,13 @@ from tsdm.types.aliases import FilePath
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class CSVEncoder(StaticEncoder[DataFrame, Path]):
+class CSVEncoder(StaticEncoder[pd.DataFrame, Path]):
     r"""Encode the data into a CSV file."""
 
     DEFAULT_READ_OPTIONS: ClassVar[dict] = {}
     DEFAULT_WRITE_OPTIONS: ClassVar[dict] = {"index": False}
 
-    path_generator: Callable[[DataFrame], Path]
+    path_generator: Callable[[pd.DataFrame], Path]
     r"""The generates the name for the CSV file."""
 
     _: KW_ONLY
@@ -36,7 +35,7 @@ class CSVEncoder(StaticEncoder[DataFrame, Path]):
 
     def __init__(
         self,
-        filename_or_generator: FilePath | Callable[[DataFrame], Path],
+        filename_or_generator: FilePath | Callable[[pd.DataFrame], Path],
         *,
         csv_write_options: Mapping[str, Any] = EMPTY_MAP,
         csv_read_options: Mapping[str, Any] = EMPTY_MAP,
@@ -49,10 +48,10 @@ class CSVEncoder(StaticEncoder[DataFrame, Path]):
             else lambda _: Path(filename_or_generator)
         )
 
-    def encode(self, data: DataFrame, /) -> Path:
+    def encode(self, data: pd.DataFrame, /) -> Path:
         path = self.path_generator(data)
         data.to_csv(path, **self.csv_write_options)
         return path
 
-    def decode(self, str_or_path: Path, /) -> DataFrame:
+    def decode(self, str_or_path: Path, /) -> pd.DataFrame:
         return pd.read_csv(str_or_path, **self.csv_read_options)

@@ -8,7 +8,6 @@ from types import MappingProxyType
 from typing import ClassVar
 
 import pandas as pd
-from pandas import DataFrame, Series
 from pandas._typing import DtypeObj
 
 from tsdm.constants import UNDEFINED
@@ -21,7 +20,7 @@ from .positional import PeriodicEncoder
 
 @pprint_repr
 @dataclass(slots=True)
-class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
+class SocialTimeEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
     r"""Social time encoding."""
 
     LEVEL_CODES: ClassVar[Mapping[str, str]] = {
@@ -46,7 +45,7 @@ class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
     levels: list[str] = field(init=False, default=UNDEFINED)
     level_columns: list[str] = field(init=False, default=UNDEFINED)
 
-    def fit(self, x: Series, /) -> None:
+    def fit(self, x: pd.Series, /) -> None:
         r"""Fit the encoder."""
         self.levels = [self.LEVEL_CODES[k] for k in self.level_codes]
         self.level_columns = [level for level in self.levels if level != "weekday"]
@@ -54,19 +53,21 @@ class SocialTimeEncoder(FittableEncoder[Series, DataFrame]):
         self.original_name = str(x.name)
         self.original_dtype = x.dtype
 
-    def encode(self, x: Series, /) -> DataFrame:
+    def encode(self, x: pd.Series, /) -> pd.DataFrame:
         r"""Encode the data."""
-        return DataFrame.from_dict({level: getattr(x, level) for level in self.levels})
+        return pd.DataFrame.from_dict(
+            {level: getattr(x, level) for level in self.levels}
+        )
 
-    def decode(self, x: DataFrame, /) -> Series:
+    def decode(self, x: pd.DataFrame, /) -> pd.Series:
         r"""Decode the data."""
         s = pd.to_datetime(x[self.level_columns])
-        return Series(s, name=self.original_name, dtype=self.original_dtype)
+        return pd.Series(s, name=self.original_name, dtype=self.original_dtype)
 
 
 @pprint_repr
 @dataclass(init=False, slots=True)
-class PeriodicSocialTimeEncoder(WrappedEncoder[Series, DataFrame]):
+class PeriodicSocialTimeEncoder(WrappedEncoder[pd.Series, pd.DataFrame]):
     r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""
 
     DEFAULT_FREQUENCIES: ClassVar[Mapping[str, int]] = MappingProxyType({
