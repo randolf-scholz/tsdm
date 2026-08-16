@@ -121,12 +121,13 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.datatools import MapDataset, TorchDataset
+from tsdm.datatools import MapDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
 from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
+from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.lazydict import LazyDict
 
 Batch = NewType("Batch", object)
@@ -271,7 +272,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
     # split specific attributes
     dataloaders: Mapping[SplitID, DataLoader[Sample]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, TorchDataset[SampleID, Sample]] = NotImplemented
+    generators: Mapping[SplitID, SupportsGetItem[SampleID, Sample]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     samplers: Mapping[SplitID, Sampler[SampleID]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -391,7 +392,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> TorchDataset[SampleID, Sample]:
+    def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, Sample]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 

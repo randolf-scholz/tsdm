@@ -10,9 +10,10 @@ from typing import Any, cast, overload
 from numpy.random import Generator
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.datatools import Dataset, MapDataset, TorchDataset
+from tsdm.datatools import Dataset, MapDataset
 from tsdm.datatools.collections import get_index
 from tsdm.pprint import pprint_repr
+from tsdm.types.protocols import SupportsGetItem
 
 from .base import BaseSampler, RandomSampler, Sampler
 
@@ -113,7 +114,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
 
 
 @pprint_repr
-class MappingDataset[K, DS: TorchDataset](Mapping[K, DS]):
+class MappingDataset[K, DS: SupportsGetItem](Mapping[K, DS]):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
     ``ds[key]`` returns the dataset for the given key.

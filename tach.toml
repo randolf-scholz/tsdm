@@ -83,7 +83,7 @@ depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.timeseries"
-depends_on = ["tsdm.datasets", "tsdm.datatools"]
+depends_on = ["tsdm.datasets", "tsdm.types"]
 
 [[modules]]
 path = "tsdm.logutils"
@@ -106,7 +106,7 @@ depends_on = [
     "tsdm.encoders",
     "tsdm.metrics",
     "tsdm.random",
-    "tsdm.timeseries",
+    "tsdm.timeseries", "tsdm.types",
 ]
 
 [[modules]]

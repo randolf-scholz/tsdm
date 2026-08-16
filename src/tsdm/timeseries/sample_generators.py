@@ -22,8 +22,8 @@ from pandas import NA, DataFrame, Index, Series
 
 from tsdm import constants as const
 from tsdm.constants import UNDEFINED
-from tsdm.datatools import TorchDataset
 from tsdm.pprint import pprint_repr
+from tsdm.types.protocols import SupportsGetItem
 
 from .pandas import PandasTS, PandasTSC
 
@@ -88,7 +88,7 @@ class Sample(NamedTuple):
 
 @pprint_repr
 @dataclass
-class TimeSeriesSampleGenerator(TorchDataset[Any, Sample]):
+class TimeSeriesSampleGenerator(SupportsGetItem[Any, Sample]):
     r"""Creates sample from a TimeSeriesCollection.
 
     This class is responsible for creating samples from a TimeSeriesCollection.
@@ -326,7 +326,7 @@ class PlainSample(NamedTuple):
 
 @pprint_repr
 @dataclass
-class FixedSliceSampleGenerator(TorchDataset[Any, PlainSample]):
+class FixedSliceSampleGenerator(SupportsGetItem[Any, PlainSample]):
     r"""Utility class for generating samples from a fixed slice of a time series.
 
     Assumptions:

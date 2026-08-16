@@ -2,6 +2,7 @@ r"""Generic types for type hints, etc."""
 
 __all__ = [
     # Submodules
+    "abc",
     "aliases",
     "callbacks",
     "dataclass",
@@ -16,7 +17,7 @@ __all__ = [
     "SupportsSlicing",
 ]
 
-from . import aliases, callbacks, dataclass, namedtuple, utils
+from . import abc, aliases, callbacks, dataclass, namedtuple, utils
 from .protocols import (
     Orderable,
     SupportsBool,

@@ -4,11 +4,8 @@ __all__ = [
     # Modules
     # "timeseries",
     # Protocols
-    "TorchDataset",
     "MapDataset",
-    "IterableDataset",
     "PandasDataset",
-    "Indexable",
     "Dataset",
     # Classes
     "InlineTable",
@@ -31,14 +28,7 @@ __all__ = [
     "validate_schema",
 ]
 
-from .collections import (
-    Dataset,
-    Indexable,
-    IterableDataset,
-    MapDataset,
-    PandasDataset,
-    TorchDataset,
-)
+from .collections import Dataset, MapDataset, PandasDataset
 from .folds import (
     folds_as_frame,
     folds_as_sparse_frame,
