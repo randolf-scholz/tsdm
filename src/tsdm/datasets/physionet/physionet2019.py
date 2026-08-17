@@ -492,14 +492,14 @@ class PhysioNet2019(PolarsDataset[Key]):
         remote.download_directory_to_zip(url, path, add_toplevel_dir=False)
 
     def validate_rawdata(
-        self, key: str | None = None, *, errors: ErrorHandler.Mode = "raise"
+        self, fname: str | None = None, *, errors: ErrorHandler.Mode = "raise"
     ) -> bool:
         r"""Validate a single rawdata file."""
-        if key is None:
+        if fname is None:
             return super().validate_rawdata(errors=errors)
 
-        expected_hash = self.rawdata_content_hashes.get(key, None)
-        self.LOGGER.info(f"Validating {key!r} against hash {expected_hash!s}")
-        path = self.rawdata_paths[key]
+        expected_hash = self.rawdata_content_hashes.get(fname, None)
+        self.LOGGER.info(f"Validating {fname!r} against hash {expected_hash!s}")
+        path = self.rawdata_paths[fname]
         actual_hash = hash_zip_contents(path)
         return validate_hash(actual_hash, expected_hash)

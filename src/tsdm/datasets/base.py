@@ -580,14 +580,14 @@ class DatasetBase[Key: str, T](
         if key not in self.table_names:
             raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
         try:
-            cleaner = getattr(self, f"clean_{key}")
+            clean_fn = getattr(self, f"clean_{key}")
         except AttributeError:
             raise NotImplementedError(
                 f"Cleaning method for {key} not implemented!"
                 f" Either implement `clean_{key}` or override `clean_table`."
             ) from None
         else:
-            return cleaner()
+            return clean_fn()
 
     @final
     def clean(
@@ -608,13 +608,13 @@ class DatasetBase[Key: str, T](
             validate_rawdata: Validate the raw data files before cleaning.
         """
         # download raw data files if they don't exist
-        if validate_rawdata and not self.rawdata_files_exist():
+        if not self.rawdata_files_exist():
             self.LOGGER.debug("Raw files missing, fetching them now!")
             self.get_rawdata(force=force, validate=validate)
 
         # validate the raw data files
         if validate_rawdata:
-            self.validate_rawdata(key, errors="raise")
+            self.validate_rawdata(errors="raise")
 
         # skip if cleaned files already exist
         if not force and self.dataset_files_exist(key):
@@ -789,10 +789,10 @@ class DatasetBase[Key: str, T](
         return nested_paths_exist(self.dataset_paths[key])
 
     def validate_rawdata(
-        self, key: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "warn"
+        self, fname: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         r"""Validate the rawdata files."""
-        if key is None:
+        if fname is None:
             self.LOGGER.debug("Validating raw data files.")
             result = True
             exceptions: dict[str, ValidationError] = {}
@@ -816,10 +816,10 @@ class DatasetBase[Key: str, T](
                 ErrorHandler(errors).emit(msg)
             return result
 
-        return self.validate_rawdata_file(key, errors=errors)
+        return self.validate_rawdata_file(fname, errors=errors)
 
     def validate_rawdata_file(
-        self, key: str, /, *, errors: ErrorHandler.Mode = "warn"
+        self, fname: str, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         r"""Validate one raw data file.
 
@@ -827,20 +827,20 @@ class DatasetBase[Key: str, T](
         byte hash only when the subclass provides a reference hash. Override
         this method for content-aware validation, such as an archive manifest.
         """
-        if key not in self.rawdata_paths:
-            raise KeyError(f"{key=} not in {self.rawdata_paths=}")
+        if fname not in self.rawdata_paths:
+            raise KeyError(f"{fname=} not in {self.rawdata_paths=}")
 
-        path = self.rawdata_paths[key]
+        path = self.rawdata_paths[fname]
         if not path.exists():
             ErrorHandler(errors).emit(
                 f"Raw data file does not exist: {path!s}", valid=False
             )
             return False
 
-        self.LOGGER.debug("Validating %s.", key)
+        self.LOGGER.debug("Validating %s.", fname)
         return validate_file_hash(
             path,
-            self.rawdata_hashes.get(key),
+            self.rawdata_hashes.get(fname),
             errors=errors,
             skipif_no_reference=True,
         )

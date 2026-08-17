@@ -74,10 +74,10 @@ def test_download_uses_custom_rawdata_validation_without_hashes(tmp_path: Path) 
             self.rawdata_paths[fname].write_bytes(b"raw data")
 
         def validate_rawdata_file(
-            self, key: str, /, *, errors: ErrorHandler.Mode = "warn"
+            self, fname: str, /, *, errors: ErrorHandler.Mode = "warn"
         ) -> bool:
             self.validation_was_called = True
-            return super().validate_rawdata_file(key, errors=errors)
+            return super().validate_rawdata_file(fname, errors=errors)
 
     dataset = RawDataset(initialize=False)
     dataset.validation_was_called = False
