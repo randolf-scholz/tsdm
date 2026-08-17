@@ -343,6 +343,13 @@ class PhysioNet2012(PolarsDataset[Key]):
     r"""HTTP address containing additional information about the dataset."""
 
     rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
+    rawdata_hashes = {
+        "set-a.tar.gz": "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
+        "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
+        "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
+    }
+    rawdata_schema = RAWDATA_SCHEMA
+
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
         "timeseries_metadata",
@@ -351,27 +358,19 @@ class PhysioNet2012(PolarsDataset[Key]):
         "raw_timeseries",
         "raw_metadata",
     ]
-
-    rawdata_hashes = {
-        "set-a.tar.gz": "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
-        "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
-        "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
-    }
-
-    rawdata_schema = RAWDATA_SCHEMA
-    table_schemas = {
-        "timeseries": TIMESERIES_SCHEMA,
-        "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
-        "static_covariates": STATIC_COVARIATES_SCHEMA,
-        "static_covariates_metadata": STATIC_COVARIATES_METADATA_SCHEMA,
-        "raw_timeseries": TIMESERIES_SCHEMA,
-        "raw_metadata": STATIC_COVARIATES_SCHEMA,
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"                 : TIMESERIES_SCHEMA,
+        "timeseries_metadata"        : TIMESERIES_METADATA_SCHEMA,
+        "static_covariates"          : STATIC_COVARIATES_SCHEMA,
+        "static_covariates_metadata" : STATIC_COVARIATES_METADATA_SCHEMA,
+        "raw_timeseries"             : TIMESERIES_SCHEMA,
+        "raw_metadata"               : STATIC_COVARIATES_SCHEMA,
     }  # fmt: skip
-    table_shapes = {
-        "timeseries"                : (898007, 39),
-        "timeseries_metadata"       :      (39, 7),
-        "static_covariates"         :   (12000, 6),
-        "static_covariates_metadata":       (6, 8),
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"                 : (898_007, 39),
+        "timeseries_metadata"        :      (39,  7),
+        "static_covariates"          :  (12_000,  6),
+        "static_covariates_metadata" :       (6,  8),
     }  # fmt: skip
 
     def _clean_single_rawdataset(

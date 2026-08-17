@@ -59,7 +59,6 @@ class ETT(PolarsDataset[ETT_Key]):
     INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = _ETT_KEYS
     rawdata_files = [f"{key}.csv" for key in _ETT_KEYS]
     rawdata_hashes = {
         "ETTh1.csv": "sha256:f18de3ad269cef59bb07b5438d79bb3042d3be49bdeecf01c1cd6d29695ee066",
@@ -68,8 +67,10 @@ class ETT(PolarsDataset[ETT_Key]):
         "ETTm2.csv": "sha256:db973ca252c6410a30d0469b13d696cf919648d0f3fd588c60f03fdbdbadd1fd",
     }
     rawdata_schemas = dict.fromkeys((f"{key}.csv" for key in _ETT_KEYS), _ETT_SCHEMA)
+
+    table_names = _ETT_KEYS
     table_schemas = dict.fromkeys(_ETT_KEYS, _ETT_SCHEMA)
-    table_shapes = {
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "ETTh1": (17420, 8),
         "ETTh2": (17420, 8),
         "ETTm1": (69680, 8),

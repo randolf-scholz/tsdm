@@ -104,22 +104,29 @@ class KiwiBenchmark(PolarsDataset[Key]):
     INFO_URL = r"https://www.tu.berlin/bioprocess/einrichtungen-associates/arbeitsgruppen/kiwi-biolab"
     HOME_URL = r"https://www.tu.berlin/bioprocess/einrichtungen-associates/arbeitsgruppen/kiwi-biolab"
 
+    rawdata_files = ["kiwi-benchmark.zip"]
+    rawdata_hashes = {
+        "kiwi-benchmark.zip": "sha256:c2c6171a4da720cd8801aed48c4199b4002adaf73a82976500c863b1dd0677b7"
+    }
+
     table_names = [  # pyright: ignore[reportAssignmentType]
         "timeseries",
         "timeseries_metadata",
         "static_covariates",
         "static_covariates_metadata",
     ]
-    rawdata_files = ["kiwi-benchmark.zip"]
-    rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:c2c6171a4da720cd8801aed48c4199b4002adaf73a82976500c863b1dd0677b7"
-    }
-    table_schemas = {
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": TIMESERIES_SCHEMA,
         "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
         "static_covariates": STATIC_COVARIATES_SCHEMA,
         "static_covariates_metadata": STATIC_COVARIATES_METADATA_SCHEMA,
     }
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"                  : (555_692, 17),
+        "timeseries_metadata"         :      (17, 10),
+        "static_covariates"           :     (378, 24),
+        "static_covariates_metadata"  :      (24,  9),
+    }  # fmt: skip
 
     def clean_table(self, key: Key, /) -> None:
         r"""Extract the preprocessed Parquet table from the bundled archive."""

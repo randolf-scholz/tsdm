@@ -70,14 +70,15 @@ class DampedPendulum_Ansari2023(PolarsDataset[Key]):
 
     rawdata_files = []
     table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
-    table_schemas = {
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": TIMESERIES_SCHEMA,
         "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries": (1_057_000, 4),
         "timeseries_metadata": (4, 7),
     }
+
     num_sequences = 7000
     step = 0.1
     t_min = 0.0

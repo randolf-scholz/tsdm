@@ -77,19 +77,20 @@ class Traffic(PolarsDataset[Traffic_Keys]):
     INFO_URL = r"https://archive.ics.uci.edu/dataset/204/pems+sf"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = [
-        "timeseries",
-        "labels",
-        "randperm",
-        "invperm",
-    ]  # pyright: ignore[reportAssignmentType]
     rawdata_files = ["pems+sf.zip"]
     rawdata_hashes = {
         "pems+sf.zip": (
             "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
         )
     }
-    table_schemas = {
+
+    table_names = [  # pyright: ignore[reportAssignmentType]
+        "timeseries",
+        "labels",
+        "randperm",
+        "invperm",
+    ]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": defaultdict(lambda: pl.Float32, {"time": pl.Duration("us")}),
         "labels": {
             "day": pl.Datetime(time_unit="us"),
@@ -98,7 +99,7 @@ class Traffic(PolarsDataset[Traffic_Keys]):
         "randperm": {"randperm": pl.UInt16},
         "invperm": {"invperm": pl.UInt16},
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries": (63_360, 964),
         "labels": (440, 2),
         "randperm": (440, 1),

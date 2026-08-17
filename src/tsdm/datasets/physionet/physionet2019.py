@@ -332,15 +332,6 @@ class PhysioNet2019(PolarsDataset[Key]):
     r"""HTTP address containing additional information about the dataset"""
 
     rawdata_files = ["training_setA.zip", "training_setB.zip"]
-    table_names = [  # pyright: ignore[reportAssignmentType]
-        "timeseries",
-        "timeseries_metadata",
-        "static_covariates",
-        "static_covariates_metadata",
-        "raw_timeseries",
-        "raw_metadata",
-    ]
-
     rawdata_hashes = {
         "training_setA.zip": None,
         "training_setB.zip": None,
@@ -349,16 +340,32 @@ class PhysioNet2019(PolarsDataset[Key]):
         "training_setA.zip": "zip:C8B68113750A7A817150C723D8438BE4431716A5BADA88899A9F50D43E76DD81",
         "training_setB.zip": "zip:37ED047C7F5A0834F90BB3C03E9F17199F98489D09CFEF51CD92B61E60B960C3",
     }
-    table_schemas = {
-        "timeseries": TIMESERIES_SCHEMA,
-        "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
-        "static_covariates": STATIC_COVARIATES_SCHEMA,
-        "static_covariates_metadata": STATIC_COVARIATES_METADATA_SCHEMA,
-        "raw_timeseries": TIMESERIES_SCHEMA,
-        "raw_metadata": STATIC_COVARIATES_SCHEMA,
-    }  # fmt: skip
-
     rawdata_schema = RAWDATA_SCHEMA
+
+    table_names = [  # pyright: ignore[reportAssignmentType]
+        "timeseries",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
+        "raw_timeseries",
+        "raw_metadata",
+    ]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"                 : TIMESERIES_SCHEMA,
+        "timeseries_metadata"        : TIMESERIES_METADATA_SCHEMA,
+        "static_covariates"          : STATIC_COVARIATES_SCHEMA,
+        "static_covariates_metadata" : STATIC_COVARIATES_METADATA_SCHEMA,
+        "raw_timeseries"             : TIMESERIES_SCHEMA,
+        "raw_metadata"               : STATIC_COVARIATES_SCHEMA,
+    }  # fmt: skip
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"                 : (1_552_210, 37),
+        "timeseries_metadata"        :        (35,  7),
+        "static_covariates"          :    (40_336,  6),
+        "static_covariates_metadata" :         (5,  7),
+        "raw_timeseries"             : (1_552_210, 37),
+        "raw_metadata"               :    (40_336,  6),
+    }  # fmt: skip
 
     def read_patient_file(
         self, archive: ZipFile, /, *, compressed_file: str

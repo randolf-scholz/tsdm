@@ -372,15 +372,6 @@ class USHCN(PolarsDataset[Key]):
     INFO_URL = "https://data.ess-dive.lbl.gov/view/doi:10.3334/CDIAC/CLI.NDP019"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = [  # pyright: ignore[reportAssignmentType]
-        "timeseries",
-        "timeseries_metadata",
-        "static_covariates",
-        "static_covariates_metadata",
-        # extra tables
-        "raw_timeseries",
-        "state_codes",
-    ]
     rawdata_files = ["ushcn_daily.tar.gz"]
     rawdata_hashes = {
         "ushcn_daily.tar.gz" : "sha256:a03598657a3b72c20f8ffa323d7265435243d7988b02d2dbbaab746c2ccae25f",
@@ -400,21 +391,29 @@ class USHCN(PolarsDataset[Key]):
         "static_covariates": RAWDATA_STATIC_COVARIATES_SCHEMA,
     }
 
-    table_shapes = {
+    table_names = [  # pyright: ignore[reportAssignmentType]
+        "timeseries",
+        "timeseries_metadata",
+        "static_covariates",
+        "static_covariates_metadata",
+        # extra tables
+        "raw_timeseries",
+        "state_codes",
+    ]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
+        "timeseries"                 : TIMESERIES_SCHEMA,
+        "timeseries_metadata"        : METADATA_SCHEMA,
+        "static_covariates"          : STATIC_COVARIATES_SCHEMA,
+        "static_covariates_metadata" : METADATA_SCHEMA,
+        "state_codes"                : STATE_CODES_SCHEMA,
+        "raw_timeseries"             : RAWTIMESERIES_SCHEMA,
+    }  # fmt: skip
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries"                 : (44497877, 7),
         "timeseries_metadata"        : (7, 8),
         "static_covariates"          : (1218, 10),
         "static_covariates_metadata" : (10, 8),
         "state_codes"                : (48, 3),
-    }  # fmt: skip
-
-    table_schemas = {
-        "timeseries": TIMESERIES_SCHEMA,
-        "timeseries_metadata": METADATA_SCHEMA,
-        "static_covariates": STATIC_COVARIATES_SCHEMA,
-        "static_covariates_metadata": METADATA_SCHEMA,
-        "state_codes": STATE_CODES_SCHEMA,
-        "raw_timeseries": RAWTIMESERIES_SCHEMA,
     }  # fmt: skip
 
     def clean_table(self, key: Key, /) -> pl.DataFrame:

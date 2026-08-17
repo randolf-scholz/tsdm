@@ -42,7 +42,6 @@ from typing import Literal, get_args
 from zipfile import ZipFile
 
 import polars as pl
-from polars.datatypes import DataType, DataTypeClass
 
 from tsdm.datatools import validate_schema
 from tsdm.testing.validation import validate_file_hash
@@ -82,18 +81,18 @@ type MIMIC_III_Key = Literal[
 ]
 
 
-ID_TYPE = pl.UInt32
-VALUE_TYPE = pl.Float32
+ID_TYPE = pl.UInt32()
+VALUE_TYPE = pl.Float32()
 TIME_TYPE = pl.Datetime("ms")
-DATE_TYPE = pl.Date
-BOOL_TYPE = pl.Boolean
-STRING_TYPE = pl.Utf8
-DICT_TYPE = pl.Categorical
-TEXT_TYPE = pl.Utf8
-INT8_TYPE = pl.Int8
+DATE_TYPE = pl.Date()
+BOOL_TYPE = pl.Boolean()
+STRING_TYPE = pl.Utf8()
+DICT_TYPE = pl.Categorical()
+TEXT_TYPE = pl.Utf8()
+INT8_TYPE = pl.Int8()
 
 
-SCHEMAS: dict[MIMIC_III_Key, dict[str, DataType | DataTypeClass]] = {
+SCHEMAS: dict[MIMIC_III_Key, dict[str, pl.DataType]] = {
     "SHA256SUMS": {
         "value": STRING_TYPE,
         "filename": STRING_TYPE,
@@ -510,6 +509,7 @@ class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
 
     table_names = list(get_args(MIMIC_III_Key.__value__))
+    table_schemas = SCHEMAS
 
     @property
     def rawdata_files(self) -> list[str]:  # type: ignore

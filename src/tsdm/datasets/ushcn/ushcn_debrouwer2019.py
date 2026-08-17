@@ -50,14 +50,15 @@ class USHCN_DeBrouwer2019(PolarsDataset[Literal["timeseries"]]):
     INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
     rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_hashes = {
         "small_chunked_sporadic.csv": "sha256:671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf",
     }
     rawdata_schemas = {"small_chunked_sporadic.csv": RAWDATA_SCHEMA}
-    table_schemas = {"timeseries": TIMESERIES_SCHEMA}
-    table_shapes = {"timeseries": (350_665, 7)}
+
+    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
+    table_schemas = {"timeseries": TIMESERIES_SCHEMA}  # pyright: ignore[reportAssignmentType]
+    table_shapes = {"timeseries": (350_665, 7)}  # pyright: ignore[reportAssignmentType]
 
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Clean the raw USHCN subset into a masked Polars timeseries table."""

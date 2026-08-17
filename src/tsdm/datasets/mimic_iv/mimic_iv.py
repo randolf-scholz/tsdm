@@ -83,7 +83,6 @@ from typing import Literal, get_args
 from zipfile import ZipFile
 
 import polars as pl
-import pyarrow as pa
 
 from tsdm.datasets.base import DatasetBase
 from tsdm.datatools import validate_schema
@@ -128,7 +127,7 @@ type MIMIC_IV_Key = Literal[
 ]
 
 
-def rename_key[K, V](items: dict[K, V], old_key: K, new_key: K, /) -> dict[K, V]:
+def rename_key[K, V](items: Mapping[K, V], old_key: K, new_key: K, /) -> dict[K, V]:
     r"""Return a copy with ``old_key`` renamed to ``new_key`` in the same position."""
     if old_key not in items:
         raise KeyError(old_key)
@@ -181,20 +180,20 @@ def insert_item[K, V](
 # region schema ------------------------------------------------------------------------
 
 
-ID_TYPE = pl.UInt32
-VALUE_TYPE = pl.Float32
+ID_TYPE = pl.UInt32()
+VALUE_TYPE = pl.Float32()
 TIME_TYPE = pl.Datetime("ms")
-DATE_TYPE = pl.Date
-BOOL_TYPE = pl.Boolean
-STRING_TYPE = pl.Utf8
-CAT_TYPE = pl.Categorical
-NULL_TYPE = pl.Null
-TEXT_TYPE = pl.Utf8
-INT8_TYPE = pl.Int8
+DATE_TYPE = pl.Date()
+BOOL_TYPE = pl.Boolean()
+STRING_TYPE = pl.Utf8()
+CAT_TYPE = pl.Categorical()
+NULL_TYPE = pl.Null()
+TEXT_TYPE = pl.Utf8()
+INT8_TYPE = pl.Int8()
 
 
 # based on version 1.0
-SCHEMAS: dict[MIMIC_IV_Key, dict[str, pa.DataType]] = {
+SCHEMAS: dict[MIMIC_IV_Key, dict[str, pl.DataType]] = {
     "SHA256SUMS": {
         "value": STRING_TYPE,
         "filename": STRING_TYPE,
@@ -765,7 +764,11 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
 
         return files
 
-    def get_schema(self, key) -> dict:
+    @cached_property
+    def table_schemas(self) -> dict[MIMIC_IV_Key, dict[str, pl.DataType]]:  # type: ignore
+        return {key: self.get_schema(key) for key in self.table_names}
+
+    def get_schema(self, key) -> dict[str, pl.DataType]:
         schema = SCHEMAS[key].copy()
         if self.version_info >= (2, 0):
             match key:

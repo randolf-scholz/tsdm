@@ -170,20 +170,19 @@ class BeijingAirQuality(PolarsDataset[Key]):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
     rawdata_files = ["beijing+multi+site+air+quality+data.zip"]
-
     rawdata_hashes = {
         "beijing+multi+site+air+quality+data.zip":
             "sha256:b04da438b2f331ac0ffd45aebdfec0d20d2367feb5f6948c4b1f7ce1191e33c4",
     }  # fmt: skip
     rawdata_schemas = {"timeseries": RAWDATA_SCHEMA}
 
-    table_schemas = {
+    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": TIMESERIES_SCHEMA,
         "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries": (420_768, 14),
         "timeseries_metadata": (14, 8),
     }

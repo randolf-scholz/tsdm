@@ -200,6 +200,7 @@ class DatasetBase[Key: str, T](
     # endregion derived members --------------------------------------------------------
 
     # region instance attributes -------------------------------------------------------
+    # TODO: Use typing.ReadOnly when PEP 767 accepted.
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Optional hashes of the raw dataset file(s).
 
@@ -212,16 +213,14 @@ class DatasetBase[Key: str, T](
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes for the raw dataset tables(s)."""
 
-    r"""Type alias for the key of the dataset."""
+    # Note: Bug in pyright means subclasses need to annotate these https://github.com/microsoft/pyright/issues/6513
     dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the cleaned dataset file(s)."""
-    # FIXME: Hack due to lack of ReadOnly attributes,
-    #   we can't use Key, as that would screw up covariance.
-    table_hashes: Mapping[str, str | None] = EMPTY_MAP
+    table_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[str, Mapping[str, Any]] = EMPTY_MAP
+    table_schemas: Mapping[Key, Mapping[str, Any]] = EMPTY_MAP
     r"""READ-ONLY: Schemas of the in-memory cleaned dataset table(s)."""
-    table_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
+    table_shapes: Mapping[Key, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
 

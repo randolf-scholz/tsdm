@@ -275,12 +275,13 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
     rawdata_files = []
+
     table_names = ["raw_timeseries", "timeseries"]  # pyright: ignore[reportAssignmentType]
-    table_schemas = {
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "raw_timeseries": RAWDATA_SCHEMA,
         "timeseries": TARGET_SCHEMA,
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "raw_timeseries": (2_485_649, 206),
         "timeseries": (2_485_649, 102),
     }
@@ -667,7 +668,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
             raise ValueError(f"Mask columns not found: {missing_masks}")
 
         masked = self.raw_timeseries.select(
-            pl.col("hadm_id").cast(pl.Int32),
+            pl.col("hadm_id"),
             pl.col("time_stamp"),
             *(
                 pl.when(pl.col(f"Mask_label_{label}").eq(1))

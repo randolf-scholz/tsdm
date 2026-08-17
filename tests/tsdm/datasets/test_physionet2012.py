@@ -14,6 +14,6 @@ def test_physionet_2012_preprocessing() -> None:
     assert ds.timeseries_metadata.height == ds.timeseries.width
     assert ds.static_covariates_metadata.height == ds.static_covariates.width
 
-    for key in PhysioNet2012.table_names:
+    for key in ds.table_names:
         assert isinstance(ds[key], pl.DataFrame)
-        assert dict(ds[key].schema) == PhysioNet2012.table_schemas[key]
+        assert dict(ds[key].schema) == ds.table_schemas[key]

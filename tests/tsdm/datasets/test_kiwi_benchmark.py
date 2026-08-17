@@ -10,6 +10,6 @@ def test_kiwi_benchmark_preprocessing() -> None:
     assert ds.timeseries.width == ds.timeseries_metadata.height
     assert ds.static_covariates.width == ds.static_covariates_metadata.height
 
-    for key in KiwiBenchmark.table_names:
+    for key in ds.table_names:
         assert isinstance(ds[key], pl.DataFrame)
-        assert dict(ds[key].schema) == KiwiBenchmark.table_schemas[key]
+        assert dict(ds[key].schema) == ds.table_schemas[key]

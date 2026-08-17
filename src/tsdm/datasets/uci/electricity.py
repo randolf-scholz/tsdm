@@ -103,20 +103,21 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
         "electricityloaddiagrams20112014.zip":
             "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
     }  # fmt: skip
-    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
     rawdata_schemas = {
         "timeseries": {
             "": pl.Datetime(time_unit="us"),
             **{f"MT_{client:03d}": pl.Float64 for client in range(1, 371)},
         }
     }
-    table_schemas = {
+
+    table_names = ["timeseries"]  # pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "time": pl.Datetime(time_unit="us"),
             **{f"MT_{client:03d}": pl.Float64 for client in range(1, 371)},
         }
     }
-    table_shapes = {"timeseries": (140256, 371)}
+    table_shapes = {"timeseries": (140_256, 371)}  # pyright: ignore[reportAssignmentType]
 
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Create a Polars DataFrame with one column per client."""

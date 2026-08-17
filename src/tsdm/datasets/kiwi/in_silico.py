@@ -70,7 +70,6 @@ class InSilico(PolarsDataset[KEY]):
     rawdata_hashes = {
         "in_silico.zip": "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba",
     }
-    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
     rawdata_schemas = {
         "timeseries": {
             "index"     : pl.Datetime(time_unit="us"),
@@ -83,11 +82,13 @@ class InSilico(PolarsDataset[KEY]):
             "Feed"      : pl.Float32,
         }
     }  # fmt: skip
-    table_schemas = {
+
+    table_names = ["timeseries", "timeseries_metadata"]  # pyright: ignore[reportAssignmentType]
+    table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": TIMESERIES_SCHEMA,
         "timeseries_metadata": TIMESERIES_METADATA_SCHEMA,
     }  # fmt: skip
-    table_shapes = {
+    table_shapes = {  # pyright: ignore[reportAssignmentType]
         "timeseries": (5206, 9),
         "timeseries_metadata": (9, 7),
     }
