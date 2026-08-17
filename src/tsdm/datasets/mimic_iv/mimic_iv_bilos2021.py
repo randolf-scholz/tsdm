@@ -325,18 +325,16 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         Patients must have exactly one admission, be older than 15, stay from
         three up to (but excluding) 30 days, and have at least one chart event.
         """
-        admissions = self.raw_dataset.load_table("admissions")
+        admissions = self.raw_dataset.load("admissions")
         single_admission_subjects = (
             admissions.group_by("subject_id")
             .agg(pl.col("hadm_id").n_unique().alias("n_admissions"))
             .filter(pl.col("n_admissions").eq(1))
             .select("subject_id")
         )
-        patients = self.raw_dataset.load_table("patients").select(
-            "subject_id", "anchor_age"
-        )
+        patients = self.raw_dataset.load("patients").select("subject_id", "anchor_age")
         charted_admissions = (
-            self.raw_dataset.load_table("chartevents").select("hadm_id").unique()
+            self.raw_dataset.load("chartevents").select("hadm_id").unique()
         )
         elapsed_time = pl.col("dischtime") - pl.col("admittime")
 
@@ -354,7 +352,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         r"""Clean and discretize the selected medication input events."""
         admission_ids = self.preprocess_admissions().select("hadm_id").lazy()
         inputevents = (
-            self.raw_dataset.load_table("inputevents")
+            self.raw_dataset.load("inputevents")
             .join(admission_ids, on="hadm_id", how="semi")
             .select(
                 "subject_id",
@@ -370,7 +368,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
                 "ordercategorydescription",
             )
             .join(
-                self.raw_dataset.load_table("d_items").select("itemid", "label"),
+                self.raw_dataset.load("d_items").select("itemid", "label"),
                 on="itemid",
                 how="inner",
             )
@@ -498,11 +496,11 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         r"""Keep the laboratory measurements used by Bilos et al."""
         admission_ids = self.preprocess_admissions().select("hadm_id").lazy()
         labevents = (
-            self.raw_dataset.load_table("labevents")
+            self.raw_dataset.load("labevents")
             .join(admission_ids, on="hadm_id", how="semi")
             .select("subject_id", "hadm_id", "charttime", "valuenum", "itemid")
             .join(
-                self.raw_dataset.load_table("d_labitems").select("itemid", "label"),
+                self.raw_dataset.load("d_labitems").select("itemid", "label"),
                 on="itemid",
                 how="inner",
             )
@@ -526,10 +524,10 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         r"""Keep the 15 selected output-event variables."""
         admission_ids = self.preprocess_admissions().select("hadm_id").lazy()
         return (
-            self.raw_dataset.load_table("outputevents")
+            self.raw_dataset.load("outputevents")
             .join(admission_ids, on="hadm_id", how="semi")
             .join(
-                self.raw_dataset.load_table("d_items").select("itemid", "label"),
+                self.raw_dataset.load("d_items").select("itemid", "label"),
                 on="itemid",
                 how="inner",
             )
@@ -543,7 +541,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         r"""Apply the prescription filters from ``prescriptions.ipynb``."""
         admission_ids = self.preprocess_admissions().select("hadm_id").lazy()
         prescriptions = (
-            self.raw_dataset.load_table("prescriptions")
+            self.raw_dataset.load("prescriptions")
             .join(admission_ids, on="hadm_id", how="semi")
             .with_columns(
                 pl.col("drug").cast(pl.String),
