@@ -16,15 +16,39 @@ from tsdm.pprint import pprint_mapping
 class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
-    Similar to `sklearn.compose.ColumnTransformer`.
+    The DataFrame index is reset before fitting, encoding, and decoding, so encoders can target
+    both data columns and named index levels. All fields not assigned an encoder pass through
+    unchanged. The original index and dtypes are restored when decoding.
 
-    Per-column encoding is possible through the dictionary input.
-    In this case, the positions of the columns in the encoded DataFrame should coincide with the
-    positions of the columns in the input DataFrame.
+    Args:
+        encoders: A mapping from column or named index-level labels to their encoders.
 
-    Todo: We want encoding groups, so for example, applying an encoder to a group of columns.
+    Examples:
+        >>> from pandas import DataFrame
+        >>> from pandas.testing import assert_frame_equal
+        >>> from tsdm.encoders import wrap
+        >>> frame = DataFrame(
+        ...     {"id": [10, 20], "value": [1, 2], "label": ["a", "b"]}
+        ... ).set_index("id")
+        >>> encoder = FrameEncoder({"value": wrap(lambda x: x + 1, lambda x: x - 1)})
+        >>> encoder.fit(frame)
+        >>> encoded = encoder.encode(frame)
+        >>> encoded.to_dict("list")
+        {'value': [2, 3], 'label': ['a', 'b']}
+        >>> assert_frame_equal(frame, encoder.decode(encoded))
 
-    - [ ] Add support for groups of column-encoders
+    Note:
+        `...` (`Ellipsis`) is treated as an ordinary mapping key, not as a wildcard for unassigned
+        columns. Thus, it only targets a column literally labelled `...`; otherwise, fitting or
+        transforming raises `KeyError`.
+
+    Todo:
+        We want encoding groups, so for example, applying an encoder to a group of columns.
+
+        - [ ] Add support for groups of column-encoders
+
+    See Also:
+        Similar to `sklearn.compose.ColumnTransformer`.
     """
 
     # fitted attributes
