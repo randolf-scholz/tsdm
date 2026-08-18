@@ -1655,7 +1655,17 @@ def pipe(*es: Encoder) -> Pipe:
 
     See Also: `Pipe`
     """
-    return Pipe(es)
+    # simplify nested pipes/chains `e >> (f >> g) = (e >> f) >> g`.
+    encoders: list[Encoder] = []
+    for encoder in map(simplify, es):
+        match encoder:
+            case Pipe() as pipe:
+                encoders.extend(pipe)
+            case Compose() as chain:
+                encoders.extend(reversed(chain))
+            case _:
+                encoders.append(encoder)
+    return Pipe(encoders)
 
 
 @pprint_repr
