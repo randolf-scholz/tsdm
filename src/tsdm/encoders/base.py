@@ -72,6 +72,7 @@ Remark: naming conventions:
 # ** num: repeat (>>)
 # * num: duplicate? (⇝ similar to (x,) * n)
 """
+# ruff: file-ignore[E501]
 
 __all__ = [
     # constants
@@ -771,21 +772,6 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         return fold(self, num)
 
     # endregion magic methods ----------------------------------------------------------
-
-    # region other methods -------------------------------------------------------------
-    def standardize(self) -> BaseEncoder[X, Y]:
-        r"""Chain a standardizer."""
-        import tsdm.encoders as E
-
-        return self >> E.StandardScaler()
-
-    def minmax_scale(self) -> BaseEncoder[X, Y]:
-        r"""Chain a minmax scaling."""
-        import tsdm.encoders as E
-
-        return self >> E.MinMaxScaler()
-
-    # endregion other methods ----------------------------------------------------------
     # endregion fluent interface -------------------------------------------------------
 
 
