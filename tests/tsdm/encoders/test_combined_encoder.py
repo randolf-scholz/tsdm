@@ -21,7 +21,6 @@ from tsdm.encoders import (
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.tasks import InSilicoTask
 from tsdm.timeseries import in_silico
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
@@ -63,8 +62,8 @@ def encoder() -> FittableEncoder:
     # construct the encoder
     encoder = (
         FrameEncoder(
-            column_encoders
-            | {"time": DateTimeEncoder(rounding=False) >> MinMaxScaler()},
+            column_encoders,
+            time=DateTimeEncoder(rounding=False) >> MinMaxScaler(),
         )
         >> StandardScaler(axis=-1)
         >> FrameAsTensorDict(
@@ -87,30 +86,19 @@ def test_combined_encoder(encoder: Encoder) -> None:
     Note:
         For some samples, we may get rounding errors in the index.
     """
-    split = (0, "train")
     atol: float = 1e-5
     rtol: float = 1e-3
 
     # initialize the task object
     torch.manual_seed(0)
-    rng = np.random.default_rng(1)
-    task = InSilicoTask()
+    ds = in_silico()
+
+    train_keys = ds.metaindex[:-2]
+    test_keys = ds.metaindex[-2:]
 
     # prepare train data
-    ts = task.dataset.timeseries.iloc[:20_000]
-    train_data = ts.reset_index(level=["run_id"], drop=True)
-
-    # prepare test data
-    sampler = task.samplers[split]
-    generator = task.generators[split]
-
-    # generate a single sample
-    key = next(iter(sampler))
-    sample = generator[key]
-    test_data = sample.inputs.x
-
-    # check that sampling was deterministic
-    assert key[0] == 16130
+    train_data = ds.timeseries.loc[train_keys].reset_index(level=["run_id"], drop=True)
+    test_data = ds.timeseries.loc[test_keys].reset_index(level=["run_id"], drop=True)
 
     # fit encoder to the whole dataset
     encoder.fit(train_data)
@@ -125,8 +113,8 @@ def test_combined_encoder(encoder: Encoder) -> None:
     assert xhat_train.shape == train_data.shape
     # NaN pattern should persist after encoding
     assert (xhat_train.isna().to_numpy() == train_data.isna().to_numpy()).all()
-    assert np.allclose(xhat_train.mean().dropna(), 0.0, atol=atol)
-    assert np.allclose(xhat_train.std(ddof=0).dropna(), 1.0, atol=atol)
+    assert np.allclose(xhat_train.mean(skipna=True).dropna(), 0.0, atol=atol)
+    assert np.allclose(xhat_train.std(ddof=0, skipna=True).dropna(), 1.0, atol=atol)
 
     # check that decode gives back original values
     train_decoded = encoder.decode(train_encoded)
