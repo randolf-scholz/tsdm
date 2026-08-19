@@ -65,8 +65,6 @@ __all__ = [
     "TORCH_UINT_TYPESTRINGS",
     # Constants
     "TYPESTRINGS",
-    # Functions
-    "map_pandas_arrowtime_numpy",
     # Types
     "PandasDType",
     "DType",
@@ -376,23 +374,6 @@ PANDAS_ARROW_DATE_TYPES: set[ArrowDtype] = {
     ArrowDtype(pa.date64()),
 }
 r"""Set of all `pandas` arrow date types."""
-
-
-def map_pandas_arrowtime_numpy(df: pd.DataFrame) -> pd.DataFrame:
-    r"""Converts pyarrow date/timestamp/duration types to numpy equivalents.
-
-    Rationale: pyarrow types are currently bugged and do not support all operations.
-    """
-    for col, dtype in df.dtypes.items():
-        if dtype in PANDAS_ARROW_DURATION_TYPES:
-            df[col] = df[col].astype("timedelta64[ms]")
-        elif dtype in PANDAS_ARROW_TIMESTAMP_TYPES:
-            df[col] = df[col].astype("datetime64[ms]")
-        elif dtype in PANDAS_ARROW_DATE_TYPES:
-            df[col] = df[col].astype("datetime64[s]")
-    return df
-
-
 # endregion pandas dtypes --------------------------------------------------------------
 
 
@@ -420,7 +401,6 @@ PYARROW_DTYPES: Final[dict[str, pa.DataType]] = {
     "timestamp[ns]" : pa.timestamp("ns"),
     "timestamp[us]" : pa.timestamp("us"),
     "timestamp[ms]" : pa.timestamp("ms"),
-    "timestamp[s]"  : pa.timestamp("s"),
     "duration[ns]"  : pa.duration("ns"),
     "duration[us]"  : pa.duration("us"),
     "duration[ms]"  : pa.duration("ms"),
@@ -588,7 +568,6 @@ PYARROW_TO_POLARS: Final[dict[pa.DataType, pl.DataType]] = {
     pa.timestamp("ns") : pl.Datetime(),
     pa.timestamp("us") : pl.Datetime(),
     pa.timestamp("ms") : pl.Datetime(),
-    pa.timestamp("s")  : pl.Datetime(),
     pa.duration("ns")  : pl.Duration(),
     pa.duration("us")  : pl.Duration(),
     pa.duration("ms")  : pl.Duration(),
