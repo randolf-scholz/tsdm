@@ -13,11 +13,11 @@ __all__ = [
     "visualize_distribution",
 ]
 
-from ._image import kernel_heatmap, rasterize
-from ._plotting import (
+from .image import kernel_heatmap, rasterize
+from .plotting import (
     center_axes,
     plot_spectrum,
     shared_grid_plot,
     visualize_distribution,
 )
-from ._setup import MATPLOTLIB_CONFIG, enable_latex_plotting
+from .setup import MATPLOTLIB_CONFIG, enable_latex_plotting
