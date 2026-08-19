@@ -14,18 +14,17 @@ __all__ = [
     "BaseSampler",
     "Sampler",
     # Classes
-    "MappingDataset",
     "HierarchicalSampler",
+    "HierarchicalDataset",
     "RandomSampler",
     "SlidingWindowSampler",
     # Functions
     "compute_grid",
 ]
 
-
 from . import functional
 from .base import BaseSampler, RandomSampler, Sampler
-from .hierarchical_sampler import HierarchicalSampler, MappingDataset
+from .hierarchical_sampler import HierarchicalDataset, HierarchicalSampler
 from .sliding_window_sampler import SlidingWindowSampler, compute_grid
 
 SAMPLERS: dict[str, type[Sampler]] = {

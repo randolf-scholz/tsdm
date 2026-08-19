@@ -23,8 +23,8 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
+    HierarchicalDataset,
     HierarchicalSampler,
-    MappingDataset,
     SlidingWindowSampler,
 )
 from tsdm.tasks._deprecated import OldBaseTask
@@ -227,7 +227,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
             targets=self.targets.index,
         )
 
-        mapped_ds = MappingDataset(
+        mapped_ds = HierarchicalDataset(
             {
                 idx: PandasTS(
                     ts.loc[idx],

@@ -1,6 +1,6 @@
 r"""Implementation of hierarchical sampler."""
 
-__all__ = ["HierarchicalSampler", "MappingDataset"]
+__all__ = ["HierarchicalSampler", "HierarchicalDataset"]
 
 from collections.abc import Collection, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
@@ -10,16 +10,15 @@ from typing import Any, cast, overload
 from numpy.random import Generator
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.datatools import Dataset, MapDataset
-from tsdm.datatools.collections import get_index
+from tsdm.datatools.collections import Dataset, MapDataset, get_index
 from tsdm.pprint import pprint_repr
-from tsdm.types.protocols import SupportsGetItem
+from tsdm.types import SupportsGetItem
 
 from .base import BaseSampler, RandomSampler, Sampler
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass(slots=True, init=False)
 class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Draw samples from a hierarchical data source.
 
@@ -114,7 +113,9 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
 
 
 @pprint_repr
-class MappingDataset[K, DS: SupportsGetItem](Mapping[K, DS]):
+class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
+    Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]]
+):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
     ``ds[key]`` returns the dataset for the given key.
@@ -123,15 +124,17 @@ class MappingDataset[K, DS: SupportsGetItem](Mapping[K, DS]):
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
 
-    datasets: Mapping[K, DS]
-    index: list[K]
+    datasets: Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]]
+    index: list[OuterKeyT]
 
-    def __init__(self, datasets: Mapping[K, DS], /) -> None:
+    def __init__(
+        self, datasets: Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]], /
+    ) -> None:
         super().__init__()
         self.index = list(datasets.keys())
         self.datasets = datasets
 
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self) -> Iterator[OuterKeyT]:
         r"""Iterate over the keys."""
         return iter(self.index)
 
@@ -140,17 +143,17 @@ class MappingDataset[K, DS: SupportsGetItem](Mapping[K, DS]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K, /) -> DS: ...
+    def __getitem__(self, key: OuterKeyT, /) -> SupportsGetItem[InnerKeyT, SampleT]: ...
     @overload
-    def __getitem__(self, key: tuple[K, Any], /) -> Any: ...
-    def __getitem__(self, key: K | tuple[K, Any], /) -> Any:
+    def __getitem__(self, key: tuple[OuterKeyT, InnerKeyT], /) -> SampleT: ...
+    def __getitem__(self, key: OuterKeyT | tuple[OuterKeyT, InnerKeyT], /) -> Any:
         r"""Get the dataset for the given key.
 
         If the key is a tuple, try to divert to the nested dataset.
         """
         match key:
             case k if key in self:
-                return self.datasets[cast("K", k)]
+                return self.datasets[cast("OuterKeyT", k)]
             case [outer_key, inner_key]:
                 dataset = self.datasets[outer_key]
                 return dataset[inner_key]

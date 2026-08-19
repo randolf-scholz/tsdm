@@ -15,11 +15,7 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import (
-    Final,
-    Protocol,
-    runtime_checkable,
-)
+from typing import Final, Protocol, ReadOnly, runtime_checkable
 
 from numpy.random import Generator
 
@@ -36,6 +32,11 @@ class Sampler[T](Protocol):  # +T
     In contrast, each Sampler must additionally have a `shuffle` attribute.
     """
 
+    shuffle: ReadOnly[bool]  # type: ignore
+    r"""Whether to shuffle the indices."""
+    rng: ReadOnly[Generator]  # type: ignore
+    r"""The random number generator."""
+
     @abstractmethod
     def __len__(self) -> int:
         r"""The number of indices that can be drawn by __iter__."""
@@ -45,24 +46,6 @@ class Sampler[T](Protocol):  # +T
     def __iter__(self) -> Iterator[T]:
         r"""Return an iterator over the indices of the data source."""
         ...
-
-    @property
-    @abstractmethod
-    def shuffle(self) -> bool:  # pyright: ignore[reportRedeclaration]
-        r"""Whether to shuffle the indices."""
-        ...
-
-    shuffle: bool
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-
-    @property
-    @abstractmethod
-    def rng(self) -> Generator:  # pyright: ignore[reportRedeclaration]
-        r"""The random number generator."""
-        ...
-
-    rng: Generator
-    # SEE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
 
 @dataclass
@@ -114,6 +97,9 @@ class RandomSampler[T](BaseSampler[T]):  # +T
         self.index = get_index(self.data)
         self.size = len(self.index)
 
+    def __len__(self) -> int:
+        return self.size
+
     def __iter__(self) -> Iterator[T]:
         perm = self.rng.permutation(self.size) if self.shuffle else range(self.size)
 
@@ -123,6 +109,3 @@ class RandomSampler[T](BaseSampler[T]):  # +T
 
         for n in perm:
             yield data[index[n]]
-
-    def __len__(self) -> int:
-        return self.size

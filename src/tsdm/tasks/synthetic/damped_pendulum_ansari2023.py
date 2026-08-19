@@ -17,8 +17,8 @@ from sklearn.model_selection import train_test_split
 
 from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.random.samplers import (
+    HierarchicalDataset,
     HierarchicalSampler,
-    MappingDataset,
     RandomSampler,
     Sampler,
 )
@@ -93,7 +93,9 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, Sample]):
                 self.observation_horizon + self.prediction_horizon,
             ),
         ]
-        sampling_data = MappingDataset({series_key: [horizons] for series_key in split})
+        sampling_data = HierarchicalDataset(
+            {series_key: [horizons] for series_key in split}
+        )
         subsamplers = {series_key: RandomSampler([horizons]) for series_key in split}
         return HierarchicalSampler(
             sampling_data,

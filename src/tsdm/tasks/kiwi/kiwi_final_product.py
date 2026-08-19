@@ -26,8 +26,8 @@ from torch.utils.data import DataLoader, Dataset
 from tsdm.datasets import KiwiBenchmark
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
+    HierarchicalDataset,
     HierarchicalSampler,
-    MappingDataset,
     SlidingWindowSampler,
 )
 from tsdm.tasks._deprecated import OldBaseTask
@@ -179,7 +179,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         self.metadata = self.metadata.rename(columns={self.target: "target_value"})
 
         # Construct the dataset object
-        self.DS = MappingDataset(
+        self.DS = HierarchicalDataset(
             {
                 key: PandasTS(
                     self.timeseries.loc[key],
@@ -310,7 +310,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
 
-        mapped_ds = MappingDataset(
+        mapped_ds = HierarchicalDataset(
             {
                 idx: PandasTS(
                     ts.loc[idx],

@@ -24,10 +24,10 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
+    HierarchicalDataset,
     HierarchicalSampler,
     SlidingWindowSampler,
 )
-from tsdm.random.samplers.hierarchical_sampler import MappingDataset
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasForecastingDataset
 from tsdm.timeseries.pandas import PandasTS, kiwi_benchmark
@@ -313,7 +313,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
             targets=self.targets.index,
         )
 
-        mapped_ds = MappingDataset(
+        mapped_ds = HierarchicalDataset(
             {idx: PandasTS(ts.loc[idx], metadata=md.loc[idx]) for idx in md.index}
         )
 
