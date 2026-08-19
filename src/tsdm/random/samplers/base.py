@@ -107,7 +107,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
     rng: Generator = RNG
     r"""The random number generator."""
 
-    index: Sequence[T] = field(init=False)
+    index: Sequence = field(init=False)
     size: int = field(init=False)
 
     def __post_init__(self) -> None:
@@ -122,7 +122,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
         index = self.index
 
         for n in perm:
-            yield data[index[n]]  # type: ignore
+            yield data[index[n]]
 
     def __len__(self) -> int:
         return self.size
