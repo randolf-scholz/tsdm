@@ -11,31 +11,51 @@ from typing import Protocol, ReadOnly
 
 
 class SeparateTimeSample[ArrayT](Protocol):
-    r"""Protocol for forecasting requests."""
+    r"""Protocol for forecasting requests.
 
-    context_times: ReadOnly[ArrayT]  # Float[..., $N], padded NaN, non-decreasing
-    context_values: ReadOnly[ArrayT]  # Float[..., $N, D], padded NaN
-    context_mask: ReadOnly[ArrayT]  # Bool[..., $N, D], padded False
+    Args:
+        context_times: Float[..., $N], padded NaN, non-decreasing
+        context_values: Float[..., $N, D], padded NaN
+        context_mask: Bool[..., $N, D], padded False
+        query_times: Float[..., $K], padded NaN, non-decreasing
+        query_mask: Bool[..., $K, F]  padded False
+        target_values: Float[..., $K, F]  padded NaN
+        static_covariates: Float[..., M]  padded NaN
 
-    query_times: ReadOnly[ArrayT]  # Float[..., $K], padded NaN, non-decreasing
-    query_mask: ReadOnly[ArrayT]  # Bool[..., $K, F]  padded False
-    target_values: ReadOnly[ArrayT | None] = None  # Float[..., $K, F]  padded NaN
+    """
 
-    static_covariates: ReadOnly[ArrayT | None] = None  # Float[..., M]  padded NaN
+    context_times: ReadOnly[ArrayT]  # type: ignore
+    context_values: ReadOnly[ArrayT]  # type: ignore
+    context_mask: ReadOnly[ArrayT]  # type: ignore
+
+    query_times: ReadOnly[ArrayT]  # type: ignore
+    query_mask: ReadOnly[ArrayT]  # type: ignore
+    target_values: ReadOnly[ArrayT | None] = None  # type: ignore
+
+    static_covariates: ReadOnly[ArrayT | None] = None  # type: ignore
 
 
 class MergedTimeSample[ArrayT](Protocol):
-    r"""Protocol for joint time representation."""
+    r"""Protocol for joint time representation.
 
-    timestamps: ReadOnly[ArrayT]  # Float[..., $T], padded NaN, non-decreasing
+    Args:
+        timestamps: Float[..., $T], padded NaN, non-decreasing
+        context_mask: Bool[..., $T, D], padded False
+        context_values: Float[..., $T, D], padded NaN
+        query_mask: Bool[..., $T, E], padded False
+        target_values: Float[..., $T, E], padded NaN
+        static_covariates: Float[..., M], padded NaN
+    """
 
-    context_mask: ReadOnly[ArrayT]  # Bool[..., $T, D], padded False
-    context_values: ReadOnly[ArrayT]  # Float[..., $T, D], padded NaN
+    timestamps: ReadOnly[ArrayT]  # type: ignore
 
-    query_mask: ReadOnly[ArrayT]  # Bool[..., $T, E], padded False
-    target_values: ReadOnly[ArrayT | None] = None  # Float[..., $T, E], padded NaN
+    context_mask: ReadOnly[ArrayT]  # type: ignore
+    context_values: ReadOnly[ArrayT]  # type: ignore
 
-    static_covariates: ReadOnly[ArrayT | None] = None  # Float[..., M], padded NaN
+    query_mask: ReadOnly[ArrayT]  # type: ignore
+    target_values: ReadOnly[ArrayT | None] = None  # type: ignore
+
+    static_covariates: ReadOnly[ArrayT | None] = None  # type: ignore
 
 
 class TripletSample[ArrayT](Protocol):
@@ -43,14 +63,23 @@ class TripletSample[ArrayT](Protocol):
 
     Tall data format that stacks context and query data into a 3 column representation of
     (time, channel, value) triplets.
+
+    Args:
+        context_times: Float[..., $X], padded NaN, non-decreasing
+        context_channels: Long[..., $X], padded -1
+        context_values: Float[..., $X], padded NaN
+        query_times: Float[..., $Q], padded NaN, non-decreasing
+        query_channels: Long[..., $Q], padded -1
+        target_values: Float[..., $Q], padded NaN
+        static_covariates: Float[..., M], padded NaN
     """
 
-    context_times: ReadOnly[ArrayT]  # Float[..., $X], padded NaN, non-decreasing
-    context_channels: ReadOnly[ArrayT]  # Long[..., $X], padded -1
-    context_values: ReadOnly[ArrayT]  # Float[..., $X], padded NaN
+    context_times: ReadOnly[ArrayT]  # type: ignore
+    context_channels: ReadOnly[ArrayT]  # type: ignore
+    context_values: ReadOnly[ArrayT]  # type: ignore
 
-    query_times: ReadOnly[ArrayT]  # Float[..., $Q], padded NaN, non-decreasing
-    query_channels: ReadOnly[ArrayT]  # Long[..., $Q], padded -1
-    target_values: ReadOnly[ArrayT | None] = None  # Float[..., $Q], padded NaN
+    query_times: ReadOnly[ArrayT]  # type: ignore
+    query_channels: ReadOnly[ArrayT]  # type: ignore
+    target_values: ReadOnly[ArrayT | None] = None  # type: ignore
 
-    static_covariates: ReadOnly[ArrayT | None] = None  # Float[..., M], padded NaN
+    static_covariates: ReadOnly[ArrayT | None] = None  # type: ignore
