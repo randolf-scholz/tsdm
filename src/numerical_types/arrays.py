@@ -137,7 +137,8 @@ class BooleanArray[BoolT](
     # FIXME: https://github.com/python/typing/issues/2021
     #   Because of the current spec, we need overloads instead of simply unions.
 
-    if not TYPE_CHECKING and False:  # 3x overloads per binary operator
+    if not TYPE_CHECKING and False:  # ruff: ignore[SIM223]
+        # 3x overloads per binary operator
         # & (bitwise AND)
         def __and__(self, other: Self | BoolT | bool, /) -> Self: ...
         def __rand__(self, other: Self | BoolT | bool, /) -> Self: ...
@@ -148,7 +149,8 @@ class BooleanArray[BoolT](
         def __xor__(self, other: Self | BoolT | bool, /) -> Self: ...
         def __rxor__(self, other: Self | BoolT | bool, /) -> Self: ...
 
-    if not TYPE_CHECKING and False:  # 2x overloads per binary operator
+    if not TYPE_CHECKING and False:  # ruff: ignore[SIM223]
+        # 2x overloads per binary operator
         # & (bitwise AND)
         @overload
         def __and__(self, other: BoolT | bool, /) -> Self: ...
