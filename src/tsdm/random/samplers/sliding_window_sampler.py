@@ -6,7 +6,6 @@ __all__ = [
     "HORIZON",
     # Classes
     "SlidingWindowSampler",
-    "RandomWindowSampler",
     # Functions
     "compute_grid",
 ]
@@ -629,6 +628,10 @@ class SlidingWindowSampler[
             )
         )
 
+    def __len__(self) -> int:
+        r"""Return the number of samples."""
+        return len(self.grid)
+
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
     @overload
@@ -699,31 +702,3 @@ class SlidingWindowSampler[
         else:
             for horizons in (window + k * stride for k in grid):
                 yield sample_fn(horizons[0], horizons[-1])
-
-    def __len__(self) -> int:
-        r"""Return the number of samples."""
-        return len(self.grid)
-
-
-class RandomWindowSampler(BaseSampler):
-    r"""Sample a random window from the data source.
-
-    Args:
-        mode: There are 4 modes, determining the output of the sampler (default: 'masks').
-            - `bounds`: return the bounds of the window(s) as a tuple.
-            - `slices`: return the slice of the lower and upper bounds of the window.
-            - `masks`: return the boolean mask of the data points inside the window.
-            - `points`: return the actual data points inside the window(s).
-        horizons: The size of the windows.
-            - Timedelta ∆t: random sample window of size ∆t
-            - list[Timedelta]: random sample subsequent windows of size ∆tₖ.
-            - tuple[low, high]: random sample window of size ∆t ∈ [low, high]
-            - list[tuple[low, high]]: random sample subsequent windows of size ∆tₖ ∈ [low, high]
-            - callable: random sample window of size ∆t = f()
-        base_freq: The minimal time resolution to consider. (default: ∆tₘᵢₙ)
-            - will draw ∆t ∈ [low, high] such that ∆t is a multiple of base_freq.
-            - will draw tₛₜₐᵣₜ ∈ [tₘᵢₙ, tₘₐₓ] such that tₛₜₐᵣₜ-tₘᵢₙ is a multiple of base_freq.
-        max_samples: The maximum number of samples to draw (optional).
-            - If set to None, the sampler will draw indefinitely.
-            - If not given, the sampler will draw all possible samples (O(freq²)).
-    """
