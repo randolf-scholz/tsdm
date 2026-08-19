@@ -282,7 +282,7 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         *,
         bounds: tuple[float, float] = (0.0, 1.0),
         offset_guess: float = 1.0,
-        method: METHOD | str = "match-uniform",
+        method: METHOD | str = "minimum",
         offset: float = UNDEFINED,
         verbose: bool = False,
     ) -> None:

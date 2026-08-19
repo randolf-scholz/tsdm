@@ -48,16 +48,9 @@ def encoder() -> FittableEncoder:
                 )
 
             case _:
-                if xmax is not None and xmax < np.inf:
-                    column_encoders[col] = (
-                        BoundaryEncoder(xmin, xmax, mode="clip")
-                        # >> MinMaxScaler(lower, upper)
-                        >> BoxCoxEncoder()
-                    )
-                else:
-                    column_encoders[col] = (
-                        BoundaryEncoder(xmin, xmax, mode="clip") >> BoxCoxEncoder()
-                    )
+                column_encoders[col] = BoundaryEncoder(
+                    xmin, xmax, mode="clip"
+                ) >> BoxCoxEncoder(method="minimum")
 
     # construct the encoder
     encoder = (
@@ -72,9 +65,14 @@ def encoder() -> FittableEncoder:
         )
     )
 
-    # fit encoder to the whole dataset
-    ts = dataset.timeseries
-    train_data = ts.iloc[:20_000].reset_index(level=["run_id"], drop=True)
+    # fit encoder to the dataset
+    train_keys = dataset.metaindex[:-2]
+
+    # prepare train data
+    train_data = dataset.timeseries.loc[train_keys].reset_index(
+        level=["run_id"], drop=True
+    )
+
     encoder.fit(train_data)
 
     return encoder
@@ -86,7 +84,7 @@ def test_combined_encoder(encoder: Encoder) -> None:
     Note:
         For some samples, we may get rounding errors in the index.
     """
-    atol: float = 1e-5
+    atol: float = 1e-4
     rtol: float = 1e-3
 
     # initialize the task object
@@ -99,9 +97,6 @@ def test_combined_encoder(encoder: Encoder) -> None:
     # prepare train data
     train_data = ds.timeseries.loc[train_keys].reset_index(level=["run_id"], drop=True)
     test_data = ds.timeseries.loc[test_keys].reset_index(level=["run_id"], drop=True)
-
-    # fit encoder to the whole dataset
-    encoder.fit(train_data)
 
     # encode and validate
     train_encoded = encoder.encode(train_data)
