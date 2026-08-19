@@ -20,7 +20,7 @@ Decomposable METRICS
 
         dims = (1, ...)  # sum over all axes except batch dimension
         # y, yhat are of shape (B, ...)
-        test_metric = lambda y, yhat: torch.sum((y - yhat) ** 2, dim=dims)
+        test_metric = lambda yhat, y: torch.sum((yhat - y) ** 2, dim=dims)
         accumulation = torch.mean
 
 .. admonition:: **Recipe**
@@ -29,7 +29,7 @@ Decomposable METRICS
 
         r = []
         for x, y in dataloader:
-            r.append(test_metric(y, model(x)))
+            r.append(test_metric(model(x), y))
 
         score = accumulation(torch.concat(r, dim=BATCHDIM))
 
@@ -43,7 +43,7 @@ Non-decomposable METRICS
         test_metric = (
             torch.AUROC()
         )  # expects two tensors of shape (N, ...) or (N, C, ...)
-        score = test_metric([(y, model(x)) for x, y in test_loader])
+        score = test_metric([(model(x), y) for x, y in test_loader])
         # accumulation = None or identity function (tbd.)
 
 .. admonition:: **Recipe**
@@ -57,7 +57,7 @@ Non-decomposable METRICS
 
         ys = torch.concat(ys, dim=BATCHDIM)
         yhats = torch.concat(yhats, dim=BATCHDIM)
-        score = test_metric(ys, yhats)
+        score = test_metric(yhats, ys)
 
 Normal Encoder
 --------------

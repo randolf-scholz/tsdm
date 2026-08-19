@@ -351,7 +351,9 @@ class EvaluationCallback(BaseCallback):
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
             scalars = compute_metrics(
-                self.metrics, targets=result.targets, predics=result.predictions
+                self.metrics,
+                predictions=result.predictions,
+                targets=result.targets,
             )
             for metric, value in scalars.items():
                 self.history.loc[step, (key, metric)] = value.cpu().item()
@@ -565,8 +567,8 @@ class MetricsCallback(BaseCallback):
             step,
             self.writer,
             metrics=self.metrics,
+            predictions=predictions,
             targets=targets,
-            predics=predictions,
             key=self.key,
             name=self.name,
             prefix=self.prefix,

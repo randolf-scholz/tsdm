@@ -271,27 +271,29 @@ def log_metrics(
     /,
     metrics: Mapping[str, str | Metric | type[Metric]],
     *,
-    inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
+    inputs: Optional[Mapping[Literal["predictions", "targets"], Tensor]] = None,
+    predictions: Optional[Tensor] = None,
     targets: Optional[Tensor] = None,
-    predics: Optional[Tensor] = None,
     key: str = "",
     name: str = "metrics",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log multiple metrics at once."""
-    if targets is not None and predics is not None and inputs is None:
+    if predictions is not None and targets is not None and inputs is None:
         pass
-    elif targets is None and predics is None and inputs is not None:
+    elif predictions is None and targets is None and inputs is not None:
+        predictions = inputs["predictions"]
         targets = inputs["targets"]
-        predics = inputs["predics"]
     else:
-        raise ValueError("Either `inputs` or `targets` and `predics` must be provided.")
+        raise ValueError(
+            "Either `inputs` or `predictions` and `targets` must be provided."
+        )
 
-    if len(targets) != len(predics):
+    if len(predictions) != len(targets):
         raise ValueError("Targets and predictions must have the same length!")
 
-    scalars = compute_metrics(metrics, targets=targets, predics=predics)
+    scalars = compute_metrics(metrics, predictions=predictions, targets=targets)
     log_values(
         step,
         writer,

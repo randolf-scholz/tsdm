@@ -28,8 +28,8 @@ def test_base_logger() -> None:
     logger.add_callback("batch", cb)
     # run callbacks
     targets = torch.randn(10, 3)
-    predics = torch.randn(10, 3)
-    logger["batch"].callback(1, targets=targets, predictions=predics)
+    predictions = torch.randn(10, 3)
+    logger["batch"].callback(1, predictions=predictions, targets=targets)
     print(logger)
 
 

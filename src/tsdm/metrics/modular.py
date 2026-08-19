@@ -40,7 +40,7 @@ class MAE(BaseMetric):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -74,7 +74,7 @@ class WMAE(WeightedMetric):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -139,7 +139,7 @@ class MSE(BaseMetric):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -203,7 +203,7 @@ class WMSE(WeightedMetric):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -237,7 +237,7 @@ class RMSE(BaseMetric):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -271,7 +271,7 @@ class WRMSE(WeightedMetric):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -323,7 +323,7 @@ class LP(BaseMetric):
         self.p = p
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -377,7 +377,7 @@ class WLP(WeightedMetric):
         self.p = p
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 

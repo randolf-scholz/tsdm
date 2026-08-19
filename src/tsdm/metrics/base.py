@@ -20,7 +20,7 @@ from tsdm.types.aliases import Axis
 class Metric(Protocol):
     r"""Represents a metric."""
 
-    def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
+    def __call__(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         ...
 
@@ -28,7 +28,7 @@ class Metric(Protocol):
 class NN_Metric(Protocol):
     r"""Protocol for a loss function."""
 
-    def forward(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor, /) -> Tensor:
         r"""Compute the loss."""
         ...
 
@@ -54,7 +54,7 @@ class BaseMetric(nn.Module, Metric):
         self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
 
     @abstractmethod
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -100,6 +100,6 @@ class WeightedMetric(BaseMetric, Metric):
             )
 
     @abstractmethod
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError

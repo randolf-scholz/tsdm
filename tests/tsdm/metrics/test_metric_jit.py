@@ -13,8 +13,8 @@ def test_metric_compilable(loss_name: str) -> None:
     compiled_loss_fn = torch.compile(loss_fn)
 
     # Test that the scripted function produces the same output
-    x = torch.randn(10, 5)
-    xhat = torch.randn(10, 5)
-    original_output = loss_fn(x, xhat)
-    scripted_output = compiled_loss_fn(x, xhat)
+    targets = torch.randn(10, 5)
+    predictions = torch.randn(10, 5)
+    original_output = loss_fn(predictions=predictions, targets=targets)
+    scripted_output = compiled_loss_fn(predictions=predictions, targets=targets)
     assert torch.allclose(original_output, scripted_output)

@@ -39,8 +39,8 @@ from .functional import nd, nrmse, q_quantile, q_quantile_loss
 class TimeSeriesLoss(Protocol):
     r"""Protocol for a loss function."""
 
-    def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
-        r"""Compute a loss between the targets and the predictions.
+    def __call__(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+        r"""Compute a loss between the predictions and the targets.
 
         .. signature:: ``[(..., *t, 𝐧), (..., *t, 𝐧)] -> 0``
 
@@ -103,7 +103,7 @@ class TimeSeriesBaseLoss(BaseMetric):
             raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -175,7 +175,7 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
             )
 
     @abstractmethod
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -196,9 +196,9 @@ class ND(TimeSeriesBaseLoss):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``(..., n), (..., n) -> ()``."""
-        return nd(targets, predictions)
+        return nd(predictions=predictions, targets=targets)
 
 
 class NRMSE(TimeSeriesBaseLoss):
@@ -212,9 +212,9 @@ class NRMSE(TimeSeriesBaseLoss):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
-        return nrmse(targets, predictions)
+        return nrmse(predictions=predictions, targets=targets)
 
 
 class Q_Quantile(TimeSeriesBaseLoss):
@@ -228,9 +228,9 @@ class Q_Quantile(TimeSeriesBaseLoss):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
-        return q_quantile(targets, predictions)
+        return q_quantile(predictions=predictions, targets=targets)
 
 
 class Q_Quantile_Loss(TimeSeriesBaseLoss):
@@ -244,9 +244,9 @@ class Q_Quantile_Loss(TimeSeriesBaseLoss):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
-        return q_quantile_loss(targets, predictions)
+        return q_quantile_loss(predictions=predictions, targets=targets)
 
 
 class TimeSeriesMSE(TimeSeriesBaseLoss):
@@ -285,7 +285,7 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -332,7 +332,7 @@ class TimeSeriesWMSE(WeightedTimeSeriesLoss):
     """
 
     @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, m), (..., t, m)] → ...``."""
         r = predictions - targets
 

@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 import pickle
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -44,19 +44,19 @@ def eval_metric(
     metric: str | Metric | type[Metric],
     /,
     *,
+    predictions: Tensor,
     targets: Tensor,
-    predics: Tensor,
 ) -> Tensor:
     r"""Evaluate a metric."""
     match metric:
         case str(metric_name):
             metric_ = LOSSES[metric_name]
-            return eval_metric(metric_, targets=targets, predics=predics)
+            return eval_metric(metric_, predictions=predictions, targets=targets)
         case type() as metric_type:
             metric_func = metric_type()
-            return eval_metric(metric_func, targets=targets, predics=predics)
-        case Metric() as func:
-            return func(targets, predics)
+            return eval_metric(metric_func, predictions=predictions, targets=targets)
+        case Callable() as func:
+            return func(predictions=predictions, targets=targets)
         case _:
             raise TypeError(f"{type(metric)=} not understood!")
 
@@ -72,24 +72,34 @@ def compute_metrics(
     ),
     /,
     *,
+    predictions: Tensor,
     targets: Tensor,
-    predics: Tensor,
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
     match metrics:
         case str(name):
-            return {name: eval_metric(LOSSES[name], targets=targets, predics=predics)}
+            return {
+                name: eval_metric(
+                    LOSSES[name], predictions=predictions, targets=targets
+                )
+            }
         case type() as cls:
-            return {cls.__name__: eval_metric(cls, targets=targets, predics=predics)}
-        case Metric() as func:
-            return {func.__class__.__name__: func(targets, predics)}
+            return {
+                cls.__name__: eval_metric(cls, predictions=predictions, targets=targets)
+            }
+        case Callable() as func:
+            return {
+                func.__class__.__name__: func(predictions=predictions, targets=targets)
+            }
         case Sequence() as sequence:
             results: dict[str, Tensor] = {}
             for metric in sequence:
-                results |= compute_metrics(metric, targets=targets, predics=predics)
+                results |= compute_metrics(
+                    metric, predictions=predictions, targets=targets
+                )
         case Mapping() as mapping:
             return {
-                key: eval_metric(metric, targets=targets, predics=predics)
+                key: eval_metric(metric, predictions=predictions, targets=targets)
                 for key, metric in mapping.items()
             }
         case _:

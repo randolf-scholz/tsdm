@@ -1,11 +1,12 @@
 r"""Test loss function normalization."""
 
+from collections.abc import Callable
 from math import pi, prod, sqrt
 
 import pytest
 import torch
 
-from tsdm.metrics import MAE, MSE, RMSE, BaseMetric, TimeSeriesMSE
+from tsdm.metrics import MAE, MSE, ND, RMSE, BaseMetric, TimeSeriesMSE, nd
 
 BATCH_SHAPES = [
     (),
@@ -19,6 +20,20 @@ CHANNEL_SHAPES = [
 ]
 TIME_SHAPES = [(1,), (32,)]
 LOSSES = [MSE, RMSE, MAE]
+
+
+@pytest.mark.parametrize("loss_func", [nd, ND()])
+def test_metric_argument_order(loss_func: Callable[..., torch.Tensor]) -> None:
+    r"""Test that metrics accept predictions before targets by position or keyword."""
+    targets = torch.ones(2, 2)
+    predictions = 2 * torch.ones(2, 2)
+    expected = torch.tensor(1.0)
+
+    assert torch.equal(loss_func(predictions, targets), expected)
+    assert torch.equal(
+        loss_func(predictions=predictions, targets=targets),
+        expected,
+    )
 
 
 @pytest.mark.slow
@@ -39,7 +54,7 @@ def test_loss_normalization(
     shape = batch_shape + channel_shape
     targets = torch.randn(*shape)
     predictions = torch.randn(*shape)
-    result = loss_func(targets, predictions)
+    result = loss_func(predictions=predictions, targets=targets)
 
     if prod(batch_shape) <= 1:
         return
@@ -91,7 +106,7 @@ def test_time_loss_normalization(
         normalize=False,
     )
 
-    result = loss_func(targets, predictions)
+    result = loss_func(predictions=predictions, targets=targets)
 
     # skip for edge case test
     if prod(batch_shape) <= 1 or prod(time_shape) <= 1:

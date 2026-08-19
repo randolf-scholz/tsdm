@@ -14,9 +14,9 @@ from collections.abc import Callable
 
 from torch import Tensor, nn
 
-from .base import Metric, NN_Metric
+from .base import NN_Metric
 
-TORCH_LOSSES_FUNCTIONAL: dict[str, Metric] = {
+TORCH_LOSSES_FUNCTIONAL: dict[str, Callable[[Tensor, Tensor], Tensor]] = {
     "binary_cross_entropy"             : nn.functional.binary_cross_entropy,
     "binary_cross_entropy_with_logits" : nn.functional.binary_cross_entropy_with_logits,
     "cross_entropy"                    : nn.functional.cross_entropy,
@@ -46,7 +46,7 @@ TORCH_SPECIAL_LOSSES_FUNCTIONAL: dict[str, Callable[..., Tensor]] = {
 }  # fmt: skip
 r"""Special losses that do not represent usual loss functions."""
 
-TORCH_ALIASES_FUNCTIONAL: dict[str, Metric] = {
+TORCH_ALIASES_FUNCTIONAL: dict[str, Callable[[Tensor, Tensor], Tensor]] = {
     "mae"  : nn.functional.l1_loss,
     "l2"   : nn.functional.mse_loss,
     "xent" : nn.functional.cross_entropy,
