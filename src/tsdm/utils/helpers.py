@@ -4,11 +4,11 @@ __all__ = [
     # Classes
     # Functions
     "flatten_dict",
-    "nested_paths_exist",
     "unflatten_dict",
+    "nested_paths_exist",
+    "transpose_list_of_dicts",
     "prompt_choice",
     "prompt_yes_no",
-    "transpose_list_of_dicts",
 ]
 
 from collections.abc import Callable, Iterable, Mapping

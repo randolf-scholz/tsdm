@@ -21,7 +21,7 @@ __all__ = [
 
 
 from . import funcutils, interval, lazydict, remote
-from ._utils import (
+from .helpers import (
     flatten_dict,
     nested_paths_exist,
     prompt_choice,
