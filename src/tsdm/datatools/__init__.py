@@ -7,8 +7,6 @@ __all__ = [
     "MapDataset",
     "PandasDataset",
     "Dataset",
-    # Classes
-    "InlineTable",
     # folds
     "is_partition",
     "folds_as_frame",
@@ -23,7 +21,6 @@ __all__ = [
     "get_schema",
     "get_dtypes",
     "get_integer_cols",
-    "make_dataframe",
     "remove_outliers",
     "strip_whitespace",
     "validate_schema",
@@ -44,5 +41,4 @@ from .preprocessing import (
     select_outliers,
     strip_whitespace,
 )
-from .serialize import InlineTable, make_dataframe
 from .utils import get_dtypes, get_schema, validate_schema
