@@ -23,11 +23,11 @@ from tsdm.random.samplers import (
     Sampler,
 )
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import (
+from tsdm.timeseries.pandas import (
     PandasForecastingDataset,
     Sample,
+    damped_pendulum_ansari2023,
 )
-from tsdm.timeseries.pandas import damped_pendulum_ansari2023
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleKey = tuple[int, list[slice]]

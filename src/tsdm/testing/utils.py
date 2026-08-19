@@ -15,7 +15,7 @@ __all__ = [
 
 from inspect import isbuiltin
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import Final, TypeGuard, TypeIs
+from typing import Final, TypeGuard
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -25,7 +25,6 @@ import pyarrow as pa
 import torch
 from pandas import NA, NaT
 
-from tsdm.dtypes import DType
 from tsdm.types.aliases import FilePath, PythonScalar
 
 _BUILTIN_TYPES: Final[frozenset[type]] = frozenset(
@@ -76,7 +75,7 @@ def is_builtin(obj: object, /) -> bool:
     return isbuiltin(obj) or is_builtin_constant(obj) or is_builtin_type(obj)
 
 
-def is_dtype(arg: object, /) -> TypeIs[DType]:
+def is_dtype(arg: object, /) -> bool:
     r"""Check if a string is a valid dtype."""
     return isinstance(
         arg,

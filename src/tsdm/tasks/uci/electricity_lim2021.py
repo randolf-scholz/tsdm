@@ -21,8 +21,7 @@ from tsdm.encoders import FittableEncoder, StandardScaler
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTS
-from tsdm.timeseries.pandas import electricity
+from tsdm.timeseries.pandas import PandasTS, electricity
 
 
 @pprint_repr

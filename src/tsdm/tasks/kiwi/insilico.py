@@ -9,15 +9,10 @@ from typing import Literal
 
 from pandas import DataFrame
 
-from tsdm.datatools import (
-    folds_as_frame,
-    folds_as_sparse_frame,
-    folds_from_groups,
-)
+from tsdm.datatools import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasForecastingDataset, PandasTSC
-from tsdm.timeseries.pandas import in_silico
+from tsdm.timeseries.pandas import PandasForecastingDataset, PandasTSC, in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[list[bool]]]
