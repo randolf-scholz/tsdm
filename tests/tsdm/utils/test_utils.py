@@ -4,14 +4,7 @@ from typing import Any
 
 import pytest
 
-from tsdm.utils import flatten_dict, replace, unflatten_dict
-
-
-def test_replace() -> None:
-    r"""Test `tsdm.utils.replace`."""
-    string = "Hello World"
-    replacements = {"Hello": "Goodbye", "World": "Earth"}
-    assert replace(string, replacements) == "Goodbye Earth"
+from tsdm.utils import flatten_dict, unflatten_dict
 
 
 @pytest.mark.parametrize(

@@ -7,7 +7,6 @@ __all__ = [
     "timedelta",
     "timestamp",
     "nested_paths_exist",
-    "replace",
     "unflatten_dict",
     "date_range",
     "timedelta_range",
@@ -22,7 +21,6 @@ from typing import Any, Optional, cast, overload
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 
-from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import FilePath, Nested, NestedDict, NestedMapping
 
 
@@ -82,19 +80,6 @@ def timedelta_range(
     if include_end and items[-1] < t1:
         items.append(t1)
     return items
-
-
-def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -> str:
-    r"""Replace multiple substrings via dict.
-
-    References:
-        https://stackoverflow.com/a/64500851
-    """
-    for x, y in mapping.items():
-        s = s.replace(x, y)
-    for x, y in strings.items():
-        s = s.replace(x, y)
-    return s
 
 
 @overload
