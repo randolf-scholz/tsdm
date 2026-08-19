@@ -84,7 +84,6 @@ import pyarrow as pa
 
 from .datatools import get_dtypes
 from .decorator import decorator
-from .dtypes import TYPESTRINGS, DType
 from .testing import (
     is_builtin,
     is_builtin_constant,
@@ -979,9 +978,7 @@ def repr_array(
     return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
 
 
-def repr_dtype(
-    dtype: str | type | DType | SupportsDtype | pa.DataType | pl.DataType, /
-) -> str:
+def repr_dtype(dtype: object, /) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
         case SupportsDtype(dtype=dtype):
@@ -994,8 +991,8 @@ def repr_dtype(
         # Some special casing for dictionary types.
         case pa.DictionaryType(index_type=index_type, value_type=value_type):
             return f"dict[{index_type!s},{value_type!s}]"
-        case type() as cls if cls in TYPESTRINGS:
-            return TYPESTRINGS[cls]
+        case type() as cls:
+            return cls.__name__
         case _:
             return str(dtype)
 
