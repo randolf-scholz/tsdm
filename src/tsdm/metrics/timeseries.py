@@ -25,7 +25,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import Final, Optional, Protocol, runtime_checkable
+from typing import Final, Optional, Protocol
 
 import torch
 from torch import Tensor, jit, nn
@@ -36,7 +36,6 @@ from .base import BaseMetric
 from .functional import nd, nrmse, q_quantile, q_quantile_loss
 
 
-@runtime_checkable
 class TimeSeriesLoss(Protocol):
     r"""Protocol for a loss function."""
 

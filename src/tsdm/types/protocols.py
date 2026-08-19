@@ -88,7 +88,6 @@ class SupportsLenAndGetItem[V](Protocol):  # +V
     def __getitem__(self, index: int, /) -> V: ...
 
 
-@runtime_checkable
 class SupportsSlicing[V](SupportsGetItem[int, V], Protocol):  # +V
     r"""Protocol for objects that support slicing with integer indices."""
 

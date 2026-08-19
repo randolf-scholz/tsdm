@@ -59,7 +59,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, ClassVar, Optional, Protocol, runtime_checkable
+from typing import Any, ClassVar, Optional, Protocol
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -89,7 +89,6 @@ from .callbacks import (
 )
 
 
-@runtime_checkable
 class Logger[CBS: CallbackSequence](Protocol):  # +CBS
     r"""Generic Logger Protocol."""
 

@@ -50,7 +50,6 @@ from tsdm.random.distributions import TimeSeriesRV
 from tsdm.types.aliases import Size
 
 
-@runtime_checkable
 class ODE[T](Protocol):  # +T
     r"""Represents a system of ordinary differential equations."""
 
@@ -75,7 +74,6 @@ class ODE[T](Protocol):  # +T
         ...
 
 
-@runtime_checkable
 class IVP_Solver[T](Protocol):  # +T
     r"""Protocol for initial value problem solvers.
 

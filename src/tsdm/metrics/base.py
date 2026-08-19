@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import Final, Protocol, runtime_checkable
+from typing import Final, Protocol
 
 import torch
 from torch import Tensor, nn
@@ -17,7 +17,6 @@ from torch import Tensor, nn
 from tsdm.types.aliases import Axis
 
 
-@runtime_checkable
 class Metric(Protocol):
     r"""Represents a metric."""
 
@@ -26,7 +25,6 @@ class Metric(Protocol):
         ...
 
 
-@runtime_checkable
 class NN_Metric(Protocol):
     r"""Protocol for a loss function."""
 

@@ -22,14 +22,7 @@ import json
 from collections.abc import Mapping
 from inspect import Parameter
 from pathlib import Path
-from typing import (
-    Any,
-    Literal,
-    Optional,
-    Protocol,
-    TypeIs,
-    runtime_checkable,
-)
+from typing import Any, Literal, Optional, Protocol, TypeIs
 
 import torch
 import yaml
@@ -64,7 +57,6 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 from .utils import compute_metrics
 
 
-@runtime_checkable
 class LogFunction(Protocol):
     r"""Protocol for logging functions."""
 
