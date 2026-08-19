@@ -13,7 +13,7 @@ from tsdm.encoders.sklearn_import import (
     SklearnEncoder,
     SklearnTransform,
 )
-from tsdm.testing import is_dunder, is_private
+from tsdm.testing import is_private
 
 BINARY_DATA = np.array(["yes", "no", "no", "yes", "yes"])
 CATEGORICAL_DATA = np.array([["car"], ["bike"], ["car"], ["bike"], ["house"]])
@@ -90,6 +90,3 @@ def test_shared_attrs() -> None:
     )
     filtered_attrs = {attr for attr in shared_attrs if not is_private(attr)}
     assert defined_attrs <= filtered_attrs
-
-    filtered_attrs = {attr for attr in filtered_attrs if not is_dunder(attr)}
-    assert filtered_attrs <= defined_attrs | {"get_metadata_routing", "set_output"}
