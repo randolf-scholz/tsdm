@@ -29,11 +29,11 @@ from tsdm.random.samplers import (
 )
 from tsdm.random.samplers.hierarchical_sampler import MappingDataset
 from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.timeseries import PandasForecastingDataset
 from tsdm.timeseries.pandas import PandasTS, kiwi_benchmark
-from tsdm.timeseries.sample_generators import TimeSeriesSampleGenerator
 
 
-class KIWI_RUNS_GENERATOR(TimeSeriesSampleGenerator):
+class KIWI_RUNS_GENERATOR(PandasForecastingDataset):
     r"""Bioprocess forecasting task using the KIWI-biolab data."""
 
     targets = ["Base", "DOT", "Glucose", "OD600"]

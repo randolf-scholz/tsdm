@@ -4,7 +4,12 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
-from tsdm.timeseries.pandas import PandasTS, PandasTSC, beijing_air_quality
+from tsdm.timeseries.pandas import (
+    PandasForecastingDataset,
+    PandasTS,
+    PandasTSC,
+    beijing_air_quality,
+)
 
 
 def test_beijing_air_quality() -> None:
@@ -131,3 +136,35 @@ def test_timeseries_collection_timeindex_uses_row_metaindex() -> None:
 
     assert_series_equal(collection.timeindex, expected_timeindex)
     assert_index_equal(collection.metaindex, expected_timeindex.index.unique())
+
+
+def test_forecasting_sample_static_covariates_from_timeseries() -> None:
+    static_covariates = pd.DataFrame({"offset": [100]})
+    timeseries = PandasTS(
+        timeseries=pd.DataFrame({"value": [10, 20, 30]}),
+        static_covariates=static_covariates,
+    )
+    dataset = PandasForecastingDataset(timeseries, targets=["value"])
+
+    sample = dataset[[slice(0, 1), slice(2, 2)]]
+
+    assert sample.static_covariates is static_covariates
+
+
+def test_forecasting_sample_static_covariates_from_collection() -> None:
+    index = pd.MultiIndex.from_product(
+        [["a", "b"], [0, 1, 2]], names=["series", "time"]
+    )
+    static_covariates = pd.DataFrame(
+        {"offset": [100, 200]}, index=pd.Index(["a", "b"], name="series")
+    )
+    collection = PandasTSC(
+        timeseries=pd.DataFrame({"value": range(6)}, index=index),
+        static_covariates=static_covariates,
+    )
+    dataset = PandasForecastingDataset(collection, targets=["value"])
+
+    sample = dataset[("a", [slice(0, 1), slice(2, 2)])]
+
+    assert isinstance(sample.static_covariates, pd.Series)
+    assert_series_equal(sample.static_covariates, static_covariates.loc["a"])

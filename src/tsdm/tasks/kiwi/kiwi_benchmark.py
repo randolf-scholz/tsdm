@@ -35,7 +35,7 @@ from tsdm.metrics import TimeSeriesMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasForecastingDataset, PandasTSC, Sample
 from tsdm.timeseries.pandas import kiwi_benchmark
 
 
@@ -180,8 +180,12 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
             y_mask: list[Tensor] = []
 
             for sample in samples:
-                tx, x = encoder.encode(sample.inputs.x).values()
-                ty, y = encoder.encode(sample.targets.y).values()
+                if sample.target_values is None:
+                    raise ValueError(
+                        "Cannot collate a forecasting sample without targets."
+                    )
+                tx, x = encoder.encode(sample.context_values).values()
+                ty, y = encoder.encode(sample.target_values).values()
                 # create a mask for looking up the target values
                 x_time.append(tx)
                 x_vals.append(x)
@@ -292,7 +296,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
 
         return sampler
 
-    def make_generator(self, key: SplitID, /, **kwds: Any) -> TimeSeriesSampleGenerator:
+    def make_generator(self, key: SplitID, /, **kwds: Any) -> PandasForecastingDataset:
         r"""Sample generator for the KIWI dataset."""
         # get configuration
         generator_kwargs = self.generator_kwargs | kwds
@@ -303,7 +307,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         if generator_kwargs:
             raise ValueError(f"Unknown generator_kwargs: {generator_kwargs}")
 
-        return TimeSeriesSampleGenerator(
+        return PandasForecastingDataset(
             self.splits[key],
             observables=observables,
             targets=targets,

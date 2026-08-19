@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from tsdm.encoders import FittableEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
-from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasForecastingDataset, PandasTSC, Sample
 from tsdm.utils import timedelta
 
 __logger__ = logging.getLogger(__name__)
@@ -31,26 +31,27 @@ def test_kiwi_task() -> None:
     assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[split_id], PandasTSC)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
-    assert isinstance(task.generators[split_id], TimeSeriesSampleGenerator)
+    assert isinstance(task.generators[split_id], PandasForecastingDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert isinstance(task.encoders[split_id], FittableEncoder)
     assert isinstance(task.train_split, dict)
     assert callable(task.collate_fns[split_id])
 
     # validate generator
-    generator: TimeSeriesSampleGenerator = task.generators[split_id]  # type: ignore
+    generator: PandasForecastingDataset = task.generators[split_id]  # type: ignore
     assert isinstance(generator, torch.utils.data.Dataset)
 
     # make sample
     sampler = task.samplers[split_id]
     key = next(iter(sampler))
     sample: Sample = generator[key]
-    assert isinstance(sample, tuple)
+    assert isinstance(sample, Sample)
 
     # validate the sample
-    x = sample.inputs.x
-    y = sample.targets.y
-    time = sample.inputs.x.index
+    x = sample.context_values
+    y = sample.target_values
+    assert y is not None
+    time = sample.context_values.index
     observables: list[str] = generator.observables
     covariates: list[str] = generator.covariates
     targets: list[str] = generator.targets

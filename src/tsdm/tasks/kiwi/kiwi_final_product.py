@@ -223,7 +223,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         # Drop runs that don't work for this task.
         dataset = KiwiBenchmark()
         dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
-        dataset.metadata = dataset.metadata.drop([355, 445, 482])
+        dataset.static_covariates = dataset.static_covariates.drop([355, 445, 482])
         return dataset
 
     @cached_property

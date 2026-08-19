@@ -16,7 +16,7 @@ from tsdm.datatools import (
 )
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasForecastingDataset, PandasTSC
 from tsdm.timeseries.pandas import in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
@@ -70,9 +70,9 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
+    def make_generator(self, key: SplitID, /) -> PandasForecastingDataset:
         split = self.splits[key]
-        return TimeSeriesSampleGenerator(
+        return PandasForecastingDataset(
             split,
             targets=["Biomass", "Product"],
             observables=["Biomass", "Substrate", "Acetate", "DOTm"],

@@ -16,19 +16,25 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from tsdm.datatools import folds_as_frame, is_partition
-from tsdm.random.samplers import RandomSampler, Sampler
+from tsdm.random.samplers import (
+    HierarchicalSampler,
+    MappingDataset,
+    RandomSampler,
+    Sampler,
+)
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import (
-    FixedSliceSampleGenerator,
-    PlainSample,
+    PandasForecastingDataset,
+    Sample,
 )
 from tsdm.timeseries.pandas import damped_pendulum_ansari2023
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
+type SampleKey = tuple[int, list[slice]]
 
 
 @final
-class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, int, PlainSample]):
+class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, Sample]):
     r"""Forecasting task on synthetic damped pendulum data.
 
     Note:
@@ -69,15 +75,31 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, int, PlainSample]):
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
         self.missing_rate = float(missing_rate)
 
-    def make_generator(self, key: SplitID, /) -> FixedSliceSampleGenerator:
-        return FixedSliceSampleGenerator(
-            self.splits[key].timeseries,
-            input_slice=slice(None, self.observation_horizon),
-            target_slice=slice(self.observation_horizon, None),
+    def make_generator(self, key: SplitID, /) -> PandasForecastingDataset[SampleKey]:
+        split = self.splits[key]
+        columns = split.timeseries.columns
+        return PandasForecastingDataset(
+            split,
+            observables=columns,
+            targets=columns,
         )
 
-    def make_sampler(self, key: SplitID, /) -> Sampler[int]:
-        return RandomSampler(self.splits[key].metaindex)
+    def make_sampler(self, key: SplitID, /) -> Sampler[SampleKey]:
+        split = self.splits[key]
+        horizons = [
+            slice(None, self.observation_horizon),
+            slice(
+                self.observation_horizon,
+                self.observation_horizon + self.prediction_horizon,
+            ),
+        ]
+        sampling_data = MappingDataset({series_key: [horizons] for series_key in split})
+        subsamplers = {series_key: RandomSampler([horizons]) for series_key in split}
+        return HierarchicalSampler(
+            sampling_data,
+            subsamplers,
+            shuffle=self.is_train_split(key),
+        )
 
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""

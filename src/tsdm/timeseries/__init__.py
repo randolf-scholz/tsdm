@@ -5,38 +5,25 @@ __all__ = [
     "base",
     "pandas",
     "polars",
-    "sample_generators",
     "util",
     # ABCs & Protocols
     "TimeSeriesCollection",
     "TimeSeries",
-    "TimeSeriesSampleGenerator",
-    "FixedSliceSampleGenerator",
+    "PandasForecastingDataset",
     # classes
     "PandasTS",
     "PandasTSC",
     "PolarsTS",
     "PolarsTSC",
-    "Inputs",
-    "Targets",
     "Sample",
-    "PlainSample",
     "TimeSeriesSample",
     "PaddedBatch",
     # Functions
     "collate_timeseries",
 ]
 
-from . import base, pandas, polars, sample_generators, util
+from . import base, pandas, polars, util
 from .base import TimeSeries, TimeSeriesCollection
-from .pandas import PandasTS, PandasTSC
+from .pandas import PandasForecastingDataset, PandasTS, PandasTSC, Sample
 from .polars import PolarsTS, PolarsTSC
-from .sample_generators import (
-    FixedSliceSampleGenerator,
-    Inputs,
-    PlainSample,
-    Sample,
-    Targets,
-    TimeSeriesSampleGenerator,
-)
 from .util import PaddedBatch, TimeSeriesSample, collate_timeseries

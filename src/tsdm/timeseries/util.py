@@ -25,31 +25,32 @@ class TimeSeriesSample(NamedTuple):
     Examples:
         time series forecasting/imputation::
 
-            t, x, q, y = sample
-            yhat = model(q, t, x)  # predict at time q given history (t, x).
-            loss = d(y, yhat)  # compute the loss
-
-        time series classification::
-
-            t, x, *_, md_targets = sample
-            md_hat = model(t, x)  # predict class of the time series.
-            loss = d(md_targets, md_hat)  # compute the loss
+            yhat = model(
+                sample.query_times,
+                sample.context_times,
+                sample.context_values,
+            )
+            loss = d(sample.target_values, yhat)
 
     Attributes:
-        t_inputs   (Float[Nᵢ]):   Timestamps of the inputs.
-        inputs     (Float[Nᵢ×D]): The inputs for all timesteps.
-        t_targets  (Float[Nₜ]):   Timestamps of the targets.
-        targets    (Float[Nₜ×K]): The targets for the target timesteps.
-        metadata   (Float[M]):    Static metadata.
-        md_targets (Float[M]):    Static metadata targets.
+        context_times      (Float[N]):   Timestamps of the inputs.
+        context_mask       (Bool[N]):    Mask indicating valid input timestamps.
+        context_values     (Float[N×D]): The inputs for all timesteps.
+        query_times        (Float[K]):   Timestamps of the targets.
+        query_mask         (Bool[K]):    Mask indicating valid query timestamps.
+        target_values      (Float[K×F]): The targets for the target timesteps.
+        static_covariates  (Float[M]):    Static metadata.
     """
 
-    t_inputs: Tensor
-    inputs: Tensor
-    t_targets: Tensor
-    targets: Tensor
-    metadata: Optional[Tensor] = None
-    md_targets: Optional[Tensor] = None
+    context_times: Tensor
+    context_mask: Tensor
+    context_values: Tensor
+
+    query_times: Tensor
+    query_mask: Tensor
+
+    target_values: Tensor | None = None
+    static_covariates: Tensor | None = None
 
 
 @pprint_repr
@@ -75,8 +76,7 @@ class PaddedBatch(NamedTuple):
         mq (Bool[B×T]):   The 'queries' mask, True if the given time stamp is a query.
         mx (Bool[B×T×D]): The 'inputs' mask, True indicates an observation, False a missing value.
         my (Bool[B×T×F]): The 'targets' mask, True indicates a target, False a missing value.
-        metadata (Optional[Float[B×M]]):   Stacked metadata.
-        md_targets (Optional[Float[B×M]]): Stacked metadata targets.
+        static_covariates (Optional[Float[B×M]]): Stacked static covariates.
 
     In this context, 'query' means that the model should predict the value at this time stamp.
     Consequently, `mq` is identical to or-reducing `my` along the target dimension.
@@ -88,15 +88,14 @@ class PaddedBatch(NamedTuple):
     mq: Tensor  # B×N:   the 'queries' mask.
     mx: Tensor  # B×N×D: the 'inputs' mask.
     my: Tensor  # B×N×F: the 'targets' mask.
-    metadata: Optional[Tensor] = None  # B×M:   stacked metadata.
-    md_targets: Optional[Tensor] = None  # B×M:   stacked metadata targets.
+    static_covariates: Optional[Tensor] = None  # B×M: stacked covariates.
 
 
 def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
     r"""Collate timeseries samples into padded batch.
 
     Assumptions:
-        - t_target is sorted.
+        - `query_times` is sorted.
     """
     masks_inputs: list[Tensor] = []
     masks_queries: list[Tensor] = []
@@ -104,19 +103,18 @@ def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
     padded_inputs: list[Tensor] = []
     padded_queries: list[Tensor] = []
     padded_targets: list[Tensor] = []
-    metadata: list[Tensor] = []
-    md_targets: list[Tensor] = []
+    static_covariates: list[Tensor] = []
 
     for sample in batch:
-        if sample.metadata is not None:
-            metadata.append(sample.metadata)
-        if sample.md_targets is not None:
-            md_targets.append(sample.md_targets)
+        if sample.static_covariates is not None:
+            static_covariates.append(sample.static_covariates)
 
-        t_inputs = sample.t_inputs
-        x = sample.inputs
-        t_target = sample.t_targets
-        y = sample.targets
+        t_inputs = sample.context_times
+        x = sample.context_values
+        t_target = sample.query_times
+        y = sample.target_values
+        if y is None:
+            raise ValueError("Cannot collate a forecasting sample without targets.")
 
         # pad the x-values by the target length
         x_padding = torch.full(
@@ -135,11 +133,16 @@ def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
         m_queries = torch.cat(
             [
                 torch.zeros_like(t_inputs, dtype=torch.bool),
-                torch.ones_like(t_target, dtype=torch.bool),
+                sample.query_mask.any(dim=-1),
             ]
         )
-        m_inputs = x.isfinite()
-        m_targets = y.isfinite()
+        input_mask_padding = torch.zeros(
+            (t_target.shape[0], x.shape[-1]),
+            dtype=torch.bool,
+            device=x.device,
+        )
+        m_inputs = torch.cat((sample.context_mask, input_mask_padding))
+        m_targets = sample.query_mask
 
         # append to lists, ordering by time
         masks_inputs.append(m_inputs[sorted_idx])
@@ -156,6 +159,7 @@ def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
         mq=pad_sequence(masks_queries, batch_first=True).squeeze(),
         mx=pad_sequence(masks_inputs, batch_first=True).squeeze(),
         my=pad_sequence(masks_target, batch_first=True).squeeze(),
-        metadata=torch.stack(metadata) if metadata else None,
-        md_targets=torch.stack(md_targets) if md_targets else None,
+        static_covariates=(
+            torch.stack(static_covariates) if static_covariates else None
+        ),
     )

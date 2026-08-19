@@ -9,10 +9,10 @@ import pytest
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import MIMIC_IV_Bilos2021, USHCN_DeBrouwer2019
 from tsdm.timeseries import (
+    PandasForecastingDataset,
     PandasTS,
     PandasTSC,
     Sample,
-    TimeSeriesSampleGenerator,
 )
 from tsdm.timeseries.pandas import in_silico
 
@@ -35,7 +35,7 @@ def test_tasks(task_cls: type) -> None:
 
 def test_time_series_sample_generator() -> None:
     r"""Test the TimeSeriesSampleGenerator."""
-    LOGGER = __logger__.getChild(TimeSeriesSampleGenerator.__name__)
+    LOGGER = __logger__.getChild(PandasForecastingDataset.__name__)
     LOGGER.info("Testing.")
 
     # make dataset
@@ -69,7 +69,7 @@ def test_time_series_sample_generator() -> None:
     observables = ["Biomass", "Substrate", "Acetate", "DOTm"]
     covariates = ["Volume", "Feed"]
 
-    generator = TimeSeriesSampleGenerator(
+    generator = PandasForecastingDataset(
         TSC,
         targets=targets,
         observables=observables,
@@ -86,7 +86,7 @@ def test_time_series_sample_generator() -> None:
     TSD = TSC[outer_key]  # selecting individual time series.
     assert isinstance(TSD, PandasTS)
 
-    generator = TimeSeriesSampleGenerator(
+    generator = PandasForecastingDataset(
         TSD,
         targets=targets,
         observables=observables,

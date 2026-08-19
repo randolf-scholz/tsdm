@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
-from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasForecastingDataset, PandasTSC, Sample
 
 
 def test_insilico_task() -> None:
@@ -16,7 +16,7 @@ def test_insilico_task() -> None:
     assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[split_id], PandasTSC)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
-    assert isinstance(task.generators[split_id], TimeSeriesSampleGenerator)
+    assert isinstance(task.generators[split_id], PandasForecastingDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert task.collate_fns[split_id] is NotImplemented
     assert isinstance(task.train_split, dict)
@@ -28,7 +28,7 @@ def test_insilico_task() -> None:
     print("key", type(key), key)
     print("generator", type(generator), generator)
     sample = generator[key]
-    assert isinstance(sample, tuple)
+    assert isinstance(sample, Sample)
 
     dataloader = task.dataloaders[split_id]
     batch = next(iter(dataloader))

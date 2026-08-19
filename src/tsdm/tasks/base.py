@@ -126,7 +126,7 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
-from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
+from tsdm.timeseries import PandasForecastingDataset, PandasTSC
 from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.lazydict import LazyDict
 
@@ -157,7 +157,7 @@ class Split[SampleT]:  # +SampleT
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Encoder = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    generator: TimeSeriesSampleGenerator = NotImplemented
+    generator: PandasForecastingDataset = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     sampler: Sampler = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -215,7 +215,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         - must be of the form `Callable[[target, prediction], Scalar]`
     - Provide a `torch.utils.data.DataLoader` for each split
         - Provide a `torch.utils.data.Dataset` for each split
-            - Dataset should return `Sample` objects providing `Sample.Inputs` and `Sample.Targets`.
+            - Dataset should return `Sample` objects providing context and target values.
         - Provide a `torch.utils.data.Sampler` for each split
             - Sampler should return indices into the datase
     - Optional: Task specific encoder/decoder

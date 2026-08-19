@@ -1,8 +1,11 @@
 r"""Test the DampedPendulum task."""
 
 import logging
+from itertools import islice
 
 from tsdm import tasks
+from tsdm.random.samplers import HierarchicalSampler
+from tsdm.timeseries import PandasForecastingDataset, Sample
 
 __logger__ = logging.getLogger(__name__)
 
@@ -28,5 +31,17 @@ def test_damped_pendulum() -> None:
 
     # test generator
     test_generator = task.generators[0, "test"]
-    for idx in test_indices[:10]:
-        assert isinstance(test_generator[idx], tuple)
+    test_sampler = task.samplers[0, "test"]
+    assert isinstance(test_generator, PandasForecastingDataset)
+    assert isinstance(test_sampler, HierarchicalSampler)
+
+    for key in islice(test_sampler, 10):
+        sample = test_generator[key]
+        assert isinstance(sample, Sample)
+        assert sample.target_values is not None
+        assert sample.context_times.index.equals(sample.context_values.index)
+        assert sample.context_mask.index.equals(sample.context_values.index)
+        assert sample.query_times.index.equals(sample.target_values.index)
+        assert sample.query_mask.index.equals(sample.target_values.index)
+        assert sample.context_mask.equals(sample.context_values.notna())
+        assert sample.query_mask.equals(sample.target_values.notna())
