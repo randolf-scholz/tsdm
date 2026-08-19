@@ -4,82 +4,18 @@ __all__ = [
     # Classes
     # Functions
     "flatten_dict",
-    "timedelta",
-    "timestamp",
     "nested_paths_exist",
     "unflatten_dict",
-    "date_range",
-    "timedelta_range",
+    "prompt_choice",
+    "prompt_yes_no",
+    "transpose_list_of_dicts",
 ]
 
-import datetime as dt
 from collections.abc import Callable, Iterable, Mapping
-from functools import wraps
 from pathlib import Path
 from typing import Any, Optional, cast, overload
 
-from pandas import Timedelta, Timestamp
-from pandas.api.typing import NaTType
-
 from tsdm.types.aliases import FilePath, Nested, NestedDict, NestedMapping
-
-
-@wraps(Timedelta)
-def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Timedelta:
-    r"""Utility function that ensures that the constructor does not return NaT."""
-    td = (
-        Timedelta(unit=unit, **kwargs)
-        if value is Ellipsis
-        else Timedelta(value, unit=unit, **kwargs)
-    )
-    if isinstance(td, NaTType):
-        raise TypeError("Constructor returned NaT")
-    return td
-
-
-@wraps(Timestamp)
-def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
-    r"""Utility function that ensures that the constructor does not return NaT."""
-    ts = Timestamp(**kwargs) if value is Ellipsis else Timestamp(value, **kwargs)
-    if isinstance(ts, NaTType):
-        raise TypeError("Constructor returned NaT")
-    return ts
-
-
-def date_range(
-    start: str | dt.datetime,
-    stop: str | dt.datetime,
-    *,
-    freq: str | dt.timedelta,
-    include_end: bool = True,
-) -> list[dt.datetime]:
-    t0 = timestamp(start)
-    t1 = timestamp(stop)
-    f = timedelta(freq)
-    k = (t1 - t0) // f
-    items = [t0 + i * f for i in range(k)]
-
-    if include_end and items[-1] < t1:
-        items.append(t1)
-    return items
-
-
-def timedelta_range(
-    start: str | dt.timedelta,
-    stop: str | dt.timedelta,
-    *,
-    freq: str | dt.timedelta,
-    include_end: bool = True,
-) -> list[dt.timedelta]:
-    t0 = timedelta(start)
-    t1 = timedelta(stop)
-    f = timedelta(freq)
-    k = (t1 - t0) // f
-    items = [t0 + i * f for i in range(k)]
-
-    if include_end and items[-1] < t1:
-        items.append(t1)
-    return items
 
 
 @overload

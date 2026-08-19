@@ -24,6 +24,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import KiwiBenchmark
+from tsdm.datatools import timedelta
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import (
     HierarchicalDataset,
@@ -32,7 +33,6 @@ from tsdm.random.samplers import (
 )
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.timeseries import PandasTS
-from tsdm.utils import timedelta
 
 
 @pprint_repr

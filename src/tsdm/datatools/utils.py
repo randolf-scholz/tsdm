@@ -2,19 +2,27 @@ r"""Generic data utilities."""
 
 __all__ = [
     "data_overview",
+    "date_range",
     "describe",
     "get_dtypes",
     "get_schema",
+    "timedelta",
+    "timedelta_range",
+    "timestamp",
     "validate_schema",
 ]
 
+import datetime as dt
 from collections.abc import Mapping
+from functools import wraps
 from os import PathLike, fspath
 from typing import Any, Optional
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
+from pandas import Timedelta, Timestamp
+from pandas._libs import NaTType
 from scipy import stats
 
 from tsdm.types.aliases import FilePath, FileStream
@@ -294,3 +302,61 @@ def validate_schema(
             f"\n\texpected: {expected_columns!r}"
             f"\n\t  actual: {actual_columns!r}"
         )
+
+
+@wraps(Timedelta)
+def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Timedelta:
+    r"""Utility function that ensures that the constructor does not return NaT."""
+    td = (
+        Timedelta(unit=unit, **kwargs)
+        if value is Ellipsis
+        else Timedelta(value, unit=unit, **kwargs)
+    )
+    if isinstance(td, NaTType):
+        raise TypeError("Constructor returned NaT")
+    return td
+
+
+@wraps(Timestamp)
+def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
+    r"""Utility function that ensures that the constructor does not return NaT."""
+    ts = Timestamp(**kwargs) if value is Ellipsis else Timestamp(value, **kwargs)
+    if isinstance(ts, NaTType):
+        raise TypeError("Constructor returned NaT")
+    return ts
+
+
+def date_range(
+    start: str | dt.datetime,
+    stop: str | dt.datetime,
+    *,
+    freq: str | dt.timedelta,
+    include_end: bool = True,
+) -> list[dt.datetime]:
+    t0 = timestamp(start)
+    t1 = timestamp(stop)
+    f = timedelta(freq)
+    k = (t1 - t0) // f
+    items = [t0 + i * f for i in range(k)]
+
+    if include_end and items[-1] < t1:
+        items.append(t1)
+    return items
+
+
+def timedelta_range(
+    start: str | dt.timedelta,
+    stop: str | dt.timedelta,
+    *,
+    freq: str | dt.timedelta,
+    include_end: bool = True,
+) -> list[dt.timedelta]:
+    t0 = timedelta(start)
+    t1 = timedelta(stop)
+    f = timedelta(freq)
+    k = (t1 - t0) // f
+    items = [t0 + i * f for i in range(k)]
+
+    if include_end and items[-1] < t1:
+        items.append(t1)
+    return items

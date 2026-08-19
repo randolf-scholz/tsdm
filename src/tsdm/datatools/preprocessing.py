@@ -5,10 +5,10 @@ __all__ = [
     "BoundaryInformation",
     # Functions
     "aggregate_nondestructive",
-    "select_outliers",
-    "is_integer_series",
     "get_integer_cols",
+    "is_integer_series",
     "remove_outliers",
+    "select_outliers",
     "strip_whitespace",
 ]
 

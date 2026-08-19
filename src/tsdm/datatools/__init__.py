@@ -7,26 +7,43 @@ __all__ = [
     "MapDataset",
     "PandasDataset",
     "Dataset",
+    # Functions
+    # collections
+    "get_first_sample",
+    "get_index",
+    "get_last_sample",
+    # preprocessing
+    "aggregate_nondestructive",
+    "get_integer_cols",
+    "is_integer_series",
+    "remove_outliers",
+    "select_outliers",
+    "strip_whitespace",
     # folds
-    "is_partition",
     "folds_as_frame",
     "folds_as_sparse_frame",
     "folds_from_groups",
-    # Functions
-    # data - arrow
-    # data
-    "aggregate_nondestructive",
-    "select_outliers",
-    "is_integer_series",
-    "get_schema",
+    "is_partition",
+    # utils
+    "data_overview",
+    "date_range",
+    "describe",
     "get_dtypes",
-    "get_integer_cols",
-    "remove_outliers",
-    "strip_whitespace",
+    "get_schema",
+    "timedelta",
+    "timedelta_range",
+    "timestamp",
     "validate_schema",
 ]
 
-from .collections import Dataset, MapDataset, PandasDataset
+from .collections import (
+    Dataset,
+    MapDataset,
+    PandasDataset,
+    get_first_sample,
+    get_index,
+    get_last_sample,
+)
 from .folds import (
     folds_as_frame,
     folds_as_sparse_frame,
@@ -41,4 +58,14 @@ from .preprocessing import (
     select_outliers,
     strip_whitespace,
 )
-from .utils import get_dtypes, get_schema, validate_schema
+from .utils import (
+    data_overview,
+    date_range,
+    describe,
+    get_dtypes,
+    get_schema,
+    timedelta,
+    timedelta_range,
+    timestamp,
+    validate_schema,
+)

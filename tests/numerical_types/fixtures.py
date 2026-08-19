@@ -11,7 +11,10 @@ import polars as pl
 import pyarrow as pa
 import torch as pt
 
-from tsdm.utils import timedelta as make_pd_timedelta, timestamp as make_pd_timestamp
+from tsdm.datatools import (
+    timedelta as make_pd_timedelta,
+    timestamp as make_pd_timestamp,
+)
 
 type Array1D[_SCT: np.generic] = np.ndarray[tuple[int], np.dtype[_SCT]]
 type Array2D[_SCT: np.generic] = np.ndarray[tuple[int, int], np.dtype[_SCT]]

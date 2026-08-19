@@ -2,10 +2,10 @@ r"""Utility function to process folds and splits."""
 
 __all__ = [
     # Functions
-    "is_partition",
     "folds_as_frame",
     "folds_as_sparse_frame",
     "folds_from_groups",
+    "is_partition",
 ]
 
 from collections.abc import Collection, Iterable, Mapping, Sequence

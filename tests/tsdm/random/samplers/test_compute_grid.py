@@ -15,8 +15,8 @@ from numpy import (
 )
 
 from numerical_types.scalars import SpanLikeScalar, TimeLikeScalar
+from tsdm.datatools import timedelta as pd_td, timestamp as pd_dt
 from tsdm.random.samplers import compute_grid
-from tsdm.utils import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
 

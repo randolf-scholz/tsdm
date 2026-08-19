@@ -46,7 +46,7 @@ depends_on = ["tsdm.types", "tsdm.dtypes", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.pprint"
-depends_on = ["tsdm.types", "tsdm.testing", "tsdm.dtypes", "tsdm.decorator", "tsdm.datatools"]
+depends_on = ["tsdm.types", "tsdm.testing", "tsdm.decorator", "tsdm.datatools"]
 utility = true
 
 [[modules]]
@@ -68,7 +68,7 @@ depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.random"
-depends_on = ["tsdm.types", "tsdm.datatools", "tsdm.interval"]
+depends_on = ["tsdm.types", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.encoders"
@@ -123,7 +123,7 @@ depends_on = [
     "tsdm.backend",
     "tsdm.encoders",
     "tsdm.linalg",
-    "tsdm.types",
+    "tsdm.types", "tsdm.datatools",
 ]
 
 [[modules]]
@@ -137,7 +137,3 @@ depends_on = ["tsdm.testing", "tsdm.encoders", "tsdm.types"]
 [[modules]]
 path = "tsdm.decorator"
 depends_on = ["tsdm.types"]
-
-[[modules]]
-path = "tsdm.interval"
-depends_on = []

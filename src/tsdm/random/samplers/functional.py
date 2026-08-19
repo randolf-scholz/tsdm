@@ -14,7 +14,7 @@ from typing import Final, Optional
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 
-from tsdm.utils import date_range, timedelta, timedelta_range, timestamp
+from tsdm.datatools import date_range, timedelta, timedelta_range, timestamp
 
 # NOTE: We rely on dict preserving insertion order (Python 3.7+)
 NUMPY_TIME_UNITS: Final[dict[str, np.timedelta64]] = {

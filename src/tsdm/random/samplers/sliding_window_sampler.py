@@ -31,13 +31,10 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
-from tsdm.datatools.collections import (
-    SequentialDataset,
-    get_first_sample,
-    get_last_sample,
-)
+from tsdm.datatools import timedelta, timestamp
+from tsdm.datatools.collections import get_first_sample, get_last_sample
 from tsdm.types.abc import Vec
-from tsdm.utils import timedelta, timestamp
+from tsdm.types.extra import SupportsArray
 from tsdm.utils.interval import HalfOpenInterval, Interval
 
 from .base import BaseSampler
@@ -440,7 +437,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
@@ -450,7 +447,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
@@ -460,7 +457,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["mask", MODE.MASK],
@@ -470,7 +467,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, I, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["interval", MODE.INTERVAL],
@@ -480,7 +477,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["index", MODE.INDEX],
@@ -490,7 +487,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["points", MODE.POINTS],
@@ -500,7 +497,7 @@ class SlidingWindowSampler[
         @overload  # unknown mode
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, MULTI],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: MODE | Mode | str,
@@ -511,7 +508,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, ONE],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
@@ -521,7 +518,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, ONE],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
@@ -531,7 +528,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, ONE],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["mask", MODE.MASK],
@@ -541,7 +538,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, ONE],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["index", MODE.INDEX],
@@ -551,7 +548,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, ONE],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: Literal["points", MODE.POINTS],
@@ -561,7 +558,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, ONE],
-            data_source: SequentialDataset[DT],
+            data_source: Vec[DT] | SupportsArray,
             /,
             *,
             mode: MODE | Mode | str,
@@ -573,7 +570,7 @@ class SlidingWindowSampler[
 
     def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
         self,
-        data_source: SequentialDataset[DT],
+        data_source: Vec[DT] | SupportsArray,
         /,
         *,
         mode: ModeVar | Mode | str,
@@ -586,8 +583,8 @@ class SlidingWindowSampler[
         super().__init__(shuffle=shuffle, rng=rng)
 
         # region set basic attributes --------------------------------------------------
-        self.tmin = cast("DType", get_first_sample(data_source))
-        self.tmax = cast("DType", get_last_sample(data_source))
+        self.tmin = cast("DType", get_first_sample(data_source))  # type: ignore
+        self.tmax = cast("DType", get_last_sample(data_source))  # type: ignore
         zero_td = cast("Any", self.tmin - self.tmin)  # type: ignore
         dt_type: type[DType] = type(self.tmin)
         td_type: type[Any] = type(zero_td)

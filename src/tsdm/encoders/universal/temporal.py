@@ -14,9 +14,9 @@ from pyarrow import ArrowNotImplementedError
 
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
+from tsdm.datatools import timedelta, timestamp
 from tsdm.encoders.base import FittableEncoder
 from tsdm.pprint import pprint_repr
-from tsdm.utils import timedelta, timestamp
 
 type DateTimeArray = Any
 type TimeDeltaArray = Any
