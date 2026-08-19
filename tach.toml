@@ -74,7 +74,7 @@ depends_on = ["tsdm.types", "tsdm.datatools"]
 path = "tsdm.encoders"
 depends_on = [
     "tsdm.types",
-    "tsdm.encoders.universal",
+    "tsdm.encoders.universal", "tsdm.testing",
 ]
 
 [[modules]]

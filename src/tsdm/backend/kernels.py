@@ -27,6 +27,7 @@ from numpy import ndarray
 from torch import Tensor
 
 from tsdm import backend as B, constants as C
+from tsdm.types import SupportsArray
 from tsdm.types.callbacks import (
     ApplyAlongAxes,
     ArraySplitProto,
@@ -41,7 +42,6 @@ from tsdm.types.callbacks import (
     ToTensorProto,
     WhereProto,
 )
-from tsdm.types.extra import SupportsArray
 
 type BackendID = Literal["generic", "arrow", "numpy", "pandas", "polars", "torch"]
 r"""A type alias for the supported backends."""

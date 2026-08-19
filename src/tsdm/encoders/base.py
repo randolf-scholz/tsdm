@@ -167,8 +167,8 @@ from warnings import deprecated
 
 from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_mapping, pprint_repr, pprint_sequence
-from tsdm.types.aliases import DictArg, FilePath
-from tsdm.types.utils import is_classvar
+from tsdm.testing import is_classvar
+from tsdm.types import DictArg, FilePath
 
 
 class Reduction[Xs: tuple, Y](Protocol):

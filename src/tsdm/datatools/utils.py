@@ -25,8 +25,9 @@ from pandas import Timedelta, Timestamp
 from pandas._libs import NaTType
 from scipy import stats
 
-from tsdm.types.aliases import FilePath, FileStream
-from tsdm.types.extra import (
+from tsdm.types import (
+    FilePath,
+    FileStream,
     SupportsArray,
     SupportsDataFrame,
     SupportsDtype,

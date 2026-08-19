@@ -22,8 +22,7 @@ from tests.numerical_types.fixtures import (
     INT,
     TIMEDELTA,
 )
-from tests.test_utils import pytest_xfail
-from tsdm.types.utils import assert_protocol
+from tests.test_utils import assert_protocol, pytest_xfail
 
 BOOL_ARRAYS: dict[str, BooleanArray] = {
     "numpy[bool]"     : ARRAYS1D.NP.BOOL,

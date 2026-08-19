@@ -10,6 +10,8 @@ __all__ = [
     # Classes
     "timer",
     "Interval",
+    "LazyDict",
+    "LazyValue",
     # utils
     "flatten_dict",
     "nested_paths_exist",
@@ -30,4 +32,5 @@ from .helpers import (
     unflatten_dict,
 )
 from .interval import Interval
+from .lazydict import LazyDict, LazyValue
 from .timer import timer

@@ -14,13 +14,15 @@ __all__ = [
 import torch
 from torch import Tensor
 
+type Axis = None | int | tuple[int, ...]
+
 
 @torch.compile(fullgraph=True)
 def geometric_mean(
     x: Tensor,
     /,
     *,
-    axis: None | int | list[int] = None,
+    axis: Axis = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Geometric mean of a tensor.
@@ -43,7 +45,7 @@ def scaled_norm(
     /,
     *,
     p: float = 2.0,
-    axis: None | int | list[int] = None,
+    axis: Axis = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Shortcut for scaled norm.
@@ -54,9 +56,9 @@ def scaled_norm(
     x = x.abs()
 
     if axis is None:
-        dim = list(range(x.ndim))
+        dim = tuple(range(x.ndim))
     elif isinstance(axis, int):
-        dim = [axis]
+        dim = (axis,)
     else:
         dim = axis
 
@@ -79,7 +81,7 @@ def norm(
     /,
     *,
     p: float = 2.0,
-    axis: None | int | list[int] = None,
+    axis: Axis = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Shortcut for non-scaled norm.
@@ -119,7 +121,7 @@ def tensor_norm(
     /,
     *,
     p: float = 2.0,
-    axis: None | int | list[int] = None,
+    axis: Axis = None,
     keepdim: bool = False,
     scaled: bool = False,
 ) -> Tensor:

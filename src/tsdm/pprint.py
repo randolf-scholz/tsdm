@@ -92,8 +92,9 @@ from .testing import (
     is_na_value,
     is_scalar,
 )
-from .types.dataclass import Dataclass
-from .types.extra import (
+from .types import (
+    Dataclass,
+    NTuple,
     SupportsArray,
     SupportsDataFrame,
     SupportsDevice,
@@ -101,7 +102,6 @@ from .types.extra import (
     SupportsItem,
     SupportsShape,
 )
-from .types.namedtuple import NTuple
 
 MAXITEMS: Final[int] = 20
 r"""Default maxitems for repr_funcs."""

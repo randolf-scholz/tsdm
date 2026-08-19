@@ -9,7 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from tsdm.pprint import pprint_repr
-from tsdm.types.extra import SupportsArrayUfunc
+from tsdm.types import SupportsArrayUfunc
 
 from .base import StaticEncoder
 

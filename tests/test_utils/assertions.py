@@ -2,8 +2,8 @@ __all__ = [
     "assert_arrays_equal",
     "assert_arrays_close",
     "check_shared_interface",
+    "supports_issubclass",
 ]
-
 
 from collections.abc import Iterable, Sequence, Set as AbstractSet
 from typing import Any, get_protocol_members, is_protocol
@@ -149,3 +149,23 @@ def supports_issubclass(cls: type, /) -> bool:
     if not result:
         raise AssertionError(f"{cls} is not a subclass of itself!")
     return True
+
+
+def assert_protocol(obj: object, proto: type, /) -> None:
+    r"""Assert that the object is a given protocol."""
+    if not is_protocol(proto):
+        raise TypeError(f"{proto} is not a protocol!")
+
+    if isinstance(obj, type):
+        match = issubclass(obj, proto)
+        name = obj.__name__
+    else:
+        match = isinstance(obj, proto)
+        name = obj.__class__.__name__
+
+    member = "a subtype" if isinstance(obj, type) else "an instance"
+    msg = f"{name!r} is not a {member} of {proto.__name__!r}!"
+    missing_attrs = sorted(get_protocol_members(proto) - set(dir(obj)))
+
+    if not match:
+        raise AssertionError(f"{msg}\n Missing Attributes: {missing_attrs}")

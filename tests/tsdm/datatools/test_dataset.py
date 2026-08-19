@@ -6,9 +6,9 @@ from collections.abc import KeysView, Mapping
 import pandas as pd
 import pytest
 
+from tests.test_utils.assertions import assert_protocol
 from tsdm.datatools import MapDataset, PandasDataset
 from tsdm.types.abc import Map
-from tsdm.types.utils import assert_protocol
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)

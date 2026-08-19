@@ -24,8 +24,7 @@ from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
 from tsdm.config import CONFIG
 from tsdm.datatools import get_schema
-from tsdm.types.aliases import FilePath, FileStream
-from tsdm.types.extra import SupportsShape
+from tsdm.types import FilePath, FileStream, SupportsShape
 
 from .hashutils import Hash, hash_array, hash_file
 

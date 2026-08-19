@@ -449,10 +449,10 @@ def matrix_norm(
     # this only happens if dim[0] < dim[1], otherwise dim[1] is already correct
     # 1 if dim[1] needs to change, 0 otherwise
     m = int(dim[0] < dim[1]) * (1 - int(keepdim))
-    axes = [dim[0], dim[1] - m]
+    dim_inner, dim_outer = dim[0], dim[1] - m
 
-    x = tensor_norm(x, p=p, axis=axes[:1], keepdim=keepdim, scaled=scaled)
-    x = tensor_norm(x, p=q, axis=axes[1:], keepdim=keepdim, scaled=scaled)
+    x = tensor_norm(x, p=p, axis=dim_inner, keepdim=keepdim, scaled=scaled)
+    x = tensor_norm(x, p=q, axis=dim_outer, keepdim=keepdim, scaled=scaled)
     return x
 
 

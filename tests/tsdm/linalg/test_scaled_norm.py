@@ -4,13 +4,13 @@ import pytest
 import torch
 
 from tsdm import linalg
-from tsdm.types.aliases import DimArg
+from tsdm.types import Axis
 
 
 @pytest.mark.parametrize("keepdim", [False, True], ids=lambda x: f"keepdim={x}")
 @pytest.mark.parametrize("dims", [None, 0, (-1,), (0, 1)], ids=lambda x: f"axis={x}")
 @pytest.mark.parametrize("shape", [(1, 2, 3)], ids=lambda x: f"shape={x}")
-def test_shape(*, shape: tuple[int, ...], dims: DimArg, keepdim: bool) -> None:
+def test_shape(*, shape: tuple[int, ...], dims: Axis, keepdim: bool) -> None:
     r"""Check that the output shape is correct."""
     torch.manual_seed(0)
     x = torch.randn(*shape)

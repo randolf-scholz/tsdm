@@ -1,19 +1,16 @@
 r"""Collection of Useful Type Aliases."""
 
 __all__ = [
-    "PythonScalar",
     # path types
-    "DirPath",
     "FilePath",
     "FileStream",
     # argument types
     "DictArg",
-    "IndexArg1D",
-    "IndexArgND",
     "Axis",
-    "DimArg",
     "Size",
     # JSON-like Types
+    "IndexArg1D",
+    "IndexArgND",
     "JSON",
     "TOML",
     "YAML",
@@ -26,27 +23,20 @@ __all__ = [
 
 import os
 from collections.abc import Collection, Iterable, Mapping
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from types import EllipsisType
 from typing import IO
-
-type PythonScalar = bool | int | float | complex | str | bytes | datetime | timedelta
-r"""Type Alias for Python scalars."""
 
 # region function argument aliases -----------------------------------------------------
 type FilePath = str | os.PathLike[str]
 r"""Type Alias for path-like objects pointing to file."""
 type FileStream = IO[bytes] | BytesIO
 r"""Type Alias for file-like objects."""
-type DirPath = str | os.PathLike[str]
-r"""Type Alias for path-like objects pointing to directory."""
 type Axis = None | int | tuple[int, ...]
 r"""Type Alias for axestype ."""
 type Size = int | tuple[int, ...]
 r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
-type DimArg = None | int | list[int]
-r"""Type Alias for dimensions compatible with torchscript."""
 type IndexArg1D = None | int | slice | range | list[int] | list[bool] | EllipsisType
 r"""Type alias for `__getitem__` argument for tensors."""
 type IndexArgND = IndexArg1D | tuple[IndexArg1D, ...]

@@ -27,7 +27,7 @@ from scipy.special import erfinv
 
 from tsdm.constants import FLOAT, UNDEFINED
 from tsdm.pprint import pprint_repr
-from tsdm.types.extra import SupportsArrayUfunc
+from tsdm.types import SupportsArrayUfunc
 
 from .base import FittableEncoder, StaticEncoder
 

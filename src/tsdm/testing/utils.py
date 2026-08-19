@@ -5,6 +5,7 @@ __all__ = [
     "is_builtin",
     "is_builtin_constant",
     "is_builtin_type",
+    "is_classvar",
     "is_dtype",
     "is_dunder",
     "is_na_value",
@@ -13,9 +14,11 @@ __all__ = [
     "is_zipfile",
 ]
 
+import datetime as dt
+from annotationlib import ForwardRef
 from inspect import isbuiltin
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import Final, TypeGuard
+from typing import ClassVar, Final, TypeGuard
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -24,8 +27,9 @@ import polars as pl
 import pyarrow as pa
 import torch
 from pandas import NA, NaT
+from typing_extensions import TypeForm
 
-from tsdm.types.aliases import FilePath, PythonScalar
+from tsdm.types import FilePath
 
 _BUILTIN_TYPES: Final[frozenset[type]] = frozenset(
     {
@@ -99,7 +103,9 @@ def is_scalar(obj: object, /) -> bool:
     r"""Check if an object is a basic type."""
     return (
         is_builtin_constant(obj)
-        or isinstance(obj, PythonScalar.__value__)
+        or isinstance(
+            obj, bool | int | float | complex | str | bytes | dt.datetime | dt.timedelta
+        )
         or np.isscalar(obj)
         or obj is NA
         or obj is NaT
@@ -141,3 +147,15 @@ def is_zipfile(path: FilePath, /) -> bool:
             return True
     except BadZipFile, IsADirectoryError:
         return False
+
+
+def is_classvar(tp: TypeForm, /) -> bool:
+    r"""Check if the type annotation is a ClassVar."""
+    if tp is ClassVar:
+        return True
+    if isinstance(tp, str | ForwardRef):
+        # TODO: add support for ForwardRef
+        raise NotImplementedError("ForwardRef / string annotation is not supported.")
+    if (origin := getattr(tp, "__origin__", None)) is not None:
+        return is_classvar(origin)
+    return False

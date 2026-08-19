@@ -80,9 +80,8 @@ from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
 from tsdm.pprint import repr_mapping
 from tsdm.testing import is_zipfile
-from tsdm.types.aliases import DirPath, FilePath, FileStream
-from tsdm.utils import nested_paths_exist
-from tsdm.utils.lazydict import LazyDict
+from tsdm.types import FilePath, FileStream
+from tsdm.utils import LazyDict, nested_paths_exist
 from tsdm.utils.remote import import_from_url
 
 
@@ -470,7 +469,7 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
 
 
 def import_module_from_path(
-    module_dir: DirPath, /, *, module_name: Optional[str] = None
+    module_dir: FilePath, /, *, module_name: Optional[str] = None
 ) -> ModuleType:
     r"""Return python module imported from the path.
 
