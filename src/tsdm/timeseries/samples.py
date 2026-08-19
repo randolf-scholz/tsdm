@@ -21,7 +21,6 @@ class SeparateTimeSample[ArrayT](Protocol):
         query_mask: Bool[..., $K, F]  padded False
         target_values: Float[..., $K, F]  padded NaN
         static_covariates: Float[..., M]  padded NaN
-
     """
 
     context_times: ReadOnly[ArrayT]  # type: ignore
