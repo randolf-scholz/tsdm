@@ -2,22 +2,20 @@ r"""Utilities for testing and validation."""
 
 __all__ = [
     # functions
-    "check_shared_interface",
     "is_builtin",
     "is_builtin_constant",
     "is_builtin_type",
+    "is_dtype",
     "is_dunder",
-    "is_private",
     "is_na_value",
+    "is_private",
     "is_scalar",
     "is_zipfile",
-    "supports_issubclass",
 ]
 
-from collections.abc import Iterable, Set as AbstractSet
-from inspect import getmembers, isbuiltin, isdatadescriptor, ismethoddescriptor
+from inspect import isbuiltin
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import Final, TypeGuard, TypeIs, get_protocol_members, is_protocol
+from typing import Final, TypeGuard, TypeIs
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -29,16 +27,6 @@ from pandas import NA, NaT
 
 from tsdm.dtypes import DType
 from tsdm.types.aliases import FilePath, PythonScalar
-
-
-def get_descriptors_and_callables(cls: type, /) -> set[str]:
-    r"""Return the descriptors and callables of a type."""
-    return {
-        name
-        for name, attr in getmembers(cls)
-        if (callable(attr) or ismethoddescriptor(attr) or isdatadescriptor(attr))
-    }
-
 
 _BUILTIN_TYPES: Final[frozenset[type]] = frozenset(
     {
@@ -77,7 +65,7 @@ def is_builtin_type(obj: object, /) -> TypeGuard[type]:
 def is_builtin_constant(obj: object, /) -> bool:
     r"""Check if the object is a builtin constant."""
     try:
-        # Builtin constants https://docs.python.org/3/library/constants.html
+        # XREF: Builtin constants https://docs.python.org/3/library/constants.html
         return obj in {None, True, False, Ellipsis, NotImplemented}
     except TypeError:
         return False
@@ -154,61 +142,3 @@ def is_zipfile(path: FilePath, /) -> bool:
             return True
     except BadZipFile, IsADirectoryError:
         return False
-
-
-def supports_issubclass(cls: type, /) -> bool:
-    r"""Check if the class supports issubclass."""
-    try:
-        result = issubclass(cls, cls)
-    except TypeError:
-        return False
-    if not result:
-        raise AssertionError(f"{cls} is not a subclass of itself!")
-    return True
-
-
-_DEFAULT_EXCLUSIONS = frozenset(set(dir(object)) | {"__hash__"})
-r"""Default excluded members for shared interface checks."""
-
-
-def check_shared_interface(
-    test_cases: Iterable[object],
-    protocol: type,
-    *,
-    excluded_members: AbstractSet[str] = _DEFAULT_EXCLUSIONS,
-    raise_on_extra: bool = True,
-    raise_on_unsatisfied: bool = True,
-) -> None:
-    r"""Check that all classes satisfy the protocol."""
-    proto_name = protocol.__name__
-    if not is_protocol(protocol):
-        raise TypeError(f"{protocol} is not a protocol!")
-
-    interface = get_protocol_members(protocol)
-    interfaces = {type(obj): set(dir(obj)) for obj in test_cases}
-
-    shared_members = set.intersection(*interfaces.values())
-    shared_members -= excluded_members - interface  # remove excluded members
-
-    unsatisfied: dict[type, list[str]] = {
-        name: missing
-        for name, members in interfaces.items()
-        if (missing := sorted(interface - members))
-    }
-
-    if unsatisfied:
-        msg = (
-            f"The following examples do not satisfy the protocol {proto_name!r}:"
-            f"\n\t{unsatisfied}"
-        )
-        if raise_on_unsatisfied:
-            raise AssertionError(msg)
-        print(msg)
-
-    if extra_members := sorted(shared_members - interface):
-        msg = (
-            f"Shared members not covered by protocol {proto_name!r}:\n\t{extra_members}"
-        )
-        if raise_on_extra:
-            raise AssertionError(msg)
-        print(msg)

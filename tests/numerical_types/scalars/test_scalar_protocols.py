@@ -19,6 +19,7 @@ from numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
+from test_utils.assertions import check_shared_interface
 from tests.numerical_types.fixtures import (
     BOOL as PY_BOOL,
     COMPLEX as PY_COMPLEX,
@@ -27,7 +28,6 @@ from tests.numerical_types.fixtures import (
     SCALARS,
 )
 from tests.test_utils import pytest_xfail
-from tsdm.testing import check_shared_interface
 
 ORDERED_SCALARS: dict[str, OrderedScalar] = {
     "np_bool"      : SCALARS.NP.BOOL,
