@@ -1,15 +1,13 @@
 r"""Serialization utilities for tables."""
 
 __all__ = [
-    "InlineTable",
     "serialize_table",
     "deserialize_table",
-    "make_dataframe",
 ]
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Concatenate, NotRequired, Optional, Required, TypedDict
+from typing import Any, Concatenate, Optional
 
 import pandas as pd
 import polars as pl
