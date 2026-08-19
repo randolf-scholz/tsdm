@@ -7,7 +7,6 @@ Supports pandas / numpy / torch.
 
 __all__ = [
     # submodules
-    "fallback",
     "generic",
     "numpy",
     "pandas",
@@ -26,5 +25,5 @@ __all__ = [
 ]
 
 
-from . import fallback, generic, numpy, pandas, polars, pyarrow, torch
+from . import generic, numpy, pandas, polars, pyarrow, torch
 from .kernels import BACKENDS, Backend, BackendID, Kernels, get_backend

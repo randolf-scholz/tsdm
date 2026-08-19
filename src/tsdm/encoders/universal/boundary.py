@@ -8,7 +8,6 @@ from enum import StrEnum
 from typing import Any
 
 from tsdm.backend import Backend, get_backend
-from tsdm.backend.fallback import is_null_scalar
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
 from tsdm.pprint import pprint_repr
@@ -122,13 +121,17 @@ class BoundaryEncoder(FittableEncoder[Any, Any]):
         # set lower_bound
         if self.lower_bound is UNDEFINED:
             self.lower_bound = float(self.backend.nanmin(data))
-        elif is_null_scalar(self.lower_bound):
+        elif self.lower_bound is None:
+            pass
+        elif math.isnan(self.lower_bound):
             self.lower_bound = None
 
         # set upper_bound
         if self.upper_bound is UNDEFINED:
             self.upper_bound = float(self.backend.nanmax(data))
-        elif is_null_scalar(self.upper_bound):
+        elif self.upper_bound is None:
+            pass
+        elif math.isnan(self.upper_bound):
             self.upper_bound = None
 
         # set lower_value
