@@ -36,9 +36,9 @@ from tsdm.datatools.collections import (
     get_first_sample,
     get_last_sample,
 )
-from tsdm.interval import HalfOpenInterval, Interval
 from tsdm.types.abc import Vec
 from tsdm.utils import timedelta, timestamp
+from tsdm.utils.interval import HalfOpenInterval, Interval
 
 from .base import BaseSampler
 

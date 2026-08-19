@@ -5,7 +5,7 @@ __all__ = ["Interval", "HalfOpenInterval", "OpenInterval", "ClosedInterval"]
 from dataclasses import KW_ONLY, dataclass
 from typing import Literal as L
 
-from .pprint import pprint_repr
+from tsdm.pprint import pprint_repr
 
 
 @pprint_repr

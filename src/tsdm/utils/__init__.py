@@ -5,9 +5,11 @@ __all__ = [
     "remote",
     "funcutils",
     "lazydict",
+    "interval",
     # Constants
     # Classes
     "timer",
+    "Interval",
     # utils
     "flatten_dict",
     "nested_paths_exist",
@@ -22,7 +24,7 @@ __all__ = [
     "timedelta_range",
 ]
 
-from . import funcutils, lazydict, remote
+from . import funcutils, interval, lazydict, remote
 from ._utils import (
     date_range,
     flatten_dict,
@@ -36,4 +38,5 @@ from ._utils import (
     transpose_list_of_dicts,
     unflatten_dict,
 )
+from .interval import Interval
 from .timer import timer
