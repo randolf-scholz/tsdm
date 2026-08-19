@@ -35,7 +35,8 @@ from tsdm.metrics import TimeSeriesMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator, kiwi_benchmark
+from tsdm.timeseries import PandasTSC, Sample, TimeSeriesSampleGenerator
+from tsdm.timeseries.pandas import kiwi_benchmark
 
 
 @pprint_repr

@@ -1,17 +1,38 @@
 r"""Implementations of time series containers backed by Polars."""
 
 __all__ = [
+    # Constants
+    "TIMESERIES",
+    "TIMESERIES_COLLECTIONS",
+    # Base classes
     "PolarsTS",
     "PolarsTSC",
+    # Concrete classes
+    "beijing_air_quality",
+    "damped_pendulum_ansari2023",
+    "electricity",
+    "etth1",
+    "etth2",
+    "ettm1",
+    "ettm2",
+    "in_silico",
+    "kiwi_benchmark",
+    "mimic_iv_bilos2021",
+    "physionet2012",
+    "physionet2019",
+    "traffic",
+    "ushcn",
+    "ushcn_de_brouwer2019",
 ]
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable as Fn, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field, fields
 from functools import cached_property
 from typing import Any, ClassVar, Self, cast, overload
 
 import polars as pl
 
+from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_repr
 
@@ -389,3 +410,320 @@ class PolarsTSC[KeyT](
         if start is None or stop is None:
             raise KeyError(key)
         return index[slice(start, stop + 1, key.step)]
+
+
+class electricity(PolarsTS[Any]):
+    r"""The Electricity dataset wrapped as a Polars time series."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.Electricity(initialize=False)
+        super().__init__(ds.name, timeseries=ds.timeseries, time_column="time")
+
+
+class traffic(PolarsTS[Any]):
+    r"""The Traffic dataset wrapped as a Polars time series."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.Traffic(initialize=False)
+        super().__init__(ds.name, timeseries=ds.timeseries, time_column="time")
+
+
+class etth1(PolarsTS[Any]):
+    r"""The ETTh1 dataset wrapped as a Polars time series."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTh1", timeseries=ds["ETTh1"], time_column="date")
+
+
+class etth2(PolarsTS[Any]):
+    r"""The ETTh2 dataset wrapped as a Polars time series."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTh2", timeseries=ds["ETTh2"], time_column="date")
+
+
+class ettm1(PolarsTS[Any]):
+    r"""The ETTm1 dataset wrapped as a Polars time series."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTm1", timeseries=ds["ETTm1"], time_column="date")
+
+
+class ettm2(PolarsTS[Any]):
+    r"""The ETTm2 dataset wrapped as a Polars time series."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTm2", timeseries=ds["ETTm2"], time_column="date")
+
+
+class beijing_air_quality(PolarsTSC[str]):
+    r"""The Beijing Air Quality dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.BeijingAirQuality(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="time",
+            meta_columns=["station"],
+            timeseries_metadata=ds.timeseries_metadata.filter(
+                ~pl.col("variable").is_in(["station", "time"])
+            ),
+        )
+
+
+class in_silico(PolarsTSC[int]):
+    r"""The in silico dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.InSilico(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="time",
+            meta_columns=["run_id"],
+            timeseries_metadata=ds.timeseries_metadata.filter(
+                ~pl.col("variable").is_in(["run_id", "time"])
+            ),
+        )
+
+
+class kiwi_benchmark(PolarsTSC[tuple[int, int]]):
+    r"""The KIWI dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: pl.DataFrame
+    static_covariates_metadata: pl.DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.KiwiBenchmark(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="elapsed_time",
+            meta_columns=["run_id", "experiment_id"],
+            timeseries_metadata=ds.timeseries_metadata,
+            static_covariates=ds.static_covariates,
+            static_covariates_metadata=ds.static_covariates_metadata,
+        )
+
+
+class ushcn(PolarsTSC[int]):
+    r"""The USHCN dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: pl.DataFrame
+    static_covariates_metadata: pl.DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.USHCN(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="DATE",
+            meta_columns=["COOP_ID"],
+            timeseries_metadata=ds.timeseries_metadata.filter(
+                ~pl.col("variable").is_in(["COOP_ID", "DATE"])
+            ),
+            static_covariates=ds.static_covariates,
+            static_covariates_metadata=ds.static_covariates_metadata.filter(
+                pl.col("variable") != "COOP_ID"
+            ),
+        )
+
+
+class ushcn_de_brouwer2019(PolarsTSC[int]):
+    r"""The USHCN_DeBrouwer2019 dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.USHCN_DeBrouwer2019(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="Time",
+            meta_columns=["ID"],
+        )
+
+
+class physionet2012(PolarsTSC[int]):
+    r"""The PhysioNet2012 dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: pl.DataFrame
+    static_covariates_metadata: pl.DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.PhysioNet2012(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="Time",
+            meta_columns=["RecordID"],
+            timeseries_metadata=ds.timeseries_metadata.filter(
+                ~pl.col("variable").is_in(["RecordID", "Time"])
+            ),
+            static_covariates=ds.static_covariates,
+            static_covariates_metadata=ds.static_covariates_metadata.filter(
+                pl.col("variable") != "RecordID"
+            ),
+        )
+
+
+class physionet2019(PolarsTSC[int]):
+    r"""The PhysioNet2019 dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: pl.DataFrame
+    static_covariates_metadata: pl.DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.PhysioNet2019(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="time",
+            meta_columns=["patient"],
+            timeseries_metadata=ds.timeseries_metadata.filter(
+                ~pl.col("variable").is_in(["patient", "time"])
+            ),
+            static_covariates=ds.static_covariates,
+            static_covariates_metadata=ds.static_covariates_metadata.filter(
+                pl.col("variable") != "patient"
+            ),
+        )
+
+
+class mimic_iv_bilos2021(PolarsTSC[int]):
+    r"""The MIMIC_IV_Bilos2021 dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.MIMIC_IV_Bilos2021(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="time_stamp",
+            meta_columns=["hadm_id"],
+        )
+
+
+class damped_pendulum_ansari2023(PolarsTSC[int]):
+    r"""The DampedPendulum_Ansari2023 dataset wrapped as a Polars collection."""
+
+    timeseries: pl.DataFrame
+    timeseries_metadata: pl.DataFrame
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.DampedPendulum_Ansari2023(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries,
+            time_column="time",
+            meta_columns=["sequence_id"],
+            timeseries_metadata=ds.timeseries_metadata.filter(
+                ~pl.col("variable").is_in(["sequence_id", "time"])
+            ),
+        )
+
+
+TIMESERIES: dict[str, Fn[[], TimeSeries[pl.DataFrame]]] = {
+    "ETTh1"       : etth1,
+    "ETTh2"       : etth2,
+    "ETTm1"       : ettm1,
+    "ETTm2"       : ettm2,
+    "Electricity" : electricity,
+    "Traffic"     : traffic,
+}  # fmt: skip
+r"""Dictionary of all available Polars time series datasets."""
+
+TIMESERIES_COLLECTIONS: dict[
+    str, Fn[[], TimeSeriesCollection[Any, pl.DataFrame]]
+] = {
+    "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
+    "InSilico"                  : in_silico,
+    "KiwiBenchmark"             : kiwi_benchmark,
+    "MIMIC_IV_Bilos2021"        : mimic_iv_bilos2021,
+    "PhysioNet2012"             : physionet2012,
+    "PhysioNet2019"             : physionet2019,
+    "USHCN"                     : ushcn,
+    "BeijingAirQuality"         : beijing_air_quality,
+    "USHCN_DeBrouwer2019"       : ushcn_de_brouwer2019,
+}  # fmt: skip
+r"""Dictionary of all available Polars time series collections."""

@@ -7,7 +7,7 @@ __all__ = [
     # Classes
     "PandasTS",
     "PandasTSC",
-    # Functions
+    # Concrete classes
     "beijing_air_quality",
     "damped_pendulum_ansari2023",
     "electricity",
@@ -387,174 +387,305 @@ class PandasTSC[KeyT](
         return index[slice(start, stop + 1, key.step)]
 
 
-def electricity() -> TimeSeries[DataFrame]:
-    r"""The Electricity dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.Electricity(initialize=False)
-    return PandasTS(ds.name, timeseries=ds.timeseries.to_pandas().set_index("time"))
+class electricity(PandasTS[Any]):
+    r"""The Electricity dataset wrapped as a pandas time series."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.Electricity(initialize=False)
+        super().__init__(
+            ds.name, timeseries=ds.timeseries.to_pandas().set_index("time")
+        )
 
 
-def traffic() -> TimeSeries[DataFrame]:
-    r"""The Traffic dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.Traffic(initialize=False)
-    return PandasTS(ds.name, timeseries=ds.timeseries.to_pandas().set_index("time"))
+class traffic(PandasTS[Any]):
+    r"""The Traffic dataset wrapped as a pandas time series."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.Traffic(initialize=False)
+        super().__init__(
+            ds.name, timeseries=ds.timeseries.to_pandas().set_index("time")
+        )
 
 
-def etth1() -> TimeSeries[DataFrame]:
-    r"""The ETTh1 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT(initialize=False)
-    return PandasTS("ETTh1", timeseries=ds["ETTh1"])
+class etth1(PandasTS[Any]):
+    r"""The ETTh1 dataset wrapped as a pandas time series."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTh1", timeseries=ds["ETTh1"].to_pandas().set_index("date"))
 
 
-def etth2() -> TimeSeries[DataFrame]:
-    r"""The ETTh2 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT(initialize=False)
-    return PandasTS("ETTh2", timeseries=ds["ETTh2"])
+class etth2(PandasTS[Any]):
+    r"""The ETTh2 dataset wrapped as a pandas time series."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTh2", timeseries=ds["ETTh2"].to_pandas().set_index("date"))
 
 
-def ettm1() -> TimeSeries[DataFrame]:
-    r"""The ETTm1 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT(initialize=False)
-    return PandasTS("ETTm1", timeseries=ds["ETTm1"])
+class ettm1(PandasTS[Any]):
+    r"""The ETTm1 dataset wrapped as a pandas time series."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTm1", timeseries=ds["ETTm1"].to_pandas().set_index("date"))
 
 
-def ettm2() -> TimeSeries[DataFrame]:
-    r"""The ETTm2 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.ETT(initialize=False)
-    return PandasTS("ETTm2", timeseries=ds["ETTm2"])
+class ettm2(PandasTS[Any]):
+    r"""The ETTm2 dataset wrapped as a pandas time series."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.ETT(initialize=False)
+        super().__init__("ETTm2", timeseries=ds["ETTm2"].to_pandas().set_index("date"))
 
 
-def beijing_air_quality() -> TimeSeriesCollection[str, DataFrame]:
-    r"""The Beijing Air Quality dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.BeijingAirQuality(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["station", "time"]),
-        timeseries_metadata=(
-            ds.timeseries_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index=["station", "time"])
-        ),
-    )
+class beijing_air_quality(PandasTSC[str]):
+    r"""The Beijing Air Quality dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.BeijingAirQuality(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["station", "time"]),
+            timeseries_metadata=(
+                ds.timeseries_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index=["station", "time"])
+            ),
+        )
 
 
-def in_silico() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The in silico dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.InSilico(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["run_id", "time"]),
-        timeseries_metadata=(
-            ds.timeseries_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index=["run_id", "time"])
-        ),
-    )
+class in_silico(PandasTSC[int]):
+    r"""The in silico dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.InSilico(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["run_id", "time"]),
+            timeseries_metadata=(
+                ds.timeseries_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index=["run_id", "time"])
+            ),
+        )
 
 
-def kiwi_benchmark() -> TimeSeriesCollection[tuple[int, int], DataFrame]:
-    r"""The KIWI dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.KiwiBenchmark(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(
-            ["run_id", "experiment_id", "elapsed_time"]
-        ),
-        timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("name"),
-        static_covariates=ds.static_covariates.to_pandas().set_index(
-            ["run_id", "experiment_id"]
-        ),
-        static_covariates_metadata=ds.static_covariates_metadata.to_pandas().set_index(
-            "name"
-        ),
-    )
+class kiwi_benchmark(PandasTSC[tuple[int, int]]):
+    r"""The KIWI dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: DataFrame
+    static_covariates_metadata: DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.KiwiBenchmark(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(
+                ["run_id", "experiment_id", "elapsed_time"]
+            ),
+            timeseries_metadata=ds.timeseries_metadata.to_pandas().set_index("name"),
+            static_covariates=ds.static_covariates.to_pandas().set_index(
+                ["run_id", "experiment_id"]
+            ),
+            static_covariates_metadata=(
+                ds.static_covariates_metadata.to_pandas().set_index("name")
+            ),
+        )
 
 
-def ushcn() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The USHCN dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.USHCN(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["COOP_ID", "DATE"]),
-        timeseries_metadata=(
-            ds.timeseries_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index=["COOP_ID", "DATE"])
-        ),
-        static_covariates=ds.static_covariates.to_pandas().set_index("COOP_ID"),
-        static_covariates_metadata=(
-            ds.static_covariates_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index="COOP_ID")
-        ),
-    )
+class ushcn(PandasTSC[int]):
+    r"""The USHCN dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: DataFrame
+    static_covariates_metadata: DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.USHCN(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["COOP_ID", "DATE"]),
+            timeseries_metadata=(
+                ds.timeseries_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index=["COOP_ID", "DATE"])
+            ),
+            static_covariates=ds.static_covariates.to_pandas().set_index("COOP_ID"),
+            static_covariates_metadata=(
+                ds.static_covariates_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index="COOP_ID")
+            ),
+        )
 
 
-def ushcn_de_brouwer2019() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The USHCN_DeBrouwer2019 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.USHCN_DeBrouwer2019(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["ID", "Time"]),
-    )
+class ushcn_de_brouwer2019(PandasTSC[int]):
+    r"""The USHCN_DeBrouwer2019 dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.USHCN_DeBrouwer2019(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["ID", "Time"]),
+        )
 
 
-def physionet2012() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The PhysioNet2012 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.PhysioNet2012(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["RecordID", "Time"]),
-        timeseries_metadata=(
-            ds.timeseries_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index=["RecordID", "Time"])
-        ),
-        static_covariates=ds.static_covariates.to_pandas().set_index("RecordID"),
-        static_covariates_metadata=(
-            ds.static_covariates_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index="RecordID")
-        ),
-    )
+class physionet2012(PandasTSC[int]):
+    r"""The PhysioNet2012 dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: DataFrame
+    static_covariates_metadata: DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.PhysioNet2012(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["RecordID", "Time"]),
+            timeseries_metadata=(
+                ds.timeseries_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index=["RecordID", "Time"])
+            ),
+            static_covariates=ds.static_covariates.to_pandas().set_index("RecordID"),
+            static_covariates_metadata=(
+                ds.static_covariates_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index="RecordID")
+            ),
+        )
 
 
-def physionet2019() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The PhysioNet2019 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.PhysioNet2019(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["patient", "time"]),
-        timeseries_metadata=(
-            ds.timeseries_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index=["patient", "time"])
-        ),
-        static_covariates=ds.static_covariates.to_pandas().set_index("patient"),
-        static_covariates_metadata=(
-            ds.static_covariates_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index="patient")
-        ),
-    )
+class physionet2019(PandasTSC[int]):
+    r"""The PhysioNet2019 dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: DataFrame
+    static_covariates_metadata: DataFrame
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.PhysioNet2019(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["patient", "time"]),
+            timeseries_metadata=(
+                ds.timeseries_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index=["patient", "time"])
+            ),
+            static_covariates=ds.static_covariates.to_pandas().set_index("patient"),
+            static_covariates_metadata=(
+                ds.static_covariates_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index="patient")
+            ),
+        )
 
 
-def mimic_iv_bilos2021() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The MIMIC_IV_Bilos2021 dataset wrapped as TimeSeriesCollection."""
-    return PandasTSC.from_dataset(datasets.MIMIC_IV_Bilos2021)
+class mimic_iv_bilos2021(PandasTSC[int]):
+    r"""The MIMIC_IV_Bilos2021 dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: None
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.MIMIC_IV_Bilos2021(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["hadm_id", "time_stamp"]),
+        )
 
 
-def damped_pendulum_ansari2023() -> TimeSeriesCollection[int, DataFrame]:
-    r"""The DampedPendulum_Ansari2023 dataset wrapped as TimeSeriesCollection."""
-    ds = datasets.DampedPendulum_Ansari2023(initialize=False)
-    return PandasTSC(
-        ds.name,
-        timeseries=ds.timeseries.to_pandas().set_index(["sequence_id", "time"]),
-        timeseries_metadata=(
-            ds.timeseries_metadata.to_pandas()
-            .set_index("variable")
-            .drop(index=["sequence_id", "time"])
-        ),
-    )
+class damped_pendulum_ansari2023(PandasTSC[int]):
+    r"""The DampedPendulum_Ansari2023 dataset wrapped as a pandas collection."""
+
+    timeseries: DataFrame
+    timeseries_metadata: DataFrame
+    static_covariates: None
+    static_covariates_metadata: None
+    constants: None
+    constants_metadata: None
+
+    def __init__(self) -> None:
+        ds = datasets.DampedPendulum_Ansari2023(initialize=False)
+        super().__init__(
+            ds.name,
+            timeseries=ds.timeseries.to_pandas().set_index(["sequence_id", "time"]),
+            timeseries_metadata=(
+                ds.timeseries_metadata.to_pandas()
+                .set_index("variable")
+                .drop(index=["sequence_id", "time"])
+            ),
+        )
 
 
 TIMESERIES: dict[str, Fn[[], TimeSeries[DataFrame]]] = {

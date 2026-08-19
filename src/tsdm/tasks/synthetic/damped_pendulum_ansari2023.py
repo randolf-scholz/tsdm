@@ -21,8 +21,8 @@ from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import (
     FixedSliceSampleGenerator,
     PlainSample,
-    damped_pendulum_ansari2023,
 )
+from tsdm.timeseries.pandas import damped_pendulum_ansari2023
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 

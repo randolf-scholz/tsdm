@@ -74,7 +74,8 @@ from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
-from tsdm.timeseries import PandasTSC, ushcn_de_brouwer2019
+from tsdm.timeseries import PandasTSC
+from tsdm.timeseries.pandas import ushcn_de_brouwer2019
 
 
 @pprint_repr

@@ -29,7 +29,7 @@ from tsdm.random.samplers import (
 )
 from tsdm.random.samplers.hierarchical_sampler import MappingDataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.timeseries import PandasTS, kiwi_benchmark
+from tsdm.timeseries.pandas import PandasTS, kiwi_benchmark
 from tsdm.timeseries.sample_generators import TimeSeriesSampleGenerator
 
 

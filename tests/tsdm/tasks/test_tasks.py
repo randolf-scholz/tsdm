@@ -13,8 +13,8 @@ from tsdm.timeseries import (
     PandasTSC,
     Sample,
     TimeSeriesSampleGenerator,
-    in_silico,
 )
+from tsdm.timeseries.pandas import in_silico
 
 __logger__ = logging.getLogger(__name__)
 

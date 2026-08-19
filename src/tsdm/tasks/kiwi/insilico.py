@@ -16,7 +16,8 @@ from tsdm.datatools import (
 )
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator, in_silico
+from tsdm.timeseries import PandasTSC, TimeSeriesSampleGenerator
+from tsdm.timeseries.pandas import in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[list[bool]]]

@@ -21,7 +21,7 @@ from tsdm.encoders import (
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.timeseries import in_silico
+from tsdm.timeseries.pandas import in_silico
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -166,7 +166,7 @@ def test_bounds(encoder: Encoder) -> None:
         keys=["lower", "upper"],
     )
     for col, lower, upper in bounds.itertuples():
-        match scale := descr.loc[col, "unit"]:
+        match descr.loc[col, "unit"]:
             case "%":
                 assert lower == 0, f"Lower bound violated {lower=}"
                 assert upper == 100, f"Upper bound violated {upper=}"
