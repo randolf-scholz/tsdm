@@ -6,7 +6,8 @@ This repository contains tools to import important time series datasets and base
 
 ## Documentation
 
-The documentation is hosted at <https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm>. Alternatively, it can be built with Sphinx locally by running `make html` in the `docs` directory.
+The documentation is hosted at <https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm>. Alternatively, it can be
+built with Sphinx locally by running `make html` in the `docs` directory.
 
 ## Installation
 

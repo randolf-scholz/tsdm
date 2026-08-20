@@ -1,87 +1,102 @@
-# CONTRIBUTING
+# Contributing to `tsdm`
 
-These are the 10 steps to contributing to the project.
+Thank you for contributing to `tsdm`. The project targets Python 3.14 on
+Linux and uses [`uv`](https://docs.astral.sh/uv/) to manage the virtual
+environment, Python version, dependencies, and development tools.
 
-## 1. Fork the GitLab project from <https://github.com/randolf-scholz/tsdm>
+## Set up the repository
 
-Use your personal namespace, e.g. <https://github.com/$USER/tsdm>.
-
-## 2. Clone the forked project locally to your machine
+Fork <https://github.com/randolf-scholz/tsdm> on GitHub, then clone your fork:
 
 ```bash
-git clone https://github.com/randolf-scholz/tsdm
+git clone https://github.com/$USER/tsdm.git
 cd tsdm
+git submodule update --init --recursive
 ```
 
-### 3. Set up the virtual environment
-
-Via `poetry` (recommended).
+Create the virtual environment, install the project and its development
+dependencies, and install the Git hooks:
 
 ```bash
-pip install --upgrade poetry
-poetry shell
-poetry install
+uv python install 3.14
+uv sync
+uv run prek install
 ```
 
-Via `conda` (You may have to rename `tables` ⟶ `pytables` and `torch` ⟶ `pytorch`).
+`uv sync` creates `.venv` when necessary. You do not need to activate it:
+run project commands with `uv run` so that they always use the managed
+environment.
+
+Verify the installation:
 
 ```bash
-conda create --name tsdm --file requirements.txt
-conda activate tsdm
-conda install --file requirements-dev.txt
+uv run python -c "import tsdm"
 ```
 
-Via `pip`.
+## Make a change
+
+Create a descriptively named branch:
 
 ```bash
-sudo apt install python3.10
-python3.10 -m virtualenv .venv
-source .venv/bin/activate
-pip install -e .
+git switch -c feature-xyz
 ```
 
-### 4. Verify that the installation was successful
+Source code lives in `src/`, and tests live in `tests/`. Add or update tests
+for behavior affected by your change.
+
+### Run the checks
+
+Run the test suite with `pytest`:
 
 ```bash
-python -c "import tsdm"
+uv run pytest
 ```
 
-### 5. Setup remote repositories and pre-commit hooks
+During development, you can pass a file, directory, or pytest selector to run
+a focused subset:
 
 ```bash
-./run/setup_remote.sh
-./run/setup_precommit.sh
+uv run pytest tests/path/to/test_module.py
 ```
 
-### 6. Create a new working branch. Choose a descriptive name for what you are trying to achieve
+Lint and check formatting with `ruff`:
 
 ```bash
-git checkout -b feature-xyz
+uv run ruff check .
+uv run ruff format --check .
 ```
 
-### 7. Write your code, bonus points for also adding unit tests
-
-- Write your code in the `src` directory.
-- Write your unit tests in the `tests` directory.
-- Check if tests are working via `pytest`.
-- Check for type errors via `mypy`.
-- Check for style errors via `flake8`.
-- Check for code quality via `pylint`.
-
-### 8. Write descriptive commit messages
-
-Try to keep individual commits easy to understand (changing dozens of files, writing 100's of lines of code is not!).
+To apply safe lint fixes and formatting:
 
 ```bash
-git commit -m '#42: Add useful new feature that does this.'
+uv run ruff check --fix .
+uv run ruff format .
 ```
 
-### 9. Push changes in the branch to your forked repository on GitHub
+Run both supported type checkers:
 
 ```bash
-git push origin feature-xyz
+uv run pyrefly check
+uv run pyright
 ```
 
-Make sure to check if the CI pipeline is successful.
+Run all configured `prek` hooks across the repository before committing:
 
-### 10. Create a merge request
+```bash
+uv run prek run --all-files
+```
+
+The installed Git hook also runs the applicable checks automatically when you
+commit.
+
+## Submit the change
+
+Keep commits focused and use descriptive commit messages. Push your branch to
+your fork:
+
+```bash
+git push -u origin feature-xyz
+```
+
+Confirm that the continuous-integration checks pass, then open a pull request
+against the `main` branch of <https://github.com/randolf-scholz/tsdm>.
