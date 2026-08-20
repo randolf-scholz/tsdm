@@ -44,14 +44,7 @@ __all__ = [
     "TimeSeriesTask",
     # Classes
     "ETT_Zhou2021",
-    "ElectricityDeepAR",
-    "ElectricityDeepState",
-    "ElectricityELBMBTTF",
-    "ElectricityLim2021",
-    "ElectricityTRMF",
     "MIMIC_IV_Bilos2021",
-    "TrafficTFT",
-    "TrafficTRMF",
     "USHCN_DeBrouwer2019",
     # New Tasks
     "DampedPendulum_Ansari2023",
@@ -65,15 +58,6 @@ from .ett.ett_zhou2021 import ETT_Zhou2021
 from .kiwi import InSilicoTask, KiwiBenchmark
 from .mimic import MIMIC_IV_Bilos2021
 from .synthetic import DampedPendulum_Ansari2023
-from .uci import (
-    ElectricityDeepAR,
-    ElectricityDeepState,
-    ElectricityELBMBTTF,
-    ElectricityLim2021,
-    ElectricityTRMF,
-    TrafficTFT,
-    TrafficTRMF,
-)
 from .ushcn import USHCN_DeBrouwer2019
 
 TASKS: dict[str, type[ForecastingTask]] = {

@@ -2,16 +2,14 @@ r"""Tasks associated with the Electricity dataset."""
 
 __all__ = [
     # CLASSES
-    "ElectricityDeepState",
-    "ElectricityDeepAR",
-    "ElectricityTRMF",
-    "ElectricityELBMBTTF",
-    "ElectricityNBEATS",
-    "ElectricityNHITS",
+    "Electricity_Sundar2018",
+    "Electricity_Salinas2020",
+    "Electricity_Yu2016",
+    "Electricity_Li2019",
 ]
 
 
-class ElectricityDeepState:
+class Electricity_Sundar2018:
     r"""Experiments as performed by the "DeepState" paper.
 
     Paper
@@ -45,13 +43,15 @@ class ElectricityDeepState:
     """
 
 
-class ElectricityDeepAR:
+class Electricity_Salinas2020:
     r"""Experiments as performed by the "DeepAR" paper.
 
     Paper
     -----
-    - | `DeepAR: Probabilistic forecasting with autoregressive recurrent networks
-        <https://www.sciencedirect.com/science/article/pii/S0169207019301888>`_
+    - | DeepAR: Probabilistic forecasting with autoregressive recurrent networks
+      | David Salinas, Valentin Flunkert, Jan Gasthaus, Tim Januschowski
+      | International Journal of Forecasting 36 (2020)
+      | <https://www.sciencedirect.com/science/article/pii/S0169207019301888>
 
     Evaluation Protocol
     -------------------
@@ -72,12 +72,14 @@ class ElectricityDeepAR:
     """
 
 
-class ElectricityTRMF:
+class Electricity_Yu2016:
     r"""Experiments as performed by the "TRMF" paper.
 
     Paper
     -----
     - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | Hsiang-Fu Yu, Nikhil Rao, Inderjit S Dhillon
+      | Advances in Neural Information Processing Systems 29 (NeurIPS 2016)
       | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
 
     Evaluation Protocol
@@ -120,7 +122,7 @@ class ElectricityTRMF:
     """
 
 
-class ElectricityELBMBTTF:
+class Electricity_Li2019:
     r"""Experiments as performed by the "LogSparseTransformer" paper.
 
     Paper
@@ -187,11 +189,3 @@ class ElectricityELBMBTTF:
     | Ours   | 0.074/0.042    | 0.139/0.090 |
     +--------+----------------+-------------+
     """
-
-
-class ElectricityNBEATS:
-    r"""NBEATS."""
-
-
-class ElectricityNHITS:
-    r"""NHITS."""

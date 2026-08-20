@@ -1,13 +1,20 @@
 r"""Tasks associated with the Traffic dataset."""
 
-__all__ = ["TrafficTFT", "TrafficTRMF"]
+__all__ = [
+    "Traffic_Lim2021",
+    "Traffic_Yu2016",
+]
 
 
-class TrafficTFT:
+class Traffic_Lim2021:
     r"""Experiments as performed by the "TFT" paper.
 
     Paper
     -----
+    - | Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting
+      | Lim et al.
+      | International Journal of Forecasting 2021
+      | https://www.sciencedirect.com/science/article/pii/S0169207021000637
 
     Evaluation Protocol
     -------------------
@@ -37,11 +44,15 @@ class TrafficTFT:
     """
 
 
-class TrafficTRMF:
+class Traffic_Yu2016:
     r"""Experiments as performed by the "TRMF" paper.
 
     Paper
     -----
+    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | Hsiang-Fu Yu, Nikhil Rao, Inderjit S Dhillon
+      | Advances in Neural Information Processing Systems 29 (NeurIPS 2016)
+      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
 
     Evaluation Protocol
     -------------------
