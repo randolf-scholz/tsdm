@@ -1,6 +1,7 @@
 __all__ = [
-    "assert_arrays_equal",
     "assert_arrays_close",
+    "assert_arrays_equal",
+    "assert_protocol",
     "check_shared_interface",
     "supports_issubclass",
 ]
