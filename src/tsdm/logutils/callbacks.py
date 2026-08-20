@@ -101,8 +101,10 @@ class Callback(Protocol):
     mutable object.
     """
 
-    frequency: int = 1
-    r"""The frequency at which the callback should be called."""
+    @property
+    def frequency(self) -> int:
+        r"""The frequency at which the callback is executed."""
+        return 1
 
     @property
     @abstractmethod
@@ -143,9 +145,10 @@ def is_callback(obj: object, /) -> TypeIs[Callback]:
     )
 
 
+# @implements(Callback)
 @pprint_repr
 @dataclass(repr=False)
-class BaseCallback(Callback):
+class BaseCallback:
     r"""Base class for callbacks."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")

@@ -168,7 +168,7 @@ class Split[KeyT, SampleT]:  # +SampleT
 
 
 @runtime_checkable
-class ForecastingTask[K, Sample](Protocol):  # K, +Sample
+class ForecastingTask[KeyT, Sample](Protocol):  # K, +Sample
     r"""Protocol for tasks.
 
     A task should provide 3 things:
@@ -180,26 +180,25 @@ class ForecastingTask[K, Sample](Protocol):  # K, +Sample
 
     @property
     @abstractmethod
-    def samplers(self) -> Mapping[SPLIT, Sampler[K]]:
-        r"""Samplers for the different splits."""
-        ...
+    def samplers(self) -> Mapping[SPLIT, Sampler[KeyT]]: ...
 
     @property
     @abstractmethod
-    def generators(self) -> Mapping[SPLIT, MapDataset[K, Sample]]:
-        r"""Generators for the different splits."""
-        ...
+    def generators(self) -> Mapping[SPLIT, MapDataset[KeyT, Sample]]: ...
 
     @property
     @abstractmethod
-    def test_metric(self) -> Metric:
-        r"""The test metric used to evalutate models."""
-        ...
+    def test_metric(self) -> Metric: ...
 
 
 @pprint_repr
 @dataclass
-class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
+class TimeSeriesTask[
+    SplitID,
+    SampleID = Any,
+    SampleT = Any,
+    BatchT = Any,
+]:  # K, +Sample
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -217,7 +216,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         - Provide a `torch.utils.data.Dataset` for each split
             - Dataset should return `Sample` objects providing context and target values.
         - Provide a `torch.utils.data.Sampler` for each split
-            - Sampler should return indices into the datase
+            - Sampler should return indices into the dataset
     - Optional: Task specific encoder/decoder
         - Since we use raw format, such an encoder might be necessary to even meaningfully
           compute the target metric
@@ -264,15 +263,15 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
     # fold specific attributes
     encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fns: Mapping[SplitID, Callable[[list[Sample]], Batch]] = NotImplemented
+    collate_fns: Mapping[SplitID, Callable[[list[SampleT]], Batch]] = NotImplemented
     r"""Collate function used to create batches from samples."""
     test_metrics: Mapping[SplitID, Callable[[Tensor, Tensor], Tensor]] = NotImplemented
     r"""Metric used for evaluation."""
 
     # split specific attributes
-    dataloaders: Mapping[SplitID, DataLoader[Sample]] = NotImplemented
+    dataloaders: Mapping[SplitID, DataLoader[SampleT]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, SupportsGetItem[SampleID, Sample]] = NotImplemented
+    generators: Mapping[SplitID, SupportsGetItem[SampleID, SampleT]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     samplers: Mapping[SplitID, Sampler[SampleID]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -281,7 +280,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
 
     default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Default test metric."""
-    default_collate_fn: Callable[[list[Sample]], Batch] = NotImplemented
+    default_collate_fn: Callable[[list[SampleT]], Batch] = NotImplemented
     r"""Default collate function."""
 
     train_patterns: Sequence[str] = ("train", "training")
@@ -348,7 +347,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # ruff: ignore[ARG002]
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[SampleT]], Batch]:  # ruff: ignore[ARG002]
         r"""Return the collate function which combines samples into a batch.
 
         Note:
@@ -392,7 +391,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, Sample]:
+    def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, SampleT]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 

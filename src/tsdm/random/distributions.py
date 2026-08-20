@@ -27,9 +27,7 @@ class RV[T](Protocol):  # +T
     @abstractmethod
     def rvs(
         self, /, size: Size = (), *, random_state: Optional[int | Generator] = None
-    ) -> T:
-        r"""Random variates of the given type."""
-        ...
+    ) -> T: ...
 
 
 @runtime_checkable
@@ -43,9 +41,7 @@ class TimeSeriesRV[T](Protocol):  # +T
         size: Size = (),
         *,
         random_state: Optional[int | Generator] = None,
-    ) -> T:
-        r"""Generate random time series."""
-        ...
+    ) -> T: ...
 
 
 @runtime_checkable

@@ -89,12 +89,12 @@ from .callbacks import (
 )
 
 
-class Logger[CBS: CallbackSequence](Protocol):  # +CBS
+class Logger[CallbackT: CallbackSequence](Protocol):  # +CallbackT
     r"""Generic Logger Protocol."""
 
     @property
     @abstractmethod
-    def callbacks(self) -> Mapping[str, CBS]:
+    def callbacks(self) -> Mapping[str, CallbackT]:
         r"""Callbacks to be called at the end of a batch/epoch."""
         ...
 

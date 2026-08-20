@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Final,
     Optional,
     Protocol,
     Self,
@@ -148,9 +149,8 @@ class DatasetMeta(ProtocolMeta):
             obj.load(initializing=True)
 
 
-class DatasetBase[Key: str, T](
-    Mapping[Key, T], Dataset[Key, T], metaclass=DatasetMeta
-):  # Key, +T
+# @implements(Dataset[Key, T])
+class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, +T
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -184,7 +184,7 @@ class DatasetBase[Key: str, T](
     # region dataset metadata ----------------------------------------------------------
     rawdata_files: Sequence[str]
     r"""READ_ONLY: The names of the raw data files that make up the dataset."""
-    table_names: Collection[Key]  # pyright: ignore[reportIncompatibleMethodOverride]
+    table_names: Collection[Key]
     r"""READ_ONLY: The names of the tables that make up the dataset."""
     # endregion dataset metadata  ------------------------------------------------------
 
@@ -200,6 +200,11 @@ class DatasetBase[Key: str, T](
     # endregion derived members --------------------------------------------------------
 
     # region instance attributes -------------------------------------------------------
+    tables: LazyDict[Key, T]  # set during __init__
+    r"""READ-ONLY: The tables that make up the dataset."""
+    name: Final[str]
+    r"""READ-ONLY: The name of the dataset."""
+
     # TODO: Use typing.ReadOnly when PEP 767 accepted.
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
     r"""READ-ONLY: Optional hashes of the raw dataset file(s).
@@ -223,15 +228,6 @@ class DatasetBase[Key: str, T](
     table_shapes: Mapping[Key, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""
     # endregion instance attributes ----------------------------------------------------
-
-    @cached_property
-    def tables(self) -> LazyDict[Key, T]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return LazyDict.from_func(
-            self.table_names,
-            self.load,
-            kwargs={"initializing": True},
-            type_hint=get_return_typehint(self.clean_table),
-        )
 
     # region constructors --------------------------------------------------------------
     @classmethod
@@ -287,10 +283,19 @@ class DatasetBase[Key: str, T](
             version: Version of the dataset. If omitted, use ``default_version()``.
             verbose: Whether to print verbose output.
         """
+        version = version or self.DEFAULT_VERSION
+
         self.verbose = verbose
         self.initialize = initialize
-        self._version = version or self.DEFAULT_VERSION
+        self._version = version
         self.init_storage_paths()
+        self.tables: LazyDict[Key, T] = LazyDict.from_func(
+            self.table_names,
+            self.load,
+            kwargs={"initializing": True},
+            type_hint=get_return_typehint(self.clean_table),
+        )
+        self.name = f"{self.__class__.__name__}{f'@v{version}' if version else ''}"
 
     def __post_init__(self) -> None:
         r"""Extra Validation code can go here."""

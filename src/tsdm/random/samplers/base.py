@@ -15,7 +15,7 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Final, Protocol, ReadOnly, runtime_checkable
+from typing import Final, Protocol, runtime_checkable
 
 from numpy.random import Generator
 
@@ -32,10 +32,13 @@ class Sampler[T](Protocol):  # +T
     In contrast, each Sampler must additionally have a `shuffle` attribute.
     """
 
-    shuffle: ReadOnly[bool]  # type: ignore
-    r"""Whether to shuffle the indices."""
-    rng: ReadOnly[Generator]  # type: ignore
-    r"""The random number generator."""
+    # TODO: Use typing.ReadOnly (PEP 767)
+    @property
+    @abstractmethod
+    def shuffle(self) -> bool: ...
+    @property
+    @abstractmethod
+    def rng(self) -> Generator: ...
 
     @abstractmethod
     def __len__(self) -> int:
@@ -48,8 +51,9 @@ class Sampler[T](Protocol):  # +T
         ...
 
 
+# @implements(Sampler[T])
 @dataclass
-class BaseSampler[T](Sampler[T]):  # +T
+class BaseSampler[T]:  # +T
     r"""Abstract Base Class for all Samplers."""
 
     _: KW_ONLY

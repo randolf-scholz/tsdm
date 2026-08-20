@@ -7,13 +7,13 @@ __all__ = [
 ]
 
 
-from typing import Protocol, ReadOnly
+from typing import Protocol
 
 
 class SeparateTimeSample[ArrayT](Protocol):
     r"""Protocol for forecasting requests.
 
-    Args:
+    Attributes:
         context_times: Float[..., $N], padded NaN, non-decreasing
         context_values: Float[..., $N, D], padded NaN
         context_mask: Bool[..., $N, D], padded False
@@ -23,21 +23,30 @@ class SeparateTimeSample[ArrayT](Protocol):
         static_covariates: Float[..., M]  padded NaN
     """
 
-    context_times: ReadOnly[ArrayT]  # type: ignore
-    context_values: ReadOnly[ArrayT]  # type: ignore
-    context_mask: ReadOnly[ArrayT]  # type: ignore
+    # TODO: Use typing.ReadOnly (PEP 767)
 
-    query_times: ReadOnly[ArrayT]  # type: ignore
-    query_mask: ReadOnly[ArrayT]  # type: ignore
-    target_values: ReadOnly[ArrayT | None] = None  # type: ignore
+    @property
+    def context_times(self) -> ArrayT: ...
+    @property
+    def context_values(self) -> ArrayT: ...
+    @property
+    def context_mask(self) -> ArrayT: ...
 
-    static_covariates: ReadOnly[ArrayT | None] = None  # type: ignore
+    @property
+    def query_times(self) -> ArrayT: ...
+    @property
+    def query_mask(self) -> ArrayT: ...
+    @property
+    def target_values(self) -> ArrayT | None: ...
+
+    @property
+    def static_covariates(self) -> ArrayT | None: ...
 
 
 class MergedTimeSample[ArrayT](Protocol):
     r"""Protocol for joint time representation.
 
-    Args:
+    Attributes:
         timestamps: Float[..., $T], padded NaN, non-decreasing
         context_mask: Bool[..., $T, D], padded False
         context_values: Float[..., $T, D], padded NaN
@@ -46,15 +55,23 @@ class MergedTimeSample[ArrayT](Protocol):
         static_covariates: Float[..., M], padded NaN
     """
 
-    timestamps: ReadOnly[ArrayT]  # type: ignore
+    # TODO: Use typing.ReadOnly (PEP 767)
 
-    context_mask: ReadOnly[ArrayT]  # type: ignore
-    context_values: ReadOnly[ArrayT]  # type: ignore
+    @property
+    def timestamps(self) -> ArrayT: ...
 
-    query_mask: ReadOnly[ArrayT]  # type: ignore
-    target_values: ReadOnly[ArrayT | None] = None  # type: ignore
+    @property
+    def context_mask(self) -> ArrayT: ...
+    @property
+    def context_values(self) -> ArrayT: ...
 
-    static_covariates: ReadOnly[ArrayT | None] = None  # type: ignore
+    @property
+    def query_mask(self) -> ArrayT: ...
+    @property
+    def target_values(self) -> ArrayT | None: ...
+
+    @property
+    def static_covariates(self) -> ArrayT | None: ...
 
 
 class TripletSample[ArrayT](Protocol):
@@ -63,7 +80,7 @@ class TripletSample[ArrayT](Protocol):
     Tall data format that stacks context and query data into a 3 column representation of
     (time, channel, value) triplets.
 
-    Args:
+    Attributes:
         context_times: Float[..., $X], padded NaN, non-decreasing
         context_channels: Long[..., $X], padded -1
         context_values: Float[..., $X], padded NaN
@@ -73,12 +90,21 @@ class TripletSample[ArrayT](Protocol):
         static_covariates: Float[..., M], padded NaN
     """
 
-    context_times: ReadOnly[ArrayT]  # type: ignore
-    context_channels: ReadOnly[ArrayT]  # type: ignore
-    context_values: ReadOnly[ArrayT]  # type: ignore
+    # TODO: Use typing.ReadOnly (PEP 767)
 
-    query_times: ReadOnly[ArrayT]  # type: ignore
-    query_channels: ReadOnly[ArrayT]  # type: ignore
-    target_values: ReadOnly[ArrayT | None] = None  # type: ignore
+    @property
+    def context_times(self) -> ArrayT: ...
+    @property
+    def context_channels(self) -> ArrayT: ...
+    @property
+    def context_values(self) -> ArrayT: ...
 
-    static_covariates: ReadOnly[ArrayT | None] = None  # type: ignore
+    @property
+    def query_times(self) -> ArrayT: ...
+    @property
+    def query_channels(self) -> ArrayT: ...
+    @property
+    def target_values(self) -> ArrayT | None: ...
+
+    @property
+    def static_covariates(self) -> ArrayT | None: ...

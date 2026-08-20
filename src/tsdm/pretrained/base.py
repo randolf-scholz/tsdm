@@ -29,7 +29,6 @@ Therefore, we need to define a way of storing and loading these files.
 
 __all__ = [
     # ABCs & Protocols
-    "PreTrained",
     "PreTrainedBase",
     "PreTrainedMetaClass",
     # functions
@@ -60,7 +59,6 @@ from typing import (
     ClassVar,
     Literal as L,
     Optional,
-    Protocol,
     Self,
     _ProtocolMeta as ProtocolMeta,
     cast,
@@ -85,13 +83,6 @@ from tsdm.utils import LazyDict, nested_paths_exist
 from tsdm.utils.remote import import_from_url
 
 
-class PreTrained(Protocol):
-    r"""Protocol for General Pretrained Models."""
-
-    components: Mapping[str, Any]
-    r"""Mapping of component names to their respective components."""
-
-
 class PreTrainedMetaClass(ProtocolMeta):
     r"""Metaclass for PreTrained."""
 
@@ -113,7 +104,7 @@ class PreTrainedMetaClass(ProtocolMeta):
             cls.RAWDATA_DIR = CONFIG.MODEL_DIR / cls.__name__
 
 
-class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
+class PreTrainedBase(metaclass=PreTrainedMetaClass):
     r"""Base class for all pretrained models.
 
     A pretrained model can provide multiple components:

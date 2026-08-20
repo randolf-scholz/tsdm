@@ -7,8 +7,6 @@ Each model comes with several components:
 """
 
 __all__ = [
-    # Protocol
-    "PreTrained",
     # Abstract Base Classes
     "PreTrainedBase",
     # Classes
@@ -18,7 +16,7 @@ __all__ = [
 ]
 
 
-from .base import PreTrained, PreTrainedBase
+from .base import PreTrainedBase
 from .linodenet import LinODEnet
 
 MODELS: dict[str, type[PreTrainedBase]] = {

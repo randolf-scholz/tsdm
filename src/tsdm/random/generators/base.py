@@ -117,9 +117,7 @@ class IVP_Solver[T](Protocol):  # +T
 class FrozenIVPSolver[T](Protocol):
     r"""Frozen version of the IVP_Solver Protocol."""
 
-    def __call__(self, t: T, /, *, y0: T) -> T:
-        r"""Solve the initial value problem."""
-        ...
+    def __call__(self, t: T, /, *, y0: T) -> T: ...
 
 
 @pprint_repr
@@ -197,19 +195,13 @@ class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
 
     # region abstract methods ----------------------------------------------------------
     @abstractmethod
-    def get_initial_state(self, size: Size = ()) -> T:
-        r"""Generate (multiple) initial state(s) y₀."""
-        ...
+    def get_initial_state(self, size: Size = ()) -> T: ...
 
     @abstractmethod
-    def make_observations(self, sol: Any, /) -> T:
-        r"""Create observations from the solution."""
-        ...
+    def make_observations(self, sol: Any, /) -> T: ...
 
     @abstractmethod
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> Any:
-        r"""Solve the initial value problem."""
-        ...
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> Any: ...
 
     @abstractmethod
     def set_rng(self, random_state: Optional[int | Generator], /) -> None:

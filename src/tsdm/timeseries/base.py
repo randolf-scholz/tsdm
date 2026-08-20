@@ -8,7 +8,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Iterator
-from typing import Any, ClassVar, Protocol, ReadOnly, Self, overload
+from typing import Any, ClassVar, Protocol, Self, overload
 
 # TODO: Use generic slice in 3.15
 type RangeSelector[T] = slice | list[T] | list[bool]
@@ -18,22 +18,34 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
     r"""Protocol for time series objects.
 
     Describes a single time series implemented as a Table-like object, indexed by time.
+
+    Attributes:
+        timeseries: The time series data.
+        timeseries_metadata: Data associated with the time such as measurement device, unit, etc.
+        static_covariates: The metadata of the dataset.
+        static_covariates_metadata: Data associated with each metadata such as measurement device, unit, etc.
+        timeindex: The time index of the time series.
     """
 
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series."""
 
-    timeseries: ReadOnly[TableT]  # type: ignore
-    r"""The time series data."""
-    timeseries_metadata: ReadOnly[TableT | None]  # type: ignore
-    r"""Data associated with the time such as measurement device, unit, etc."""
-    static_covariates: ReadOnly[TableT | None]  # type: ignore
-    r"""The metadata of the dataset."""
-    static_covariates_metadata: ReadOnly[TableT | None]  # type: ignore
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
-
-    timeindex: ReadOnly[Any]  # type: ignore
-    r"""The time index of the time series."""
+    # TODO: Use typing.ReadOnly (PEP 767)
+    @property
+    @abstractmethod
+    def timeseries(self) -> TableT: ...
+    @property
+    @abstractmethod
+    def timeseries_metadata(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def static_covariates(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def static_covariates_metadata(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def timeindex(self) -> Any: ...
 
     @abstractmethod
     def __len__(self) -> int: ...
@@ -46,28 +58,48 @@ class TimeSeries[TableT, TimeT = Any](Protocol):
 
 
 class TimeSeriesCollection[KeyT, TableT](Protocol):
-    r"""Protocol for time series collection objects."""
+    r"""Protocol for time series collection objects.
+
+    Attributes:
+        timeseries: The collection of time series data.
+        timeseries_metadata: Data associated with each channel such as measurement device, unit, etc.
+        static_covariates: The static covariates associated with each time series.
+        static_covariates_metadata: Data associated with each metadata such as measurement device, unit, etc.
+        constants: Additional data that is independent of the metaindex.
+        constants_metadata: Data associated with each global metadata such as measurement device, unit, etc.
+        timeindex: The time index of the time series.
+        metaindex: The meta index of the time series collection.
+
+    """
 
     FIELDS: ClassVar[frozenset[str]]
     r"""The fields of the time series collection."""
 
-    timeseries: ReadOnly[TableT]  # type: ignore
-    r"""The collection of time series data."""
-    timeseries_metadata: ReadOnly[TableT | None]  # type: ignore
-    r"""Data associated with each channel such as measurement device, unit, etc."""
-    static_covariates: ReadOnly[TableT | None]  # type: ignore
-    r"""The static covariates associated with each t  # pyrefly: ignore[invalid-annotation]imeseries."""
-    static_covariates_metadata: ReadOnly[TableT | None]  # type: ignore
-    r"""Data associated with each metadata such as measurement device, unit, etc."""
-    constants: ReadOnly[TableT | None]  # type: ignore
-    r"""Additional data that is independent of the metaindex."""
-    constants_metadata: ReadOnly[TableT | None]  # type: ignore
-    r"""Data associated with each global metadata such as measurement device, unit, etc."""
-
-    timeindex: ReadOnly[Any]  # type: ignore
-    r"""The time index of the time series."""
-    metaindex: ReadOnly[Any]  # type: ignore
-    r"""The meta index of the time series collection."""
+    # TODO: Use typing.ReadOnly (PEP 767)
+    @property
+    @abstractmethod
+    def timeseries(self) -> TableT: ...
+    @property
+    @abstractmethod
+    def timeseries_metadata(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def static_covariates(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def static_covariates_metadata(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def constants(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def constants_metadata(self) -> TableT | None: ...
+    @property
+    @abstractmethod
+    def timeindex(self) -> Any: ...
+    @property
+    @abstractmethod
+    def metaindex(self) -> Any: ...
 
     @abstractmethod
     def __len__(self) -> int: ...
