@@ -56,23 +56,24 @@ import warnings
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, NamedTuple
+from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
 import torch
-from pandas import DataFrame, Index, MultiIndex
+from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader, Dataset
 
-from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
-from tsdm.datatools import is_partition
+from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.encoders import FrameEncoder, MinMaxScaler
-from tsdm.pprint import repr_namedtuple
-from tsdm.tasks._deprecated import OldBaseTask
+from tsdm.pprint import pprint_repr
+from tsdm.random.samplers import RandomSampler, Sampler
+from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
+from tsdm.timeseries.pandas import PandasTSC, mimic_iv_bilos2021
 
 
+@pprint_repr
 class Inputs(NamedTuple):
     r"""A single sample of the data."""
 
@@ -80,11 +81,8 @@ class Inputs(NamedTuple):
     x: Tensor
     t_target: Tensor
 
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
 
-
+@pprint_repr
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
@@ -93,13 +91,9 @@ class Sample(NamedTuple):
     targets: Tensor
     originals: tuple[Tensor, Tensor]
 
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
-
 
 @dataclass
-class MIMIC_IV_SampleGenerator(Dataset):
+class MIMIC_IV_SampleGenerator:
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -131,6 +125,7 @@ class MIMIC_IV_SampleGenerator(Dataset):
         return f"{self.__class__.__name__}"
 
 
+@pprint_repr
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
@@ -141,9 +136,6 @@ class Batch(NamedTuple):
     y_time: Tensor  # B×K:   the target timestamps.
     y_vals: Tensor  # B×K×D: the target values.
     y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
 
 @deprecated("Consider using tasks.utils.collate_timeseries instead.")
@@ -196,8 +188,14 @@ def mimic_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class MIMIC_IV_Bilos2021(OldBaseTask):
+type SplitID = tuple[int, Literal["train", "valid", "test"]]
+
+
+class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample]):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
+
+    dataset: PandasTSC[int]
+    preprocessor: FrameEncoder | None
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
     prediction_steps = 3
@@ -214,34 +212,38 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
             stacklevel=2,
         )
 
-        super().__init__()
-
         self.normalize_time = normalize_time
-        self.IDs = self.dataset.reset_index()["hadm_id"].unique()
+        dataset = mimic_iv_bilos2021()
+        timeseries = dataset.timeseries
 
-    @cached_property
-    def dataset(self) -> DataFrame:
-        r"""Load the dataset."""
-        ds = MIMIC_IV_Dataset()
+        if normalize_time:
+            self.preprocessor = FrameEncoder({"time_stamp": MinMaxScaler()})
+            self.preprocessor.fit(timeseries)
+            timeseries = self.preprocessor.encode(timeseries)
+            index_encoder = cast("MinMaxScaler", self.preprocessor["time_stamp"])
+            self.observation_time /= index_encoder.xmax
+        else:
+            self.preprocessor = None
 
-        # we additionally min-max scale time axis
-        ts = ds.timeseries
-        self.preprocessor = FrameEncoder({"time_stamp": MinMaxScaler()})
-        self.preprocessor.fit(ts)
-        ts = self.preprocessor.encode(ts)
-        index_encoder = self.preprocessor["time_stamp"]
-        self.observation_time /= index_encoder.params["xmax"]  # type: ignore
+        timeseries = timeseries.astype("float32")
+        self.dataset = PandasTSC(  # pyright: ignore[reportIncompatibleVariableOverride]
+            dataset.name,
+            timeseries=timeseries,
+            timeseries_metadata=dataset.timeseries_metadata,
+            static_covariates=dataset.static_covariates,
+            static_covariates_metadata=dataset.static_covariates_metadata,
+            constants=dataset.constants,
+            constants_metadata=dataset.constants_metadata,
+        )
+        self.IDs = self.dataset.metaindex
+        super().__init__(dataset=self.dataset)
 
-        return ts.astype("float32")
-
-    @cached_property
-    def folds(self) -> list[dict[str, Sequence[int]]]:
+    def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
-        num_folds = 5
-        folds = []
+        folds: list[dict[str, Sequence[int]]] = []
         # NOTE: all folds are the same due to fixed random state.
         # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-        for _ in range(num_folds):
+        for _ in range(self.num_folds):
             train_idx, test_idx = train_test_split(
                 self.IDs,
                 test_size=self.test_size
@@ -262,101 +264,47 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
                 raise ValueError("Invalid partitions!")
             folds.append(fold)
 
-        return folds
+        return folds_as_frame(folds, index=self.IDs, sparse=True)
 
     @cached_property
-    def split_idx(self) -> DataFrame:
-        r"""Create the split index."""
-        fold_idx = Index(list(range(len(self.folds))), name="fold")
-        splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")
-
-        for k in range(self.num_folds):
-            for key, split in self.folds[k].items():
-                mask = splits.index.isin(split)
-                splits[k] = splits[k].where(
-                    ~mask, key
-                )  # where cond is `False`, the value is replaced with 'key'.
-        return splits
-
-    @cached_property
-    def split_idx_sparse(self) -> DataFrame:
-        r"""Sparse table with indices for each split."""
-        df = self.split_idx
-        columns = df.columns
-
-        # get categoricals
-        categories = {
-            col: df[col].astype("category").dtype.categories for col in columns
+    def tensors(self) -> Mapping[int, tuple[Tensor, Tensor]]:
+        r"""Tensor dictionary."""
+        return {
+            key: (
+                torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
+                torch.tensor(timeseries.timeseries.values, dtype=torch.float32),
+            )
+            for key, timeseries in self.dataset.items()
         }
 
-        if isinstance(df.columns, MultiIndex):
-            index_tuples = [
-                (*col, cat)
-                for col, cats in zip(columns, categories, strict=True)
-                for cat in categories[col]
-            ]
-            names = [*df.columns.names, "partition"]
-        else:
-            index_tuples = [
-                (col, cat)
-                for col, cats in zip(columns, categories, strict=True)
-                for cat in categories[col]
-            ]
-            names = [df.columns.name, "partition"]
+    def make_collate_fn(
+        self,
+        _key: SplitID,
+        /,
+    ) -> Callable[[list[Sample]], BaseBatch]:
+        r"""Return the collate function for the specified split."""
+        return cast("Callable[[list[Sample]], BaseBatch]", mimic_collate)
 
-        new_columns = MultiIndex.from_tuples(index_tuples, names=names)
-        result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
-
-        if isinstance(df.columns, MultiIndex):
-            for col in new_columns:
-                result[col] = df[col[:-1]] == col[-1]
-        else:
-            for col in new_columns:
-                result[col] = df[col[0]] == col[-1]
-
-        return result
-
-    @cached_property
-    def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
-        r"""The test metric."""
-        return nn.MSELoss()
-
-    @cached_property
-    def splits(self) -> Mapping:
-        r"""Create the splits."""
-        splits = {}
-        for key in self.index:
-            mask = self.split_idx_sparse[key]
-            ids = self.split_idx_sparse.index[mask]
-            splits[key] = self.dataset.loc[ids]
-        return splits
-
-    @cached_property
-    def index(self) -> MultiIndex:
-        r"""Create the index."""
-        return self.split_idx_sparse.columns
-
-    @cached_property
-    def tensors(self) -> Mapping:
-        r"""Tensor dictionary."""
-        tensors = {}
-        for ident in self.IDs:
-            s = self.dataset.loc[ident]
-            t = torch.tensor(s.index.values, dtype=torch.float32)
-            x = torch.tensor(s.values, dtype=torch.float32)
-            tensors[ident] = (t, x)
-        return tensors
-
-    def make_dataloader(
-        self, key: tuple[int, str], /, **dataloader_kwargs: Any
-    ) -> DataLoader:
-        r"""Return the dataloader for the given key."""
-        fold, partition = key
-        fold_idx = self.folds[fold][partition]
-        dataset = MIMIC_IV_SampleGenerator(
-            [val for idx, val in self.tensors.items() if idx in fold_idx],
+    def make_generator(self, key: SplitID, /) -> MIMIC_IV_SampleGenerator:
+        r"""Return the sample generator for the specified split."""
+        return MIMIC_IV_SampleGenerator(
+            [self.tensors[identifier] for identifier in self.splits[key]],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
-        return DataLoader(dataset, **kwargs)
+
+    def make_sampler(self, key: SplitID, /) -> Sampler[int]:
+        r"""Return the sampler for the specified split."""
+        generator = cast("MIMIC_IV_SampleGenerator", self.generators[key])
+        return RandomSampler(
+            range(len(generator)),
+            shuffle=self.is_train_split(key),
+        )
+
+    def make_test_metric(
+        self,
+        _key: SplitID,
+        /,
+    ) -> Callable[[Tensor, Tensor], Tensor]:
+        r"""Return the test metric."""
+        return nn.MSELoss()

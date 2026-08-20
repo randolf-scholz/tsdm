@@ -126,7 +126,7 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
-from tsdm.timeseries import PandasForecastingDataset, PandasTSC
+from tsdm.timeseries import TimeSeriesCollection
 from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.lazydict import LazyDict
 
@@ -143,7 +143,7 @@ type SPLIT_TYPE = Literal["train", "infer", "unknown"]
 
 
 @dataclass
-class Split[SampleT]:  # +SampleT
+class Split[KeyT, SampleT]:  # +SampleT
     r"""Represents a split of a dataset."""
 
     name: str = NotImplemented
@@ -157,11 +157,11 @@ class Split[SampleT]:  # +SampleT
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Encoder = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    generator: PandasForecastingDataset = NotImplemented
+    generator: SupportsGetItem[KeyT, SampleT] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    sampler: Sampler = NotImplemented
+    sampler: Sampler[KeyT] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
-    split: PandasTSC = NotImplemented
+    split: TimeSeriesCollection = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
     test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Metric used for evaluation."""
@@ -251,7 +251,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
 
-    dataset: PandasTSC
+    dataset: TimeSeriesCollection
     r"""Dataset from which the splits are constructed."""
 
     _: KW_ONLY
@@ -276,7 +276,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     samplers: Mapping[SplitID, Sampler[SampleID]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
-    splits: Mapping[SplitID, PandasTSC] = NotImplemented
+    splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
 
     default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
@@ -401,7 +401,7 @@ class TimeSeriesTask[SplitID, SampleID = Any, Sample = Any]:  # K, +Sample
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 
-    def make_split(self, key: SplitID, /) -> PandasTSC:
+    def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
         r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
