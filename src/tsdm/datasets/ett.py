@@ -9,8 +9,9 @@ from typing import Literal
 
 import polars as pl
 
-from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import validate_schema
+
+from .base import PolarsDataset
 
 type ETT_Key = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 

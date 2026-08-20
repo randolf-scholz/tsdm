@@ -24,9 +24,10 @@ from typing import Literal, Optional
 
 import polars as pl
 
-from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers
 from tsdm.types.aliases import FilePath, FileStream
+
+from .base import PolarsDataset
 
 METADATA_SCHEMA = {
     "variable"        : pl.String,

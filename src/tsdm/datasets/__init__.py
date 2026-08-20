@@ -64,7 +64,6 @@ from . import (
     physionet,
     synthetic,
     uci,
-    ushcn,
 )
 from .base import Dataset, DatasetBase, PolarsDataset
 from .ett import ETT
@@ -74,7 +73,8 @@ from .mimic_iv import MIMIC_IV, MIMIC_IV_Bilos2021, MIMIC_IV_Scholz2026
 from .physionet import PhysioNet2012, PhysioNet2019
 from .synthetic import DampedPendulum_Ansari2023
 from .uci import BeijingAirQuality, Electricity, Traffic
-from .ushcn import USHCN, USHCN_DeBrouwer2019
+from .ushcn import USHCN
+from .ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality"         : BeijingAirQuality,

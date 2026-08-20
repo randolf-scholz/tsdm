@@ -6,8 +6,9 @@ from typing import Literal
 
 import polars as pl
 
-from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import validate_schema
+
+from .base import PolarsDataset
 
 RAWDATA_SCHEMA = {
     "ID": pl.Float32,
