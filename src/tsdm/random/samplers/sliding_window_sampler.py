@@ -600,7 +600,7 @@ class SlidingWindowSampler[
             # cast to timedelta and wrap in a numpy array
             case str(unit):
                 self.multi_horizon = False
-                self.horizons = np.array([timedelta(unit)], dtype=td_type)
+                self.horizons = np.array([timedelta(unit)], dtype=td_type)  # pyrefly: ignore[missing-attribute]
             case Iterable() as vals:
                 self.multi_horizon = True
                 self.horizons = np.array(
