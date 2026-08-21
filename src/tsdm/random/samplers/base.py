@@ -51,9 +51,8 @@ class Sampler[T](Protocol):  # +T
         ...
 
 
-# @implements(Sampler[T])
 @dataclass
-class BaseSampler[T]:  # +T
+class BaseSampler[T](metaclass=type(Protocol)):  # pyrefly: ignore[invalid-inheritance]
     r"""Abstract Base Class for all Samplers."""
 
     _: KW_ONLY

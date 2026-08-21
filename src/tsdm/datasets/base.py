@@ -23,6 +23,7 @@ from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Final,
@@ -149,7 +150,6 @@ class DatasetMeta(ProtocolMeta):
             obj.load(initializing=True)
 
 
-# @implements(Dataset[Key, T])
 class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, +T
     r"""Abstract base class that all datasets must subclass.
 
@@ -1004,3 +1004,11 @@ class PolarsDataset[Key: str](DatasetBase[Key, pl.DataFrame]):
     def load_table(self, key: Key, /) -> pl.DataFrame:
         r"""Load a cleaned Polars DataFrame from parquet."""
         return self.deserialize_table(self.dataset_paths[key])
+
+
+if TYPE_CHECKING:
+    # ensure base classes are compatible with protocols
+    # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
+
+    def _upcast[K: str, T](arg: DatasetBase[K, T], /) -> Dataset[K, T]:
+        return arg

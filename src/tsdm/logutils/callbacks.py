@@ -145,7 +145,6 @@ def is_callback(obj: object, /) -> TypeIs[Callback]:
     )
 
 
-# @implements(Callback)
 @pprint_repr
 @dataclass(repr=False)
 class BaseCallback:

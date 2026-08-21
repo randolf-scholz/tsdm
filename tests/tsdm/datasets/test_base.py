@@ -5,15 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from tsdm.datasets.base import Dataset, DatasetBase
+from tsdm.datasets.base import DatasetBase
 from tsdm.testing.validation import ErrorHandler, ValidationError
-
-
-def check_upcasting() -> None:
-    r"""Check that DatasetBase can be upcast to Dataset."""
-
-    def _upcast[K: str, T](arg: DatasetBase[K, T], /) -> Dataset[K, T]:
-        return arg
 
 
 class DummyDataset(DatasetBase[str, object]):

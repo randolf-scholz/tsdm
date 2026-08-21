@@ -33,7 +33,7 @@ import math
 import warnings
 from collections.abc import Callable as Fn, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, field, fields, replace
-from typing import Any, ClassVar, Optional, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, cast, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
 
@@ -49,7 +49,7 @@ from .samples import SeparateTimeSample
 
 @pprint_repr
 @dataclass(frozen=True)
-class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
+class PandasTS[TimeT = Any]:
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -190,9 +190,7 @@ class PandasTS[TimeT = Any](TimeSeries[DataFrame, TimeT]):
 
 @pprint_repr
 @dataclass(frozen=True)
-class PandasTSC[KeyT](
-    TimeSeriesCollection[KeyT, DataFrame], Mapping[KeyT, PandasTS[Any]]
-):
+class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
     r"""Class for **equimodal** TimeSeriesCollections.
 
     A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
@@ -326,8 +324,8 @@ class PandasTSC[KeyT](
     @overload
     def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
-    def __getitem__[TimeT = Any](self, key: KeyT, /) -> PandasTS[TimeT]: ...
-    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PandasTS[Any] | Self:
+    def __getitem__(self, key: KeyT, /) -> PandasTS[TimeT]: ...
+    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PandasTS[TimeT] | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         match key:
             case slice() as s:
@@ -975,3 +973,16 @@ class PandasForecastingDataset[KeyT](SupportsGetItem[KeyT, Sample]):
             raise ValueError(f"Covariates and observables not disjoint! {cols}.")
         if cols := ts_columns - (observables | targets | covariates):
             warnings.warn(f"Unused columns in timeseries: {cols}", stacklevel=2)
+
+
+if TYPE_CHECKING:
+    # ensure base classes are compatible with protocols
+    # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
+
+    def _upcast_ts[KeyT](arg: PandasTS[KeyT], /) -> TimeSeries[KeyT, DataFrame]:
+        return arg
+
+    def _upcast_tsc[KeyT](
+        arg: PandasTSC[KeyT], /
+    ) -> TimeSeriesCollection[KeyT, DataFrame]:
+        return arg
