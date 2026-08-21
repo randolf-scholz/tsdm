@@ -24,18 +24,19 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 @pytest.mark.xfail(reason="batching not supported by scipy solve_ivp")
 def test_damped_pendulum_batch() -> None:
+    seed = 0
     t = np.linspace(0, 10, 128)
     num_sequences = 3
-    y = DampedPendulum().rvs(t, size=(num_sequences,))
+    y = DampedPendulum().rvs(t, size=(num_sequences,), random_state=seed)
     assert y.shape == (num_sequences, t.size, 2)
 
 
-@pytest.mark.flaky(reruns=3)
 def test_bouncing_ball() -> None:
     r"""Test Bouncing Ball."""
     # sample from generator
+    seed = 0
     t = np.linspace(-10, 20, 256)
-    y = BouncingBall().rvs(t)
+    y = BouncingBall().rvs(t, random_state=seed)
 
     # generate plot
     fig, ax = plt.subplots(figsize=(12, 6), constrained_layout=True)
@@ -50,12 +51,12 @@ def test_bouncing_ball() -> None:
     fig.savefig(RESULT_DIR / "bouncing_ball.png")
 
 
-@pytest.mark.flaky(reruns=3)
 def test_lotka_volterra() -> None:
     r"""Test Lotka-Volterra."""
     # sample from generator
+    seed = 0
     t = np.linspace(0, 20, 256)
-    y = LotkaVolterra().rvs(t)
+    y = LotkaVolterra().rvs(t, random_state=seed)
 
     # generate plot
     ax0: Axes
@@ -74,12 +75,12 @@ def test_lotka_volterra() -> None:
     fig.savefig(RESULT_DIR / "lotka_volterra.png")
 
 
-@pytest.mark.flaky(reruns=3)
 def test_damped_pendulum() -> None:
     r"""Test Damped Pendulum."""
     # sample from generator
+    seed = 0
     t = np.linspace(0, 10, 256)
-    y = DampedPendulum().rvs(t)
+    y = DampedPendulum().rvs(t, random_state=seed)
 
     # generate plot
     cmap = plt.colormaps["tab10"]
@@ -110,12 +111,12 @@ def test_damped_pendulum() -> None:
     fig.savefig(RESULT_DIR / "damped_pendulum.png")
 
 
-@pytest.mark.flaky(reruns=3)
 def test_damped_pendulum_xy() -> None:
     r"""Test Damped Pendulum XY."""
     # sample from generator
+    seed = 0
     t = np.linspace(0, 10, 512)
-    y = DampedPendulumXY().rvs(t)
+    y = DampedPendulumXY().rvs(t, random_state=seed)
 
     # generate plot
     ax0: Axes
@@ -137,12 +138,12 @@ def test_damped_pendulum_xy() -> None:
     fig.savefig(RESULT_DIR / "damped_pendulum_xy.png")
 
 
-@pytest.mark.flaky(reruns=3)
 def test_sir_model() -> None:
     r"""Test SIR model."""
     # sample from generator
+    seed = 0
     t = np.linspace(0, 100, 256)
-    y = SIR(alpha=0.1, beta=0.5).rvs(t)
+    y = SIR(alpha=0.1, beta=0.5).rvs(t, random_state=seed)
 
     # generate plot
     ax0: Axes
