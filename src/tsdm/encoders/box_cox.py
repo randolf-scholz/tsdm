@@ -242,7 +242,7 @@ def construct_wasserstein_loss_logit_normal(
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
@@ -372,7 +372,7 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     r"""Encode data from the interval [0,1] with a logit transform.
 

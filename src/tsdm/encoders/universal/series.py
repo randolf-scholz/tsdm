@@ -19,7 +19,7 @@ type FloatArray = Any
 
 
 @pprint_repr
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True, frozen=True)
 class LinearScaler[T: FloatArray](StaticEncoder[T, T]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 

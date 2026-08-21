@@ -19,7 +19,7 @@ from tsdm.types.aliases import Size
 from .base import IVP_GeneratorBase
 
 
-@dataclass
+@dataclass(slots=True)
 class LotkaVolterra(IVP_GeneratorBase):
     r"""Lotka-Volterra Equations Simulation.
 

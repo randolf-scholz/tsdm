@@ -14,7 +14,7 @@ from tsdm.types.aliases import Size
 from .base import IVP_GeneratorBase
 
 
-@dataclass
+@dataclass(slots=True)
 class SIR(IVP_GeneratorBase):
     r"""SIR model from epidemiology.
 

@@ -18,7 +18,7 @@ from tsdm.types.aliases import Size
 from .base import IVP_GeneratorBase
 
 
-@dataclass
+@dataclass(slots=True)
 class DampedPendulum(IVP_GeneratorBase):
     r"""Dampened Pendulum Simulation.
 

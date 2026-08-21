@@ -51,7 +51,7 @@ class Sampler[T](Protocol):  # +T
         ...
 
 
-@dataclass
+@dataclass(slots=True)
 class BaseSampler[T](metaclass=type(Protocol)):  # pyrefly: ignore[invalid-inheritance]
     r"""Abstract Base Class for all Samplers."""
 
@@ -61,6 +61,10 @@ class BaseSampler[T](metaclass=type(Protocol)):  # pyrefly: ignore[invalid-inher
     r"""Whether to randomize sampling."""
     rng: Generator = RNG
     r"""The random number generator."""
+
+    # def __init__(self, *, shuffle: bool = False, rng: Generator = RNG) -> None:
+    #     self.shuffle = shuffle
+    #     self.rng = rng
 
     @abstractmethod
     def __len__(self) -> int:
@@ -74,7 +78,7 @@ class BaseSampler[T](metaclass=type(Protocol)):  # pyrefly: ignore[invalid-inher
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class RandomSampler[T](BaseSampler[T]):  # +T
     r"""Sample randomly from the data source.
 
@@ -97,8 +101,8 @@ class RandomSampler[T](BaseSampler[T]):  # +T
     size: int = field(init=False)
 
     def __post_init__(self) -> None:
-        self.index = get_index(self.data)
-        self.size = len(self.index)
+        object.__setattr__(self, "index", get_index(self.data))
+        object.__setattr__(self, "size", len(self.index))
 
     def __len__(self) -> int:
         return self.size

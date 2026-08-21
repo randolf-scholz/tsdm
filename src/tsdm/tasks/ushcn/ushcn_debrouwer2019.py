@@ -110,7 +110,7 @@ class Batch(NamedTuple):
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class USHCN_SampleGenerator:
     r"""Wrapper for creating samples of the dataset."""
 

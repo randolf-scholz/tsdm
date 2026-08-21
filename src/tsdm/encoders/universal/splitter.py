@@ -40,7 +40,7 @@ type Array = Any
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class TensorSplitter[Arr: Array](FittableEncoder[Arr, list[Arr]]):
     r"""Split tensor along specified axis."""
 
@@ -65,7 +65,7 @@ class TensorSplitter[Arr: Array](FittableEncoder[Arr, list[Arr]]):
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class TensorConcatenator[Arr: Array](FittableEncoder[list[Arr], Arr]):
     r"""Concatenate multiple tensors."""
 

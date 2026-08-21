@@ -16,7 +16,7 @@ from tsdm.types.aliases import FilePath
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class CSVEncoder(StaticEncoder[pd.DataFrame, Path]):
     r"""Encode the data into a CSV file."""
 

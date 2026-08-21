@@ -121,7 +121,7 @@ class FrozenIVPSolver[T](Protocol):
 
 
 @pprint_repr
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
     r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
 

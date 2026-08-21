@@ -38,7 +38,7 @@ def _reduce_param(param: Any, selection: Any) -> Any:
 
 
 @pprint_repr
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True, frozen=True)
 class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 

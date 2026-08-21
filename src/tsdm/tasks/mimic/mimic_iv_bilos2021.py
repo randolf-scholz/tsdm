@@ -92,7 +92,7 @@ class Sample(NamedTuple):
     originals: tuple[Tensor, Tensor]
 
 
-@dataclass
+@dataclass(slots=True)
 class MIMIC_IV_SampleGenerator:
     r"""Wrapper for creating samples of the dataset."""
 

@@ -15,7 +15,7 @@ from .base import StaticEncoder
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class PositionalEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
     r"""Positional encoding.
 

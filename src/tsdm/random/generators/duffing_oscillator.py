@@ -10,7 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 from .base import IVP_GeneratorBase
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class DuffingOszillator(IVP_GeneratorBase):
     r"""Duffing Oszillator Simulation.
 

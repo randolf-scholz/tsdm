@@ -100,7 +100,7 @@ class Logger[CallbackT: CallbackSequence](Protocol):  # +CallbackT
 
 
 @pprint_mapping
-@dataclass
+@dataclass(slots=True)
 class BaseLogger(Mapping[str, CallbackList]):
     r"""Base class for loggers."""
 
@@ -139,7 +139,7 @@ class BaseLogger(Mapping[str, CallbackList]):
 
 
 @pprint_repr
-@dataclass(repr=False)
+@dataclass(slots=True)
 class DefaultLogger(BaseLogger):
     r"""Logger that adds pre-made batch/epoch logging."""
 

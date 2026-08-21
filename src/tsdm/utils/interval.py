@@ -9,7 +9,7 @@ from tsdm.pprint import pprint_repr
 
 
 @pprint_repr
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True, frozen=True)
 class Interval[T, Left: bool, Right: bool]:
     r"""Simple interval class."""
 

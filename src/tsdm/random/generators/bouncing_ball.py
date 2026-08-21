@@ -23,7 +23,7 @@ from tsdm.types.aliases import Size
 from .base import IVP_GeneratorBase
 
 
-@dataclass
+@dataclass(slots=True)
 class BouncingBall(IVP_GeneratorBase):
     r"""Bouncing Ball Simulation.
 

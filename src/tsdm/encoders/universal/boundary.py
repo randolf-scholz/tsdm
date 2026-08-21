@@ -16,7 +16,7 @@ type FloatArray = Any
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class BoundaryEncoder(FittableEncoder[Any, Any]):
     r"""Clip or mask values outside a given range.
 

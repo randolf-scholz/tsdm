@@ -146,7 +146,7 @@ def is_callback(obj: object, /) -> TypeIs[Callback]:
 
 
 @pprint_repr
-@dataclass(repr=False)
+@dataclass(slots=True)
 class BaseCallback:
     r"""Base class for callbacks."""
 
@@ -188,8 +188,11 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
         r"""The required kwargs for the callback."""
         return set().union(*(callback.required_kwargs for callback in self.callbacks))
 
-    def __init__(self, iterable: Iterable[Callback] = (), /) -> None:
+    def __init__(
+        self, iterable: Iterable[Callback] = (), /, *, frequency: int = 1
+    ) -> None:
         r"""Initialize the callback."""
+        super().__init__(frequency=frequency)
         self.callbacks = list(iterable)
 
     def __len__(self) -> int:
@@ -230,7 +233,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
         self.callbacks.insert(index, value)
 
 
-@dataclass
+@dataclass(slots=True)
 class WrapCallback(BaseCallback):
     r"""Wraps callable as a callback."""
 
@@ -240,7 +243,7 @@ class WrapCallback(BaseCallback):
         self.func(step, **state_dict)
 
 
-@dataclass
+@dataclass(slots=True)
 class ConfigCallback(BaseCallback):
     r"""Callback to log the config to tensorboard."""
 
@@ -269,7 +272,7 @@ class ConfigCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class EvaluationCallback(BaseCallback):
     r"""Callback to log evaluation metrics to tensorboard."""
 
@@ -307,19 +310,6 @@ class EvaluationCallback(BaseCallback):
         for i in self.history.index:
             self.compute_results(i)
 
-        # make sure there is exactly one validation split.
-        candidate = None
-        for key in self.dataloaders:
-            if key.lower() in {"val", "valid", "validation"}:
-                if candidate is not None:
-                    raise ValueError(
-                        f"Found multiple validation splits: {candidate} and {key}!"
-                    )
-                candidate = key
-        if candidate is None:
-            raise ValueError("Could not find a validation split!")
-        self._val_key = candidate
-
     def __call__(self, step: int, /, **_: Any) -> None:
         # update the history
         self.compute_results(step)
@@ -348,6 +338,20 @@ class EvaluationCallback(BaseCallback):
         path = Path(self.writer.log_dir) / f"history-{step}.parquet"
         self.history.to_parquet(path)
 
+    def _get_validation_key(self) -> str:
+        # make sure there is exactly one validation split.
+        candidate: str | None = None
+        for key in self.dataloaders:
+            if key.lower() in {"val", "valid", "validation"}:
+                if candidate is not None:
+                    raise ValueError(
+                        f"Found multiple validation splits: {candidate} and {key}!"
+                    )
+                candidate = key
+        if candidate is None:
+            raise ValueError("Could not find a validation split!")
+        return candidate
+
     def compute_results(self, step: int) -> None:
         r"""Return the results at the minimal validation loss."""
         for key, dataloader in self.dataloaders.items():
@@ -364,8 +368,9 @@ class EvaluationCallback(BaseCallback):
         r"""Compute the best epoch for the given index."""
         # unoptimized...
         mask = self.history.index <= step
+        validation_key = self._get_validation_key()
         best_epochs = (
-            self.history.loc[mask, self._val_key]
+            self.history.loc[mask, validation_key]
             .rolling(5, min_periods=1)
             .mean()
             .idxmin()
@@ -401,7 +406,7 @@ class EvaluationCallback(BaseCallback):
         return TargetsAndPredictions(targets=targets, predictions=predictions)
 
 
-@dataclass
+@dataclass(slots=True)
 class CheckpointCallback(BaseCallback):
     r"""Callback to save checkpoints."""
 
@@ -415,7 +420,7 @@ class CheckpointCallback(BaseCallback):
         save_checkpoint(step, self.path, objects=self.objects)
 
 
-@dataclass
+@dataclass(slots=True)
 class HParamCallback(BaseCallback):
     r"""Callback to log hyperparameters to tensorboard."""
 
@@ -475,7 +480,7 @@ class HParamCallback(BaseCallback):
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class KernelCallback(BaseCallback):
     r"""Callback to log kernel information to tensorboard."""
 
@@ -520,7 +525,7 @@ class KernelCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class LRSchedulerCallback(BaseCallback):
     r"""Callback to log learning rate information to tensorboard."""
 
@@ -546,7 +551,7 @@ class LRSchedulerCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class MetricsCallback(BaseCallback):
     r"""Callback to log multiple metrics to tensorboard."""
 
@@ -578,7 +583,7 @@ class MetricsCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ModelCallback(BaseCallback):
     r"""Callback to log model information to tensorboard."""
 
@@ -610,7 +615,7 @@ class ModelCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class OptimizerCallback(BaseCallback):
     r"""Callback to log optimizer information to tensorboard."""
 
@@ -642,7 +647,7 @@ class OptimizerCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ScalarsCallback(BaseCallback):
     r"""Callback to log multiple values to tensorboard."""
 
@@ -673,7 +678,7 @@ class ScalarsCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class TableCallback(BaseCallback):
     r"""Callback to log a table to disk."""
 
@@ -703,7 +708,7 @@ class TableCallback(BaseCallback):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class PlotCallback(BaseCallback):
     r"""Callback to log a plot to tensorboard."""
 

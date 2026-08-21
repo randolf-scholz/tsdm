@@ -180,7 +180,7 @@ class Kernels:  # TODO: how to make this more elegant?
     }
 
 
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(slots=True, frozen=True, init=False)
 class Backend[T]:
     r"""Provides kernels for numerical operations."""
 

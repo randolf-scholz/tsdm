@@ -49,7 +49,7 @@ from .samples import SeparateTimeSample
 
 
 @pprint_repr
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class PandasTS[TimeT = Any]:
     r"""Abstract Base Class for TimeSeriesDatasets.
 
@@ -190,7 +190,7 @@ class PandasTS[TimeT = Any]:
 
 
 @pprint_repr
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
     r"""Class for **equimodal** TimeSeriesCollections.
 
@@ -731,7 +731,7 @@ r"""Dictionary of all available time series collections."""
 
 
 @pprint_repr
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True, frozen=True)
 class Sample(SeparateTimeSample[Series | DataFrame]):
     r"""A pandas-backed forecasting sample with separate context and query times."""
 
@@ -777,7 +777,7 @@ class Sample(SeparateTimeSample[Series | DataFrame]):
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class PandasForecastingDataset[KeyT](SupportsGetItem[KeyT, Sample]):
     r"""Creates sample from a TimeSeriesCollection.
 

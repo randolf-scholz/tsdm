@@ -43,7 +43,7 @@ class NDArrayToTensor(StaticEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
 
@@ -75,7 +75,7 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass(slots=True, init=False)
 class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
     r"""Encodes a DataFrame as a dict of Tensors.
 
@@ -236,7 +236,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
 
 @pprint_repr
-@dataclass(init=False, repr=False)
+@dataclass(slots=True, init=False)
 class FrameDTypeConverter(FittableEncoder[DataFrame, DataFrame]):
     r"""Converts dtypes of a DataFrame.
 
@@ -306,7 +306,7 @@ def get_ellipsis_cols[T](
 
 
 @pprint_repr
-@dataclass(init=False)
+@dataclass(slots=True, init=False)
 class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
     """Encodes a DataFrame as a dict of DataFrames.
 

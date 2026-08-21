@@ -27,7 +27,6 @@ __all__ = [
 
 from collections.abc import Callable as Fn, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field, fields
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, overload
 
 import polars as pl
@@ -40,7 +39,7 @@ from .base import RangeSelector, TimeSeries, TimeSeriesCollection
 
 
 @pprint_repr
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class PolarsTS[TimeT = Any]:
     r"""A single time series backed by a Polars DataFrame.
 
@@ -76,12 +75,7 @@ class PolarsTS[TimeT = Any]:
     r"""Metadata associated with the static covariates."""
 
     timeindex: pl.Series = field(init=False)
-    r"""The row-aligned timestamp column inferred from ``timeseries``."""
-
-    @cached_property
-    def unique_timeindex(self) -> pl.Series:
-        r"""Return distinct timestamps in order of appearance."""
-        return self.timeindex.unique(maintain_order=True)
+    r"""The distinct timestamps in order of appearance."""
 
     def __post_init__(self) -> None:
         r"""Validate that the data and time index are aligned."""
@@ -91,7 +85,11 @@ class PolarsTS[TimeT = Any]:
                 f" got {type(self.timeseries)}."
             )
 
-        object.__setattr__(self, "timeindex", self._infer_timeindex())
+        object.__setattr__(
+            self,
+            "timeindex",
+            self.timeseries.get_column(self.time_column).unique(maintain_order=True),
+        )
 
         for f in fields(self):
             if getattr(self, f.name, UNDEFINED) is UNDEFINED:
@@ -99,15 +97,15 @@ class PolarsTS[TimeT = Any]:
 
     def __len__(self) -> int:
         r"""Return the number of distinct timestamps."""
-        return self.unique_timeindex.len()
+        return self.timeindex.len()
 
     def __iter__(self) -> Iterator[TimeT]:
         r"""Iterate over distinct timestamps in order of appearance."""
-        return iter(self.unique_timeindex)
+        return iter(self.timeindex)
 
     def __contains__(self, key: object, /) -> bool:
         r"""Check whether a timestamp is present."""
-        return key in self.unique_timeindex
+        return key in self.timeindex
 
     def __getitem__(self, key: TimeT | RangeSelector[TimeT], /) -> Self:
         r"""Return the subset selected by timestamp labels.
@@ -149,18 +147,14 @@ class PolarsTS[TimeT = Any]:
             **sliced,
         )
 
-    def _infer_timeindex(self) -> pl.Series:
-        r"""Infer the row-aligned timestamp column from ``timeseries``."""
-        return self.timeseries.get_column(self.time_column)
-
     def _check_keys(self, keys: list[TimeT] | pl.Series, /) -> None:
         r"""Raise ``KeyError`` when a label is not present in an index."""
-        if missing_keys := [key for key in keys if key not in self.unique_timeindex]:
+        if missing_keys := [key for key in keys if key not in self.timeindex]:
             raise KeyError(missing_keys)
 
     def _select_slice(self, key: slice, /) -> pl.Series:
         r"""Resolve a label slice against an index, including its stop label."""
-        index = self.unique_timeindex
+        index = self.timeindex
         start = 0 if key.start is None else index.index_of(key.start)
         stop = len(index) if key.stop is None else index.index_of(key.stop)
         if start is None or stop is None:
@@ -169,7 +163,7 @@ class PolarsTS[TimeT = Any]:
 
 
 @pprint_repr
-@dataclass(frozen=True)
+@dataclass(slots=True, frozen=True)
 class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
     r"""A collection of time series backed by a Polars DataFrame.
 
@@ -214,14 +208,9 @@ class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
     r"""Metadata associated with the constants."""
 
     timeindex: pl.Series = field(init=False)
-    r"""The row-aligned timestamps inferred from ``timeseries``."""
+    r"""The distinct timestamps in order of appearance."""
     metaindex: pl.DataFrame = field(init=False)
     r"""The distinct collection identifiers inferred from ``timeseries``."""
-
-    @cached_property
-    def unique_timeindex(self) -> pl.Series:
-        r"""Return distinct timestamps in order of appearance."""
-        return self.timeindex.unique(maintain_order=True)
 
     def __post_init__(self) -> None:
         r"""Validate collection columns and infer its derived indices."""
@@ -250,7 +239,9 @@ class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
             )
 
         object.__setattr__(
-            self, "timeindex", self.timeseries.get_column(self.time_column)
+            self,
+            "timeindex",
+            self.timeseries.get_column(self.time_column).unique(maintain_order=True),
         )
         object.__setattr__(
             self,

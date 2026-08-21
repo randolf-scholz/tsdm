@@ -980,7 +980,7 @@ class EncoderDict[
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
     r"""Wraps an `Encoder` to a `BaseEncoder`."""
 
@@ -1252,7 +1252,7 @@ r"""Canonical tuple decoder."""
 ########################################################################################
 
 
-@dataclass(frozen=True, slots=True, repr=False)
+@dataclass(slots=True, frozen=True, repr=False)
 class InverseEncoder[X, Y](FittableEncoder[Y, X]):
     r"""Applies an encoder in reverse.
 
@@ -1357,7 +1357,7 @@ def diagonal[T](num: int, /, reduction: Reduction[tuple[T, ...], T] = random.cho
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Choice(StaticEncoder[tuple[Any, ...], Any]):
     r"""Encoder that randomly selects one of the input values.
 
@@ -1655,7 +1655,7 @@ def pipe(*es: Encoder) -> Pipe:
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
     r"""Repeat copies of an encoder n times (``**``).
 
@@ -1821,7 +1821,7 @@ def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]:
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class Replicate[
     TupleIn: tuple,  # tuple[X, ...]
     TupleOut: tuple,  # tuple[Y, ...]
@@ -1940,7 +1940,7 @@ def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple, tuple]:
 
 
 # region single input multiple output encoders -----------------------------------------
-# @dataclass
+# @dataclass(slots=True)
 # class Expand[X, TupleOut: tuple ](FittableEncoder[X, TupleOut]):
 #     r"""Encoder that expands the input into a tuple of values (Single Input Multiple Outputs).
 #
@@ -2111,7 +2111,7 @@ def fork[X, Y](*encoders: Encoder[X, Y]) -> Fork[X, tuple]:
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class Duplicate[
     X,
     Ys: tuple,  # tuple[Y, Y, ..., Y]
@@ -2262,7 +2262,7 @@ def duplicate[X, Y](
 
 # region single input multiple output encoders -----------------------------------------
 # @pprint_repr
-# @dataclass
+# @dataclass(slots=True)
 # class Reduce[T, E: Encoder](FittableEncoder[tuple[T, ...], T]):
 #     r"""Encoder that reduces the input to a single value.
 #

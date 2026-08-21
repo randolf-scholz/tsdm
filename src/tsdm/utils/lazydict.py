@@ -35,7 +35,7 @@ type Lazy[V] = Callable[[], V]
 
 
 @pprint_repr
-@dataclass(slots=True, init=False)  # use slots since many instances might be created.
+@dataclass(slots=True, init=False)
 class LazyValue[V]:  # +V
     r"""A placeholder for uninitialized values."""
 

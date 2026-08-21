@@ -142,7 +142,7 @@ type SPLIT = Literal["train", "valid", "test"]
 type SPLIT_TYPE = Literal["train", "infer", "unknown"]
 
 
-@dataclass
+@dataclass(slots=True)
 class Split[KeyT, SampleT]:  # +SampleT
     r"""Represents a split of a dataset."""
 
@@ -192,7 +192,7 @@ class ForecastingTask[KeyT, Sample](Protocol):  # K, +Sample
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class TimeSeriesTask[
     SplitID,
     SampleID = Any,

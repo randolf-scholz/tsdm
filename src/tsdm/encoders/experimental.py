@@ -12,7 +12,7 @@ from .base import Encoder, FittableEncoder, invert, simplify
 
 
 @pprint_repr
-@dataclass
+@dataclass(slots=True)
 class NestedEncoder[X, Y](FittableEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""Apply an encoder recursively to nested data structure.
 

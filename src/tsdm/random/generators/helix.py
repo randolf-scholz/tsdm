@@ -14,7 +14,7 @@ from tsdm.types.aliases import Size
 from .base import IVP_GeneratorBase
 
 
-@dataclass
+@dataclass(slots=True)
 class Helix(IVP_GeneratorBase):
     r"""Helix Motion Simulation.
 

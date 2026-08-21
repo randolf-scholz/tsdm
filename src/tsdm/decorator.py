@@ -39,7 +39,7 @@ def rpartial[**P, R](  # +R
     return __wrapper
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class DecoratorError(Exception):
     r"""Raise Error related to decorator construction."""
 

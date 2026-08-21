@@ -66,7 +66,7 @@ class SocialTimeEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class PeriodicSocialTimeEncoder(WrappedEncoder[pd.Series, pd.DataFrame]):
     r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""
 

@@ -24,7 +24,7 @@ type FloatArray = Any
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode TimeDelta as Float."""
 
@@ -76,7 +76,7 @@ class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
 
 
 @pprint_repr
-@dataclass(init=False, slots=True)
+@dataclass(slots=True, init=False)
 class DateTimeEncoder[X: DateTimeArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode Datetime as Float."""
 

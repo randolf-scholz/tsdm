@@ -3,7 +3,7 @@ r"""Encode timeseries in triplet format."""
 __all__ = ["TripletEncoder", "TripletDecoder"]
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import pandas as pd
@@ -14,7 +14,7 @@ from tsdm.pprint import pprint_repr
 
 
 @pprint_repr
-@dataclass(init=False, repr=False)
+@dataclass(slots=True, init=False)
 class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""Converts wide DataFrame to a tall DataFrame.
 
@@ -28,12 +28,13 @@ class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""The name of the variable column."""
     value_name: str = "value"
     r"""The name of the value column."""
-    value_dtype: Any = UNDEFINED
-    r"""The dtype of the variable column."""
 
-    original_schema: pd.Series = UNDEFINED
+    # derived fields
+    value_dtype: Any = field(init=False, default=UNDEFINED)
+    r"""The dtype of the variable column."""
+    original_schema: pd.Series = field(init=False, default=UNDEFINED)
     r"""The original schema (column -> dtype)."""
-    categories: pd.CategoricalDtype = UNDEFINED
+    categories: pd.CategoricalDtype = field(init=False, default=UNDEFINED)
     r"""The stored categories."""
 
     def __init__(
@@ -46,6 +47,9 @@ class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
         self.sparse = sparse
         self.var_name = var_name
         self.value_name = value_name
+        self.value_dtype = UNDEFINED
+        self.original_schema = UNDEFINED
+        self.categories = UNDEFINED
 
     def fit(self, data: pd.DataFrame, /) -> None:
         self.original_schema = data.dtypes
@@ -116,7 +120,7 @@ class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
 
 
 @pprint_repr
-@dataclass(init=False, repr=False)
+@dataclass(slots=True, init=False)
 class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""Convert a tall DataFrame to a wide DataFrame."""
 
@@ -126,13 +130,14 @@ class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""The name of the value column."""
     var_name: str = UNDEFINED
     r"""The name of the variable column."""
-    value_dtype: Any = UNDEFINED
-    r"""The dtype of the variable column."""
-
     categories: pd.CategoricalDtype = UNDEFINED
     r"""The stored categories."""
-    original_schema: Mapping[str, Any] = UNDEFINED
+
+    # derived fields
+    original_schema: Mapping[str, Any] = field(init=False, default=UNDEFINED)
     r"""The original dtypes."""
+    value_dtype: Any = field(init=False, default=UNDEFINED)
+    r"""The dtype of the variable column."""
 
     def __init__(
         self,
@@ -150,6 +155,8 @@ class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
             if isinstance(categories, Iterable)
             else categories
         )
+        self.original_schema = UNDEFINED
+        self.value_dtype = UNDEFINED
 
     def fit(self, data: pd.DataFrame, /) -> None:
         if self.sparse is UNDEFINED:

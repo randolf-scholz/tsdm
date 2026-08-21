@@ -3,7 +3,7 @@ r"""Implementation of hierarchical sampler."""
 __all__ = ["HierarchicalSampler", "HierarchicalDataset"]
 
 from collections.abc import Collection, Iterator, Mapping
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 from typing import Any, cast, overload
 
@@ -49,6 +49,14 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Whether to sample in random order."""
     rng: Generator = RNG
     r"""The random number generator."""
+
+    # derived fields
+    index: Collection[K] = field(init=False)
+    r"""The index of the data source."""
+    sizes: Mapping[K, int] = field(init=False)
+    r"""The sizes of the subsamplers."""
+    partition: list[K] = field(init=False)
+    r"""The partition of the data source."""
 
     def __init__(
         self,
