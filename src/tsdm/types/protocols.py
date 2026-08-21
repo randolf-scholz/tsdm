@@ -20,12 +20,24 @@ __all__ = [
     "SupportsNdim",
     "SupportsRound",
     "SupportsShape",
+    # functions
+    "implements",
 ]
 
 
 from abc import abstractmethod
 from collections.abc import Collection
-from typing import Any, Literal, Protocol, Self, overload, runtime_checkable
+from types import GenericAlias
+from typing import (
+    Any,
+    Literal,
+    Protocol,
+    Self,
+    get_origin,
+    is_protocol,
+    overload,
+    runtime_checkable,
+)
 
 import numpy as np
 from numpy.typing import NDArray
@@ -234,3 +246,18 @@ class SupportsRound(Protocol):
     @overload
     @abstractmethod
     def round(self, *, decimals: int) -> Self: ...
+
+
+def implements[T](cls: type[T], /, *protos: type | GenericAlias) -> type[T]:
+    r"""Check if a class implements a protocol."""
+    for proto in protos:
+        if isinstance(proto, GenericAlias):
+            proto = get_origin(proto)  # ruff: ignore[PLW2901]
+
+        if not (isinstance(proto, type) and is_protocol(proto)):
+            raise TypeError(f"{proto=} is not a protocol type.")
+
+        if bool(getattr(proto, "_is_runtime_protocol", False)):
+            assert issubclass(cls, proto)
+
+    return cls

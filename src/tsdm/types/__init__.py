@@ -37,6 +37,7 @@ __all__ = [
     "NTuple",
     "is_dataclass",
     "is_namedtuple",
+    "implements",
 ]
 
 from . import abc, aliases, callbacks, dataclass, namedtuple
@@ -60,4 +61,5 @@ from .protocols import (
     SupportsRound,
     SupportsShape,
     SupportsSlicing,
+    implements,
 )
