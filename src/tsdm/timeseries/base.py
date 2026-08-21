@@ -14,7 +14,7 @@ from typing import Any, ClassVar, Protocol, Self, overload
 type RangeSelector[T] = slice | list[T] | list[bool]
 
 
-class TimeSeries[TableT, TimeT = Any](Protocol):
+class TimeSeries[TimeT, TableT](Protocol):
     r"""Protocol for time series objects.
 
     Describes a single time series implemented as a Table-like object, indexed by time.
@@ -112,4 +112,4 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
     def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
     @abstractmethod
-    def __getitem__[TimeT = Any](self, key: KeyT, /) -> TimeSeries[TableT, TimeT]: ...
+    def __getitem__[TimeT = Any](self, key: KeyT, /) -> TimeSeries[TimeT, TableT]: ...

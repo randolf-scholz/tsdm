@@ -28,7 +28,7 @@ __all__ = [
 from collections.abc import Callable as Fn, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field, fields
 from functools import cached_property
-from typing import Any, ClassVar, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, overload
 
 import polars as pl
 
@@ -41,7 +41,7 @@ from .base import RangeSelector, TimeSeries, TimeSeriesCollection
 
 @pprint_repr
 @dataclass(frozen=True)
-class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
+class PolarsTS[TimeT = Any]:
     r"""A single time series backed by a Polars DataFrame.
 
     Polars does not have a dedicated row index. ``time_column`` identifies the
@@ -170,9 +170,7 @@ class PolarsTS[TimeT = Any](TimeSeries[pl.DataFrame, TimeT]):
 
 @pprint_repr
 @dataclass(frozen=True)
-class PolarsTSC[KeyT](
-    TimeSeriesCollection[KeyT, pl.DataFrame], Mapping[KeyT, PolarsTS[Any]]
-):
+class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
     r"""A collection of time series backed by a Polars DataFrame.
 
     Polars does not have a dedicated row index. ``time_column`` and
@@ -306,8 +304,8 @@ class PolarsTSC[KeyT](
     @overload
     def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
-    def __getitem__[TimeT = Any](self, key: KeyT, /) -> PolarsTS[TimeT]: ...
-    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PolarsTS[Any] | Self:
+    def __getitem__(self, key: KeyT, /) -> PolarsTS[TimeT]: ...
+    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PolarsTS[TimeT] | Self:
         r"""Select one time series or a subset of the collection.
 
         Scalar keys return a :class:`PolarsTS`; lists and slices return a
@@ -703,7 +701,7 @@ class damped_pendulum_ansari2023(PolarsTSC[int]):
         )
 
 
-TIMESERIES: dict[str, Fn[[], TimeSeries[pl.DataFrame]]] = {
+TIMESERIES: dict[str, Fn[[], TimeSeries[Any, pl.DataFrame]]] = {
     "ETTh1"       : etth1,
     "ETTh2"       : etth2,
     "ETTm1"       : ettm1,
@@ -727,3 +725,16 @@ TIMESERIES_COLLECTIONS: dict[
     "USHCN_DeBrouwer2019"       : ushcn_de_brouwer2019,
 }  # fmt: skip
 r"""Dictionary of all available Polars time series collections."""
+
+
+if TYPE_CHECKING:
+    # ensure base classes are compatible with protocols
+    # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
+
+    def _upcast_ts[TimeT](arg: PolarsTS[TimeT], /) -> TimeSeries[TimeT, pl.DataFrame]:
+        return arg
+
+    def _upcast_tsc[KeyT](
+        arg: PolarsTSC[KeyT], /
+    ) -> TimeSeriesCollection[KeyT, pl.DataFrame]:
+        return arg

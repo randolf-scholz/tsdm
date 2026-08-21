@@ -35,7 +35,8 @@ from collections.abc import Callable as Fn, Iterator, Mapping
 from dataclasses import KW_ONLY, asdict, dataclass, field, fields, replace
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, cast, overload
 
-from pandas import DataFrame, Index, MultiIndex, Series
+import pandas as pd
+from pandas import DataFrame, Index, Series
 
 from tsdm import datasets
 from tsdm.constants import UNDEFINED
@@ -180,7 +181,7 @@ class PandasTS[TimeT = Any]:
     def _infer_timeindex(self) -> Series:
         r"""Get timestamps indexed by the canonical time index."""
         index = self.timeseries.index.copy()
-        if isinstance(index, MultiIndex):
+        if isinstance(index, pd.MultiIndex):
             raise TypeError(
                 "Tried to create a TimeSeries from a DataFrame with MultiIndex."
                 "\n    Are you sure this is not a TimeSeriesCollection?"
@@ -282,7 +283,7 @@ class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
     def _infer_timeindex(self) -> Series:
         r"""Get timestamps indexed by row-aligned collection keys."""
         index = self.timeseries.index.copy()
-        if not isinstance(index, MultiIndex):
+        if not isinstance(index, pd.MultiIndex):
             raise TypeError("Expected a timeseries with MultiIndex.")
         return Series(
             index.get_level_values(-1),
@@ -705,7 +706,7 @@ class damped_pendulum_ansari2023(PandasTSC[int]):
         )
 
 
-TIMESERIES: dict[str, Fn[[], TimeSeries[DataFrame]]] = {
+TIMESERIES: dict[str, Fn[[], TimeSeries[Any, DataFrame]]] = {
     "ETTh1"       : etth1,
     "ETTh2"       : etth2,
     "ETTm1"       : ettm1,
@@ -979,7 +980,7 @@ if TYPE_CHECKING:
     # ensure base classes are compatible with protocols
     # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
 
-    def _upcast_ts[KeyT](arg: PandasTS[KeyT], /) -> TimeSeries[KeyT, DataFrame]:
+    def _upcast_ts[TimeT](arg: PandasTS[TimeT], /) -> TimeSeries[TimeT, DataFrame]:
         return arg
 
     def _upcast_tsc[KeyT](
