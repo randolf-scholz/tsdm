@@ -48,7 +48,6 @@ import warnings
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import datetime, timedelta
-from functools import cached_property
 from io import StringIO
 from typing import Any, Literal
 from zipfile import ZipFile
@@ -114,9 +113,10 @@ class Traffic(PolarsDataset[Traffic_Keys]):
     def __init__(self, *, use_corrected_dates: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.use_corrected_dates = use_corrected_dates
+        self.weekdays = self._make_weekdays()
+        self.dates = self._make_dates()
 
-    @cached_property
-    def weekdays(self) -> dict[int, str]:
+    def _make_weekdays(self) -> dict[int, str]:
         r"""Encoding of weekdays."""
         if self.use_corrected_dates:
             weekdays = {
@@ -140,8 +140,7 @@ class Traffic(PolarsDataset[Traffic_Keys]):
             }
         return weekdays
 
-    @cached_property
-    def dates(self) -> pl.Series:
+    def _make_dates(self) -> pl.Series:
         r"""Dates of the dataset."""
         match self.use_corrected_dates:
             case True:

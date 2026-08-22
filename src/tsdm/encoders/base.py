@@ -142,10 +142,9 @@ import pickle
 import random
 from abc import abstractmethod
 from collections.abc import Callable as Fn, Iterable, Iterator, Mapping, Sequence
-from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass, fields, is_dataclass
-from functools import cached_property, wraps
+from functools import wraps
 from pathlib import Path
 from typing import (
     Any,
@@ -452,8 +451,8 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     def params(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self.FIELDS}
 
-    @cached_property
-    def requires_fit(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    @property
+    def requires_fit(self) -> bool:
         r"""Check if the encoder requires fitting."""
         return any(
             (val is UNDEFINED or getattr(val, "requires_fit", False))
@@ -805,12 +804,6 @@ class FittableEncoder[X, Y](BaseEncoder[X, Y]):
 
     # endregion abstract methods -------------------------------------------------------
 
-    def __setattr__(self, key: str, value: object, /) -> None:
-        if key in self.FIELDS:
-            with suppress(AttributeError):
-                del self.requires_fit  # clear requires_fit flag
-        super().__setattr__(key, value)
-
     def assert_fitted(self, /) -> None:
         r"""Assert that the encoder has been fitted."""
         if self.requires_fit:
@@ -832,7 +825,7 @@ class StaticEncoder[X, Y](BaseEncoder[X, Y]):
     provided/determined at initialization time.
     """
 
-    requires_fit: Final[L[False]] = False  # pyright: ignore[reportIncompatibleVariableOverride]  # ruff: ignore[PYI064]
+    requires_fit: Final[L[False]] = False  # pyright: ignore[reportIncompatibleMethodOverride] # ruff: ignore[PYI064]
     post_fit_hooks = [BaseEncoder.validate_params]
 
     @final
@@ -886,7 +879,7 @@ class EncoderList[
         r"""The raw sequence of encoders."""
         return self._encoders
 
-    @cached_property
+    @property
     def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self)
 
@@ -971,7 +964,7 @@ class EncoderDict[
     def encoders(self) -> Mapping[K, E]:
         return self._encoders
 
-    @cached_property
+    @property
     def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self.values())
 

@@ -53,9 +53,8 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
@@ -266,17 +265,6 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample]):
 
         return folds_as_frame(folds, index=self.IDs, sparse=True)
 
-    @cached_property
-    def tensors(self) -> Mapping[int, tuple[Tensor, Tensor]]:
-        r"""Tensor dictionary."""
-        return {
-            key: (
-                torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
-                torch.tensor(timeseries.timeseries.values, dtype=torch.float32),
-            )
-            for key, timeseries in self.dataset.items()
-        }
-
     def make_collate_fn(
         self,
         _key: SplitID,
@@ -287,8 +275,18 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample]):
 
     def make_generator(self, key: SplitID, /) -> MIMIC_IV_SampleGenerator:
         r"""Return the sample generator for the specified split."""
+        tensors: list[tuple[Tensor, Tensor]] = []
+        for identifier in self.splits[key]:
+            timeseries = self.dataset[identifier]
+            tensors.append(
+                (
+                    torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
+                    torch.tensor(timeseries.timeseries.values, dtype=torch.float32),
+                )
+            )
+
         return MIMIC_IV_SampleGenerator(
-            [self.tensors[identifier] for identifier in self.splits[key]],
+            tensors,
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )

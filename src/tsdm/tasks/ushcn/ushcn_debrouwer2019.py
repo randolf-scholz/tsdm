@@ -57,9 +57,8 @@ __all__ = [
     "ushcn_collate",
 ]
 
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, replace
-from functools import cached_property
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
@@ -251,25 +250,24 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample]):
 
         return folds_as_frame(folds, index=self.IDs, sparse=True)
 
-    @cached_property
-    def tensors(self) -> Mapping[int, tuple[Tensor, Tensor]]:
-        r"""Tensor dictionary."""
-        tensors: dict[int, tuple[Tensor, Tensor]] = {}
-        for key, timeseries in self.dataset.items():
-            tensors[key] = (
-                torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
-                torch.tensor(timeseries.timeseries.values, dtype=torch.float32),
-            )
-        return tensors
-
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], BaseBatch]:  # ruff: ignore[ARG002]
         r"""Return the collate function for the specified split."""
         return cast("Callable[[list[Sample]], BaseBatch]", ushcn_collate)
 
     def make_generator(self, key: SplitID, /) -> USHCN_SampleGenerator:
         r"""Return the sample generator for the specified split."""
+        tensors: list[tuple[Tensor, Tensor]] = []
+        for identifier in self.splits[key]:
+            timeseries = self.dataset[identifier]
+            tensors.append(
+                (
+                    torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
+                    torch.tensor(timeseries.timeseries.values, dtype=torch.float32),
+                )
+            )
+
         return USHCN_SampleGenerator(
-            [self.tensors[identifier] for identifier in self.splits[key]],
+            tensors,
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )

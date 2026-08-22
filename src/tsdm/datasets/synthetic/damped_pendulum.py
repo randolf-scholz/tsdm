@@ -7,7 +7,6 @@ __all__ = [
     "DampedPendulum_Ansari2023",
 ]
 
-from functools import cached_property
 from typing import Literal, final
 
 import numpy as np
@@ -84,9 +83,9 @@ class DampedPendulum_Ansari2023(PolarsDataset[Key]):
     t_min = 0.0
     t_max = 15.0
 
-    @cached_property
-    def generator(self) -> generators.DampedPendulumXY:
-        return generators.DampedPendulumXY(
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.generator = generators.DampedPendulumXY(
             length=1.0,
             g=9.81,
             mass=1.0,
