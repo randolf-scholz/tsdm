@@ -137,6 +137,23 @@ class SplitType(StrEnum):
     INFERENCE = "inference"
     UNKNOWN = "unknown"
 
+    @classmethod
+    def _missing_(cls, value: object) -> SplitType | None:
+        if not isinstance(value, str):
+            return None
+
+        match value.lower():
+            case "train" | "training":
+                return cls.TRAIN
+            case "valid" | "validation" | "val":
+                return cls.VALIDATION
+            case "test" | "testing":
+                return cls.TEST
+            case "infer" | "inference":
+                return cls.INFERENCE
+            case _:
+                return None
+
 
 @runtime_checkable
 class ForecastingTask[SplitID, SampleID, SampleT, BatchT](Protocol):
