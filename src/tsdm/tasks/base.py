@@ -111,7 +111,6 @@ from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -408,34 +407,37 @@ class TimeSeriesTask[
             case _:
                 raise TypeError(f"Cannot infer split type from {key=}.")
 
-    @cached_property
-    def train_partition_mapper(self) -> Mapping[SplitID, SplitID]:
-        r"""Matching train partition for the given key.
+    def get_train_split(self, key: SplitID, /) -> SplitID:
+        r"""Return the training split associated with the given split key.
 
         For example, given (3, "test"), return (3, "train") or (3, "trainval") depending on the folds.
         """
+        target_key = (key,) if isinstance(key, str) else key
+        if not isinstance(target_key, tuple) or not target_key:
+            raise TypeError(f"Split keys must be strings or non-empty tuples: {key!r}.")
+
+        if self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}:
+            # fast path: if the key is already a training split, return it
+            return key
+
         fold_keys = self.folds.keys()
-        normalized_keys: dict[tuple[Any, ...], SplitID]
-        if all(isinstance(key, str) for key in fold_keys):
-            normalized_keys = {(key,): key for key in fold_keys}
-        elif all(isinstance(key, tuple) and key for key in fold_keys):
-            normalized_keys = {key: key for key in fold_keys}
-        else:
+        if key not in fold_keys:
+            raise KeyError(f"Unknown split key: {key!r}.")
+        if not (
+            all(isinstance(key, str) and key for key in fold_keys)
+            or all(isinstance(key, tuple) and key for key in fold_keys)
+        ):
             raise TypeError("Fold keys must be uniformly strings or non-empty tuples.")
 
-        train_partitions = {
-            key[:-1]: original_key
-            for key, original_key in normalized_keys.items()
-            if self.split_type(key) == SplitType.TRAIN
-        }
-        return {
-            original_key: (
-                original_key
-                if self.split_type(key) == SplitType.TRAIN_VALIDATION
-                else train_partitions[key[:-1]]
-            )
-            for key, original_key in normalized_keys.items()
-        }
+        for fold_key in fold_keys:
+            normalized_key = (fold_key,) if isinstance(fold_key, str) else fold_key
+            if (
+                normalized_key[:-1] == target_key[:-1]
+                and self.split_type(fold_key) == SplitType.TRAIN
+            ):
+                return fold_key
+
+        raise KeyError(f"No training split found for {key!r}.")
 
     def validate_folds(self) -> None:
         r"""Make sure all keys are correct format `str` or `tuple[str, ...]`.

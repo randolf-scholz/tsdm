@@ -169,7 +169,7 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
             >> StandardScaler(axis=-1)
             >> FrameEncoder({"date": DateTimeEncoder() >> MinMaxScaler()})
         )
-        train_split = self.splits[self.train_partition_mapper[key]]
+        train_split = self.splits[self.get_train_split(key)]
         encoder.fit(train_split.timeseries)
         return encoder
 

@@ -89,7 +89,7 @@ def test_time_series_task_rejects_unknown_split(
 
 def test_train_split_mapping(task: TimeSeriesTask[Any]) -> None:
     r"""Test that trainval uses itself as its associated training split."""
-    assert task.train_partition_mapper == {
+    assert {key: task.get_train_split(key) for key in tuple(task.folds.keys())} == {
         "train": "train",
         "trainval": "trainval",
         "valid": "train",
@@ -133,7 +133,7 @@ def test_train_split_mapping_uses_only_fold_keys() -> None:
         validate=False,
     )
 
-    assert task.train_partition_mapper == {
+    assert {key: task.get_train_split(key) for key in tuple(folds.keys())} == {
         (0, "train"): (0, "train"),
         (0, "valid"): (0, "train"),
         (0, "test"): (0, "train"),
