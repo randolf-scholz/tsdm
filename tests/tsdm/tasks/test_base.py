@@ -130,7 +130,6 @@ def test_train_split_mapping_uses_only_fold_keys() -> None:
         folds=folds,
         index=list(folds.keys()),
         initialize=False,
-        validate=False,
     )
 
     assert {key: task.get_train_split(key) for key in tuple(folds.keys())} == {

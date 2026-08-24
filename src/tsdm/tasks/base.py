@@ -108,12 +108,13 @@ __all__ = [
 
 import logging
 from abc import abstractmethod
+from collections import Counter
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
 
@@ -431,6 +432,7 @@ class TimeSeriesTask[
 
         for fold_key in fold_keys:
             normalized_key = (fold_key,) if isinstance(fold_key, str) else fold_key
+            assert isinstance(normalized_key, tuple)
             if (
                 normalized_key[:-1] == target_key[:-1]
                 and self.split_type(fold_key) == SplitType.TRAIN
@@ -440,39 +442,29 @@ class TimeSeriesTask[
         raise KeyError(f"No training split found for {key!r}.")
 
     def validate_folds(self) -> None:
-        r"""Make sure all keys are correct format `str` or `tuple[str, ...]`.
+        r"""Make sure all keys are correct format `str` or `tuple[*fold_ids, str]`.
 
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
         """
-        # get the index
-        match self.folds:
-            case Series() | DataFrame():
-                split_index = self.folds.T.index
-            case Mapping():
-                split_index = Index(self.folds.keys())
-            case _:
-                raise TypeError(
-                    f"Cannot infer train-partition from {type(self.folds)=}"
-                )
+        fold_keys = self.folds.keys()
+        normalized_keys: set[tuple[Any, ...]]
+        if all(isinstance(key, str) for key in fold_keys):
+            normalized_keys = {(key,) for key in fold_keys}
+        elif all(isinstance(key, tuple) and key for key in fold_keys):
+            normalized_keys = {key for key in fold_keys if isinstance(key, tuple)}
+        else:
+            raise TypeError("Fold keys must be uniformly strings or non-empty tuples.")
 
-        match split_index:
-            case MultiIndex(names=names):
-                *fold, partition = names
-                df = split_index.to_frame(index=False)
-                split_types = df[partition].map(self.split_type)
-                df["is_train"] = split_types == SplitType.TRAIN
-                if not all(df.groupby(fold)["is_train"].sum() == 1):
-                    raise ValueError("Each fold must have a unique train partition.")
-            case Index():
-                split_types = split_index.map(self.split_type)
-                mask = split_types == SplitType.TRAIN
-                if not sum(mask) == 1:
-                    raise ValueError("Each fold must have a unique train partition.")
-            case _:
-                raise TypeError(
-                    f"Expected Index or MultiIndex, got {type(split_index)=}"
-                )
+        split_types = {key: self.split_type(key) for key in normalized_keys}
+        fold_ids = {key[:-1] for key in normalized_keys}
+        train_counts = Counter(
+            key[:-1]
+            for key, split_type in split_types.items()
+            if split_type == SplitType.TRAIN
+        )
+        if not fold_ids or any(train_counts[fold_id] != 1 for fold_id in fold_ids):
+            raise ValueError("Each fold must have a unique train partition.")
 
 
 if TYPE_CHECKING:
