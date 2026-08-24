@@ -114,7 +114,6 @@ from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
-from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.encoders import Encoder
@@ -250,7 +249,7 @@ class TimeSeriesTask[
     r"""Dictionary holding `Encoder` associated with each key."""
     collate_fns: Mapping[SplitID, Callable[[list[SampleT]], BatchT]] = NotImplemented
     r"""Collate function used to create batches from samples."""
-    test_metrics: Mapping[SplitID, Callable[[Tensor, Tensor], Tensor]] = NotImplemented
+    test_metrics: Mapping[SplitID, Callable[[Any, Any], Any]] = NotImplemented
     r"""Metric used for evaluation."""
 
     # split specific attributes
@@ -263,10 +262,10 @@ class TimeSeriesTask[
     splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
 
-    default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
-    r"""Default test metric."""
     default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x
     r"""Default collate function."""
+    default_test_metric: Callable[[Any, Any], Any] = NotImplemented
+    r"""Default test metric."""
 
     validate: bool = True
     r"""Whether to validate the folds."""
@@ -381,7 +380,7 @@ class TimeSeriesTask[
         r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Any, Any], Any]:  # ruff: ignore[ARG002]
         r"""Return the test metric."""
         return NotImplemented
 
