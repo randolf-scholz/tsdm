@@ -154,22 +154,6 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
             "test": mask("2017-11-01", "2018-02-28"),
         }
 
-    @property
-    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
-        r"""Split-aware configuration for the data loaders."""
-        return {
-            key: {
-                "batch_size": (
-                    self.train_batch_size
-                    if self.is_train_split(key)
-                    else self.eval_batch_size
-                ),
-                "drop_last": self.is_train_split(key),
-                "pin_memory": True,
-            }
-            for key in self
-        }
-
     def make_collate_fn(
         self, _key: SplitID, /
     ) -> Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]:

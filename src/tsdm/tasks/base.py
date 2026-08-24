@@ -107,7 +107,6 @@ __all__ = [
 ]
 
 import logging
-import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
@@ -194,7 +193,7 @@ class TimeSeriesTask[
     SplitID,
     SampleID = Any,
     SampleT = Any,
-    BatchT = Any,
+    BatchT = list[SampleT],
 ]:
     r"""Abstract Base Class for Tasks.
 
@@ -267,12 +266,18 @@ class TimeSeriesTask[
 
     default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Default test metric."""
-    default_collate_fn: Callable[[list[SampleT]], BatchT] = NotImplemented
+    default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x
     r"""Default collate function."""
 
     validate: bool = True
     r"""Whether to validate the folds."""
     initialize: bool = True
+    r"""Whether to initialize the task object."""
+
+    train_batch_size: int = 32
+    r"""Batch size for training splits."""
+    eval_batch_size: int = 64
+    r"""Batch size for evaluation splits."""
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
@@ -341,30 +346,24 @@ class TimeSeriesTask[
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
 
-        kwargs: dict = self.dataloader_config[key]
         dataset = self.generators[key]
 
-        # set sampler
-        if "sampler" in opts:
-            kwargs["sampler"] = opts["sampler"]
-        elif (sampler := self.samplers[key]) is not NotImplemented:
-            kwargs["sampler"] = sampler
-        else:
-            warnings.warn(f"No sampler provided for {key=}.", stacklevel=2)
-            kwargs["sampler"] = None
+        kwargs: dict = {
+            "batch_size": (
+                self.train_batch_size
+                if self.is_train_split(key)
+                else self.eval_batch_size
+            ),
+            "drop_last": self.is_train_split(key),
+            "pin_memory": True,
+            "sampler": self.samplers[key],
+            "collate_fn": (
+                fn
+                if (fn := self.collate_fns[key]) is not NotImplemented
+                else self.default_collate_fn
+            ),
+        } | opts
 
-        # set collate_fn
-        if "collate_fn" in opts:
-            kwargs["collate_fn"] = opts["collate_fn"]
-        elif (collate_fn := self.collate_fns[key]) is not NotImplemented:
-            kwargs["collate_fn"] = collate_fn
-        elif self.default_collate_fn is not NotImplemented:
-            kwargs["collate_fn"] = self.default_collate_fn
-        else:
-            warnings.warn(f"No collate_fn provided for {key=}.", stacklevel=2)
-            kwargs["collate_fn"] = lambda x: x
-
-        kwargs |= opts
         return DataLoader(dataset, **kwargs)  # type: ignore
 
     @abstractmethod
@@ -407,18 +406,6 @@ class TimeSeriesTask[
                 return SplitType(partition)
             case _:
                 raise TypeError(f"Cannot infer split type from {key=}.")
-
-    @property
-    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
-        r"""Dataloader configuration."""
-        return {
-            key: {
-                "batch_size": 32,
-                "drop_last": self.is_train_split(key),
-                "pin_memory": True,
-            }
-            for key in self
-        }
 
     @cached_property
     def train_split(self) -> Mapping[SplitID, SplitID]:
