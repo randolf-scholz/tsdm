@@ -56,10 +56,11 @@ def task() -> TimeSeriesTask[object]:
         ("val", SplitType.VALIDATION),
         ("testing", SplitType.TEST),
         ("infer", SplitType.INFERENCE),
-        ("other", SplitType.UNKNOWN),
         ((0, "training"), SplitType.TRAIN),
         ((0, "train_val"), SplitType.TRAIN_VALIDATION),
         ((0, "val"), SplitType.VALIDATION),
+        ((3, "train", "test"), SplitType.TEST),
+        ([3, "testing"], SplitType.TEST),
     ],
 )
 def test_time_series_task_split_type(
@@ -67,22 +68,18 @@ def test_time_series_task_split_type(
 ) -> None:
     r"""Test that TimeSeriesTask classifies split keys using SplitType."""
     assert task.split_type(key) is expected
-    if expected is SplitType.UNKNOWN:
-        with pytest.raises(ValueError, match="Unknown split type"):
-            task.is_train_split(key)
-        return
-
     assert task.is_train_split(key) is (
         expected in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
     )
 
 
-def test_time_series_task_rejects_mixed_split_types(
-    task: TimeSeriesTask[object],
+@pytest.mark.parametrize("key", ["other", (0, "other")])
+def test_time_series_task_rejects_unknown_split(
+    task: TimeSeriesTask[object], key: object
 ) -> None:
-    r"""Test that a composite key cannot mix training and inference splits."""
-    with pytest.raises(ValueError, match="both training and inference"):
-        task.split_type(("train", "test"))
+    r"""Test that unknown split names raise an error."""
+    with pytest.raises(ValueError, match="valid SplitType"):
+        task.split_type(key)
 
 
 def test_train_split_mapping(task: TimeSeriesTask[object]) -> None:

@@ -136,7 +136,6 @@ class SplitType(StrEnum):
     VALIDATION = "validation"
     TEST = "test"
     INFERENCE = "inference"
-    UNKNOWN = "unknown"
 
     @classmethod
     def _missing_(cls, value: object) -> SplitType | None:
@@ -225,8 +224,10 @@ class TimeSeriesTask[
           provide DataFrameEncoders, one for each of the index / timeseries / metadata.
         - Encoders must be fit on the training data, but also transform the test data.
             - Need a way to associate a train split to each test/valid split.
-            - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
-              the strings `train`, `valid` or `test`, and `fold` is an integer or tuple of integers.
+            - CONVENTION: a split key is either a partition name or a sequence of the form
+              `[*fold_ids, partition]`. Only the final element identifies the partition; all
+              preceding elements identify the cross-validation fold. The partition must be a
+              recognized `SplitType` value or alias.
 
     To make this simpler, we first consider the `Mapping` interface,
     i.e. all the samplers are of fixed sized. and the dataset is a `Mapping` type.
@@ -391,35 +392,21 @@ class TimeSeriesTask[
 
     def is_train_split(self, key: SplitID, /) -> bool:
         r"""Return whether the key is a training split."""
-        split_type = self.split_type(key)
-        if split_type is SplitType.UNKNOWN:
-            raise ValueError(f"Unknown split type for key={key}")
-        return split_type in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
+        return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
 
     def split_type(self, key: object, /) -> SplitType:
-        r"""Return the type of split."""
-        match key:
-            case str(name):
-                try:
-                    return SplitType(name)
-                except ValueError:
-                    return SplitType.UNKNOWN
-            case Iterable() as names:
-                split_types = {self.split_type(name) for name in names}
-                split_types.discard(SplitType.UNKNOWN)
-                if not split_types:
-                    return SplitType.UNKNOWN
-                if len(split_types) == 1:
-                    return split_types.pop()
+        r"""Return the split type encoded by a split key.
 
-                training_types = {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
-                if split_types <= training_types:
-                    return SplitType.TRAIN_VALIDATION
-                if split_types.isdisjoint(training_types):
-                    return SplitType.INFERENCE
-                raise ValueError(f"{key=} contains both training and inference splits.")
+        By convention, a sequence key has the form ``[*fold_ids, partition]``.
+        Only its final element is interpreted as the partition name.
+        """
+        match key:
+            case str(partition):
+                return SplitType(partition)
+            case [*_, partition]:
+                return SplitType(partition)
             case _:
-                return SplitType.UNKNOWN
+                raise TypeError(f"Cannot infer split type from {key=}.")
 
     @property
     def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
