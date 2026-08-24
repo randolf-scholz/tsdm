@@ -114,7 +114,6 @@ from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
-from pandas import DataFrame, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
 
@@ -243,7 +242,7 @@ class TimeSeriesTask[
 
     index: Sequence[SplitID] = NotImplemented
     r"""List of index."""
-    folds: SupportsKeysAndGetItem[SplitID, Series] = NotImplemented
+    folds: SupportsKeysAndGetItem[SplitID, Any] = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
 
     # fold specific attributes
@@ -290,11 +289,7 @@ class TimeSeriesTask[
             self.validate_folds()
 
         if self.index is NotImplemented:
-            match self.folds:
-                case DataFrame() as frame:
-                    self.index = frame.columns
-                case _:
-                    self.index = Series(list(self.folds.keys()), name="folds")
+            self.index = list(self.folds.keys())
 
         if not self.initialize:
             return
@@ -331,7 +326,7 @@ class TimeSeriesTask[
         return len(self.index)
 
     @abstractmethod
-    def make_folds(self, /) -> Mapping[SplitID, Series]:
+    def make_folds(self, /) -> Mapping[SplitID, Any]:
         r"""Return the indices of the datapoints associated with the specific split."""
         return NotImplemented
 
