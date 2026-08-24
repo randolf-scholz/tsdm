@@ -330,6 +330,21 @@ class TimeSeriesTask[
         r"""Return the number of splits."""
         return len(self.index)
 
+    @abstractmethod
+    def make_folds(self, /) -> Mapping[SplitID, Series]:
+        r"""Return the indices of the datapoints associated with the specific split."""
+        return NotImplemented
+
+    @abstractmethod
+    def make_sampler(self, key: SplitID, /) -> Sampler[SampleID]:
+        r"""Create the sampler associated with the specified key."""
+        return NotImplemented
+
+    @abstractmethod
+    def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, SampleT]:
+        r"""Return the generator associated with the specified key."""
+        return NotImplemented
+
     def make_encoder(self, key: SplitID, /) -> Encoder:  # ruff: ignore[ARG002]
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
@@ -338,7 +353,8 @@ class TimeSeriesTask[
         r"""Return the collate function which combines samples into a batch.
 
         Note:
-            `collate_fn` is key-dependent in order to allow
+            `collate_fn` is allowed to be key-dependent for cases when an encoder
+             fitted on the training split is used to transform the validation/test splits.
         """
         return NotImplemented
 
@@ -365,21 +381,6 @@ class TimeSeriesTask[
         } | opts
 
         return DataLoader(dataset, **kwargs)  # type: ignore
-
-    @abstractmethod
-    def make_folds(self, /) -> Mapping[SplitID, Series]:
-        r"""Return the indices of the datapoints associated with the specific split."""
-        return NotImplemented
-
-    @abstractmethod
-    def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, SampleT]:
-        r"""Return the generator associated with the specified key."""
-        return NotImplemented
-
-    @abstractmethod
-    def make_sampler(self, key: SplitID, /) -> Sampler[SampleID]:
-        r"""Create the sampler associated with the specified key."""
-        return NotImplemented
 
     def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
         r"""Return the sub-dataset associated with the specified split."""
