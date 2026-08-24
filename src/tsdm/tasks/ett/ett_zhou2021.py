@@ -24,7 +24,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
-from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTS, PandasTSC
 
 type SplitID = Literal["train", "test", "valid", "joint", "trial", "whole"]
@@ -193,9 +193,11 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
 
     def make_collate_fn(
         self, _key: SplitID, /
-    ) -> Callable[[list[tuple[Tensor, ...]]], BaseBatch]:
+    ) -> Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]:
         r"""Return PyTorch's default collate function."""
-        return cast("Callable[[list[tuple[Tensor, ...]]], BaseBatch]", default_collate)
+        return cast(
+            "Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]", default_collate
+        )
 
     def make_encoder(self, key: SplitID, /) -> Encoder:
         r"""Create and fit the preprocessing encoder for the specified split."""

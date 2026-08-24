@@ -102,10 +102,7 @@ create a `Sample` from the `TimeSeriesCollection`.
 __all__ = [
     # Protocol & ABCs
     "ForecastingTask",
-    # Classes
-    "Batch",
-    "Split",
-    # "SplitID",
+    "SplitType",
     "TimeSeriesTask",
 ]
 
@@ -114,14 +111,14 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
+from enum import StrEnum
 from functools import cached_property
-from typing import Any, ClassVar, Literal, NewType, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, runtime_checkable
 
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.datatools import MapDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.pprint import pprint_repr
@@ -130,64 +127,45 @@ from tsdm.timeseries import TimeSeriesCollection
 from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.lazydict import LazyDict
 
-Batch = NewType("Batch", object)
-r"""Type of a batch."""
 
-type TRAIN = Literal["train"]
-type VALID = Literal["valid"]
-type TEST = Literal["test"]
-type INFERENCE = Literal["infer"]
-type UNKNOWN = Literal["unknown"]
-type SPLIT = Literal["train", "valid", "test"]
-type SPLIT_TYPE = Literal["train", "infer", "unknown"]
+class SplitType(StrEnum):
+    r"""Type of a split."""
 
-
-@dataclass(slots=True)
-class Split[KeyT, SampleT]:  # +SampleT
-    r"""Represents a split of a dataset."""
-
-    name: str = NotImplemented
-    r"""List of index."""
-    fold: Series = NotImplemented
-    r"""Dictionary holding `Fold` associated with each key (index for split)."""
-
-    collate_fn: Callable[[list[SampleT]], Batch] = NotImplemented
-    r"""Collate function used to create batches from samples."""
-    dataloader: DataLoader[SampleT] = NotImplemented
-    r"""Dictionary holding `DataLoader` associated with each key."""
-    encoders: Encoder = NotImplemented
-    r"""Dictionary holding `Encoder` associated with each key."""
-    generator: SupportsGetItem[KeyT, SampleT] = NotImplemented
-    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    sampler: Sampler[KeyT] = NotImplemented
-    r"""Dictionary holding `Sampler` associated with each key."""
-    split: TimeSeriesCollection = NotImplemented
-    r"""Dictionary holding sampler associated with each key."""
-    test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
-    r"""Metric used for evaluation."""
+    TRAIN = "train"
+    VALIDDATION = "validation"
+    TEST = "test"
+    INFERENCE = "infererence"
+    UNKNOWN = "unknown"
 
 
 @runtime_checkable
-class ForecastingTask[KeyT, Sample](Protocol):  # K, +Sample
+class ForecastingTask[SplitID, SampleID, SampleT, BatchT](Protocol):
     r"""Protocol for tasks.
 
-    A task should provide 3 things:
+    A task should provide:
 
-    - A sampler that returns keys.
-    - A generator that for a given key returns a sample (x,y), consisting of input x and target y.
-    - A test metric that takes (possibly batched) samples and returns a scalar.
+    - A split definition (e.g. simple train/test split, 5-fold cross-validation, etc.)
+        - we shall generally assume K-fold cross-validation, with K=1 being a simple train/test split
+        - For K-fold CV, SplitID may be tuples like (3, "test") or (3, "train"),
+          where 3 is the fold number and "test"/"train" is the partition.
+          Here, some things like preprocessing may depend on the other partitions.
+          Like when standardizing the data, (3, "test") should be standardized using
+          the mean and std of (3, "train").
+    - a dataloader for each split
+    - a test metric for evaluation
     """
 
     @property
-    @abstractmethod
-    def samplers(self) -> Mapping[SPLIT, Sampler[KeyT]]: ...
-
+    def splits(self) -> Mapping[SplitID, TimeSeriesCollection]: ...
     @property
-    @abstractmethod
-    def generators(self) -> Mapping[SPLIT, MapDataset[KeyT, Sample]]: ...
-
+    def samplers(self) -> Mapping[SplitID, Iterable[SampleID]]: ...
     @property
-    @abstractmethod
+    def generators(self) -> Mapping[SplitID, SupportsGetItem[SampleID, SampleT]]: ...
+    @property
+    def batchers(self) -> Mapping[SplitID, Callable[[Sequence[SampleT]], BatchT]]: ...
+    @property
+    def dataloaders(self) -> Mapping[SplitID, Iterable[BatchT]]: ...
+    @property
     def test_metric(self) -> Metric: ...
 
 
@@ -198,7 +176,7 @@ class TimeSeriesTask[
     SampleID = Any,
     SampleT = Any,
     BatchT = Any,
-]:  # K, +Sample
+]:
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -233,18 +211,6 @@ class TimeSeriesTask[
     To make this simpler, we first consider the `Mapping` interface,
     i.e. all the samplers are of fixed sized. and the dataset is a `Mapping` type.
     We do not support `torch.utils.data.IterableDataset`, as this point.
-
-    .. note::
-
-        - `torch.utils.data.Dataset[T_co]` implements
-            - `__getitem__(self, index) -> T_co`
-            - `__add__(self, other: Dataset[T_co]) -> ConcatDataset[T_co]`.
-        - `torch.utils.data.Sampler[T_co]`
-            - `__iter__(self) -> Iterator[T_co]`.
-        - `torch.utils.data.DataLoader[T_co]`
-            - attribute dataset: `Dataset[T_co]`
-            - `__iter__(self) -> Iterator[Any]`
-            - `__len__(self) -> int`.
     """
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -263,7 +229,7 @@ class TimeSeriesTask[
     # fold specific attributes
     encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fns: Mapping[SplitID, Callable[[list[SampleT]], Batch]] = NotImplemented
+    collate_fns: Mapping[SplitID, Callable[[list[SampleT]], BatchT]] = NotImplemented
     r"""Collate function used to create batches from samples."""
     test_metrics: Mapping[SplitID, Callable[[Tensor, Tensor], Tensor]] = NotImplemented
     r"""Metric used for evaluation."""
@@ -280,7 +246,7 @@ class TimeSeriesTask[
 
     default_test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
     r"""Default test metric."""
-    default_collate_fn: Callable[[list[SampleT]], Batch] = NotImplemented
+    default_collate_fn: Callable[[list[SampleT]], BatchT] = NotImplemented
     r"""Default collate function."""
 
     train_patterns: Sequence[str] = ("train", "training")
@@ -347,7 +313,7 @@ class TimeSeriesTask[
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[SampleT]], Batch]:  # ruff: ignore[ARG002]
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[SampleT]], BatchT]:  # ruff: ignore[ARG002]
         r"""Return the collate function which combines samples into a batch.
 
         Note:
@@ -524,3 +490,14 @@ class TimeSeriesTask[
                 raise TypeError(
                     f"Expected Index or MultiIndex, got {type(split_index)=}"
                 )
+
+
+if TYPE_CHECKING:
+    # ensure base classes are compatible with protocols
+    # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
+
+    def _upcast[SplitID, SampleID, SampleT, BatchT](
+        task: TimeSeriesTask[SplitID, SampleID, SampleT, BatchT],
+    ) -> ForecastingTask[SplitID, SampleID, SampleT, BatchT]:
+        r"""Upcast a TimeSeriesTask to a ForecastingTask."""
+        return task

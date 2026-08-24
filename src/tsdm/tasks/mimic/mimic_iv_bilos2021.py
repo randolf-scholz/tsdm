@@ -68,7 +68,7 @@ from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.encoders import FrameEncoder, MinMaxScaler
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
-from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import PandasTSC, mimic_iv_bilos2021
 
 
@@ -138,7 +138,7 @@ class Batch(NamedTuple):
 
 
 @deprecated("Consider using tasks.utils.collate_timeseries instead.")
-def mimic_collate(batch: list[Sample]) -> Batch:
+def mimic_collate(batch: list[Sample], /) -> Batch:
     r"""Collate tensors into batch.
 
     Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
@@ -190,7 +190,7 @@ def mimic_collate(batch: list[Sample]) -> Batch:
 type SplitID = tuple[int, Literal["train", "valid", "test"]]
 
 
-class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample]):
+class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
 
     dataset: PandasTSC[int]
@@ -265,13 +265,9 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample]):
 
         return folds_as_frame(folds, index=self.IDs, sparse=True)
 
-    def make_collate_fn(
-        self,
-        _key: SplitID,
-        /,
-    ) -> Callable[[list[Sample]], BaseBatch]:
+    def make_collate_fn(self, _key: SplitID, /) -> Callable[[list[Sample]], Batch]:
         r"""Return the collate function for the specified split."""
-        return cast("Callable[[list[Sample]], BaseBatch]", mimic_collate)
+        return mimic_collate
 
     def make_generator(self, key: SplitID, /) -> MIMIC_IV_SampleGenerator:
         r"""Return the sample generator for the specified split."""

@@ -72,7 +72,7 @@ from torch.nn.utils.rnn import pad_sequence
 from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
-from tsdm.tasks.base import Batch as BaseBatch, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import PandasTSC, ushcn_de_brouwer2019
 
 
@@ -192,7 +192,7 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
 type SplitID = tuple[int, Literal["train", "valid", "test"]]
 
 
-class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample]):
+class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
 
     dataset: PandasTSC
@@ -250,9 +250,9 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample]):
 
         return folds_as_frame(folds, index=self.IDs, sparse=True)
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], BaseBatch]:  # ruff: ignore[ARG002]
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # ruff: ignore[ARG002]
         r"""Return the collate function for the specified split."""
-        return cast("Callable[[list[Sample]], BaseBatch]", ushcn_collate)
+        return cast("Callable[[list[Sample]], Batch]", ushcn_collate)
 
     def make_generator(self, key: SplitID, /) -> USHCN_SampleGenerator:
         r"""Return the sample generator for the specified split."""
