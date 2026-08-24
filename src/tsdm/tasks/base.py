@@ -181,7 +181,7 @@ class ForecastingTask[SplitID, SampleID, SampleT, BatchT](Protocol):
     @property
     def generators(self) -> Mapping[SplitID, SupportsGetItem[SampleID, SampleT]]: ...
     @property
-    def batchers(self) -> Mapping[SplitID, Callable[[Sequence[SampleT]], BatchT]]: ...
+    def collate_fns(self) -> Mapping[SplitID, Callable[[list[SampleT]], BatchT]]: ...
     @property
     def dataloaders(self) -> Mapping[SplitID, Iterable[BatchT]]: ...
     @property
@@ -256,7 +256,7 @@ class TimeSeriesTask[
     r"""Metric used for evaluation."""
 
     # split specific attributes
-    dataloaders: Mapping[SplitID, DataLoader[SampleT]] = NotImplemented
+    dataloaders: Mapping[SplitID, DataLoader[BatchT]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
     generators: Mapping[SplitID, SupportsGetItem[SampleID, SampleT]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
