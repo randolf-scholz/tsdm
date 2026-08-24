@@ -132,9 +132,9 @@ class SplitType(StrEnum):
     r"""Type of a split."""
 
     TRAIN = "train"
-    VALIDDATION = "validation"
+    VALIDATION = "validation"
     TEST = "test"
-    INFERENCE = "infererence"
+    INFERENCE = "inference"
     UNKNOWN = "unknown"
 
 
