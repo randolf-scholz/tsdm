@@ -123,7 +123,7 @@ from tsdm.metrics import Metric
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
 from tsdm.timeseries import TimeSeriesCollection
-from tsdm.types.protocols import SupportsGetItem
+from tsdm.types.protocols import SupportsGetItem, SupportsKeysAndGetItem
 from tsdm.utils.lazydict import LazyDict
 
 
@@ -243,7 +243,7 @@ class TimeSeriesTask[
 
     index: Sequence[SplitID] = NotImplemented
     r"""List of index."""
-    folds: DataFrame = NotImplemented
+    folds: SupportsKeysAndGetItem[SplitID, Series] = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
 
     # fold specific attributes
@@ -294,7 +294,7 @@ class TimeSeriesTask[
                 case DataFrame() as frame:
                     self.index = frame.columns
                 case _:
-                    self.index = Series(list(self.folds), name="folds")
+                    self.index = Series(list(self.folds.keys()), name="folds")
 
         if not self.initialize:
             return
@@ -414,63 +414,28 @@ class TimeSeriesTask[
 
         For example, given (3, "test"), return (3, "train") or (3, "trainval") depending on the folds.
         """
-        match self.folds:
-            case Series() | DataFrame():
-                split_index = self.folds.T.index
-            case Mapping():
-                split_index = Index(self.folds.keys())
-            case _:
-                raise TypeError(
-                    f"Cannot infer train-partition from {type(self.folds)=}"
-                )
+        fold_keys = self.folds.keys()
+        normalized_keys: dict[tuple[Any, ...], SplitID]
+        if all(isinstance(key, str) for key in fold_keys):
+            normalized_keys = {(key,): key for key in fold_keys}
+        elif all(isinstance(key, tuple) and key for key in fold_keys):
+            normalized_keys = {key: key for key in fold_keys}
+        else:
+            raise TypeError("Fold keys must be uniformly strings or non-empty tuples.")
 
-        match split_index:
-            case MultiIndex(names=names) as multi_index:
-                *fold, partition = names
-
-                # Create Frame (fold, partition) -> split type
-                df = multi_index.to_frame()
-                split_types = df[partition].map(self.split_type)
-                mask = split_types == SplitType.TRAIN
-
-                # create Series (train_key) -> train_key
-                train_folds = df[mask].copy()
-                train_folds = train_folds.drop(columns=names)
-                train_folds["key"] = list(df[mask].index)
-                train_folds = train_folds.droplevel(-1)
-
-                # create Series (fold, partition) -> train_key
-                df = df.drop(columns=names)
-                df = df.join(train_folds, on=fold)
-                result = df["key"].to_dict()
-                result.update(
-                    {
-                        key: key
-                        for key, split_type in zip(
-                            multi_index, split_types, strict=True
-                        )
-                        if split_type == SplitType.TRAIN_VALIDATION
-                    }
-                )
-                return result
-            case Index() as index:
-                split_types = index.map(self.split_type)
-                mask = split_types == SplitType.TRAIN
-                value = index[mask]
-                s = Series(value.item(), index=index)
-                result = s.to_dict()
-                result.update(
-                    {
-                        key: key
-                        for key, split_type in zip(index, split_types, strict=True)
-                        if split_type == SplitType.TRAIN_VALIDATION
-                    }
-                )
-                return result
-            case _:
-                raise TypeError(
-                    f"Expected Index or MultiIndex, got {type(split_index)=}"
-                )
+        train_partitions = {
+            key[:-1]: original_key
+            for key, original_key in normalized_keys.items()
+            if self.split_type(key) == SplitType.TRAIN
+        }
+        return {
+            original_key: (
+                original_key
+                if self.split_type(key) == SplitType.TRAIN_VALIDATION
+                else train_partitions[key[:-1]]
+            )
+            for key, original_key in normalized_keys.items()
+        }
 
     def validate_folds(self) -> None:
         r"""Make sure all keys are correct format `str` or `tuple[str, ...]`.

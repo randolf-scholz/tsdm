@@ -1,7 +1,12 @@
+from collections.abc import KeysView
+from typing import Any
+
 import pytest
 from pandas import Series
 
 from tsdm.tasks.base import SplitType, TimeSeriesTask
+
+type SplitKey = tuple[int, str]
 
 
 @pytest.mark.parametrize(
@@ -29,10 +34,10 @@ def test_split_type_aliases(alias: str, expected: SplitType) -> None:
 
 
 @pytest.fixture
-def task() -> TimeSeriesTask[object]:
+def task() -> TimeSeriesTask[Any]:
     r"""Create an uninitialized task with all standard split types."""
 
-    class DummyTask(TimeSeriesTask[object]):
+    class DummyTask(TimeSeriesTask[Any]):
         pass
 
     folds = {
@@ -64,7 +69,7 @@ def task() -> TimeSeriesTask[object]:
     ],
 )
 def test_time_series_task_split_type(
-    task: TimeSeriesTask[object], key: object, expected: SplitType
+    task: TimeSeriesTask[Any], key: object, expected: SplitType
 ) -> None:
     r"""Test that TimeSeriesTask classifies split keys using SplitType."""
     assert task.split_type(key) is expected
@@ -75,14 +80,14 @@ def test_time_series_task_split_type(
 
 @pytest.mark.parametrize("key", ["other", (0, "other")])
 def test_time_series_task_rejects_unknown_split(
-    task: TimeSeriesTask[object], key: object
+    task: TimeSeriesTask[Any], key: object
 ) -> None:
     r"""Test that unknown split names raise an error."""
     with pytest.raises(ValueError, match="valid SplitType"):
         task.split_type(key)
 
 
-def test_train_split_mapping(task: TimeSeriesTask[object]) -> None:
+def test_train_split_mapping(task: TimeSeriesTask[Any]) -> None:
     r"""Test that trainval uses itself as its associated training split."""
     assert task.train_partition_mapper == {
         "train": "train",
@@ -90,3 +95,50 @@ def test_train_split_mapping(task: TimeSeriesTask[object]) -> None:
         "valid": "train",
         "test": "train",
     }
+
+
+def test_train_split_mapping_uses_only_fold_keys() -> None:
+    r"""Test tuple split keys without relying on the folds' implementation type."""
+
+    class FoldTable:
+        def __init__(self, data: dict[SplitKey, Series], /) -> None:
+            self.data = data
+            self.getitem_calls = 0
+
+        def keys(self) -> KeysView[SplitKey]:
+            return self.data.keys()
+
+        def __getitem__(self, key: SplitKey, /) -> Series:
+            self.getitem_calls += 1
+            return self.data[key]
+
+    class DummyTask(TimeSeriesTask[SplitKey]):
+        pass
+
+    folds = FoldTable(
+        {
+            (0, "train"): Series(dtype=bool),
+            (0, "valid"): Series(dtype=bool),
+            (0, "test"): Series(dtype=bool),
+            (1, "train"): Series(dtype=bool),
+            (1, "trainval"): Series(dtype=bool),
+            (1, "test"): Series(dtype=bool),
+        }
+    )
+    task = DummyTask(
+        NotImplemented,
+        folds=folds,
+        index=list(folds.keys()),
+        initialize=False,
+        validate=False,
+    )
+
+    assert task.train_partition_mapper == {
+        (0, "train"): (0, "train"),
+        (0, "valid"): (0, "train"),
+        (0, "test"): (0, "train"),
+        (1, "train"): (1, "train"),
+        (1, "trainval"): (1, "trainval"),
+        (1, "test"): (1, "train"),
+    }
+    assert folds.getitem_calls == 0
