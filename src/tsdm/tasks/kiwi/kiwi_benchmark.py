@@ -10,6 +10,7 @@ __all__ = [
 from collections.abc import Callable, Mapping
 from typing import Any, Literal, NamedTuple
 
+import torch
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
@@ -159,7 +160,6 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
         dataset = kiwi_benchmark()
-        dataset.timeseries = dataset.timeseries.astype("float32")
         super().__init__(dataset=dataset)
 
     def make_folds(self, /, **kwargs: Any) -> DataFrame:
@@ -250,7 +250,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
                 "T": ["elapsed_time"],
                 "X": ...,
             },
-            dtypes={"T": "float32", "X": "float32"},
+            dtypes={"T": torch.float32, "X": torch.float32},
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)

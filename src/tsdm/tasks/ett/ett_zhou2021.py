@@ -34,7 +34,14 @@ type Target = Literal["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
 type DatasetID = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
-class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
+class ETT_Zhou2021(
+    TimeSeriesTask[
+        SplitID,
+        Any,
+        tuple[Tensor, ...],
+        tuple[Tensor, ...],
+    ]
+):
     r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
 
     Paper

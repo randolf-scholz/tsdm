@@ -117,7 +117,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 from torch.utils.data import DataLoader
 
 from tsdm.encoders import Encoder
-from tsdm.metrics import Metric
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
 from tsdm.timeseries import TimeSeriesCollection
@@ -181,12 +180,10 @@ class ForecastingTask[SplitID, SampleID, SampleT, BatchT](Protocol):
     def collate_fns(self) -> Mapping[SplitID, Callable[[list[SampleT]], BatchT]]: ...
     @property
     def dataloaders(self) -> Mapping[SplitID, Iterable[BatchT]]: ...
-    @property
-    def test_metric(self) -> Metric: ...
 
 
 @pprint_repr
-@dataclass(slots=True)
+@dataclass  # (slots=True)
 class TimeSeriesTask[
     SplitID,
     SampleID = Any,
@@ -262,7 +259,7 @@ class TimeSeriesTask[
     splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
 
-    default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x
+    default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x  # type: ignore
     r"""Default collate function."""
     default_test_metric: Callable[[Any, Any], Any] = NotImplemented
     r"""Default test metric."""
@@ -388,7 +385,7 @@ class TimeSeriesTask[
         r"""Return whether the key is a training split."""
         return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
 
-    def split_type(self, key: SplitID, /) -> SplitType:
+    def split_type(self, key: object, /) -> SplitType:
         r"""Return the split type encoded by a split key.
 
         By convention, a sequence key has the form ``[*fold_ids, partition]``.
