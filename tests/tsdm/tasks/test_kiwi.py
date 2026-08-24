@@ -34,7 +34,7 @@ def test_kiwi_task() -> None:
     assert isinstance(task.generators[split_id], PandasForecastingDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert isinstance(task.encoders[split_id], FittableEncoder)
-    assert isinstance(task.train_split, dict)
+    assert isinstance(task.train_partition_mapper, dict)
     assert callable(task.collate_fns[split_id])
 
     # validate generator

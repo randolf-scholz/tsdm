@@ -254,7 +254,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
-        train_key = self.train_split[key]
+        train_key = self.train_partition_mapper[key]
         associated_train_split = self.splits[train_key]
         self.LOGGER.info("Fitting encoder to associated train split '%s'", train_key)
         encoder.fit(associated_train_split.timeseries)

@@ -409,8 +409,11 @@ class TimeSeriesTask[
                 raise TypeError(f"Cannot infer split type from {key=}.")
 
     @cached_property
-    def train_split(self) -> Mapping[SplitID, SplitID]:
-        r"""Matching train partition for the given key."""
+    def train_partition_mapper(self) -> Mapping[SplitID, SplitID]:
+        r"""Matching train partition for the given key.
+
+        For example, given (3, "test"), return (3, "train") or (3, "trainval") depending on the folds.
+        """
         match self.folds:
             case Series() | DataFrame():
                 split_index = self.folds.T.index

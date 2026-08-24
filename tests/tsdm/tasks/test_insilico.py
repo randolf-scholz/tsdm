@@ -19,7 +19,7 @@ def test_insilico_task() -> None:
     assert isinstance(task.generators[split_id], PandasForecastingDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert task.collate_fns[split_id] is NotImplemented
-    assert isinstance(task.train_split, dict)
+    assert isinstance(task.train_partition_mapper, dict)
 
     sampler = task.samplers[split_id]
     key = next(iter(sampler))
