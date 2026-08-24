@@ -113,7 +113,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
@@ -132,6 +132,7 @@ class SplitType(StrEnum):
     r"""Type of a split."""
 
     TRAIN = "train"
+    TRAIN_VALIDATION = "trainval"
     VALIDATION = "validation"
     TEST = "test"
     INFERENCE = "inference"
@@ -145,6 +146,8 @@ class SplitType(StrEnum):
         match value.lower():
             case "train" | "training":
                 return cls.TRAIN
+            case "trainval" | "train_val" | "train_valid" | "train_validation":
+                return cls.TRAIN_VALIDATION
             case "valid" | "validation" | "val":
                 return cls.VALIDATION
             case "test" | "testing":
@@ -265,11 +268,6 @@ class TimeSeriesTask[
     r"""Default test metric."""
     default_collate_fn: Callable[[list[SampleT]], BatchT] = NotImplemented
     r"""Default collate function."""
-
-    train_patterns: Sequence[str] = ("train", "training")
-    r"""List of patterns to match for training splits."""
-    infer_patterns: Sequence[str] = ("test", "testing", "val", "valid", "validation")
-    r"""List of patterns to match for infererence splits."""
 
     validate: bool = True
     r"""Whether to validate the folds."""
@@ -393,34 +391,35 @@ class TimeSeriesTask[
 
     def is_train_split(self, key: SplitID, /) -> bool:
         r"""Return whether the key is a training split."""
-        match self.split_type(key):
-            case "train":
-                return True
-            case "infer":
-                return False
-            case _:
-                raise ValueError(f"Unknown split type for key={key}")
+        split_type = self.split_type(key)
+        if split_type is SplitType.UNKNOWN:
+            raise ValueError(f"Unknown split type for key={key}")
+        return split_type in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
 
-    def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
+    def split_type(self, key: object, /) -> SplitType:
         r"""Return the type of split."""
         match key:
             case str(name):
-                if name.lower() in self.train_patterns:
-                    return "train"
-                if name.lower() in self.infer_patterns:
-                    return "infer"
-                return "unknown"
+                try:
+                    return SplitType(name)
+                except ValueError:
+                    return SplitType.UNKNOWN
             case Iterable() as names:
-                patterns = {self.split_type(k) for k in names}
-                if patterns <= {"train", "unknown"}:
-                    return "train"
-                if patterns <= {"infer", "unknown"}:
-                    return "infer"
-                if patterns == {"unknown"}:
-                    return "unknown"
-                raise ValueError(f"{key=} contains both train and infer splits.")
+                split_types = {self.split_type(name) for name in names}
+                split_types.discard(SplitType.UNKNOWN)
+                if not split_types:
+                    return SplitType.UNKNOWN
+                if len(split_types) == 1:
+                    return split_types.pop()
+
+                training_types = {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
+                if split_types <= training_types:
+                    return SplitType.TRAIN_VALIDATION
+                if split_types.isdisjoint(training_types):
+                    return SplitType.INFERENCE
+                raise ValueError(f"{key=} contains both training and inference splits.")
             case _:
-                return "unknown"
+                return SplitType.UNKNOWN
 
     @property
     def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
@@ -451,9 +450,10 @@ class TimeSeriesTask[
             case MultiIndex(names=names) as multi_index:
                 *fold, partition = names
 
-                # Create Frame (fold, partition) -> (fold, partition.lower())
+                # Create Frame (fold, partition) -> split type
                 df = multi_index.to_frame()
-                mask = df[partition].str.lower().isin(self.train_patterns)
+                split_types = df[partition].map(self.split_type)
+                mask = split_types == SplitType.TRAIN
 
                 # create Series (train_key) -> train_key
                 train_folds = df[mask].copy()
@@ -464,12 +464,31 @@ class TimeSeriesTask[
                 # create Series (fold, partition) -> train_key
                 df = df.drop(columns=names)
                 df = df.join(train_folds, on=fold)
-                return df["key"].to_dict()
+                result = df["key"].to_dict()
+                result.update(
+                    {
+                        key: key
+                        for key, split_type in zip(
+                            multi_index, split_types, strict=True
+                        )
+                        if split_type == SplitType.TRAIN_VALIDATION
+                    }
+                )
+                return result
             case Index() as index:
-                mask = index.str.lower().isin(self.train_patterns)
+                split_types = index.map(self.split_type)
+                mask = split_types == SplitType.TRAIN
                 value = index[mask]
                 s = Series(value.item(), index=index)
-                return s.to_dict()
+                result = s.to_dict()
+                result.update(
+                    {
+                        key: key
+                        for key, split_type in zip(index, split_types, strict=True)
+                        if split_type == SplitType.TRAIN_VALIDATION
+                    }
+                )
+                return result
             case _:
                 raise TypeError(
                     f"Expected Index or MultiIndex, got {type(split_index)=}"
@@ -496,11 +515,13 @@ class TimeSeriesTask[
             case MultiIndex(names=names):
                 *fold, partition = names
                 df = split_index.to_frame(index=False)
-                df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
+                split_types = df[partition].map(self.split_type)
+                df["is_train"] = split_types == SplitType.TRAIN
                 if not all(df.groupby(fold)["is_train"].sum() == 1):
                     raise ValueError("Each fold must have a unique train partition.")
             case Index():
-                mask = split_index.str.lower().isin(self.train_patterns)
+                split_types = split_index.map(self.split_type)
+                mask = split_types == SplitType.TRAIN
                 if not sum(mask) == 1:
                     raise ValueError("Each fold must have a unique train partition.")
             case _:

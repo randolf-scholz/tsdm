@@ -27,7 +27,7 @@ from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTS, PandasTSC
 
-type SplitID = Literal["train", "test", "valid", "joint", "trial", "whole"]
+type SplitID = Literal["train", "trainval", "valid", "test"]
 
 type Target = Literal["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
 
@@ -91,20 +91,6 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
     TODO: add results
     """
 
-    train_patterns = ("train", "training")
-    r"""Patterns that identify splits used for training."""
-    infer_patterns = (
-        "test",
-        "testing",
-        "val",
-        "valid",
-        "validation",
-        "trial",
-        "joint",
-        "whole",
-    )
-    r"""Patterns that identify splits used for evaluation."""
-
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
 
@@ -147,11 +133,7 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.frequency = dataset.timeindex[1] - dataset.timeindex[0]
         self.accumulation_function = nn.Identity()
-        super().__init__(
-            dataset=cast("PandasTSC", dataset),
-            train_patterns=self.train_patterns,
-            infer_patterns=self.infer_patterns,
-        )
+        super().__init__(dataset=cast("PandasTSC", dataset))
         self.preprocessor = self.encoders["train"]
 
     def make_folds(self, /) -> Mapping[SplitID, Series]:
@@ -165,14 +147,11 @@ class ETT_Zhou2021(TimeSeriesTask[SplitID, Any, tuple[Tensor, ...]]):
                 index=index,
             )
 
-        trial = mask("2017-11-01", "2018-02-28")
         return {
             "train": mask("2016-07-01", "2017-06-30"),
             "valid": mask("2017-07-01", "2017-10-31"),
-            "joint": mask("2016-07-01", "2017-10-31"),
-            "trial": trial,
-            "test": trial.copy(),
-            "whole": Series(data=True, index=index),
+            "trainval": mask("2016-07-01", "2017-10-31"),
+            "test": mask("2017-11-01", "2018-02-28"),
         }
 
     @property

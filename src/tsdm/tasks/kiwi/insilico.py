@@ -11,7 +11,7 @@ from pandas import DataFrame
 
 from tsdm.datatools import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
-from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.base import SplitType, TimeSeriesTask
 from tsdm.timeseries.pandas import PandasForecastingDataset, PandasTSC, in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
@@ -50,7 +50,7 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         sampler = HierarchicalSampler(
             split,
             subsamplers,
-            shuffle=self.split_type(key) == "training",
+            shuffle=self.split_type(key) is SplitType.TRAIN,
         )
         return sampler
 
