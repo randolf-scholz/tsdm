@@ -321,7 +321,7 @@ class TimeSeriesTask[
         """
         return NotImplemented
 
-    def make_dataloader(self, key: SplitID, /, **dataloader_kwargs: Any) -> DataLoader:
+    def make_dataloader(self, key: SplitID, /, **opts: Any) -> DataLoader[BatchT]:
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
 
@@ -329,8 +329,8 @@ class TimeSeriesTask[
         dataset = self.generators[key]
 
         # set sampler
-        if "sampler" in dataloader_kwargs:
-            kwargs["sampler"] = dataloader_kwargs["sampler"]
+        if "sampler" in opts:
+            kwargs["sampler"] = opts["sampler"]
         elif (sampler := self.samplers[key]) is not NotImplemented:
             kwargs["sampler"] = sampler
         else:
@@ -338,8 +338,8 @@ class TimeSeriesTask[
             kwargs["sampler"] = None
 
         # set collate_fn
-        if "collate_fn" in dataloader_kwargs:
-            kwargs["collate_fn"] = dataloader_kwargs["collate_fn"]
+        if "collate_fn" in opts:
+            kwargs["collate_fn"] = opts["collate_fn"]
         elif (collate_fn := self.collate_fns[key]) is not NotImplemented:
             kwargs["collate_fn"] = collate_fn
         elif self.default_collate_fn is not NotImplemented:
@@ -348,7 +348,7 @@ class TimeSeriesTask[
             warnings.warn(f"No collate_fn provided for {key=}.", stacklevel=2)
             kwargs["collate_fn"] = lambda x: x
 
-        kwargs |= dataloader_kwargs
+        kwargs |= opts
         return DataLoader(dataset, **kwargs)  # type: ignore
 
     @abstractmethod

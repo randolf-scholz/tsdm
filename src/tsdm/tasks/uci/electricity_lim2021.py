@@ -167,7 +167,7 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
         return self.dataset[self.masks[key]]
 
     def make_dataloader(
-        self, key: SplitID, /, *, shuffle: bool = False, **dataloader_kwargs: Any
+        self, key: SplitID, /, *, shuffle: bool = False, **opts: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""
         ds = self.splits[key]
@@ -183,4 +183,4 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
         )
         dataset = TensorDataset(tensor)
 
-        return DataLoader(dataset, sampler=sampler, **dataloader_kwargs)
+        return DataLoader(dataset, sampler=sampler, **opts)
