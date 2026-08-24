@@ -394,7 +394,7 @@ class TimeSeriesTask[
         r"""Return whether the key is a training split."""
         return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
 
-    def split_type(self, key: object, /) -> SplitType:
+    def split_type(self, key: SplitID, /) -> SplitType:
         r"""Return the split type encoded by a split key.
 
         By convention, a sequence key has the form ``[*fold_ids, partition]``.
