@@ -2497,7 +2497,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         *,
         reduction: Reduction[tuple, V] = random.choice,
     ) -> None:
-        Meet[tuple[U, ...], V].__init__(
+        Meet.__init__(
             self,
             *(deepcopy(encoder) for _ in range(num)),
             reduction=reduction,
