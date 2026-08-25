@@ -1,5 +1,6 @@
 r"""Tests for :class:`tsdm.encoders.pandas.FrameEncoder`."""
 
+import pytest
 from pandas import DataFrame, MultiIndex
 from pandas.testing import assert_frame_equal
 
@@ -16,6 +17,32 @@ TEST_FRAME = DataFrame(
         names=["run", "time"],
     ),
 )
+
+
+class FailingEncoder[T]:
+    r"""Encoder that records fitting and then fails."""
+
+    def __init__(self, name: str, calls: list[str], /) -> None:
+        self.name = name
+        self.calls = calls
+
+    @property
+    def params(self) -> dict[str, object]:
+        return {}
+
+    @property
+    def requires_fit(self) -> bool:
+        return False
+
+    def fit(self, _: T, /) -> None:
+        self.calls.append(self.name)
+        raise ValueError(self.name)
+
+    def encode(self, data: T, /) -> T:
+        return data
+
+    def decode(self, data: T, /) -> T:
+        return data
 
 
 def make_encoder() -> FrameEncoder[str]:
@@ -57,3 +84,25 @@ def test_frame_encoder_decode_inverts_encode() -> None:
     decoded = encoder.decode(encoded)
 
     assert_frame_equal(TEST_FRAME, decoded)
+
+
+def test_frame_encoder_fit_reports_all_failures() -> None:
+    r"""Test that fitting attempts every column and groups all failures."""
+    calls: list[str] = []
+    encoder = FrameEncoder(
+        {
+            "run": FailingEncoder("run", calls),
+            "value": FailingEncoder("value", calls),
+        }
+    )
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        encoder.fit(TEST_FRAME)
+
+    errors = exc_info.value.exceptions
+    assert calls == ["run", "value"]
+    assert [str(error) for error in errors] == ["run", "value"]
+    assert [error.__notes__ for error in errors] == [
+        ["FrameEncoder[run]: Failed to fit FailingEncoder."],
+        ["FrameEncoder[value]: Failed to fit FailingEncoder."],
+    ]

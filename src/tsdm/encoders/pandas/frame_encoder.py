@@ -62,15 +62,18 @@ class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
         data = data.reset_index()
         self.original_schema = data.dtypes
 
-        # fit the encoders one by one
+        errors: list[Exception] = []
+        typ = type(self).__name__
         for group, encoder in self.encoders.items():
             try:
                 encoder.fit(data[group])
             except Exception as exc:
-                typ = type(self).__name__
                 enc = type(encoder).__name__
                 exc.add_note(f"{typ}[{group}]: Failed to fit {enc}.")
-                raise
+                errors.append(exc)
+
+        if errors:
+            raise ExceptionGroup(f"{typ}: Failed to fit column encoders.", errors)
 
     def encode(self, data: pd.DataFrame, /) -> pd.DataFrame:
         data = data.reset_index()

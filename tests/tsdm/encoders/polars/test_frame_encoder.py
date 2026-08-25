@@ -1,6 +1,7 @@
 r"""Tests for :class:`tsdm.encoders.polars.FrameEncoder`."""
 
 import polars as pl
+import pytest
 from polars.testing import assert_frame_equal
 
 from tsdm.encoders import wrap
@@ -17,32 +18,38 @@ TEST_FRAME = pl.DataFrame(
 )
 
 
-def add_ten(series: pl.Series, /) -> pl.Series:
-    r"""Add ten to a Series."""
-    return series + 10
+class FailingEncoder[T]:
+    r"""Encoder that records fitting and then fails."""
 
+    def __init__(self, name: str, calls: list[str], /) -> None:
+        self.name = name
+        self.calls = calls
 
-def subtract_ten(series: pl.Series, /) -> pl.Series:
-    r"""Subtract ten from a Series."""
-    return series - 10
+    @property
+    def params(self) -> dict[str, object]:
+        return {}
 
+    @property
+    def requires_fit(self) -> bool:
+        return False
 
-def double(series: pl.Series, /) -> pl.Series:
-    r"""Double a Series."""
-    return series * 2
+    def fit(self, _: T, /) -> None:
+        self.calls.append(self.name)
+        raise ValueError(self.name)
 
+    def encode(self, data: T, /) -> T:
+        return data
 
-def halve(series: pl.Series, /) -> pl.Series:
-    r"""Halve a Series."""
-    return series / 2
+    def decode(self, data: T, /) -> T:
+        return data
 
 
 def make_encoder() -> FrameEncoder[str]:
     r"""Construct a frame encoder with simple wrapped transforms."""
     return FrameEncoder(
         {
-            "run": wrap(encoder=add_ten, decoder=subtract_ten),
-            "value": wrap(encoder=double, decoder=halve),
+            "run": wrap(encoder=lambda x: x + 10, decoder=lambda x: x - 10),
+            "value": wrap(encoder=lambda x: x * 2, decoder=lambda x: x / 2),
         }
     )
 
@@ -75,3 +82,25 @@ def test_frame_encoder_decode_inverts_encode() -> None:
     decoded = encoder.decode(encoded)
 
     assert_frame_equal(TEST_FRAME, decoded)
+
+
+def test_frame_encoder_fit_reports_all_failures() -> None:
+    r"""Test that fitting attempts every column and groups all failures."""
+    calls: list[str] = []
+    encoder = FrameEncoder(
+        {
+            "run": FailingEncoder("run", calls),
+            "value": FailingEncoder("value", calls),
+        }
+    )
+
+    with pytest.raises(ExceptionGroup) as exc_info:
+        encoder.fit(TEST_FRAME)
+
+    errors = exc_info.value.exceptions
+    assert calls == ["run", "value"]
+    assert [str(error) for error in errors] == ["run", "value"]
+    assert [error.__notes__ for error in errors] == [
+        ["FrameEncoder[run]: Failed to fit FailingEncoder."],
+        ["FrameEncoder[value]: Failed to fit FailingEncoder."],
+    ]

@@ -59,14 +59,18 @@ class FrameEncoder[K: str](
         data = data.clone()
         self.original_schema = data.schema
 
+        errors: list[Exception] = []
+        typ = type(self).__name__
         for column, encoder in self.encoders.items():
             try:
                 encoder.fit(data[column])
             except Exception as exc:
-                typ = type(self).__name__
                 enc = type(encoder).__name__
                 exc.add_note(f"{typ}[{column}]: Failed to fit {enc}.")
-                raise
+                errors.append(exc)
+
+        if errors:
+            raise ExceptionGroup(f"{typ}: Failed to fit column encoders.", errors)
 
     def encode(self, data: pl.DataFrame, /) -> pl.DataFrame:
         for column, encoder in self.encoders.items():
