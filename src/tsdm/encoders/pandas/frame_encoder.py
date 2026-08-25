@@ -27,9 +27,8 @@ class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
         >>> from pandas import DataFrame
         >>> from pandas.testing import assert_frame_equal
         >>> from tsdm.encoders import wrap
-        >>> frame = DataFrame(
-        ...     {"id": [10, 20], "value": [1, 2], "label": ["a", "b"]}
-        ... ).set_index("id")
+        >>> frame = DataFrame({"id": [10, 20], "value": [1, 2], "label": ["a", "b"]})
+        >>> frame = frame.set_index("id")
         >>> encoder = FrameEncoder({"value": wrap(lambda x: x + 1, lambda x: x - 1)})
         >>> encoder.fit(frame)
         >>> encoded = encoder.encode(frame)

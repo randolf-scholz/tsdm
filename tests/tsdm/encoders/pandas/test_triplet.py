@@ -8,7 +8,7 @@ from pandas import DataFrame, Index, MultiIndex
 from pandas.testing import assert_frame_equal
 
 from tsdm.config import PROJECT
-from tsdm.encoders import TripletDecoder, TripletEncoder
+from tsdm.encoders.pandas import TripletDecoder, TripletEncoder
 
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 

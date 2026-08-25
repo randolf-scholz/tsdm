@@ -19,10 +19,10 @@ from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
     FrameDTypeConverter,
-    FrameEncoder,
     MinMaxScaler,
     StandardScaler,
 )
+from tsdm.encoders.pandas import FrameEncoder
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries import PandasTS

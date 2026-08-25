@@ -97,6 +97,7 @@ __all__ = [
     "universal",
     "torch",
     "pandas",
+    "polars",
     # Constants
     "ID",
     "ENCODERS",
@@ -111,7 +112,6 @@ __all__ = [
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
-    "CSVEncoder",
     "Choice",
     "Compose",
     "FrameDTypeConverter",
@@ -124,7 +124,6 @@ __all__ = [
     "FrameAsDict",
     "FrameAsTensor",
     "FrameAsTensorDict",
-    "FrameEncoder",
     "IdentityEncoder",
     "InverseEncoder",
     "Meet",
@@ -135,18 +134,13 @@ __all__ = [
     "MappedEncoder",
     "MinMaxScaler",
     "Parallel",
-    "PeriodicEncoder",
-    "PeriodicSocialTimeEncoder",
     "Pipe",
     "PositionalEncoder",
     "Replicate",
-    "SocialTimeEncoder",
     "StandardScaler",
     "TensorConcatenator",
     "TensorSplitter",
     "TimeDeltaEncoder",
-    "TripletDecoder",
-    "TripletEncoder",
     "TupleUnwrapper",
     "TupleWrapper",
     "WrappedEncoder",
@@ -165,7 +159,7 @@ __all__ = [
     "wrap",
 ]
 
-from . import pandas, positional, torch, universal
+from . import pandas, polars, positional, torch, universal
 from .base import (
     ID,
     BaseEncoder,
@@ -212,15 +206,6 @@ from .converters import (
     FrameAsTensorDict,
     FrameDTypeConverter,
 )
-from .pandas import (
-    CSVEncoder,
-    FrameEncoder,
-    PeriodicEncoder,
-    PeriodicSocialTimeEncoder,
-    SocialTimeEncoder,
-    TripletDecoder,
-    TripletEncoder,
-)
 from .positional import PositionalEncoder
 from .universal import (
     BoundaryEncoder,
@@ -236,7 +221,6 @@ from .universal import (
 ENCODERS: dict[str, type[BaseEncoder]] = {
     "BoundaryEncoder"           : BoundaryEncoder,
     "BoxCoxEncoder"             : BoxCoxEncoder,
-    "CSVEncoder"                : CSVEncoder,
     "Choice"                    : Choice,
     "Compose"                   : Compose,
     "FrameDTypeConverter"       : FrameDTypeConverter,
@@ -249,7 +233,6 @@ ENCODERS: dict[str, type[BaseEncoder]] = {
     "FrameAsDict"               : FrameAsDict,
     "FrameAsTensor"             : FrameAsTensor,
     "FrameAsTensorDict"         : FrameAsTensorDict,
-    "FrameEncoder"              : FrameEncoder,
     "IdentityEncoder"           : IdentityEncoder,
     "InverseEncoder"            : InverseEncoder,
     "LinearScaler"              : LinearScaler,
@@ -260,20 +243,17 @@ ENCODERS: dict[str, type[BaseEncoder]] = {
     "Meet"                      : Meet,
     "MinMaxScaler"              : MinMaxScaler,
     "Parallel"                  : Parallel,
-    "PeriodicEncoder"           : PeriodicEncoder,
-    "PeriodicSocialTimeEncoder" : PeriodicSocialTimeEncoder,
     "Pipe"                      : Pipe,
     "PositionalEncoder"         : PositionalEncoder,
     "Replicate"                 : Replicate,
-    "SocialTimeEncoder"         : SocialTimeEncoder,
     "StandardScaler"            : StandardScaler,
     "TensorConcatenator"        : TensorConcatenator,
     "TensorSplitter"            : TensorSplitter,
     "TimeDeltaEncoder"          : TimeDeltaEncoder,
-    "TripletDecoder"            : TripletDecoder,
-    "TripletEncoder"            : TripletEncoder,
     "TupleUnwrapper"            : TupleUnwrapper,
     "TupleWrapper"              : TupleWrapper,
     "WrappedEncoder"            : WrappedEncoder,
+    **{f"pandas.{name}": cls for name, cls in pandas.ENCODERS.items()},
+    **{f"polars.{name}": cls for name, cls in polars.ENCODERS.items()},
 }  # fmt: skip
 r"""Dictionary of all available encoders."""

@@ -16,11 +16,11 @@ from tsdm.encoders import (
     Encoder,
     FittableEncoder,
     FrameAsTensorDict,
-    FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
 )
+from tsdm.encoders.pandas import FrameEncoder
 from tsdm.timeseries.pandas import in_silico
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]

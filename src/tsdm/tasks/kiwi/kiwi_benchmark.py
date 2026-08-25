@@ -27,11 +27,11 @@ from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
     FrameAsTensorDict,
-    FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
 )
+from tsdm.encoders.pandas import FrameEncoder
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler

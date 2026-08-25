@@ -65,7 +65,8 @@ from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.datatools import folds_as_frame, is_partition
-from tsdm.encoders import FrameEncoder, MinMaxScaler
+from tsdm.encoders import MinMaxScaler
+from tsdm.encoders.pandas import FrameEncoder
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask

@@ -4,7 +4,7 @@ from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
 from tsdm.config import PROJECT
-from tsdm.encoders import CSVEncoder
+from tsdm.encoders.pandas import CSVEncoder
 
 RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
 

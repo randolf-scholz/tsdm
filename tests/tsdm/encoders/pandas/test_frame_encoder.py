@@ -1,9 +1,10 @@
-r"""Tests for :class:`tsdm.encoders.FrameEncoder`."""
+r"""Tests for :class:`tsdm.encoders.pandas.FrameEncoder`."""
 
 from pandas import DataFrame, MultiIndex
 from pandas.testing import assert_frame_equal
 
-from tsdm.encoders import FrameEncoder, wrap
+from tsdm.encoders import wrap
+from tsdm.encoders.pandas import FrameEncoder
 
 TEST_FRAME = DataFrame(
     {
