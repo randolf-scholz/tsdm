@@ -195,7 +195,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
 
-    dataset: PandasTSC
+    dataset: PandasTSC  # type: ignore
 
     observation_time = 150
     prediction_steps = 3

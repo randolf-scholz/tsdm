@@ -145,8 +145,17 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         sampler_kwargs: Mapping[str, Any] = EMPTY_MAP,
         generator_kwargs: Mapping[str, Any] = EMPTY_MAP,
         dataloader_kwargs: Mapping[str, Any] = EMPTY_MAP,
+        train_batch_size: int = 32,
+        eval_batch_size: int = 128,
     ) -> None:
         r"""Initialize the KIWI task."""
+        dataset = kiwi_benchmark()
+        super().__init__(
+            dataset=dataset,
+            train_batch_size=train_batch_size,
+            eval_batch_size=eval_batch_size,
+        )
+
         self.generator_kwargs |= generator_kwargs
         self.sampler_kwargs |= sampler_kwargs
         self.fold_kwargs |= fold_kwargs
@@ -158,9 +167,6 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         self.stride = self.sampler_kwargs["stride"]
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
-
-        dataset = kiwi_benchmark()
-        super().__init__(dataset=dataset)
 
     def make_folds(self, /, **kwargs: Any) -> DataFrame:
         r"""Group by RunID and color which indicates replicates."""

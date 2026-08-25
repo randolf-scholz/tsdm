@@ -25,7 +25,7 @@ from tsdm.encoders import (
 )
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTS, PandasTSC
+from tsdm.timeseries import PandasTS
 
 type SplitID = Literal["train", "trainval", "valid", "test"]
 
@@ -128,20 +128,32 @@ class ETT_Zhou2021(
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
     ) -> None:
+        timeseries = ETT().tables[dataset_id]
+        dataset = PandasTS(dataset_id, timeseries=timeseries)
+        super().__init__(
+            dataset=dataset,
+            train_batch_size=train_batch_size,
+            eval_batch_size=eval_batch_size,
+        )
+        self.dataset_id = dataset_id
         self.target = target
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
-        self.eval_batch_size = eval_batch_size
-        self.train_batch_size = train_batch_size
-
-        self.dataset_id = dataset_id
-        timeseries = ETT().tables[dataset_id]
-        dataset = PandasTS(dataset_id, timeseries=timeseries)
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.frequency = dataset.timeindex[1] - dataset.timeindex[0]
         self.accumulation_function = nn.Identity()
-        super().__init__(dataset=cast("PandasTSC", dataset))
-        self.preprocessor = self.encoders["train"]
+        self.preprocessor = self._make_encoder()
+
+    def _make_encoder(self) -> Encoder:
+        r"""Create and fit the preprocessing encoder for the specified split."""
+        encoder = (
+            FrameDTypeConverter(float)
+            >> StandardScaler(axis=-1)
+            >> FrameEncoder({"date": DateTimeEncoder() >> MinMaxScaler()})
+        )
+        train_split = self.splits[self.get_train_split("train")]
+        encoder.fit(train_split.timeseries)
+        return encoder
 
     def make_folds(self, /) -> Mapping[SplitID, Series]:
         r"""Create timestamp masks for the prescribed ETT partitions."""
@@ -168,17 +180,6 @@ class ETT_Zhou2021(
         return cast(
             "Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]", default_collate
         )
-
-    def make_encoder(self, key: SplitID, /) -> Encoder:
-        r"""Create and fit the preprocessing encoder for the specified split."""
-        encoder = (
-            FrameDTypeConverter(float)
-            >> StandardScaler(axis=-1)
-            >> FrameEncoder({"date": DateTimeEncoder() >> MinMaxScaler()})
-        )
-        train_split = self.splits[self.get_train_split(key)]
-        encoder.fit(train_split.timeseries)
-        return encoder
 
     def make_generator(self, key: SplitID, /) -> TensorDataset:
         r"""Create the encoded tensor dataset for the specified split."""

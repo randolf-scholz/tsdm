@@ -109,8 +109,8 @@ __all__ = [
 import logging
 from abc import abstractmethod
 from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from dataclasses import KW_ONLY, dataclass
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 
@@ -236,43 +236,37 @@ class TimeSeriesTask[
 
     _: KW_ONLY
 
-    index: Sequence[SplitID] = NotImplemented
-    r"""List of index."""
     folds: SupportsKeysAndGetItem[SplitID, Any] = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
-
-    # fold specific attributes
-    encoders: Mapping[SplitID, Encoder] = NotImplemented
+    encoders: Mapping[SplitID, Encoder] = field(init=False)
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fns: Mapping[SplitID, Callable[[list[SampleT]], BatchT]] = NotImplemented
+    collate_fns: Mapping[SplitID, Callable[[list[SampleT]], BatchT]] = field(init=False)
     r"""Collate function used to create batches from samples."""
-    test_metrics: Mapping[SplitID, Callable[[Any, Any], Any]] = NotImplemented
+    dataloaders: Mapping[SplitID, DataLoader[BatchT]] = field(init=False)
+    r"""Dictionary holding `DataLoader` associated with each key."""
+    generators: Mapping[SplitID, SupportsGetItem[SampleID, SampleT]] = field(init=False)
+    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
+    samplers: Mapping[SplitID, Sampler[SampleID]] = field(init=False)
+    r"""Dictionary holding `Sampler` associated with each key."""
+    splits: Mapping[SplitID, TimeSeriesCollection] = field(init=False)
+    r"""Dictionary holding sampler associated with each key."""
+    test_metrics: Mapping[SplitID, Callable[[Any, Any], Any]] = field(init=False)
     r"""Metric used for evaluation."""
 
-    # split specific attributes
-    dataloaders: Mapping[SplitID, DataLoader[BatchT]] = NotImplemented
-    r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, SupportsGetItem[SampleID, SampleT]] = NotImplemented
-    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    samplers: Mapping[SplitID, Sampler[SampleID]] = NotImplemented
-    r"""Dictionary holding `Sampler` associated with each key."""
-    splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
-    r"""Dictionary holding sampler associated with each key."""
-
-    default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x  # type: ignore
-    r"""Default collate function."""
-    default_test_metric: Callable[[Any, Any], Any] = NotImplemented
-    r"""Default test metric."""
+    train_batch_size: int = 32
+    r"""Batch size for training splits."""
+    eval_batch_size: int = 64
+    r"""Batch size for evaluation splits."""
 
     validate: bool = True
     r"""Whether to validate the folds."""
     initialize: bool = True
     r"""Whether to initialize the task object."""
 
-    train_batch_size: int = 32
-    r"""Batch size for training splits."""
-    eval_batch_size: int = 64
-    r"""Batch size for evaluation splits."""
+    default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x  # type: ignore
+    r"""Default collate function."""
+    default_test_metric: Callable[[Any, Any], Any] = NotImplemented
+    r"""Default test metric."""
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
@@ -284,42 +278,25 @@ class TimeSeriesTask[
         if self.validate:
             self.validate_folds()
 
-        if self.index is NotImplemented:
-            self.index = list(self.folds.keys())
-
         if not self.initialize:
             return
 
         # create LazyDicts for the Mapping attributes
-        if self.collate_fns is NotImplemented:
-            self.LOGGER.info("No collate functions provided. Caching them.")
-            self.collate_fns = LazyDict.from_func(self, self.make_collate_fn)
-        if self.dataloaders is NotImplemented:
-            self.LOGGER.info("No DataLoaders provided. Caching them.")
-            self.dataloaders = LazyDict.from_func(self, self.make_dataloader)
-        if self.encoders is NotImplemented:
-            self.LOGGER.info("No Encoders provided. Caching them.")
-            self.encoders = LazyDict.from_func(self, self.make_encoder)
-        if self.generators is NotImplemented:
-            self.LOGGER.info("No Generators provided. Caching them.")
-            self.generators = LazyDict.from_func(self, self.make_generator)
-        if self.samplers is NotImplemented:
-            self.LOGGER.info("No Samplers provided. Caching them.")
-            self.samplers = LazyDict.from_func(self, self.make_sampler)
-        if self.splits is NotImplemented:
-            self.LOGGER.info("No splits provided. Creating them.")
-            self.splits = LazyDict.from_func(self, self.make_split)
-        if self.test_metrics is NotImplemented:
-            self.LOGGER.info("No test metrics provided. Caching them.")
-            self.test_metrics = LazyDict.from_func(self, self.make_test_metric)
+        self.collate_fns = LazyDict.from_func(self, self.make_collate_fn)
+        self.dataloaders = LazyDict.from_func(self, self.make_dataloader)
+        self.encoders = LazyDict.from_func(self, self.make_encoder)
+        self.generators = LazyDict.from_func(self, self.make_generator)
+        self.samplers = LazyDict.from_func(self, self.make_sampler)
+        self.splits = LazyDict.from_func(self, self.make_split)
+        self.test_metrics = LazyDict.from_func(self, self.make_test_metric)
 
     def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the split keys."""
-        return iter(self.index)
+        return iter(self.folds.keys())
 
     def __len__(self) -> int:
         r"""Return the number of splits."""
-        return len(self.index)
+        return len(self.folds.keys())
 
     @abstractmethod
     def make_folds(self, /) -> Mapping[SplitID, Any]:

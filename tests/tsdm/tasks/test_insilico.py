@@ -1,6 +1,6 @@
 r"""Test task implementation with InSilico."""
 
-from pandas import DataFrame, MultiIndex
+from pandas import DataFrame
 from torch.utils.data import DataLoader
 
 from tsdm.random.samplers import HierarchicalSampler
@@ -13,7 +13,6 @@ def test_insilico_task() -> None:
     split_id = (0, "train")
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)
-    assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[split_id], PandasTSC)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], PandasForecastingDataset)

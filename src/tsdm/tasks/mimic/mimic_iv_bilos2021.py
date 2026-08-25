@@ -193,7 +193,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
 
-    dataset: PandasTSC[int]
+    dataset: PandasTSC[int]  # type: ignore
     preprocessor: FrameEncoder | None
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
@@ -225,7 +225,7 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
             self.preprocessor = None
 
         timeseries = timeseries.astype("float32")
-        self.dataset = PandasTSC(  # pyright: ignore[reportIncompatibleVariableOverride]
+        dataset = PandasTSC(  # pyright: ignore[reportIncompatibleVariableOverride]
             dataset.name,
             timeseries=timeseries,
             timeseries_metadata=dataset.timeseries_metadata,
@@ -234,8 +234,8 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
             constants=dataset.constants,
             constants_metadata=dataset.constants_metadata,
         )
-        self.IDs = self.dataset.metaindex
-        super().__init__(dataset=self.dataset)
+        self.IDs = dataset.metaindex
+        super().__init__(dataset=dataset)
 
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""

@@ -128,7 +128,6 @@ def test_train_split_mapping_uses_only_fold_keys() -> None:
     task = DummyTask(
         NotImplemented,
         folds=folds,
-        index=list(folds.keys()),
         initialize=False,
     )
 
