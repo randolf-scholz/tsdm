@@ -507,6 +507,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         self.validate_params()
 
 
+@pprint_repr
 @dataclass(slots=True)
 class LogEncoder(FittableEncoder[NDArray, NDArray]):
     r"""Encode data on a logarithmic scale.
