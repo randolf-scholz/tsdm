@@ -66,7 +66,7 @@ class SocialTimeEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
 
 
 @pprint_repr
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, frozen=True, init=False)
 class PeriodicSocialTimeEncoder(WrappedEncoder[pd.Series, pd.DataFrame]):
     r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""
 
@@ -92,9 +92,9 @@ class PeriodicSocialTimeEncoder(WrappedEncoder[pd.Series, pd.DataFrame]):
         levels: str = "YMWDhms",
         frequencies: Mapping[str, int] = DEFAULT_FREQUENCIES,
     ) -> None:
-        self.levels = levels
-        self.frequencies = frequencies
         encoder = SocialTimeEncoder(levels) >> FrameEncoder(
             {level: PeriodicEncoder(period=frequencies[level]) for level in levels}
         )
         super().__init__(encoder=encoder)
+        object.__setattr__(self, "levels", levels)
+        object.__setattr__(self, "frequencies", frequencies)

@@ -973,7 +973,7 @@ class EncoderDict[
 
 
 @pprint_repr
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
     r"""Wraps an `Encoder` to a `BaseEncoder`."""
 
@@ -988,42 +988,6 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
     def __invert__(self) -> BaseEncoder[Y, X]:
         return wrap(encoder=self.decoder, decoder=self.encoder)
 
-    def __post_init__(self) -> None:
-        match self.encoder, self.decoder:
-            # easy cases
-            case None, None:
-                raise ValueError(
-                    "At least one of `encoder` or `decoder` must be provided."
-                )
-
-            # only one of them provided
-            case e, None:
-                assert e is not None
-                self.encode = e.encode if isinstance(e, SupportsEncode) else e
-                if isinstance(e, SupportsDecode):
-                    self.decode = e.decode
-            case None, d:
-                assert d is not None
-                self.decode = d.encode if isinstance(d, SupportsEncode) else d
-                if isinstance(d, SupportsDecode):
-                    self.encode = d.decode
-
-            # ambiguous cases
-            case SupportsEncode() as e, SupportsEncode() as d:
-                self.encode = e.encode
-                self.decode = d.encode
-            case SupportsEncode() as e, d if callable(d):
-                self.encode = e.encode
-                self.decode = d
-            case e, SupportsEncode() as d if callable(e):
-                self.encode = e
-                self.decode = d.encode
-            case e, d if callable(e) and callable(d):
-                self.encode = e
-                self.decode = d
-            case _ as never:
-                raise TypeError(f"Unsupported encoder/decoder types: {never}")
-
     @property
     def params(self) -> dict[str, Any]:
         return getattr(self.encoder, "params", {})
@@ -1037,12 +1001,22 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
                 pass
 
     def encode(self, x: X, /) -> Y:
-        # overwritten in __post_init__
-        raise NotImplementedError
+        if isinstance(self.encoder, SupportsEncode):
+            return self.encoder.encode(x)
+        if callable(self.encoder):
+            return self.encoder(x)
+        if callable(encode := getattr(self.decoder, "decode", None)):
+            return encode(x)  # type: ignore
+        raise NotImplementedError("No encoder or decoder provided.")
 
     def decode(self, y: Y, /) -> X:
-        # overwritten in __post_init__
-        raise NotImplementedError
+        if isinstance(self.decoder, SupportsEncode):
+            return self.decoder.encode(y)
+        if callable(self.decoder):
+            return self.decoder(y)
+        if callable(decode := getattr(self.encoder, "decode", None)):
+            return decode(y)  # type: ignore
+        raise NotImplementedError("No encoder or decoder provided.")
 
     def simplify(self) -> BaseEncoder[X, Y]:
         if (simplify := getattr(self.encoder, "simplify", None)) is not None:
