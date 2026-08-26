@@ -1622,7 +1622,6 @@ def pipe(*es: Encoder) -> Pipe:
 
 
 @pprint_repr
-@dataclass(slots=True)
 class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
     r"""Repeat copies of an encoder n times (``**``).
 
@@ -1788,7 +1787,6 @@ def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]:
 
 
 @pprint_repr
-@dataclass(slots=True)
 class Replicate[
     TupleIn: tuple,  # tuple[X, ...]
     TupleOut: tuple,  # tuple[Y, ...]
@@ -1828,9 +1826,11 @@ class Replicate[
     ) -> None:
         if num < 0:
             raise ValueError(f"n must be non-negative, got {num}")
+
+        self.kind = type(encoder)  # pyrefly: ignore[bad-assignment]
+        self.num = num
         super().__init__([deepcopy(encoder) for _ in range(num)])
-        self.kind = type(self[0]) if self else Encoder  # pyrefly: ignore[bad-assignment]
-        self.num = len(self)
+        assert len(self) == num
 
     @classmethod
     def new[X, Y](  # pyrefly: ignore[bad-override]
@@ -1844,9 +1844,9 @@ class Replicate[
             raise TypeError("All encoders must be of the same type.")
 
         new = Replicate.__new__(Replicate)
-        super(Replicate, new).__init__(encoders)
         new.kind = type(encoders[0]) if encoders else Encoder  # type: ignore
         new.num = len(encoders)  # type: ignore
+        super(Replicate, new).__init__(encoders)
         return new
 
     def get_slice[U, V](
@@ -1907,7 +1907,6 @@ def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple, tuple]:
 
 
 # region single input multiple output encoders -----------------------------------------
-# @dataclass(slots=True)
 # class Expand[X, TupleOut: tuple ](FittableEncoder[X, TupleOut]):
 #     r"""Encoder that expands the input into a tuple of values (Single Input Multiple Outputs).
 #
@@ -2078,7 +2077,6 @@ def fork[X, Y](*encoders: Encoder[X, Y]) -> Fork[X, tuple]:
 
 
 @pprint_repr
-@dataclass(slots=True)
 class Duplicate[
     X,
     Ys: tuple,  # tuple[Y, Y, ..., Y]
@@ -2132,11 +2130,12 @@ class Duplicate[
         *,
         reduction: Reduction[tuple, U] = random.choice,
     ) -> None:
+        self.num = num
         super().__init__(  # type: ignore
             *(deepcopy(encoder) for _ in range(num)),
             reduction=reduction,
         )
-        self.num = num
+        assert len(self) == num
 
     @classmethod
     def new[Y](  # pyrefly: ignore[bad-override]
@@ -2154,8 +2153,8 @@ class Duplicate[
             raise TypeError("All encoders must be of the same type.")
 
         new = object.__new__(Duplicate)
-        super(Duplicate, new).__init__(*encoders, reduction=reduction)
         new.num = len(encoders)  # type: ignore
+        super(Duplicate, new).__init__(*encoders, reduction=reduction)
         return new
 
     def get_slice[U, V](self: Duplicate[U, tuple[V, ...]], arg: slice, /) -> Duplicate[U, tuple[V, ...]]:  # fmt: skip
@@ -2229,7 +2228,6 @@ def duplicate[X, Y](
 
 # region single input multiple output encoders -----------------------------------------
 # @pprint_repr
-# @dataclass(slots=True)
 # class Reduce[T, E: Encoder](FittableEncoder[tuple[T, ...], T]):
 #     r"""Encoder that reduces the input to a single value.
 #
