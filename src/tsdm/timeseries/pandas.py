@@ -743,13 +743,15 @@ class Sample(SeparateTimeSample[Series | DataFrame]):
     r"""Values available to the model as forecasting context."""
     context_mask: DataFrame
     r"""Mask indicating which context values are available."""
+
     query_times: Series
     r"""Timestamps at which predictions are requested."""
     query_mask: DataFrame
     r"""Mask indicating which target values should be predicted."""
-    target_values: Optional[DataFrame] = None
+    target_values: Optional[DataFrame] = None  # pyright: ignore[reportIncompatibleMethodOverride]
     r"""Target values at the query times."""
-    static_covariates: Optional[Series | DataFrame] = None
+
+    static_covariates: Optional[DataFrame] = None  # pyright: ignore[reportIncompatibleMethodOverride]
     r"""Static covariates associated with the time series."""
 
     def drop_null_rows(self) -> Self:
