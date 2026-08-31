@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
+from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset
 from tsdm.timeseries.pandas import (
-    PandasForecastingDataset,
     PandasTS,
     PandasTSC,
     beijing_air_quality,

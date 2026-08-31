@@ -12,7 +12,8 @@ from tsdm.datatools import timedelta
 from tsdm.encoders import FittableEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
-from tsdm.timeseries import PandasForecastingDataset, PandasTSC, Sample
+from tsdm.timeseries import PandasTSC
+from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 
 __logger__ = logging.getLogger(__name__)
 
@@ -44,8 +45,8 @@ def test_kiwi_task() -> None:
     # make sample
     sampler = task.samplers[split_id]
     key = next(iter(sampler))
-    sample: Sample = generator[key]
-    assert isinstance(sample, Sample)
+    sample: SplitTimeData = generator[key]
+    assert isinstance(sample, SplitTimeData)
 
     # validate the sample
     x = sample.context_values

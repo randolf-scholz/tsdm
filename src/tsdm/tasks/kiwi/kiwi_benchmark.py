@@ -36,10 +36,9 @@ from tsdm.metrics import TimeSeriesMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 from tsdm.timeseries.pandas import (
-    PandasForecastingDataset,
     PandasTSC,
-    Sample,
     kiwi_benchmark,
 )
 
@@ -177,11 +176,13 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:
+    def make_collate_fn(
+        self, key: SplitID, /
+    ) -> Callable[[list[SplitTimeData]], Batch]:
         r"""Create the collate function for the given split."""
         encoder = self.encoders[key]
 
-        def collate_fn(samples: list[Sample], /) -> Batch:
+        def collate_fn(samples: list[SplitTimeData], /) -> Batch:
             x_vals: list[Tensor] = []
             y_vals: list[Tensor] = []
             x_time: list[Tensor] = []

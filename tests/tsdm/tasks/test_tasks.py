@@ -9,11 +9,10 @@ import pytest
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import MIMIC_IV_Bilos2021, USHCN_DeBrouwer2019
 from tsdm.timeseries import (
-    PandasForecastingDataset,
     PandasTS,
     PandasTSC,
-    Sample,
 )
+from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 from tsdm.timeseries.pandas import in_silico
 
 __logger__ = logging.getLogger(__name__)
@@ -78,7 +77,7 @@ def test_time_series_sample_generator() -> None:
         sparse_columns=True,
     )
     sample = generator[key]
-    assert isinstance(sample, Sample)
+    assert isinstance(sample, SplitTimeData)
 
     # test with TimeSeriesDataset
     outer_key = key[0]
@@ -96,4 +95,4 @@ def test_time_series_sample_generator() -> None:
     )
 
     sample = generator[inner_key]
-    assert isinstance(sample, Sample)
+    assert isinstance(sample, SplitTimeData)

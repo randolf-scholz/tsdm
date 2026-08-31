@@ -23,9 +23,8 @@ from tsdm.random.samplers import (
     Sampler,
 )
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 from tsdm.timeseries.pandas import (
-    PandasForecastingDataset,
-    Sample,
     damped_pendulum_ansari2023,
 )
 
@@ -34,7 +33,7 @@ type SampleKey = tuple[int, list[slice]]
 
 
 @final
-class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, Sample]):
+class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData]):
     r"""Forecasting task on synthetic damped pendulum data.
 
     Note:

@@ -12,7 +12,8 @@ from pandas import DataFrame
 from tsdm.datatools import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import SplitType, TimeSeriesTask
-from tsdm.timeseries.pandas import PandasForecastingDataset, in_silico
+from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset
+from tsdm.timeseries.pandas import in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[list[bool]]]
