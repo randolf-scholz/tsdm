@@ -25,10 +25,13 @@ def pytest_collection_modifyitems(config, items):  # ruff: ignore[ARG001]
         for item in interactive
     }
     if non_interactive or len(interactive_test_ids) > 1:
-        skip = pytest.mark.skip(
-            reason="Skipping interactive plot test in mixed test run"
-        )
         for item in interactive:
+            reason = (
+                "manual tests must be run individually"
+                if item.get_closest_marker(MANUAL_MARK)
+                else "interactive tests must be run individually"
+            )
+            skip = pytest.mark.skip(reason=reason)
             item.add_marker(skip)
 
 
