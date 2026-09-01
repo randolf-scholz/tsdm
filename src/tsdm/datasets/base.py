@@ -181,14 +181,8 @@ class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     r"""Location where the dataset is stored."""
     # endregion class attributes -------------------------------------------------------
 
-    # region dataset metadata ----------------------------------------------------------
-    rawdata_files: Sequence[str]
-    r"""READ_ONLY: The names of the raw data files that make up the dataset."""
-    table_names: Collection[Key]
-    r"""READ_ONLY: The names of the tables that make up the dataset."""
-    # endregion dataset metadata  ------------------------------------------------------
-
-    # region derived members -----------------------------------------------------------
+    # region instance attributes -------------------------------------------------------
+    # lazy attributes set during __init__
     ROOT_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/
     r"""READ_ONLY: Location where the dataset version is stored."""
     RAWDATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/raw
@@ -197,28 +191,27 @@ class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     r"""READ_ONLY:Location where the processed data is stored."""
     METADATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/meta
     r"""READ_ONLY:Location where the metadata is stored."""
-    # endregion derived members --------------------------------------------------------
-
-    # region instance attributes -------------------------------------------------------
-    tables: LazyDict[Key, T]  # set during __init__
+    tables: LazyDict[Key, T]
     r"""READ-ONLY: The tables that make up the dataset."""
     name: Final[str]
     r"""READ-ONLY: The name of the dataset."""
 
-    # TODO: Use typing.ReadOnly when PEP 767 accepted.
-    rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
-    r"""READ-ONLY: Optional hashes of the raw dataset file(s).
+    # abstract attributes
+    rawdata_files: Sequence[str]
+    r"""READ_ONLY: The names of the raw data files that make up the dataset."""
+    table_names: Collection[Key]
+    r"""READ_ONLY: The names of the tables that make up the dataset."""
 
-    Files without a mapping entry, or whose entry is ``None``, are checked only
-    for existence. Subclasses can override :meth:`validate_rawdata_file` for
-    content-aware validation.
-    """
+    # optional attributes
+    # TODO: Use typing.ReadOnly when PEP 767 accepted.
+    # TODO: Use frozendict with python 3.15
+    # Note: Bug in pyright means subclasses need to annotate these https://github.com/microsoft/pyright/issues/6513
+    rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
+    r"""READ-ONLY: Optional hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, Any]] = EMPTY_MAP
     r"""READ-ONLY: Schemas for the raw dataset tables(s)."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
     r"""READ-ONLY: Shapes for the raw dataset tables(s)."""
-
-    # Note: Bug in pyright means subclasses need to annotate these https://github.com/microsoft/pyright/issues/6513
     dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the cleaned dataset file(s)."""
     table_hashes: Mapping[Key, str | None] = EMPTY_MAP
