@@ -3,7 +3,9 @@
 #:schema https://www.schemastore.org/prek.json
 
 exclude = ".idea/|.vscode/|bugs/|dev/"
-minimum_pre_commit_version = "4.5.1"
+minimum_prek_version = "0.5.1"
+fail_fast = false
+update.cooldown_days = 7
 default_language_version = { python = "3.14", node = "24.13.0" }
 
 [[repos]]
