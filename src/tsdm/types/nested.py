@@ -1,3 +1,5 @@
+r"""Nested/Recursive Type Aliases for JSON, TOML, and YAML-like objects."""
+
 __all__ = [
     "JSON",
     "TOML",
