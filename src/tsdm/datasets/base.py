@@ -21,6 +21,7 @@ import webbrowser
 from abc import abstractmethod
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
+from inspect import getattr_static
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -104,6 +105,9 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
 class DatasetMeta(ProtocolMeta):
     r"""Metaclass for BaseDataset."""
 
+    REQUIRED_ATTRIBUTES: ClassVar[tuple[str, ...]] = ("rawdata_files", "table_names")
+    r"""Attributes that every concrete dataset must implement."""
+
     def __init__(
         cls,  # ruff: ignore[N805]
         name: str,
@@ -125,7 +129,19 @@ class DatasetMeta(ProtocolMeta):
 
         if "DATASET_ROOT_DIR" not in namespace:
             cls.DATASET_ROOT_DIR: Path = CONFIG.DATASET_DIR / cls.ID
+
         assert isinstance(cls.DATASET_ROOT_DIR, Path)
+
+        # mark table_names and rawdata_files as abstract.
+        # TODO: use python 3.15 builtin sentinel.
+        sentinel = object()
+        abstract_methods = set(cls.__abstractmethods__)
+        abstract_methods.update(
+            attr
+            for attr in cls.REQUIRED_ATTRIBUTES
+            if getattr_static(cls, attr, sentinel) is sentinel
+        )
+        cls.__abstractmethods__ = frozenset(abstract_methods)
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:  # ruff: ignore[N805]
         r"""When an instance of the class is created, this method is called."""
@@ -182,6 +198,7 @@ class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     # endregion class attributes -------------------------------------------------------
 
     # region instance attributes -------------------------------------------------------
+    # TODO: Use typing.ReadOnly when PEP 767 accepted.
     # lazy attributes set during __init__
     ROOT_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/
     r"""READ_ONLY: Location where the dataset version is stored."""
@@ -196,14 +213,14 @@ class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     name: Final[str]
     r"""READ-ONLY: The name of the dataset."""
 
-    # abstract attributes
+    # required attributes
+    # TODO: Use typing.ReadOnly when PEP 767 accepted.
     rawdata_files: Sequence[str]
     r"""READ_ONLY: The names of the raw data files that make up the dataset."""
     table_names: Collection[Key]
     r"""READ_ONLY: The names of the tables that make up the dataset."""
 
     # optional attributes
-    # TODO: Use typing.ReadOnly when PEP 767 accepted.
     # TODO: Use frozendict with python 3.15
     # Note: Bug in pyright means subclasses need to annotate these https://github.com/microsoft/pyright/issues/6513
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP

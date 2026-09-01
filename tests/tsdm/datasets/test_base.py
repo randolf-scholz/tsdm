@@ -1,6 +1,8 @@
 r"""Tests for raw data validation in :mod:`tsdm.datasets.base`."""
 
 from collections.abc import Collection
+from functools import cached_property
+from inspect import isabstract
 from pathlib import Path
 
 import pytest
@@ -12,13 +14,88 @@ from tsdm.testing.validation import ErrorHandler, ValidationError
 class DummyDataset(DatasetBase[str, object]):
     r"""Concrete dataset implementation for raw-data validation tests."""
 
-    table_names: Collection[str] = ()
+    rawdata_files = []
+    table_names = []
 
     def store_table(self, key: str, table: object, /) -> None:
         pass
 
     def load_table(self, _key: str, /) -> object:
         return object()
+
+
+def test_dataset_required_attributes_determine_abstractness() -> None:
+    r"""Datasets are abstract until both required attributes are available."""
+
+    class DatasetImplementation(DatasetBase[str, object]):
+        def store_table(self, _key: str, _table: object, /) -> None:
+            pass
+
+        def load_table(self, _key: str, /) -> object:
+            return object()
+
+    class MissingAttributes(DatasetImplementation):
+        pass
+
+    class MissingRawdataFiles(DatasetImplementation):
+        table_names = ()
+
+    class MissingTableNames(DatasetImplementation):
+        rawdata_files = ()
+
+    class AttributeDataset(DatasetImplementation):
+        rawdata_files = ()
+        table_names = ()
+
+    class PropertyDataset(DatasetImplementation):
+        @property
+        def rawdata_files(self) -> Collection[str]:  # type: ignore
+            return ()
+
+        @property
+        def table_names(self) -> Collection[str]:  # type: ignore
+            return ()
+
+    class CachedPropertyDataset(DatasetImplementation):
+        @cached_property
+        def rawdata_files(self) -> Collection[str]:  # type: ignore
+            return ()
+
+        @cached_property
+        def table_names(self) -> Collection[str]:  # type: ignore
+            return ()
+
+    assert isabstract(MissingAttributes)
+    assert isabstract(MissingRawdataFiles)
+    assert isabstract(MissingTableNames)
+    assert not isabstract(AttributeDataset)
+    assert not isabstract(PropertyDataset)
+    assert not isabstract(CachedPropertyDataset)
+
+    with pytest.raises(
+        TypeError,
+        match=(
+            "abstract class MissingAttributes without an implementation for "
+            "abstract methods 'rawdata_files', 'table_names'"
+        ),
+    ):
+        MissingAttributes()
+    with pytest.raises(
+        TypeError,
+        match=(
+            "abstract class MissingRawdataFiles without an implementation for "
+            "abstract method 'rawdata_files'"
+        ),
+    ):
+        MissingRawdataFiles()
+    with pytest.raises(
+        TypeError,
+        match=(
+            "abstract class MissingTableNames without an implementation for "
+            "abstract method 'table_names'"
+        ),
+    ):
+        MissingTableNames()
 
 
 def test_rawdata_without_hash_passes_when_file_exists(tmp_path: Path) -> None:

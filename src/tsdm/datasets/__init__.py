@@ -84,7 +84,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "InSilico"                  : InSilico,
     "KiwiBenchmark"             : KiwiBenchmark,
     "MIMIC_III"                 : MIMIC_III,
-    "MIMIC_IV"                  : MIMIC_IV,
+    "MIMIC_IV"                  : MIMIC_IV,  # pyright: ignore[reportAssignmentType]
     "MIMIC_IV_Bilos2021"        : MIMIC_IV_Bilos2021,
     "MIMIC_IV_Scholz2026"       : MIMIC_IV_Scholz2026,
     "PhysioNet2012"             : PhysioNet2012,

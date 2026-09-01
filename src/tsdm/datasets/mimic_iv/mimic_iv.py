@@ -690,11 +690,11 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         if self.version is None:
             raise ValueError("Version must be specified.")
 
-    @property
+    @cached_property
     def rawdata_files(self) -> list[str]:  # type: ignore
         return [f"mimic-iv-{self.version}.zip"]
 
-    @property
+    @cached_property
     def table_names(self) -> list[MIMIC_IV_Key]:  # type: ignore
         expected_names = list(self.filelist)
         type_hinted_names = get_args(MIMIC_IV_Key.__value__)
