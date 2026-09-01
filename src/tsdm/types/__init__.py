@@ -7,59 +7,20 @@ __all__ = [
     "callbacks",
     "dataclass",
     "namedtuple",
-    # Aliases
-    "FilePath",
-    "FileStream",
-    "DictArg",
-    "Axis",
-    "Size",
-    # Protocols
-    "SupportsBool",
-    "SupportsGetItem",
-    "SupportsKeysAndGetItem",
-    "SupportsLenAndGetItem",
-    "SupportsSlicing",
-    # Comparison operations
-    "SupportsEquality",
-    "SupportsComparison",
-    # Mixins
-    "SupportsArray",
-    "SupportsArrayUfunc",
-    "SupportsDataFrame",
-    "SupportsDevice",
-    "SupportsDtype",
-    "SupportsItem",
-    "SupportsNdim",
-    "SupportsRound",
-    "SupportsShape",
+    "protocols",
+    "nested",
     # Special
     "Dataclass",
     "NTuple",
     "is_dataclass",
     "is_namedtuple",
-    "implements",
 ]
 
-from . import abc, aliases, callbacks, dataclass, namedtuple
-from .aliases import Axis, DictArg, FilePath, FileStream, Size
+from . import abc, aliases, callbacks, dataclass, namedtuple, nested, protocols
+from .aliases import *  # ruff: ignore[F403]
 from .dataclass import Dataclass, is_dataclass
 from .namedtuple import NTuple, is_namedtuple
-from .protocols import (
-    SupportsArray,
-    SupportsArrayUfunc,
-    SupportsBool,
-    SupportsComparison,
-    SupportsDataFrame,
-    SupportsDevice,
-    SupportsDtype,
-    SupportsEquality,
-    SupportsGetItem,
-    SupportsItem,
-    SupportsKeysAndGetItem,
-    SupportsLenAndGetItem,
-    SupportsNdim,
-    SupportsRound,
-    SupportsShape,
-    SupportsSlicing,
-    implements,
-)
+from .protocols import *  # ruff: ignore[F403]
+
+__all__ += aliases.__all__
+__all__ += protocols.__all__

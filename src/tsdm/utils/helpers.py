@@ -15,7 +15,8 @@ from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Any, Optional, cast, overload
 
-from tsdm.types.aliases import FilePath, Nested, NestedDict, NestedMapping
+from tsdm.types import FilePath
+from tsdm.types.nested import Nested, NestedDict, NestedMapping
 
 
 @overload

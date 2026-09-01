@@ -50,7 +50,7 @@ from tsdm.linalg import (
     schatten_norm,
 )
 from tsdm.metrics import Metric
-from tsdm.types.aliases import JSON
+from tsdm.types.nested import JSON
 from tsdm.utils import transpose_list_of_dicts
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 

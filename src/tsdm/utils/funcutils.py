@@ -35,8 +35,8 @@ from dataclasses import fields
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Final, Optional, overload
 
-from tsdm.types.aliases import NestedBuiltin
 from tsdm.types.dataclass import Dataclass, issubclass_dataclass
+from tsdm.types.nested import NestedBuiltin
 
 KEYWORD_ONLY: Final = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY: Final = Parameter.POSITIONAL_ONLY

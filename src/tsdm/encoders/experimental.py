@@ -5,7 +5,7 @@ __all__ = ["NestedEncoder", "nest_encoder"]
 from dataclasses import KW_ONLY, dataclass
 
 from tsdm.pprint import pprint_repr
-from tsdm.types.aliases import NestedBuiltin
+from tsdm.types.nested import NestedBuiltin
 from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 from .base import Encoder, FittableEncoder, invert, simplify

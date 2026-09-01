@@ -23,7 +23,7 @@ from torch import Tensor
 
 from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_repr
-from tsdm.types.aliases import NestedBuiltin
+from tsdm.types.nested import NestedBuiltin
 from tsdm.utils.funcutils import recurse_on_nested_builtin
 
 from .base import FittableEncoder, StaticEncoder
