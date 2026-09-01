@@ -1,6 +1,7 @@
 r"""Encoders that work on torch tensors."""
 
 __all__ = [
+    "ENCODERS",
     "PositionalEncoding",
     "PositionalEncoder",
     "Time2VecEncoder",
@@ -10,3 +11,8 @@ __all__ = [
 
 from .positional import PositionalEncoder, PositionalEncoding
 from .time2vec import Time2Vec, Time2VecEncoder
+
+ENCODERS = {
+    "PositionalEncoder"  : PositionalEncoder,
+    "Time2VecEncoder"    : Time2VecEncoder,
+}  # fmt: skip

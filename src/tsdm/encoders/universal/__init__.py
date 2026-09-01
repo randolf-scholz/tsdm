@@ -1,6 +1,7 @@
 r"""Encoders that can be used with different data types (numpy, pandas, torch, etc.)."""
 
 __all__ = [
+    "ENCODERS",
     "BoundaryEncoder",
     "LinearScaler",
     "MinMaxScaler",
@@ -15,3 +16,14 @@ from .boundary import BoundaryEncoder
 from .linear import LinearScaler, MinMaxScaler, StandardScaler
 from .splitter import TensorConcatenator, TensorSplitter
 from .temporal import DateTimeEncoder, TimeDeltaEncoder
+
+ENCODERS = {
+    "BoundaryEncoder"    : BoundaryEncoder,
+    "LinearScaler"       : LinearScaler,
+    "MinMaxScaler"       : MinMaxScaler,
+    "StandardScaler"     : StandardScaler,
+    "TensorSplitter"     : TensorSplitter,
+    "TensorConcatenator" : TensorConcatenator,
+    "DateTimeEncoder"    : DateTimeEncoder,
+    "TimeDeltaEncoder"   : TimeDeltaEncoder,
+}  # fmt: skip

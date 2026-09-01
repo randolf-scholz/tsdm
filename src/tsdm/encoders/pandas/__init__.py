@@ -11,7 +11,6 @@ __all__ = [
     "TripletEncoder",
 ]
 
-from tsdm.encoders.base import BaseEncoder
 
 from .csv import CSVEncoder
 from .frame_encoder import FrameEncoder
@@ -19,7 +18,7 @@ from .positional import PeriodicEncoder
 from .social_time import PeriodicSocialTimeEncoder, SocialTimeEncoder
 from .triplet import TripletDecoder, TripletEncoder
 
-ENCODERS: dict[str, type[BaseEncoder]] = {
+ENCODERS = {
     "CSVEncoder"                : CSVEncoder,
     "FrameEncoder"              : FrameEncoder,
     "PeriodicEncoder"           : PeriodicEncoder,
