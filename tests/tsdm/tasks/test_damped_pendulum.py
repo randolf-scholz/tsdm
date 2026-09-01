@@ -4,8 +4,9 @@ import logging
 from itertools import islice
 
 from tsdm import tasks
+from tsdm.datatools import CallableDataset
+from tsdm.prediction.pandas import SplitTimeData
 from tsdm.random.samplers import HierarchicalSampler
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 
 __logger__ = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def test_damped_pendulum() -> None:
     # test generator
     test_generator = task.generators[0, "test"]
     test_sampler = task.samplers[0, "test"]
-    assert isinstance(test_generator, PandasForecastingDataset)
+    assert isinstance(test_generator, CallableDataset)
     assert isinstance(test_sampler, HierarchicalSampler)
 
     for key in islice(test_sampler, 10):

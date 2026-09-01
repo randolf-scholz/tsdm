@@ -126,6 +126,7 @@ class USHCN_SampleGenerator:
         return iter(self.tensors)
 
     def __getitem__(self, key: int, /) -> Sample:
+        r"""Create the sample associated with the given key."""
         t, x = self.tensors[key]
         observations = t <= self.observation_time
         first_target = observations.sum()

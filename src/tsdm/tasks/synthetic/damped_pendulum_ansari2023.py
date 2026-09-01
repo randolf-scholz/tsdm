@@ -10,12 +10,13 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
-from typing import Literal, final
+from typing import Literal, cast, final
 
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
-from tsdm.datatools import folds_as_frame, is_partition
+from tsdm.datatools import CallableDataset, folds_as_frame, is_partition
+from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import (
     HierarchicalDataset,
     HierarchicalSampler,
@@ -23,10 +24,7 @@ from tsdm.random.samplers import (
     Sampler,
 )
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
-from tsdm.timeseries.pandas import (
-    damped_pendulum_ansari2023,
-)
+from tsdm.timeseries.pandas import PandasTSC, damped_pendulum_ansari2023
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleKey = tuple[int, list[slice]]
@@ -74,13 +72,16 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
         self.missing_rate = float(missing_rate)
 
-    def make_generator(self, key: SplitID, /) -> PandasForecastingDataset[SampleKey]:
-        split = self.splits[key]
+    def make_generator(
+        self, key: SplitID, /
+    ) -> CallableDataset[SampleKey, SplitTimeData]:
+        split = cast("PandasTSC", self.splits[key])
         columns = split.timeseries.columns
-        return PandasForecastingDataset(
+        return make_sample_factory(
             split,
             observables=columns,
             targets=columns,
+            covariates=[],
         )
 
     def make_sampler(self, key: SplitID, /) -> Sampler[SampleKey]:

@@ -3,17 +3,16 @@ r"""Test task implementation with InSilico."""
 import logging
 
 import pytest
-import torch.utils.data
 from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.datatools import timedelta
+from tsdm.datatools import CallableDataset, timedelta
 from tsdm.encoders import FittableEncoder
+from tsdm.prediction.pandas import SplitTimeData
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
 from tsdm.timeseries import PandasTSC
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 
 __logger__ = logging.getLogger(__name__)
 
@@ -31,15 +30,14 @@ def test_kiwi_task() -> None:
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.splits[split_id], PandasTSC)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
-    assert isinstance(task.generators[split_id], PandasForecastingDataset)
+    assert isinstance(task.generators[split_id], CallableDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert isinstance(task.encoders[split_id], FittableEncoder)
     assert task.get_train_split(split_id) == split_id
     assert callable(task.collate_fns[split_id])
 
     # validate generator
-    generator: PandasForecastingDataset = task.generators[split_id]  # type: ignore
-    assert isinstance(generator, torch.utils.data.Dataset)
+    generator = task.generators[split_id]
 
     # make sample
     sampler = task.samplers[split_id]
@@ -52,9 +50,9 @@ def test_kiwi_task() -> None:
     y = sample.target_values
     assert y is not None
     time = sample.context_values.index
-    observables: list[str] = generator.observables
-    covariates: list[str] = generator.covariates
-    targets: list[str] = generator.targets
+    observables: list[str] = task.observables
+    covariates: list[str] = task.covariates
+    targets: list[str] = task.targets
     assert set(observables) | set(covariates) | set(targets) == set(x.columns)
 
     td_observation = timedelta(task.observation_horizon)

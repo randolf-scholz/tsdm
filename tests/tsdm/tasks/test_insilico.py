@@ -3,10 +3,11 @@ r"""Test task implementation with InSilico."""
 from pandas import DataFrame
 from torch.utils.data import DataLoader
 
+from tsdm.datatools import CallableDataset
+from tsdm.prediction.pandas import SplitTimeData
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
 from tsdm.timeseries import PandasTSC
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 
 
 def test_insilico_task() -> None:
@@ -16,7 +17,7 @@ def test_insilico_task() -> None:
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.splits[split_id], PandasTSC)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
-    assert isinstance(task.generators[split_id], PandasForecastingDataset)
+    assert isinstance(task.generators[split_id], CallableDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert task.collate_fns[split_id] is NotImplemented
     assert task.get_train_split(split_id) == split_id

@@ -8,6 +8,7 @@ __all__ = [
     "SequentialDataset",
     "TabularDataset",
     # Classes
+    "CallableDataset",
     # Functions
     "get_first_sample",
     "get_index",
@@ -15,7 +16,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import Any, Protocol, overload, runtime_checkable
 
 from numpy.typing import NDArray
@@ -74,6 +75,21 @@ class PandasDataset[K, V](Protocol):  # K, +V
     def loc(self) -> SupportsGetItem[K, V]: ...
     @property
     def iloc(self) -> SupportsSlicing[V]: ...
+
+
+class CallableDataset[K, V]:
+    r"""Adapt a key-to-value callable to a map-style dataset.
+
+    The wrapped function remains publicly available through the function
+    attribute. This is useful when a sampler supplies arbitrary keys to a
+    PyTorch DataLoader.
+    """
+
+    def __init__(self, function: Callable[[K], V], /) -> None:
+        self.function = function
+
+    def __getitem__(self, key: K, /) -> V:
+        return self.function(key)
 
 
 @overload

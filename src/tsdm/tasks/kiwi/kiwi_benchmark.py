@@ -8,7 +8,7 @@ __all__ = [
 
 
 from collections.abc import Callable, Mapping
-from typing import Any, Literal, NamedTuple
+from typing import Any, Literal, NamedTuple, cast
 
 import torch
 from pandas import DataFrame
@@ -17,6 +17,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.datatools import (
+    CallableDataset,
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,
@@ -34,9 +35,9 @@ from tsdm.encoders import (
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.pprint import pprint_repr
+from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 from tsdm.timeseries.pandas import (
     PandasTSC,
     kiwi_benchmark,
@@ -307,7 +308,9 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
 
         return sampler
 
-    def make_generator(self, key: SplitID, /, **kwds: Any) -> PandasForecastingDataset:
+    def make_generator(
+        self, key: SplitID, /, **kwds: Any
+    ) -> CallableDataset[Any, SplitTimeData]:
         r"""Sample generator for the KIWI dataset."""
         # get configuration
         generator_kwargs = self.generator_kwargs | kwds
@@ -318,8 +321,8 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         if generator_kwargs:
             raise ValueError(f"Unknown generator_kwargs: {generator_kwargs}")
 
-        return PandasForecastingDataset(
-            self.splits[key],
+        return make_sample_factory(
+            cast("PandasTSC", self.splits[key]),
             observables=observables,
             targets=targets,
             covariates=covariates,

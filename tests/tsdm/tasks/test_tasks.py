@@ -6,13 +6,13 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
+from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import MIMIC_IV_Bilos2021, USHCN_DeBrouwer2019
 from tsdm.timeseries import (
     PandasTS,
     PandasTSC,
 )
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset, SplitTimeData
 from tsdm.timeseries.pandas import in_silico
 
 __logger__ = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def test_tasks(task_cls: type) -> None:
 
 def test_time_series_sample_generator() -> None:
     r"""Test the TimeSeriesSampleGenerator."""
-    LOGGER = __logger__.getChild(PandasForecastingDataset.__name__)
+    LOGGER = __logger__.getChild(make_sample_factory.__name__)
     LOGGER.info("Testing.")
 
     # make dataset
@@ -68,7 +68,7 @@ def test_time_series_sample_generator() -> None:
     observables = ["Biomass", "Substrate", "Acetate", "DOTm"]
     covariates = ["Volume", "Feed"]
 
-    generator = PandasForecastingDataset(
+    make_sample = make_sample_factory(
         TSC,
         targets=targets,
         observables=observables,
@@ -76,7 +76,7 @@ def test_time_series_sample_generator() -> None:
         sparse_index=True,
         sparse_columns=True,
     )
-    sample = generator[key]
+    sample = make_sample[key]
     assert isinstance(sample, SplitTimeData)
 
     # test with TimeSeriesDataset
@@ -85,7 +85,7 @@ def test_time_series_sample_generator() -> None:
     TSD = TSC[outer_key]  # selecting individual time series.
     assert isinstance(TSD, PandasTS)
 
-    generator = PandasForecastingDataset(
+    make_sample = make_sample_factory(
         TSD,
         targets=targets,
         observables=observables,
@@ -94,5 +94,5 @@ def test_time_series_sample_generator() -> None:
         sparse_columns=True,
     )
 
-    sample = generator[inner_key]
+    sample = make_sample[inner_key]
     assert isinstance(sample, SplitTimeData)

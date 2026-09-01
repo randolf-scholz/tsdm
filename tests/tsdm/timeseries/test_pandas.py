@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset
+from tsdm.prediction.pandas import make_sample_factory
 from tsdm.timeseries.pandas import (
     PandasTS,
     PandasTSC,
@@ -144,9 +144,14 @@ def test_forecasting_sample_static_covariates_from_timeseries() -> None:
         timeseries=pd.DataFrame({"value": [10, 20, 30]}),
         static_covariates=static_covariates,
     )
-    dataset = PandasForecastingDataset(timeseries, targets=["value"])
+    make_sample = make_sample_factory(
+        timeseries,
+        targets=["value"],
+        observables=["value"],
+        covariates=[],
+    )
 
-    sample = dataset[[slice(0, 1), slice(2, 2)]]
+    sample = make_sample[[slice(0, 1), slice(2, 2)]]
 
     assert sample.static_covariates is static_covariates
 
@@ -162,9 +167,27 @@ def test_forecasting_sample_static_covariates_from_collection() -> None:
         timeseries=pd.DataFrame({"value": range(6)}, index=index),
         static_covariates=static_covariates,
     )
-    dataset = PandasForecastingDataset(collection, targets=["value"])
+    make_sample = make_sample_factory(
+        collection,
+        targets=["value"],
+        observables=["value"],
+        covariates=[],
+    )
 
-    sample = dataset[("a", [slice(0, 1), slice(2, 2)])]
+    sample = make_sample["a", [slice(0, 1), slice(2, 2)]]
 
     assert isinstance(sample.static_covariates, pd.Series)
     assert_series_equal(sample.static_covariates, static_covariates.loc["a"])
+
+
+def test_make_sample_factory_validates_selected_columns() -> None:
+    r"""Column validation is performed while constructing the sample factory."""
+    timeseries = PandasTS(timeseries=pd.DataFrame({"value": [10, 20, 30]}))
+
+    with pytest.raises(ValueError, match="Covariates and observables"):
+        make_sample_factory(
+            timeseries,
+            targets=["value"],
+            observables=["value"],
+            covariates=["value"],
+        )

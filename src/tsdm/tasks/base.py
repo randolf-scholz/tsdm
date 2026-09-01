@@ -245,7 +245,7 @@ class TimeSeriesTask[
     dataloaders: Mapping[SplitID, DataLoader[BatchT]] = field(init=False)
     r"""Dictionary holding `DataLoader` associated with each key."""
     generators: Mapping[SplitID, SupportsGetItem[SampleID, SampleT]] = field(init=False)
-    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
+    r"""Dictionary holding the sample generator associated with each key."""
     samplers: Mapping[SplitID, Sampler[SampleID]] = field(init=False)
     r"""Dictionary holding `Sampler` associated with each key."""
     splits: Mapping[SplitID, TimeSeriesCollection] = field(init=False)
@@ -310,7 +310,7 @@ class TimeSeriesTask[
 
     @abstractmethod
     def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, SampleT]:
-        r"""Return the generator associated with the specified key."""
+        r"""Return the sample generator associated with the specified key."""
         return NotImplemented
 
     def make_encoder(self, key: SplitID, /) -> Encoder:  # ruff: ignore[ARG002]

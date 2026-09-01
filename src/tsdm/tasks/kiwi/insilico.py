@@ -5,15 +5,20 @@ __all__ = [
     "InSilicoTask",
 ]
 
-from typing import Literal
+from typing import Literal, cast
 
 from pandas import DataFrame
 
-from tsdm.datatools import folds_as_frame, folds_as_sparse_frame, folds_from_groups
+from tsdm.datatools import (
+    CallableDataset,
+    folds_as_frame,
+    folds_as_sparse_frame,
+    folds_from_groups,
+)
+from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import SplitType, TimeSeriesTask
-from tsdm.timeseries.forecasting.pandas import PandasForecastingDataset
-from tsdm.timeseries.pandas import in_silico
+from tsdm.timeseries.pandas import PandasTSC, in_silico
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[list[bool]]]
@@ -38,7 +43,7 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         super().__init__(dataset)
 
     def make_sampler(self, key: SplitID, /) -> Sampler:
-        split = self.splits[key]
+        split = cast("PandasTSC", self.splits[key])
         subsamplers = {
             key: SlidingWindowSampler(
                 tsd.timeindex,
@@ -66,9 +71,11 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: SplitID, /) -> PandasForecastingDataset:
-        split = self.splits[key]
-        return PandasForecastingDataset(
+    def make_generator(
+        self, key: SplitID, /
+    ) -> CallableDataset[SampleID, SplitTimeData]:
+        split = cast("PandasTSC", self.splits[key])
+        return make_sample_factory(
             split,
             targets=["Biomass", "Product"],
             observables=["Biomass", "Substrate", "Acetate", "DOTm"],

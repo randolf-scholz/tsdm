@@ -4,6 +4,7 @@ __all__ = [
     # Modules
     # "timeseries",
     # Protocols
+    "CallableDataset",
     "MapDataset",
     "PandasDataset",
     "Dataset",
@@ -37,6 +38,7 @@ __all__ = [
 ]
 
 from .collections import (
+    CallableDataset,
     Dataset,
     MapDataset,
     PandasDataset,

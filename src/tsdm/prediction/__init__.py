@@ -1,4 +1,4 @@
-r"""Utilities for time series forecasting."""
+r"""Utilities for time series prediction."""
 
 __all__ = [
     # submodules
