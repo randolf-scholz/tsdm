@@ -37,6 +37,7 @@ class SIR(IVP_GeneratorBase):
     X_MAX: ClassVar[float] = 1.0
 
     _: KW_ONLY
+
     alpha: float = 0.1
     r"""Recovery rate."""
     beta: float = 0.5

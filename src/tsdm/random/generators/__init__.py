@@ -13,6 +13,8 @@ __all__ = [
     "BouncingBall",
     "DampedPendulum",
     "DampedPendulumXY",
+    "DuffingOscillator",
+    "Helix",
     "LotkaVolterra",
     "SIR",
 ]
@@ -20,6 +22,8 @@ from . import base
 from .base import *  # ruff: ignore[F403]
 from .bouncing_ball import BouncingBall
 from .dampened_pendulum import DampedPendulum, DampedPendulumXY
+from .duffing_oscillator import DuffingOscillator
+from .helix import Helix
 from .lotka_volterra import LotkaVolterra
 from .sir_model import SIR
 
@@ -29,6 +33,8 @@ GENERATORS: dict[str, type[base.IVP_Generator]] = {
     "BouncingBall"     : BouncingBall,
     "DampedPendulum"   : DampedPendulum,
     "DampedPendulumXY" : DampedPendulumXY,
+    "DuffingOscillator": DuffingOscillator,
+    "Helix"            : Helix,
     "LotkaVolterra"    : LotkaVolterra,
     "SIR"              : SIR,
 }  # fmt: skip

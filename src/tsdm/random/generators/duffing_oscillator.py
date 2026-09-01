@@ -1,6 +1,6 @@
-r"""Duffing Oszillator Simulation."""
+r"""Duffing Oscillator Simulation."""
 
-__all__ = ["DuffingOszillator"]
+__all__ = ["DuffingOscillator"]
 
 from dataclasses import KW_ONLY, dataclass
 
@@ -10,9 +10,9 @@ from numpy.typing import ArrayLike, NDArray
 from .base import IVP_GeneratorBase
 
 
-@dataclass(slots=True, frozen=True)
-class DuffingOszillator(IVP_GeneratorBase):
-    r"""Duffing Oszillator Simulation.
+@dataclass(slots=True)
+class DuffingOscillator(IVP_GeneratorBase):
+    r"""Duffing Oscillator Simulation.
 
     References:
         - https://en.wikipedia.org/wiki/Duffing_equation
