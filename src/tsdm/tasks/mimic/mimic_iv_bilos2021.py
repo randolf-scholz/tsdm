@@ -226,7 +226,7 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
             self.preprocessor = None
 
         timeseries = timeseries.astype("float32")
-        dataset = PandasTSC(  # pyright: ignore[reportIncompatibleVariableOverride]
+        dataset = PandasTSC(
             dataset.name,
             timeseries=timeseries,
             timeseries_metadata=dataset.timeseries_metadata,
