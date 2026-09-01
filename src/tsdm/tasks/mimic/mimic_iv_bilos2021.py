@@ -70,7 +70,7 @@ from tsdm.encoders.pandas import FrameEncoder
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import PandasTSC, mimic_iv_bilos2021
+from tsdm.timeseries.pandas import TimeSeriesCollection, mimic_iv_bilos2021
 
 
 @pprint_repr
@@ -195,7 +195,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
 
-    dataset: PandasTSC[int]  # type: ignore
+    dataset: TimeSeriesCollection[int]  # type: ignore
     preprocessor: FrameEncoder | None
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
@@ -227,7 +227,7 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
             self.preprocessor = None
 
         timeseries = timeseries.astype("float32")
-        dataset = PandasTSC(
+        dataset = TimeSeriesCollection(
             dataset.name,
             timeseries=timeseries,
             timeseries_metadata=dataset.timeseries_metadata,

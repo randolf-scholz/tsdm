@@ -21,7 +21,7 @@ from tsdm.encoders import FittableEncoder, StandardScaler
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import PandasTS, electricity
+from tsdm.timeseries.pandas import TimeSeries, electricity
 
 
 @pprint_repr
@@ -110,7 +110,7 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
     preprocessor: FittableEncoder
 
     # FIXME: need a different base class for this task!
-    dataset: PandasTS  # type: ignore
+    dataset: TimeSeries  # type: ignore
 
     def __init__(self) -> None:
         ds = electricity().timeseries

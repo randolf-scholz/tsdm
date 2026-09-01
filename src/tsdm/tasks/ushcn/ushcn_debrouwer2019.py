@@ -73,7 +73,7 @@ from tsdm.datatools import folds_as_frame, is_partition
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import PandasTSC, ushcn_de_brouwer2019
+from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
 
 
 @pprint_repr
@@ -196,7 +196,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
 
-    dataset: PandasTSC
+    dataset: TimeSeriesCollection
 
     observation_time = 150
     prediction_steps = 3
@@ -207,7 +207,7 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
 
     def __init__(self, *, normalize_time: bool = True) -> None:
         self.normalize_time = normalize_time
-        dataset = cast("PandasTSC[int]", ushcn_de_brouwer2019())
+        dataset = cast("TimeSeriesCollection[int]", ushcn_de_brouwer2019())
         timeseries = dataset.timeseries
 
         if normalize_time:

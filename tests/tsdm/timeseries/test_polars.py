@@ -4,7 +4,7 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal, assert_series_equal
 
-from tsdm.timeseries.polars import PolarsTS, PolarsTSC
+from tsdm.timeseries.polars import TimeSeries, TimeSeriesCollection
 
 
 @pytest.mark.parametrize(
@@ -22,14 +22,14 @@ def test_timeseries_getitem(
     expected_values: list[int],
 ) -> None:
     raw_data = {"time": [1, 2, 3], "value": [10, 20, 30]}
-    ts = PolarsTS(
+    ts = TimeSeries(
         timeseries=pl.DataFrame(raw_data),
         time_column="time",
     )
 
     actual = ts[key]
 
-    assert isinstance(actual, PolarsTS)
+    assert isinstance(actual, TimeSeries)
     assert_frame_equal(
         actual.timeseries,
         pl.DataFrame({"time": expected_timeindex, "value": expected_values}),
@@ -43,15 +43,15 @@ def test_timeseries_getitem(
 @pytest.mark.parametrize(
     ("key", "expected_type", "expected_series", "expected_values"),
     [
-        ("a", PolarsTS, ["a"], [10, 20]),
-        (["b"], PolarsTSC, ["b"], [30, 40]),
-        ([False, True], PolarsTSC, ["b"], [30, 40]),
-        (slice("a", "a"), PolarsTSC, ["a"], [10, 20]),
+        ("a", TimeSeries, ["a"], [10, 20]),
+        (["b"], TimeSeriesCollection, ["b"], [30, 40]),
+        ([False, True], TimeSeriesCollection, ["b"], [30, 40]),
+        (slice("a", "a"), TimeSeriesCollection, ["a"], [10, 20]),
     ],
 )
 def test_timeseries_collection_getitem(
     key: str | slice | list[str] | list[bool],
-    expected_type: type[PolarsTS | PolarsTSC],
+    expected_type: type[TimeSeries | TimeSeriesCollection],
     expected_series: list[str],
     expected_values: list[int],
 ) -> None:
@@ -60,7 +60,7 @@ def test_timeseries_collection_getitem(
         "time": [1, 2, 1, 2],
         "value": [10, 20, 30, 40],
     }
-    collection = PolarsTSC(
+    collection = TimeSeriesCollection(
         timeseries=pl.DataFrame(raw_data),
         time_column="time",
         meta_columns=["series"],
@@ -68,7 +68,7 @@ def test_timeseries_collection_getitem(
     )
     assert isinstance(collection, Mapping)
     assert list(collection.keys()) == ["a", "b"]
-    assert all(isinstance(value, PolarsTS) for value in collection.values())
+    assert all(isinstance(value, TimeSeries) for value in collection.values())
     assert_frame_equal(collection.metaindex, pl.DataFrame({"series": ["a", "b"]}))
 
     actual = collection[key]
@@ -98,7 +98,7 @@ def test_timeseries_collection_getitem(
         actual.timeindex,
         pl.Series("time", [1, 2] * len(expected_series)),
     )
-    if isinstance(actual, PolarsTSC):
+    if isinstance(actual, TimeSeriesCollection):
         assert_frame_equal(
             actual.metaindex,
             pl.DataFrame({"series": expected_series}),
@@ -109,7 +109,7 @@ def test_timeseries_collection_getitem(
 
 
 def test_timeseries_collection_getitem_with_multicolumn_metaindex() -> None:
-    collection = PolarsTSC(
+    collection = TimeSeriesCollection(
         timeseries=pl.DataFrame(
             {
                 "batch": [1, 1, 1, 1, 2, 2],
@@ -139,7 +139,7 @@ def test_timeseries_collection_getitem_with_multicolumn_metaindex() -> None:
 
     actual = collection[(1, 2)]
 
-    assert isinstance(actual, PolarsTS)
+    assert isinstance(actual, TimeSeries)
     assert_frame_equal(
         actual.timeseries,
         pl.DataFrame(
@@ -160,7 +160,7 @@ def test_timeseries_collection_getitem_with_multicolumn_metaindex() -> None:
 
     subset = collection[[(1, 1), (2, 1)]]
 
-    assert isinstance(subset, PolarsTSC)
+    assert isinstance(subset, TimeSeriesCollection)
     assert_frame_equal(
         subset.metaindex,
         pl.DataFrame({"batch": [1, 2], "series": [1, 1]}),
@@ -179,7 +179,7 @@ def test_timeseries_collection_getitem_with_multicolumn_metaindex() -> None:
 
 def test_timeseries_collection_requires_static_covariate_meta_columns() -> None:
     with pytest.raises(ValueError, match="contain all meta_columns"):
-        PolarsTSC(
+        TimeSeriesCollection(
             timeseries=pl.DataFrame(
                 {
                     "series": ["a", "a", "b", "b"],

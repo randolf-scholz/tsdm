@@ -15,7 +15,7 @@ from tsdm.datatools import CallableDataset
 from tsdm.pprint import pprint_repr
 from tsdm.timeseries import abstract
 
-from .datasets import PandasTS, PandasTSC
+from .datasets import TimeSeries, TimeSeriesCollection
 
 
 @pprint_repr
@@ -67,7 +67,7 @@ class SplitTimeData(abstract.SplitTimeData[Series | DataFrame]):
 
 
 def make_sample(
-    dataset: PandasTS | PandasTSC,
+    dataset: TimeSeries | TimeSeriesCollection,
     key: Any,
     /,
     *,
@@ -102,11 +102,11 @@ def make_sample(
         make_sample_factory when creating many samples from one dataset.
     """
     match dataset:
-        case PandasTS() as tsd:
+        case TimeSeries() as tsd:
             # Single-series keys contain only the pair of horizons.
             horizons = key
             static_covariates = tsd.static_covariates
-        case PandasTSC() as tsc:
+        case TimeSeriesCollection() as tsc:
             # Collection keys additionally identify the selected time series.
             try:
                 outer_key, horizons = key
@@ -177,7 +177,7 @@ def make_sample(
 
 
 def make_sample_factory(
-    dataset: PandasTS | PandasTSC,
+    dataset: TimeSeries | TimeSeriesCollection,
     /,
     *,
     targets: Iterable[str],
@@ -221,7 +221,7 @@ def make_sample_factory(
 
 
 def _validate_columns(
-    dataset: PandasTS | PandasTSC,
+    dataset: TimeSeries | TimeSeriesCollection,
     targets: Index,
     observables: Index,
     covariates: Index,

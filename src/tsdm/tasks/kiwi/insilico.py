@@ -15,8 +15,8 @@ from tsdm.datatools import (
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import SplitType, TimeSeriesTask
 from tsdm.timeseries.pandas import (
-    PandasTSC,
     SplitTimeData,
+    TimeSeriesCollection,
     in_silico,
     make_sample_factory,
 )
@@ -44,7 +44,7 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         super().__init__(dataset)
 
     def make_sampler(self, key: SplitID, /) -> Sampler:
-        split = cast("PandasTSC", self.splits[key])
+        split = cast("TimeSeriesCollection", self.splits[key])
         subsamplers = {
             key: SlidingWindowSampler(
                 tsd.timeindex,
@@ -75,7 +75,7 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
     def make_generator(
         self, key: SplitID, /
     ) -> CallableDataset[SampleID, SplitTimeData]:
-        split = cast("PandasTSC", self.splits[key])
+        split = cast("TimeSeriesCollection", self.splits[key])
         return make_sample_factory(
             split,
             targets=["Biomass", "Product"],

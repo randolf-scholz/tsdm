@@ -22,7 +22,7 @@ from tsdm.encoders import (
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import PandasTS
+from tsdm.timeseries.pandas import TimeSeries
 
 type SplitID = Literal["train", "trainval", "valid", "test"]
 
@@ -104,7 +104,7 @@ class ETT_Zhou2021(
     r"""Default batch size when evaluating."""
 
     # additional attributes
-    dataset: PandasTS  # type: ignore[reportIncompatibleVariableOverride]
+    dataset: TimeSeries  # type: ignore[reportIncompatibleVariableOverride]
     preprocessor: Encoder
     r"""Encoder for the observations."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
@@ -126,7 +126,7 @@ class ETT_Zhou2021(
         train_batch_size: int = 32,
     ) -> None:
         timeseries = ETT().tables[dataset_id]
-        dataset = PandasTS(dataset_id, timeseries=timeseries)
+        dataset = TimeSeries(dataset_id, timeseries=timeseries)
         super().__init__(
             dataset=dataset,
             train_batch_size=train_batch_size,

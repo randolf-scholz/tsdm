@@ -3,8 +3,8 @@ __all__ = [
     "TIMESERIES",
     "TIMESERIES_COLLECTIONS",
     # Classes
-    "PandasTS",
-    "PandasTSC",
+    "TimeSeries",
+    "TimeSeriesCollection",
     # Concrete classes
     "beijing_air_quality",
     "damped_pendulum_ansari2023",
@@ -41,7 +41,7 @@ from tsdm.timeseries.abstract import RangeSelector
 
 @pprint_repr
 @dataclass(slots=True, frozen=True)
-class PandasTS[TimeT = Any]:
+class TimeSeries[TimeT = Any]:
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and metadata.
@@ -149,7 +149,7 @@ class PandasTS[TimeT = Any]:
             {k: v for k, v in asdict(self).items() if k in self.FIELDS}
             | {"timeseries": timeseries}
         )
-        return cast("Self", PandasTS(**sliced))
+        return cast("Self", TimeSeries(**sliced))
 
     def _check_keys(self, keys: list[TimeT] | Index, /) -> None:
         r"""Raise ``KeyError`` when a label is not present in the time index."""
@@ -182,7 +182,7 @@ class PandasTS[TimeT = Any]:
 
 @pprint_repr
 @dataclass(slots=True, frozen=True)
-class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
+class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     r"""Class for **equimodal** TimeSeriesCollections.
 
     A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
@@ -316,8 +316,10 @@ class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
     @overload
     def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
-    def __getitem__(self, key: KeyT, /) -> PandasTS[TimeT]: ...
-    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PandasTS[TimeT] | Self:
+    def __getitem__(self, key: KeyT, /) -> TimeSeries[TimeT]: ...
+    def __getitem__(
+        self, key: KeyT | RangeSelector[KeyT], /
+    ) -> TimeSeries[TimeT] | Self:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         match key:
             case slice() as s:
@@ -351,7 +353,7 @@ class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
                 labels = [scalar]
                 self._check_keys(labels)
                 timeseries = self.timeseries.loc[scalar]
-                return PandasTS(
+                return TimeSeries(
                     name=self.name,
                     timeseries=timeseries,
                     timeseries_metadata=self.timeseries_metadata,
@@ -380,7 +382,7 @@ class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
                 "static_covariates": self._static_covariates_for(keys),
             }
         )
-        return cast("Self", PandasTSC(**sliced))
+        return cast("Self", TimeSeriesCollection(**sliced))
 
     def _select_slice(self, key: slice, /) -> Index:
         r"""Resolve a label slice against an index, including its stop label."""
@@ -396,7 +398,7 @@ class PandasTSC[KeyT, TimeT = Any](Mapping[KeyT, PandasTS[TimeT]]):
         return index[slice(start, stop + 1, key.step)]
 
 
-class electricity(PandasTS[Any]):
+class electricity(TimeSeries[Any]):
     r"""The Electricity dataset wrapped as a pandas time series."""
 
     timeseries: DataFrame
@@ -411,7 +413,7 @@ class electricity(PandasTS[Any]):
         )
 
 
-class traffic(PandasTS[Any]):
+class traffic(TimeSeries[Any]):
     r"""The Traffic dataset wrapped as a pandas time series."""
 
     timeseries: DataFrame
@@ -426,7 +428,7 @@ class traffic(PandasTS[Any]):
         )
 
 
-class etth1(PandasTS[Any]):
+class etth1(TimeSeries[Any]):
     r"""The ETTh1 dataset wrapped as a pandas time series."""
 
     timeseries: DataFrame
@@ -439,7 +441,7 @@ class etth1(PandasTS[Any]):
         super().__init__("ETTh1", timeseries=ds["ETTh1"].to_pandas().set_index("date"))
 
 
-class etth2(PandasTS[Any]):
+class etth2(TimeSeries[Any]):
     r"""The ETTh2 dataset wrapped as a pandas time series."""
 
     timeseries: DataFrame
@@ -452,7 +454,7 @@ class etth2(PandasTS[Any]):
         super().__init__("ETTh2", timeseries=ds["ETTh2"].to_pandas().set_index("date"))
 
 
-class ettm1(PandasTS[Any]):
+class ettm1(TimeSeries[Any]):
     r"""The ETTm1 dataset wrapped as a pandas time series."""
 
     timeseries: DataFrame
@@ -465,7 +467,7 @@ class ettm1(PandasTS[Any]):
         super().__init__("ETTm1", timeseries=ds["ETTm1"].to_pandas().set_index("date"))
 
 
-class ettm2(PandasTS[Any]):
+class ettm2(TimeSeries[Any]):
     r"""The ETTm2 dataset wrapped as a pandas time series."""
 
     timeseries: DataFrame
@@ -478,7 +480,7 @@ class ettm2(PandasTS[Any]):
         super().__init__("ETTm2", timeseries=ds["ETTm2"].to_pandas().set_index("date"))
 
 
-class beijing_air_quality(PandasTSC[str]):
+class beijing_air_quality(TimeSeriesCollection[str]):
     r"""The Beijing Air Quality dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -501,7 +503,7 @@ class beijing_air_quality(PandasTSC[str]):
         )
 
 
-class in_silico(PandasTSC[int]):
+class in_silico(TimeSeriesCollection[int]):
     r"""The in silico dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -524,7 +526,7 @@ class in_silico(PandasTSC[int]):
         )
 
 
-class kiwi_benchmark(PandasTSC[tuple[int, int]]):
+class kiwi_benchmark(TimeSeriesCollection[tuple[int, int]]):
     r"""The KIWI dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -551,7 +553,7 @@ class kiwi_benchmark(PandasTSC[tuple[int, int]]):
         )
 
 
-class ushcn(PandasTSC[int]):
+class ushcn(TimeSeriesCollection[int]):
     r"""The USHCN dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -580,7 +582,7 @@ class ushcn(PandasTSC[int]):
         )
 
 
-class ushcn_de_brouwer2019(PandasTSC[int]):
+class ushcn_de_brouwer2019(TimeSeriesCollection[int]):
     r"""The USHCN_DeBrouwer2019 dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -598,7 +600,7 @@ class ushcn_de_brouwer2019(PandasTSC[int]):
         )
 
 
-class physionet2012(PandasTSC[int]):
+class physionet2012(TimeSeriesCollection[int]):
     r"""The PhysioNet2012 dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -627,7 +629,7 @@ class physionet2012(PandasTSC[int]):
         )
 
 
-class physionet2019(PandasTSC[int]):
+class physionet2019(TimeSeriesCollection[int]):
     r"""The PhysioNet2019 dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -656,7 +658,7 @@ class physionet2019(PandasTSC[int]):
         )
 
 
-class mimic_iv_bilos2021(PandasTSC[int]):
+class mimic_iv_bilos2021(TimeSeriesCollection[int]):
     r"""The MIMIC_IV_Bilos2021 dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -674,7 +676,7 @@ class mimic_iv_bilos2021(PandasTSC[int]):
         )
 
 
-class damped_pendulum_ansari2023(PandasTSC[int]):
+class damped_pendulum_ansari2023(TimeSeriesCollection[int]):
     r"""The DampedPendulum_Ansari2023 dataset wrapped as a pandas collection."""
 
     timeseries: DataFrame
@@ -725,11 +727,11 @@ if TYPE_CHECKING:
     # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
 
     def _upcast_ts[TimeT](
-        arg: PandasTS[TimeT], /
+        arg: TimeSeries[TimeT], /
     ) -> abstract.TimeSeries[TimeT, DataFrame]:
         return arg
 
     def _upcast_tsc[KeyT](
-        arg: PandasTSC[KeyT], /
+        arg: TimeSeriesCollection[KeyT], /
     ) -> abstract.TimeSeriesCollection[KeyT, DataFrame]:
         return arg

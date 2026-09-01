@@ -24,8 +24,8 @@ from tsdm.random.samplers import (
 )
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import (
-    PandasTSC,
     SplitTimeData,
+    TimeSeriesCollection,
     damped_pendulum_ansari2023,
     make_sample_factory,
 )
@@ -79,7 +79,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
     def make_generator(
         self, key: SplitID, /
     ) -> CallableDataset[SampleKey, SplitTimeData]:
-        split = cast("PandasTSC", self.splits[key])
+        split = cast("TimeSeriesCollection", self.splits[key])
         columns = split.timeseries.columns
         return make_sample_factory(
             split,

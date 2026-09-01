@@ -11,7 +11,7 @@ from tsdm.datatools import CallableDataset, timedelta
 from tsdm.encoders import FittableEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
-from tsdm.timeseries.pandas import PandasTSC, SplitTimeData
+from tsdm.timeseries.pandas import SplitTimeData, TimeSeriesCollection
 
 __logger__ = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def test_kiwi_task() -> None:
     task = KiwiBenchmark()
 
     assert isinstance(task.folds, DataFrame)
-    assert isinstance(task.splits[split_id], PandasTSC)
+    assert isinstance(task.splits[split_id], TimeSeriesCollection)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], CallableDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)

@@ -3,8 +3,8 @@ __all__ = [
     "TIMESERIES",
     "TIMESERIES_COLLECTIONS",
     # Base classes
-    "PolarsTS",
-    "PolarsTSC",
+    "TimeSeries",
+    "TimeSeriesCollection",
     # Concrete classes
     "beijing_air_quality",
     "damped_pendulum_ansari2023",
@@ -38,7 +38,7 @@ from tsdm.timeseries.abstract import RangeSelector
 
 @pprint_repr
 @dataclass(slots=True, frozen=True)
-class PolarsTS[TimeT = Any]:
+class TimeSeries[TimeT = Any]:
     r"""A single time series backed by a Polars DataFrame.
 
     Polars does not have a dedicated row index. ``time_column`` identifies the
@@ -162,7 +162,7 @@ class PolarsTS[TimeT = Any]:
 
 @pprint_repr
 @dataclass(slots=True, frozen=True)
-class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
+class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     r"""A collection of time series backed by a Polars DataFrame.
 
     Polars does not have a dedicated row index. ``time_column`` and
@@ -293,8 +293,10 @@ class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
     @overload
     def __getitem__(self, key: RangeSelector[KeyT], /) -> Self: ...
     @overload
-    def __getitem__(self, key: KeyT, /) -> PolarsTS[TimeT]: ...
-    def __getitem__(self, key: KeyT | RangeSelector[KeyT], /) -> PolarsTS[TimeT] | Self:
+    def __getitem__(self, key: KeyT, /) -> TimeSeries[TimeT]: ...
+    def __getitem__(
+        self, key: KeyT | RangeSelector[KeyT], /
+    ) -> TimeSeries[TimeT] | Self:
         r"""Select one time series or a subset of the collection.
 
         Scalar keys return a :class:`PolarsTS`; lists and slices return a
@@ -328,7 +330,7 @@ class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
                 labels = [scalar]
                 self._check_keys(labels)
                 keys = self._key_frame(labels)
-                return PolarsTS(
+                return TimeSeries(
                     name=self.name,
                     timeseries=self.timeseries.join(
                         keys, on=self.meta_columns, how="semi"
@@ -399,7 +401,7 @@ class PolarsTSC[KeyT, TimeT = Any](Mapping[KeyT, PolarsTS[TimeT]]):
         return index[slice(start, stop + 1, key.step)]
 
 
-class electricity(PolarsTS[Any]):
+class electricity(TimeSeries[Any]):
     r"""The Electricity dataset wrapped as a Polars time series."""
 
     timeseries: pl.DataFrame
@@ -412,7 +414,7 @@ class electricity(PolarsTS[Any]):
         super().__init__(ds.name, timeseries=ds.timeseries, time_column="time")
 
 
-class traffic(PolarsTS[Any]):
+class traffic(TimeSeries[Any]):
     r"""The Traffic dataset wrapped as a Polars time series."""
 
     timeseries: pl.DataFrame
@@ -425,7 +427,7 @@ class traffic(PolarsTS[Any]):
         super().__init__(ds.name, timeseries=ds.timeseries, time_column="time")
 
 
-class etth1(PolarsTS[Any]):
+class etth1(TimeSeries[Any]):
     r"""The ETTh1 dataset wrapped as a Polars time series."""
 
     timeseries: pl.DataFrame
@@ -438,7 +440,7 @@ class etth1(PolarsTS[Any]):
         super().__init__("ETTh1", timeseries=ds["ETTh1"], time_column="date")
 
 
-class etth2(PolarsTS[Any]):
+class etth2(TimeSeries[Any]):
     r"""The ETTh2 dataset wrapped as a Polars time series."""
 
     timeseries: pl.DataFrame
@@ -451,7 +453,7 @@ class etth2(PolarsTS[Any]):
         super().__init__("ETTh2", timeseries=ds["ETTh2"], time_column="date")
 
 
-class ettm1(PolarsTS[Any]):
+class ettm1(TimeSeries[Any]):
     r"""The ETTm1 dataset wrapped as a Polars time series."""
 
     timeseries: pl.DataFrame
@@ -464,7 +466,7 @@ class ettm1(PolarsTS[Any]):
         super().__init__("ETTm1", timeseries=ds["ETTm1"], time_column="date")
 
 
-class ettm2(PolarsTS[Any]):
+class ettm2(TimeSeries[Any]):
     r"""The ETTm2 dataset wrapped as a Polars time series."""
 
     timeseries: pl.DataFrame
@@ -477,7 +479,7 @@ class ettm2(PolarsTS[Any]):
         super().__init__("ETTm2", timeseries=ds["ETTm2"], time_column="date")
 
 
-class beijing_air_quality(PolarsTSC[str]):
+class beijing_air_quality(TimeSeriesCollection[str]):
     r"""The Beijing Air Quality dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -500,7 +502,7 @@ class beijing_air_quality(PolarsTSC[str]):
         )
 
 
-class in_silico(PolarsTSC[int]):
+class in_silico(TimeSeriesCollection[int]):
     r"""The in silico dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -523,7 +525,7 @@ class in_silico(PolarsTSC[int]):
         )
 
 
-class kiwi_benchmark(PolarsTSC[tuple[int, int]]):
+class kiwi_benchmark(TimeSeriesCollection[tuple[int, int]]):
     r"""The KIWI dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -546,7 +548,7 @@ class kiwi_benchmark(PolarsTSC[tuple[int, int]]):
         )
 
 
-class ushcn(PolarsTSC[int]):
+class ushcn(TimeSeriesCollection[int]):
     r"""The USHCN dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -573,7 +575,7 @@ class ushcn(PolarsTSC[int]):
         )
 
 
-class ushcn_de_brouwer2019(PolarsTSC[int]):
+class ushcn_de_brouwer2019(TimeSeriesCollection[int]):
     r"""The USHCN_DeBrouwer2019 dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -593,7 +595,7 @@ class ushcn_de_brouwer2019(PolarsTSC[int]):
         )
 
 
-class physionet2012(PolarsTSC[int]):
+class physionet2012(TimeSeriesCollection[int]):
     r"""The PhysioNet2012 dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -620,7 +622,7 @@ class physionet2012(PolarsTSC[int]):
         )
 
 
-class physionet2019(PolarsTSC[int]):
+class physionet2019(TimeSeriesCollection[int]):
     r"""The PhysioNet2019 dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -647,7 +649,7 @@ class physionet2019(PolarsTSC[int]):
         )
 
 
-class mimic_iv_bilos2021(PolarsTSC[int]):
+class mimic_iv_bilos2021(TimeSeriesCollection[int]):
     r"""The MIMIC_IV_Bilos2021 dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -667,7 +669,7 @@ class mimic_iv_bilos2021(PolarsTSC[int]):
         )
 
 
-class damped_pendulum_ansari2023(PolarsTSC[int]):
+class damped_pendulum_ansari2023(TimeSeriesCollection[int]):
     r"""The DampedPendulum_Ansari2023 dataset wrapped as a Polars collection."""
 
     timeseries: pl.DataFrame
@@ -721,11 +723,11 @@ if TYPE_CHECKING:
     # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
 
     def _upcast_ts[TimeT](
-        arg: PolarsTS[TimeT], /
+        arg: TimeSeries[TimeT], /
     ) -> abstract.TimeSeries[TimeT, pl.DataFrame]:
         return arg
 
     def _upcast_tsc[KeyT](
-        arg: PolarsTSC[KeyT], /
+        arg: TimeSeriesCollection[KeyT], /
     ) -> abstract.TimeSeriesCollection[KeyT, pl.DataFrame]:
         return arg

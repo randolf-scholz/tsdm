@@ -9,9 +9,9 @@ import pytest
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import MIMIC_IV_Bilos2021, USHCN_DeBrouwer2019
 from tsdm.timeseries.pandas import (
-    PandasTS,
-    PandasTSC,
     SplitTimeData,
+    TimeSeries,
+    TimeSeriesCollection,
     in_silico,
     make_sample_factory,
 )
@@ -40,7 +40,7 @@ def test_time_series_sample_generator() -> None:
 
     # make dataset
     dataset = in_silico()
-    TSC = PandasTSC(
+    TSC = TimeSeriesCollection(
         timeseries=dataset.timeseries,
     )
 
@@ -84,7 +84,7 @@ def test_time_series_sample_generator() -> None:
     outer_key = key[0]
     inner_key = key[1]
     TSD = TSC[outer_key]  # selecting individual time series.
-    assert isinstance(TSD, PandasTS)
+    assert isinstance(TSD, TimeSeries)
 
     make_sample = make_sample_factory(
         TSD,

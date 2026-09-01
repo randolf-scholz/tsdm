@@ -38,8 +38,8 @@ from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import (
-    PandasTSC,
     SplitTimeData,
+    TimeSeriesCollection,
     kiwi_benchmark,
     make_sample_factory,
 )
@@ -67,7 +67,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
     The task is to forecast the observables inside the forecasting horizon.
     """
 
-    dataset: PandasTSC
+    dataset: TimeSeriesCollection
 
     # sampler kwargs
     observation_horizon: str = "2h"
@@ -323,7 +323,7 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
             raise ValueError(f"Unknown generator_kwargs: {generator_kwargs}")
 
         return make_sample_factory(
-            cast("PandasTSC", self.splits[key]),
+            cast("TimeSeriesCollection", self.splits[key]),
             observables=observables,
             targets=targets,
             covariates=covariates,

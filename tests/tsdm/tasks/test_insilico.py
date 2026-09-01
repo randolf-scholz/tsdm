@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from tsdm.datatools import CallableDataset
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
-from tsdm.timeseries.pandas import PandasTSC, SplitTimeData
+from tsdm.timeseries.pandas import SplitTimeData, TimeSeriesCollection
 
 
 def test_insilico_task() -> None:
@@ -14,7 +14,7 @@ def test_insilico_task() -> None:
     split_id = (0, "train")
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)
-    assert isinstance(task.splits[split_id], PandasTSC)
+    assert isinstance(task.splits[split_id], TimeSeriesCollection)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], CallableDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
