@@ -74,7 +74,7 @@ def where[Arr: FloatArray](mask: Any, x: Arr, y: Arr, /) -> Arr:
     #   in particular, xᵐ - (1-m) = {x: m=1, 0: m=0}
     #   so, we can return (xᵐ - (1-m)) + (y¹⁻ᵐ - m) = xᵐ + y¹⁻ᵐ - 1
     m = cast("Arr", mask * 1.0)  # floating conversion
-    return x**m + y ** (1.0 - m) - 1.0  # pyrefly: ignore[unsupported-operation]
+    return x**m + y ** (1.0 - m) - 1.0
 
 
 def floor[Arr: FloatArray](x: Arr, /) -> Arr:
@@ -82,7 +82,7 @@ def floor[Arr: FloatArray](x: Arr, /) -> Arr:
     # Note: x // 1 produces NaN when x is ±inf, instead we use x - (x % 1)
     r = x % 1  # fractional part, NaN for ±inf
     m = is_nan(r)
-    return where(m, x, x - r)  # pyrefly: ignore[bad-return]
+    return where(m, x, x - r)
 
 
 def round_impl[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:
@@ -121,6 +121,6 @@ def round[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # ruff: ign
         https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even
     """
     try:
-        return x.round(decimals=decimals)  # pyrefly: ignore[missing-attribute]
+        return x.round(decimals=decimals)
     except AttributeError:
         return round_impl(x, decimals=decimals)

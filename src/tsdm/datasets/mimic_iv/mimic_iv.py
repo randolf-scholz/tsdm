@@ -747,7 +747,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
         }  # fmt: skip
 
         if self.version_info >= (2, 0):
-            files |= {  # pyrefly: ignore[bad-assignment]
+            files |= {
                 "CHANGELOG"        : f"{top}/CHANGELOG.txt",
                 "admissions"       : f"{top}/hosp/admissions.csv.gz",       # NOTE: changed folder
                 "patients"         : f"{top}/hosp/patients.csv.gz",         # NOTE: changed folder
@@ -757,7 +757,7 @@ class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
             }  # fmt: skip
 
         if self.version_info >= (2, 2):
-            files |= {  # pyrefly: ignore[bad-assignment]
+            files |= {
                 "caregiver"        : f"{top}/icu/caregiver.csv.gz",  # NOTE: new table
                 "provider"         : f"{top}/hosp/provider.csv.gz",  # NOTE: new table
             }  # fmt: skip

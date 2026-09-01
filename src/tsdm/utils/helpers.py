@@ -28,22 +28,22 @@ def flatten_dict(  # pyrefly: ignore[inconsistent-overload-default]
     recursive: bool | int = ...,
 ) -> dict[str, Any]: ...
 @overload
-def flatten_dict[K, K2](
-    d: NestedMapping[K, Any],
+def flatten_dict[Key, Key_flat](
+    d: NestedMapping[Key, Any],
     /,
     *,
-    join_fn: Callable[[Iterable[K]], K2],
-    split_fn: Callable[[K2], Iterable[K]],
+    join_fn: Callable[[Iterable[Key]], Key_flat],
+    split_fn: Callable[[Key_flat], Iterable[Key]],
     recursive: bool | int = ...,
-) -> dict[K2, Any]: ...
-def flatten_dict[K, K2](
-    d: NestedMapping[K, Any],
+) -> dict[Key_flat, Any]: ...
+def flatten_dict[Key, Key_flat](
+    d: NestedMapping[Key, Any],
     /,
     *,
-    join_fn: Callable[[Iterable[K]], K2] = cast("Any", ".".join),  # ruff: ignore[B008]
-    split_fn: Callable[[K2], Iterable[K]] = cast("Any", lambda s: s.split(".")),  # ruff: ignore[B008]
+    join_fn: Callable[[Iterable[Key]], Key_flat] = cast("Any", ".".join),  # ruff: ignore[B008]
+    split_fn: Callable[[Key_flat], Iterable[Key]] = cast("Any", lambda s: s.split(".")),  # ruff: ignore[B008]
     recursive: bool | int = True,
-) -> dict[K2, Any]:
+) -> dict[Key_flat, Any]:
     r"""Flatten dictionaries recursively.
 
     Args:
@@ -99,7 +99,7 @@ def flatten_dict[K, K2](
         {'a': {'i': {'x': 0}, 'b': {'y': 1}}}
     """
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
-    result: dict[K2, Any] = {}
+    result: dict[Key_flat, Any] = {}
     for key, item in d.items():
         if recursive and isinstance(item, Mapping):
             for subkey, subitem in flatten_dict(
@@ -126,22 +126,22 @@ def unflatten_dict(  # pyrefly: ignore[inconsistent-overload-default]
     recursive: bool | int = ...,
 ) -> NestedDict[str, Any]: ...
 @overload
-def unflatten_dict[K, K2](
-    d: Mapping[K2, Any],
+def unflatten_dict[Key, Key_flat](
+    d: Mapping[Key_flat, Any],
     /,
     *,
-    join_fn: Callable[[Iterable[K]], K2],
-    split_fn: Callable[[K2], Iterable[K]],
+    join_fn: Callable[[Iterable[Key]], Key_flat],
+    split_fn: Callable[[Key_flat], Iterable[Key]],
     recursive: bool | int = ...,
-) -> NestedDict[K, Any]: ...
-def unflatten_dict[K, K2](
-    d: Mapping[K2, Any],
+) -> NestedDict[Key, Any]: ...
+def unflatten_dict[Key, Key_flat](
+    d: Mapping[Key_flat, Any],
     /,
     *,
     recursive: bool | int = True,
-    join_fn: Callable[[Iterable[K]], K2] = cast("Any", ".".join),  # ruff: ignore[B008]
-    split_fn: Callable[[K2], Iterable[K]] = cast("Any", lambda s: s.split(".")),  # ruff: ignore[B008]
-) -> NestedDict[K, Any]:
+    join_fn: Callable[[Iterable[Key]], Key_flat] = cast("Any", ".".join),  # ruff: ignore[B008]
+    split_fn: Callable[[Key_flat], Iterable[Key]] = cast("Any", lambda s: s.split(".")),  # ruff: ignore[B008]
+) -> NestedDict[Key, Any]:
     r"""Unflatten dictionaries recursively.
 
     Example: Unflattening with string keys.
@@ -173,7 +173,7 @@ def unflatten_dict[K, K2](
         {'a': {'b.c.d': 0, 'x.y.z': 1}}
     """
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
-    result: dict[K, Any] = {}
+    result: dict[Key, Any] = {}
     for key, item in d.items():
         outer_key, *inner_keys = split_fn(key)
         if inner_keys:

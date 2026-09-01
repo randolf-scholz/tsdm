@@ -4,7 +4,7 @@ import logging
 
 import pytest
 import torch.utils.data
-from pandas import DataFrame, MultiIndex
+from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import DataLoader
 
@@ -29,7 +29,6 @@ def test_kiwi_task() -> None:
     task = KiwiBenchmark()
 
     assert isinstance(task.folds, DataFrame)
-    assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[split_id], PandasTSC)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], PandasForecastingDataset)

@@ -48,7 +48,7 @@ class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
 
     def fit(self, data: X, /) -> None:
         self.backend = get_backend(data)
-        self.timedelta_dtype = data.dtype  # pyrefly: ignore[missing-attribute]
+        self.timedelta_dtype = data.dtype
 
         if self.unit is UNDEFINED:
             # This looks awkward but is robust.
@@ -64,7 +64,7 @@ class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
 
     def decode(self, y: Y, /) -> X:
         if self.round:
-            y = y.round()  # pyrefly: ignore[missing-attribute]
+            y = y.round()
 
         try:
             return cast("X", y * self.unit)
@@ -103,7 +103,7 @@ class DateTimeEncoder[X: DateTimeArray, Y: FloatArray](FittableEncoder[X, Y]):
     def fit(self, data: X, /) -> None:
         # get the datetime dtype
         self.backend: Backend[Any] = get_backend(data)
-        self.datetime_dtype = data.dtype  # pyrefly: ignore[missing-attribute]
+        self.datetime_dtype = data.dtype
 
         # set the offset
         offset = self.backend.nanmin(data) if self.offset is UNDEFINED else self.offset
@@ -111,7 +111,7 @@ class DateTimeEncoder[X: DateTimeArray, Y: FloatArray](FittableEncoder[X, Y]):
 
         # get the timedelta dtype
         deltas = self.backend.drop_null(data - self.offset)
-        self.timedelta_dtype = deltas.dtype  # pyrefly: ignore[missing-attribute]
+        self.timedelta_dtype = deltas.dtype
 
         if self.unit is UNDEFINED:
             # FIXME: https://github.com/pandas-dev/pandas/issues/58403
@@ -129,7 +129,7 @@ class DateTimeEncoder[X: DateTimeArray, Y: FloatArray](FittableEncoder[X, Y]):
 
     def decode(self, y: Y, /) -> X:
         if self.round:
-            y = y.round()  # pyrefly: ignore[missing-attribute]
+            y = y.round()
 
         try:
             return cast("X", y * self.unit + self.offset)

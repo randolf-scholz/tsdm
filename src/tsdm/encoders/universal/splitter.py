@@ -81,7 +81,7 @@ class TensorConcatenator[Arr: Array](FittableEncoder[list[Arr], Arr]):
 
     def fit(self, x: list[Arr], /) -> None:
         self.backend = get_backend(x)
-        self.indices = [arr.shape[self.axis] for arr in x]  # pyrefly: ignore[missing-attribute]
+        self.indices = [arr.shape[self.axis] for arr in x]
 
     def encode(self, x: list[Arr], /) -> Arr:
         return self.backend.concatenate(x, axis=self.axis)

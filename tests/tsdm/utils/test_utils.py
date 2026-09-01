@@ -96,7 +96,7 @@ def test_unflatten_dict() -> None:
     }
 
     tup = {("a", "b", "c"): 1, ("a", "d", "e"): 2, ("a", "f"): 3, ("g",): 4}
-    tuple_result = unflatten_dict(tup, join_fn=tuple, split_fn=lambda x: x)
+    tuple_result = unflatten_dict(tup, join_fn=tuple, split_fn=lambda x: x)  # pyrefly: ignore[no-matching-overload]
     assert tuple_result == result
 
     dot = {"a.b.c": 1, "a.d.e": 2, "a.f": 3, "g": 4}

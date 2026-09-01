@@ -167,7 +167,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
             if cols is ...:  # NOTE: https://github.com/microsoft/pyright/issues/10721
                 self.target_schema[group] = ellipsis_cols
             else:
-                self.target_schema[group] = cols  # pyrefly: ignore[unsupported-operation]
+                self.target_schema[group] = cols
         assert self.target_schema.keys() == self.schema.keys()
 
         # fill in the dtype for missing groups
@@ -342,7 +342,7 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
             if cols is ...:  # NOTE: https://github.com/microsoft/pyright/issues/10721
                 self.target_schema[group] = ellipsis_cols
             else:
-                self.target_schema[group] = cols  # pyrefly: ignore[unsupported-operation]
+                self.target_schema[group] = cols
 
         if missing_cols := set().union(*self.target_schema.values()) - set(
             data.columns
