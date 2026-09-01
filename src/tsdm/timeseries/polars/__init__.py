@@ -1,4 +1,9 @@
-r"""Implementations of time series containers backed by Polars."""
+r"""Polars-backed time-series datasets and sample interfaces.
+
+This backend provides table containers based on Polars DataFrames, using an
+explicit timestamp column because Polars has no row index. Its public surface
+also reserves a home for Polars-native prediction-sample implementations.
+"""
 
 __all__ = ["datasets", "samples"]
 

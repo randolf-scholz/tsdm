@@ -1,4 +1,10 @@
-r"""Pandas-based utilities for time series prediction."""
+r"""Pandas sample structures and factories for time-series prediction.
+
+This module transforms pandas-backed time-series datasets into split samples
+with separate context and query horizons. The samples retain timestamps,
+values, availability masks, and optional static covariates for forecasting,
+imputation, and related tasks.
+"""
 
 __all__ = ["SplitTimeData", "make_sample", "make_sample_factory"]
 

@@ -1,3 +1,10 @@
+r"""Pandas implementations of single and collection time-series datasets.
+
+The containers wrap time-varying measurements, static covariates, and their
+metadata in pandas DataFrames. They expose the common time-series interfaces
+and adapt the project's tabular dataset definitions to those interfaces.
+"""
+
 __all__ = [
     # Constants
     "TIMESERIES",

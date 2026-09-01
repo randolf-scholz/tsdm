@@ -1,4 +1,10 @@
-r"""Timeseries data structures and functions."""
+r"""Backend-independent interfaces for time-series containers and samples.
+
+The protocols in this module specify the common structure of a single time
+series, a collection of time series, and prediction samples. Concrete
+backends use these contracts while choosing their own table, index, and tensor
+types.
+"""
 
 __all__ = [
     # Protocols

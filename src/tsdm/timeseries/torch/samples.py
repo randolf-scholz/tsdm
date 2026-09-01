@@ -1,4 +1,9 @@
-r"""Torch-based utilities for time series forecasting."""
+r"""PyTorch tensor structures, conversions, and batching for prediction samples.
+
+This module implements the abstract split, merged, and triplet sample layouts
+with tensors. It converts between layouts and collates variable-length
+samples into padded batches for time-series prediction models.
+"""
 
 __all__ = [
     "SplitTimeData",

@@ -1,3 +1,11 @@
+r"""Polars implementations of single and collection time-series datasets.
+
+The containers store time-varying measurements, static covariates, and their
+metadata as Polars DataFrames. An explicit timestamp column defines each
+series' time axis, while collection containers additionally manage series
+identifiers.
+"""
+
 __all__ = [
     # Constants
     "TIMESERIES",
