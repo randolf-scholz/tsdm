@@ -1,23 +1,17 @@
 r"""Plotting Functionality."""
 
 __all__ = [
-    # Constants
-    "MATPLOTLIB_CONFIG",
-    # Functions
-    "center_axes",
-    "kernel_heatmap",
-    "plot_spectrum",
-    "rasterize",
-    "enable_latex_plotting",
-    "shared_grid_plot",
-    "visualize_distribution",
+    # Submodules
+    "image",
+    "plotting",
+    "setup",
 ]
 
-from .image import kernel_heatmap, rasterize
-from .plotting import (
-    center_axes,
-    plot_spectrum,
-    shared_grid_plot,
-    visualize_distribution,
-)
-from .setup import MATPLOTLIB_CONFIG, enable_latex_plotting
+from . import image, plotting, setup
+from .image import *  # ruff: ignore[F403]
+from .plotting import *  # ruff: ignore[F403]
+from .setup import *  # ruff: ignore[F403]
+
+__all__ += image.__all__
+__all__ += plotting.__all__
+__all__ += setup.__all__
