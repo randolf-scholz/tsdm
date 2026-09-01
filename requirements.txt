@@ -7,43 +7,45 @@ annotated-types==0.8.0
     # via pydantic
 anyio==4.14.2 ; sys_platform != 'emscripten'
     # via httpx2
+cloudpickle==3.1.2
+    # via joblib
 colorama==0.4.6 ; sys_platform == 'win32'
     # via tqdm
 contourpy==1.3.3
     # via matplotlib
 cuda-bindings==13.3.1 ; sys_platform == 'linux'
     # via torch
-cuda-pathfinder==1.6.0 ; sys_platform == 'linux'
+cuda-pathfinder==1.8.0 ; sys_platform == 'linux'
     # via cuda-bindings
 cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==3.32.3
+filelock==3.32.5
     # via torch
-fonttools==4.63.0
+fonttools==4.64.0
     # via matplotlib
 fsspec==2026.7.0
     # via torch
-grpcio==1.83.0
+grpcio==1.83.1
     # via tensorboard
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
-httpcore2==2.10.0 ; sys_platform != 'emscripten'
+httpcore2==2.12.0 ; sys_platform != 'emscripten'
     # via httpx2
-httpx2==2.10.0
+httpx2==2.12.0
     # via tsdm
 httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'
     # via httpx2
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   httpx2
 jinja2==3.1.6
     # via torch
-joblib==1.5.3
+joblib==1.6.0
     # via scikit-learn
-kiwisolver==1.5.0
+kiwisolver==1.5.1
     # via matplotlib
 markdown==3.10.3
     # via tensorboard
@@ -55,7 +57,7 @@ matplotlib==3.11.1
     # via tsdm
 mpmath==1.3.0
     # via sympy
-narwhals==2.24.0
+narwhals==2.25.0
     # via scikit-learn
 networkx==3.6.1
     # via torch
@@ -119,17 +121,17 @@ pillow==12.3.0
     # via
     #   matplotlib
     #   tensorboard
-polars==1.43.2
+polars==1.44.1
     # via tsdm
-polars-runtime-32==1.43.2
+polars-runtime-32==1.44.1
     # via polars
-protobuf==7.35.1
+protobuf==7.36.1
     # via tensorboard
 pyarrow==25.0.1
     # via tsdm
-pydantic==2.13.4
+pydantic==2.13.5
     # via tsdm
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via pydantic
 pyparsing==3.3.2
     # via matplotlib
@@ -141,7 +143,7 @@ pyyaml==6.0.3
     # via tsdm
 scikit-learn==1.9.0
     # via tsdm
-scipy==1.18.0
+scipy==1.18.1
     # via
     #   scikit-learn
     #   tsdm
