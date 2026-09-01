@@ -13,17 +13,12 @@ __all__ = [
     "polars",
     "pyarrow",
     "torch",
-    # Constants
-    "BACKENDS",
-    # Type aliases
-    "BackendID",
-    # Classes
-    "Kernels",
-    "Backend",
-    # Functions
-    "get_backend",
+    "kernels",
 ]
 
 
-from . import generic, numpy, pandas, polars, pyarrow, torch
-from .kernels import BACKENDS, Backend, BackendID, Kernels, get_backend
+from . import generic, numpy, pandas, polars, pyarrow, torch  # ruff: ignore[I001]
+from . import kernels  # must be imported last
+from .kernels import *  # ruff: ignore[F403]
+
+__all__ += kernels.__all__

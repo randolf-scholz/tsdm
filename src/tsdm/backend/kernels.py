@@ -26,7 +26,7 @@ import torch as pt
 from numpy import ndarray
 from torch import Tensor
 
-from tsdm import backend as B, constants as C
+from tsdm import backend as B, constants
 from tsdm.types import SupportsArray
 from tsdm.types.callbacks import (
     ApplyAlongAxes,
@@ -253,7 +253,7 @@ def _gather_types(obj: object, /) -> set[BackendID]:
         case ndarray():
             return {"numpy"}
         case (
-            C.UNDEFINED
+            constants.UNDEFINED
             | None
             | bool()
             | int()
