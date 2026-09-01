@@ -985,7 +985,9 @@ class PolarsDataset[Key: str](DatasetBase[Key, pl.DataFrame]):
     ) -> None:
         r"""Serialize a Polars DataFrame to parquet."""
         target = (
-            Path(path_or_buf) if isinstance(path_or_buf, os.PathLike) else path_or_buf
+            Path(path_or_buf)
+            if isinstance(path_or_buf, str | os.PathLike)
+            else path_or_buf
         )
         table.write_parquet(target)
 
@@ -993,7 +995,9 @@ class PolarsDataset[Key: str](DatasetBase[Key, pl.DataFrame]):
     def deserialize_table(path_or_buf: FilePath | FileStream, /) -> pl.DataFrame:
         r"""Deserialize a Polars DataFrame from parquet."""
         source = (
-            Path(path_or_buf) if isinstance(path_or_buf, os.PathLike) else path_or_buf
+            Path(path_or_buf)
+            if isinstance(path_or_buf, str | os.PathLike)
+            else path_or_buf
         )
         return pl.read_parquet(source)
 
