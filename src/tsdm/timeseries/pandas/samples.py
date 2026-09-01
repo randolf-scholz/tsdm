@@ -13,9 +13,9 @@ from pandas import DataFrame, Index, Series
 
 from tsdm.datatools import CallableDataset
 from tsdm.pprint import pprint_repr
-from tsdm.timeseries import PandasTS, PandasTSC
+from tsdm.timeseries import abstract
 
-from . import abstract
+from .datasets import PandasTS, PandasTSC
 
 
 @pprint_repr

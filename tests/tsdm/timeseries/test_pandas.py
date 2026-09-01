@@ -4,11 +4,11 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
-from tsdm.prediction.pandas import make_sample_factory
 from tsdm.timeseries.pandas import (
     PandasTS,
     PandasTSC,
     beijing_air_quality,
+    make_sample_factory,
 )
 
 

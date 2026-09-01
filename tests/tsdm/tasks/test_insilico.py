@@ -4,10 +4,9 @@ from pandas import DataFrame
 from torch.utils.data import DataLoader
 
 from tsdm.datatools import CallableDataset
-from tsdm.prediction.pandas import SplitTimeData
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
-from tsdm.timeseries import PandasTSC
+from tsdm.timeseries.pandas import PandasTSC, SplitTimeData
 
 
 def test_insilico_task() -> None:

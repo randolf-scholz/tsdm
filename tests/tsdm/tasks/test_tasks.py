@@ -6,14 +6,15 @@ from collections.abc import Sequence
 import numpy as np
 import pytest
 
-from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import MIMIC_IV_Bilos2021, USHCN_DeBrouwer2019
-from tsdm.timeseries import (
+from tsdm.timeseries.pandas import (
     PandasTS,
     PandasTSC,
+    SplitTimeData,
+    in_silico,
+    make_sample_factory,
 )
-from tsdm.timeseries.pandas import in_silico
 
 __logger__ = logging.getLogger(__name__)
 

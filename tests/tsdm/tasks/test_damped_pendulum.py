@@ -5,8 +5,8 @@ from itertools import islice
 
 from tsdm import tasks
 from tsdm.datatools import CallableDataset
-from tsdm.prediction.pandas import SplitTimeData
 from tsdm.random.samplers import HierarchicalSampler
+from tsdm.timeseries.pandas import SplitTimeData
 
 __logger__ = logging.getLogger(__name__)
 

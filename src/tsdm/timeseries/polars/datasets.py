@@ -1,5 +1,3 @@
-r"""Implementations of time series containers backed by Polars."""
-
 __all__ = [
     # Constants
     "TIMESERIES",
@@ -34,9 +32,8 @@ import polars as pl
 from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_repr
-
-from . import abstract
-from .abstract import RangeSelector
+from tsdm.timeseries import abstract
+from tsdm.timeseries.abstract import RangeSelector
 
 
 @pprint_repr

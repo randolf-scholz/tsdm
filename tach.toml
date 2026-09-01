@@ -23,7 +23,7 @@ depends_on = [
     "tsdm.timeseries",
     "tsdm.types",
     "tsdm.viz",
-    "tsdm.pretrained", "tsdm.prediction",
+    "tsdm.pretrained"
 ]
 
 [[modules]]
@@ -83,7 +83,7 @@ depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.timeseries"
-depends_on = ["tsdm.datasets"]
+depends_on = ["tsdm.datasets", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.logutils"
@@ -106,7 +106,7 @@ depends_on = [
     "tsdm.encoders",
     "tsdm.metrics",
     "tsdm.random",
-    "tsdm.timeseries", "tsdm.types", "tsdm.prediction",
+    "tsdm.timeseries", "tsdm.types"
 ]
 
 
@@ -134,7 +134,3 @@ depends_on = ["tsdm.testing", "tsdm.encoders", "tsdm.types"]
 [[modules]]
 path = "tsdm.decorator"
 depends_on = ["tsdm.types"]
-
-[[modules]]
-path = "tsdm.prediction"
-depends_on = ["tsdm.timeseries", "tsdm.datatools"]

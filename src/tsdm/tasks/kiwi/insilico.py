@@ -1,9 +1,6 @@
 r"""Implementation of the kiwi task."""
 
-__all__ = [
-    # Classes
-    "InSilicoTask",
-]
+__all__ = ["InSilicoTask"]
 
 from typing import Literal, cast
 
@@ -15,10 +12,14 @@ from tsdm.datatools import (
     folds_as_sparse_frame,
     folds_from_groups,
 )
-from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import SplitType, TimeSeriesTask
-from tsdm.timeseries.pandas import PandasTSC, in_silico
+from tsdm.timeseries.pandas import (
+    PandasTSC,
+    SplitTimeData,
+    in_silico,
+    make_sample_factory,
+)
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[list[bool]]]

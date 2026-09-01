@@ -16,7 +16,6 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 
 from tsdm.datatools import CallableDataset, folds_as_frame, is_partition
-from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import (
     HierarchicalDataset,
     HierarchicalSampler,
@@ -24,7 +23,12 @@ from tsdm.random.samplers import (
     Sampler,
 )
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import PandasTSC, damped_pendulum_ansari2023
+from tsdm.timeseries.pandas import (
+    PandasTSC,
+    SplitTimeData,
+    damped_pendulum_ansari2023,
+    make_sample_factory,
+)
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleKey = tuple[int, list[slice]]

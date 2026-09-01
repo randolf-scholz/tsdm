@@ -35,12 +35,13 @@ from tsdm.encoders import (
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.pprint import pprint_repr
-from tsdm.prediction.pandas import SplitTimeData, make_sample_factory
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import (
     PandasTSC,
+    SplitTimeData,
     kiwi_benchmark,
+    make_sample_factory,
 )
 
 

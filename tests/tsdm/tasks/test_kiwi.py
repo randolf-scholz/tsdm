@@ -9,10 +9,9 @@ from torch.utils.data import DataLoader
 
 from tsdm.datatools import CallableDataset, timedelta
 from tsdm.encoders import FittableEncoder
-from tsdm.prediction.pandas import SplitTimeData
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
-from tsdm.timeseries import PandasTSC
+from tsdm.timeseries.pandas import PandasTSC, SplitTimeData
 
 __logger__ = logging.getLogger(__name__)
 

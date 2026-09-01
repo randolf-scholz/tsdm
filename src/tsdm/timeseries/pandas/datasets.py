@@ -1,7 +1,3 @@
-r"""Implementation of TimeSeries and TimeSeriesCollection using Pandas DataFrames."""
-
-# mypy: disable-error-code="overload-overlap"
-
 __all__ = [
     # Constants
     "TIMESERIES",
@@ -39,9 +35,8 @@ from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
 from tsdm.pprint import pprint_repr
-
-from . import abstract
-from .abstract import RangeSelector
+from tsdm.timeseries import abstract
+from tsdm.timeseries.abstract import RangeSelector
 
 
 @pprint_repr

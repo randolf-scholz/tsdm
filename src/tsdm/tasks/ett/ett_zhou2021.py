@@ -1,9 +1,6 @@
 r"""Predicting transformer oil temperatures."""
 
-__all__ = [
-    # Classes
-    "ETT_Zhou2021",
-]
+__all__ = ["ETT_Zhou2021"]
 
 
 from collections.abc import Callable, Mapping
@@ -25,7 +22,7 @@ from tsdm.encoders import (
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries import PandasTS
+from tsdm.timeseries.pandas import PandasTS
 
 type SplitID = Literal["train", "trainval", "valid", "test"]
 
