@@ -14,7 +14,8 @@ from tsdm.datatools.collections import Dataset, MapDataset, get_index
 from tsdm.pprint import pprint_repr
 from tsdm.types import SupportsGetItem
 
-from .base import BaseSampler, RandomSampler, Sampler
+from .base import BaseSampler, Sampler
+from .random_sampler import RandomSampler
 
 
 @pprint_repr

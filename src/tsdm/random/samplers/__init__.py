@@ -7,12 +7,10 @@ Note:
 
 __all__ = [
     # submodules
+    "base",
     "functional",
     # Constants
     "SAMPLERS",
-    # ABC & Protocols
-    "BaseSampler",
-    "Sampler",
     # Classes
     "HierarchicalSampler",
     "HierarchicalDataset",
@@ -22,12 +20,17 @@ __all__ = [
     "compute_grid",
 ]
 
-from . import functional
-from .base import BaseSampler, RandomSampler, Sampler
+from . import base, functional
+from .base import *  # ruff: ignore[F403]
+from .functional import *  # ruff: ignore[F403]
 from .hierarchical_sampler import HierarchicalDataset, HierarchicalSampler
+from .random_sampler import RandomSampler
 from .sliding_window_sampler import SlidingWindowSampler, compute_grid
 
-SAMPLERS: dict[str, type[Sampler]] = {
+__all__ += base.__all__
+__all__ += functional.__all__
+
+SAMPLERS: dict[str, type[base.Sampler]] = {
     "HierarchicalSampler"  : HierarchicalSampler,
     "RandomSampler"        : RandomSampler,
     "SlidingWindowSampler" : SlidingWindowSampler,
