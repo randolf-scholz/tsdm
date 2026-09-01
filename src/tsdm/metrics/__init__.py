@@ -54,43 +54,18 @@ __all__ = [
     "LOSSES",
     "FUNCTIONAL_LOSSES",
     "MODULAR_LOSSES",
+    "TIMESERIES_LOSSES",
+    # torch imports
     "TORCH_ALIASES",
     "TORCH_ALIASES_FUNCTIONAL",
     "TORCH_LOSSES",
     "TORCH_LOSSES_FUNCTIONAL",
     "TORCH_SPECIAL_LOSSES",
     "TORCH_SPECIAL_LOSSES_FUNCTIONAL",
-    "TIMESERIES_LOSSES",
-    # ABCs & Protocols
-    "Metric",
-    "BaseMetric",
-    "WeightedMetric",
-    "NN_Metric",
-    "TimeSeriesLoss",
-    "TimeSeriesBaseLoss",
-    # Classes
-    "MAE",
-    "MSE",
-    "ND",
-    "NRMSE",
-    "Q_Quantile",
-    "Q_Quantile_Loss",
-    "RMSE",
-    "TimeSeriesMSE",
-    "TimeSeriesWMSE",
-    "WMAE",
-    "WMSE",
-    "WRMSE",
-    # Functions
-    "nd",
-    "nrmse",
-    "q_quantile",
-    "q_quantile_loss",
-    "rmse",
 ]
 
 
-from . import functional, modular, timeseries
+from . import base, functional, modular, timeseries
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -99,57 +74,55 @@ from ._torch_imports import (
     TORCH_SPECIAL_LOSSES,
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
-from .base import BaseMetric, Metric, NN_Metric, WeightedMetric
-from .functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
-from .modular import MAE, MSE, RMSE, WMAE, WMSE, WRMSE
-from .timeseries import (
-    ND,
-    NRMSE,
-    Q_Quantile,
-    Q_Quantile_Loss,
-    TimeSeriesBaseLoss,
-    TimeSeriesLoss,
-    TimeSeriesMSE,
-    TimeSeriesWMSE,
-)
+from .base import *  # ruff: ignore[F403]
+from .functional import *  # ruff: ignore[F403]
+from .modular import *  # ruff: ignore[F403]
+from .timeseries import *  # ruff: ignore[F403]
 
-FUNCTIONAL_LOSSES: dict[str, Metric] = {
-    "nd"              : nd,
-    "rmse"            : rmse,
-    "nrmse"           : nrmse,
-    "q_quantile"      : q_quantile,
-    "q_quantile_loss" : q_quantile_loss,
+__all__ += base.__all__
+__all__ += functional.__all__
+__all__ += modular.__all__
+__all__ += timeseries.__all__
+
+FUNCTIONAL_LOSSES: dict[str, base.Metric] = {
+    "nd"              : functional.nd,
+    "rmse"            : functional.rmse,
+    "nrmse"           : functional.nrmse,
+    "q_quantile"      : functional.q_quantile,
+    "q_quantile_loss" : functional.q_quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
 
-MODULAR_LOSSES: dict[str, type[BaseMetric]] = {
-    "MAE"             : MAE,
-    "MSE"             : MSE,
-    "ND"              : ND,
-    "NRMSE"           : NRMSE,
-    "Q_Quantile"      : Q_Quantile,
-    "Q_Quantile_Loss" : Q_Quantile_Loss,
-    "RMSE"            : RMSE,
-    "TimeSeriesMSE"   : TimeSeriesMSE,
-    "TimeSeriesWMSE"  : TimeSeriesWMSE,
-    "WMAE"            : WMAE,
-    "WMSE"            : WMSE,
-    "WRMSE"           : WRMSE,
+MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
+    "MAE"             : modular.MAE,
+    "MSE"             : modular.MSE,
+    "RMSE"            : modular.RMSE,
+    "WMAE"            : modular.WMAE,
+    "WMSE"            : modular.WMSE,
+    "WRMSE"           : modular.WRMSE,
+    # timeseries
+    "ND"              : timeseries.ND,
+    "NRMSE"           : timeseries.NRMSE,
+    "Q_Quantile"      : timeseries.Q_Quantile,
+    "Q_Quantile_Loss" : timeseries.Q_Quantile_Loss,
+    "TimeSeriesMSE"   : timeseries.TimeSeriesMSE,
+    "TimeSeriesWMSE"  : timeseries.TimeSeriesWMSE,
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
-TIMESERIES_LOSSES: dict[str, type[TimeSeriesBaseLoss]] = {
-    "ND"              : ND,
-    "NRMSE"           : NRMSE,
-    "Q_Quantile"      : Q_Quantile,
-    "Q_Quantile_Loss" : Q_Quantile_Loss,
-    "TimeSeriesMSE"   : TimeSeriesMSE,
-    "TimeSeriesWMSE"  : TimeSeriesWMSE,
+TIMESERIES_LOSSES: dict[str, type[timeseries.TimeSeriesBaseLoss]] = {
+    "ND"              : timeseries.ND,
+    "NRMSE"           : timeseries.NRMSE,
+    "Q_Quantile"      : timeseries.Q_Quantile,
+    "Q_Quantile_Loss" : timeseries.Q_Quantile_Loss,
+    "TimeSeriesMSE"   : timeseries.TimeSeriesMSE,
+    "TimeSeriesWMSE"  : timeseries.TimeSeriesWMSE,
 }  # fmt: skip
 r"""Dictionary of all available time-series losses."""
 
-LOSSES: dict[str, Metric | type[Metric]] = {
+LOSSES: dict[str, base.Metric | type[base.Metric]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
+    **TIMESERIES_LOSSES,
 }  # fmt: skip
 r"""Dictionary of all available losses."""
