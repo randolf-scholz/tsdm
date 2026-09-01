@@ -1,3 +1,5 @@
+r"""Sampler for iterating over dataset items in random order."""
+
 __all__ = ["RandomSampler"]
 
 from collections.abc import Iterator, Sequence
@@ -16,22 +18,16 @@ from .base import BaseSampler
 @pprint_repr
 @dataclass(slots=True)
 class RandomSampler[T](BaseSampler[T]):  # +T
-    r"""Sample randomly from the data source.
-
-    Note:
-        In contrast to torch.utils.data.RandomSampler, this sampler also works for map-style datasets.
-        In this case, the sampler will return random values of the mapping.
-        For Iterable-style datasets, the sampler will return random values of the iterable.
-    """
+    r"""Yield the items of a dataset once, optionally in a random order."""
 
     data: Final[Dataset[T]]
 
     _: KW_ONLY
 
     shuffle: bool = False
-    r"""Whether to randomize sampling."""
+    r"""Whether to permute the dataset before yielding its items."""
     rng: Generator = RNG
-    r"""The random number generator."""
+    r"""Generator used to create the optional permutation."""
 
     index: Sequence = field(init=False)
     size: int = field(init=False)

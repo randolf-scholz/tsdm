@@ -1,4 +1,8 @@
-r"""Utility functions for random number generation."""
+r"""Helpers for generating random arrays and time-based samples.
+
+The functions in this module sample timestamp and timedelta grids or create
+synthetic NumPy arrays for tests and examples.
+"""
 
 __all__ = [
     "NUMPY_TIME_UNITS",
@@ -31,7 +35,7 @@ NUMPY_TIME_UNITS: Final[dict[str, np.timedelta64]] = {
     "fs": np.timedelta64(1, "fs"),
     "as": np.timedelta64(1, "as"),
 }
-r"""Time units for `numpy.timedelta64`."""
+r"""Ordered NumPy timedelta units used to choose result precision."""
 
 
 def sample_timestamps(
@@ -45,16 +49,20 @@ def sample_timestamps(
     include_start: bool = True,
     include_final: bool = False,
 ) -> NDArray[np.datetime64]:
-    r"""Create randomly sampled timestamps.
+    r"""Sample timestamps from a regular grid within a time interval.
+
+    When ``stop`` is omitted, the interval spans one day from ``start``. The
+    optional boundary flags reserve the first and final grid points, respectively;
+    all remaining timestamps are drawn uniformly from the interior grid.
 
     Args:
-        start: TimeStampLike, default <today>
-        stop: TimeStampLike, default <today>+<24h>
-        size: Number of timestamps to sample.
-        freq: The smallest possible timedelta between distinct timestamps.
-        replace: Whether the sample is with or without replacement.
-        include_start: If `True`, then `start` will always be the first sampled timestamp.
-        include_final: If `True`, then `final` will always be the final sampled timestamp.
+        start: Inclusive lower bound of the sampling interval.
+        stop: Inclusive upper bound; defaults to one day after ``start``.
+        size: Number of timestamps to return.
+        freq: Spacing of the candidate timestamp grid.
+        replace: Whether non-boundary timestamps may be selected repeatedly.
+        include_start: Whether to include ``start`` in the result.
+        include_final: Whether to include ``stop`` in the result.
     """
     start_dt = timestamp(start)
     final_dt = start_dt + timedelta("24h") if stop is None else timestamp(stop)
@@ -92,7 +100,10 @@ def sample_timedeltas(
     *,
     freq: str | dt.timedelta | np.timedelta64 = "1s",
 ) -> NDArray[np.timedelta64]:
-    r"""Create randomly sampled timedeltas."""
+    r"""Sample timedeltas from a regularly spaced interval.
+
+    Both bounds are rounded to ``freq`` before constructing the candidate grid.
+    """
     low_dt = timedelta(low)
     high_dt = timedelta(high)
     freq_dt = timedelta(freq)
@@ -109,7 +120,7 @@ def sample_timedeltas(
 
 
 _EXAMPLE_BOOLS: Final[list[bool]] = [True, False]
-r"""List of example bool objects."""
+r"""Boolean values used when generating synthetic boolean arrays."""
 
 _EXAMPLE_STRINGS: Final[list[str]] = [
     "Alfa",
@@ -139,13 +150,17 @@ _EXAMPLE_STRINGS: Final[list[str]] = [
     "Yankee",
     "Zulu",
 ]
-r"""List of example string objects."""
+r"""NATO-style words used when generating synthetic string arrays."""
 
 
 def random_data(
     size: tuple[int], *, dtype: DTypeLike = float, missing: float = 0.0
 ) -> NDArray:
-    r"""Create random data of given size and dtype."""
+    r"""Create a synthetic NumPy array with values appropriate for ``dtype``.
+
+    Integer, floating-point, boolean, and string dtypes are supported. Missing
+    value generation is reserved for future implementation.
+    """
     if missing != 0.0:
         raise NotImplementedError("Missing values not yet implemented.")
 

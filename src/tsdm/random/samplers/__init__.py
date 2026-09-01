@@ -1,8 +1,8 @@
-r"""Random Samplers.
+r"""Samplers for from sampling datasets and timeseries.
 
 Note:
-    Samplers are used to randomly select **indices** that can be used to select data.
-    For methods that randomly select data from the data source directly, see `tsdm.random.generators`.
+    These are often used to sample keys used for indexing into a dataset,
+    rather than sampling directly from the dataset itself.
 """
 
 __all__ = [
@@ -35,4 +35,4 @@ SAMPLERS: dict[str, type[base.Sampler]] = {
     "RandomSampler"        : RandomSampler,
     "SlidingWindowSampler" : SlidingWindowSampler,
 }  # fmt: skip
-r"""Dictionary of all available samplers."""
+r"""Mapping from public sampler names to their implementation classes."""

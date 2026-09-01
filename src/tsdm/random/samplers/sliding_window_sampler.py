@@ -1,4 +1,8 @@
-r"""Implementation of a sliding window sampler for continuous time series data."""
+r"""Sliding-window sampling for ordered, continuous time-series coordinates.
+
+The sampler advances one or more half-open horizons along a timestamp-like axis
+and can represent each resulting window in several useful formats.
+"""
 
 __all__ = [
     # types
@@ -51,25 +55,17 @@ def compute_grid[TD: SpanLikeScalar](
     *,
     offset: Optional[str | TimeLikeScalar[TD]] = None,
 ) -> list[int]:
-    r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
+    r"""Return grid offsets that keep ``offset + k * step`` within the bounds.
 
-    That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
-    Special case: if $Δt=0$, returns $[0]$.
+    ``offset`` defaults to ``tmin`` and must lie within the closed interval
+    ``[tmin, tmax]``. Positive and negative steps are both supported; a zero
+    step raises :class:`ValueError`.
 
-    .. math::
-        if ∆t > 0
-            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘᵢₙ-t₀)/Δt⌉
-            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≥ ⟺ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
-            ⟹ ⌈(tₘᵢₙ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
-        if ∆t < 0
-            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≥ k ⟺ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
-            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘₐₓ-t₀)/Δt⌉
-            ⟹ ⌈(tₘₐₓ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
-
-    Note:
-        This function is used to compute the strides for the sliding window sampler.
-        given a window ∆s<tₘₐₓ-tₘᵢₙ, we want to find all k≥0 such that
-        tₘᵢₙ ≤ [tₗ+k⋅Δt, tᵣ+k∆t] ≤ tₘₐₓ. This is equivalent to finding all k such that
+    Args:
+        tmin: Inclusive lower bound of the coordinate range.
+        tmax: Inclusive upper bound of the coordinate range.
+        step: Distance between adjacent grid points.
+        offset: Grid point assigned to index zero.
     """
     # cast strings to timestamp/timedelta
     if offset is None:
@@ -108,7 +104,7 @@ def compute_grid[TD: SpanLikeScalar](
 
 
 class MODE(StrEnum):
-    r"""Valid modes for the sampler, determining the return format."""
+    r"""Representations available for each sampled window."""
 
     # fmt: off
     BOUNDS   = "bounds"    # -> tuple[DT, DT]  (equivalent to half open interval [l, u))
@@ -130,7 +126,7 @@ type UNKNOWN = MODE
 
 
 class HORIZON(StrEnum):
-    r"""Valid horizon types for the sampler."""
+    r"""Whether a sample contains one horizon or a sequence of horizons."""
 
     ONE = "one"  # -> single horizon
     MULTI = "multi"  # -> multiple horizons
@@ -146,38 +142,22 @@ class SlidingWindowSampler[
     ModeVar: (B, M, S, I, P, X, UNKNOWN),
     MultiVar: (ONE, MULTI),
 ](BaseSampler):
-    r"""Sampler that generates a single sliding window over an interval.
+    r"""Generate half-open time windows that slide across ordered coordinates.
 
-    Note:
-        This sampler is intended to be used with continuous time series data types,
-        such as `float`, `numpy.timedelta64`, `datetime.timedelta`, `pd.Timestamp`, etc.
-        For discrete time series, particularly integer types, use `DiscreteSlidingWindowSampler`.
-        Otherwise, off-by-one errors may occur, for example,
-        for `horizons=(3, 1)` and `stride=2`, given the data `np.arange(10)`,
-        this sampler will produce 3 windows.
+    A scalar ``horizons`` value produces one window per grid position; a sequence
+    produces contiguous horizons and yields one representation for each. Windows
+    are closed on the left and open on the right. The ``mode`` chooses whether a
+    window is returned as bounds, a slice, an interval, matching positions, their
+    indices, or a boolean mask.
 
     Args:
-        data_source: A dataset that contains the ordered timestamps.
-        stride: How much the window(s) advances at each step.
-        horizons: The size of the window.
-            Note: The size is specified as a timedelta, not as the number of data points.
-            When sampling discrete data, this may lead to off-by-one errors.
-            Consider using `DiscreteSlidingWindowSampler` instead.
-            Multiple horizons can be given, in which case the sampler will return a list.
-        mode: There are 4 modes, determining the output of the sampler (default: 'masks').
-            - `tuple` / 'bounds': return the bounds of the window(s) as a tuple.
-            - `slice` / 'slice': return the slice of the lower and upper bounds of the window.
-            - `bool` / 'mask': return the boolean mask of the data points inside the window.
-            - `list` / 'window': return the actual data points inside the window(s).
-        shuffle: Whether to shuffle the indices (default: False).
-        drop_last: Whether to drop the last incomplete window (default: False).
-            If true, it is guaranteed that each window is completely contained in the data.
-            If false, the last window may only partially overlap with the data.
-            If multiple horizons are given, these rules apply to the last horizon.
-
-    The window is considered to be closed on the left and open on the right. Moreover,
-    the sampler can return multiple subsequent horizons if `horizons` is a sequence of
-    `TimeDelta` objects. In this case, lists of the above objects are returned.
+        data_source: Ordered coordinates that delimit the sampling range.
+        mode: Representation to yield for each horizon.
+        horizons: Width of one horizon or widths of consecutive horizons.
+        stride: Distance by which the complete window advances between samples.
+        drop_last: Exclude a final window unless all of its horizons fit in range.
+        shuffle: Whether to randomize the order of window positions.
+        rng: Generator used when ``shuffle`` is enabled.
     """
 
     # NOTE: type checkers seem to break if we do not use 'TypeAlias' here.
@@ -185,7 +165,7 @@ class SlidingWindowSampler[
     HORIZON: Final = HORIZON
 
     type Mode = Literal["slice", "mask", "bounds", "interval", "points", "index"]
-    r"""Type hint for the mode."""
+    r"""Accepted string literals for selecting a window representation."""
 
     data: NDArray
 
@@ -617,7 +597,7 @@ class SlidingWindowSampler[
 
     @property
     def grid(self) -> NDArray[np.integer]:
-        r"""Grid of indices."""
+        r"""Integer offsets of the windows that are eligible for sampling."""
         # NOTE: we use a property so that if drop_last is changed, the grid is recomputed correctly...
         return np.array(
             compute_grid(
@@ -628,7 +608,7 @@ class SlidingWindowSampler[
         )
 
     def __len__(self) -> int:
-        r"""Return the number of samples."""
+        r"""Return the number of eligible window positions."""
         return len(self.grid)
 
     # region __iter__ overloads --------------------------------------------------------
@@ -666,13 +646,10 @@ class SlidingWindowSampler[
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self, /) -> Iterator[Any]:
-        r"""Iterate through.
+        r"""Yield the requested representation for each eligible time window.
 
-        For each k, we return either:
-
-        - mode=points: $(x₀ + k⋅∆t, x₁+k⋅∆t, …, xₘ+k⋅∆t)$
-        - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
-        - mode=masks: $(mask_1, …, mask_m)$
+        Multi-horizon samplers yield a list of adjacent window representations;
+        single-horizon samplers yield that representation directly.
         """
         # unpack variables (avoids attribute lookup in loop)
         window = self.tmin + self.cumulative_horizons

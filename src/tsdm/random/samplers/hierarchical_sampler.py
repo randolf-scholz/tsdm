@@ -1,4 +1,8 @@
-r"""Implementation of hierarchical sampler."""
+r"""Sampling and dataset adapters for two-level collections.
+
+These utilities treat a mapping of datasets as a flat collection of
+``(outer_key, inner_key)`` pairs while retaining access to its nested layout.
+"""
 
 __all__ = ["HierarchicalSampler", "HierarchicalDataset"]
 
@@ -21,7 +25,11 @@ from .random_sampler import RandomSampler
 @pprint_repr
 @dataclass(slots=True, init=False)
 class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
-    r"""Draw samples from a hierarchical data source.
+    r"""Flatten a mapping of datasets into pairs of outer and inner keys.
+
+    Each nested dataset has its own sampler. With ``early_stop=False`` every
+    nested sampler is exhausted; with ``early_stop=True`` all groups contribute
+    the same number of samples.
 
     Example:
         >>> from tsdm.random.samplers import HierarchicalSampler, RandomSampler
@@ -32,32 +40,34 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
         [('A', 1), ('A', 2), ('A', 3), ('B', 4), ('B', 5), ('B', 6)]
 
     Args:
-        shuffle: Whether to sample in random order.
-        rng: The random number generator.
-        early_stop: Ensure each group is sampled the same number of times.
+        data: Mapping from outer keys to datasets.
+        subsamplers: Per-dataset samplers, created automatically when omitted.
+        early_stop: Stop after every group has produced the smallest group size.
+        shuffle: Whether to shuffle the order of the emitted key pairs.
+        rng: Generator used to shuffle the combined sampling schedule.
     """
 
     data: MapDataset[K, Dataset[K2]]
-    r"""The shared index."""
+    r"""Mapping of outer keys to the datasets being sampled."""
 
     _: KW_ONLY
 
     subsamplers: Mapping[K, Sampler[K2]]
-    r"""The subsamplers to sample from the collection."""
+    r"""Sampler assigned to each nested dataset."""
     early_stop: bool = False
-    r"""Whether to stop sampling when the index is exhausted."""
+    r"""Whether each group is limited to the smallest sampler length."""
     shuffle: bool = False
-    r"""Whether to sample in random order."""
+    r"""Whether the combined key-pair schedule is shuffled."""
     rng: Generator = RNG
-    r"""The random number generator."""
+    r"""Generator used to shuffle the combined schedule."""
 
     # derived fields
     index: Collection[K] = field(init=False)
-    r"""The index of the data source."""
+    r"""Outer keys available in the source mapping."""
     sizes: Mapping[K, int] = field(init=False)
-    r"""The sizes of the subsamplers."""
+    r"""Number of available inner keys for each outer key."""
     partition: list[K] = field(init=False)
-    r"""The partition of the data source."""
+    r"""Outer-key schedule aligned with the nested sampler lengths."""
 
     def __init__(
         self,
@@ -97,20 +107,20 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
         )
 
     def __len__(self) -> int:
-        r"""Return the maximum allowed index."""
+        r"""Return the number of key pairs yielded during iteration."""
         if self.early_stop:
             return min(self.sizes.values()) * len(self.subsamplers)
         return sum(self.sizes.values())
 
     def __getitem__(self, key: K, /) -> Sampler[K2]:
-        r"""Return the subsampler for the given key."""
+        r"""Return the sampler associated with an outer key."""
         return self.subsamplers[key]
 
     def __iter__(self) -> Iterator[tuple[K, K2]]:
-        r"""Yield indices of the samples.
+        r"""Yield outer and inner keys selected by the nested samplers.
 
-        When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
-        When ``early_stop=False``, it will sample all samples.
+        The outer-key schedule is optionally shuffled, while each inner key is
+        obtained from the corresponding nested sampler in its own iteration order.
         """
         iterators = {key: iter(sampler) for key, sampler in self.subsamplers.items()}
         n = len(self.partition)
@@ -125,12 +135,11 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
 class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
     Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]]
 ):
-    r"""Represents a ``Mapping[Key, Dataset]``.
+    r"""Expose a mapping of datasets with convenient nested-key lookup.
 
-    ``ds[key]`` returns the dataset for the given key.
-    If the key is a tuple, try to divert to the nested dataset.
-
-    ``ds[(key, subkey)]=ds[key][subkey]``
+    An outer key returns its complete nested dataset. A pair of outer and inner
+    keys returns the sample from that dataset, equivalent to
+    ``datasets[outer_key][inner_key]``.
     """
 
     datasets: Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]]
@@ -144,11 +153,11 @@ class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
         self.datasets = datasets
 
     def __iter__(self) -> Iterator[OuterKeyT]:
-        r"""Iterate over the keys."""
+        r"""Iterate over the outer dataset keys in insertion order."""
         return iter(self.index)
 
     def __len__(self) -> int:
-        r"""Length of the dataset."""
+        r"""Return the number of nested datasets."""
         return len(self.index)
 
     @overload
@@ -156,9 +165,10 @@ class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
     @overload
     def __getitem__(self, key: tuple[OuterKeyT, InnerKeyT], /) -> SampleT: ...
     def __getitem__(self, key: OuterKeyT | tuple[OuterKeyT, InnerKeyT], /) -> Any:
-        r"""Get the dataset for the given key.
+        r"""Return a nested dataset or one of its samples by key.
 
-        If the key is a tuple, try to divert to the nested dataset.
+        A single key returns the corresponding dataset; an ``(outer, inner)``
+        tuple returns the nested sample.
         """
         match key:
             case k if key in self:
