@@ -4,6 +4,7 @@ __all__ = [
     # Protocols
     "TimeSeries",
     "TimeSeriesCollection",
+    "RangeSelector",
 ]
 
 from abc import abstractmethod

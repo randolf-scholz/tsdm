@@ -2,7 +2,7 @@ r"""Utilities for time series."""
 
 __all__ = [
     # submodules:
-    "base",
+    "abstract",
     "pandas",
     "polars",
     # ABCs & Protocols
@@ -16,7 +16,7 @@ __all__ = [
     # Functions
 ]
 
-from . import base, pandas, polars
-from .base import TimeSeries, TimeSeriesCollection
+from . import abstract, pandas, polars
+from .abstract import TimeSeries, TimeSeriesCollection
 from .pandas import PandasTS, PandasTSC
 from .polars import PolarsTS, PolarsTSC

@@ -40,7 +40,8 @@ from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
 from tsdm.pprint import pprint_repr
 
-from .base import RangeSelector, TimeSeries, TimeSeriesCollection
+from . import abstract
+from .abstract import RangeSelector
 
 
 @pprint_repr
@@ -701,7 +702,7 @@ class damped_pendulum_ansari2023(PandasTSC[int]):
         )
 
 
-TIMESERIES: dict[str, Fn[[], TimeSeries[Any, DataFrame]]] = {
+TIMESERIES: dict[str, Fn[[], abstract.TimeSeries[Any, DataFrame]]] = {
     "ETTh1"       : etth1,
     "ETTh2"       : etth2,
     "ETTm1"       : ettm1,
@@ -711,7 +712,7 @@ TIMESERIES: dict[str, Fn[[], TimeSeries[Any, DataFrame]]] = {
 }  # fmt: skip
 r"""Dictionary of all available time series datasets."""
 
-TIMESERIES_COLLECTIONS: dict[str, Fn[[], TimeSeriesCollection[Any, DataFrame]]] = {
+TIMESERIES_COLLECTIONS: dict[str, Fn[[], abstract.TimeSeriesCollection[Any, DataFrame]]] = {
     "DampedPendulum_Ansari2023" : damped_pendulum_ansari2023,
     "InSilico"                  : in_silico,
     "KiwiBenchmark"             : kiwi_benchmark,
@@ -728,10 +729,12 @@ if TYPE_CHECKING:
     # ensure base classes are compatible with protocols
     # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
 
-    def _upcast_ts[TimeT](arg: PandasTS[TimeT], /) -> TimeSeries[TimeT, DataFrame]:
+    def _upcast_ts[TimeT](
+        arg: PandasTS[TimeT], /
+    ) -> abstract.TimeSeries[TimeT, DataFrame]:
         return arg
 
     def _upcast_tsc[KeyT](
         arg: PandasTSC[KeyT], /
-    ) -> TimeSeriesCollection[KeyT, DataFrame]:
+    ) -> abstract.TimeSeriesCollection[KeyT, DataFrame]:
         return arg
