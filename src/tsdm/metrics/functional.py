@@ -78,7 +78,11 @@ def rmse(predictions: Tensor, targets: Tensor) -> Tensor:
 def q_quantile(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile.
 
-    .. math:: 𝖯_q(x，x̂) ≔ \begin{cases}\hfill q⋅|x-x̂|:& x≥x̂ \\ (1-q)⋅|x-x̂|:& x≤x̂ \end{cases}
+    .. math::
+        𝖯_q(x，x̂) ≔ \begin{cases}
+            \hfill q⋅|x-x̂| :& x ≥ x̂ \\
+               (1-q)⋅|x-x̂| :& x ≤ x̂
+        \end{cases}
 
     References:
         - | Deep State Space Models for Time Series Forecasting
