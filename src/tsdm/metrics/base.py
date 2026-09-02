@@ -26,7 +26,7 @@ class Metric(Protocol):
 class NN_Metric(Protocol):
     r"""Protocol for a loss function."""
 
-    def forward(self, predictions: Tensor, targets: Tensor, /) -> Tensor: ...
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor: ...
 
 
 class BaseMetric(nn.Module, Metric):
@@ -50,7 +50,7 @@ class BaseMetric(nn.Module, Metric):
         self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
 
     @abstractmethod
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -96,6 +96,6 @@ class WeightedMetric(BaseMetric, Metric):
             )
 
     @abstractmethod
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError

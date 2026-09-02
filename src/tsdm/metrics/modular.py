@@ -20,7 +20,7 @@ __all__ = [
 from typing import Final
 
 import torch
-from torch import Tensor, jit
+from torch import Tensor
 
 from tsdm.types.aliases import Axis
 
@@ -39,8 +39,8 @@ class MAE(BaseMetric):
     .. math:: 𝖬𝖠𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -73,8 +73,8 @@ class WMAE(WeightedMetric):
     .. math:: 𝗐𝖬𝖠𝖤(x，x̂) ≔ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w}
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -138,8 +138,8 @@ class MSE(BaseMetric):
        .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K (x̂_{n,k} - x_{n,k})^2
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -202,8 +202,8 @@ class WMSE(WeightedMetric):
        .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K w_k(x̂_{nk} - x_{nk})^2
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -236,8 +236,8 @@ class RMSE(BaseMetric):
     .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2}
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -270,8 +270,8 @@ class WRMSE(WeightedMetric):
     .. math:: 𝗐𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^2}
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -322,8 +322,8 @@ class LP(BaseMetric):
         super().__init__(normalize=normalize, axis=axis)
         self.p = p
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -376,8 +376,8 @@ class WLP(WeightedMetric):
         super().__init__(weight, normalize=normalize, learnable=learnable, axis=axis)
         self.p = p
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 

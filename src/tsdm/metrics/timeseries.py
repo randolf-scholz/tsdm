@@ -28,7 +28,7 @@ from collections.abc import Callable
 from typing import Final, Optional, Protocol
 
 import torch
-from torch import Tensor, jit, nn
+from torch import Tensor, nn
 
 from tsdm.types.aliases import Axis
 
@@ -103,7 +103,7 @@ class TimeSeriesBaseLoss(BaseMetric):
             raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -175,7 +175,7 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
             )
 
     @abstractmethod
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -195,8 +195,8 @@ class ND(TimeSeriesBaseLoss):
           | https://openreview.net/forum?id=r1ecqn4YwB
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``(..., n), (..., n) -> ()``."""
         return nd(predictions=predictions, targets=targets)
 
@@ -211,8 +211,8 @@ class NRMSE(TimeSeriesBaseLoss):
           | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
         return nrmse(predictions=predictions, targets=targets)
 
@@ -227,8 +227,8 @@ class Q_Quantile(TimeSeriesBaseLoss):
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
         return q_quantile(predictions=predictions, targets=targets)
 
@@ -243,8 +243,8 @@ class Q_Quantile_Loss(TimeSeriesBaseLoss):
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
         return q_quantile_loss(predictions=predictions, targets=targets)
 
@@ -284,8 +284,8 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
     Possible batch-dimensions are averaged over.
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
         r = predictions - targets
 
@@ -331,8 +331,8 @@ class TimeSeriesWMSE(WeightedTimeSeriesLoss):
     Possible batch-dimensions are averaged over.
     """
 
-    @jit.export
-    def forward(self, predictions: Tensor, targets: Tensor) -> Tensor:
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, m), (..., t, m)] → ...``."""
         r = predictions - targets
 
