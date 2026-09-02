@@ -115,7 +115,7 @@ class BaseMetric(nn.Module, Metric):
     normalize: Final[bool]
     r"""CONST: Whether to normalize the weights."""
     learnable: Final[bool]
-    r"""CONST: Whether the weights are learnable."""
+    r"""CONST: Whether the weights are learnable (for gradient-based hyperparameter tuning)."""
 
     def __init__(
         self,
@@ -134,15 +134,15 @@ class BaseMetric(nn.Module, Metric):
                 raise ValueError(
                     "Weights must be non-negative and at least one must be positive."
                 )
-            w = nn.Parameter(w / torch.sum(w), requires_grad=self.learnable)
+            w = nn.Parameter(w / torch.sum(w), requires_grad=learnable)
             axis = tuple(range(-w.ndim, 0)) if axis is None else axis
         else:
             w = None
             axis = -1 if axis is None else axis
 
-        self.normalize = normalize
-        self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
+        self.normalize = bool(normalize)
         self.learnable = bool(learnable)
+        self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
         self.register_parameter("weight", w)
 
     @abstractmethod
@@ -190,9 +190,9 @@ class SequentialBaseMetric(BaseMetric):
         learnable: bool = False,
     ) -> None:
         super().__init__(
+            weight=weight,
             axis=axis,
             normalize=normalize,
-            weight=weight,
             learnable=learnable,
         )
         self.channel_axes = self.axis  # alias

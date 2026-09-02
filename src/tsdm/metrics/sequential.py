@@ -26,7 +26,6 @@ from .base import SequentialBaseMetric
 from .samplewise import q_quantile
 
 
-@torch.compile(fullgraph=True)
 def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
@@ -51,7 +50,6 @@ def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-@torch.compile(fullgraph=True)
 def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized root mean square errors.
 
@@ -72,7 +70,6 @@ def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tenso
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-@torch.compile(fullgraph=True)
 def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile loss.
 

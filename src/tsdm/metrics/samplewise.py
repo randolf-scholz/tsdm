@@ -140,10 +140,10 @@ def lp(
 
 def q_quantile(
     *,
-    predictions: Tensor,
-    targets: Tensor,
+    predictions: Tensor,  # Float[...]
+    targets: Tensor,  # Float[...]
     q: float = 0.5,
-) -> Tensor:
+) -> Tensor:  # Float[...]
     r"""Return the q-quantile.
 
     For scalar valued x, this is just:
@@ -330,7 +330,17 @@ class Q_Quantile(BaseMetric):
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
+    q: Final[float]
+
+    def __init__(self, q: float = 0.5, *, axis: Axis = None):
+        super().__init__(axis=axis)
+        self.q = q
+
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
-        return q_quantile(predictions=predictions, targets=targets)
+        return q_quantile(
+            predictions=predictions,
+            targets=targets,
+            q=self.q,
+        )
