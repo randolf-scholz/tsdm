@@ -23,7 +23,7 @@ from torch import Tensor
 def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
-    .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑_{tk} |x̂_{tk} - x_{tk}|}{∑_{tk} |x_{tk}|}
+    .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑ₜₖ |x̂ₜₖ - xₜₖ|}{∑ₜₖ |xₜₖ|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -48,7 +48,7 @@ def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
 def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑_{tk}|x̂_{tk} - x_{tk}|^2}}{∑_{tk}|x_{tk}|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -69,7 +69,7 @@ def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tenso
 def rmse(predictions: Tensor, targets: Tensor) -> Tensor:
     r"""Compute the RMSE.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖^2]}
+    .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖²]}
     """
     return torch.sqrt(torch.mean((predictions - targets) ** 2))
 
@@ -80,8 +80,8 @@ def q_quantile(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tenso
 
     .. math::
         𝖯_q(x，x̂) ≔ \begin{cases}
-            \hfill q⋅|x-x̂| :& x ≥ x̂ \\
-               (1-q)⋅|x-x̂| :& x ≤ x̂
+            \hfill  q⋅|x-x̂| :& x ≥ x̂
+            \\  (1-q)⋅|x-x̂| :& x ≤ x̂
         \end{cases}
 
     References:
@@ -99,7 +99,7 @@ def q_quantile(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tenso
 def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑_{tk}𝖯_q(x_{tk}，x̂_{tk})}{∑_{tk}|x_{tk}|}
+    .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑ₜₖ𝖯_q(xₜₖ，x̂ₜₖ)}{∑ₜₖ|xₜₖ|}
 
     References:
         - | Deep State Space Models for Time Series Forecasting
