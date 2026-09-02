@@ -1,7 +1,6 @@
 r"""Encoders for converting between backends."""
 
 __all__ = [
-    "NDArrayToTensor",
     "FrameAsTensor",
     "FrameAsTensorDict",
     "FrameDTypeConverter",
@@ -17,29 +16,15 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 import torch
-from numpy._typing import NDArray
 from pandas import DataFrame
 from torch import Tensor
 
 from tsdm.constants import UNDEFINED
+from tsdm.encoders.base import FittableEncoder
 from tsdm.pprint import pprint_repr
-from tsdm.types.nested import NestedBuiltin
-from tsdm.utils.funcutils import recurse_on_nested_builtin
-
-from .base import FittableEncoder, StaticEncoder
 
 type PandasDType = Any
 type PandasDTypeArg = str | type | PandasDType
-
-
-class NDArrayToTensor(StaticEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]):
-    r"""Encodes nested data as tensors."""
-
-    def encode(self, x: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
-        return recurse_on_nested_builtin(x, leaf_fn=torch.tensor, leaf_type=np.ndarray)
-
-    def decode(self, y: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
-        return recurse_on_nested_builtin(y, leaf_fn=Tensor.numpy, leaf_type=Tensor)  # pyright: ignore[reportArgumentType]
 
 
 @pprint_repr
@@ -94,7 +79,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
     Example:
         >>> from pandas import DataFrame
-        >>> from tsdm.encoders import FrameAsTensorDict
+        >>> from tsdm.encoders.pandas import FrameAsTensorDict
         >>> df = DataFrame(
         ...     {
         ...         "ID": [10, 21, 33],

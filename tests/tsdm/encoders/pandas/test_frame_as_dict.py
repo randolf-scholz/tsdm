@@ -4,7 +4,7 @@ import pytest
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal, assert_index_equal
 
-from tsdm.encoders import FrameAsDict
+from tsdm.encoders.pandas import FrameAsDict
 
 TEST_FRAME = DataFrame(
     {

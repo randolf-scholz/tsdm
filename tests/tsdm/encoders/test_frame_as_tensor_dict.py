@@ -5,7 +5,7 @@ import torch
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
-from tsdm.encoders import FrameAsTensorDict
+from tsdm.encoders.pandas import FrameAsTensorDict
 
 TEST_FRAME = DataFrame(
     {

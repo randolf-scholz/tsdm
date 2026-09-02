@@ -1,14 +1,19 @@
 r"""Experimental encoders."""
 
-__all__ = ["NestedEncoder", "nest_encoder"]
+__all__ = ["NDArrayToTensor", "NestedEncoder", "nest_encoder"]
 
 from dataclasses import KW_ONLY, dataclass
+
+import numpy as np
+import torch
+from numpy.typing import NDArray
+from torch import Tensor
 
 from tsdm.pprint import pprint_repr
 from tsdm.types.nested import NestedBuiltin
 from tsdm.utils.funcutils import recurse_on_nested_builtin
 
-from .base import Encoder, FittableEncoder, invert, simplify
+from .base import Encoder, FittableEncoder, StaticEncoder, invert, simplify
 
 
 @pprint_repr
@@ -74,3 +79,13 @@ def nest_encoder[X, Y](
     return NestedEncoder(
         encoder, leaf_type=leaf_type, output_leaf_type=output_leaf_type
     )
+
+
+class NDArrayToTensor(StaticEncoder[NestedBuiltin[NDArray], NestedBuiltin[Tensor]]):
+    r"""Encodes nested data as tensors."""
+
+    def encode(self, x: NestedBuiltin[NDArray], /) -> NestedBuiltin[Tensor]:
+        return recurse_on_nested_builtin(x, leaf_fn=torch.tensor, leaf_type=np.ndarray)
+
+    def decode(self, y: NestedBuiltin[Tensor], /) -> NestedBuiltin[NDArray]:
+        return recurse_on_nested_builtin(y, leaf_fn=Tensor.numpy, leaf_type=Tensor)  # pyright: ignore[reportArgumentType]

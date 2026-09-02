@@ -95,7 +95,6 @@ __all__ = [
     # Sub-Packages & Modules
     "base",
     "box_cox",
-    "converters",
     "pandas",
     "polars",
     "positional",
@@ -106,7 +105,6 @@ __all__ = [
 from . import (
     base,
     box_cox,
-    converters,
     pandas,
     polars,
     positional,
@@ -115,13 +113,11 @@ from . import (
 )
 from .base import *  # ruff: ignore[F403]
 from .box_cox import *  # ruff: ignore[F403]
-from .converters import *  # ruff: ignore[F403]
 from .positional import *  # ruff: ignore[F403]
 from .universal import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
 __all__ += box_cox.__all__
-__all__ += converters.__all__
 __all__ += positional.__all__
 __all__ += universal.__all__
 
@@ -140,6 +136,7 @@ ENCODERS: dict[str, type[base.BaseEncoder]] = {
     "Meet"                      : base.Meet,
     "Parallel"                  : base.Parallel,
     "Pipe"                      : base.Pipe,
+    "Repeat"                    : base.Repeat,
     "Replicate"                 : base.Replicate,
     "TupleUnwrapper"            : base.TupleUnwrapper,
     "TupleWrapper"              : base.TupleWrapper,
@@ -149,11 +146,6 @@ ENCODERS: dict[str, type[base.BaseEncoder]] = {
     "LogEncoder"                : box_cox.LogEncoder,
     "LogitBoxCoxEncoder"        : box_cox.LogitBoxCoxEncoder,
     "LogitEncoder"              : box_cox.LogitEncoder,
-    # converters
-    "FrameDTypeConverter"       : converters.FrameDTypeConverter,
-    "FrameAsDict"               : converters.FrameAsDict,
-    "FrameAsTensor"             : converters.FrameAsTensor,
-    "FrameAsTensorDict"         : converters.FrameAsTensorDict,
     # positional
     "PositionalEncoder"         : positional.PositionalEncoder,
     **universal.ENCODERS,

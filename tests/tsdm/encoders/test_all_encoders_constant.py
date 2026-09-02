@@ -5,7 +5,7 @@ from dataclasses import fields
 
 import pytest
 
-from tsdm.encoders import ENCODERS, pandas, polars
+from tsdm.encoders import ENCODERS, pandas, polars, torch
 from tsdm.types.dataclass import Dataclass
 
 
@@ -36,6 +36,7 @@ def test_root_registry_contains_only_canonical_keys() -> None:
     r"""Check that the root registry has no unqualified backend aliases."""
     expected = {f"pandas.{name}" for name in pandas.ENCODERS}
     expected.update(f"polars.{name}" for name in polars.ENCODERS)
+    expected.update(f"torch.{name}" for name in torch.ENCODERS)
     qualified = {name for name in ENCODERS if "." in name}
 
     assert qualified == expected

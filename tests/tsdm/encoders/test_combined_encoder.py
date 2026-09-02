@@ -15,12 +15,11 @@ from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
     FittableEncoder,
-    FrameAsTensorDict,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.encoders.pandas import FrameEncoder
+from tsdm.encoders.pandas import FrameAsTensorDict, FrameEncoder
 from tsdm.timeseries.pandas import in_silico
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]

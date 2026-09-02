@@ -15,11 +15,10 @@ from tsdm.datasets import ETT
 from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
-    FrameDTypeConverter,
     MinMaxScaler,
     StandardScaler,
 )
-from tsdm.encoders.pandas import FrameEncoder
+from tsdm.encoders.pandas import FrameDTypeConverter, FrameEncoder
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import TimeSeries
