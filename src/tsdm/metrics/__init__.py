@@ -94,9 +94,11 @@ FUNCTIONAL_LOSSES: dict[str, base.Metric] = {
 r"""Dictionary of all available functional losses."""
 
 MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
+    "LP"              : modular.LP,
     "MAE"             : modular.MAE,
     "MSE"             : modular.MSE,
     "RMSE"            : modular.RMSE,
+    "WLP"             : modular.WLP,
     "WMAE"            : modular.WMAE,
     "WMSE"            : modular.WMSE,
     "WRMSE"           : modular.WRMSE,
