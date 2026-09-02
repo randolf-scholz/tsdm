@@ -5,17 +5,7 @@ Note:
     See `tsdm.metrics.functional` for functional implementations.
 """
 
-__all__ = [
-    # Classes
-    "WRMSE",
-    "RMSE",
-    "MSE",
-    "WMSE",
-    "MAE",
-    "WMAE",
-    "LP",
-    "WLP",
-]
+__all__ = ["RMSE", "MSE", "MAE", "LP"]
 
 from typing import Final
 
@@ -24,7 +14,7 @@ from torch import Tensor
 
 from tsdm.types.aliases import Axis
 
-from .base import BaseMetric, WeightedMetric
+from .base import BaseMetric
 
 
 class MAE(BaseMetric):
@@ -34,57 +24,25 @@ class MAE(BaseMetric):
 
     .. math:: 𝖬𝖠𝖤(x，x̂) ≔ 𝔼[‖x - x̂‖]
 
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+    Given $N$ random samples $x₁, …, x_N ∼ x$ and $x̂₁, …, x̂_N ∼ x̂$, it can be estimated as:
 
-    .. math:: 𝖬𝖠𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖
+    .. math:: 𝖬𝖠𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂ₙ - xₙ‖
+
+    If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |z_k|²$ is used.
     """
 
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        w = self.weight
+        m = ~targets.isnan()
         r = predictions - targets
-
-        m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
-        r = torch.abs(r)
+        r = r.abs() if w is None else w * r.abs()
         r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return r
-
-
-class WMAE(WeightedMetric):
-    r"""Weighted Mean Absolute Error.
-
-    Given two random vectors $x,x̂∈ℝ^K$, the weighted mean absolute error is defined as:
-
-    .. math:: 𝗐𝖬𝖠𝖤(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖_w]}
-
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
-
-    .. math:: 𝗐𝖬𝖠𝖤(x，x̂) ≔ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w}
-    """
-
-    @torch.compile(fullgraph=True)
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        r = predictions - targets
-
-        m = ~torch.isnan(targets)
-        r = torch.where(m, r, 0.0)
-        r = self.weight * torch.abs(r)
-        r = torch.sum(r, dim=self.axis)
-
-        if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axis)
+            c = torch.sum(m if w is None else w * m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -141,79 +99,15 @@ class MSE(BaseMetric):
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        w = self.weight
+        m = ~targets.isnan()
         r = predictions - targets
-
-        m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
-        r = r**2
+        r = r**2 if w is None else w * r**2
         r = torch.sum(r, dim=self.axis)  # shape=(..., )
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return r
-
-
-class WMSE(WeightedMetric):
-    r"""Weighted Mean Square Error.
-
-    Given two random vectors $x,x̂∈ℝ^K$, the weighted mean square error is defined as:
-
-    .. math:: 𝗐𝖬𝖲𝖤(x，x̂) ≔ 𝔼[‖x - x̂‖_w^2]
-
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
-
-    .. math:: 𝗐𝖬𝖲𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^2
-
-    If the `normalize` option is set to True, then the weighted normalized weighted ℓ²-norm instead:
-
-    .. math:: ‖z‖^2_{w^*} ≔ \frac{1}{∑_k m_k} ∑_{k=1}^K w_k z_k^2
-
-    If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
-    In this case, the loss is computed as if the NaN channels would not exist.
-    Crucially, the existing weights are re-weighted:
-
-    .. math:: ‖z‖^2_{w^*} ≔ \frac{1}{∑_k m_k w_k} ∑_{k=1}^K [m_k \? w_k z_k^2 : 0]
-
-    Since it could happen that all channels are NaN, the loss is set to zero in this case.
-
-    So, in total, there are 4 variants of the weighted MSE loss:
-
-    1. wMSE with normalization and NaNs ignored
-
-       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{∑_k m_k w_k} ∑_{k=1}^K [m_k \? w_k(x̂_{nk} - x_{nk})^2 : 0]
-
-    2. wMSE with normalization and NaNs counted
-
-       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{∑_k m_k}∑_{k=1}^K w_k(x̂_{nk} - x_{nk})^2
-
-    3. wMSE without normalization and NaNs ignored
-
-       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K [m_k \? w_k(x̂_{nk} - x_{nk})^2 : 0]
-
-    4. wMSE without normalization and NaNs counted
-
-       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K w_k(x̂_{nk} - x_{nk})^2
-    """
-
-    @torch.compile(fullgraph=True)
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        r = predictions - targets
-
-        m = ~torch.isnan(targets)
-        r = torch.where(m, r, 0.0)
-        r = self.weight * r**2
-        r = torch.sum(r, dim=self.axis)
-
-        if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axis)
+            c = torch.sum(m if w is None else w * m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -239,49 +133,15 @@ class RMSE(BaseMetric):
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        w = self.weight
+        m = ~targets.isnan()
         r = predictions - targets
-
-        m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
-        r = r**2
+        r = r**2 if w is None else w * r**2
         r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return torch.sqrt(r)
-
-
-class WRMSE(WeightedMetric):
-    r"""Weighted Root Mean Square Error.
-
-    Given two random vectors $x,x̂∈ℝ^K$, the root-mean-square error is defined as:
-
-    .. math:: 𝗐𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖_w^2]}
-
-    Given $N$ random samples $x_1, …, x_n ∼ x$ and $x̂_1, …, x̂_n ∼ x̂$, it can be estimated as:
-
-    .. math:: 𝗐𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^2}
-    """
-
-    @torch.compile(fullgraph=True)
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        r = predictions - targets
-
-        m = ~torch.isnan(targets)
-        r = torch.where(m, r, 0.0)
-        r = self.weight * r**2
-        r = torch.sum(r, dim=self.axis)
-
-        if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axis)
+            c = torch.sum(m if w is None else w * m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -293,20 +153,19 @@ class WRMSE(WeightedMetric):
 
 
 class LP(BaseMetric):
-    r"""$L^p$ Loss.
+    r"""$Lᵖ$ Loss.
 
-    Given two random vectors $x,x̂∈ℝ^K$, the $L^p$-loss is defined as:
+    Given two random vectors $x,x̂∈ℝᴷ$, the $Lᵖ$-loss is defined as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt[p]{𝔼[‖x - x̂‖^p]}
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt[p]{𝔼[‖x - x̂‖ᵖ]}
 
     Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt[p]{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^p}
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt[p]{\frac{1}{N}∑_{n=1}^N ‖x̂ₙ - xₙ‖ᵖ}
 
     Special cases:
-        - $p=1$: :class:`.MAE`
-        - $p=2$: :class:`.RMSE`
-        - $p=∞$: :class:`.MXE`
+        - $p=1$: :class:`MAE`
+        - $p=2$: :class:`RMSE`
     """
 
     p: Final[float]
@@ -316,78 +175,32 @@ class LP(BaseMetric):
         self,
         p: float = 2.0,
         *,
-        normalize: bool = False,
-        axis: int | tuple[int, ...] = -1,
-    ) -> None:
-        super().__init__(normalize=normalize, axis=axis)
-        self.p = p
-
-    @torch.compile(fullgraph=True)
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        r = predictions - targets
-
-        m = ~torch.isnan(targets)
-        r = torch.where(m, r, 0.0)
-        r = r**self.p
-        r = torch.sum(r, dim=self.axis)
-
-        if self.normalize:
-            c = torch.sum(m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return torch.pow(r, 1 / self.p)
-
-
-class WLP(WeightedMetric):
-    r"""Weighted $L^p$ Loss.
-
-    Given two random vectors $x,x̂∈ℝ^K$, the weighted $L^p$-loss is defined as:
-
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt[p]{𝔼[‖x - x̂‖_w^p]}
-
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
-
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt[p]{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^p}
-
-    Special cases:
-        - $p=1$: :class:`.WMAE`
-        - $p=2$: :class:`.WRMSE`
-        - $p=∞$: :class:`.WMXE`
-    """
-
-    p: Final[float]
-    r"""The $p$-norm to use."""
-
-    def __init__(
-        self,
-        weight: Tensor,
-        *,
-        p: float = 2.0,
-        learnable: bool = False,
+        weight: Tensor | None = None,
         normalize: bool = False,
         axis: Axis = None,
-    ):
-        super().__init__(weight, normalize=normalize, learnable=learnable, axis=axis)
+        learnable: bool = False,
+    ) -> None:
+        super().__init__(
+            normalize=normalize,
+            axis=axis,
+            weight=weight,
+            learnable=learnable,
+        )
         self.p = p
 
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        w = self.weight
+        p = self.p
+        m = ~targets.isnan()
         r = predictions - targets
-
-        m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
-        r = self.weight * r**self.p
+        r = r**p if w is None else w * r**p
         r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axis)
+            c = torch.sum(m if w is None else w * m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -395,4 +208,4 @@ class WLP(WeightedMetric):
 
         # aggregate over batch dimensions
         r = torch.mean(r)
-        return torch.pow(r, 1 / self.p)
+        return torch.pow(r, 1 / p)

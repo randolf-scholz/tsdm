@@ -98,10 +98,6 @@ MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
     "MAE"             : modular.MAE,
     "MSE"             : modular.MSE,
     "RMSE"            : modular.RMSE,
-    "WLP"             : modular.WLP,
-    "WMAE"            : modular.WMAE,
-    "WMSE"            : modular.WMSE,
-    "WRMSE"           : modular.WRMSE,
     # timeseries
     "ND"              : timeseries.ND,
     "NRMSE"           : timeseries.NRMSE,

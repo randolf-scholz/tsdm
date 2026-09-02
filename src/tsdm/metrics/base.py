@@ -5,7 +5,6 @@ __all__ = [
     "Metric",
     "NN_Metric",
     "BaseMetric",
-    "WeightedMetric",
 ]
 
 from abc import abstractmethod
@@ -70,52 +69,6 @@ class BaseMetric(nn.Module, Metric):
         self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
         self.learnable = bool(learnable)
         self.register_parameter("weight", w)
-
-    @abstractmethod
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r"""Compute the loss."""
-        raise NotImplementedError
-
-
-class WeightedMetric(BaseMetric, Metric):
-    r"""Base class for a weighted loss function."""
-
-    # Parameters
-    weight: Tensor
-    r"""PARAM: The weight-vector."""
-
-    # Constants
-    learnable: Final[bool]
-    r"""CONST: Whether the weights are learnable."""
-
-    def __init__(
-        self,
-        weight: Tensor,
-        /,
-        *,
-        learnable: bool = False,
-        normalize: bool = False,
-        axis: Axis = None,
-    ) -> None:
-        r"""Initialize the loss function."""
-        w = torch.as_tensor(weight, dtype=torch.float32)
-        if not torch.all(w >= 0) and torch.any(w > 0):
-            raise ValueError(
-                "Weights must be non-negative and at least one must be positive."
-            )
-        axis = tuple(range(-w.ndim, 0)) if axis is None else axis
-        super().__init__(axis=axis, normalize=normalize)
-
-        # Set the weight tensor.
-        self.learnable = bool(learnable)
-        self.weight = nn.Parameter(w / torch.sum(w), requires_grad=self.learnable)
-
-        # Validate the axes.
-        if len(self.axis) != self.weight.ndim:
-            raise ValueError(
-                "Number of axes does not match weight shape:"
-                f" {len(self.axis)} != {self.weight.ndim=}"
-            )
 
     @abstractmethod
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
