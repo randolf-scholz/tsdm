@@ -35,6 +35,7 @@ CALLBACKS: dict[str, type[callbacks.Callback]] = {
     "MetricsCallback"     : callbacks.MetricsCallback,
     "ModelCallback"       : callbacks.ModelCallback,
     "OptimizerCallback"   : callbacks.OptimizerCallback,
+    "PlotCallback"        : callbacks.PlotCallback,
     "ScalarsCallback"     : callbacks.ScalarsCallback,
     "TableCallback"       : callbacks.TableCallback,
     "WrapCallback"        : callbacks.WrapCallback,

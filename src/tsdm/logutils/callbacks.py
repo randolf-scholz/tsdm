@@ -23,10 +23,10 @@ __all__ = [
     "MetricsCallback",
     "ModelCallback",
     "OptimizerCallback",
+    "PlotCallback",
     "ScalarsCallback",
     "TableCallback",
     "WrapCallback",
-    "PlotCallback",
     # Functions
     "is_callback",
 ]
