@@ -26,9 +26,8 @@ from tsdm.metrics import (
     TIMESERIES_LOSSES,
     BaseMetric,
     Metric,
-    TimeSeriesBaseLoss,
-    TimeSeriesLoss,
 )
+from tsdm.metrics.base import SequentialBaseMetric, SequentialMetric
 from tsdm.random.generators import GENERATORS, IVP_Generator, IVP_GeneratorBase
 from tsdm.random.samplers import SAMPLERS, BaseSampler, Sampler
 
@@ -50,7 +49,7 @@ CASES: dict[str, Case] = {
     "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
     # "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
     "metrics     "   : Case(tsdm.metrics           , Metric            , BaseMetric         , MODULAR_LOSSES      ),
-    "metrics_time"   : Case(tsdm.metrics           , TimeSeriesLoss    , TimeSeriesBaseLoss , TIMESERIES_LOSSES   ),
+    "metrics_time"   : Case(tsdm.metrics, SequentialMetric, SequentialBaseMetric, TIMESERIES_LOSSES),
     # "models"         : Case(tsdm.models            , ForecastingModel  , BaseModel          , MODELS              ),
     # "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
     "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS            ),

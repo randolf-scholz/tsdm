@@ -11,10 +11,16 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from typing import Protocol
 
 from torch import Tensor, nn
 
-from .base import NN_Metric
+
+class NN_Metric(Protocol):
+    r"""Protocol for a loss function."""
+
+    def forward(self, predictions: Tensor, targets: Tensor, /) -> Tensor: ...
+
 
 TORCH_LOSSES_FUNCTIONAL: dict[str, Callable[[Tensor, Tensor], Tensor]] = {
     "binary_cross_entropy"             : nn.functional.binary_cross_entropy,

@@ -7,8 +7,6 @@ Note:
 
 __all__ = [
     # ABCs & Protocols
-    "TimeSeriesLoss",
-    "TimeSeriesBaseLoss",
     # Classes
     "ND",
     "NRMSE",
@@ -23,95 +21,10 @@ __all__ = [
     "q_quantile_loss",
 ]
 
-from abc import abstractmethod
-from typing import Final, Protocol
-
 import torch
 from torch import Tensor
 
-from tsdm.types.aliases import Axis
-
-from .base import BaseMetric
-
-
-class TimeSeriesLoss(Protocol):
-    r"""Protocol for a loss function."""
-
-    def __call__(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r"""Compute a loss between the predictions and the targets.
-
-        .. signature:: ``[(..., *t, 𝐧), (..., *t, 𝐧)] -> 0``
-
-        A time series loss function acts on sequences of variable length.
-        Given a collection of pairs of sequences $(x_n,x̂_n)∈⋃_{T∈ℕ}(V⊕V)^T$,
-        returns a single scalar. Each pair $(x_n,x̂_n)$ is of equal length $T_n$,
-        but different pairs may have different lengths.
-
-        In principle, this means that nested/ragged tensors are required.
-        However, for the sake of simplicity, we assume that the tensors are
-        padded with missing values, such that they are of equal length.
-        """
-        ...
-
-
-class TimeSeriesBaseLoss(BaseMetric):
-    r"""Base class for a time-series function.
-
-    Because the loss is computed over a sequence of variable length, the default is to normalize
-    the loss by the sequence length, so that loss values are comparable across sequences.
-    This class can be used to express decomposable losses of the form
-
-    .. math:: 𝓛(x，x̂) ≔ 𝐀_t ℓ(x_t，x̂_t)
-
-    By default, the aggregation $𝐀_t$ is the mean over the time-axes $𝐄_t$, but simply
-    summing over the time-axes is also possible.
-    """
-
-    # Constants
-    time_axis: Final[int]
-    r"""CONST: The time-axes over which the loss is computed."""
-    channel_axes: Final[tuple[int, ...]]
-    r"""CONST: The channel-axes over which the loss is computed."""
-    combined_axes: Final[tuple[int, ...]]
-    r"""CONST: The combined time- and channel-axes."""
-    normalize_time: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-    normalize_channels: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-
-    # TODO: implement discount factors.
-
-    def __init__(
-        self,
-        /,
-        *,
-        weight: Tensor | None = None,
-        axis: Axis = -1,
-        time_axis: int = -2,
-        normalize_time: bool = True,
-        normalize: bool = False,
-        learnable: bool = False,
-    ) -> None:
-        super().__init__(
-            axis=axis,
-            normalize=normalize,
-            weight=weight,
-            learnable=learnable,
-        )
-        self.channel_axes = self.axis  # alias
-        self.normalize_channels = self.normalize  # alias
-
-        self.normalize_time = bool(normalize_time)
-        self.time_axis = int(time_axis)
-        self.combined_axes = (self.time_axis, *self.channel_axes)
-
-        if not {self.time_axis}.isdisjoint(self.channel_axes):
-            raise ValueError("Time and channel axes must be disjoint!")
-
-    @abstractmethod
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r"""Compute the loss."""
-        raise NotImplementedError
+from .base import SequentialBaseMetric
 
 
 @torch.compile(fullgraph=True)
@@ -201,7 +114,7 @@ def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> 
     )
 
 
-class ND(TimeSeriesBaseLoss):
+class ND(SequentialBaseMetric):
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|}{∑̂ₜₖ |x̂ₜₖ|}
@@ -222,7 +135,7 @@ class ND(TimeSeriesBaseLoss):
         return nd(predictions=predictions, targets=targets)
 
 
-class NRMSE(TimeSeriesBaseLoss):
+class NRMSE(SequentialBaseMetric):
     r"""Compute the normalized root mean squared error.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|²}}{∑̂ₜₖ |x̂ₜₖ|}
@@ -238,7 +151,7 @@ class NRMSE(TimeSeriesBaseLoss):
         return nrmse(predictions=predictions, targets=targets)
 
 
-class Q_Quantile(TimeSeriesBaseLoss):
+class Q_Quantile(SequentialBaseMetric):
     r"""The q-quantile.
 
     .. math:: 𝖯_q(x，x̂) ≔ \begin{cases}\hfill q⋅|x-x̂|:& x≥x̂ \\ (1-q)⋅|x-x̂|:& x≤x̂ \end{cases}
@@ -254,7 +167,7 @@ class Q_Quantile(TimeSeriesBaseLoss):
         return q_quantile(predictions=predictions, targets=targets)
 
 
-class Q_Quantile_Loss(TimeSeriesBaseLoss):
+class Q_Quantile_Loss(SequentialBaseMetric):
     r"""The q-quantile loss.
 
     .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑̂ₜₖ𝖯_q(x̂ₜₖ，x̂̂ₜₖ)}{∑̂ₜₖ|x̂ₜₖ|}
@@ -270,7 +183,7 @@ class Q_Quantile_Loss(TimeSeriesBaseLoss):
         return q_quantile_loss(predictions=predictions, targets=targets)
 
 
-class TimeSeriesMSE(TimeSeriesBaseLoss):
+class TimeSeriesMSE(SequentialBaseMetric):
     r"""Time-Series Mean Square Error.
 
     Given two random sequences $x,x̂∈(ℝ∪𝙽𝚊𝙽)^{T×K}$, the time-series mean square error is defined as:

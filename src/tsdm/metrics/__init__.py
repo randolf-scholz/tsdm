@@ -104,7 +104,7 @@ MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
-TIMESERIES_LOSSES: dict[str, type[sequential.TimeSeriesBaseLoss]] = {
+TIMESERIES_LOSSES: dict[str, type[base.SequentialBaseMetric]] = {
     "ND"              : sequential.ND,
     "NRMSE"           : sequential.NRMSE,
     "Q_Quantile"      : sequential.Q_Quantile,
