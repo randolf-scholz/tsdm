@@ -183,7 +183,7 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
 class ND(TimeSeriesBaseLoss):
     r"""Compute the normalized deviation score.
 
-    .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑_{tk} |x̂_{tk} - x_{tk}|}{∑_{tk} |x_{tk}|}
+    .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|}{∑̂ₜₖ |x̂ₜₖ|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -204,7 +204,7 @@ class ND(TimeSeriesBaseLoss):
 class NRMSE(TimeSeriesBaseLoss):
     r"""Compute the normalized root mean squared error.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑_{tk} |x̂_{tk} - x_{tk}|^2 }}{∑_{tk} |x_{tk}|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|² }}{∑̂ₜₖ |x̂ₜₖ|}
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -236,7 +236,7 @@ class Q_Quantile(TimeSeriesBaseLoss):
 class Q_Quantile_Loss(TimeSeriesBaseLoss):
     r"""The q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑_{tk}𝖯_q(x_{tk}，x̂_{tk})}{∑_{tk}|x_{tk}|}
+    .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑̂ₜₖ𝖯_q(x̂ₜₖ，x̂̂ₜₖ)}{∑̂ₜₖ|x̂ₜₖ|}
 
     References:
         - | Deep State Space Models for Time Series Forecasting
@@ -254,11 +254,11 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
 
     Given two random sequences $x,x̂∈(ℝ∪𝙽𝚊𝙽)^{T×K}$, the time-series mean square error is defined as:
 
-    .. math:: 𝖳𝖲-𝖬𝖲𝖤(x，x̂) ≔ ∑_{tk} \frac{[m_{tk} \? (x̂_{tk} - x_{tk})^2 : 0]}{∑_τ m_{τk}}
+    .. math:: 𝖳𝖲-𝖬𝖲𝖤(x，x̂) ≔ ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}
 
     Or, more precisely, to avoid division by zero, we use the following
 
-    .. math:: ∑_{tk} \Bigr[∑_τ m_{τk}>0 \? \frac{[m_{tk} \? (x̂_{tk} - x_{tk})^2 : 0]}{∑_τ m_{τk}} : 0\Bigl]
+    .. math:: ∑̂ₜₖ \Bigr[∑_τ m_{τk}>0 \? \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}} : 0\Bigl]
 
     By default, each channel is normalized by the number of observations in that channel.
     Other normalization schemes are possible, e.g. by the number of observations in the
@@ -266,15 +266,15 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
 
     With time-normalization:
 
-    .. math:: ∑_{tk} \frac{[m_{tk} \? (x̂_{tk} - x_{tk})^2 : 0]}{∑_τ m_{τk}}
+    .. math:: ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}
 
     with channel-normalization:
 
-    .. math:: ∑_{tk} \frac{[m_{tk} \? (x̂_{tk} - x_{tk})^2 : 0]}{∑_j m_{tj}}
+    .. math:: ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_j m_{tj}}
 
     with both:
 
-    .. math:: ∑_{tk} \frac{[m_{tk} \? (x̂_{tk} - x_{tk})^2 : 0]}{∑_{τj} m_{τj}}
+    .. math:: ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_{τj} m_{τj}}
 
     Moreover, we can consider adding a discount factor with respect to the time,
     i.e. a simple geometric dsitribution, which amounts to adding a term of the form
@@ -322,11 +322,11 @@ class TimeSeriesWMSE(WeightedTimeSeriesLoss):
 
     Given two random sequences $x,x̂∈ℝ^{T×K}$, the weighted time-series mean square error is defined as:
 
-    .. math:: 𝗐𝖳𝖲-𝖬𝖲𝖤(x，x̂) ≔ ∑_{tk} \frac{[m_{tk} \? w_k (x̂_{tk} - x_{tk})^2 : 0]}{∑_τ m_{τk}}
+    .. math:: 𝗐𝖳𝖲-𝖬𝖲𝖤(x，x̂) ≔ ∑̂ₜₖ \frac{[m̂ₜₖ \? w_k (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}
 
     Or, more precisely, to avoid division by zero, we use the following
 
-    .. math:: ∑_{tk}\Bigl[∑_τ m_{τk}>0 \? \frac{[m_{tk} \? w_k (x̂_{tk} - x_{tk})^2 : 0]}{∑_τ m_{τk}}:0\Bigr]
+    .. math:: ∑̂ₜₖ\Bigl[∑_τ m_{τk}>0 \? \frac{[m̂ₜₖ \? w_k (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}:0\Bigr]
 
     Possible batch-dimensions are averaged over.
     """
