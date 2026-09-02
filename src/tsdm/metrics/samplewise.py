@@ -5,7 +5,18 @@ Note:
     See `tsdm.metrics.functional` for functional implementations.
 """
 
-__all__ = ["RMSE", "MSE", "MAE", "LP", "rmse"]
+__all__ = [
+    "RMSE",
+    "MSE",
+    "MAE",
+    "LP",
+    "Q_Quantile",
+    "rmse",
+    "mse",
+    "mae",
+    "lp",
+    "q_quantile",
+]
 
 from typing import Final
 
@@ -17,13 +28,147 @@ from tsdm.types.aliases import Axis
 from .base import BaseMetric
 
 
-@torch.compile(fullgraph=True)
-def rmse(predictions: Tensor, targets: Tensor) -> Tensor:
+def mae(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    dim: Axis = -1,
+    weight: Tensor | None = None,
+    normalize: bool = False,
+) -> Tensor:
+    w = weight
+    m = ~targets.isnan()
+    r = predictions - targets
+    r = torch.where(m, r, 0.0)
+    r = r.abs() if w is None else w * r.abs()
+    r = torch.sum(r, dim=dim)
+
+    if normalize:
+        c = torch.sum(m if w is None else w * m, dim=dim)
+    else:
+        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+
+    r = torch.where(c > 0, r / c, 0.0)
+
+    # aggregate over batch dimensions
+    r = torch.mean(r)
+    return r
+
+
+def mse(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    dim: Axis = -1,
+    weight: Tensor | None = None,
+    normalize: bool = False,
+) -> Tensor:
+    r"""Compute the MSE."""
+    w = weight
+    m = ~targets.isnan()
+    r = predictions - targets
+    r = torch.where(m, r, 0.0)
+    r = r**2 if w is None else w * r**2
+    r = torch.sum(r, dim=dim)  # shape=(..., )
+
+    if normalize:
+        c = torch.sum(m if w is None else w * m, dim=dim)
+    else:
+        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+
+    r = torch.where(c > 0, r / c, 0.0)
+
+    # aggregate over batch dimensions
+    r = torch.mean(r)
+    return r
+
+
+def rmse(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    dim: Axis = -1,
+    weight: Tensor | None = None,
+    normalize: bool = False,
+) -> Tensor:
     r"""Compute the RMSE.
 
     .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖²]}
     """
-    return torch.sqrt(torch.mean((predictions - targets) ** 2))
+    w = weight
+    m = ~targets.isnan()
+    r = predictions - targets
+    r = torch.where(m, r, 0.0)
+    r = r**2 if w is None else w * r**2
+    r = torch.sum(r, dim=dim)
+
+    if normalize:
+        c = torch.sum(m if w is None else w * m, dim=dim)
+    else:
+        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+
+    r = torch.where(c > 0, r / c, 0.0)
+
+    # aggregate over batch dimensions
+    r = torch.mean(r)
+    return torch.sqrt(r)
+
+
+def lp(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    p: float = 2.0,
+    dim: Axis = -1,
+    weight: Tensor | None = None,
+    normalize: bool = False,
+) -> Tensor:
+    r"""Compute the $p$-norm."""
+    w = weight
+    m = ~targets.isnan()
+    r = predictions - targets
+    r = torch.where(m, r, 0.0)
+    r = r**p if w is None else w * r**p
+    r = torch.sum(r, dim=dim)
+
+    if normalize:
+        c = torch.sum(m if w is None else w * m, dim=dim)
+    else:
+        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+
+    r = torch.where(c > 0, r / c, 0.0)
+
+    # aggregate over batch dimensions
+    r = torch.mean(r)
+    return torch.pow(r, 1 / p)
+
+
+def q_quantile(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    q: float = 0.5,
+) -> Tensor:
+    r"""Return the q-quantile.
+
+    For scalar valued x, this is just:
+
+    .. math::
+        𝖯_q(x̂, x) ≔ \begin{cases}
+            \hfill  q⋅|x̂-x| :& x ≥ x̂
+            \\  (1-q)⋅|x̂-x| :& x ≤ x̂
+        \end{cases}
+
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
+            Tim Januschowski
+          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
+    # simplified formula
+    residual = targets - predictions
+    return torch.maximum((q - 1) * residual, q * residual)
 
 
 class MAE(BaseMetric):
@@ -43,23 +188,12 @@ class MAE(BaseMetric):
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        w = self.weight
-        m = ~targets.isnan()
-        r = predictions - targets
-        r = torch.where(m, r, 0.0)
-        r = r.abs() if w is None else w * r.abs()
-        r = torch.sum(r, dim=self.axis)
-
-        if self.normalize:
-            c = torch.sum(m if w is None else w * m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return r
+        return mae(
+            predictions=predictions,
+            targets=targets,
+            weight=self.weight,
+            normalize=self.normalize,
+        )
 
 
 class MSE(BaseMetric):
@@ -108,23 +242,12 @@ class MSE(BaseMetric):
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        w = self.weight
-        m = ~targets.isnan()
-        r = predictions - targets
-        r = torch.where(m, r, 0.0)
-        r = r**2 if w is None else w * r**2
-        r = torch.sum(r, dim=self.axis)  # shape=(..., )
-
-        if self.normalize:
-            c = torch.sum(m if w is None else w * m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return r
+        return mse(
+            predictions=predictions,
+            targets=targets,
+            weight=self.weight,
+            normalize=self.normalize,
+        )
 
 
 class RMSE(BaseMetric):
@@ -142,23 +265,12 @@ class RMSE(BaseMetric):
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        w = self.weight
-        m = ~targets.isnan()
-        r = predictions - targets
-        r = torch.where(m, r, 0.0)
-        r = r**2 if w is None else w * r**2
-        r = torch.sum(r, dim=self.axis)
-
-        if self.normalize:
-            c = torch.sum(m if w is None else w * m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        r = torch.where(c > 0, r / c, 0.0)
-
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return torch.sqrt(r)
+        return rmse(
+            predictions=predictions,
+            targets=targets,
+            weight=self.weight,
+            normalize=self.normalize,
+        )
 
 
 class LP(BaseMetric):
@@ -200,21 +312,30 @@ class LP(BaseMetric):
     @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        w = self.weight
-        p = self.p
-        m = ~targets.isnan()
-        r = predictions - targets
-        r = torch.where(m, r, 0.0)
-        r = r**p if w is None else w * r**p
-        r = torch.sum(r, dim=self.axis)
+        return lp(
+            predictions=predictions,
+            targets=targets,
+            p=self.p,
+            weight=self.weight,
+            normalize=self.normalize,
+        )
 
-        if self.normalize:
-            c = torch.sum(m if w is None else w * m, dim=self.axis)
-        else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.where(c > 0, r / c, 0.0)
+class Q_Quantile(BaseMetric):
+    r"""The q-quantile.
 
-        # aggregate over batch dimensions
-        r = torch.mean(r)
-        return torch.pow(r, 1 / p)
+    .. math::
+        𝖯_q(x̂, x) ≔ \begin{cases}
+            \hfill  q⋅|x̂-x| :& x ≥ x̂
+            \\  (1-q)⋅|x̂-x| :& x ≤ x̂
+        \end{cases}
+
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
+
+    @torch.compile(fullgraph=True)
+    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+        r"""Compute the loss value."""
+        return q_quantile(predictions=predictions, targets=targets)

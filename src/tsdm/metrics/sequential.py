@@ -10,14 +10,12 @@ __all__ = [
     # Classes
     "ND",
     "NRMSE",
-    "Q_Quantile",
     "Q_Quantile_Loss",
     "TimeSeriesMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesRMSE",
     "nd",
     "nrmse",
-    "q_quantile",
     "q_quantile_loss",
 ]
 
@@ -25,6 +23,7 @@ import torch
 from torch import Tensor
 
 from .base import SequentialBaseMetric
+from .samplewise import q_quantile
 
 
 @torch.compile(fullgraph=True)
@@ -71,27 +70,6 @@ def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tenso
     mag = torch.maximum(mag, torch.full_like(x_true, eps))
 
     return torch.mean(res / mag)  # get rid of any batch dimensions
-
-
-@torch.compile(fullgraph=True)
-def q_quantile(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
-    r"""Return the q-quantile.
-
-    .. math::
-        𝖯_q(x，x̂) ≔ \begin{cases}
-            \hfill  q⋅|x-x̂| :& x ≥ x̂
-            \\  (1-q)⋅|x-x̂| :& x ≤ x̂
-        \end{cases}
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
-            Tim Januschowski
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-    residual = targets - predictions
-    return torch.max((q - 1) * residual, q * residual)  # simplified formula
 
 
 @torch.compile(fullgraph=True)
@@ -149,22 +127,6 @@ class NRMSE(SequentialBaseMetric):
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
         return nrmse(predictions=predictions, targets=targets)
-
-
-class Q_Quantile(SequentialBaseMetric):
-    r"""The q-quantile.
-
-    .. math:: 𝖯_q(x，x̂) ≔ \begin{cases}\hfill q⋅|x-x̂|:& x≥x̂ \\ (1-q)⋅|x-x̂|:& x≤x̂ \end{cases}
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-
-    @torch.compile(fullgraph=True)
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r"""Compute the loss value."""
-        return q_quantile(predictions=predictions, targets=targets)
 
 
 class Q_Quantile_Loss(SequentialBaseMetric):

@@ -47,10 +47,20 @@ class SequentialMetric(Protocol):
         sequence space. As a set, this is just identical to the union $⋃_{n∈ℕ} Xⁿ$.
         However, if $X$ has additional structure, such as being a topological vector
         space, then this induces structure on the finite sequence space.
+
+    Args:
+        predictions: Predictions of shape (..., *d), possibly padded NaN.
+        targets: Targets of shape (..., *d), possibly padded NaN.
+        mask: Mask of shape (..., *d), marking valid values.
     """
 
-    # (..., $N, *d), (..., $N, *d) -> (...)
-    def __call__(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def __call__(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., $N, *D], possibly padded NaN
+        targets: Tensor,  # Float[..., $N, *D], possibly padded NaN
+        mask: Tensor | None = None,  # Bool[..., $N, *D]
+    ) -> Tensor:  # Float[...]
         r"""Compute a loss between the predictions and the targets.
 
         .. signature:: ``[(..., *t, 𝐧), (..., *t, 𝐧)] -> 0``
@@ -75,11 +85,21 @@ class IndexedMetric(Protocol):
     .. math:: ℓ： \Seq(T) ×_ℕ \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0}
 
     This allows for instance for discounting values depending on the time-steps.
+
+    Args:
+        predictions: Predictions of shape (..., *d), possibly padded NaN.
+        targets: Targets of shape (..., *d), possibly padded NaN.
+        time_steps: Time steps of shape (..., *d), possibly padded NaN.
+        mask: Mask of shape (..., *d), marking valid values.
     """
 
-    # (..., $N, *d), (..., $N, *d), (..., $N) -> (...)
     def __call__(
-        self, *, predictions: Tensor, targets: Tensor, time_steps: Tensor
+        self,
+        *,
+        predictions: Tensor,  # Float[..., $N, *D], possibly padded NaN
+        targets: Tensor,  # Float[..., $N, *D], possibly padded NaN
+        time_steps: Tensor,  # Float[..., $N], possibly padded NaN
+        mask: Tensor | None = None,  # Bool[..., $N, *D]
     ) -> Tensor: ...
 
 

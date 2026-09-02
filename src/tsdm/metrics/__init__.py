@@ -85,7 +85,7 @@ FUNCTIONAL_LOSSES: dict[str, base.Metric] = {
     "nd"              : sequential.nd,
     "rmse"            : samplewise.rmse,
     "nrmse"           : sequential.nrmse,
-    "q_quantile"      : sequential.q_quantile,
+    "q_quantile"      : samplewise.q_quantile,
     "q_quantile_loss" : sequential.q_quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
@@ -98,7 +98,7 @@ MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
     # timeseries
     "ND"              : sequential.ND,
     "NRMSE"           : sequential.NRMSE,
-    "Q_Quantile"      : sequential.Q_Quantile,
+    "Q_Quantile"      : samplewise.Q_Quantile,
     "Q_Quantile_Loss" : sequential.Q_Quantile_Loss,
     "TimeSeriesMSE"   : sequential.TimeSeriesMSE,
 }  # fmt: skip
@@ -107,7 +107,6 @@ r"""Dictionary of all available modular losses."""
 TIMESERIES_LOSSES: dict[str, type[base.SequentialBaseMetric]] = {
     "ND"              : sequential.ND,
     "NRMSE"           : sequential.NRMSE,
-    "Q_Quantile"      : sequential.Q_Quantile,
     "Q_Quantile_Loss" : sequential.Q_Quantile_Loss,
     "TimeSeriesMSE"   : sequential.TimeSeriesMSE,
 }  # fmt: skip
