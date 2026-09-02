@@ -135,7 +135,7 @@ class ND(TimeSeriesBaseLoss):
 class NRMSE(TimeSeriesBaseLoss):
     r"""Compute the normalized root mean squared error.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|² }}{∑̂ₜₖ |x̂ₜₖ|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|²}}{∑̂ₜₖ |x̂ₜₖ|}
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
