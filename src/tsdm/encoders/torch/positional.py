@@ -6,7 +6,7 @@ from dataclasses import KW_ONLY, dataclass, field
 from typing import Final
 
 import torch
-from torch import Tensor, jit, nn
+from torch import Tensor, nn
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import StaticEncoder
@@ -51,23 +51,19 @@ class PositionalEncoding(nn.Module):
         if self.scales[0] != 1.0:
             raise ValueError("Lowest scale must be 1.0")
 
-    @jit.export
     def encode(self, t: Tensor) -> Tensor:
         r""".. signature:: ``(..., d) -> ...``."""
         z = torch.einsum("..., d -> ...d", t, self.scales)
         return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
 
-    @jit.export
     def decode(self, z: Tensor) -> Tensor:
         r""".. signature:: ``(..., 2d) -> ...``."""
         return torch.asin(z[..., 0])
 
-    @jit.export
     def forward(self, t: Tensor) -> Tensor:
         r""".. signature:: ``... -> (..., 2d)``."""
         return self.encode(t)
 
-    @jit.export
     def inverse(self, t: Tensor) -> Tensor:
         r""".. signature:: ``(..., 2d) -> ...``."""
         return self.decode(t)

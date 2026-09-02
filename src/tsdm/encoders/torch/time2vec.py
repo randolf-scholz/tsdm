@@ -6,7 +6,7 @@ from dataclasses import KW_ONLY, dataclass, field
 from typing import Final
 
 import torch
-from torch import Tensor, jit, nn
+from torch import Tensor, nn
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import StaticEncoder
@@ -44,24 +44,20 @@ class Time2Vec(nn.Module):
             "cos": torch.cos,
         }[activation]
 
-    @jit.export
     def encode(self, t: Tensor) -> Tensor:
         r""".. signature:: ``(..., d) -> ...``."""
         z = torch.einsum("..., k -> ...k", t, self.freq) + self.phase
         z = self.act(z)
         return torch.cat([t.unsqueeze(dim=-1), z], dim=-1)
 
-    @jit.export
     def decode(self, z: Tensor) -> Tensor:
         r""".. signature:: ``(..., d) -> ...``."""
         return z[..., 0]
 
-    @jit.export
     def forward(self, t: Tensor) -> Tensor:
         r""".. signature:: ``... -> (..., d)``."""
         return self.encode(t)
 
-    @jit.export
     def inverse(self, z: Tensor) -> Tensor:
         r""".. signature:: ``(..., d) -> ...``."""
         return self.decode(z)
