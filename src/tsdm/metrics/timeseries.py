@@ -65,11 +65,11 @@ class TimeSeriesBaseLoss(BaseMetric):
     """
 
     # Constants
-    time_axis: Final[tuple[int, ...]]
+    time_axis: Final[int]
     r"""CONST: The time-axes over which the loss is computed."""
-    channel_axis: Final[tuple[int, ...]]
+    channel_axes: Final[tuple[int, ...]]
     r"""CONST: The channel-axes over which the loss is computed."""
-    combined_axis: Final[tuple[int, ...]]
+    combined_axes: Final[tuple[int, ...]]
     r"""CONST: The combined time- and channel-axes."""
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize the weights."""
@@ -84,7 +84,7 @@ class TimeSeriesBaseLoss(BaseMetric):
         *,
         weight: Tensor | None = None,
         axis: Axis = -1,
-        time_axis: int | tuple[int, ...] = -2,
+        time_axis: int = -2,
         normalize_time: bool = True,
         normalize: bool = False,
         learnable: bool = False,
@@ -95,16 +95,14 @@ class TimeSeriesBaseLoss(BaseMetric):
             weight=weight,
             learnable=learnable,
         )
+        self.channel_axes = self.axis  # alias
+        self.normalize_channels = self.normalize  # alias
 
         self.normalize_time = bool(normalize_time)
-        self.normalize_channels = bool(normalize)
-        self.time_axis = (
-            (time_axis,) if isinstance(time_axis, int) else tuple(time_axis)
-        )
-        self.channel_axis = self.axis
-        self.combined_axis = self.time_axis + self.channel_axis
+        self.time_axis = int(time_axis)
+        self.combined_axes = (self.time_axis, *self.channel_axes)
 
-        if not set(self.time_axis).isdisjoint(self.channel_axis):
+        if not {self.time_axis}.isdisjoint(self.channel_axes):
             raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
@@ -231,27 +229,27 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
         match self.normalize_time, self.normalize_channels:
             case True, True:
                 c = torch.sum(
-                    m if w is None else w * m, dim=self.combined_axis, keepdim=True
+                    m if w is None else w * m, dim=self.combined_axes, keepdim=True
                 )
-                s = torch.sum(r / c, dim=self.combined_axis, keepdim=True)
+                s = torch.sum(r / c, dim=self.combined_axes, keepdim=True)
                 r = torch.where(c > 0, s, 0.0)
 
             case True, False:
                 c = torch.sum(m, dim=self.time_axis, keepdim=True)
                 s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
                 r = torch.where(c > 0, s, 0.0)
-                r = torch.sum(r, dim=self.channel_axis, keepdim=True)
+                r = torch.sum(r, dim=self.channel_axes, keepdim=True)
 
             case False, True:
                 c = torch.sum(
-                    m if w is None else w * m, dim=self.channel_axis, keepdim=True
+                    m if w is None else w * m, dim=self.channel_axes, keepdim=True
                 )
-                s = torch.sum(r / c, dim=self.channel_axis, keepdim=True)
+                s = torch.sum(r / c, dim=self.channel_axes, keepdim=True)
                 r = torch.where(c > 0, s, 0.0)
                 r = torch.sum(r, dim=self.time_axis, keepdim=True)
 
             case False, False:
-                r = torch.sum(r, dim=self.combined_axis, keepdim=True)
+                r = torch.sum(r, dim=self.combined_axes, keepdim=True)
 
             case _:
                 raise RuntimeError("unreachable")
