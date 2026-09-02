@@ -104,7 +104,6 @@ MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
     "Q_Quantile"      : timeseries.Q_Quantile,
     "Q_Quantile_Loss" : timeseries.Q_Quantile_Loss,
     "TimeSeriesMSE"   : timeseries.TimeSeriesMSE,
-    "TimeSeriesWMSE"  : timeseries.TimeSeriesWMSE,
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
@@ -114,7 +113,6 @@ TIMESERIES_LOSSES: dict[str, type[timeseries.TimeSeriesBaseLoss]] = {
     "Q_Quantile"      : timeseries.Q_Quantile,
     "Q_Quantile_Loss" : timeseries.Q_Quantile_Loss,
     "TimeSeriesMSE"   : timeseries.TimeSeriesMSE,
-    "TimeSeriesWMSE"  : timeseries.TimeSeriesWMSE,
 }  # fmt: skip
 r"""Dictionary of all available time-series losses."""
 

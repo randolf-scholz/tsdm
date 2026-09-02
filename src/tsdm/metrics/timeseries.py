@@ -9,26 +9,21 @@ __all__ = [
     # ABCs & Protocols
     "TimeSeriesLoss",
     "TimeSeriesBaseLoss",
-    "WeightedTimeSeriesLoss",
     # Classes
     "ND",
     "NRMSE",
     "Q_Quantile",
     "Q_Quantile_Loss",
     "TimeSeriesMSE",
-    "TimeSeriesWMSE",
     # "TimeSeriesMAE",
-    # "TimeSeriesWMAE",
     # "TimeSeriesRMSE",
-    # "TimeSeriesWRMSE",
 ]
 
 from abc import abstractmethod
-from collections.abc import Callable
-from typing import Final, Optional, Protocol
+from typing import Final, Protocol
 
 import torch
-from torch import Tensor, nn
+from torch import Tensor
 
 from tsdm.types.aliases import Axis
 
@@ -81,98 +76,36 @@ class TimeSeriesBaseLoss(BaseMetric):
     normalize_channels: Final[bool]
     r"""CONST: Whether to normalize the weights."""
 
+    # TODO: implement discount factors.
+
     def __init__(
         self,
         /,
         *,
+        weight: Tensor | None = None,
+        axis: Axis = -1,
         time_axis: int | tuple[int, ...] = -2,
-        axis: int | tuple[int, ...] = -1,
         normalize_time: bool = True,
         normalize: bool = False,
+        learnable: bool = False,
     ) -> None:
-        super().__init__(axis=axis, normalize=normalize)
+        super().__init__(
+            axis=axis,
+            normalize=normalize,
+            weight=weight,
+            learnable=learnable,
+        )
+
         self.normalize_time = bool(normalize_time)
         self.normalize_channels = bool(normalize)
         self.time_axis = (
             (time_axis,) if isinstance(time_axis, int) else tuple(time_axis)
         )
-        self.channel_axis = (axis,) if isinstance(axis, int) else tuple(axis)
+        self.channel_axis = self.axis
         self.combined_axis = self.time_axis + self.channel_axis
 
         if not set(self.time_axis).isdisjoint(self.channel_axis):
             raise ValueError("Time and channel axes must be disjoint!")
-
-    @abstractmethod
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r"""Compute the loss."""
-        raise NotImplementedError
-
-
-class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
-    r"""Base class for a weighted time series loss function.
-
-    Because the loss is computed over a sequence of variable length, the default is to normalize
-    the loss by the sequence length, so that loss values are comparable across sequences.
-    This class can be used to express decomposable losses of the form
-
-    .. math:: 𝓛(𝐭，x，x̂) ≔ ∑_t ω_t ℓ(x_t，x̂_t；w)
-
-    Where $w$ are the channel weights, and $ω_t$ is a time-dependent discount factor,
-    and $ℓ$ is a time-independent loss function. Typically, these losses take the form:
-
-    .. math:: 𝓛(x，x̂)  = ∑_t ω_t Φ(w ⊙ (x_t - x̂_t))
-
-    where $Φ$ is some function acting on the weighted residuals, for example, $Φ(r) = ‖r‖$.
-    """
-
-    # Parameters
-    channel_weights: Tensor
-    r"""PARAM: The weight-vector."""
-    discount_factor: Optional[Tensor] = None
-    r"""PARAM: The weight-vector."""
-    discount_function: Optional[Callable[[Tensor], Tensor]] = None
-    r"""Optional: Use a more complicated discounting schema."""
-
-    # Constants
-    learnable: Final[bool]
-    r"""CONST: Whether the weights are learnable."""
-
-    def __init__(
-        self,
-        weight: Tensor,
-        /,
-        *,
-        time_axis: Axis = None,
-        axis: Axis = None,
-        normalize: bool = False,
-        normalize_time: bool = True,
-        learnable: bool = False,
-    ) -> None:
-        r"""Initialize the loss function."""
-        w = torch.as_tensor(weight, dtype=torch.float32)
-        if not torch.all(w >= 0) and torch.any(w > 0):
-            raise ValueError(
-                "Weights must be non-negative and at least one must be positive."
-            )
-        axis = tuple(range(-w.ndim, 0)) if axis is None else axis
-        time_axis = (-w.ndim - 1,) if time_axis is None else time_axis
-        super().__init__(
-            time_axis=time_axis,
-            axis=axis,
-            normalize=normalize,
-            normalize_time=normalize_time,
-        )
-
-        # Set the weight tensor.
-        self.learnable = bool(learnable)
-        self.weight = nn.Parameter(w / torch.sum(w), requires_grad=self.learnable)
-
-        # Validate the axes.
-        if len(self.channel_axis) != self.weight.ndim:
-            raise ValueError(
-                "Number of axes does not match weight shape:"
-                f" {len(self.channel_axis)} != {self.weight.ndim=}"
-            )
 
     @abstractmethod
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
@@ -287,78 +220,41 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
     @torch.compile
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
+        w = self.weight
+        m = ~targets.isnan()  # 1 if not nan, 0 if nan
         r = predictions - targets
-
-        m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
         r = torch.where(m, r, 0.0)
-        r = r**2  # must come after where, else we get NaN gradients!
+        # must come after where, else we get NaN gradients!
+        r = r**2 if w is None else w * r**2
 
         # compute normalization constant
-        # NOTE: JIT does not support match-case
-        if self.normalize_time and self.normalize_channels:
-            c = torch.sum(m, dim=self.combined_axis, keepdim=True)
-            s = torch.sum(r / c, dim=self.combined_axis, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-        elif self.normalize_time and not self.normalize_channels:
-            c = torch.sum(m, dim=self.time_axis, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.channel_axis, keepdim=True)
-        elif not self.normalize_time and self.normalize_channels:
-            c = torch.sum(m, dim=self.channel_axis, keepdim=True)
-            s = torch.sum(r / c, dim=self.channel_axis, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axis, keepdim=True)
-        else:
-            r = torch.sum(r, dim=self.combined_axis, keepdim=True)
+        match self.normalize_time, self.normalize_channels:
+            case True, True:
+                c = torch.sum(
+                    m if w is None else w * m, dim=self.combined_axis, keepdim=True
+                )
+                s = torch.sum(r / c, dim=self.combined_axis, keepdim=True)
+                r = torch.where(c > 0, s, 0.0)
 
-        # aggregate over batch-dimensions
-        r = torch.mean(r)
-        return r
+            case True, False:
+                c = torch.sum(m, dim=self.time_axis, keepdim=True)
+                s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
+                r = torch.where(c > 0, s, 0.0)
+                r = torch.sum(r, dim=self.channel_axis, keepdim=True)
 
+            case False, True:
+                c = torch.sum(
+                    m if w is None else w * m, dim=self.channel_axis, keepdim=True
+                )
+                s = torch.sum(r / c, dim=self.channel_axis, keepdim=True)
+                r = torch.where(c > 0, s, 0.0)
+                r = torch.sum(r, dim=self.time_axis, keepdim=True)
 
-class TimeSeriesWMSE(WeightedTimeSeriesLoss):
-    r"""Weighted Time-Series Mean Square Error.
+            case False, False:
+                r = torch.sum(r, dim=self.combined_axis, keepdim=True)
 
-    Given two random sequences $x,x̂∈ℝ^{T×K}$, the weighted time-series mean square error is defined as:
-
-    .. math:: 𝗐𝖳𝖲-𝖬𝖲𝖤(x，x̂) ≔ ∑̂ₜₖ \frac{[m̂ₜₖ \? w_k (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}
-
-    Or, more precisely, to avoid division by zero, we use the following
-
-    .. math:: ∑̂ₜₖ\Bigl[∑_τ m_{τk}>0 \? \frac{[m̂ₜₖ \? w_k (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}:0\Bigr]
-
-    Possible batch-dimensions are averaged over.
-    """
-
-    @torch.compile(fullgraph=True)
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., t, m), (..., t, m)] → ...``."""
-        r = predictions - targets
-
-        m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
-        r = torch.where(m, r, 0.0)
-        r = self.weight * r**2  # must come after where, else we get NaN gradients!
-
-        # compute normalization constant
-        if self.normalize_time and self.normalize_channels:
-            c = torch.sum(
-                self.weight * m, dim=self.time_axis + self.channel_axis, keepdim=True
-            )
-            s = torch.sum(r / c, dim=self.time_axis + self.channel_axis, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-        elif self.normalize_time and not self.normalize_channels:
-            c = torch.sum(m, dim=self.time_axis, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.channel_axis, keepdim=True)
-        elif not self.normalize_time and self.normalize_channels:
-            c = torch.sum(self.weight * m, dim=self.channel_axis, keepdim=True)
-            s = torch.sum(r / c, dim=self.channel_axis, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axis, keepdim=True)
-        else:
-            r = torch.sum(r, dim=self.time_axis + self.channel_axis, keepdim=True)
+            case _:
+                raise RuntimeError("unreachable")
 
         # aggregate over batch-dimensions
         r = torch.mean(r)
