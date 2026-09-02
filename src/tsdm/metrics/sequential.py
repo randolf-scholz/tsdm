@@ -11,7 +11,7 @@ __all__ = [
     "ND",
     "NRMSE",
     "Q_Quantile_Loss",
-    "TimeSeriesMSE",
+    "SequentialMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesRMSE",
     "nd",
@@ -30,7 +30,7 @@ from .samplewise import q_quantile
 def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
-    .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑ₜₖ |x̂ₜₖ - xₜₖ|}{∑ₜₖ |xₜₖ|}
+    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -55,7 +55,7 @@ def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
 def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized root mean square errors.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -76,7 +76,7 @@ def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tenso
 def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑ₜₖ𝖯_q(xₜₖ，x̂ₜₖ)}{∑ₜₖ|xₜₖ|}
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ)}{∑ₜₖ|xₜₖ|}
 
     References:
         - | Deep State Space Models for Time Series Forecasting
@@ -95,7 +95,7 @@ def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> 
 class ND(SequentialBaseMetric):
     r"""Compute the normalized deviation score.
 
-    .. math:: 𝖭𝖣(x，x̂) ≔ \frac{∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|}{∑̂ₜₖ |x̂ₜₖ|}
+    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -116,7 +116,7 @@ class ND(SequentialBaseMetric):
 class NRMSE(SequentialBaseMetric):
     r"""Compute the normalized root mean squared error.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑̂ₜₖ |x̂̂ₜₖ - x̂ₜₖ|²}}{∑̂ₜₖ |x̂ₜₖ|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -132,7 +132,7 @@ class NRMSE(SequentialBaseMetric):
 class Q_Quantile_Loss(SequentialBaseMetric):
     r"""The q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x，x̂) ≔ 2\frac{∑̂ₜₖ𝖯_q(x̂ₜₖ，x̂̂ₜₖ)}{∑̂ₜₖ|x̂ₜₖ|}
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ) }{∑ₜₖ\abs{xₜₖ}}
 
     References:
         - | Deep State Space Models for Time Series Forecasting
@@ -145,16 +145,17 @@ class Q_Quantile_Loss(SequentialBaseMetric):
         return q_quantile_loss(predictions=predictions, targets=targets)
 
 
-class TimeSeriesMSE(SequentialBaseMetric):
+class SequentialMSE(SequentialBaseMetric):
     r"""Time-Series Mean Square Error.
 
-    Given two random sequences $x,x̂∈(ℝ∪𝙽𝚊𝙽)^{T×K}$, the time-series mean square error is defined as:
+    Given two random sequences $x,x̂∈( ℝ ∪ \{𝙽𝙰\})^{T×K}$, the time-series
+    mean square error is defined as:
 
-    .. math:: 𝖳𝖲-𝖬𝖲𝖤(x，x̂) ≔ ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}
+    .. math:: 𝖳𝖲-𝖬𝖲𝖤(x̂，x) ≔ ∑ₜₖ \frac{[mₜₖ \? (x̂ₜₖ - xₜₖ)² : 0]}{∑ₛ mₛₖ}
 
     Or, more precisely, to avoid division by zero, we use the following
 
-    .. math:: ∑̂ₜₖ \Bigr[∑_τ m_{τk}>0 \? \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}} : 0\Bigl]
+    .. math:: ∑ₜₖ \Bigr[∑ₛ mₛₖ > 0 \? \frac{[mₜₖ \? (x̂ₜₖ - xₜₖ)² : 0]}{∑ₛ mₛₖ} : 0\Bigl]
 
     By default, each channel is normalized by the number of observations in that channel.
     Other normalization schemes are possible, e.g. by the number of observations in the
@@ -162,19 +163,19 @@ class TimeSeriesMSE(SequentialBaseMetric):
 
     With time-normalization:
 
-    .. math:: ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_τ m_{τk}}
+    .. math:: ∑ₜₖ \frac{[mₜₖ \? |x̂ₜₖ - xₜₖ|² : 0]}{∑ₛ mₛₖ}
 
     with channel-normalization:
 
-    .. math:: ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_j m_{tj}}
+    .. math:: ∑ₜₖ \frac{[mₜₖ \? |x̂ₜₖ - xₜₖ|² : 0]}{∑ⱼ mₜⱼ}
 
     with both:
 
-    .. math:: ∑̂ₜₖ \frac{[m̂ₜₖ \? (x̂̂ₜₖ - x̂ₜₖ)² : 0]}{∑_{τj} m_{τj}}
+    .. math:: ∑ₜₖ \frac{[mₜₖ \? |x̂ₜₖ - xₜₖ|² : 0]}{∑ₛⱼ mₛⱼ}
 
     Moreover, we can consider adding a discount factor with respect to the time,
     i.e. a simple geometric dsitribution, which amounts to adding a term of the form
-    $γ^{∑_k ∆t_k}$ to the denominator, where $γ$ is the discount factor and $∆t_k$
+    $γ^{∑ₖ ∆tₖ}$ to the denominator, where $γ$ is the discount factor and $∆t_k$
     is the time difference between the $k$-th and $(k+1)$-th time point.
 
     Possible batch-dimensions are averaged over.

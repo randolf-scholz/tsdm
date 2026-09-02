@@ -3,7 +3,7 @@ from math import prod
 import pytest
 import torch
 
-from tsdm.metrics.timeseries import TimeSeriesMSE
+from tsdm.metrics.sequential import SequentialMSE
 
 BATCH_SHAPES = [
     (),
@@ -48,7 +48,7 @@ def test_time_loss_normalization(
     time_axis = -K - 1
     channel_axes = tuple(range(-K, 0))
     print(shape, time_axis, channel_axes)
-    loss_func = TimeSeriesMSE(
+    loss_func = SequentialMSE(
         time_axis=time_axis,
         axis=channel_axes,
         normalize_time=True,

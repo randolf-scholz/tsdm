@@ -32,7 +32,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.encoders.pandas import FrameAsTensorDict, FrameEncoder
-from tsdm.metrics import TimeSeriesMSE
+from tsdm.metrics import SequentialMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -342,4 +342,4 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
 
         Note that if :math:`∑_{t∈T} m_{t, i} = 0`, then the loss is zero for that channel.
         """
-        return TimeSeriesMSE()
+        return SequentialMSE()

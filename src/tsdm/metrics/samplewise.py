@@ -1,9 +1,4 @@
-r"""Implementations of metrics for (non-sequential) data.
-
-Note:
-    Contains losses in modular form.
-    See `tsdm.metrics.functional` for functional implementations.
-"""
+r"""Implementations of metrics for (non-sequential) data."""
 
 __all__ = [
     "RMSE",
@@ -93,7 +88,7 @@ def rmse(
 ) -> Tensor:
     r"""Compute the RMSE.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖²]}
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{𝔼[‖x̂ - x‖²]}
     """
     w = weight
     m = ~targets.isnan()
@@ -174,15 +169,15 @@ def q_quantile(
 class MAE(BaseMetric):
     r"""Mean Absolute Error.
 
-    Given two random vectors $x,x̂∈ℝ^K$, the mean absolute error is defined as:
+    Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:
 
-    .. math:: 𝖬𝖠𝖤(x，x̂) ≔ 𝔼[‖x - x̂‖]
+    .. math:: 𝖬𝖠𝖤(x̂，x) ≔ 𝔼[‖x̂ - x‖]
 
-    Given $N$ random samples $x₁, …, x_N ∼ x$ and $x̂₁, …, x̂_N ∼ x̂$, it can be estimated as:
+    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
-    .. math:: 𝖬𝖠𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂ₙ - xₙ‖
+    .. math:: 𝖬𝖠𝖤(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖
 
-    If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |z_k|²$ is used.
+    If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |zₖ|²$ is used.
     """
 
     @torch.compile(fullgraph=True)
@@ -199,22 +194,22 @@ class MAE(BaseMetric):
 class MSE(BaseMetric):
     r"""Mean Square Error.
 
-    Given two random vectors $x,x̂∈ℝ^K$, the mean square error is defined as:
+    Given two random vectors $x̂,x∈ℝᴷ$, the mean square error is defined as:
 
-    .. math:: 𝖬𝖲𝖤(x，x̂) ≔ 𝔼[‖x̂-x‖^2] ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2
+    .. math:: 𝖬𝖲𝖤(x̂，x) ≔ 𝔼[‖x̂-x‖²] ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²
 
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
-    .. math:: 𝖬𝖲𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2
+    .. math:: 𝖬𝖲𝖤(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²
 
     If the `normalize` option is set to True, then the normalized ℓ²-norm is used instead:
 
-    .. math:: ‖z‖^2_{2^*} ≔ \frac{1}{K}∑_{k=1}^K z_k^2
+    .. math:: ‖z‖²_{2^*} ≔ \frac{1}{K}∑ₖ₌₁ᴷ zₖ²
 
     If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
     In this case, the loss is computed as if the NaN channels would not exist.
 
-    .. math:: ‖z‖^2_{2^*} ≔ \frac{1}{∑_k m_k} ∑_{k=1}^K [m_k \? z_k^2 : 0]
+    .. math:: ‖z‖²_{2^*} ≔ \frac{1}{∑ₖ mₖ} ∑ₖ₌₁ᴷ [mₖ \? zₖ² : 0]
 
     Since it could happen that all channels are NaN, the loss is set to zero in this case.
 
@@ -224,19 +219,19 @@ class MSE(BaseMetric):
 
     1. MSE with normalization and NaNs ignored
 
-       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{∑_k m_k}∑_{k=1}^K [m_k \? (x̂_{n,k} - x_{n,k})^2 : 0]
+       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ \frac{1}{∑ₖ mₖ}∑ₖ₌₁ᴷ [mₖ \? |x̂ₙₖ - xₙₖ|² : 0]
 
     2. MSE with normalization and NaNs counted
 
-       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{K}∑_{k=1}^K (x̂_{n,k} - x_{n,k})^2
+       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ \frac{1}{K}∑ₖ₌₁ᴷ |x̂ₙₖ - xₙₖ|²
 
     3. MSE without normalization and NaNs ignored
 
-       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K [m_i \? (x̂_{n,k} - x_{n,k})^2 : 0]
+       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ ∑ₖ₌₁ᴷ [mₖ \? |x̂ₙₖ - xₙₖ|² : 0]
 
     4. MSE without normalization and NaNs counted
 
-       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K (x̂_{n,k} - x_{n,k})^2
+       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ ∑ₖ₌₁ᴷ |x̂ₙₖ - xₙₖ|²
     """
 
     @torch.compile(fullgraph=True)
@@ -253,13 +248,13 @@ class MSE(BaseMetric):
 class RMSE(BaseMetric):
     r"""Root Mean Square Error.
 
-    Given two random vectors $x,x̂∈ℝ^K$, the root-mean-square error is defined as:
+    Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖^2]}
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt{𝔼[‖x̂ - x‖²]}
 
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2}
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
     """
 
     @torch.compile(fullgraph=True)
@@ -276,13 +271,13 @@ class RMSE(BaseMetric):
 class LP(BaseMetric):
     r"""$Lᵖ$ Loss.
 
-    Given two random vectors $x,x̂∈ℝᴷ$, the $Lᵖ$-loss is defined as:
+    Given two random vectors $x̂,x∈ℝᴷ$, the $Lᵖ$-loss is defined as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt[p]{𝔼[‖x - x̂‖ᵖ]}
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt[p]{𝔼[‖x̂ - x‖ᵖ]}
 
-    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt[p]{\frac{1}{N}∑_{n=1}^N ‖x̂ₙ - xₙ‖ᵖ}
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt[p]{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖ᵖ}
 
     Special cases:
         - $p=1$: :class:`MAE`
