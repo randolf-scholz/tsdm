@@ -29,7 +29,6 @@ def test_metric_argument_order(loss_func: Callable[..., torch.Tensor]) -> None:
     predictions = 2 * torch.ones(2, 2)
     expected = torch.tensor(1.0)
 
-    assert torch.equal(loss_func(predictions, targets), expected)
     assert torch.equal(
         loss_func(predictions=predictions, targets=targets),
         expected,

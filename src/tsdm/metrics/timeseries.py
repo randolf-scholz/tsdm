@@ -284,7 +284,7 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
     Possible batch-dimensions are averaged over.
     """
 
-    @torch.compile(fullgraph=True)
+    @torch.compile
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
         r = predictions - targets
