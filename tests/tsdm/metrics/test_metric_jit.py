@@ -1,4 +1,4 @@
-r"""Test JIT compilation of all metrics."""
+r"""Test compilation of all metrics."""
 
 import pytest
 import torch
@@ -12,9 +12,9 @@ def test_metric_compilable(loss_name: str) -> None:
     loss_fn = FUNCTIONAL_LOSSES[loss_name]
     compiled_loss_fn = torch.compile(loss_fn)
 
-    # Test that the scripted function produces the same output
+    # Test that the compiled function produces the same output
     targets = torch.randn(10, 5)
     predictions = torch.randn(10, 5)
     original_output = loss_fn(predictions=predictions, targets=targets)
-    scripted_output = compiled_loss_fn(predictions=predictions, targets=targets)
-    assert torch.allclose(original_output, scripted_output)
+    compiled_output = compiled_loss_fn(predictions=predictions, targets=targets)
+    assert torch.allclose(original_output, compiled_output)
