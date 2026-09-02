@@ -66,6 +66,15 @@ def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tenso
 
 
 @torch.compile(fullgraph=True)
+def rmse(predictions: Tensor, targets: Tensor) -> Tensor:
+    r"""Compute the RMSE.
+
+    .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖^2]}
+    """
+    return torch.sqrt(torch.mean((predictions - targets) ** 2))
+
+
+@torch.compile(fullgraph=True)
 def q_quantile(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile.
 
@@ -100,12 +109,3 @@ def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> 
         * torch.sum(q_quantile(predictions=predictions, targets=targets, q=q))
         / torch.sum(targets.abs())
     )
-
-
-@torch.compile(fullgraph=True)
-def rmse(predictions: Tensor, targets: Tensor) -> Tensor:
-    r"""Compute the RMSE.
-
-    .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖^2]}
-    """
-    return torch.sqrt(torch.mean((predictions - targets) ** 2))
