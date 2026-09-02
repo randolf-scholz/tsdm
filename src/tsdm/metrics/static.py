@@ -1,11 +1,11 @@
-r"""Implementations of loss functions.
+r"""Implementations of metrics for (non-sequential) data.
 
 Note:
     Contains losses in modular form.
     See `tsdm.metrics.functional` for functional implementations.
 """
 
-__all__ = ["RMSE", "MSE", "MAE", "LP"]
+__all__ = ["RMSE", "MSE", "MAE", "LP", "rmse"]
 
 from typing import Final
 
@@ -15,6 +15,15 @@ from torch import Tensor
 from tsdm.types.aliases import Axis
 
 from .base import BaseMetric
+
+
+@torch.compile(fullgraph=True)
+def rmse(predictions: Tensor, targets: Tensor) -> Tensor:
+    r"""Compute the RMSE.
+
+    .. math:: 𝗋𝗆𝗌𝖾(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖²]}
+    """
+    return torch.sqrt(torch.mean((predictions - targets) ** 2))
 
 
 class MAE(BaseMetric):

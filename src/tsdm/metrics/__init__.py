@@ -47,8 +47,7 @@ See Also:
 
 __all__ = [
     # Sub-Modules
-    "functional",
-    "modular",
+    "static",
     "timeseries",
     # Constants
     "LOSSES",
@@ -65,7 +64,7 @@ __all__ = [
 ]
 
 
-from . import base, functional, modular, timeseries
+from . import base, static, timeseries
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -75,29 +74,27 @@ from ._torch_imports import (
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
 from .base import *  # ruff: ignore[F403]
-from .functional import *  # ruff: ignore[F403]
-from .modular import *  # ruff: ignore[F403]
+from .static import *  # ruff: ignore[F403]
 from .timeseries import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
-__all__ += functional.__all__
-__all__ += modular.__all__
+__all__ += static.__all__
 __all__ += timeseries.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Metric] = {
-    "nd"              : functional.nd,
-    "rmse"            : functional.rmse,
-    "nrmse"           : functional.nrmse,
-    "q_quantile"      : functional.q_quantile,
-    "q_quantile_loss" : functional.q_quantile_loss,
+    "nd"              : timeseries.nd,
+    "rmse"            : static.rmse,
+    "nrmse"           : timeseries.nrmse,
+    "q_quantile"      : timeseries.q_quantile,
+    "q_quantile_loss" : timeseries.q_quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
 
 MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
-    "LP"              : modular.LP,
-    "MAE"             : modular.MAE,
-    "MSE"             : modular.MSE,
-    "RMSE"            : modular.RMSE,
+    "LP"              : static.LP,
+    "MAE"             : static.MAE,
+    "MSE"             : static.MSE,
+    "RMSE"            : static.RMSE,
     # timeseries
     "ND"              : timeseries.ND,
     "NRMSE"           : timeseries.NRMSE,

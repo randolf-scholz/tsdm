@@ -6,7 +6,8 @@ from math import pi, prod, sqrt
 import pytest
 import torch
 
-from tsdm.metrics import MAE, MSE, ND, RMSE, BaseMetric, nd
+from tsdm.metrics import MAE, MSE, ND, RMSE, BaseMetric
+from tsdm.metrics.timeseries import nd
 
 BATCH_SHAPES = [
     (),
