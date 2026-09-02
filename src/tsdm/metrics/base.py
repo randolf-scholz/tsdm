@@ -19,13 +19,14 @@ from tsdm.types.aliases import Axis
 class Metric(Protocol):
     r"""Represents a metric."""
 
+    # (..., *d), (..., *d) -> (...)
     def __call__(self, *, predictions: Tensor, targets: Tensor) -> Tensor: ...
 
 
 class NN_Metric(Protocol):
     r"""Protocol for a loss function."""
 
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor: ...
+    def forward(self, predictions: Tensor, targets: Tensor, /) -> Tensor: ...
 
 
 class BaseMetric(nn.Module, Metric):
