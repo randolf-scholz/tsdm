@@ -7,11 +7,9 @@ __all__ = [
     "cumulative_xor",
 ]
 
-import torch
 from torch import Tensor
 
 
-@torch.compile(fullgraph=True)
 def cumulative_and(x: Tensor, /, *, dim: int = 0) -> Tensor:
     r"""Cumulative aggregation with logical ``AND`` $yᵢ = ⋀_{j≤i} xⱼ$."""
     y = x.clone().swapaxes(0, dim)
@@ -20,7 +18,6 @@ def cumulative_and(x: Tensor, /, *, dim: int = 0) -> Tensor:
     return y.swapaxes(0, dim)
 
 
-@torch.compile(fullgraph=True)
 def cumulative_or(x: Tensor, /, *, dim: int = 0) -> Tensor:
     r"""Cumulative aggregation with logical ``OR`` $yᵢ = ⋁_{j≤i} xⱼ$."""
     y = x.clone().swapaxes(0, dim)
@@ -29,7 +26,6 @@ def cumulative_or(x: Tensor, /, *, dim: int = 0) -> Tensor:
     return y.swapaxes(0, dim)
 
 
-@torch.compile(fullgraph=True)
 def cumulative_xor(x: Tensor, /, *, dim: int = 0) -> Tensor:
     r"""Cumulative aggregation with logical ``XOR`` $yᵢ = ⊕_{j≤i} xⱼ$."""
     y = x.clone().swapaxes(0, dim)

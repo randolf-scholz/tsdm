@@ -17,7 +17,6 @@ from torch import Tensor
 type Axis = None | int | tuple[int, ...]
 
 
-@torch.compile(fullgraph=True)
 def geometric_mean(
     x: Tensor,
     /,
@@ -39,7 +38,6 @@ def geometric_mean(
     return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
 
 
-@torch.compile(fullgraph=True)
 def scaled_norm(
     x: Tensor,
     /,
@@ -75,7 +73,6 @@ def scaled_norm(
     return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
 
 
-@torch.compile(fullgraph=True)
 def norm(
     x: Tensor,
     /,
@@ -115,7 +112,6 @@ def norm(
     return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
 
 
-@torch.compile(fullgraph=True)
 def tensor_norm(
     x: Tensor,
     /,
@@ -154,7 +150,6 @@ def tensor_norm(
     )
 
 
-@torch.compile(fullgraph=True)
 def multi_norm(
     tensors: list[Tensor],
     /,
@@ -190,7 +185,6 @@ def multi_norm(
     return (s / (1 + int(scaled) * len(tensors))) ** (1 / q)
 
 
-@torch.compile(fullgraph=True)
 def grad_norm(
     tensors: list[Tensor],
     /,
