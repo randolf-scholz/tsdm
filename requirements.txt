@@ -5,7 +5,7 @@ absl-py==2.5.0
     # via tensorboard
 annotated-types==0.8.0
     # via pydantic
-anyio==4.14.2 ; sys_platform != 'emscripten'
+anyio==4.15.0 ; sys_platform != 'emscripten'
     # via httpx2
 cloudpickle==3.1.2
     # via joblib
@@ -15,7 +15,7 @@ contourpy==1.3.3
     # via matplotlib
 cuda-bindings==13.3.1 ; sys_platform == 'linux'
     # via torch
-cuda-pathfinder==1.8.0 ; sys_platform == 'linux'
+cuda-pathfinder==1.8.1 ; sys_platform == 'linux'
     # via cuda-bindings
 cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
     # via torch
@@ -83,7 +83,7 @@ nvidia-cuda-nvrtc==13.0.88 ; sys_platform == 'linux'
     #   nvidia-cublas
 nvidia-cuda-runtime==13.0.96 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-nvidia-cudnn-cu13==9.20.0.48 ; sys_platform == 'linux'
+nvidia-cudnn-cu13==9.24.0.43 ; sys_platform == 'linux'
     # via torch
 nvidia-cufft==12.0.0.61 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
@@ -99,7 +99,7 @@ nvidia-cusparse==12.6.3.3 ; (platform_machine == 'aarch64' and sys_platform == '
     #   nvidia-cusolver
 nvidia-cusparselt-cu13==0.8.1 ; sys_platform == 'linux'
     # via torch
-nvidia-nccl-cu13==2.29.7 ; sys_platform == 'linux'
+nvidia-nccl-cu13==2.30.7 ; sys_platform == 'linux'
     # via torch
 nvidia-nvjitlink==13.3.33 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via
@@ -161,11 +161,11 @@ tensorboard-data-server==0.7.2
     # via tensorboard
 threadpoolctl==3.6.0
     # via scikit-learn
-torch==2.13.0
+torch==2.14.0
     # via tsdm
 tqdm==4.70.0
     # via tsdm
-triton==3.7.1 ; sys_platform == 'linux'
+triton==3.8.0 ; sys_platform == 'linux'
     # via torch
 truststore==0.10.4 ; sys_platform != 'emscripten'
     # via
@@ -173,6 +173,7 @@ truststore==0.10.4 ; sys_platform != 'emscripten'
     #   httpx2
 typing-extensions==4.16.0
     # via
+    #   anyio
     #   grpcio
     #   pydantic
     #   pydantic-core
