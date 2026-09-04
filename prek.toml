@@ -51,7 +51,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.16.2"
+rev = "v0.16.5"
 hooks = [
     {
         id = "ruff-check",
@@ -65,7 +65,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
-rev = "0.12.3"
+rev = "0.12.7"
 hooks = [
     { id = "uv-lock" },
     {
@@ -173,7 +173,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/shellcheck-py/shellcheck-py"
-rev = "v0.11.0.1"
+rev = "v0.11.0.1-1"
 hooks = [
     {
         id = "shellcheck",
