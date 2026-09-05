@@ -16,6 +16,7 @@ __all__ = [
     "q_quantile",
 ]
 
+from enum import StrEnum
 from typing import Final
 
 import torch
@@ -26,16 +27,24 @@ from .base import BaseMetric
 type Dim = int | tuple[int, ...] | None
 
 
+class Reduction(StrEnum):
+    """Reduction method for metrics."""
+
+    SUM = "sum"
+    MEAN = "mean"
+    NONE = "none"
+
+
 def lp_norm(
-    x,  # Float[..., *D]
+    x: Tensor,  # Float[..., *D]
     /,
     *,
     p: float = 2.0,
     dim: Dim = -1,  # *D
     mask: Tensor | None = None,  # Bool[..., *D]
     weight: Tensor | None = None,  # Float[*D], non-negative
-    normalize: bool = False,
-) -> Tensor:
+    scaled: bool = False,
+) -> Tensor:  # Float[...]
     r"""Compute (possibly scaled) Lₚ-norm.
 
     .. math:: ‖x‖ₚ     ≔ \sqrt[p]{∑ₖ|xₖ|ᵖ}
@@ -56,7 +65,23 @@ def lp_norm(
     .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ|[mₖ \? xₖ : 0]|ᵖ }
     .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖwₖ|[mₖ \? xₖ : 0]|ᵖ }
     """
-    raise NotImplementedError
+    dims = (dim,) if isinstance(dim, int) else tuple(dim)
+
+    if weight is not None and weight.ndim != len(dim):
+        raise ValueError(f"Expected {weight.ndim=} to equal {len(dim)=}")
+
+    if mask is not None:
+        x = torch.where(mask, x, 0.0)
+
+    w = 1.0 if weight is None else weight
+    r = torch.sum(w * x.abs().pow(p), dim=dims)
+
+    if scaled:
+        numel = x.shape[dims].numel() if mask is None else mask.sum(dim=dims)
+        assert numel > 0
+        r = r.div(numel)
+
+    return r.pow(1 / p)
 
 
 def lp_loss(
@@ -67,29 +92,31 @@ def lp_loss(
     dim: Dim = -1,
     mask: Tensor | None = None,
     weight: Tensor | None = None,
-    normalize: bool = False,
+    scaled: bool = False,
+    reduction: Reduction = "mean",
 ) -> Tensor:
     r"""Compute the $p$-norm.
 
     .. math:: ℓₚ(x̂，x) ≔ 𝔼[‖x̂ - x‖ₚ]
     """
-    w = weight
-    m = ~targets.isnan()
-    r = predictions - targets
-    r = torch.where(m, r, 0.0)
-    r = r**p if w is None else w * r**p
-    r = torch.sum(r, dim=dim)
+    norms = lp_norm(
+        predictions - targets,
+        p=p,
+        dim=dim,
+        mask=mask,
+        weight=weight,
+        scaled=scaled,
+    )
 
-    if normalize:
-        c = torch.sum(m if w is None else w * m, dim=dim)
-    else:
-        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-    r = torch.where(c > 0, r / c, 0.0)
-
-    # aggregate over batch dimensions
-    r = torch.mean(r)
-    return torch.pow(r, 1 / p)
+    match reduction:
+        case Reduction.SUM:
+            return norms.sum()
+        case Reduction.MEAN:
+            return norms.mean()
+        case Reduction.NONE:
+            return norms
+        case _:
+            raise ValueError(f"Invalid reduction: {reduction}")
 
 
 def mae(
@@ -99,7 +126,7 @@ def mae(
     dim: Dim = -1,
     mask: Tensor | None = None,
     weight: Tensor | None = None,
-    normalize: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Compute the mean absolute error.
 
@@ -112,7 +139,7 @@ def mae(
     r = r.abs() if w is None else w * r.abs()
     r = torch.sum(r, dim=dim)
 
-    if normalize:
+    if scaled:
         c = torch.sum(m if w is None else w * m, dim=dim)
     else:
         c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
@@ -131,7 +158,7 @@ def mse(
     dim: Dim = -1,
     mask: Tensor | None = None,
     weight: Tensor | None = None,
-    normalize: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Compute the mean squared error.
 
@@ -144,7 +171,7 @@ def mse(
     r = r**2 if w is None else w * r**2
     r = torch.sum(r, dim=dim)  # shape=(..., )
 
-    if normalize:
+    if scaled:
         c = torch.sum(m if w is None else w * m, dim=dim)
     else:
         c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
@@ -163,7 +190,7 @@ def rmse(
     dim: Dim = -1,
     mask: Tensor | None = None,
     weight: Tensor | None = None,
-    normalize: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Compute the root mean squared error.
 
@@ -176,7 +203,7 @@ def rmse(
     r = r**2 if w is None else w * r**2
     r = torch.sum(r, dim=dim)
 
-    if normalize:
+    if scaled:
         c = torch.sum(m if w is None else w * m, dim=dim)
     else:
         c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
@@ -236,7 +263,7 @@ class MAE(BaseMetric):
             predictions=predictions,
             targets=targets,
             weight=self.weight,
-            normalize=self.normalize,
+            scaled=self.normalize,
         )
 
 
@@ -289,7 +316,7 @@ class MSE(BaseMetric):
             predictions=predictions,
             targets=targets,
             weight=self.weight,
-            normalize=self.normalize,
+            scaled=self.normalize,
         )
 
 
@@ -311,7 +338,7 @@ class RMSE(BaseMetric):
             predictions=predictions,
             targets=targets,
             weight=self.weight,
-            normalize=self.normalize,
+            scaled=self.normalize,
         )
 
 
