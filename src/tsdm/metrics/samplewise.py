@@ -72,6 +72,8 @@ def lp_norm(
         For weighted scaled norms, zero-weight entries are treated as masked: the
         denominator is ``sum(weight != 0)`` without a mask and
         ``sum(mask & (weight != 0))`` with one.
+
+        An empty ``dim`` tuple performs no inner reduction.
     """
     if dim is UNDEFINED:
         # -1 if no weight, else (-weight.ndim, ..., -1)
@@ -88,7 +90,7 @@ def lp_norm(
     match mask, weight:
         case None, None: active = None
         case _,    None: active = mask
-        case None, _   : active = weight != 0  # pyrefly: ignore[unsupported-operation]
+        case None, _   : active = weight != 0
         case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
     # fmt: on
 
@@ -113,7 +115,7 @@ def lp_norm(
     if weight is not None:
         r = weight * r
 
-    r = torch.sum(r, dim=dims)
+    r = torch.sum(r, dim=dims) if dims else r
 
     if scaled:
         numel = (
@@ -121,6 +123,7 @@ def lp_norm(
             if active is None
             else active.sum(dim=dims)
         )
+
         if torch.any(torch.as_tensor(numel) == 0):
             raise ValueError("Cannot scale a norm with no unmasked elements.")
         r = r.div(numel)
@@ -128,114 +131,127 @@ def lp_norm(
     return r.pow(1 / p)
 
 
+def _reduce_loss(
+    losses: Tensor,
+    /,
+    *,
+    weight: Tensor | None = None,
+    reduction: Reduction = Reduction.MEAN,
+) -> Tensor:
+    """Apply an optional sample weight and outer reduction to losses."""
+    if weight is not None:
+        weight = torch.broadcast_to(weight, losses.shape)
+        losses = weight * losses
+
+    match reduction:
+        case Reduction.SUM:
+            return losses.sum()
+        case Reduction.MEAN:
+            return losses.mean() if weight is None else losses.sum() / weight.sum()
+        case Reduction.NONE:
+            return losses
+        case _:
+            raise ValueError(f"Invalid reduction: {reduction}")
+
+
 def lp_loss(
     *,
-    predictions: Tensor,
-    targets: Tensor,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D],
     p: float = 2.0,
-    dim: Dim = -1,
-    mask: Tensor | None = None,
-    weight: Tensor | None = None,
+    dim: Dim = -1,  # *D
+    mask: Tensor | None = None,  # Bool[..., *D],
+    weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
-    reduction: Reduction = "mean",
-) -> Tensor:
-    r"""Compute the $p$-norm.
+) -> Tensor:  # Float[()]
+    r"""Compute the sample-weighted $p$-norm loss.
 
     .. math:: ℓₚ(x̂，x) ≔ 𝔼[‖x̂ - x‖ₚ]
+
+    ``channel_weight`` is applied within the $p$-norm along ``dim``. ``weight``
+    is applied to the resulting per-sample losses before ``reduction``.
     """
     norms = lp_norm(
         predictions - targets,
         p=p,
         dim=dim,
         mask=mask,
-        weight=weight,
+        weight=channel_weight,
         scaled=scaled,
     )
-
-    match reduction:
-        case Reduction.SUM:
-            return norms.sum()
-        case Reduction.MEAN:
-            return norms.mean()
-        case Reduction.NONE:
-            return norms
-        case _:
-            raise ValueError(f"Invalid reduction: {reduction}")
+    return _reduce_loss(norms, weight=weight, reduction=reduction)
 
 
 def mae_loss(
     *,
-    predictions: Tensor,
-    targets: Tensor,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
-    mask: Tensor | None = None,
-    weight: Tensor | None = None,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
-) -> Tensor:
-    r"""Compute the mean absolute error.
+) -> Tensor:  # Float[()]
+    r"""Compute the sample-weighted mean absolute error.
 
     .. math:: mae(x̂，x) ≔ 𝔼[‖x̂ - x‖₂]
     """
-    w = weight
-    m = ~targets.isnan()
-    r = predictions - targets
-    r = torch.where(m, r, 0.0)
-    r = r.abs() if w is None else w * r.abs()
-    r = torch.sum(r, dim=dim)
-
-    if scaled:
-        c = torch.sum(m if w is None else w * m, dim=dim)
-    else:
-        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-    r = torch.where(c > 0, r / c, 0.0)
-
-    # aggregate over batch dimensions
-    r = torch.mean(r)
-    return r
+    return lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=1.0,
+        dim=dim,
+        mask=mask,
+        weight=weight,
+        channel_weight=channel_weight,
+        scaled=scaled,
+        reduction=reduction,
+    )
 
 
 def mse_loss(
     *,
-    predictions: Tensor,
-    targets: Tensor,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
-    mask: Tensor | None = None,
-    weight: Tensor | None = None,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
     scaled: bool = False,
-) -> Tensor:
-    r"""Compute the mean squared error.
+    reduction: Reduction = Reduction.MEAN,
+) -> Tensor:  # Float[()]
+    r"""Compute the sample-weighted mean squared error.
 
     .. math:: mse(x̂，x) ≔ 𝔼[‖x̂ - x‖₂²]
     """
-    w = weight
-    m = ~targets.isnan()
-    r = predictions - targets
-    r = torch.where(m, r, 0.0)
-    r = r**2 if w is None else w * r**2
-    r = torch.sum(r, dim=dim)  # shape=(..., )
+    losses = lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=2.0,
+        dim=dim,
+        mask=mask,
+        channel_weight=channel_weight,
+        scaled=scaled,
+        reduction=Reduction.NONE,
+    ).square()
 
-    if scaled:
-        c = torch.sum(m if w is None else w * m, dim=dim)
-    else:
-        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-    r = torch.where(c > 0, r / c, 0.0)
-
-    # aggregate over batch dimensions
-    r = torch.mean(r)
-    return r
+    return _reduce_loss(losses, weight=weight, reduction=reduction)
 
 
 def rmse(
     *,
-    predictions: Tensor,
-    targets: Tensor,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
-    mask: Tensor | None = None,
-    weight: Tensor | None = None,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
-) -> Tensor:
+) -> Tensor:  # Float[()]
     r"""Compute the root mean squared error.
 
     .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
@@ -306,7 +322,7 @@ class MAE(BaseMetric):
         return mae_loss(
             predictions=predictions,
             targets=targets,
-            weight=self.weight,
+            channel_weight=self.weight,
             scaled=self.normalize,
         )
 
@@ -359,7 +375,7 @@ class MSE(BaseMetric):
         return mse_loss(
             predictions=predictions,
             targets=targets,
-            weight=self.weight,
+            channel_weight=self.weight,
             scaled=self.normalize,
         )
 
@@ -428,8 +444,9 @@ class LP_Loss(BaseMetric):
             predictions=predictions,
             targets=targets,
             p=self.p,
-            weight=self.weight,
-            normalize=self.normalize,
+            dim=self.dim,
+            channel_weight=self.weight,
+            scaled=self.normalize,
         )
 
 
