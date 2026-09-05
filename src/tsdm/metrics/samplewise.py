@@ -4,16 +4,18 @@ These metrics support missing values through the mask argument.
 """
 
 __all__ = [
-    "RMSE",
-    "MSE",
-    "MAE",
+    "RMSE_Loss",
+    "MSE_Loss",
+    "MAE_loss",
     "LP_Loss",
     "Q_Quantile",
-    "rmse",
+    "rmse_loss",
     "mse_loss",
     "mae_loss",
     "lp_loss",
+    "lp_norm",
     "q_quantile",
+    "Reduction",
 ]
 
 from enum import StrEnum
@@ -28,7 +30,7 @@ type Dim = int | tuple[int, ...] | None
 
 
 class Reduction(StrEnum):
-    """Reduction method for metrics."""
+    r"""Reduction method for metrics."""
 
     SUM = "sum"
     MEAN = "mean"
@@ -69,9 +71,9 @@ def lp_norm(
     .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ&(wⱼ≠0)) ∑ₖwₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
 
     Note:
-        For weighted scaled norms, zero-weight entries are treated as masked: the
-        denominator is ``sum(weight != 0)`` without a mask and
-        ``sum(mask & (weight != 0))`` with one.
+        For weighted scaled norms, zero-weight entries are treated as masked:
+        the denominator is ``sum(weight != 0)`` without a mask,
+        and ``sum(mask & (weight != 0))`` with one.
 
         An empty ``dim`` tuple performs no inner reduction.
     """
@@ -87,6 +89,7 @@ def lp_norm(
         raise ValueError(f"Expected {weight.ndim=} to equal {len(dims)=}")
 
     # fmt: off
+    active: Tensor | None
     match mask, weight:
         case None, None: active = None
         case _,    None: active = mask
@@ -94,14 +97,12 @@ def lp_norm(
         case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
     # fmt: on
 
-    if p == torch.inf:
+    if p in (torch.inf, -torch.inf):
         raise NotImplementedError
-    elif p == -torch.inf:
-        raise NotImplementedError
-    elif p == 0.0:
+    if p == 0.0:
         # TODO: if scaled, use geometric mean.
         raise NotImplementedError
-    elif p > 0:
+    if p > 0:
         if active is not None:
             x = torch.where(active, x, 0.0)
         r = x.abs().pow(p)
@@ -138,7 +139,7 @@ def _reduce_loss(
     weight: Tensor | None = None,
     reduction: Reduction = Reduction.MEAN,
 ) -> Tensor:
-    """Apply an optional sample weight and outer reduction to losses."""
+    r"""Apply an optional sample weight and outer reduction to losses."""
     if weight is not None:
         weight = torch.broadcast_to(weight, losses.shape)
         losses = weight * losses
@@ -237,11 +238,10 @@ def mse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-
     return _reduce_loss(losses, weight=weight, reduction=reduction)
 
 
-def rmse(
+def rmse_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D]
@@ -252,58 +252,79 @@ def rmse(
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
 ) -> Tensor:  # Float[()]
-    r"""Compute the root mean squared error.
+    r"""Compute the sample-weighted root mean squared error.
 
     .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
     """
-    w = weight
-    m = ~targets.isnan()
-    r = predictions - targets
-    r = torch.where(m, r, 0.0)
-    r = r**2 if w is None else w * r**2
-    r = torch.sum(r, dim=dim)
-
-    if scaled:
-        c = torch.sum(m if w is None else w * m, dim=dim)
-    else:
-        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-    r = torch.where(c > 0, r / c, 0.0)
-
-    # aggregate over batch dimensions
-    r = torch.mean(r)
-    return torch.sqrt(r)
+    squared_norms = lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=2.0,
+        dim=dim,
+        mask=mask,
+        channel_weight=channel_weight,
+        scaled=scaled,
+        reduction=Reduction.NONE,
+    ).square()
+    return _reduce_loss(squared_norms, weight=weight, reduction=reduction).sqrt()
 
 
-def q_quantile(
-    *,
-    predictions: Tensor,  # Float[...]
-    targets: Tensor,  # Float[...]
-    q: float = 0.5,
-) -> Tensor:  # Float[...]
-    r"""Return the q-quantile.
+class LP_Loss(BaseMetric):
+    r"""$Lᵖ$ Loss.
 
-    For scalar valued x, this is just:
+    Given two random vectors $x̂,x∈ℝᴷ$, the $Lᵖ$-loss is defined as:
 
-    .. math::
-        𝖯_q(x̂, x) ≔ \begin{cases}
-            \hfill  q⋅|x̂-x| :& x ≥ x̂
-            \\  (1-q)⋅|x̂-x| :& x ≤ x̂
-        \end{cases}
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt[p]{𝔼[‖x̂ - x‖ᵖ]}
 
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
-            Tim Januschowski
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
+
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt[p]{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖ᵖ}
+
+    Special cases:
+        - $p=1$: :class:`MAE_Loss`
+        - $p=2$: :class:`MSE_Loss`
     """
-    # simplified formula
-    residual = targets - predictions
-    return torch.maximum((q - 1) * residual, q * residual)
+
+    p: Final[float]
+    r"""The $p$-norm to use."""
+
+    def __init__(
+        self,
+        p: float = 2.0,
+        *,
+        channel_weight: Tensor | None = None,
+        scaled: bool = False,
+        dim: Dim = None,
+    ) -> None:
+        super().__init__(
+            scaled=scaled,
+            dim=dim,
+            channel_weight=channel_weight,
+        )
+        self.p = p
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        weight: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        return lp_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            weight=weight,
+            p=self.p,
+            dim=self.dim,
+            channel_weight=self.channel_weight,
+            scaled=self.scaled,
+        )
 
 
-class MAE(BaseMetric):
+class MAE_loss(BaseMetric):
     r"""Mean Absolute Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:
@@ -317,17 +338,26 @@ class MAE(BaseMetric):
     If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |zₖ|²$ is used.
     """
 
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        weight: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return mae_loss(
             predictions=predictions,
             targets=targets,
-            channel_weight=self.weight,
-            scaled=self.normalize,
+            mask=mask,
+            weight=weight,
+            channel_weight=self.channel_weight,
+            scaled=self.scaled,
         )
 
 
-class MSE(BaseMetric):
+class MSE_Loss(BaseMetric):
     r"""Mean Square Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean square error is defined as:
@@ -370,17 +400,26 @@ class MSE(BaseMetric):
        .. math:: \frac{1}{N}∑ₙ₌₁ᴺ ∑ₖ₌₁ᴷ |x̂ₙₖ - xₙₖ|²
     """
 
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        weight: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return mse_loss(
             predictions=predictions,
             targets=targets,
-            channel_weight=self.weight,
-            scaled=self.normalize,
+            mask=mask,
+            weight=weight,
+            channel_weight=self.channel_weight,
+            scaled=self.scaled,
         )
 
 
-class RMSE(BaseMetric):
+class RMSE_Loss(BaseMetric):
     r"""Root Mean Square Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
@@ -392,62 +431,51 @@ class RMSE(BaseMetric):
     .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
     """
 
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        return rmse(
-            predictions=predictions,
-            targets=targets,
-            weight=self.weight,
-            scaled=self.normalize,
-        )
-
-
-class LP_Loss(BaseMetric):
-    r"""$Lᵖ$ Loss.
-
-    Given two random vectors $x̂,x∈ℝᴷ$, the $Lᵖ$-loss is defined as:
-
-    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt[p]{𝔼[‖x̂ - x‖ᵖ]}
-
-    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
-
-    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt[p]{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖ᵖ}
-
-    Special cases:
-        - $p=1$: :class:`MAE`
-        - $p=2$: :class:`RMSE`
-    """
-
-    p: Final[float]
-    r"""The $p$-norm to use."""
-
-    def __init__(
+    def forward(
         self,
-        p: float = 2.0,
         *,
-        weight: Tensor | None = None,
-        normalize: bool = False,
-        dim: Dim = None,
-        learnable: bool = False,
-    ) -> None:
-        super().__init__(
-            normalize=normalize,
-            dim=dim,
-            weight=weight,
-            learnable=learnable,
-        )
-        self.p = p
-
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        weight: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        return lp_loss(
+        return rmse_loss(
             predictions=predictions,
             targets=targets,
-            p=self.p,
-            dim=self.dim,
-            channel_weight=self.weight,
-            scaled=self.normalize,
+            mask=mask,
+            weight=weight,
+            channel_weight=self.channel_weight,
+            scaled=self.scaled,
         )
+
+
+def q_quantile(
+    *,
+    predictions: Tensor,  # Float[...]
+    targets: Tensor,  # Float[...]
+    q: float = 0.5,
+) -> Tensor:  # Float[...]
+    r"""Return the q-quantile.
+
+    For scalar valued x, this is just:
+
+    .. math::
+        𝖯_q(x̂, x) ≔ \begin{cases}
+            \hfill  q⋅|x̂-x| :& x ≥ x̂
+            \\  (1-q)⋅|x̂-x| :& x ≤ x̂
+        \end{cases}
+
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
+            Tim Januschowski
+          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
+    # simplified formula
+    residual = targets - predictions
+    return torch.maximum((q - 1) * residual, q * residual)
 
 
 class Q_Quantile(BaseMetric):

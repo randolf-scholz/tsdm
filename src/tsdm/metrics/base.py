@@ -106,29 +106,34 @@ class IndexedMetric(Protocol):
 class BaseMetric(nn.Module, Metric):
     r"""Base class for a sample-wise loss function."""
 
-    weight: Tensor | None
+    channel_weight: Tensor | None
     r"""PARAM: Optional weight-vector."""
 
     # Constants
     dim: Final[tuple[int, ...]]
     r"""CONST: The axes over which the loss is computed."""
-    normalize: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
+    scaled: Final[bool]
+    r"""CONST: Whether to normalize the channel axis."""
 
     def __init__(
         self,
-        /,
         *,
-        weight: Tensor | None = None,
         dim: Dim = None,
-        normalize: bool = False,
+        channel_weight: Tensor | None = None,
+        scaled: bool = False,
     ) -> None:
         super().__init__()
 
-        if weight is not None:
-            w = torch.as_tensor(weight, dtype=torch.float32)
+        if channel_weight is not None:
+            w = torch.as_tensor(channel_weight, dtype=torch.float32)
             w = nn.Parameter(w, requires_grad=False)
-            dim = tuple(range(-w.ndim, 0)) if dim is None else dim
+            dim = (
+                tuple(range(-w.ndim, 0))
+                if dim is None
+                else (dim,)
+                if isinstance(dim, int)
+                else dim
+            )
 
             if len(dim) != w.ndim:
                 raise ValueError(
@@ -139,12 +144,19 @@ class BaseMetric(nn.Module, Metric):
             w = None
             dim = -1 if dim is None else dim
 
-        self.normalize = bool(normalize)
+        self.scaled = bool(scaled)
         self.dim = (dim,) if isinstance(dim, int) else tuple(dim)
         self.register_parameter("weight", w)
 
     @abstractmethod
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        weight: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError
 
@@ -195,7 +207,13 @@ class SequentialBaseMetric(nn.Module, SequentialMetric):
         if weight is not None:
             w = torch.as_tensor(weight, dtype=torch.float32)
             w = nn.Parameter(w, requires_grad=False)
-            dim = tuple(range(-w.ndim, 0)) if channel_dim is None else channel_dim
+            dim = (
+                tuple(range(-w.ndim, 0))
+                if channel_dim is None
+                else (channel_dim,)
+                if isinstance(channel_dim, int)
+                else channel_dim
+            )
 
             if len(dim) != w.ndim:
                 raise ValueError(
@@ -204,7 +222,13 @@ class SequentialBaseMetric(nn.Module, SequentialMetric):
                 )
         else:
             w = None
-            dim = -1 if channel_dim is None else channel_dim
+            dim = (
+                (-1,)
+                if channel_dim is None
+                else (channel_dim,)
+                if isinstance(channel_dim, int)
+                else channel_dim
+            )
 
         self.register_parameter("weight", w)
         self.time_dim = time_dim

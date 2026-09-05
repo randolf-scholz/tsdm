@@ -31,21 +31,44 @@ type Dim = int | tuple[int, ...] | None
 
 
 def lp_norm(
-    x,
+    x: Tensor,  # Float[..., $N, *D]
     /,
     *,
     p: float = 2.0,
     time_dim: int = -2,
-    dim: Dim = -1,
-    normalize_time: bool = True,
-    normalize_channels: bool = False,
+    channel_dim: Dim = -1,
+    scale_time: bool = True,
+    scale_channels: bool = False,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    channel_weight: Tensor | None = None,  # Float[..., *D]
+    time_weight: Tensor | None = None,  # Float[..., $N]
 ) -> Tensor:
     r"""Compute time-normalized lp-norm.
 
-    .. math::
-        ‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}
-                 = \sqrt[p]{(1/T)∑ₜ‖xₜ‖ᵖ}
+    Args:
+        time_dim: Dimension of the time.
+        channel_dim: Dimension of the channels.
+        scale_time: Whether to sum or mean aggregation for the time dimension.
+        scale_channels: Whether to sum or mean aggregation for the channel dimension.
     """
+    raise NotImplementedError
+
+
+def lp_loss(
+    x: Tensor,  # Float[..., $N, *D]
+    /,
+    *,
+    p: float = 2.0,
+    time_dim: int = -2,
+    channel_dim: Dim = -1,
+    scale_time: bool = True,
+    scale_channels: bool = False,
+    mask: Tensor | None = None,  # Bool[..., $N, *D] or Bool[..., $N]
+    weight: Tensor | None = None,  # Float[...], non-negative
+    channel_weight: Tensor | None = None,  # Float[..., *D], non-negative
+    time_weight: Tensor | None = None,  # Float[..., $N], non-negative
+) -> Tensor:
+    raise NotImplementedError
 
 
 def nd(
