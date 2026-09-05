@@ -10,14 +10,14 @@ __all__ = [
     "LP_Loss",
     "Q_Quantile",
     "rmse",
-    "mse",
-    "mae",
+    "mse_loss",
+    "mae_loss",
     "lp_loss",
     "q_quantile",
 ]
 
 from enum import StrEnum
-from typing import Final
+from typing import Any, Final
 
 import torch
 from torch import Tensor
@@ -35,14 +35,17 @@ class Reduction(StrEnum):
     NONE = "none"
 
 
+UNDEFINED: Final[Any] = object()
+
+
 def lp_norm(
     x: Tensor,  # Float[..., *D]
     /,
     *,
     p: float = 2.0,
-    dim: Dim = -1,  # *D
+    dim: Dim = UNDEFINED,  # *D
     mask: Tensor | None = None,  # Bool[..., *D]
-    weight: Tensor | None = None,  # Float[*D], non-negative
+    weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
     scaled: bool = False,
 ) -> Tensor:  # Float[...]
     r"""Compute (possibly scaled) Lₚ-norm.
@@ -52,33 +55,74 @@ def lp_norm(
 
     And masked versions:
 
-    .. math:: ‖x‖_{m,p}  ≔ \sqrt[p]{∑ₖ |[mₖ \? xₖ : 0]|ᵖ }
-    .. math:: ‖x‖_{m,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖ |[mₖ \? xₖ : 0]|ᵖ }
+    .. math:: ‖x‖_{m,p}  ≔ \sqrt[p]{∑ₖ ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
+    .. math:: ‖x‖_{m,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
 
     Moreover, one can introduce channel weights:
 
     .. math:: ‖x‖_{w,p}  ≔ \sqrt[p]{∑ₖwₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{w,p⁎} ≔ \sqrt[p]{(1/K)∑ₖwₖ|xₖ|ᵖ}
+    .. math:: ‖x‖_{w,p⁎} ≔ \sqrt[p]{(1/∑ⱼ⟦wⱼ≠0⟧)∑ₖwₖ|xₖ|ᵖ}
 
     and with both weights and masks:
 
-    .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ|[mₖ \? xₖ : 0]|ᵖ }
-    .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖwₖ|[mₖ \? xₖ : 0]|ᵖ }
+    .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
+    .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ&(wⱼ≠0)) ∑ₖwₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
+
+    Note:
+        For weighted scaled norms, zero-weight entries are treated as masked: the
+        denominator is ``sum(weight != 0)`` without a mask and
+        ``sum(mask & (weight != 0))`` with one.
     """
-    dims = (dim,) if isinstance(dim, int) else tuple(dim)
+    if dim is UNDEFINED:
+        # -1 if no weight, else (-weight.ndim, ..., -1)
+        dim = (-1,) if weight is None else tuple(range(-weight.ndim, 0))
 
-    if weight is not None and weight.ndim != len(dim):
-        raise ValueError(f"Expected {weight.ndim=} to equal {len(dim)=}")
+    dims = tuple(
+        range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim
+    )
 
-    if mask is not None:
-        x = torch.where(mask, x, 0.0)
+    if weight is not None and weight.ndim != len(dims):
+        raise ValueError(f"Expected {weight.ndim=} to equal {len(dims)=}")
 
-    w = 1.0 if weight is None else weight
-    r = torch.sum(w * x.abs().pow(p), dim=dims)
+    # fmt: off
+    match mask, weight:
+        case None, None: active = None
+        case _,    None: active = mask
+        case None, _   : active = weight != 0  # pyrefly: ignore[unsupported-operation]
+        case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
+    # fmt: on
+
+    if p == torch.inf:
+        raise NotImplementedError
+    elif p == -torch.inf:
+        raise NotImplementedError
+    elif p == 0.0:
+        # TODO: if scaled, use geometric mean.
+        raise NotImplementedError
+    elif p > 0:
+        if active is not None:
+            x = torch.where(active, x, 0.0)
+        r = x.abs().pow(p)
+    else:  # p<0
+        if active is not None:
+            x = torch.where(active, x, 1.0)
+        r = x.abs().pow(p)
+        if active is not None:
+            r = torch.where(active, r, 0.0)
+
+    if weight is not None:
+        r = weight * r
+
+    r = torch.sum(r, dim=dims)
 
     if scaled:
-        numel = x.shape[dims].numel() if mask is None else mask.sum(dim=dims)
-        assert numel > 0
+        numel = (
+            torch.Size(x.shape[d] for d in dims).numel()
+            if active is None
+            else active.sum(dim=dims)
+        )
+        if torch.any(torch.as_tensor(numel) == 0):
+            raise ValueError("Cannot scale a norm with no unmasked elements.")
         r = r.div(numel)
 
     return r.pow(1 / p)
@@ -119,7 +163,7 @@ def lp_loss(
             raise ValueError(f"Invalid reduction: {reduction}")
 
 
-def mae(
+def mae_loss(
     *,
     predictions: Tensor,
     targets: Tensor,
@@ -151,7 +195,7 @@ def mae(
     return r
 
 
-def mse(
+def mse_loss(
     *,
     predictions: Tensor,
     targets: Tensor,
@@ -259,7 +303,7 @@ class MAE(BaseMetric):
 
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        return mae(
+        return mae_loss(
             predictions=predictions,
             targets=targets,
             weight=self.weight,
@@ -312,7 +356,7 @@ class MSE(BaseMetric):
 
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        return mse(
+        return mse_loss(
             predictions=predictions,
             targets=targets,
             weight=self.weight,
