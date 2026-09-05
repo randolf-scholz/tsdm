@@ -1,8 +1,10 @@
-r"""Loss functions for time series.
+r"""Loss functions for time series data.
 
-Note:
-    Contains losses in modular form.
-    See `tsdm.metrics.functional` for functional implementations.
+Since batch elements can be of different lengths, we need to be careful about the
+computation of the loss. We add a mask argument.
+
+Typically, the mask should agree with the arguments provided by `targets` and `predictions`
+should provide arguments for these positions.
 """
 
 __all__ = [
@@ -25,14 +27,45 @@ from torch import Tensor
 from .base import SequentialBaseMetric
 from .samplewise import q_quantile
 
+type Dim = int | tuple[int, ...] | None
 
-def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
+
+def lp_norm(
+    x,
+    /,
+    *,
+    p: float = 2.0,
+    time_dim: int = -2,
+    dim: Dim = -1,
+    normalize_time: bool = True,
+    normalize_channels: bool = False,
+) -> Tensor:
+    r"""Compute time-normalized lp-norm.
+
+    .. math::
+        ‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}
+                 = \sqrt[p]{(1/T)∑ₜ‖xₜ‖ᵖ}
+    """
+
+
+def nd(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    time_dim: int = -2,
+    dim: Dim = -1,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    eps: float = 2**-24,
+) -> Tensor:  # Float[...]
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
 
-    TODO: How to distinguish batch univariate vs single multivariate?
-    => Batch makes little sense since all could have different length!
+    or, more generally:
+
+    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
+
+    where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -46,14 +79,28 @@ def nd(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
     x_true = targets
     res = torch.sum((x_pred - x_true).abs(), dim=(-2, -1))
     mag = torch.sum(x_true.abs(), dim=(-2, -1))
-    mag = torch.maximum(mag, torch.full_like(x_true, eps))
+    mag = torch.maximum(mag, torch.full_like(mag, eps))
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tensor:
+def nrmse(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    time_dim: int = -2,
+    dim: Dim = -1,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    eps: float = 2**-24,
+) -> Tensor:  # Float[...]
     r"""Compute the normalized root mean square errors.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{\frac{1}{T}∑ₜₖ|xₜₖ|}
+
+    or, more generally:
+
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{‖x̂-x‖_{2⁎}}}{‖x‖_{1⁎}}
+
+    where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
 
     References:
         - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -70,7 +117,12 @@ def nrmse(*, predictions: Tensor, targets: Tensor, eps: float = 2**-24) -> Tenso
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-def q_quantile_loss(*, predictions: Tensor, targets: Tensor, q: float = 0.5) -> Tensor:
+def q_quantile_loss(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    q: float = 0.5,
+) -> Tensor:
     r"""Return the q-quantile loss.
 
     .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ)}{∑ₜₖ|xₜₖ|}
@@ -104,7 +156,6 @@ class ND(SequentialBaseMetric):
           | https://openreview.net/forum?id=r1ecqn4YwB
     """
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``(..., n), (..., n) -> ()``."""
         return nd(predictions=predictions, targets=targets)
@@ -120,7 +171,6 @@ class NRMSE(SequentialBaseMetric):
           | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
         return nrmse(predictions=predictions, targets=targets)
@@ -129,14 +179,13 @@ class NRMSE(SequentialBaseMetric):
 class Q_Quantile_Loss(SequentialBaseMetric):
     r"""The q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ) }{∑ₜₖ\abs{xₜₖ}}
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ) }{∑ₜₖ|xₜₖ|}
 
     References:
         - | Deep State Space Models for Time Series Forecasting
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
         return q_quantile_loss(predictions=predictions, targets=targets)
@@ -152,7 +201,7 @@ class SequentialMSE(SequentialBaseMetric):
 
     Or, more precisely, to avoid division by zero, we use the following
 
-    .. math:: ∑ₜₖ \Bigr[∑ₛ mₛₖ > 0 \? \frac{[mₜₖ \? (x̂ₜₖ - xₜₖ)² : 0]}{∑ₛ mₛₖ} : 0\Bigl]
+    .. math:: ∑ₜₖ \Bigr[ ∑ₛmₛₖ > 0 \? \frac{[mₜₖ \? (x̂ₜₖ - xₜₖ)² : 0]}{∑ₛmₛₖ} : 0\Bigl]
 
     By default, each channel is normalized by the number of observations in that channel.
     Other normalization schemes are possible, e.g. by the number of observations in the
@@ -178,10 +227,9 @@ class SequentialMSE(SequentialBaseMetric):
     Possible batch-dimensions are averaged over.
     """
 
-    @torch.compile
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
-        w = self.weight
+        w = self.channel_weights
         m = ~targets.isnan()  # 1 if not nan, 0 if nan
         r = predictions - targets
         r = torch.where(m, r, 0.0)
@@ -192,27 +240,27 @@ class SequentialMSE(SequentialBaseMetric):
         match self.normalize_time, self.normalize_channels:
             case True, True:
                 c = torch.sum(
-                    m if w is None else w * m, dim=self.combined_axes, keepdim=True
+                    m if w is None else w * m, dim=self.combined_dim, keepdim=True
                 )
-                s = torch.sum(r / c, dim=self.combined_axes, keepdim=True)
+                s = torch.sum(r / c, dim=self.combined_dim, keepdim=True)
                 r = torch.where(c > 0, s, 0.0)
 
             case True, False:
-                c = torch.sum(m, dim=self.time_axis, keepdim=True)
-                s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
+                c = torch.sum(m, dim=self.time_dim, keepdim=True)
+                s = torch.sum(r / c, dim=self.time_dim, keepdim=True)
                 r = torch.where(c > 0, s, 0.0)
-                r = torch.sum(r, dim=self.channel_axes, keepdim=True)
+                r = torch.sum(r, dim=self.channel_dim, keepdim=True)
 
             case False, True:
                 c = torch.sum(
-                    m if w is None else w * m, dim=self.channel_axes, keepdim=True
+                    m if w is None else w * m, dim=self.channel_dim, keepdim=True
                 )
-                s = torch.sum(r / c, dim=self.channel_axes, keepdim=True)
+                s = torch.sum(r / c, dim=self.channel_dim, keepdim=True)
                 r = torch.where(c > 0, s, 0.0)
-                r = torch.sum(r, dim=self.time_axis, keepdim=True)
+                r = torch.sum(r, dim=self.time_dim, keepdim=True)
 
             case False, False:
-                r = torch.sum(r, dim=self.combined_axes, keepdim=True)
+                r = torch.sum(r, dim=self.combined_dim, keepdim=True)
 
             case _:
                 raise RuntimeError("unreachable")

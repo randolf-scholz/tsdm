@@ -1,15 +1,18 @@
-r"""Implementations of metrics for (non-sequential) data."""
+r"""Implementations of metrics for (non-sequential) data.
+
+These metrics support missing values through the mask argument.
+"""
 
 __all__ = [
     "RMSE",
     "MSE",
     "MAE",
-    "LP",
+    "LP_Loss",
     "Q_Quantile",
     "rmse",
     "mse",
     "mae",
-    "lp",
+    "lp_loss",
     "q_quantile",
 ]
 
@@ -18,19 +21,90 @@ from typing import Final
 import torch
 from torch import Tensor
 
-from tsdm.types.aliases import Axis
-
 from .base import BaseMetric
+
+type Dim = int | tuple[int, ...] | None
+
+
+def lp_norm(
+    x,  # Float[..., *D]
+    /,
+    *,
+    p: float = 2.0,
+    dim: Dim = -1,  # *D
+    mask: Tensor | None = None,  # Bool[..., *D]
+    weight: Tensor | None = None,  # Float[*D], non-negative
+    normalize: bool = False,
+) -> Tensor:
+    r"""Compute (possibly scaled) Lₚ-norm.
+
+    .. math:: ‖x‖ₚ     ≔ \sqrt[p]{∑ₖ|xₖ|ᵖ}
+    .. math:: ‖x‖_{p⁎} ≔ \sqrt[p]{(1/K)∑ₖ|xₖ|ᵖ}
+
+    And masked versions:
+
+    .. math:: ‖x‖_{m,p}  ≔ \sqrt[p]{∑ₖ |[mₖ \? xₖ : 0]|ᵖ }
+    .. math:: ‖x‖_{m,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖ |[mₖ \? xₖ : 0]|ᵖ }
+
+    Moreover, one can introduce channel weights:
+
+    .. math:: ‖x‖_{w,p}  ≔ \sqrt[p]{∑ₖwₖ|xₖ|ᵖ}
+    .. math:: ‖x‖_{w,p⁎} ≔ \sqrt[p]{(1/K)∑ₖwₖ|xₖ|ᵖ}
+
+    and with both weights and masks:
+
+    .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ|[mₖ \? xₖ : 0]|ᵖ }
+    .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖwₖ|[mₖ \? xₖ : 0]|ᵖ }
+    """
+    raise NotImplementedError
+
+
+def lp_loss(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    p: float = 2.0,
+    dim: Dim = -1,
+    mask: Tensor | None = None,
+    weight: Tensor | None = None,
+    normalize: bool = False,
+) -> Tensor:
+    r"""Compute the $p$-norm.
+
+    .. math:: ℓₚ(x̂，x) ≔ 𝔼[‖x̂ - x‖ₚ]
+    """
+    w = weight
+    m = ~targets.isnan()
+    r = predictions - targets
+    r = torch.where(m, r, 0.0)
+    r = r**p if w is None else w * r**p
+    r = torch.sum(r, dim=dim)
+
+    if normalize:
+        c = torch.sum(m if w is None else w * m, dim=dim)
+    else:
+        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+
+    r = torch.where(c > 0, r / c, 0.0)
+
+    # aggregate over batch dimensions
+    r = torch.mean(r)
+    return torch.pow(r, 1 / p)
 
 
 def mae(
     *,
     predictions: Tensor,
     targets: Tensor,
-    dim: Axis = -1,
+    dim: Dim = -1,
+    mask: Tensor | None = None,
     weight: Tensor | None = None,
     normalize: bool = False,
 ) -> Tensor:
+    r"""Compute the mean absolute error.
+
+    .. math:: mae(x̂，x) ≔ 𝔼[‖x̂ - x‖₂]
+    """
     w = weight
     m = ~targets.isnan()
     r = predictions - targets
@@ -54,11 +128,15 @@ def mse(
     *,
     predictions: Tensor,
     targets: Tensor,
-    dim: Axis = -1,
+    dim: Dim = -1,
+    mask: Tensor | None = None,
     weight: Tensor | None = None,
     normalize: bool = False,
 ) -> Tensor:
-    r"""Compute the MSE."""
+    r"""Compute the mean squared error.
+
+    .. math:: mse(x̂，x) ≔ 𝔼[‖x̂ - x‖₂²]
+    """
     w = weight
     m = ~targets.isnan()
     r = predictions - targets
@@ -82,13 +160,14 @@ def rmse(
     *,
     predictions: Tensor,
     targets: Tensor,
-    dim: Axis = -1,
+    dim: Dim = -1,
+    mask: Tensor | None = None,
     weight: Tensor | None = None,
     normalize: bool = False,
 ) -> Tensor:
-    r"""Compute the RMSE.
+    r"""Compute the root mean squared error.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{𝔼[‖x̂ - x‖²]}
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
     """
     w = weight
     m = ~targets.isnan()
@@ -107,35 +186,6 @@ def rmse(
     # aggregate over batch dimensions
     r = torch.mean(r)
     return torch.sqrt(r)
-
-
-def lp(
-    *,
-    predictions: Tensor,
-    targets: Tensor,
-    p: float = 2.0,
-    dim: Axis = -1,
-    weight: Tensor | None = None,
-    normalize: bool = False,
-) -> Tensor:
-    r"""Compute the $p$-norm."""
-    w = weight
-    m = ~targets.isnan()
-    r = predictions - targets
-    r = torch.where(m, r, 0.0)
-    r = r**p if w is None else w * r**p
-    r = torch.sum(r, dim=dim)
-
-    if normalize:
-        c = torch.sum(m if w is None else w * m, dim=dim)
-    else:
-        c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-    r = torch.where(c > 0, r / c, 0.0)
-
-    # aggregate over batch dimensions
-    r = torch.mean(r)
-    return torch.pow(r, 1 / p)
 
 
 def q_quantile(
@@ -180,7 +230,6 @@ class MAE(BaseMetric):
     If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |zₖ|²$ is used.
     """
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return mae(
@@ -234,7 +283,6 @@ class MSE(BaseMetric):
        .. math:: \frac{1}{N}∑ₙ₌₁ᴺ ∑ₖ₌₁ᴷ |x̂ₙₖ - xₙₖ|²
     """
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return mse(
@@ -257,7 +305,6 @@ class RMSE(BaseMetric):
     .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
     """
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return rmse(
@@ -268,7 +315,7 @@ class RMSE(BaseMetric):
         )
 
 
-class LP(BaseMetric):
+class LP_Loss(BaseMetric):
     r"""$Lᵖ$ Loss.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the $Lᵖ$-loss is defined as:
@@ -293,21 +340,20 @@ class LP(BaseMetric):
         *,
         weight: Tensor | None = None,
         normalize: bool = False,
-        axis: Axis = None,
+        dim: Dim = None,
         learnable: bool = False,
     ) -> None:
         super().__init__(
             normalize=normalize,
-            axis=axis,
+            dim=dim,
             weight=weight,
             learnable=learnable,
         )
         self.p = p
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
-        return lp(
+        return lp_loss(
             predictions=predictions,
             targets=targets,
             p=self.p,
@@ -332,15 +378,10 @@ class Q_Quantile(BaseMetric):
 
     q: Final[float]
 
-    def __init__(self, q: float = 0.5, *, axis: Axis = None):
-        super().__init__(axis=axis)
+    def __init__(self, q: float = 0.5, *, dim: Dim = None):
+        super().__init__(dim=dim)
         self.q = q
 
-    @torch.compile(fullgraph=True)
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
-        return q_quantile(
-            predictions=predictions,
-            targets=targets,
-            q=self.q,
-        )
+        return q_quantile(predictions=predictions, targets=targets, q=self.q)

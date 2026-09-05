@@ -16,7 +16,7 @@ from typing import Final, Protocol
 import torch
 from torch import Tensor, nn
 
-from tsdm.types.aliases import Axis
+type Dim = int | tuple[int, ...] | None
 
 
 class Metric(Protocol):
@@ -110,39 +110,37 @@ class BaseMetric(nn.Module, Metric):
     r"""PARAM: Optional weight-vector."""
 
     # Constants
-    axis: Final[tuple[int, ...]]
+    dim: Final[tuple[int, ...]]
     r"""CONST: The axes over which the loss is computed."""
     normalize: Final[bool]
     r"""CONST: Whether to normalize the weights."""
-    learnable: Final[bool]
-    r"""CONST: Whether the weights are learnable (for gradient-based hyperparameter tuning)."""
 
     def __init__(
         self,
         /,
         *,
         weight: Tensor | None = None,
-        axis: Axis = None,
+        dim: Dim = None,
         normalize: bool = False,
-        learnable: bool = False,
     ) -> None:
         super().__init__()
 
         if weight is not None:
             w = torch.as_tensor(weight, dtype=torch.float32)
-            if not torch.all(w >= 0) and torch.any(w > 0):
+            w = nn.Parameter(w, requires_grad=False)
+            dim = tuple(range(-w.ndim, 0)) if dim is None else dim
+
+            if len(dim) != w.ndim:
                 raise ValueError(
-                    "Weights must be non-negative and at least one must be positive."
+                    f"Weight tensor has {w.ndim} axes, "
+                    f"but axis={dim} specifies {len(dim)} axes."
                 )
-            w = nn.Parameter(w / torch.sum(w), requires_grad=learnable)
-            axis = tuple(range(-w.ndim, 0)) if axis is None else axis
         else:
             w = None
-            axis = -1 if axis is None else axis
+            dim = -1 if dim is None else dim
 
         self.normalize = bool(normalize)
-        self.learnable = bool(learnable)
-        self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
+        self.dim = (dim,) if isinstance(dim, int) else tuple(dim)
         self.register_parameter("weight", w)
 
     @abstractmethod
@@ -151,26 +149,31 @@ class BaseMetric(nn.Module, Metric):
         raise NotImplementedError
 
 
-class SequentialBaseMetric(BaseMetric):
+class SequentialBaseMetric(nn.Module, SequentialMetric):
     r"""Base class for a time-series function.
 
     Because the loss is computed over a sequence of variable length, the default is to normalize
     the loss by the sequence length, so that loss values are comparable across sequences.
     This class can be used to express decomposable losses of the form
 
-    .. math:: 𝓛(x，x̂) ≔ 𝐀_t ℓ(x_t，x̂_t)
+    .. math:: 𝓛(x̂，x) ≔ ℓ(x̂ₜ, xₜ)
 
     By default, the aggregation $𝐀_t$ is the mean over the time-axes $𝐄_t$, but simply
     summing over the time-axes is also possible.
     """
 
     # Constants
-    time_axis: Final[int]
+    time_dim: Final[int]
     r"""CONST: The time-axes over which the loss is computed."""
-    channel_axes: Final[tuple[int, ...]]
+
+    channel_weights: Tensor | None
+    r"""CONST: Optional weight-tensor for the channel-axes."""
+    channel_dim: Final[tuple[int, ...]]
     r"""CONST: The channel-axes over which the loss is computed."""
-    combined_axes: Final[tuple[int, ...]]
+
+    combined_dim: Final[tuple[int, ...]]
     r"""CONST: The combined time- and channel-axes."""
+
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize the weights."""
     normalize_channels: Final[bool]
@@ -182,27 +185,36 @@ class SequentialBaseMetric(BaseMetric):
         self,
         /,
         *,
+        time_dim: int = -2,
+        channel_dim: Dim = None,
         weight: Tensor | None = None,
-        axis: Axis = -1,
-        time_axis: int = -2,
         normalize_time: bool = True,
         normalize: bool = False,
-        learnable: bool = False,
     ) -> None:
-        super().__init__(
-            weight=weight,
-            axis=axis,
-            normalize=normalize,
-            learnable=learnable,
-        )
-        self.channel_axes = self.axis  # alias
-        self.normalize_channels = self.normalize  # alias
+        super().__init__()
+        if weight is not None:
+            w = torch.as_tensor(weight, dtype=torch.float32)
+            w = nn.Parameter(w, requires_grad=False)
+            dim = tuple(range(-w.ndim, 0)) if channel_dim is None else channel_dim
 
+            if len(dim) != w.ndim:
+                raise ValueError(
+                    f"Weight tensor has {w.ndim} axes, "
+                    f"but axis={dim} specifies {len(dim)} axes."
+                )
+        else:
+            w = None
+            dim = -1 if channel_dim is None else channel_dim
+
+        self.register_parameter("weight", w)
+        self.time_dim = time_dim
+        self.channel_dim = dim
+        self.normalize_channels = bool(normalize)
         self.normalize_time = bool(normalize_time)
-        self.time_axis = int(time_axis)
-        self.combined_axes = (self.time_axis, *self.channel_axes)
 
-        if not {self.time_axis}.isdisjoint(self.channel_axes):
+        self.combined_dim = (self.time_dim, *self.channel_dim)
+
+        if not {self.time_dim}.isdisjoint(self.channel_dim):
             raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
