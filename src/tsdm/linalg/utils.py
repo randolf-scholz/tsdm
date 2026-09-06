@@ -18,7 +18,7 @@ def get_broadcast(
     /,
     *,
     axis: Axis,
-    keep_axis: bool = False,
+    keepdim: bool = False,
 ) -> tuple[slice | None, ...]:
     r"""Creates an indexer that broadcasts a tensors contracted via `axis`.
 
@@ -38,14 +38,14 @@ def get_broadcast(
     >>> m[broadcast].shape == m_ref.shape
     True
 
-    If `keep_axis` is True, then the broadcast is the complement of the contraction,
+    If `keepdim` is True, then the broadcast is the complement of the contraction,
     i.e. ``x[broadcast]`` is roughly equivalent to ``contraction(data, kept_axis, keepdims=True)``,
     where ``kept_axis = set(range(data.ndim)) - set(ax%data.ndim for ax in axis)``.
 
     Args:
         original_shape: The tensor to be contracted.
         axis: The axes to be contracted.
-        keep_axis: select `True` if the axes are to be kept instead.
+        keepdim: select `True` if the axes are to be kept instead.
 
     Example:
         data is of shape  ``(2,3,4,5,6,7)``
@@ -54,7 +54,7 @@ def get_broadcast(
     """
     rank = len(original_shape)
 
-    if keep_axis:
+    if keepdim:
         match axis:
             case None:  # all axes are contracted
                 kept_axis = set()
