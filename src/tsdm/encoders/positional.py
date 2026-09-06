@@ -20,8 +20,8 @@ class PositionalEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
     r"""Positional encoding.
 
     .. math::
-        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
-        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
+        x₂ₖ(t)   &:=\sin \left(\frac{t}{t^{2k/τ}}\right) \\
+        x₂ₖ₊₁(t) &:=\cos \left(\frac{t}{t^{2k/τ}}\right)
     """
 
     # Constants

@@ -93,7 +93,7 @@ def lp_norm(
     match mask, weight:
         case None, None: active = None
         case _,    None: active = mask
-        case None, _   : active = weight != 0
+        case None, _   : active = weight != 0  # pyrefly: ignore[bad-assignment]
         case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
     # fmt: on
 
@@ -311,7 +311,6 @@ class LP_Loss(BaseMetric):
         mask: Tensor | None = None,  # Bool[..., *D],
         weight: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return lp_loss(
             predictions=predictions,
             targets=targets,
@@ -346,7 +345,6 @@ class MAE_loss(BaseMetric):
         mask: Tensor | None = None,  # Bool[..., *D],
         weight: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return mae_loss(
             predictions=predictions,
             targets=targets,
@@ -408,7 +406,6 @@ class MSE_Loss(BaseMetric):
         mask: Tensor | None = None,  # Bool[..., *D],
         weight: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return mse_loss(
             predictions=predictions,
             targets=targets,
@@ -439,7 +436,6 @@ class RMSE_Loss(BaseMetric):
         mask: Tensor | None = None,  # Bool[..., *D],
         weight: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
-        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         return rmse_loss(
             predictions=predictions,
             targets=targets,

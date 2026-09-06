@@ -50,13 +50,13 @@ def construct_wasserstein_loss_boxcox_uniform(
             Wasserstein-2 loss between $z(c)$ and Uniform distribution with given mean and std.
 
     .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]       \\
-        F^{-1}(q) &= a + (b-a)q                                           \\
-        β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²                                \\
-        C &= ∫_0^1 F^{-1}(q)^2 dq = ⅓(a^2 + ab + b^2)
+        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]  \\
+        F⁻¹(q) &= a + (b-a)q                                         \\
+        β &= ∫ F⁻¹(q)dq = aq + ½(b-a)q²                              \\
+        C &= ∫₀¹ F⁻¹(q)² dq = ⅓(a² + ab + b²)
 
-    Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&√12}⋅\bmat{μ\\σ}$
-    Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/√12}$.
+    Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&\sqrt{12}}⋅\bmat{μ\\σ}$
+    Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/\sqrt{12}}$.
     """
     ROOT_3 = FLOAT.ROOT_3
 
@@ -102,11 +102,11 @@ def construct_wasserstein_loss_boxcox_normal(
             Wasserstein-2 loss between $z(c)$ and $N(μ,σ²)$.
 
     .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]                           \\
-        F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)                                                   \\
-        β &= ∫_a^b F^{-1}(q)dq                                                                \\
-          &= (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}               \\
-        C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
+        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]      \\
+        F⁻¹(q) &= μ + σ√2\erf⁻¹(2q-1)                                    \\
+        β &= ∫ₐᵇ F⁻¹(q)dq                                                \\
+          &= (b-a)μ - σ/√(2PI) (e^{-\erf⁻¹(2b-1)²} - e^{-\erf⁻¹(2a-1)²}  \\
+        C &= ∫₀¹ F⁻¹(q)² dq = μ² + σ²
     """
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -155,14 +155,14 @@ def construct_wasserstein_loss_logit_uniform(
             Wasserstein-2 loss between $z(c)$ and $N(μ,σ²)$.
 
     .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² +Bxₖ + C]                      \\
-        F^{-1}(q) &= a + (b-a)q                                                   \\
-        β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²                                        \\
-        B &= -2(βₖ/αₖ)                                                            \\
-        C &= ∫_0^1 F^{-1}(q)^2 dq = ⅓(a^2 + ab + b^2)
+        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² +Bxₖ + C]  \\
+        F⁻¹(q) &= a + (b-a)q                                  \\
+        β &= ∫ F⁻¹(q)dq = aq + ½(b-a)q²                       \\
+        B &= -2(βₖ/αₖ)                                        \\
+        C &= ∫₀¹ F⁻¹(q)² dq = ⅓(a² + ab + b²)
 
-    Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&√12}⋅\bmat{μ\\σ}$
-    Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/√12}$.
+    Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&\sqrt{12}}⋅\bmat{μ\\σ}$
+    Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/\sqrt{12}}$.
     """
     ROOT_3 = FLOAT.ROOT_3
 
@@ -208,11 +208,11 @@ def construct_wasserstein_loss_logit_normal(
             Wasserstein-2 loss between $z(c)$ and $N(μ,σ²)$.
 
     .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]               \\
-        F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)                                       \\
-        β &= ∫_a^b F^{-1}(q)dq                                                    \\
-          &= (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}   \\
-        C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
+        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]      \\
+        F⁻¹(q) &= μ + σ√2\erf⁻¹(2q-1)                                    \\
+        β &= ∫ₐᵇ F⁻¹(q)dq                                                \\
+          &= (b-a)μ - σ/√(2PI) (e^{-\erf⁻¹(2b-1)²} - e^{-\erf⁻¹(2a-1)²}  \\
+        C &= ∫₀¹ F⁻¹(q)² dq = μ² + σ²
     """
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -247,8 +247,8 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
-        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log(x+c)                            \\
-        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(\exp(y)-c, 0)
+        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log(x+c)            \\
+        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(eʸ-c, 0)
 
     We consider multiple ideas for how to fit the parameter $c$
 
@@ -379,8 +379,8 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     An offset c is added/subtracted to avoid log(0) and division by zero.
 
     .. math::
-        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log((x + c) / (1 - (x - c)))       \\
-        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(\exp(y)-c, 0)
+        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log((x + c) / (1 - (x - c)))  \\
+        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(eʸ-c, 0)
 
     We consider multiple ideas for how to fit the parameter $c$
 

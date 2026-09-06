@@ -6,30 +6,30 @@ Theory
 ------
 We define the following
 
-1. A metric is a  function
+1. A metric is a function
 
-    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)^n ⟶ ℝ_{≥0}
-        \qq{s.t.} \text{$𝔪(Y，Ŷ) = 0$ if and only if $y_n=ŷ_n∀n=1:N$}
+    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)ⁿ ⟶ ℝ_{≥0}
+        \qq{s.t.} \text{$𝔪(ŷ，y) = 0$ if and only if $yₙ=ŷₙ ∀n=1:N$}
 
-    I.e., a function that takes a finite number of pairs $(y_n, ŷ_n)_{n=1:N}$
-    and returns a non-negative scalar. We denote $Y≔(y_n)_n$ and $Ŷ≔(ŷ_n)_n$
-    and write $𝔪(Y，Ŷ)$ for the metric value.
+    I.e., a function that takes a finite number of pairs $(ŷₙ，yₙ)_{n=1:N}$
+    and returns a non-negative scalar. We denote $Y≔(yₙ)ₙ$ and $Ŷ≔(ŷₙ)ₙ$
+    and write $𝔪(ŷ，y)$ for the metric value.
 
 2. A metric is called **decomposable**, if and only if it can be written as a composition
    of an **aggregation function** $Ψ$ and an **intance-wise loss function** $ℓ$:
 
-    .. math:: 𝔪 = Ψ∘(ℓ×𝗂𝖽) \qq{with} ℓ：𝓨×𝓨 ⟶ ℝ_{≥0} \qq{and} Ψ：⋃_{n∈ℕ}ℝ^n ⟶ ℝ_{≥0}
+    .. math:: 𝔪 = Ψ∘(ℓ×𝗂𝖽) \qq{with} ℓ：𝓨×𝓨 ⟶ ℝ_{≥0} \qq{and} Ψ：⋃_{n∈ℕ}ℝⁿ ⟶ ℝ_{≥0}
 
     I.e. the function $ℓ$ is applied element-wise to all pairs $(y, ŷ)$ and the function $Ψ$
     accumulates the results. Typical choices of $ψ$ are:
 
-    - sum: $Ψ(r) = ∑_n r_n$
-    - mean: $Ψ(r) = 𝐄_n r_n ≔ \frac{1}{N} ∑_{n=1}^N r_N$
-    - median: $Ψ(r) = 𝐌_n r_n ≔ \Median((r_n)_{n=1:N})$
+    - sum: $Ψ(r) = ∑ₙ rₙ$
+    - mean: $Ψ(r) = \frac{1}{N} ∑ₙ rₙ$
+    - median: $Ψ(r) = 𝐌ₙ rₙ ≔ \Median((rₙ)_{n=1:N})$
 
 3. A metric is called **instance-wise** if it can be written in the form
 
-    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)^n ⟶ ℝ_{≥0}, 𝔪(Y，Ŷ) = ∑_{n=1}^N ω(n,N) ℓ(y_n，ŷ_n)
+    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)ⁿ ⟶ ℝ_{≥0}, 𝔪(ŷ，y) = ∑ₙ ω(n,N) ℓ(ŷₙ，yₙ)
 
     with a weight function $ω：ℕ×ℕ ⟶ ℝ_{≥0}$ and an instance-wise loss function $ℓ$.
 
@@ -39,10 +39,6 @@ We define the following
    - It is non-constant, at least on some open set.
 
 Note that in the context of time-series, we allow the accumulator to depend on the time variable.
-
-See Also:
-    - `tsdm.losses.functional` for functional implementations.
-    - `tsdm.losses` for modular implementations.
 """
 
 __all__ = [

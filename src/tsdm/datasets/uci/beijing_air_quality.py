@@ -38,17 +38,17 @@ Attribute Information
 +---------+-----------------------------------------+
 | hour    | hour of data in this row                |
 +---------+-----------------------------------------+
-| PM2.5   | PM2.5 concentration (ug/m^3)            |
+| PM2.5   | PM2.5 concentration (ug/m³)             |
 +---------+-----------------------------------------+
-| PM10    | PM10 concentration (ug/m^3)             |
+| PM10    | PM10 concentration (ug/m³)              |
 +---------+-----------------------------------------+
-| SO2     | SO2 concentration (ug/m^3)              |
+| SO2     | SO2 concentration (ug/m³)               |
 +---------+-----------------------------------------+
-| NO2     | NO2 concentration (ug/m^3)              |
+| NO2     | NO2 concentration (ug/m³                |
 +---------+-----------------------------------------+
-| CO      | CO concentration (ug/m^3)               |
+| CO      | CO concentration (ug/m³)                |
 +---------+-----------------------------------------+
-| O3      | O3 concentration (ug/m^3)               |
+| O3      | O3 concentration (ug/m³)                |
 +---------+-----------------------------------------+
 | TEMP    | temperature (degree Celsius)            |
 +---------+-----------------------------------------+

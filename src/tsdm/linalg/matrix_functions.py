@@ -170,7 +170,7 @@ def reldist_skew(x: Tensor, /) -> Tensor:
 def reldist_orthogonal(x: Tensor, /) -> Tensor:
     r"""Relative magnitude of orthogonal part of a square matrix.
 
-    .. math:: \min_{X: X^⊤X = 𝕀} \frac{‖A-X‖}{‖A‖}
+    .. math:: \min_{X: XᵀX = 𝕀} \frac{‖A-X‖}{‖A‖}
     """
     return reldist(closest_orthogonal(x), x)
 

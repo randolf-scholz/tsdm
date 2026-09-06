@@ -447,7 +447,7 @@ def is_string_array(arr: AnyArray, /) -> bool:
 def compute_entropy(value_counts: AnyArray, /) -> float:
     r"""Compute the normalized entropy using a value_counts array.
 
-    .. math:: ∑_{i=1}^n -pᵢ \log₂(pᵢ)/\log₂(n)
+    .. math:: ∑ᵢ₌₁ⁿ -pᵢ \log₂(pᵢ)/\log₂(n)
 
     Note:
         Since entropy is maximized for a uniform distribution, and the entropy

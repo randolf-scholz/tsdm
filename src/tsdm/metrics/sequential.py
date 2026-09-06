@@ -179,8 +179,8 @@ class ND(SequentialBaseMetric):
           | https://openreview.net/forum?id=r1ecqn4YwB
     """
 
+    # Float[..., $N], Float[..., $N] -> Float[()]
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``(..., n), (..., n) -> ()``."""
         return nd(predictions=predictions, targets=targets)
 
 
@@ -250,8 +250,8 @@ class SequentialMSE(SequentialBaseMetric):
     Possible batch-dimensions are averaged over.
     """
 
+    # Float[..., $N, *D], Float[..., $N, *D] -> Float[()]
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
         w = self.channel_weights
         m = ~targets.isnan()  # 1 if not nan, 0 if nan
         r = predictions - targets

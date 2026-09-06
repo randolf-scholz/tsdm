@@ -85,8 +85,8 @@ class ETT_Zhou2021(
     Test-Metric
     -----------
 
-    - MSE: :math:`⅟ₙ∑_{i=1}^{n} |y - ŷ|^2`
-    - MAE: :math:`⅟ₙ∑_{i=1}^{n} |y - ŷ|`
+    - MSE: :math:`⅟ₙ∑ᵢ₌₁ⁿ |ŷ - y|ⁿ`
+    - MAE: :math:`⅟ₙ∑ᵢ₌₁ⁿ |ŷ - y|`
 
     Results
     -------

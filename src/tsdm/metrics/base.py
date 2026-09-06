@@ -63,8 +63,6 @@ class SequentialMetric(Protocol):
     ) -> Tensor:  # Float[...]
         r"""Compute a loss between the predictions and the targets.
 
-        .. signature:: ``[(..., *t, 𝐧), (..., *t, 𝐧)] -> 0``
-
         A time series loss function acts on sequences of variable length.
         Given a collection of pairs of sequences $(x_n,x̂_n)∈⋃_{T∈ℕ}(V⊕V)^T$,
         returns a single scalar. Each pair $(x_n,x̂_n)$ is of equal length $T_n$,
