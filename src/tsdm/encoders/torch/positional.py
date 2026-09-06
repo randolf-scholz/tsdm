@@ -51,21 +51,21 @@ class PositionalEncoding(nn.Module):
         if self.scales[0] != 1.0:
             raise ValueError("Lowest scale must be 1.0")
 
-    def encode(self, t: Tensor) -> Tensor:
-        r""".. signature:: ``(..., d) -> ...``."""
+    # Float[...] -> Float[..., 2D]
+    def encode(self, t: Tensor, /) -> Tensor:
         z = torch.einsum("..., d -> ...d", t, self.scales)
         return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
 
-    def decode(self, z: Tensor) -> Tensor:
-        r""".. signature:: ``(..., 2d) -> ...``."""
+    # Float[..., 2D] -> Float[...]
+    def decode(self, z: Tensor, /) -> Tensor:
         return torch.asin(z[..., 0])
 
-    def forward(self, t: Tensor) -> Tensor:
-        r""".. signature:: ``... -> (..., 2d)``."""
+    # Float[...] -> Float[..., 2D]
+    def forward(self, t: Tensor, /) -> Tensor:
         return self.encode(t)
 
-    def inverse(self, t: Tensor) -> Tensor:
-        r""".. signature:: ``(..., 2d) -> ...``."""
+    # Float[..., 2D] -> Float[...]
+    def inverse(self, t: Tensor, /) -> Tensor:
         return self.decode(t)
 
 

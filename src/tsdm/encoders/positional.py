@@ -41,14 +41,12 @@ class PositionalEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
         if self.scales[0] != 1.0:
             raise ValueError("Initial scale must be 1.0")
 
+    # Float[...] -> Float[..., 2D]
     def encode[Arr: SupportsArrayUfunc](self, x: Arr, /) -> Arr:
-        r""".. Signature: ``... -> (..., 2d)``.
-
-        Note: we simply concatenate the sin and cosine terms without interleaving them.
-        """
+        # Note: we simply concatenate the sin and cosine terms without interleaving them.
         z = np.einsum("..., d -> ...d", x, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)  # type: ignore
 
+    # Float[..., 2D] -> Float[...]
     def decode[Arr: SupportsArrayUfunc](self, y: Arr, /) -> Arr:
-        r""".. signature:: ``(..., 2d) -> ...``."""
         return np.arcsin(y[..., 0])  # type: ignore

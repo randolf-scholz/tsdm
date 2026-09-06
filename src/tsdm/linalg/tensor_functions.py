@@ -14,58 +14,53 @@ __all__ = [
 import torch
 from torch import Tensor
 
-type Axis = None | int | tuple[int, ...]
+type Dim = None | int | tuple[int, ...]
 
 
 def geometric_mean(
-    x: Tensor,
+    x: Tensor,  # Float[..., *D]
     /,
     *,
-    axis: Axis = None,
+    dim: Dim = None,  # *D
     keepdim: bool = False,
-) -> Tensor:
-    r"""Geometric mean of a tensor.
-
-    .. signature:: ``(..., n) -> (...)``
-    """
-    if axis is None:
-        dim = list(range(x.ndim))
-    elif isinstance(axis, int):
-        dim = [axis]
-    else:
-        dim = axis
+) -> Tensor:  # Float[...]
+    r"""Geometric mean of a tensor."""
+    dim = (
+        tuple(range(x.ndim))
+        if dim is None
+        else (dim,)
+        if isinstance(dim, int)
+        else tuple(dim)
+    )
 
     return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
 
 
 def scaled_norm(
-    x: Tensor,
+    x: Tensor,  # Float[..., *D]
     /,
     *,
     p: float = 2.0,
-    axis: Axis = None,
+    dim: Dim = None,
     keepdim: bool = False,
-) -> Tensor:
-    r"""Shortcut for scaled norm.
-
-    .. signature:: ``(..., n) -> ...``
-    """
+) -> Tensor:  # Float[...]
+    r"""Shortcut for scaled norm."""
     # TODO: deal with nan values
+    dim = (
+        tuple(range(x.ndim))
+        if dim is None
+        else (dim,)
+        if isinstance(dim, int)
+        else tuple(dim)
+    )
     x = x.abs()
-
-    if axis is None:
-        dim = tuple(range(x.ndim))
-    elif isinstance(axis, int):
-        dim = (axis,)
-    else:
-        dim = axis
 
     if p == torch.inf:
         return x.amax(dim=dim, keepdim=keepdim)
     if p == -torch.inf:
         return x.amin(dim=dim, keepdim=keepdim)
     if p == 0:
-        return geometric_mean(x, axis=dim, keepdim=keepdim)
+        return geometric_mean(x, dim=dim, keepdim=keepdim)
 
     # NOTE: preconditioning with x_max is not necessary, but it helps with numerical stability and prevents overflow
     x_max = x.abs().amax(dim=dim, keepdim=True)
@@ -74,28 +69,26 @@ def scaled_norm(
 
 
 def norm(
-    x: Tensor,
+    x: Tensor,  # Float[..., *D]
     /,
     *,
     p: float = 2.0,
-    axis: Axis = None,
+    dim: Dim = None,
     keepdim: bool = False,
-) -> Tensor:
+) -> Tensor:  # Float[...]
     r"""Shortcut for non-scaled norm.
-
-    .. signature:: ``(..., n) -> ...``
 
     Only present here for testing purposes.
     """
     # TODO: deal with nan values
     x = x.abs()
 
-    dim: list[int] = (
-        list(range(x.ndim))
-        if axis is None
-        else [axis]
-        if isinstance(axis, int)
-        else list(axis)
+    dim = (
+        tuple(range(x.ndim))
+        if dim is None
+        else (dim,)
+        if isinstance(dim, int)
+        else tuple(dim)
     )
 
     # non-scaled
@@ -113,17 +106,15 @@ def norm(
 
 
 def tensor_norm(
-    x: Tensor,
+    x: Tensor,  # Float[..., *D]
     /,
     *,
     p: float = 2.0,
-    axis: Axis = None,
+    dim: Dim = None,
     keepdim: bool = False,
     scaled: bool = False,
-) -> Tensor:
+) -> Tensor:  # Float[...]
     r"""Entry-wise norm of $p$-th order.
-
-    .. signature:: ``(..., n) -> ...``
 
     +--------+-----------------------------------+------------------------------------+
     |        | standard                          | size normalized                    |
@@ -144,27 +135,29 @@ def tensor_norm(
     +--------+-----------------------------------+------------------------------------+
     """
     return (
-        scaled_norm(x, p=p, axis=axis, keepdim=keepdim)
+        scaled_norm(x, p=p, dim=dim, keepdim=keepdim)
         if scaled
-        else norm(x, p=p, axis=axis, keepdim=keepdim)
+        else norm(x, p=p, dim=dim, keepdim=keepdim)
     )
 
 
 def multi_norm(
-    tensors: list[Tensor],
+    tensors: list[Tensor],  # list[Float[...]]
     /,
     *,
     p: float = 2,
     q: float = 2,
     scaled: bool = True,
-) -> Tensor:
+) -> Tensor:  # Float[()]
     r"""Return the (scaled) p-q norm of the gradients.
 
-    .. signature:: ``(...) -> ()``
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑ⱼ₌₁ⁿ \Big(∑ᵢ₌₁ᵐ |Aᵢⱼ|ᵖ\Big)^{q/p}\Bigr|^{1/q}
 
-    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
-
-    If `normalize=True`, the sums are replaced with averages.
+    Args:
+        tensors: `list[Float[...]]`
+        p: the inner norm order
+        q: the outer norm order
+        scaled: If `True`, the sums are replaced with averages.
     """
     if not tensors:
         raise ValueError(
@@ -186,18 +179,22 @@ def multi_norm(
 
 
 def grad_norm(
-    tensors: list[Tensor],
+    tensors: list[Tensor],  # list[Float[...]]
     /,
     *,
     p: float = 2,
     q: float = 2,
     scaled: bool = True,
-) -> Tensor:
+) -> Tensor:  # Float[()]
     r"""Return the (scaled) p-q norm of the gradients.
 
-    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑ⱼ₌₁ⁿ \Big(∑ᵢ₌₁ᵐ |Aᵢⱼ|ᵖ\Big)^{q/p}\Bigr|^{1/q}
 
-    If `normalize=True`, the sums are replaced with averages.
+    Args:
+        tensors: `list[Float[...]]`
+        p: the inner norm order
+        q: the outer norm order
+        scaled: If `True`, the sums are replaced with averages.
     """
     if len(tensors) == 0:
         return torch.tensor(0.0)

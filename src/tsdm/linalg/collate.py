@@ -38,13 +38,15 @@ def collate_packed(batch: list[Tensor], /) -> PackedSequence:
 
 
 def collate_padded(
-    batch: list[Tensor], /, *, batch_first: bool = True, padding_value: float = 0.0
-) -> Tensor:
+    batch: list[Tensor],  # Float[$N, ...]
+    /,
+    *,
+    batch_first: bool = True,
+    padding_value: float = 0.0,
+) -> Tensor:  # Float[$Nₘₐₓ, ...]
     r"""Collates a list of tensors of varying lengths into a single Tensor, padded with zeros.
 
     Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
-
-    .. signature:: ``[ (lᵢ, ...)_{i=1:B} ] -> (B, lₘₐₓ, ...)``.
     """
     return pad_sequence(batch, batch_first=batch_first, padding_value=padding_value)
 
@@ -80,7 +82,7 @@ def unpad_sequence(
         )
 
         # select the feature dimensions
-        dims: list[int] = list(range(min(2, padded_seq.ndim), padded_seq.ndim))
+        dims = tuple(range(min(2, padded_seq.ndim), padded_seq.ndim))
 
         # mask for completely missing timestamps and flip
         masked_timestamps = torch.all(mask, dim=dims)  # (B, T)

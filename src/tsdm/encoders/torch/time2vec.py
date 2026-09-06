@@ -44,22 +44,22 @@ class Time2Vec(nn.Module):
             "cos": torch.cos,
         }[activation]
 
+    # Float[...] -> Float[..., D]
     def encode(self, t: Tensor) -> Tensor:
-        r""".. signature:: ``(..., d) -> ...``."""
         z = torch.einsum("..., k -> ...k", t, self.freq) + self.phase
         z = self.act(z)
         return torch.cat([t.unsqueeze(dim=-1), z], dim=-1)
 
+    # Float[..., D] -> Float[...]
     def decode(self, z: Tensor) -> Tensor:
-        r""".. signature:: ``(..., d) -> ...``."""
         return z[..., 0]
 
+    # Float[...] -> Float[..., D]
     def forward(self, t: Tensor) -> Tensor:
-        r""".. signature:: ``... -> (..., d)``."""
         return self.encode(t)
 
+    # Float[..., D] -> Float[...]
     def inverse(self, z: Tensor) -> Tensor:
-        r""".. signature:: ``(..., d) -> ...``."""
         return self.decode(z)
 
 

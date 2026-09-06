@@ -10,7 +10,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 import tsdm
 from tsdm.config import PROJECT
 from tsdm.logutils import BaseLogger, DefaultLogger, log_table
-from tsdm.metrics import MSE
+from tsdm.metrics import MSE_Loss
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
@@ -21,7 +21,7 @@ def test_base_logger() -> None:
     logger = BaseLogger()
 
     # add callback
-    metrics = {"MSE": MSE}
+    metrics = {"MSE": MSE_Loss}
     writer = SummaryWriter(RESULT_DIR)
     cb = tsdm.logutils.MetricsCallback(metrics, writer=writer)
     assert cb.required_kwargs == {"targets", "predictions"}

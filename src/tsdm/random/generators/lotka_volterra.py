@@ -77,10 +77,9 @@ class LotkaVolterra(IVP_GeneratorBase):
         p = self.observation_noise_dist
         return state * p.rvs(size=state.shape, random_state=self.rng)
 
+    # Float[..., $N], Float[..., $N, 2] -> Float[..., $N, 2]
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.
-
-        .. signature:: ``[(...B, N), (...B, N, 2) -> (...B, N, 2)``
 
         sub-signatures:
             - ``[(...,), (2, ) -> (..., 2)``

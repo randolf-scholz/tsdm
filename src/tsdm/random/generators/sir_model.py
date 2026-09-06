@@ -62,15 +62,9 @@ class SIR(IVP_GeneratorBase):
         """
         return Dirichlet.rvs(sir / noise, random_state=self.rng)
 
+    # Float[..., $N], Float[..., $N, 3] -> Float[..., $N, 3]
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
-        r"""Vector field of the SIR model.
-
-        .. signature:: ``[(...B, N), (...B, N, 3) -> (...B, N, 3)``
-
-        sub-signatures:
-            - ``[(...,), (2, ) -> (..., 2)``
-            - ``[(,), (..., 2) -> (..., 2)``
-        """
+        r"""Vector field of the SIR model."""
         t = np.asarray(t)
         state = np.asarray(state)
         S, I, R = np.moveaxis(state, -1, 0)

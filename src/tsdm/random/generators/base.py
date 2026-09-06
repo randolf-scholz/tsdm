@@ -54,10 +54,9 @@ class ODE[T](Protocol):  # +T
     r"""Represents a system of ordinary differential equations."""
 
     @abstractmethod
+    # Float[$N], Float[..., $N,*D] -> Float[..., $N,*D]
     def __call__(self, /, t: ArrayLike, state: ArrayLike) -> T:
         r"""Evaluate the vector field at given time and state.
-
-        .. signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
 
         Sub-signatures:
             - ``[(,), (..., *D) -> (..., *D)``
@@ -98,10 +97,9 @@ class IVP_Solver[T](Protocol):  # +T
     """
 
     @abstractmethod
+    # Float[$N], Float[..., *D] -> Float[..., $N,*D]
     def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T:
         r"""Solve the initial value problem.
-
-        .. signature:: ``[(N,), (..., *D)] -> (..., N, *D)``
 
         Args:
             system: Some object that represents the dynamics of the systems.

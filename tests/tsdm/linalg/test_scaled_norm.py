@@ -36,8 +36,8 @@ def test_shape(*, shape: tuple[int, ...], dims: Axis, keepdim: bool) -> None:
     assert reference_norm.shape == reference_shape
 
     # compute norms
-    scaled_norm = linalg.scaled_norm(x, p=2, axis=dims, keepdim=keepdim)
-    tensor_norm = linalg.tensor_norm(x, p=2, axis=dims, keepdim=keepdim)
+    scaled_norm = linalg.scaled_norm(x, p=2, dim=dims, keepdim=keepdim)
+    tensor_norm = linalg.tensor_norm(x, p=2, dim=dims, keepdim=keepdim)
     assert scaled_norm.shape == reference_shape
     assert tensor_norm.shape == reference_shape
     assert torch.allclose(tensor_norm, reference_norm, atol=1e-6, rtol=1e-6)

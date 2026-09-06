@@ -19,16 +19,13 @@ from torch import Tensor
 
 @torch.no_grad()
 def kernel_heatmap(
-    kernel: NDArray | Tensor,
+    kernel: NDArray | Tensor,  # Float[..., $H, $W]
     /,
     *,
     fmt: Literal["HWC", "CHW"] = "HWC",
     cmap: str | colors.Colormap = "seismic",
-) -> NDArray:
+) -> NDArray:  # Float[..., $H, $W, 3] if "HWC" or Float[..., 3, $H, $W] if "CHW"
     r"""Create heatmap of given matrix.
-
-    .. signature:: ``(..., ) ⟶ (..., 3)`` if "HWC"
-    .. signature:: ``(..., ) ⟶ (3, ...)`` if "CHW".
 
     By default, the data is linearly transformed to a normal distribution $𝓝(½,⅙)$,
     which ensures that 99.7% of the data lies in the interval $[0,1]$, and then clipped.
