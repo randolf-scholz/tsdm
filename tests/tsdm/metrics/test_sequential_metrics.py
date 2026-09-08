@@ -49,8 +49,8 @@ def test_time_loss_normalization(
     channel_axes = tuple(range(-K, 0))
     print(shape, time_axis, channel_axes)
     loss_func = SequentialMSE(
-        time_axis=time_axis,
-        axis=channel_axes,
+        time_dim=time_axis,
+        channel_dim=channel_axes,
         normalize_time=True,
         normalize=False,
     )

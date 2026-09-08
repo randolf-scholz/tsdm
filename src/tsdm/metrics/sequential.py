@@ -1,5 +1,28 @@
 r"""Loss functions for time series data.
 
+We have some data sets where the number of samples can vary drastically between channels.
+In that case, since we want the model still to be able to predict different channels,
+one should normalize the per-channel loss.
+
+
+
+a general Lₚ loss could look like:
+
+Nₙₖ = ∑ₜmₙₜₖ
+Iₙₖ = [Nₙₖ > 0]
+Sₖ = ∑ₙIₙₖ
+
+ℓₚ = ( ∑ₙ (1/K) ∑ₖ ( [Nₙₖ>0]  / )    ∑ₜ mₙₜₖ|xₙₜₖ|ᵖ )^{1/p}
+
+Iₙₖ = Anyₜ(mₙₜₖ) = 1-∏ₜ(1-mₙₜₖ)  # was any value observed in channel k for batch element n
+Kₙ = ∑ₖ Iₙₖ  # number of channels with at least one observation for batch element n.
+Sₖ = ∑ₙ Iₙₖ  # number of batch elements with at least one obervation in channel k.
+
+Wₙ = ∑ₖIₙₖwₖ  # per sample total channel weight.
+
+
+
+
 Since batch elements can be of different lengths, we need to be careful about the
 computation of the loss. We add a mask argument.
 
@@ -24,6 +47,7 @@ __all__ = [
 import torch
 from torch import Tensor
 
+from . import samplewise
 from .base import SequentialBaseMetric
 from .samplewise import q_quantile
 
@@ -35,23 +59,38 @@ def lp_norm(
     /,
     *,
     p: float = 2.0,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    channel_dim: Dim = -1,  # *D
+    channel_weight: Tensor | None = None,  # Float[*D]
     time_dim: int = -2,
-    channel_dim: Dim = -1,
+    time_weight: Tensor | None = None,  # Float[..., $N]
     scale_time: bool = True,
     scale_channels: bool = False,
-    mask: Tensor | None = None,  # Bool[..., $N, *D]
-    channel_weight: Tensor | None = None,  # Float[..., *D]
-    time_weight: Tensor | None = None,  # Float[..., $N]
-) -> Tensor:
+) -> Tensor:  # Float[...]
     r"""Compute time-normalized lp-norm.
 
+    .. math:: ℓₚ(x) = ( ∑ₜ wₜᵗⁱᵐᵉ ∑ₖ wₖᶜʰsₖ ⟦ mₜₖ ? |xₜₖ|ᵖ : 0⟧ )^{1/p}
+
+    here, the scaling factors $sₙₖ$ should estimate the prevalence of the $k$-th channel.
+
+    - $sₖ = 1$ if ``scale_channel = False``
+    - $sₖ = (∑ₛmₜₖ)⁻¹$ if ``scale_channel = True``
+    - $sₖ = cₖ$ if a tensor is given. in this case, it is recommended to choose
+
+        .. math:: cₖ ∝ 𝐄_{m∼Dataset}[∑ₜmₜₖ]⁻¹
+
     Args:
-        time_dim: Dimension of the time.
-        channel_dim: Dimension of the channels.
+        x: Tensor of shape $(\$N, *D)$.
+        p: Order of the norm (any non-NAN float including ±inf).
+        mask: Boolean mask indicating valid values.
+        time_dim: Tensor axis of the time dimension.
+        time_weight: Importance weight $wₜᵗⁱᵐᵉ$ for each time step.
+        channel_dim: Tensor axes of the channel dimensions.
+        channel_weight: Importance weight $wₖᶜʰ$ for each channel.
         scale_time: Whether to sum or mean aggregation for the time dimension.
         scale_channels: Whether to sum or mean aggregation for the channel dimension.
     """
-    raise NotImplementedError
+    assert x.ndim >= 1, "x must have at least one dimension"
 
 
 def lp_loss(
@@ -68,7 +107,25 @@ def lp_loss(
     channel_weight: Tensor | None = None,  # Float[..., *D], non-negative
     time_weight: Tensor | None = None,  # Float[..., $N], non-negative
 ) -> Tensor:
-    raise NotImplementedError
+    r"""Compute time-normalized lp-norm.
+
+    .. math:: (1/B) ∑ₙ ( ∑ₜ∑ₖ wₖsₙₖ ⟦ mₙₜₖ ? |xₙₜₖ|ᵖ : 0⟧ )^{1/p}
+
+    here, the scaling factors $sₙₖ$ should estimate the prevalence of the $k$-th channel.
+
+    - $sₙₖ = 1$ if ``scale_channel = False``
+    - $sₙₖ = (∑ₛmₙₜₖ)⁻¹$ if ``scale_channel = True``
+    - $sₙₖ = cₖ$ if a tensor is given. in this case, it is recommended to choose
+
+        .. math:: cₖ ∝ 𝐄_{m∼Dataset}[∑ₜmₜₖ]⁻¹
+
+    Args:
+        time_dim: Dimension of the time.
+        channel_dim: Dimension of the channels.
+        channel_weight: Importance scalar $wₖᶜʰ$ for each channel.
+        scale_time: Whether to sum or mean aggregation for the time dimension.
+        scale_channels: Whether to sum or mean aggregation for the channel dimension.
+    """
 
 
 def nd(

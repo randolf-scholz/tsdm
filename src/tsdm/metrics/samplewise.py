@@ -9,20 +9,23 @@ __all__ = [
     "MAE_loss",
     "LP_Loss",
     "Q_Quantile",
+    "Reduction",
+    # functions
     "rmse_loss",
     "mse_loss",
     "mae_loss",
     "lp_loss",
     "lp_norm",
     "q_quantile",
-    "Reduction",
+    "apply_reduction",
 ]
 
+from collections.abc import Callable
 from enum import StrEnum
 from typing import Any, Final
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 
 from .base import BaseMetric
 
@@ -38,6 +41,48 @@ class Reduction(StrEnum):
 
 
 UNDEFINED: Final[Any] = object()
+
+
+def apply_reduction(
+    args: Tensor,
+    /,
+    *,
+    inner_fun: Callable[..., Tensor],
+    outer_fun: Callable[[Tensor], Tensor],
+    dim: Dim = UNDEFINED,
+    mask: Tensor | None = None,  # Bool[..., *D]
+    weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
+    scaled: bool = False,
+) -> Tensor:
+    r"""Apply a reduction to a tensor, optionally masked.
+
+    .. math:: ℓ = ψ( agg_k ϕ(xₖ) )
+
+    with inner function $ϕ$, outer function $ψ$ and aggregation function $agg_k$.
+    Note that due to gradient accumulation, the arguments to $ϕ$ need to be masked
+    beforehand.
+
+    +------+--------+--------+-------------------------------------------+
+    | mask | weight | scaled | formula                                   |
+    +======+========+========+===========================================+
+    | n    | n      | n      | $∑ₖxₖ$                                    |
+    +------+--------+--------+-------------------------------------------+
+    | n    | n      | y      | $∑ₖxₖ/K$                                  |
+    +------+--------+--------+-------------------------------------------+
+    | n    | y      | n      | $∑ₖwₖxₖ$                                  |
+    +------+--------+--------+-------------------------------------------+
+    | n    | y      | y      | $∑ₖwₖ/∑ⱼ⟦wⱼ≠0⟧⟦wₖ≠0 \? xₖ : 0⟧$           |
+    +------+--------+--------+-------------------------------------------+
+    | y    | n      | n      | $∑ₖ⟦mₖ \? xₖ : 0⟧$                        |
+    +------+--------+--------+-------------------------------------------+
+    | y    | n      | y      | $∑ₖ⟦mₖ \? xₖ/∑ⱼmⱼ : 0⟧$                   |
+    +------+--------+--------+-------------------------------------------+
+    | y    | y      | n      | $∑ₖwₖ⟦mₖ&(wₖ≠0) \? xₖ : 0⟧$               |
+    +------+--------+--------+-------------------------------------------+
+    | y    | y      | y      | $∑ₖwₖ/∑ⱼmⱼ&(wⱼ≠0)⟦mₖ&(wₖ≠0) \? xₖ : 0⟧$   |
+    +------+--------+--------+-------------------------------------------+
+    """
+    raise NotImplementedError
 
 
 def lp_norm(
@@ -77,14 +122,11 @@ def lp_norm(
 
         An empty ``dim`` tuple performs no inner reduction.
     """
-    if dim is UNDEFINED:
-        # -1 if no weight, else (-weight.ndim, ..., -1)
-        dim = (-1,) if weight is None else tuple(range(-weight.ndim, 0))
-
     dims = tuple(
-        range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim
+        ((-1,) if weight is None else range(-weight.ndim, 0))
+        if dim is UNDEFINED
+        else (range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim)
     )
-
     if weight is not None and weight.ndim != len(dims):
         raise ValueError(f"Expected {weight.ndim=} to equal {len(dims)=}")
 
@@ -97,26 +139,28 @@ def lp_norm(
         case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
     # fmt: on
 
-    if p in (torch.inf, -torch.inf):
+    if p == torch.inf:  # noqa: SIM114
         raise NotImplementedError
-    if p == 0.0:
+    elif p == -torch.inf:  # noqa: RET506
+        raise NotImplementedError
+    elif p == 0.0:
         # TODO: if scaled, use geometric mean.
         raise NotImplementedError
-    if p > 0:
+    elif p > 0:
         if active is not None:
             x = torch.where(active, x, 0.0)
-        r = x.abs().pow(p)
+        s = x.abs().pow(p)
     else:  # p<0
         if active is not None:
             x = torch.where(active, x, 1.0)
-        r = x.abs().pow(p)
+        s = x.abs().pow(p)
         if active is not None:
-            r = torch.where(active, r, 0.0)
+            s = torch.where(active, s, 0.0)
 
     if weight is not None:
-        r = weight * r
+        s = weight * s
 
-    r = torch.sum(r, dim=dims) if dims else r
+    r = torch.sum(s, dim=dims) if dims else s
 
     if scaled:
         numel = (
@@ -448,19 +492,29 @@ class RMSE_Loss(BaseMetric):
 
 def q_quantile(
     *,
-    predictions: Tensor,  # Float[...]
-    targets: Tensor,  # Float[...]
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
     q: float = 0.5,
+    dim: Dim = -1,  # *D
+    mask: Tensor | None = None,  # Bool[..., *D],
+    weight: Tensor | None = None,  # Float[*D]  # channel weights
 ) -> Tensor:  # Float[...]
-    r"""Return the q-quantile.
+    r"""Return the q-quantile / pinball loss.
 
-    For scalar valued x, this is just:
+    For a scalar valued x, this is just:
 
     .. math::
-        𝖯_q(x̂, x) ≔ \begin{cases}
+        𝖯_q(x̂，x) ≔ \begin{cases}
             \hfill  q⋅|x̂-x| :& x ≥ x̂
             \\  (1-q)⋅|x̂-x| :& x ≤ x̂
         \end{cases}
+
+    For a vector / tensor valued x, we set:
+
+    .. math::  ℓ(x̂，x) ≔ ∑ₖP_q(x̂ₖ，x)
+    .. math::  ℓ(x̂，x) ≔ ∑ₖ⟦mₖ \? P_q(x̂ₖ，x) : 0⟧
+    .. math::  ℓ(x̂，x) ≔ ∑ₖwₖP_q(x̂ₖ，x)
+    .. math::  ℓ(x̂，x) ≔ ∑ₖwₖ⟦mₖ \? P_q(x̂ₖ，x) : 0⟧
 
     References:
         - | Deep State Space Models for Time Series Forecasting
@@ -470,12 +524,13 @@ def q_quantile(
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
     # simplified formula
-    residual = targets - predictions
-    return torch.maximum((q - 1) * residual, q * residual)
+    r = targets - predictions
+    s = torch.maximum((q - 1) * r, q * r)
+    return s
 
 
-class Q_Quantile(BaseMetric):
-    r"""The q-quantile.
+class Q_Quantile(nn.Module):
+    r"""The q-quantile / pinball loss.
 
     .. math::
         𝖯_q(x̂, x) ≔ \begin{cases}
@@ -490,8 +545,8 @@ class Q_Quantile(BaseMetric):
 
     q: Final[float]
 
-    def __init__(self, q: float = 0.5, *, dim: Dim = None):
-        super().__init__(dim=dim)
+    def __init__(self, q: float = 0.5):
+        super().__init__()
         self.q = q
 
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:

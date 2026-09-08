@@ -6,8 +6,8 @@ from math import pi, prod, sqrt
 import pytest
 import torch
 
-from tsdm.metrics import MAE, MSE, ND, RMSE, BaseMetric
-from tsdm.metrics.timeseries import nd
+from tsdm.metrics import ND, BaseMetric, MAE_loss, MSE_Loss, RMSE_Loss
+from tsdm.metrics.sequential import nd
 
 BATCH_SHAPES = [
     (),
@@ -20,7 +20,7 @@ CHANNEL_SHAPES = [
     (5, 16),
 ]
 TIME_SHAPES = [(1,), (32,)]
-LOSSES = [MSE, RMSE, MAE]
+LOSSES = [MSE_Loss, RMSE_Loss, MAE_loss]
 
 
 @pytest.mark.parametrize("loss_func", [nd, ND()])
@@ -50,7 +50,7 @@ def test_loss_normalization(
     rtol: float,
 ) -> None:
     r"""Test whether the modular losses are normalized."""
-    loss_func = loss(normalize=True)
+    loss_func = loss(scaled=True)
     shape = batch_shape + channel_shape
     targets = torch.randn(*shape)
     predictions = torch.randn(*shape)

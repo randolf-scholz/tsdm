@@ -114,7 +114,7 @@ def test_get_broadcast(shape: tuple[int, ...], axis: Axis) -> None:
 
     # test with keep_axis:
     kept_axis = axis
-    broadcast = get_broadcast(arr.shape, axis=kept_axis, keep_axis=True)
+    broadcast = get_broadcast(arr.shape, axis=kept_axis, keepdim=True)
     match kept_axis:
         case None:
             contracted_axes = tuple(range(arr.ndim))
