@@ -3,7 +3,8 @@ from math import prod
 import pytest
 import torch
 
-from tsdm.metrics.sequential import Normalization, SequentialMSE, lp_norm
+from tsdm.metrics.samplewise import Reduction
+from tsdm.metrics.sequential import Normalization, SequentialMSE, lp_loss, lp_norm
 
 BATCH_SHAPES = [
     (),
@@ -307,6 +308,84 @@ class TestLpNorm:
         assert x.grad is not None
         assert torch.isfinite(x.grad[mask]).all()
         assert torch.equal(x.grad[~mask], torch.zeros_like(x.grad[~mask]))
+
+
+class TestLpLoss:
+    r"""Tests for sequential Lp losses."""
+
+    @pytest.mark.parametrize("reduction", list(Reduction))
+    def test_matches_lp_norm_of_residuals(self, reduction: Reduction) -> None:
+        r"""The loss wraps the corresponding norm and then reduces it."""
+        predictions = torch.arange(24.0).reshape(2, 3, 4)
+        targets = torch.arange(24.0, 0.0, -1.0).reshape(2, 3, 4)
+
+        result = lp_loss(
+            predictions=predictions,
+            targets=targets,
+            p=1.0,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=None,
+            reduction=reduction,
+        )
+        norms = lp_norm(
+            predictions - targets,
+            p=1.0,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=None,
+        )
+        expected = {
+            Reduction.NONE: norms,
+            Reduction.SUM: norms.sum(),
+            Reduction.MEAN: norms.mean(),
+        }[reduction]
+
+        torch.testing.assert_close(result, expected)
+
+    def test_defaults_to_mean_reduction(self) -> None:
+        r"""The default reduction averages the per-sequence norms."""
+        predictions = torch.arange(24.0).reshape(2, 3, 4)
+        targets = torch.arange(24.0, 0.0, -1.0).reshape(2, 3, 4)
+
+        result = lp_loss(
+            predictions=predictions,
+            targets=targets,
+            time_dim=-2,
+            channel_dim=-1,
+        )
+        expected = lp_norm(
+            predictions - targets,
+            time_dim=-2,
+            channel_dim=-1,
+        ).mean()
+
+        torch.testing.assert_close(result, expected)
+
+    def test_masks_sparse_targets_without_breaking_prediction_gradients(self) -> None:
+        r"""Sparse targets do not contaminate prediction gradients."""
+        predictions = torch.tensor(
+            [[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]], requires_grad=True
+        )
+        targets = torch.tensor([[[1.0, torch.nan, 3.0], [torch.nan, 5.0, 6.0]]])
+        mask = ~targets.isnan()
+
+        loss = lp_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=-2,
+            channel_dim=-1,
+        )
+        loss.backward()
+
+        assert torch.isfinite(loss)
+        assert predictions.grad is not None
+        assert torch.isfinite(predictions.grad).all()
+        assert torch.all(predictions.grad[mask] != 0)
+        assert torch.equal(
+            predictions.grad[~mask], torch.zeros_like(predictions.grad[~mask])
+        )
 
 
 @pytest.mark.slow

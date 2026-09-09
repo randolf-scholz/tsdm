@@ -54,7 +54,7 @@ import torch
 from torch import Tensor
 
 from .base import SequentialBaseMetric
-from .samplewise import q_quantile
+from .samplewise import Reduction, q_quantile
 
 type Dim = int | tuple[int, ...] | None
 
@@ -234,39 +234,45 @@ def lp_norm(
 
 
 def lp_loss(
-    x: Tensor,  # Float[..., $N, *D]
-    /,
     *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
     p: float = 2.0,
-    time_dim: int = -2,
-    channel_dim: Dim = -1,
-    scale_time: bool = True,
-    scale_channels: bool = False,
-    mask: Tensor | None = None,  # Bool[..., $N, *D] or Bool[..., $N]
-    weight: Tensor | None = None,  # Float[...], non-negative
-    channel_weight: Tensor | None = None,  # Float[..., *D], non-negative
-    time_weight: Tensor | None = None,  # Float[..., $N], non-negative
-) -> Tensor:
-    r"""Compute time-normalized lp-norm.
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    channel_dim: int | tuple[int, ...],  # *D
+    channel_weight: Tensor | None = None,  # Float[*D]
+    time_dim: int,
+    time_weight: Tensor | None = None,  # Float[..., $N]
+    normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
+    reduction: Reduction = Reduction.MEAN,
+) -> Tensor:  # Float[()]
+    r"""Compute the reduced time-normalized $p$-norm of prediction residuals.
 
-    .. math:: (1/B) ∑ₙ ( ∑ₜ∑ₖ wₖsₙₖ ⟦ mₙₜₖ ? |xₙₜₖ|ᵖ : 0⟧ )^{1/p}
+    .. math:: ℓₚ(x̂, x) ≔ 𝔼[‖x̂ - x‖ₚ]
 
-    here, the scaling factors $sₙₖ$ should estimate the prevalence of the $k$-th channel.
-
-    - $sₙₖ = 1$ if ``scale_channel = False``
-    - $sₙₖ = (∑ₛmₙₜₖ)⁻¹$ if ``scale_channel = True``
-    - $sₙₖ = cₖ$ if a tensor is given. in this case, it is recommended to choose
-
-        .. math:: cₖ ∝ 𝐄_{m∼Dataset}[∑ₜmₜₖ]⁻¹
-
-    Args:
-        time_dim: Dimension of the time.
-        channel_dim: Dimension of the channels.
-        channel_weight: Importance scalar $wₖᶜʰ$ for each channel.
-        scale_time: Whether to sum or mean aggregation for the time dimension.
-        scale_channels: Whether to sum or mean aggregation for the channel dimension.
+    The arguments other than ``predictions``, ``targets``, and ``reduction``
+    are forwarded to :func:`lp_norm`. ``reduction`` aggregates over the batch
+    dimensions of the resulting norms.
     """
-    raise NotImplementedError
+    norms = lp_norm(
+        predictions - targets,
+        p=p,
+        mask=mask,
+        channel_dim=channel_dim,
+        channel_weight=channel_weight,
+        time_dim=time_dim,
+        time_weight=time_weight,
+        normalization=normalization,
+    )
+    match reduction:
+        case Reduction.SUM:
+            return norms.sum()
+        case Reduction.MEAN:
+            return norms.mean()
+        case Reduction.NONE:
+            return norms
+        case _:
+            raise ValueError(f"Invalid reduction: {reduction}")
 
 
 def nd(
