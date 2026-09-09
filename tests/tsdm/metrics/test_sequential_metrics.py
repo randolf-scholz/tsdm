@@ -58,6 +58,44 @@ class TestLpNorm:
         torch.testing.assert_close(result, expected)
 
     @pytest.mark.parametrize("p", P_VALUES)
+    @pytest.mark.parametrize(
+        ("shape", "time_dim", "channel_dim", "weight_shape"),
+        [
+            ((7, 2, 3, 4), 0, (-2, -1), (1, 1, 3, 4)),
+            ((2, 3, 4, 7), -1, (-3, -2), (1, 3, 4, 1)),
+        ],
+        ids=["time-batch-channel", "batch-channel-time"],
+    )
+    def test_channel_weights_align_with_noncanonical_dimension_orders(
+        self,
+        p: float,
+        shape: tuple[int, ...],
+        time_dim: int,
+        channel_dim: tuple[int, ...],
+        weight_shape: tuple[int, ...],
+    ) -> None:
+        r"""Channel weights align with their declared dimensions, not just trailing ones."""
+        x = torch.linspace(0.1, 2.0, prod(shape), dtype=torch.float64).reshape(shape)
+        channel_weight = torch.arange(1.0, 13.0, dtype=x.dtype).reshape(3, 4)
+
+        result = lp_norm(
+            x,
+            p=p,
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            channel_weight=channel_weight,
+        )
+        expected = (
+            x.abs()
+            .pow(p)
+            .mul(channel_weight.reshape(weight_shape))
+            .sum(dim=(time_dim, *channel_dim))
+            .pow(1 / p)
+        )
+
+        torch.testing.assert_close(result, expected)
+
+    @pytest.mark.parametrize("p", P_VALUES)
     def test_masks_values_and_preserves_gradients(self, p: float) -> None:
         r"""Masks exclude values while valid inputs and weights remain differentiable."""
         x = torch.tensor([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]], requires_grad=True)
