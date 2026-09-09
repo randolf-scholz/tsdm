@@ -34,16 +34,16 @@ class TestLpNorm:
         torch.testing.assert_close(result, expected)
 
     @pytest.mark.parametrize("weight_shape", [(4,), (3, 4)])
-    def test_infers_reduction_axes_from_weight(
+    def test_weight_matches_reduction_axes(
         self,
         weight_shape: tuple[int, ...],
     ) -> None:
-        r"""The default axes are precisely the axes represented by the weights."""
+        r"""Weights span precisely the explicitly reduced axes."""
         x = torch.linspace(0.1, 2.4, 24, dtype=torch.float64).reshape(2, 3, 4)
         weight = torch.ones(weight_shape, dtype=x.dtype)
         dim = tuple(range(-weight.ndim, 0))
 
-        result = lp_norm(x, weight=weight)
+        result = lp_norm(x, dim=dim, weight=weight)
         expected = torch.linalg.vector_norm(x, dim=dim)
 
         torch.testing.assert_close(result, expected)
@@ -75,7 +75,7 @@ class TestLpNorm:
         x = torch.tensor([[1.0, 2.0, 4.0], [2.0, 4.0, 8.0]])
         mask = torch.tensor([[True, False, True], [False, True, True]])
 
-        result = lp_norm(x, p=-1.0, mask=mask)
+        result = lp_norm(x, p=-1.0, dim=-1, mask=mask)
         expected = torch.tensor([1 / (1 + 1 / 4), 1 / (1 / 4 + 1 / 8)])
 
         torch.testing.assert_close(result, expected)
@@ -86,7 +86,7 @@ class TestLpNorm:
         mask = torch.tensor([True, True, False])
         weight = torch.tensor([1.0, 0.0, 1.0])
 
-        result = lp_norm(x, mask=mask, weight=weight, scaled=True)
+        result = lp_norm(x, dim=-1, mask=mask, weight=weight, scaled=True)
 
         torch.testing.assert_close(result, torch.tensor(3.0))
 
@@ -98,7 +98,7 @@ class TestLpNorm:
         )
         mask = ~values.isnan()
 
-        loss = lp_norm(values, mask=mask).sum()
+        loss = lp_norm(values, dim=-1, mask=mask).sum()
         loss.backward()
 
         assert torch.isfinite(loss)

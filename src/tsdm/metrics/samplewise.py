@@ -22,7 +22,7 @@ __all__ = [
 
 from collections.abc import Callable
 from enum import StrEnum
-from typing import Any, Final, assert_never
+from typing import Final, assert_never
 
 import torch
 from torch import Tensor, nn
@@ -98,15 +98,12 @@ def apply_reduction(
     raise NotImplementedError
 
 
-UNDEFINED: Final[Any] = object()
-
-
 def lp_norm(
     x: Tensor,  # Float[..., *D]
     /,
     *,
+    dim: Dim,  # *D
     p: float = 2.0,
-    dim: Dim = UNDEFINED,  # *D
     mask: Tensor | None = None,  # Bool[..., *D]
     weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
     scaled: bool = False,
@@ -139,9 +136,7 @@ def lp_norm(
         An empty ``dim`` tuple performs no inner reduction.
     """
     dims = tuple(
-        ((-1,) if weight is None else range(-weight.ndim, 0))
-        if dim is UNDEFINED
-        else (range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim)
+        range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim
     )
     if weight is not None and weight.ndim != len(dims):
         raise ValueError(f"Expected {weight.ndim=} to equal {len(dims)=}")
