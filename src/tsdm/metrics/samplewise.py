@@ -22,7 +22,7 @@ __all__ = [
 
 from collections.abc import Callable
 from enum import StrEnum
-from typing import Any, Final
+from typing import Any, Final, assert_never
 
 import torch
 from torch import Tensor, nn
@@ -39,8 +39,21 @@ class Reduction(StrEnum):
     MEAN = "mean"
     NONE = "none"
 
+    def apply(self, values: Tensor, /, *, weight: Tensor | None = None) -> Tensor:
+        r"""Apply an optional sample weight and outer reduction to losses."""
+        if weight is not None:
+            weight = torch.broadcast_to(weight, values.shape)
+            values = weight * values
 
-UNDEFINED: Final[Any] = object()
+        match self:
+            case Reduction.NONE:
+                return values
+            case Reduction.SUM:
+                return values.sum()
+            case Reduction.MEAN:
+                return values.mean() if weight is None else values.sum() / weight.sum()
+            case other:
+                assert_never(other)
 
 
 def apply_reduction(
@@ -49,7 +62,7 @@ def apply_reduction(
     *,
     inner_fun: Callable[..., Tensor],
     outer_fun: Callable[[Tensor], Tensor],
-    dim: Dim = UNDEFINED,
+    dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D]
     weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
     scaled: bool = False,
@@ -83,6 +96,9 @@ def apply_reduction(
     +------+--------+--------+-------------------------------------------+
     """
     raise NotImplementedError
+
+
+UNDEFINED: Final[Any] = object()
 
 
 def lp_norm(
@@ -178,29 +194,6 @@ def lp_norm(
     return r.pow(1 / p)
 
 
-def _reduce_loss(
-    losses: Tensor,
-    /,
-    *,
-    weight: Tensor | None = None,
-    reduction: Reduction = Reduction.MEAN,
-) -> Tensor:
-    r"""Apply an optional sample weight and outer reduction to losses."""
-    if weight is not None:
-        weight = torch.broadcast_to(weight, losses.shape)
-        losses = weight * losses
-
-    match reduction:
-        case Reduction.SUM:
-            return losses.sum()
-        case Reduction.MEAN:
-            return losses.mean() if weight is None else losses.sum() / weight.sum()
-        case Reduction.NONE:
-            return losses
-        case _:
-            raise ValueError(f"Invalid reduction: {reduction}")
-
-
 def lp_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
@@ -251,7 +244,7 @@ def lp_loss(
             weight=channel_weight,
             scaled=scaled,
         )
-    return _reduce_loss(norms, weight=weight, reduction=reduction)
+    return Reduction(reduction).apply(norms, weight=weight)
 
 
 def mae_loss(
@@ -307,7 +300,7 @@ def mse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return _reduce_loss(losses, weight=weight, reduction=reduction)
+    return Reduction(reduction).apply(losses, weight=weight)
 
 
 def rmse_loss(
@@ -335,7 +328,7 @@ def rmse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return _reduce_loss(squared_norms, weight=weight, reduction=reduction).sqrt()
+    return Reduction(reduction).apply(squared_norms, weight=weight).sqrt()
 
 
 class LP_Loss(BaseMetric):
