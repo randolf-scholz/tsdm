@@ -39,6 +39,7 @@ __all__ = [
     "SequentialMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesRMSE",
+    "lp_norm",
     "nd",
     "nrmse",
     "q_quantile_loss",
@@ -47,11 +48,16 @@ __all__ = [
 import torch
 from torch import Tensor
 
-from . import samplewise
 from .base import SequentialBaseMetric
 from .samplewise import q_quantile
 
 type Dim = int | tuple[int, ...] | None
+
+
+def normalize_dim(dim: int, ndim: int, /) -> int:
+    if not -ndim <= dim < ndim:
+        raise ValueError(f"Dimension {dim} is out of range for {ndim=}")
+    return dim % ndim
 
 
 def lp_norm(
@@ -60,9 +66,9 @@ def lp_norm(
     *,
     p: float = 2.0,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-    channel_dim: Dim = -1,  # *D
+    channel_dim: int | tuple[int, ...],  # *D
     channel_weight: Tensor | None = None,  # Float[*D]
-    time_dim: int = -2,
+    time_dim: int,
     time_weight: Tensor | None = None,  # Float[..., $N]
     scale_time: bool = True,
     scale_channels: bool = False,
@@ -73,24 +79,95 @@ def lp_norm(
 
     here, the scaling factors $sₙₖ$ should estimate the prevalence of the $k$-th channel.
 
-    - $sₖ = 1$ if ``scale_channel = False``
-    - $sₖ = (∑ₛmₜₖ)⁻¹$ if ``scale_channel = True``
-    - $sₖ = cₖ$ if a tensor is given. in this case, it is recommended to choose
-
-        .. math:: cₖ ∝ 𝐄_{m∼Dataset}[∑ₜmₜₖ]⁻¹
+    - $sₖ = 1$ if ``scale_channels = False``
+    - $sₖ = (∑ₛmₛₖ)⁻¹$ if ``scale_channels = True``
 
     Args:
-        x: Tensor of shape $(\$N, *D)$.
-        p: Order of the norm (any non-NAN float including ±inf).
+        x: Tensor of shape ``[..., $N, *D]``.
+        p: Finite, non-zero order of the norm.
         mask: Boolean mask indicating valid values.
-        time_dim: Tensor axis of the time dimension.
+        time_dim: Required tensor axis of the time dimension.
         time_weight: Importance weight $wₜᵗⁱᵐᵉ$ for each time step.
-        channel_dim: Tensor axes of the channel dimensions.
+        channel_dim: Required tensor axes of the channel dimensions. Use ``()``
+            for an univariate time series.
         channel_weight: Importance weight $wₖᶜʰ$ for each channel.
-        scale_time: Whether to sum or mean aggregation for the time dimension.
-        scale_channels: Whether to sum or mean aggregation for the channel dimension.
+        scale_time: Reserved for a future time-normalization scheme.
+        scale_channels: Whether to scale each channel by its observation prevalence.
     """
-    assert x.ndim >= 1, "x must have at least one dimension"
+    if x.ndim < 1:
+        raise ValueError("x must have at least a time dimension.")
+
+    time_axis = normalize_dim(time_dim, x.ndim)
+    channel_axes = (
+        (normalize_dim(channel_dim, x.ndim),)
+        if isinstance(channel_dim, int)
+        else tuple(normalize_dim(dim, x.ndim) for dim in channel_dim)
+    )
+
+    if time_axis in channel_axes:
+        raise ValueError("time_dim and channel_dim must be disjoint.")
+    if len(set(channel_axes)) != len(channel_axes):
+        raise ValueError("channel_dim must not contain duplicate dimensions.")
+
+    def broadcast_channel_weight(weight: Tensor, /) -> Tensor:
+        if weight.ndim != len(channel_axes):
+            raise ValueError(f"Expected {weight.ndim=} to equal {len(channel_axes)=}")
+        shape = [1] * x.ndim
+        for dim, size in zip(channel_axes, weight.shape, strict=True):
+            shape[dim] = size
+        return weight.reshape(shape)
+
+    def broadcast_time_weight(weight: Tensor, /) -> Tensor:
+        time_axes = tuple(dim for dim in range(x.ndim) if dim not in channel_axes)
+        if weight.ndim > len(time_axes):
+            raise ValueError(f"Expected {weight.ndim=} to be at most {len(time_axes)=}")
+        shape = [1] * x.ndim
+        weight_axes = () if weight.ndim == 0 else time_axes[-weight.ndim :]
+        for dim, size in zip(weight_axes, weight.shape, strict=True):
+            shape[dim] = size
+        return weight.reshape(shape)
+
+    active = None if mask is None else torch.broadcast_to(mask, x.shape)
+
+    if p != p:
+        raise ValueError("p must not be NaN.")
+    if p == torch.inf:
+        raise NotImplementedError
+    if p == -torch.inf:
+        raise NotImplementedError
+    if p == 0.0:
+        raise NotImplementedError
+    if p > 0:  # p∈(0,∞)
+        values = x if active is None else torch.where(active, x, 0.0)
+        values = values.abs().pow(p)
+    else:  # p∈(-∞,0)
+        values = x if active is None else torch.where(active, x, 1.0)
+        values = values.abs().pow(p)
+        if active is not None:
+            values = torch.where(active, values, 0.0)
+
+    if time_weight is not None:
+        values = broadcast_time_weight(time_weight) * values
+    if channel_weight is not None:
+        values = broadcast_channel_weight(channel_weight) * values
+    if scale_channels:
+        count = (
+            x.new_tensor(x.shape[time_axis])
+            if active is None
+            else active.sum(dim=time_axis, keepdim=True).clamp_min(1)
+        )
+        values = values / count
+
+    # Reserved for a future time-normalization scheme. The prevalence scaling above
+    # already normalizes each channel over its observed time steps.
+    del scale_time
+    reduced = values.sum(dim=(time_axis, *channel_axes))
+    if active is None:
+        return reduced.pow(1 / p)
+
+    observed = active.any(dim=(time_axis, *channel_axes))
+    safe_reduced = torch.where(observed, reduced, torch.ones_like(reduced))
+    return torch.where(observed, safe_reduced.pow(1 / p), torch.zeros_like(reduced))
 
 
 def lp_loss(
@@ -126,6 +203,7 @@ def lp_loss(
         scale_time: Whether to sum or mean aggregation for the time dimension.
         scale_channels: Whether to sum or mean aggregation for the channel dimension.
     """
+    raise NotImplementedError
 
 
 def nd(

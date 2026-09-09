@@ -139,18 +139,20 @@ def lp_norm(
         case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
     # fmt: on
 
-    if p == torch.inf:  # noqa: SIM114
+    if p != p:
+        raise ValueError("p must not be NaN.")
+    if p == torch.inf:  # noqa: RET506
         raise NotImplementedError
-    elif p == -torch.inf:  # noqa: RET506
+    if p == -torch.inf:  # noqa: RET506
         raise NotImplementedError
-    elif p == 0.0:
+    if p == 0.0:
         # TODO: if scaled, use geometric mean.
         raise NotImplementedError
-    elif p > 0:
+    if p > 0:  # p∈(0,∞)
         if active is not None:
             x = torch.where(active, x, 0.0)
         s = x.abs().pow(p)
-    else:  # p<0
+    else:  # p∈(-∞,0)
         if active is not None:
             x = torch.where(active, x, 1.0)
         s = x.abs().pow(p)
