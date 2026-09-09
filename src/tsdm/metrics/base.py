@@ -228,7 +228,7 @@ class SequentialBaseMetric(nn.Module, SequentialMetric):
                 else channel_dim
             )
 
-        self.register_parameter("channel_weight", w)
+        self.register_parameter("channel_weights", w)
         self.time_dim = time_dim
         self.channel_dim = dim
         self.normalize_channels = bool(normalize)
