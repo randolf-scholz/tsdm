@@ -60,25 +60,6 @@ def normalize_dim(dim: int, ndim: int, /) -> int:
     return dim % ndim
 
 
-def reshape_weight(
-    weight: Tensor,
-    /,
-    *,
-    axes: tuple[int, ...],
-    ndim: int,
-    exact: bool = False,
-) -> Tensor:
-    r"""Reshape a weight tensor to align it with the specified axes."""
-    if weight.ndim > len(axes) or (exact and weight.ndim != len(axes)):
-        relation = "equal" if exact else "be at most"
-        raise ValueError(f"Expected {weight.ndim=} to {relation} {len(axes)=}")
-    weight_axes = () if weight.ndim == 0 else axes[-weight.ndim :]
-    shape = [1] * ndim
-    for axis, size in zip(weight_axes, weight.shape, strict=True):
-        shape[axis] = size
-    return weight.reshape(shape)
-
-
 def lp_norm(
     x: Tensor,  # Float[..., $N, *D]
     /,
@@ -117,16 +98,18 @@ def lp_norm(
         raise ValueError("x must have at least a time dimension.")
 
     time_axis = normalize_dim(time_dim, x.ndim)
-    channel_axes = (
+    ch_dims = (
         (normalize_dim(channel_dim, x.ndim),)
         if isinstance(channel_dim, int)
         else tuple(normalize_dim(dim, x.ndim) for dim in channel_dim)
     )
 
-    if time_axis in channel_axes:
+    if time_axis in ch_dims:
         raise ValueError("time_dim and channel_dim must be disjoint.")
-    if len(set(channel_axes)) != len(channel_axes):
+    if len(set(ch_dims)) != len(ch_dims):
         raise ValueError("channel_dim must not contain duplicate dimensions.")
+    if ch_dims != tuple(sorted(ch_dims)):
+        raise ValueError("channel_dim must be strictly increasing.")
 
     active = mask
 
@@ -147,36 +130,37 @@ def lp_norm(
         if active is not None:
             values = torch.where(active, values, 0.0)
 
-    if time_weight is not None:
-        time_axes = tuple(axis for axis in range(x.ndim) if axis not in channel_axes)
-        values = reshape_weight(time_weight, axes=time_axes, ndim=x.ndim) * values
-    if channel_weight is not None:
-        values = (
-            reshape_weight(
-                channel_weight,
-                axes=channel_axes,
-                ndim=x.ndim,
-                exact=True,
-            )
-            * values
-        )
+    if (w_t := time_weight) is not None:
+        time_axes = tuple(axis for axis in range(x.ndim) if axis not in ch_dims)
+        if w_t.ndim > len(time_axes):
+            raise ValueError(f"Expected {w_t.ndim=} to be at most {len(time_axes)=}")
+        dims = time_axes[-w_t.ndim :] if w_t.ndim else ()
+        w_t = w_t[*(slice(None) if d in dims else None for d in range(x.ndim))]
+        values = w_t * values
+
+    if (w_k := channel_weight) is not None:
+        if w_k.ndim != len(ch_dims):
+            raise ValueError(f"Expected {w_k.ndim=} to equal {len(ch_dims)=}")
+        w_k = w_k[*(slice(None) if d in ch_dims else None for d in range(x.ndim))]
+        values = w_k * values
+
     if scale_time:
         # Reserved for a future time-normalization scheme. The prevalence scaling above
         # already normalizes each channel over its observed time steps.
         pass
     if scale_channels:
         count = (
-            x.new_tensor(x.shape[time_axis])
+            x.new_tensor(x.shape[time_axis], dtype=torch.long)
             if active is None
             else active.sum(dim=time_axis, keepdim=True).clamp_min(1)
         )
         values = values / count
 
-    reduced = values.sum(dim=(time_axis, *channel_axes))
+    reduced = values.sum(dim=(time_axis, *ch_dims))
     if active is None:
         return reduced.pow(1 / p)
 
-    observed = active.any(dim=(time_axis, *channel_axes))
+    observed = active.any(dim=(time_axis, *ch_dims))
     safe_reduced = torch.where(observed, reduced, 1.0)
     return torch.where(observed, safe_reduced.pow(1 / p), 0.0)
 

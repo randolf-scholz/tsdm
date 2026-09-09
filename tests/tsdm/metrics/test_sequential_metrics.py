@@ -95,6 +95,21 @@ class TestLpNorm:
 
         torch.testing.assert_close(result, expected)
 
+    @pytest.mark.parametrize(
+        ("channel_dim", "time_dim"),
+        [((1, 0), -1), ((-1, -2), 0)],
+    )
+    def test_rejects_nonincreasing_channel_dimensions(
+        self,
+        channel_dim: tuple[int, ...],
+        time_dim: int,
+    ) -> None:
+        r"""Channel dimensions must follow their physical tensor-axis order."""
+        x = torch.ones(2, 3, 4)
+
+        with pytest.raises(ValueError, match="strictly increasing"):
+            lp_norm(x, time_dim=time_dim, channel_dim=channel_dim)
+
     @pytest.mark.parametrize("p", P_VALUES)
     def test_masks_values_and_preserves_gradients(self, p: float) -> None:
         r"""Masks exclude values while valid inputs and weights remain differentiable."""
@@ -153,6 +168,35 @@ class TestLpNorm:
             (torch.where(mask, x.abs().pow(p), 0.0) / counts)
             .sum(dim=(-2, -1))
             .pow(1 / p)
+        )
+
+        torch.testing.assert_close(result, expected)
+
+    @pytest.mark.parametrize("p", P_VALUES)
+    @pytest.mark.parametrize("scale_channels", [False, True])
+    def test_missing_mask_equals_all_observed_mask(
+        self,
+        p: float,
+        *,
+        scale_channels: bool,
+    ) -> None:
+        r"""An omitted mask treats every value as observed."""
+        x = torch.linspace(0.1, 2.4, 24).reshape(2, 3, 4)
+
+        result = lp_norm(
+            x,
+            p=p,
+            time_dim=-2,
+            channel_dim=-1,
+            scale_channels=scale_channels,
+        )
+        expected = lp_norm(
+            x,
+            p=p,
+            mask=torch.ones_like(x, dtype=torch.bool),
+            time_dim=-2,
+            channel_dim=-1,
+            scale_channels=scale_channels,
         )
 
         torch.testing.assert_close(result, expected)
