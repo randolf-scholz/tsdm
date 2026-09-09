@@ -212,6 +212,7 @@ def lp_loss(
     channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
+    relative: bool = False,
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted $p$-norm loss.
 
@@ -219,6 +220,19 @@ def lp_loss(
 
     ``channel_weight`` is applied within the $p$-norm along ``dim``. ``weight``
     is applied to the resulting per-sample losses before ``reduction``.
+
+    Args:
+        predictions: Predicted values.
+        targets: Target values.
+        p: Order of the norm.
+        dim: Tensor axes reduced within each sample.
+        mask: Boolean mask indicating valid values.
+        weight: Optional weights applied to the per-sample losses.
+        channel_weight: Optional weights applied within each sample norm.
+        reduction: Aggregation applied to the per-sample losses.
+        scaled: Whether to scale each norm by its number of active entries.
+        relative: If ``True``, divide each residual norm by the corresponding
+            target norm, computing $‖x̂ - x‖ₚ / ‖x‖ₚ$.
     """
     norms = lp_norm(
         predictions - targets,
@@ -228,6 +242,15 @@ def lp_loss(
         weight=channel_weight,
         scaled=scaled,
     )
+    if relative:
+        norms = norms / lp_norm(
+            targets,
+            p=p,
+            dim=dim,
+            mask=mask,
+            weight=channel_weight,
+            scaled=scaled,
+        )
     return _reduce_loss(norms, weight=weight, reduction=reduction)
 
 

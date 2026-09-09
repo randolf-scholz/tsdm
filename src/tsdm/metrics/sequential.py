@@ -245,6 +245,7 @@ def lp_loss(
     time_weight: Tensor | None = None,  # Float[..., $N]
     normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
     reduction: Reduction = Reduction.MEAN,
+    relative: bool = False,
 ) -> Tensor:  # Float[()]
     r"""Compute the reduced time-normalized $p$-norm of prediction residuals.
 
@@ -253,6 +254,20 @@ def lp_loss(
     The arguments other than ``predictions``, ``targets``, and ``reduction``
     are forwarded to :func:`lp_norm`. ``reduction`` aggregates over the batch
     dimensions of the resulting norms.
+
+    Args:
+        predictions: Predicted time series.
+        targets: Target time series.
+        p: Order of the norm.
+        mask: Boolean mask indicating valid values.
+        channel_dim: Tensor axes of the channel dimensions.
+        channel_weight: Optional weights applied within each channel norm.
+        time_dim: Tensor axis of the time dimension.
+        time_weight: Optional weights applied to time steps.
+        normalization: Time-series normalization applied within each norm.
+        reduction: Aggregation applied to the per-sequence losses.
+        relative: If ``True``, divide each residual norm by the corresponding
+            target norm, computing $‖x̂ - x‖ₚ / ‖x‖ₚ$.
     """
     norms = lp_norm(
         predictions - targets,
@@ -264,6 +279,17 @@ def lp_loss(
         time_weight=time_weight,
         normalization=normalization,
     )
+    if relative:
+        norms = norms / lp_norm(
+            targets,
+            p=p,
+            mask=mask,
+            channel_dim=channel_dim,
+            channel_weight=channel_weight,
+            time_dim=time_dim,
+            time_weight=time_weight,
+            normalization=normalization,
+        )
     match reduction:
         case Reduction.SUM:
             return norms.sum()

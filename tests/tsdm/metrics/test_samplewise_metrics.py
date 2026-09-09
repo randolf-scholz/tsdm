@@ -108,6 +108,32 @@ class TestLpNorm:
 
 
 class TestLpLoss:
+    @pytest.mark.parametrize("reduction", list(Reduction))
+    def test_relative_divides_residual_norm_by_target_norm(
+        self, reduction: Reduction
+    ) -> None:
+        r"""Relative losses are normalized separately for each sample."""
+        predictions = torch.tensor([[2.0, 4.0], [6.0, 12.0]])
+        targets = torch.tensor([[1.0, 2.0], [2.0, 4.0]])
+
+        result = lp_loss(
+            predictions=predictions,
+            targets=targets,
+            p=2.0,
+            reduction=reduction,
+            relative=True,
+        )
+        ratios = torch.linalg.vector_norm(
+            predictions - targets, dim=-1
+        ) / torch.linalg.vector_norm(targets, dim=-1)
+        expected = {
+            Reduction.NONE: ratios,
+            Reduction.SUM: ratios.sum(),
+            Reduction.MEAN: ratios.mean(),
+        }[reduction]
+
+        torch.testing.assert_close(result, expected)
+
     def test_masks_nan_targets_without_breaking_prediction_gradients(
         self,
     ) -> None:

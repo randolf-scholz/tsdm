@@ -314,6 +314,47 @@ class TestLpLoss:
     r"""Tests for sequential Lp losses."""
 
     @pytest.mark.parametrize("reduction", list(Reduction))
+    def test_relative_divides_residual_norm_by_target_norm(
+        self, reduction: Reduction
+    ) -> None:
+        r"""Relative losses are normalized separately for each sequence."""
+        predictions = torch.tensor(
+            [[[2.0, 4.0], [6.0, 8.0]], [[3.0, 6.0], [9.0, 12.0]]]
+        )
+        targets = torch.tensor([[[1.0, 2.0], [3.0, 4.0]], [[1.0, 2.0], [3.0, 4.0]]])
+
+        result = lp_loss(
+            predictions=predictions,
+            targets=targets,
+            p=2.0,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=None,
+            reduction=reduction,
+            relative=True,
+        )
+        ratios = lp_norm(
+            predictions - targets,
+            p=2.0,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=None,
+        ) / lp_norm(
+            targets,
+            p=2.0,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=None,
+        )
+        expected = {
+            Reduction.NONE: ratios,
+            Reduction.SUM: ratios.sum(),
+            Reduction.MEAN: ratios.mean(),
+        }[reduction]
+
+        torch.testing.assert_close(result, expected)
+
+    @pytest.mark.parametrize("reduction", list(Reduction))
     def test_matches_lp_norm_of_residuals(self, reduction: Reduction) -> None:
         r"""The loss wraps the corresponding norm and then reduces it."""
         predictions = torch.arange(24.0).reshape(2, 3, 4)
