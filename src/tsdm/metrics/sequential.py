@@ -39,11 +39,16 @@ __all__ = [
     "SequentialMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesRMSE",
+    "Normalization",
     "lp_norm",
+    "lp_loss",
     "nd",
     "nrmse",
     "q_quantile_loss",
 ]
+
+from enum import StrEnum
+from math import prod
 
 import torch
 from torch import Tensor
@@ -54,10 +59,62 @@ from .samplewise import q_quantile
 type Dim = int | tuple[int, ...] | None
 
 
-def normalize_dim(dim: int, ndim: int, /) -> int:
-    if not -ndim <= dim < ndim:
-        raise ValueError(f"Dimension {dim} is out of range for {ndim=}")
-    return dim % ndim
+class Normalization(StrEnum):
+    r"""Built-in normalization schemes for sequential norms."""
+
+    SEQUENCE_LENGTH = "sequence_length"
+    CHANNEL_PREVALENCE = "channel_prevalence"
+    TIMEPOINT_COVERAGE = "timepoint_coverage"
+    OBSERVATION_COUNT = "observation_count"
+
+    def compute_normalization(
+        self,
+        values: Tensor,
+        /,
+        *,
+        mask: Tensor | None,
+        time_dim: int,
+        channel_dims: tuple[int, ...],
+    ) -> Tensor | int:
+        match self:
+            case Normalization.SEQUENCE_LENGTH:
+                return (
+                    values.shape[time_dim]
+                    if mask is None
+                    else (
+                        mask.any(dim=channel_dims, keepdim=True)
+                        .sum(dim=time_dim, keepdim=True)
+                        .clamp_min(1)
+                    )
+                )
+
+            case Normalization.CHANNEL_PREVALENCE:
+                return (
+                    values.shape[time_dim]
+                    if mask is None
+                    else mask.sum(dim=time_dim, keepdim=True).clamp_min(1)
+                )
+
+            case Normalization.TIMEPOINT_COVERAGE:
+                return (
+                    values.shape[time_dim] * prod(values.shape[d] for d in channel_dims)
+                    if mask is None
+                    else (
+                        mask.any(dim=channel_dims, keepdim=True)
+                        .sum(dim=time_dim, keepdim=True)
+                        .mul(mask.sum(dim=channel_dims, keepdim=True))
+                        .clamp_min(1)
+                    )
+                )
+
+            case Normalization.OBSERVATION_COUNT:
+                return (
+                    values.shape[time_dim] * prod(values.shape[d] for d in channel_dims)
+                    if mask is None
+                    else mask.sum(
+                        dim=(time_dim, *channel_dims), keepdim=True
+                    ).clamp_min(1)
+                )
 
 
 def lp_norm(
@@ -70,64 +127,88 @@ def lp_norm(
     channel_weight: Tensor | None = None,  # Float[*D]
     time_dim: int,
     time_weight: Tensor | None = None,  # Float[..., $N]
-    scale_time: bool = True,
-    scale_channels: bool = False,
+    normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
 ) -> Tensor:  # Float[...]
     r"""Compute time-normalized lp-norm.
 
-    .. math:: ℓₚ(x) = ( ∑ₜ wₜᵗⁱᵐᵉ ∑ₖ wₖᶜʰsₖ ⟦ mₜₖ ? |xₜₖ|ᵖ : 0⟧ )^{1/p}
-
-    here, the scaling factors $sₙₖ$ should estimate the prevalence of the $k$-th channel.
-
-    - $sₖ = 1$ if ``scale_channels = False``
-    - $sₖ = (∑ₛmₛₖ)⁻¹$ if ``scale_channels = True``
+    .. math:: ℓₚ(x) = ( ∑ₜ wₜᵗⁱᵐᵉ ∑ₖ wₖᶜʰsₜₖ⁻¹ ⟦ mₜₖ ? |xₜₖ|ᵖ : 0⟧ )^{1/p}
 
     Args:
         x: Tensor of shape ``[..., $N, *D]``.
-        p: Finite, non-zero order of the norm.
+        p: Order of the norm. Note: $p∈\{0, ±∞\}$ are currently not implemented.
         mask: Boolean mask indicating valid values.
         time_dim: Required tensor axis of the time dimension.
         time_weight: Importance weight $wₜᵗⁱᵐᵉ$ for each time step.
         channel_dim: Required tensor axes of the channel dimensions. Use ``()``
             for an univariate time series.
         channel_weight: Importance weight $wₖᶜʰ$ for each channel.
-        scale_time: Reserved for a future time-normalization scheme.
-        scale_channels: Whether to scale each channel by its observation prevalence.
+        normalization: Normalization applied to the powered values. ``None``
+            performs no normalization ($sₜₖ=1$). The built-in schemes are:
+
+            - ``sequence_length``: Divide by the number of time steps with at
+              least one observed channel $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛ⋁ⱼmₛⱼ$.
+              Use it to give padded sequences equal weight regardless of their length.
+            - ``channel_prevalence``: Divide each channel by its number of observations
+              $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛmₛₖ$.
+              Use it to prevent frequently observed channels from dominating sparse channels.
+            - ``timepoint_coverage``: Divide by both sequence length and the
+              number of observed channels at each time step
+              $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ (∑ₛ⋁ⱼmₛⱼ)⋅(∑ⱼmₜⱼ)$.
+              Use it to give each observed time point equal weight.
+            - ``observation_count``: Divide by the total number of observed
+              values $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ ∑ₛⱼmₛⱼ$.
+              Use it to compute a global mean over observations.
+
+            A custom tensor is reserved for a future user-defined normalization
+            scheme and currently raises ``NotImplementedError``.
     """
-    time_axis = normalize_dim(time_dim, x.ndim)
-    ch_dims = (
-        (normalize_dim(channel_dim, x.ndim),)
-        if isinstance(channel_dim, int)
-        else tuple(normalize_dim(dim, x.ndim) for dim in channel_dim)
-    )
+    assert mask is None or mask.shape == x.shape
+    ch_dims = (channel_dim,) if isinstance(channel_dim, int) else channel_dim
+    if not all(-x.ndim <= d < x.ndim for d in (time_dim, *ch_dims)):
+        raise ValueError(f"channel or time dims are out of range for {x.ndim=}.")
+
+    # normalize
+    time_dim = time_dim % x.ndim
+    ch_dims = tuple(d % x.ndim for d in ch_dims)
 
     if x.ndim < 1:
         raise ValueError("x must have at least a time dimension.")
-    if time_axis in ch_dims:
+    if time_dim in ch_dims:
         raise ValueError("time_dim and channel_dim must be disjoint.")
     if len(set(ch_dims)) != len(ch_dims):
         raise ValueError("channel_dim must not contain duplicate dimensions.")
     if ch_dims != tuple(sorted(ch_dims)):
         raise ValueError("channel_dim must be strictly increasing.")
 
-    active = mask
+    match p:
+        case torch.inf:
+            raise NotImplementedError
+        case _ if p == -torch.inf:
+            raise NotImplementedError
+        case 0.0:
+            raise NotImplementedError
+        case _ if p > 0:  # p∈(0,∞)
+            values = x if mask is None else torch.where(mask, x, 0.0)
+            values = values.abs().pow(p)
+        case _ if p < 0:  # p∈(-∞,0)
+            values = x if mask is None else torch.where(mask, x, 1.0)
+            values = values.abs().pow(p)
+            if mask is not None:
+                values = torch.where(mask, values, 0.0)
+        case _:  # NAN
+            raise ValueError("p must not be NaN.")
 
-    if p != p:
-        raise ValueError("p must not be NaN.")
-    if p == torch.inf:
-        raise NotImplementedError
-    if p == -torch.inf:
-        raise NotImplementedError
-    if p == 0.0:
-        raise NotImplementedError
-    if p > 0:  # p∈(0,∞)
-        values = x if active is None else torch.where(active, x, 0.0)
-        values = values.abs().pow(p)
-    else:  # p∈(-∞,0)
-        values = x if active is None else torch.where(active, x, 1.0)
-        values = values.abs().pow(p)
-        if active is not None:
-            values = torch.where(active, values, 0.0)
+    match normalization:
+        case None:
+            pass
+        case Tensor():
+            raise NotImplementedError
+        case name:
+            scheme = Normalization(name)
+            normalizer = scheme.compute_normalization(
+                values, mask=mask, time_dim=time_dim, channel_dims=ch_dims
+            )
+            values = values / normalizer
 
     if (w_t := time_weight) is not None:
         time_axes = tuple(axis for axis in range(x.ndim) if axis not in ch_dims)
@@ -143,23 +224,11 @@ def lp_norm(
         w_k = w_k[*(slice(None) if d in ch_dims else None for d in range(x.ndim))]
         values = w_k * values
 
-    if scale_time:
-        # Reserved for a future time-normalization scheme. The prevalence scaling above
-        # already normalizes each channel over its observed time steps.
-        pass
-    if scale_channels:
-        count = (
-            x.new_tensor(x.shape[time_axis], dtype=torch.long)
-            if active is None
-            else active.sum(dim=time_axis, keepdim=True).clamp_min(1)
-        )
-        values = values / count
-
-    reduced = values.sum(dim=(time_axis, *ch_dims))
-    if active is None:
+    reduced = values.sum(dim=(time_dim, *ch_dims))
+    if mask is None:
         return reduced.pow(1 / p)
 
-    observed = active.any(dim=(time_axis, *ch_dims))
+    observed = mask.any(dim=(time_dim, *ch_dims))
     safe_reduced = torch.where(observed, reduced, 1.0)
     return torch.where(observed, safe_reduced.pow(1 / p), 0.0)
 

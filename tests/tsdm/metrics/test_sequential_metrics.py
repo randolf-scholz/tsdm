@@ -3,7 +3,7 @@ from math import prod
 import pytest
 import torch
 
-from tsdm.metrics.sequential import SequentialMSE, lp_norm
+from tsdm.metrics.sequential import Normalization, SequentialMSE, lp_norm
 
 BATCH_SHAPES = [
     (),
@@ -31,7 +31,13 @@ class TestLpNorm:
         r"""The unscaled sequential norm agrees with PyTorch."""
         x = torch.linspace(0.1, 2.4, 24, dtype=torch.float64).reshape(2, 3, 4)
 
-        result = lp_norm(x, p=p, time_dim=-2, channel_dim=-1)
+        result = lp_norm(
+            x,
+            p=p,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=None,
+        )
         expected = torch.linalg.vector_norm(x, ord=p, dim=(-2, -1))
 
         torch.testing.assert_close(result, expected)
@@ -51,7 +57,13 @@ class TestLpNorm:
         time_dim = -len(channel_shape) - 1
         channel_dim = tuple(range(-len(channel_shape), 0))
 
-        result = lp_norm(x, p=p, time_dim=time_dim, channel_dim=channel_dim)
+        result = lp_norm(
+            x,
+            p=p,
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            normalization=None,
+        )
         expected = torch.linalg.vector_norm(x, ord=p, dim=(time_dim, *channel_dim))
 
         assert result.shape == batch_shape
@@ -84,6 +96,7 @@ class TestLpNorm:
             time_dim=time_dim,
             channel_dim=channel_dim,
             channel_weight=channel_weight,
+            normalization=None,
         )
         expected = (
             x.abs()
@@ -138,6 +151,7 @@ class TestLpNorm:
             channel_dim=-1,
             time_weight=time_weight,
             channel_weight=channel_weight,
+            normalization=None,
         )
         expected = (
             (
@@ -160,8 +174,9 @@ class TestLpNorm:
         assert torch.equal(x.grad[~mask], torch.zeros_like(x.grad[~mask]))
 
     @pytest.mark.parametrize("p", P_VALUES)
-    def test_prevalence_scaling(self, p: float) -> None:
-        r"""Each channel is scaled by its number of observations, safely at zero."""
+    @pytest.mark.parametrize("normalization", Normalization)
+    def test_normalization(self, p: float, normalization: Normalization) -> None:
+        r"""Each normalization scheme uses its corresponding masked observation count."""
         x = torch.tensor([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]])
         mask = torch.tensor(
             [[[True, True, False], [True, False, False], [False, False, False]]]
@@ -173,9 +188,23 @@ class TestLpNorm:
             mask=mask,
             time_dim=-2,
             channel_dim=-1,
-            scale_channels=True,
+            normalization=normalization,
         )
-        counts = mask.sum(dim=-2, keepdim=True).clamp_min(1)
+        match normalization:
+            case Normalization.SEQUENCE_LENGTH:
+                counts = (
+                    mask.any(dim=-1, keepdim=True)
+                    .sum(dim=-2, keepdim=True)
+                    .clamp_min(1)
+                )
+            case Normalization.CHANNEL_PREVALENCE:
+                counts = mask.sum(dim=-2, keepdim=True).clamp_min(1)
+            case Normalization.TIMEPOINT_COVERAGE:
+                counts = mask.any(dim=-1, keepdim=True).sum(
+                    dim=-2, keepdim=True
+                ).clamp_min(1) * mask.sum(dim=-1, keepdim=True).clamp_min(1)
+            case Normalization.OBSERVATION_COUNT:
+                counts = mask.sum(dim=(-2, -1), keepdim=True).clamp_min(1)
         expected = (
             (torch.where(mask, x.abs().pow(p), 0.0) / counts)
             .sum(dim=(-2, -1))
@@ -184,13 +213,41 @@ class TestLpNorm:
 
         torch.testing.assert_close(result, expected)
 
+    def test_defaults_to_channel_prevalence_normalization(self) -> None:
+        r"""Channel-prevalence normalization is the default."""
+        x = torch.arange(1.0, 7.0).reshape(1, 2, 3)
+        mask = torch.tensor([[[True, False, True], [True, True, False]]])
+
+        result = lp_norm(x, mask=mask, time_dim=-2, channel_dim=-1)
+        expected = lp_norm(
+            x,
+            mask=mask,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=Normalization.CHANNEL_PREVALENCE,
+        )
+
+        torch.testing.assert_close(result, expected)
+
+    def test_custom_normalization_is_not_implemented(self) -> None:
+        r"""Custom normalization tensors are reserved for a future implementation."""
+        x = torch.ones(2, 3, 4)
+
+        with pytest.raises(NotImplementedError):
+            lp_norm(
+                x,
+                time_dim=-2,
+                channel_dim=-1,
+                normalization=torch.ones(1),
+            )
+
     @pytest.mark.parametrize("p", P_VALUES)
-    @pytest.mark.parametrize("scale_channels", [False, True])
+    @pytest.mark.parametrize("normalization", Normalization)
     def test_missing_mask_equals_all_observed_mask(
         self,
         p: float,
         *,
-        scale_channels: bool,
+        normalization: Normalization,
     ) -> None:
         r"""An omitted mask treats every value as observed."""
         x = torch.linspace(0.1, 2.4, 24).reshape(2, 3, 4)
@@ -200,7 +257,7 @@ class TestLpNorm:
             p=p,
             time_dim=-2,
             channel_dim=-1,
-            scale_channels=scale_channels,
+            normalization=normalization,
         )
         expected = lp_norm(
             x,
@@ -208,18 +265,30 @@ class TestLpNorm:
             mask=torch.ones_like(x, dtype=torch.bool),
             time_dim=-2,
             channel_dim=-1,
-            scale_channels=scale_channels,
+            normalization=normalization,
         )
 
         torch.testing.assert_close(result, expected)
 
     @pytest.mark.parametrize("p", P_VALUES)
-    def test_all_masked_values_return_zero(self, p: float) -> None:
+    @pytest.mark.parametrize("normalization", Normalization)
+    def test_all_masked_values_return_zero(
+        self,
+        p: float,
+        normalization: Normalization,
+    ) -> None:
         r"""An all-zero mask produces zero norms, including for negative orders."""
         x = torch.linspace(0.1, 2.4, 24).reshape(2, 3, 4)
         mask = torch.zeros_like(x, dtype=torch.bool)
 
-        result = lp_norm(x, p=p, mask=mask, time_dim=-2, channel_dim=-1)
+        result = lp_norm(
+            x,
+            p=p,
+            mask=mask,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=normalization,
+        )
 
         torch.testing.assert_close(result, torch.zeros_like(result))
 
