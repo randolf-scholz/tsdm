@@ -6,7 +6,7 @@ from math import pi, prod, sqrt
 import pytest
 import torch
 
-from tsdm.metrics import ND, BaseMetric, MAE_loss, MSE_Loss, RMSE_Loss
+from tsdm.metrics import ND, BaseMetric, MAE_Loss, MSE_Loss, RMSE_Loss
 from tsdm.metrics.sequential import nd
 
 BATCH_SHAPES = [
@@ -20,7 +20,7 @@ CHANNEL_SHAPES = [
     (5, 16),
 ]
 TIME_SHAPES = [(1,), (32,)]
-LOSSES = [MSE_Loss, RMSE_Loss, MAE_loss]
+LOSSES = [MSE_Loss, RMSE_Loss, MAE_Loss]
 
 
 @pytest.mark.parametrize("loss_func", [nd, ND()])
@@ -60,9 +60,9 @@ def test_loss_normalization(
         return
 
     expected = {
-        "MAE": 2 / sqrt(pi),
-        "MSE": 2,
-        "RMSE": sqrt(2),
+        "MAE_Loss": 2 / sqrt(pi),
+        "MSE_Loss": 2,
+        "RMSE_Loss": sqrt(2),
     }[loss.__name__]
     assert abs(result - expected) < rtol * abs(expected) + atol, (
         f"tolerance exceeded! {shape=}, {result=}, {expected=}"

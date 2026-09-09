@@ -144,7 +144,7 @@ class BaseMetric(nn.Module, Metric):
 
         self.scaled = bool(scaled)
         self.dim = (dim,) if isinstance(dim, int) else tuple(dim)
-        self.register_parameter("weight", w)
+        self.register_parameter("channel_weight", w)
 
     @abstractmethod
     def forward(

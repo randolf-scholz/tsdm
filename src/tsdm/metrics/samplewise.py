@@ -6,7 +6,7 @@ These metrics support missing values through the mask argument.
 __all__ = [
     "RMSE_Loss",
     "MSE_Loss",
-    "MAE_loss",
+    "MAE_Loss",
     "LP_Loss",
     "Q_Quantile",
     "Reduction",
@@ -385,7 +385,7 @@ class LP_Loss(BaseMetric):
         )
 
 
-class MAE_loss(BaseMetric):
+class MAE_Loss(BaseMetric):
     r"""Mean Absolute Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:

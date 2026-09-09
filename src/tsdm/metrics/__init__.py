@@ -88,7 +88,7 @@ r"""Dictionary of all available functional losses."""
 
 MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
     "LP_Loss"   : samplewise.LP_Loss,
-    "MAE_loss"  : samplewise.MAE_loss,
+    "MAE_loss"  : samplewise.MAE_Loss,
     "MSE_Loss"  : samplewise.MSE_Loss,
     "RMSE_Loss" : samplewise.RMSE_Loss,
 }  # fmt: skip
