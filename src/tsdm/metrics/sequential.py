@@ -94,9 +94,6 @@ def lp_norm(
         scale_time: Reserved for a future time-normalization scheme.
         scale_channels: Whether to scale each channel by its observation prevalence.
     """
-    if x.ndim < 1:
-        raise ValueError("x must have at least a time dimension.")
-
     time_axis = normalize_dim(time_dim, x.ndim)
     ch_dims = (
         (normalize_dim(channel_dim, x.ndim),)
@@ -104,6 +101,8 @@ def lp_norm(
         else tuple(normalize_dim(dim, x.ndim) for dim in channel_dim)
     )
 
+    if x.ndim < 1:
+        raise ValueError("x must have at least a time dimension.")
     if time_axis in ch_dims:
         raise ValueError("time_dim and channel_dim must be disjoint.")
     if len(set(ch_dims)) != len(ch_dims):
@@ -132,9 +131,9 @@ def lp_norm(
 
     if (w_t := time_weight) is not None:
         time_axes = tuple(axis for axis in range(x.ndim) if axis not in ch_dims)
-        if w_t.ndim > len(time_axes):
-            raise ValueError(f"Expected {w_t.ndim=} to be at most {len(time_axes)=}")
-        dims = time_axes[-w_t.ndim :] if w_t.ndim else ()
+        if not 1 <= w_t.ndim <= len(time_axes):
+            raise ValueError(f"Expected 1 <= {w_t.ndim=} <= {len(time_axes)=}")
+        dims = time_axes[-w_t.ndim :]
         w_t = w_t[*(slice(None) if d in dims else None for d in range(x.ndim))]
         values = w_t * values
 

@@ -110,6 +110,18 @@ class TestLpNorm:
         with pytest.raises(ValueError, match="strictly increasing"):
             lp_norm(x, time_dim=time_dim, channel_dim=channel_dim)
 
+    def test_rejects_scalar_time_weight(self) -> None:
+        r"""A time weight must include the time dimension."""
+        x = torch.ones(2, 3, 4)
+
+        with pytest.raises(ValueError, match=r"1 <= w_t.ndim"):
+            lp_norm(
+                x,
+                time_dim=-2,
+                channel_dim=-1,
+                time_weight=torch.tensor(1.0),
+            )
+
     @pytest.mark.parametrize("p", P_VALUES)
     def test_masks_values_and_preserves_gradients(self, p: float) -> None:
         r"""Masks exclude values while valid inputs and weights remain differentiable."""
