@@ -17,7 +17,7 @@ depends_on = [
     "tsdm.encoders",
     "tsdm.linalg",
     "tsdm.logutils",
-    "tsdm.metrics",
+    "tsdm.losses",
     "tsdm.random",
     "tsdm.tasks",
     "tsdm.timeseries",
@@ -63,10 +63,6 @@ path = "tsdm.viz"
 depends_on = []
 
 [[modules]]
-path = "tsdm.metrics"
-depends_on = ["tsdm.types"]
-
-[[modules]]
 path = "tsdm.random"
 depends_on = ["tsdm.types", "tsdm.datatools"]
 
@@ -87,7 +83,7 @@ depends_on = ["tsdm.datasets", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.logutils"
-depends_on = ["tsdm.types", "tsdm.metrics", "tsdm.viz", "tsdm.linalg", "tsdm.datatools"]
+depends_on = ["tsdm.types", "tsdm.losses", "tsdm.viz", "tsdm.linalg", "tsdm.datatools"]
 
 [[modules]]
 path = "tsdm.datasets"
@@ -104,7 +100,7 @@ depends_on = [
     "tsdm.datasets",
     "tsdm.datatools",
     "tsdm.encoders",
-    "tsdm.metrics",
+    "tsdm.losses",
     "tsdm.random",
     "tsdm.timeseries", "tsdm.types"
 ]
@@ -124,13 +120,13 @@ depends_on = [
 ]
 
 [[modules]]
-path = "numerical_types"
-depends_on = []
-
-[[modules]]
 path = "tsdm.pretrained"
 depends_on = ["tsdm.testing", "tsdm.encoders", "tsdm.types"]
 
 [[modules]]
 path = "tsdm.decorator"
 depends_on = ["tsdm.types"]
+
+[[modules]]
+path = "tsdm.losses"
+depends_on = []

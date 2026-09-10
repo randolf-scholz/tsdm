@@ -121,12 +121,12 @@ def lp_norm(
     x: Tensor,  # Float[..., $N, *D]
     /,
     *,
-    p: float = 2.0,
-    mask: Tensor | None = None,  # Bool[..., $N, *D]
-    channel_dim: int | tuple[int, ...],  # *D
-    channel_weight: Tensor | None = None,  # Float[*D]
     time_dim: int,
+    channel_dim: int | tuple[int, ...],  # *D
+    p: float = 2.0,
+    channel_weight: Tensor | None = None,  # Float[*D]
     time_weight: Tensor | None = None,  # Float[..., $N]
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
     normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
 ) -> Tensor:  # Float[...]
     r"""Compute time-normalized lp-norm.

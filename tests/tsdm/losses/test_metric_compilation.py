@@ -3,7 +3,7 @@ r"""Test compilation of all metrics."""
 import pytest
 import torch
 
-from tsdm.metrics import FUNCTIONAL_LOSSES
+from tsdm.losses import FUNCTIONAL_LOSSES
 
 
 @pytest.mark.parametrize("loss_name", FUNCTIONAL_LOSSES)

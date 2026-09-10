@@ -10,7 +10,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 import tsdm
 from tsdm.config import PROJECT
 from tsdm.logutils import BaseLogger, DefaultLogger, log_table
-from tsdm.metrics import MSE_Loss
+from tsdm.losses import MSE_Loss
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 

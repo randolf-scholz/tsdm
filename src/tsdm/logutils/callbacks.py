@@ -72,7 +72,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.metrics import Loss
+from tsdm.losses import Loss
 from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types import FilePath
 from tsdm.types.abc import MutSeq

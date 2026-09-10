@@ -7,13 +7,13 @@ import pytest
 import torch
 from torch.nn import functional
 
-from tsdm.metrics.samplewise import (
+from tsdm.losses.batch import rmse_loss
+from tsdm.losses.samplewise import (
     Reduction,
     lp_loss,
     lp_norm,
     mae_loss,
     mse_loss,
-    rmse_loss,
 )
 
 

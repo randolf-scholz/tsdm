@@ -3,8 +3,8 @@ from math import prod
 import pytest
 import torch
 
-from tsdm.metrics.samplewise import Reduction
-from tsdm.metrics.sequential import Normalization, SequentialMSE, lp_loss, lp_norm
+from tsdm.losses.samplewise import Reduction
+from tsdm.losses.sequential import Normalization, SequentialMSE, lp_loss, lp_norm
 
 BATCH_SHAPES = [
     (),

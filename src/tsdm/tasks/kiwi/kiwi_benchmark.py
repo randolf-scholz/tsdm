@@ -32,7 +32,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.encoders.pandas import FrameAsTensorDict, FrameEncoder
-from tsdm.metrics import SequentialMSE
+from tsdm.losses import SequentialMSE
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask

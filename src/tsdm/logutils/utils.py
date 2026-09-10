@@ -20,7 +20,7 @@ from torch import Tensor, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from tsdm.metrics import LOSSES, Loss
+from tsdm.losses import LOSSES, Loss
 from tsdm.types.aliases import FilePath
 
 

@@ -60,7 +60,7 @@ __all__ = [
 ]
 
 
-from . import base, samplewise, sequential
+from . import base, batch, samplewise, sequential
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -79,7 +79,7 @@ __all__ += sequential.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
     "nd"              : sequential.nd,
-    "rmse"            : samplewise.rmse_loss,
+    "rmse"            : batch.rmse_loss,
     "nrmse"           : sequential.nrmse,
     "q_quantile"      : samplewise.quantile_error,
     "q_quantile_loss" : sequential.q_quantile_loss,
@@ -90,7 +90,7 @@ MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
     "LP_Loss"   : samplewise.LP_Loss,
     "MAE_loss"  : samplewise.MAE_Loss,
     "MSE_Loss"  : samplewise.MSE_Loss,
-    "RMSE_Loss" : samplewise.RMSE_Loss,
+    "RMSE_Loss" : batch.RMSE_Loss,
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 

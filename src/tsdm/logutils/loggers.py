@@ -70,7 +70,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import UNDEFINED
-from tsdm.metrics import Loss
+from tsdm.losses import Loss
 from tsdm.pprint import pprint_mapping, pprint_repr
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
