@@ -65,7 +65,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
-rev = "0.12.7"
+rev = "0.12.9"
 hooks = [
     { id = "uv-lock" },
     {
@@ -188,7 +188,6 @@ hooks = [
     {
         id = "pyright-concise",
         files = "^src/|^tests/",
-        exclude = "^tests/(numerical_types|third_party)"
     }
 ]
 
@@ -202,7 +201,6 @@ hooks = [
         require_serial = true,
         types_or = ["python", "pyi"],
         files = "^src/|^tests/",
-        exclude = "^tests/(numerical_types|third_party)",
         entry = "pyrefly",
         args = ["check", "--output-format=min-text", "--"]
     },
@@ -213,7 +211,6 @@ hooks = [
         require_serial = true,
         types_or = ["python", "pyi"],
         files = "^src/|^tests/",
-        exclude = "^tests/(numerical_types|third_party)",
         entry = "mypy",
         stages = ["manual"],
         args = [
