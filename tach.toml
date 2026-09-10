@@ -18,13 +18,17 @@ depends_on = [
     "tsdm.linalg",
     "tsdm.logutils",
     "tsdm.losses",
+    "tsdm.pretrained",
     "tsdm.random",
     "tsdm.tasks",
     "tsdm.timeseries",
     "tsdm.types",
     "tsdm.viz",
-    "tsdm.pretrained"
 ]
+
+[[modules]]
+path = "tsdm.backend"
+depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.config"
@@ -37,55 +41,6 @@ depends_on = []
 utility = true
 
 [[modules]]
-path = "tsdm.types"
-depends_on = []
-
-[[modules]]
-path = "tsdm.testing"
-depends_on = ["tsdm.types", "tsdm.datatools"]
-
-[[modules]]
-path = "tsdm.pprint"
-depends_on = ["tsdm.types", "tsdm.testing", "tsdm.decorator", "tsdm.datatools"]
-utility = true
-
-[[modules]]
-path = "tsdm.utils"
-depends_on = ["tsdm.types", "tsdm.testing"]
-utility = true
-
-[[modules]]
-path = "tsdm.backend"
-depends_on = ["tsdm.types"]
-
-[[modules]]
-path = "tsdm.viz"
-depends_on = []
-
-[[modules]]
-path = "tsdm.random"
-depends_on = ["tsdm.types", "tsdm.datatools"]
-
-[[modules]]
-path = "tsdm.encoders"
-depends_on = [
-    "tsdm.types",
-    "tsdm.encoders.universal", "tsdm.testing",
-]
-
-[[modules]]
-path = "tsdm.linalg"
-depends_on = ["tsdm.types"]
-
-[[modules]]
-path = "tsdm.timeseries"
-depends_on = ["tsdm.datasets", "tsdm.datatools"]
-
-[[modules]]
-path = "tsdm.logutils"
-depends_on = ["tsdm.types", "tsdm.losses", "tsdm.viz", "tsdm.linalg", "tsdm.datatools"]
-
-[[modules]]
 path = "tsdm.datasets"
 depends_on = [
     "tsdm.datatools",
@@ -95,6 +50,82 @@ depends_on = [
 ]
 
 [[modules]]
+path = "tsdm.datatools"
+depends_on = [
+    "tsdm.backend",
+    "tsdm.types",
+]
+
+[[modules]]
+path = "tsdm.decorator"
+depends_on = ["tsdm.types"]
+
+[[modules]]
+path = "tsdm.encoders"
+depends_on = [
+    "tsdm.encoders.universal",
+    "tsdm.testing",
+    "tsdm.types",
+]
+
+[[modules]]
+path = "tsdm.encoders.universal"
+depends_on = [
+    "tsdm.backend",
+    "tsdm.datatools",
+    "tsdm.encoders",
+    "tsdm.linalg",
+    "tsdm.types",
+]
+
+[[modules]]
+path = "tsdm.linalg"
+depends_on = ["tsdm.types"]
+
+[[modules]]
+path = "tsdm.logutils"
+depends_on = [
+    "tsdm.datatools",
+    "tsdm.linalg",
+    "tsdm.losses",
+    "tsdm.types",
+    "tsdm.viz",
+]
+
+[[modules]]
+path = "tsdm.losses"
+depends_on = []
+
+[[modules]]
+path = "tsdm.pretrained"
+depends_on = [
+    "tsdm.testing",
+    "tsdm.encoders",
+    "tsdm.types",
+]
+
+[[modules]]
+path = "tsdm.pprint"
+depends_on = [
+    "tsdm.types",
+    "tsdm.testing",
+    "tsdm.decorator",
+    "tsdm.datatools",
+]
+utility = true
+
+[[modules]]
+path = "tsdm.random"
+depends_on = [
+    "tsdm.datatools",
+    "tsdm.types",
+]
+
+[[modules]]
+path = "tsdm.testing"
+depends_on = ["tsdm.types", "tsdm.datatools"]
+
+[[modules]]
 path = "tsdm.tasks"
 depends_on = [
     "tsdm.datasets",
@@ -102,31 +133,29 @@ depends_on = [
     "tsdm.encoders",
     "tsdm.losses",
     "tsdm.random",
-    "tsdm.timeseries", "tsdm.types"
+    "tsdm.timeseries",
+    "tsdm.types",
 ]
 
-
 [[modules]]
-path = "tsdm.datatools"
-depends_on = ["tsdm.types", "tsdm.backend"]
-
-[[modules]]
-path = "tsdm.encoders.universal"
+path = "tsdm.timeseries"
 depends_on = [
-    "tsdm.backend",
-    "tsdm.encoders",
-    "tsdm.linalg",
-    "tsdm.types", "tsdm.datatools",
+    "tsdm.datasets",
+    "tsdm.datatools",
 ]
 
 [[modules]]
-path = "tsdm.pretrained"
-depends_on = ["tsdm.testing", "tsdm.encoders", "tsdm.types"]
+path = "tsdm.types"
+depends_on = []
 
 [[modules]]
-path = "tsdm.decorator"
-depends_on = ["tsdm.types"]
+path = "tsdm.utils"
+depends_on = [
+    "tsdm.types",
+    "tsdm.testing",
+]
+utility = true
 
 [[modules]]
-path = "tsdm.losses"
+path = "tsdm.viz"
 depends_on = []
