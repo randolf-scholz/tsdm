@@ -6,8 +6,8 @@ import pyarrow as pa
 import pytest
 import torch
 
-from numerical_types import SupportsShape
 from tsdm.backend.generic import is_singleton
+from tsdm.types import SupportsShape
 
 CASES: dict[str, tuple[SupportsShape, bool]] = {
     "ndarray-()"       : (np.array(1)                        , True),

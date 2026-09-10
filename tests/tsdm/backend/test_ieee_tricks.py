@@ -10,12 +10,13 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 `is_nan` can be tested via `x != x`.
 """
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import pytest
 import torch
 
-from numerical_types import FloatSeries as Array
 from tsdm.backend.generic import false_like, true_like
 from tsdm.types.callbacks import SelfMap
 
@@ -33,7 +34,7 @@ TIME = np.array(DATA) * np.timedelta64(1, "s")
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_make_ones_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_make_ones_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -57,7 +58,7 @@ def test_make_ones_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> 
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_zeros_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_zeros_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -86,7 +87,7 @@ def test_zeros_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_true_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_true_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
@@ -113,7 +114,7 @@ def test_true_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_false_like[T: Array](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_false_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:
