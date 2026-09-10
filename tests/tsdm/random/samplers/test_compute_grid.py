@@ -3,7 +3,7 @@ r"""Test compute_grid function."""
 import logging
 import math
 from datetime import datetime as py_dt, timedelta as py_td
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import pandas as pd
 import pytest
@@ -14,11 +14,15 @@ from numpy import (
     timedelta64 as np_td,
 )
 
-from numerical_types.scalars import SpanLikeScalar, TimeLikeScalar
 from tsdm.datatools import timedelta as pd_td, timestamp as pd_dt
 from tsdm.random.samplers import compute_grid
 
 __logger__ = logging.getLogger(__name__)
+
+
+# TODO: consider using numerical_types scalars
+type SpanLikeScalar = Any
+type TimeLikeScalar[SpanT] = Any
 
 
 # FIXME: Use PEP 696 with python 3.13

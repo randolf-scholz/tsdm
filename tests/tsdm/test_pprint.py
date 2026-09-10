@@ -10,7 +10,6 @@ import polars as pl
 import pytest
 import torch
 
-from numerical_types import SupportsArray
 from tsdm.pprint import (
     INDENT,
     repr_array,
@@ -21,6 +20,7 @@ from tsdm.pprint import (
     repr_sequence,
     repr_set,
 )
+from tsdm.types import SupportsArray
 from tsdm.types.dataclass import Dataclass
 from tsdm.types.namedtuple import NTuple
 
