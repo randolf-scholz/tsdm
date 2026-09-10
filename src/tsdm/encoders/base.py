@@ -1827,7 +1827,7 @@ class Replicate[
         if num < 0:
             raise ValueError(f"n must be non-negative, got {num}")
 
-        self.kind = type(encoder)  # pyrefly: ignore[bad-assignment]
+        self.kind = type(encoder)
         self.num = num
         super().__init__([deepcopy(encoder) for _ in range(num)])
         assert len(self) == num
@@ -2474,7 +2474,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
             *(deepcopy(encoder) for _ in range(num)),
             reduction=reduction,
         )
-        self.kind = type(self[0]) if self else Encoder  # pyrefly: ignore[bad-assignment]
+        self.kind = type(self[0]) if self else Encoder  # type: ignore[assignment]
         self.num = num
 
     @classmethod

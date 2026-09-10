@@ -1057,7 +1057,7 @@ def test_points_single() -> None:
         assert np.array_equal(m1, m2)
 
     # try with drop_last=True
-    sampler.drop_last = True  # pyrefly: ignore[missing-attribute]
+    sampler.drop_last = True
     for m1, m2 in zip(
         sampler,
         [
@@ -1143,7 +1143,7 @@ def test_masks_single() -> None:
     )
 
     # try with drop_last=True
-    sampler.drop_last = True  # pyrefly: ignore[missing-attribute]
+    sampler.drop_last = True
     assert all(
         np.array_equal(m1, m2)
         for m1, m2 in zip(
@@ -1236,7 +1236,7 @@ def test_bounds_single() -> None:
     ]
 
     # try with drop_last=True
-    sampler.drop_last = True  # pyrefly: ignore[missing-attribute]
+    sampler.drop_last = True
     assert list(sampler) == [
         (11, 14),
         (13, 16),
@@ -1302,7 +1302,7 @@ def test_slices_single() -> None:
     ]
 
     # try with drop_last=True
-    sampler.drop_last = True  # pyrefly: ignore[missing-attribute]
+    sampler.drop_last = True
     assert list(sampler) == [
         slice(11, 14, None),
         slice(13, 16, None),
