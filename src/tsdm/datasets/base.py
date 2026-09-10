@@ -7,7 +7,7 @@ r"""Base Classes for dataset."""
 __all__ = [
     # ABCs & Protocols
     "Dataset",
-    "DatasetBase",
+    "BaseDataset",
     "DatasetMeta",
     "PolarsDataset",
 ]
@@ -151,7 +151,7 @@ class DatasetMeta(ProtocolMeta):
         return obj
 
     @staticmethod
-    def _initialize(obj: DatasetBase, /) -> None:
+    def _initialize(obj: BaseDataset, /) -> None:
         r"""Initialize a dataset instance after post-initialization."""
         if not (hasattr(obj, "verbose") and hasattr(obj, "initialize")):
             raise RuntimeError(
@@ -166,7 +166,7 @@ class DatasetMeta(ProtocolMeta):
             obj.load(initializing=True)
 
 
-class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, +T
+class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, +T
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -986,7 +986,7 @@ class DatasetBase[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     # endregion validation methods -----------------------------------------------------
 
 
-class PolarsDataset[Key: str](DatasetBase[Key, pl.DataFrame]):
+class PolarsDataset[Key: str](BaseDataset[Key, pl.DataFrame]):
     r"""Dataset base class storing eager Polars tables as parquet files."""
 
     @staticmethod
@@ -1024,5 +1024,5 @@ if TYPE_CHECKING:
     # ensure base classes are compatible with protocols
     # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
 
-    def _upcast[K: str, T](arg: DatasetBase[K, T], /) -> Dataset[K, T]:
+    def _upcast[K: str, T](arg: BaseDataset[K, T], /) -> Dataset[K, T]:
         return arg

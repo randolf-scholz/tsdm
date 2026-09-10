@@ -47,7 +47,7 @@ from tsdm.datatools import validate_schema
 from tsdm.testing.validation import validate_file_hash
 from tsdm.utils import remote
 
-from .base import DatasetBase
+from .base import BaseDataset
 
 type MIMIC_III_Key = Literal[
     "SHA256SUMS",
@@ -477,7 +477,7 @@ SCHEMAS: dict[MIMIC_III_Key, dict[str, pl.DataType]] = {
 }  # fmt: skip
 
 
-class MIMIC_III(DatasetBase[MIMIC_III_Key, pl.LazyFrame]):
+class MIMIC_III(BaseDataset[MIMIC_III_Key, pl.LazyFrame]):
     r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data

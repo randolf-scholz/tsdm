@@ -84,7 +84,7 @@ from zipfile import ZipFile
 
 import polars as pl
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import BaseDataset
 from tsdm.datatools import validate_schema
 from tsdm.testing.validation import validate_file_hash
 from tsdm.utils import remote
@@ -616,7 +616,7 @@ SCHEMAS: dict[MIMIC_IV_Key, dict[str, pl.DataType]] = {
 # endregion schema ---------------------------------------------------------------------
 
 
-class MIMIC_IV(DatasetBase[MIMIC_IV_Key, pl.LazyFrame]):
+class MIMIC_IV(BaseDataset[MIMIC_IV_Key, pl.LazyFrame]):
     r"""Raw version of the MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
