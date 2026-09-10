@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from numerical_types.scalars import (
+from experimental.numerical_types.scalars import (
     AdditiveScalar,
     BoolScalar,
     ComplexScalar,
@@ -20,7 +20,7 @@ from numerical_types.scalars import (
     TimeLikeScalar,
 )
 from test_utils.assertions import check_shared_interface
-from tests.numerical_types.fixtures import (
+from experimental.tests.fixtures import (
     BOOL as PY_BOOL,
     COMPLEX as PY_COMPLEX,
     FLOAT as PY_FLOAT,

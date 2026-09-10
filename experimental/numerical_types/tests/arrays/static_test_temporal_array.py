@@ -1,7 +1,7 @@
 import datetime as dt
 
-from numerical_types import SpanLikeArray, TimeLikeArray
-from tests.numerical_types.fixtures import ARRAYS1D
+from experimental.numerical_types import SpanLikeArray, TimeLikeArray
+from experimental.tests.fixtures import ARRAYS1D
 
 
 class TestTimeLikeArrayAssignments:

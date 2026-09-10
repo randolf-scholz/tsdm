@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 import pytest
 
-from numerical_types import (
+from experimental.numerical_types import (
     DatetimeArray,
     SpanLikeArray,
     SpanLikeScalar,
@@ -14,7 +14,7 @@ from numerical_types import (
     TimeLikeScalar,
 )
 from test_utils import pytest_xfail
-from tests.numerical_types.fixtures import ARRAYS1D, SCALARS
+from experimental.tests.fixtures import ARRAYS1D, SCALARS
 
 # region setup -------------------------------------------------------------------------
 type KEY_NP = Literal["numpy[np_float]", "numpy[np_int]", "numpy[np_time]"]

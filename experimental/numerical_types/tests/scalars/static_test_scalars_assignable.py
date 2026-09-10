@@ -4,7 +4,7 @@ r"""Tests for `tsdm.types.scalars`."""
 from datetime import datetime, timedelta
 from typing import Any, Never
 
-from numerical_types.scalars import (
+from experimental.numerical_types.scalars import (
     BoolScalar,
     ComplexScalar,
     DatetimeScalar,
@@ -15,7 +15,7 @@ from numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-from tests.numerical_types.fixtures import SCALARS, types0d as t
+from experimental.tests.fixtures import SCALARS, types0d as t
 
 
 class TestBooleanAssignable:

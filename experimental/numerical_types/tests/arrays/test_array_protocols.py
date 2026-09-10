@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from numerical_types import (
+from experimental.numerical_types import (
     BooleanArray,
     ComplexArray,
     FloatArray,
@@ -13,7 +13,7 @@ from numerical_types import (
     SpanLikeArray,
     TimeLikeArray,
 )
-from tests.numerical_types.fixtures import (
+from experimental.tests.fixtures import (
     ARRAYS1D,
     BOOL,
     COMPLEX,

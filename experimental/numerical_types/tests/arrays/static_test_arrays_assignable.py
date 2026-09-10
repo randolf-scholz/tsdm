@@ -4,8 +4,8 @@ r"""Static type tests for Numerical Array assignments."""
 from datetime import datetime, timedelta
 from typing import Any, Never, reveal_type
 
-from numerical_types import SpanLikeScalar, TimeLikeScalar
-from numerical_types.arrays import (
+from experimental.numerical_types import SpanLikeScalar, TimeLikeScalar
+from experimental.numerical_types import (
     BooleanArray,
     ComplexArray,
     DatetimeArray,
@@ -15,7 +15,7 @@ from numerical_types.arrays import (
     TimedeltaArray,
     TimeLikeArray,
 )
-from tests.numerical_types.fixtures import ARRAYS1D, types0d
+from experimental.tests.fixtures import ARRAYS1D, types0d
 
 
 class TestContravariance:

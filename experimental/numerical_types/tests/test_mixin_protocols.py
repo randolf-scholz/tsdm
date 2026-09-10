@@ -2,8 +2,7 @@ r"""Test other protocols."""
 
 import numpy as np
 import pytest
-
-from numerical_types import (
+from experimental.numerical_types import (
     SupportsArray,
     SupportsArrayUfunc,
     SupportsComparison,
@@ -15,6 +14,7 @@ from numerical_types import (
     SupportsNdim,
     SupportsShape,
 )
+
 from tests.test_utils.assertions import assert_protocol
 
 from .fixtures import ARRAYS1D, ARRAYS2D, SERIES, TABLES
@@ -58,7 +58,7 @@ def test_supports_array(name: str) -> None:
     r"""Test the SupportsArray protocol."""
     obj = TEST_ARRAYS[name]
     assert_protocol(obj, SupportsArray)
-    assert issubclass(obj.__class__, SupportsArray)  # pyrefly: ignore[unsafe-overlap]
+    assert issubclass(obj.__class__, SupportsArray)
     assert isinstance(obj.__array__(), np.ndarray)
 
 

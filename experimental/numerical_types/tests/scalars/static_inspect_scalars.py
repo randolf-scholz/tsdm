@@ -4,7 +4,7 @@ r"""Inspection tests for scalar types."""
 from datetime import datetime, timedelta
 from typing import assert_type, reveal_type
 
-from numerical_types import (
+from experimental.numerical_types import (
     BoolScalar,
     ComplexScalar,
     DatetimeScalar,
@@ -14,7 +14,7 @@ from numerical_types import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-from tests.numerical_types.fixtures import SCALARS, types0d
+from experimental.tests.fixtures import SCALARS, types0d
 
 type np_float = types0d.np.float
 type np_int = types0d.np.int

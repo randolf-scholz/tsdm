@@ -30,7 +30,11 @@ However, there are several limitations that make this difficult or impossible:
 
   ```python
   from typing import overload
+
+
   class Duration: ...
+
+
   class Timestamp:
       @overload
       def __sub__(self, other: Duration) -> Timestamp: ...
@@ -42,7 +46,11 @@ However, there are several limitations that make this difficult or impossible:
 
   ```python
   from typing import overload
+
+
   class Duration: ...
+
+
   class Timestamp:
       @overload
       def __sub__(self, other: Timestamp) -> Duration: ...
@@ -61,6 +69,8 @@ However, there are several limitations that make this difficult or impossible:
   # protocol needs to know the "partner" type (ndarray[bool] for ndarray[float],
   # Tensor[bool] for Tensor[float], etc.) for boolean operations.
   class FloatArray[MaskType: Boolarray]: ...
+
+
   def positive_values[Ret: BoolArray, Arg: FloatArray[Ret]](arg: Arg) -> Ret:
       return arg > 0
   ```
