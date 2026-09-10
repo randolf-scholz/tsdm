@@ -11,11 +11,11 @@ from numpy.typing import ArrayLike, NDArray
 from tsdm.random.distributions import Dirichlet
 from tsdm.types.aliases import Size
 
-from .base import IVP_GeneratorBase
+from .base import BaseIVP_Generator
 
 
 @dataclass(slots=True)
-class SIR(IVP_GeneratorBase):
+class SIR(BaseIVP_Generator):
     r"""SIR model from epidemiology.
 
     .. math::

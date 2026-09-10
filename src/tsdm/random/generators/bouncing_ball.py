@@ -20,11 +20,11 @@ from scipy.stats import truncnorm
 
 from tsdm.types.aliases import Size
 
-from .base import IVP_GeneratorBase
+from .base import BaseIVP_Generator
 
 
 @dataclass(slots=True)
-class BouncingBall(IVP_GeneratorBase):
+class BouncingBall(BaseIVP_Generator):
     r"""Bouncing Ball Simulation.
 
     NOTE: This simulation differs from the reference in two regards:

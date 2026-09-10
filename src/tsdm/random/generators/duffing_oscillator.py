@@ -7,11 +7,11 @@ from dataclasses import KW_ONLY, dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from .base import IVP_GeneratorBase
+from .base import BaseIVP_Generator
 
 
 @dataclass(slots=True)
-class DuffingOscillator(IVP_GeneratorBase):
+class DuffingOscillator(BaseIVP_Generator):
     r"""Duffing Oscillator Simulation.
 
     References:

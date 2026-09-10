@@ -11,11 +11,11 @@ from scipy.stats import multivariate_normal
 from tsdm.random.distributions import RV
 from tsdm.types.aliases import Size
 
-from .base import IVP_GeneratorBase
+from .base import BaseIVP_Generator
 
 
 @dataclass(slots=True)
-class Helix(IVP_GeneratorBase):
+class Helix(BaseIVP_Generator):
     r"""Helix Motion Simulation.
 
     The particle moves at constant speed in the given direction, and follows a circular path

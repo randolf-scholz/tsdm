@@ -27,7 +27,7 @@ __all__ = [
     "IVP_Solver",
     "ODE",
     # Classes
-    "IVP_GeneratorBase",
+    "BaseIVP_Generator",
     "ScipyIVPSolver",
     # Functions
     "solve_ivp",
@@ -234,7 +234,7 @@ class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
     # endregion mixin methods ----------------------------------------------------------
 
 
-class IVP_GeneratorBase(IVP_Generator[NDArray]):
+class BaseIVP_Generator(IVP_Generator[NDArray]):
     r"""Base class for IVP_Generators based on numpy."""
 
     rng: Generator = RNG

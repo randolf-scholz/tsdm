@@ -15,11 +15,11 @@ from scipy.stats import norm as univariate_normal, truncnorm
 from tsdm.random.distributions import RV
 from tsdm.types.aliases import Size
 
-from .base import IVP_GeneratorBase
+from .base import BaseIVP_Generator
 
 
 @dataclass(slots=True)
-class DampedPendulum(IVP_GeneratorBase):
+class DampedPendulum(BaseIVP_Generator):
     r"""Dampened Pendulum Simulation.
 
     The dampended pendulum is an autonomous system with two degrees of freedom.

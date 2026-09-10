@@ -16,11 +16,11 @@ from scipy.stats import norm as univariate_normal, uniform
 from tsdm.random.distributions import RV
 from tsdm.types.aliases import Size
 
-from .base import IVP_GeneratorBase
+from .base import BaseIVP_Generator
 
 
 @dataclass(slots=True)
-class LotkaVolterra(IVP_GeneratorBase):
+class LotkaVolterra(BaseIVP_Generator):
     r"""Lotka-Volterra Equations Simulation.
 
     The Lotka–Volterra equations, also known as the predator–prey equations, are a pair of
