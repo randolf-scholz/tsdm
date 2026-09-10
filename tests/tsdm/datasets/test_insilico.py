@@ -4,7 +4,7 @@ import logging
 
 import polars as pl
 
-from tsdm.datasets import Dataset, DatasetBase, InSilico
+from tsdm.datasets import BaseDataset, Dataset, InSilico
 from tsdm.utils import timer
 
 __logger__ = logging.getLogger(__name__)
@@ -53,4 +53,4 @@ def test_dataset_protocol() -> None:
     LOGGER.info("Testing attributes.")
     ds = InSilico()
     assert isinstance(ds, Dataset)
-    assert isinstance(ds, DatasetBase)
+    assert isinstance(ds, BaseDataset)

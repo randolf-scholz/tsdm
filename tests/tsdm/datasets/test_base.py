@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from tsdm.datasets.base import DatasetBase
+from tsdm.datasets.base import BaseDataset
 from tsdm.testing.validation import ErrorHandler, ValidationError
 
 
-class DummyDataset(DatasetBase[str, object]):
+class DummyDataset(BaseDataset[str, object]):
     r"""Concrete dataset implementation for raw-data validation tests."""
 
     rawdata_files = []
@@ -27,7 +27,7 @@ class DummyDataset(DatasetBase[str, object]):
 def test_dataset_required_attributes_determine_abstractness() -> None:
     r"""Datasets are abstract until both required attributes are available."""
 
-    class DatasetImplementation(DatasetBase[str, object]):
+    class DatasetImplementation(BaseDataset[str, object]):
         def store_table(self, _key: str, _table: object, /) -> None:
             pass
 

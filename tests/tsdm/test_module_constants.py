@@ -8,7 +8,7 @@ from typing import NamedTuple, is_protocol
 import pytest
 
 import tsdm
-from tsdm.datasets import DATASETS, Dataset, DatasetBase
+from tsdm.datasets import DATASETS, BaseDataset, Dataset
 from tsdm.encoders import ENCODERS, BaseEncoder, Encoder
 from tsdm.logutils import (
     CALLBACKS,
@@ -28,7 +28,7 @@ from tsdm.losses import (
     Loss,
 )
 from tsdm.losses.base import BaseSequenceLoss, SequenceLoss
-from tsdm.random.generators import GENERATORS, IVP_Generator, IVP_GeneratorBase
+from tsdm.random.generators import GENERATORS, BaseIVP_Generator, IVP_Generator
 from tsdm.random.samplers import SAMPLERS, BaseSampler, Sampler
 
 
@@ -42,21 +42,16 @@ class Case(NamedTuple):
 
 
 CASES: dict[str, Case] = {
-    "callbacks"      : Case(tsdm.logutils          , Callback          , BaseCallback       , CALLBACKS           ),
-    "datasets"       : Case(tsdm.datasets          , Dataset           , DatasetBase        , DATASETS            ),
-    "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS            ),
-    "generators"     : Case(tsdm.random.generators , IVP_Generator     , IVP_GeneratorBase  , GENERATORS          ),
-    "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
-    # "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
-    "metrics     "   : Case(tsdm.losses, Loss, BaseLoss, MODULAR_LOSSES),
-    "metrics_time"   : Case(tsdm.losses, SequenceLoss, BaseSequenceLoss, TIMESERIES_LOSSES),
-    # "models"         : Case(tsdm.models            , ForecastingModel  , BaseModel          , MODELS              ),
-    # "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
-    "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS            ),
-    "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS            ),
-    # "decorators_cls" : Case(tsdm.utils.decorators  , ClassDecorator    , None               , CLASS_DECORATORS    ),
-    # "decorators_fun" : Case(tsdm.utils.decorators  , FunctionDecorator , None               , FUNCTION_DECORATORS ),
-    "metrics_fun"    : Case(tsdm.losses, Loss, None, FUNCTIONAL_LOSSES),
+    "callbacks"      : Case(tsdm.logutils          , Callback          , BaseCallback       , CALLBACKS         ),
+    "datasets"       : Case(tsdm.datasets          , Dataset           , BaseDataset        , DATASETS          ),
+    "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS          ),
+    "generators"     : Case(tsdm.random.generators , IVP_Generator     , BaseIVP_Generator  , GENERATORS        ),
+    "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS          ),
+    "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS           ),
+    "metrics     "   : Case(tsdm.losses            , Loss              , BaseLoss           , MODULAR_LOSSES    ),
+    "metrics_fun"    : Case(tsdm.losses            , Loss              , None               , FUNCTIONAL_LOSSES ),
+    "metrics_time"   : Case(tsdm.losses            , SequenceLoss      , BaseSequenceLoss   , TIMESERIES_LOSSES ),
+    "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS          ),
 }  # fmt: skip
 r"""Dictionary of all available cases."""
 
