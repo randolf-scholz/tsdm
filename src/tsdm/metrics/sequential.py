@@ -53,8 +53,8 @@ from math import prod
 import torch
 from torch import Tensor
 
-from .base import SequentialBaseMetric
-from .samplewise import Reduction, q_quantile
+from .base import BaseSequenceLoss
+from .samplewise import Reduction, quantile_error
 
 type Dim = int | tuple[int, ...] | None
 
@@ -389,12 +389,12 @@ def q_quantile_loss(
     """
     return (
         2
-        * torch.sum(q_quantile(predictions=predictions, targets=targets, q=q))
+        * torch.sum(quantile_error(predictions=predictions, targets=targets, q=q))
         / torch.sum(targets.abs())
     )
 
 
-class ND(SequentialBaseMetric):
+class ND(BaseSequenceLoss):
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
@@ -414,7 +414,7 @@ class ND(SequentialBaseMetric):
         return nd(predictions=predictions, targets=targets)
 
 
-class NRMSE(SequentialBaseMetric):
+class NRMSE(BaseSequenceLoss):
     r"""Compute the normalized root mean squared error.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
@@ -429,7 +429,7 @@ class NRMSE(SequentialBaseMetric):
         return nrmse(predictions=predictions, targets=targets)
 
 
-class Q_Quantile_Loss(SequentialBaseMetric):
+class Q_Quantile_Loss(BaseSequenceLoss):
     r"""The q-quantile loss.
 
     .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ) }{∑ₜₖ|xₜₖ|}
@@ -444,7 +444,7 @@ class Q_Quantile_Loss(SequentialBaseMetric):
         return q_quantile_loss(predictions=predictions, targets=targets)
 
 
-class SequentialMSE(SequentialBaseMetric):
+class SequentialMSE(BaseSequenceLoss):
     r"""Time-Series Mean Square Error.
 
     Given two random sequences $x,x̂∈( ℝ ∪ \{𝙽𝙰\})^{T×K}$, the time-series

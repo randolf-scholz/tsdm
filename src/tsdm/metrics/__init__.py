@@ -77,16 +77,16 @@ __all__ += base.__all__
 __all__ += samplewise.__all__
 __all__ += sequential.__all__
 
-FUNCTIONAL_LOSSES: dict[str, base.Metric] = {
+FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
     "nd"              : sequential.nd,
     "rmse"            : samplewise.rmse_loss,
     "nrmse"           : sequential.nrmse,
-    "q_quantile"      : samplewise.q_quantile,
+    "q_quantile"      : samplewise.quantile_error,
     "q_quantile_loss" : sequential.q_quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
 
-MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
+MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
     "LP_Loss"   : samplewise.LP_Loss,
     "MAE_loss"  : samplewise.MAE_Loss,
     "MSE_Loss"  : samplewise.MSE_Loss,
@@ -94,7 +94,7 @@ MODULAR_LOSSES: dict[str, type[base.BaseMetric]] = {
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
-TIMESERIES_LOSSES: dict[str, type[base.SequentialBaseMetric]] = {
+TIMESERIES_LOSSES: dict[str, type[base.BaseSequenceLoss]] = {
     "ND"              : sequential.ND,
     "NRMSE"           : sequential.NRMSE,
     "Q_Quantile_Loss" : sequential.Q_Quantile_Loss,
@@ -102,7 +102,7 @@ TIMESERIES_LOSSES: dict[str, type[base.SequentialBaseMetric]] = {
 }  # fmt: skip
 r"""Dictionary of all available time-series losses."""
 
-LOSSES: dict[str, base.Metric | type[base.Metric]] = {
+LOSSES: dict[str, base.Loss | type[base.Loss]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
     **TIMESERIES_LOSSES,

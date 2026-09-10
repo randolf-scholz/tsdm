@@ -49,7 +49,7 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.metrics import Metric
+from tsdm.metrics import Loss
 from tsdm.types.nested import JSON
 from tsdm.utils import transpose_list_of_dicts
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
@@ -269,7 +269,7 @@ def log_metrics(
     step: int,
     writer: SummaryWriter,
     /,
-    metrics: Mapping[str, str | Metric | type[Metric]],
+    metrics: Mapping[str, str | Loss | type[Loss]],
     *,
     inputs: Optional[Mapping[Literal["predictions", "targets"], Tensor]] = None,
     predictions: Optional[Tensor] = None,

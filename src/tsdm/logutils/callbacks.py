@@ -72,7 +72,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.metrics import Metric
+from tsdm.metrics import Loss
 from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types import FilePath
 from tsdm.types.abc import MutSeq
@@ -283,10 +283,7 @@ class EvaluationCallback(BaseCallback):
 
     predict_fn: Callable[..., tuple[Tensor, Tensor]]
     dataloaders: Mapping[str, DataLoader]
-    metrics: (
-        Sequence[str | Metric | type[Metric]]
-        | Mapping[str, str | Metric | type[Metric]]
-    )
+    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
     writer: SummaryWriter
 
     # Optional parameters
@@ -556,7 +553,7 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     r"""Callback to log multiple metrics to tensorboard."""
 
-    metrics: Mapping[str, str | Metric | type[Metric]]
+    metrics: Mapping[str, str | Loss | type[Loss]]
 
     _: KW_ONLY
 

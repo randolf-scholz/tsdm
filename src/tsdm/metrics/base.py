@@ -2,12 +2,13 @@ r"""Base class for a loss function."""
 
 __all__ = [
     # Protocols
-    "Metric",
-    "SequentialMetric",
-    "IndexedMetric",
+    "Loss",
+    "SequenceLoss",
+    "TimedSequenceLoss",
+    "BatchLoss",
     # ABCs
-    "BaseMetric",
-    "SequentialBaseMetric",
+    "BaseLoss",
+    "BaseSequenceLoss",
 ]
 
 from abc import abstractmethod
@@ -19,28 +20,47 @@ from torch import Tensor, nn
 type Dim = int | tuple[int, ...] | None
 
 
-class Metric(Protocol):
-    r"""Protocol for metrics on (non-sequential) data.
+class Loss(Protocol):
+    r"""Protocol for losses on (non-sequential) data.
 
     .. math:: ℓ：Y×Y ⟶ ℝ_{≥0}
     """
 
-    # (..., *d), (..., *d) -> (...)
-    def __call__(self, *, predictions: Tensor, targets: Tensor) -> Tensor: ...
+    def __call__(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D]
+        targets: Tensor,  # Float[..., *D]
+    ) -> Tensor: ...  # Float[...]
 
 
-class SequentialMetric(Protocol):
+class BatchLoss(Protocol):
+    r"""Loss that includes aggregation over the batch.
+
+    .. math:: ℓ：\Seq(Y×Y) ⟶ ℝ_{≥0}
+    """
+
+    def __call__(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D]
+        targets: Tensor,  # Float[..., *D]
+    ) -> Tensor: ...  # Float[()]
+
+
+class SequenceLoss(Protocol):
     r"""Protocol for a loss function on sequences of variable length.
 
     .. math:: ℓ： \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0}
 
-    Where $\Seq(Y)$ denotes the set of all finite sequences over $Y$
+    Note:
+        $\Seq(Y)$ denotes the set of all finite sequences over $Y$
 
-    .. math:: \Seq(Y) ≔ ∐_{n∈ℕ} Yⁿ ≙ ⋃_{n∈ℕ} Yⁿ
+        .. math:: \Seq(Y) ≔ ∐_{n∈ℕ} Yⁿ ≙ ⋃_{n∈ℕ} Yⁿ
 
-    and the fiber product $×_ℕ$ denotes the set of all pairs of same length sequences:
+        and the fiber product $×_ℕ$ denotes the set of all pairs of same length sequences:
 
-    .. math:: \Seq(U) ×_ℕ \Seq(V) ≔ {(u, v) ∈ \Seq(U) × \Seq(V) : \abs{u} = \abs{v}}
+        .. math:: \Seq(U) ×_ℕ \Seq(V) ≔ {(u, v) ∈ \Seq(U) × \Seq(V) : \abs{u} = \abs{v}}
 
     Remark:
         The categorical coproduct $∐_{n∈ℕ}Xⁿ$ is used to formally define the finite
@@ -75,14 +95,13 @@ class SequentialMetric(Protocol):
         ...
 
 
-class IndexedMetric(Protocol):
-    r"""Protocol for a loss function on sequences of variable length.
-
-    Similar to `SequentialMetric`, but the input is indexed by a time-steps:
+class TimedSequenceLoss(Protocol):
+    r"""Protocol for a loss function on sequences of variable length with time information.
 
     .. math:: ℓ： \Seq(T) ×_ℕ \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0}
 
-    This allows for instance for discounting values depending on the time-steps.
+    Suitable for continuous-time objectives whose weighting or
+    discounting depends on observation/prediction times.
 
     Args:
         predictions: Predictions of shape (..., *d), possibly padded NaN.
@@ -98,10 +117,10 @@ class IndexedMetric(Protocol):
         targets: Tensor,  # Float[..., $N, *D], possibly padded NaN
         time_steps: Tensor,  # Float[..., $N], possibly padded NaN
         mask: Tensor | None = None,  # Bool[..., $N, *D]
-    ) -> Tensor: ...
+    ) -> Tensor: ...  # Float[...]
 
 
-class BaseMetric(nn.Module, Metric):
+class BaseLoss(nn.Module, Loss):
     r"""Base class for a sample-wise loss function."""
 
     channel_weight: Tensor | None
@@ -159,8 +178,8 @@ class BaseMetric(nn.Module, Metric):
         raise NotImplementedError
 
 
-class SequentialBaseMetric(nn.Module, SequentialMetric):
-    r"""Base class for a time-series function.
+class BaseSequenceLoss(nn.Module, SequenceLoss):
+    r"""Base class for a time-series losses.
 
     Because the loss is computed over a sequence of variable length, the default is to normalize
     the loss by the sequence length, so that loss values are comparable across sequences.

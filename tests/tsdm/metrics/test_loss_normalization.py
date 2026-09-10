@@ -6,7 +6,7 @@ from math import pi, prod, sqrt
 import pytest
 import torch
 
-from tsdm.metrics import ND, BaseMetric, MAE_Loss, MSE_Loss, RMSE_Loss
+from tsdm.metrics import ND, BaseLoss, MAE_Loss, MSE_Loss, RMSE_Loss
 from tsdm.metrics.sequential import nd
 
 BATCH_SHAPES = [
@@ -43,7 +43,7 @@ def test_metric_argument_order(loss_func: Callable[..., torch.Tensor]) -> None:
 @pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
 @pytest.mark.parametrize(("atol", "rtol"), [(0.01, 0.01)])
 def test_loss_normalization(
-    loss: type[BaseMetric],
+    loss: type[BaseLoss],
     batch_shape: tuple[int, ...],
     channel_shape: tuple[int, ...],
     atol: float,

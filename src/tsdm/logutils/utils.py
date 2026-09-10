@@ -20,7 +20,7 @@ from torch import Tensor, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from tsdm.metrics import LOSSES, Metric
+from tsdm.metrics import LOSSES, Loss
 from tsdm.types.aliases import FilePath
 
 
@@ -41,7 +41,7 @@ class TargetsAndPredictions(NamedTuple):
 
 @torch.no_grad()
 def eval_metric(
-    metric: str | Metric | type[Metric],
+    metric: str | Loss | type[Loss],
     /,
     *,
     predictions: Tensor,
@@ -65,10 +65,10 @@ def eval_metric(
 def compute_metrics(
     metrics: (
         str
-        | Metric
-        | type[Metric]
-        | Sequence[str | Metric | type[Metric]]
-        | Mapping[str, str | Metric | type[Metric]]
+        | Loss
+        | type[Loss]
+        | Sequence[str | Loss | type[Loss]]
+        | Mapping[str, str | Loss | type[Loss]]
     ),
     /,
     *,

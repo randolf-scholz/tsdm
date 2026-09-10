@@ -24,10 +24,10 @@ from tsdm.metrics import (
     FUNCTIONAL_LOSSES,
     MODULAR_LOSSES,
     TIMESERIES_LOSSES,
-    BaseMetric,
-    Metric,
+    BaseLoss,
+    Loss,
 )
-from tsdm.metrics.base import SequentialBaseMetric, SequentialMetric
+from tsdm.metrics.base import BaseSequenceLoss, SequenceLoss
 from tsdm.random.generators import GENERATORS, IVP_Generator, IVP_GeneratorBase
 from tsdm.random.samplers import SAMPLERS, BaseSampler, Sampler
 
@@ -48,15 +48,15 @@ CASES: dict[str, Case] = {
     "generators"     : Case(tsdm.random.generators , IVP_Generator     , IVP_GeneratorBase  , GENERATORS          ),
     "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS             ),
     # "lr_schedulers"  : Case(tsdm.optimizers        , LRScheduler       , TorchLRScheduler   , LR_SCHEDULERS       ),
-    "metrics     "   : Case(tsdm.metrics           , Metric            , BaseMetric         , MODULAR_LOSSES      ),
-    "metrics_time"   : Case(tsdm.metrics, SequentialMetric, SequentialBaseMetric, TIMESERIES_LOSSES),
+    "metrics     "   : Case(tsdm.metrics, Loss, BaseLoss, MODULAR_LOSSES),
+    "metrics_time"   : Case(tsdm.metrics, SequenceLoss, BaseSequenceLoss, TIMESERIES_LOSSES),
     # "models"         : Case(tsdm.models            , ForecastingModel  , BaseModel          , MODELS              ),
     # "optimizers"     : Case(tsdm.optimizers        , Optimizer         , TorchOptimizer     , OPTIMIZERS          ),
     "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS            ),
     "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS            ),
     # "decorators_cls" : Case(tsdm.utils.decorators  , ClassDecorator    , None               , CLASS_DECORATORS    ),
     # "decorators_fun" : Case(tsdm.utils.decorators  , FunctionDecorator , None               , FUNCTION_DECORATORS ),
-    "metrics_fun"    : Case(tsdm.metrics           , Metric            , None               , FUNCTIONAL_LOSSES   ),
+    "metrics_fun"    : Case(tsdm.metrics, Loss, None, FUNCTIONAL_LOSSES),
 }  # fmt: skip
 r"""Dictionary of all available cases."""
 

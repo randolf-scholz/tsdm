@@ -16,7 +16,7 @@ __all__ = [
     "mae_loss",
     "lp_loss",
     "lp_norm",
-    "q_quantile",
+    "quantile_error",
     "apply_reduction",
 ]
 
@@ -27,7 +27,7 @@ from typing import Final, assert_never
 import torch
 from torch import Tensor, nn
 
-from .base import BaseMetric
+from .base import BaseLoss
 
 type Dim = int | tuple[int, ...] | None
 
@@ -326,7 +326,7 @@ def rmse_loss(
     return Reduction(reduction).apply(squared_norms, weight=weight).sqrt()
 
 
-class LP_Loss(BaseMetric):
+class LP_Loss(BaseLoss):
     r"""$Lᵖ$ Loss.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the $Lᵖ$-loss is defined as:
@@ -380,7 +380,7 @@ class LP_Loss(BaseMetric):
         )
 
 
-class MAE_Loss(BaseMetric):
+class MAE_Loss(BaseLoss):
     r"""Mean Absolute Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:
@@ -412,7 +412,7 @@ class MAE_Loss(BaseMetric):
         )
 
 
-class MSE_Loss(BaseMetric):
+class MSE_Loss(BaseLoss):
     r"""Mean Square Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean square error is defined as:
@@ -473,7 +473,7 @@ class MSE_Loss(BaseMetric):
         )
 
 
-class RMSE_Loss(BaseMetric):
+class RMSE_Loss(BaseLoss):
     r"""Root Mean Square Error.
 
     Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
@@ -503,43 +503,56 @@ class RMSE_Loss(BaseMetric):
         )
 
 
-def q_quantile(
+def quantile_error(
+    r,  # Float[...]
+    /,
     *,
-    predictions: Tensor,  # Float[..., *D]
-    targets: Tensor,  # Float[..., *D]
     q: float = 0.5,
-    dim: Dim = -1,  # *D
-    mask: Tensor | None = None,  # Bool[..., *D],
-    weight: Tensor | None = None,  # Float[*D]  # channel weights
 ) -> Tensor:  # Float[...]
     r"""Return the q-quantile / pinball loss.
 
-    For a scalar valued x, this is just:
+    For a residual scalar $r=x̂-x$, this is just:
 
-    .. math::
-        𝖯_q(x̂，x) ≔ \begin{cases}
-            \hfill  q⋅|x̂-x| :& x ≥ x̂
-            \\  (1-q)⋅|x̂-x| :& x ≤ x̂
-        \end{cases}
-
-    For a vector / tensor valued x, we set:
-
-    .. math::  ℓ(x̂，x) ≔ ∑ₖP_q(x̂ₖ，x)
-    .. math::  ℓ(x̂，x) ≔ ∑ₖ⟦mₖ \? P_q(x̂ₖ，x) : 0⟧
-    .. math::  ℓ(x̂，x) ≔ ∑ₖwₖP_q(x̂ₖ，x)
-    .. math::  ℓ(x̂，x) ≔ ∑ₖwₖ⟦mₖ \? P_q(x̂ₖ，x) : 0⟧
+    .. math:: ρ_q(r) ≔ ⟦r ≤ 0 \? q⋅|r| : (1-q)⋅|r| ⟧ = \max( (q-1)r, qr)
 
     References:
         - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
-            Tim Januschowski
+          | Syama Sundar Rangapuram et al.
           | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
+    if not (0.0 <= q <= 1.0):
+        raise ValueError(f"q must be in [0, 1], but got {q}")
     # simplified formula
-    r = targets - predictions
-    s = torch.maximum((q - 1) * r, q * r)
-    return s
+    return torch.maximum((q - 1) * r, q * r)
+
+
+def quantile_loss(
+    *,
+    predictions: Tensor,
+    targets: Tensor,
+    q: float = 0.5,
+    dim: int = -1,
+    relative: bool = True,
+) -> Tensor:
+    r"""Compute the QL loss, based on relative q-quantile values.
+
+    .. math:: ℓ(x̂，x) ≔ ∑  (2 ∑ₖ⟦mₖ \? P_q(x̂ₖ-xₖ) : 0⟧ / ∑ₖ⟦mₖ \? |xₖ| : 0⟧)
+
+    Args:
+        predictions: The predicted values.
+        targets: The target values.
+        q: The quantile level.
+        dim: The dimension along which to compute the loss.
+        relative: Whether to compute the relative loss.
+
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | Syama Sundar Rangapuram et al.
+          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
+    return quantile_error(predictions - targets, q=q, dim=dim)
 
 
 class Q_Quantile(nn.Module):
@@ -564,4 +577,4 @@ class Q_Quantile(nn.Module):
 
     def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
         r"""Compute the loss value."""
-        return q_quantile(predictions=predictions, targets=targets, q=self.q)
+        return quantile_error(predictions - targets, q=self.q)

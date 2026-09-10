@@ -70,7 +70,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import UNDEFINED
-from tsdm.metrics import Metric
+from tsdm.metrics import Loss
 from tsdm.pprint import pprint_mapping, pprint_repr
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
@@ -169,7 +169,7 @@ class DefaultLogger(BaseLogger):
     r"""Hyperparameters used for the experiment."""
     lr_scheduler: Optional[LRScheduler] = None
     r"""Learning rate scheduler."""
-    metrics: Optional[dict[str, Metric]] = None
+    metrics: Optional[dict[str, Loss]] = None
     r"""Metrics used for evaluation."""
     model: Optional[TorchModule] = None
     r"""Model used for training."""
