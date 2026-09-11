@@ -14,15 +14,17 @@ __all__ = [
 ]
 
 import datetime as dt
+import operator
 from collections.abc import Collection, Mapping, Sequence
 from functools import wraps
 from os import PathLike, fspath
-from typing import Any, Optional
+from typing import Any, Optional, SupportsFloat, SupportsIndex, overload
 
 import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
+from numpy.random import Generator
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from scipy import stats
@@ -36,38 +38,76 @@ from tsdm.types import (
 )
 
 
-def random_partition(
-    num: int,
-    sizes: float | Sequence[float],
+@overload
+def random_partition[K](
+    keys: Collection[K],
     *,
-    rng: int | np.random.Generator | None = None,
-) -> tuple:
-    r"""Create a random partition for a dataset."""
+    sizes: Sequence[SupportsIndex],
+    rng: Generator | int | None = ...,
+) -> tuple[list[K], ...]: ...
+@overload
+def random_partition[K](
+    keys: Collection[K],
+    *,
+    ratios: Sequence[SupportsFloat],
+    rng: Generator | int | None = ...,
+) -> tuple[list[K], ...]: ...
+def random_partition[K](
+    keys: Collection[K],
+    *,
+    sizes: Sequence[SupportsIndex] | None = None,
+    ratios: Sequence[SupportsFloat] | None = None,
+    rng: Generator | int | None = None,
+) -> tuple[list[K], ...]:
+    r"""Create a random partition for a dataset.
+
+    Exactly one of ``sizes`` or ``ratios`` must be provided. Sizes are absolute
+    partition counts and must sum to the number of keys. Ratios are normalized
+    weights used to distribute all keys between the partitions.
+
+    Args:
+        keys: Keys to distribute among the partitions.
+        sizes: Absolute partition counts. The counts must be non-negative and
+            sum to the number of keys. Mutually exclusive with ``ratios``.
+        ratios: Relative partition weights. The weights must be non-negative
+            and not all zero. Mutually exclusive with ``sizes``.
+        rng: Random seed or generator used to shuffle the keys.
+
+    Returns:
+        A tuple of key lists, one list for each requested partition.
+    """
+    if (sizes is None) == (ratios is None):
+        raise ValueError("Exactly one of sizes or ratios must be provided")
+
     rng = np.random.default_rng(rng)
+    key_map = dict(enumerate(keys))
+    num = len(key_map)
 
-    weights = (
-        np.asarray([1 - sizes, sizes], dtype=float)
-        if isinstance(sizes, float | int)
-        else np.asarray(sizes, dtype=float)
-    )
+    if sizes is not None:
+        counts = tuple(operator.index(size) for size in sizes)
+        if any(count < 0 for count in counts) or sum(counts) != num:
+            raise ValueError("sizes must be non-negative and sum to the number of keys")
+    else:
+        assert ratios is not None
+        weights = tuple(float(ratio) for ratio in ratios)
 
-    if np.any(weights < 0) or weights.sum() <= 0:
-        raise ValueError("sizes must be non-negative and not all zero")
+        if any(weight < 0 for weight in weights) or sum(weights) <= 0:
+            raise ValueError("ratios must be non-negative and not all zero")
 
-    # normalize the weights
-    weights = weights / weights.sum()
-    quotas = num * weights
-    counts = np.floor(quotas).astype(int)
+        # Normalize the weights and assign leftovers to the largest remainders.
+        quotas = num * np.asarray(weights) / sum(weights)
+        counts = np.floor(quotas).astype(int)
 
-    if remainder := num - counts.sum():
-        # Assign leftovers to the largest fractional remainders.
-        idx = np.argsort(quotas - counts)
-        counts[idx[-remainder:]] += 1
+        if remainder := num - counts.sum():
+            idx = np.argsort(quotas - counts)
+            counts[idx[-remainder:]] += 1
 
     indices = rng.permutation(num)
     cuts = np.cumsum(counts[:-1])
 
-    return tuple(np.split(indices, cuts))
+    return tuple(
+        [key_map[i] for i in partition] for partition in np.split(indices, cuts)
+    )
 
 
 def get_schema(
