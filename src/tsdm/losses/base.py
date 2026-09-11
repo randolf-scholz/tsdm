@@ -259,6 +259,12 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
             raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+    ) -> Tensor:
         r"""Compute the loss."""
         raise NotImplementedError

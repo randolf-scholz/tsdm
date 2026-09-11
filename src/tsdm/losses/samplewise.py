@@ -173,9 +173,9 @@ def lp_norm(
 
     if p != p:
         raise ValueError("p must not be NaN.")
-    if p == torch.inf:  # noqa: RET506
+    if p == torch.inf:
         raise NotImplementedError
-    if p == -torch.inf:  # noqa: RET506
+    if p == -torch.inf:
         raise NotImplementedError
     if p == 0.0:
         # TODO: if scaled, use geometric mean.

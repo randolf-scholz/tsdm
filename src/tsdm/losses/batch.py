@@ -25,7 +25,7 @@ def quantile_loss(
 ) -> Tensor:
     r"""Compute the QL loss, based on relative q-quantile values.
 
-    .. math:: ℓ(x̂，x) ≔ ∑  (2 ∑ₖ⟦mₖ \? P_q(x̂ₖ-xₖ) : 0⟧ / ∑ₖ⟦mₖ \? |xₖ| : 0⟧)
+    .. math:: ℓ(x̂，x) ≔ 2 ∑ₖ⟦mₖ \? P_q(x̂ₖ-xₖ) : 0⟧ / ∑ₖ⟦mₖ \? |xₖ| : 0⟧
 
     Args:
         predictions: The predicted values.

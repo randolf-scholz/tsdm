@@ -31,20 +31,19 @@ should provide arguments for these positions.
 """
 
 __all__ = [
-    # ABCs & Protocols
+    "Normalization",
     # Classes
     "ND",
     "NRMSE",
-    "Q_Quantile_Loss",
+    "Quantile_Loss",
     "SequentialMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesRMSE",
-    "Normalization",
-    "lp_norm",
     "lp_loss",
+    "lp_norm",
     "nd",
     "nrmse",
-    "q_quantile_loss",
+    "quantile_loss",
 ]
 
 from enum import StrEnum
@@ -72,9 +71,9 @@ class Normalization(StrEnum):
         values: Tensor,
         /,
         *,
-        mask: Tensor | None,
         time_dim: int,
-        channel_dims: tuple[int, ...],
+        channel_dim: int | tuple[int, ...],
+        mask: Tensor | None = None,
     ) -> Tensor | int:
         match self:
             case Normalization.SEQUENCE_LENGTH:
@@ -82,7 +81,7 @@ class Normalization(StrEnum):
                     values.shape[time_dim]
                     if mask is None
                     else (
-                        mask.any(dim=channel_dims, keepdim=True)
+                        mask.any(dim=channel_dim, keepdim=True)
                         .sum(dim=time_dim, keepdim=True)
                         .clamp_min(1)
                     )
@@ -97,23 +96,23 @@ class Normalization(StrEnum):
 
             case Normalization.TIMEPOINT_COVERAGE:
                 return (
-                    values.shape[time_dim] * prod(values.shape[d] for d in channel_dims)
+                    values.shape[time_dim] * prod(values.shape[d] for d in channel_dim)
                     if mask is None
                     else (
-                        mask.any(dim=channel_dims, keepdim=True)
+                        mask.any(dim=channel_dim, keepdim=True)
                         .sum(dim=time_dim, keepdim=True)
-                        .mul(mask.sum(dim=channel_dims, keepdim=True))
+                        .mul(mask.sum(dim=channel_dim, keepdim=True))
                         .clamp_min(1)
                     )
                 )
 
             case Normalization.OBSERVATION_COUNT:
                 return (
-                    values.shape[time_dim] * prod(values.shape[d] for d in channel_dims)
+                    values.shape[time_dim] * prod(values.shape[d] for d in channel_dim)
                     if mask is None
-                    else mask.sum(
-                        dim=(time_dim, *channel_dims), keepdim=True
-                    ).clamp_min(1)
+                    else mask.sum(dim=(time_dim, *channel_dim), keepdim=True).clamp_min(
+                        1
+                    )
                 )
 
 
@@ -123,6 +122,7 @@ def lp_norm(
     *,
     time_dim: int,
     channel_dim: int | tuple[int, ...],  # *D
+    # optional args
     p: float = 2.0,
     channel_weight: Tensor | None = None,  # Float[*D]
     time_weight: Tensor | None = None,  # Float[..., $N]
@@ -206,7 +206,7 @@ def lp_norm(
         case name:
             scheme = Normalization(name)
             normalizer = scheme.compute_normalization(
-                values, mask=mask, time_dim=time_dim, channel_dims=ch_dims
+                values, mask=mask, time_dim=time_dim, channel_dim=ch_dims
             )
             values = values / normalizer
 
@@ -237,11 +237,12 @@ def lp_loss(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
+    time_dim: int,
+    channel_dim: int | tuple[int, ...],  # *D
+    # optional args
     p: float = 2.0,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-    channel_dim: int | tuple[int, ...],  # *D
     channel_weight: Tensor | None = None,  # Float[*D]
-    time_dim: int,
     time_weight: Tensor | None = None,  # Float[..., $N]
     normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
     reduction: Reduction = Reduction.MEAN,
@@ -306,7 +307,8 @@ def nd(
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
     time_dim: int = -2,
-    dim: Dim = -1,
+    channel_dim: Dim = -1,
+    # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
     eps: float = 2**-24,
 ) -> Tensor:  # Float[...]
@@ -341,25 +343,27 @@ def nrmse(
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
     time_dim: int = -2,
-    dim: Dim = -1,
+    channel_dim: Dim = -1,
+    # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
     eps: float = 2**-24,
 ) -> Tensor:  # Float[...]
-    r"""Compute the normalized root mean square errors.
+    r"""Compute the normalized root mean square error as defined by [TRMF]_.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{\frac{1}{T}∑ₜₖ|xₜₖ|}
 
     or, more generally:
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{‖x̂-x‖_{2⁎}}}{‖x‖_{1⁎}}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
 
-    where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
+    where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
 
     References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
-          | Advances in Neural Information Processing Systems 29 (NIPS 2016)
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+        .. [TRMF]
+        | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+        | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
+        | Advances in Neural Information Processing Systems 29 (NIPS 2016)
+        | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
     x_pred = predictions
     x_true = targets
@@ -370,20 +374,20 @@ def nrmse(
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-def q_quantile_loss(
+def quantile_loss(
     *,
     predictions: Tensor,
     targets: Tensor,
     q: float = 0.5,
+    mask: Tensor | None = None,
 ) -> Tensor:
     r"""Return the q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ)}{∑ₜₖ|xₜₖ|}
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ ρ_q(x̂ₜₖ，xₜₖ) }{ ∑ₜₖ|xₜₖ| }
 
     References:
         - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
-            Tim Januschowski
+          | Syama Sundar Rangapuram et al.
           | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
@@ -410,8 +414,16 @@ class ND(BaseSequenceLoss):
     """
 
     # Float[..., $N], Float[..., $N] -> Float[()]
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        return nd(predictions=predictions, targets=targets)
+    def forward(
+        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+    ) -> Tensor:
+        return nd(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
 
 
 class NRMSE(BaseSequenceLoss):
@@ -424,24 +436,42 @@ class NRMSE(BaseSequenceLoss):
           | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
 
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+    ) -> Tensor:
         r"""Compute the loss value."""
-        return nrmse(predictions=predictions, targets=targets)
+        return nrmse(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
 
 
-class Q_Quantile_Loss(BaseSequenceLoss):
+class Quantile_Loss(BaseSequenceLoss):
     r"""The q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ𝖯_q(x̂ₜₖ，xₜₖ) }{∑ₜₖ|xₜₖ|}
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖρ_q(x̂ₜₖ，xₜₖ) }{ ∑ₜₖ|xₜₖ| }
 
     References:
         - | Deep State Space Models for Time Series Forecasting
+          | Syama Sundar Rangapuram et al.
+          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+    ) -> Tensor:
         r"""Compute the loss value."""
-        return q_quantile_loss(predictions=predictions, targets=targets)
+        return quantile_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
 
 
 class SequentialMSE(BaseSequenceLoss):
@@ -481,7 +511,9 @@ class SequentialMSE(BaseSequenceLoss):
     """
 
     # Float[..., $N, *D], Float[..., $N, *D] -> Float[()]
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
+    def forward(
+        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+    ) -> Tensor:
         w = self.channel_weights
         m = ~targets.isnan()  # 1 if not nan, 0 if nan
         r = predictions - targets
