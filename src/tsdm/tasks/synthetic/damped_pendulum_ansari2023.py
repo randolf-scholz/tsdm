@@ -10,12 +10,17 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
+from collections.abc import Sequence
 from typing import Literal, cast, final
 
 from pandas import DataFrame
-from sklearn.model_selection import train_test_split
 
-from tsdm.datatools import CallableDataset, folds_as_frame, is_partition
+from tsdm.datatools import (
+    CallableDataset,
+    folds_as_frame,
+    is_partition,
+    random_partition,
+)
 from tsdm.random.samplers import (
     HierarchicalDataset,
     HierarchicalSampler,
@@ -111,19 +116,13 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
         r"""Create the folds."""
         # NOTE: all folds are the same due to fixed random state.
         # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-        folds = []
+        folds: list[dict[str, Sequence[int]]] = []
         for _ in range(self.num_folds):
-            # get the test split
-            train_idx, test_idx = train_test_split(
+            train_idx, valid_idx, test_idx = random_partition(
                 self.dataset.metaindex,
-                test_size=self.test_size,
+                sizes=(self.train_size, self.valid_size, self.test_size),
             )
-            # get the train and validation split
-            train_idx, valid_idx = train_test_split(
-                train_idx,
-                test_size=self.valid_size,
-            )
-            fold = {
+            fold: dict[str, Sequence[int]] = {
                 "train": train_idx,
                 "valid": valid_idx,
                 "test": test_idx,

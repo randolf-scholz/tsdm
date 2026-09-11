@@ -65,11 +65,10 @@ from warnings import deprecated
 import numpy as np
 import torch
 from pandas import DataFrame
-from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.datatools import folds_as_frame, is_partition
+from tsdm.datatools import folds_as_frame, is_partition, random_partition
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -226,21 +225,20 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
         folds: list[dict[str, Sequence[int]]] = []
-        rng = np.random.RandomState(self.seed)
+        rng = np.random.default_rng(self.seed)
 
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         for _ in range(self.num_folds):
-            train_idx, test_idx = train_test_split(
+            train_idx, valid_idx, test_idx = random_partition(
                 self.IDs,
-                test_size=self.test_size,
-                random_state=rng,
+                ratios=[
+                    (1 - self.test_size) * (1 - self.valid_size),
+                    (1 - self.test_size) * self.valid_size,
+                    self.test_size,
+                ],
+                rng=rng,
             )
-            train_idx, valid_idx = train_test_split(
-                train_idx,
-                test_size=self.valid_size,
-                random_state=rng,
-            )
-            fold = {
+            fold: dict[str, Sequence[int]] = {
                 "train": train_idx,
                 "valid": valid_idx,
                 "test": test_idx,

@@ -60,11 +60,10 @@ from warnings import deprecated
 
 import torch
 from pandas import DataFrame
-from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.datatools import folds_as_frame, is_partition
+from tsdm.datatools import folds_as_frame, is_partition, random_partition
 from tsdm.encoders import MinMaxScaler
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.pprint import pprint_repr
@@ -245,18 +244,12 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
         # NOTE: all folds are the same due to fixed random state.
         # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
         for _ in range(self.num_folds):
-            train_idx, test_idx = train_test_split(
+            train_idx, valid_idx, test_idx = random_partition(
                 self.IDs,
-                test_size=self.test_size
-                / (self.train_size + self.valid_size + self.test_size),
-                random_state=self.RANDOM_STATE,
+                ratios=(self.train_size, self.valid_size, self.test_size),
+                rng=self.RANDOM_STATE,
             )
-            train_idx, valid_idx = train_test_split(
-                train_idx,
-                test_size=self.valid_size / (self.train_size + self.valid_size),
-                random_state=self.RANDOM_STATE,
-            )
-            fold = {
+            fold: dict[str, Sequence[int]] = {
                 "train": train_idx,
                 "valid": valid_idx,
                 "test": test_idx,
