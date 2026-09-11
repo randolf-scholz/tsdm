@@ -119,15 +119,67 @@ const unicodeSubscriptsToTeX = (s) => {
 };
 
 
+/** @type {Map<string, string>} */
+const LETTER_MODIFIER_MAP = new Map([
+    // Unicode combining marks mapped to MathJax accent commands.
+    ["\u20D7", "vec"], // U+20D7 COMBINING RIGHT ARROW ABOVE
+    ["\u0300", "grave"], // U+0300 COMBINING GRAVE ACCENT
+    ["\u0301", "acute"], // U+0301 COMBINING ACUTE ACCENT
+    ["\u0302", "hat"], // U+0302 COMBINING CIRCUMFLEX ACCENT
+    ["\u0303", "tilde"], // U+0303 COMBINING TILDE
+    ["\u0306", "breve"], // U+0306 COMBINING BREVE
+    ["\u0307", "dot"], // U+0307 COMBINING DOT ABOVE
+    ["\u0308", "ddot"], // U+0308 COMBINING DIAERESIS
+    ["\u20DB", "dddot"], // U+20DB COMBINING THREE DOTS ABOVE
+    ["\u0304", "bar"], // U+0304 COMBINING MACRON
+    ["\u030A", "mathring"], // U+030A COMBINING RING ABOVE
+    ["\u030C", "check"], // U+030C COMBINING CARON
+]);
+
+// Capture the letter and modifier separately for the replacement callback.
+const LETTER_MODIFIER_PATTERN = (
+    /([\p{Script=Latin}\p{Script=Greek}])([\u20D7\u0300\u0301\u0302\u0303\u0306\u0307\u0308\u20DB\u0304\u030A\u030C])/gu
+);
+
+
+/**
+ * Convert supported Unicode combining letter modifiers into TeX accents.
+ *
+ * Latin and Greek letters are supported, so, for example, ``β̂`` becomes
+ * ``\\hat{β}``. The callback leaves TeX control sequences such as ``\\alphâ``
+ * untouched: its combining mark belongs to the control-sequence name rather
+ * than to a literal Unicode letter.
+ *
+ * @param {string} s - Input string (e.g. MathJax MathItem.math)
+ * @returns {string} - Output string with modifiers rewritten as TeX accents.
+ */
+const unicodeLetterModifiersToTeX = (s) => s.replace(
+    LETTER_MODIFIER_PATTERN,
+    (match, letter, modifier, offset, input) => {
+        // Do not treat the final character in a TeX control sequence as a
+        // literal letter (e.g. the ``a`` in ``\\alphâ``).
+        if (/\\[A-Za-z]*$/.test(input.slice(0, offset))) {
+            return match;
+        }
+
+        const command = LETTER_MODIFIER_MAP.get(modifier);
+        return (command === undefined) ? match : `\\${command}{${letter}}`;
+    },
+);
+
+
 // SEE: https://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
+// SEE: https://docs.mathjax.org/en/v4.0/advanced/synchronize/filters.html#converting-unicode-numeric-superscripts-to-tex-ones
 MathJax = {
     loader: {load: ["[tex]/ams", "[tex]/mathtools", "[tex]/physics"]},
     tex: {
         packages: {"[+]": ["ams", "mathtools", "physics"]},
         preFilters: [
             // Define pre-filter to convert Unicode superscripts to TeX syntax
-            // SEE: https://docs.mathjax.org/en/v4.0/advanced/synchronize/filters.html#converting-unicode-numeric-superscripts-to-tex-ones
             // NOTE: math is a MathItem object, math.math is a string.
+            ({math}) => {
+                math.math = unicodeLetterModifiersToTeX(math.math);
+            },
             ({math}) => {
                 math.math = unicodeSubscriptsToTeX(math.math);
             },
