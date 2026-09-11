@@ -1,21 +1,30 @@
+#!/usr/bin/env -S just --justfile
+mod docs
+mod tests
+
 export GIT_ROOT := `git rev-parse --show-toplevel`
 export GIT_PREFIX := `git rev-parse --show-prefix`
 export TEST_DIR := GIT_ROOT / "tests"
 
-clean:
-    pyclean . --debris
-    find {{TEST_DIR}} -type d -name reports -exec rm -rf {} +
-    find {{TEST_DIR}} -type d -name results -exec rm -rf {} +
+[default]
+[doc('List available commands.')]
+help:
+    @just --justfile {{ justfile() }} --list --list-submodules --unsorted
 
+[doc('Remove generated Python cache and build artifacts.')]
+clean:
+    uv run pyclean {{ GIT_ROOT }} --debris
+
+[doc('Show ignored files below the target directory.')]
 show-ignored target=TEST_DIR:
     #!/usr/bin/env bash
-    git -C "{{target}}" ls-files -z --others -i --exclude-standard \
+    git -C "{{ target }}" ls-files -z --others -i --exclude-standard \
       --directory -- |
     while IFS= read -r -d '' p; do
       printf '%s\n' "${p#$prefix}"
     done
 
-
+[doc('Reconfigure the repository Git remotes.')]
 setup-remote:
     #!/usr/bin/env bash
     echo -e "\n" "Current remotes:"
@@ -57,9 +66,10 @@ setup-remote:
     echo -e "\nNew remote config:"
     git remote -v
 
+[doc('Upgrade dependencies and run project checks.')]
 upgrade:
     uv sync --upgrade
     git add .
-    prek run -a
+    uv run prek run -a
     git add .
-    prek run -a
+    uv run prek run -a

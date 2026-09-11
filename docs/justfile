@@ -1,0 +1,32 @@
+#!/usr/bin/env -S just --justfile
+export PYTORCH_JIT := "0"
+BUILD_DIR := "./_build"
+
+[default]
+[doc('List available commands.')]
+help:
+    @just --justfile {{ justfile() }} --list --unsorted
+
+[doc('Clean Sphinx build artifacts.')]
+clean:
+    #!/usr/bin/env bash
+    set -eu
+
+    mkdir -p "{{ BUILD_DIR }}"
+    rm -rf _previous_build
+    mv "{{ BUILD_DIR }}" _previous_build
+
+    rm -rf "{{ BUILD_DIR }}"
+    rm -rf _autosummary
+    rm -rf autoapi
+    rm -rf apidoc
+    rm -rf api
+
+[doc('Rebuild the Sphinx API docs and HTML output.')]
+make *sphinx_args: clean
+    #!/usr/bin/env bash
+    set -eu
+
+    sphinx_opts=(-w .sphinx/warnings.txt)
+    uv run sphinx-apidoc --separate -o apidoc/ ../src/
+    uv run sphinx-build -M html . "{{ BUILD_DIR }}" "${sphinx_opts[@]}" {{ sphinx_args }}
