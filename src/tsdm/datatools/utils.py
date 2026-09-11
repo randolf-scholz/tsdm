@@ -10,19 +10,21 @@ __all__ = [
     "timedelta_range",
     "timestamp",
     "validate_schema",
+    "random_partition",
 ]
 
 import datetime as dt
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping, Sequence
 from functools import wraps
 from os import PathLike, fspath
 from typing import Any, Optional
 
+import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 from pandas import Timedelta, Timestamp
-from pandas._libs import NaTType
+from pandas.api.typing import NaTType
 from scipy import stats
 
 from tsdm.types import (
@@ -32,6 +34,40 @@ from tsdm.types import (
     SupportsDataFrame,
     SupportsDtype,
 )
+
+
+def random_partition(
+    num: int,
+    sizes: float | Sequence[float],
+    *,
+    rng: int | np.random.Generator | None = None,
+) -> tuple:
+    r"""Create a random partition for a dataset."""
+    rng = np.random.default_rng(rng)
+
+    weights = (
+        np.asarray([1 - sizes, sizes], dtype=float)
+        if isinstance(sizes, float | int)
+        else np.asarray(sizes, dtype=float)
+    )
+
+    if np.any(weights < 0) or weights.sum() <= 0:
+        raise ValueError("sizes must be non-negative and not all zero")
+
+    # normalize the weights
+    weights = weights / weights.sum()
+    quotas = num * weights
+    counts = np.floor(quotas).astype(int)
+
+    if remainder := num - counts.sum():
+        # Assign leftovers to the largest fractional remainders.
+        idx = np.argsort(quotas - counts)
+        counts[idx[-remainder:]] += 1
+
+    indices = rng.permutation(num)
+    cuts = np.cumsum(counts[:-1])
+
+    return tuple(np.split(indices, cuts))
 
 
 def get_schema(
