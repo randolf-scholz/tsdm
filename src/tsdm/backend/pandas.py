@@ -170,7 +170,7 @@ def where[
         if isinstance(b, pandas_type):
             return _where(~cond, b, a)
         if isinstance(cond, pandas_type):
-            return _where(~cond, _where(cond, cond, b), a)
+            return _where(~cond, _where(cond, cond, b), a)  # pyrefly: ignore[bad-return]
     return np.where(cond, a, b)  # type: ignore
 
 
