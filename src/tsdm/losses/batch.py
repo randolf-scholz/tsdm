@@ -16,8 +16,8 @@ from typing import Final
 
 from torch import Tensor, nn
 
-from .base import BaseLoss
-from .samplewise import Dim, Reduction, lp_loss, quantile_error
+from .base import BaseLoss, Dim, Reduction
+from .samplewise import lp_loss, quantile_error
 
 
 def quantile_loss(
@@ -83,7 +83,7 @@ def rmse_loss(
     targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
-    weight: Tensor | None = None,  # Float[...], sample weights
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
     channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
@@ -102,7 +102,7 @@ def rmse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(squared_norms, weight=weight).sqrt()
+    return Reduction(reduction).apply(squared_norms, weight=sample_weight).sqrt()
 
 
 class RMSE_Loss(BaseLoss):
@@ -129,7 +129,7 @@ class RMSE_Loss(BaseLoss):
             predictions=predictions,
             targets=targets,
             mask=mask,
-            weight=weight,
+            sample_weight=weight,
             channel_weight=self.channel_weight,
             scaled=self.scaled,
         )

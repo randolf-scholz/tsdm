@@ -52,10 +52,8 @@ from math import prod
 import torch
 from torch import Tensor
 
-from .base import BaseSequenceLoss
-from .samplewise import Reduction, quantile_error
-
-type Dim = int | tuple[int, ...] | None
+from .base import BaseSequenceLoss, Dim, Reduction
+from .samplewise import quantile_error
 
 
 class Normalization(StrEnum):

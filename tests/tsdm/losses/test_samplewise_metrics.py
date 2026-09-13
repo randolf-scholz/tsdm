@@ -7,9 +7,9 @@ import pytest
 import torch
 from torch.nn import functional
 
+from tsdm.losses.base import Reduction
 from tsdm.losses.batch import rmse_loss
 from tsdm.losses.samplewise import (
-    Reduction,
     lp_loss,
     lp_norm,
     mae_loss,
@@ -224,7 +224,7 @@ def test_rmse_loss_matches_square_root_of_torch_mse_loss(
         predictions=predictions,
         targets=targets,
         dim=(),
-        weight=weight,
+        sample_weight=weight,
         reduction=reduction,
     )
     expected = functional.mse_loss(
