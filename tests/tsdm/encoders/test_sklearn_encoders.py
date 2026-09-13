@@ -7,13 +7,14 @@ import pytest
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
 
-from tsdm.encoders.sklearn_import import (
+from tsdm.testing import is_private
+
+from .sklearn_import import (
     SKLEARN_ENCODERS,
     SKLEARN_TRANSFORMS,
     SklearnEncoder,
     SklearnTransform,
 )
-from tsdm.testing import is_private
 
 BINARY_DATA = np.array(["yes", "no", "no", "yes", "yes"])
 CATEGORICAL_DATA = np.array([["car"], ["bike"], ["car"], ["bike"], ["house"]])
