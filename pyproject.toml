@@ -33,7 +33,6 @@ dependencies = [
     "pandas>=3.0.5",
     "polars>=1.44.2",
     "pyarrow>=25.0.1",
-    "pydantic>=2.13.5", # removal candidate
     "pyyaml>=6.0.3",
     "scipy>=1.18.1",
     "tensorboard>=2.21.0",

@@ -3,8 +3,6 @@
 -e .
 absl-py==2.5.0
     # via tensorboard
-annotated-types==0.8.0
-    # via pydantic
 anyio==4.15.1 ; sys_platform != 'emscripten'
     # via httpx2
 colorama==0.4.6 ; sys_platform == 'win32'
@@ -122,10 +120,6 @@ protobuf==7.36.1
     # via tensorboard
 pyarrow==25.0.1
     # via tsdm
-pydantic==2.13.5
-    # via tsdm
-pydantic-core==2.46.5
-    # via pydantic
 pyparsing==3.3.2
     # via matplotlib
 python-dateutil==2.9.0.post0
@@ -162,13 +156,8 @@ typing-extensions==4.16.0
     # via
     #   anyio
     #   grpcio
-    #   pydantic
-    #   pydantic-core
     #   torch
     #   tsdm
-    #   typing-inspection
-typing-inspection==0.4.4
-    # via pydantic
 tzdata==2026.3 ; sys_platform == 'emscripten' or sys_platform == 'win32'
     # via pandas
 werkzeug==3.1.8

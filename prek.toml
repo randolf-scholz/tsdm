@@ -137,12 +137,11 @@ hooks = [
     {
         id = "check-clean-interface",
         files = "^src/",
-        exclude = "^tests/|/tests/"
     },
     { id = "update-requirements" },
     { id = "check-requirements-valid" },
     { id = "check-requirements-maintained" },
-    { id = "check-requirements-used" },
+    { id = "check-requirements-used", args = ["--exclude", "tensorboard"] },
     { id = "check-archived-hooks" },
     { id = "check-resolved-github-issues", files = "^src/|^tests/" }
 ]
