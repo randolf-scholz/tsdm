@@ -393,7 +393,7 @@ def quantile_loss(
     If a mask is given, instead compute:
 
     .. math:: 𝖰𝖫_q(x̂，x) ≔
-        2\frac{⟦ mₜ⁽ⁱ⁾ \? ∑ᵢₜ ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) : 0 ⟧ }{ ∑ᵢₜ⟦ mₜ⁽ⁱ⁾ \? |xₜ⁽ⁱ⁾| : 0 ⟧ }
+        2\frac{ ∑ᵢₜ ⟦ mₜ⁽ⁱ⁾ \? ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) : 0 ⟧ }{ ∑ᵢₜ⟦ mₜ⁽ⁱ⁾ \? |xₜ⁽ⁱ⁾| : 0 ⟧ }
 
     Args:
         predictions:
@@ -413,6 +413,10 @@ def quantile_loss(
 
     predictions = predictions.squeeze(-1)
     targets = targets.squeeze(-1)
+    if mask is not None:
+        mask = mask.squeeze(-1)
+        predictions = torch.where(mask, predictions, 0.0)
+        targets = torch.where(mask, targets, 0.0)
     q_err = 2 * quantile_error(predictions - targets, q=q)
 
     return q_err.sum() / targets.abs().sum() if relative else q_err.sum()
@@ -489,8 +493,6 @@ class Quantile_Loss(BaseSequenceLoss):
             predictions=predictions,
             targets=targets,
             mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
         )
 
 
