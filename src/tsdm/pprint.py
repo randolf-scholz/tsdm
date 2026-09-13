@@ -987,9 +987,9 @@ def repr_dtype(dtype: object, /) -> str:
             return string
         # These are too verbose.
         case pd.ArrowDtype() as wrapped_arrow_dtype:
-            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
+            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)  # pyrefly: ignore[missing-attribute]
         # Some special casing for dictionary types.
-        case pa.DictionaryType(index_type=index_type, value_type=value_type):
+        case pa.DictionaryType(index_type=index_type, value_type=value_type):  # pyrefly: ignore[missing-attribute]
             return f"dict[{index_type!s},{value_type!s}]"
         case type() as cls:
             return cls.__name__

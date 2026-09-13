@@ -203,7 +203,7 @@ def test_scaler[
             Y = arr[:, 2]
     match X:
         case pd.DataFrame() as df:
-            X = df.loc[:, 2]
+            X = df.loc[:, 2]  # pyrefly: ignore[missing-attribute]
         case _ as arr:
             X = arr[:, 2]
     encoded = encoder.encode(X)

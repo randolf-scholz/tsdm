@@ -333,17 +333,17 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
                 labels = self._select_slice(s)
                 return self._subset(labels)
 
-            case Series(dtype=dtype) as series if dtype.kind == "b":
+            case Series(dtype=dtype) as series if dtype.kind == "b":  # pyrefly: ignore[missing-attribute]
                 if len(series) != len(self.metaindex):
                     raise ValueError(
                         "Expected boolean mask to have one entry per collection,"
                         f" got {len(series)} and {len(self.metaindex)}."
                     )
-                mask = series.to_numpy(dtype=bool, na_value=False)
+                mask = series.to_numpy(dtype=bool, na_value=False)  # pyrefly: ignore[missing-attribute]
                 return self._subset(self.metaindex[mask])
 
             case Series() as series:
-                return self._subset(series.tolist())
+                return self._subset(series.tolist())  # pyrefly: ignore[missing-attribute]
 
             case list(items):
                 if items and all(isinstance(k, bool) for k in items):

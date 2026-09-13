@@ -148,9 +148,9 @@ def get_schema(
 def get_dtypes(table: object) -> list[object]:
     match table:
         # DataFrame-like
-        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):
+        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):  # pyrefly: ignore[missing-attribute]
             return list(dtypes)
-        case pa.Table(schema=schema):
+        case pa.Table(schema=schema):  # pyrefly: ignore[missing-attribute]
             return list(schema.types)
         case pl.DataFrame(dtypes=dtypes):
             return list(dtypes)
@@ -158,7 +158,7 @@ def get_dtypes(table: object) -> list[object]:
             frame: pd.DataFrame = supports_frame.__dataframe__()
             return list(frame.dtypes)
         # Tensor-like
-        case pa.Array(type=dtype):
+        case pa.Array(type=dtype):  # pyrefly: ignore[missing-attribute]
             return [dtype]
         case SupportsDtype(dtype=dtype):
             return [dtype]
