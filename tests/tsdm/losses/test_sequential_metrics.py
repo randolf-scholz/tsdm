@@ -508,8 +508,8 @@ def test_time_loss_normalization(
     r"""Test whether the time-series losses are normalized.
 
     Note:
-        The expectation is that, if $x,x̂∼N(0,1)$, then $r=x-x̂ ∼ N(0,2)$.
-        Thus, $‖r‖^2  = ‖√2⋅p‖^2 = 2‖p‖^2 = 2⋅χ^2(K) = χ^2(2K)$.
+        The expectation is that, if $x̂,x∼N(0,1)$, then $r=x̂-x ∼ N(0,2)$.
+        Thus, $‖r‖²  = ‖√2⋅p‖² = 2‖p‖² = 2⋅χ²(K) = χ²(2K)$.
 
         The chi-squared distribution strongly concentrates around its mean,
         so we should expect to see a value close to $2K$.
