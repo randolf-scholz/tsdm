@@ -48,6 +48,7 @@ __all__ = [
 
 from enum import StrEnum
 from math import prod
+from typing import assert_never
 
 import torch
 from torch import Tensor
@@ -64,19 +65,19 @@ class Normalization(StrEnum):
     TIMEPOINT_COVERAGE = "timepoint_coverage"
     OBSERVATION_COUNT = "observation_count"
 
-    def compute_normalization(
+    def apply(
         self,
-        values: Tensor,
+        values: Tensor,  # Float[..., $N, *D]
         /,
         *,
         time_dim: int,
         channel_dim: int | tuple[int, ...],
-        mask: Tensor | None = None,
-    ) -> Tensor | int:
+        mask: Tensor | None = None,  # Float[..., $N, *D]
+    ) -> Tensor:  # Float[..., $N, *D]
         channel_dim = (channel_dim,) if isinstance(channel_dim, int) else channel_dim
         match self:
             case Normalization.SEQUENCE_LENGTH:
-                return (
+                normalizer = (
                     values.shape[time_dim]
                     if mask is None
                     else (
@@ -87,14 +88,14 @@ class Normalization(StrEnum):
                 )
 
             case Normalization.CHANNEL_PREVALENCE:
-                return (
+                normalizer = (
                     values.shape[time_dim]
                     if mask is None
                     else mask.sum(dim=time_dim, keepdim=True).clamp_min(1)
                 )
 
             case Normalization.TIMEPOINT_COVERAGE:
-                return (
+                normalizer = (
                     values.shape[time_dim] * prod(values.shape[d] for d in channel_dim)
                     if mask is None
                     else (
@@ -106,13 +107,18 @@ class Normalization(StrEnum):
                 )
 
             case Normalization.OBSERVATION_COUNT:
-                return (
+                normalizer = (
                     values.shape[time_dim] * prod(values.shape[d] for d in channel_dim)
                     if mask is None
                     else mask.sum(dim=(time_dim, *channel_dim), keepdim=True).clamp_min(
                         1
                     )
                 )
+
+            case other:
+                assert_never(other)
+
+        return values / normalizer
 
 
 def lp_norm(
@@ -204,10 +210,12 @@ def lp_norm(
             raise NotImplementedError
         case name:
             scheme = Normalization(name)
-            normalizer = scheme.compute_normalization(
-                values, mask=mask, time_dim=time_dim, channel_dim=ch_dims
+            values = scheme.apply(
+                values,
+                mask=mask,
+                time_dim=time_dim,
+                channel_dim=ch_dims,
             )
-            values = values / normalizer
 
     if (w_t := time_weight) is not None:
         time_axes = tuple(axis for axis in range(x.ndim) if axis not in ch_dims)
