@@ -5,7 +5,12 @@ These should not be evaluated on mini-batches, instead they should only be estim
 on the full dataset.
 """
 
-__all__ = ["quantile_loss"]
+__all__ = [
+    "Quantile_Loss",
+    "RMSE_Loss",
+    "quantile_loss",
+    "rmse_loss",
+]
 
 from typing import Final
 
@@ -25,7 +30,7 @@ def quantile_loss(
 ) -> Tensor:
     r"""Compute the QL loss, based on relative q-quantile values.
 
-    .. math:: ℓ(x̂，x) ≔ 2 ∑ₖ⟦mₖ \? P_q(x̂ₖ-xₖ) : 0⟧ / ∑ₖ⟦mₖ \? |xₖ| : 0⟧
+    .. math:: ℓ(x̂，x) ≔ 2 ∑ₖ⟦mₖ \? ρ_q(x̂ₖ-xₖ) : 0⟧ / ∑ₖ⟦mₖ \? |xₖ| : 0⟧
 
     Args:
         predictions: The predicted values.
@@ -40,7 +45,11 @@ def quantile_loss(
           | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
-    return quantile_error(predictions - targets, q=q, dim=dim)
+    q_err = 2 * quantile_error(predictions - targets, q=q)
+
+    if relative:
+        return q_err.sum(dim=dim) / targets.abs().sum(dim=dim)
+    return q_err.sum(dim=dim)
 
 
 class Quantile_Loss(nn.Module):
