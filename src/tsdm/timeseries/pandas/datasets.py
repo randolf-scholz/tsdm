@@ -326,27 +326,17 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     def __getitem__(self, key: KeyT, /) -> TimeSeries[TimeT]: ...
     def __getitem__(
         self, key: KeyT | RangeSelector[KeyT], /
-    ) -> TimeSeries[TimeT] | Self:
+    ) -> Self | TimeSeries[TimeT]:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         match key:
             case slice() as s:
                 labels = self._select_slice(s)
                 return self._subset(labels)
 
-            case Series(dtype=dtype) as series if dtype.kind == "b":  # pyrefly: ignore[missing-attribute]
-                if len(series) != len(self.metaindex):
-                    raise ValueError(
-                        "Expected boolean mask to have one entry per collection,"
-                        f" got {len(series)} and {len(self.metaindex)}."
-                    )
-                mask = series.to_numpy(dtype=bool, na_value=False)  # pyrefly: ignore[missing-attribute]
-                return self._subset(self.metaindex[mask])
-
-            case Series() as series:
-                return self._subset(series.tolist())  # pyrefly: ignore[missing-attribute]
-
             case list(items):
-                if items and all(isinstance(k, bool) for k in items):
+                if any(isinstance(k, bool) for k in items):
+                    if not all(isinstance(k, bool) for k in items):
+                        raise ValueError("Expected all keys to be boolean for mask.")
                     if len(items) != len(self.metaindex):
                         raise ValueError(
                             "Expected boolean mask to have one entry per collection,"
@@ -355,6 +345,9 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
                     return self._subset(self.metaindex[items])
                 labels = cast("list[KeyT]", items)
                 return self._subset(labels)
+
+            case Series() as series:
+                return self[series.to_list()]  # pyrefly: ignore[missing-attribute]
 
             case scalar:
                 labels = [scalar]
