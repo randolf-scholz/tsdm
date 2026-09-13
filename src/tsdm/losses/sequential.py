@@ -375,14 +375,32 @@ def nrmse(
 
 def quantile_loss(
     *,
-    predictions: Tensor,
-    targets: Tensor,
+    predictions: Tensor,  # Float[..., $N, 1]
+    targets: Tensor,  # Float[..., $N, 1]
     q: float = 0.5,
     mask: Tensor | None = None,
-) -> Tensor:
+    relative: bool = True,
+) -> Tensor:  # Float[()]
     r"""Return the q-quantile loss.
 
-    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖ ρ_q(x̂ₜₖ，xₜₖ) }{ ∑ₜₖ|xₜₖ| }
+    Given a collection of of univariate time series $x̂ₜ⁽ⁱ⁾$:
+
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ᵢₜ ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) }{ ∑ᵢₜ|xₜ⁽ⁱ⁾| }
+
+    In order to prevent accidental application on multivariate time series,
+    this method checks for the presence of a trailing singleton dimension.
+
+    If a mask is given, instead compute:
+
+    .. math:: 𝖰𝖫_q(x̂，x) ≔
+        2\frac{⟦ mₜ⁽ⁱ⁾ \? ∑ᵢₜ ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) : 0 ⟧ }{ ∑ᵢₜ⟦ mₜ⁽ⁱ⁾ \? |xₜ⁽ⁱ⁾| : 0 ⟧ }
+
+    Args:
+        predictions:
+        targets:
+        q:
+        mask:
+        relative:
 
     References:
         - | Deep State Space Models for Time Series Forecasting
@@ -390,11 +408,14 @@ def quantile_loss(
           | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
           | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
-    return (
-        2
-        * torch.sum(quantile_error(predictions - targets, q=q))
-        / torch.sum(targets.abs())
-    )
+    if targets.shape[-1] != 1 or predictions.shape[-1] != 1:
+        raise ValueError("This loss is only defined for univariate time series.")
+
+    predictions = predictions.squeeze(-1)
+    targets = targets.squeeze(-1)
+    q_err = 2 * quantile_error(predictions - targets, q=q)
+
+    return q_err.sum() / targets.abs().sum() if relative else q_err.sum()
 
 
 class ND(BaseSequenceLoss):

@@ -6,75 +6,15 @@ on the full dataset.
 """
 
 __all__ = [
-    "Quantile_Loss",
     "RMSE_Loss",
-    "quantile_loss",
     "rmse_loss",
 ]
 
-from typing import Final
 
-from torch import Tensor, nn
+from torch import Tensor
 
 from .base import BaseLoss, Dim, Reduction
-from .samplewise import lp_loss, quantile_error
-
-
-def quantile_loss(
-    *,
-    predictions: Tensor,
-    targets: Tensor,
-    q: float = 0.5,
-    dim: int = -1,
-    relative: bool = True,
-) -> Tensor:
-    r"""Compute the QL loss, based on relative q-quantile values.
-
-    .. math:: ℓ(x̂，x) ≔ 2 ∑ₖ⟦mₖ \? ρ_q(x̂ₖ-xₖ) : 0⟧ / ∑ₖ⟦mₖ \? |xₖ| : 0⟧
-
-    Args:
-        predictions: The predicted values.
-        targets: The target values.
-        q: The quantile level.
-        dim: The dimension along which to compute the loss.
-        relative: Whether to compute the relative loss.
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram et al.
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-    q_err = 2 * quantile_error(predictions - targets, q=q)
-
-    if relative:
-        return q_err.sum(dim=dim) / targets.abs().sum(dim=dim)
-    return q_err.sum(dim=dim)
-
-
-class Quantile_Loss(nn.Module):
-    r"""The q-quantile / pinball loss.
-
-    .. math::
-        𝖯_q(x̂, x) ≔ \begin{cases}
-            \hfill  q⋅|x̂-x| :& x ≥ x̂
-            \\  (1-q)⋅|x̂-x| :& x ≤ x̂
-        \end{cases}
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-
-    q: Final[float]
-
-    def __init__(self, q: float = 0.5):
-        super().__init__()
-        self.q = q
-
-    def forward(self, *, predictions: Tensor, targets: Tensor) -> Tensor:
-        r"""Compute the loss value."""
-        return quantile_error(predictions - targets, q=self.q)
+from .samplewise import lp_loss
 
 
 def rmse_loss(
