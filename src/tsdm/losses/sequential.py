@@ -75,6 +75,7 @@ class Normalization(StrEnum):
         channel_dim: int | tuple[int, ...],
         mask: Tensor | None = None,
     ) -> Tensor | int:
+        channel_dim = (channel_dim,) if isinstance(channel_dim, int) else channel_dim
         match self:
             case Normalization.SEQUENCE_LENGTH:
                 return (
@@ -393,7 +394,7 @@ def quantile_loss(
     """
     return (
         2
-        * torch.sum(quantile_error(predictions=predictions, targets=targets, q=q))
+        * torch.sum(quantile_error(predictions - targets, q=q))
         / torch.sum(targets.abs())
     )
 
