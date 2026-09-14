@@ -3,9 +3,9 @@ from math import prod
 import pytest
 import torch
 
-from tsdm.losses.penalties.sequence import Normalization
 from tsdm.losses.reductions import Reduction
 from tsdm.losses.sequence import (
+    Normalization,
     Quantile_Loss,
     SequentialMSE,
     lp_loss,

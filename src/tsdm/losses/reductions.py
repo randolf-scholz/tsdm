@@ -1,3 +1,7 @@
+r"""Reduction methods for aggregating penalties."""
+
+__all__ = ["Reduction", "apply_reduction"]
+
 from collections.abc import Callable
 from enum import StrEnum
 from typing import assert_never

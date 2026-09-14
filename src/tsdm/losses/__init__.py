@@ -43,7 +43,10 @@ Note that in the context of time-series, we allow the accumulator to depend on t
 
 __all__ = [
     # Sub-Modules
+    "base",
+    "penalties",
     "pointwise",
+    "reductions",
     "sequence",
     # Constants
     "LOSSES",
@@ -60,7 +63,7 @@ __all__ = [
 ]
 
 
-from . import base, pointwise, sequence
+from . import base, penalties, pointwise, reductions, sequence
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -70,12 +73,12 @@ from ._torch_imports import (
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
 from .base import *  # ruff: ignore[F403]
-from .pointwise import *  # ruff: ignore[F403]
-from .sequence import *  # ruff: ignore[F403]
+from .penalties import *  # ruff: ignore[F403]
+from .reductions import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
-__all__ += pointwise.__all__
-__all__ += pointwise.__all__
+__all__ += penalties.__all__
+__all__ += reductions.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
     "mae_loss"        : pointwise.mae_loss,

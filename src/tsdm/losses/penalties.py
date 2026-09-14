@@ -1,3 +1,5 @@
+r"""Penalty functions."""
+
 __all__ = ["quantile_error"]
 
 import torch
