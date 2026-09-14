@@ -37,13 +37,13 @@ __all__ = [
     "NRMSE",
     "Quantile_Loss",
     "SequentialMSE",
-    # "TimeSeriesMAE",
-    # "TimeSeriesRMSE",
+    # losses
     "lp_loss",
-    "lp_norm",
     "nd",
     "nrmse",
     "quantile_loss",
+    # functions
+    "lp_norm",
 ]
 
 from enum import StrEnum
@@ -404,11 +404,14 @@ def quantile_loss(
         2\frac{ ∑ᵢₜ ⟦ mₜ⁽ⁱ⁾ \? ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) : 0 ⟧ }{ ∑ᵢₜ⟦ mₜ⁽ⁱ⁾ \? |xₜ⁽ⁱ⁾| : 0 ⟧ }
 
     Args:
-        predictions:
-        targets:
-        q:
-        mask:
-        relative:
+        predictions: Predicted values of shape ``[..., N, 1]``.
+        targets: Target values of shape ``[..., N, 1]``.
+        q: Quantile level in the closed interval ``[0, 1]``.
+        mask: Optional Boolean mask of observations to include. It must be
+            broadcastable to ``predictions`` and may include the trailing
+            singleton channel dimension.
+        relative: Whether to normalize the summed quantile errors by the sum
+            of absolute target values.
 
     References:
         - | Deep State Space Models for Time Series Forecasting
@@ -421,12 +424,13 @@ def quantile_loss(
 
     predictions = predictions.squeeze(-1)
     targets = targets.squeeze(-1)
+
     if mask is not None:
         mask = mask.squeeze(-1)
         predictions = torch.where(mask, predictions, 0.0)
         targets = torch.where(mask, targets, 0.0)
-    q_err = 2 * quantile_error(predictions - targets, q=q)
 
+    q_err = 2 * quantile_error(predictions - targets, q=q)
     return q_err.sum() / targets.abs().sum() if relative else q_err.sum()
 
 

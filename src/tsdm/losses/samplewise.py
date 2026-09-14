@@ -7,10 +7,11 @@ __all__ = [
     "MSE_Loss",
     "MAE_Loss",
     "LP_Loss",
-    # functions
+    # losses
     "mse_loss",
     "mae_loss",
     "lp_loss",
+    # functions
     "lp_norm",
     "quantile_error",
 ]

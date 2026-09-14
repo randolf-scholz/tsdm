@@ -78,11 +78,14 @@ __all__ += samplewise.__all__
 __all__ += sequential.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
+    "mae_loss"        : samplewise.MAE_Loss,
+    "mse_loss"        : samplewise.MSE_Loss,
+    "lp_loss"         : samplewise.LP_Loss,
+    # sequential
     "nd"              : sequential.nd,
     "rmse"            : batch.rmse_loss,
     "nrmse"           : sequential.nrmse,
-    "q_quantile"      : samplewise.quantile_error,
-    "q_quantile_loss" : sequential.quantile_loss,
+    "quantile_loss" : sequential.quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
 
