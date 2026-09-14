@@ -319,23 +319,32 @@ def nd(
     mask: Tensor | None = None,  # Bool[..., $N, *D]
     eps: float = 2**-24,
 ) -> Tensor:  # Float[...]
-    r"""Compute the normalized deviation score.
+    r"""Compute the normalized deviation score as defined by [TRMF]_.
 
-    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
+    For a collection of dense, univariate time series $x̂ₜ⁽ⁱ⁾$, [TRMF]_ defines:
 
-    or, more generally:
+    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ᵢₜ|x̂ₜ⁽ⁱ⁾ - xₜ⁽ⁱ⁾|}{∑ᵢₜ|xₜ⁽ⁱ⁾|}
+
+    which we generalize towards sparse, multivariate time series as:
+
+    .. math::  𝖭𝖣(x̂，x) ≔
+        \frac{∑ᵢₜₖ ⟦ mᵢₜₖ \? |x̂ₜₖ⁽ⁱ⁾ - xₜₖ⁽ⁱ⁾| : 0 ⟧ }{∑ᵢₜₖ ⟦mᵢₜₖ \? |xₜₖ⁽ⁱ⁾| : 0 ⟧}
+
+    which is equivalent to `lp_loss` with `p=1` and `relative=True`.
 
     .. math:: 𝖭𝖣(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
 
     where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
 
     References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
-          | Advances in Neural Information Processing Systems 29 (NIPS 2016)
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-        - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
-          | https://openreview.net/forum?id=r1ecqn4YwB
+        .. [TRMF]
+        | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+        | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
+        | Advances in Neural Information Processing Systems 29 (NIPS 2016)
+        | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+        .. [NBEATS]
+        | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+        | https://openreview.net/forum?id=r1ecqn4YwB
     """
     x_pred = predictions
     x_true = targets
@@ -357,9 +366,13 @@ def nrmse(
 ) -> Tensor:  # Float[...]
     r"""Compute the normalized root mean square error as defined by [TRMF]_.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{\frac{1}{T}∑ₜₖ|xₜₖ|}
+    For a collection of univariate time series $x̂ₜ⁽ⁱ⁾$, [TRMF]_ defines:
 
-    or, more generally:
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ᵢₜ|x̂ₜ⁽ⁱ⁾ - xₜ⁽ⁱ⁾|²}}{\frac{1}{T}∑ᵢₜ|xₜ⁽ⁱ⁾|}
+
+    which we generalize towards sparse, multivariate time series as:
+
+    which is equivalent to `lp_loss` with `p=2` and `relative=1`.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
 
