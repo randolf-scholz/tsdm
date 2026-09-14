@@ -317,8 +317,7 @@ def nd(
     channel_dim: Dim = -1,
     # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-    eps: float = 2**-24,
-) -> Tensor:  # Float[...]
+) -> Tensor:  # Float[()]
     r"""Compute the normalized deviation score as defined by [TRMF]_.
 
     For a collection of dense, univariate time series $x̂ₜ⁽ⁱ⁾$, [TRMF]_ defines:
@@ -330,7 +329,7 @@ def nd(
     .. math::  𝖭𝖣(x̂，x) ≔
         \frac{∑ᵢₜₖ ⟦ mᵢₜₖ \? |x̂ₜₖ⁽ⁱ⁾ - xₜₖ⁽ⁱ⁾| : 0 ⟧ }{∑ᵢₜₖ ⟦mᵢₜₖ \? |xₜₖ⁽ⁱ⁾| : 0 ⟧}
 
-    which is equivalent to `lp_loss` with `p=1` and `relative=True`.
+    which is equivalent to `lp_loss` with `p=1`, `relative=True` and `normalization=observation_count`.
 
     .. math:: 𝖭𝖣(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
 
@@ -346,12 +345,7 @@ def nd(
         | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
         | https://openreview.net/forum?id=r1ecqn4YwB
     """
-    x_pred = predictions
-    x_true = targets
-    res = torch.sum((x_pred - x_true).abs(), dim=(-2, -1))
-    mag = torch.sum(x_true.abs(), dim=(-2, -1))
-    mag = torch.maximum(mag, torch.full_like(mag, eps))
-    return torch.mean(res / mag)  # get rid of any batch dimensions
+    raise NotImplementedError
 
 
 def nrmse(
