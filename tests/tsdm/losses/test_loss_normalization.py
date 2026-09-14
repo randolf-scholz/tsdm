@@ -6,9 +6,7 @@ from math import pi, prod, sqrt
 import pytest
 import torch
 
-from tsdm.losses import ND, BaseLoss, MAE_Loss, MSE_Loss
-from tsdm.losses.batch import RMSE_Loss
-from tsdm.losses.sequential import nd
+from tsdm.losses import ND, BaseLoss, MAE_Loss, MSE_Loss, RMSE_Loss, nd
 
 BATCH_SHAPES = [
     (),

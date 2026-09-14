@@ -1,142 +1,28 @@
-r"""Implementations of metrics for (non-sequential) data.
+r"""Implementation of losses that are applies pointwise.
 
-These metrics support missing values through the mask argument.
+These can still be used for sequential data, however, note that in this case
+the sequence dimension is simply treated as any other a batch dimension.
 """
 
 __all__ = [
-    "MSE_Loss",
-    "MAE_Loss",
     "LP_Loss",
+    "MAE_Loss",
+    "MSE_Loss",
+    "RMSE_Loss",
     # losses
-    "mse_loss",
-    "mae_loss",
     "lp_loss",
-    # functions
-    "lp_norm",
-    "quantile_error",
+    "mae_loss",
+    "mse_loss",
+    "rmse_loss",
 ]
 
 from typing import Final
 
-import torch
 from torch import Tensor
 
-from .base import BaseLoss, Dim, Reduction
-
-
-def quantile_error(
-    r,  # Float[...]
-    /,
-    *,
-    q: float = 0.5,
-) -> Tensor:  # Float[...]
-    r"""Return the q-quantile / pinball loss.
-
-    For a residual scalar $r=x̂-x$, this is just:
-
-    .. math:: ρ_q(r) ≔ ⟦r ≤ 0 \? q⋅|r| : (1-q)⋅|r| ⟧ = \max( (q-1)r, qr)
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram et al.
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-    if not (0.0 <= q <= 1.0):
-        raise ValueError(f"q must be in [0, 1], but got {q}")
-    # simplified formula
-    return torch.maximum((q - 1) * r, q * r)
-
-
-def lp_norm(
-    x: Tensor,  # Float[..., *D]
-    /,
-    *,
-    dim: Dim,  # *D
-    p: float = 2.0,
-    mask: Tensor | None = None,  # Bool[..., *D]
-    weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
-    scaled: bool = False,
-) -> Tensor:  # Float[...]
-    r"""Compute (possibly scaled) Lₚ-norm.
-
-    .. math:: ‖x‖ₚ     ≔ \sqrt[p]{∑ₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{p⁎} ≔ \sqrt[p]{(1/K)∑ₖ|xₖ|ᵖ}
-
-    And masked versions:
-
-    .. math:: ‖x‖_{m,p}  ≔ \sqrt[p]{∑ₖ ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
-    .. math:: ‖x‖_{m,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
-
-    Moreover, one can introduce channel weights:
-
-    .. math:: ‖x‖_{w,p}  ≔ \sqrt[p]{∑ₖwₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{w,p⁎} ≔ \sqrt[p]{(1/∑ⱼ⟦wⱼ≠0⟧)∑ₖwₖ|xₖ|ᵖ}
-
-    and with both weights and masks:
-
-    .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
-    .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ&(wⱼ≠0)) ∑ₖwₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
-
-    Note:
-        For weighted scaled norms, zero-weight entries are treated as masked:
-        the denominator is ``sum(weight != 0)`` without a mask,
-        and ``sum(mask & (weight != 0))`` with one.
-
-        An empty ``dim`` tuple performs no inner reduction.
-    """
-    dims = tuple(
-        range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim
-    )
-    if weight is not None and weight.ndim != len(dims):
-        raise ValueError(f"Expected {weight.ndim=} to equal {len(dims)=}")
-
-    # fmt: off
-    active: Tensor | None
-    match mask, weight:
-        case None, None: active = None
-        case _,    None: active = mask
-        case None, _   : active = weight != 0  # pyrefly: ignore[bad-assignment]
-        case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
-    # fmt: on
-
-    if p != p:
-        raise ValueError("p must not be NaN.")
-    if p == torch.inf:
-        raise NotImplementedError
-    if p == -torch.inf:
-        raise NotImplementedError
-    if p == 0.0:
-        # TODO: if scaled, use geometric mean.
-        raise NotImplementedError
-    if p > 0:  # p∈(0,∞)
-        if active is not None:
-            x = torch.where(active, x, 0.0)
-        s = x.abs().pow(p)
-    else:  # p∈(-∞,0)
-        if active is not None:
-            x = torch.where(active, x, 1.0)
-        s = x.abs().pow(p)
-        if active is not None:
-            s = torch.where(active, s, 0.0)
-
-    if weight is not None:
-        s = weight * s
-
-    r = torch.sum(s, dim=dims) if dims else s
-
-    if scaled:
-        numel = (
-            torch.Size(x.shape[d] for d in dims).numel()
-            if active is None
-            else active.sum(dim=dims)
-        )
-
-        if torch.any(torch.as_tensor(numel) == 0):
-            raise ValueError("Cannot scale a norm with no unmasked elements.")
-        r = r.div(numel)
-
-    return r.pow(1 / p)
+from .base import BaseLoss, Dim
+from .penalties.pointwise import lp_norm
+from .reductions import Reduction
 
 
 def lp_loss(
@@ -384,6 +270,64 @@ class MSE_Loss(BaseLoss):
             targets=targets,
             mask=mask,
             weight=weight,
+            channel_weight=self.channel_weight,
+            scaled=self.scaled,
+        )
+
+
+def rmse_loss(
+    *,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
+    dim: Dim = -1,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    reduction: Reduction = Reduction.MEAN,
+    scaled: bool = False,
+) -> Tensor:  # Float[()]
+    r"""Compute the sample-weighted root mean squared error.
+
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
+    """
+    squared_norms = lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=2.0,
+        dim=dim,
+        mask=mask,
+        channel_weight=channel_weight,
+        scaled=scaled,
+        reduction=Reduction.NONE,
+    ).square()
+    return Reduction(reduction).apply(squared_norms, weight=sample_weight).sqrt()
+
+
+class RMSE_Loss(BaseLoss):
+    r"""Root Mean Square Error.
+
+    Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
+
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt{𝔼[‖x̂ - x‖²]}
+
+    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
+
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
+    """
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        weight: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
+        return rmse_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            sample_weight=weight,
             channel_weight=self.channel_weight,
             scaled=self.scaled,
         )

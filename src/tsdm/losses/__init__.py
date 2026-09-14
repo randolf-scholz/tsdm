@@ -43,8 +43,8 @@ Note that in the context of time-series, we allow the accumulator to depend on t
 
 __all__ = [
     # Sub-Modules
-    "samplewise",
-    "sequential",
+    "pointwise",
+    "sequence",
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
@@ -60,7 +60,7 @@ __all__ = [
 ]
 
 
-from . import base, batch, samplewise, sequential
+from . import base, pointwise, sequence
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -70,38 +70,38 @@ from ._torch_imports import (
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
 from .base import *  # ruff: ignore[F403]
-from .samplewise import *  # ruff: ignore[F403]
-from .sequential import *  # ruff: ignore[F403]
+from .pointwise import *  # ruff: ignore[F403]
+from .sequence import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
-__all__ += samplewise.__all__
-__all__ += sequential.__all__
+__all__ += pointwise.__all__
+__all__ += pointwise.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
-    "mae_loss"        : samplewise.MAE_Loss,
-    "mse_loss"        : samplewise.MSE_Loss,
-    "lp_loss"         : samplewise.LP_Loss,
+    "mae_loss"        : pointwise.mae_loss,
+    "mse_loss"        : pointwise.mse_loss,
+    "rmse"            : pointwise.rmse_loss,
+    "lp_loss"         : pointwise.lp_loss,
     # sequential
-    "nd"              : sequential.nd,
-    "rmse"            : batch.rmse_loss,
-    "nrmse"           : sequential.nrmse,
-    "quantile_loss" : sequential.quantile_loss,
+    "nd"              : sequence.nd,
+    "nrmse"           : sequence.nrmse,
+    "quantile_loss"   : sequence.quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
 
 MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
-    "LP_Loss"   : samplewise.LP_Loss,
-    "MAE_loss"  : samplewise.MAE_Loss,
-    "MSE_Loss"  : samplewise.MSE_Loss,
-    "RMSE_Loss" : batch.RMSE_Loss,
+    "LP_Loss"   : pointwise.LP_Loss,
+    "MAE_loss"  : pointwise.MAE_Loss,
+    "MSE_Loss"  : pointwise.MSE_Loss,
+    "RMSE_Loss" : pointwise.RMSE_Loss,
 }  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
 TIMESERIES_LOSSES: dict[str, type[base.BaseSequenceLoss]] = {
-    "ND"              : sequential.ND,
-    "NRMSE"           : sequential.NRMSE,
-    "Q_Quantile_Loss" : sequential.Quantile_Loss,
-    "SequentialMSE"   : sequential.SequentialMSE,
+    "ND"            : sequence.ND,
+    "NRMSE"         : sequence.NRMSE,
+    "Quantile_Loss" : sequence.Quantile_Loss,
+    "SequentialMSE" : sequence.SequentialMSE,
 }  # fmt: skip
 r"""Dictionary of all available time-series losses."""
 
