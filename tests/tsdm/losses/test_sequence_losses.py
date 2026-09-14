@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from math import prod
 
 import pytest
@@ -5,11 +6,13 @@ import torch
 
 from tsdm.losses.reductions import Reduction
 from tsdm.losses.sequence import (
+    ND,
     Normalization,
     Quantile_Loss,
     SequentialMSE,
     lp_loss,
     lp_norm,
+    nd,
     quantile_loss,
 )
 
@@ -538,4 +541,17 @@ def test_time_loss_normalization(
     expected = 2 * prod(channel_shape)
     assert abs(result - expected) < rtol * abs(expected) + atol, (
         f"tolerance exceeded! {shape=}, {result=}, {expected=}"
+    )
+
+
+@pytest.mark.parametrize("loss_func", [nd, ND()])
+def test_argument_order(loss_func: Callable[..., torch.Tensor]) -> None:
+    r"""Test that metrics accept predictions before targets by position or keyword."""
+    targets = torch.ones(2, 2)
+    predictions = 2 * torch.ones(2, 2)
+    expected = torch.tensor(1.0)
+
+    assert torch.equal(
+        loss_func(predictions=predictions, targets=targets),
+        expected,
     )

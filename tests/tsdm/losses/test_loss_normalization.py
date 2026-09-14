@@ -1,12 +1,11 @@
 r"""Test loss function normalization."""
 
-from collections.abc import Callable
 from math import pi, prod, sqrt
 
 import pytest
 import torch
 
-from tsdm.losses import ND, BaseLoss, MAE_Loss, MSE_Loss, RMSE_Loss, nd
+from tsdm.losses import BaseLoss, pointwise
 
 BATCH_SHAPES = [
     (),
@@ -19,20 +18,7 @@ CHANNEL_SHAPES = [
     (5, 16),
 ]
 TIME_SHAPES = [(1,), (32,)]
-LOSSES = [MSE_Loss, RMSE_Loss, MAE_Loss]
-
-
-@pytest.mark.parametrize("loss_func", [nd, ND()])
-def test_metric_argument_order(loss_func: Callable[..., torch.Tensor]) -> None:
-    r"""Test that metrics accept predictions before targets by position or keyword."""
-    targets = torch.ones(2, 2)
-    predictions = 2 * torch.ones(2, 2)
-    expected = torch.tensor(1.0)
-
-    assert torch.equal(
-        loss_func(predictions=predictions, targets=targets),
-        expected,
-    )
+LOSSES = [pointwise.MSE_Loss, pointwise.RMSE_Loss, pointwise.MAE_Loss]
 
 
 @pytest.mark.slow

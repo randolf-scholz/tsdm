@@ -30,9 +30,11 @@ should provide arguments for these positions.
 
 __all__ = [
     # Classes
+    "Normalization",
     "ND",
     "NRMSE",
     "Quantile_Loss",
+    "LP_Loss",
     "SequentialMSE",
     # losses
     "lp_loss",
@@ -40,6 +42,7 @@ __all__ = [
     "nrmse",
     "quantile_loss",
     # functions
+    "lp_norm",
 ]
 
 from enum import StrEnum
@@ -503,6 +506,10 @@ class Quantile_Loss(BaseSequenceLoss):
             targets=targets,
             mask=mask,
         )
+
+
+class LP_Loss(BaseSequenceLoss):
+    r"""LP-loss for sequence spaces."""
 
 
 class SequentialMSE(BaseSequenceLoss):

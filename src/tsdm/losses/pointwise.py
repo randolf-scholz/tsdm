@@ -14,6 +14,8 @@ __all__ = [
     "mae_loss",
     "mse_loss",
     "rmse_loss",
+    # penalties
+    "lp_norm",
 ]
 
 from typing import Final

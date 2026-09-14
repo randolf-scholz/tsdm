@@ -7,7 +7,7 @@ from tsdm.losses import FUNCTIONAL_LOSSES
 
 
 @pytest.mark.parametrize("loss_name", FUNCTIONAL_LOSSES)
-def test_metric_compilable(loss_name: str) -> None:
+def test_loss_compilable(loss_name: str) -> None:
     r"""Test that all functional metrics can be compiled with torch.compile."""
     loss_fn = FUNCTIONAL_LOSSES[loss_name]
     compiled_loss_fn = torch.compile(loss_fn)
