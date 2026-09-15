@@ -17,26 +17,16 @@ from tsdm.losses.sequence import (
     rmse,
 )
 
-BATCH_SHAPES = [
-    (),
-    (1,),
-    (128,),
-    (8, 16),
-]
-CHANNEL_SHAPES = [
-    (64,),
-    (5, 16),
-]
-NUM_STEPS = [1, 32]
-
-P_VALUES = [-2.0, -1.0, 0.5, 1.0, 2.0, 3.0]
-LP_NORM_BATCH_SHAPES = [(), (6,), (1, 2, 3)]
-LP_NORM_CHANNEL_SHAPES = [(), (4,), (2, 2)]
-LP_NORM_SEQUENCE_LENGTH = 7
+from .fixtures import TestSequenceLoss as SequenceLossTestBase
 
 
 class TestLpNorm:
     r"""Tests for sequential Lp norms."""
+
+    P_VALUES = [-2.0, -1.0, 0.5, 1.0, 2.0, 3.0]
+    BATCH_SHAPES = [(), (6,), (1, 2, 3)]
+    CHANNEL_SHAPES = [(), (4,), (2, 2)]
+    SEQUENCE_LENGTH = 7
 
     @pytest.mark.parametrize("p", P_VALUES)
     def test_matches_torch_vector_norm(self, p: float) -> None:
@@ -55,8 +45,8 @@ class TestLpNorm:
         torch.testing.assert_close(result, expected)
 
     @pytest.mark.parametrize("p", P_VALUES)
-    @pytest.mark.parametrize("batch_shape", LP_NORM_BATCH_SHAPES)
-    @pytest.mark.parametrize("channel_shape", LP_NORM_CHANNEL_SHAPES)
+    @pytest.mark.parametrize("batch_shape", BATCH_SHAPES)
+    @pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES)
     def test_accepts_arbitrary_batch_and_channel_shapes(
         self,
         p: float,
@@ -64,7 +54,7 @@ class TestLpNorm:
         channel_shape: tuple[int, ...],
     ) -> None:
         r"""Arbitrary batch and channel shapes include unbatched univariate series."""
-        shape = (*batch_shape, LP_NORM_SEQUENCE_LENGTH, *channel_shape)
+        shape = (*batch_shape, self.SEQUENCE_LENGTH, *channel_shape)
         x = torch.linspace(0.1, 2.0, prod(shape), dtype=torch.float64).reshape(shape)
         time_dim = -len(channel_shape) - 1
         channel_dim = tuple(range(-len(channel_shape), 0))
@@ -321,8 +311,10 @@ class TestLpNorm:
         assert torch.equal(x.grad[~mask], torch.zeros_like(x.grad[~mask]))
 
 
-class TestLpLoss:
+class TestLpLoss(SequenceLossTestBase):
     r"""Tests for sequential Lp losses."""
+
+    loss = staticmethod(lp_loss)
 
     @pytest.mark.parametrize("reduction", list(Reduction))
     def test_relative_divides_residual_norm_by_target_norm(
@@ -414,34 +406,11 @@ class TestLpLoss:
 
         torch.testing.assert_close(result, expected)
 
-    def test_masks_sparse_targets_without_breaking_prediction_gradients(self) -> None:
-        r"""Sparse targets do not contaminate prediction gradients."""
-        predictions = torch.tensor(
-            [[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]]], requires_grad=True
-        )
-        targets = torch.tensor([[[1.0, torch.nan, 3.0], [torch.nan, 5.0, 6.0]]])
-        mask = ~targets.isnan()
 
-        loss = lp_loss(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=-2,
-            channel_dim=-1,
-        )
-        loss.backward()
-
-        assert torch.isfinite(loss)
-        assert predictions.grad is not None
-        assert torch.isfinite(predictions.grad).all()
-        assert torch.all(predictions.grad[mask] != 0)
-        assert torch.equal(
-            predictions.grad[~mask], torch.zeros_like(predictions.grad[~mask])
-        )
-
-
-class TestRMSE:
+class TestRMSE(SequenceLossTestBase):
     r"""Tests for root mean square error."""
+
+    loss = staticmethod(rmse)
 
     def test_masks_values_and_normalizes_by_observed_timepoints(self) -> None:
         r"""Each sequence is normalized by its nonempty masked time steps."""
@@ -573,9 +542,11 @@ class TestQuantileLoss:
 
 @pytest.mark.slow
 @pytest.mark.flaky(reruns=3)
-@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
-@pytest.mark.parametrize("num_steps", NUM_STEPS)
-@pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
+@pytest.mark.parametrize("channel_shape", [(64,), (5, 16)], ids=lambda cs: f"{cs=}")
+@pytest.mark.parametrize("num_steps", [1, 32])
+@pytest.mark.parametrize(
+    "batch_shape", [(), (1,), (128,), (8, 16)], ids=lambda bs: f"{bs=}"
+)
 @pytest.mark.parametrize(("atol", "rtol"), [(0.01, 0.01)])
 def test_time_loss_normalization(
     batch_shape: tuple[int, ...],

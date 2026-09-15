@@ -388,9 +388,9 @@ def rmse(
     )
 
     residuals = predictions - targets
-    squared_errors = residuals.square()
     if mask is not None:
-        squared_errors = torch.where(mask, squared_errors, 0.0)
+        residuals = torch.where(mask, residuals, 0.0)
+    squared_errors = residuals.square()
 
     channel_squared_errors = (
         squared_errors if not channel_dims else squared_errors.sum(dim=channel_dims)
