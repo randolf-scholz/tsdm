@@ -23,13 +23,13 @@ fonttools==4.65.0
     # via matplotlib
 fsspec==2026.7.0
     # via torch
-grpcio==1.83.1
+grpcio==1.84.0
     # via tensorboard
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
-httpcore2==2.12.0 ; sys_platform != 'emscripten'
+httpcore2==2.13.0 ; sys_platform != 'emscripten'
     # via httpx2
-httpx2==2.12.0
+httpx2==2.13.0
     # via tsdm
 httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'
     # via httpx2
@@ -158,7 +158,7 @@ typing-extensions==4.16.0
     #   grpcio
     #   torch
     #   tsdm
-tzdata==2026.3 ; sys_platform == 'emscripten' or sys_platform == 'win32'
+tzdata==2026.4 ; sys_platform == 'emscripten' or sys_platform == 'win32'
     # via pandas
 werkzeug==3.1.8
     # via tensorboard
