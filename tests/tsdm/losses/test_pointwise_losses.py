@@ -161,7 +161,7 @@ class TestLpLoss:
             targets=targets,
             p=1.0,
             channel_weight=torch.tensor([1.0, 2.0]),
-            weight=torch.tensor([1.0, 3.0]),
+            sample_weight=torch.tensor([1.0, 3.0]),
             reduction=Reduction.NONE,
         )
 

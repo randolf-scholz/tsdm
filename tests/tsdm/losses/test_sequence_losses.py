@@ -14,6 +14,7 @@ from tsdm.losses.sequence import (
     lp_norm,
     nd,
     quantile_loss,
+    rmse,
 )
 
 BATCH_SHAPES = [
@@ -437,6 +438,81 @@ class TestLpLoss:
         assert torch.equal(
             predictions.grad[~mask], torch.zeros_like(predictions.grad[~mask])
         )
+
+
+class TestRMSE:
+    r"""Tests for root mean square error."""
+
+    def test_masks_values_and_normalizes_by_observed_timepoints(self) -> None:
+        r"""Each sequence is normalized by its nonempty masked time steps."""
+        predictions = torch.tensor(
+            [
+                [[3.0, 4.0], [torch.nan, torch.nan], [5.0, 12.0]],
+                [[6.0, 8.0], [9.0, torch.nan], [123.0, 456.0]],
+            ]
+        )
+        targets = torch.zeros_like(predictions)
+        mask = torch.tensor(
+            [
+                [[True, False], [False, False], [True, True]],
+                [[True, True], [True, False], [False, False]],
+            ]
+        )
+
+        result = rmse(predictions=predictions, targets=targets, mask=mask)
+        expected = torch.stack(
+            [
+                torch.tensor((3.0**2 + 5.0**2 + 12.0**2) / 2).sqrt(),
+                torch.tensor((6.0**2 + 8.0**2 + 9.0**2) / 2).sqrt(),
+            ]
+        ).mean()
+
+        torch.testing.assert_close(result, expected)
+
+
+class TestND:
+    r"""Tests for normalized deviation."""
+
+    def test_matches_lp_loss_with_observation_count_normalization(self) -> None:
+        r"""ND agrees with its documented ``lp_loss`` specialization."""
+        predictions = torch.tensor(
+            [
+                [[2.0, -1.0, 4.0], [8.0, 100.0, 0.0]],
+                [[12.0, 5.0, -4.0], [1.0, 4.0, 9.0]],
+            ]
+        )
+        targets = torch.tensor(
+            [
+                [[1.0, -2.0, 3.0], [5.0, 20.0, 1.0]],
+                [[6.0, 1.0, -2.0], [2.0, 8.0, 3.0]],
+            ]
+        )
+        mask = torch.tensor(
+            [
+                [[True, False, True], [False, True, True]],
+                [[True, True, False], [False, True, True]],
+            ]
+        )
+
+        result = nd(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=-2,
+            channel_dim=-1,
+        )
+        expected = lp_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            p=1.0,
+            relative=True,
+            time_dim=-2,
+            channel_dim=-1,
+            normalization=Normalization.OBSERVATION_COUNT,
+        )
+
+        torch.testing.assert_close(result, expected)
 
 
 class TestQuantileLoss:

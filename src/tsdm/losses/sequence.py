@@ -36,11 +36,13 @@ __all__ = [
     "Quantile_Loss",
     "LP_Loss",
     "SequentialMSE",
+    "RMSE_Loss",
     # losses
     "lp_loss",
     "nd",
     "nrmse",
     "quantile_loss",
+    "rmse",
     # functions
     "lp_norm",
 ]
@@ -58,7 +60,32 @@ from .reductions import Reduction
 
 
 class Normalization(StrEnum):
-    r"""Built-in normalization schemes for sequential norms."""
+    r"""Built-in normalization schemes for sequential norms.
+
+    - ``sequence_length``: Divide by the number of time steps with at least one observed channel
+
+            $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛ⋁ⱼmₛⱼ$.
+
+      Use it to give padded sequences equal weight regardless of their length.
+
+    - ``channel_prevalence``: Divide each channel by its number of observations
+
+            $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛmₛₖ$.
+
+      Use it to prevent frequently observed channels from dominating sparse channels.
+
+    - ``timepoint_coverage``: Divide by both sequence length and the number of observed channels at each time step
+
+            $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ (∑ₛ⋁ⱼmₛⱼ)⋅(∑ⱼmₜⱼ)$
+
+      Use it to give each observed time point equal weight.
+
+    - ``observation_count``: Divide by the total number of observed values
+
+            $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ ∑ₛⱼmₛⱼ$.
+
+      Use it to compute a global mean over observations.
+    """
 
     SEQUENCE_LENGTH = "sequence_length"
     CHANNEL_PREVALENCE = "channel_prevalence"
@@ -121,6 +148,31 @@ class Normalization(StrEnum):
         return values / normalizer
 
 
+def _normalize_dims(
+    *,
+    ndim: int,
+    time_dim: int,
+    channel_dim: int | tuple[int, ...],
+) -> tuple[int, tuple[int, ...]]:
+    r"""Validate and normalize time and channel dimensions."""
+    channel_dims = (channel_dim,) if isinstance(channel_dim, int) else channel_dim
+    if not all(-ndim <= dim < ndim for dim in (time_dim, *channel_dims)):
+        raise ValueError(f"channel or time dims are out of range for {ndim=}.")
+
+    time_dim %= ndim
+    channel_dims = tuple(dim % ndim for dim in channel_dims)
+    if ndim < 1:
+        raise ValueError("x must have at least a time dimension.")
+    if time_dim in channel_dims:
+        raise ValueError("time_dim and channel_dim must be disjoint.")
+    if len(set(channel_dims)) != len(channel_dims):
+        raise ValueError("channel_dim must not contain duplicate dimensions.")
+    if channel_dims != tuple(sorted(channel_dims)):
+        raise ValueError("channel_dim must be strictly increasing.")
+
+    return time_dim, channel_dims
+
+
 def lp_norm(
     x: Tensor,  # Float[..., $N, *D]
     /,
@@ -168,22 +220,11 @@ def lp_norm(
             scheme and currently raises ``NotImplementedError``.
     """
     assert mask is None or mask.shape == x.shape
-    ch_dims = (channel_dim,) if isinstance(channel_dim, int) else channel_dim
-    if not all(-x.ndim <= d < x.ndim for d in (time_dim, *ch_dims)):
-        raise ValueError(f"channel or time dims are out of range for {x.ndim=}.")
-
-    # normalize
-    time_dim = time_dim % x.ndim
-    ch_dims = tuple(d % x.ndim for d in ch_dims)
-
-    if x.ndim < 1:
-        raise ValueError("x must have at least a time dimension.")
-    if time_dim in ch_dims:
-        raise ValueError("time_dim and channel_dim must be disjoint.")
-    if len(set(ch_dims)) != len(ch_dims):
-        raise ValueError("channel_dim must not contain duplicate dimensions.")
-    if ch_dims != tuple(sorted(ch_dims)):
-        raise ValueError("channel_dim must be strictly increasing.")
+    time_dim, ch_dims = _normalize_dims(
+        ndim=x.ndim,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+    )
 
     match p:
         case torch.inf:
@@ -309,6 +350,84 @@ def lp_loss(
             raise ValueError(f"Invalid reduction: {reduction}")
 
 
+def rmse(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    time_dim: int = -2,
+    channel_dim: Dim = -1,
+    # optional args
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    reduction: Reduction = Reduction.MEAN,
+    sample_weight: Tensor | None = None,
+) -> Tensor[...]:
+    r"""Root mean square error.
+
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{1/T ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
+
+    the masked version is defined as
+
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{ ∑ₜ ‖ ⟦mₜ \? x̂ₜ - x₂ : 0 ⟧ ‖₂² / ∑ₜ⋁ₖmₜₖ} ]
+
+    Args:
+        predictions: Predicted values of shape ``[..., N, *D]``.
+        targets: Target values with the same shape as ``predictions``.
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels; use ``()`` for a
+            univariate time series.
+        mask: Boolean mask selecting values that contribute to the error.
+            Each sequence is normalized by the number of time steps with at
+            least one observed channel.
+    """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    time_dim, channel_dims = _normalize_dims(
+        ndim=predictions.ndim,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+    )
+
+    residuals = predictions - targets
+    squared_errors = residuals.square()
+    if mask is not None:
+        squared_errors = torch.where(mask, squared_errors, 0.0)
+
+    channel_squared_errors = (
+        squared_errors if not channel_dims else squared_errors.sum(dim=channel_dims)
+    )
+    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
+    time_squared_errors = channel_squared_errors.sum(dim=reduced_time_dim)
+
+    if mask is None:
+        sequence_rmse = time_squared_errors.div(predictions.shape[time_dim]).sqrt()
+    else:
+        time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
+        observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
+        sequence_rmse = time_squared_errors.div(observed_timepoints).sqrt()
+
+    reduction = Reduction(reduction)
+    return reduction.apply(sequence_rmse, weight=sample_weight)
+
+
+class RMSE_Loss(BaseSequenceLoss):
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weight: Tensor | None = None,
+    ) -> Tensor:
+        return rmse(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+            sample_weight=sample_weight,
+        )
+
+
 def nd(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
@@ -345,7 +464,20 @@ def nd(
         | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
         | https://openreview.net/forum?id=r1ecqn4YwB
     """
-    raise NotImplementedError
+    time_dim, channel_dims = _normalize_dims(
+        ndim=targets.ndim,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+    )
+
+    residuals = predictions - targets
+
+    if mask is not None:
+        assert mask.shape == residuals.shape
+        residuals = torch.where(mask, residuals, 0.0)
+        targets = torch.where(mask, targets, 0.0)
+
+    return residuals.abs().sum().div(targets.abs().sum())
 
 
 def nrmse(

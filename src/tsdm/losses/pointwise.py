@@ -13,6 +13,7 @@ __all__ = [
     "lp_loss",
     "mae_loss",
     "mse_loss",
+    "med_loss",
     "rmse_loss",
     # penalties
     "lp_norm",
@@ -125,7 +126,7 @@ def lp_loss(
     p: float = 2.0,
     dim: Dim = -1,  # *D
     mask: Tensor | None = None,  # Bool[..., *D],
-    weight: Tensor | None = None,  # Float[...], sample weights
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
     channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
@@ -144,7 +145,7 @@ def lp_loss(
         p: Order of the norm.
         dim: Tensor axes reduced within each sample.
         mask: Boolean mask indicating valid values.
-        weight: Optional weights applied to the per-sample losses.
+        sample_weight: Optional weights applied to the per-sample losses.
         channel_weight: Optional weights applied within each sample norm.
         reduction: Aggregation applied to the per-sample losses.
         scaled: Whether to scale each norm by its number of active entries.
@@ -168,7 +169,7 @@ def lp_loss(
             weight=channel_weight,
             scaled=scaled,
         )
-    return Reduction(reduction).apply(norms, weight=weight)
+    return Reduction(reduction).apply(norms, weight=sample_weight)
 
 
 def mae_loss(
@@ -177,14 +178,14 @@ def mae_loss(
     targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
-    weight: Tensor | None = None,  # Float[...], sample weights
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
     channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted mean absolute error.
 
-    .. math:: mae(x̂，x) ≔ 𝔼[‖x̂ - x‖₂]
+    .. math:: mae(x̂，x) ≔ 𝔼[‖x̂ - x‖₁]
     """
     return lp_loss(
         predictions=predictions,
@@ -192,7 +193,7 @@ def mae_loss(
         p=1.0,
         dim=dim,
         mask=mask,
-        weight=weight,
+        sample_weight=sample_weight,
         channel_weight=channel_weight,
         scaled=scaled,
         reduction=reduction,
@@ -205,7 +206,7 @@ def mse_loss(
     targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
-    weight: Tensor | None = None,  # Float[...], sample weights
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
     channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
     scaled: bool = False,
     reduction: Reduction = Reduction.MEAN,
@@ -224,7 +225,63 @@ def mse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(losses, weight=weight)
+    return Reduction(reduction).apply(losses, weight=sample_weight)
+
+
+def med_loss(
+    *,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
+    dim: Dim = -1,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    scaled: bool = False,
+    reduction: Reduction = Reduction.MEAN,
+) -> Tensor:  # Float[()]
+    r"""Compute the sample-weighted mean euclidean distance.
+
+    .. math:: med(x̂，x) ≔ 𝔼[‖x̂ - x‖₂]
+    """
+    return lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=2.0,
+        dim=dim,
+        mask=mask,
+        sample_weight=sample_weight,
+        channel_weight=channel_weight,
+        scaled=scaled,
+        reduction=reduction,
+    )
+
+
+def rmse_loss(
+    *,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
+    dim: Dim = -1,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    sample_weight: Tensor | None = None,  # Float[...], sample weights
+    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    reduction: Reduction = Reduction.MEAN,
+    scaled: bool = False,
+) -> Tensor:  # Float[()]
+    r"""Compute the sample-weighted root mean squared error.
+
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
+    """
+    squared_norms = lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=2.0,
+        dim=dim,
+        mask=mask,
+        channel_weight=channel_weight,
+        scaled=scaled,
+        reduction=Reduction.NONE,
+    ).square()
+    return Reduction(reduction).apply(squared_norms, weight=sample_weight).sqrt()
 
 
 class LP_Loss(BaseLoss):
@@ -234,7 +291,7 @@ class LP_Loss(BaseLoss):
 
     Special cases:
         - $p=1$: :class:`MAE_Loss`
-        - $p=2$: :class:`MSE_Loss`
+        - $p=2$: :class:`MED_Loss`
     """
 
     p: Final[float]
@@ -267,7 +324,7 @@ class LP_Loss(BaseLoss):
             predictions=predictions,
             targets=targets,
             mask=mask,
-            weight=weight,
+            sample_weight=weight,
             p=self.p,
             dim=self.dim,
             channel_weight=self.channel_weight,
@@ -301,7 +358,7 @@ class MAE_Loss(BaseLoss):
             predictions=predictions,
             targets=targets,
             mask=mask,
-            weight=weight,
+            sample_weight=weight,
             channel_weight=self.channel_weight,
             scaled=self.scaled,
         )
@@ -362,38 +419,10 @@ class MSE_Loss(BaseLoss):
             predictions=predictions,
             targets=targets,
             mask=mask,
-            weight=weight,
+            sample_weight=weight,
             channel_weight=self.channel_weight,
             scaled=self.scaled,
         )
-
-
-def rmse_loss(
-    *,
-    predictions: Tensor,  # Float[..., *D]
-    targets: Tensor,  # Float[..., *D]
-    dim: Dim = -1,
-    mask: Tensor | None = None,  # Bool[..., *D],
-    sample_weight: Tensor | None = None,  # Float[...], sample weights
-    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
-    reduction: Reduction = Reduction.MEAN,
-    scaled: bool = False,
-) -> Tensor:  # Float[()]
-    r"""Compute the sample-weighted root mean squared error.
-
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
-    """
-    squared_norms = lp_loss(
-        predictions=predictions,
-        targets=targets,
-        p=2.0,
-        dim=dim,
-        mask=mask,
-        channel_weight=channel_weight,
-        scaled=scaled,
-        reduction=Reduction.NONE,
-    ).square()
-    return Reduction(reduction).apply(squared_norms, weight=sample_weight).sqrt()
 
 
 class RMSE_Loss(BaseLoss):
