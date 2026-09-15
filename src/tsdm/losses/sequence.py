@@ -31,12 +31,12 @@ should provide arguments for these positions.
 __all__ = [
     # Classes
     "Normalization",
+    "LP_Loss",
     "ND",
     "NRMSE",
     "Quantile_Loss",
-    "LP_Loss",
-    "SequentialMSE",
     "RMSE_Loss",
+    "SequentialMSE",
     # losses
     "lp_loss",
     "nd",
@@ -479,6 +479,34 @@ def nd(
     return residuals.abs().sum().div(targets.abs().sum())
 
 
+class ND(BaseSequenceLoss):
+    r"""Compute the normalized deviation score.
+
+    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
+
+    TODO: How to distinguish batch univariate vs single multivariate?
+    => Batch makes little sense since all could have different length!
+
+    References:
+        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+        - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+          | https://openreview.net/forum?id=r1ecqn4YwB
+    """
+
+    # Float[..., $N], Float[..., $N] -> Float[()]
+    def forward(
+        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+    ) -> Tensor:
+        return nd(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
+
+
 def nrmse(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
@@ -517,6 +545,29 @@ def nrmse(
     mag = torch.maximum(mag, torch.full_like(x_true, eps))
 
     return torch.mean(res / mag)  # get rid of any batch dimensions
+
+
+class NRMSE(BaseSequenceLoss):
+    r"""Compute the normalized root mean squared error.
+
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
+
+    References:
+        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+    """
+
+    def forward(
+        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+    ) -> Tensor:
+        r"""Compute the loss value."""
+        return nrmse(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
 
 
 def quantile_loss(
@@ -570,57 +621,6 @@ def quantile_loss(
 
     q_err = 2 * quantile_error(predictions - targets, q=q)
     return q_err.sum() / targets.abs().sum() if relative else q_err.sum()
-
-
-class ND(BaseSequenceLoss):
-    r"""Compute the normalized deviation score.
-
-    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
-
-    TODO: How to distinguish batch univariate vs single multivariate?
-    => Batch makes little sense since all could have different length!
-
-    References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-        - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
-          | https://openreview.net/forum?id=r1ecqn4YwB
-    """
-
-    # Float[..., $N], Float[..., $N] -> Float[()]
-    def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
-    ) -> Tensor:
-        return nd(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
-        )
-
-
-class NRMSE(BaseSequenceLoss):
-    r"""Compute the normalized root mean squared error.
-
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
-
-    References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-    """
-
-    def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
-    ) -> Tensor:
-        r"""Compute the loss value."""
-        return nrmse(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
-        )
 
 
 class Quantile_Loss(BaseSequenceLoss):
