@@ -181,9 +181,9 @@ def lp_norm(
     channel_dim: int | tuple[int, ...],  # *D
     # optional args
     p: float = 2.0,
-    channel_weight: Tensor | None = None,  # Float[*D]
-    time_weight: Tensor | None = None,  # Float[..., $N]
     mask: Tensor | None = None,  # Bool[..., $N, *D]
+    time_weights: Tensor | None = None,  # Float[..., $N]
+    channel_weights: Tensor | None = None,  # Float[*D]
     normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
 ) -> Tensor:  # Float[...]
     r"""Compute time-normalized lp-norm.
@@ -195,10 +195,10 @@ def lp_norm(
         p: Order of the norm. Note: $p∈\{0, ±∞\}$ are currently not implemented.
         mask: Boolean mask indicating valid values.
         time_dim: Required tensor axis of the time dimension.
-        time_weight: Importance weight $wₜᵗⁱᵐᵉ$ for each time step.
+        time_weights: Importance weight $wₜᵗⁱᵐᵉ$ for each time step.
         channel_dim: Required tensor axes of the channel dimensions. Use ``()``
             for an univariate time series.
-        channel_weight: Importance weight $wₖᶜʰ$ for each channel.
+        channel_weights: Importance weight $wₖᶜʰ$ for each channel.
         normalization: Normalization applied to the powered values. ``None``
             performs no normalization ($sₜₖ=1$). The built-in schemes are:
 
@@ -258,7 +258,7 @@ def lp_norm(
                 channel_dim=ch_dims,
             )
 
-    if (w_t := time_weight) is not None:
+    if (w_t := time_weights) is not None:
         time_axes = tuple(axis for axis in range(x.ndim) if axis not in ch_dims)
         if not 1 <= w_t.ndim <= len(time_axes):
             raise ValueError(f"Expected 1 <= {w_t.ndim=} <= {len(time_axes)=}")
@@ -266,7 +266,7 @@ def lp_norm(
         w_t = w_t[*(slice(None) if d in dims else None for d in range(x.ndim))]
         values = w_t * values
 
-    if (w_k := channel_weight) is not None:
+    if (w_k := channel_weights) is not None:
         if w_k.ndim != len(ch_dims):
             raise ValueError(f"Expected {w_k.ndim=} to equal {len(ch_dims)=}")
         w_k = w_k[*(slice(None) if d in ch_dims else None for d in range(x.ndim))]
@@ -289,12 +289,14 @@ def lp_loss(
     channel_dim: int | tuple[int, ...],  # *D
     # optional args
     p: float = 2.0,
-    mask: Tensor | None = None,  # Bool[..., $N, *D]
-    channel_weight: Tensor | None = None,  # Float[*D]
-    time_weight: Tensor | None = None,  # Float[..., $N]
-    normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
-    reduction: Reduction = Reduction.MEAN,
     relative: bool = False,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+    reduction: Reduction = Reduction.MEAN,
+    normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
+    # weights:
+    time_weights: Tensor | None = None,  # Float[..., $N]
+    channel_weights: Tensor | None = None,  # Float[*D]
+    sample_weights: Tensor | None = None,  # Float[...]
 ) -> Tensor:  # Float[()]
     r"""Compute the reduced time-normalized $p$-norm of prediction residuals.
 
@@ -307,25 +309,29 @@ def lp_loss(
     Args:
         predictions: Predicted time series.
         targets: Target time series.
-        p: Order of the norm.
-        mask: Boolean mask indicating valid values.
-        channel_dim: Tensor axes of the channel dimensions.
-        channel_weight: Optional weights applied within each channel norm.
         time_dim: Tensor axis of the time dimension.
-        time_weight: Optional weights applied to time steps.
-        normalization: Time-series normalization applied within each norm.
-        reduction: Aggregation applied to the per-sequence losses.
+        channel_dim: Tensor axes of the channel dimensions.
+
+        p: Order of the norm.
         relative: If ``True``, divide each residual norm by the corresponding
             target norm, computing $‖x̂ - x‖ₚ / ‖x‖ₚ$.
+        mask: Optional boolean mask indicating valid values.
+
+        reduction: Aggregation applied to the per-sequence losses.
+        normalization: Time-series normalization applied within each norm.
+
+        time_weights: Optional weights applied to time steps.
+        channel_weights: Optional weights applied within each channel norm.
+        sample_weights: Optional weights applied to each sample.
     """
     norms = lp_norm(
         predictions - targets,
         p=p,
         mask=mask,
         channel_dim=channel_dim,
-        channel_weight=channel_weight,
+        channel_weights=channel_weights,
         time_dim=time_dim,
-        time_weight=time_weight,
+        time_weights=time_weights,
         normalization=normalization,
     )
     if relative:
@@ -334,20 +340,12 @@ def lp_loss(
             p=p,
             mask=mask,
             channel_dim=channel_dim,
-            channel_weight=channel_weight,
+            channel_weights=channel_weights,
             time_dim=time_dim,
-            time_weight=time_weight,
+            time_weights=time_weights,
             normalization=normalization,
         )
-    match reduction:
-        case Reduction.SUM:
-            return norms.sum()
-        case Reduction.MEAN:
-            return norms.mean()
-        case Reduction.NONE:
-            return norms
-        case _:
-            raise ValueError(f"Invalid reduction: {reduction}")
+    return Reduction(reduction).apply(norms, weight=sample_weights)
 
 
 def rmse(
@@ -355,12 +353,12 @@ def rmse(
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
     time_dim: int = -2,
-    channel_dim: Dim = -1,
+    channel_dim: int | tuple[int, ...] = -1,
     # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-    reduction: Reduction = Reduction.MEAN,
-    sample_weight: Tensor | None = None,
-) -> Tensor[...]:
+    reduction: Reduction | str = Reduction.MEAN,
+    sample_weights: Tensor | None = None,  # Float[...]
+) -> Tensor:  # Float[()]
     r"""Root mean square error.
 
     .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{1/T ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
@@ -378,6 +376,8 @@ def rmse(
         mask: Boolean mask selecting values that contribute to the error.
             Each sequence is normalized by the number of time steps with at
             least one observed channel.
+        reduction: Reduction method.
+        sample_weights: Sample weights.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -405,8 +405,7 @@ def rmse(
         observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
         sequence_rmse = time_squared_errors.div(observed_timepoints).sqrt()
 
-    reduction = Reduction(reduction)
-    return reduction.apply(sequence_rmse, weight=sample_weight)
+    return Reduction(reduction).apply(sequence_rmse, weight=sample_weights)
 
 
 class RMSE_Loss(BaseSequenceLoss):
@@ -424,7 +423,7 @@ class RMSE_Loss(BaseSequenceLoss):
             mask=mask,
             time_dim=self.time_dim,
             channel_dim=self.channel_dim,
-            sample_weight=sample_weight,
+            sample_weights=sample_weight,
         )
 
 
@@ -433,7 +432,7 @@ def nd(
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
     time_dim: int = -2,
-    channel_dim: Dim = -1,
+    channel_dim: int | tuple[int, ...] = -1,
     # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[()]

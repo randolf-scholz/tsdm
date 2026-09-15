@@ -97,7 +97,7 @@ class TestLpNorm:
             p=p,
             time_dim=time_dim,
             channel_dim=channel_dim,
-            channel_weight=channel_weight,
+            channel_weights=channel_weight,
             normalization=None,
         )
         expected = (
@@ -134,7 +134,7 @@ class TestLpNorm:
                 x,
                 time_dim=-2,
                 channel_dim=-1,
-                time_weight=torch.tensor(1.0),
+                time_weights=torch.tensor(1.0),
             )
 
     @pytest.mark.parametrize("p", P_VALUES)
@@ -151,8 +151,8 @@ class TestLpNorm:
             mask=mask,
             time_dim=-2,
             channel_dim=-1,
-            time_weight=time_weight,
-            channel_weight=channel_weight,
+            time_weights=time_weight,
+            channel_weights=channel_weight,
             normalization=None,
         )
         expected = (
