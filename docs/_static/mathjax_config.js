@@ -204,6 +204,7 @@ MathJax = {
             tr: "\\operatorname{tr}",
             E: "\\operatorname{\\mathbf{E}",
             Var: "\\operatorname{\\mathbf{Var}}",
+            where: "\\operatorname{where}",
             // macros
             bmat: ["\\begin{bmatrix} #1 \\end{bmatrix}", 1],
             norm: ["\\left\\lVert #1\\right\\rVert", 1],
