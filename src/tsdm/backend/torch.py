@@ -84,7 +84,7 @@ def apply_along_axes(op: Fn[..., Tensor], /, *tensors: Tensor, axis: Axis) -> Te
 
     Assumptions:
     - All tensors must have the same shape.
-    - The operator `op` acts on the last `len(axis)` axes of the tensors.
+    - The operator ``op`` acts on the last ``len(axis)`` axes of the tensors.
     - The operator `op` does not change the shape of the tensors.
     """
     if len(tensors) < 1:

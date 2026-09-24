@@ -41,24 +41,24 @@ Note:
         - support: [0, 100]
         - dimensionless: True
         - ordered: True
-        - Encoders: `Logit @ MinMaxScalar[0, 100]`, `HardLogit @ MinMaxScalar[0, 100]`
+        - Encoders: ``Logit @ MinMaxScalar[0, 100]``, ``HardLogit @ MinMaxScalar[0, 100]``
     - bounded
         - support: [a, b]
         - dimensionless: False
         - ordered: True
-        - Encoders: `Logit @ MinMaxScalar[a, b]`, `HardLogit @ MinMaxScalar[a, b]`
+        - Encoders: ``Logit @ MinMaxScalar[a, b]``, ``HardLogit @ MinMaxScalar[a, b]``
     - linear
         - support: (-∞, +∞)
         - dimensionless: False
         - ordered: True
         - Encoders: `StandardScalar` (diagonal or full covariance)
     - category
-        - support: `{1, ..., K}`
+        - support: $\{1, …, K\}$
         - dimensionless: `True`
         - ordered: `False`
         - Encoders: `OneHotEncoder`
     - ordinal
-        - support: `{1, ..., K}`
+        - support: $\{1, …, K\}$
         - dimensionless: `True`
         - ordered: `True`
         - Encoders: `OrdinalEncoder`, `PositionalEncoder`

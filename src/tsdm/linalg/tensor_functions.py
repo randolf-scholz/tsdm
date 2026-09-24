@@ -154,7 +154,7 @@ def multi_norm(
     .. math:: ‖A‖_{p,q} ≔ \Bigl|∑ⱼ₌₁ⁿ \Big(∑ᵢ₌₁ᵐ |Aᵢⱼ|ᵖ\Big)^{q/p}\Bigr|^{1/q}
 
     Args:
-        tensors: `list[Float[...]]`
+        tensors: ``list[Float[...]]``
         p: the inner norm order
         q: the outer norm order
         scaled: If `True`, the sums are replaced with averages.
@@ -191,7 +191,7 @@ def grad_norm(
     .. math:: ‖A‖_{p,q} ≔ \Bigl|∑ⱼ₌₁ⁿ \Big(∑ᵢ₌₁ᵐ |Aᵢⱼ|ᵖ\Big)^{q/p}\Bigr|^{1/q}
 
     Args:
-        tensors: `list[Float[...]]`
+        tensors: ``list[Float[...]]``
         p: the inner norm order
         q: the outer norm order
         scaled: If `True`, the sums are replaced with averages.

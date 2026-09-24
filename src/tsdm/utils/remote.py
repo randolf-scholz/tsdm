@@ -351,7 +351,7 @@ def _get_content_length(response: Response, /) -> Optional[int]:
 def _url_to_relative_path(base_url: str, file_url: str) -> PurePosixPath:
     r"""Convert a URL to a relative path based on a base URL.
 
-    Robost alternative to `os.path.relpath(base_url, url)`.
+    Robost alternative to ``os.path.relpath(base_url, url)``.
     """
     base = urlparse(base_url)
     file = urlparse(file_url)

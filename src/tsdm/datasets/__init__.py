@@ -15,9 +15,9 @@ Basic Usage
 Some design decisions:
 
 1. Why not use `Series` instead of Mapping for dataset?
-    - `Series[object]` has bad performance issues in construction.
+    - ``Series[object]`` has bad performance issues in construction.
 2. Should we have Dataset style iteration or dict style iteration?
-    - Note that for `dict`, `iter(dict)` iterates over index.
+    - Note that for `dict`, ``iter(dict)`` iterates over index.
     - For `Series`, `DataFrame`, `TorchDataset`, `__iter__` iterates over values.
 """
 

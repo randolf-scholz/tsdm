@@ -97,7 +97,7 @@ def make_test_folders(
                 )
 
     if dry_run:
-        print("Pass option `dry_run=False` to actually create the folders.")
+        print("Pass option ``dry_run=False`` to actually create the folders.")
 
 
 @final

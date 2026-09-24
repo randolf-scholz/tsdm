@@ -252,7 +252,7 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
 
     We consider multiple ideas for how to fit the parameter $c$
 
-    1. Half the minimal non-zero value: `c = min(data[data>0])/2`
+    1. Half the minimal non-zero value: ``c = min(data[data>0])/2``
     2. Square of the first quartile divided by the third quartile (Stahle 2002)
     3. Value which minimizes the Wasserstein distance to
         - a mean-0, variance-1 uniform distribution
@@ -384,7 +384,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
 
     We consider multiple ideas for how to fit the parameter $c$
 
-    1. Half the minimal non-zero value: `c = min(data[data>0])/2`
+    1. Half the minimal non-zero value: ``c = min(data[data>0])/2``
     2. Square of the first quartile divided by the third quartile (Stahle 2002)
     3. Value which minimizes the Wasserstein distance to
         - a mean-0, variance-1 uniform distribution

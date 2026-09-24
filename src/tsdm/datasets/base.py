@@ -585,7 +585,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     def clean_table(self, key: Key, /) -> Optional[T]:
         r"""Create the cleaned table for the given key.
 
-        By default, this method redirects to `self.clean_{key}` method.
+        By default, this method redirects to the ``self.clean_{key}`` method.
         Subclasses can either implement these, or override this method directly.
 
         If a table is returned, the `self.serialize` method is used to write it to disk.
@@ -598,7 +598,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         except AttributeError:
             raise NotImplementedError(
                 f"Cleaning method for {key} not implemented!"
-                f" Either implement `clean_{key}` or override `clean_table`."
+                f" Either implement ``clean_{key}`` or override `clean_table`."
             ) from None
         else:
             return clean_fn()

@@ -22,8 +22,8 @@ def get_broadcast(
 ) -> tuple[slice | None, ...]:
     r"""Creates an indexer that broadcasts a tensors contracted via `axis`.
 
-    Essentially works like a-posteriori adding the `keepdims=True` option to a contraction.
-    If `x = contraction(data, axis)` (e.g. sum, mean, max), then ``x[broadcast]``
+    Essentially works like a-posteriori adding the ``keepdims=True`` option to a contraction.
+    If ``x = contraction(data, axis)`` (e.g. sum, mean, max), then ``x[broadcast]``
     for ``broadcast=get_braodcast(data.shape, axis) is roughly equivalent to
     ``contraction(data, axis, keepdims=True)``.
 
@@ -86,8 +86,8 @@ def reduce_axes(
 ) -> tuple[int, ...] | None:
     r"""Returns axis selection corresponding to given tensor indexing.
 
-    Assuming some universal operator `op` acts in tensor `T`, that is `op(T, axis=axis)`,
-    then the return of this method allows to apply `op(T[selection], axis=reduced_axis)`.
+    Assuming some universal operator ``op`` acts in tensor ``T``, that is ``op(T, axis=axis)``,
+    then the return of this method allows to apply ``op(T[selection], axis=reduced_axis)``.
     """
     # convert to tuple
     match axis:

@@ -202,7 +202,7 @@ class TimeSeriesTask[
         - cross-validation + train/(valid)/test: (0, train), (0, test), ..., (n, train), (n, test)
         - nested cross-validation: (0, 0), (0, 1), ..., (0, n), (1, 0), ..., (n, n)
     - Provide a metric for evaluation
-        - must be of the form `Callable[[target, prediction], Scalar]`
+        - must be of the form ``Callable[[target, prediction], Scalar]``
     - Provide a `torch.utils.data.DataLoader` for each split
         - Provide a `torch.utils.data.Dataset` for each split
             - Dataset should return `Sample` objects providing context and target values.
@@ -219,7 +219,7 @@ class TimeSeriesTask[
         - Encoders must be fit on the training data, but also transform the test data.
             - Need a way to associate a train split to each test/valid split.
             - CONVENTION: a split key is either a partition name or a sequence of the form
-              `[*fold_ids, partition]`. Only the final element identifies the partition; all
+              ``[*fold_ids, partition]``. Only the final element identifies the partition; all
               preceding elements identify the cross-validation fold. The partition must be a
               recognized `SplitType` value or alias.
 
@@ -410,10 +410,10 @@ class TimeSeriesTask[
         raise KeyError(f"No training split found for {key!r}.")
 
     def validate_folds(self) -> None:
-        r"""Make sure all keys are correct format `str` or `tuple[*fold_ids, str]`.
+        r"""Make sure all keys are correct format `str` or ``tuple[*fold_ids, str]``.
 
         - If keys are `partition`, they are assumed to be `partition` keys.
-        - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
+        - If keys are ``*folds, partition``, then test whether for each fold there is a unique train partition.
         """
         fold_keys = self.folds.keys()
         normalized_keys: set[tuple[Any, ...]]

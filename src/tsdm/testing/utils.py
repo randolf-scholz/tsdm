@@ -115,7 +115,7 @@ def is_scalar(obj: object, /) -> bool:
 def is_dunder(name: str, /) -> bool:
     r"""Check if the name is a dunder method.
 
-    Equivalent to the regex pattern: `^__.*__$`
+    Equivalent to the regex pattern: ``^__.*__$``
     """
     return (
         name.isidentifier()
@@ -130,7 +130,7 @@ def is_dunder(name: str, /) -> bool:
 def is_private(name: str, /) -> bool:
     r"""Check if the name is a private method.
 
-    Equivalent to the regex pattern: `^_.*[^_]$`
+    Equivalent to the regex pattern: ``^_.*[^_]$``
     """
     return (
         name.isidentifier()

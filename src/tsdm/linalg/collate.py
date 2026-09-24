@@ -46,7 +46,7 @@ def collate_padded(
 ) -> Tensor:  # Float[$Nₘₐₓ, ...]
     r"""Collates a list of tensors of varying lengths into a single Tensor, padded with zeros.
 
-    Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
+    Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with ``batch_first=True`` as default
     """
     return pad_sequence(batch, batch_first=batch_first, padding_value=padding_value)
 

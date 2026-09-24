@@ -276,8 +276,8 @@ class Traffic(PolarsDataset[Traffic_Keys]):
         - "2009-02-24": "???",
 
         The true anomalies were found by iteratively adding days one by one,
-        Each time checking when the first date was when `labels[invperm].map(weekdays)`
-        didn't match with `dates.day_name()`
+        Each time checking when the first date was when ``labels[invperm].map(weekdays)``
+        didn't match with ``dates.day_name()``
         """
         randperm = self.randperm.to_series(0)
         dates = self.dates.gather(randperm)

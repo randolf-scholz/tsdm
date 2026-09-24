@@ -143,7 +143,7 @@ class USHCN_SampleGenerator:
 def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
-    Transform the data slightly: `t, x, t_target → T, X where X[t_target:] = NAN`.
+    Transform the data slightly: ``t, x, t_target → T, X where X[t_target:] = NAN``.
     """
     x_vals: list[Tensor] = []
     y_vals: list[Tensor] = []

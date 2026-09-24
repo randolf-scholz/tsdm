@@ -58,7 +58,7 @@ def false_like(x: SupportsEquality, /) -> BooleanArray:
 def true_like(x: SupportsEquality, /) -> BooleanArray:
     r"""Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
-    #   `(𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True`
+    #   ``(𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True``
     z = x == x
     return z ^ (~z)
 

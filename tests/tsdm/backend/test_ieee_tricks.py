@@ -7,7 +7,7 @@ Sometimes we would like to keep NaNs.
 
 There are some tricks to create such tensors in a backend-agnostic way, using IEEE arithmetic.
 
-`is_nan` can be tested via `x != x`.
+`is_nan` can be tested via ``x != x``.
 """
 
 from typing import Any
@@ -38,10 +38,10 @@ def test_make_ones_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> No
     r"""Analogous to `ones_like`.
 
     Candidates for creating ones are:
-    - `x**0`  gets rid of NANs
-    - `x / x` keeps NANs, introduces NaNs for inf
+    - ``x**0``  gets rid of NANs
+    - ``x / x`` keeps NANs, introduces NaNs for inf
 
-    However, `x**0` is not implemented for time-delta types.
+    However, ``x**0`` is not implemented for time-delta types.
     What could work
     """
     result = formula(data)
@@ -62,10 +62,10 @@ def test_zeros_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     r"""Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
-    - `x - x`  # keeps NANs
-    - `x**0 - x**0`  # gets rid of NANs
-    - `0 * x`      # keeps NANs, introduces NaNs for inf
-    - `0 ** x`  # doesn't for negatives, keeps NANs
+    - ``x - x``  # keeps NANs
+    - ``x**0 - x**0``  # gets rid of NANs
+    - ``0 * x``      # keeps NANs, introduces NaNs for inf
+    - ``0 ** x``  # doesn't for negatives, keeps NANs
     """
     result = formula(data)
     assert all(result == expected)
@@ -88,11 +88,11 @@ def test_zeros_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
 def test_true_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
-    r"""Analogous to `ones_like(x, dtype=bool)`.
+    r"""Analogous to ``ones_like(x, dtype=bool)``.
 
     Candidates:
-    - `where(x!=x, x!=x, x==x)`
-    - `x==x | x!=x`
+    - ``where(x != x, x != x, x == x)``
+    - ``x == x | x != x``
     """
     result = formula(data)
     assert all(result == expected)
@@ -115,7 +115,7 @@ def test_true_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
 def test_false_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
-    r"""Analogous to `zeros_like(x, dtype=bool)`.
+    r"""Analogous to ``zeros_like(x, dtype=bool)``.
 
     Candidates:
     - XOR-trick: (x==x) ^ (x==x)

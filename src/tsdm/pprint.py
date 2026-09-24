@@ -151,7 +151,7 @@ class Types(Enum):
 class ReprProtocol(Protocol):
     r"""Protocol for recursive repr functions.
 
-    The output string is of the form `Title@Modifier<Identifier>[generics](values)`
+    The output string is of the form ``Title@Modifier<Identifier>[generics](values)``
     """
 
     def __call__(

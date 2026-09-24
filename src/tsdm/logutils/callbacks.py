@@ -4,7 +4,7 @@ A callback class generally should take a single positional argument to initializ
 This argument can be either:
 
 1. A mutable object that changes by itself over time, e.g. a `DataFrame`, `nn.Module`, etc.
-2. A `Callable[[int, **kwargs], T]` that takes a step index and returns a value to log.
+2. A ``Callable[[int, **kwargs], T]`` that takes a step index and returns a value to log.
 """
 
 __all__ = [
@@ -124,7 +124,7 @@ class CallbackSequence(MutSeq[Callback], Callback, Protocol):
     r"""Protocol for sequences of callbacks.
 
     Helper Protocol, in practice, this should be the intersection
-    of `MutableSequence[Callback]` and `Callback`.
+    of ``MutableSequence[Callback]`` and `Callback`.
     """
 
 

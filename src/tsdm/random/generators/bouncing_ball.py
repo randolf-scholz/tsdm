@@ -36,7 +36,7 @@ class BouncingBall(BaseIVP_Generator):
     setting the velocity to the negative of the previous velocity.
     We fix ② by sampling yₖ from a truncated normal distribution.
 
-    For a given velocity v₀, the period is `2/|v₀|`.
+    For a given velocity v₀, the period is $2/\abs{v₀}$.
     """
 
     _: KW_ONLY

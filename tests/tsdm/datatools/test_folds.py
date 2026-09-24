@@ -42,7 +42,7 @@ def test_folds_as_frame_mask() -> None:
 
 
 def test_fold_as_frame_sparse() -> None:
-    r"""Test `folds_as_frame` with `sparse=True`."""
+    r"""Test `folds_as_frame` with ``sparse=True``."""
     folds = [
         {"train": [0, 1, 2], "valid": [3], "test": [4]},
         {"train": [1, 2, 3], "valid": [4], "test": [0]},
@@ -61,7 +61,7 @@ def test_fold_as_frame_sparse() -> None:
 
 
 def test_fold_as_frame_sparse_mask() -> None:
-    r"""Test `folds_as_frame` with `sparse=True`."""
+    r"""Test `folds_as_frame` with ``sparse=True``."""
     folds = [
         {
             "train": [True, True, True, False, False],

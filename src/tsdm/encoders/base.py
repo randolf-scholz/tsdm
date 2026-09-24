@@ -2,12 +2,12 @@ r"""Base Classes for Encoders.
 
 Some special encoders that can be considered are:
 
-- inverse encoders: `~f(x) = f⁻¹(x)`
-- chaining encoders: `(f @ g)(x) = g(f(x))`
-- piping encoders: `(f >> g)(x) = f(g(x))`
-- parallel encoders: `(f | g)((x, y)) = (f(x), g(y))`
-- joint encoders: `(f & g)(x) = (f(x), g(x))`
-  - inversion requires an aggregation function: `(f & g)⁻¹(y) = agg(f⁻¹(y), g⁻¹(y))`
+- inverse encoders: ``~f(x) = f⁻¹(x)``
+- chaining encoders: ``(f @ g)(x) = g(f(x))``
+- piping encoders: ``(f >> g)(x) = f(g(x))``
+- parallel encoders: ``(f | g)((x, y)) = (f(x), g(y))``
+- joint encoders: ``(f & g)(x) = (f(x), g(x))``
+  - inversion requires an aggregation function: ``(f & g)⁻¹(y) = agg(f⁻¹(y), g⁻¹(y))``
   - in principle, one can use any element from the tuple.
   - but higher numerical precision can be achieved by aggregation.
   - default aggregation is to use a random element from the tuple.
@@ -36,8 +36,8 @@ There are multiple ways to handle this:
 2. Add Manual `__new__` overloads that fall back to an upper bound type.
    - in the future, we can use the default type (PEP 696)
 3. Use a polymorphic instead of a generic type.
-   For example, we can have `StandardScalar(Encoder[NumericalArray, NumericalArray])`
-   and then set `def encoder[Arr: NumericalArray](x: Arr) -> Arr: ...`
+   For example, we can have ``StandardScalar(Encoder[NumericalArray, NumericalArray])``
+   and then set ``def encoder[Arr: NumericalArray](x: Arr) -> Arr: ...``
 
 The use of polymorphic encoders also has effects on the chaining of encoders.
 What is [T → T] >> [DataFrame → DataFrame]?
@@ -48,9 +48,9 @@ What is [T → T] >> [DataFrame → DataFrame]?
 The only sensible answer to (2) is that it should be [DataFrame → DataFrame].
 However it might be difficult for a type-checker to infer this correctly.
 In principle, this would require some form of higher kinded types, then we could write an overload
-of the form `(self: Poly[X], other: [X, Y]) -> Encoder[X, Y]: ...`.
-Here, `Poly[T]` is a protocol describing a polymorphic encoder, with `X` being the upper bound.
-That is, the encode signature is `Poly[T].encode[T: X](x: X) -> X: ...`.
+of the form ``(self: Poly[X], other: [X, Y]) -> Encoder[X, Y]: ...``.
+Here, ``Poly[T]`` is a protocol describing a polymorphic encoder, with ``X`` being the upper bound.
+That is, the encode signature is ``Poly[T].encode[T: X](x: X) -> X: ...``.
 
 Polymorphic encoders might be problematic for this very reason, and possibly should be avoided.
 
@@ -58,12 +58,12 @@ Polymorphic encoders might be problematic for this very reason, and possibly sho
 
 Remark: naming conventions:
 
-- For ``OP(Encoder, Encoder)`` we use boolean/bitwise operators like `@`, `|`, `&`, `~`, `*`, and `**`.
-- For ``OP(Enocder, int)`` we use integer operators like `*`, `**`, `%`, `//`.
+- For ``OP(Encoder, Encoder)`` we use boolean/bitwise operators like ``@``, ``|``, ``&``, ``~``, ``*``, and ``**``.
+- For ``OP(Enocder, int)`` we use integer operators like ``*``, ``**``, ``%``, ``//``.
 
 # @: tensor product? (allows us to not having to define scalar multiplication separately?)
 #    - nice equivalence to being compositon of linear maps.
-#    So (f @ Tensor) is equivalent to `f >> LinearMap(Tensor)`.
+#    So (f @ Tensor) is equivalent to ``f >> LinearMap(Tensor)``.
 # +: sum
 # -: ?
 # / num: ? reduce?
@@ -368,7 +368,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # as well as a general post-init hook
     # hooks must be registered on the class-level as lists of callables.
     # FIXME: https://github.com/python/mypy/pull/19466
-    # Due to incorrect variance inference with mypy, we annotate these with `Any` instead of `Fn[[Self], None]`.
+    # Due to incorrect variance inference with mypy, we annotate these with `Any` instead of ``Fn[[Self], None]``.
     post_init_hooks: ClassVar[list[Fn[[Any], None]]] = []
     pre_fit_hooks: ClassVar[list[Fn[[Any], None]]] = []
     post_fit_hooks: ClassVar[list[Fn[[Any], None]]] = []
@@ -560,7 +560,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # endregion MIMO -------------------------------------------------------------------
 
     # region SIMO ----------------------------------------------------------------------
-    # TODO: automatically combine `e1 & e2 & e3` into a single meet?
+    # TODO: automatically combine ``e1 & e2 & e3`` into a single meet?
     def __or__[Y2](self, other: Encoder[X, Y2], /) -> Fork[X, tuple[Y, Y2]]:
         r"""Execute multiple encoders with the same input (``&``).
 
@@ -576,7 +576,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         assert_type(result, Fork[X, tuple[Y, Y2]])
         return result
 
-    # TODO: automatically combine `e1 & e2 & e3` into a single meet?
+    # TODO: automatically combine ``e1 & e2 & e3`` into a single meet?
     def __ror__[Y2](self, other: Encoder[X, Y2], /) -> Fork[X, tuple[Y2, Y]]:
         r"""Execute multiple encoders with the same input (``&``).
 
@@ -1283,7 +1283,7 @@ class Diagonal(StaticEncoder[Any, tuple[Any, ...]]):
              └───▶ x
 
     Note:
-        `Diagonal(n)` is equivalent to `Fork(ID, n)`, where `ID` is the identity encoder.
+        ``Diagonal(n)`` is equivalent to ``Fork(ID, n)``, where `ID` is the identity encoder.
 
     Note:
         In practice, when working with float arrays, we need to be careful how to select
@@ -1347,7 +1347,7 @@ class Choice(StaticEncoder[tuple[Any, ...], Any]):
 
     def __invert__(self) -> Diagonal:
         if self.num is None:
-            raise ValueError("Choice not invertible when `num=None`.")
+            raise ValueError("Choice not invertible when ``num=None``.")
         return diagonal(self.num, reduction=self)
 
     # FIXME: https://discuss.python.org/t/proposal-allow-typevartuple-unpacking-in-unions/
@@ -1482,10 +1482,10 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
         >>> assert enc("a") == "(2 * (a)) + 1"
 
 
-    Note that the order is reversed compared to the `@`-operator.
+    Note that the order is reversed compared to the ``@``-operator.
 
     Note:
-        `>>` is associative: `(A >> B) >> C = A >> (B >> C)`
+        $\gg$ is associative: $(A \gg B) \gg C = A \gg (B \gg C)$
 
         .. math::
             ((A ≫ B) ≫ C)(x) = C((A ≫ B)(x)) = C(B(A(x)))  \\
@@ -1532,7 +1532,7 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
 
     def simplify(self) -> BaseEncoder[X, Y]:
         r"""Simplify the chained encoder."""
-        # reduction 1: combine nested pipes/chains `e >> (f >> g) = (e >> f) >> g`.
+        # reduction 1: combine nested pipes/chains ``e >> (f >> g) = (e >> f) >> g``.
         encoders: list[Encoder] = []
         for encoder in map(simplify, self):
             match encoder:
@@ -1543,12 +1543,12 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
                 case _:
                     encoders.append(encoder)
 
-        # reduction 2: remove identity encoders `e >> id = e`.
+        # reduction 2: remove identity encoders ``e >> id = e``.
         encoders = [e for e in encoders if not isinstance(e, IdentityEncoder)]
 
-        # reduction 3: remove inverse pairs `(e >> ~e) = id`.
+        # reduction 3: remove inverse pairs ``(e >> ~e) = id``.
 
-        # reduction 4: remove idempotent encoders `e >> e = e`.
+        # reduction 4: remove idempotent encoders ``e >> e = e``.
 
         # reduction 5: combine successive identical encoders via repeat.
 
@@ -1608,7 +1608,7 @@ def pipe(*es: Encoder) -> Pipe:
 
     See Also: `Pipe`
     """
-    # simplify nested pipes/chains `e >> (f >> g) = (e >> f) >> g`.
+    # simplify nested pipes/chains ``e >> (f >> g) = (e >> f) >> g``.
     encoders: list[Encoder] = []
     for encoder in map(simplify, es):
         match encoder:
@@ -1627,7 +1627,7 @@ class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
 
         x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
 
-    Equivalent to `f >> f >> ... >> f` (n times).
+    Equivalent to ``f >> f >> ... >> f`` (n times).
     """
 
     encoder: E
@@ -1972,8 +1972,8 @@ class Fork[
 
     Note:
         `Fork` is essentially a heterogeneous `Split` encoder.
-        `Fork(f1, ..., fn)` is equivalent to `Diagonal(n) >> Parallel(f1, ..., fn)`.
-        Hence, `~Fork(f1, ..., fn) = `Parallel(~f1, ..., ~fn) >> Choice(n)`.
+        ``Fork(f1, ..., fn)`` is equivalent to ``Diagonal(n) >> Parallel(f1, ..., fn)``.
+        Hence, ``~Fork(f1, ..., fn) = Parallel(~f1, ..., ~fn) >> Choice(n)``.
 
     Example:
         >>> from tsdm.encoders import Fork, wrap
@@ -2100,8 +2100,8 @@ class Duplicate[
 
     Note:
         `Split` is essentially a homogeneous `Fork` encoder.
-        `Split(f, n)` is equivalent to `Diagonal(n) >> Replicate(f, n)`.
-        Hence, `~Split(f, n) = Duplicate(~f, n) >> Choice(n) = Fold(~f, n)`.
+        ``Split(f, n)`` is equivalent to ``Diagonal(n) >> Replicate(f, n)``.
+        Hence, ``~Split(f, n) = Duplicate(~f, n) >> Choice(n) = Fold(~f, n)``.
 
     Example:
         >>> from tsdm.encoders import Duplicate, wrap
@@ -2437,8 +2437,8 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
     Note:
         `Fold` is essentially a homogeneous `Join` encoder.
-        `Fold(f, n)` is equivalent to `Duplicate(f, n) >> Choice(n)`.
-        Hence, `~Fold(f, n) = Diagonal(n) >> Duplicate(~f, n) = Split(~f, n)`.
+        ``Fold(f, n)`` is equivalent to ``Duplicate(f, n) >> Choice(n)``.
+        Hence, ``~Fold(f, n) = Diagonal(n) >> Duplicate(~f, n) = Split(~f, n)``.
 
     Example:
         >>> from tsdm.encoders import Fold, wrap

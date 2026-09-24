@@ -491,7 +491,7 @@ class PhysioNet2019(PolarsDataset[Key]):
 
     def get_rawdata_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file."""
-        # Map `training_setA.zip` -> `training_setA/`
+        # Map training_setA.zip -> training_setA/
         folder = Path(fname).with_suffix("").name + "/"
         url = f"{self.SOURCE_URL}{folder}"
         path = self.rawdata_paths[fname]

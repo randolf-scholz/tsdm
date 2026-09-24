@@ -80,15 +80,15 @@ class IVP_Solver[T](Protocol):  # +T
 
     Examples:
         - `scipy.integrate.odeint`
-            - expects system-component to be `Callable[[t, y], ...]` or `Callable[[t, y], ...]`
+            - expects system-component to be ``Callable[[t, y], ...]`` or ``Callable[[t, y], ...]``
         - `scipy.integrate.solve_ivp`
-            - expects system to be `Callable[[t, y], ...]`
+            - expects system to be ``Callable[[t, y], ...]``
         - `torchdiffeq.odeint`
-            - expects system to be `Callable[[t, y], ...]`
+            - expects system to be ``Callable[[t, y], ...]``
         - `torchsde.sdeint`
             - expects system to be SDE object with methods
-                - `f(self, t, y) -> ...` (drift)
-                - `g(self, t, y) -> ...` (diffusion)
+                - ``f(self, t, y) -> ...`` (drift)
+                - ``g(self, t, y) -> ...`` (diffusion)
         - `brainpy.sdeint` decorated functions
 
     Note:
@@ -104,7 +104,7 @@ class IVP_Solver[T](Protocol):  # +T
         Args:
             system: Some object that represents the dynamics of the systems.
             t: sorted list of N time points at which to solve for y.
-            y0: Initial state at t[0], tensor of shape `(..., *D)`.
+            y0: Initial state at t[0], tensor of shape ``(..., *D)``.
 
         Returns:
             array-like object y[t_i] containing the solution of the initial value problem.

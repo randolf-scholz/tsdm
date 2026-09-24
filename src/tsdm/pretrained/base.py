@@ -486,7 +486,7 @@ def import_module_from_path(
 
 
 class _insert_system_path(ContextDecorator):
-    r"""Prepends a path to environment variable `$PATH`.
+    r"""Prepends a path to environment variable ``$PATH``.
 
     References:
         - https://stackoverflow.com/a/41904558

@@ -542,7 +542,8 @@ def nd(
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
 
     Note:
-        This loss is equivalent to `lp_loss` with `p=1`, `relative=True` and `normalization=observation_count`.
+        This loss is equivalent to `lp_loss` with ``p=1``, ``relative=True``,
+        and ``normalization=observation_count``.
 
         .. math:: nd(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
 
@@ -581,7 +582,7 @@ def nrmse(
         mask: Boolean mask selecting values that contribute to the error.
             All selected values should be finite and not null.
 
-    which is equivalent to `lp_loss` with `p=2` and `relative=1`.
+    which is equivalent to `lp_loss` with ``p=2`` and ``relative=1``.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
 

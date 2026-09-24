@@ -356,7 +356,7 @@ def aggregate_nondestructive(df: pd.DataFrame, /) -> pd.DataFrame:
     r"""Aggregate multiple simulataneous measurements in a non-destructive way.
 
     Given a `pd.DataFrame` of size $m×k$, this will construct a new pd.DataFrame of size $m'×k$,
-    where `m' = max(df.notna().sum())` is the maximal number of measured not-null values.
+    where ``m' = max(df.notna().sum())`` is the maximal number of measured not-null values.
 
     For example::
 

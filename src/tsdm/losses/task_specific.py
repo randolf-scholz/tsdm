@@ -27,7 +27,8 @@ def nd(
     .. math::  𝖭𝖣(x̂，x) ≔
         \frac{∑ᵢₜₖ ⟦ mᵢₜₖ \? |x̂ₜₖ⁽ⁱ⁾ - xₜₖ⁽ⁱ⁾| : 0 ⟧ }{∑ᵢₜₖ ⟦mᵢₜₖ \? |xₜₖ⁽ⁱ⁾| : 0 ⟧}
 
-    which is equivalent to `lp_loss` with `p=1`, `relative=True` and `normalization=observation_count`.
+    which is equivalent to `lp_loss` with ``p=1``, ``relative=True``,
+    and ``normalization=observation_count``.
 
     .. math:: 𝖭𝖣(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
 
@@ -105,7 +106,7 @@ def nrmse(
 
     which we generalize towards sparse, multivariate time series as:
 
-    which is equivalent to `lp_loss` with `p=2` and `relative=1`.
+    which is equivalent to `lp_loss` with ``p=2`` and ``relative=1``.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
 

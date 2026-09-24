@@ -37,8 +37,8 @@ class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
         >>> assert_frame_equal(frame, encoder.decode(encoded))
 
     Note:
-        `...` (`Ellipsis`) is treated as an ordinary mapping key, not as a wildcard for unassigned
-        columns. Thus, it only targets a column literally labelled `...`; otherwise, fitting or
+        ``...`` (`Ellipsis`) is treated as an ordinary mapping key, not as a wildcard for unassigned
+        columns. Thus, it only targets a column literally labelled ``...``; otherwise, fitting or
         transforming raises `KeyError`.
 
     Todo:

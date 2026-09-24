@@ -12,10 +12,10 @@ Conventions:
 
 2. Type conventions:
 
-    - functions of schema `is_<cond>` return a boolean or `TypeGuard`.
+    - functions of schema ``is_<cond>`` return a boolean or `TypeGuard`.
 
 
 3. Design conventions:
 
-    - Base classes that use implemeter pattern should mark the methods as `@final`.
+    - Base classes that use implemeter pattern should mark the methods as ``@final``.
 """

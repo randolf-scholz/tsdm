@@ -274,7 +274,7 @@ def prompt_choice(
 ) -> str:
     r"""Ask the user to pick an option.
 
-    If `pick_by_number=True`, then will allow the user to pick the choice by number.
+    If ``pick_by_number=True``, then will allow the user to pick the choice by number.
     """
     choices = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))

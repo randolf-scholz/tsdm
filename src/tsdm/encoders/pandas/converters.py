@@ -33,7 +33,7 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
 
     Note:
-        - This encoder requires that the DataFrame is canonically indexed. (i.e. `index = range(len(df))`)
+        - This encoder requires that the DataFrame is canonically indexed. (i.e. ``index = range(len(df))``)
         - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
@@ -70,9 +70,9 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
     Note:
         - Each column must be assigned to exactly one group.
-        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
+        - The special value ``...`` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
         - Encoding the index is mandatory, except if the data is canonically indexed.
-          (i.e. `index = RangeIndex(len(df))`)
+          (i.e. ``index = RangeIndex(len(df))``)
         - This Encoder is basically equivalent to `FrameAsDict` followed by `MapEncoders` wrapping `FrameAsTensor`
           for each group, but it also encodes the index.
         - Missing columns are allowed (submodular), and will be filled with `NAN`-values if the datatype allows it.
@@ -227,9 +227,9 @@ class FrameDTypeConverter(FittableEncoder[DataFrame, DataFrame]):
 
     Note:
         - If a column is not present, it will be ignored.
-        - If `...` (`Ellipsis`) is given,
+        - If ``...`` (`Ellipsis`) is given,
           all unspecified columns will be converted to the given dtype.
-          (Ellipsis will be removed during `.fit()`)
+          (Ellipsis will be removed during ``.fit()``)
     """
 
     target_dtypes: dict[Any, PandasDTypeArg] = UNDEFINED
@@ -297,7 +297,7 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
 
     Note:
         - Each column must be assigned to exactly one group.
-        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
+        - The special value ``...`` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
     """
 
     # Attributes (type hints represent post-fit attributes)

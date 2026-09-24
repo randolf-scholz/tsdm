@@ -129,7 +129,7 @@ def regularity_coefficient(a: ArrayLike, /, *, ignore_duplicates: bool = True) -
 
     In particular, if the time-series is regular, $κ=1$, and if it is irregular, $κ=∞$.
     To make the time-series regular, one would have to insert additional
-    :math:`(κ(𝐭)-1) | 𝐭 |`-many data-points.
+    $(κ(𝐭)-1)\abs{𝐭}$-many data-points.
     """
     s = np.asanyarray(a)
     gcd = time_gcd(s)

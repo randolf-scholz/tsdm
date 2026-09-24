@@ -123,7 +123,7 @@ def test_edge_case() -> None:
     [17, 18, 19, 20]  (shifted thrice)
 
     However, the last window is excluded, despite being within the range.
-    This is because compute grid checks for the true inequality `t_last < t_max`.
+    This is because compute grid checks for the true inequality ``t_last < t_max``.
 
     This is the correct thing to do for continuous data, but not for discrete data.
     """

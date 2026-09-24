@@ -85,8 +85,8 @@ class ETT_Zhou2021(
     Test-Metric
     -----------
 
-    - MSE: :math:`⅟ₙ∑ᵢ₌₁ⁿ |ŷ - y|ⁿ`
-    - MAE: :math:`⅟ₙ∑ᵢ₌₁ⁿ |ŷ - y|`
+    - MSE: $⅟ₙ∑ᵢ₌₁ⁿ \abs{ŷ - y}ⁿ$
+    - MAE: $⅟ₙ∑ᵢ₌₁ⁿ \abs{ŷ - y}$
 
     Results
     -------

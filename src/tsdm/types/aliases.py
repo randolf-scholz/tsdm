@@ -25,7 +25,7 @@ r"""Type Alias for file-like objects."""
 type Axis = None | int | tuple[int, ...]
 r"""Type Alias for axestype ."""
 type Size = int | tuple[int, ...]
-r"""Type Alias for size-like objects (note: `sample(size=None)` creates scalar."""
+r"""Type Alias for size-like objects (note: ``sample(size=None)`` creates scalar."""
 type DictArg[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
 r"""Type Alias for dictionary-like arguments."""
 type IndexArg1D = None | int | slice | range | list[int] | list[bool] | EllipsisType

@@ -94,13 +94,13 @@ class Vec[T](Protocol, metaclass=_VecMeta):  # +T
         will fail `issubclass`, in particular also `dict`.
 
     Examples:
-        - list
-        - tuple
-        - numpy.ndarray
-        - pandas.Index
-        - pandas.Series (with integer index)
+        - `list`
+        - `tuple`
+        - `numpy.ndarray`
+        - `pandas.Index`
+        - `pandas.Series` (with integer index)
     Counter-Example:
-        - `str`/`bytes` (__contains__ incompatible)
+        - `str` / `bytes` (`__contains__` incompatible)
         - `dict`
     """
 
@@ -129,7 +129,7 @@ class Seq[T](Protocol):  # +T
     r"""Protocol version of `collections.abc.Sequence`.
 
     Note:
-        Only compatible with `tuple[T, ...]`, not `tuple[*Ts]` when using pyright.
+        Only compatible with ``tuple[T, ...]``, not ``tuple[*Ts]`` when using pyright.
 
     References:
         - https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
