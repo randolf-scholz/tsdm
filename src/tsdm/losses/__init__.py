@@ -63,7 +63,7 @@ __all__ = [
 ]
 
 
-from . import base, penalties, pointwise, reductions, sequence
+from . import base, penalties, pointwise, reductions, sequence, task_specific
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -86,8 +86,8 @@ FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
     "rmse"            : pointwise.rmse_loss,
     "lp_loss"         : pointwise.lp_loss,
     # sequential
-    "nd"              : sequence.nd,
-    "nrmse"           : sequence.nrmse,
+    "nd"              : task_specific.nd,
+    "nrmse"           : task_specific.nrmse,
     "quantile_loss"   : sequence.quantile_loss,
 }  # fmt: skip
 r"""Dictionary of all available functional losses."""
@@ -101,8 +101,8 @@ MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
 r"""Dictionary of all available modular losses."""
 
 TIMESERIES_LOSSES: dict[str, type[base.BaseSequenceLoss]] = {
-    "ND"            : sequence.ND,
-    "NRMSE"         : sequence.NRMSE,
+    "ND"            : task_specific.ND,
+    "NRMSE"         : task_specific.NRMSE,
     "Quantile_Loss" : sequence.Quantile_Loss,
     "SequentialMSE" : sequence.SequentialMSE,
 }  # fmt: skip

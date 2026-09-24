@@ -169,7 +169,7 @@ def lp_loss(
             weight=channel_weight,
             scaled=scaled,
         )
-    return Reduction(reduction).apply(norms, weight=sample_weight)
+    return Reduction(reduction).apply(norms, weights=sample_weight)
 
 
 def mae_loss(
@@ -225,7 +225,7 @@ def mse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(losses, weight=sample_weight)
+    return Reduction(reduction).apply(losses, weights=sample_weight)
 
 
 def med_loss(
@@ -281,7 +281,7 @@ def rmse_loss(
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(squared_norms, weight=sample_weight).sqrt()
+    return Reduction(reduction).apply(squared_norms, weights=sample_weight).sqrt()
 
 
 class LP_Loss(BaseLoss):

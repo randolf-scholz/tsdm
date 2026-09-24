@@ -19,11 +19,11 @@ class Reduction(StrEnum):
     MEAN = "mean"
     NONE = "none"
 
-    def apply(self, values: Tensor, /, *, weight: Tensor | None = None) -> Tensor:
+    def apply(self, values: Tensor, /, *, weights: Tensor | None = None) -> Tensor:
         r"""Apply an optional sample weight and outer reduction to losses."""
-        if weight is not None:
-            weight = torch.broadcast_to(weight, values.shape)
-            values = weight * values
+        if weights is not None:
+            weights = torch.broadcast_to(weights, values.shape)
+            values = weights * values
 
         match self:
             case Reduction.NONE:
@@ -31,7 +31,9 @@ class Reduction(StrEnum):
             case Reduction.SUM:
                 return values.sum()
             case Reduction.MEAN:
-                return values.mean() if weight is None else values.sum() / weight.sum()
+                return (
+                    values.mean() if weights is None else values.sum() / weights.sum()
+                )
             case other:
                 assert_never(other)
 

@@ -180,65 +180,15 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
     # Constants
     time_dim: Final[int]
     r"""CONST: The time-axes over which the loss is computed."""
-
-    channel_weights: Tensor | None
-    r"""CONST: Optional weight-tensor for the channel-axes."""
     channel_dim: Final[tuple[int, ...]]
     r"""CONST: The channel-axes over which the loss is computed."""
 
-    combined_dim: Final[tuple[int, ...]]
-    r"""CONST: The combined time- and channel-axes."""
-
-    normalize_time: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-    normalize_channels: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-
-    # TODO: implement discount factors.
-
-    def __init__(
-        self,
-        /,
-        *,
-        time_dim: int = -2,
-        channel_dim: Dim = None,
-        weight: Tensor | None = None,
-        normalize_time: bool = True,
-        normalize: bool = False,
-    ) -> None:
+    def __init__(self, *, time_dim: int, channel_dim: Dim) -> None:
         super().__init__()
-        if weight is not None:
-            w = torch.as_tensor(weight, dtype=torch.float32)
-            w = nn.Parameter(w, requires_grad=False)
-            dim = (
-                tuple(range(-w.ndim, 0))
-                if channel_dim is None
-                else (channel_dim,)
-                if isinstance(channel_dim, int)
-                else channel_dim
-            )
-
-            if len(dim) != w.ndim:
-                raise ValueError(
-                    f"Weight tensor has {w.ndim} axes, "
-                    f"but axis={dim} specifies {len(dim)} axes."
-                )
-        else:
-            w = None
-            dim = (
-                (-1,)
-                if channel_dim is None
-                else (channel_dim,)
-                if isinstance(channel_dim, int)
-                else channel_dim
-            )
-
-        self.register_parameter("channel_weights", w)
         self.time_dim = time_dim
-        self.channel_dim = dim
-        self.normalize_channels = bool(normalize)
-        self.normalize_time = bool(normalize_time)
-
+        self.channel_dim = (
+            (channel_dim,) if isinstance(channel_dim, int) else channel_dim
+        )
         self.combined_dim = (self.time_dim, *self.channel_dim)
 
         if not {self.time_dim}.isdisjoint(self.channel_dim):
@@ -248,9 +198,10 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
     def forward(
         self,
         *,
-        predictions: Tensor,
-        targets: Tensor,
-        mask: Tensor | None = None,
-    ) -> Tensor:
+        predictions: Tensor,  # Float[..., $N, *D]
+        targets: Tensor,  # Float[..., $N, *D]
+        mask: Tensor | None = None,  # Bool[..., $N, *D]
+        sample_weights: Tensor | None = None,  # Float[...]
+    ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError

@@ -6,18 +6,17 @@ import torch
 
 from tsdm.losses.reductions import Reduction
 from tsdm.losses.sequence import (
-    ND,
     Normalization,
     Quantile_Loss,
     SequentialMSE,
     lp_loss,
     lp_norm,
-    nd,
     quantile_loss,
     rmse,
 )
 
 from .fixtures import TestSequenceLoss as SequenceLossTestBase
+from .task_specific import ND, nd
 
 
 class TestLpNorm:

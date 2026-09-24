@@ -32,31 +32,46 @@ __all__ = [
     # Classes
     "Normalization",
     "LP_Loss",
-    "ND",
-    "NRMSE",
     "Quantile_Loss",
     "RMSE_Loss",
     "SequentialMSE",
     # losses
     "lp_loss",
-    "nd",
-    "nrmse",
     "quantile_loss",
     "rmse",
     # functions
     "lp_norm",
 ]
 
+from collections.abc import Callable
 from enum import StrEnum
 from math import prod
-from typing import assert_never
+from typing import Any, Protocol, assert_never, cast
 
 import torch
 from torch import Tensor
 
-from .base import BaseSequenceLoss, Dim
+from .base import BaseSequenceLoss
 from .penalties import quantile_error
 from .reductions import Reduction
+
+
+class TaggedCallable[**P, R](Protocol[P, R]):
+    __tags__: dict[str, Any]
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
+
+
+class MapsToTagged(Protocol):
+    def __call__[**P, R](self, fn: Callable[P, R], /) -> TaggedCallable[P, R]: ...
+
+
+def tags(**kwargs: object) -> MapsToTagged:
+    def decorator[**P, R](fn: Callable[P, R], /) -> TaggedCallable[P, R]:
+        fn.__tags__ = kwargs
+        return cast("TaggedCallable[P, R]", fn)
+
+    return decorator
 
 
 class Normalization(StrEnum):
@@ -87,6 +102,7 @@ class Normalization(StrEnum):
       Use it to compute a global mean over observations.
     """
 
+    NONE = "none"
     SEQUENCE_LENGTH = "sequence_length"
     CHANNEL_PREVALENCE = "channel_prevalence"
     TIMEPOINT_COVERAGE = "timepoint_coverage"
@@ -103,6 +119,9 @@ class Normalization(StrEnum):
     ) -> Tensor:  # Float[..., $N, *D]
         channel_dim = (channel_dim,) if isinstance(channel_dim, int) else channel_dim
         match self:
+            case Normalization.NONE:
+                return values
+
             case Normalization.SEQUENCE_LENGTH:
                 normalizer = (
                     values.shape[time_dim]
@@ -186,9 +205,13 @@ def lp_norm(
     channel_weights: Tensor | None = None,  # Float[*D]
     normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
 ) -> Tensor:  # Float[...]
-    r"""Compute time-normalized lp-norm.
+    r"""Compute time-normalized lp-norm for sequence space $\Seq(Y)$.
 
-    .. math:: ℓₚ(x) = ( ∑ₜ wₜᵗⁱᵐᵉ ∑ₖ wₖᶜʰsₜₖ⁻¹ ⟦ mₜₖ ? |xₜₖ|ᵖ : 0⟧ )^{1/p}
+    .. math:: ℓₚ^*(x) = \Bigl( ∑ₜ wₜᵗⁱᵐᵉ ∑ₖ wₖᶜʰ γₜₖ (mₜₖ⊙|xₜₖ|ᵖ) \Bigr)^{1/p}
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
 
     Args:
         x: Tensor of shape ``[..., $N, *D]``.
@@ -202,6 +225,7 @@ def lp_norm(
         normalization: Normalization applied to the powered values. ``None``
             performs no normalization ($sₜₖ=1$). The built-in schemes are:
 
+            - ``none``: $γₜₖ = 1$.
             - ``sequence_length``: Divide by the number of time steps with at
               least one observed channel $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛ⋁ⱼmₛⱼ$.
               Use it to give padded sequences equal weight regardless of their length.
@@ -345,39 +369,99 @@ def lp_loss(
             time_weights=time_weights,
             normalization=normalization,
         )
-    return Reduction(reduction).apply(norms, weight=sample_weights)
+    return Reduction(reduction).apply(norms, weights=sample_weights)
+
+
+def mae(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    # optional args
+    time_dim: int = -2,
+    channel_dim: int | tuple[int, ...] = -1,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+) -> Tensor:  # Float[...]
+    r"""Mean absolute error.
+
+    .. math:: mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₁ = ‖x̂ - x‖_{1,1⁎}
+
+    the masked version is defined as
+
+    .. math:: mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Args:
+        predictions: Predicted values of shape ``[..., N, *D]``.
+        targets: Target values of shape ``[..., N, *D]``.
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels;
+            use ``()`` for a univariate time series.
+        mask: Boolean mask selecting values that contribute to the error.
+            All selected values should be finite and not null.
+    """
+
+
+def mee(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    # optional args
+    time_dim: int = -2,
+    channel_dim: int | tuple[int, ...] = -1,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+) -> Tensor:  # Float[...]
+    r"""Mean euclidean error.
+
+    .. math:: med(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
+
+    the masked version is defined as
+
+    .. math:: med(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Args:
+        predictions: Predicted values of shape ``[..., N, *D]``.
+        targets: Target values of shape ``[..., N, *D]``.
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels;
+            use ``()`` for a univariate time series.
+        mask: Boolean mask selecting values that contribute to the error.
+            All selected values should be finite and not null.
+    """
 
 
 def rmse(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
+    # optional args
     time_dim: int = -2,
     channel_dim: int | tuple[int, ...] = -1,
-    # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-    reduction: Reduction | str = Reduction.MEAN,
-    sample_weights: Tensor | None = None,  # Float[...]
-) -> Tensor:  # Float[()]
+) -> Tensor:  # Float[...]
     r"""Root mean square error.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{1/T ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} = ‖x̂ - x‖_{2,2⁎}
 
     the masked version is defined as
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{ ∑ₜ ‖ ⟦mₜ \? x̂ₜ - x₂ : 0 ⟧ ‖₂² / ∑ₜ⋁ₖmₜₖ} ]
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² }
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
 
     Args:
         predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values with the same shape as ``predictions``.
+        targets: Target values of shape ``[..., N, *D]``.
         time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels; use ``()`` for a
-            univariate time series.
+        channel_dim: Tensor axes containing the channels;
+            use ``()`` for a univariate time series.
         mask: Boolean mask selecting values that contribute to the error.
-            Each sequence is normalized by the number of time steps with at
-            least one observed channel.
-        reduction: Reduction method.
-        sample_weights: Sample weights.
+            All selected values should be finite and not null.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -399,131 +483,103 @@ def rmse(
     time_squared_errors = channel_squared_errors.sum(dim=reduced_time_dim)
 
     if mask is None:
-        sequence_rmse = time_squared_errors.div(predictions.shape[time_dim]).sqrt()
-    else:
-        time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
-        observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
-        sequence_rmse = time_squared_errors.div(observed_timepoints).sqrt()
+        return time_squared_errors.div(predictions.shape[time_dim]).sqrt()
 
-    return Reduction(reduction).apply(sequence_rmse, weight=sample_weights)
+    time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
+    observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
+    return time_squared_errors.div(observed_timepoints).sqrt()
 
 
-class RMSE_Loss(BaseSequenceLoss):
-    def forward(
-        self,
-        *,
-        predictions: Tensor,
-        targets: Tensor,
-        mask: Tensor | None = None,
-        sample_weight: Tensor | None = None,
-    ) -> Tensor:
-        return rmse(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
-            sample_weights=sample_weight,
-        )
+def mse(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    # optional args
+    time_dim: int = -2,
+    channel_dim: int | tuple[int, ...] = -1,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+) -> Tensor:  # Float[...]
+    r"""Mean square error.
+
+    .. math:: 𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₂² = ‖x̂ - x‖²_{2,2⁎}
+
+    the masked version is defined as
+
+    .. math:: 𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₂²
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Args:
+        predictions: Predicted values of shape ``[..., N, *D]``.
+        targets: Target values of shape ``[..., N, *D]``.
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels;
+            use ``()`` for a univariate time series.
+        mask: Boolean mask selecting values that contribute to the error.
+            All selected values should be finite and not null.
+    """
 
 
 def nd(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
+    # optional args
     time_dim: int = -2,
     channel_dim: int | tuple[int, ...] = -1,
-    # optional args
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-) -> Tensor:  # Float[()]
-    r"""Compute the normalized deviation score as defined by [TRMF]_.
+) -> Tensor:  # Float[...]
+    r"""Compute the normalized deviation.
 
-    For a collection of dense, univariate time series $x̂ₜ⁽ⁱ⁾$, [TRMF]_ defines:
+    .. math:: nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}
 
-    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ᵢₜ|x̂ₜ⁽ⁱ⁾ - xₜ⁽ⁱ⁾|}{∑ᵢₜ|xₜ⁽ⁱ⁾|}
+    the masked version is defined as
 
-    which we generalize towards sparse, multivariate time series as:
+    .. math:: nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₁ }{ ∑ₜ‖mₜ⊙xₜ‖₁ }
 
-    .. math::  𝖭𝖣(x̂，x) ≔
-        \frac{∑ᵢₜₖ ⟦ mᵢₜₖ \? |x̂ₜₖ⁽ⁱ⁾ - xₜₖ⁽ⁱ⁾| : 0 ⟧ }{∑ᵢₜₖ ⟦mᵢₜₖ \? |xₜₖ⁽ⁱ⁾| : 0 ⟧}
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
 
-    which is equivalent to `lp_loss` with `p=1`, `relative=True` and `normalization=observation_count`.
+    Note:
+        This loss is equivalent to `lp_loss` with `p=1`, `relative=True` and `normalization=observation_count`.
 
-    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
+        .. math:: nd(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
 
-    where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
-
-    References:
-        .. [TRMF]
-        | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-        | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
-        | Advances in Neural Information Processing Systems 29 (NIPS 2016)
-        | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-        .. [NBEATS]
-        | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
-        | https://openreview.net/forum?id=r1ecqn4YwB
+        where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
     """
-    time_dim, channel_dims = _normalize_dims(
-        ndim=targets.ndim,
-        time_dim=time_dim,
-        channel_dim=channel_dim,
-    )
-
-    residuals = predictions - targets
-
-    if mask is not None:
-        assert mask.shape == residuals.shape
-        residuals = torch.where(mask, residuals, 0.0)
-        targets = torch.where(mask, targets, 0.0)
-
-    return residuals.abs().sum().div(targets.abs().sum())
-
-
-class ND(BaseSequenceLoss):
-    r"""Compute the normalized deviation score.
-
-    .. math:: 𝖭𝖣(x̂，x) ≔ \frac{∑ₜₖ|x̂ₜₖ - xₜₖ|}{∑ₜₖ|xₜₖ|}
-
-    TODO: How to distinguish batch univariate vs single multivariate?
-    => Batch makes little sense since all could have different length!
-
-    References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-        - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
-          | https://openreview.net/forum?id=r1ecqn4YwB
-    """
-
-    # Float[..., $N], Float[..., $N] -> Float[()]
-    def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
-    ) -> Tensor:
-        return nd(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
-        )
 
 
 def nrmse(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
-    time_dim: int = -2,
-    channel_dim: Dim = -1,
     # optional args
+    time_dim: int = -2,
+    channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
-    eps: float = 2**-24,
 ) -> Tensor:  # Float[...]
-    r"""Compute the normalized root mean square error as defined by [TRMF]_.
+    r"""Compute the normalized root mean square error.
 
-    For a collection of univariate time series $x̂ₜ⁽ⁱ⁾$, [TRMF]_ defines:
+    .. math:: nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ᵢₜ|x̂ₜ⁽ⁱ⁾ - xₜ⁽ⁱ⁾|²}}{\frac{1}{T}∑ᵢₜ|xₜ⁽ⁱ⁾|}
+    the masked version is defined as
 
-    which we generalize towards sparse, multivariate time series as:
+    .. math:: nrmse(x̂，x) ≔ \frac
+        { \sqrt{ \tfrac{1}{∑ₜₖmₜₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
+        { \tfrac{1}{∑ₜₖmₜₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Args:
+        predictions: Predicted values of shape ``[..., N, *D]``.
+        targets: Target values of shape ``[..., N, *D]``.
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels;
+            use ``()`` for a univariate time series.
+        mask: Boolean mask selecting values that contribute to the error.
+            All selected values should be finite and not null.
 
     which is equivalent to `lp_loss` with `p=2` and `relative=1`.
 
@@ -531,43 +587,91 @@ def nrmse(
 
     where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
 
-    References:
-        .. [TRMF]
-        | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-        | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
-        | Advances in Neural Information Processing Systems 29 (NIPS 2016)
-        | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
-    x_pred = predictions
-    x_true = targets
-    res = torch.sqrt(torch.sum(torch.abs(x_pred - x_true) ** 2, dim=(-2, -1)))
-    mag = torch.sum(x_true.abs(), dim=(-2, -1))
-    mag = torch.maximum(mag, torch.full_like(x_true, eps))
-
-    return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
-class NRMSE(BaseSequenceLoss):
-    r"""Compute the normalized root mean squared error.
+class MAE_Loss(BaseSequenceLoss):
+    r"""Mean absolute error.
 
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{\sqrt{\frac{1}{T}∑ₜₖ|x̂ₜₖ - xₜₖ|²}}{∑ₜₖ|xₜₖ|}
+    .. math:: mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
 
-    References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+    the masked version is defined as
+
+    .. math:: mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
     """
+
+    reduction: Reduction
+
+    def __init__(
+        self, *, time_dim, channel_dim, reduction: Reduction = Reduction.MEAN
+    ) -> None:
+        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
+        self.reduction = reduction
 
     def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
     ) -> Tensor:
-        r"""Compute the loss value."""
-        return nrmse(
+        errors = mae(
             predictions=predictions,
             targets=targets,
             mask=mask,
             time_dim=self.time_dim,
             channel_dim=self.channel_dim,
         )
+        return self.reduction.apply(errors, weights=sample_weights)
+
+
+class RMSE_Loss(BaseSequenceLoss):
+    r"""Root mean square error.
+
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
+
+    the masked version is defined as
+
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² } ]
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Args:
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels; use ``()`` for a
+            univariate time series.
+        reduction:
+    """
+
+    reduction: Reduction
+
+    def __init__(
+        self, *, time_dim, channel_dim, reduction: Reduction = Reduction.MEAN
+    ) -> None:
+        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
+        self.reduction = reduction
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
+    ) -> Tensor:
+        errors = rmse(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
+        return self.reduction.apply(errors, weights=sample_weights)
 
 
 def quantile_loss(
