@@ -194,9 +194,11 @@ MathJax = {
             argmax: "\\operatorname*{arg\\,max}",
             argmin: "\\operatorname*{arg\\,min}",
             Median: "\\operatorname{Median}",
+            chol: "\\operatorname{chol}",
             diag: "\\operatorname{diag}",
             dist: "\\operatorname{dist}",
             logsumexp: "\\operatorname{logsumexp}",
+            softplus: "\\operatorname{softplus}",
             NdtriExp: "\\operatorname{ndtri\\_exp}",
             rank: "\\operatorname{rank}",
             relu: "\\operatorname{ReLU}",
@@ -204,7 +206,6 @@ MathJax = {
             tr: "\\operatorname{tr}",
             E: "\\operatorname{\\mathbf{E}",
             Var: "\\operatorname{\\mathbf{Var}}",
-            where: "\\operatorname{where}",
             // macros
             bmat: ["\\begin{bmatrix} #1 \\end{bmatrix}", 1],
             norm: ["\\left\\lVert #1\\right\\rVert", 1],
@@ -214,6 +215,7 @@ MathJax = {
             tuple: ["\\left( #1 \\right)", 1],
             floor: ["\\left\\lfloor #1 \\right\\rfloor", 1],
             ceil: ["\\left\\lceil #1 \\right\\rceil", 1],
+            op: ["\\operatorname{#1}", 1],
         },
 
     },
