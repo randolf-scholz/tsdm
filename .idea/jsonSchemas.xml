@@ -3,6 +3,22 @@
   <component name="JsonSchemaMappingsProjectConfiguration">
     <state>
       <map>
+        <entry key="Pylock">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="Pylock" />
+              <option name="relativePathToSchema" value="https://www.schemastore.org/pylock.json" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="pylock.toml" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
         <entry key="Tach">
           <value>
             <SchemaInfo>
