@@ -219,5 +219,21 @@ hooks = [
             "--show-traceback",
             "--"
         ]
+    },
+    {
+        id = "rst-backtick-check",
+        name = "[rst] backtick-check",
+        language = "pygrep",
+        types_or = ["python", "pyi", "rst"],
+        files = "^src/|^tests/",
+        entry = '(?<!`)`(?![`\s])(?!(?:\w+\.)*\w+`)[^`\n]*?(?<!\s)`(?![`_])',
+        args = [],
+        # `foo` E: no match
+        # `foo.bar` E: no match
+        # ``(1,2,3)`` E: no match
+        # `(1,2,3)` E: match
+        # `x+1` E: match
+        # `x+1 <url>`_  E: no match
+        # both `encode` and `decode` method.  E: no match
     }
 ]
