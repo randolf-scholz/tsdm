@@ -36,10 +36,10 @@ r"""Type alias for a generic dataset."""
 
 @runtime_checkable
 class MapDataset[K, V](Protocol):  # +V
-    r"""Protocol version of `torch.utils.data.Dataset` with a `keys()` method.
+    r"""Protocol version of `torch.utils.data.Dataset` with a ``keys()`` method.
 
     Note:
-        We deviate from the original in that we require a `keys()` method.
+        We deviate from the original in that we require a ``keys()`` method.
         Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
         simply makes the assumption that the dataset is indexed by integers.
         But this is simply wrong for many use cases such as dictionaries or DataFrames.
@@ -53,14 +53,14 @@ class MapDataset[K, V](Protocol):  # +V
     # NOTE: We want keys to support __reverse__, which requires either
     #   - SupportsLenAndGetItem -> Use IndexableDataset instead
     #   - Reversible -> Use KeysView instead
-    def keys(self) -> Collection[K]:  # supertype of `KeysView[K]`
+    def keys(self) -> Collection[K]:  # supertype of ``KeysView[K]``
         r"""Access the keys."""
         ...
 
 
 @runtime_checkable
 class PandasDataset[K, V](Protocol):  # K, +V
-    r"""Protocol version of `pandas.DataFrame`/`Series`.
+    r"""Protocol version of `pandas.DataFrame` / `Series`.
 
     Note that in particular, `__getitem__` is not present, as it returns columns,
     but we are usually interested in the rows.

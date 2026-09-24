@@ -102,10 +102,10 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     r"""A Lazy Dictionary implementation.
 
     Note:
-        - Getter methods `__getitem__`, `.pop`, `.get` trigger the lazy evaluation.
-        - View-operations `.values()` and `.items()` do not!
-        - Using `__setitem__` or `.setdefault` does not create `LazyValue` entries.
-        - Use `.get_lazy` and `.set_lazy` to lookup/create `LazyValue` entries.
+        - Getter methods `__getitem__`, ``.pop()`` and ``.get()`` trigger the lazy evaluation.
+        - View-operations ``.values()`` and ``.items()`` do not!
+        - Using `__setitem__` or ``.setdefault`` does not create `LazyValue` entries.
+        - Use ``.get_lazy`` and ``.set_lazy`` to lookup/create `LazyValue` entries.
 
     Values are allowed to be one of the following:
 

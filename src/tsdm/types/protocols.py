@@ -224,7 +224,7 @@ class SupportsDataFrame[DataFrameT = Any](Protocol):
 
 @runtime_checkable
 class SupportsItem[Scalar](Protocol):  # +T
-    r"""Protocol for objects that support `.item()`.
+    r"""Protocol for objects that support ``.item()``.
 
     Return the scalar value the tensor if it only has a single element.
 

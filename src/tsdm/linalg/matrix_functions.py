@@ -255,7 +255,7 @@ def logarithmic_norm(
 
     References:
         - Logarithmic Norm https://en.wikipedia.org/wiki/Logarithmic_norm
-        - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
+        - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>`_
         - | The logarithmic norm. History and modern theory
           | Gustaf Söderlind, BIT Numerical Mathematics, 2006
           | https://link.springer.com/article/10.1007/s10543-006-0069-9
