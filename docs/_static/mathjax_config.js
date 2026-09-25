@@ -204,7 +204,7 @@ MathJax = {
             relu: "\\operatorname{ReLU}",
             KL: "\\operatorname{KL}",
             tr: "\\operatorname{tr}",
-            E: "\\operatorname{\\mathbf{E}",
+            E: "\\operatorname{\\mathbf{E}}",
             Var: "\\operatorname{\\mathbf{Var}}",
             nan: "\\texttt{NaN}",
             // macros
