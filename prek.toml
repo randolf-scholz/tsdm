@@ -3,7 +3,7 @@
 #:schema https://www.schemastore.org/prek.json
 
 exclude = ".idea/|.vscode/|bugs/|dev/"
-minimum_prek_version = "0.5.1"
+minimum_prek_version = "0.5.4"
 fail_fast = false
 update.cooldown_days = 7
 default_language_version = { python = "3.14", node = "24.13.0" }
@@ -51,7 +51,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.16.6"
+rev = "v0.16.8"
 hooks = [
     {
         id = "ruff-check",
@@ -65,7 +65,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
-rev = "0.12.10"
+rev = "0.12.17"
 hooks = [
     { id = "uv-lock" },
     {
