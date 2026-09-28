@@ -42,7 +42,6 @@ dependencies = [
 ]
 # endregion project configuration ------------------------------------------------------
 
-
 # region development dependencies ------------------------------------------------------
 [dependency-groups]
 dev = [
@@ -165,7 +164,7 @@ docstring-code-line-length = "dynamic"
     "SIM300",
     "T20",
     "UP018",
-    "RUF046"
+    "RUF046",
 ]
 
 [tool.ruff.lint.pylint]
@@ -173,7 +172,7 @@ allow-dunder-method-names = [
     "__array__",
     "__array_ufunc__",
     "__dataframe__",
-    "_repr_html_"
+    "_repr_html_",
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -196,7 +195,7 @@ combine-as-imports = true
 fixable = ["ALL"]
 unfixable = []
 
-#select = [
+# select = [
 #    "A",     # flake8-builtins
 #    "ANN",   # flake8-annotations
 #    "ARG",   # flake8-unused-arguments
@@ -233,7 +232,7 @@ unfixable = []
 #    "TRY",   # tryceratops
 #    "UP",    # pyupgrade
 #    "W",     # warnings
-#]
+# ]
 select = ["ALL"]
 ignore = [
     # fully ignored:
@@ -355,9 +354,8 @@ output-format = "concise"
 
 [tool.ty.analysis]
 respect-type-ignore-comments = true
-replace-imports-with-any = [
-    "pyarrow.*", ]
-allowed-unresolved-imports = ["pyarrow.compute.*", ]
+replace-imports-with-any = ["pyarrow.*"]
+allowed-unresolved-imports = ["pyarrow.compute.*"]
 
 # region pyrefly configuration ---------------------------------------------------------
 [tool.pyrefly]
@@ -375,7 +373,6 @@ replace_imports_with_any = [
 invalid-overload = false
 unused-ignore = true
 # endregion pyrefly configuration ------------------------------------------------------
-
 
 # region mypy configuration ------------------------------------------------------------
 [tool.mypy]
@@ -446,7 +443,6 @@ module = [
 ]
 ignore_missing_imports = true
 # endregion mypy configuration ---------------------------------------------------------
-
 
 # region pyright configuration ---------------------------------------------------------
 [tool.pyright]
@@ -554,8 +550,8 @@ reportUnnecessaryTypeIgnoreComment = "error"  # default: "none"
 # reportUnreachable = "none"  # default: "none"
 # reportUnsupportedDunderAll = "warning"  # default: "warning"
 reportUntypedBaseClass = "error"  # default: "none"
-#reportUntypedClassDecorator = "none"  # default: "none"
-#reportUntypedFunctionDecorator = "none"  # default: "none"
+# reportUntypedClassDecorator = "none"  # default: "none"
+# reportUntypedFunctionDecorator = "none"  # default: "none"
 reportUntypedNamedTuple = "error"  # default: "none"
 # reportUnusedCallResult = "none"  # default: "none"
 reportUnusedClass = "error"  # default: "none"
@@ -568,13 +564,12 @@ reportUnusedVariable = "error"  # default: "none"
 reportWildcardImportFromLibrary = "error"  # default: "warning"
 # endregion pyright configuration ------------------------------------------------------
 
-
 # region pytest configuration ----------------------------------------------------------
 [tool.pytest]
 minversion = "9.0.2"
 pythonpath = ["src"]
 testpaths = ["src/", "tests/"]
-xfail_strict = true
+strict_xfail = true
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "manual: marks tests that only run individually",
@@ -590,7 +585,8 @@ required_plugins = [
     "pytest-xdist",
 ]
 addopts = [
-    "-p", "no:tach", # FIXME: https://github.com/tach-org/tach/issues/903
+    "-p",
+    "no:tach", # FIXME: https://github.com/tach-org/tach/issues/903
     "--doctest-modules",
     # "--junit-xml=.reports/pytest.xml",
     # rerunfailures options
