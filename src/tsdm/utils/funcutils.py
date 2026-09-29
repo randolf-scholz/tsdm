@@ -62,8 +62,9 @@ class _MapsToTagged(Protocol):
 
 def tags(**kwargs: object) -> _MapsToTagged:
     def decorator[**P, R](fn: Fn[P, R], /) -> TaggedCallable[P, R]:
+        fn = cast("TaggedCallable[P, R]", fn)
         fn.__tags__ = kwargs
-        return cast("TaggedCallable[P, R]", fn)
+        return fn
 
     return decorator
 
