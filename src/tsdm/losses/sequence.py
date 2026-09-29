@@ -35,18 +35,22 @@ __all__ = [
     "Quantile_Loss",
     "RMSE_Loss",
     "SequentialMSE",
+    "MAE_Loss",
     # losses
     "lp_loss",
     "quantile_loss",
     "rmse",
-    # functions
     "lp_norm",
+    "mean_euclidean_error",
+    "mae",
+    "mse",
+    "nrmse",
+    "nd",
 ]
 
-from collections.abc import Callable
 from enum import StrEnum
 from math import prod
-from typing import Any, Protocol, assert_never, cast
+from typing import assert_never
 
 import torch
 from torch import Tensor
@@ -54,24 +58,6 @@ from torch import Tensor
 from .base import BaseSequenceLoss
 from .penalties import quantile_error
 from .reductions import Reduction
-
-
-class TaggedCallable[**P, R](Protocol[P, R]):
-    __tags__: dict[str, Any]
-
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
-
-
-class MapsToTagged(Protocol):
-    def __call__[**P, R](self, fn: Callable[P, R], /) -> TaggedCallable[P, R]: ...
-
-
-def tags(**kwargs: object) -> MapsToTagged:
-    def decorator[**P, R](fn: Callable[P, R], /) -> TaggedCallable[P, R]:
-        fn.__tags__ = kwargs
-        return cast("TaggedCallable[P, R]", fn)
-
-    return decorator
 
 
 class Normalization(StrEnum):
@@ -383,11 +369,11 @@ def mae(
 ) -> Tensor:  # Float[...]
     r"""Mean absolute error.
 
-    .. math:: mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₁ = ‖x̂ - x‖_{1,1⁎}
+    .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₁ = ‖x̂ - x‖_{1,1⁎}
 
     the masked version is defined as
 
-    .. math:: mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
+    .. math:: \mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -403,7 +389,7 @@ def mae(
     """
 
 
-def mee(
+def mean_euclidean_error(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
@@ -414,11 +400,11 @@ def mee(
 ) -> Tensor:  # Float[...]
     r"""Mean euclidean error.
 
-    .. math:: med(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
+    .. math:: \mee(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
 
     the masked version is defined as
 
-    .. math:: med(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
+    .. math:: \mee(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -445,11 +431,11 @@ def rmse(
 ) -> Tensor:  # Float[...]
     r"""Root mean square error.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} = ‖x̂ - x‖_{2,2⁎}
+    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} = ‖x̂ - x‖_{2,2⁎}
 
     the masked version is defined as
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² }
+    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² }
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -501,11 +487,11 @@ def mse(
 ) -> Tensor:  # Float[...]
     r"""Mean square error.
 
-    .. math:: 𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₂² = ‖x̂ - x‖²_{2,2⁎}
+    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₂² = ‖x̂ - x‖²_{2,2⁎}
 
     the masked version is defined as
 
-    .. math:: 𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₂²
+    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₂²
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -532,11 +518,11 @@ def nd(
 ) -> Tensor:  # Float[...]
     r"""Compute the normalized deviation.
 
-    .. math:: nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}
+    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}
 
     the masked version is defined as
 
-    .. math:: nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₁ }{ ∑ₜ‖mₜ⊙xₜ‖₁ }
+    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₁ }{ ∑ₜ‖mₜ⊙xₜ‖₁ }
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -562,11 +548,11 @@ def nrmse(
 ) -> Tensor:  # Float[...]
     r"""Compute the normalized root mean square error.
 
-    .. math:: nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
+    .. math:: \nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
 
     the masked version is defined as
 
-    .. math:: nrmse(x̂，x) ≔ \frac
+    .. math:: \nrmse(x̂，x) ≔ \frac
         { \sqrt{ \tfrac{1}{∑ₜₖmₜₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
         { \tfrac{1}{∑ₜₖmₜₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
 
@@ -594,11 +580,11 @@ def nrmse(
 class MAE_Loss(BaseSequenceLoss):
     r"""Mean absolute error.
 
-    .. math:: mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
+    .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
 
     the masked version is defined as
 
-    .. math:: mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
+    .. math:: \mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -633,11 +619,11 @@ class MAE_Loss(BaseSequenceLoss):
 class RMSE_Loss(BaseSequenceLoss):
     r"""Root mean square error.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
+    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
 
     the masked version is defined as
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² } ]
+    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² } ]
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.

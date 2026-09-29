@@ -6,6 +6,8 @@ __all__ = [
     "POSITIONAL_OR_KEYWORD",
     "VAR_KEYWORD",
     "VAR_POSITIONAL",
+    # Types
+    "TaggedCallable",
     # Functions
     "accepts_varkwargs",
     "dataclass_args_kwargs",
@@ -25,6 +27,7 @@ __all__ = [
     "prod_fn",
     "recurse_on_nested_builtin",
     "yield_return_nodes",
+    "tags",
 ]
 
 import ast
@@ -33,7 +36,7 @@ from ast import AST, Name, Return, Tuple
 from collections.abc import Callable as Fn, Iterable, Iterator, Sequence
 from dataclasses import fields
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
-from typing import Any, Final, Optional, overload
+from typing import Any, Final, Optional, Protocol, cast, overload
 
 from tsdm.types.dataclass import Dataclass, issubclass_dataclass
 from tsdm.types.nested import NestedBuiltin
@@ -43,6 +46,26 @@ POSITIONAL_ONLY: Final = Parameter.POSITIONAL_ONLY
 POSITIONAL_OR_KEYWORD: Final = Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD: Final = Parameter.VAR_KEYWORD
 VAR_POSITIONAL: Final = Parameter.VAR_POSITIONAL
+
+
+class TaggedCallable[**P, R](Protocol):
+    r"""Protocol for callables with a ``__tags__`` dictionary."""
+
+    __tags__: dict[str, Any]
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
+
+
+class _MapsToTagged(Protocol):
+    def __call__[**P, R](self, fn: Fn[P, R], /) -> TaggedCallable[P, R]: ...
+
+
+def tags(**kwargs: object) -> _MapsToTagged:
+    def decorator[**P, R](fn: Fn[P, R], /) -> TaggedCallable[P, R]:
+        fn.__tags__ = kwargs
+        return cast("TaggedCallable[P, R]", fn)
+
+    return decorator
 
 
 def accepts_varkwargs(func: Fn[..., Any], /) -> bool:

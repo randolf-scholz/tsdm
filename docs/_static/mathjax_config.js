@@ -207,6 +207,12 @@ MathJax = {
             E: "\\operatorname{\\mathbf{E}}",
             Var: "\\operatorname{\\mathbf{Var}}",
             nan: "\\texttt{NaN}",
+            mae: "\\operatorname{\\mathbf{MAE}}",
+            mee: "\\operatorname{\\mathbf{MEE}}",
+            mse: "\\operatorname{\\mathbf{MSE}}",
+            rsme: "\\operatorname{\\mathbf{RSME}}",
+            nd: "\\operatorname{\\mathbf{ND}}",
+            nrmse: "\\operatorname{\\mathbf{NRMSE}}",
             // macros
             bmat: ["\\begin{bmatrix} #1 \\end{bmatrix}", 1],
             norm: ["\\left\\lVert #1\\right\\rVert", 1],
