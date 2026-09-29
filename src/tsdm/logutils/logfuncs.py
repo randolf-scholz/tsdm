@@ -19,6 +19,7 @@ __all__ = [
 
 import inspect
 import json
+import math
 from collections.abc import Mapping
 from inspect import Parameter
 from pathlib import Path
@@ -148,7 +149,7 @@ def log_kernel(
         raise ValueError("Kernel must be a square matrix!")
 
     log = writer.add_scalar
-    ω = float("inf")
+    ω = math.inf
 
     if log_scalars and log_distances:
         # fmt: off

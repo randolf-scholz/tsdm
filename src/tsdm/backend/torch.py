@@ -47,7 +47,7 @@ def drop_null(x: Tensor, /) -> Tensor:
 def nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanmin`."""
     return torch.amin(
-        torch.where(torch.isnan(x), float("+inf"), x),
+        torch.where(x.isnan(), torch.inf, x),
         dim=axis,  # type: ignore
         keepdim=keepdims,
     )
@@ -56,7 +56,7 @@ def nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
 def nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor:
     r"""Analogue to `numpy.nanmax`."""
     return torch.amax(
-        torch.where(torch.isnan(x), float("-inf"), x),
+        torch.where(x.isnan(), -torch.inf, x),
         dim=axis,  # type: ignore
         keepdim=keepdims,
     )

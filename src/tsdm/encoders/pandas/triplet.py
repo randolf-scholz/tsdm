@@ -2,6 +2,7 @@ r"""Encode timeseries in triplet format."""
 
 __all__ = ["TripletEncoder", "TripletDecoder"]
 
+import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -200,7 +201,7 @@ class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
             df.index = pd.MultiIndex.from_tuples(df.index, names=data.index.names)
 
         # re-add missing columns
-        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
+        df = df.reindex(columns=self.categories.categories, fill_value=math.nan)
         df.columns.name = self.var_name
 
         # Finalize result

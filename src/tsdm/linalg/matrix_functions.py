@@ -193,7 +193,7 @@ def stiffness_ratio(x: Tensor, /) -> Tensor:
     # Get smallest non-zero eigenvalue.
     maxvals = λ.amax(dim=-1)
     minvals = λ.amin(dim=-1)
-    return torch.where(maxvals < 0, minvals / maxvals, float("nan"))
+    return torch.where(maxvals < 0, minvals / maxvals, torch.nan)
 
 
 # Float[..., n, n] -> Float[...]
@@ -296,10 +296,10 @@ def logarithmic_norm(
         x = x.sum(dim=coldim, keepdim=keepdim)
         return x.amin(dim=rowdim - shift, keepdim=keepdim)
     shift = int(rowdim < coldim) * (1 - int(keepdim))
-    if p == float("inf"):
+    if p == torch.inf:
         x = x.sum(dim=rowdim, keepdim=keepdim)
         return x.amax(dim=coldim - shift, keepdim=keepdim)
-    if p == -float("inf"):
+    if p == -torch.inf:
         x = x.sum(dim=rowdim, keepdim=keepdim)
         return x.amin(dim=coldim - shift, keepdim=keepdim)
 
@@ -344,26 +344,26 @@ def schatten_norm(
 
     if p == 0:
         if scaled:
-            σ = torch.where(m, σ, float("nan"))
+            σ = torch.where(m, σ, torch.nan)
             result = geometric_mean(σ, dim=-1)
         else:
             result = m.sum(dim=-1)
         return _apply_keepdim(result, dim=dim, keepdim=keepdim)
 
-    if p == float("+inf"):
-        σ = torch.where(m, σ, float("-inf"))
+    if p == torch.inf:
+        σ = torch.where(m, σ, -torch.inf)
         maxvals = σ.amax(dim=-1)
-        maxvals = torch.where(maxvals == float("-inf"), float("nan"), maxvals)
+        maxvals = torch.where(maxvals == -torch.inf, torch.nan, maxvals)
         return _apply_keepdim(maxvals, dim=dim, keepdim=keepdim)
-    if p == float("-inf"):
-        σ = torch.where(m, σ, float("+inf"))
+    if p == -torch.inf:
+        σ = torch.where(m, σ, torch.inf)
         minvals = σ.amin(dim=-1)
-        minvals = torch.where(minvals == float("+inf"), float("nan"), minvals)
+        minvals = torch.where(minvals == torch.inf, torch.nan, minvals)
         return _apply_keepdim(minvals, dim=dim, keepdim=keepdim)
 
-    σ = torch.where(m, σ, float("-inf"))
+    σ = torch.where(m, σ, -torch.inf)
     σ_max = σ.amax(dim=-1)
-    σ = torch.where(m, σ, float("+nan"))
+    σ = torch.where(m, σ, torch.nan)
     σ = σ / σ_max
 
     result = (
@@ -475,10 +475,10 @@ def operator_norm(
     if p == -1:
         x = x.sum(dim=coldim, keepdim=keepdim)
         return c * x.amin(dim=rowdim - shift, keepdim=keepdim)
-    if p == float("inf"):
+    if p == torch.inf:
         x = x.sum(dim=rowdim, keepdim=keepdim)
         return c * x.amax(dim=coldim + shift, keepdim=keepdim)
-    if p == -float("inf"):
+    if p == -torch.inf:
         x = x.sum(dim=rowdim, keepdim=keepdim)
         return c * x.amin(dim=coldim + shift, keepdim=keepdim)
 

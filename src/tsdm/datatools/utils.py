@@ -14,6 +14,7 @@ __all__ = [
 ]
 
 import datetime as dt
+import math
 import operator
 from collections.abc import Collection, Mapping, Sequence
 from functools import wraps
@@ -192,9 +193,9 @@ def describe(
         median_value = s.median()
         std_value = s.std()
     except Exception:
-        mean_value = float("nan")
-        std_value = float("nan")
-        median_value = float("nan")
+        mean_value = math.nan
+        std_value = math.nan
+        median_value = math.nan
 
     # compute counts
     max_count = (s == max_value).sum()
@@ -234,7 +235,7 @@ def describe(
     try:
         quantile_values = s.quantile(quantiles)
     except Exception:
-        quantile_values = pd.Series([float("nan")] * len(quantiles))
+        quantile_values = pd.Series([math.nan] * len(quantiles))
 
     return pd.DataFrame(
         {

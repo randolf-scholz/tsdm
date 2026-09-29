@@ -63,7 +63,7 @@ def unpad_sequence(
     *,
     batch_first: bool = False,
     lengths: Optional[Tensor] = None,
-    padding_value: float = float("nan"),
+    padding_value: float = torch.nan,
 ) -> list[Tensor]:
     r"""Reverse operation of `torch.nn.utils.rnn.pad_sequence`."""
     # swap batch dimension if necessary

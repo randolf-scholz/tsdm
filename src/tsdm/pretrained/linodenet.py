@@ -5,6 +5,7 @@ __all__ = [
     "LinODEnet",
 ]
 
+import math
 import pickle
 from collections.abc import Collection
 from typing import Any
@@ -87,7 +88,7 @@ class LinODEnet(PreTrainedBase):
 
         # fill up missing columns
         print(f">>> Adding columns {miss_columns}")
-        ts.loc[:, miss_columns] = float("nan")
+        ts.loc[:, miss_columns] = math.nan
 
         # correctly order columns
         ts = ts.reindex(columns=list(encoder_cols)).copy()
