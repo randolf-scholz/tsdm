@@ -44,11 +44,10 @@ import shutil
 import sys
 import warnings
 import webbrowser
-from _frozen_importlib import module_from_spec
-from _frozen_importlib_external import spec_from_file_location
 from collections.abc import Collection, Mapping
 from contextlib import ContextDecorator
 from functools import cached_property
+from importlib.util import module_from_spec, spec_from_file_location
 from io import IOBase
 from pathlib import Path
 from tempfile import TemporaryDirectory

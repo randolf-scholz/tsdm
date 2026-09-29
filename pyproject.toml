@@ -318,6 +318,8 @@ ignore = [
     "RUF013", # PEP 484 prohibits implicit Optional
     "RUF022", # __all__ not sorted
     "RUF036", # None not at the end of type annotation
+    "RUF067", # non-empty-init-module
+    "RUF106", # rule-codes-in-suppression-comments
     # flake8-bandit
     "S101", # assert statement
     "S301", # suspicious-pickle-usage

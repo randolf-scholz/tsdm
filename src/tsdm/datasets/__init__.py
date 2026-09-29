@@ -64,6 +64,7 @@ from . import (
     physionet,
     synthetic,
     uci,
+    ushcn,
 )
 from .base import BaseDataset, Dataset, PolarsDataset
 from .ett import ETT
