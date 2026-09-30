@@ -147,7 +147,7 @@ class BaseLoss(nn.Module, Loss):
             w = None
             dim = -1 if dim is None else dim
 
-        self.scaled = bool(scaled)
+        self.scaled = scaled
         self.dim = (dim,) if isinstance(dim, int) else tuple(dim)
         self.register_parameter("channel_weight", w)
 

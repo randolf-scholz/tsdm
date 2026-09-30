@@ -438,8 +438,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     def rawdata_paths(self) -> Mapping[str, Path]:
         r"""Mapping from rawdata filenames to paths."""
         return {
-            str(fname): (self.RAWDATA_DIR / fname).absolute()
-            for fname in self.rawdata_files
+            fname: (self.RAWDATA_DIR / fname).absolute() for fname in self.rawdata_files
         }
 
     @cached_property

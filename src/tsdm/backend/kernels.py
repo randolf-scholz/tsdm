@@ -219,7 +219,7 @@ class Backend[T]:
 
     def __init__(self, backend: str | Self) -> None:
         # set the selected backend
-        name = backend.NAME if isinstance(backend, Backend) else str(backend)
+        name = backend.NAME if isinstance(backend, Backend) else backend
 
         if name not in BACKENDS:
             raise ValueError(f"Invalid backend: {name}.")

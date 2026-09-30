@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from math import prod
+from typing import assert_never
 
 import pytest
 import torch
@@ -192,6 +193,8 @@ class TestLpNorm:
             normalization=normalization,
         )
         match normalization:
+            case Normalization.NONE:
+                counts = 1.0
             case Normalization.SEQUENCE_LENGTH:
                 counts = (
                     mask.any(dim=-1, keepdim=True)
@@ -206,6 +209,9 @@ class TestLpNorm:
                 ).clamp_min(1) * mask.sum(dim=-1, keepdim=True).clamp_min(1)
             case Normalization.OBSERVATION_COUNT:
                 counts = mask.sum(dim=(-2, -1), keepdim=True).clamp_min(1)
+            case other:
+                assert_never(other)
+
         expected = (
             (torch.where(mask, x.abs().pow(p), 0.0) / counts)
             .sum(dim=(-2, -1))

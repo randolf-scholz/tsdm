@@ -39,7 +39,7 @@ class PositionalEncoding(nn.Module):
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
         super().__init__()
-        self.num_dim = int(num_dim)
+        self.num_dim = num_dim
         self.scale = float(scale)
         self.register_buffer(
             "scales",
