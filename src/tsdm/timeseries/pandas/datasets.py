@@ -347,7 +347,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
                 return self._subset(labels)
 
             case Series() as series:
-                return self[series.to_list()]  # pyrefly: ignore[missing-attribute]
+                return self[series.to_list()]
 
             case scalar:
                 labels = [scalar]
