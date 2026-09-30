@@ -98,7 +98,7 @@ hooks = [{ id = "nbstripout-fast", exclude = "^docs/|^experiments/" }]
 
 [[repos]]
 repo = "https://github.com/randolf-scholz/assorted-hooks.git"
-rev = "v0.7.23"
+rev = "v0.7.24"
 hooks = [
     { id = "check-separator-length-88" },
     { id = "numpy-rename-axes-axis" },
@@ -177,7 +177,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/randolf-scholz/assorted-hooks.git"
-rev = "v0.7.23"
+rev = "v0.7.24"
 hooks = [
     {
         id = "pyright-concise",

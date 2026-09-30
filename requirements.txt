@@ -17,9 +17,9 @@ cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==4.0.5
+filelock==4.0.7
     # via torch
-fonttools==4.66.0
+fonttools==4.66.1
     # via matplotlib
 fsspec==2026.9.0
     # via torch
