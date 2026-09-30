@@ -3,10 +3,10 @@
   <component name="PyToolsState">
     <option name="tools">
       <map>
-        <entry key="black">
+        <entry key="pyrefly">
           <value>
             <ToolEntry>
-              <option name="customPathToExecutable" value="$USER_HOME$/.pyenv/shims/black" />
+              <option name="enabled" value="true" />
             </ToolEntry>
           </value>
         </entry>
