@@ -333,37 +333,28 @@ def repr_mapping(
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
 
-    # set title
-    title = (
-        str(title) if title is not None
-        else cls.__name__
-    )  # fmt: skip
+    title = title if title is not None else cls.__name__
 
-    # set modifier
     modifier = f"@{modifier}" if modifier is not None else ""
 
-    # set identifier
     identifier = (
-        str(identifier) if identifier is not None
+        identifier if identifier is not None
         else "<mapping>" if recursive
         else ""
     )  # fmt: skip
 
-    # set linebreaks
     linebreaks = (
         False if len(obj) < 1  # always inline if empty mapping
-        else bool(linebreaks) if linebreaks is not None
+        else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
 
-    # set maxitems
     maxitems = (
-        int(maxitems) if maxitems is not None
+        maxitems if maxitems is not None
         else MAXITEMS if linebreaks
         else MAXITEMS_INLINE
     )  # fmt: skip
 
-    # set max_key_length
     max_key_length = (
         max((len(str(key)) for key in obj), default=0)
         if (align and linebreaks)
@@ -495,32 +486,24 @@ def repr_sequence(
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
 
-    # set title
-    title = (
-        str(title) if title is not None
-        else cls.__name__
-    )  # fmt: skip
+    title = title if title is not None else cls.__name__
 
-    # set modifier
     modifier = f"@{modifier}" if modifier is not None else ""
 
-    # set identifier
     identifier = (
-        str(identifier) if identifier is not None
+        identifier if identifier is not None
         else "<sequence>" if recursive
         else ""
     )  # fmt: skip
 
-    # set linebreaks
     linebreaks = (
         False if len(obj) < 1  # always inline if empty mapping
-        else bool(linebreaks) if linebreaks is not None
+        else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
 
-    # set maxitems
     maxitems = (
-        int(maxitems) if maxitems is not None
+        maxitems if maxitems is not None
         else MAXITEMS if linebreaks
         else MAXITEMS_INLINE
     )  # fmt: skip
@@ -625,32 +608,24 @@ def repr_set(
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
 
-    # set title
-    title = (
-        str(title) if title is not None
-        else cls.__name__
-    )  # fmt: skip
+    title = title if title is not None else cls.__name__
 
-    # set modifier
     modifier = f"@{modifier}" if modifier is not None else ""
 
-    # set identifier
     identifier = (
-        str(identifier) if identifier is not None
+        identifier if identifier is not None
         else "<set>" if recursive
         else ""
     )  # fmt: skip
 
-    # set linebreaks
     linebreaks = (
         False if len(obj) < 1  # always inline if empty mapping
-        else bool(linebreaks) if linebreaks is not None
+        else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
 
-    # set maxitems
     maxitems = (
-        int(maxitems) if maxitems is not None
+        maxitems if maxitems is not None
         else MAXITEMS if linebreaks
         else MAXITEMS_INLINE
     )  # fmt: skip
@@ -765,16 +740,14 @@ def repr_dataclass(
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
 
-    # set title
     title = (
-        str(title) if title is not None
+        title if title is not None
         else "" if is_builtin_constant(wrapped)
         else cls.__name__
     )  # fmt: skip
 
-    # set identifier
     identifier = (
-        str(identifier) if identifier is not None
+        identifier if identifier is not None
         else "<dataclass>" if recursive
         else ""
     )  # fmt: skip
@@ -838,16 +811,14 @@ def repr_namedtuple(
     wrapped = obj if wrapped is None else wrapped
     cls = type(wrapped)
 
-    # set title
     title = (
-        str(title) if title is not None
+        title if title is not None
         else "" if is_builtin_constant(wrapped)
         else cls.__name__
     )  # fmt: skip
 
-    # set identifier
     identifier = (
-        str(identifier) if identifier is not None
+        identifier if identifier is not None
         else "<namedtuple>" if recursive
         else ""
     )  # fmt: skip
@@ -895,17 +866,17 @@ def repr_array(
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
-    maxitems = MAXITEMS_INLINE if maxitems is None else int(maxitems)
+    maxitems = MAXITEMS_INLINE if maxitems is None else maxitems
 
     # set type
     cls: type = obj.__class__
 
     # get the type-repr
-    type_repr = str(title) if title is not None else cls.__name__
+    type_repr = title if title is not None else cls.__name__
 
     if isinstance(obj, pl.LazyFrame):
         schema = obj.collect_schema()
-        shape_repr = f"<*,{len(schema)}>" if identifier is None else str(identifier)
+        shape_repr = f"<*,{len(schema)}>" if identifier is None else identifier
         vals = [repr_dtype(dtype) for dtype in schema.values()]
 
         if len(set(vals)) <= 1:
@@ -929,7 +900,7 @@ def repr_array(
         case None, _:
             shape_repr = "" if not shape else f"<{','.join(str(dim) for dim in shape)}>"
         case _:
-            shape_repr = "" if identifier is None else str(identifier)
+            shape_repr = "" if identifier is None else identifier
 
     # set modifier = device
     match modifier, obj:
@@ -987,9 +958,9 @@ def repr_dtype(dtype: object, /) -> str:
             return string
         # These are too verbose.
         case pd.ArrowDtype() as wrapped_arrow_dtype:
-            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)  # pyrefly: ignore[missing-attribute]
+            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
         # Some special casing for dictionary types.
-        case pa.DictionaryType(index_type=index_type, value_type=value_type):  # pyrefly: ignore[missing-attribute]
+        case pa.DictionaryType(index_type=index_type, value_type=value_type):
             return f"dict[{index_type!s},{value_type!s}]"
         case type() as cls:
             return cls.__name__
@@ -1014,6 +985,7 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
+
     cls.__repr__ = partialmethod(repr_sequence, **kwds)  # type: ignore
     return cls
 
@@ -1024,6 +996,7 @@ def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
+
     cls.__repr__ = partialmethod(repr_mapping, **kwds)  # type: ignore
     return cls
 
@@ -1034,6 +1007,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
+
     cls.__repr__ = partialmethod(repr_set, **kwds)  # type: ignore
     return cls
 
@@ -1044,6 +1018,7 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Dataclass):  # type: ignore
         raise TypeError(f"Expected Sequence type, got {cls}.")
+
     cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore
     return cls
 
@@ -1054,6 +1029,7 @@ def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, NTuple):  # type: ignore
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
+
     cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore
     return cls
 
