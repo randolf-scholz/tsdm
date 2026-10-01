@@ -107,7 +107,7 @@ toc_object_entries_show_parents = "domain"  # how object TOC entries are display
 # options for python domain
 add_module_names = False  # prepend module names to all object names
 modindex_common_prefix = []  # list of prefixes to ignore in object names
-python_display_short_literal_types: True  # display Literal["egg"] as "egg"
+python_display_short_literal_types = True  # display Literal["egg"] as "egg"
 python_maximum_signature_line_length = 88  # maximum line length for function signatures
 python_use_unqualified_type_names = True  # If true, suppress the module name
 trim_doctest_flags = True  # remove common whitespace from doctest blocks
