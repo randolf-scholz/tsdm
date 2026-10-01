@@ -160,72 +160,81 @@ class TestLpLoss:
             predictions=predictions,
             targets=targets,
             p=1.0,
-            channel_weight=torch.tensor([1.0, 2.0]),
-            sample_weight=torch.tensor([1.0, 3.0]),
+            feature_weights=torch.tensor([1.0, 2.0]),
+            sample_weights=torch.tensor([1.0, 3.0]),
             reduction=Reduction.NONE,
         )
 
         torch.testing.assert_close(result, torch.tensor([3.0, 9.0]))
 
 
-@pytest.mark.parametrize("reduction", list(Reduction))
-@pytest.mark.parametrize(
-    "weight",
-    [None, torch.tensor([[1.0, 1.0, 1.0], [0.5, 0.5, 0.5]])],
-)
+@pytest.mark.parametrize("reduction", Reduction)
+@pytest.mark.parametrize("weighted", [False, True], ids=["", "weighted"])
 @pytest.mark.parametrize(
     ("loss", "torch_loss"),
     [(mae_loss, functional.l1_loss), (mse_loss, functional.mse_loss)],
 )
 def test_lp_losses_match_torch_functional(
+    *,
     loss: Callable[..., torch.Tensor],
     torch_loss: Callable[..., torch.Tensor],
     reduction: Reduction,
-    weight: torch.Tensor | None,
+    weighted: bool,
 ) -> None:
     r"""MAE and MSE agree with PyTorch when no inner axes are reduced."""
-    predictions = torch.tensor([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
-    targets = torch.tensor([[1.0, 2.0, 1.0], [5.0, 2.0, 8.0]])
+    num_samples = 2
+    num_dim = 3
+    predictions = torch.randn(num_samples, num_dim)
+    targets = torch.randn(num_samples, num_dim)
+    # Note: this test checks element-wise agreement,
+    #   so sample weights must be the same shape as predictions and targets.
+    sample_weights = torch.rand_like(predictions) if weighted else None
 
     result = loss(
         predictions=predictions,
         targets=targets,
         dim=(),
-        weight=weight,
+        sample_weights=sample_weights,
         reduction=reduction,
     )
     expected = torch_loss(
-        predictions, targets, reduction=reduction.value, weight=weight
+        predictions,
+        targets,
+        reduction=reduction.value,
+        weight=sample_weights,
     )
 
     torch.testing.assert_close(result, expected)
 
 
-@pytest.mark.parametrize("reduction", list(Reduction))
-@pytest.mark.parametrize(
-    "weight",
-    [None, torch.tensor([[1.0, 1.0, 1.0], [0.5, 0.5, 0.5]])],
-)
+@pytest.mark.parametrize("reduction", Reduction)
+@pytest.mark.parametrize("weighted", [False, True], ids=["", "weighted"])
 def test_rmse_loss_matches_square_root_of_torch_mse_loss(
+    *,
     reduction: Reduction,
-    weight: torch.Tensor | None,
+    weighted: bool,
 ) -> None:
     r"""RMSE is the square root of the corresponding weighted MSE."""
-    predictions = torch.tensor([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
-    targets = torch.tensor([[1.0, 2.0, 1.0], [5.0, 2.0, 8.0]])
+    num_samples = 2
+    num_dim = 3
+    predictions = torch.randn(num_samples, num_dim)
+    targets = torch.randn(num_samples, num_dim)
+    # Note: this test checks element-wise agreement,
+    #   so sample weights must be the same shape as predictions and targets.
+    sample_weights = torch.rand_like(predictions) if weighted else None
 
     result = rmse_loss(
         predictions=predictions,
         targets=targets,
         dim=(),
-        sample_weight=weight,
+        sample_weights=sample_weights,
         reduction=reduction,
     )
     expected = functional.mse_loss(
         predictions,
         targets,
         reduction=reduction.value,
-        weight=weight,  # type: ignore
+        weight=sample_weights,  # type: ignore
     ).sqrt()
 
     torch.testing.assert_close(result, expected)
