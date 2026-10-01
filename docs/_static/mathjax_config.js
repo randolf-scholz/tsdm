@@ -208,7 +208,6 @@ MathJax = {
             Var: "\\operatorname{\\mathbf{Var}}",
             nan: "\\texttt{NaN}",
             mae: "\\operatorname{\\mathbf{MAE}}",
-            mee: "\\operatorname{\\mathbf{MEE}}",
             mse: "\\operatorname{\\mathbf{MSE}}",
             rsme: "\\operatorname{\\mathbf{RSME}}",
             nd: "\\operatorname{\\mathbf{ND}}",
