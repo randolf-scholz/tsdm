@@ -9,8 +9,6 @@ from typing import assert_never
 import torch
 from torch import Tensor
 
-from .base import Dim
-
 
 class Reduction(StrEnum):
     r"""Reduction method for metrics."""
@@ -44,7 +42,7 @@ def apply_reduction(
     *,
     inner_fun: Callable[..., Tensor],
     outer_fun: Callable[[Tensor], Tensor],
-    dim: Dim = -1,
+    dim: int = -1,
     mask: Tensor | None = None,  # Bool[..., *D]
     weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
     scaled: bool = False,

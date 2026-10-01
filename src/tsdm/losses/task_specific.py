@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 
 from .base import BaseSequenceLoss, Dim
+from .penalties import quantile_error
 from .sequence import _normalize_dims
 
 
@@ -77,7 +78,12 @@ class ND(BaseSequenceLoss):
 
     # Float[..., $N], Float[..., $N] -> Float[()]
     def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
     ) -> Tensor:
         return nd(
             predictions=predictions,
@@ -139,7 +145,12 @@ class NRMSE(BaseSequenceLoss):
     """
 
     def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
     ) -> Tensor:
         r"""Compute the loss value."""
         return nrmse(
@@ -148,4 +159,87 @@ class NRMSE(BaseSequenceLoss):
             mask=mask,
             time_dim=self.time_dim,
             channel_dim=self.channel_dim,
+        )
+
+
+def quantile_loss(
+    *,
+    predictions: Tensor,  # Float[..., $N, 1]
+    targets: Tensor,  # Float[..., $N, 1]
+    q: float = 0.5,
+    mask: Tensor | None = None,
+    relative: bool = True,
+) -> Tensor:  # Float[()]
+    r"""Return the q-quantile loss.
+
+    Given a collection of of univariate time series $x̂ₜ⁽ⁱ⁾$:
+
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ᵢₜ ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) }{ ∑ᵢₜ|xₜ⁽ⁱ⁾| }
+
+    In order to prevent accidental application on multivariate time series,
+    this method checks for the presence of a trailing singleton dimension.
+
+    If a mask is given, instead compute:
+
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ᵢₜ mₜ⁽ⁱ⁾ ⊙ ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) }{ ∑ᵢₜ mₜ⁽ⁱ⁾ ⊙ |xₜ⁽ⁱ⁾| }
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Args:
+        predictions: Predicted values of shape ``[..., N, 1]``.
+        targets: Target values of shape ``[..., N, 1]``.
+        q: Quantile level in the closed interval ``[0, 1]``.
+        mask: Optional Boolean mask of observations to include. It must be
+            broadcastable to ``predictions`` and may include the trailing
+            singleton channel dimension.
+        relative: Whether to normalize the summed quantile errors by the sum
+            of absolute target values.
+
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | Syama Sundar Rangapuram et al.
+          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
+    if targets.shape[-1] != 1 or predictions.shape[-1] != 1:
+        raise ValueError("This loss is only defined for univariate time series.")
+
+    predictions = predictions.squeeze(-1)
+    targets = targets.squeeze(-1)
+
+    if mask is not None:
+        mask = mask.squeeze(-1)
+        predictions = torch.where(mask, predictions, 0.0)
+        targets = torch.where(mask, targets, 0.0)
+
+    q_err = 2 * quantile_error(predictions - targets, q=q)
+    return q_err.sum() / targets.abs().sum() if relative else q_err.sum()
+
+
+class Quantile_Loss(BaseSequenceLoss):
+    r"""The q-quantile loss.
+
+    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖρ_q(x̂ₜₖ，xₜₖ) }{ ∑ₜₖ|xₜₖ| }
+
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | Syama Sundar Rangapuram et al.
+          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
+    ) -> Tensor:
+        r"""Compute the loss value."""
+        return quantile_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
         )

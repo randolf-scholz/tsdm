@@ -5,15 +5,16 @@ the sequence dimension is simply treated as any other a batch dimension.
 """
 
 __all__ = [
+    "L2_Loss",
     "LP_Loss",
     "MAE_Loss",
     "MSE_Loss",
     "RMSE_Loss",
     # losses
+    "l2_loss",
     "lp_loss",
     "mae_loss",
     "mse_loss",
-    "med_loss",
     "rmse_loss",
     # penalties
     "lp_norm",
@@ -116,7 +117,9 @@ def lp_norm(
             raise ValueError("Cannot scale a norm with no unmasked elements.")
         r = r.div(numel)
 
-    return r.pow(1 / p)
+    result = r.pow(1 / p)
+    assert result.ndim == x.ndim - len(dims)
+    return result
 
 
 def lp_loss(
@@ -126,15 +129,15 @@ def lp_loss(
     p: float = 2.0,
     dim: Dim = -1,  # *D
     mask: Tensor | None = None,  # Bool[..., *D],
-    sample_weight: Tensor | None = None,  # Float[...], sample weights
-    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    sample_weights: Tensor | None = None,  # Float[...], sample weights
+    feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
     relative: bool = False,
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted $p$-norm loss.
 
-    .. math:: ℓₚ(x̂，x) ≔ 𝔼[‖x̂ - x‖ₚ]
+    .. math:: ℓₚ(x̂，x) ≔ \E[‖x̂ - x‖ₚ]
 
     ``channel_weight`` is applied within the $p$-norm along ``dim``. ``weight``
     is applied to the resulting per-sample losses before ``reduction``.
@@ -145,8 +148,8 @@ def lp_loss(
         p: Order of the norm.
         dim: Tensor axes reduced within each sample.
         mask: Boolean mask indicating valid values.
-        sample_weight: Optional weights applied to the per-sample losses.
-        channel_weight: Optional weights applied within each sample norm.
+        sample_weights: Optional weights applied to the per-sample losses.
+        feature_weights: Optional weights applied within each sample norm.
         reduction: Aggregation applied to the per-sample losses.
         scaled: Whether to scale each norm by its number of active entries.
         relative: If ``True``, divide each residual norm by the corresponding
@@ -157,7 +160,7 @@ def lp_loss(
         p=p,
         dim=dim,
         mask=mask,
-        weight=channel_weight,
+        weight=feature_weights,
         scaled=scaled,
     )
     if relative:
@@ -166,10 +169,10 @@ def lp_loss(
             p=p,
             dim=dim,
             mask=mask,
-            weight=channel_weight,
+            weight=feature_weights,
             scaled=scaled,
         )
-    return Reduction(reduction).apply(norms, weights=sample_weight)
+    return Reduction(reduction).apply(norms, weights=sample_weights)
 
 
 def mae_loss(
@@ -178,14 +181,16 @@ def mae_loss(
     targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
-    sample_weight: Tensor | None = None,  # Float[...], sample weights
-    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    sample_weights: Tensor | None = None,  # Float[...], sample weights
+    feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted mean absolute error.
 
-    .. math:: mae(x̂，x) ≔ 𝔼[‖x̂ - x‖₁]
+    .. math:: \mae(x̂，x) ≔ \E[‖x̂ - x‖₁]
+
+    This is minimized by the marginal median of the distribution.
     """
     return lp_loss(
         predictions=predictions,
@@ -193,8 +198,38 @@ def mae_loss(
         p=1.0,
         dim=dim,
         mask=mask,
-        sample_weight=sample_weight,
-        channel_weight=channel_weight,
+        sample_weights=sample_weights,
+        feature_weights=feature_weights,
+        scaled=scaled,
+        reduction=reduction,
+    )
+
+
+def l2_loss(
+    *,
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D]
+    dim: Dim = -1,
+    mask: Tensor | None = None,  # Bool[..., *D],
+    sample_weights: Tensor | None = None,  # Float[...], sample weights
+    feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
+    scaled: bool = False,
+    reduction: Reduction = Reduction.MEAN,
+) -> Tensor:  # Float[()]
+    r"""Compute the mean euclidean distance.
+
+    .. math:: ℓ₂(x̂，x) ≔ \E[‖x̂ - x‖₂]
+
+    This is minimized by the geometric median of the distribution.
+    """
+    return lp_loss(
+        predictions=predictions,
+        targets=targets,
+        p=2.0,
+        dim=dim,
+        mask=mask,
+        sample_weights=sample_weights,
+        feature_weights=feature_weights,
         scaled=scaled,
         reduction=reduction,
     )
@@ -206,14 +241,16 @@ def mse_loss(
     targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
-    sample_weight: Tensor | None = None,  # Float[...], sample weights
-    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    sample_weights: Tensor | None = None,  # Float[...], sample weights
+    feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
     scaled: bool = False,
     reduction: Reduction = Reduction.MEAN,
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted mean squared error.
 
-    .. math:: mse(x̂，x) ≔ 𝔼[‖x̂ - x‖₂²]
+    .. math:: \mse(x̂，x) ≔ \E[‖x̂ - x‖₂²]
+
+    This is minimized by the mean of the distribution.
     """
     losses = lp_loss(
         predictions=predictions,
@@ -221,39 +258,11 @@ def mse_loss(
         p=2.0,
         dim=dim,
         mask=mask,
-        channel_weight=channel_weight,
+        feature_weights=feature_weights,
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(losses, weights=sample_weight)
-
-
-def med_loss(
-    *,
-    predictions: Tensor,  # Float[..., *D]
-    targets: Tensor,  # Float[..., *D]
-    dim: Dim = -1,
-    mask: Tensor | None = None,  # Bool[..., *D],
-    sample_weight: Tensor | None = None,  # Float[...], sample weights
-    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
-    scaled: bool = False,
-    reduction: Reduction = Reduction.MEAN,
-) -> Tensor:  # Float[()]
-    r"""Compute the sample-weighted mean euclidean distance.
-
-    .. math:: med(x̂，x) ≔ 𝔼[‖x̂ - x‖₂]
-    """
-    return lp_loss(
-        predictions=predictions,
-        targets=targets,
-        p=2.0,
-        dim=dim,
-        mask=mask,
-        sample_weight=sample_weight,
-        channel_weight=channel_weight,
-        scaled=scaled,
-        reduction=reduction,
-    )
+    return Reduction(reduction).apply(losses, weights=sample_weights)
 
 
 def rmse_loss(
@@ -262,14 +271,14 @@ def rmse_loss(
     targets: Tensor,  # Float[..., *D]
     dim: Dim = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
-    sample_weight: Tensor | None = None,  # Float[...], sample weights
-    channel_weight: Tensor | None = None,  # Float[..., *D], channel weights
+    sample_weights: Tensor | None = None,  # Float[...], sample weights
+    feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
     reduction: Reduction = Reduction.MEAN,
     scaled: bool = False,
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted root mean squared error.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] }
+    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ \E[‖x̂ - x‖₂²] }
     """
     squared_norms = lp_loss(
         predictions=predictions,
@@ -277,11 +286,11 @@ def rmse_loss(
         p=2.0,
         dim=dim,
         mask=mask,
-        channel_weight=channel_weight,
+        feature_weights=feature_weights,
         scaled=scaled,
         reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(squared_norms, weights=sample_weight).sqrt()
+    return Reduction(reduction).apply(squared_norms, weights=sample_weights).sqrt()
 
 
 class LP_Loss(BaseLoss):
@@ -301,14 +310,14 @@ class LP_Loss(BaseLoss):
         self,
         p: float = 2.0,
         *,
-        channel_weight: Tensor | None = None,
+        feature_weights: Tensor | None = None,
         scaled: bool = False,
         dim: Dim = None,
     ) -> None:
         super().__init__(
             scaled=scaled,
             dim=dim,
-            channel_weight=channel_weight,
+            feature_weights=feature_weights,
         )
         self.p = p
 
@@ -318,16 +327,16 @@ class LP_Loss(BaseLoss):
         predictions: Tensor,  # Float[..., *D], possibly contains NaN
         targets: Tensor,  # Float[..., *D], possibly contains NaN
         mask: Tensor | None = None,  # Bool[..., *D],
-        weight: Tensor | None = None,  # Float[...], sample weights
+        sample_weights: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
         return lp_loss(
             predictions=predictions,
             targets=targets,
             mask=mask,
-            sample_weight=weight,
+            sample_weights=sample_weights,
             p=self.p,
             dim=self.dim,
-            channel_weight=self.channel_weight,
+            feature_weights=self.feature_weights,
             scaled=self.scaled,
         )
 
@@ -337,7 +346,7 @@ class MAE_Loss(BaseLoss):
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:
 
-    .. math:: 𝖬𝖠𝖤(x̂，x) ≔ 𝔼[‖x̂ - x‖]
+    .. math:: 𝖬𝖠𝖤(x̂，x) ≔ \E[‖x̂ - x‖₁]
 
     Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
@@ -352,59 +361,26 @@ class MAE_Loss(BaseLoss):
         predictions: Tensor,  # Float[..., *D], possibly contains NaN
         targets: Tensor,  # Float[..., *D], possibly contains NaN
         mask: Tensor | None = None,  # Bool[..., *D],
-        weight: Tensor | None = None,  # Float[...], sample weights
+        sample_weights: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
         return mae_loss(
             predictions=predictions,
             targets=targets,
             mask=mask,
-            sample_weight=weight,
-            channel_weight=self.channel_weight,
+            sample_weights=sample_weights,
+            feature_weights=self.feature_weights,
             scaled=self.scaled,
         )
 
 
-class MSE_Loss(BaseLoss):
-    r"""Mean Square Error.
+class L2_Loss(BaseLoss):
+    r"""Mean Euclidean Distance.
 
-    Given two random vectors $x̂,x∈ℝᴷ$, the mean square error is defined as:
+    Given two random vectors $x̂,x∈ℝᴷ$, the median loss:
 
-    .. math:: 𝖬𝖲𝖤(x̂，x) ≔ 𝔼[‖x̂-x‖²] ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²
+    .. math:: ℓ₂(x̂，x) ≔ \E[‖x̂ - x‖₂]
 
-    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
-
-    .. math:: 𝖬𝖲𝖤(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²
-
-    If the `normalize` option is set to True, then the normalized ℓ²-norm is used instead:
-
-    .. math:: ‖z‖²_{2^*} ≔ \frac{1}{K}∑ₖ₌₁ᴷ zₖ²
-
-    If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
-    In this case, the loss is computed as if the NaN channels would not exist.
-
-    .. math:: ‖z‖²_{2^*} ≔ \frac{1}{∑ₖ mₖ} ∑ₖ₌₁ᴷ [mₖ \? zₖ² : 0]
-
-    Since it could happen that all channels are NaN, the loss is set to zero in this case.
-
-    So, in total, there are 4 variants of the MSE loss:
-
-    Note that this is equivalent to a weighted MSE loss with weights equal to 1.0.
-
-    1. MSE with normalization and NaNs ignored
-
-       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ \frac{1}{∑ₖ mₖ}∑ₖ₌₁ᴷ [mₖ \? |x̂ₙₖ - xₙₖ|² : 0]
-
-    2. MSE with normalization and NaNs counted
-
-       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ \frac{1}{K}∑ₖ₌₁ᴷ |x̂ₙₖ - xₙₖ|²
-
-    3. MSE without normalization and NaNs ignored
-
-       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ ∑ₖ₌₁ᴷ [mₖ \? |x̂ₙₖ - xₙₖ|² : 0]
-
-    4. MSE without normalization and NaNs counted
-
-       .. math:: \frac{1}{N}∑ₙ₌₁ᴺ ∑ₖ₌₁ᴷ |x̂ₙₖ - xₙₖ|²
+    This is minimized by the geometric median of the distribution.
     """
 
     def forward(
@@ -413,14 +389,42 @@ class MSE_Loss(BaseLoss):
         predictions: Tensor,  # Float[..., *D], possibly contains NaN
         targets: Tensor,  # Float[..., *D], possibly contains NaN
         mask: Tensor | None = None,  # Bool[..., *D],
-        weight: Tensor | None = None,  # Float[...], sample weights
+        sample_weights: Tensor | None = None,  # Float[...], sample weights
+    ) -> Tensor:  # Float[()]
+        return l2_loss(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            sample_weights=sample_weights,
+            feature_weights=self.feature_weights,
+            scaled=self.scaled,
+        )
+
+
+class MSE_Loss(BaseLoss):
+    r"""Mean Squared Error.
+
+    Given two random vectors $x̂,x∈ℝᴷ$, the MSE loss:
+
+    .. math:: \mse(x̂，x) ≔ \E[‖x̂ - x‖₂²]
+
+    This is minimized by the mean of the distribution.
+    """
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D], possibly contains NaN
+        targets: Tensor,  # Float[..., *D], possibly contains NaN
+        mask: Tensor | None = None,  # Bool[..., *D],
+        sample_weights: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
         return mse_loss(
             predictions=predictions,
             targets=targets,
             mask=mask,
-            sample_weight=weight,
-            channel_weight=self.channel_weight,
+            sample_weights=sample_weights,
+            feature_weights=self.feature_weights,
             scaled=self.scaled,
         )
 
@@ -430,7 +434,7 @@ class RMSE_Loss(BaseLoss):
 
     Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt{𝔼[‖x̂ - x‖²]}
+    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt{\E[‖x̂ - x‖²]}
 
     Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
@@ -443,13 +447,13 @@ class RMSE_Loss(BaseLoss):
         predictions: Tensor,  # Float[..., *D], possibly contains NaN
         targets: Tensor,  # Float[..., *D], possibly contains NaN
         mask: Tensor | None = None,  # Bool[..., *D],
-        weight: Tensor | None = None,  # Float[...], sample weights
+        sample_weights: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
         return rmse_loss(
             predictions=predictions,
             targets=targets,
             mask=mask,
-            sample_weight=weight,
-            channel_weight=self.channel_weight,
+            sample_weights=sample_weights,
+            feature_weights=self.feature_weights,
             scaled=self.scaled,
         )

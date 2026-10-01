@@ -29,23 +29,25 @@ should provide arguments for these positions.
 """
 
 __all__ = [
-    # Classes
     "Normalization",
+    # Classes
+    "L2_Loss",
     "LP_Loss",
-    "Quantile_Loss",
-    "RMSE_Loss",
-    "SequentialMSE",
     "MAE_Loss",
-    # losses
-    "lp_loss",
-    "quantile_loss",
-    "rmse",
+    "MSE_Loss",
+    "ND_Loss",
+    "NRMSE_Loss",
+    "RMSE_Loss",
+    # error metrics
+    "l2_error",
     "lp_norm",
-    "mean_euclidean_error",
     "mae",
     "mse",
-    "nrmse",
     "nd",
+    "nrmse",
+    "rmse",
+    # losses
+    "lp_loss",
 ]
 
 from enum import StrEnum
@@ -55,8 +57,7 @@ from typing import assert_never
 import torch
 from torch import Tensor
 
-from .base import BaseSequenceLoss
-from .penalties import quantile_error
+from .base import BaseSequenceLoss, WrappedLoss
 from .reductions import Reduction
 
 
@@ -387,9 +388,34 @@ def mae(
         mask: Boolean mask selecting values that contribute to the error.
             All selected values should be finite and not null.
     """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    time_dim, channel_dims = _normalize_dims(
+        ndim=predictions.ndim,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+    )
+
+    residuals = predictions - targets
+    if mask is not None:
+        residuals = torch.where(mask, residuals, 0.0)
+    absolute_errors = residuals.abs()
+
+    channel_absolute_errors = (
+        absolute_errors if not channel_dims else absolute_errors.sum(dim=channel_dims)
+    )
+    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
+    time_absolute_errors = channel_absolute_errors.sum(dim=reduced_time_dim)
+
+    if mask is None:
+        return time_absolute_errors.div(predictions.shape[time_dim])
+
+    time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
+    observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
+    return time_absolute_errors.div(observed_timepoints)
 
 
-def mean_euclidean_error(
+def l2_error(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
     targets: Tensor,  # Float[..., $N, *D]
@@ -400,11 +426,11 @@ def mean_euclidean_error(
 ) -> Tensor:  # Float[...]
     r"""Mean euclidean error.
 
-    .. math:: \mee(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
+    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
 
     the masked version is defined as
 
-    .. math:: \mee(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
+    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -418,6 +444,31 @@ def mean_euclidean_error(
         mask: Boolean mask selecting values that contribute to the error.
             All selected values should be finite and not null.
     """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    time_dim, channel_dims = _normalize_dims(
+        ndim=predictions.ndim,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+    )
+
+    residuals = predictions - targets
+    if mask is not None:
+        residuals = torch.where(mask, residuals, 0.0)
+    squared_errors = residuals.square()
+
+    channel_squared_errors = (
+        squared_errors if not channel_dims else squared_errors.sum(dim=channel_dims)
+    )
+    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
+    time_euclidean_errors = channel_squared_errors.sqrt().sum(dim=reduced_time_dim)
+
+    if mask is None:
+        return time_euclidean_errors.div(predictions.shape[time_dim])
+
+    time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
+    observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
+    return time_euclidean_errors.div(observed_timepoints)
 
 
 def rmse(
@@ -505,6 +556,16 @@ def mse(
         mask: Boolean mask selecting values that contribute to the error.
             All selected values should be finite and not null.
     """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    return lp_norm(
+        predictions - targets,
+        p=2.0,
+        mask=mask,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+        normalization=Normalization.SEQUENCE_LENGTH,
+    ).square()
 
 
 def nd(
@@ -535,6 +596,25 @@ def nd(
 
         where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
     """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    residual_norm = lp_norm(
+        predictions - targets,
+        p=1.0,
+        mask=mask,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+        normalization=Normalization.OBSERVATION_COUNT,
+    )
+    target_norm = lp_norm(
+        targets,
+        p=1.0,
+        mask=mask,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+        normalization=Normalization.OBSERVATION_COUNT,
+    )
+    return residual_norm / target_norm
 
 
 def nrmse(
@@ -553,8 +633,8 @@ def nrmse(
     the masked version is defined as
 
     .. math:: \nrmse(x̂，x) ≔ \frac
-        { \sqrt{ \tfrac{1}{∑ₜₖmₜₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
-        { \tfrac{1}{∑ₜₖmₜₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
+        { \sqrt{ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
+        { \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
 
     where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
@@ -568,16 +648,60 @@ def nrmse(
         mask: Boolean mask selecting values that contribute to the error.
             All selected values should be finite and not null.
 
-    which is equivalent to `lp_loss` with ``p=2`` and ``relative=1``.
-
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
 
     where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
+    """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    residual_norm = lp_norm(
+        predictions - targets,
+        p=2.0,
+        mask=mask,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+        normalization=Normalization.SEQUENCE_LENGTH,
+    )
+    target_norm = lp_norm(
+        targets,
+        p=1.0,
+        mask=mask,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+        normalization=Normalization.SEQUENCE_LENGTH,
+    )
+    return residual_norm / target_norm
 
+
+class L2_Loss(WrappedLoss):
+    r"""Mean Euclidean error.
+
+    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
+
+    the masked version is defined as
+
+    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
     """
 
+    def __init__(
+        self,
+        *,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            metric=l2_error,
+        )
 
-class MAE_Loss(BaseSequenceLoss):
+
+class MAE_Loss(WrappedLoss):
     r"""Mean absolute error.
 
     .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
@@ -590,33 +714,50 @@ class MAE_Loss(BaseSequenceLoss):
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
     """
 
-    reduction: Reduction
-
     def __init__(
-        self, *, time_dim, channel_dim, reduction: Reduction = Reduction.MEAN
-    ) -> None:
-        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
-        self.reduction = reduction
-
-    def forward(
         self,
         *,
-        predictions: Tensor,
-        targets: Tensor,
-        mask: Tensor | None = None,
-        sample_weights: Tensor | None = None,
-    ) -> Tensor:
-        errors = mae(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            metric=mae,
         )
-        return self.reduction.apply(errors, weights=sample_weights)
 
 
-class RMSE_Loss(BaseSequenceLoss):
+class MSE_Loss(WrappedLoss):
+    r"""Mean square error.
+
+    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²
+
+    the masked version is defined as
+
+    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₂²
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    """
+
+    def __init__(
+        self,
+        *,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            metric=mse,
+        )
+
+
+class RMSE_Loss(WrappedLoss):
     r"""Root mean square error.
 
     .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
@@ -635,188 +776,81 @@ class RMSE_Loss(BaseSequenceLoss):
         reduction:
     """
 
-    reduction: Reduction
-
     def __init__(
-        self, *, time_dim, channel_dim, reduction: Reduction = Reduction.MEAN
-    ) -> None:
-        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
-        self.reduction = reduction
-
-    def forward(
         self,
         *,
-        predictions: Tensor,
-        targets: Tensor,
-        mask: Tensor | None = None,
-        sample_weights: Tensor | None = None,
-    ) -> Tensor:
-        errors = rmse(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            metric=mse,
         )
-        return self.reduction.apply(errors, weights=sample_weights)
 
 
-def quantile_loss(
-    *,
-    predictions: Tensor,  # Float[..., $N, 1]
-    targets: Tensor,  # Float[..., $N, 1]
-    q: float = 0.5,
-    mask: Tensor | None = None,
-    relative: bool = True,
-) -> Tensor:  # Float[()]
-    r"""Return the q-quantile loss.
+class NRMSE_Loss(WrappedLoss):
+    r"""Compute the normalized root mean square error.
 
-    Given a collection of of univariate time series $x̂ₜ⁽ⁱ⁾$:
+    .. math:: \nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
 
-    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ᵢₜ ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) }{ ∑ᵢₜ|xₜ⁽ⁱ⁾| }
+    the masked version is defined as
 
-    In order to prevent accidental application on multivariate time series,
-    this method checks for the presence of a trailing singleton dimension.
+    .. math:: \nrmse(x̂，x) ≔ \frac
+        { \sqrt{ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
+        { \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
 
-    If a mask is given, instead compute:
-
-    .. math:: 𝖰𝖫_q(x̂，x) ≔
-        2\frac{ ∑ᵢₜ ⟦ mₜ⁽ⁱ⁾ \? ρ_q(x̂ₜ⁽ⁱ⁾，xₜ⁽ⁱ⁾) : 0 ⟧ }{ ∑ᵢₜ⟦ mₜ⁽ⁱ⁾ \? |xₜ⁽ⁱ⁾| : 0 ⟧ }
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, 1]``.
-        targets: Target values of shape ``[..., N, 1]``.
-        q: Quantile level in the closed interval ``[0, 1]``.
-        mask: Optional Boolean mask of observations to include. It must be
-            broadcastable to ``predictions`` and may include the trailing
-            singleton channel dimension.
-        relative: Whether to normalize the summed quantile errors by the sum
-            of absolute target values.
+        predictions: Predicted values of shape ``[..., N, *D]``.
+        targets: Target values of shape ``[..., N, *D]``.
+        time_dim: Tensor axis containing the time steps.
+        channel_dim: Tensor axes containing the channels;
+            use ``()`` for a univariate time series.
+        mask: Boolean mask selecting values that contribute to the error.
+            All selected values should be finite and not null.
 
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram et al.
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-    if targets.shape[-1] != 1 or predictions.shape[-1] != 1:
-        raise ValueError("This loss is only defined for univariate time series.")
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
 
-    predictions = predictions.squeeze(-1)
-    targets = targets.squeeze(-1)
-
-    if mask is not None:
-        mask = mask.squeeze(-1)
-        predictions = torch.where(mask, predictions, 0.0)
-        targets = torch.where(mask, targets, 0.0)
-
-    q_err = 2 * quantile_error(predictions - targets, q=q)
-    return q_err.sum() / targets.abs().sum() if relative else q_err.sum()
-
-
-class Quantile_Loss(BaseSequenceLoss):
-    r"""The q-quantile loss.
-
-    .. math:: 𝖰𝖫_q(x̂，x) ≔ 2\frac{ ∑ₜₖρ_q(x̂ₜₖ，xₜₖ) }{ ∑ₜₖ|xₜₖ| }
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram et al.
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
     """
 
-    def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
-    ) -> Tensor:
-        r"""Compute the loss value."""
-        return quantile_loss(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
+    def __init__(
+        self,
+        *,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            metric=nrmse,
+        )
+
+
+class ND_Loss(WrappedLoss):
+    __doc__ = nd.__doc__
+
+    def __init__(
+        self,
+        *,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            metric=nd,
         )
 
 
 class LP_Loss(BaseSequenceLoss):
     r"""LP-loss for sequence spaces."""
-
-
-class SequentialMSE(BaseSequenceLoss):
-    r"""Time-Series Mean Square Error.
-
-    Given two random sequences $x,x̂∈( ℝ ∪ \{𝙽𝙰\})^{T×K}$, the time-series
-    mean square error is defined as:
-
-    .. math:: 𝖳𝖲-𝖬𝖲𝖤(x̂，x) ≔ ∑ₜₖ \frac{[mₜₖ \? (x̂ₜₖ - xₜₖ)² : 0]}{∑ₛ mₛₖ}
-
-    Or, more precisely, to avoid division by zero, we use the following
-
-    .. math:: ∑ₜₖ \Bigr[ ∑ₛmₛₖ > 0 \? \frac{[mₜₖ \? (x̂ₜₖ - xₜₖ)² : 0]}{∑ₛmₛₖ} : 0\Bigl]
-
-    By default, each channel is normalized by the number of observations in that channel.
-    Other normalization schemes are possible, e.g. by the number of observations in the
-    entire time series, or by the number of observations in each time step:
-
-    With time-normalization:
-
-    .. math:: ∑ₜₖ \frac{[mₜₖ \? |x̂ₜₖ - xₜₖ|² : 0]}{∑ₛ mₛₖ}
-
-    with channel-normalization:
-
-    .. math:: ∑ₜₖ \frac{[mₜₖ \? |x̂ₜₖ - xₜₖ|² : 0]}{∑ⱼ mₜⱼ}
-
-    with both:
-
-    .. math:: ∑ₜₖ \frac{[mₜₖ \? |x̂ₜₖ - xₜₖ|² : 0]}{∑ₛⱼ mₛⱼ}
-
-    Moreover, we can consider adding a discount factor with respect to the time,
-    i.e. a simple geometric dsitribution, which amounts to adding a term of the form
-    $γ^{∑ₖ ∆tₖ}$ to the denominator, where $γ$ is the discount factor and $∆t_k$
-    is the time difference between the $k$-th and $(k+1)$-th time point.
-
-    Possible batch-dimensions are averaged over.
-    """
-
-    # Float[..., $N, *D], Float[..., $N, *D] -> Float[()]
-    def forward(
-        self, *, predictions: Tensor, targets: Tensor, mask: Tensor | None = None
-    ) -> Tensor:
-        w = self.channel_weights
-        m = ~targets.isnan()  # 1 if not nan, 0 if nan
-        r = predictions - targets
-        r = torch.where(m, r, 0.0)
-        # must come after where, else we get NaN gradients!
-        r = r**2 if w is None else w * r**2
-
-        # compute normalization constant
-        match self.normalize_time, self.normalize_channels:
-            case True, True:
-                c = torch.sum(
-                    m if w is None else w * m, dim=self.combined_dim, keepdim=True
-                )
-                s = torch.sum(r / c, dim=self.combined_dim, keepdim=True)
-                r = torch.where(c > 0, s, 0.0)
-
-            case True, False:
-                c = torch.sum(m, dim=self.time_dim, keepdim=True)
-                s = torch.sum(r / c, dim=self.time_dim, keepdim=True)
-                r = torch.where(c > 0, s, 0.0)
-                r = torch.sum(r, dim=self.channel_dim, keepdim=True)
-
-            case False, True:
-                c = torch.sum(
-                    m if w is None else w * m, dim=self.channel_dim, keepdim=True
-                )
-                s = torch.sum(r / c, dim=self.channel_dim, keepdim=True)
-                r = torch.where(c > 0, s, 0.0)
-                r = torch.sum(r, dim=self.time_dim, keepdim=True)
-
-            case False, False:
-                r = torch.sum(r, dim=self.combined_dim, keepdim=True)
-
-            case _:
-                raise RuntimeError("unreachable")
-
-        # aggregate over batch-dimensions
-        r = torch.mean(r)
-        return r

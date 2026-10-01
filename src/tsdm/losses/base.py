@@ -4,6 +4,7 @@ __all__ = [
     # Protocols
     "Loss",
     "SequenceLoss",
+    "WrappedLoss",
     "TimedSequenceLoss",
     # ABCs
     "BaseLoss",
@@ -17,7 +18,23 @@ from typing import Final, Protocol
 import torch
 from torch import Tensor, nn
 
+from .reductions import Reduction
+
 type Dim = int | tuple[int, ...] | None
+
+
+class SequenceMetric(Protocol):
+    r"""Protocol for a metric on equal length sequences."""
+
+    def __call__(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., $N, *D]
+        targets: Tensor,  # Float[..., $N, *D]
+        mask: Tensor | None,  # Bool[..., $N, *D]
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+    ) -> Tensor: ...  # Float[...]
 
 
 class Loss(Protocol):
@@ -109,7 +126,7 @@ class TimedSequenceLoss(Protocol):
 class BaseLoss(nn.Module, Loss):
     r"""Base class for a sample-wise loss function."""
 
-    channel_weight: Tensor | None
+    feature_weights: Tensor | None
     r"""PARAM: Optional weight-vector."""
 
     # Constants
@@ -122,13 +139,13 @@ class BaseLoss(nn.Module, Loss):
         self,
         *,
         dim: Dim = None,
-        channel_weight: Tensor | None = None,
+        feature_weights: Tensor | None = None,
         scaled: bool = False,
     ) -> None:
         super().__init__()
 
-        if channel_weight is not None:
-            w = torch.as_tensor(channel_weight, dtype=torch.float32)
+        if feature_weights is not None:
+            w = torch.as_tensor(feature_weights, dtype=torch.float32)
             w = nn.Parameter(w, requires_grad=False)
             dim = (
                 tuple(range(-w.ndim, 0))
@@ -158,7 +175,7 @@ class BaseLoss(nn.Module, Loss):
         predictions: Tensor,  # Float[..., *D], possibly contains NaN
         targets: Tensor,  # Float[..., *D], possibly contains NaN
         mask: Tensor | None = None,  # Bool[..., *D],
-        weight: Tensor | None = None,  # Float[...], sample weights
+        sample_weights: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError
@@ -183,7 +200,7 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
     channel_dim: Final[tuple[int, ...]]
     r"""CONST: The channel-axes over which the loss is computed."""
 
-    def __init__(self, *, time_dim: int, channel_dim: Dim) -> None:
+    def __init__(self, *, time_dim: int, channel_dim: int | tuple[int, ...]) -> None:
         super().__init__()
         self.time_dim = time_dim
         self.channel_dim = (
@@ -205,3 +222,34 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
     ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError
+
+
+class WrappedLoss(BaseSequenceLoss):
+    def __init__(
+        self,
+        *,
+        metric: SequenceMetric,
+        reduction: Reduction,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+    ) -> None:
+        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
+        self.metric = metric
+        self.reduction = reduction
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
+    ) -> Tensor:
+        errors = self.metric(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
+        return self.reduction.apply(errors, weights=sample_weights)
