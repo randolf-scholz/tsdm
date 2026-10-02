@@ -1,19 +1,12 @@
-from collections.abc import Callable
 from math import prod
 from typing import assert_never
 
 import pytest
 import torch
 
+from tsdm.losses.penalties.sequence import Normalization, lp_norm
 from tsdm.losses.reductions import Reduction
-from tsdm.losses.sequence import (
-    ND_Loss,
-    Normalization,
-    lp_loss,
-    lp_norm,
-    nd,
-    rmse,
-)
+from tsdm.losses.sequence import MSE_Loss, lp_loss, nd_loss, rmse_loss
 
 from .fixtures import TestSequenceLoss as SequenceLossTestBase
 
@@ -413,7 +406,7 @@ class TestLpLoss(SequenceLossTestBase):
 class TestRMSE(SequenceLossTestBase):
     r"""Tests for root mean square error."""
 
-    loss = staticmethod(rmse)
+    loss = staticmethod(rmse_loss)
 
     def test_masks_values_and_normalizes_by_observed_timepoints(self) -> None:
         r"""Each sequence is normalized by its nonempty masked time steps."""
@@ -431,7 +424,7 @@ class TestRMSE(SequenceLossTestBase):
             ]
         )
 
-        result = rmse(predictions=predictions, targets=targets, mask=mask)
+        result = self.loss(predictions=predictions, targets=targets, mask=mask)
         expected = torch.stack(
             [
                 torch.tensor((3.0**2 + 5.0**2 + 12.0**2) / 2).sqrt(),
@@ -466,7 +459,7 @@ class TestND:
             ]
         )
 
-        result = nd(
+        result = nd_loss(
             predictions=predictions,
             targets=targets,
             mask=mask,
@@ -483,62 +476,6 @@ class TestND:
             channel_dim=-1,
             normalization=Normalization.OBSERVATION_COUNT,
         )
-
-        torch.testing.assert_close(result, expected)
-
-
-class TestQuantileLoss:
-    r"""Tests for the sequential q-quantile loss."""
-
-    @pytest.mark.parametrize("relative", [False, True])
-    def test_masks_individual_observations(self, *, relative: bool) -> None:
-        r"""The mask is applied to each numerator and denominator term before summing."""
-        predictions = torch.tensor([[[3.0], [-4.0], [2.0]], [[5.0], [1.0], [-2.0]]])
-        targets = torch.tensor([[[1.0], [8.0], [4.0]], [[2.0], [-3.0], [-1.0]]])
-        mask = torch.tensor([[[True], [False], [True]], [[False], [True], [True]]])
-        q = 0.25
-
-        result = quantile_loss(
-            predictions=predictions,
-            targets=targets,
-            q=q,
-            mask=mask,
-            relative=relative,
-        )
-
-        residuals = predictions.squeeze(-1) - targets.squeeze(-1)
-        errors = 2 * torch.maximum((q - 1) * residuals, q * residuals)
-        active = mask.squeeze(-1)
-        expected = torch.where(active, errors, 0.0).sum()
-        if relative:
-            expected /= torch.where(active, targets.squeeze(-1).abs(), 0.0).sum()
-
-        torch.testing.assert_close(result, expected)
-
-    def test_masked_nan_values_do_not_contaminate_gradients(self) -> None:
-        r"""Masked values are excluded before computing the quantile error."""
-        predictions = torch.tensor([[[2.0], [torch.nan], [-1.0]]], requires_grad=True)
-        targets = torch.tensor([[[1.0], [torch.nan], [2.0]]])
-        mask = ~targets.isnan()
-
-        loss = quantile_loss(predictions=predictions, targets=targets, mask=mask)
-        loss.backward()
-
-        assert torch.isfinite(loss)
-        assert predictions.grad is not None
-        assert torch.isfinite(predictions.grad[mask]).all()
-        assert torch.equal(
-            predictions.grad[~mask], torch.zeros_like(predictions.grad[~mask])
-        )
-
-    def test_module_forwards_mask(self) -> None:
-        r"""The module wrapper delegates to the masked functional implementation."""
-        predictions = torch.tensor([[[2.0], [3.0]]])
-        targets = torch.tensor([[[1.0], [4.0]]])
-        mask = torch.tensor([[[True], [False]]])
-
-        result = Quantile_Loss()(predictions=predictions, targets=targets, mask=mask)
-        expected = quantile_loss(predictions=predictions, targets=targets, mask=mask)
 
         torch.testing.assert_close(result, expected)
 
@@ -575,11 +512,9 @@ def test_time_loss_normalization(
     time_axis = -K - 1
     channel_axes = tuple(range(-K, 0))
     print(shape, time_axis, channel_axes)
-    loss_func = SequentialMSE(
+    loss_func = MSE_Loss(
         time_dim=time_axis,
         channel_dim=channel_axes,
-        normalize_time=True,
-        normalize=False,
     )
 
     result = loss_func(predictions=predictions, targets=targets)

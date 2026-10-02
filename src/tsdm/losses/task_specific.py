@@ -1,11 +1,18 @@
-__all__ = ["nd", "nrmse", "ND", "NRMSE"]
+__all__ = [
+    "ND",
+    "NRMSE",
+    "Quantile_Loss",
+    "nd",
+    "nrmse",
+    "quantile_loss",
+]
 
 import torch
 from torch import Tensor
 
 from .base import BaseSequenceLoss, Dim
-from .penalties import quantile_error
-from .sequence import _normalize_dims
+from .penalties.pointwise import quantile_error
+from .penalties.sequence import _normalize_dims
 
 
 def nd(

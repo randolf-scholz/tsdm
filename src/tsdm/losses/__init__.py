@@ -64,7 +64,7 @@ __all__ = [
 ]
 
 
-from . import base, penalties, pointwise, reductions, sequence, task_specific
+from . import base, penalties, pointwise, reductions, sequence
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -74,11 +74,9 @@ from ._torch_imports import (
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
 from .base import *  # ruff: ignore[F403]
-from .penalties import *  # ruff: ignore[F403]
 from .reductions import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
-__all__ += penalties.__all__
 __all__ += reductions.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
@@ -92,6 +90,7 @@ r"""Dictionary of all available functional losses."""
 
 
 MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
+    "L2_Loss"   : pointwise.L2_Loss,
     "LP_Loss"   : pointwise.LP_Loss,
     "MAE_Loss"  : pointwise.MAE_Loss,
     "MSE_Loss"  : pointwise.MSE_Loss,
@@ -101,24 +100,23 @@ r"""Dictionary of all available modular losses."""
 
 
 TIMESERIES_METRICS: dict[str, base.SequenceMetric] = {
-    "rmse"     : sequence.rmse,
-    "lp_norm"  : sequence.lp_norm,
     "l2_error" : sequence.l2_error,
     "mae"      : sequence.mae,
     "mse"      : sequence.mse,
+    "nd"       : sequence.nd,
     "nrmse"    : sequence.nrmse,
+    "rmse"     : sequence.rmse,
 }  # fmt: skip
 r"""Dictionary of all available time-series metrics."""
 
 
 TIMESERIES_LOSSES: dict[str, type[base.BaseSequenceLoss]] = {
+    "L2_Loss"       : sequence.L2_Loss,
     "LP_Loss"       : sequence.LP_Loss,
     "MAE_Loss"      : sequence.MAE_Loss,
     "MSE_Loss"      : sequence.MSE_Loss,
-    "MeanL2_Loss"   : sequence.L2_Loss,
     "ND_Loss"       : sequence.ND_Loss,
     "NRMSE_Loss"    : sequence.NRMSE_Loss,
-    "Quantile_Loss" : task_specific.Quantile_Loss,
     "RMSE_Loss"     : sequence.RMSE_Loss,
 }  # fmt: skip
 r"""Dictionary of all available time-series losses."""

@@ -1,6 +1,7 @@
-r"""Penalty functions."""
+r"""Penalty functions for vector data."""
 
 __all__ = ["quantile_error"]
+
 
 import torch
 from torch import Tensor
