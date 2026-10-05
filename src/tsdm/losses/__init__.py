@@ -46,7 +46,6 @@ __all__ = [
     "base",
     "penalties",
     "pointwise",
-    "reductions",
     "sequence",
     # Constants
     "LOSSES",
@@ -64,7 +63,7 @@ __all__ = [
 ]
 
 
-from . import base, penalties, pointwise, reductions, sequence
+from . import base, penalties, pointwise, sequence
 from ._torch_imports import (
     TORCH_ALIASES,
     TORCH_ALIASES_FUNCTIONAL,
@@ -74,10 +73,8 @@ from ._torch_imports import (
     TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
 from .base import *  # ruff: ignore[F403]
-from .reductions import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
-__all__ += reductions.__all__
 
 FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
     "l2_loss"         : pointwise.l2_loss,

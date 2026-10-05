@@ -24,7 +24,7 @@ from torch import Tensor
 
 
 class Normalization(StrEnum):
-    r"""Built-in normalization schemes for sequential norms.
+    r"""Built-in normalization schemes for sequence penalties.
 
     - ``sequence_length``: Divide by the number of time steps with at least one observed channel
 

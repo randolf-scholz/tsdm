@@ -10,6 +10,7 @@ __all__ = [
     # classes
     "SeparableLoss",
     "SeparableSequenceLoss",
+    "Reduction",
     # ABCs
     "BaseLoss",
     "BaseSequenceLoss",
@@ -17,12 +18,11 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import Final, Protocol
+from enum import StrEnum
+from typing import Final, Protocol, assert_never
 
 import torch
 from torch import Tensor, nn
-
-from .reductions import Reduction
 
 type Dim = int | tuple[int, ...] | None
 
@@ -140,8 +140,34 @@ class TimeSeriesLoss(Protocol):
     ) -> Tensor: ...  # Float[()]
 
 
+class Reduction(StrEnum):
+    r"""Reduction methods for seperable losses."""
+
+    SUM = "sum"
+    MEAN = "mean"
+    NONE = "none"
+
+    def apply(self, values: Tensor, /, *, weights: Tensor | None = None) -> Tensor:
+        r"""Apply an optional sample weight and outer reduction to losses."""
+        if weights is not None:
+            weights = torch.broadcast_to(weights, values.shape)
+            values = weights * values
+
+        match self:
+            case Reduction.NONE:
+                return values
+            case Reduction.SUM:
+                return values.sum()
+            case Reduction.MEAN:
+                return (
+                    values.mean() if weights is None else values.sum() / weights.sum()
+                )
+            case other:
+                assert_never(other)
+
+
 class BaseLoss(nn.Module, Loss):
-    r"""Base class for a sample-wise loss function."""
+    r"""Base class for loss functions."""
 
     feature_weights: Tensor | None
     r"""PARAM: Optional weight-vector."""
@@ -199,7 +225,7 @@ class BaseLoss(nn.Module, Loss):
 
 
 class BaseSequenceLoss(nn.Module, SequenceLoss):
-    r"""Base class for a time-series losses.
+    r"""Base class for a sequence losses.
 
     Because the loss is computed over a sequence of variable length, the default is to normalize
     the loss by the sequence length, so that loss values are comparable across sequences.

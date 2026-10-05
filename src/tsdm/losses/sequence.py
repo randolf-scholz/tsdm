@@ -49,7 +49,7 @@ __all__ = [
 
 from torch import Tensor
 
-from .base import BaseSequenceLoss, SeparableSequenceLoss
+from .base import BaseSequenceLoss, Reduction, SeparableSequenceLoss
 from .penalties.sequence import (
     Normalization,
     l2_error,
@@ -60,7 +60,6 @@ from .penalties.sequence import (
     nrmse,
     rmse,
 )
-from .reductions import Reduction
 
 
 def lp_loss(

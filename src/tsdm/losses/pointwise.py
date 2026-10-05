@@ -25,8 +25,7 @@ from typing import Final
 import torch
 from torch import Tensor
 
-from .base import BaseLoss, Dim
-from .reductions import Reduction
+from .base import BaseLoss, Dim, Reduction
 
 
 def lp_norm(

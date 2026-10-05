@@ -7,8 +7,8 @@ import pytest
 import torch
 from torch.nn import functional
 
+from tsdm.losses.base import Reduction
 from tsdm.losses.pointwise import lp_loss, lp_norm, mae_loss, mse_loss, rmse_loss
-from tsdm.losses.reductions import Reduction
 
 
 class TestLpNorm:

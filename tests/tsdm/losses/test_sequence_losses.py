@@ -4,8 +4,8 @@ from typing import assert_never
 import pytest
 import torch
 
+from tsdm.losses import Reduction
 from tsdm.losses.penalties.sequence import Normalization, lp_norm
-from tsdm.losses.reductions import Reduction
 from tsdm.losses.sequence import MSE_Loss, lp_loss, nd_loss, rmse_loss
 
 from .fixtures import TestSequenceLoss as SequenceLossTestBase
