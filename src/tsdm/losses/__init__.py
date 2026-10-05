@@ -99,7 +99,7 @@ MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
 r"""Dictionary of all available modular losses."""
 
 
-TIMESERIES_METRICS: dict[str, base.SequenceMetric] = {
+TIMESERIES_METRICS: dict[str, base.SequencePenalty] = {
     "l2_error" : sequence.l2_error,
     "mae"      : sequence.mae,
     "mse"      : sequence.mse,
@@ -110,7 +110,7 @@ TIMESERIES_METRICS: dict[str, base.SequenceMetric] = {
 r"""Dictionary of all available time-series metrics."""
 
 
-TIMESERIES_LOSSES: dict[str, type[base.BaseSequenceLoss]] = {
+TIMESERIES_LOSSES: dict[str, type[base.SequenceLoss]] = {
     "L2_Loss"       : sequence.L2_Loss,
     "LP_Loss"       : sequence.LP_Loss,
     "MAE_Loss"      : sequence.MAE_Loss,

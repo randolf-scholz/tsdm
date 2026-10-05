@@ -2,10 +2,14 @@ r"""Base class for a loss function."""
 
 __all__ = [
     # Protocols
+    "Penalty",
+    "SequencePenalty",
     "Loss",
     "SequenceLoss",
-    "WrappedLoss",
-    "TimedSequenceLoss",
+    "TimeSeriesLoss",
+    # classes
+    "SeparableLoss",
+    "SeparableSequenceLoss",
     # ABCs
     "BaseLoss",
     "BaseSequenceLoss",
@@ -23,17 +27,30 @@ from .reductions import Reduction
 type Dim = int | tuple[int, ...] | None
 
 
-class SequenceMetric(Protocol):
-    r"""Protocol for a metric on equal length sequences."""
+class Penalty(Protocol):
+    r"""Protocol for a penalty term on (non-sequence) data."""
+
+    def __call__(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., *D]
+        targets: Tensor,  # Float[..., *D]
+        feature_dim: int | tuple[int, ...],  # *D
+        mask: Tensor | None = None,  # Bool[...,  *D]
+    ) -> Tensor: ...  # Float[...]
+
+
+class SequencePenalty(Protocol):
+    r"""Protocol for a penalty on equal length sequences."""
 
     def __call__(
         self,
         *,
         predictions: Tensor,  # Float[..., $N, *D]
         targets: Tensor,  # Float[..., $N, *D]
-        mask: Tensor | None,  # Bool[..., $N, *D]
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
+        time_dim: int,  # $N
+        channel_dim: int | tuple[int, ...],  # *D
+        mask: Tensor | None = None,  # Bool[..., $N, *D]
     ) -> Tensor: ...  # Float[...]
 
 
@@ -98,7 +115,7 @@ class SequenceLoss(Protocol):
         ...
 
 
-class TimedSequenceLoss(Protocol):
+class TimeSeriesLoss(Protocol):
     r"""Protocol for a loss function on sequences of variable length with time information.
 
     .. math:: ℓ： \Seq(T) ×_ℕ \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0}
@@ -166,7 +183,7 @@ class BaseLoss(nn.Module, Loss):
 
         self.scaled = scaled
         self.dim = (dim,) if isinstance(dim, int) else tuple(dim)
-        self.register_parameter("channel_weight", w)
+        self.feature_weights = w
 
     @abstractmethod
     def forward(
@@ -224,18 +241,29 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
         raise NotImplementedError
 
 
-class WrappedLoss(BaseSequenceLoss):
+class SeparableLoss(nn.Module, Loss):
+    r"""Base class for separable loss function with reduction over samples.
+
+    Note:
+        A loss is separable if there is no interaction between batch elements,
+        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
+        and a reduction function Reduce.
+    """
+
+    penalty: Penalty
+    r"""CONST: The penalty function to apply."""
+    reduction: Reduction
+    r"""CONST: The reduction to apply over the samples."""
+
     def __init__(
         self,
         *,
-        metric: SequenceMetric,
-        reduction: Reduction,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
+        feature_dim: int | tuple[int, ...],
     ) -> None:
-        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
-        self.metric = metric
-        self.reduction = reduction
+        super().__init__()
+        self.feature_dim = (
+            (feature_dim,) if isinstance(feature_dim, int) else feature_dim
+        )
 
     def forward(
         self,
@@ -245,7 +273,58 @@ class WrappedLoss(BaseSequenceLoss):
         mask: Tensor | None = None,
         sample_weights: Tensor | None = None,
     ) -> Tensor:
-        errors = self.metric(
+        errors = self.penalty(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            feature_dim=self.feature_dim,
+        )
+        return self.reduction.apply(errors, weights=sample_weights)
+
+
+class SeparableSequenceLoss(nn.Module, SequenceLoss):
+    r"""Base class for separable time-series loss with a reduction over samples.
+
+    Note:
+        A loss is separable if there is no interaction between batch elements,
+        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
+        and a reduction function Reduce.
+    """
+
+    penalty: SequencePenalty
+    r"""CONST: The penalty function to apply per sequence pair."""
+    reduction: Reduction
+    r"""CONST: The reduction to apply over the samples."""
+    time_dim: Final[int]
+    r"""CONST: The time-axes over which the loss is computed."""
+    channel_dim: Final[tuple[int, ...]]
+    r"""CONST: The channel-axes over which the loss is computed."""
+
+    def __init__(self, *, time_dim: int, channel_dim: int | tuple[int, ...]) -> None:
+        super().__init__()
+        self.time_dim = time_dim
+        self.channel_dim = (
+            (channel_dim,) if isinstance(channel_dim, int) else channel_dim
+        )
+
+        if not {self.time_dim}.isdisjoint(self.channel_dim):
+            raise ValueError("Time and channel axes must be disjoint!")
+
+    def __init_subclass__(cls) -> None:
+        if not hasattr(cls, "penalty"):
+            raise TypeError(
+                f"Subclasses of {cls.__name__} must define a `penalty` method or class attribute."
+            )
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
+    ) -> Tensor:
+        errors = self.penalty(
             predictions=predictions,
             targets=targets,
             mask=mask,

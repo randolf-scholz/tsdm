@@ -18,12 +18,13 @@ CHANNEL_SHAPES = [
     (5, 16),
 ]
 TIME_SHAPES = [(1,), (32,)]
-LOSSES = [pointwise.MSE_Loss, pointwise.RMSE_Loss, pointwise.MAE_Loss]
 
 
 @pytest.mark.slow
 @pytest.mark.flaky(reruns=3)
-@pytest.mark.parametrize("loss", LOSSES)
+@pytest.mark.parametrize(
+    "loss", [pointwise.MSE_Loss, pointwise.RMSE_Loss, pointwise.MAE_Loss]
+)
 @pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
 @pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
 @pytest.mark.parametrize(("atol", "rtol"), [(0.01, 0.01)])

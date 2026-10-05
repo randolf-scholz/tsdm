@@ -49,7 +49,7 @@ __all__ = [
 
 from torch import Tensor
 
-from .base import BaseSequenceLoss, WrappedLoss
+from .base import BaseSequenceLoss, SeparableSequenceLoss
 from .penalties.sequence import (
     Normalization,
     l2_error,
@@ -247,7 +247,7 @@ def nd_loss(
     return Reduction(reduction).apply(errors, weights=sample_weights)
 
 
-class L2_Loss(WrappedLoss):
+class L2_Loss(SeparableSequenceLoss):
     r"""Mean Euclidean error.
 
     .. math:: ℓ(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
@@ -260,22 +260,11 @@ class L2_Loss(WrappedLoss):
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
     """
 
-    def __init__(
-        self,
-        *,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
-        reduction: Reduction = Reduction.MEAN,
-    ) -> None:
-        super().__init__(
-            time_dim=time_dim,
-            channel_dim=channel_dim,
-            reduction=reduction,
-            metric=l2_error,
-        )
+    penalty = staticmethod(l2_error)
+    reduction = Reduction.MEAN
 
 
-class MAE_Loss(WrappedLoss):
+class MAE_Loss(SeparableSequenceLoss):
     r"""Mean absolute error.
 
     .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
@@ -288,22 +277,11 @@ class MAE_Loss(WrappedLoss):
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
     """
 
-    def __init__(
-        self,
-        *,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
-        reduction: Reduction = Reduction.MEAN,
-    ) -> None:
-        super().__init__(
-            time_dim=time_dim,
-            channel_dim=channel_dim,
-            reduction=reduction,
-            metric=mae,
-        )
+    penalty = staticmethod(mae)
+    reduction = Reduction.MEAN
 
 
-class MSE_Loss(WrappedLoss):
+class MSE_Loss(SeparableSequenceLoss):
     r"""Mean square error.
 
     .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²
@@ -316,22 +294,11 @@ class MSE_Loss(WrappedLoss):
     masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
     """
 
-    def __init__(
-        self,
-        *,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
-        reduction: Reduction = Reduction.MEAN,
-    ) -> None:
-        super().__init__(
-            time_dim=time_dim,
-            channel_dim=channel_dim,
-            reduction=reduction,
-            metric=mse,
-        )
+    penalty = staticmethod(mse)
+    reduction = Reduction.MEAN
 
 
-class RMSE_Loss(WrappedLoss):
+class RMSE_Loss(SeparableSequenceLoss):
     r"""Root mean square error.
 
     .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
@@ -350,22 +317,11 @@ class RMSE_Loss(WrappedLoss):
         reduction:
     """
 
-    def __init__(
-        self,
-        *,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
-        reduction: Reduction = Reduction.MEAN,
-    ) -> None:
-        super().__init__(
-            time_dim=time_dim,
-            channel_dim=channel_dim,
-            reduction=reduction,
-            metric=mse,
-        )
+    penalty = staticmethod(rmse)
+    reduction = Reduction.MEAN
 
 
-class NRMSE_Loss(WrappedLoss):
+class NRMSE_Loss(SeparableSequenceLoss):
     r"""Compute the normalized root mean square error.
 
     .. math:: \nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
@@ -393,37 +349,33 @@ class NRMSE_Loss(WrappedLoss):
     where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
     """
 
-    def __init__(
-        self,
-        *,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
-        reduction: Reduction = Reduction.MEAN,
-    ) -> None:
-        super().__init__(
-            time_dim=time_dim,
-            channel_dim=channel_dim,
-            reduction=reduction,
-            metric=nrmse,
-        )
+    penalty = staticmethod(nrmse)
+    reduction = Reduction.MEAN
 
 
-class ND_Loss(WrappedLoss):
-    __doc__ = nd.__doc__
+class ND_Loss(SeparableSequenceLoss):
+    r"""Compute the normalized deviation.
 
-    def __init__(
-        self,
-        *,
-        time_dim: int,
-        channel_dim: int | tuple[int, ...],
-        reduction: Reduction = Reduction.MEAN,
-    ) -> None:
-        super().__init__(
-            time_dim=time_dim,
-            channel_dim=channel_dim,
-            reduction=reduction,
-            metric=nd,
-        )
+    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}
+
+    the masked version is defined as
+
+    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₁ }{ ∑ₜ‖mₜ⊙xₜ‖₁ }
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+
+    Note:
+        This loss is equivalent to `lp_loss` with ``p=1``, ``relative=True``,
+        and ``normalization=observation_count``.
+
+        .. math:: nd(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
+
+        where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
+    """
+
+    penalty = staticmethod(nd)
+    reduction = Reduction.MEAN
 
 
 class LP_Loss(BaseSequenceLoss):

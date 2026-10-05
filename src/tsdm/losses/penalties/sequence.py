@@ -10,6 +10,7 @@ __all__ = [
     "mse",
     "nd",
     "nrmse",
+    "quantile_error",
     "rmse",
 ]
 
@@ -291,6 +292,57 @@ def lp_error(
     return norms
 
 
+def quantile_error(
+    *,
+    predictions: Tensor,  # Float[..., $N, *D]
+    targets: Tensor,  # Float[..., $N, *D]
+    q: float,
+    # optional args
+    time_dim: int = -2,
+    channel_dim: int | tuple[int, ...] = -1,
+    mask: Tensor | None = None,  # Bool[..., $N, *D]
+) -> Tensor:  # Float[...]
+    r"""Quantile error, aggregated over time and channels.
+
+    This is analogous to the mean absolute error, but with asymmetric penalties for over- and under-prediction.
+    For a quantile $q ∈ (0, 1)$, the quantile error is defined as:
+
+    .. math:: ρ_q(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ∑ₖ \max(-(1-q)(x̂ₜ - xₜ), q(x̂ₜ - xₜ))
+
+    the masked version is defined as
+
+    .. math:: ρ_q(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ∑ₖ mₜₖ⊙ρ_q(x̂ₜₖ - xₜₖ)
+
+    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
+    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    """
+    assert predictions.shape == targets.shape
+    assert mask is None or mask.shape == predictions.shape
+    time_dim, channel_dims = _normalize_dims(
+        ndim=predictions.ndim,
+        time_dim=time_dim,
+        channel_dim=channel_dim,
+    )
+    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
+
+    r = predictions - targets
+    if mask is not None:
+        r = torch.where(mask, r, 0.0)
+    errors = torch.maximum((q - 1) * r, q * r)
+
+    # aggregate over channels and time
+    # FIXME: https://github.com/pytorch/pytorch/issues/29137
+    errors = errors if not channel_dims else errors.sum(dim=channel_dims)
+    errors = errors.sum(dim=reduced_time_dim)
+
+    if mask is None:
+        return errors.div(predictions.shape[time_dim])
+
+    time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
+    observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
+    return errors.div(observed_timepoints)
+
+
 def mae(
     *,
     predictions: Tensor,  # Float[..., $N, *D]
@@ -327,24 +379,24 @@ def mae(
         time_dim=time_dim,
         channel_dim=channel_dim,
     )
+    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
 
     residuals = predictions - targets
     if mask is not None:
         residuals = torch.where(mask, residuals, 0.0)
-    absolute_errors = residuals.abs()
+    errors = residuals.abs()
 
-    channel_absolute_errors = (
-        absolute_errors if not channel_dims else absolute_errors.sum(dim=channel_dims)
-    )
-    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
-    time_absolute_errors = channel_absolute_errors.sum(dim=reduced_time_dim)
+    # aggregate over channels and time
+    # FIXME: https://github.com/pytorch/pytorch/issues/29137
+    errors = errors if not channel_dims else errors.sum(dim=channel_dims)
+    errors = errors.sum(dim=reduced_time_dim)
 
     if mask is None:
-        return time_absolute_errors.div(predictions.shape[time_dim])
+        return errors.div(predictions.shape[time_dim])
 
     time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
     observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
-    return time_absolute_errors.div(observed_timepoints)
+    return errors.div(observed_timepoints)
 
 
 def l2_error(
@@ -383,24 +435,25 @@ def l2_error(
         time_dim=time_dim,
         channel_dim=channel_dim,
     )
+    reduced_time_dim = time_dim - sum(d < time_dim for d in channel_dims)
 
     residuals = predictions - targets
     if mask is not None:
         residuals = torch.where(mask, residuals, 0.0)
-    squared_errors = residuals.square()
+    errors = residuals.square()
 
-    channel_squared_errors = (
-        squared_errors if not channel_dims else squared_errors.sum(dim=channel_dims)
-    )
-    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
-    time_euclidean_errors = channel_squared_errors.sqrt().sum(dim=reduced_time_dim)
+    # aggregate over channels and time
+    # FIXME: https://github.com/pytorch/pytorch/issues/29137
+    errors = errors if not channel_dims else errors.sum(dim=channel_dims)
+    errors = errors.sqrt()
+    errors = errors.sum(dim=reduced_time_dim)
 
     if mask is None:
-        return time_euclidean_errors.div(predictions.shape[time_dim])
+        return errors.div(predictions.shape[time_dim])
 
     time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
     observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
-    return time_euclidean_errors.div(observed_timepoints)
+    return errors.div(observed_timepoints)
 
 
 def mse(
@@ -480,24 +533,24 @@ def rmse(
         time_dim=time_dim,
         channel_dim=channel_dim,
     )
+    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
 
     residuals = predictions - targets
     if mask is not None:
         residuals = torch.where(mask, residuals, 0.0)
-    squared_errors = residuals.square()
+    errors = residuals.square()
 
-    channel_squared_errors = (
-        squared_errors if not channel_dims else squared_errors.sum(dim=channel_dims)
-    )
-    reduced_time_dim = time_dim - sum(dim < time_dim for dim in channel_dims)
-    time_squared_errors = channel_squared_errors.sum(dim=reduced_time_dim)
+    # aggregate over channels and time
+    # FIXME: https://github.com/pytorch/pytorch/issues/29137
+    errors = errors if not channel_dims else errors.sum(dim=channel_dims)
+    errors = errors.sum(dim=reduced_time_dim)
 
     if mask is None:
-        return time_squared_errors.div(predictions.shape[time_dim]).sqrt()
+        return errors.div(predictions.shape[time_dim]).sqrt()
 
     time_mask = mask if not channel_dims else mask.any(dim=channel_dims)
     observed_timepoints = time_mask.sum(dim=reduced_time_dim).clamp_min(1)
-    return time_squared_errors.div(observed_timepoints).sqrt()
+    return errors.div(observed_timepoints).sqrt()
 
 
 def nd(
