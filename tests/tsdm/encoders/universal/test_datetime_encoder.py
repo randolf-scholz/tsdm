@@ -27,7 +27,7 @@ def make_dtarray(data: Sequence[str | None], backend: str):
         case "pandas[numpy]-series":
             return pd.Series(data).astype("datetime64[ms]")
         case "polars-series":
-            return pl.Series(data).cast(dtype=pl.Datetime())
+            return pl.Series(data).str.to_datetime()
         case _:
             raise ValueError(f"Unsupported backend: {backend}.")
 
