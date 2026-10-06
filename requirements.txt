@@ -17,7 +17,7 @@ cuda-toolkit==13.0.3.0 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==4.0.11
+filelock==4.0.12
     # via torch
 fonttools==4.66.1
     # via matplotlib
@@ -112,9 +112,9 @@ pillow==12.3.0
     # via
     #   matplotlib
     #   tensorboard
-polars==1.44.2
+polars==2.0.0
     # via tsdm
-polars-runtime-32==1.44.2
+polars-runtime-32==2.0.0
     # via polars
 protobuf==7.36.2
     # via tensorboard
