@@ -147,20 +147,31 @@ class Reduction(StrEnum):
     MEAN = "mean"
     NONE = "none"
 
-    def apply(self, values: Tensor, /, *, weights: Tensor | None = None) -> Tensor:
+    def apply(
+        self,
+        values: Tensor,  # Float[...]
+        /,
+        *,
+        weights: Tensor | None = None,  # Float[...]
+    ) -> Tensor:  # Float[()]
         r"""Apply an optional sample weight and outer reduction to losses."""
         if weights is not None:
             weights = torch.broadcast_to(weights, values.shape)
-            values = weights * values
 
         match self:
             case Reduction.NONE:
-                return values
+                return values if weights is None else weights * values
             case Reduction.SUM:
-                return values.sum()
+                return (
+                    values.sum()
+                    if weights is None
+                    else torch.dot(weights.flatten(), values.flatten())
+                )
             case Reduction.MEAN:
                 return (
-                    values.mean() if weights is None else values.sum() / weights.sum()
+                    values.mean()
+                    if weights is None
+                    else torch.dot(weights.flatten(), values.flatten()) / weights.sum()
                 )
             case other:
                 assert_never(other)
