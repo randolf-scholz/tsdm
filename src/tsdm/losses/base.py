@@ -235,49 +235,6 @@ class BaseLoss(nn.Module, Loss):
         raise NotImplementedError
 
 
-class BaseSequenceLoss(nn.Module, SequenceLoss):
-    r"""Base class for a sequence losses.
-
-    Because the loss is computed over a sequence of variable length, the default is to normalize
-    the loss by the sequence length, so that loss values are comparable across sequences.
-    This class can be used to express decomposable losses of the form
-
-    .. math:: 𝓛(x̂，x) ≔ ℓ(x̂ₜ, xₜ)
-
-    By default, the aggregation $𝐀_t$ is the mean over the time-axes $𝐄_t$, but simply
-    summing over the time-axes is also possible.
-    """
-
-    # Constants
-    time_dim: Final[int]
-    r"""CONST: The time-axes over which the loss is computed."""
-    channel_dim: Final[tuple[int, ...]]
-    r"""CONST: The channel-axes over which the loss is computed."""
-
-    def __init__(self, *, time_dim: int, channel_dim: int | tuple[int, ...]) -> None:
-        super().__init__()
-        self.time_dim = time_dim
-        self.channel_dim = (
-            (channel_dim,) if isinstance(channel_dim, int) else channel_dim
-        )
-        self.combined_dim = (self.time_dim, *self.channel_dim)
-
-        if not {self.time_dim}.isdisjoint(self.channel_dim):
-            raise ValueError("Time and channel axes must be disjoint!")
-
-    @abstractmethod
-    def forward(
-        self,
-        *,
-        predictions: Tensor,  # Float[..., $N, *D]
-        targets: Tensor,  # Float[..., $N, *D]
-        mask: Tensor | None = None,  # Bool[..., $N, *D]
-        sample_weights: Tensor | None = None,  # Float[...]
-    ) -> Tensor:  # Float[()]
-        r"""Compute the loss."""
-        raise NotImplementedError
-
-
 class SeparableLoss(nn.Module, Loss):
     r"""Base class for separable loss function with reduction over samples.
 
@@ -319,7 +276,48 @@ class SeparableLoss(nn.Module, Loss):
         return self.reduction.apply(errors, weights=sample_weights)
 
 
-class SeparableSequenceLoss(nn.Module, SequenceLoss):
+class BaseSequenceLoss(nn.Module, SequenceLoss):
+    r"""Base class for a sequence losses.
+
+    Because the loss is computed over a sequence of variable length, the default is to normalize
+    the loss by the sequence length, so that loss values are comparable across sequences.
+    This class can be used to express decomposable losses of the form
+
+    .. math:: 𝓛(x̂，x) ≔ ℓ(x̂ₜ, xₜ)
+
+    By default, the aggregation $𝐀_t$ is the mean over the time-axes $𝐄_t$, but simply
+    summing over the time-axes is also possible.
+    """
+
+    # Constants
+    time_dim: Final[int]
+    r"""CONST: The time-axes over which the loss is computed."""
+    channel_dim: Final[tuple[int, ...]]
+    r"""CONST: The channel-axes over which the loss is computed."""
+
+    def __init__(self, *, time_dim: int, channel_dim: int | tuple[int, ...]) -> None:
+        super().__init__()
+        self.time_dim = time_dim
+        self.channel_dim = (
+            (channel_dim,) if isinstance(channel_dim, int) else channel_dim
+        )
+        if not {self.time_dim}.isdisjoint(self.channel_dim):
+            raise ValueError("Time and channel axes must be disjoint!")
+
+    @abstractmethod
+    def forward(
+        self,
+        *,
+        predictions: Tensor,  # Float[..., $N, *D]
+        targets: Tensor,  # Float[..., $N, *D]
+        mask: Tensor | None = None,  # Bool[..., $N, *D]
+        sample_weights: Tensor | None = None,  # Float[...]
+    ) -> Tensor:  # Float[()]
+        r"""Compute the loss."""
+        raise NotImplementedError
+
+
+class SeparableSequenceLoss(BaseSequenceLoss):
     r"""Base class for separable time-series loss with a reduction over samples.
 
     Note:
@@ -332,20 +330,6 @@ class SeparableSequenceLoss(nn.Module, SequenceLoss):
     r"""CONST: The penalty function to apply per sequence pair."""
     reduction: Reduction
     r"""CONST: The reduction to apply over the samples."""
-    time_dim: Final[int]
-    r"""CONST: The time-axes over which the loss is computed."""
-    channel_dim: Final[tuple[int, ...]]
-    r"""CONST: The channel-axes over which the loss is computed."""
-
-    def __init__(self, *, time_dim: int, channel_dim: int | tuple[int, ...]) -> None:
-        super().__init__()
-        self.time_dim = time_dim
-        self.channel_dim = (
-            (channel_dim,) if isinstance(channel_dim, int) else channel_dim
-        )
-
-        if not {self.time_dim}.isdisjoint(self.channel_dim):
-            raise ValueError("Time and channel axes must be disjoint!")
 
     def __init_subclass__(cls) -> None:
         if not hasattr(cls, "penalty"):
