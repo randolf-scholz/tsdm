@@ -42,16 +42,16 @@ class Case(NamedTuple):
 
 
 CASES: dict[str, Case] = {
-    "callbacks"      : Case(tsdm.logutils          , Callback          , BaseCallback       , CALLBACKS         ),
-    "datasets"       : Case(tsdm.datasets          , Dataset           , BaseDataset        , DATASETS          ),
-    "encoders"       : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS          ),
-    "generators"     : Case(tsdm.random.generators , IVP_Generator     , BaseIVP_Generator  , GENERATORS        ),
-    "logfuncs"       : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS          ),
-    "loggers"        : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS           ),
-    "metrics     "   : Case(tsdm.losses            , Loss              , BaseLoss           , MODULAR_LOSSES    ),
-    "metrics_fun"    : Case(tsdm.losses            , Loss              , None               , FUNCTIONAL_LOSSES ),
-    "metrics_time"   : Case(tsdm.losses            , SequenceLoss      , BaseSequenceLoss   , TIMESERIES_LOSSES ),
-    "samplers"       : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS          ),
+    "callbacks"    : Case(tsdm.logutils          , Callback          , BaseCallback       , CALLBACKS         ),
+    "datasets"     : Case(tsdm.datasets          , Dataset           , BaseDataset        , DATASETS          ),
+    "encoders"     : Case(tsdm.encoders          , Encoder           , BaseEncoder        , ENCODERS          ),
+    "generators"   : Case(tsdm.random.generators , IVP_Generator     , BaseIVP_Generator  , GENERATORS        ),
+    "logfuncs"     : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS          ),
+    "loggers"      : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS           ),
+    "losses"       : Case(tsdm.losses            , Loss              , BaseLoss           , MODULAR_LOSSES    ),
+    "losses_fun"   : Case(tsdm.losses            , Loss              , None               , FUNCTIONAL_LOSSES ),
+    "losses_time"  : Case(tsdm.losses            , SequenceLoss      , BaseSequenceLoss   , TIMESERIES_LOSSES ),
+    "samplers"     : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS          ),
 }  # fmt: skip
 r"""Dictionary of all available cases."""
 
