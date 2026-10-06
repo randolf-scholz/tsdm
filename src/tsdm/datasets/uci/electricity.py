@@ -106,7 +106,7 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
     rawdata_schemas = {
         "timeseries": {
             "": pl.Datetime(time_unit="us"),
-            **{f"MT_{client:03d}": pl.Float64 for client in range(1, 371)},
+            **{f"MT_{client:03d}": pl.Float32 for client in range(1, 371)},
         }
     }
 
@@ -114,7 +114,7 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
     table_schemas = {  # pyright: ignore[reportAssignmentType]
         "timeseries": {
             "time": pl.Datetime(time_unit="us"),
-            **{f"MT_{client:03d}": pl.Float64 for client in range(1, 371)},
+            **{f"MT_{client:03d}": pl.Float32 for client in range(1, 371)},
         }
     }
     table_shapes = {"timeseries": (140_256, 371)}  # pyright: ignore[reportAssignmentType]
@@ -128,13 +128,16 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
             archive.open("LD2011_2014.txt") as file,
         ):
             validate_schema(file, rawdata_schema, separator=";")
-            ts = pl.read_csv(
-                file,
-                new_columns=["time"],
-                separator=";",
-                decimal_comma=True,
-                schema=rawdata_schema,
-            ).fill_nan(None)
+            ts = (
+                pl.read_csv(
+                    file,
+                    separator=";",
+                    decimal_comma=True,
+                    schema=rawdata_schema,
+                )
+                .fill_nan(None)
+                .rename({"": "time"})
+            )
 
         return ts
 
