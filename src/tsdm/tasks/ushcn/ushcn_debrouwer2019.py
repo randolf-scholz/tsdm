@@ -58,7 +58,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Iterator, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
@@ -72,7 +72,7 @@ from tsdm.datatools import folds_as_frame, is_partition, random_partition
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
+from tsdm.timeseries.pandas import ushcn_de_brouwer2019
 
 
 @pprint_repr
@@ -195,8 +195,6 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
 
-    dataset: TimeSeriesCollection
-
     observation_time = 150
     prediction_steps = 3
     num_folds = 5
@@ -204,23 +202,10 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     test_size = 0.1  # of total
     valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
 
-    def __init__(self, *, normalize_time: bool = True) -> None:
-        self.normalize_time = normalize_time
-        dataset = cast("TimeSeriesCollection[int]", ushcn_de_brouwer2019())
-        timeseries = dataset.timeseries
-
-        if normalize_time:
-            timeseries = timeseries.reset_index()
-            t_max = timeseries["Time"].max()
-            self.observation_time /= t_max
-            timeseries["Time"] /= t_max
-            timeseries = timeseries.set_index(["ID", "Time"])
-
-        # NOTE: only numpy float types supported by torch
-        timeseries = timeseries.dropna(axis=1, how="all").copy().astype("float32")
-        self.dataset = replace(dataset, timeseries=timeseries)
-        self.IDs = self.dataset.metaindex
-        super().__init__(dataset=self.dataset)
+    def __init__(self) -> None:
+        dataset = ushcn_de_brouwer2019()
+        self.IDs = dataset.metaindex
+        super().__init__(dataset=dataset)
 
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
