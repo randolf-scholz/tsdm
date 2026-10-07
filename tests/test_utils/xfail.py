@@ -39,7 +39,6 @@ class pytest_xfail(AbstractContextManager):
     ) -> None:
         self.strict: bool = strict
         self.reason: str = reason
-        self.failed: bool = NotImplemented
         self.raises: tuple[type[BaseException], ...] | None = (
             None
             if raises is None
