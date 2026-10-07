@@ -17,109 +17,47 @@ __all__ = [
     "mae_loss",
     "mse_loss",
     "rmse_loss",
-    # penalties
-    "lp_norm",
+    # error metrics
+    "lp_error",
 ]
 
 from typing import Final
 
-import torch
 from torch import Tensor, nn
 
-from .base import BaseLoss, Dim, Loss, Penalty, Reduction
+from .base import BaseLoss, Loss, Penalty, Reduction
+from .penalties.pointwise import lp_norm
 
 
-def lp_norm(
-    x: Tensor,  # Float[..., *D]
-    /,
+def lp_error(
     *,
-    dim: Dim,  # *D
+    predictions: Tensor,  # Float[..., *D]
+    targets: Tensor,  # Float[..., *D],
+    dim: int | tuple[int, ...],  # *D
     p: float = 2.0,
     mask: Tensor | None = None,  # Bool[..., *D]
-    weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
+    feature_weights: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
     scaled: bool = False,
+    relative: bool = False,
 ) -> Tensor:  # Float[...]
-    r"""Compute (possibly scaled) Lₚ-norm.
-
-    .. math:: ‖x‖ₚ     ≔ \sqrt[p]{∑ₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{p⁎} ≔ \sqrt[p]{(1/K)∑ₖ|xₖ|ᵖ}
-
-    And masked versions:
-
-    .. math:: ‖x‖_{m,p}  ≔ \sqrt[p]{∑ₖ ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
-    .. math:: ‖x‖_{m,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
-
-    Moreover, one can introduce channel weights:
-
-    .. math:: ‖x‖_{w,p}  ≔ \sqrt[p]{∑ₖwₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{w,p⁎} ≔ \sqrt[p]{(1/∑ⱼ⟦wⱼ≠0⟧)∑ₖwₖ|xₖ|ᵖ}
-
-    and with both weights and masks:
-
-    .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
-    .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ&(wⱼ≠0)) ∑ₖwₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
-
-    Note:
-        For weighted scaled norms, zero-weight entries are treated as masked:
-        the denominator is ``sum(weight != 0)`` without a mask,
-        and ``sum(mask & (weight != 0))`` with one.
-
-        An empty ``dim`` tuple performs no inner reduction.
-    """
-    dims = tuple(
-        range(x.ndim) if dim is None else (dim,) if isinstance(dim, int) else dim
+    norms = lp_norm(
+        predictions - targets,
+        p=p,
+        dim=dim,
+        mask=mask,
+        weight=feature_weights,
+        scaled=scaled,
     )
-    if weight is not None and weight.ndim != len(dims):
-        raise ValueError(f"Expected {weight.ndim=} to equal {len(dims)=}")
-
-    # fmt: off
-    active: Tensor | None
-    match mask, weight:
-        case None, None: active = None
-        case _,    None: active = mask
-        case None, _   : active = weight != 0  # pyrefly: ignore[bad-assignment]
-        case _,    _   : active = mask & (weight != 0)  # pyrefly: ignore[unsupported-operation]
-    # fmt: on
-
-    if p != p:
-        raise ValueError("p must not be NaN.")
-    if p == torch.inf:
-        raise NotImplementedError
-    if p == -torch.inf:
-        raise NotImplementedError
-    if p == 0.0:
-        # TODO: if scaled, use geometric mean.
-        raise NotImplementedError
-    if p > 0:  # p∈(0,∞)
-        if active is not None:
-            x = torch.where(active, x, 0.0)
-        s = x.abs().pow(p)
-    else:  # p∈(-∞,0)
-        if active is not None:
-            x = torch.where(active, x, 1.0)
-        s = x.abs().pow(p)
-        if active is not None:
-            s = torch.where(active, s, 0.0)
-
-    if weight is not None:
-        s = weight * s
-
-    r = torch.sum(s, dim=dims) if dims else s
-
-    if scaled:
-        numel = (
-            torch.Size(x.shape[d] for d in dims).numel()
-            if active is None
-            else active.sum(dim=dims)
+    if relative:
+        norms = norms / lp_norm(
+            targets,
+            p=p,
+            dim=dim,
+            mask=mask,
+            weight=feature_weights,
+            scaled=scaled,
         )
-
-        if torch.any(torch.as_tensor(numel) == 0):
-            raise ValueError("Cannot scale a norm with no unmasked elements.")
-        r = r.div(numel)
-
-    result = r.pow(1 / p)
-    assert result.ndim == x.ndim - len(dims)
-    return result
+    return norms
 
 
 def lp_loss(
@@ -127,7 +65,7 @@ def lp_loss(
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D],
     p: float = 2.0,
-    dim: Dim = -1,  # *D
+    dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
     sample_weights: Tensor | None = None,  # Float[...], sample weights
     feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
@@ -155,31 +93,24 @@ def lp_loss(
         relative: If ``True``, divide each residual norm by the corresponding
             target norm, computing $‖x̂ - x‖ₚ / ‖x‖ₚ$.
     """
-    norms = lp_norm(
-        predictions - targets,
+    errors = lp_error(
+        predictions=predictions,
+        targets=targets,
         p=p,
         dim=dim,
         mask=mask,
-        weight=feature_weights,
+        feature_weights=feature_weights,
         scaled=scaled,
+        relative=relative,
     )
-    if relative:
-        norms = norms / lp_norm(
-            targets,
-            p=p,
-            dim=dim,
-            mask=mask,
-            weight=feature_weights,
-            scaled=scaled,
-        )
-    return Reduction(reduction).apply(norms, weights=sample_weights)
+    return Reduction(reduction).apply(errors, weights=sample_weights)
 
 
 def mae_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D]
-    dim: Dim = -1,
+    dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
     sample_weights: Tensor | None = None,  # Float[...], sample weights
     feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
@@ -192,24 +123,23 @@ def mae_loss(
 
     This is minimized by the marginal median of the distribution.
     """
-    return lp_loss(
+    errors = lp_error(
         predictions=predictions,
         targets=targets,
         p=1.0,
         dim=dim,
         mask=mask,
-        sample_weights=sample_weights,
         feature_weights=feature_weights,
         scaled=scaled,
-        reduction=reduction,
     )
+    return Reduction(reduction).apply(errors, weights=sample_weights)
 
 
 def l2_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D]
-    dim: Dim = -1,
+    dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
     sample_weights: Tensor | None = None,  # Float[...], sample weights
     feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
@@ -222,24 +152,23 @@ def l2_loss(
 
     This is minimized by the geometric median of the distribution.
     """
-    return lp_loss(
+    errors = lp_error(
         predictions=predictions,
         targets=targets,
         p=2.0,
         dim=dim,
         mask=mask,
-        sample_weights=sample_weights,
         feature_weights=feature_weights,
         scaled=scaled,
-        reduction=reduction,
     )
+    return Reduction(reduction).apply(errors, weights=sample_weights)
 
 
 def mse_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D]
-    dim: Dim = -1,
+    dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
     sample_weights: Tensor | None = None,  # Float[...], sample weights
     feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
@@ -252,7 +181,7 @@ def mse_loss(
 
     This is minimized by the mean of the distribution.
     """
-    losses = lp_loss(
+    errors = lp_error(
         predictions=predictions,
         targets=targets,
         p=2.0,
@@ -260,16 +189,15 @@ def mse_loss(
         mask=mask,
         feature_weights=feature_weights,
         scaled=scaled,
-        reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(losses, weights=sample_weights)
+    return Reduction(reduction).apply(errors, weights=sample_weights)
 
 
 def rmse_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D]
-    dim: Dim = -1,
+    dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
     sample_weights: Tensor | None = None,  # Float[...], sample weights
     feature_weights: Tensor | None = None,  # Float[..., *D], channel weights
@@ -278,9 +206,9 @@ def rmse_loss(
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted root mean squared error.
 
-    .. math:: 𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ \E[‖x̂ - x‖₂²] }
+    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ \E[‖x̂ - x‖₂²] }
     """
-    squared_norms = lp_loss(
+    errors = lp_error(
         predictions=predictions,
         targets=targets,
         p=2.0,
@@ -288,9 +216,8 @@ def rmse_loss(
         mask=mask,
         feature_weights=feature_weights,
         scaled=scaled,
-        reduction=Reduction.NONE,
     ).square()
-    return Reduction(reduction).apply(squared_norms, weights=sample_weights).sqrt()
+    return Reduction(reduction).apply(errors, weights=sample_weights).sqrt()
 
 
 class SeparableLoss(nn.Module, Loss):
@@ -346,7 +273,7 @@ class LP_Loss(BaseLoss):
         *,
         feature_weights: Tensor | None = None,
         scaled: bool = False,
-        dim: Dim = None,
+        dim: int | tuple[int, ...] = -1,
     ) -> None:
         super().__init__(
             scaled=scaled,
@@ -386,7 +313,7 @@ class MAE_Loss(BaseLoss):
 
     .. math:: \mae(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖
 
-    If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |zₖ|²$ is used.
+    If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ\abs{zₖ}²$ is used.
     """
 
     def forward(

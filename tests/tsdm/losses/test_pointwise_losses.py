@@ -8,16 +8,17 @@ import torch
 from torch.nn import functional
 
 from tsdm.losses.base import Reduction
-from tsdm.losses.pointwise import lp_loss, lp_norm, mae_loss, mse_loss, rmse_loss
+from tsdm.losses.penalties.pointwise import lp_norm
+from tsdm.losses.pointwise import lp_loss, mae_loss, mse_loss, rmse_loss
 
 
 class TestLpNorm:
     @pytest.mark.parametrize("p", [-2.0, -1.0, 0.5, 1.0, 2.0, 3.0])
-    @pytest.mark.parametrize("dim", [-1, (1, 2), None])
+    @pytest.mark.parametrize("dim", [-1, (1, 2)])
     def test_matches_torch_vector_norm(
         self,
         p: float,
-        dim: int | tuple[int, ...] | None,
+        dim: int | tuple[int, ...],
     ) -> None:
         r"""The ordinary unscaled norm agrees with PyTorch for finite non-zero inputs."""
         x = torch.linspace(0.1, 2.4, 24, dtype=torch.float64).reshape(2, 3, 4)
@@ -28,10 +29,7 @@ class TestLpNorm:
         torch.testing.assert_close(result, expected)
 
     @pytest.mark.parametrize("weight_shape", [(4,), (3, 4)])
-    def test_weight_matches_reduction_axes(
-        self,
-        weight_shape: tuple[int, ...],
-    ) -> None:
+    def test_weight_matches_reduction_axes(self, weight_shape: tuple[int, ...]) -> None:
         r"""Weights span precisely the explicitly reduced axes."""
         x = torch.linspace(0.1, 2.4, 24, dtype=torch.float64).reshape(2, 3, 4)
         weight = torch.ones(weight_shape, dtype=x.dtype)
@@ -42,11 +40,8 @@ class TestLpNorm:
 
         torch.testing.assert_close(result, expected)
 
-    @pytest.mark.parametrize("dim", [-1, (1, 2), None])
-    def test_scaled_divides_by_reduced_size(
-        self,
-        dim: int | tuple[int, ...] | None,
-    ) -> None:
+    @pytest.mark.parametrize("dim", [-1, (1, 2)])
+    def test_scaled_divides_by_reduced_size(self, dim: int | tuple[int, ...]) -> None:
         r"""Scaling uses the number of elements along the reduced axes."""
         x = torch.linspace(0.1, 2.4, 24, dtype=torch.float64).reshape(2, 3, 4)
         dims = (
