@@ -66,28 +66,28 @@ class Kernels:  # TODO: how to make this more elegant?
         "torch": pt.isnan,
     }
 
-    nanmin: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanmin,  # type: ignore
+    nanmin: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
+        "numpy": np.nanmin,  # pyrefly: ignore[bad-assignment]
         "pandas": B.pandas.nanmin,
         "polars": B.polars.nanmin,
         "torch": B.torch.nanmin,
     }
 
-    nanmax: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanmax,  # type: ignore
+    nanmax: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
+        "numpy": np.nanmax,  # pyrefly: ignore[bad-assignment]
         "pandas": B.pandas.nanmax,
         "polars": B.polars.nanmax,
         "torch": B.torch.nanmax,
     }
 
-    nanmean: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanmean,  # type: ignore
+    nanmean: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
+        "numpy": np.nanmean,  # pyrefly: ignore[bad-assignment]
         "pandas": B.pandas.nanmean,
         "torch": cast("ContractionProto[Tensor]", pt.nanmean),
     }
 
-    nanstd: dict[BackendID, ContractionProto] = {
-        "numpy": np.nanstd,  # type: ignore
+    nanstd: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
+        "numpy": np.nanstd,  # pyrefly: ignore[bad-assignment]
         "pandas": B.pandas.nanstd,
         "torch": B.torch.nanstd,
     }

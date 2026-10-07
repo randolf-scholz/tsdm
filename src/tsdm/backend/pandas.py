@@ -168,10 +168,11 @@ def where[
         if isinstance(a, pandas_type):
             return _where(cond, a, b)
         if isinstance(b, pandas_type):
+            assert not isinstance(cond, bool)
             return _where(~cond, b, a)
         if isinstance(cond, pandas_type):
             return _where(~cond, _where(cond, cond, b), a)
-    return np.where(cond, a, b)  # type: ignore
+    return np.where(cond, a, b)  # pyrefly: ignore[bad-return]
 
 
 def null_like[P: PandasType](x: P, /) -> P:
