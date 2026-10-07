@@ -30,6 +30,7 @@ should provide arguments for these positions.
 
 __all__ = [
     # Classes
+    "SeparableLoss",
     "L2_Loss",
     "LP_Loss",
     "MAE_Loss",
@@ -49,7 +50,7 @@ __all__ = [
 
 from torch import Tensor
 
-from .base import BaseSequenceLoss, Reduction, SeparableSequenceLoss
+from .base import BaseSequenceLoss, Reduction, SequencePenalty
 from .penalties.sequence import (
     Normalization,
     l2_error,
@@ -246,7 +247,75 @@ def nd_loss(
     return Reduction(reduction).apply(errors, weights=sample_weights)
 
 
-class L2_Loss(SeparableSequenceLoss):
+class SeparableLoss(BaseSequenceLoss):
+    r"""Base class for separable time-series loss with a reduction over samples.
+
+    Note:
+        A loss is separable if there is no interaction between batch elements,
+        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
+        and a reduction function Reduce.
+    """
+
+    penalty: SequencePenalty
+    r"""CONST: The penalty function to apply per sequence pair."""
+    reduction: Reduction
+    r"""CONST: The reduction to apply over the samples."""
+
+    def __init__(
+        self,
+        *,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        penalty: SequencePenalty | None = None,
+        reduction: Reduction | None = None,
+    ) -> None:
+        super().__init__(time_dim=time_dim, channel_dim=channel_dim)
+
+        match penalty, getattr(self, "penalty", None):
+            case None, None:
+                raise TypeError("Expected a `penalty` argument.")
+            case None, _:  # use class attribute
+                assert callable(self.penalty)
+            case _, None:  # use instance attribute
+                assert callable(penalty)
+                self.penalty = penalty
+            case _, _:
+                raise TypeError(
+                    "Cannot override class attribute `penalty` with an instance attribute."
+                )
+
+        match reduction, getattr(self, "reduction", None):
+            case None, None:
+                raise TypeError("Expected a `reduction` argument.")
+            case None, _:  # use class attribute
+                assert isinstance(self.reduction, Reduction)
+            case _, None:  # use instance attribute
+                assert isinstance(reduction, Reduction)
+                self.reduction = reduction
+            case _, _:
+                raise TypeError(
+                    "Cannot override class attribute `reduction` with an instance attribute."
+                )
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
+    ) -> Tensor:
+        errors = self.penalty(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            time_dim=self.time_dim,
+            channel_dim=self.channel_dim,
+        )
+        return self.reduction.apply(errors, weights=sample_weights)
+
+
+class L2_Loss(SeparableLoss):
     r"""Mean Euclidean error.
 
     .. math:: ℓ(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
@@ -263,7 +332,7 @@ class L2_Loss(SeparableSequenceLoss):
     reduction = Reduction.MEAN
 
 
-class MAE_Loss(SeparableSequenceLoss):
+class MAE_Loss(SeparableLoss):
     r"""Mean absolute error.
 
     .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
@@ -280,7 +349,7 @@ class MAE_Loss(SeparableSequenceLoss):
     reduction = Reduction.MEAN
 
 
-class MSE_Loss(SeparableSequenceLoss):
+class MSE_Loss(SeparableLoss):
     r"""Mean square error.
 
     .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²
@@ -297,7 +366,7 @@ class MSE_Loss(SeparableSequenceLoss):
     reduction = Reduction.MEAN
 
 
-class RMSE_Loss(SeparableSequenceLoss):
+class RMSE_Loss(SeparableLoss):
     r"""Root mean square error.
 
     .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
@@ -320,7 +389,7 @@ class RMSE_Loss(SeparableSequenceLoss):
     reduction = Reduction.MEAN
 
 
-class NRMSE_Loss(SeparableSequenceLoss):
+class NRMSE_Loss(SeparableLoss):
     r"""Compute the normalized root mean square error.
 
     .. math:: \nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
@@ -352,7 +421,7 @@ class NRMSE_Loss(SeparableSequenceLoss):
     reduction = Reduction.MEAN
 
 
-class ND_Loss(SeparableSequenceLoss):
+class ND_Loss(SeparableLoss):
     r"""Compute the normalized deviation.
 
     .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}

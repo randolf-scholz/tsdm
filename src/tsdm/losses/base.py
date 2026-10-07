@@ -8,8 +8,6 @@ __all__ = [
     "SequenceLoss",
     "TimeSeriesLoss",
     # classes
-    "SeparableLoss",
-    "SeparableSequenceLoss",
     "Reduction",
     # ABCs
     "BaseLoss",
@@ -235,47 +233,6 @@ class BaseLoss(nn.Module, Loss):
         raise NotImplementedError
 
 
-class SeparableLoss(nn.Module, Loss):
-    r"""Base class for separable loss function with reduction over samples.
-
-    Note:
-        A loss is separable if there is no interaction between batch elements,
-        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
-        and a reduction function Reduce.
-    """
-
-    penalty: Penalty
-    r"""CONST: The penalty function to apply."""
-    reduction: Reduction
-    r"""CONST: The reduction to apply over the samples."""
-
-    def __init__(
-        self,
-        *,
-        feature_dim: int | tuple[int, ...],
-    ) -> None:
-        super().__init__()
-        self.feature_dim = (
-            (feature_dim,) if isinstance(feature_dim, int) else feature_dim
-        )
-
-    def forward(
-        self,
-        *,
-        predictions: Tensor,
-        targets: Tensor,
-        mask: Tensor | None = None,
-        sample_weights: Tensor | None = None,
-    ) -> Tensor:
-        errors = self.penalty(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            feature_dim=self.feature_dim,
-        )
-        return self.reduction.apply(errors, weights=sample_weights)
-
-
 class BaseSequenceLoss(nn.Module, SequenceLoss):
     r"""Base class for a sequence losses.
 
@@ -315,41 +272,3 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
     ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError
-
-
-class SeparableSequenceLoss(BaseSequenceLoss):
-    r"""Base class for separable time-series loss with a reduction over samples.
-
-    Note:
-        A loss is separable if there is no interaction between batch elements,
-        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
-        and a reduction function Reduce.
-    """
-
-    penalty: SequencePenalty
-    r"""CONST: The penalty function to apply per sequence pair."""
-    reduction: Reduction
-    r"""CONST: The reduction to apply over the samples."""
-
-    def __init_subclass__(cls) -> None:
-        if not hasattr(cls, "penalty"):
-            raise TypeError(
-                f"Subclasses of {cls.__name__} must define a `penalty` method or class attribute."
-            )
-
-    def forward(
-        self,
-        *,
-        predictions: Tensor,
-        targets: Tensor,
-        mask: Tensor | None = None,
-        sample_weights: Tensor | None = None,
-    ) -> Tensor:
-        errors = self.penalty(
-            predictions=predictions,
-            targets=targets,
-            mask=mask,
-            time_dim=self.time_dim,
-            channel_dim=self.channel_dim,
-        )
-        return self.reduction.apply(errors, weights=sample_weights)

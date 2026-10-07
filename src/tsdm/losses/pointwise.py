@@ -5,6 +5,7 @@ the sequence dimension is simply treated as any other a batch dimension.
 """
 
 __all__ = [
+    "SeparableLoss",
     "L2_Loss",
     "LP_Loss",
     "MAE_Loss",
@@ -23,9 +24,9 @@ __all__ = [
 from typing import Final
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 
-from .base import BaseLoss, Dim, Reduction
+from .base import BaseLoss, Dim, Loss, Penalty, Reduction
 
 
 def lp_norm(
@@ -290,6 +291,47 @@ def rmse_loss(
         reduction=Reduction.NONE,
     ).square()
     return Reduction(reduction).apply(squared_norms, weights=sample_weights).sqrt()
+
+
+class SeparableLoss(nn.Module, Loss):
+    r"""Base class for separable loss function with reduction over samples.
+
+    Note:
+        A loss is separable if there is no interaction between batch elements,
+        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
+        and a reduction function Reduce.
+    """
+
+    penalty: Penalty
+    r"""CONST: The penalty function to apply."""
+    reduction: Reduction
+    r"""CONST: The reduction to apply over the samples."""
+
+    def __init__(
+        self,
+        *,
+        feature_dim: int | tuple[int, ...],
+    ) -> None:
+        super().__init__()
+        self.feature_dim = (
+            (feature_dim,) if isinstance(feature_dim, int) else feature_dim
+        )
+
+    def forward(
+        self,
+        *,
+        predictions: Tensor,
+        targets: Tensor,
+        mask: Tensor | None = None,
+        sample_weights: Tensor | None = None,
+    ) -> Tensor:
+        errors = self.penalty(
+            predictions=predictions,
+            targets=targets,
+            mask=mask,
+            feature_dim=self.feature_dim,
+        )
+        return self.reduction.apply(errors, weights=sample_weights)
 
 
 class LP_Loss(BaseLoss):

@@ -22,8 +22,8 @@ from tsdm.logutils import (
 )
 from tsdm.losses import (
     FUNCTIONAL_LOSSES,
-    MODULAR_LOSSES,
     TIMESERIES_LOSSES,
+    VECTOR_LOSSES,
     BaseLoss,
     Loss,
 )
@@ -48,7 +48,7 @@ CASES: dict[str, Case] = {
     "generators"   : Case(tsdm.random.generators , IVP_Generator     , BaseIVP_Generator  , GENERATORS        ),
     "logfuncs"     : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS          ),
     "loggers"      : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS           ),
-    "losses"       : Case(tsdm.losses            , Loss              , BaseLoss           , MODULAR_LOSSES    ),
+    "losses"       : Case(tsdm.losses            , Loss              , BaseLoss           , VECTOR_LOSSES     ),
     "losses_fun"   : Case(tsdm.losses            , Loss              , None               , FUNCTIONAL_LOSSES ),
     "losses_time"  : Case(tsdm.losses            , SequenceLoss      , BaseSequenceLoss   , TIMESERIES_LOSSES ),
     "samplers"     : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS          ),

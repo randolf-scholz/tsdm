@@ -50,7 +50,7 @@ __all__ = [
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
-    "MODULAR_LOSSES",
+    "VECTOR_LOSSES",
     "TIMESERIES_METRICS",
     "TIMESERIES_LOSSES",
     # torch imports
@@ -86,7 +86,7 @@ FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
 r"""Dictionary of all available functional losses."""
 
 
-MODULAR_LOSSES: dict[str, type[base.BaseLoss]] = {
+VECTOR_LOSSES: dict[str, type[base.BaseLoss]] = {
     "L2_Loss"   : pointwise.L2_Loss,
     "LP_Loss"   : pointwise.LP_Loss,
     "MAE_Loss"  : pointwise.MAE_Loss,
@@ -108,6 +108,7 @@ r"""Dictionary of all available time-series metrics."""
 
 
 TIMESERIES_LOSSES: dict[str, type[base.SequenceLoss]] = {
+    "SeparableLoss" : sequence.SeparableLoss,
     "L2_Loss"       : sequence.L2_Loss,
     "LP_Loss"       : sequence.LP_Loss,
     "MAE_Loss"      : sequence.MAE_Loss,
@@ -121,7 +122,7 @@ r"""Dictionary of all available time-series losses."""
 
 LOSSES: dict[str, base.Loss | type[base.Loss]] = {
     **FUNCTIONAL_LOSSES,
-    **MODULAR_LOSSES,
+    **VECTOR_LOSSES,
     **TIMESERIES_LOSSES,
 }  # fmt: skip
 r"""Dictionary of all available losses."""
