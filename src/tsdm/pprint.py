@@ -73,7 +73,7 @@ __all__ = [
 import dataclasses
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
-from functools import partialmethod
+from functools import partial
 from math import prod
 from types import FunctionType
 from typing import Any, Final, Optional, Protocol
@@ -101,6 +101,8 @@ from .types import (
     SupportsDtype,
     SupportsItem,
     SupportsShape,
+    is_dataclass,
+    is_namedtuple,
 )
 
 MAXITEMS: Final[int] = 20
@@ -986,7 +988,7 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
-    cls.__repr__ = partialmethod(repr_sequence, **kwds)  # type: ignore
+    cls.__repr__ = partial(repr_sequence, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
@@ -997,7 +999,7 @@ def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
 
-    cls.__repr__ = partialmethod(repr_mapping, **kwds)  # type: ignore
+    cls.__repr__ = partial(repr_mapping, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
@@ -1008,7 +1010,7 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
 
-    cls.__repr__ = partialmethod(repr_set, **kwds)  # type: ignore
+    cls.__repr__ = partial(repr_set, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
@@ -1016,10 +1018,10 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
 def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
     # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
     r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, Dataclass):  # type: ignore
+    if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
-    cls.__repr__ = partialmethod(repr_dataclass, **kwds)  # type: ignore
+    cls.__repr__ = partial(repr_dataclass, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
@@ -1027,10 +1029,10 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
 def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
     # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
     r"""Add appropriate __repr__ to class."""
-    if not issubclass(cls, NTuple):  # type: ignore
+    if not (isinstance(cls, type) and is_namedtuple(cls)):
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
 
-    cls.__repr__ = partialmethod(repr_namedtuple, **kwds)  # type: ignore
+    cls.__repr__ = partial(repr_namedtuple, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
@@ -1043,9 +1045,9 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
 
     repr_func: Callable[..., str]
 
-    if issubclass(cls, Dataclass):  # type: ignore
+    if is_dataclass(cls):
         repr_func = repr_dataclass
-    elif issubclass(cls, NTuple):  # type: ignore
+    elif is_namedtuple(cls):
         repr_func = repr_namedtuple
     elif issubclass(cls, Mapping):
         repr_func = repr_mapping
@@ -1060,5 +1062,5 @@ def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = partialmethod(repr_func, **kwds)  # type: ignore
+    cls.__repr__ = partial(repr_func, **kwds)  # ty: ignore[invalid-assignment]
     return cls
