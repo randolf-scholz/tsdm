@@ -222,10 +222,10 @@ def describe(
     min_rate = min_count / num
     mode_rate = mode_count / num
     nan_rate = nan_count / num
-    neg_rate = neg_count / num
-    pos_rate = pos_count / num
+    neg_rate = neg_count / num  # ty: ignore[unsupported-operator]
+    pos_rate = pos_count / num  # ty: ignore[unsupported-operator]
     unique_rate = unique_count / num
-    zero_rate = zero_count / num
+    zero_rate = zero_count / num  # ty: ignore[unsupported-operator]
 
     # stats
     try:
