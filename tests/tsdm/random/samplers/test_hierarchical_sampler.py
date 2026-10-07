@@ -41,11 +41,10 @@ def test_hierarchical_sampler() -> None:
 @pytest.fixture
 def benchmark_data() -> dict[str, list[int]]:
     # for each letter in the alphabet, list of random digits of size range(100, 1000)
-    data = {
+    return {
         letter: [random.randint(0, 9) for _ in range(random.randint(100, 1000))]
         for letter in ascii_letters
     }
-    return data
 
 
 @pytest.mark.benchmark
