@@ -48,6 +48,8 @@ __all__ = [
     "rmse_loss",
 ]
 
+from functools import partial
+
 from torch import Tensor
 
 from .base import BaseSequenceLoss, Reduction, SequencePenalty
@@ -446,5 +448,22 @@ class ND_Loss(SeparableLoss):
     reduction = Reduction.MEAN
 
 
-class LP_Loss(BaseSequenceLoss):
-    r"""LP-loss for sequence spaces."""
+class LP_Loss(SeparableLoss):
+    r"""Lᵖ-loss for sequence spaces."""
+
+    reduction = Reduction.MEAN
+
+    def __init__(
+        self,
+        *,
+        p: float,
+        time_dim: int,
+        channel_dim: int | tuple[int, ...],
+        reduction: Reduction = Reduction.MEAN,
+    ) -> None:
+        super().__init__(
+            time_dim=time_dim,
+            channel_dim=channel_dim,
+            reduction=reduction,
+            penalty=partial(lp_error, p=p),
+        )
