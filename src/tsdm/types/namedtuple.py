@@ -3,8 +3,6 @@ r"""NamedTuple Protocol and utilities."""
 __all__ = [
     "NTuple",
     "is_namedtuple",
-    "issubclass_namedtuple",
-    "isinstance_namedtuple",
 ]
 
 
@@ -60,7 +58,7 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
     #   see: https://github.com/python/typing/issues/1216
     #   see: https://github.com/python/typing/issues/1273
 
-    _fields: Final[ClassVar[tuple[str, ...]]]  # type: ignore
+    _fields: Final[ClassVar[tuple[str, ...]]]  # pyrefly: ignore[invalid-annotation]
     r"""The fields of the namedtuple."""
 
     def _asdict(self) -> Mapping[str, T]: ...
@@ -84,14 +82,6 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
     # def __rmul__(self, value: SupportsIndex, /) -> tuple[T, ...]: ...
     # def count(self, value: Any, /) -> int: ...
     # def index(self, value: Any, start: SupportsIndex = 0, stop: SupportsIndex = sys.maxsize, /) -> int: ...
-
-
-def issubclass_namedtuple(cls: type, /) -> TypeIs[type[NTuple]]:
-    return issubclass(cls, NTuple)  # type: ignore
-
-
-def isinstance_namedtuple(obj: object, /) -> TypeIs[NTuple]:
-    return issubclass(type(obj), NTuple)  # type: ignore
 
 
 @overload

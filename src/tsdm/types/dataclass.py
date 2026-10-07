@@ -3,8 +3,6 @@ r"""Dataclass protocol and utilities."""
 __all__ = [
     "Dataclass",
     "is_dataclass",
-    "isinstance_dataclass",
-    "issubclass_dataclass",
     # type qualifiers
     "Fittable",
     "Derivable",
@@ -56,14 +54,6 @@ class Dataclass(Protocol, metaclass=_DataclassMeta):
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]] = {}
     r"""The fields of the dataclass."""
-
-
-def issubclass_dataclass(cls: type, /) -> TypeIs[type[Dataclass]]:
-    return issubclass(cls, Dataclass)  # type: ignore
-
-
-def isinstance_dataclass(obj: object, /) -> TypeIs[Dataclass]:
-    return issubclass(type(obj), Dataclass)  # type: ignore
 
 
 @overload
