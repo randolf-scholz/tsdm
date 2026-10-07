@@ -46,8 +46,8 @@ def test_seq_inference() -> None:
         return x
 
     var_tuple: tuple[int, ...] = (1, 2, 3)
-    seq_tup = as_seq(var_tuple)  # pyright: ignore[reportArgumentType]
-    assert_type(seq_tup, Seq[int])  # pyright: ignore[reportAssertTypeFailure]
+    seq_tup = as_seq(var_tuple)  # ty: ignore[invalid-argument-type]
+    assert_type(seq_tup, Seq[int])  # ty: ignore[type-assertion-failure]
 
 
 def show_interscetion_indexable_types() -> None:

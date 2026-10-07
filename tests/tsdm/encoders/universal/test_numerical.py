@@ -287,7 +287,7 @@ def test_scaler_dataframe[
         reloaded_params = pickle.load(f)
         for x, y in zip(params, reloaded_params, strict=True):
             try:
-                assert all(x == y)
+                assert all(x == y)  # ty: ignore[invalid-argument-type]
             except Exception:
                 assert x == y
 

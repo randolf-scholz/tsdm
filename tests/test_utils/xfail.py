@@ -42,7 +42,11 @@ class pytest_xfail(AbstractContextManager):
         self.raises: tuple[type[BaseException], ...] | None = (
             None
             if raises is None
-            else ((raises,) if isinstance(raises, type) else tuple(raises))
+            else (
+                (raises,)
+                if (isinstance(raises, type) and issubclass(raises, BaseException))
+                else tuple(raises)  # pyrefly: ignore[bad-argument-type]
+            )
         )
         self.defer_xfail: bool = defer_xfail
         self.exc_type: type[BaseException] | None = None

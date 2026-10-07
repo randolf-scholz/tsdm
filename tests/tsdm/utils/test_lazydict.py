@@ -64,7 +64,7 @@ def test_lazy_dict_init() -> None:
     d1 = LazyDict()
     assert_type(d1, LazyDict)
     d2 = LazyDict({"x": 0.0})
-    assert_type(d2, LazyDict[str, float])
+    assert_type(d2, LazyDict[str, float])  # ty: ignore[type-assertion-failure]
 
     # check bound initializers
     d3 = LazyDict[str, float]()
