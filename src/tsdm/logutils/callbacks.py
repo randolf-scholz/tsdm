@@ -606,7 +606,7 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(
+    def __call__(  # ty: ignore[invalid-method-override]
         self, step: int, /, *, targets: Tensor, predictions: Tensor, **_: Any
     ) -> None:
         log_metrics(
