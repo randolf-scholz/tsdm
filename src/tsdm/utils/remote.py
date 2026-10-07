@@ -77,7 +77,7 @@ def download_directory_to_zip(
     )
     with (
         _delete_if_failed(zipfile_path),
-        ZipFile(zipfile_path, **zip_options) as archive,  # pyrefly: ignore[no-matching-overload]
+        ZipFile(zipfile_path, **zip_options) as archive,  # type: ignore
         ThreadPoolExecutor(max_workers=max_workers) as pool,
         Client(auth=auth, headers=headers, timeout=timeout) as client,
     ):
@@ -209,7 +209,7 @@ def download(
     if isinstance(fname, IOBase | IO):
         _download_io(
             url,
-            fname,
+            fname,  # ty: ignore[invalid-argument-type]
             username=username,
             password=password,
             headers=headers,
@@ -294,7 +294,7 @@ def _download_io(
             if client is None
             else nullcontext(client)
         ) as c,
-        c.stream("GET", url, **request_opts) as response,
+        c.stream("GET", url, **request_opts) as response,  # ty: ignore[invalid-argument-type]
     ):
         response.raise_for_status()
         with tqdm(
