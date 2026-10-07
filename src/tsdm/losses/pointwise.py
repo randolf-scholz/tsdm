@@ -298,7 +298,7 @@ class SeparableLoss(nn.Module, Loss):
 
     Note:
         A loss is separable if there is no interaction between batch elements,
-        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
+        i.e. $ℒ(x̂, x) = Reduce(wₙℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
         and a reduction function Reduce.
     """
 
@@ -335,14 +335,7 @@ class SeparableLoss(nn.Module, Loss):
 
 
 class LP_Loss(BaseLoss):
-    r"""$Lᵖ$ Loss.
-
-    Given two random vectors $x̂,x∈ℝᴷ$, the $Lᵖ$-loss is defined as:
-
-    Special cases:
-        - $p=1$: :class:`MAE_Loss`
-        - $p=2$: :class:`MED_Loss`
-    """
+    r"""$Lᵖ$ Loss."""
 
     p: Final[float]
     r"""The $p$-norm to use."""
@@ -387,11 +380,11 @@ class MAE_Loss(BaseLoss):
 
     Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:
 
-    .. math:: 𝖬𝖠𝖤(x̂，x) ≔ \E[‖x̂ - x‖₁]
+    .. math:: \mae(x̂，x) ≔ \E[‖x̂ - x‖₁]
 
     Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
-    .. math:: 𝖬𝖠𝖤(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖
+    .. math:: \mae(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖
 
     If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ |zₖ|²$ is used.
     """
@@ -475,11 +468,11 @@ class RMSE_Loss(BaseLoss):
 
     Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ≔ \sqrt{\E[‖x̂ - x‖²]}
+    .. math:: \rmse(x̂，x) ≔ \sqrt{\E[‖x̂ - x‖²]}
 
     Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
 
-    .. math:: 𝖱𝖬𝖲𝖤(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
+    .. math:: \rmse(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
     """
 
     def forward(
