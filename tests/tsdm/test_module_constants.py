@@ -21,8 +21,8 @@ from tsdm.logutils import (
     Logger,
 )
 from tsdm.losses import (
-    FUNCTIONAL_LOSSES,
-    TIMESERIES_LOSSES,
+    FUNCTIONAL_VECTOR_LOSSES,
+    SEQUENCE_LOSSES,
     VECTOR_LOSSES,
     BaseLoss,
     Loss,
@@ -49,8 +49,8 @@ CASES: dict[str, Case] = {
     "logfuncs"     : Case(tsdm.logutils.logfuncs , LogFunction       , None               , LOGFUNCS          ),
     "loggers"      : Case(tsdm.logutils          , Logger            , BaseLogger         , LOGGERS           ),
     "losses"       : Case(tsdm.losses            , Loss              , BaseLoss           , VECTOR_LOSSES     ),
-    "losses_fun"   : Case(tsdm.losses            , Loss              , None               , FUNCTIONAL_LOSSES ),
-    "losses_time"  : Case(tsdm.losses            , SequenceLoss      , BaseSequenceLoss   , TIMESERIES_LOSSES ),
+    "losses_fun"   : Case(tsdm.losses, Loss, None, FUNCTIONAL_VECTOR_LOSSES),
+    "losses_time"  : Case(tsdm.losses            , SequenceLoss      , BaseSequenceLoss   , SEQUENCE_LOSSES   ),
     "samplers"     : Case(tsdm.random.samplers   , Sampler           , BaseSampler        , SAMPLERS          ),
 }  # fmt: skip
 r"""Dictionary of all available cases."""

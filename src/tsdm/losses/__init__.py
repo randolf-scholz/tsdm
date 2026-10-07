@@ -48,11 +48,12 @@ __all__ = [
     "pointwise",
     "sequence",
     # Constants
-    "LOSSES",
-    "FUNCTIONAL_LOSSES",
+    "FUNCTIONAL_VECTOR_LOSSES",
+    "FUNCTIONAL_SEQUENCE_LOSSES",
+    "SEQUENCE_LOSSES",
+    "SEQUENCE_PENALTIES",
     "VECTOR_LOSSES",
-    "TIMESERIES_METRICS",
-    "TIMESERIES_LOSSES",
+    "VECTOR_PENALTIES",
     # torch imports
     "TORCH_ALIASES",
     "TORCH_ALIASES_FUNCTIONAL",
@@ -76,9 +77,15 @@ from .base import *  # ruff: ignore[F403]
 
 __all__ += base.__all__
 
-FUNCTIONAL_LOSSES: dict[str, base.Loss] = {
+
+VECTOR_PENALTIES: dict[str, base.Penalty] = {
+    "lp_error" : pointwise.lp_error,
+}  # fmt: skip
+r"""Dictionary of all available vector penalties."""
+
+FUNCTIONAL_VECTOR_LOSSES: dict[str, base.Loss] = {
+    # "lp_loss"         : pointwise.lp_loss,  # needs extra args
     "l2_loss"         : pointwise.l2_loss,
-    "lp_loss"         : pointwise.lp_loss,
     "mae_loss"        : pointwise.mae_loss,
     "mse_loss"        : pointwise.mse_loss,
     "rmse_loss"       : pointwise.rmse_loss,
@@ -96,18 +103,30 @@ VECTOR_LOSSES: dict[str, type[base.BaseLoss]] = {
 r"""Dictionary of all available modular losses."""
 
 
-TIMESERIES_METRICS: dict[str, base.SequencePenalty] = {
+SEQUENCE_PENALTIES: dict[str, base.SequencePenalty] = {
     "l2_error" : sequence.l2_error,
+    "lp_error" : sequence.lp_error,
     "mae"      : sequence.mae,
     "mse"      : sequence.mse,
     "nd"       : sequence.nd,
     "nrmse"    : sequence.nrmse,
     "rmse"     : sequence.rmse,
 }  # fmt: skip
-r"""Dictionary of all available time-series metrics."""
+r"""Dictionary of all available sequence penalties."""
+
+FUNCTIONAL_SEQUENCE_LOSSES: dict[str, base.SequenceLoss] = {
+    # "lp_loss"       : sequence.lp_loss,  # needs extra args
+    "l2_loss"       : sequence.l2_loss,
+    "mae_loss"      : sequence.mae_loss,
+    "mse_loss"      : sequence.mse_loss,
+    "nd_loss"       : sequence.nd_loss,
+    "nrmse_loss"    : sequence.nrmse_loss,
+    "rmse_loss"     : sequence.rmse_loss,
+}  # fmt: skip
+r"""Dictionary of all available sequence losses."""
 
 
-TIMESERIES_LOSSES: dict[str, type[base.SequenceLoss]] = {
+SEQUENCE_LOSSES: dict[str, type[base.SequenceLoss]] = {
     "SeparableLoss" : sequence.SeparableLoss,
     "L2_Loss"       : sequence.L2_Loss,
     "LP_Loss"       : sequence.LP_Loss,
@@ -118,11 +137,3 @@ TIMESERIES_LOSSES: dict[str, type[base.SequenceLoss]] = {
     "RMSE_Loss"     : sequence.RMSE_Loss,
 }  # fmt: skip
 r"""Dictionary of all available time-series losses."""
-
-
-LOSSES: dict[str, base.Loss | type[base.Loss]] = {
-    **FUNCTIONAL_LOSSES,
-    **VECTOR_LOSSES,
-    **TIMESERIES_LOSSES,
-}  # fmt: skip
-r"""Dictionary of all available losses."""

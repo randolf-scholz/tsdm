@@ -123,9 +123,7 @@ class TestLpLoss:
 
         torch.testing.assert_close(result, expected)
 
-    def test_masks_nan_targets_without_breaking_prediction_gradients(
-        self,
-    ) -> None:
+    def test_masks_nan_targets_without_breaking_prediction_gradients(self) -> None:
         r"""All predictions retain finite gradients with masked NaN targets."""
         predictions = torch.tensor(
             [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]],
@@ -134,7 +132,7 @@ class TestLpLoss:
         targets = torch.tensor([[1.0, torch.nan, 3.0], [torch.nan, 5.0, 6.0]])
         mask = ~targets.isnan()
 
-        loss = lp_loss(predictions=predictions, targets=targets, mask=mask)
+        loss = lp_loss(predictions=predictions, targets=targets, mask=mask, p=2.0)
         loss.backward()
 
         assert torch.isfinite(loss)

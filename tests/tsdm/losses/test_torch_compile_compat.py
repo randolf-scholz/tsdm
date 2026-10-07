@@ -3,13 +3,13 @@ r"""Test compilation of all metrics."""
 import pytest
 import torch
 
-from tsdm.losses import FUNCTIONAL_LOSSES
+from tsdm.losses import FUNCTIONAL_VECTOR_LOSSES
 
 
-@pytest.mark.parametrize("loss_name", FUNCTIONAL_LOSSES)
+@pytest.mark.parametrize("loss_name", FUNCTIONAL_VECTOR_LOSSES)
 def test_loss_compilable(loss_name: str) -> None:
     r"""Test that all functional metrics can be compiled with torch.compile."""
-    loss_fn = FUNCTIONAL_LOSSES[loss_name]
+    loss_fn = FUNCTIONAL_VECTOR_LOSSES[loss_name]
     compiled_loss_fn = torch.compile(loss_fn)
 
     # Test that the compiled function produces the same output

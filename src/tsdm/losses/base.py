@@ -33,7 +33,7 @@ class Penalty(Protocol):
         *,
         predictions: Tensor,  # Float[..., *D]
         targets: Tensor,  # Float[..., *D]
-        feature_dim: int | tuple[int, ...],  # *D
+        dim: int | tuple[int, ...],  # *D
         mask: Tensor | None = None,  # Bool[...,  *D]
     ) -> Tensor: ...  # Float[...]
 

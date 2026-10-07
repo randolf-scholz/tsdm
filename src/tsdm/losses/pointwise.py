@@ -64,7 +64,7 @@ def lp_loss(
     *,
     predictions: Tensor,  # Float[..., *D]
     targets: Tensor,  # Float[..., *D],
-    p: float = 2.0,
+    p: float,
     dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., *D],
     sample_weights: Tensor | None = None,  # Float[...], sample weights
@@ -256,7 +256,7 @@ class SeparableLoss(nn.Module, Loss):
             predictions=predictions,
             targets=targets,
             mask=mask,
-            feature_dim=self.feature_dim,
+            dim=self.feature_dim,
         )
         return self.reduction.apply(errors, weights=sample_weights)
 
