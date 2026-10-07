@@ -110,7 +110,6 @@ __all__ = [
     # ALGEBRA SUBMODULE
     # classes
     "Choice",
-    "Compose",
     "Diagonal",
     "Duplicate",  # %
     "Fold",
@@ -123,7 +122,6 @@ __all__ = [
     "Replicate",
     # functions
     "choice",
-    "compose",
     "diagonal",
     "duplicate",
     "fold",
@@ -162,7 +160,6 @@ from typing import (
     overload,
     runtime_checkable,
 )
-from warnings import deprecated
 
 from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_mapping, pprint_repr, pprint_sequence
@@ -1379,93 +1376,6 @@ def choice(num: int | None = None, /) -> Choice:
 
 
 # region single input single output encoders -------------------------------------------
-@deprecated("Use `Pipe` instead.")
-@pprint_repr(recursive=2)
-class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
-    r"""Represents function composition of encoders.
-
-    >>> from tsdm.encoders import Compose, wrap
-    >>> e1 = wrap(lambda x: f"({x}) + 1")
-    >>> e2 = wrap(lambda x: f"2 * ({x})")
-    >>> enc = compose(e1, e2)
-    >>> assert enc("a") == "(2 * (a)) + 1"
-    >>> enc = compose(e2, e1)
-    >>> assert enc("a") == "2 * ((a) + 1)"
-    """
-
-    @classmethod
-    def new[E2: Encoder](cls, /, *, encoders: Iterable[E2]) -> Compose[Any, Any, E2]:
-        return Compose(encoders)
-
-    def __invert__(self) -> Compose[Y, X]:
-        return compose(*map(invert, reversed(self)))
-
-    def fit(self, x: X, /) -> None:
-        for encoder in reversed(self):
-            try:
-                encoder.fit(x)
-            except Exception as exc:
-                index = self.index(encoder)
-                typ = type(self).__name__
-                enc = type(encoder).__name__
-                exc.add_note(f"{typ}[{index}]: Failed to fit {enc!r}.")
-                raise
-            else:
-                x = encoder.encode(x)
-
-    def encode(self, x: X, /) -> Y:
-        for encoder in reversed(self):
-            x = encoder.encode(x)
-        return cast("Y", x)
-
-    def decode(self, y: Y, /) -> X:
-        for encoder in self:
-            y = encoder.decode(y)
-        return cast("X", y)
-
-    def simplify(self) -> BaseEncoder[X, Y]:
-        # simplify the nested encoders
-        encoders: list[Encoder] = []
-        for encoder in map(simplify, self):
-            match encoder:
-                case Pipe() as pipe:
-                    encoders.extend(reversed(pipe))
-                case Compose() as chain:
-                    encoders.extend(chain)
-                case _:
-                    encoders.append(encoder)  # ty: ignore[invalid-argument-type]
-
-        # simplify self
-        match encoders:
-            case []:
-                return IdentityEncoder()
-            case [encoder]:
-                return WrappedEncoder(encoder).simplify()
-            case _:
-                return Compose(map(simplify, encoders))
-
-
-# fmt: off
-@overload  # n=0
-def compose() -> Compose: ...
-@overload  # n=1
-def compose[X, Y](e: Encoder[X, Y], /) -> Compose[X, Y]: ...
-@overload  # n=2
-def compose[X, Y, Z](e1: Encoder[Y, Z], e2: Encoder[X, Y], /) -> Compose[X, Z]: ...
-@overload  # n>2
-def compose[X, Y](*es: *tuple[Encoder[Any, Y], *tuple[Encoder, ...], Encoder[X, Any]]) -> Compose[X, Y]: ...
-@overload  # fallback
-def compose(*es: Encoder) -> Compose: ...
-# fmt: on
-@deprecated("Use `pipe` instead.")
-def compose(*encoders: Encoder) -> Compose:
-    r"""Chain encoders.
-
-    See Also: `Compose`, `Pipe`
-    """
-    return Compose(encoders)
-
-
 @pprint_repr(recursive=2)
 class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     r"""Represents function composition of encoders.
@@ -1485,7 +1395,7 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     Note that the order is reversed compared to the ``@``-operator.
 
     Note:
-        $\gg$ is associative: $(A \gg B) \gg C = A \gg (B \gg C)$
+        $≫$ is associative: $(A ≫ B) ≫ C = A ≫ (B ≫ C)$
 
         .. math::
             ((A ≫ B) ≫ C)(x) = C((A ≫ B)(x)) = C(B(A(x)))  \\
@@ -1538,8 +1448,6 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
             match encoder:
                 case Pipe() as pipe:
                     encoders.extend(pipe)
-                case Compose() as chain:
-                    encoders.extend(reversed(chain))
                 case _:
                     encoders.append(encoder)  # ty: ignore[invalid-argument-type]
 
@@ -1614,8 +1522,6 @@ def pipe(*es: Encoder) -> Pipe:
         match encoder:
             case Pipe() as pipe:
                 encoders.extend(pipe)
-            case Compose() as chain:
-                encoders.extend(reversed(chain))
             case _:
                 encoders.append(encoder)
     return Pipe(encoders)

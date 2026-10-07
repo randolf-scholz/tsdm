@@ -124,7 +124,6 @@ __all__ += universal.__all__
 ENCODERS: dict[str, type[base.BaseEncoder]] = {
     # base
     "Choice"                    : base.Choice,
-    "Compose"                   : base.Compose,
     "DeepcopyEncoder"           : base.DeepcopyEncoder,
     "Diagonal"                  : base.Diagonal,
     "Duplicate"                 : base.Duplicate,
