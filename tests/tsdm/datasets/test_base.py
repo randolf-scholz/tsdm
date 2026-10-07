@@ -49,20 +49,20 @@ def test_dataset_required_attributes_determine_abstractness() -> None:
 
     class PropertyDataset(DatasetImplementation):
         @property
-        def rawdata_files(self) -> Collection[str]:  # type: ignore
+        def rawdata_files(self) -> Collection[str]:  # pyrefly: ignore[bad-override]
             return ()
 
         @property
-        def table_names(self) -> Collection[str]:  # type: ignore
+        def table_names(self) -> Collection[str]:  # pyrefly: ignore[bad-override]
             return ()
 
     class CachedPropertyDataset(DatasetImplementation):
         @cached_property
-        def rawdata_files(self) -> Collection[str]:  # type: ignore
+        def rawdata_files(self) -> Collection[str]:  # pyrefly: ignore[bad-override]
             return ()
 
         @cached_property
-        def table_names(self) -> Collection[str]:  # type: ignore
+        def table_names(self) -> Collection[str]:  # pyrefly: ignore[bad-override]
             return ()
 
     assert isabstract(MissingAttributes)
