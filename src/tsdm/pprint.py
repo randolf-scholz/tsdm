@@ -982,8 +982,8 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
-    # def pprint_sequence[Seq: type[Sequence]](cls: Seq, /, **kwds: Any) -> Seq:
+# def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
+def pprint_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -993,8 +993,8 @@ def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
-    # def pprint_mapping[Map: type[Mapping]](cls: Map, /, **kwds: Any) -> Map:
+# def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
+def pprint_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -1004,8 +1004,8 @@ def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
-    # def pprint_set[Set: type[AbstractSet]](cls: Set, /, **kwds: Any) -> Set:
+# def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
+def pprint_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
@@ -1015,8 +1015,8 @@ def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
-    # def pprint_dataclass[Dtc: Dataclass](cls: type[Dtc], /, **kwds: Any) -> type[Dtc]: ...
+# def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
+def pprint_dataclass[Cls: Dataclass](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -1026,8 +1026,8 @@ def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
-    # def pprint_namedtuple[Ntp: type[NTuple]](cls: Ntp, /, **kwds: Any) -> Ntp:
+# def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
+def pprint_namedtuple[Cls: type[NTuple]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not (isinstance(cls, type) and is_namedtuple(cls)):
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
@@ -1037,8 +1037,8 @@ def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
-    # def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
+# def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
+def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not isinstance(cls, type):
         raise TypeError("Must be a class!")
