@@ -307,7 +307,7 @@ class Traffic(PolarsDataset[Traffic_Keys]):
                 "Number of raw time series does not match number of dates."
             )
         table = pl.concat(frames, rechunk=True)
-        self.table_schemas = self.table_schemas | {"timeseries": dict(table.schema)}  # type: ignore
+        self.table_schemas = {**self.table_schemas, "timeseries": dict(table.schema)}  # ty: ignore[invalid-assignment]
         return table
 
     @staticmethod
@@ -399,5 +399,8 @@ class Traffic(PolarsDataset[Traffic_Keys]):
         r"""Load a cleaned table as a Polars DataFrame."""
         table = pl.read_parquet(self.dataset_paths[key])
         if key == "timeseries":
-            self.table_schemas = self.table_schemas | {"timeseries": dict(table.schema)}  # type: ignore
+            self.table_schemas = {  # ty: ignore[invalid-assignment]
+                **self.table_schemas,
+                "timeseries": dict(table.schema),
+            }
         return table

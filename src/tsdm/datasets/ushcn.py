@@ -174,7 +174,7 @@ def _read_fwf(
     /,
     *,
     colspecs: Mapping[str, tuple[int, int]],
-    schema: Mapping[str, pl.DataType],
+    schema: Mapping[str, pl.DataType | type[pl.DataType]],
     null_values: Optional[Mapping[str, Sequence[str]]] = None,
 ) -> pl.LazyFrame:
     r"""Read a fixed-width file by slicing each string row.

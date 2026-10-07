@@ -691,11 +691,11 @@ class MIMIC_IV(BaseDataset[MIMIC_IV_Key, pl.LazyFrame]):
             raise ValueError("Version must be specified.")
 
     @cached_property
-    def rawdata_files(self) -> list[str]:  # type: ignore
+    def rawdata_files(self) -> list[str]:  # pyrefly: ignore[bad-override]
         return [f"mimic-iv-{self.version}.zip"]
 
     @cached_property
-    def table_names(self) -> list[MIMIC_IV_Key]:  # type: ignore
+    def table_names(self) -> list[MIMIC_IV_Key]:  # pyrefly: ignore[bad-override]
         expected_names = list(self.filelist)
         type_hinted_names = get_args(MIMIC_IV_Key.__value__)
         if unknown_names := set(expected_names) - set(type_hinted_names):
@@ -765,7 +765,7 @@ class MIMIC_IV(BaseDataset[MIMIC_IV_Key, pl.LazyFrame]):
         return files
 
     @cached_property
-    def table_schemas(self) -> dict[MIMIC_IV_Key, dict[str, pl.DataType]]:  # type: ignore
+    def table_schemas(self) -> dict[MIMIC_IV_Key, dict[str, pl.DataType]]:  # pyrefly: ignore[bad-override]
         return {key: self.get_schema(key) for key in self.table_names}
 
     def get_schema(self, key) -> dict[str, pl.DataType]:
