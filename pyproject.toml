@@ -354,8 +354,13 @@ output-format = "concise"
 
 [tool.ty.analysis]
 respect-type-ignore-comments = true
-replace-imports-with-any = ["pyarrow.*"]
 allowed-unresolved-imports = ["pyarrow.compute.*"]
+replace-imports-with-any = [
+    "pandas.*",
+    "pyarrow.*",
+    "pytest_benchmark.*",
+    "sklearn.*",
+]
 
 [tool.pyrefly]
 python-version = "3.14"
