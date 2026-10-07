@@ -227,7 +227,6 @@ class BaseLoss(nn.Module, Loss):
         predictions: Tensor,  # Float[..., *D], possibly contains NaN
         targets: Tensor,  # Float[..., *D], possibly contains NaN
         mask: Tensor | None = None,  # Bool[..., *D],
-        sample_weights: Tensor | None = None,  # Float[...], sample weights
     ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError
@@ -268,7 +267,6 @@ class BaseSequenceLoss(nn.Module, SequenceLoss):
         predictions: Tensor,  # Float[..., $N, *D]
         targets: Tensor,  # Float[..., $N, *D]
         mask: Tensor | None = None,  # Bool[..., $N, *D]
-        sample_weights: Tensor | None = None,  # Float[...]
     ) -> Tensor:  # Float[()]
         r"""Compute the loss."""
         raise NotImplementedError
