@@ -1014,9 +1014,9 @@ def test_pandas_timestamps() -> None:
     )
 
     result = list(sampler)
-    assert_type(sampler, SlidingWindowSampler[pd.Timestamp, B, ONE])
+    assert_type(sampler, SlidingWindowSampler[pd.Timestamp, B, ONE])  # ty: ignore[type-assertion-failure]
     assert_type(sampler.mode, B)
-    assert_type(result, list[tuple[pd.Timestamp, pd.Timestamp]])
+    assert_type(result, list[tuple[pd.Timestamp, pd.Timestamp]])  # ty: ignore[type-assertion-failure]
 
     assert isinstance(result, list)
     assert isinstance(result[0], tuple)
