@@ -149,7 +149,8 @@ def decorator[**P](deco: Polymorphism[P], /) -> ParametrizedPolymorphism[P]:
 
     That is, it must hat exactly one positional argument: the object to be decorated.
     """
-    logger = logging.getLogger(f"@decorator/{deco.__name__}")  # type: ignore
+    name = getattr(deco, "__name__", "<unknown>")
+    logger = logging.getLogger(f"@decorator/{name}")
     logger.debug("Creating @decorator.")
 
     deco_sig = signature(deco)
