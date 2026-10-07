@@ -229,9 +229,9 @@ class Backend[T]:
 
         for attr in Kernels.__annotations__:
             implementations = getattr(Kernels, attr)
-            impl = implementations.get(name, NotImplemented)
-            if impl is NotImplemented:  # fallback to generic kernel
-                impl = implementations.get("generic", NotImplemented)
+            impl = implementations.get(name, None)
+            if impl is None:  # fallback to generic kernel
+                impl = implementations.get("generic", None)
             object.__setattr__(self, attr, impl)
 
 
