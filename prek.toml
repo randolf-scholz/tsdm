@@ -182,6 +182,8 @@ hooks = [
     {
         id = "pyright-concise",
         files = "^src/|^tests/",
+        groups = ["unused"],
+        stages = ["manual"],
     }
 ]
 
@@ -206,6 +208,7 @@ hooks = [
         types_or = ["python", "pyi"],
         files = "^src/|^tests/",
         entry = "mypy",
+        groups = ["unused"],
         stages = ["manual"],
         args = ["--hide-error-context", "--hide-error-end", "--no-pretty", "--show-traceback", "--"],
     },
