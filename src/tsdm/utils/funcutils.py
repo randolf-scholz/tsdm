@@ -38,7 +38,7 @@ from dataclasses import fields
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Final, Optional, Protocol, cast, overload
 
-from tsdm.types.dataclass import Dataclass, issubclass_dataclass
+from tsdm.types.dataclass import Dataclass, is_dataclass
 from tsdm.types.nested import NestedBuiltin
 
 KEYWORD_ONLY: Final = Parameter.KEYWORD_ONLY
@@ -82,7 +82,7 @@ def dataclass_args_kwargs(
     forbidden_keys: set[str] = set()
     if ignore_parent_fields:
         for parent in obj.__class__.__mro__[1:]:
-            if issubclass_dataclass(parent):
+            if isinstance(parent, type) and is_dataclass(parent):
                 forbidden_keys.update(field.name for field in fields(parent))
 
     args = tuple(
