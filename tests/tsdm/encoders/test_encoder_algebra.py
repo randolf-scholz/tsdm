@@ -4,10 +4,10 @@ import unittest
 
 from tsdm.encoders import (
     BaseEncoder,
-    Compose,
     Encoder,
     EncoderDict,
     EncoderList,
+    Pipe,
     duplicate,
     wrap,
 )
@@ -41,10 +41,10 @@ def test_encoderdict_covariant() -> None:
         return enc
 
 
-def test_compose_covariant() -> None:
+def test_pipe_covariant() -> None:
     r"""Test that we can upcast to a more general type."""
 
-    def _[X, Y](enc: Compose[X, Y, BaseEncoder]) -> Compose[X, Y, Encoder]:
+    def _[X, Y](enc: Pipe[X, Y, BaseEncoder]) -> Pipe[X, Y, Encoder]:
         return enc
 
 
