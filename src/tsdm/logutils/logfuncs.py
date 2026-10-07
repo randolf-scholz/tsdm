@@ -50,12 +50,11 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.losses import Loss
 from tsdm.types.nested import JSON
 from tsdm.utils import transpose_list_of_dicts
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
-from .utils import compute_metrics
+from .utils import Loss
 
 
 class LogFunction(Protocol):
@@ -266,11 +265,12 @@ def log_lr_scheduler(
     writer.add_scalar(f"{identifier}:{cls_name}/lr", lr, step)
 
 
+@torch.no_grad()
 def log_metrics(
     step: int,
     writer: SummaryWriter,
     /,
-    metrics: Mapping[str, str | Loss | type[Loss]],
+    metrics: Mapping[str, Loss],
     *,
     inputs: Optional[Mapping[Literal["predictions", "targets"], Tensor]] = None,
     predictions: Optional[Tensor] = None,
@@ -294,7 +294,10 @@ def log_metrics(
     if len(predictions) != len(targets):
         raise ValueError("Targets and predictions must have the same length!")
 
-    scalars = compute_metrics(metrics, predictions=predictions, targets=targets)
+    scalars = {
+        key: metric(predictions=predictions, targets=targets)
+        for key, metric in metrics.items()
+    }
     log_values(
         step,
         writer,

@@ -23,7 +23,6 @@ __all__ += logfuncs.__all__
 __all__ += loggers.__all__
 __all__ += utils.__all__
 
-
 CALLBACKS: dict[str, type[callbacks.Callback]] = {
     "CallbackList"        : callbacks.CallbackList,
     "CheckpointCallback"  : callbacks.CheckpointCallback,

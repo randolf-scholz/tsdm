@@ -33,6 +33,7 @@ __all__ = [
 
 import inspect
 import logging
+import pickle
 from abc import abstractmethod
 from collections.abc import (
     Callable,
@@ -40,7 +41,6 @@ from collections.abc import (
     Iterator,
     Mapping,
     MutableSequence,
-    Sequence,
 )
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
@@ -72,10 +72,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.losses import Loss
 from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types import FilePath
-from tsdm.types.abc import MutSeq
 from tsdm.types.nested import JSON
 from tsdm.utils.funcutils import get_mandatory_kwargs
 
@@ -90,7 +88,7 @@ from .logfuncs import (
     log_table,
     log_values,
 )
-from .utils import TargetsAndPredictions, compute_metrics, save_checkpoint
+from .utils import Loss, TargetsAndPredictions
 
 
 @runtime_checkable
@@ -120,12 +118,33 @@ class Callback(Protocol):
 
 
 @runtime_checkable
-class CallbackSequence(MutSeq[Callback], Callback, Protocol):
+class CallbackSequence[CallbackT: Callback](Callback, Protocol):
     r"""Protocol for sequences of callbacks.
 
-    Helper Protocol, in practice, this should be the intersection
-    of ``MutableSequence[Callback]`` and `Callback`.
+    Helper Protocol, emulates the intersection of ``MutableSequence[Callback]`` and `Callback`.
     """
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[CallbackT]: ...
+    def __contains__(self, value: object, /) -> bool: ...
+    @overload
+    def __getitem__(self, index: int, /) -> CallbackT: ...
+    @overload
+    def __getitem__(self, index: slice, /) -> Self: ...
+    @overload
+    def __setitem__(self, index: int, value: CallbackT, /) -> None: ...
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[CallbackT], /) -> None: ...
+    @overload
+    def __delitem__(self, index: int, /) -> None: ...
+    @overload
+    def __delitem__(self, index: slice, /) -> None: ...
+    def __iadd__(self, values: Iterable[CallbackT], /) -> Self: ...
+    def insert(self, index: int, value: CallbackT, /) -> None: ...
+    def append(self, value: CallbackT, /) -> None: ...
+    def extend(self, values: Iterable[CallbackT], /) -> None: ...
+    def pop(self, index: int = -1, /) -> CallbackT: ...
+    def clear(self, /) -> None: ...
 
 
 def is_callback(obj: object, /) -> TypeIs[Callback]:
@@ -283,7 +302,7 @@ class EvaluationCallback(BaseCallback):
 
     predict_fn: Callable[..., tuple[Tensor, Tensor]]
     dataloaders: Mapping[str, DataLoader]
-    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
+    metrics: Mapping[str, Loss]
     writer: SummaryWriter
 
     # Optional parameters
@@ -350,15 +369,15 @@ class EvaluationCallback(BaseCallback):
             raise ValueError("Could not find a validation split!")
         return candidate
 
+    @torch.no_grad()
     def compute_results(self, step: int) -> None:
         r"""Return the results at the minimal validation loss."""
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
-            scalars = compute_metrics(
-                self.metrics,
-                predictions=result.predictions,
-                targets=result.targets,
-            )
+            scalars = {
+                key: metric(predictions=result.predictions, targets=result.targets)
+                for key, metric in self.metrics.items()
+            }
             for metric, value in scalars.items():
                 self.history.loc[step, (key, metric)] = value.cpu().item()
 
@@ -415,7 +434,29 @@ class CheckpointCallback(BaseCallback):
     path: FilePath
 
     def __call__(self, step: int, /, **_: Any) -> None:
-        save_checkpoint(step, self.path, objects=self.objects)
+        path = Path(self.path) / f"{step}"
+        path.mkdir(parents=True, exist_ok=True)
+
+        for name, obj in self.objects.items():
+            match obj:
+                case None:
+                    pass
+                case torch.jit.ScriptModule():
+                    torch.jit.save(obj, path / name)
+                case nn.Module():
+                    torch.save(obj, path / name)
+                case Optimizer():
+                    torch.save(obj, path / name)
+                case LRScheduler():
+                    torch.save(obj, path / name)
+                case dict() | list() | tuple() | set() | str() | int() | float() | None:
+                    path /= f"{name}.yaml"
+                    with path.open("w", encoding="utf8") as file:
+                        yaml.safe_dump(obj, file)
+                case _:
+                    path /= f"{name}.pickle"
+                    with path.open("wb") as file:
+                        pickle.dump(obj, file)
 
 
 @dataclass(slots=True)
@@ -553,7 +594,7 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     r"""Callback to log multiple metrics to tensorboard."""
 
-    metrics: Mapping[str, str | Loss | type[Loss]]
+    metrics: Mapping[str, Loss]
 
     _: KW_ONLY
 
