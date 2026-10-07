@@ -313,7 +313,7 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         return np.log(data + self.offset)  # type: ignore
 
     def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
-        return np.maximum(np.exp(data) - self.offset, 0)  # type: ignore
+        return np.maximum(np.exp(data) - self.offset, 0)  # pyrefly: ignore[bad-return]
 
     def fit(self, data: SupportsArrayUfunc, /) -> None:
         array = np.asanyarray(data)
@@ -443,7 +443,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
-        return np.clip(r, 0, 1)  # type: ignore
+        return np.clip(r, 0, 1)
 
     def fit(self, data: SupportsArrayUfunc, /) -> None:
         array = np.asanyarray(data)

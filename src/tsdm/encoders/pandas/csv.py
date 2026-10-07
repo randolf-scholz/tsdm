@@ -42,7 +42,7 @@ class CSVEncoder(StaticEncoder[pd.DataFrame, Path]):
     ) -> None:
         self.csv_read_options = self.DEFAULT_READ_OPTIONS | dict(csv_read_options)
         self.csv_write_options = self.DEFAULT_WRITE_OPTIONS | dict(csv_write_options)
-        self.path_generator = (
+        self.path_generator = (  # ty: ignore[invalid-assignment]
             filename_or_generator
             if callable(filename_or_generator)
             else lambda _: Path(filename_or_generator)

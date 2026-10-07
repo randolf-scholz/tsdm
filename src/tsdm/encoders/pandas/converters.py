@@ -147,7 +147,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
         # get the original dtypes
         self.original_schema = data.dtypes.to_dict()
         self.target_schema = {}
-        ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
+        ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())  # ty: ignore[invalid-assignment]
         for group, cols in self.schema.items():
             if cols is ...:  # NOTE: https://github.com/microsoft/pyright/issues/10721
                 self.target_schema[group] = ellipsis_cols
@@ -322,7 +322,7 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
         self.original_schema = data.dtypes.to_dict()
 
         self.target_schema = {}
-        ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())
+        ellipsis_cols: list[str] = get_ellipsis_cols(data, self.schema.values())  # ty: ignore[invalid-assignment]
         for group, cols in self.schema.items():
             if cols is ...:  # NOTE: https://github.com/microsoft/pyright/issues/10721
                 self.target_schema[group] = ellipsis_cols

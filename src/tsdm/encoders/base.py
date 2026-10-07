@@ -382,9 +382,9 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     def __init_subclass__(cls) -> None:
         r"""Initialize subclass hooks."""
         super().__init_subclass__()
-        cls.encode = cls.with_hooks(cls.encode)
-        cls.decode = cls.with_hooks(cls.decode)
-        cls.fit = cls.with_hooks(cls.fit)
+        cls.encode = cls.with_hooks(cls.encode)  # ty: ignore[invalid-assignment]
+        cls.decode = cls.with_hooks(cls.decode)  # ty: ignore[invalid-assignment]
+        cls.fit = cls.with_hooks(cls.fit)  # ty: ignore[invalid-assignment]
         cls.pre_hooks["fit"] = cls.pre_fit_hooks
         cls.post_hooks["fit"] = cls.post_fit_hooks
         cls.pre_hooks["encode"] = cls.pre_encode_hooks
@@ -400,10 +400,10 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
         @wraps(method)
         def wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-            for hook in self.pre_hooks[method.__name__]:
+            for hook in self.pre_hooks[method.__name__]:  # ty: ignore[unresolved-attribute]
                 hook(self)
             result = method(self, *args, **kwargs)
-            for hook in self.post_hooks[method.__name__]:
+            for hook in self.post_hooks[method.__name__]:  # ty: ignore[unresolved-attribute]
                 hook(self)
             return result
 
@@ -573,7 +573,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         """
         # FIXME: mypy does not predict correct return type...
         result = fork(self, other)
-        assert_type(result, Fork[X, tuple[Y, Y2]])
+        assert_type(result, Fork[X, tuple[Y, Y2]])  # ty: ignore[type-assertion-failure]
         return result
 
     # TODO: automatically combine ``e1 & e2 & e3`` into a single meet?
@@ -589,7 +589,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         """
         # FIXME: mypy does not predict correct return type...
         result = fork(other, self)
-        assert_type(result, Fork[X, tuple[Y2, Y]])
+        assert_type(result, Fork[X, tuple[Y2, Y]])  # ty: ignore[type-assertion-failure]
         return result
 
     def __mul__(self, other: int, /) -> Fork[X, tuple[Y, ...]]:
@@ -922,7 +922,7 @@ class EncoderDict[
     def new[K2, E2: Encoder](
         cls, *, encoders: DictArg[K2, E2]
     ) -> EncoderDict[Any, Any, K2, E2]:
-        return cls(encoders)  # pyright: ignore[reportReturnType, reportArgumentType]
+        return cls(encoders)  # ty: ignore
 
     @abstractmethod
     def encode(self, x: X, /) -> Y: ...
@@ -951,7 +951,7 @@ class EncoderDict[
         /,
         **kwargs: E2,
     ) -> None:
-        self._encoders: Final[Mapping[K, E]] = dict(encs, **kwargs)
+        self._encoders: Final[Mapping[K, E]] = dict(encs, **kwargs)  # ty: ignore[invalid-assignment]
 
     # fmt: off
     def __len__(self) -> int: return len(self._encoders)
@@ -996,7 +996,7 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
         r"""Fit the encoder if it is a `FittableEncoder`."""
         match self.encoder:
             case SupportsFit() as fittable:
-                fittable.fit(x)  # type: ignore
+                fittable.fit(x)
             case _:
                 pass
 
@@ -1006,7 +1006,7 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
         if callable(self.encoder):
             return self.encoder(x)
         if callable(encode := getattr(self.decoder, "decode", None)):
-            return encode(x)  # type: ignore
+            return encode(x)
         raise NotImplementedError("No encoder or decoder provided.")
 
     def decode(self, y: Y, /) -> X:
@@ -1015,7 +1015,7 @@ class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
         if callable(self.decoder):
             return self.decoder(y)
         if callable(decode := getattr(self.encoder, "decode", None)):
-            return decode(y)  # type: ignore
+            return decode(y)
         raise NotImplementedError("No encoder or decoder provided.")
 
     def simplify(self) -> BaseEncoder[X, Y]:
@@ -1065,7 +1065,7 @@ class MappedEncoder[
     """
 
     @classmethod
-    def new[X, Y](  # type: ignore
+    def new[X, Y](  # pyrefly: ignore[bad-override]
         cls, *, encoders: DictArg[str, Encoder[X, Y]]
     ) -> MappedEncoder[Mapping[str, X], Mapping[str, Y]]:
         return MappedEncoder(encoders)
@@ -1433,7 +1433,7 @@ class Compose[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
                 case Compose() as chain:
                     encoders.extend(chain)
                 case _:
-                    encoders.append(encoder)
+                    encoders.append(encoder)  # ty: ignore[invalid-argument-type]
 
         # simplify self
         match encoders:
@@ -1541,7 +1541,7 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
                 case Compose() as chain:
                     encoders.extend(reversed(chain))
                 case _:
-                    encoders.append(encoder)
+                    encoders.append(encoder)  # ty: ignore[invalid-argument-type]
 
         # reduction 2: remove identity encoders ``e >> id = e``.
         encoders = [e for e in encoders if not isinstance(e, IdentityEncoder)]
@@ -1643,7 +1643,7 @@ class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
         self.num = num
         super().__init__([deepcopy(encoder) for _ in range(num)])
 
-    def get_slice[V](self: Repeat[V], arg: slice, /) -> Repeat[V]:  # fmt: skip
+    def get_slice[V](self: Repeat[V], arg: slice, /) -> Repeat[V]:  # ty: ignore[invalid-method-override]
         num = len(self.encoders[arg])
         return Repeat(self.encoder, num)
 
@@ -1747,7 +1747,7 @@ class Parallel[
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
                     encoder=lambda _: (),  # type: ignore
-                    decoder=lambda _: (),
+                    decoder=lambda _: (),  # ty: ignore[invalid-argument-type]
                 )
 
             case [encoder]:
@@ -1833,7 +1833,7 @@ class Replicate[
         assert len(self) == num
 
     @classmethod
-    def new[X, Y](  # pyrefly: ignore[bad-override]
+    def new[X, Y](  # type: ignore
         cls: type[Replicate], /, *, encoders: Iterable[Encoder[X, Y]]
     ) -> Replicate[tuple[X, ...], tuple[Y, ...]]:
         if cls is not Replicate:
@@ -1864,7 +1864,7 @@ class Replicate[
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
                     encoder=lambda _: (),  # type: ignore
-                    decoder=lambda _: (),
+                    decoder=lambda _: (),  # ty: ignore[invalid-argument-type]
                 )
 
             case [encoder]:
@@ -2033,9 +2033,9 @@ class Fork[
     def simplify(self) -> BaseEncoder[X, TupleOut]:
         match self:
             case []:  # encode[any X -> ()], decode[() -> some x] (depends on reduction)
-                return simplify(  # pyrefly: ignore[bad-return]
+                return simplify(  # type: ignore
                     wrap(
-                        encoder=lambda _: (),  # type: ignore
+                        encoder=lambda _: (),
                         decoder=self.reduction,
                     )
                 )
@@ -2131,14 +2131,14 @@ class Duplicate[
         reduction: Reduction[tuple, U] = random.choice,
     ) -> None:
         self.num = num
-        super().__init__(  # type: ignore
+        super().__init__(  # pyrefly: ignore[no-matching-overload]
             *(deepcopy(encoder) for _ in range(num)),
             reduction=reduction,
         )
         assert len(self) == num
 
     @classmethod
-    def new[Y](  # pyrefly: ignore[bad-override]
+    def new[Y](  # type: ignore
         cls: type[Duplicate],
         /,
         *,
@@ -2157,7 +2157,9 @@ class Duplicate[
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
         return new
 
-    def get_slice[U, V](self: Duplicate[U, tuple[V, ...]], arg: slice, /) -> Duplicate[U, tuple[V, ...]]:  # fmt: skip
+    def get_slice[U, V](  # ty: ignore[invalid-method-override]
+        self: Duplicate[U, tuple[V, ...]], arg: slice, /
+    ) -> Duplicate[U, tuple[V, ...]]:
         return Duplicate.new(encoders=self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> Fold[Ys, X]:
@@ -2183,7 +2185,7 @@ class Duplicate[
 
             case _:
                 return Duplicate[X, Ys].new(  # type: ignore
-                    encoders=map(simplify, self),
+                    encoders=map(simplify, self),  # ty: ignore[invalid-argument-type]
                     reduction=self.reduction,
                 )
 
@@ -2380,7 +2382,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
                 )
 
             case _:
-                return Meet(  # type: ignore
+                return Meet(  # pyrefly: ignore[bad-return]
                     *map(simplify, self),
                     reduction=self.reduction,
                 )
@@ -2478,7 +2480,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         self.num = num
 
     @classmethod
-    def new[X](  # pyrefly: ignore[bad-override]
+    def new[X](  # type: ignore
         cls: type[Fold],
         /,
         *,
@@ -2528,7 +2530,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
             case _:
                 return Fold.new(  # type: ignore
-                    encoders=map(simplify, self),
+                    encoders=map(simplify, self),  # ty: ignore[invalid-argument-type]
                     reduction=self.reduction,
                 )
 
