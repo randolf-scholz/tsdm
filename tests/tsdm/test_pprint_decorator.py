@@ -1,3 +1,4 @@
+# ty: ignore[assert-type-unspellable-subtype]
 r"""Test pprint decorators."""
 
 from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
