@@ -174,7 +174,7 @@ class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
             case k if key in self:
                 return self.datasets[cast("OuterKeyT", k)]
             case [outer_key, inner_key]:
-                dataset = self.datasets[outer_key]
-                return dataset[inner_key]
+                dataset = self.datasets[outer_key]  # ty: ignore[invalid-argument-type]
+                return dataset[inner_key]  # ty: ignore[invalid-argument-type]
             case _:
                 raise KeyError(key)

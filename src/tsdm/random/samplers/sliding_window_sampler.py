@@ -75,9 +75,9 @@ def compute_grid[TD: SpanLikeScalar](
     # Python just lacks some critical abilities like
     #  typeof https://github.com/python/typing/issues/769
     #  or generic bounds https://github.com/python/typing/issues/548
-    t_min = cast("Any", timestamp(tmin) if isinstance(tmin, str) else tmin)
-    t_max = cast("Any", timestamp(tmax) if isinstance(tmax, str) else tmax)
-    t_0 = cast("Any", timestamp(offset) if isinstance(offset, str) else offset)
+    t_min: Any = timestamp(tmin) if isinstance(tmin, str) else tmin
+    t_max: Any = timestamp(tmax) if isinstance(tmax, str) else tmax
+    t_0: Any = timestamp(offset) if isinstance(offset, str) else offset
     delta = timedelta(step) if isinstance(step, str) else step
 
     # validate inputs
@@ -645,7 +645,7 @@ class SlidingWindowSampler[
     def __iter__(self: SlidingWindowSampler[DType, Any, Any], /) -> Iterator[Any]: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
-    def __iter__(self, /) -> Iterator[Any]:
+    def __iter__(self, /) -> Iterator[Any]:  # ty: ignore[invalid-method-override]
         r"""Yield the requested representation for each eligible time window.
 
         Multi-horizon samplers yield a list of adjacent window representations;
