@@ -242,27 +242,27 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
     @cached_property
     def model(self) -> torch.nn.Module:
         r"""Model."""
-        return self.components.get("model", NotImplemented)
+        return self.components["model"]
 
     @cached_property
-    def optimizer(self) -> torch.optim.Optimizer:
+    def optimizer(self) -> torch.optim.Optimizer | None:
         r"""Optimizer."""
-        return self.components.get("optimizer", NotImplemented)
+        return self.components.get("optimizer")
 
     @cached_property
-    def hyperparameters(self) -> dict[str, Any]:
+    def hyperparameters(self) -> dict[str, Any] | None:
         r"""Hyperparameters."""
-        return self.components.get("hyperparameters", NotImplemented)
+        return self.components.get("hyperparameters")
 
     @cached_property
-    def encoder(self, /) -> Encoder:
+    def encoder(self, /) -> Encoder | None:
         r"""Encoder."""
-        return self.components.get("encoder", NotImplemented)
+        return self.components.get("encoder")
 
     @cached_property
-    def lr_scheduler(self) -> TorchLRScheduler:
+    def lr_scheduler(self) -> TorchLRScheduler | None:
         r"""Learning rate scheduler."""
-        return self.components.get("lr_scheduler", NotImplemented)
+        return self.components.get("lr_scheduler")
 
     def autodetect_component_files(self) -> dict[str, str]:
         r"""Detect which components are available."""
@@ -384,9 +384,9 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
         logger.info("Found state_dict.")
         state_dict = loaded_object
 
+        logger.info("Trying to obtain module config from hyperparameters.")
         try:
-            logger.info("Trying to obtain module config from hyperparameters.")
-            module_config = self.hyperparameters[component]
+            module_config = self.hyperparameters[component]  # type: ignore
         except KeyError as exc:
             raise ValueError(
                 f"No {component!r} configuration in {self.hyperparameters}."
@@ -421,7 +421,9 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
         return cast(
             "TorchOptimizer",
             self.__load_torch_component(
-                file, component="optimizer", params=self.model.parameters()
+                file,
+                component="optimizer",
+                params=self.model.parameters(),
             ),
         )
 
