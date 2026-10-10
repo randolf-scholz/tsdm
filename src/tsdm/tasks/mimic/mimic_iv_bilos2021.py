@@ -194,7 +194,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
 
-    dataset: TimeSeriesCollection[int]  # type: ignore
+    dataset: TimeSeriesCollection[int]
     preprocessor: FrameEncoder | None
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)

@@ -101,7 +101,7 @@ create a `Sample` from the `TimeSeriesCollection`.
 
 __all__ = [
     # Protocol & ABCs
-    "ForecastingTask",
+    "Task",
     "SplitType",
     "TimeSeriesTask",
 ]
@@ -112,7 +112,14 @@ from collections import Counter
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Protocol,
+    SupportsFloat,
+    runtime_checkable,
+)
 
 from torch.utils.data import DataLoader
 
@@ -154,38 +161,53 @@ class SplitType(StrEnum):
 
 
 @runtime_checkable
-class ForecastingTask[SplitID, SampleID, SampleT, BatchT](Protocol):
-    r"""Protocol for tasks.
+class Task[
+    DatasetT = Any,
+    FoldID = Any,  # e.g. (0,1,2,3,4)
+    SplitID = str,  # e.g. "train", "valid", "split"
+    SampleID = Any,  # e.g. observation and prediction window
+    SampleT = Any,  # e.g. (inputs=Tensor, targets=Tensor)
+    BatchT = list[SampleT],  # e.g. (inputs=Tensor, targets=Tensor)
+](Protocol):
+    r"""Protocol for tasks."""
 
-    A task should provide:
+    @property  # the raw datase
+    def dataset(self) -> DatasetT: ...
 
-    - A split definition (e.g. simple train/test split, 5-fold cross-validation, etc.)
-        - we shall generally assume K-fold cross-validation, with K=1 being a simple train/test split
-        - For K-fold CV, SplitID may be tuples like (3, "test") or (3, "train"),
-          where 3 is the fold number and "test"/"train" is the partition.
-          Here, some things like preprocessing may depend on the other partitions.
-          Like when standardizing the data, (3, "test") should be standardized using
-          the mean and std of (3, "train").
-    - a dataloader for each split
-    - a test metric for evaluation
-    """
+    @property  # e.g. the training data of the first fold
+    def partitions(self) -> Mapping[tuple[FoldID, SplitID], DatasetT]: ...
 
     @property
-    def splits(self) -> Mapping[SplitID, TimeSeriesCollection]: ...
+    def generators(  # maps sample_id -> sample
+        self,
+    ) -> Mapping[tuple[FoldID, SplitID], SupportsGetItem[SampleID, SampleT]]: ...
+
+    def make_dataloader[T = BatchT](
+        self,
+        fold: FoldID,
+        split: SplitID,
+        /,
+        *,
+        batch_size: int | None = None,
+        drop_last: bool | None = None,
+        collate_fn: Callable[[list[SampleT]], T] | None = None,
+        **loader_kwargs,
+    ) -> Iterable[T]: ...
+
     @property
-    def samplers(self) -> Mapping[SplitID, Iterable[SampleID]]: ...
-    @property
-    def generators(self) -> Mapping[SplitID, SupportsGetItem[SampleID, SampleT]]: ...
-    @property
-    def collate_fns(self) -> Mapping[SplitID, Callable[[list[SampleT]], BatchT]]: ...
-    @property
-    def dataloaders(self) -> Mapping[SplitID, Iterable[BatchT]]: ...
+    def error_fn(self) -> Callable[[TargetT, TargetT], SupportsFloat]:
+        """Compare predictions and targets; lower is better.
+
+        Arguments are ordered as (predictions, targets).
+        """
+        ...
 
 
 @pprint_repr
 @dataclass  # (slots=True)
 class TimeSeriesTask[
-    SplitID,
+    FoldID = Any,
+    SplitID = Any,
     SampleID = Any,
     SampleT = Any,
     BatchT = list[SampleT],
@@ -228,6 +250,8 @@ class TimeSeriesTask[
     We do not support `torch.utils.data.IterableDataset`, as this point.
     """
 
+    type KeyT = tuple[FoldID, SplitID]
+
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
 
@@ -236,21 +260,21 @@ class TimeSeriesTask[
 
     _: KW_ONLY
 
-    folds: SupportsKeysAndGetItem[SplitID, Any] = NotImplemented
+    folds: SupportsKeysAndGetItem[KeyT, Any] = field(init=False)
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
-    encoders: Mapping[SplitID, Encoder] = field(init=False)
+    encoders: Mapping[KeyT, Encoder] = field(init=False)
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fns: Mapping[SplitID, Callable[[list[SampleT]], BatchT]] = field(init=False)
+    collate_fns: Mapping[KeyT, Callable[[list[SampleT]], BatchT]] = field(init=False)
     r"""Collate function used to create batches from samples."""
-    dataloaders: Mapping[SplitID, DataLoader[BatchT]] = field(init=False)
+    dataloaders: Mapping[KeyT, DataLoader[BatchT]] = field(init=False)
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[SplitID, SupportsGetItem[SampleID, SampleT]] = field(init=False)
+    generators: Mapping[KeyT, SupportsGetItem[SampleID, SampleT]] = field(init=False)
     r"""Dictionary holding the sample generator associated with each key."""
-    samplers: Mapping[SplitID, Sampler[SampleID]] = field(init=False)
+    samplers: Mapping[KeyT, Sampler[SampleID]] = field(init=False)
     r"""Dictionary holding `Sampler` associated with each key."""
-    splits: Mapping[SplitID, TimeSeriesCollection] = field(init=False)
+    splits: Mapping[KeyT, TimeSeriesCollection] = field(init=False)
     r"""Dictionary holding sampler associated with each key."""
-    test_metrics: Mapping[SplitID, Callable[[Any, Any], Any]] = field(init=False)
+    test_metrics: Mapping[KeyT, Callable[[Any, Any], Any]] = field(init=False)
     r"""Metric used for evaluation."""
 
     train_batch_size: int = 32
@@ -262,11 +286,6 @@ class TimeSeriesTask[
     r"""Whether to validate the folds."""
     initialize: bool = True
     r"""Whether to initialize the task object."""
-
-    default_collate_fn: Callable[[list[SampleT]], BatchT] = lambda x: x  # type: ignore
-    r"""Default collate function."""
-    default_test_metric: Callable[[Any, Any], Any] = NotImplemented
-    r"""Default test metric."""
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
@@ -290,7 +309,7 @@ class TimeSeriesTask[
         self.splits = LazyDict.from_func(self, self.make_split)
         self.test_metrics = LazyDict.from_func(self, self.make_test_metric)
 
-    def __iter__(self) -> Iterator[SplitID]:
+    def __iter__(self) -> Iterator[KeyT]:
         r"""Iterate over the split keys."""
         return iter(self.folds.keys())
 
@@ -299,25 +318,25 @@ class TimeSeriesTask[
         return len(self.folds.keys())
 
     @abstractmethod
-    def make_folds(self, /) -> Mapping[SplitID, Any]:
+    def make_folds(self, /) -> Mapping[KeyT, Any]:
         r"""Return the indices of the datapoints associated with the specific split."""
         return NotImplemented
 
     @abstractmethod
-    def make_sampler(self, key: SplitID, /) -> Sampler[SampleID]:
+    def make_sampler(self, key: KeyT, /) -> Sampler[SampleID]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> SupportsGetItem[SampleID, SampleT]:
+    def make_generator(self, key: KeyT, /) -> SupportsGetItem[SampleID, SampleT]:
         r"""Return the sample generator associated with the specified key."""
         return NotImplemented
 
-    def make_encoder(self, key: SplitID, /) -> Encoder:  # ruff: ignore[ARG002]
+    def make_encoder(self, key: KeyT, /) -> Encoder:  # ruff: ignore[ARG002]
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[SampleT]], BatchT]:  # ruff: ignore[ARG002]
+    def make_collate_fn(self, key: KeyT, /) -> Callable[[list[SampleT]], BatchT]:  # ruff: ignore[ARG002]
         r"""Return the collate function which combines samples into a batch.
 
         Note:
@@ -326,7 +345,7 @@ class TimeSeriesTask[
         """
         return NotImplemented
 
-    def make_dataloader(self, key: SplitID, /, **opts: Any) -> DataLoader[BatchT]:
+    def make_dataloader(self, key: KeyT, /, **opts: Any) -> DataLoader:
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
 
@@ -342,23 +361,21 @@ class TimeSeriesTask[
             "pin_memory": True,
             "sampler": self.samplers[key],
             "collate_fn": (
-                fn
-                if (fn := self.collate_fns[key]) is not NotImplemented
-                else self.default_collate_fn
+                fn if (fn := self.collate_fns[key]) is not NotImplemented else None
             ),
         } | opts
 
         return DataLoader(dataset, **kwargs)  # type: ignore
 
-    def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
+    def make_split(self, key: KeyT, /) -> TimeSeriesCollection:
         r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Any, Any], Any]:  # ruff: ignore[ARG002]
+    def make_test_metric(self, key: KeyT, /) -> Callable[[Any, Any], Any]:  # ruff: ignore[ARG002]
         r"""Return the test metric."""
         return NotImplemented
 
-    def is_train_split(self, key: SplitID, /) -> bool:
+    def is_train_split(self, key: KeyT, /) -> bool:
         r"""Return whether the key is a training split."""
         return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
 
@@ -376,7 +393,7 @@ class TimeSeriesTask[
             case _:
                 raise TypeError(f"Cannot infer split type from {key=}.")
 
-    def get_train_split(self, key: SplitID, /) -> SplitID:
+    def get_train_split(self, key: KeyT, /) -> KeyT:
         r"""Return the training split associated with the given split key.
 
         For example, given (3, "test"), return (3, "train") or (3, "trainval") depending on the folds.
@@ -441,6 +458,6 @@ if TYPE_CHECKING:
 
     def _upcast[SplitID, SampleID, SampleT, BatchT](
         task: TimeSeriesTask[SplitID, SampleID, SampleT, BatchT],
-    ) -> ForecastingTask[SplitID, SampleID, SampleT, BatchT]:
+    ) -> Task[SplitID, SampleID, SampleT, BatchT]:
         r"""Upcast a TimeSeriesTask to a ForecastingTask."""
         return task

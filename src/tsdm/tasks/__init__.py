@@ -53,14 +53,14 @@ __all__ = [
 ]
 
 from . import base, kiwi, mimic, synthetic, uci, ushcn
-from .base import ForecastingTask, TimeSeriesTask
+from .base import Task, TimeSeriesTask
 from .ett.ett_zhou2021 import ETT_Zhou2021
 from .kiwi import InSilicoTask, KiwiBenchmark
 from .mimic import MIMIC_IV_Bilos2021
 from .synthetic import DampedPendulum_Ansari2023
 from .ushcn import USHCN_DeBrouwer2019
 
-TASKS: dict[str, type[ForecastingTask]] = {
+TASKS: dict[str, type[Task]] = {
     "KiwiBenchmark"             : KiwiBenchmark,
     "InSilicoTask"              : InSilicoTask,
     "DampedPendulum_Ansari2023" : DampedPendulum_Ansari2023,

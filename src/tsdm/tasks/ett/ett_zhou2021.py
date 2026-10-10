@@ -103,7 +103,7 @@ class ETT_Zhou2021(
     r"""Default batch size when evaluating."""
 
     # additional attributes
-    dataset: TimeSeries  # type: ignore[reportIncompatibleVariableOverride]
+    dataset: TimeSeries
     preprocessor: Encoder
     r"""Encoder for the observations."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
