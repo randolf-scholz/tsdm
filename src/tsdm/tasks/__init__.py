@@ -40,7 +40,7 @@ __all__ = [
     # Constants
     "TASKS",
     # ABCs & Protocols
-    "ForecastingTask",
+    "Task",
     "TimeSeriesTask",
     # Classes
     "ETT_Zhou2021",

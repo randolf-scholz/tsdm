@@ -163,29 +163,40 @@ class SplitType(StrEnum):
 @runtime_checkable
 class Task[
     DatasetT = Any,
-    FoldID = Any,  # e.g. (0,1,2,3,4)
-    SplitID = str,  # e.g. "train", "valid", "split"
+    SplitKey = Any,  # e.g. tuple[FoldID, SplitID] like (0, "train")
     SampleID = Any,  # e.g. observation and prediction window
     SampleT = Any,  # e.g. (inputs=Tensor, targets=Tensor)
     BatchT = list[SampleT],  # e.g. (inputs=Tensor, targets=Tensor)
+    TargetT = Any,
 ](Protocol):
-    r"""Protocol for tasks."""
+    r"""Protocol for tasks.
+
+    Type Parameters:
+        DatasetT: The type of the raw dataset.
+        SplitKey: The key to identify a split within a dataset, e.g.
+            - A single SplitType like "train" or "test"
+            - A tuple like (2, "test") for the test partition of the second fold
+            - longer tuples when performing nested cross-validation.
+        SampleID: The random input for the sampler.
+        SampleT: The type of sample returned by the generator.
+            (e.g. ``tuple[InputType, TargetType]``)
+        BatchT: The batched data type returned by the dataloaders
+    """
 
     @property  # the raw datase
     def dataset(self) -> DatasetT: ...
 
     @property  # e.g. the training data of the first fold
-    def partitions(self) -> Mapping[tuple[FoldID, SplitID], DatasetT]: ...
+    def partitions(self) -> Mapping[SplitKey, DatasetT]: ...
 
     @property
     def generators(  # maps sample_id -> sample
         self,
-    ) -> Mapping[tuple[FoldID, SplitID], SupportsGetItem[SampleID, SampleT]]: ...
+    ) -> Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]]: ...
 
     def make_dataloader[T = BatchT](
         self,
-        fold: FoldID,
-        split: SplitID,
+        key: SplitKey,
         /,
         *,
         batch_size: int | None = None,
@@ -206,13 +217,18 @@ class Task[
 @pprint_repr
 @dataclass  # (slots=True)
 class TimeSeriesTask[
-    FoldID = Any,
-    SplitID = Any,
+    SplitKey,  # e.g. tuple[FoldID, SplitID] like (0, "train")
     SampleID = Any,
     SampleT = Any,
     BatchT = list[SampleT],
 ]:
     r"""Abstract Base Class for Tasks.
+
+    Type Parameters:
+        SplitKey
+        SampleID
+        SampleT
+        BatchT
 
     A task has the following responsibilities:
 
@@ -250,8 +266,6 @@ class TimeSeriesTask[
     We do not support `torch.utils.data.IterableDataset`, as this point.
     """
 
-    type KeyT = tuple[FoldID, SplitID]
-
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
 
@@ -260,21 +274,25 @@ class TimeSeriesTask[
 
     _: KW_ONLY
 
-    folds: SupportsKeysAndGetItem[KeyT, Any] = field(init=False)
+    folds: SupportsKeysAndGetItem[SplitKey, Any] = field(init=False)
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
-    encoders: Mapping[KeyT, Encoder] = field(init=False)
+    encoders: Mapping[SplitKey, Encoder] = field(init=False)
     r"""Dictionary holding `Encoder` associated with each key."""
-    collate_fns: Mapping[KeyT, Callable[[list[SampleT]], BatchT]] = field(init=False)
+    collate_fns: Mapping[SplitKey, Callable[[list[SampleT]], BatchT]] = field(
+        init=False
+    )
     r"""Collate function used to create batches from samples."""
-    dataloaders: Mapping[KeyT, DataLoader[BatchT]] = field(init=False)
+    dataloaders: Mapping[SplitKey, DataLoader[BatchT]] = field(init=False)
     r"""Dictionary holding `DataLoader` associated with each key."""
-    generators: Mapping[KeyT, SupportsGetItem[SampleID, SampleT]] = field(init=False)
+    generators: Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]] = field(
+        init=False
+    )
     r"""Dictionary holding the sample generator associated with each key."""
-    samplers: Mapping[KeyT, Sampler[SampleID]] = field(init=False)
+    samplers: Mapping[SplitKey, Sampler[SampleID]] = field(init=False)
     r"""Dictionary holding `Sampler` associated with each key."""
-    splits: Mapping[KeyT, TimeSeriesCollection] = field(init=False)
+    splits: Mapping[SplitKey, TimeSeriesCollection] = field(init=False)
     r"""Dictionary holding sampler associated with each key."""
-    test_metrics: Mapping[KeyT, Callable[[Any, Any], Any]] = field(init=False)
+    test_metrics: Mapping[SplitKey, Callable[[Any, Any], Any]] = field(init=False)
     r"""Metric used for evaluation."""
 
     train_batch_size: int = 32
@@ -309,7 +327,7 @@ class TimeSeriesTask[
         self.splits = LazyDict.from_func(self, self.make_split)
         self.test_metrics = LazyDict.from_func(self, self.make_test_metric)
 
-    def __iter__(self) -> Iterator[KeyT]:
+    def __iter__(self) -> Iterator[SplitKey]:
         r"""Iterate over the split keys."""
         return iter(self.folds.keys())
 
@@ -318,25 +336,25 @@ class TimeSeriesTask[
         return len(self.folds.keys())
 
     @abstractmethod
-    def make_folds(self, /) -> Mapping[KeyT, Any]:
+    def make_folds(self, /) -> Mapping[SplitKey, Any]:
         r"""Return the indices of the datapoints associated with the specific split."""
         return NotImplemented
 
     @abstractmethod
-    def make_sampler(self, key: KeyT, /) -> Sampler[SampleID]:
+    def make_sampler(self, key: SplitKey, /) -> Sampler[SampleID]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: KeyT, /) -> SupportsGetItem[SampleID, SampleT]:
+    def make_generator(self, key: SplitKey, /) -> SupportsGetItem[SampleID, SampleT]:
         r"""Return the sample generator associated with the specified key."""
         return NotImplemented
 
-    def make_encoder(self, key: KeyT, /) -> Encoder:  # ruff: ignore[ARG002]
+    def make_encoder(self, key: SplitKey, /) -> Encoder:  # ruff: ignore[ARG002]
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
-    def make_collate_fn(self, key: KeyT, /) -> Callable[[list[SampleT]], BatchT]:  # ruff: ignore[ARG002]
+    def make_collate_fn(self, key: SplitKey, /) -> Callable[[list[SampleT]], BatchT]:  # ruff: ignore[ARG002]
         r"""Return the collate function which combines samples into a batch.
 
         Note:
@@ -345,7 +363,7 @@ class TimeSeriesTask[
         """
         return NotImplemented
 
-    def make_dataloader(self, key: KeyT, /, **opts: Any) -> DataLoader:
+    def make_dataloader(self, key: SplitKey, /, **opts: Any) -> DataLoader:
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
 
@@ -367,15 +385,15 @@ class TimeSeriesTask[
 
         return DataLoader(dataset, **kwargs)  # type: ignore
 
-    def make_split(self, key: KeyT, /) -> TimeSeriesCollection:
+    def make_split(self, key: SplitKey, /) -> TimeSeriesCollection:
         r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
-    def make_test_metric(self, key: KeyT, /) -> Callable[[Any, Any], Any]:  # ruff: ignore[ARG002]
+    def make_test_metric(self, key: SplitKey, /) -> Callable[[Any, Any], Any]:  # ruff: ignore[ARG002]
         r"""Return the test metric."""
         return NotImplemented
 
-    def is_train_split(self, key: KeyT, /) -> bool:
+    def is_train_split(self, key: SplitKey, /) -> bool:
         r"""Return whether the key is a training split."""
         return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
 
@@ -393,7 +411,7 @@ class TimeSeriesTask[
             case _:
                 raise TypeError(f"Cannot infer split type from {key=}.")
 
-    def get_train_split(self, key: KeyT, /) -> KeyT:
+    def get_train_split(self, key: SplitKey, /) -> SplitKey:
         r"""Return the training split associated with the given split key.
 
         For example, given (3, "test"), return (3, "train") or (3, "trainval") depending on the folds.
