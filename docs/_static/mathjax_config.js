@@ -191,27 +191,33 @@ MathJax = {
         displayMath: [["\\[", "\\]"]],
         macros: {
             // operators
-            E: "\\operatorname{\\mathbf{E}}",
-            KL: "\\operatorname{KL}",
+            Cov: "\\operatorname{Cov}",  // covariance
+            E: "\\operatorname{\\mathbf{E}}",  // expected value
+            KL: "\\operatorname{KL}",  // kullback-leibler divergence
             Median: "\\operatorname{Median}",
             NdtriExp: "\\operatorname{ndtri\\_exp}",
-            Var: "\\operatorname{\\mathbf{Var}}",
+            Var: "\\operatorname{\\mathbf{Var}}",  // variance
             argmax: "\\operatorname*{arg\\,max}",
             argmin: "\\operatorname*{arg\\,min}",
-            chol: "\\operatorname{chol}",
+            chol: "\\operatorname{chol}",  // cholesky decomposition
             diag: "\\operatorname{diag}",
             dist: "\\operatorname{dist}",
             logsumexp: "\\operatorname{logsumexp}",
-            mae: "\\operatorname{\\mathbf{MAE}}",
-            mse: "\\operatorname{\\mathbf{MSE}}",
+            mae: "\\operatorname{\\mathbf{MAE}}",  // mean absolute error
+            mse: "\\operatorname{\\mathbf{MSE}}",  // mean squared error
             nan: "\\texttt{NaN}",
             nd: "\\operatorname{\\mathbf{ND}}",
             nrmse: "\\operatorname{\\mathbf{NRMSE}}",
+            orth: "\\operatorname{orth}",  // orthogonal projection / QR decom
             rank: "\\operatorname{rank}",
             relu: "\\operatorname{ReLU}",
             rsme: "\\operatorname{\\mathbf{RSME}}",
+            sign: "\\operatorname{sign}",
             softplus: "\\operatorname{softplus}",
-            tr: "\\operatorname{tr}",
+            sym: "\\operatorname{sym}",  // symmetric part
+            tr: "\\operatorname{tr}",  // trace
+            tril: "\\operatorname{tril}",  // lower triangular
+            triu: "\\operatorname{triu}",  // upper triangular
             // macros
             bmat: ["\\begin{bmatrix} #1 \\end{bmatrix}", 1],
             norm: ["\\left\\lVert #1\\right\\rVert", 1],
