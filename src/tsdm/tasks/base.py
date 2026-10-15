@@ -108,7 +108,6 @@ __all__ = [
 
 import logging
 from abc import abstractmethod
-from collections import Counter
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
@@ -125,7 +124,6 @@ from torch.utils.data import DataLoader
 
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
-from tsdm.timeseries import TimeSeriesCollection
 from tsdm.types.protocols import SupportsGetItem, SupportsKeysAndGetItem
 from tsdm.utils.lazydict import LazyDict
 
@@ -161,8 +159,8 @@ class SplitType(StrEnum):
 
 @runtime_checkable
 class Task[
+    SplitKey,  # e.g. tuple[FoldID, SplitID] like (0, "train")
     DatasetT = Any,
-    SplitKey = Any,  # e.g. tuple[FoldID, SplitID] like (0, "train")
     SampleID = Any,  # e.g. observation and prediction window
     SampleT = Any,  # e.g. (inputs=Tensor, targets=Tensor)
     BatchT = list[SampleT],  # e.g. (inputs=Tensor, targets=Tensor)
@@ -215,6 +213,7 @@ class Task[
 @dataclass  # (slots=True)
 class TimeSeriesTask[
     SplitKey,  # e.g. tuple[FoldID, SplitID] like (0, "train")
+    DatasetT = Any,
     SampleID = Any,
     SampleT = Any,
     BatchT = list[SampleT],
@@ -270,12 +269,12 @@ class TimeSeriesTask[
     DEFAULT_EVAL_BATCH_SIZE: ClassVar[int] = 64
     r"""Batch size for evaluation splits."""
 
-    dataset: TimeSeriesCollection
+    dataset: DatasetT
     r"""Dataset from which the splits are constructed."""
 
     _: KW_ONLY
 
-    partitions: SupportsKeysAndGetItem[SplitKey, Any] = field(init=False)
+    partitions: Mapping[SplitKey, DatasetT] = field(init=False)
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
     collate_fns: Mapping[SplitKey, Callable[[list[SampleT]], BatchT]] = field(
         init=False
@@ -313,9 +312,9 @@ class TimeSeriesTask[
         raise NotImplementedError
 
     @abstractmethod
-    def make_partition(self, key: SplitKey, /) -> TimeSeriesCollection:
+    def make_partition(self, key: SplitKey, /) -> DatasetT:
         r"""Return the sub-dataset associated with the specified split like ``(0, "train")``."""
-        return self.dataset[self.partitions[key]]
+        raise NotImplementedError
 
     @abstractmethod
     def make_sampler(self, key: SplitKey, /) -> Sampler[SampleID]:
@@ -376,8 +375,20 @@ if TYPE_CHECKING:
     # ensure base classes are compatible with protocols
     # TODO: subclass protocols when PEP 767 (ReadOnly attributes) is accepted.
 
-    def _upcast[SplitID, SampleID, SampleT, BatchT](
-        task: TimeSeriesTask[SplitID, SampleID, SampleT, BatchT],
-    ) -> Task[SplitID, SampleID, SampleT, BatchT]:
+    def _upcast[SplitKey, DatasetT, SampleID, SampleT, BatchT](
+        task: TimeSeriesTask[
+            SplitKey,
+            DatasetT,
+            SampleID,
+            SampleT,
+            BatchT,
+        ],
+    ) -> Task[
+        SplitKey,
+        DatasetT,
+        SampleID,
+        SampleT,
+        BatchT,
+    ]:
         r"""Upcast a TimeSeriesTask to a ForecastingTask."""
         return task
