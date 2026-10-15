@@ -124,7 +124,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
-from tsdm.types.protocols import SupportsGetItem, SupportsKeysAndGetItem
+from tsdm.types.protocols import SupportsGetItem
 from tsdm.utils.lazydict import LazyDict
 
 
@@ -273,6 +273,8 @@ class TimeSeriesTask[
     r"""Dataset from which the splits are constructed."""
 
     _: KW_ONLY
+
+    error_fn: Callable
 
     partitions: Mapping[SplitKey, DatasetT] = field(init=False)
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
