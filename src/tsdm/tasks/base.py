@@ -265,6 +265,10 @@ class TimeSeriesTask[
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
+    DEFAULT_TRAIN_BATCH_SIZE: ClassVar[int] = 32
+    r"""Batch size for training splits."""
+    DEFAULT_EVAL_BATCH_SIZE: ClassVar[int] = 64
+    r"""Batch size for evaluation splits."""
 
     dataset: TimeSeriesCollection
     r"""Dataset from which the splits are constructed."""
@@ -277,7 +281,7 @@ class TimeSeriesTask[
         init=False
     )
     r"""Collate function used to create batches from samples."""
-    dataloaders: Mapping[SplitKey, DataLoader[BatchT]] = field(init=False)
+    dataloaders: Mapping[SplitKey, Iterable[BatchT]] = field(init=False)
     r"""Dictionary holding `DataLoader` associated with each key."""
     generators: Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]] = field(
         init=False
@@ -286,46 +290,14 @@ class TimeSeriesTask[
     samplers: Mapping[SplitKey, Sampler[SampleID]] = field(init=False)
     r"""Dictionary holding `Sampler` associated with each key."""
 
-    train_batch_size: int = 32
-    r"""Batch size for training splits."""
-    eval_batch_size: int = 64
-    r"""Batch size for evaluation splits."""
-
-    validate: bool = True
-    r"""Whether to validate the folds."""
-    initialize: bool = True
-    r"""Whether to initialize the task object."""
-
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
-        # check the folds for consistency
-        if self.validate:
-            self.validate_folds()
-
-        if not self.initialize:
-            return
-
         # create LazyDicts for the Mapping attributes
         self.collate_fns = LazyDict.from_func(self.make_collate_fn, self)
         self.dataloaders = LazyDict.from_func(self.make_dataloader, self)
         self.generators = LazyDict.from_func(self.make_generator, self)
         self.samplers = LazyDict.from_func(self.make_sampler, self)
         self.partitions = LazyDict.from_func(self.make_partition, self)
-
-    @staticmethod
-    def split_type(key: object, /) -> SplitType:
-        r"""Return the split type encoded by a split key.
-
-        By convention, a sequence key has the form ``[*fold_ids, partition]``.
-        Only its final element is interpreted as the partition name.
-        """
-        match key:
-            case str(partition):
-                return SplitType(partition)
-            case [*_, partition]:
-                return SplitType(partition)
-            case _:
-                raise TypeError(f"Cannot infer split type from {key=}.")
 
     def __iter__(self) -> Iterator[SplitKey]:
         r"""Iterate over the split keys."""
@@ -334,6 +306,11 @@ class TimeSeriesTask[
     def __len__(self) -> int:
         r"""Return the number of splits."""
         return len(self.partitions.keys())
+
+    @abstractmethod
+    def is_train_split(self, key: SplitKey) -> bool:
+        r"""Return whether the key is a training split."""
+        raise NotImplementedError
 
     @abstractmethod
     def make_partition(self, key: SplitKey, /) -> TimeSeriesCollection:
@@ -357,9 +334,18 @@ class TimeSeriesTask[
             `collate_fn` is allowed to be key-dependent for cases when an encoder
              fitted on the training split is used to transform the validation/test splits.
         """
-        return NotImplemented
+        return lambda x: x  # type: ignore
 
-    def make_dataloader(self, key: SplitKey, /, **opts: Any) -> DataLoader:
+    def make_dataloader[T = BatchT](
+        self,
+        key: SplitKey,
+        /,
+        *,
+        batch_size: int | None = None,
+        drop_last: bool | None = None,
+        collate_fn: Callable[[list[SampleT]], T] | None = None,
+        **loader_kwargs,
+    ) -> Iterable[T]:
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
 
@@ -367,81 +353,23 @@ class TimeSeriesTask[
 
         kwargs: dict = {
             "batch_size": (
-                self.train_batch_size
+                batch_size
+                if batch_size is not None
+                else self.DEFAULT_TRAIN_BATCH_SIZE
                 if self.is_train_split(key)
-                else self.eval_batch_size
+                else self.DEFAULT_EVAL_BATCH_SIZE
             ),
-            "drop_last": self.is_train_split(key),
+            "drop_last": (
+                drop_last if drop_last is not None else self.is_train_split(key)
+            ),
             "pin_memory": True,
             "sampler": self.samplers[key],
             "collate_fn": (
-                fn if (fn := self.collate_fns[key]) is not NotImplemented else None
+                collate_fn if collate_fn is not None else self.collate_fns[key]
             ),
-        } | opts
+        } | loader_kwargs
 
         return DataLoader(dataset, **kwargs)  # type: ignore
-
-    def is_train_split(self, key: SplitKey, /) -> bool:
-        r"""Return whether the key is a training split."""
-        return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
-
-    def get_train_split(self, key: SplitKey, /) -> SplitKey:
-        r"""Return the training split associated with the given split key.
-
-        For example, given (3, "test"), return (3, "train") or (3, "trainval") depending on the folds.
-        """
-        target_key = (key,) if isinstance(key, str) else key
-        if not isinstance(target_key, tuple) or not target_key:
-            raise TypeError(f"Split keys must be strings or non-empty tuples: {key!r}.")
-
-        if self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}:
-            # fast path: if the key is already a training split, return it
-            return key
-
-        fold_keys = self.partitions.keys()
-        if key not in fold_keys:
-            raise KeyError(f"Unknown split key: {key!r}.")
-        if not (
-            all(isinstance(key, str) and key for key in fold_keys)
-            or all(isinstance(key, tuple) and key for key in fold_keys)
-        ):
-            raise TypeError("Fold keys must be uniformly strings or non-empty tuples.")
-
-        for fold_key in fold_keys:
-            normalized_key = (fold_key,) if isinstance(fold_key, str) else fold_key
-            assert isinstance(normalized_key, tuple)
-            if (
-                normalized_key[:-1] == target_key[:-1]
-                and self.split_type(fold_key) == SplitType.TRAIN
-            ):
-                return fold_key
-
-        raise KeyError(f"No training split found for {key!r}.")
-
-    def validate_folds(self) -> None:
-        r"""Make sure all keys are correct format `str` or ``tuple[*fold_ids, str]``.
-
-        - If keys are `partition`, they are assumed to be `partition` keys.
-        - If keys are ``*folds, partition``, then test whether for each fold there is a unique train partition.
-        """
-        fold_keys = self.partitions.keys()
-        normalized_keys: set[tuple[Any, ...]]
-        if all(isinstance(key, str) for key in fold_keys):
-            normalized_keys = {(key,) for key in fold_keys}
-        elif all(isinstance(key, tuple) and key for key in fold_keys):
-            normalized_keys = {key for key in fold_keys if isinstance(key, tuple)}
-        else:
-            raise TypeError("Fold keys must be uniformly strings or non-empty tuples.")
-
-        split_types = {key: self.split_type(key) for key in normalized_keys}
-        fold_ids = {key[:-1] for key in normalized_keys}
-        train_counts = Counter(
-            key[:-1]
-            for key, split_type in split_types.items()
-            if split_type == SplitType.TRAIN
-        )
-        if not fold_ids or any(train_counts[fold_id] != 1 for fold_id in fold_ids):
-            raise ValueError("Each fold must have a unique train partition.")
 
 
 if TYPE_CHECKING:

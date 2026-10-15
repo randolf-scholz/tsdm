@@ -97,9 +97,9 @@ class ETT_Zhou2021(
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
 
-    train_batch_size: int = 32
+    DEFAULT_TRAIN_BATCH_SIZE: int = 32
     r"""Default batch size."""
-    eval_batch_size: int = 128
+    DEFAULT_EVAL_BATCH_SIZE: int = 128
     r"""Default batch size when evaluating."""
 
     # additional attributes
