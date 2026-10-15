@@ -221,14 +221,14 @@ def test_fromkeys() -> None:
 def test_get() -> None:
     r"""Test the `get` method of `LazyDict`."""
     # get should return non-lazy values
-    ld = LazyDict.from_func([1, 2, 3], lambda _: 0)
+    ld = LazyDict.from_func(lambda _: 0, [1, 2, 3])
     assert ld.get(1) == 0
 
 
 def test_get_lazy() -> None:
     r"""Test the `get` method of `LazyDict` with lazy values."""
     # get should return lazy values
-    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)
+    ld = LazyDict.from_func(lambda x: x**2, [1, 2, 3])
 
     assert isinstance(ld.get_lazy(2), LazyValue)
     assert ld.get_lazy(5, "foo") == "foo"
@@ -239,7 +239,7 @@ def test_from_func() -> None:
     LOGGER = __logger__.getChild(LazyDict.__name__)
     LOGGER.info("Testing %s", LazyDict.fromkeys)
 
-    ld = LazyDict.from_func([1, 2, 3], lambda x: x**2)
+    ld = LazyDict.from_func(lambda x: x**2, [1, 2, 3])
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)

@@ -13,7 +13,7 @@ def test_insilico_task() -> None:
     r"""Test the TimeSeriesDatasetTask."""
     split_id = (0, "train")
     task = InSilicoTask()
-    assert isinstance(task.folds, DataFrame)
+    assert isinstance(task.partitions, DataFrame)
     assert isinstance(task.splits[split_id], TimeSeriesCollection)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], CallableDataset)

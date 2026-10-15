@@ -26,7 +26,7 @@ def test_kiwi_task() -> None:
     LOGGER.info("Testing.")
     task = KiwiBenchmark()
 
-    assert isinstance(task.folds, DataFrame)
+    assert isinstance(task.partitions, DataFrame)
     assert isinstance(task.splits[split_id], TimeSeriesCollection)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], CallableDataset)

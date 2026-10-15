@@ -89,7 +89,9 @@ def test_time_series_task_rejects_unknown_split(
 
 def test_train_split_mapping(task: TimeSeriesTask[Any]) -> None:
     r"""Test that trainval uses itself as its associated training split."""
-    assert {key: task.get_train_split(key) for key in tuple(task.folds.keys())} == {
+    assert {
+        key: task.get_train_split(key) for key in tuple(task.partitions.keys())
+    } == {
         "train": "train",
         "trainval": "trainval",
         "valid": "train",
