@@ -151,7 +151,7 @@ class ETT_Zhou2021(
         encoder.fit(train_split.timeseries)
         return encoder
 
-    def make_folds(self, /) -> Mapping[SplitID, Series]:
+    def make_partitions(self, /) -> Mapping[SplitID, Series]:
         r"""Create timestamp masks for the prescribed ETT partitions."""
         timeseries = self.dataset.timeseries
         index = timeseries.index

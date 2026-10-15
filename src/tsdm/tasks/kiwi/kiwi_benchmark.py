@@ -42,6 +42,7 @@ from tsdm.timeseries.pandas import (
     kiwi_benchmark,
     make_sample_factory,
 )
+from tsdm.utils import LazyDict
 
 
 @pprint_repr
@@ -168,7 +169,9 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
-    def make_folds(self, /, **kwargs: Any) -> DataFrame:
+        self.encoders = LazyDict.from_func(self.make_encoder, self)
+
+    def make_partitions(self, /, **kwargs: Any) -> DataFrame:
         r"""Group by RunID and color which indicates replicates."""
         fold_kwargs = self.fold_kwargs | kwargs
         md = self.dataset.static_covariates

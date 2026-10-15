@@ -123,7 +123,6 @@ from typing import (
 
 from torch.utils.data import DataLoader
 
-from tsdm.encoders import Encoder
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
 from tsdm.timeseries import TimeSeriesCollection
@@ -190,9 +189,7 @@ class Task[
     def partitions(self) -> Mapping[SplitKey, DatasetT]: ...
 
     @property
-    def generators(  # maps sample_id -> sample
-        self,
-    ) -> Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]]: ...
+    def generators(self) -> Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]]: ...
 
     def make_dataloader[T = BatchT](
         self,
@@ -274,10 +271,8 @@ class TimeSeriesTask[
 
     _: KW_ONLY
 
-    folds: SupportsKeysAndGetItem[SplitKey, Any] = field(init=False)
+    partitions: SupportsKeysAndGetItem[SplitKey, Any] = field(init=False)
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
-    encoders: Mapping[SplitKey, Encoder] = field(init=False)
-    r"""Dictionary holding `Encoder` associated with each key."""
     collate_fns: Mapping[SplitKey, Callable[[list[SampleT]], BatchT]] = field(
         init=False
     )
@@ -290,10 +285,6 @@ class TimeSeriesTask[
     r"""Dictionary holding the sample generator associated with each key."""
     samplers: Mapping[SplitKey, Sampler[SampleID]] = field(init=False)
     r"""Dictionary holding `Sampler` associated with each key."""
-    splits: Mapping[SplitKey, TimeSeriesCollection] = field(init=False)
-    r"""Dictionary holding sampler associated with each key."""
-    test_metrics: Mapping[SplitKey, Callable[[Any, Any], Any]] = field(init=False)
-    r"""Metric used for evaluation."""
 
     train_batch_size: int = 32
     r"""Batch size for training splits."""
@@ -307,10 +298,6 @@ class TimeSeriesTask[
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
-        if self.folds is NotImplemented:
-            self.LOGGER.info("No folds provided. Creating them.")
-            self.folds = self.make_folds()
-
         # check the folds for consistency
         if self.validate:
             self.validate_folds()
@@ -319,26 +306,39 @@ class TimeSeriesTask[
             return
 
         # create LazyDicts for the Mapping attributes
-        self.collate_fns = LazyDict.from_func(self, self.make_collate_fn)
-        self.dataloaders = LazyDict.from_func(self, self.make_dataloader)
-        self.encoders = LazyDict.from_func(self, self.make_encoder)
-        self.generators = LazyDict.from_func(self, self.make_generator)
-        self.samplers = LazyDict.from_func(self, self.make_sampler)
-        self.splits = LazyDict.from_func(self, self.make_split)
-        self.test_metrics = LazyDict.from_func(self, self.make_test_metric)
+        self.collate_fns = LazyDict.from_func(self.make_collate_fn, self)
+        self.dataloaders = LazyDict.from_func(self.make_dataloader, self)
+        self.generators = LazyDict.from_func(self.make_generator, self)
+        self.samplers = LazyDict.from_func(self.make_sampler, self)
+        self.partitions = LazyDict.from_func(self.make_partition, self)
+
+    @staticmethod
+    def split_type(key: object, /) -> SplitType:
+        r"""Return the split type encoded by a split key.
+
+        By convention, a sequence key has the form ``[*fold_ids, partition]``.
+        Only its final element is interpreted as the partition name.
+        """
+        match key:
+            case str(partition):
+                return SplitType(partition)
+            case [*_, partition]:
+                return SplitType(partition)
+            case _:
+                raise TypeError(f"Cannot infer split type from {key=}.")
 
     def __iter__(self) -> Iterator[SplitKey]:
         r"""Iterate over the split keys."""
-        return iter(self.folds.keys())
+        return iter(self.partitions.keys())
 
     def __len__(self) -> int:
         r"""Return the number of splits."""
-        return len(self.folds.keys())
+        return len(self.partitions.keys())
 
     @abstractmethod
-    def make_folds(self, /) -> Mapping[SplitKey, Any]:
-        r"""Return the indices of the datapoints associated with the specific split."""
-        return NotImplemented
+    def make_partition(self, key: SplitKey, /) -> TimeSeriesCollection:
+        r"""Return the sub-dataset associated with the specified split like ``(0, "train")``."""
+        return self.dataset[self.partitions[key]]
 
     @abstractmethod
     def make_sampler(self, key: SplitKey, /) -> Sampler[SampleID]:
@@ -348,10 +348,6 @@ class TimeSeriesTask[
     @abstractmethod
     def make_generator(self, key: SplitKey, /) -> SupportsGetItem[SampleID, SampleT]:
         r"""Return the sample generator associated with the specified key."""
-        return NotImplemented
-
-    def make_encoder(self, key: SplitKey, /) -> Encoder:  # ruff: ignore[ARG002]
-        r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
     def make_collate_fn(self, key: SplitKey, /) -> Callable[[list[SampleT]], BatchT]:  # ruff: ignore[ARG002]
@@ -385,31 +381,9 @@ class TimeSeriesTask[
 
         return DataLoader(dataset, **kwargs)  # type: ignore
 
-    def make_split(self, key: SplitKey, /) -> TimeSeriesCollection:
-        r"""Return the sub-dataset associated with the specified split."""
-        return self.dataset[self.folds[key]]
-
-    def make_test_metric(self, key: SplitKey, /) -> Callable[[Any, Any], Any]:  # ruff: ignore[ARG002]
-        r"""Return the test metric."""
-        return NotImplemented
-
     def is_train_split(self, key: SplitKey, /) -> bool:
         r"""Return whether the key is a training split."""
         return self.split_type(key) in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
-
-    def split_type(self, key: object, /) -> SplitType:
-        r"""Return the split type encoded by a split key.
-
-        By convention, a sequence key has the form ``[*fold_ids, partition]``.
-        Only its final element is interpreted as the partition name.
-        """
-        match key:
-            case str(partition):
-                return SplitType(partition)
-            case [*_, partition]:
-                return SplitType(partition)
-            case _:
-                raise TypeError(f"Cannot infer split type from {key=}.")
 
     def get_train_split(self, key: SplitKey, /) -> SplitKey:
         r"""Return the training split associated with the given split key.
@@ -424,7 +398,7 @@ class TimeSeriesTask[
             # fast path: if the key is already a training split, return it
             return key
 
-        fold_keys = self.folds.keys()
+        fold_keys = self.partitions.keys()
         if key not in fold_keys:
             raise KeyError(f"Unknown split key: {key!r}.")
         if not (
@@ -450,7 +424,7 @@ class TimeSeriesTask[
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are ``*folds, partition``, then test whether for each fold there is a unique train partition.
         """
-        fold_keys = self.folds.keys()
+        fold_keys = self.partitions.keys()
         normalized_keys: set[tuple[Any, ...]]
         if all(isinstance(key, str) for key in fold_keys):
             normalized_keys = {(key,) for key in fold_keys}

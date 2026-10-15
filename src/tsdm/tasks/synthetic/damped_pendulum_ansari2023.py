@@ -112,7 +112,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
             shuffle=self.is_train_split(key),
         )
 
-    def make_folds(self, /) -> DataFrame:
+    def make_partitions(self, /) -> DataFrame:
         r"""Create the folds."""
         # NOTE: all folds are the same due to fixed random state.
         # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67

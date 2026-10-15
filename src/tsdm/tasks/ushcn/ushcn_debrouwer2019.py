@@ -207,7 +207,7 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
         self.IDs = dataset.metaindex
         super().__init__(dataset=dataset)
 
-    def make_folds(self, /) -> DataFrame:
+    def make_partitions(self, /) -> DataFrame:
         r"""Create the folds."""
         folds: list[dict[str, Sequence[int]]] = []
         rng = np.random.default_rng(self.seed)

@@ -61,7 +61,7 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         )
         return sampler
 
-    def make_folds(self, /) -> DataFrame:
+    def make_partitions(self, /) -> DataFrame:
         # TODO: refactor code, use **fold_kwargs, move code to base class?!?
         idx = self.dataset.metaindex
         df = idx.to_frame(index=False).set_index(idx.names)  # i.e. add dummy column

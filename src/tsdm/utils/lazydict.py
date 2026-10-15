@@ -151,8 +151,8 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
 
     @staticmethod
     def from_func(
-        iterable: Iterable[K],
         func: Callable[Concatenate[K, ...], V],
+        iterable: Iterable[K],
         /,
         *,
         args: tuple = (),

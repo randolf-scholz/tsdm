@@ -300,8 +300,8 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         self._version = version
         self.init_storage_paths()
         self.tables: LazyDict[Key, T] = LazyDict.from_func(
-            self.table_names,
             self.load,
+            self.table_names,
             kwargs={"initializing": True},
             type_hint=get_return_typehint(self.clean_table),
         )

@@ -238,7 +238,7 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
         self.IDs = dataset.metaindex
         super().__init__(dataset=dataset)
 
-    def make_folds(self, /) -> DataFrame:
+    def make_partitions(self, /) -> DataFrame:
         r"""Create the folds."""
         folds: list[dict[str, Sequence[int]]] = []
         # NOTE: all folds are the same due to fixed random state.
