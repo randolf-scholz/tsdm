@@ -87,7 +87,6 @@ import polars as pl
 import pyarrow as pa
 import torch
 
-from .datatools import get_dtypes
 from .decorator import decorator
 from .types import (
     Dataclass,
@@ -226,6 +225,29 @@ def _is_dtype(arg: object, /) -> bool:
         | pd.api.extensions.ExtensionDtype
         | pl.DataType,
     ) or (isinstance(arg, type) and issubclass(arg, pl.DataType))
+
+
+def _get_dtypes(table: object) -> list[object]:
+    match table:
+        # DataFrame-like
+        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):
+            return list(dtypes)
+        case pa.Table(schema=schema):
+            return list(schema.types)
+        case pl.DataFrame(dtypes=dtypes):
+            return list(dtypes)
+        case SupportsDataFrame() as supports_frame:
+            frame: pd.DataFrame = supports_frame.__dataframe__()
+            return list(frame.dtypes)
+        # Tensor-like
+        case pa.Array(type=dtype):
+            return [dtype]
+        case SupportsDtype(dtype=dtype):
+            return [dtype]
+        case SupportsArray() as array:
+            return [array.__array__().dtype]
+        case _:
+            raise TypeError(f"Unsupported object type {type(table)}.")
 
 
 def get_identifier(obj: object, /, **_: Any) -> str:
@@ -965,7 +987,7 @@ def repr_array(
     # get the dtype-repr
     # Table-like: [dtype1, dtype2, ...]
     # Tensor-like:
-    vals = [repr_dtype(dtype) for dtype in get_dtypes(obj)]
+    vals = [repr_dtype(dtype) for dtype in _get_dtypes(obj)]
 
     # if all vals are the same, show only one
     if len(set(vals)) <= 1:

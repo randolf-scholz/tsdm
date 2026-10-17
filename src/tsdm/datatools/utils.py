@@ -4,7 +4,6 @@ __all__ = [
     "data_overview",
     "date_range",
     "describe",
-    "get_dtypes",
     "get_schema",
     "timedelta",
     "timedelta_range",
@@ -33,9 +32,6 @@ from scipy import stats
 from tsdm.types import (
     FilePath,
     FileStream,
-    SupportsArray,
-    SupportsDataFrame,
-    SupportsDtype,
 )
 
 
@@ -144,29 +140,6 @@ def get_schema(
             return df.columns, {col: df[col].dtype for col in df.columns}, []
         case _:
             raise NotImplementedError(f"Cannot get schema for {type(table)} objects!")
-
-
-def get_dtypes(table: object) -> list[object]:
-    match table:
-        # DataFrame-like
-        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):
-            return list(dtypes)
-        case pa.Table(schema=schema):
-            return list(schema.types)
-        case pl.DataFrame(dtypes=dtypes):
-            return list(dtypes)
-        case SupportsDataFrame() as supports_frame:
-            frame: pd.DataFrame = supports_frame.__dataframe__()
-            return list(frame.dtypes)
-        # Tensor-like
-        case pa.Array(type=dtype):
-            return [dtype]
-        case SupportsDtype(dtype=dtype):
-            return [dtype]
-        case SupportsArray() as array:
-            return [array.__array__().dtype]
-        case _:
-            raise TypeError(f"Unsupported object type {type(table)}.")
 
 
 def describe(
