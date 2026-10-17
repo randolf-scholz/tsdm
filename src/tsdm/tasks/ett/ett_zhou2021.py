@@ -3,15 +3,15 @@ r"""Predicting transformer oil temperatures."""
 __all__ = ["ETT_Zhou2021"]
 
 
-from collections.abc import Callable, Mapping
-from typing import Any, Literal, cast
+from collections.abc import Callable
+from functools import cached_property
+from typing import Any, ClassVar, Literal
 
 import torch
 from pandas import Series
 from torch import Tensor, nn
 from torch.utils.data import TensorDataset, default_collate
 
-from tsdm.datasets import ETT
 from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
@@ -21,7 +21,7 @@ from tsdm.encoders import (
 from tsdm.encoders.pandas import FrameDTypeConverter, FrameEncoder
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import TimeSeries
+from tsdm.timeseries.pandas import TimeSeries, etth1, etth2, ettm1, ettm2
 
 type SplitID = Literal["train", "trainval", "valid", "test"]
 
@@ -33,6 +33,7 @@ type DatasetID = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 class ETT_Zhou2021(
     TimeSeriesTask[
         SplitID,
+        TimeSeries,
         Any,
         tuple[Tensor, ...],
         tuple[Tensor, ...],
@@ -97,9 +98,9 @@ class ETT_Zhou2021(
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
 
-    DEFAULT_TRAIN_BATCH_SIZE: int = 32
+    DEFAULT_TRAIN_BATCH_SIZE: ClassVar[int] = 32
     r"""Default batch size."""
-    DEFAULT_EVAL_BATCH_SIZE: int = 128
+    DEFAULT_EVAL_BATCH_SIZE: ClassVar[int] = 128
     r"""Default batch size when evaluating."""
 
     # additional attributes
@@ -124,34 +125,47 @@ class ETT_Zhou2021(
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
     ) -> None:
-        timeseries = ETT().tables[dataset_id]
-        dataset = TimeSeries(dataset_id, timeseries=timeseries)
-        super().__init__(
-            dataset=dataset,
-            train_batch_size=train_batch_size,
-            eval_batch_size=eval_batch_size,
-        )
+        dataset = {
+            "ETTh1": etth1,
+            "ETTh2": etth2,
+            "ETTm1": ettm1,
+            "ETTm2": ettm2,
+        }[dataset_id]()
         self.dataset_id = dataset_id
         self.target = target
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
-        self.frequency = dataset.timeindex[1] - dataset.timeindex[0]
+        self.frequency = dataset.timeindex.iloc[1] - dataset.timeindex.iloc[0]
+        self.train_batch_size = train_batch_size
+        self.eval_batch_size = eval_batch_size
         self.accumulation_function = nn.Identity()
+        super().__init__(dataset=dataset, error_fn=nn.MSELoss())
         self.preprocessor = self._make_encoder()
 
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.split_masks)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        return key in {"train", "trainval"}
+
+    def make_partition(self, key: SplitID, /) -> TimeSeries:
+        return self.dataset[self.split_masks[key].to_list()]
+
     def _make_encoder(self) -> Encoder:
-        r"""Create and fit the preprocessing encoder for the specified split."""
+        r"""Fit the shared preprocessing encoder on the training partition."""
         encoder = (
             FrameDTypeConverter(float)
             >> StandardScaler(axis=-1)
             >> FrameEncoder({"date": DateTimeEncoder() >> MinMaxScaler()})
         )
-        train_split = self.splits[self.get_train_split("train")]
+        train_split = self.partitions["train"]
         encoder.fit(train_split.timeseries)
         return encoder
 
-    def make_partitions(self, /) -> Mapping[SplitID, Series]:
+    @cached_property
+    def split_masks(self) -> dict[SplitID, Series]:
         r"""Create timestamp masks for the prescribed ETT partitions."""
         timeseries = self.dataset.timeseries
         index = timeseries.index
@@ -173,27 +187,23 @@ class ETT_Zhou2021(
         self, _key: SplitID, /
     ) -> Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]:
         r"""Return PyTorch's default collate function."""
-        return cast(
-            "Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]", default_collate
-        )
+        return lambda samples: tuple(default_collate(samples))
 
     def make_generator(self, key: SplitID, /) -> TensorDataset:
         r"""Create the encoded tensor dataset for the specified split."""
-        encoded = self.encoders[key].encode(self.splits[key].timeseries).reset_index()
+        encoded = self.preprocessor.encode(
+            self.partitions[key].timeseries
+        ).reset_index()
         tensor = torch.tensor(encoded.values, dtype=torch.float32)
         return TensorDataset(tensor)
 
     def make_sampler(self, key: SplitID, /) -> Sampler:
         r"""Create full-length sliding windows for the specified split."""
         return SlidingWindowSampler(
-            self.splits[key].timeindex,
+            self.partitions[key].timeindex,
             horizons=self.horizon * self.frequency,
             stride=self.frequency,
             mode="index",
             drop_last=True,
             shuffle=self.is_train_split(key),
         )
-
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
-        r"""Return the evaluation metric."""
-        return nn.MSELoss()

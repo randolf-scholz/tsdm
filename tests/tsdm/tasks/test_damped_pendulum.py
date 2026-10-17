@@ -16,9 +16,9 @@ def test_damped_pendulum() -> None:
     __logger__.info("Testing %s", object)
     task = tasks.DampedPendulum_Ansari2023()
 
-    train_indices = task.splits[0, "train"]
-    valid_indices = task.splits[0, "valid"]
-    test_indices = task.splits[0, "test"]
+    train_indices = task.partitions[0, "train"]
+    valid_indices = task.partitions[0, "valid"]
+    test_indices = task.partitions[0, "test"]
 
     # check lengths
     assert len(train_indices) == 5000

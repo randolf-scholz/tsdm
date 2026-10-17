@@ -2,8 +2,11 @@ r"""Implementation of the kiwi task."""
 
 __all__ = ["InSilicoTask"]
 
-from typing import Literal, cast
+from functools import cached_property
+from typing import Any, Literal
 
+import numpy as np
+from numpy.typing import NDArray
 from pandas import DataFrame
 
 from tsdm.datatools import (
@@ -12,8 +15,9 @@ from tsdm.datatools import (
     folds_as_sparse_frame,
     folds_from_groups,
 )
+from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
-from tsdm.tasks.base import SplitType, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,
@@ -22,10 +26,12 @@ from tsdm.timeseries.pandas import (
 )
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
-type SampleID = tuple[int, list[list[bool]]]
+type SampleID = tuple[int, list[NDArray[np.bool_]]]
 
 
-class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
+class InSilicoTask(
+    TimeSeriesTask[SplitID, TimeSeriesCollection[int], SampleID, SplitTimeData]
+):
     r"""Task for the KIWI dataset."""
 
     observation_horizon: str = "2h"
@@ -41,27 +47,44 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
         dataset = in_silico()
         self.observation_horizon = observation_horizon
         self.forecasting_horizon = forecasting_horizon
-        super().__init__(dataset)
+        super().__init__(
+            dataset,
+            error_fn=lambda predictions, targets: mse_loss(
+                predictions=predictions, targets=targets, time_dim=-2, channel_dim=-1
+            ),
+        )
 
-    def make_sampler(self, key: SplitID, /) -> Sampler:
-        split = cast("TimeSeriesCollection", self.splits[key])
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.split_masks.columns)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        return key[-1] == "train"
+
+    def make_partition(self, key: SplitID, /) -> TimeSeriesCollection[int]:
+        return self.dataset[self.split_masks[key].to_list()]
+
+    def make_sampler(self, key: SplitID, /) -> Sampler[SampleID]:
+        split = self.partitions[key]
         subsamplers = {
             key: SlidingWindowSampler(
                 tsd.timeindex,
-                horizons=["2h", "1h"],
+                horizons=[self.observation_horizon, self.forecasting_horizon],
                 stride="1h",
                 mode="mask",
             )
             for key, tsd in split.items()
         }
-        sampler = HierarchicalSampler(
+        sampler = HierarchicalSampler[int, Any](
             split,
             subsamplers,
-            shuffle=self.split_type(key) is SplitType.TRAIN,
+            shuffle=self.is_train_split(key),
         )
         return sampler
 
-    def make_partitions(self, /) -> DataFrame:
+    @cached_property
+    def split_masks(self) -> DataFrame:
+        r"""Boolean masks indexed by series identifier and split key."""
         # TODO: refactor code, use **fold_kwargs, move code to base class?!?
         idx = self.dataset.metaindex
         df = idx.to_frame(index=False).set_index(idx.names)  # i.e. add dummy column
@@ -75,7 +98,7 @@ class InSilicoTask(TimeSeriesTask[SplitID, SampleID]):
     def make_generator(
         self, key: SplitID, /
     ) -> CallableDataset[SampleID, SplitTimeData]:
-        split = cast("TimeSeriesCollection", self.splits[key])
+        split = self.partitions[key]
         return make_sample_factory(
             split,
             targets=["Biomass", "Product"],

@@ -57,14 +57,15 @@ __all__ = [
     "ushcn_collate",
 ]
 
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
 import numpy as np
 import torch
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
@@ -72,7 +73,7 @@ from tsdm.datatools import folds_as_frame, is_partition, random_partition
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.timeseries.pandas import ushcn_de_brouwer2019
+from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
 
 
 @pprint_repr
@@ -192,7 +193,9 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
 type SplitID = tuple[int, Literal["train", "valid", "test"]]
 
 
-class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
+class USHCN_DeBrouwer2019(
+    TimeSeriesTask[SplitID, TimeSeriesCollection[int], int, Sample, Batch]
+):
     r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
 
     observation_time = 150
@@ -205,11 +208,22 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
     def __init__(self) -> None:
         dataset = ushcn_de_brouwer2019()
         self.IDs = dataset.metaindex
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, error_fn=nn.MSELoss())
 
-    def make_partitions(self, /) -> DataFrame:
-        r"""Create the folds."""
-        folds: list[dict[str, Sequence[int]]] = []
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.split_masks.columns)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        return key[-1] == "train"
+
+    def make_partition(self, key: SplitID, /) -> TimeSeriesCollection[int]:
+        return self.dataset[self.split_masks[key].to_list()]
+
+    @cached_property
+    def split_masks(self) -> DataFrame:
+        r"""Create the boolean masks for each fold and partition."""
+        folds: list[dict[str, Series]] = []
         rng = np.random.default_rng(self.seed)
 
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
@@ -223,26 +237,27 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
                 ],
                 rng=rng,
             )
-            fold: dict[str, Sequence[int]] = {
-                "train": train_idx,
-                "valid": valid_idx,
-                "test": test_idx,
+            fold = {
+                "train": Series(train_idx),
+                "valid": Series(valid_idx),
+                "test": Series(test_idx),
             }
             if not is_partition(fold.values(), union=self.IDs):
                 raise ValueError("Invalid partition!")
             folds.append(fold)
 
-        return folds_as_frame(folds, index=self.IDs, sparse=True)
+        return folds_as_frame(folds, index=self.IDs.to_list(), sparse=True)
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # ruff: ignore[ARG002]
         r"""Return the collate function for the specified split."""
-        return cast("Callable[[list[Sample]], Batch]", ushcn_collate)
+        return ushcn_collate
 
     def make_generator(self, key: SplitID, /) -> USHCN_SampleGenerator:
         r"""Return the sample generator for the specified split."""
         tensors: list[tuple[Tensor, Tensor]] = []
-        for identifier in self.splits[key]:
-            timeseries = self.dataset[identifier]
+        partition = self.partitions[key]
+        for identifier in partition:
+            timeseries = partition[identifier]
             tensors.append(
                 (
                     torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
@@ -263,7 +278,3 @@ class USHCN_DeBrouwer2019(TimeSeriesTask[SplitID, int, Sample, Batch]):
             range(len(generator)),
             shuffle=self.is_train_split(key),
         )
-
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
-        r"""Return the test metric."""
-        return nn.MSELoss()

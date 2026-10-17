@@ -108,7 +108,7 @@ __all__ = [
 
 import logging
 from abc import abstractmethod
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from enum import StrEnum
 from typing import (
@@ -293,20 +293,36 @@ class TimeSeriesTask[
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
+        message = (
+            f"{type(self).__name__}.split_keys must provide a non-empty collection of split keys "
+            "before the lazy mappings are initialized. It must not depend on partitions, "
+            "generators, samplers, collate_fns, or dataloaders, as that creates a circular dependency."
+        )
+        try:
+            keys = self.split_keys
+        except (AttributeError, RecursionError) as exc:
+            raise RuntimeError(message) from exc
+        if not keys:
+            raise RuntimeError(message)
+        keys = tuple(keys)
+
         # create LazyDicts for the Mapping attributes
-        self.collate_fns = LazyDict.from_func(self.make_collate_fn, self)
-        self.dataloaders = LazyDict.from_func(self.make_dataloader, self)
-        self.generators = LazyDict.from_func(self.make_generator, self)
-        self.samplers = LazyDict.from_func(self.make_sampler, self)
-        self.partitions = LazyDict.from_func(self.make_partition, self)
+        self.collate_fns = LazyDict.from_func(self.make_collate_fn, keys)
+        self.dataloaders = LazyDict.from_func(self.make_dataloader, keys)
+        self.generators = LazyDict.from_func(self.make_generator, keys)
+        self.samplers = LazyDict.from_func(self.make_sampler, keys)
+        self.partitions = LazyDict.from_func(self.make_partition, keys)
 
-    def __iter__(self) -> Iterator[SplitKey]:
-        r"""Iterate over the split keys."""
-        return iter(self.partitions.keys())
+    @property
+    @abstractmethod
+    def split_keys(self) -> Collection[SplitKey]:
+        r"""Return the non-empty collection of unique split keys.
 
-    def __len__(self) -> int:
-        r"""Return the number of splits."""
-        return len(self.partitions.keys())
+        Keys must remain stable throughout the task's lifetime. This property must
+        be available before the lazy mappings exist and must not depend on them
+        to avoid a circular dependency.
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def is_train_split(self, key: SplitKey) -> bool:

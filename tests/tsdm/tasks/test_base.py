@@ -1,12 +1,9 @@
-from collections.abc import KeysView
-from typing import Any
+from collections.abc import Iterable, Sized
 
 import pytest
-from pandas import Series
 
-from tsdm.tasks.base import SplitType, TimeSeriesTask
-
-type SplitKey = tuple[int, str]
+from tsdm.random.samplers import RandomSampler, Sampler
+from tsdm.tasks.base import SplitType, Task, TimeSeriesTask
 
 
 @pytest.mark.parametrize(
@@ -33,112 +30,85 @@ def test_split_type_aliases(alias: str, expected: SplitType) -> None:
     assert SplitType(alias.upper()) is expected
 
 
-@pytest.fixture
-def task() -> TimeSeriesTask[Any]:
-    r"""Create an uninitialized task with all standard split types."""
+class DummyTask(TimeSeriesTask[int, list[int], int, int]):
+    @property
+    def split_keys(self) -> tuple[int, ...]:
+        return (10, 20)
 
-    class DummyTask(TimeSeriesTask[Any]):
-        pass
+    def is_train_split(self, key: int) -> bool:
+        return key == 10
 
-    folds = {
-        "train": Series(dtype=bool),
-        "trainval": Series(dtype=bool),
-        "valid": Series(dtype=bool),
-        "test": Series(dtype=bool),
-    }
-    return DummyTask(
-        NotImplemented,
-        folds=folds,
-        initialize=False,
-    )
+    def make_partition(self, key: int, /) -> list[int]:
+        return self.dataset[:3] if self.is_train_split(key) else self.dataset[3:]
+
+    def make_generator(self, key: int, /) -> list[int]:
+        return self.partitions[key]
+
+    def make_sampler(self, key: int, /) -> Sampler[int]:
+        return RandomSampler(range(len(self.partitions[key])), shuffle=False)
+
+
+def test_task_with_opaque_split_keys() -> None:
+    r"""Subclasses can supply split semantics independently of key structure."""
+    task = DummyTask([1, 2, 3, 4, 5], error_fn=lambda x, y: abs(x - y))
+    assert isinstance(task, Task)
+    assert task.split_keys == (10, 20)
+    assert len(task.split_keys) == 2
+    assert not isinstance(task, Iterable)
+    assert not isinstance(task, Sized)
+    assert set(task.partitions) == {10, 20}
+    assert task.partitions[10] == [1, 2, 3]
+    assert task.partitions[20] == [4, 5]
+    assert task.error_fn(2, 5) == 3
+    assert task.collate_fns[10]([1, 2]) == [1, 2]
+    assert list(task.make_dataloader(10, batch_size=2, pin_memory=False)) == [[1, 2]]
+    assert list(task.make_dataloader(20, batch_size=2, pin_memory=False)) == [[4, 5]]
+    assert list(
+        task.make_dataloader(
+            10, batch_size=2, drop_last=False, collate_fn=sum, pin_memory=False
+        )
+    ) == [3, 3]
+
+
+def test_task_rejects_empty_split_keys() -> None:
+    r"""An empty key collection fails before any lazy mappings are created."""
+
+    class EmptyTask(DummyTask):
+        @property
+        def split_keys(self) -> tuple[int, ...]:
+            return ()
+
+    with pytest.raises(
+        RuntimeError, match=r"split_keys.*non-empty.*circular dependency"
+    ):
+        EmptyTask([], error_fn=lambda x, y: abs(x - y))
 
 
 @pytest.mark.parametrize(
-    ("key", "expected"),
-    [
-        ("training", SplitType.TRAIN),
-        ("train_valid", SplitType.TRAIN_VALIDATION),
-        ("val", SplitType.VALIDATION),
-        ("testing", SplitType.TEST),
-        ("infer", SplitType.INFERENCE),
-        ((0, "training"), SplitType.TRAIN),
-        ((0, "train_val"), SplitType.TRAIN_VALIDATION),
-        ((0, "val"), SplitType.VALIDATION),
-        ((3, "train", "test"), SplitType.TEST),
-        ([3, "testing"], SplitType.TEST),
-    ],
+    "mapping_name",
+    ["partitions", "generators", "samplers", "collate_fns", "dataloaders"],
 )
-def test_time_series_task_split_type(
-    task: TimeSeriesTask[Any], key: object, expected: SplitType
-) -> None:
-    r"""Test that TimeSeriesTask classifies split keys using SplitType."""
-    assert task.split_type(key) is expected
-    assert task.is_train_split(key) is (
-        expected in {SplitType.TRAIN, SplitType.TRAIN_VALIDATION}
-    )
+def test_task_rejects_split_keys_depending_on_lazy_mappings(mapping_name: str) -> None:
+    r"""Explain the circular dependency instead of exposing an AttributeError."""
+
+    class CircularTask(DummyTask):
+        @property
+        def split_keys(self) -> tuple[int, ...]:
+            return tuple(getattr(self, mapping_name))
+
+    with pytest.raises(RuntimeError, match="circular dependency") as exc_info:
+        CircularTask([], error_fn=lambda x, y: abs(x - y))
+    assert isinstance(exc_info.value.__cause__, AttributeError)
 
 
-@pytest.mark.parametrize("key", ["other", (0, "other")])
-def test_time_series_task_rejects_unknown_split(
-    task: TimeSeriesTask[Any], key: object
-) -> None:
-    r"""Test that unknown split names raise an error."""
-    with pytest.raises(ValueError, match="valid SplitType"):
-        task.split_type(key)
+def test_task_rejects_recursive_split_keys() -> None:
+    r"""Recursive split-key lookup fails with the initialization diagnostic."""
 
+    class RecursiveTask(DummyTask):
+        @property
+        def split_keys(self) -> tuple[int, ...]:
+            return self.split_keys
 
-def test_train_split_mapping(task: TimeSeriesTask[Any]) -> None:
-    r"""Test that trainval uses itself as its associated training split."""
-    assert {
-        key: task.get_train_split(key) for key in tuple(task.partitions.keys())
-    } == {
-        "train": "train",
-        "trainval": "trainval",
-        "valid": "train",
-        "test": "train",
-    }
-
-
-def test_train_split_mapping_uses_only_fold_keys() -> None:
-    r"""Test tuple split keys without relying on the folds' implementation type."""
-
-    class FoldTable:
-        def __init__(self, data: dict[SplitKey, Series], /) -> None:
-            self.data = data
-            self.getitem_calls = 0
-
-        def keys(self) -> KeysView[SplitKey]:
-            return self.data.keys()
-
-        def __getitem__(self, key: SplitKey, /) -> Series:
-            self.getitem_calls += 1
-            return self.data[key]
-
-    class DummyTask(TimeSeriesTask[SplitKey]):
-        pass
-
-    folds = FoldTable(
-        {
-            (0, "train"): Series(dtype=bool),
-            (0, "valid"): Series(dtype=bool),
-            (0, "test"): Series(dtype=bool),
-            (1, "train"): Series(dtype=bool),
-            (1, "trainval"): Series(dtype=bool),
-            (1, "test"): Series(dtype=bool),
-        }
-    )
-    task = DummyTask(
-        NotImplemented,
-        folds=folds,
-        initialize=False,
-    )
-
-    assert {key: task.get_train_split(key) for key in tuple(folds.keys())} == {
-        (0, "train"): (0, "train"),
-        (0, "valid"): (0, "train"),
-        (0, "test"): (0, "train"),
-        (1, "train"): (1, "train"),
-        (1, "trainval"): (1, "trainval"),
-        (1, "test"): (1, "train"),
-    }
-    assert folds.getitem_calls == 0
+    with pytest.raises(RuntimeError, match="circular dependency") as exc_info:
+        RecursiveTask([], error_fn=lambda x, y: abs(x - y))
+    assert isinstance(exc_info.value.__cause__, RecursionError)

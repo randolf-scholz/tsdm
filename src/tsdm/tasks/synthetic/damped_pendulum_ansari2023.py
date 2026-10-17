@@ -10,10 +10,10 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
-from collections.abc import Sequence
-from typing import Literal, cast, final
+from functools import cached_property
+from typing import Literal, final
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from tsdm.datatools import (
     CallableDataset,
@@ -21,8 +21,8 @@ from tsdm.datatools import (
     is_partition,
     random_partition,
 )
+from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import (
-    HierarchicalDataset,
     HierarchicalSampler,
     RandomSampler,
     Sampler,
@@ -40,7 +40,9 @@ type SampleKey = tuple[int, list[slice]]
 
 
 @final
-class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData]):
+class DampedPendulum_Ansari2023(
+    TimeSeriesTask[SplitID, TimeSeriesCollection[int], SampleKey, SplitTimeData]
+):
     r"""Forecasting task on synthetic damped pendulum data.
 
     Note:
@@ -73,18 +75,31 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
     def __init__(
         self,
         *,
-        validate: bool = True,
-        initialize: bool = True,
         missing_rate: float = 0.0,
     ) -> None:
         timeseries = damped_pendulum_ansari2023()
-        super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
         self.missing_rate = float(missing_rate)
+        super().__init__(
+            dataset=timeseries,
+            error_fn=lambda predictions, targets: mse_loss(
+                predictions=predictions, targets=targets, time_dim=-2, channel_dim=-1
+            ),
+        )
+
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.split_masks.columns)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        return key[-1] == "train"
+
+    def make_partition(self, key: SplitID, /) -> TimeSeriesCollection[int]:
+        return self.dataset[self.split_masks[key].to_list()]
 
     def make_generator(
         self, key: SplitID, /
     ) -> CallableDataset[SampleKey, SplitTimeData]:
-        split = cast("TimeSeriesCollection", self.splits[key])
+        split = self.partitions[key]
         columns = split.timeseries.columns
         return make_sample_factory(
             split,
@@ -94,7 +109,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
         )
 
     def make_sampler(self, key: SplitID, /) -> Sampler[SampleKey]:
-        split = self.splits[key]
+        split = self.partitions[key]
         horizons = [
             slice(None, self.observation_horizon),
             slice(
@@ -102,9 +117,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
                 self.observation_horizon + self.prediction_horizon,
             ),
         ]
-        sampling_data = HierarchicalDataset(
-            {series_key: [horizons] for series_key in split}
-        )
+        sampling_data = {series_key: [horizons] for series_key in split}
         subsamplers = {series_key: RandomSampler([horizons]) for series_key in split}
         return HierarchicalSampler(
             sampling_data,
@@ -112,22 +125,25 @@ class DampedPendulum_Ansari2023(TimeSeriesTask[SplitID, SampleKey, SplitTimeData
             shuffle=self.is_train_split(key),
         )
 
-    def make_partitions(self, /) -> DataFrame:
-        r"""Create the folds."""
+    @cached_property
+    def split_masks(self) -> DataFrame:
+        r"""Create the boolean masks for each fold and partition."""
         # NOTE: all folds are the same due to fixed random state.
         # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-        folds: list[dict[str, Sequence[int]]] = []
+        folds: list[dict[str, Series]] = []
         for _ in range(self.num_folds):
             train_idx, valid_idx, test_idx = random_partition(
                 self.dataset.metaindex,
                 sizes=(self.train_size, self.valid_size, self.test_size),
             )
-            fold: dict[str, Sequence[int]] = {
-                "train": train_idx,
-                "valid": valid_idx,
-                "test": test_idx,
+            fold = {
+                "train": Series(train_idx),
+                "valid": Series(valid_idx),
+                "test": Series(test_idx),
             }
             if not is_partition(fold.values(), union=self.dataset.metaindex):
                 raise ValueError("Invalid partitions!")
             folds.append(fold)
-        return folds_as_frame(folds, index=self.dataset.metaindex, sparse=True)
+        return folds_as_frame(
+            folds, index=self.dataset.metaindex.to_list(), sparse=True
+        )

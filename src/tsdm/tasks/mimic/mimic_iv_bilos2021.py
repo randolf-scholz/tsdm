@@ -53,13 +53,14 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
 import torch
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
@@ -191,13 +192,15 @@ def mimic_collate(batch: list[Sample], /) -> Batch:
 type SplitID = tuple[int, Literal["train", "valid", "test"]]
 
 
-class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
+class MIMIC_IV_Bilos2021(
+    TimeSeriesTask[SplitID, TimeSeriesCollection[int], int, Sample, Batch]
+):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
 
     dataset: TimeSeriesCollection[int]
     preprocessor: FrameEncoder | None
 
-    observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
+    observation_time: float = 2160  # 36 hours after admission (freq=1min)
     prediction_steps = 3
     num_folds = 5
     RANDOM_STATE = 0
@@ -236,11 +239,22 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
             constants_metadata=dataset.constants_metadata,
         )
         self.IDs = dataset.metaindex
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, error_fn=nn.MSELoss())
 
-    def make_partitions(self, /) -> DataFrame:
-        r"""Create the folds."""
-        folds: list[dict[str, Sequence[int]]] = []
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.split_masks.columns)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        return key[-1] == "train"
+
+    def make_partition(self, key: SplitID, /) -> TimeSeriesCollection[int]:
+        return self.dataset[self.split_masks[key].to_list()]
+
+    @cached_property
+    def split_masks(self) -> DataFrame:
+        r"""Create the boolean masks for each fold and partition."""
+        folds: list[dict[str, Series]] = []
         # NOTE: all folds are the same due to fixed random state.
         # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
         for _ in range(self.num_folds):
@@ -249,16 +263,16 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
                 ratios=(self.train_size, self.valid_size, self.test_size),
                 rng=self.RANDOM_STATE,
             )
-            fold: dict[str, Sequence[int]] = {
-                "train": train_idx,
-                "valid": valid_idx,
-                "test": test_idx,
+            fold = {
+                "train": Series(train_idx),
+                "valid": Series(valid_idx),
+                "test": Series(test_idx),
             }
             if not is_partition(fold.values(), union=self.IDs):
                 raise ValueError("Invalid partitions!")
             folds.append(fold)
 
-        return folds_as_frame(folds, index=self.IDs, sparse=True)
+        return folds_as_frame(folds, index=self.IDs.to_list(), sparse=True)
 
     def make_collate_fn(self, _key: SplitID, /) -> Callable[[list[Sample]], Batch]:
         r"""Return the collate function for the specified split."""
@@ -267,8 +281,9 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
     def make_generator(self, key: SplitID, /) -> MIMIC_IV_SampleGenerator:
         r"""Return the sample generator for the specified split."""
         tensors: list[tuple[Tensor, Tensor]] = []
-        for identifier in self.splits[key]:
-            timeseries = self.dataset[identifier]
+        partition = self.partitions[key]
+        for identifier in partition:
+            timeseries = partition[identifier]
             tensors.append(
                 (
                     torch.tensor(timeseries.timeindex.values, dtype=torch.float32),
@@ -289,11 +304,3 @@ class MIMIC_IV_Bilos2021(TimeSeriesTask[SplitID, int, Sample, Batch]):
             range(len(generator)),
             shuffle=self.is_train_split(key),
         )
-
-    def make_test_metric(
-        self,
-        _key: SplitID,
-        /,
-    ) -> Callable[[Tensor, Tensor], Tensor]:
-        r"""Return the test metric."""
-        return nn.MSELoss()

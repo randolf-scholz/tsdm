@@ -8,7 +8,8 @@ __all__ = [
 
 
 from collections.abc import Callable, Mapping
-from typing import Any, Literal, NamedTuple, cast
+from functools import cached_property
+from typing import Any, Literal, NamedTuple
 
 import torch
 from pandas import DataFrame
@@ -32,7 +33,7 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.encoders.pandas import FrameAsTensorDict, FrameEncoder
-from tsdm.losses.sequence import MSE_Loss
+from tsdm.losses.sequence import mse_loss
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -61,13 +62,17 @@ class Batch(NamedTuple):
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 
 
-class KiwiBenchmark(TimeSeriesTask[SplitID]):
+class KiwiBenchmark(
+    TimeSeriesTask[
+        SplitID, TimeSeriesCollection[tuple[int, int]], Any, SplitTimeData, Batch
+    ]
+):
     r"""Task for the KIWI dataset.
 
     The task is to forecast the observables inside the forecasting horizon.
     """
 
-    dataset: TimeSeriesCollection
+    dataset: TimeSeriesCollection[tuple[int, int]]
 
     # sampler kwargs
     observation_horizon: str = "2h"
@@ -131,7 +136,6 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
     }
     r"""The configuration of the sampler."""
     dataloader_kwargs: dict[str, Any] = {
-        "batch_size": 32,
         "num_workers": 0,
         "pin_memory": True,
     }
@@ -150,17 +154,12 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         eval_batch_size: int = 128,
     ) -> None:
         r"""Initialize the KIWI task."""
-        dataset = kiwi_benchmark()
-        super().__init__(
-            dataset=dataset,
-            train_batch_size=train_batch_size,
-            eval_batch_size=eval_batch_size,
-        )
-
-        self.generator_kwargs |= generator_kwargs
-        self.sampler_kwargs |= sampler_kwargs
-        self.fold_kwargs |= fold_kwargs
-        self.dataloader_kwargs |= dataloader_kwargs
+        self.generator_kwargs = self.generator_kwargs | dict(generator_kwargs)
+        self.sampler_kwargs = self.sampler_kwargs | dict(sampler_kwargs)
+        self.fold_kwargs = self.fold_kwargs | dict(fold_kwargs)
+        self.dataloader_kwargs = self.dataloader_kwargs | dict(dataloader_kwargs)
+        self.train_batch_size = train_batch_size
+        self.eval_batch_size = eval_batch_size
 
         self.observables = self.generator_kwargs["observables"]
         self.covariates = self.generator_kwargs["covariates"]
@@ -169,14 +168,45 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
-        self.encoders = LazyDict.from_func(self.make_encoder, self)
+        super().__init__(
+            dataset=kiwi_benchmark(),
+            error_fn=lambda predictions, targets: mse_loss(
+                predictions=predictions, targets=targets, time_dim=-2, channel_dim=-1
+            ),
+        )
+        self.encoders = LazyDict.from_func(self.make_encoder, self.split_keys)
 
-    def make_partitions(self, /, **kwargs: Any) -> DataFrame:
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.split_masks.columns)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        return key[-1] == "train"
+
+    def make_partition(self, key: SplitID, /) -> TimeSeriesCollection[tuple[int, int]]:
+        r"""Select complete trajectories using both components of their identifiers."""
+        keys = self.split_masks.index[self.split_masks[key].to_numpy(dtype=bool)]
+        metadata = self.dataset.static_covariates
+        return TimeSeriesCollection(
+            self.dataset.name,
+            timeseries=self.dataset.timeseries.loc[
+                self.dataset.timeindex.index.isin(keys)
+            ],
+            timeseries_metadata=self.dataset.timeseries_metadata,
+            static_covariates=None if metadata is None else metadata.loc[keys],
+            static_covariates_metadata=self.dataset.static_covariates_metadata,
+            constants=self.dataset.constants,
+            constants_metadata=self.dataset.constants_metadata,
+        )
+
+    @cached_property
+    def split_masks(self) -> DataFrame:
         r"""Group by RunID and color which indicates replicates."""
-        fold_kwargs = self.fold_kwargs | kwargs
         md = self.dataset.static_covariates
+        if md is None:
+            raise ValueError("KIWI fold generation requires static covariates.")
         groups = md.groupby(["run_id", "color"], sort=False).ngroup()
-        folds = folds_from_groups(groups, **fold_kwargs)
+        folds = folds_from_groups(groups, **self.fold_kwargs)
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
@@ -227,6 +257,8 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
 
     def get_columns_encoder(self, variable: str, /) -> Encoder:
         descr = self.dataset.timeseries_metadata
+        if descr is None:
+            raise ValueError("KIWI encoders require timeseries metadata.")
         kind, lower, upper = descr.loc[variable, ["kind", "lower_bound", "upper_bound"]]
 
         match kind:
@@ -257,7 +289,6 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
             elapsed_time=DateTimeEncoder() >> MinMaxScaler(),
         ) >> FrameAsTensorDict(
             schema={
-                "key": ["run_id", "experiment_id"],
                 "T": ["elapsed_time"],
                 "X": ...,
             },
@@ -265,18 +296,20 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
-        train_key = self.get_train_split(key)
-        associated_train_split = self.splits[train_key]
+        train_key: SplitID = (key[0], "train")
+        associated_train_split = self.partitions[train_key]
         self.LOGGER.info("Fitting encoder to associated train split '%s'", train_key)
-        encoder.fit(associated_train_split.timeseries)
+        encoder.fit(
+            associated_train_split.timeseries.droplevel(["run_id", "experiment_id"])
+        )
 
         return encoder
 
     def make_sampler(self, key: SplitID, /, **kwds: Any) -> Sampler:
-        split = self.splits[key]
+        split = self.partitions[key]
 
         # get configuration
-        sampler_kwargs = (
+        sampler_kwargs: dict[str, Any] = (
             self.sampler_kwargs | {"shuffle": self.is_train_split(key)} | kwds
         )
         observation_horizon = sampler_kwargs.pop("observation_horizon")
@@ -295,13 +328,13 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,
                 shuffle=shuffle,
-                mode="masks",
+                mode="mask",
                 rng=rng,
             )
             for key, tsd in split.items()
         }
 
-        sampler = HierarchicalSampler(
+        sampler = HierarchicalSampler[tuple[int, int], Any](
             split,
             subsamplers,
             early_stop=early_stop,
@@ -325,24 +358,8 @@ class KiwiBenchmark(TimeSeriesTask[SplitID]):
             raise ValueError(f"Unknown generator_kwargs: {generator_kwargs}")
 
         return make_sample_factory(
-            cast("TimeSeriesCollection", self.splits[key]),
+            self.partitions[key],
             observables=observables,
             targets=targets,
             covariates=covariates,
         )
-
-    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:  # ruff: ignore[ARG002]
-        r"""By default, weight channels inversely proportial to missing rate.
-
-        This ensures the model fits on all channels instead of underfitting on sparse
-        and overfitting on channels with many observations.
-        Since some channels might be observed all the time, we add a small
-        constant to the denominator to avoid division by zero.
-
-        For a single forecasting window $T$, the loss is:
-
-        .. math:: ∑ₜ∑ᵢ\frac{[mₜᵢ ? |ŷₜᵢ - yₜᵢ|² : 0]}{∑ₜ mₜᵢ}
-
-        Note that if $∑ₜmₜᵢ = 0$, then the loss is zero for that channel.
-        """
-        return MSE_Loss(time_dim=-2, channel_dim=-1)

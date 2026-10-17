@@ -2,6 +2,7 @@ r"""Test converters to masked format etc."""
 
 import logging
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pytest
@@ -40,7 +41,7 @@ def test_time_series_sample_generator() -> None:
 
     # make dataset
     dataset = in_silico()
-    TSC = TimeSeriesCollection(
+    TSC = TimeSeriesCollection[int](
         timeseries=dataset.timeseries,
     )
 
@@ -54,7 +55,7 @@ def test_time_series_sample_generator() -> None:
         )
         for key, ds in TSC.items()
     }
-    sampler = HierarchicalSampler(TSC, subsamplers, shuffle=False)
+    sampler = HierarchicalSampler[int, Any](TSC, subsamplers, shuffle=False)
     key = next(iter(sampler))
 
     # validate key

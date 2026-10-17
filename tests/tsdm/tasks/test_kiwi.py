@@ -26,13 +26,13 @@ def test_kiwi_task() -> None:
     LOGGER.info("Testing.")
     task = KiwiBenchmark()
 
-    assert isinstance(task.partitions, DataFrame)
-    assert isinstance(task.splits[split_id], TimeSeriesCollection)
+    assert isinstance(task.split_masks, DataFrame)
+    assert isinstance(task.partitions[split_id], TimeSeriesCollection)
     assert isinstance(task.samplers[split_id], HierarchicalSampler)
     assert isinstance(task.generators[split_id], CallableDataset)
     assert isinstance(task.dataloaders[split_id], DataLoader)
     assert isinstance(task.encoders[split_id], FittableEncoder)
-    assert task.get_train_split(split_id) == split_id
+    assert task.is_train_split(split_id)
     assert callable(task.collate_fns[split_id])
 
     # validate generator
@@ -70,5 +70,5 @@ def test_kiwi_task() -> None:
     dataloader = task.dataloaders[split_id]
     batch = next(iter(dataloader))
     assert isinstance(batch, list | tuple)
-    sample = batch[0]
-    assert isinstance(sample, tuple | Tensor)
+    batch_item = batch[0]
+    assert isinstance(batch_item, tuple | Tensor)

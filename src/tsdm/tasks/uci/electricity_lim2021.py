@@ -7,19 +7,19 @@ __all__ = [
 ]
 
 
+from collections.abc import Callable
 from functools import cached_property
 from typing import Any, Literal, NamedTuple
 
-import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import TensorDataset, default_collate
 
 from tsdm.datatools import timedelta, timestamp
-from tsdm.encoders import FittableEncoder, StandardScaler
+from tsdm.encoders import StandardScaler
 from tsdm.pprint import pprint_repr
-from tsdm.random.samplers import SlidingWindowSampler
+from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import TimeSeries, electricity
 
@@ -40,7 +40,9 @@ class Batch(NamedTuple):
 type SplitID = Literal["train", "test", "valid", "joint", "whole"]
 
 
-class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
+class ElectricityLim2021(
+    TimeSeriesTask[SplitID, TimeSeries, Any, tuple[Tensor, ...], tuple[Tensor, ...]]
+):
     r"""Experiments as performed by the "TFT" paper.
 
     Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
@@ -107,28 +109,30 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
     +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     """
 
-    preprocessor: FittableEncoder
-
-    # FIXME: need a different base class for this task!
-    dataset: TimeSeries
-
     def __init__(self) -> None:
         ds = electricity().timeseries
         ds = ds.resample("1h").mean()
         mask = (self.boundaries["start"] <= ds.index) & (
             ds.index < self.boundaries["final"]
         )
-        dataset = ds[mask]
-
-        super().__init__(dataset=dataset)
+        dataset = TimeSeries("electricity", timeseries=ds[mask])
 
         self.observation_period = timedelta("7d")
         self.forecasting_period = timedelta("1d")
         self.observation_horizon = 24 * 7
         self.forecasting_horizon = 24
 
-        self.encoder = StandardScaler()
-        self.encoder.fit(self.splits["train"])
+        super().__init__(dataset=dataset, error_fn=self.q50_loss)
+        self.encoder = StandardScaler(axis=-1)
+        self.encoder.fit(self.partitions["train"].timeseries)
+
+    @property
+    def split_keys(self) -> tuple[SplitID, ...]:
+        return tuple(self.masks)
+
+    def is_train_split(self, key: SplitID) -> bool:
+        r"""The joint partition combines training and validation data."""
+        return key in {"train", "joint"}
 
     @cached_property
     def boundaries(self) -> dict[str, pd.Timestamp]:
@@ -141,7 +145,7 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
         }
 
     @cached_property
-    def masks(self) -> dict[SplitID, np.ndarray]:
+    def masks(self) -> dict[SplitID, pd.Series]:
         r"""Masks for the training, validation and test sets."""
         return {
             "train": (self.boundaries["start"] <= self.dataset.timeindex)
@@ -162,25 +166,36 @@ class ElectricityLim2021(TimeSeriesTask[SplitID, int]):
             & (self.dataset.timeindex < self.boundaries["valid"]),
         }
 
-    def make_split(self, key: SplitID) -> Any:
-        r"""Return the split of the dataset."""
-        return self.dataset[self.masks[key]]
+    def make_partition(self, key: SplitID, /) -> TimeSeries:
+        r"""Return the time series restricted to the specified partition."""
+        return self.dataset[self.masks[key].to_list()]
 
-    def make_dataloader(
-        self, key: SplitID, /, *, shuffle: bool = False, **opts: Any
-    ) -> DataLoader:
-        r"""Return the dataloader for the given key."""
-        ds = self.splits[key]
-        encoded = self.encoder.encode(ds)
+    def make_generator(self, key: SplitID, /) -> TensorDataset:
+        r"""Create the encoded tensor dataset for the specified split."""
+        encoded = self.encoder.encode(self.partitions[key].timeseries)
         tensor = torch.tensor(encoded.values, dtype=torch.float32)
+        return TensorDataset(tensor)
 
-        sampler = SlidingWindowSampler(
-            encoded.index,
+    def make_sampler(self, key: SplitID, /) -> Sampler:
+        r"""Sample complete observation and prediction windows."""
+        return SlidingWindowSampler(
+            self.partitions[key].timeindex,
             stride="1d",
             horizons=self.observation_period + self.forecasting_period,
-            mode="mask",
-            shuffle=shuffle,
+            mode="index",
+            drop_last=True,
+            shuffle=self.is_train_split(key),
         )
-        dataset = TensorDataset(tensor)
 
-        return DataLoader(dataset, sampler=sampler, **opts)
+    def make_collate_fn(
+        self, _key: SplitID, /
+    ) -> Callable[[list[tuple[Tensor, ...]]], tuple[Tensor, ...]]:
+        r"""Stack equally sized tensor windows into a batch."""
+        return lambda samples: tuple(default_collate(samples))
+
+    @staticmethod
+    def q50_loss(predictions: Tensor, targets: Tensor, /) -> Tensor:
+        r"""Normalized absolute error, equivalent to the q=0.5 quantile risk."""
+        return torch.sum(torch.abs(predictions - targets)) / torch.sum(
+            torch.abs(targets)
+        )
