@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from tsdm.datasets.base import BaseDataset
-from tsdm.testing.validation import ErrorHandler, ValidationError
+from tsdm.validation import ErrorHandler, ValidationError
 
 
 class DummyDataset(BaseDataset[str, object]):

@@ -5,6 +5,7 @@ __all__ = [
     "__version__",
     # Sub-Modules
     "backend",
+    "config",
     "datatools",
     "datasets",
     "encoders",
@@ -31,7 +32,11 @@ except metadata.PackageNotFoundError:
 finally:
     del metadata
 
-from . import (
+from . import config
+
+config.initialize_directories()
+
+from . import (  # noqa: E402  # Initialize storage before importing dependent modules.
     backend,
     datasets,
     datatools,

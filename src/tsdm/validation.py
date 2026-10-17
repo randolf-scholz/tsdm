@@ -22,7 +22,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
-from .config import CONFIG
+from . import config
 from .datatools import get_schema
 from .hashutils import Hash, hash_array, hash_file
 from .types import FilePath, FileStream, SupportsShape
@@ -218,11 +218,11 @@ def validate_file_hash(
                 case _:
                     warnings.warn(
                         "No hash algorithm given for reference hash!"
-                        f"Using {CONFIG.DEFAULT_HASH_METHOD!r} as default.",
+                        f"Using {config.DEFAULT_HASH_METHOD!r} as default.",
                         UserWarning,
                         stacklevel=2,
                     )
-                    hash_alg = CONFIG.DEFAULT_HASH_METHOD
+                    hash_alg = config.DEFAULT_HASH_METHOD
         case _:
             raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 
@@ -287,11 +287,11 @@ def validate_table_hash(
                 case _:
                     warnings.warn(
                         "No hash algorithm given for reference hash!"
-                        f"Using {CONFIG.DEFAULT_HASH_METHOD!r} as default.",
+                        f"Using {config.DEFAULT_HASH_METHOD!r} as default.",
                         UserWarning,
                         stacklevel=2,
                     )
-                    hash_alg = CONFIG.DEFAULT_HASH_METHOD
+                    hash_alg = config.DEFAULT_HASH_METHOD
         case _:
             raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 

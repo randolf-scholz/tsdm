@@ -6,7 +6,7 @@ from io import BytesIO
 
 import pytest
 
-from tsdm.testing.validation import ValidationError, validate_file_hash
+from tsdm.validation import ValidationError, validate_file_hash
 
 
 def test_validate_file_hash_stream_restores_position() -> None:

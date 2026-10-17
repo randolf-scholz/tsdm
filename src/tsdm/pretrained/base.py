@@ -72,7 +72,7 @@ from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from tqdm.asyncio import tqdm
 
-from tsdm.config import CONFIG
+from tsdm import config
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
 from tsdm.pprint import repr_mapping
@@ -100,7 +100,7 @@ class PreTrainedMetaClass(ProtocolMeta):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if not hasattr(cls, "RAWDATA_DIR"):
-            cls.RAWDATA_DIR = CONFIG.MODEL_DIR / cls.__name__
+            cls.RAWDATA_DIR = config.MODEL_DIR / cls.__name__
 
 
 class PreTrainedBase(metaclass=PreTrainedMetaClass):

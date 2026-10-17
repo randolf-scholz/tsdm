@@ -42,7 +42,7 @@ from zipfile import ZipFile
 import polars as pl
 from tqdm.auto import tqdm
 
-from tsdm.config import CONFIG
+from tsdm import config
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.pprint import repr_mapping
 from tsdm.types.aliases import FilePath, FileStream
@@ -128,7 +128,7 @@ class DatasetMeta(ProtocolMeta):
         assert isinstance(cls.ID, str)
 
         if "DATASET_ROOT_DIR" not in namespace:
-            cls.DATASET_ROOT_DIR: Path = CONFIG.DATASET_DIR / cls.ID
+            cls.DATASET_ROOT_DIR: Path = config.DATASET_DIR / cls.ID
 
         assert isinstance(cls.DATASET_ROOT_DIR, Path)
 
@@ -263,19 +263,19 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         r"""Get the storage paths for the given version."""
         root_dir = self.DATASET_ROOT_DIR / (self.version or "")
         return {
-            CONFIG.DATASET_PATHS.ROOT: root_dir,
-            CONFIG.DATASET_PATHS.RAWDATA: root_dir / CONFIG.DATASET_PATHS.RAWDATA,
-            CONFIG.DATASET_PATHS.PROCESSED: root_dir / CONFIG.DATASET_PATHS.PROCESSED,
-            CONFIG.DATASET_PATHS.METADATA: root_dir / CONFIG.DATASET_PATHS.METADATA,
+            config.DATASET_PATHS.ROOT: root_dir,
+            config.DATASET_PATHS.RAWDATA: root_dir / config.DATASET_PATHS.RAWDATA,
+            config.DATASET_PATHS.PROCESSED: root_dir / config.DATASET_PATHS.PROCESSED,
+            config.DATASET_PATHS.METADATA: root_dir / config.DATASET_PATHS.METADATA,
         }
 
     def init_storage_paths(self, /) -> None:
         r"""Set the storage paths for the given version."""
         storage_paths = self.get_storage_paths()
-        self.ROOT_DIR = storage_paths[CONFIG.DATASET_PATHS.ROOT]
-        self.RAWDATA_DIR = storage_paths[CONFIG.DATASET_PATHS.RAWDATA]
-        self.DATASET_DIR = storage_paths[CONFIG.DATASET_PATHS.PROCESSED]
-        self.METADATA_DIR = storage_paths[CONFIG.DATASET_PATHS.METADATA]
+        self.ROOT_DIR = storage_paths[config.DATASET_PATHS.ROOT]
+        self.RAWDATA_DIR = storage_paths[config.DATASET_PATHS.RAWDATA]
+        self.DATASET_DIR = storage_paths[config.DATASET_PATHS.PROCESSED]
+        self.METADATA_DIR = storage_paths[config.DATASET_PATHS.METADATA]
         for path in storage_paths.values():
             path.mkdir(parents=True, exist_ok=True)
 
