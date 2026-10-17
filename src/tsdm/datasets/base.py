@@ -45,7 +45,12 @@ from tqdm.auto import tqdm
 from tsdm.config import CONFIG
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.pprint import repr_mapping
-from tsdm.testing.validation import (
+from tsdm.types.aliases import FilePath, FileStream
+from tsdm.utils import nested_paths_exist, prompt_yes_no, remote
+from tsdm.utils.funcutils import get_return_typehint
+from tsdm.utils.lazydict import LazyDict
+from tsdm.utils.timer import timer
+from tsdm.validation import (
     ErrorHandler,
     ValidationError,
     validate_file_hash,
@@ -53,11 +58,6 @@ from tsdm.testing.validation import (
     validate_table_schema,
     validate_table_shape,
 )
-from tsdm.types.aliases import FilePath, FileStream
-from tsdm.utils import nested_paths_exist, prompt_yes_no, remote
-from tsdm.utils.funcutils import get_return_typehint
-from tsdm.utils.lazydict import LazyDict
-from tsdm.utils.timer import timer
 
 
 @runtime_checkable

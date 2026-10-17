@@ -73,7 +73,7 @@ import polars as pl
 import pyarrow as pa
 from numpy.typing import NDArray
 
-from tsdm.types import Dataclass, FilePath, FileStream, SupportsArray
+from .types import Dataclass, FilePath, FileStream, SupportsArray
 
 HEXDIGITS = "0123456789ABCDEF"
 r"""Upppercase hexadecimal digits."""

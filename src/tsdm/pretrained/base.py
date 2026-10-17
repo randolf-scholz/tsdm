@@ -76,9 +76,9 @@ from tsdm.config import CONFIG
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
 from tsdm.pprint import repr_mapping
-from tsdm.testing import is_zipfile
 from tsdm.types import FilePath, FileStream
 from tsdm.utils import LazyDict, nested_paths_exist
+from tsdm.utils.helpers import is_zipfile
 from tsdm.utils.remote import import_from_url
 
 

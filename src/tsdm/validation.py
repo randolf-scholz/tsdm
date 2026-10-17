@@ -22,11 +22,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
-from tsdm.config import CONFIG
-from tsdm.datatools import get_schema
-from tsdm.types import FilePath, FileStream, SupportsShape
-
+from .config import CONFIG
+from .datatools import get_schema
 from .hashutils import Hash, hash_array, hash_file
+from .types import FilePath, FileStream, SupportsShape
 
 
 class ValidationError(ValueError):

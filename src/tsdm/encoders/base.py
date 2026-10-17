@@ -163,8 +163,8 @@ from typing import (
 
 from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_mapping, pprint_repr, pprint_sequence
-from tsdm.testing import is_classvar
 from tsdm.types import DictArg, FilePath
+from tsdm.utils.helpers import is_classvar
 
 
 class Reduction[Xs: tuple, Y](Protocol):

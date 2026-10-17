@@ -86,8 +86,8 @@ import polars as pl
 
 from tsdm.datasets.base import BaseDataset
 from tsdm.datatools import validate_schema
-from tsdm.testing.validation import validate_file_hash
 from tsdm.utils import remote
+from tsdm.validation import validate_file_hash
 
 type MIMIC_IV_Key = Literal[
     "CHANGELOG",

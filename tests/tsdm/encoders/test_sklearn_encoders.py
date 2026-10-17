@@ -7,7 +7,7 @@ import pytest
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.estimator_checks import check_estimator
 
-from tsdm.testing import is_private
+from tsdm.utils.helpers import is_private
 
 from .sklearn_import import (
     SKLEARN_ENCODERS,

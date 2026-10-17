@@ -180,9 +180,9 @@ from tqdm.auto import tqdm
 
 from tsdm.datasets.base import PolarsDataset
 from tsdm.datatools import remove_outliers, validate_schema
-from tsdm.testing.hashutils import hash_zip_contents
-from tsdm.testing.validation import ErrorHandler, validate_hash
+from tsdm.hashutils import hash_zip_contents
 from tsdm.utils import remote
+from tsdm.validation import ErrorHandler, validate_hash
 
 TIMESERIES_METADATA = [
     ("patient",          None, None, None, None, None,      "Patient identifier"                         ),

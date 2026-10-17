@@ -44,8 +44,8 @@ from zipfile import ZipFile
 import polars as pl
 
 from tsdm.datatools import validate_schema
-from tsdm.testing.validation import validate_file_hash
 from tsdm.utils import remote
+from tsdm.validation import validate_file_hash
 
 from .base import BaseDataset
 

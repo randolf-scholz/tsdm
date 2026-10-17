@@ -45,8 +45,9 @@ path = "tsdm.datasets"
 depends_on = [
     "tsdm.datatools",
     "tsdm.random",
-    "tsdm.testing",
     "tsdm.types",
+    "tsdm.hashutils",
+    "tsdm.validation",
 ]
 
 [[modules]]
@@ -64,7 +65,6 @@ depends_on = ["tsdm.types"]
 path = "tsdm.encoders"
 depends_on = [
     "tsdm.encoders.universal",
-    "tsdm.testing",
     "tsdm.types",
 ]
 
@@ -87,7 +87,6 @@ path = "tsdm.logutils"
 depends_on = [
     "tsdm.datatools",
     "tsdm.linalg",
-    "tsdm.losses",
     "tsdm.types",
     "tsdm.viz",
 ]
@@ -99,7 +98,6 @@ depends_on = []
 [[modules]]
 path = "tsdm.pretrained"
 depends_on = [
-    "tsdm.testing",
     "tsdm.encoders",
     "tsdm.types",
 ]
@@ -108,9 +106,7 @@ depends_on = [
 path = "tsdm.pprint"
 depends_on = [
     "tsdm.types",
-    "tsdm.testing",
     "tsdm.decorator",
-    "tsdm.datatools",
 ]
 utility = true
 
@@ -122,13 +118,8 @@ depends_on = [
 ]
 
 [[modules]]
-path = "tsdm.testing"
-depends_on = ["tsdm.types", "tsdm.datatools"]
-
-[[modules]]
 path = "tsdm.tasks"
 depends_on = [
-    "tsdm.datasets",
     "tsdm.datatools",
     "tsdm.encoders",
     "tsdm.losses",
@@ -152,10 +143,18 @@ depends_on = []
 path = "tsdm.utils"
 depends_on = [
     "tsdm.types",
-    "tsdm.testing",
+    "tsdm.validation",
 ]
 utility = true
 
 [[modules]]
 path = "tsdm.viz"
 depends_on = []
+
+[[modules]]
+path = "tsdm.validation"
+depends_on = ["tsdm.datatools", "tsdm.hashutils", "tsdm.types"]
+
+[[modules]]
+path = "tsdm.hashutils"
+depends_on = ["tsdm.types"]
