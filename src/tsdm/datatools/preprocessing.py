@@ -41,7 +41,6 @@ def _limits_from_columns(
     return {key: dict(zip(variables, columns[key], strict=True)) for key in keys}
 
 
-# pyrefly: ignore[bad-return]
 def _extract_limits(limits: Any, keys: Sequence[str], /) -> Mapping[str, Any]:
     r"""Extract outlier-limit mappings from a backend-specific table."""
     match limits:

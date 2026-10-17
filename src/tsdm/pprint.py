@@ -69,29 +69,26 @@ __all__ = [
     "pprint_set",
 ]
 
-
+import builtins
 import dataclasses
+import datetime as dt
+import math
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
 from functools import partial
+from inspect import isbuiltin as is_builtin_function
 from math import prod
 from types import FunctionType
-from typing import Any, Final, Optional, Protocol
+from typing import Any, Final, Optional, Protocol, SupportsFloat
 
+import numpy as np
 import pandas as pd
 import polars as pl
 import pyarrow as pa
+import torch
 
 from .datatools import get_dtypes
 from .decorator import decorator
-from .testing import (
-    is_builtin,
-    is_builtin_constant,
-    is_builtin_type,
-    is_dtype,
-    is_na_value,
-    is_scalar,
-)
 from .types import (
     Dataclass,
     NTuple,
@@ -175,13 +172,67 @@ class ReprProtocol(Protocol):
     ) -> str: ...
 
 
+def _is_builtin_singleton(obj: object, /) -> bool:
+    r"""Check if the object is a builtin constant."""
+    return (
+        obj is None
+        or obj is True
+        or obj is False
+        or obj is Ellipsis
+        or obj is NotImplemented
+    )
+
+
+def _is_builtin(obj: object, /) -> bool:
+    r"""Check if the object is a builtin constant."""
+    return (
+        is_builtin_function(obj)
+        or _is_builtin_singleton(obj)
+        or (isinstance(obj, type) and obj in builtins.__dict__.values())
+    )
+
+
+def _is_scalar(obj: object, /) -> bool:
+    r"""Check if an object is a basic type."""
+    return (
+        _is_builtin_singleton(obj)
+        or isinstance(
+            obj, bool | int | float | complex | str | bytes | dt.datetime | dt.timedelta
+        )
+        or np.isscalar(obj)
+        or obj is pd.NA
+        or obj is pd.NaT
+    )
+
+
+def _is_nan(obj: object, /) -> bool:
+    r"""Check if an object is NaN."""
+    return (
+        math.isnan(float(obj))
+        if isinstance(obj, SupportsFloat)
+        else np.isnan(obj)
+        if isinstance(obj, np.generic)
+        else obj is pd.NA
+    )
+
+
+def _is_dtype(arg: object, /) -> bool:
+    r"""Check if a string is a valid dtype."""
+    return isinstance(
+        arg,
+        np.dtype
+        | torch.dtype
+        | pa.DataType
+        | pd.api.extensions.ExtensionDtype
+        | pl.DataType,
+    ) or (isinstance(arg, type) and issubclass(arg, pl.DataType))
+
+
 def get_identifier(obj: object, /, **_: Any) -> str:
     r"""Return the identifier of an object."""
     match obj:
         case type() as cls:
             return f"<{cls.__name__}>"
-        case _ if is_builtin_type(type(obj)):
-            return ""
         case SupportsArray():
             return "<array>"
         case SupportsDataFrame():
@@ -214,13 +265,13 @@ def repr_shortform(
             return string
         case type() as cls:
             return cls.__name__
-        case builtin if is_builtin(builtin):
+        case builtin if _is_builtin(builtin):
             return repr(builtin)
         case SupportsArray() as arr if arr.__array__().size <= 1:
             return repr(arr.__array__().item())
-        case dtype if is_dtype(dtype):
+        case dtype if _is_dtype(dtype):
             return repr_dtype(dtype)
-        case nan if is_na_value(nan):
+        case nan if _is_nan(obj):
             return repr(nan)
         case _:
             # set identifier
@@ -252,7 +303,7 @@ def repr_generic(
     match x:
         case type() as cls:
             return cls.__name__
-        case basic if is_scalar(basic):  # scalars, strings, etc.
+        case basic if _is_scalar(basic):  # scalars, strings, etc.
             return repr(basic)
         case pl.LazyFrame() as frame:
             return repr_array(frame, **kwargs)
@@ -268,7 +319,7 @@ def repr_generic(
             return repr_sequence(sequence, **kwargs)
         case AbstractSet() as set_:
             return repr_set(set_, **kwargs)
-        case dtype if is_dtype(dtype):
+        case dtype if _is_dtype(dtype):
             return repr_dtype(dtype)
         case _:
             # avoid recursion:
@@ -744,7 +795,7 @@ def repr_dataclass(
 
     title = (
         title if title is not None
-        else "" if is_builtin_constant(wrapped)
+        else "" if _is_builtin_singleton(wrapped)
         else cls.__name__
     )  # fmt: skip
 
@@ -815,7 +866,7 @@ def repr_namedtuple(
 
     title = (
         title if title is not None
-        else "" if is_builtin_constant(wrapped)
+        else "" if _is_builtin_singleton(wrapped)
         else cls.__name__
     )  # fmt: skip
 

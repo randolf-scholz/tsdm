@@ -443,7 +443,7 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
     def decode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         ey = np.exp(data)
         r = (ey + (ey - 1) * self.offset) / (1 + ey)
-        return np.clip(r, 0, 1)
+        return np.clip(r, 0, 1)  # type: ignore
 
     def fit(self, data: SupportsArrayUfunc, /) -> None:
         array = np.asanyarray(data)
