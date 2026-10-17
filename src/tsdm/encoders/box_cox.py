@@ -1,6 +1,7 @@
 r"""Box-Cox encoder."""
 
 __all__ = [
+    "ROOT_3",
     # Classes
     "BoxCoxEncoder",
     "LogitBoxCoxEncoder",
@@ -13,11 +14,12 @@ __all__ = [
     "construct_wasserstein_loss_logit_normal",
 ]
 
+import math
 import warnings
 from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
 from enum import StrEnum
-from typing import assert_never
+from typing import Final, assert_never
 
 import numpy as np
 from numpy import pi as PI
@@ -25,19 +27,21 @@ from numpy.typing import NDArray
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
-from tsdm.constants import FLOAT, UNDEFINED
+from tsdm.constants import UNDEFINED
 from tsdm.pprint import pprint_repr
 from tsdm.types import SupportsArrayUfunc
 
 from .base import FittableEncoder, StaticEncoder
+
+ROOT_3: Final[float] = math.sqrt(3)
 
 
 def construct_wasserstein_loss_boxcox_uniform(
     x: NDArray,
     /,
     *,
-    lower: float = -FLOAT.ROOT_3,
-    upper: float = +FLOAT.ROOT_3,
+    lower: float = -ROOT_3,
+    upper: float = +ROOT_3,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     r"""Construct the loss for the Uniform distribution.
 
@@ -58,7 +62,6 @@ def construct_wasserstein_loss_boxcox_uniform(
     Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&\sqrt{12}}⋅\bmat{μ\\σ}$
     Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/\sqrt{12}}$.
     """
-    ROOT_3 = FLOAT.ROOT_3
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
         if (lower, upper) == (-ROOT_3, +ROOT_3):
@@ -141,8 +144,8 @@ def construct_wasserstein_loss_logit_uniform(
     x: NDArray,
     /,
     *,
-    lower: float = -FLOAT.ROOT_3,
-    upper: float = +FLOAT.ROOT_3,
+    lower: float = -ROOT_3,
+    upper: float = +ROOT_3,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     r"""Construct the loss for the Uniform distribution.
 
@@ -164,7 +167,6 @@ def construct_wasserstein_loss_logit_uniform(
     Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&\sqrt{12}}⋅\bmat{μ\\σ}$
     Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/\sqrt{12}}$.
     """
-    ROOT_3 = FLOAT.ROOT_3
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
         if (lower, upper) == (-ROOT_3, +ROOT_3):
