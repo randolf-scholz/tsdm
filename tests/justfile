@@ -5,6 +5,23 @@
 help:
     @just --justfile {{ justfile() }} --list --unsorted
 
+[doc('Mirror source packages in tests, preserving existing files.')]
+setup_directories:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "$(git rev-parse --show-toplevel)"
+    while IFS= read -r -d '' source_init; do
+        package_path="${source_init#src/}"
+        test_init="tests/$package_path"
+        package="${package_path%/__init__.py}"
+        package="${package//\//.}"
+        mkdir -p "$(dirname "$test_init")"
+        if [[ ! -e "$test_init" ]]; then
+            printf 'Creating %s\n' "$test_init"
+            printf '"""Tests for %s."""\n' "$package" > "$test_init"
+        fi
+    done < <(find src -type f -name __init__.py -print0)
+
 [doc('Profile tsdm import time with tuna.')]
 time-imports:
     #!/usr/bin/env bash

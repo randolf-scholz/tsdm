@@ -5,10 +5,6 @@ __all__ = [
     # Classes
     "Config",
     "Project",
-    # Functions
-    "generate_folders",
-    "get_package_structure",
-    "make_test_folders",
     # Constants
     "CONFIG",
     "PROJECT",
@@ -19,85 +15,9 @@ import os
 from enum import StrEnum
 from functools import cached_property
 from importlib import import_module
-from itertools import chain
 from pathlib import Path
 from types import ModuleType
 from typing import Any, ClassVar, Final, final
-
-
-def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
-    r"""Creates nested dictionary of the package structure."""
-    d = {}
-    for name in dir(root_module):
-        attr = getattr(root_module, name)
-        # check if it is a subpackage
-        if (
-            isinstance(attr, ModuleType)
-            and attr.__name__.startswith(root_module.__name__)
-            and attr.__package__ != root_module.__package__
-            and attr.__package__ is not None
-        ):
-            d[attr.__package__] = get_package_structure(attr)
-    return d
-
-
-def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
-    r"""Create nested folder structure based on nested dictionary index.
-
-    References:
-        https://stackoverflow.com/a/22058144
-    """
-    match dirs:
-        case str(name):
-            path = parent / name
-            path.mkdir(parents=True, exist_ok=True)
-        case list(seq):
-            for item in seq:
-                generate_folders(item, parent=parent)
-        case dict(mapping):
-            for key, value in mapping.items():
-                generate_folders(value, parent=parent / key)
-        case _:
-            raise TypeError
-
-
-def make_test_folders(
-    root: ModuleType, tests_path: Path, *, dry_run: bool = True
-) -> None:
-    r"""Make the tests folder if it does not exist."""
-    package_structure = get_package_structure(root)
-
-    def flattened(d: dict[str, Any], /) -> list[str]:
-        r"""Flatten nested dictionary."""
-        return list(d) + list(chain.from_iterable(map(flattened, d.values())))
-
-    for package in flattened(package_structure):
-        test_package_path = tests_path / package.replace(".", "/")
-        test_package_init_file = test_package_path / "__init__.py"
-
-        if not test_package_path.exists():
-            if dry_run:
-                print(f"Dry-Run: Creating {test_package_path}")
-            else:
-                print(f"Creating {test_package_path}")
-                test_package_path.mkdir(parents=True, exist_ok=True)
-        if not test_package_path.exists():
-            if dry_run:
-                print(f"Dry-Run: Creating {test_package_init_file}")
-            else:
-                raise RuntimeError(f"Creation of {test_package_path} failed!")
-        elif not test_package_init_file.exists():
-            if dry_run:
-                print(f"Dry-Run: Creating {test_package_init_file}")
-            else:
-                print(f"Creating {test_package_init_file}")
-                test_package_init_file.write_text(
-                    f'"""Tests for {package}."""\n',
-                    encoding="utf8",
-                )
-
-    if dry_run:
-        print("Pass option ``dry_run=False`` to actually create the folders.")
 
 
 @final
@@ -170,7 +90,8 @@ class Config:
         # further initialization
         self.LOG_DIR.mkdir(parents=True, exist_ok=True)
         self.LOGGER.debug("Initializing folder structure")
-        generate_folders(self.DEFAULT_CONFIG["folders"], parent=self.ROOT_DIR)
+        for folder in self.DEFAULT_CONFIG["folders"]:
+            (self.ROOT_DIR / folder).mkdir(parents=True, exist_ok=True)
         self.LOGGER.debug("Created folder structure in %s", self.ROOT_DIR)
 
 
