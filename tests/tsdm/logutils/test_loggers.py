@@ -8,10 +8,10 @@ from pandas import DataFrame
 from torch.utils.tensorboard.writer import SummaryWriter
 
 import tsdm
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.logutils import BaseLogger, DefaultLogger, log_table
 
-RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULT_DIR = get_results_dir(__file__)
 
 
 def test_base_logger() -> None:

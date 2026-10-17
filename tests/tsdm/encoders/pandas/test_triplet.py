@@ -7,10 +7,10 @@ from hypothesis.extra.pandas import column, data_frames
 from pandas import DataFrame, Index, MultiIndex
 from pandas.testing import assert_frame_equal
 
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.encoders.pandas import TripletDecoder, TripletEncoder
 
-RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULTS_DIR = get_results_dir(__file__)
 
 
 TEST_FRAMES = data_frames(

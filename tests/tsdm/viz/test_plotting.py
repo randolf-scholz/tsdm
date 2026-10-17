@@ -4,10 +4,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gamma
 
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.viz import visualize_distribution
 
-RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULT_DIR = get_results_dir(__file__)
 
 
 def test_visualize_distribution() -> None:

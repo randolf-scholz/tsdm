@@ -8,7 +8,7 @@ import pytest
 import torch
 from pandas import DataFrame
 
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -22,7 +22,7 @@ from tsdm.encoders import (
 from tsdm.encoders.pandas import FrameAsTensorDict, FrameEncoder
 from tsdm.timeseries.pandas import in_silico
 
-RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULT_DIR = get_results_dir(__file__)
 
 
 @pytest.fixture(scope="session")

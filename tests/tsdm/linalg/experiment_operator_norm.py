@@ -5,10 +5,10 @@ import numpy as np
 from matplotlib import colormaps
 from numpy.typing import ArrayLike, NDArray
 
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.constants import RNG
 
-RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULTS_DIR = get_results_dir(__file__)
 
 
 def f(x: ArrayLike, p: ArrayLike) -> NDArray:

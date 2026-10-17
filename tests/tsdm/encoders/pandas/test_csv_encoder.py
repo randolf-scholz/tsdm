@@ -3,10 +3,10 @@ r"""Test encoders defined in `tsdm.encoders.dataframe`."""
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.encoders.pandas import CSVEncoder
 
-RESULTS_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULTS_DIR = get_results_dir(__file__)
 
 
 TEST_FRAME_A = DataFrame(

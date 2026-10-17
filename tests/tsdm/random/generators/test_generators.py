@@ -10,7 +10,7 @@ import pytest
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
-from tsdm.config import PROJECT
+from tests.test_utils import get_results_dir
 from tsdm.random.generators import (
     SIR,
     BouncingBall,
@@ -19,7 +19,7 @@ from tsdm.random.generators import (
     LotkaVolterra,
 )
 
-RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
+RESULT_DIR = get_results_dir(__file__)
 
 
 @pytest.mark.xfail(reason="batching not supported by scipy solve_ivp")
