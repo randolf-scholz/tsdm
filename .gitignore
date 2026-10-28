@@ -2,7 +2,7 @@
 # local files
 *.local.*
 # temporary files / directories
-tmp*.py
+tmp*.*
 tmp*/
 # private/hidden directories
 _*/
