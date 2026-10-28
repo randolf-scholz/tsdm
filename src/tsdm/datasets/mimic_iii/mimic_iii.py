@@ -43,11 +43,10 @@ from zipfile import ZipFile
 
 import polars as pl
 
+from tsdm.datasets.base import BaseDataset
 from tsdm.datatools import validate_schema
 from tsdm.utils import remote
 from tsdm.validation import validate_file_hash
-
-from .base import BaseDataset
 
 type MIMIC_III_Key = Literal[
     "SHA256SUMS",
