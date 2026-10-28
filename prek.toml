@@ -6,7 +6,7 @@ exclude = ".idea/|.vscode/|bugs/|dev/"
 minimum_prek_version = "0.5.4"
 fail_fast = false
 update.cooldown_days = 7
-default_language_version = { python = "3.14", node = "24.13.0" }
+default_language_version = { python = "3.15", node = "24.13.0" }
 
 [[repos]]
 repo = "builtin"

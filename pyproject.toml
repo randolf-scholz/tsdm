@@ -19,7 +19,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Environment :: GPU :: NVIDIA CUDA",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
@@ -134,7 +134,7 @@ format.rules.table-keys-order.enabled = false
 src = ["src/", "tests/"]
 indent-width = 4
 line-length = 88
-target-version = "py314"
+target-version = "py315"
 output-format = "concise"
 
 [tool.ruff.format]
@@ -347,7 +347,7 @@ required-environments = [
 
 [tool.ty]
 [tool.ty.environment]
-python-version = "3.14"
+python-version = "3.15"
 
 [tool.ty.terminal]
 output-format = "concise"
@@ -363,7 +363,7 @@ replace-imports-with-any = [
 ]
 
 [tool.pyrefly]
-python-version = "3.14"
+python-version = "3.15"
 output-format = "min-text"
 search-path = ["src/", "."]
 replace_imports_with_any = [
@@ -383,7 +383,7 @@ follow_imports = "silent"
 files = ["src/", "tests/"]
 platform = "linux"
 plugins = []
-python_version = "3.14"
+python_version = "3.15"
 disable_error_code = [
     "func-returns-value", # SEE: https://github.com/python/mypy/issues/6549
     "method-assign", # SEE: https://github.com/python/mypy/issues/2427#issuecomment-1419206807
@@ -458,7 +458,7 @@ defineConstant = { "__debug__" = true }
 # stubPath = ""
 venvPath = ".venv"
 # venv = ".venv"
-pythonVersion = "3.14"
+pythonVersion = "3.15"
 pythonPlatform = "Linux"
 # executionEnvironments = []
 useLibraryCodeForTypes = false  # pandas and pyarrow lack proper type hints
