@@ -36,7 +36,7 @@ from . import config
 
 config.initialize_directories()
 
-from . import (  # noqa: E402  # Initialize storage before importing dependent modules.
+from . import (  # ruff: ignore[E402]  # Initialize storage before importing dependent modules.
     backend,
     datasets,
     datatools,

@@ -20,8 +20,7 @@ from abc import abstractmethod
 from collections.abc import Iterator
 from typing import Any, ClassVar, Protocol, Self, overload
 
-# TODO: Use generic slice in 3.15
-type RangeSelector[T] = slice | list[T] | list[bool]
+type RangeSelector[T] = slice[T] | list[T] | list[bool]
 
 
 class TimeSeries[TimeT, TableT](Protocol):

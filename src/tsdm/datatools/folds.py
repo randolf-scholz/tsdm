@@ -123,10 +123,7 @@ def folds_as_frame(
 
     if index is None and not is_mask:
         # infer the index from the union of all indices in the folds
-        # TODO: Python 3.15: use PEP798
-        splits = [np.array(split) for split in first_fold.values()]
-        indices = np.concatenate(splits)
-        index = np.unique(indices)
+        index = np.unique([*split for split in first_fold.values()])  # type: ignore
 
     idx = (
         Index(index)

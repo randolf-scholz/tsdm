@@ -17,10 +17,8 @@ __all__ = [
 from annotationlib import ForwardRef
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Any, ClassVar, Optional, cast, overload
+from typing import Any, ClassVar, Optional, TypeForm, cast, overload
 from zipfile import BadZipFile, ZipFile
-
-from typing_extensions import TypeForm
 
 from tsdm.types import FilePath
 from tsdm.types.nested import Nested, NestedDict, NestedMapping

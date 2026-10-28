@@ -133,13 +133,12 @@ class DatasetMeta(ProtocolMeta):
         assert isinstance(cls.DATASET_ROOT_DIR, Path)
 
         # mark table_names and rawdata_files as abstract.
-        # TODO: use python 3.15 builtin sentinel.
-        sentinel = object()
+        MARKER = sentinel("MARKER")
         abstract_methods = set(cls.__abstractmethods__)
         abstract_methods.update(
             attr
             for attr in cls.REQUIRED_ATTRIBUTES
-            if getattr_static(cls, attr, sentinel) is sentinel
+            if getattr_static(cls, attr, MARKER) is MARKER
         )
         cls.__abstractmethods__ = frozenset(abstract_methods)
 
