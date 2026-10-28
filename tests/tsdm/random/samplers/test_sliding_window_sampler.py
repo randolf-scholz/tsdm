@@ -1,6 +1,6 @@
 r"""Test Sliding Window Sampler."""
 
-import datetime
+import datetime as dt
 from collections.abc import Iterator
 from typing import Any, Literal, assert_never, assert_type
 
@@ -805,9 +805,7 @@ def test_sliding_window_sampler_continuous(
 
 
 # dates 2020-01-01 to 2020-01-10
-PYTHON_DATES = [
-    datetime.datetime(2020, 1, 1) + datetime.timedelta(days=i) for i in range(10)
-]
+PYTHON_DATES = [dt.datetime(2020, 1, 1) + dt.timedelta(days=i) for i in range(10)]
 DATETIME_DATA: dict[str, Vec[Any]] = {
     "list-python"     : PYTHON_DATES,
     "list-pandas"     : [pd.Timestamp(d) for d in PYTHON_DATES],
