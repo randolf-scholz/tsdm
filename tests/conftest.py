@@ -4,6 +4,11 @@ import pytest
 
 
 def pytest_collection_modifyitems(config, items):  # ruff: ignore[ARG001]
+    # FIXME: https://github.com/ionelmc/pytest-benchmark/issues/321
+    for item in items:
+        if not hasattr(item, "_nodeid"):
+            item._nodeid = item.nodeid  # ruff: ignore[SLF001]
+
     interactive = []
     non_interactive = []
     for item in items:
