@@ -938,6 +938,7 @@ def repr_array(
     identifier: Optional[str] = None,
     title: Optional[str] = None,
     maxitems: Optional[int] = MAXITEMS_INLINE,  # max number of dtypes to show
+    show_device: bool = False,
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
@@ -978,15 +979,18 @@ def repr_array(
             shape_repr = "" if identifier is None else identifier
 
     # set modifier = device
-    match modifier, obj:
-        case None, SupportsDevice(device=device):
-            device_repr = f"@{device}"
-        case _:
-            device_repr = f"@{modifier}" if modifier is not None else ""
+    if not show_device:
+        device_repr = ""
+    else:
+        match modifier, obj:
+            case None, SupportsDevice(device=device):
+                device_repr = f"@{device}"
+            case _:
+                device_repr = f"@{modifier}" if modifier is not None else ""
 
     # get the dtype-repr
     # Table-like: [dtype1, dtype2, ...]
-    # Tensor-like:
+    # Tensor-like: [dtype]
     vals = [repr_dtype(dtype) for dtype in _get_dtypes(obj)]
 
     # if all vals are the same, show only one
@@ -1029,6 +1033,8 @@ def repr_dtype(dtype: object, /) -> str:
     match dtype:
         case SupportsDtype(dtype=dtype):
             return repr_dtype(dtype)
+        case torch.dtype():
+            return repr(dtype).lstrip("torch.")
         case str(string):
             return string
         # These are too verbose.
