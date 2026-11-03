@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import BaseDataset, PolarsDataset
 from tsdm.validation import ErrorHandler, ValidationError
 
 
@@ -17,6 +17,9 @@ class DummyDataset(BaseDataset[str, object]):
     rawdata_files = []
     table_names = []
 
+    def clean_table(self, key: str, /) -> None:
+        pass
+
     def store_table(self, key: str, table: object, /) -> None:
         pass
 
@@ -24,10 +27,28 @@ class DummyDataset(BaseDataset[str, object]):
         return object()
 
 
+def test_clean_table_is_required_even_with_named_helpers() -> None:
+    r"""Named cleaning helpers do not satisfy the explicit cleaning contract."""
+
+    class MissingCleanTable(PolarsDataset[str]):
+        rawdata_files = ()
+        table_names = ("example",)
+
+        def clean_example(self) -> None:
+            pass
+
+    assert isabstract(MissingCleanTable)
+    with pytest.raises(TypeError, match="abstract method 'clean_table'"):
+        MissingCleanTable(initialize=False)  # pyright: ignore[reportAbstractUsage]
+
+
 def test_dataset_required_attributes_determine_abstractness() -> None:
     r"""Datasets are abstract until both required attributes are available."""
 
     class DatasetImplementation(BaseDataset[str, object]):
+        def clean_table(self, _key: str, /) -> None:
+            pass
+
         def store_table(self, _key: str, _table: object, /) -> None:
             pass
 

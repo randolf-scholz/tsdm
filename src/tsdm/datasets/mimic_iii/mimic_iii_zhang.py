@@ -146,7 +146,7 @@ class MIMIC_III_Zhang2024(BaseDataset[MIMIC_III_Zhang2024_Key, object]):
         )
 
     def clean_table(self, key: MIMIC_III_Zhang2024_Key, /) -> object:
-        r"""Read release metadata or dispatch to the corresponding data loader."""
+        r"""Read release metadata or dispatch to the corresponding cleaning helper."""
         match key:
             case "LICENSE" | "README" | "SHA256SUMS":
                 with ZipFile(self.rawdata_paths[self.rawdata_files[0]]) as archive:
@@ -162,8 +162,14 @@ class MIMIC_III_Zhang2024(BaseDataset[MIMIC_III_Zhang2024_Key, object]):
                         orient="row",
                     )
                 return text
+            case "full_dataset":
+                return self.clean_full_dataset()
+            case "variable_dict":
+                return self.clean_variable_dict()
+            case "mimic":
+                return self.clean_mimic()
             case _:
-                return super().clean_table(key)
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
 
     def clean_full_dataset(self) -> pl.DataFrame:
         r"""Read Float32 values and Boolean masks, preserving CSV column order."""

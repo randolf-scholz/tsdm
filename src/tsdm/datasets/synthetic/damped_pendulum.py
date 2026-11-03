@@ -96,6 +96,16 @@ class DampedPendulum_Ansari2023(PolarsDataset[Key]):
             initial_state_dist=univariate_normal(loc=0, scale=1),
         )
 
+    def clean_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Create the generated timeseries or metadata table."""
+        match key:
+            case "timeseries":
+                return self.clean_timeseries()
+            case "timeseries_metadata":
+                return self.clean_timeseries_metadata()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     @staticmethod
     def clean_timeseries_metadata() -> pl.DataFrame:
         r"""Create DataFrame with metadata for the timeseries."""

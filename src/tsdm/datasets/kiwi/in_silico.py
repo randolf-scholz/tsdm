@@ -93,6 +93,16 @@ class InSilico(PolarsDataset[KEY]):
         "timeseries_metadata": (9, 7),
     }
 
+    def clean_table(self, key: KEY, /) -> pl.DataFrame:
+        r"""Create the cleaned timeseries or metadata table."""
+        match key:
+            case "timeseries":
+                return self.clean_timeseries()
+            case "timeseries_metadata":
+                return self.clean_timeseries_metadata()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Create the timeseries table as a Polars DataFrame."""
         rawdata_schema = self.rawdata_schemas["timeseries"]

@@ -580,26 +580,16 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     # endregion download mechanism -----------------------------------------------------
 
     # region cleaning mechanism --------------------------------------------------------
+    @abstractmethod
     def clean_table(self, key: Key, /) -> Optional[T]:
         r"""Create the cleaned table for the given key.
 
-        By default, this method redirects to the ``self.clean_{key}`` method.
-        Subclasses can either implement these, or override this method directly.
+        Subclasses define the cleaning logic for each key.
 
-        If a table is returned, the `self.serialize` method is used to write it to disk.
+        If a table is returned, `self.store_table` is used to write it to disk.
         If manually writing the table to disk, return None.
         """
-        if key not in self.table_names:
-            raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
-        try:
-            clean_fn = getattr(self, f"clean_{key}")
-        except AttributeError:
-            raise NotImplementedError(
-                f"Cleaning method for {key} not implemented!"
-                f" Either implement ``clean_{key}`` or override `clean_table`."
-            ) from None
-        else:
-            return clean_fn()
+        raise NotImplementedError
 
     @final
     def clean(

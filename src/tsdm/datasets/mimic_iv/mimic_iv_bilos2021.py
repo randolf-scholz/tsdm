@@ -583,6 +583,16 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
             (pl.col("drug") + pl.lit(" Drug")).alias("label"),
         ).collect()
 
+    def clean_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Create the raw or normalized timeseries table."""
+        match key:
+            case "raw_timeseries":
+                return self.clean_raw_timeseries()
+            case "timeseries":
+                return self.clean_timeseries()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     def clean_raw_timeseries(self) -> pl.DataFrame:
         r"""Merge events into the wide frame exported as ``full_dataset.csv``."""
         inputs = self.preprocess_inputevents().rename({"amount": "valuenum"})

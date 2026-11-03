@@ -61,6 +61,14 @@ class USHCN_DeBrouwer2019(PolarsDataset[Literal["timeseries"]]):
     table_schemas = {"timeseries": TIMESERIES_SCHEMA}  # pyright: ignore[reportAssignmentType]
     table_shapes = {"timeseries": (350_665, 7)}  # pyright: ignore[reportAssignmentType]
 
+    def clean_table(self, key: Literal["timeseries"], /) -> pl.DataFrame:
+        r"""Create the cleaned timeseries table."""
+        match key:
+            case "timeseries":
+                return self.clean_timeseries()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Clean the raw USHCN subset into a masked Polars timeseries table."""
         fname = self.rawdata_files[0]

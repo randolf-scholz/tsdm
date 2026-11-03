@@ -213,6 +213,20 @@ class Traffic(PolarsDataset[Traffic_Keys]):
             pl.col("time"), pl.exclude("time")
         )
 
+    def clean_table(self, key: Traffic_Keys, /) -> pl.DataFrame:
+        r"""Create the cleaned table for the selected key."""
+        match key:
+            case "timeseries":
+                return self.clean_timeseries()
+            case "labels":
+                return self.clean_labels()
+            case "randperm":
+                return self.clean_randperm()
+            case "invperm":
+                return self.clean_invperm()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Create DataFrame from raw data.
 

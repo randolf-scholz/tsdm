@@ -187,6 +187,16 @@ class BeijingAirQuality(PolarsDataset[Key]):
         "timeseries_metadata": (14, 8),
     }
 
+    def clean_table(self, key: Key, /) -> pl.DataFrame:
+        r"""Create the cleaned timeseries or metadata table."""
+        match key:
+            case "timeseries":
+                return self.clean_timeseries()
+            case "timeseries_metadata":
+                return self.clean_timeseries_metadata()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     def clean_timeseries(self) -> pl.DataFrame:
         rawdata_path = self.rawdata_paths["beijing+multi+site+air+quality+data.zip"]
         archive_path = "PRSA2017_Data_20130301-20170228.zip"

@@ -119,6 +119,14 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
     }
     table_shapes = {"timeseries": (140_256, 371)}  # pyright: ignore[reportAssignmentType]
 
+    def clean_table(self, key: Literal["timeseries"], /) -> pl.DataFrame:
+        r"""Create the cleaned timeseries table."""
+        match key:
+            case "timeseries":
+                return self.clean_timeseries()
+            case _:
+                raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
+
     def clean_timeseries(self) -> pl.DataFrame:
         r"""Create a Polars DataFrame with one column per client."""
         rawdata_path = self.rawdata_paths["electricityloaddiagrams20112014.zip"]
