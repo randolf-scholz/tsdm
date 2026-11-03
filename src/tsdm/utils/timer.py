@@ -17,9 +17,9 @@ class timer[ExitT: bool | None = None](ContextDecorator):
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
 
-    start_time: int
+    start_time: int | None
     r"""Start time of the timer."""
-    end_time: int
+    end_time: int | None
     r"""End time of the timer."""
     disable_gc: bool = False
     r"""Whether to disable garbage collection."""
@@ -45,6 +45,8 @@ class timer[ExitT: bool | None = None](ContextDecorator):
         self.disable_gc = disable_gc
         self.timeout = timeout
         self.exception = TimeoutError(msg)
+        self.start_time = None
+        self.end_time = None
 
     def _timeout_handler(self, signum: int, frame: FrameType | None, /) -> Never:  # ruff: ignore[ARG002]
         self.exception.add_note(f"Timed out after {self.timeout} seconds.")
@@ -113,11 +115,11 @@ class timer[ExitT: bool | None = None](ContextDecorator):
     @property
     def elapsed_time(self) -> int:
         r"""Elapsed time in nanoseconds."""
-        if start_time := getattr(self, "start_time", None) is None:
+        if self.start_time is None:
             raise RuntimeError("Timer has not been started!")
-        if end_time := getattr(self, "end_time", None) is None:
-            return perf_counter_ns() - start_time
-        return end_time - start_time
+        if self.end_time is None:
+            return perf_counter_ns() - self.start_time
+        return self.end_time - self.start_time
 
     @property
     def elapsed_seconds(self) -> float:
@@ -127,25 +129,23 @@ class timer[ExitT: bool | None = None](ContextDecorator):
     @property
     def value(self) -> str:
         r"""Formatted elapsed time."""
-        return _format_ns(self.elapsed_time)
+        ns = self.elapsed_time
 
+        # Format nanoseconds into a human-readable string.
+        hours, remainder = divmod(ns, 3_600_000_000_000)
+        minutes, remainder = divmod(remainder, 60_000_000_000)
+        seconds, remainder = divmod(remainder, 1_000_000_000)
+        milliseconds, remainder = divmod(remainder, 1_000_000)
+        microseconds = remainder // 1_000
 
-def _format_ns(ns: int, /) -> str:
-    r"""Format nanoseconds into a human-readable string."""
-    hours, remainder = divmod(ns, 3_600_000_000_000)
-    minutes, remainder = divmod(remainder, 60_000_000_000)
-    seconds, remainder = divmod(remainder, 1_000_000_000)
-    milliseconds, remainder = divmod(remainder, 1_000_000)
-    microseconds = remainder // 1_000
-
-    if hours:
-        return f"{hours}h {minutes}m"
-    if minutes:
-        return f"{minutes}m {seconds}s"
-    if seconds:  # print 2 decimal places
-        return f"{seconds}.{remainder // 10**7:02d}s"
-    if milliseconds:  # print 2 decimal places
-        return f"{milliseconds}.{remainder // 10**4:02d}ms"
-    if microseconds:  # print 2 decimal places
-        return f"{microseconds}.{remainder // 10}µs"
-    return f"{remainder}ns"
+        if hours:
+            return f"{hours}h {minutes}m"
+        if minutes:
+            return f"{minutes}m {seconds}s"
+        if seconds:  # print 2 decimal places
+            return f"{seconds}.{remainder // 10**7:02d}s"
+        if milliseconds:  # print 2 decimal places
+            return f"{milliseconds}.{remainder // 10**4:02d}ms"
+        if microseconds:  # print 2 decimal places
+            return f"{microseconds}.{remainder // 10}µs"
+        return f"{remainder}ns"
