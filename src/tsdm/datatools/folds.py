@@ -123,7 +123,7 @@ def folds_as_frame(
 
     if index is None and not is_mask:
         # infer the index from the union of all indices in the folds
-        index = np.unique([*split for split in first_fold.values()])  # type: ignore
+        index = np.unique([*split for split in first_fold.values()])  # pyrefly: ignore[no-matching-overload]
 
     idx = (
         Index(index)

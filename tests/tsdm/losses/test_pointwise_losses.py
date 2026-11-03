@@ -227,7 +227,7 @@ def test_rmse_loss_matches_square_root_of_torch_mse_loss(
         predictions,
         targets,
         reduction=reduction.value,
-        weight=sample_weights,  # type: ignore
+        weight=sample_weights,
     ).sqrt()
 
     torch.testing.assert_close(result, expected)

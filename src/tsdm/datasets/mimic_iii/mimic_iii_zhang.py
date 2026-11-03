@@ -253,17 +253,12 @@ class MIMIC_III_Zhang2024(BaseDataset[MIMIC_III_Zhang2024_Key, object]):
 
     @overload
     def load_table(self, key: Literal["mimic"], /) -> list[MIMIC_III_Record]: ...
-
     @overload
     def load_table(self, key: Literal["LICENSE", "README"], /) -> str: ...
-
     @overload
     def load_table(
-        self,
-        key: Literal["SHA256SUMS", "full_dataset", "variable_dict"],
-        /,
+        self, key: Literal["SHA256SUMS", "full_dataset", "variable_dict"], /
     ) -> pl.DataFrame: ...
-
     def load_table(self, key: MIMIC_III_Zhang2024_Key, /) -> object:
         r"""Load documents, tables, or patient views over memory-mapped tensors.
 

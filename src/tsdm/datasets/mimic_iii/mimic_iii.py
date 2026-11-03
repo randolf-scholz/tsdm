@@ -511,7 +511,7 @@ class MIMIC_III(BaseDataset[MIMIC_III_Key, pl.LazyFrame]):
     table_schemas = SCHEMAS
 
     @property
-    def rawdata_files(self) -> list[str]:  # pyrefly: ignore[bad-override]
+    def rawdata_files(self) -> list[str]:  # type: ignore
         return [f"mimic-iii-clinical-database-{self.version}.zip"]
 
     @cached_property

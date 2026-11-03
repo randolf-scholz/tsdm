@@ -1948,7 +1948,7 @@ class Fork[
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
                 return simplify(  # type: ignore
-                    cast("Encoder[X, Any]", encoder)
+                    encoder
                     >> wrap(
                         encoder=WRAP_TUPLE,
                         decoder=self.reduction,
@@ -2082,7 +2082,7 @@ class Duplicate[
 
             case [encoder]:  # encode[X -> [f(x)]], decode[[y] -> f⁻¹(reduce([y]))]
                 return (  # type: ignore
-                    cast("Encoder[X, Any]", encoder)
+                    encoder
                     >> wrap(
                         encoder=WRAP_TUPLE,
                         decoder=self.reduction,
@@ -2284,7 +2284,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
                     )
-                    >> cast("Encoder[Any, Y]", encoder)
+                    >> encoder
                 )
 
             case _:
@@ -2382,7 +2382,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
             *(deepcopy(encoder) for _ in range(num)),
             reduction=reduction,
         )
-        self.kind = type(self[0]) if self else Encoder  # type: ignore[assignment]
+        self.kind = type(self[0]) if self else Encoder  # type: ignore
         self.num = num
 
     @classmethod
@@ -2425,14 +2425,13 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
                 ).simplify()
 
             case [encoder]:
-                encoder = cast("Encoder[Any, Y]", encoder)
-                return (  # type: ignore
+                return simplify(  # type: ignore
                     wrap(
                         encoder=self.reduction,
                         decoder=WRAP_TUPLE,
                     )
                     >> encoder
-                ).simplify()
+                )
 
             case _:
                 return Fold.new(  # type: ignore

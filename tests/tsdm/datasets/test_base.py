@@ -39,7 +39,7 @@ def test_clean_table_is_required_even_with_named_helpers() -> None:
 
     assert isabstract(MissingCleanTable)
     with pytest.raises(TypeError, match="abstract method 'clean_table'"):
-        MissingCleanTable(initialize=False)  # pyright: ignore[reportAbstractUsage]
+        MissingCleanTable(initialize=False)  # type: ignore
 
 
 def test_dataset_required_attributes_determine_abstractness() -> None:
