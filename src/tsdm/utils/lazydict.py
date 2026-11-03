@@ -225,7 +225,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
         new_dict = super().__or__(dict(other))
         return LazyDict(new_dict)
 
-    def __ror__[K2, V2](self, other: Mapping[K2, V2], /) -> LazyDict[K | K2, V | V2]:
+    def __ror__[K2, V2](self, other: Mapping[K2, V2], /) -> LazyDict[K | K2, V | V2]:  # type: ignore
         new_dict = super().__ror__(dict(other))
         return LazyDict(new_dict)
 

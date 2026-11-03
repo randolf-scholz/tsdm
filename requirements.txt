@@ -3,7 +3,7 @@
 -e .
 absl-py==2.5.1
     # via tensorboard
-anyio==4.15.1 ; sys_platform != 'emscripten'
+anyio==4.16.0 ; sys_platform != 'emscripten'
     # via httpx2
 colorama==0.4.6 ; sys_platform == 'win32'
     # via tqdm
@@ -13,13 +13,13 @@ cuda-toolkit==13.2.2 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==4.2.4
+filelock==4.2.7
     # via torch
 fonttools==4.68.0
     # via matplotlib
 fsspec==2026.9.0
     # via torch
-grpcio==1.85.0
+grpcio==1.85.1
     # via tensorboard
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
@@ -114,11 +114,11 @@ polars-runtime-32==2.1.0
     # via polars
 protobuf==7.36.2
     # via tensorboard
-pyarrow==26.0.0
+pyarrow==26.0.1
     # via tsdm
 pyparsing==3.3.3
     # via matplotlib
-python-dateutil==3.0.0
+python-dateutil==4.0.0
     # via
     #   matplotlib
     #   pandas
@@ -130,8 +130,6 @@ setuptools==84.2.1
     # via
     #   tensorboard
     #   torch
-six==1.17.0
-    # via python-dateutil
 sympy==1.14.0
     # via torch
 tensorboard==2.21.0
