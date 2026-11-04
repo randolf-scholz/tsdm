@@ -1,6 +1,6 @@
 # Time Series Datasets and Models
 
-[INSTALLATION](#installation) | [DOCUMENTATION](#documentation) | [CONTRIBUTING](CONTRIBUTING.md) | [CHANGELOG](CHANGELOG.md) | [LICENSE](LICENSE)
+[INSTALLATION](#installation) | [DOCUMENTATION](#documentation) | [CONTRIBUTING](CONTRIBUTING.md) | [LICENSE](LICENSE)
 
 This repository contains tools to import important time series datasets and baseline models.
 

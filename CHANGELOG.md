@@ -1,3 +1,0 @@
-# Changelog
-
-None so far
