@@ -73,7 +73,7 @@ import polars as pl
 import pyarrow as pa
 from numpy.typing import NDArray
 
-from .types import Dataclass, FilePath, FileStream, SupportsArray
+from .types import DataclassType, FilePath, FileStream, SupportsArray
 
 HEXDIGITS = "0123456789ABCDEF"
 r"""Upppercase hexadecimal digits."""
@@ -269,7 +269,7 @@ _BASIC_TOKENIZERS: dict[type, Callable[[Any], bytes]] = {
 }  # fmt: skip
 
 
-def tokenize_dataclass(arg: Dataclass, hasher: str | Hasher, /) -> bytes:
+def tokenize_dataclass(arg: DataclassType, hasher: str | Hasher, /) -> bytes:
     return tokenize_mapping(dataclasses.asdict(arg), hasher)
 
 
@@ -401,7 +401,7 @@ def tokenize_object(x: object, hasher: str | Hasher, /) -> bytes:
             return hash_func(basic_type)
         case SupportsArray():
             return tokenize_array(x, hasher)
-        case Dataclass():
+        case DataclassType():
             return tokenize_dataclass(x, hasher)
         case Mapping():
             return tokenize_mapping(x, hasher)

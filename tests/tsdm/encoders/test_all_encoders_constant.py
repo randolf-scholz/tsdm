@@ -6,7 +6,7 @@ from dataclasses import fields
 import pytest
 
 from tsdm.encoders import ENCODERS, pandas, polars, torch
-from tsdm.types.dataclass import Dataclass
+from tsdm.types.dataclass import DataclassType
 
 
 @pytest.mark.parametrize("name", ENCODERS)
@@ -15,7 +15,7 @@ def test_fields_classvar(name: str) -> None:
     cls = ENCODERS[name]
 
     actual_fields = cls.FIELDS
-    if issubclass(cls, Dataclass):  # type: ignore
+    if issubclass(cls, DataclassType):  # type: ignore
         expected_fields = {f.name for f in fields(cls)}
         assert actual_fields == expected_fields
 

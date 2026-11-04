@@ -10,16 +10,16 @@ __all__ = [
     "protocols",
     "nested",
     # Special
-    "Dataclass",
-    "NTuple",
+    "DataclassType",
+    "NamedTupleType",
     "is_dataclass",
     "is_namedtuple",
 ]
 
 from . import abc, aliases, callbacks, dataclass, namedtuple, nested, protocols
 from .aliases import *  # ruff: ignore[F403]
-from .dataclass import Dataclass, is_dataclass
-from .namedtuple import NTuple, is_namedtuple
+from .dataclass import DataclassType, is_dataclass
+from .namedtuple import NamedTupleType, is_namedtuple
 from .protocols import *  # ruff: ignore[F403]
 
 __all__ += aliases.__all__

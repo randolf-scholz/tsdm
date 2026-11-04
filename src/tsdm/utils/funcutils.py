@@ -38,7 +38,7 @@ from dataclasses import fields
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Final, Optional, Protocol, cast, overload
 
-from tsdm.types.dataclass import Dataclass, is_dataclass
+from tsdm.types.dataclass import DataclassType, is_dataclass
 from tsdm.types.nested import NestedBuiltin
 
 KEYWORD_ONLY: Final = Parameter.KEYWORD_ONLY
@@ -76,7 +76,7 @@ def accepts_varkwargs(func: Fn[..., Any], /) -> bool:
 
 
 def dataclass_args_kwargs(
-    obj: Dataclass, /, *, ignore_parent_fields: bool = False
+    obj: DataclassType, /, *, ignore_parent_fields: bool = False
 ) -> tuple[tuple[Any, ...], dict[str, Any]]:
     r"""Return positional and keyword arguments of a dataclass."""
     forbidden_keys: set[str] = set()

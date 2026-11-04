@@ -21,8 +21,8 @@ from tsdm.pprint import (
     repr_set,
 )
 from tsdm.types import SupportsArray
-from tsdm.types.dataclass import Dataclass
-from tsdm.types.namedtuple import NTuple
+from tsdm.types.dataclass import DataclassType
+from tsdm.types.namedtuple import NamedTupleType
 
 INDENTATION = " " * INDENT
 
@@ -105,7 +105,7 @@ def test_pprint_object(obj: object, expected: str) -> None:
         ),
     ],
 )
-def test_pprint_namedtuple(tup: NTuple, expected: str) -> None:
+def test_pprint_namedtuple(tup: NamedTupleType, expected: str) -> None:
     r"""Test pprint_namedtuple."""
     result = repr_namedtuple(tup)
     expected = expected.replace("\t", INDENTATION)
@@ -121,7 +121,7 @@ def test_pprint_namedtuple(tup: NTuple, expected: str) -> None:
         ),
     ],
 )
-def test_pprint_dataclass(dc: Dataclass, expected: str) -> None:
+def test_pprint_dataclass(dc: DataclassType, expected: str) -> None:
     r"""Test pprint_dataclass."""
     result = repr_dataclass(dc)
     expected = expected.replace("\t", INDENTATION)

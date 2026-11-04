@@ -2,7 +2,7 @@ r"""Test other protocols."""
 
 from typing import NamedTuple, Self
 
-from tsdm.types.namedtuple import NTuple, is_namedtuple
+from tsdm.types.namedtuple import NamedTupleType, is_namedtuple
 
 
 class MyNamedTuple(NamedTuple):
@@ -28,7 +28,7 @@ class NotNamedTuple(tuple[int, int]):  # ruff: ignore[SLOT001]
 
 def test_ntuple_match() -> None:
     match MyNamedTuple(1, 2):
-        case NTuple():
+        case NamedTupleType():
             pass
         case _:
             raise AssertionError
@@ -36,7 +36,7 @@ def test_ntuple_match() -> None:
 
 def test_ntuple_no_match() -> None:
     match NotNamedTuple(1, 2):
-        case NTuple():
+        case NamedTupleType():
             raise AssertionError
         case _:
             pass
@@ -44,30 +44,30 @@ def test_ntuple_no_match() -> None:
 
 def test_namedtuple_types() -> None:
     r"""Test the NTuple protocol."""
-    _typ: type[NTuple] = MyNamedTuple
-    _obj: NTuple = MyNamedTuple(1, 2)
+    _typ: type[NamedTupleType] = MyNamedTuple
+    _obj: NamedTupleType = MyNamedTuple(1, 2)
 
 
 def test_namedtuple_protocol() -> None:
     r"""Test the NTuple protocol."""
     # check an instance
     assert isinstance(MyNamedTuple(1, 2), tuple)
-    assert isinstance(MyNamedTuple(1, 2), NTuple)
+    assert isinstance(MyNamedTuple(1, 2), NamedTupleType)
     assert issubclass(MyNamedTuple, tuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore
-    assert issubclass(NTuple, NTuple)  # type: ignore
+    assert issubclass(MyNamedTuple, NamedTupleType)  # type: ignore
+    assert issubclass(NamedTupleType, NamedTupleType)  # type: ignore
 
 
 def test_is_namedtuple() -> None:
     r"""Test the is_namedtuple utility."""
     # check an instance
     assert isinstance(MyNamedTuple(1, 2), tuple)
-    assert isinstance(MyNamedTuple(1, 2), NTuple)
+    assert isinstance(MyNamedTuple(1, 2), NamedTupleType)
     assert is_namedtuple(MyNamedTuple(1, 2))
     # check the type
     assert issubclass(MyNamedTuple, tuple)
     assert is_namedtuple(MyNamedTuple)
-    assert issubclass(MyNamedTuple, NTuple)  # type: ignore
+    assert issubclass(MyNamedTuple, NamedTupleType)  # type: ignore
 
 
 def test_not_namedtuple() -> None:
@@ -75,8 +75,8 @@ def test_not_namedtuple() -> None:
     # check an instance
     assert isinstance(NotNamedTuple(1, 2), tuple)
     assert not is_namedtuple(NotNamedTuple(1, 2))
-    assert not isinstance(NotNamedTuple(1, 2), NTuple)
+    assert not isinstance(NotNamedTuple(1, 2), NamedTupleType)
     # check the type
     assert issubclass(NotNamedTuple, tuple)
     assert not is_namedtuple(NotNamedTuple)
-    assert not issubclass(NotNamedTuple, NTuple)  # type: ignore
+    assert not issubclass(NotNamedTuple, NamedTupleType)  # type: ignore

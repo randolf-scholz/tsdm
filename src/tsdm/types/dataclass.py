@@ -1,7 +1,7 @@
 r"""Dataclass protocol and utilities."""
 
 __all__ = [
-    "Dataclass",
+    "DataclassType",
     "is_dataclass",
     # type qualifiers
     "Fittable",
@@ -37,16 +37,16 @@ r"""Type Alias for fields that are fitted automatically."""
 class _DataclassMeta(ProtocolMeta):
     r"""Metaclass for `Dataclass`."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs[Dataclass]:  # ruff: ignore[N805]
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[DataclassType]:  # ruff: ignore[N805]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[Dataclass]]:  # ruff: ignore[N805]
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[DataclassType]]:  # ruff: ignore[N805]
         fields = getattr(subclass, "__dataclass_fields__", None)
         return isinstance(fields, dict)
 
 
 @runtime_checkable
-class Dataclass(Protocol, metaclass=_DataclassMeta):
+class DataclassType(Protocol, metaclass=_DataclassMeta):
     r"""Protocol for anonymous dataclasses.
 
     Similar to `DataClassInstance` from typeshed, but allows isinstance and issubclass.
@@ -57,11 +57,11 @@ class Dataclass(Protocol, metaclass=_DataclassMeta):
 
 
 @overload
-def is_dataclass(obj: type, /) -> TypeIs[type[Dataclass]]: ...
+def is_dataclass(obj: type, /) -> TypeIs[type[DataclassType]]: ...
 @overload
-def is_dataclass(obj: object, /) -> TypeIs[Dataclass]: ...
-def is_dataclass(obj: object, /) -> TypeIs[Dataclass] | TypeIs[type[Dataclass]]:
+def is_dataclass(obj: object, /) -> TypeIs[DataclassType]: ...
+def is_dataclass(obj: object, /) -> TypeIs[DataclassType] | TypeIs[type[DataclassType]]:
     r"""Check if the object is a dataclass."""
     if isinstance(obj, type):
-        return issubclass(obj, Dataclass)  # type: ignore
-    return issubclass(type(obj), Dataclass)  # type: ignore
+        return issubclass(obj, DataclassType)  # type: ignore
+    return issubclass(type(obj), DataclassType)  # type: ignore

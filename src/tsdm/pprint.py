@@ -89,8 +89,8 @@ import torch
 
 from .decorator import decorator
 from .types import (
-    Dataclass,
-    NTuple,
+    DataclassType,
+    NamedTupleType,
     SupportsArray,
     SupportsDataFrame,
     SupportsDevice,
@@ -136,10 +136,10 @@ class Types(Enum):
     r"""Enum for types."""
 
     ARRAY = SupportsArray
-    DATACLASS = Dataclass
+    DATACLASS = DataclassType
     FUNCTION = FunctionType
     MAPPING = Mapping
-    NAMEDTUPLE = NTuple
+    NAMEDTUPLE = NamedTupleType
     SEQUENCE = Sequence
     SET = AbstractSet
     TABLE = SupportsDataFrame
@@ -259,9 +259,9 @@ def get_identifier(obj: object, /, **_: Any) -> str:
             return "<array>"
         case SupportsDataFrame():
             return "<table>"
-        case Dataclass():
+        case DataclassType():
             return "<dataclass>"
-        case NTuple():
+        case NamedTupleType():
             return "<namedtuple>"
         case Mapping():
             return "<mapping>"
@@ -331,9 +331,9 @@ def repr_generic(
             return repr_array(frame, **kwargs)
         case SupportsArray() as array:
             return repr_array(array, **kwargs)
-        case Dataclass() as dtc:  # pyrefly: ignore[unsafe-overlap]
+        case DataclassType() as dtc:  # pyrefly: ignore[unsafe-overlap]
             return repr_dataclass(dtc, **kwargs)
-        case NTuple() as ntuple:  # pyrefly: ignore[unsafe-overlap]
+        case NamedTupleType() as ntuple:  # pyrefly: ignore[unsafe-overlap]
             return repr_namedtuple(ntuple, **kwargs)
         case Mapping() as mapping:
             return repr_mapping(mapping, **kwargs)
@@ -791,7 +791,7 @@ def repr_set(
 
 
 def repr_dataclass(
-    obj: Dataclass,
+    obj: DataclassType,
     /,
     *,
     align: bool = ALIGN,
@@ -862,7 +862,7 @@ def repr_dataclass(
 
 
 def repr_namedtuple(
-    obj: NTuple,
+    obj: NamedTupleType,
     /,
     *,
     align: bool = ALIGN,
@@ -1095,7 +1095,7 @@ def pprint_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
 
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
-def pprint_dataclass[Cls: Dataclass](cls: Cls, /, **kwds: Any) -> Cls:
+def pprint_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -1106,7 +1106,7 @@ def pprint_dataclass[Cls: Dataclass](cls: Cls, /, **kwds: Any) -> Cls:
 
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
-def pprint_namedtuple[Cls: type[NTuple]](cls: Cls, /, **kwds: Any) -> Cls:
+def pprint_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Add appropriate __repr__ to class."""
     if not (isinstance(cls, type) and is_namedtuple(cls)):
         raise TypeError(f"Expected NamedTuple type, got {cls}.")

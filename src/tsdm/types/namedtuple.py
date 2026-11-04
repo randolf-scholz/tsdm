@@ -1,18 +1,18 @@
 r"""NamedTuple Protocol and utilities."""
 
 __all__ = [
-    "NTuple",
+    "NamedTupleType",
     "is_namedtuple",
 ]
 
 
-import typing
 from abc import ABCMeta
 from collections.abc import Iterator, Mapping
 from types import get_original_bases
 from typing import (
     ClassVar,
     Final,
+    NamedTuple,
     Protocol,
     SupportsIndex,
     TypeIs,
@@ -20,8 +20,6 @@ from typing import (
     overload,
     runtime_checkable,
 )
-
-import typing_extensions
 
 
 class _NTupleMeta(ProtocolMeta):
@@ -35,18 +33,18 @@ class _NTupleMeta(ProtocolMeta):
     _fields: ClassVar[tuple[str, ...]] = ()
     r"""The fields of the namedtuple."""
 
-    def __instancecheck__(cls, instance: object, /) -> TypeIs[NTuple]:  # ruff: ignore[N805]
+    def __instancecheck__(cls, instance: object, /) -> TypeIs[NamedTupleType]:  # ruff: ignore[N805]
         return cls.__subclasscheck__(type(instance))
 
-    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[NTuple]]:  # ruff: ignore[N805]
+    def __subclasscheck__(cls, subclass: type, /) -> TypeIs[type[NamedTupleType]]:  # ruff: ignore[N805]
         if ABCMeta.__subclasscheck__(cls, subclass):
             return True
         bases = get_original_bases(subclass)
-        return (typing.NamedTuple in bases) or (typing_extensions.NamedTuple in bases)
+        return NamedTuple in bases
 
 
 @runtime_checkable  # FIXME: Use TypeVarTuple
-class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
+class NamedTupleType[T](Protocol, metaclass=_NTupleMeta):  # +T
     r"""Protocol for anonymous namedtuple.
 
     References:
@@ -85,11 +83,13 @@ class NTuple[T](Protocol, metaclass=_NTupleMeta):  # +T
 
 
 @overload
-def is_namedtuple(obj: type, /) -> TypeIs[type[NTuple]]: ...
+def is_namedtuple(obj: type, /) -> TypeIs[type[NamedTupleType]]: ...
 @overload
-def is_namedtuple(obj: object, /) -> TypeIs[NTuple]: ...
-def is_namedtuple(obj: object, /) -> TypeIs[NTuple] | TypeIs[type[NTuple]]:
+def is_namedtuple(obj: object, /) -> TypeIs[NamedTupleType]: ...
+def is_namedtuple(
+    obj: object, /
+) -> TypeIs[NamedTupleType] | TypeIs[type[NamedTupleType]]:
     r"""Check if the object is a namedtuple."""
     if isinstance(obj, type):
-        return issubclass(obj, NTuple)  # type: ignore
-    return issubclass(type(obj), NTuple)  # type: ignore
+        return issubclass(obj, NamedTupleType)  # type: ignore
+    return issubclass(type(obj), NamedTupleType)  # type: ignore
