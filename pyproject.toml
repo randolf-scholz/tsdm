@@ -37,7 +37,6 @@ dependencies = [
     "tensorboard>=2.21.0",
     "torch>=2.15.0",
     "tqdm>=4.70.1",
-    "typing-extensions>=4.16.0",
 ]
 
 [dependency-groups]
@@ -72,10 +71,11 @@ docs = [
     "sphinx-math-dollar>=1.3",
     "sphinx-togglebutton>=0.4.5",
     "sphinx-typo3-theme>=4.9.0",
+    "zensical>=0.0.74",
 ]
 linters = [
     "packaging>=26.3", # for some git hooks
-    "prek>=0.5.9",
+    "prek>=0.5.10",
     "ruff>=0.17.3",
     "tach>=0.35.3",
 ]
@@ -97,19 +97,16 @@ typing = [
     "pyrefly>=1.4.0",
     "pyright>=1.1.414",
     "scipy-stubs>=1.18.1.1",
-    "ty>=0.0.96",
+    "ty>=0.0.97",
     "types-colorama>=0.4.15.20260508",
-    "types-defusedxml>=0.7.0.20260504",
     "types-gevent>=26.9.0.20261006",
-    "types-jsonschema>=4.26.0.20261006",
     "types-networkx>=3.6.1.20261031",
     "types-pexpect>=4.9.0.20260518",
     "types-protobuf>=7.35.1.20260906",
+    "types-psutil>=7.2.2.20260906",
     "types-pygments>=2.21.0.20260819",
     "types-pytz>=2026.6.0.20261031",
     "types-pyyaml>=6.0.12.20261103",
-    "types-setuptools>=84.0.0.20261006",
-    "types-tabulate>=0.10.0.20261006",
     "types-tqdm>=4.70.0.20261102",
     "typing-extensions>=4.16.0",
 ]
@@ -119,8 +116,8 @@ forbid_circular_dependencies = true
 exact = true
 
 [tool.tombi]
-[tool.tombi.format.rules]
-indent-width = 4
+lint.rules.tables-out-of-order = "off"
+format.rules.indent-width = 4
 
 [[tool.tombi.schemas]]
 # XREF: https://tombi-toml.github.io/tombi/docs/formatter/auto-sorting/

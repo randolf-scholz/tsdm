@@ -3,10 +3,10 @@
 #:schema https://www.schemastore.org/prek.json
 
 exclude = ".idea/|.vscode/|bugs/|dev/"
-minimum_prek_version = "0.5.4"
+minimum_prek_version = "0.5.10"
 fail_fast = false
 update.cooldown_days = 7
-default_language_version = { python = "3.15", node = "24.13.0" }
+default_language_version = { python = "3.15", node = "26.13.0" }
 
 [[repos]]
 repo = "builtin"
@@ -18,21 +18,31 @@ hooks = [
     { id = "end-of-file-fixer" },
     { id = "file-contents-sorter" },
     { id = "fix-byte-order-marker" },
+    # { id = "forbid-new-submodules" },
     { id = "check-json" },
     { id = "check-json5" },
+    { id = "check-jsonc" },
     # { id = "pretty-format-json" },
     { id = "check-toml" },
     { id = "check-vcs-permalinks" },
     { id = "check-yaml" },
     { id = "check-xml" },
+    # { id = "deny-filename-pattern" },
+    # { id = "deny-pattern" },
+    # { id = "replace-pattern" },
+    # { id = "require-filename-pattern" },
+    # { id = "require-pattern" },
     { id = "mixed-line-ending" },
+    # { id = "normalize-indentation" },
     { id = "check-symlinks" },
     { id = "destroyed-symlinks" },
     { id = "check-merge-conflict" },
     { id = "detect-private-key" },
     { id = "no-commit-to-branch" },
+    # { id = "check-signed-commit" },
+    # { id = "check-commit-trailers" },
+    { id = "check-executables-have-shebangs" },
     { id = "check-shebang-scripts-are-executable" },
-    { id = "check-executables-have-shebangs" }
 ]
 
 [[repos]]
