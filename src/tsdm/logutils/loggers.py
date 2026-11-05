@@ -1,49 +1,27 @@
-r"""Logging Utility Functions.
+r"""Organize logging callbacks by training event.
 
-We allow the user to define callbacks for logging, which are called at the end of
-batches/epochs.
+`BaseLogger` groups callbacks under string keys. Its `log_batch_end`,
+`log_epoch_end`, and `log_results` methods dispatch the `batch`, `epoch`, and
+`result` groups, respectively. Each callback receives the current `step` and
+keyword arguments from the supplied state, and applies its own frequency check.
 
-A callback is a function that takes the following arguments:
+Callbacks can hold mutable objects such as models and optimizers. Pass existing
+losses, predictions, targets, or other computed results as keyword arguments to
+reuse them during logging. `WrapCallback` adapts a callable to this interface.
 
-- ``i``: The current iteration/epoch.
-- ``writer``: The ``SummaryWriter`` instance.
-- ``logged_object``: The object that is being logged.
-    - what if we need to pass multiple objects?
-- when used in callbacks, the
-- Should a callback be self-contained?
-- Does the callback need to reference the Logger it is being called from?
+Example:
+    ```python
+    from tsdm.logutils import BaseLogger, WrapCallback
 
-Idea: We want to so something like this:
 
-.. code-block:: python
+    def log_loss(step: int, /, *, loss: float) -> None:
+        print(f"Step {step}: loss={loss}")
 
-    logger = Logger(...)
-    logger.add_callback(log_loss, on="batch")
 
-How do we ensure logging is fast?
-
-- loggers should not recompute things that have already been computed
-    - loggers need access to existing results
-
-Examples:
-    We want to log the left-inverse residual of the linodenet.
-    Sometimes, this is also used as a regularization term.
-    Therefore, the logging function either has to:
-
-    - compute R and log it
-    - use the existing R and log it
-
-    Typical things the loggers need access to include:
-
-    - the current iteration
-    - the current loss
-    - the current model
-    - the current optimizer
-    - the current data
-        - the current predictions
-        - the current targets
-    - the current metrics
-    - the current metrics
+    logger = BaseLogger()
+    logger.add_callback("batch", WrapCallback(log_loss))
+    logger.log_batch_end(1, loss=0.5)
+    ```
 """
 
 __all__ = [
@@ -91,12 +69,12 @@ from .utils import Loss
 
 
 class Logger[CallbackT: CallbackSequence](Protocol):  # +CallbackT
-    r"""Generic Logger Protocol."""
+    r"""Protocol for loggers that expose callback sequences by event key."""
 
     @property
     @abstractmethod
     def callbacks(self) -> Mapping[str, CallbackT]:
-        r"""Callbacks to be called at the end of a batch/epoch."""
+        r"""Callback sequences indexed by event key."""
         ...
 
 
@@ -106,12 +84,12 @@ class BaseLogger(Mapping[str, CallbackList]):
     r"""Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
-    r"""Logger for the Encoder."""
+    r"""Diagnostic logger for this class."""
 
     callbacks: dict[str, CallbackList] = field(
         default_factory=lambda: defaultdict(CallbackList)
     )
-    r"""Callbacks to be called at the end of a batch/epoch."""
+    r"""Callback lists indexed by event key, such as `batch`, `epoch`, or `result`."""
 
     def __len__(self) -> int:
         return len(self.callbacks)
@@ -123,7 +101,7 @@ class BaseLogger(Mapping[str, CallbackList]):
         return self.callbacks[key]
 
     def add_callback(self, key: str, callback: Callback) -> None:
-        r"""Add a callback to the logger."""
+        r"""Append a callback to the group identified by `key`."""
         self.callbacks[key].append(callback)
 
     def log_epoch_end(self, step: int, /, **state_dict: Any) -> None:
@@ -142,7 +120,7 @@ class BaseLogger(Mapping[str, CallbackList]):
 @pprint_repr
 @dataclass(slots=True)
 class DefaultLogger(BaseLogger):
-    r"""Logger that adds pre-made batch/epoch logging."""
+    r"""Register batch, epoch, and result callbacks for the supplied objects."""
 
     _: KW_ONLY
 
@@ -155,7 +133,7 @@ class DefaultLogger(BaseLogger):
 
     # Optional Arguments
     checkpoint_frequency: int = 1
-    r"""Frequency of checkpoints."""
+    r"""Positive number of epoch steps between checkpoints."""
 
     config: Optional[JSON] = None
     r"""Configuration of the experiment."""
@@ -176,15 +154,15 @@ class DefaultLogger(BaseLogger):
     optimizer: Optional[TorchOptimizer] = None
     r"""Optimizer used for training."""
     predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None
-    r"""Function used for prediction."""
+    r"""Function called as `predict_fn(model, batch)` to return targets and predictions."""
     checkpointable_objects: Optional[dict[str, Any]] = None
     r"""Objects to be checkpointed."""
     # derived from other arguments
     writer: SummaryWriter = UNDEFINED
-    r"""SummaryWriter used for logging."""
+    r"""TensorBoard writer; created from `log_dir` when not supplied."""
 
     def __post_init__(self) -> None:
-        r"""Post-initialization steps."""
+        r"""Initialize the writer, evaluation history, and default callback groups."""
         self.writer = (
             SummaryWriter(log_dir=self.log_dir)
             if self.writer is UNDEFINED

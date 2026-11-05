@@ -1,10 +1,15 @@
 r"""Callback utilities for logging.
 
-A callback class generally should take a single positional argument to initialize.
-This argument can be either:
+Callbacks hold the objects or callables needed to log the current state.
+Most callback classes take the logged object as a positional constructor argument:
 
-1. A mutable object that changes by itself over time, e.g. a `DataFrame`, `nn.Module`, etc.
-2. A ``Callable[[int, **kwargs], T]`` that takes a step index and returns a value to log.
+1. A mutable object, such as a `DataFrame` or `nn.Module`, whose state changes over time.
+2. A callable that receives a step index and any additional keyword arguments.
+
+`WrapCallback` invokes a callable for its side effects; `PlotCallback` invokes
+a callable that returns a figure. Use the `callback(step, **state_dict)` entry
+point to apply frequency checks. Calling `__call__` directly bypasses the
+frequency check supplied by `BaseCallback`.
 """
 
 __all__ = [
@@ -95,25 +100,25 @@ from .utils import Loss, TargetsAndPredictions
 class Callback(Protocol):
     r"""Protocol for callbacks.
 
-    Callbacks should be initialized with mutable objects that are being logged.
-    every time the callback is called, it should log the current state of the
-    mutable object.
+    Callbacks log the current state of stored objects or values supplied as
+    keyword arguments. The `callback` method receives the current step and
+    applies the callback's execution frequency.
     """
 
     @property
     def frequency(self) -> int:
-        r"""The frequency at which the callback is executed."""
+        r"""Positive number of steps between executions."""
         return 1
 
     @property
     @abstractmethod
     def required_kwargs(self) -> set[str]:
-        r"""The required kwargs for the callback."""
+        r"""Names of the keyword arguments required to execute the callback."""
         ...
 
     @abstractmethod
     def callback(self, step: int, /, **state_dict: Any) -> None:
-        r"""Log something at time index i."""
+        r"""Log the supplied state at `step` when the execution frequency permits."""
         ...
 
 
@@ -121,34 +126,55 @@ class Callback(Protocol):
 class CallbackSequence[CallbackT: Callback](Callback, Protocol):
     r"""Protocol for sequences of callbacks.
 
-    Helper Protocol, emulates the intersection of ``MutableSequence[Callback]`` and `Callback`.
+    Combine the `Callback` interface with mutable sequence operations on
+    elements of type `CallbackT`.
     """
 
     def __len__(self) -> int: ...
+
     def __iter__(self) -> Iterator[CallbackT]: ...
+
     def __contains__(self, value: object, /) -> bool: ...
+
     @overload
     def __getitem__(self, index: int, /) -> CallbackT: ...
+
     @overload
     def __getitem__(self, index: slice, /) -> Self: ...
+
     @overload
     def __setitem__(self, index: int, value: CallbackT, /) -> None: ...
+
     @overload
     def __setitem__(self, index: slice, value: Iterable[CallbackT], /) -> None: ...
+
     @overload
     def __delitem__(self, index: int, /) -> None: ...
+
     @overload
     def __delitem__(self, index: slice, /) -> None: ...
+
     def __iadd__(self, values: Iterable[CallbackT], /) -> Self: ...
+
     def insert(self, index: int, value: CallbackT, /) -> None: ...
+
     def append(self, value: CallbackT, /) -> None: ...
+
     def extend(self, values: Iterable[CallbackT], /) -> None: ...
+
     def pop(self, index: int = -1, /) -> CallbackT: ...
+
     def clear(self, /) -> None: ...
 
 
 def is_callback(obj: object, /) -> TypeIs[Callback]:
-    r"""Check if the function is a callback."""
+    r"""Check whether a callable has the expected callback signature.
+
+    The first parameter must be positional-only; all remaining parameters must
+    be keyword-only or accept arbitrary keyword arguments. This signature check
+    does not verify the other attributes required by the `Callback` protocol.
+    A callable whose signature cannot be inspected raises `ValueError`.
+    """
     if not callable(obj):
         return False
 
@@ -176,21 +202,25 @@ class BaseCallback:
     _: KW_ONLY
 
     frequency: int = 1
-    r"""The frequency at which the callback is executed."""
+    r"""Positive number of steps between executions; must be nonzero."""
 
     @property
     def required_kwargs(self) -> set[str]:
-        r"""The required kwargs for the callback."""
+        r"""Names of the keyword arguments required by `__call__`."""
         return get_mandatory_kwargs(self.__call__)
 
     @abstractmethod
     def __call__(self, step: int, /, **state_dict: Any) -> None:
-        r"""Implementation of the callback."""
+        r"""Execute the callback without applying the frequency check."""
         ...
 
     @final
     def callback(self, step: int, /, **state_dict: Any) -> None:
-        r"""Executes the callback if `step` is a multiple of the frequency."""
+        r"""Execute the callback if `step` is a multiple of `frequency`.
+
+        Forward all keyword arguments to `__call__`. A zero frequency raises
+        `ZeroDivisionError`; use a positive frequency.
+        """
         if step % self.frequency == 0:
             self.LOGGER.debug("Logging at step %d", step)
             self(step, **state_dict)
@@ -198,20 +228,20 @@ class BaseCallback:
 
 @pprint_sequence
 class CallbackList(MutableSequence[Callback], BaseCallback):
-    r"""Callback to log multiple callbacks."""
+    r"""Execute an ordered, mutable sequence of callbacks."""
 
     callbacks: list[Callback]
-    r"""The callbacks to log."""
+    r"""Callbacks to execute in order, each with its own frequency check."""
 
     @property
     def required_kwargs(self) -> set[str]:
-        r"""The required kwargs for the callback."""
+        r"""Union of the keyword argument names required by the child callbacks."""
         return set().union(*(callback.required_kwargs for callback in self.callbacks))
 
     def __init__(
         self, iterable: Iterable[Callback] = (), /, *, frequency: int = 1
     ) -> None:
-        r"""Initialize the callback."""
+        r"""Store the callbacks and set the execution frequency of the list."""
         super().__init__(frequency=frequency)
         self.callbacks = list(iterable)
 
@@ -223,8 +253,10 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
 
     @overload
     def __getitem__(self, index: int, /) -> Callback: ...
+
     @overload
     def __getitem__(self, index: slice, /) -> Self: ...
+
     def __getitem__(self, index: int | slice, /) -> Callback | Self:
         if isinstance(index, SupportsIndex):
             return self.callbacks[index]
@@ -232,20 +264,24 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
 
     @overload
     def __setitem__(self, index: int, value: Callback, /) -> None: ...
+
     @overload
     def __setitem__(self, index: slice, value: Iterable[Callback], /) -> None: ...
+
     def __setitem__(self, index: int | slice, value: Any, /) -> None:
         self.callbacks[index] = value
 
     @overload
     def __delitem__(self, index: int, /) -> None: ...
+
     @overload
     def __delitem__(self, index: slice, /) -> None: ...
+
     def __delitem__(self, index: int | slice, /) -> None:
         del self.callbacks[index]
 
     def __call__(self, step: int, /, **state_dict: Any) -> None:
-        r"""Log something at the end of a batch/epoch."""
+        r"""Dispatch `step` and the supplied state to each child callback."""
         for obj in self.callbacks:
             obj.callback(step, **state_dict)
 
@@ -255,7 +291,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
 
 @dataclass(slots=True)
 class WrapCallback(BaseCallback):
-    r"""Wraps callable as a callback."""
+    r"""Wrap a callable that accepts a step and keyword arguments as a callback."""
 
     func: Callable[Concatenate[int, ...], None]
 
@@ -265,7 +301,11 @@ class WrapCallback(BaseCallback):
 
 @dataclass(slots=True)
 class ConfigCallback(BaseCallback):
-    r"""Callback to log the config to tensorboard."""
+    r"""Save the configuration to a JSON or YAML file via `log_config`.
+
+    Use `writer.log_dir` or the supplied path as the destination directory.
+    TOML output is not implemented.
+    """
 
     config: JSON
 
@@ -280,7 +320,7 @@ class ConfigCallback(BaseCallback):
     postfix: str = ""
 
     def __call__(self, step: int, /, **_: Any) -> None:
-        r"""Log the config to tensorboard."""
+        r"""Save the configuration to a file identified by `step`."""
         log_config(
             step,
             self.writer,
@@ -294,7 +334,13 @@ class ConfigCallback(BaseCallback):
 
 @dataclass(slots=True)
 class EvaluationCallback(BaseCallback):
-    r"""Callback to log evaluation metrics to tensorboard."""
+    r"""Evaluate data splits, log metrics to TensorBoard, and save the history.
+
+    Call `predict_fn(model, batch)` for each batch to obtain targets and
+    predictions. The history has step indices and `(split, metric)` columns.
+    Selecting best epochs requires exactly one split named `val`, `valid`, or
+    `validation`, ignoring case. Metrics are treated as losses to minimize.
+    """
 
     model: nn.Module  # mutable
 
@@ -317,7 +363,7 @@ class EvaluationCallback(BaseCallback):
     best_epoch: DataFrame = field(init=False)
 
     def __post_init__(self) -> None:
-        r"""Initialize the callback."""
+        r"""Initialize the history tables and recompute results for existing steps."""
         if self.history is UNDEFINED:
             self.history = DataFrame(
                 columns=MultiIndex.from_product([self.dataloaders, self.metrics])
@@ -371,7 +417,7 @@ class EvaluationCallback(BaseCallback):
 
     @torch.no_grad()
     def compute_results(self, step: int) -> None:
-        r"""Return the results at the minimal validation loss."""
+        r"""Evaluate every data split and store its metrics in `history` at `step`."""
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
             scalars = {
@@ -382,7 +428,13 @@ class EvaluationCallback(BaseCallback):
                 self.history.loc[step, (key, metric)] = value.cpu().item()
 
     def compute_best_epoch(self, step: int) -> None:
-        r"""Compute the best epoch for the given index."""
+        r"""Store split scores from the best validation epoch for each metric.
+
+        Consider history rows with indices at most `step`. Choose an epoch for
+        each metric by minimizing its trailing five-row validation mean, allowing
+        windows with a single observation. Store the unsmoothed scores from those
+        epochs across all splits in `best_epoch` at `step`.
+        """
         # unoptimized...
         mask = self.history.index <= step
         validation_key = self._get_validation_key()
@@ -399,7 +451,12 @@ class EvaluationCallback(BaseCallback):
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredictions:
-        r"""Return the targets and predictions for the given dataloader."""
+        r"""Collect targets and predictions, pad with NaNs, and squeeze singleton axes.
+
+        `predict_fn(model, batch)` must return targets and predictions whose
+        leading dimension indexes sequences with compatible trailing shapes.
+        The dataloader must yield at least one sequence.
+        """
         targets_list: list[Tensor] = []
         predics_list: list[Tensor] = []
 
@@ -461,14 +518,14 @@ class CheckpointCallback(BaseCallback):
 
 @dataclass(slots=True)
 class HParamCallback(BaseCallback):
-    r"""Callback to log hyperparameters to tensorboard."""
+    r"""Callback to log hyperparameters to TensorBoard."""
 
     hparam_dict: JSON
 
     _: KW_ONLY
 
     history: DataFrame
-    r"""The history of the metrics, must have columns for train, valid, and test."""
+    r"""Metric history with `(split, metric)` columns for `train`, `valid`, and `test`."""
     writer: SummaryWriter
 
     def __post_init__(self) -> None:
@@ -507,7 +564,13 @@ class HParamCallback(BaseCallback):
 
     @property
     def scores(self) -> dict[str, dict[str, float]]:
-        r"""Current scores."""
+        r"""Scores at epochs minimizing centered five-row validation means.
+
+        Select an epoch independently for each metric, then return that epoch's
+        unsmoothed scores for `train`, `valid`, and `test`. The rolling mean uses
+        full windows, so at least five history rows with valid values are needed
+        for each metric to select an epoch.
+        """
         best_epochs: Series = self.history.rolling(5, center=True).mean().idxmin()
 
         return {
@@ -521,7 +584,7 @@ class HParamCallback(BaseCallback):
 
 @dataclass(slots=True)
 class KernelCallback(BaseCallback):
-    r"""Callback to log kernel information to tensorboard."""
+    r"""Callback to log kernel information to TensorBoard."""
 
     kernel: Tensor  # mutable
 
@@ -566,7 +629,7 @@ class KernelCallback(BaseCallback):
 
 @dataclass(slots=True)
 class LRSchedulerCallback(BaseCallback):
-    r"""Callback to log learning rate information to tensorboard."""
+    r"""Callback to log learning rate information to TensorBoard."""
 
     lr_scheduler: LRScheduler  # mutable
 
@@ -592,7 +655,7 @@ class LRSchedulerCallback(BaseCallback):
 
 @dataclass(slots=True)
 class MetricsCallback(BaseCallback):
-    r"""Callback to log multiple metrics to tensorboard."""
+    r"""Callback to log multiple metrics to TensorBoard."""
 
     metrics: Mapping[str, Loss]
 
@@ -624,7 +687,7 @@ class MetricsCallback(BaseCallback):
 
 @dataclass(slots=True)
 class ModelCallback(BaseCallback):
-    r"""Callback to log model information to tensorboard."""
+    r"""Callback to log model information to TensorBoard."""
 
     model: nn.Module  # mutable
 
@@ -656,7 +719,7 @@ class ModelCallback(BaseCallback):
 
 @dataclass(slots=True)
 class OptimizerCallback(BaseCallback):
-    r"""Callback to log optimizer information to tensorboard."""
+    r"""Callback to log optimizer information to TensorBoard."""
 
     optimizer: Optimizer  # mutable
 
@@ -688,7 +751,7 @@ class OptimizerCallback(BaseCallback):
 
 @dataclass(slots=True)
 class ScalarsCallback(BaseCallback):
-    r"""Callback to log multiple values to tensorboard."""
+    r"""Callback to log multiple scalar values to TensorBoard."""
 
     scalars: dict[str, Tensor]
 
@@ -749,7 +812,7 @@ class TableCallback(BaseCallback):
 
 @dataclass(slots=True)
 class PlotCallback(BaseCallback):
-    r"""Callback to log a plot to tensorboard."""
+    r"""Call `plot_fn(step, **plot_kwargs)` and log the returned figure to TensorBoard."""
 
     plot_fn: Callable[Concatenate[int, ...], Figure]
 

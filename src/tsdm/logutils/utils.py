@@ -12,16 +12,19 @@ from torch import Tensor
 
 
 class TargetsAndPredictions(NamedTuple):
-    r"""Targets and predictions."""
+    r"""Pair target and prediction tensors returned by model evaluation."""
 
     targets: Tensor
     predictions: Tensor
 
 
 class Loss(Protocol):
-    r"""Protocol for losses on arbitrary data.
+    r"""Protocol for scalar losses on target and prediction tensors.
 
-    .. math:: ℓ：Y×Y ⟶ ℝ_{≥0}
+    $$ ℓ：Y×Y ⟶ ℝ_{≥0} $$
+
+    Implementations accept keyword-only `predictions` and `targets` and return
+    a scalar tensor. Nonnegativity is a convention, not a runtime check.
     """
 
     def __call__(

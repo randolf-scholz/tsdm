@@ -1,4 +1,4 @@
-r"""Functions that realize logging via a `tensorboard.SummaryWriter`."""
+r"""Log to TensorBoard or save artifacts in a writer's logging directory."""
 
 __all__ = [
     # Protocols
@@ -71,12 +71,18 @@ class LogFunction(Protocol):
         prefix: str = "",
         postfix: str = "",
     ) -> None:
-        r"""Log to tensorboard."""
+        r"""Log the supplied object to TensorBoard at `step`."""
         ...
 
 
 def is_logfunc(func: object, /) -> TypeIs[LogFunction]:
-    r"""Check if the function is a callback."""
+    r"""Check whether a callable has a signature compatible with a logging function.
+
+    Require at least six parameters, with the first three accepting positional
+    arguments. This is a signature heuristic; parameter names, annotations,
+    and the remaining parameter kinds are not checked. Signature inspection
+    errors propagate to the caller.
+    """
     if not callable(func):
         return False
 
@@ -99,7 +105,14 @@ def log_config(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log config to tensorboard."""
+    r"""Save a configuration as a JSON or YAML file in the logging directory.
+
+    Use `writer.log_dir` when given a `SummaryWriter`, or the supplied path
+    otherwise. The destination directory must already exist. The filename is
+    `{identifier}-{step}.{fmt}`, where optional `prefix` and `postfix`
+    surround `name`, separated by colons. TOML output raises
+    `NotImplementedError`.
+    """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path /= f"{identifier}-{step}.{fmt}"
@@ -137,10 +150,13 @@ def log_kernel(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log kernel information.
+    r"""Log scalar diagnostics and figures for a square, two-dimensional kernel.
 
-    Set option to true to log every epoch.
-    Set option to an integer to log whenever ``i % log_interval == 0``.
+    The boolean `log_scalars` and `log_figures` switches enable scalar and
+    image logging, respectively. Individual switches select distances, linear
+    algebra diagnostics, norms, scaled norms, a heatmap, and an eigenvalue plot.
+    Each invocation logs at the supplied `step`; scheduling is handled by the
+    caller or callback. A nonsquare or nonmatrix kernel raises `ValueError`.
     """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     K = kernel
@@ -258,7 +274,7 @@ def log_lr_scheduler(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log learning rate scheduler."""
+    r"""Log the learning rate returned by the scheduler's `get_last_lr` method."""
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     cls_name = lr_scheduler.__class__.__name__
     lr = lr_scheduler.get_last_lr()
@@ -280,7 +296,13 @@ def log_metrics(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log multiple metrics at once."""
+    r"""Evaluate metrics on targets and predictions and log the resulting scalars.
+
+    Supply either `inputs` with `predictions` and `targets` keys, or both
+    `predictions` and `targets` directly. These forms are mutually exclusive.
+    Targets and predictions must have the same length; invalid combinations or
+    unequal lengths raise `ValueError`.
+    """
     if predictions is not None and targets is not None and inputs is None:
         pass
     elif predictions is None and targets is None and inputs is not None:
@@ -322,7 +344,12 @@ def log_model(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log model data."""
+    r"""Log aggregate norms and histograms of model parameters and their gradients.
+
+    Parameters without gradients are omitted from gradient logging. Empty tensors
+    are skipped when logging histograms. Use `log_norms` and `log_histograms`
+    to select the outputs.
+    """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
 
     variables: dict[str, Tensor] = dict(model.named_parameters())
@@ -363,7 +390,12 @@ def log_optimizer(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log optimizer data under ``prefix:optimizer:postfix/``."""
+    r"""Log optimizer parameters, gradients, and additional state tensors.
+
+    In tags, optional `prefix` and `postfix` surround `name`, separated by
+    colons. The `log_norms`, `log_histograms`, and `log_extras` switches
+    select aggregate norms, histograms, and additional state such as momentum.
+    """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
 
     # NOTE: optimizer.state is of kind
@@ -413,7 +445,12 @@ def log_values(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log multiple metrics at once."""
+    r"""Log a mapping of precomputed scalar values to TensorBoard.
+
+    Each entry is logged at `step` under `{identifier}:{entry_name}/{key}`.
+    In the identifier, optional `prefix` and `postfix` surround `name`,
+    separated by colons.
+    """
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     for ident, scalar in scalars.items():
         writer.add_scalar(f"{identifier}:{ident}/{key}", scalar, step)
@@ -431,7 +468,13 @@ def log_table(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log multiple metrics at once."""
+    r"""Serialize a table to a file in the logging directory.
+
+    Use `writer.log_dir` when given a `SummaryWriter`, or the supplied path
+    otherwise. The destination directory must already exist. The filename is
+    `{identifier}-{step}.{filetype}`, with the hyphen omitted for an empty
+    identifier. Pass `options` to `tsdm.datatools.serialize.serialize_table`.
+    """
     options = {} if options is None else options
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
@@ -450,11 +493,11 @@ def log_plot(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Make a forecast plot.
+    r"""Rasterize an existing Matplotlib figure and log it to TensorBoard.
 
     Args:
         step: The current step.
-        fig: The plot to log can be a figure or a function returning a figure.
+        fig: The Matplotlib figure to log.
         rasterization_options: Options to pass to `tsdm.viz.rasterize`.
         writer: The writer to log to.
         name: The name of the plot.
