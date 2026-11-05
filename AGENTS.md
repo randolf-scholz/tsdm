@@ -51,10 +51,18 @@ This file describes project conventions for automated agents contributing to `ts
 - Keep code compatible with the configured tooling in `pyproject.toml` (ruff, mypy, pyright, pylint).
 - Match existing project formatting (line length, imports, quotes) and do not introduce conflicting style rules.
 
-## Documentation expectations
+## Docstrings
 
-- Docstrings should align with the configured convention (Google style).
-- When behavior is subtle, document invariants and edge cases alongside the type signature.
+- documentation is compibled with `zensical` and requires markdown syntax.
+- Docstrings follow Google style; document invariants and edge cases.
+- Prefer raw docstrings (`r"""..."""`) by default.
+- Use Unicode characters in latex formulas in docstrings to improve readability. so $ℝ$ rather than $\mathbb{R}$, $ϕ$
+  rather that $\phi$, $∑$ rather than $\sum$, etc. This includes super- and subscripts, e.g. $xᵢⱼ$ rather than $x_{ij}$
+  and $f⁻¹$ rather than $f^{-1}$.
+- Keep single line equations to a single line `$$ <eq> $$` rather than `$$\n <eq>\n $$`
+- Use `$$\begin{aligned}\n <eq>\n \end{aligned}$$` for multiline equations, rather than
+  `$$\n\begin{aligned}\n <eq>\n \end{aligned}\n$$`
+- Equations shouldn't have a trailing dot.
 
 ## Running tests, formatting, and linting
 
