@@ -8,7 +8,7 @@ __all__ = [
 
 from collections.abc import Iterable
 from types import EllipsisType
-from typing import Optional, overload
+from typing import overload
 
 from tsdm.types.aliases import Axis, IndexArgND
 
@@ -20,37 +20,34 @@ def get_broadcast(
     axis: Axis,
     keepdim: bool = False,
 ) -> tuple[slice | None, ...]:
-    r"""Creates an indexer that broadcasts a tensors contracted via `axis`.
+    r"""Create an indexer that restores axes removed by a tensor contraction.
 
-    Essentially works like a-posteriori adding the ``keepdims=True`` option to a contraction.
-    If ``x = contraction(data, axis)`` (e.g. sum, mean, max), then ``x[broadcast]``
-    for ``broadcast=get_braodcast(data.shape, axis) is roughly equivalent to
-    ``contraction(data, axis, keepdims=True)``.
+    If `x = contraction(data, axis=axis)`, then `x[get_broadcast(data.shape, axis=axis)]`
+    has the same shape as `contraction(data, axis=axis, keepdims=True)`.
+    This allows element-wise operations such as `data + x[broadcast]`.
 
-    This achieves element-wise compatibility: ``data + x[broadcast]``.
-
-    >>> import numpy as np
-    >>> arr = np.random.randn(1, 2, 3, 4, 5)
-    >>> ax = (1, -1)
-    >>> broadcast = get_broadcast(arr.shape, axis=ax)
-    >>> m = np.mean(arr, ax)
-    >>> m_ref = np.mean(arr, axis=ax, keepdims=True)
-    >>> m[broadcast].shape == m_ref.shape
-    True
-
-    If `keepdim` is True, then the broadcast is the complement of the contraction,
-    i.e. ``x[broadcast]`` is roughly equivalent to ``contraction(data, kept_axis, keepdims=True)``,
-    where ``kept_axis = set(range(data.ndim)) - set(ax%data.ndim for ax in axis)``.
+    With `keepdim=True`, `axis` instead selects the axes retained by the
+    contraction. Negative axes are normalized modulo the rank.
 
     Args:
-        original_shape: The tensor to be contracted.
-        axis: The axes to be contracted.
-        keepdim: select `True` if the axes are to be kept instead.
+        original_shape: The shape of the tensor before contraction.
+        axis: The axes to contract, or `None` to select all axes.
+        keepdim: Whether `axis` selects retained axes instead of contracted axes.
 
     Example:
-        data is of shape  ``(2,3,4,5,6,7)``
-        axis is the tuple ``(0,2,-1)``
-        broadcast is ``(:, None, :, None, None, :)``
+        ```pycon
+        >>> import numpy as np
+        >>> arr = np.ones([1, 2, 3, 4, 5])
+        >>> ax = (1, -1)
+        >>> broadcast = get_broadcast(arr.shape, axis=ax)
+        >>> m = np.mean(arr, axis=ax)
+        >>> m_ref = np.mean(arr, axis=ax, keepdims=True)
+        >>> m[broadcast].shape == m_ref.shape
+        True
+        ```
+
+        For shape `(2, 3, 4, 5, 6, 7)` and contracted axes `(0, 2, -1)`,
+        the indexer is `(None, slice(None), None, slice(None), slice(None), None)`.
     """
     rank = len(original_shape)
 
@@ -84,10 +81,14 @@ def reduce_axes(
 def reduce_axes(
     axis: Axis, selection: str | list[str] | IndexArgND
 ) -> tuple[int, ...] | None:
-    r"""Returns axis selection corresponding to given tensor indexing.
+    r"""Reduce an axis selection to account for tensor indexing.
 
-    Assuming some universal operator ``op`` acts in tensor ``T``, that is ``op(T, axis=axis)``,
-    then the return of this method allows to apply ``op(T[selection], axis=reduced_axis)``.
+    Given an operation `op(T, axis=axis)`, use
+    `reduced_axis = reduce_axes(axis, selection)` to obtain the axis selection
+    for `op(T[selection], axis=reduced_axis)`.
+
+    An `axis` of `None` remains `None`. Inserting dimensions with `None` is
+    unsupported for explicit axis selections; at most one ellipsis is allowed.
     """
     # convert to tuple
     match axis:
@@ -110,9 +111,6 @@ def reduce_axes(
         case list(seq):
             drop = len(seq) <= 1
             return axis[drop:]
-        case slice() as slc:
-            drop = _slice_size(slc) in {0, 1}
-            return axis[drop:]
         case range(start=start, stop=stop):
             drop = (stop - start) in {0, 1}
             return axis[drop:]
@@ -134,30 +132,21 @@ def reduce_axes(
             raise TypeError(f"Unknown type {type(selection)}")
 
 
-def _slice_size(s: slice, /) -> Optional[int]:
-    r"""Get the size of a slice."""
-    if s.stop is None or s.start is None:
-        return None
-    return s.stop - s.start
-
-
 def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:
-    r"""Invert axes-selection for a rank `ndim` tensor.
+    r"""Return the complement of an axis selection for a tensor of rank `ndim`.
 
-    Example:
-        +------+------------+-----------+
-        | ndim | axis       | inverted  |
-        +======+============+===========+
-        | 4    | None       | ()        |
-        +------+------------+-----------+
-        | 4    | (-3,-2,-1) | (0,)      |
-        +------+------------+-----------+
-        | 4    | (-2,-1)    | (0,1)     |
-        +------+------------+-----------+
-        | 4    | (-1)       | (0,1,2)   |
-        +------+------------+-----------+
-        | 4    | ()         | (0,1,2,3) |
-        +------+------------+-----------+
+    Negative axes are normalized modulo `ndim`. An `axis` of `None` selects
+    every axis, so its complement is empty. The output order is unspecified.
+
+    The following examples show the complementary axes in sorted order:
+
+    | `ndim` | `axis`         | Complement     |
+    |--------|----------------|----------------|
+    | 4      | `None`         | `()`           |
+    | 4      | `(-3, -2, -1)` | `(0,)`         |
+    | 4      | `(-2, -1)`     | `(0, 1)`       |
+    | 4      | `(-1,)`        | `(0, 1, 2)`    |
+    | 4      | `()`           | `(0, 1, 2, 3)` |
     """
     match axis:
         case None:
