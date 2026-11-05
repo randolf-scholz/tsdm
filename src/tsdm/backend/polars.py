@@ -1,4 +1,4 @@
-r"""Implement `polars`-backend for tsdm."""
+r"""Polars backend implementation."""
 
 __all__ = [
     "nanmin",
@@ -28,14 +28,22 @@ def scalar(x: Any, /, dtype: Any) -> Any:
 
 
 def nanmin(x: Series, /, axis: Axis = None) -> Any:
-    r"""Analogue to `numpy.nanmin`."""
+    r"""Return the minimum of a Series, ignoring null values.
+
+    Only `axis=None` is supported. Unlike null values, `NaN` values are not
+    explicitly filtered by this wrapper.
+    """
     if axis is not None:
         raise ValueError("Axis is not supported for polars Series.")
     return x.min()
 
 
 def nanmax(x: Series, /, axis: Axis = None) -> Any:
-    r"""Analogue to `numpy.nanmin`."""
+    r"""Return the maximum of a Series, ignoring null values.
+
+    Only `axis=None` is supported. Unlike null values, `NaN` values are not
+    explicitly filtered by this wrapper.
+    """
     if axis is not None:
         raise ValueError("Axis is not supported for polars Series.")
     return x.max()
@@ -55,12 +63,18 @@ def drop_null(x: Series, /) -> Series: ...
 @overload
 def drop_null(x: DataFrame, /) -> DataFrame: ...
 def drop_null[T: (Series, DataFrame)](x: T, /) -> T:
-    r"""Drop `NaN` values from a polars object."""
+    r"""Drop null values, or rows containing nulls for a DataFrame.
+
+    Floating-point `NaN` values are retained.
+    """
     return x.drop_nulls()  # ty: ignore[invalid-return-type]
 
 
 def is_null(x: Series, /) -> Series:
-    r"""Check for `NaN` values in a polars object."""
+    r"""Return a mask identifying null values in a Series.
+
+    Floating-point `NaN` values are not marked as null.
+    """
     return x.is_null()
 
 
@@ -73,7 +87,12 @@ def select_outliers_series(
     lower_inclusive: bool | None,
     upper_inclusive: bool | None,
 ) -> Series:
-    r"""Detect outliers in a Series, given boundary values."""
+    r"""Return a boolean mask identifying values outside the supplied bounds.
+
+    A bound of `None` leaves that side unbounded. Inclusive bounds admit values
+    equal to the boundary. Nulls and values in nonnumeric Series are not marked
+    as outliers.
+    """
     if not s.dtype.is_numeric():
         return Series(s.name, [False] * len(s), dtype=pl.Boolean)
 
@@ -146,7 +165,10 @@ def remove_outliers_series[S: Series](
 ) -> S:
     r"""Remove outliers from a Series, given boundary values.
 
-    ``inplace`` is accepted for API compatibility. Polars objects are immutable.
+    Outliers are replaced with nulls and, when `drop=True`, removed. If both
+    bounds are `None`, return the input unchanged.
+
+    `inplace` is accepted for API compatibility and ignored; the input is not modified.
     """
     del inplace
     if lower_bound is None and upper_bound is None:
@@ -185,7 +207,11 @@ def remove_outliers_dataframe[T: DataFrame](
 ) -> T:
     r"""Remove outliers from a DataFrame, given boundary values.
 
-    ``inplace`` is accepted for API compatibility. Polars objects are immutable.
+    Outlying cells are replaced with nulls. When `drop=True`, remove rows only
+    if every column is marked as an outlier. All columns must have entries in
+    each bounds mapping.
+
+    `inplace` is accepted for API compatibility and ignored; the input is not modified.
     """
     del inplace
     given_bounds = set.intersection(

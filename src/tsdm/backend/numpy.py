@@ -1,4 +1,4 @@
-r"""Implements `numpy`-backend for tsdm."""
+r"""NumPy backend implementation."""
 
 __all__ = [
     # types
@@ -28,7 +28,11 @@ r"""Type Alias for `numpy` dtype arguments."""
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:
-    r"""Construct a scalar (0d)-array of a given type."""
+    r"""Construct a zero-dimensional array of the given dtype.
+
+    Singleton dimensions are removed. Raise `ValueError` if the resulting array
+    is not zero-dimensional.
+    """
     array = np.array(x).astype(dtype).squeeze()
     if array.shape != ():
         raise ValueError(f"Created scalar array has shape {array.shape}!")
@@ -43,7 +47,7 @@ def drop_null(x: NDArray, /) -> NDArray:
 
 
 def copy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
-    r"""Create an array of the same shape as `x`."""
+    r"""Create an array from `x` using the dtype of `ref`."""
     return np.array(x, dtype=ref.dtype, copy=False)
 
 
@@ -55,7 +59,16 @@ def apply_along_axes(
 ) -> NDArray:
     r"""Apply a function to multiple arrays along axes.
 
-    It is assumed that all arrays have the same shape.
+    Move the selected axes to the front, call `op`, and restore the original axis
+    order. The operation must preserve the shape of its inputs.
+
+    Args:
+        op: Function applied to the arrays after moving the selected axes.
+        *arrays: One or more arrays with identical shapes.
+        axis: Axes to move to the front. `None` leaves the axis order unchanged.
+
+    Raises:
+        ValueError: If no arrays are supplied or their shapes differ.
     """
     if len(arrays) < 1:
         raise ValueError("At least one array is required!")
@@ -83,9 +96,16 @@ def apply_along_axes(
 def round_relative(x: np.ndarray, /, *, decimals: int = 2) -> np.ndarray:
     r"""Round to relative precision.
 
-    >>> np.set_printoptions(6, floatmode="fixed", suppress=True)
-    >>> round_relative(np.array([1234.5678, 0.12345678]), decimals=2)
-    array([1230.000000,    0.123000])
+    For positive values, retain `decimals + 1` significant digits. Zero remains
+    zero; negative values produce `NaN` because their logarithm is undefined.
+
+    Examples:
+        ```pycon
+        >>> with np.printoptions(precision=6, floatmode="fixed", suppress=True):
+        ...     round_relative(np.array([1234.5678, 0.12345678]), decimals=2)
+        array([1230.000000,    0.123000])
+
+        ```
     """
     order = np.where(x == 0, 0, np.floor(np.log10(x)))
     digits = decimals - order

@@ -24,17 +24,17 @@ type BooleanArray = Any
 
 
 def ndim(x: SupportsShape, /) -> int:
-    r"""Returns the number of dimensions in the tensor like object."""
+    r"""Return the number of dimensions of an object with a `shape` attribute."""
     return len(x.shape)
 
 
 def numel(x: SupportsShape, /) -> int:
-    r"""Returns the number of elements in the tensor like object."""
+    r"""Return the number of elements of an object with a `shape` attribute."""
     return prod(x.shape)
 
 
 def is_singleton(x: SupportsShape, /) -> bool:
-    r"""Determines whether a tensor like object has a single element."""
+    r"""Determine whether an object with a `shape` attribute has one element."""
     return prod(x.shape) == 1
 
 
@@ -49,14 +49,14 @@ def is_nan(x: SupportsEquality, /) -> BooleanArray:
 
 # FIXME: https://github.com/python/typing/issues/548
 def false_like(x: SupportsEquality, /) -> BooleanArray:
-    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Return an all-false boolean array with the same shape as `x`."""
     z = x == x
     return z ^ z
 
 
 # FIXME: https://github.com/python/typing/issues/548
 def true_like(x: SupportsEquality, /) -> BooleanArray:
-    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Return an all-true boolean array with the same shape as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
     #   ``(𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True``
     z = x == x
@@ -65,7 +65,7 @@ def true_like(x: SupportsEquality, /) -> BooleanArray:
 
 # FIXME: https://github.com/python/typing/issues/548
 def where[Arr: FloatArray](mask: Any, x: Arr, y: Arr, /) -> Arr:
-    r"""Selects elements from `x` or `y` based on `m`."""
+    r"""Select elements from `x` where `mask` is true and from `y` otherwise."""
     # Note: A fundamental problem with implementing this generically is dealing
     #   with infinity and NaN values.
     #   We use a hack to avoid this problem: by IEEE standard x⁰ = 1,
@@ -107,18 +107,17 @@ def round_impl[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:
 def round[Arr: FloatArray](x: Arr, /, *, decimals: int = 0) -> Arr:  # ruff: ignore[A001]
     r"""Round elements of the array to the given number of decimals.
 
+    Rounding uses [round half to even](https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even).
+
     Note:
-        Keeps floating point data type, does not cast to integer.
+        Rounding does not explicitly cast the result to an integer dtype.
 
     Args:
-        x: Input array
-        decimals: Number of decimal places to round to (default: 0)
+        x: Input array.
+        decimals: Number of decimal places to round to. Defaults to zero.
 
     Returns:
-        Array with elements rounded to the given number of decimals
-
-    Refernces:
-        https://en.wikipedia.org/wiki/Rounding#Rounding_half_to_even
+        Array with elements rounded to the given number of decimals.
     """
     try:
         return x.round(decimals=decimals)

@@ -182,7 +182,11 @@ class Kernels:  # TODO: how to make this more elegant?
 
 @dataclass(slots=True, frozen=True, init=False)
 class Backend[T]:
-    r"""Provides kernels for numerical operations."""
+    r"""Provide numerical kernels for a selected backend.
+
+    Kernels without a backend-specific implementation use a generic implementation
+    when available. Unsupported kernels are set to `None`.
+    """
 
     NAME: BackendID
 
@@ -236,7 +240,12 @@ class Backend[T]:
 
 
 def _gather_types(obj: object, /) -> set[BackendID]:
-    r"""Gather the backend types of a set of objects."""
+    r"""Gather backend identifiers from an object or nested containers.
+
+    Inspect dictionary values and elements of lists, tuples, sets, and frozensets
+    recursively. Python scalars and sentinel values contribute no identifiers.
+    Unsupported objects raise `TypeError`.
+    """
     match obj:
         case (tuple() | set() | frozenset() | list()) as container:
             return set().union(*map(_gather_types, container))
@@ -273,7 +282,19 @@ def _gather_types(obj: object, /) -> set[BackendID]:
 
 
 def get_backend_id(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
-    r"""Get the backend of a set of objects."""
+    r"""Return the backend identifier of an object or nested containers.
+
+    Args:
+        obj: Object or nested containers to inspect.
+        fallback: Backend identifier to return when no backend is detected.
+
+    Returns:
+        The detected backend identifier, or `fallback` for scalars and empty containers.
+
+    Raises:
+        TypeError: If an object has an unsupported type.
+        ValueError: If more than one backend is detected.
+    """
     types: set[BackendID] = _gather_types(obj)
 
     match len(types):
@@ -292,6 +313,18 @@ def get_backend[Arr: SupportsArray](
 @overload
 def get_backend(obj: object, /, *, fallback: BackendID = ...) -> Backend: ...
 def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> Backend:
-    r"""Get the backend of a set of objects."""
+    r"""Return numerical kernels for an object or nested containers.
+
+    Args:
+        obj: Object or nested containers to inspect.
+        fallback: Backend to use when no backend is detected.
+
+    Returns:
+        A backend providing kernels for the detected type, or the fallback backend.
+
+    Raises:
+        TypeError: If an object has an unsupported type.
+        ValueError: If multiple backends are detected or the backend name is invalid.
+    """
     backend_id = get_backend_id(obj, fallback=fallback)
     return Backend(backend_id)

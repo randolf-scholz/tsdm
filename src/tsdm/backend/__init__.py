@@ -1,8 +1,7 @@
-r"""Utilities for backends.
+r"""Numerical kernels for NumPy, pandas, Polars, PyArrow, and PyTorch.
 
-TODO: Consider using the python Array API for the backend interface.
-
-Supports pandas / numpy / torch.
+Todo:
+    Consider using the Python Array API for the backend interface.
 """
 
 __all__ = [

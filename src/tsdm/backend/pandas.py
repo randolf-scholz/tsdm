@@ -1,4 +1,4 @@
-r"""Implement `pandas`-backend for tsdm."""
+r"""pandas backend implementation."""
 
 __all__ = [
     # types
@@ -60,7 +60,7 @@ type PANDAS_TYPE = Index | Series | DataFrame
 r"""A type alias for pandas objects."""
 
 NA_VALUES: Final[frozenset[object]] = frozenset({NA, NaT})
-r"""Values that correspond to NaN."""
+r"""pandas missing-value sentinels `NA` and `NaT`."""
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:
@@ -74,18 +74,18 @@ def cast[P: PandasType](x: P, /, dtype: Any) -> P:
 
 
 def drop_null[P: PandasType](x: P, /) -> P:
-    r"""Drop `NaN` values from a pandas object."""
+    r"""Drop missing values, or rows containing missing values for a DataFrame."""
     return x.dropna()
 
 
 def false_like[P: PandasType](x: P, /) -> P:
-    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Return an all-false boolean mask with the same shape as `x`."""
     m = x.isna()
     return m ^ m
 
 
 def true_like[P: PandasType](x: P, /) -> P:
-    r"""Returns a constant boolean tensor with the same shape/device as `x`."""
+    r"""Return an all-true boolean mask with the same shape as `x`."""
     m = x.isna()
     return m ^ (~m)
 
@@ -93,10 +93,14 @@ def true_like[P: PandasType](x: P, /) -> P:
 def infer_axes(
     x: PandasType, /, *, axis: Axis = None
 ) -> Literal["index", "columns"] | None:
-    r"""Convert axes specification to pandas-compatible axes specification.
+    r"""Convert an axis specification to a pandas axis name.
 
-    - Series: -1 → 0, -2 → Error
-    - DataFrame: -1 → 1, -2 → 0
+    Integer axes are normalized modulo the number of dimensions. For a Series,
+    every integer maps to `"index"`. For a DataFrame, even integers map to
+    `"index"` and odd integers map to `"columns"`.
+
+    `None` is returned unchanged. A sequence containing one integer is also
+    accepted; other specifications raise `TypeError`.
     """
     match axis:
         case None:
@@ -139,7 +143,7 @@ def nanstd[P: PandasType](x: P, /, *, axis: Axis = None) -> P:
 
 
 def _where[P: PandasType](cond: Any, x: P, other: Any, /) -> P:
-    r"""Apply ``where`` while preserving DataFrame's row-wise alignment."""
+    r"""Apply `where` while preserving DataFrame row alignment."""
     if isinstance(x, DataFrame):
         return x.where(cond, other, axis=0)
     return x.where(cond, other)
@@ -150,9 +154,10 @@ def where[
 ](cond: T | Any, a: T | Any, b: T | Any, /) -> T:
     r"""Analogue to `numpy.where` with null conditions treated as false.
 
-    At least one argument must be  a pandas type, the other two can be array-like.
+    At least one argument should be a pandas object; the other two can be
+    array-like. If none is a pandas object, fall back to `numpy.where`.
 
-    Nulls propagate from ``a`` where ``cond`` is true and from ``b`` otherwise.
+    Nulls propagate from `a` where `cond` is true and from `b` otherwise.
     """
     mask = pd.isna(cond)
     if isinstance(cond, DataFrame | Series):
@@ -176,12 +181,21 @@ def where[
 
 
 def null_like[P: PandasType](x: P, /) -> P:
-    r"""Returns a copy of the input filled with nulls."""
+    r"""Select the input values using an all-true mask.
+
+    Note:
+        The current implementation retains the values of `x`; it does not fill
+        them with nulls despite the function name.
+    """
     return where(true_like(x), x, NA)
 
 
 def copy_like[P: PandasType](x: ArrayLike, ref: P, /) -> P:
-    r"""Create a Series/DataFrame with the same modality as a reference."""
+    r"""Create a pandas object from `x` using the type, dtype, and labels of `ref`.
+
+    Supported references are Index, Series, and DataFrame objects. Index names,
+    Series indices, and DataFrame indices and columns are taken from `ref`.
+    """
     match ref:
         case Index() as idx:
             return Index(x, dtype=idx.dtype, name=idx.name)
