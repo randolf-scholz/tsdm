@@ -1,12 +1,4 @@
-r"""General Purpose Data Loaders for Time Series Data.
-
-We implement multiple levels of abstraction.
-
-- Dataloader for TimeSeriesTensor
-- Dataloader for tuple of TimeSeriesTensor
-- Dataloader for MetaDataset
-   - sample dataset by index, then sample from that dataset.
-"""
+r"""Pack, pad, unpack, and unpad batches of variable-length tensors."""
 
 __all__ = [
     # Functions
@@ -31,7 +23,11 @@ from .logical_operators import cumulative_and
 
 
 def collate_packed(batch: list[Tensor], /) -> PackedSequence:
-    r"""Collates list of tensors into a PackedSequence."""
+    r"""Collate tensors into a `PackedSequence`, sorting the input list in place.
+
+    The tensors must have positive lengths and matching trailing dimensions.
+    The output is ordered by decreasing sequence length.
+    """
     # First, need to sort in descending order by length
     batch.sort(key=Tensor.__len__, reverse=True)
     return pack_sequence(batch)
@@ -44,15 +40,21 @@ def collate_padded(
     batch_first: bool = True,
     padding_value: float = 0.0,
 ) -> Tensor:  # Float[$Nₘₐₓ, ...]
-    r"""Collates a list of tensors of varying lengths into a single Tensor, padded with zeros.
+    r"""Collate tensors of varying lengths into a single padded tensor.
 
-    Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with ``batch_first=True`` as default
+    Equivalent to `torch.nn.utils.rnn.pad_sequence`, with `batch_first=True`
+    by default. Trailing dimensions must match across tensors.
+
+    Args:
+        batch: The nonempty list of tensors to pad.
+        batch_first: Whether to place the batch dimension before the time dimension.
+        padding_value: The value used for padding; defaults to zero.
     """
     return pad_sequence(batch, batch_first=batch_first, padding_value=padding_value)
 
 
 def unpack_sequence(batch: PackedSequence, /) -> list[Tensor]:
-    r"""Reverse operation of pack_sequence."""
+    r"""Unpack a `PackedSequence` into a list of unpadded tensors."""
     batch_pad_packed, lengths = pad_packed_sequence(batch, batch_first=True)
     return [x[:n] for x, n in zip(batch_pad_packed, lengths, strict=True)]
 
@@ -65,7 +67,19 @@ def unpad_sequence(
     lengths: Optional[Tensor] = None,
     padding_value: float = torch.nan,
 ) -> list[Tensor]:
-    r"""Reverse operation of `torch.nn.utils.rnn.pad_sequence`."""
+    r"""Recover unpadded tensors from a batch produced by `pad_sequence`.
+
+    Args:
+        padded_seq: A padded batch with matching trailing feature dimensions.
+        batch_first: Whether the first dimension indexes the batch.
+        lengths: The length of each sequence. If omitted, infer lengths by removing
+            trailing timestamps whose features all equal `padding_value`.
+        padding_value: The padding marker used when inferring lengths. NaN markers
+            are detected with `torch.isnan`.
+
+    Interior timestamps matching the padding marker are retained. Supply `lengths`
+    when valid trailing observations can also match the padding marker.
+    """
     # swap batch dimension if necessary
     padded_seq = padded_seq if batch_first else padded_seq.swapaxes(0, 1)  # (B, T, ...)
 

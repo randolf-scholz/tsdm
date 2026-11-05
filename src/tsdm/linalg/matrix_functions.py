@@ -34,18 +34,20 @@ from .tensor_functions import geometric_mean, tensor_norm
 def erank(x: Tensor, /) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    .. math:: \operatorname{erank}(A) ≔ e^{H(\frac{𝛔}{‖𝛔‖₁})}
-        = ∏ \bigl(\frac{σᵢ}{‖σᵢ‖}\bigr)^{-\frac{σᵢ}{‖σᵢ‖}}
+    $$\begin{aligned}
+        pᵢ &≔ \frac{σᵢ}{∑ⱼ σⱼ} \\
+        \op{erank}(A) &≔ e^{H(p)} = \exp\Bigl(-∑ᵢ pᵢ \log pᵢ\Bigr)
+    \end{aligned}$$
 
     By definition, the effective rank is equal to the exponential of the entropy of the
-    distribution of the singular values.
+    distribution of the singular values. Zero probabilities contribute zero to the
+    entropy. A matrix whose singular values are all zero produces NaN.
 
     References:
-        - | `The effective rank: A measure of effective dimensionality
-            <https://ieeexplore.ieee.org/document/7098875>`_
-          | Olivier Roy, Martin Vetterli
-          | `15th European Signal Processing Conference (EUSIPCO), 2007
-            <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
+        - `The effective rank: A measure of effective dimensionality \
+          Olivier Roy, Martin Vetterli \
+          `15th European Signal Processing Conference (EUSIPCO), 2007 \
+          <https://ieeexplore.ieee.org/document/7098875>
     """
     σ = torch.linalg.svdvals(x)
     σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
@@ -57,16 +59,19 @@ def erank(x: Tensor, /) -> Tensor:
 def relerank(x: Tensor, /) -> Tensor:
     r"""Compute the relative effective rank of a matrix.
 
-    This is the effective rank scaled by $\min(m,n)$.
+    This is the effective rank divided by $\min(m,n)$ for an $m×n$ matrix.
     """
     return erank(x) / min(x.shape[-2:])
 
 
 # Float[..., m, n] -> Float[...]
 def col_corr(x: Tensor, /) -> Tensor:
-    r"""Compute average column-wise correlation of a matrix.
+    r"""Compute the mean absolute cosine similarity between distinct columns.
 
-    .. math:: \frac{1}{n(n-1)}\left\|𝕀ₙ - \frac{XᵀX}{\diag(XᵀX)⊗\diag(XᵀX)}\right\|_{1,1}
+    $$ \frac{1}{n(n-1)}∑_{i≠j}\frac{|xᵢᵀxⱼ|}{‖xᵢ‖₂‖xⱼ‖₂} $$
+
+    Here $xᵢ$ denotes column $i$ of a two-dimensional matrix. Columns are not
+    centered. Zero columns or fewer than two columns can produce NaN.
     """
     _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
@@ -79,9 +84,12 @@ def col_corr(x: Tensor, /) -> Tensor:
 
 # Float[..., m, n] -> Float[...]
 def row_corr(x: Tensor, /) -> Tensor:
-    r"""Compute average column-wise correlation of a matrix.
+    r"""Compute the mean absolute cosine similarity between distinct rows.
 
-    .. math:: \frac{1}{m(m-1)}\left\|𝕀ₘ - \frac{XXᵀ}{diag(XXᵀ)⊗diag(XXᵀ)}\right\|_{1,1}
+    $$ \frac{1}{m(m-1)}∑_{i≠j}\frac{|xᵢᵀxⱼ|}{‖xᵢ‖₂‖xⱼ‖₂} $$
+
+    Here $xᵢ$ denotes row $i$ of a two-dimensional matrix. Rows are not
+    centered. Zero rows or fewer than two rows can produce NaN.
     """
     m, _ = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
@@ -94,9 +102,9 @@ def row_corr(x: Tensor, /) -> Tensor:
 
 # Float[..., n, n] -> Float[..., n, n]
 def closest_symmetric(x: Tensor, /, *, dim: tuple[int, int] = (-2, -1)) -> Tensor:
-    r"""Symmetric part of square matrix.
+    r"""Return the symmetric part of a square matrix along `dim`.
 
-    .. math:: \argmin_{X: Xᵀ = -X} ‖A-X‖
+    $$ \frac{A+Aᵀ}{2} = \argmin_{X: Xᵀ = X} ‖A-X‖_F $$
     """
     rowdim, coldim = dim
     return (x + x.swapaxes(rowdim, coldim)) / 2
@@ -104,9 +112,9 @@ def closest_symmetric(x: Tensor, /, *, dim: tuple[int, int] = (-2, -1)) -> Tenso
 
 # Float[..., n, n] -> Float[..., n, n]
 def closest_skew(x: Tensor, /, *, dim: tuple[int, int] = (-2, -1)) -> Tensor:
-    r"""Skew-Symmetric part of a matrix.
+    r"""Return the skew-symmetric part of a square matrix along `dim`.
 
-    .. math:: \argmin_{X: Xᵀ = X} ‖A-X‖
+    $$ \frac{A-Aᵀ}{2} = \argmin_{X: Xᵀ = -X} ‖A-X‖_F $$
     """
     rowdim, coldim = dim
     return (x - x.swapaxes(rowdim, coldim)) / 2
@@ -114,9 +122,9 @@ def closest_skew(x: Tensor, /, *, dim: tuple[int, int] = (-2, -1)) -> Tensor:
 
 # Float[..., n, n] -> Float[..., n, n]
 def closest_orthogonal(x: Tensor, /) -> Tensor:
-    r"""Orthogonal part of a square matrix.
+    r"""Return a closest orthogonal matrix to a real square matrix.
 
-    .. math:: \argmin_{X: XᵀX = 𝕀} ‖A-X‖
+    $$ \argmin_{X: XᵀX = 𝕀} ‖A-X‖_F $$
     """
     U, _, Vt = torch.linalg.svd(x, full_matrices=True)
     Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
@@ -125,9 +133,9 @@ def closest_orthogonal(x: Tensor, /) -> Tensor:
 
 # Float[..., n, n] -> Float[..., n, n]
 def closest_diagonal(x: Tensor, /) -> Tensor:
-    r"""Diagonal part of a square matrix.
+    r"""Return the diagonal part of a square matrix.
 
-    .. math:: \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    $$ \argmin_{X: X⊙𝕀 = X} ‖A-X‖_F $$
     """
     d = torch.diagonal(x, dim1=-2, dim2=-1)
     return torch.diag_embed(d)
@@ -135,9 +143,11 @@ def closest_diagonal(x: Tensor, /) -> Tensor:
 
 # Float[..., m, n], Float[..., m, n] -> Float[...]
 def reldist(x: Tensor, y: Tensor, /) -> Tensor:
-    r"""Relative distance between two matrices.
+    r"""Compute the relative Frobenius distance between two matrices.
 
-    .. math::  \frac{‖x-y‖}{‖y‖}
+    $$ \frac{ ‖x-y‖_F }{ ‖y‖_F } $$
+
+    Return zero when `y` has zero Frobenius norm, regardless of `x`.
     """
     r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
     yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
@@ -149,28 +159,38 @@ def reldist(x: Tensor, y: Tensor, /) -> Tensor:
 def reldist_diagonal(x: Tensor, /) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    .. math:: \frac{‖A-X‖}{‖A‖} X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    $$ \frac{ ‖A-\diag(A)‖_F }{ ‖A‖_F } $$
+
+    Return zero for a zero matrix.
     """
     return reldist(closest_diagonal(x), x)
 
 
 # Float[..., n, n] -> Float[...]
 def reldist_symmetric(x: Tensor, /) -> Tensor:
-    r"""Relative magnitude of closest_symm part of a square matrix."""
+    r"""Compute the relative Frobenius distance to the closest symmetric matrix.
+
+    Return zero for a zero matrix.
+    """
     return reldist(closest_symmetric(x), x)
 
 
 # Float[..., n, n] -> Float[...]
 def reldist_skew(x: Tensor, /) -> Tensor:
-    r"""Relative magnitude of skew-closest_symm part of a square matrix."""
+    r"""Compute the relative Frobenius distance to the closest skew-symmetric matrix.
+
+    Return zero for a zero matrix.
+    """
     return reldist(closest_skew(x), x)
 
 
 # Float[..., n, n] -> Float[...]
 def reldist_orthogonal(x: Tensor, /) -> Tensor:
-    r"""Relative magnitude of orthogonal part of a square matrix.
+    r"""Compute the relative distance to the closest orthogonal matrix.
 
-    .. math:: \min_{X: XᵀX = 𝕀} \frac{‖A-X‖}{‖A‖}
+    $$ \min_{X: XᵀX = 𝕀} \frac{ ‖A-X‖_F }{ ‖A‖_F } $$
+
+    Return zero for a zero matrix, following `reldist`.
     """
     return reldist(closest_orthogonal(x), x)
 
@@ -179,13 +199,14 @@ def reldist_orthogonal(x: Tensor, /) -> Tensor:
 def stiffness_ratio(x: Tensor, /) -> Tensor:
     r"""Compute the stiffness ratio of a square matrix.
 
-    .. math:: \frac{|\Re(λ_\max)|}{|\Re(λ_\min)|}
+    $$ \frac{\maxᵢ |\Re(λᵢ)|}{\minᵢ |\Re(λᵢ)|} $$
 
-    Only applicable if $\Re(λᵢ)<0$ for all $i$.
+    All eigenvalues must satisfy $\Re(λᵢ)<0$; otherwise return NaN.
 
     References:
-        - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
-          | J. D. Lambert, ISBN: 978-0-471-92990-1
+        - J. D. Lambert \
+          Numerical Methods for Ordinary Differential Systems: The Initial Value Problem \
+          ISBN: 978-0-471-92990-1
     """
     x = x.to(dtype=torch.complex128)
     λ = torch.linalg.eigvals(x)
@@ -198,14 +219,14 @@ def stiffness_ratio(x: Tensor, /) -> Tensor:
 
 # Float[..., n, n] -> Float[...]
 def spectral_radius(x: Tensor, /) -> Tensor:
-    r"""Return $\max_i \abs{λᵢ}$."""
+    r"""Return the spectral radius $\maxᵢ |λᵢ|$."""
     λ = torch.linalg.eigvals(x)
     return λ.abs().amax(dim=-1)
 
 
 # Float[..., n, n] -> Float[...]
 def spectral_abscissa(x: Tensor, /) -> Tensor:
-    r"""Return $\max_i \Re(λᵢ)$."""
+    r"""Return the spectral abscissa $\maxᵢ \Re(λᵢ)$."""
     λ = torch.linalg.eigvals(x)
     return λ.real.amax(dim=-1)
 
@@ -213,13 +234,14 @@ def spectral_abscissa(x: Tensor, /) -> Tensor:
 def _apply_keepdim(
     x: Tensor, /, *, dim: tuple[int, int], keepdim: bool = False
 ) -> Tensor:
-    r"""Insert dimensions in the right places.
+    r"""Restore reduced dimensions as singleton axes when `keepdim=True`.
 
-    We assume x was some tensor to which a reduction was applied, such that
+    The reduction must have been performed as follows:
 
-    1. The affected axes were mapped, in order, to the last dimensions of x.
-    2. The reduction was performed over the last dimensions of x.
-    3. We now want to insert the dimensions back into x at the right places.
+    1. Move the axes in `dim`, in order, to the final dimensions.
+    2. Reduce over those final dimensions to produce `x`.
+
+    Return `x` unchanged when `keepdim=False`.
     """
     if not keepdim:
         return x
@@ -242,23 +264,26 @@ def logarithmic_norm(
 ) -> Tensor:  # Float[...]
     r"""Compute the logarithmic norm of a matrix.
 
-    .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖ₚ-1}{ε}
+    $$ μₚ(A) ≔ \lim_{ε→0⁺} \frac{‖𝕀+εA‖ₚ-1}{ε} $$
 
-    Special cases:
+    For real matrices, the standard logarithmic norm has these special cases:
 
-    - p=+∞: maxiumum rowsum, using real value for diagonal
-    - p=+2: maximum eigenvalue of symmetric part of A
-    - p=+1: maximum columnsum, using real value for diagonal
-    - p=-1: minimum columnsum, using real value for diagonal
-    - p=-2: minimum eigenvalue of symmetric part of A
-    - p=-∞: minimum rowsum, using real value for diagonal
+    - $p=+∞$: Maximum row sum, using absolute off-diagonal entries.
+    - $p=2$: Maximum eigenvalue of the symmetric part of $A$.
+    - $p=1$: Maximum column sum, using absolute off-diagonal entries.
+
+    Diagonal entries contribute their real parts to the sums. Negative orders
+    select the corresponding minima in this implementation. The current axis
+    reductions exchange the row-sum and column-sum cases for $p=±1$ and $p=±∞$.
+    Only $p=±1,±2,±∞$ are supported. The matrix must be square;
+    `scaled=True` raises `NotImplementedError`.
 
     References:
-        - Logarithmic Norm https://en.wikipedia.org/wiki/Logarithmic_norm
-        - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>`_
-        - | The logarithmic norm. History and modern theory
-          | Gustaf Söderlind, BIT Numerical Mathematics, 2006
-          | https://link.springer.com/article/10.1007/s10543-006-0069-9
+        - [Logarithmic norm](https://en.wikipedia.org/wiki/Logarithmic_norm).
+        - [What Is the Logarithmic Norm?](https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/).
+        - The logarithmic norm. History and modern theory \
+          Gustaf Söderlind, BIT Numerical Mathematics, 2006 \
+          <https://link.springer.com/article/10.1007/s10543-006-0069-9>
     """
     if scaled:
         raise NotImplementedError("Implementation not validated!")
@@ -315,23 +340,32 @@ def schatten_norm(
     keepdim: bool = False,
     scaled: bool = False,
 ) -> Tensor:  # Float[...]
-    r"""Schatten norm $p$-th order.
+    r"""Compute a singular-value norm of order $p$.
 
-    .. math::  ‖A‖ₚᵖ ≔ \tr(|A|ᵖ) = ∑ᵢ σᵢᵖ
+    The standard Schatten norm is the vector norm of the singular values:
 
-    The Schatten norm is equivalent to the vector norm of the singular values.
+    $$ ‖A‖ₚ ≔ \Bigl(∑ᵢ σᵢᵖ\Bigr)^{1/p} $$
 
-    - $p=+∞$: Maximum Singular Value, equivalent to spectral norm $‖A‖_2$.
-    - $p=2$: Frobius Norm (sum of squared values)
-    - $p=1$: Nuclear Norm (sum of singular values)
-    - $p=0$: Number of non-zero singular values. Equivalent to rank.
-    - $p=-1$: Reciprocal sum of singular values.
-    - $p=-2$: Reciprocal sum of squared singular values.
-    - $p=+∞$: Minimal Singular Value
+    | Order  | Standard interpretation                                                  |
+    |--------|--------------------------------------------------------------------------|
+    | $p=+∞$ | Maximum singular value (spectral norm).                                  |
+    | $p=2$  | Frobenius norm (square root of the sum of squared singular values).      |
+    | $p=1$  | Nuclear norm (sum of singular values).                                   |
+    | $p=0$  | Number of nonzero singular values (rank).                                |
+    | $p=-1$ | Reciprocal of the sum of reciprocal singular values.                     |
+    | $p=-2$ | Reciprocal square root of the sum of reciprocal squared singular values. |
+    | $p=-∞$ | Minimum singular value.                                                  |
+
+    The implementation omits zero singular values. For finite nonzero `p`, it
+    normalizes singular values by their maximum without restoring that scale.
+    With `scaled=True`, it averages powers instead of summing them. For `p=0`,
+    the scaled result is the geometric mean of nonzero singular values.
+    For infinite orders, it returns the largest or smallest nonzero singular
+    value; an all-zero matrix produces NaN in these cases.
 
     References:
-        - Matrix Norms (schatten): https://en.wikipedia.org/wiki/Matrix_norm#Schatten_norms
-        - Schatten Norms: https://en.wikipedia.org/wiki/Schatten_norms
+        - [Matrix norms: Schatten norms](https://en.wikipedia.org/wiki/Matrix_norm#Schatten_norms).
+        - [Schatten norms](https://en.wikipedia.org/wiki/Schatten_norms).
     """
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
@@ -384,18 +418,20 @@ def matrix_norm(
     keepdim: bool = False,
     scaled: bool = False,
 ) -> Tensor:  # Float[...]
-    r"""Entry-Wise Matrix norm of $p,q$-th order.
+    r"""Compute the entry-wise matrix norm of orders $p$ and $q$.
 
-    .. math:: ‖A‖_{p,q} ≔ \Bigl(∑ₙ \Bigl(∑ₘ |Aₘₙ|ᵖ\Bigr)^{q/p} \Bigr)^{1/q}
+    $$ ‖A‖_{p,q} ≔ \Bigl(∑ₙ \Bigl(∑ₘ |Aₘₙ|ᵖ\Bigr)^{q/p}\Bigr)^{1/q} $$
 
-    If $q$ is not specified, then $q=p$ is used. The scaled version is defined as
+    Both orders default independently to two. The inner reduction uses `dim[0]`
+    and order `p`; the outer reduction uses `dim[1]` and order `q`.
+    For finite nonzero orders, the scaled version is defined as
 
-    .. math:: ‖A‖_{p,q}^* ≔ \Bigl(𝐄ₙ \Bigl(𝐄ₘ |Aₘₙ|ᵖ\Bigr)^{q/p}\Bigr)^{1/q}
+    $$ ‖A‖_{p,q}^{\mathrm{scaled}} ≔ \Bigl(𝐄ₙ \Bigl(𝐄ₘ |Aₘₙ|ᵖ\Bigr)^{q/p}\Bigr)^{1/q} $$
 
-    where $𝐄$ is the averaging operator, which estimates the expected value $𝔼$.
+    Here $𝐄$ is the arithmetic mean. Zero and infinite orders follow `tensor_norm`.
 
     References:
-        - Matrix Norms (entry-wise): https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
+        - [Matrix norms: Entry-wise norms](https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms).
     """
     # convert to tuple
     dim = (dim[0] % x.ndim, dim[1] % x.ndim)  # absolufy dim
@@ -419,34 +455,33 @@ def operator_norm(
     keepdim: bool = True,
     scaled: bool = False,
 ) -> Tensor:  # Float[...]
-    r"""Operator norm of $p$-th order.
+    r"""Compute an operator norm of order $p$ for a square matrix.
 
-    .. math::
-        ‖x‖ₚ &≔ (   ∑ₖ₌₀ⁿ |xₖ|ᵖ)^{1/p}  \text{scaled=False} \\
-        ‖x‖ₚ &≔ (⅟ₙ ∑ₖ₌₀ⁿ |xₖ|ᵖ)^{1/p}  \text{scaled=True}  \\
+    For positive orders, the induced norm is defined by
+
+    $$\begin{aligned}
+        ‖x‖ₚ &≔ \Bigl(∑ₖ₌₁ⁿ |xₖ|ᵖ\Bigr)^{1/p} \\
         ‖A‖ₚ &≔ \sup_{x≠0} \frac{‖Ax‖ₚ}{‖x‖ₚ}
+    \end{aligned}$$
 
-    +--------+--------------------------+---------+
-    |        | regular                  | scaled  |
-    +========+==========================+=========+
-    | $p=+∞$ | maximum absolute row sum | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
-    | $p=+2$ | maximum singular value   | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
-    | $p=+1$ | maximum absolute col sum | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
-    | $p=±0$ | ∞                        | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
-    | $p=-1$ | minimum absolute col sum | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
-    | $p=-2$ | minimum singular value   | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
-    | $p=-∞$ | minimum absolute row sum | ᵖ√(n/m) |
-    +--------+--------------------------+---------+
+    | Order  | Standard interpretation      |
+    |--------|------------------------------|
+    | $p=+∞$ | Maximum absolute row sum.    |
+    | $p=2$  | Maximum singular value.      |
+    | $p=1$  | Maximum absolute column sum. |
+    | $p=-1$ | Minimum absolute column sum. |
+    | $p=-2$ | Minimum singular value.      |
+    | $p=-∞$ | Minimum absolute row sum.    |
+
+    Negative orders select minima as an extension of the positive-order cases.
+    Only $p=±1$, $±2$ and $±∞$ are supported. The current axis reductions exchange the
+    row-sum and column-sum cases for $p=±1$ and $p=±∞$; some combinations of
+    `dim` and `keepdim` can also select an invalid reduction axis.
+    The current `scaled=True` factor uses axis indices rather than matrix sizes.
 
     References:
-        - Matrix Norms (induced): https://en.wikipedia.org/wiki/Matrix_norm#Matrix_norms_induced_by_vector_norms
-        - Operator Norm: https://en.wikipedia.org/wiki/Operator_norm
+        - [Matrix norms induced by vector norms](https://en.wikipedia.org/wiki/Matrix_norm#Matrix_norms_induced_by_vector_norms).
+        - [Operator norm](https://en.wikipedia.org/wiki/Operator_norm).
     """
     rowdim, coldim = dim
     if x.shape[rowdim] != x.shape[coldim]:

@@ -11,7 +11,7 @@ from torch import Tensor
 
 
 def cumulative_and(x: Tensor, /, *, dim: int = 0) -> Tensor:
-    r"""Cumulative aggregation with logical ``AND`` $yᵢ = ⋀_{j≤i} xⱼ$."""
+    r"""Compute cumulative `AND` along `dim`: $yᵢ = ⋀_{j≤i} xⱼ$."""
     y = x.clone().swapaxes(0, dim)
     for i in range(1, len(y)):
         y[i] = y[i] & y[i - 1]
@@ -19,7 +19,7 @@ def cumulative_and(x: Tensor, /, *, dim: int = 0) -> Tensor:
 
 
 def cumulative_or(x: Tensor, /, *, dim: int = 0) -> Tensor:
-    r"""Cumulative aggregation with logical ``OR`` $yᵢ = ⋁_{j≤i} xⱼ$."""
+    r"""Compute cumulative `OR` along `dim`: $yᵢ = ⋁_{j≤i} xⱼ$."""
     y = x.clone().swapaxes(0, dim)
     for i in range(1, len(y)):
         y[i] = y[i] | y[i - 1]
@@ -27,7 +27,7 @@ def cumulative_or(x: Tensor, /, *, dim: int = 0) -> Tensor:
 
 
 def cumulative_xor(x: Tensor, /, *, dim: int = 0) -> Tensor:
-    r"""Cumulative aggregation with logical ``XOR`` $yᵢ = ⊕_{j≤i} xⱼ$."""
+    r"""Compute cumulative `XOR` along `dim`: $yᵢ = ⊕_{j≤i} xⱼ$."""
     y = x.clone().swapaxes(0, dim)
     for i in range(1, len(y)):
         y[i] = y[i] ^ y[i - 1]
