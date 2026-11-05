@@ -1,11 +1,23 @@
 #!/usr/bin/env -S just --justfile
 export PYTORCH_JIT := "0"
-BUILD_DIR := "./_build"
+BUILD_DIR := "./build"
 
 [default]
 [doc('List available commands.')]
 help:
     @just --justfile {{ justfile() }} --list --unsorted
+
+[doc("Build the Zensical documentation (the default builder).")]
+make *zensical_args: (zensical zensical_args)
+
+[doc("Build the Zensical site with generated API Markdown and strict validation.")]
+zensical *zensical_args: zensical-clean
+    uv run python scripts/generate_reference.py
+    uv run zensical build --clean --strict --config-file zensical.toml {{ zensical_args }}
+
+[doc("Remove Zensical output and staged Markdown, including generated API pages.")]
+zensical-clean:
+    rm -rf {{ BUILD_DIR }}/zensical {{ BUILD_DIR }}/markdown
 
 [doc('Clean Sphinx build artifacts.')]
 clean:
@@ -23,7 +35,7 @@ clean:
     rm -rf api
 
 [doc('Rebuild the Sphinx API docs and HTML output.')]
-make *sphinx_args: clean
+sphinx *sphinx_args: clean
     #!/usr/bin/env bash
     set -eu
 

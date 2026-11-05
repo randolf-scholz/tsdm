@@ -1,0 +1,129 @@
+[project]
+docs_dir = "build/markdown"
+site_dir = "build/zensical"
+# The build script stages Markdown and static assets without legacy Sphinx files.
+site_name = "tsdm"
+site_description = "Time-Series Datasets and Models"
+site_url = "https://github.com/randolf-scholz/tsdm"
+site_author = "Randolf Scholz"
+repo_url = "https://github.com/randolf-scholz/tsdm"
+repo_name = "randolf-scholz/tsdm"
+extra_css = ["_static/footer-navigation.css", "_static/signatures.css"]
+
+# The configuration must be loaded before the MathJax runtime.
+extra_javascript = [
+    "_static/mathjax_config.js",
+    "https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js",
+]
+
+nav = [
+    { "Home" = "index.md" },
+    { "API reference" = "reference/" },
+]
+
+[project.theme]
+custom_dir = "overrides"
+language = "en"
+features = [
+    "content.code.copy",
+    "content.footnote.tooltips",
+    # "navigation.footer",
+    "navigation.indexes",
+    "navigation.sections",
+    "navigation.tabs",
+    "navigation.top",
+    "search.highlight",
+    "search.suggest",
+    "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.theme.icon.admonition]
+# See: https://zensical.org/docs/authoring/admonitions/#admonition-icons
+note = "octicons/tag-16"
+abstract = "octicons/checklist-16"
+info = "octicons/info-16"
+tip = "octicons/squirrel-16"
+success = "octicons/check-16"
+question = "octicons/question-16"
+warning = "octicons/alert-16"
+failure = "octicons/x-circle-16"
+danger = "octicons/zap-16"
+bug = "octicons/bug-16"
+example = "octicons/beaker-16"
+quote = "octicons/quote-16"
+
+[project.plugins.mkdocstrings]
+default_handler = "python"
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["../src"]
+inventories = [
+    "https://numpy.org/doc/stable/objects.inv",
+    "https://docs.pytest.org/en/stable/objects.inv",
+    "https://docs.python.org/3/objects.inv",
+    "https://docs.scipy.org/doc/scipy/objects.inv",
+    "https://docs.pytorch.org/docs/stable/objects.inv",
+    "https://typing-extensions.readthedocs.io/en/latest/objects.inv",
+]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+# general
+show_source = true
+# headings
+heading_level = 1
+parameter_headings = true
+show_root_full_path = false
+show_root_heading = true
+show_symbol_type_heading = true
+show_symbol_type_toc = true
+# members
+members = false
+members_order = "source"
+show_submodules = false
+# docstrings
+docstring_style = "google"
+docstring_section_style = "list"
+docstring_options = { ignore_init_summary = true, trim_doctest_flags = true }
+# signatures
+line_length = 88
+overloads_only = true
+separate_signature = true
+show_signature_annotations = true
+signature_crossrefs = true
+type_parameter_headings = true
+
+[project.plugins.literate-nav]
+nav_file = "SUMMARY.md"
+
+[project.markdown_extensions]
+footnotes = { }
+admonition = { }
+attr_list = { }
+md_in_html = { }
+toc.permalink = true
+pymdownx.arithmatex.generic = true
+pymdownx.details = { }
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = { }
+pymdownx.snippets = { }
+pymdownx.superfences = { }
+pymdownx.tabbed.alternate_style = true

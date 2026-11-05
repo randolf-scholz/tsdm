@@ -170,10 +170,12 @@ const unicodeLetterModifiersToTeX = (s) => s.replace(
 
 // SEE: https://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
 // SEE: https://docs.mathjax.org/en/v4.0/advanced/synchronize/filters.html#converting-unicode-numeric-superscripts-to-tex-ones
-MathJax = {
-    loader: {load: ["[tex]/ams", "[tex]/mathtools", "[tex]/physics"]},
+window.MathJax = {
+    loader: {load: ["[tex]/ams", "[tex]/mathtools", "[tex]/physics", "[tex]/newcommand"]},
     tex: {
-        packages: {"[+]": ["ams", "mathtools", "physics"]},
+        processEscapes: true,  // https://zensical.org/docs/authoring/math/
+        processEnvironments: true,  // https://zensical.org/docs/authoring/math/
+        packages: {"[+]": ["ams", "mathtools", "physics", "newcommand"]},
         preFilters: [
             // Define pre-filter to convert Unicode superscripts to TeX syntax
             // NOTE: math is a MathItem object, math.math is a string.
@@ -232,4 +234,23 @@ MathJax = {
         },
 
     },
+    options: {  // added for https://zensical.org/docs/authoring/math/
+        ignoreHtmlClass: ".*|",
+        processHtmlClass: "arithmatex",
+    }
 };
+
+// This integrates MathJax with instant navigation.
+// See: https://zensical.org/docs/authoring/math/
+document$.subscribe(async () => {
+    await MathJax.startup.promise;
+    MathJax.startup.output.clearCache()
+    MathJax.typesetClear()
+    MathJax.texReset()
+    await MathJax.typesetPromise()
+})
+
+component$.subscribe(({ref}) => {
+    if (ref.classList.contains("md-annotation"))
+        MathJax.typesetPromise([ref])
+})

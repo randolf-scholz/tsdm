@@ -1,0 +1,8 @@
+/* Apply to your custom class only */
+.admonition.signature {
+    padding-bottom: 0;     /* removes extra space for body */
+}
+
+.admonition.signature > .admonition-title {
+    margin-bottom: 0;      /* removes space under the title */
+}

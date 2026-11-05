@@ -1,0 +1,33 @@
+/* Render adjacent-page navigation directly below the document content. */
+.adjacent-navigation {
+    border-top: 0.05rem solid var(--md-default-fg-color--lightest);
+    margin-top: 1.5rem;
+    padding: 0.2rem 0;
+}
+
+.md-footer__link {
+    color: var(--md-typeset-a-color);
+    margin: 0.35rem 0;
+}
+
+.md-footer__title {
+    font-size: 0.7rem;
+    margin-bottom: 0.1rem;
+    padding: 0 0.4rem;
+}
+
+.md-footer__button {
+    margin: 0;
+    padding: 0.2rem;
+}
+
+.md-footer__direction {
+    font-size: 0.55rem;
+}
+
+@media screen and (min-width: 45em) {
+    .adjacent-navigation .md-footer__link {
+        flex: 0 0 33.333%;
+        max-width: 33.333%;
+    }
+}
