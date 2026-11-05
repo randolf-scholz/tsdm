@@ -1,70 +1,53 @@
-r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
+r"""Hourly measurements of six air pollutants and six meteorological variables in Beijing.
 
-Beijing Multi-Site Air-Quality Data Data Set
-============================================
+### Beijing Multi-Site Air-Quality Dataset
 
-+--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-| **Data Set Characteristics:**  | Multivariate, Time-Series | **Number of Instances:**  | 420768 | **Area:**               | Physical   |
-+--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-| **Attribute Characteristics:** | Integer, Real             | **Number of Attributes:** | 18     | **Date Donated**        | 2019-09-20 |
-+--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-| **Associated Tasks:**          | Regression                | **Missing Values?**       | Yes    | **Number of Web Hits:** | 68746      |
-+--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
+| Property                       | Value                     |
+|--------------------------------|---------------------------|
+| **Data Set Characteristics:**  | Multivariate, Time-Series |
+| **Number of Instances:**       | 420768                    |
+| **Area:**                      | Physical                  |
+| **Attribute Characteristics:** | Integer, Real             |
+| **Number of Attributes:**      | 18                        |
+| **Date Donated**               | 2019-09-20                |
+| **Associated Tasks:**          | Regression                |
+| **Missing Values?**            | Yes                       |
+| **Number of Web Hits:**        | 68746                     |
 
-Source
-------
+### Source
 
 Song Xi Chen, csx '@' gsm.pku.edu.cn, Guanghua School of Management, Center for Statistical Science, Peking University.
 
-Data Set Information
---------------------
+### Data Set Information
 
 This data set includes hourly air pollutants data from 12 nationally-controlled air-quality monitoring sites.
 The air-quality data are from the Beijing Municipal Environmental Monitoring Center. The meteorological data in each
 air-quality site are matched with the nearest weather station from the China Meteorological Administration.
 The time period is from March 1st, 2013 to February 28th, 2017. Missing data are denoted as NA.
 
-Attribute Information
----------------------
+### Attribute Information
 
-+---------+-----------------------------------------+
+| Field   | Description                             |
+|---------|-----------------------------------------|
 | No      | row number                              |
-+=========+=========================================+
 | year    | year of data in this row                |
-+---------+-----------------------------------------+
 | month   | month of data in this row               |
-+---------+-----------------------------------------+
 | day     | day of data in this row                 |
-+---------+-----------------------------------------+
 | hour    | hour of data in this row                |
-+---------+-----------------------------------------+
-| PM2.5   | PM2.5 concentration (ug/m³)             |
-+---------+-----------------------------------------+
-| PM10    | PM10 concentration (ug/m³)              |
-+---------+-----------------------------------------+
-| SO2     | SO2 concentration (ug/m³)               |
-+---------+-----------------------------------------+
-| NO2     | NO2 concentration (ug/m³                |
-+---------+-----------------------------------------+
-| CO      | CO concentration (ug/m³)                |
-+---------+-----------------------------------------+
-| O3      | O3 concentration (ug/m³)                |
-+---------+-----------------------------------------+
+| PM2.5   | PM2.5 concentration (µg/m³)             |
+| PM10    | PM10 concentration (µg/m³)              |
+| SO2     | SO2 concentration (µg/m³)               |
+| NO2     | NO2 concentration (µg/m³)               |
+| CO      | CO concentration (µg/m³)                |
+| O3      | O3 concentration (µg/m³)                |
 | TEMP    | temperature (degree Celsius)            |
-+---------+-----------------------------------------+
 | PRES    | pressure (hPa)                          |
-+---------+-----------------------------------------+
 | DEWP    | dew point temperature (degree Celsius)  |
-+---------+-----------------------------------------+
 | RAIN    | precipitation (mm)                      |
-+---------+-----------------------------------------+
 | wd      | wind direction                          |
-+---------+-----------------------------------------+
 | WSPM    | wind speed (m/s)                        |
-+---------+-----------------------------------------+
 | station | name of the air-quality monitoring site |
-+---------+-----------------------------------------+
-"""  # ruff: ignore[E501, W505]
+"""
 
 __all__ = [
     # Constants
@@ -151,24 +134,28 @@ type Key = Literal["timeseries", "timeseries_metadata"]
 
 
 class BeijingAirQuality(PolarsDataset[Key]):
-    r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
+    r"""Hourly measurements of six air pollutants and six meteorological variables in Beijing.
 
-    +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    | **Data Set Characteristics:**  | Multivariate, Time-Series | **Number of Instances:**  | 420768 | **Area:**               | Physical   |
-    +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    | **Attribute Characteristics:** | Integer, Real             | **Number of Attributes:** | 18     | **Date Donated**        | 2019-09-20 |
-    +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    | **Associated Tasks:**          | Regression                | **Missing Values?**       | Yes    | **Number of Web Hits:** | 68746      |
-    +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    """  # ruff: ignore[E501, W505]
+    | Property                       | Value                     |
+    |--------------------------------|---------------------------|
+    | **Data Set Characteristics:**  | Multivariate, Time-Series |
+    | **Number of Instances:**       | 420768                    |
+    | **Area:**                      | Physical                  |
+    | **Attribute Characteristics:** | Integer, Real             |
+    | **Number of Attributes:**      | 18                        |
+    | **Date Donated**               | 2019-09-20                |
+    | **Associated Tasks:**          | Regression                |
+    | **Missing Values?**            | Yes                       |
+    | **Number of Web Hits:**        | 68746                     |
+    """
 
     SOURCE_URL = r"https://archive.ics.uci.edu/static/public/501/"
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
 
     INFO_URL = (
         r"https://archive.ics.uci.edu/dataset/501/beijing+multi+site+air+quality+data"
     )
-    r"""HTTP address containing additional information about the dataset."""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = ["beijing+multi+site+air+quality+data.zip"]
     rawdata_hashes = {

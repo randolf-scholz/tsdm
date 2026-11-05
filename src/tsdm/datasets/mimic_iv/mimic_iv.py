@@ -1,7 +1,7 @@
 r"""MIMIC-IV clinical dataset.
 
-Abstract
---------
+### Abstract
+
 Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
 algorithm development. Broad reuse of medical data is desirable for the greatest public good, but data sharing must
 be done in a manner which protects patient privacy. The Medical Information Mart for Intensive Care (MIMIC)-III
@@ -14,42 +14,11 @@ and improves on numerous aspects of MIMIC-III. MIMIC-IV adopts a modular approac
 highlighting data provenance and facilitating both individual and combined use of disparate data sources.
 MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
 
-Preprocessing Details
----------------------
-1. emar_detail: cast/drop the following columns to float:
-    - dose_due
-    - dose_given
-    - product_amount_given
-    - prior_infusion_rate
-    - infusion_rate
-    - infusion_rate_adjustment_amount
-2. labevents:
-    - drop data without hadm_id
-    - cast value to float
-3. omr:
-    - convert from tall to wide by unstacking result_name/result_value
-    - split columns containing blood pressure into systolic and diastolic
-    - cast all generated columns to float
-4. poe_detail:  Unstack on field_name/field_value
-5. prescriptions: drop rows whose dose_val_rx/form_val_disp is not float.
-6. procedureevents: convert storetime to second resolution
-7. chartevents:
-    - Drop rows with missing valueuom
-    - Cast values to float.
-    - Unstack value/valueuom?
+### Processed variants
 
-Tables that may require unstacking
-----------------------------------
-- icu/chartevents
-- icu/inputevents  <- has 3 of them...
-- icu/outputevents
-- icu/procedureevents
-- icu/datetimeevents
-- icu/ingredientevents
-- hosp/labevents
-- hosp/poe_detail   # <- unstack for sure
-- hosp/pharmacy
-- hosp/omr  # <- unstack for sure
+This module loads raw source tables. For admission filtering, numeric conversion,
+and reshaping of selected tables, see `MIMIC_IV_Scholz2026`. For the Biloš et al.
+time-series benchmark, see `MIMIC_IV_Bilos2021`.
 """
 
 __all__ = [
@@ -128,7 +97,7 @@ type MIMIC_IV_Key = Literal[
 
 
 def rename_key[K, V](items: Mapping[K, V], old_key: K, new_key: K, /) -> dict[K, V]:
-    r"""Return a copy with ``old_key`` renamed to ``new_key`` in the same position."""
+    r"""Return a copy with `old_key` renamed to `new_key` in the same position."""
     if old_key not in items:
         raise KeyError(old_key)
     if new_key != old_key and new_key in items:
@@ -149,7 +118,7 @@ def insert_item[K, V](
 ) -> dict[K, V]:
     r"""Return a copy with an item inserted at an explicit position.
 
-    Exactly one of ``before``, ``after``, and ``at`` must be provided.
+    Exactly one of `before`, `after`, and `at` must be provided.
     """
     if sum(position is not None for position in (before, after, at)) != 1:
         raise ValueError("Specify exactly one of 'before', 'after', or 'at'.")
@@ -704,7 +673,7 @@ class MIMIC_IV(BaseDataset[MIMIC_IV_Key, pl.LazyFrame]):
 
     @cached_property
     def filelist(self) -> dict[MIMIC_IV_Key, str]:
-        r"""Mapping between table_names and contents of the zip file."""
+        r"""Map table names to members of the source archive."""
         top = f"mimic-iv-{self.version}"
 
         files: dict[MIMIC_IV_Key, str] = {

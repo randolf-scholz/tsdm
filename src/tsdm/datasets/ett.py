@@ -34,31 +34,22 @@ class ETT(PolarsDataset[ETT_Key]):
     This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data
     from two electrical transformers (1 and 2) with hourly (h) and minute (m) resolution.
 
-    +-------+--------------------------+
     | Field | Description              |
-    +=======+==========================+
+    |-------|--------------------------|
     | date  | The recorded date        |
-    +-------+--------------------------+
     | HUFL  | High UseFul Load         |
-    +-------+--------------------------+
     | HULL  | High UseLess Load        |
-    +-------+--------------------------+
     | MUFL  | Middle UseFul Load       |
-    +-------+--------------------------+
     | MULL  | Middle UseLess Load      |
-    +-------+--------------------------+
     | LUFL  | Low UseFul Load          |
-    +-------+--------------------------+
     | LULL  | Low UseLess Load         |
-    +-------+--------------------------+
     | OT    | Oil Temperature (target) |
-    +-------+--------------------------+
     """
 
     SOURCE_URL = r"https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/"
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
     INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
-    r"""HTTP address containing additional information about the dataset."""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = [f"{key}.csv" for key in _ETT_KEYS]
     rawdata_hashes = {

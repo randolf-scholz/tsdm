@@ -53,17 +53,13 @@ TIMESERIES_METADATA = [
 
 
 class InSilico(PolarsDataset[KEY]):
-    r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
+    r"""Artificially generated data with eight runs, seven attributes, and about 465 samples.
 
-    +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
-    |         | Time    | Biomass | Substrate | Acetate | DOTm  | Product | Volume    | Feed |
-    +=========+=========+=========+===========+=========+=======+=========+===========+======+
-    | unit    | float   | g/L     | g/l       | g/L     | %     | g/L     | L         | µL   |
-    +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
-    | domain  | [0, 12] | >0      | >0        | >0      | [0,1] | >0      | [0, 0.01] | >0   |
-    +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
-    | missing | -       | 99%     | 99%       | 99%     | 12%   | 99%     | 93%       | -    |
-    +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
+    | Property | Time    | Biomass | Substrate | Acetate | DOTm  | Product | Volume    | Feed |
+    |----------|---------|---------|-----------|---------|-------|---------|-----------|------|
+    | unit     | float   | g/L     | g/l       | g/L     | %     | g/L     | L         | µL   |
+    | domain   | [0, 12] | >0      | >0        | >0      | [0,1] | >0      | [0, 0.01] | >0   |
+    | missing  | -       | 99%     | 99%       | 99%     | 12%   | 99%     | 93%       | -    |
     """
 
     rawdata_files = ["in_silico.zip"]

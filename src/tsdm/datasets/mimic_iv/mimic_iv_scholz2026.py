@@ -179,25 +179,23 @@ def _assert_columns_equal(table: pl.DataFrame, /, *, left: str, right: str) -> N
 class MIMIC_IV_Scholz2026(PolarsDataset[MIMIC_IV_Key]):
     r"""Lightly preprocessed version of the MIMIC-IV dataset.
 
-    The following preprocessing steps are applied:
+    Rows with missing `hadm_id` are dropped from every table containing that column.
+    Selected string columns are converted to Boolean values. Additional processing
+    depends on the table:
 
-    - data entries with missing hadm_id are dropped. affects:
-        - hosp/(admissions, diagnoses_icd, drgcodes, emar, hcpcsevents, labevents,
-          microbiologyevents, pharmacy, poe, prescriptions, procedures_icd, services, transfers
-        - icu/chartevents, datetimeevents, icustays, ingredientevents, inputevents, outputevents, procedureevents
-    - hosp/emar_detail:
-        - trim whitespaces and cast the following columns to float, dropping incompatible values.
-          dose_due, dose_given, product_amount_given, prior_infusion_rate,
-          infusion_rate, infusion_rate_adjustment_amount,
-    - hosp/labevents:
-        - drop rows whose value/valuenum/valueuom is missing, convert value to float
-        - drop rows whose storetime is missing
-    - hosp/omr: unstack on value/valueuom
-    - hosp/poe_detail: unstack on field_value/field_name
-    - icu/chartevents: drop rows whose value/valuenum/valueuom is missing, convert value to float
-    - icu/procedureevents:
-        - storetime is converted to second resolution
-        - unstack on value/valueuom, convert to new column "procedure_duration"
+    - `emar_detail`: strip whitespace from `dose_due`, `dose_given`,
+      `product_amount_given`, `prior_infusion_rate`, `infusion_rate`, and
+      `infusion_rate_adjustment_amount`, then cast to floats. Incompatible values
+      become null.
+    - `labevents`: require `storetime`, `value`, `valuenum`, and `valueuom`,
+      convert `value` to float, check agreement with `valuenum`, and drop `valuenum`.
+    - `omr`: pivot `result_name` and `result_value` into measurement columns,
+      splitting blood pressure into systolic and diastolic values.
+    - `poe_detail`: pivot `field_name` and `field_value` into columns.
+    - `chartevents`: require `value`, `valuenum`, and `valueuom`, and convert
+      numeric measurements to floats.
+    - `procedureevents`: convert `storetime` to second resolution and derive
+      `procedure_duration` from the event values.
     """
 
     dataset_shapes = {

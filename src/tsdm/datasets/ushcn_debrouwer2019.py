@@ -39,17 +39,17 @@ class USHCN_DeBrouwer2019(PolarsDataset[Literal["timeseries"]]):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:
-        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series
-            <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-          | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-          | `Advances in Neural Information Processing Systems 2019<https://proceedings.neurips.cc/paper/2019>`_
+        - GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series \
+          De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves \
+          Advances in Neural Information Processing Systems 2019 \
+          <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>
     """
 
     SOURCE_URL = r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/master/gru_ode_bayes/datasets/Climate/"
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
 
     INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
-    r"""HTTP address containing additional information about the dataset."""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_hashes = {

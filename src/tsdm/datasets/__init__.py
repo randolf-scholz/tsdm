@@ -6,19 +6,13 @@ For actual usage of the datasets in machine learning models, please use the wrap
 classes in the `tsdm.timeseries` package.
 
 
-Basic Usage
------------
+### Basic Usage
 
->>> from tsdm.datasets import InSilico
->>> dataset = InSilico()
+```python
+from tsdm.datasets import InSilico
 
-Some design decisions:
-
-1. Why not use `Series` instead of Mapping for dataset?
-    - ``Series[object]`` has bad performance issues in construction.
-2. Should we have Dataset style iteration or dict style iteration?
-    - Note that for `dict`, ``iter(dict)`` iterates over index.
-    - For `Series`, `DataFrame`, `TorchDataset`, `__iter__` iterates over values.
+dataset = InSilico()
+```
 """
 
 __all__ = [
@@ -94,4 +88,4 @@ DATASETS: dict[str, type[Dataset]] = {
     "USHCN"                     : USHCN,
     "USHCN_DeBrouwer2019"       : USHCN_DeBrouwer2019,
 }  # fmt: skip
-r"""Dictionary of all available dataset."""
+r"""Dictionary of all available datasets."""

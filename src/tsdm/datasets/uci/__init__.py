@@ -1,7 +1,7 @@
 r"""Datasets from the UCI machine learning repository.
 
 References:
-- `UCI Machine Learning Repository <https://archive.ics.uci.edu/>`_
+    - [UCI Machine Learning Repository](https://archive.ics.uci.edu/)
 """
 
 __all__ = [

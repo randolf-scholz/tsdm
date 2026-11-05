@@ -182,7 +182,7 @@ def _read_fwf(
     The column specifications are one-indexed, closed intervals, matching the
     USHCN documentation.
 
-    TODO: Replace this when Polars provides a native ``read_fwf`` implementation.
+    TODO: Replace this when Polars provides a native `read_fwf` implementation.
     """
     # FIXME: https://github.com/pola-rs/polars/issues/3151
     # FIXME: https://github.com/apache/arrow/issues/33404
@@ -234,132 +234,108 @@ class USHCN(PolarsDataset[Key]):
     Network, with sites selected according to their spatial coverage, record length,
     data completeness, and historical stability.
 
-    .. rubric:: Stations Data
+    ### Stations Data
 
-    +----------+---------+-----------+
     | Variable | Columns | Type      |
-    +==========+=========+===========+
+    |----------|---------|-----------|
     | COOP ID  | 1-6     | Character |
-    +----------+---------+-----------+
     | YEAR     | 7-10    | Integer   |
-    +----------+---------+-----------+
     | MONTH    | 11-12   | Integer   |
-    +----------+---------+-----------+
     | ELEMENT  | 13-16   | Character |
-    +----------+---------+-----------+
     | VALUE1   | 17-21   | Integer   |
-    +----------+---------+-----------+
     | MFLAG1   | 22      | Character |
-    +----------+---------+-----------+
     | QFLAG1   | 23      | Character |
-    +----------+---------+-----------+
     | SFLAG1   | 24      | Character |
-    +----------+---------+-----------+
-    |     ⋮    |    ⋮    |     ⋮     |
-    +----------+---------+-----------+
+    | ⋮        | ⋮       | ⋮         |
     | VALUE31  | 257-261 | Integer   |
-    +----------+---------+-----------+
     | MFLAG31  | 262     | Character |
-    +----------+---------+-----------+
     | QFLAG31  | 263     | Character |
-    +----------+---------+-----------+
     | SFLAG31  | 264     | Character |
-    +----------+---------+-----------+
 
-    .. rubric: Station Variables
+    ### Station Variables
 
-    - COOP ID	is the U.S. Cooperative Observer Network station identification code.
+    - `COOP ID` is the U.S. Cooperative Observer Network station identification code.
       Note that the first two digits in the Coop Id correspond to the state.
-    - YEAR		is the year of the record.
-    - MONTH	is the month of the record.
-    - ELEMENT	is the element type. There are five possible values
-        - PRCP = precipitation (hundredths of inches)
-        - SNOW = snowfall (tenths of inches)
-        - SNWD = snow depth (inches)
-        - TMAX = maximum temperature (degrees F)
-        - TMIN = minimum temperature (degrees F)
-    - VALUE1	is the value on the first day of the month (missing = -9999).
-    - MFLAG1	is the measurement flag for the first day of the month. There are five possible values:
-        - Blank = no measurement information applicable
-        - B = precipitation total formed from two 12-hour totals
-        - D = precipitation total formed from four six-hour totals
-        - H = represents highest or lowest hourly temperature
-        - L = temperature appears to be lagged with respect to reported hour of observation
-        - P = identified as "missing presumed zero" in DSI 3200 and 3206
-        - T = trace of precipitation, snowfall, or snow depth
-    - QFLAG1	is the quality flag for the first day of the month. There are fourteen possible values:
-        - Blank = did not fail any quality assurance check
-        - D = failed duplicate check
-        - G = failed gap check
-        - I = failed internal consistency check
-        - K = failed streak/frequent-value check
-        - L = failed check on length of multiday period
-        - M = failed megaconsistency check
-        - N = failed naught check
-        - O = failed climatological outlier check
-        - R = failed lagged range check
-        - S = failed spatial consistency check
-        - T = failed temporal consistency check
-        - W = temperature too warm for snow
-        - X = failed bounds check
-        - Z = flagged as a result of an official Datzilla investigation
-    - SFLAG1	is the source flag for the first day of the month. There are fifteen possible values:
-        - Blank = No source (e.g., data value missing)
-        - 0 = U.S. Cooperative Summary of the Day (NCDC DSI-3200)
-        - 6 = CDMP Cooperative Summary of the Day (NCDC DSI-3206)
-        - 7 = U.S. Cooperative Summary of the Day -- Transmitted via WxCoder3 (NCDC DSI-3207)
-        - A = U.S. Automated Surface Observing System (ASOS) real-time data (since January 1, 2006)
-        - B = U.S. ASOS data for October 2000-December 2005 (NCDC DSI-3211)
-        - F = U.S. Fort Data
-        - G = Official Global Climate Observing System (GCOS) or other government-supplied data
-        - H = High Plains Regional Climate Center real-time data
-        - M = Monthly METAR Extract (additional ASOS data)
-        - N = Community Collaborative Rain, Hail, and Snow (CoCoRaHS)
-        - R = NCDC Reference Network Database (Climate Reference Network and Historical Climatology Network-Modernized)
-        - S = Global Summary of the Day (NCDC DSI-9618)
+    - `YEAR` is the year of the record.
+    - `MONTH` is the month of the record.
+    - `ELEMENT` is the element type. The five possible values are:
+        - `PRCP` = precipitation (hundredths of inches)
+        - `SNOW` = snowfall (tenths of inches)
+        - `SNWD` = snow depth (inches)
+        - `TMAX` = maximum temperature (degrees F)
+        - `TMIN` = minimum temperature (degrees F)
+    - `VALUE1` is the value on the first day of the month (missing = -9999).
+    - `MFLAG1` is the measurement flag for the first day of the month. The flags are:
+        - `<blank>` = no measurement information applicable
+        - `B` = precipitation total formed from two 12-hour totals
+        - `D` = precipitation total formed from four six-hour totals
+        - `H` = represents highest or lowest hourly temperature
+        - `L` = temperature appears to be lagged with respect to reported hour of observation
+        - `P` = identified as "missing presumed zero" in DSI 3200 and 3206
+        - `T` = trace of precipitation, snowfall, or snow depth
+    - `QFLAG1` is the quality flag for the first day of the month. The quality flags are:
+        - `<blank>` = did not fail any quality assurance check
+        - `D` = failed duplicate check
+        - `G` = failed gap check
+        - `I` = failed internal consistency check
+        - `K` = failed streak/frequent-value check
+        - `L` = failed check on length of multiday period
+        - `M` = failed megaconsistency check
+        - `N` = failed naught check
+        - `O` = failed climatological outlier check
+        - `R` = failed lagged range check
+        - `S` = failed spatial consistency check
+        - `T` = failed temporal consistency check
+        - `W` = temperature too warm for snow
+        - `X` = failed bounds check
+        - `Z` = flagged as a result of an official Datzilla investigation
+    - `SFLAG1` is the source flag for the first day of the month. The source flags are:
+        - `<blank>` = No source (e.g., data value missing)
+        - `0` = U.S. Cooperative Summary of the Day (NCDC DSI-3200)
+        - `6` = CDMP Cooperative Summary of the Day (NCDC DSI-3206)
+        - `7` = U.S. Cooperative Summary of the Day -- Transmitted via WxCoder3 (NCDC DSI-3207)
+        - `A` = U.S. Automated Surface Observing System (ASOS) real-time data (since January 1, 2006)
+        - `B` = U.S. ASOS data for October 2000-December 2005 (NCDC DSI-3211)
+        - `F` = U.S. Fort Data
+        - `G` = Official Global Climate Observing System (GCOS) or other government-supplied data
+        - `H` = High Plains Regional Climate Center real-time data
+        - `M` = Monthly METAR Extract (additional ASOS data)
+        - `N` = Community Collaborative Rain, Hail, and Snow (CoCoRaHS)
+        - `R` = NCDC Reference Network Database
+                (Climate Reference Network and Historical Climatology Network-Modernized)
+        - `S` = Global Summary of the Day (NCDC DSI-9618)
 
-    .. rubric:: Stations Meta-Data
+    ### Stations Meta-Data
 
-    +-------------+---------+-----------+
     | Variable    | Columns | Type      |
-    +=============+=========+===========+
+    |-------------|---------|-----------|
     | COOP ID     | 1-6     | Character |
-    +-------------+---------+-----------+
     | LATITUDE    | 8-15    | Real      |
-    +-------------+---------+-----------+
     | LONGITUDE   | 17-25   | Real      |
-    +-------------+---------+-----------+
     | ELEVATION   | 27-32   | Real      |
-    +-------------+---------+-----------+
     | STATE       | 34-35   | Character |
-    +-------------+---------+-----------+
     | NAME        | 37-66   | Character |
-    +-------------+---------+-----------+
     | COMPONENT 1 | 68-73   | Character |
-    +-------------+---------+-----------+
     | COMPONENT 2 | 75-80   | Character |
-    +-------------+---------+-----------+
     | COMPONENT 3 | 82-87   | Character |
-    +-------------+---------+-----------+
     | UTC OFFSET  | 89-90   | Integer   |
-    +-------------+---------+-----------+
 
-    .. rubric:: Station Meta-Data Variables
+    ### Station Meta-Data Variables
 
-    - COOP_ID		is the U.S. Cooperative Observer Network station identification code. Note that
-      the first two digits in the Coop ID correspond to the assigned state number (see Table 1 below).
-    - LATITUDE	is latitude of the station (in decimal degrees).
-    - LONGITUDE	is the longitude of the station (in decimal degrees).
-    - ELEVATION	is the elevation of the station (in meters, missing = -999.9).
-    - STATE		is the U.S. postal code for the state.
-    - NAME		is the name of the station location.
-    - COMPONENT_1	is the Coop Id for the first station (in chronologic order) whose records were
+    - `COOP_ID` is the U.S. Cooperative Observer Network station identification code. Note that
+      the first two digits in the Coop ID correspond to the assigned state number.
+    - `LATITUDE` is latitude of the station (in decimal degrees).
+    - `LONGITUDE` is the longitude of the station (in decimal degrees).
+    - `ELEVATION` is the elevation of the station (in meters, missing = -999.9).
+    - `STATE` is the U.S. postal code for the state.
+    - `NAME` is the name of the station location.
+    - `COMPONENT_1` is the Coop Id for the first station (in chronologic order) whose records were
       joined with those of the USHCN site to form a longer time series. "------" indicates "not applicable".
-    - COMPONENT_2	is the Coop Id for the second station (if applicable) whose records were joined
+    - `COMPONENT_2` is the Coop Id for the second station (if applicable) whose records were joined
       with those of the USHCN site to form a longer time series.
-    - COMPONENT_3	is the Coop Id for the third station (if applicable) whose records were joined
+    - `COMPONENT_3` is the Coop Id for the third station (if applicable) whose records were joined
       with those of the USHCN site to form a longer time series.
-    - UTC_OFFSET	is the time difference between Coordinated Universal Time (UTC) and local standard time
+    - `UTC_OFFSET` is the time difference between Coordinated Universal Time (UTC) and local standard time
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
     """
 
@@ -369,9 +345,9 @@ class USHCN(PolarsDataset[Key]):
     # "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
     # "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     SOURCE_URL = "https://data.ess-dive.lbl.gov/catalog/d1/mn/v2/object/ess-dive-7b1e0d7f2fc3c43-20180727T175547656"
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
     INFO_URL = "https://data.ess-dive.lbl.gov/view/doi:10.3334/CDIAC/CLI.NDP019"
-    r"""HTTP address containing additional information about the dataset."""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = ["ushcn_daily.tar.gz"]
     rawdata_hashes = {

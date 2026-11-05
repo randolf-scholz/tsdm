@@ -1,7 +1,7 @@
 r"""MIMIC-III Clinical Database.
 
-Abstract
---------
+### Abstract
+
 MIMIC-III is a large, freely-available database comprising de-identified health-related
 data associated with over forty thousand patients who stayed in critical care units of
 the Beth Israel Deaconess Medical Center between 2001 and 2012.
@@ -493,11 +493,8 @@ class MIMIC_III(BaseDataset[MIMIC_III_Key, pl.LazyFrame]):
     and medications.
 
     Notes:
-        ``TIME_STAMP = round(merged_df_short_binned["TIME_STAMP"].dt.total_seconds() * bin_k / (100 * 36))``
-        and ``bin_k = 10``
-        i.e. ``TIME_STAMP = round(dt.total_seconds() * 10 / 3600) = round(dt.total_hours() * 10)``
-        i.e. ``TIME_STAMP ≈ 10*total_hours``
-        so e.g. the last patient was roughly 250 hours, 10½ days.
+        This class loads the raw source tables. Time binning belongs to processed
+        variants and is not applied here.
     """
 
     DEFAULT_VERSION = "1.4"
@@ -516,7 +513,7 @@ class MIMIC_III(BaseDataset[MIMIC_III_Key, pl.LazyFrame]):
 
     @cached_property
     def filelist(self) -> dict[MIMIC_III_Key, str]:
-        r"""Mapping between table_names and contents of the zip file."""
+        r"""Map table names to members of the source archive."""
         if not self.version_info >= (1, 4):
             raise ValueError("MIMIC-III v1.4+ is required.")
 

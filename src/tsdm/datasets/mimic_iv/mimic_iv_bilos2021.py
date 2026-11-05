@@ -1,7 +1,7 @@
 r"""MIMIC-IV clinical dataset.
 
-Abstract
---------
+### Abstract
+
 Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
 algorithm development. Broad reuse of medical data is desirable for the greatest public good, but data sharing must
 be done in a manner which protects patient privacy. The Medical Information Mart for Intensive Care (MIMIC)-III
@@ -251,22 +251,22 @@ type Key = Literal["raw_timeseries", "timeseries"]
 class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
     r"""Polars reimplementation of the MIMIC-IV preprocessing by Bilos et al.
 
-    The raw MIMIC-IV tables are supplied by :class:`MIMIC_IV`. They must already
-    have been converted from the source archive to parquet by that dataset. This
-    dataset only materializes the final, normalized time-series table.
+    The raw MIMIC-IV tables are supplied by `MIMIC_IV`. They must already
+    have been converted from the source archive to parquet by that dataset.
+    This dataset materializes both the merged raw table and its normalized variant.
 
     Attributes:
         raw_timeseries: The Polars recreation of the Bilos et al.
-            ``full_dataset.csv`` export, including its value and mask columns.
-        timeseries: ``raw_timeseries`` with masks folded into the value columns,
+            `full_dataset.csv` export, including its value and mask columns.
+        timeseries: `raw_timeseries` with masks folded into the value columns,
             empty rows dropped, every variable standardized over the full dataset,
             and 5σ outliers removed.
 
     References:
-        - | Neural Flows: Efficient Alternative to Neural ODEs
-          | Biloš et al.
-          | NeurIPS 2021
-          | https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html
+        - Neural Flows: Efficient Alternative to Neural ODEs \
+          Biloš et al. \
+          NeurIPS 2021 \
+          <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>
     """
 
     SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
@@ -294,9 +294,9 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
 
     @classmethod
     def from_processed(cls) -> Self:
-        r"""Create the dataset from a local Bilos ``full_dataset.csv`` export.
+        r"""Create the dataset from a local Bilos `full_dataset.csv` export.
 
-        The CSV must be present in this class's :attr:`RAWDATA_DIR`.
+        The CSV must be present in this class's `RAWDATA_DIR`.
         """
         dataset = cls(initialize=False)
         source_path = dataset.RAWDATA_DIR / "full_dataset.csv"
@@ -321,7 +321,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         return dataset
 
     def preprocess_admissions(self) -> pl.DataFrame:
-        r"""Select the admissions retained by ``admissions.ipynb``.
+        r"""Select the admissions retained by `admissions.ipynb`.
 
         Patients must have exactly one admission, be older than 15, stay from
         three up to (but excluding) 30 days, and have at least one chart event.
@@ -539,7 +539,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         )
 
     def preprocess_prescriptions(self) -> pl.DataFrame:
-        r"""Apply the prescription filters from ``prescriptions.ipynb``."""
+        r"""Apply the prescription filters from `prescriptions.ipynb`."""
         admission_ids = self.preprocess_admissions().select("hadm_id").lazy()
         prescriptions = (
             self.raw_dataset.load("prescriptions")
@@ -594,7 +594,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
                 raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
 
     def clean_raw_timeseries(self) -> pl.DataFrame:
-        r"""Merge events into the wide frame exported as ``full_dataset.csv``."""
+        r"""Merge events into the wide frame exported as `full_dataset.csv`."""
         inputs = self.preprocess_inputevents().rename({"amount": "valuenum"})
         laboratories = self.preprocess_labevents()
         outputs = self.preprocess_outputevents().rename({"value": "valuenum"})
@@ -665,8 +665,11 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
         )
 
     def clean_timeseries(self) -> pl.DataFrame:
-        r"""Apply the masking, normalization, and 5σ filtering from Bilos et al."""
-        r"""Fold masks, standardize variables, and remove 5σ outliers."""
+        r"""Apply the masking, normalization, and 5σ filtering from Bilos et al.
+
+        Fold masks into the value columns, standardize variables, and remove
+        observations more than five standard deviations from the mean.
+        """
         value_columns = [f"Value_label_{label}" for label in range(102)]
         mask_columns = [f"Mask_label_{label}" for label in range(102)]
         target_columns = [f"Value_{label}" for label in range(102)]

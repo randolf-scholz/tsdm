@@ -1,7 +1,7 @@
 r"""Datasets from the KIWI project.
 
 References:
-- `KIWI project <https://kiwi-biolab.de/>`_
+    - [KIWI project](https://kiwi-biolab.de/)
 """
 
 __all__ = [

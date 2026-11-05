@@ -1,4 +1,4 @@
-r"""Base Classes for dataset."""
+r"""Base classes for datasets."""
 
 # NOTE: signature of metaclass.__init__ should match that of type.__new__
 # NOTE: type.__new__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any) -> Self
@@ -66,14 +66,14 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
 
     A dataset is a collection of table-like objects indexed by keys.
 
-    This protocol describes a reduced interface of the `DatasetBase` class,
+    This protocol describes a reduced interface of the `BaseDataset` class,
     and covers only methods that should be used at call sites, that is, methods
     from an already instantiated object.
     """
 
     @property
     def version(self) -> str | None:
-        r"""READ-ONLY: The version of the dataset (None=unversioned)."""
+        r"""READ-ONLY: The dataset version; `None` denotes an unversioned dataset."""
         return None
 
     @property
@@ -103,7 +103,7 @@ class Dataset[KeyT, TableT](Protocol):  # +TableT
 
 
 class DatasetMeta(ProtocolMeta):
-    r"""Metaclass for BaseDataset."""
+    r"""Metaclass for `BaseDataset`."""
 
     REQUIRED_ATTRIBUTES: ClassVar[tuple[str, ...]] = ("rawdata_files", "table_names")
     r"""Attributes that every concrete dataset must implement."""
@@ -171,12 +171,12 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     Implements methods that are available for all dataset classes.
 
     We allow for systematic validation of the datasets.
-    Users can check the validity of the datasets by implementing the following attributes/properites:
+    Subclasses can enable validation by defining the following attributes or properties:
 
-    - rawdata_hashes: Used to verify rawdata files after `download` and before `clean`.
-    - dataset_hashes: Used to verify cleaned dataset files after `clean` and before `load`.
-    - table_hashes: Used to verify in-memory tables after `load`.
-    - table_schemas: Used to verify in-memory tables after `load`.
+    - `rawdata_hashes`: Reference hashes for raw files, checked after `get_rawdata`.
+    - `dataset_hashes`: Reference hashes for cleaned files, checked by `clean` and `load`.
+    - `table_hashes`: Reference hashes for in-memory tables, checked by `validate_tables`.
+    - `table_schemas`: Reference schemas for in-memory tables, checked by `validate_tables`.
     """
 
     # region class attributes ----------------------------------------------------------
@@ -187,11 +187,9 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
     SOURCE_URL: ClassVar[str] = UNDEFINED
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
     INFO_URL: ClassVar[Optional[str]] = None
-    r"""HTTP address containing additional information about the dataset."""
-    ID: ClassVar[str]  # typically the class name
-    r"""READ_ONLY: Unique identifier for the dataset."""
+    r"""URL containing additional information about the dataset."""
     DATASET_ROOT_DIR: ClassVar[Path]  # on class:  ~/.tsdm/datasets/<name>/
     r"""Location where the dataset is stored."""
     # endregion class attributes -------------------------------------------------------
@@ -200,13 +198,13 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     # TODO: Use typing.ReadOnly when PEP 767 accepted.
     # lazy attributes set during __init__
     ROOT_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/
-    r"""READ_ONLY: Location where the dataset version is stored."""
+    r"""READ-ONLY: Location where the dataset version is stored."""
     RAWDATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/raw
-    r"""READ_ONLY: Location where the raw data is stored."""
+    r"""READ-ONLY: Location where the raw data is stored."""
     DATASET_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/processed
-    r"""READ_ONLY:Location where the processed data is stored."""
+    r"""READ-ONLY: Location where the processed data is stored."""
     METADATA_DIR: Path  # typically ~/.tsdm/datasets/<name>/<version>/meta
-    r"""READ_ONLY:Location where the metadata is stored."""
+    r"""READ-ONLY: Location where the metadata is stored."""
     tables: LazyDict[Key, T]
     r"""READ-ONLY: The tables that make up the dataset."""
     name: Final[str]
@@ -215,27 +213,27 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     # required attributes
     # TODO: Use typing.ReadOnly when PEP 767 accepted.
     rawdata_files: Sequence[str]
-    r"""READ_ONLY: The names of the raw data files that make up the dataset."""
+    r"""READ-ONLY: The names of the raw data files that make up the dataset."""
     table_names: Collection[Key]
-    r"""READ_ONLY: The names of the tables that make up the dataset."""
+    r"""READ-ONLY: The names of the tables that make up the dataset."""
 
     # optional attributes
     # TODO: Use frozendict with python 3.15
     # Note: Bug in pyright means subclasses need to annotate these https://github.com/microsoft/pyright/issues/6513
     rawdata_hashes: Mapping[str, str | None] = EMPTY_MAP
-    r"""READ-ONLY: Optional hashes of the raw dataset file(s)."""
+    r"""READ-ONLY: Optional hashes of the raw dataset files."""
     rawdata_schemas: Mapping[str, Mapping[str, Any]] = EMPTY_MAP
-    r"""READ-ONLY: Schemas for the raw dataset tables(s)."""
+    r"""READ-ONLY: Schemas for the raw dataset tables."""
     rawdata_shapes: Mapping[str, tuple[int, ...]] = EMPTY_MAP
-    r"""READ-ONLY: Shapes for the raw dataset tables(s)."""
+    r"""READ-ONLY: Shapes for the raw dataset tables."""
     dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
-    r"""READ-ONLY: Hashes of the cleaned dataset file(s)."""
+    r"""READ-ONLY: Hashes of the cleaned dataset files."""
     table_hashes: Mapping[Key, str | None] = EMPTY_MAP
-    r"""READ-ONLY: Hashes of the in-memory cleaned dataset table(s)."""
+    r"""READ-ONLY: Hashes of the in-memory cleaned dataset tables."""
     table_schemas: Mapping[Key, Mapping[str, Any]] = EMPTY_MAP
-    r"""READ-ONLY: Schemas of the in-memory cleaned dataset table(s)."""
+    r"""READ-ONLY: Schemas of the in-memory cleaned dataset tables."""
     table_shapes: Mapping[Key, tuple[int, ...]] = EMPTY_MAP
-    r"""READ-ONLY: Shapes of the in-memory cleaned dataset table(s)."""
+    r"""READ-ONLY: Shapes of the in-memory cleaned dataset tables."""
     # endregion instance attributes ----------------------------------------------------
 
     # region constructors --------------------------------------------------------------
@@ -251,7 +249,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         # check for superfluous keys
         if superfluous_keys := tables.keys() - obj.keys():
             warnings.warn(
-                f"Keys {superfluous_keys} are not valid keys for {cls.ID}!"
+                f"Keys {superfluous_keys} are not valid keys for {cls}!"
                 f" They will not be added to the dataset.",
                 RuntimeWarning,
                 stacklevel=2,
@@ -289,7 +287,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
         Args:
             initialize: Whether to initialize the dataset.
-            version: Version of the dataset. If omitted, use ``default_version()``.
+            version: Version of the dataset. If omitted, use `DEFAULT_VERSION`.
             verbose: Whether to print verbose output.
         """
         version = version or self.DEFAULT_VERSION
@@ -307,7 +305,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         self.name = f"{self.__class__.__name__}{f'@v{version}' if version else ''}"
 
     def __post_init__(self) -> None:
-        r"""Extra Validation code can go here."""
+        r"""Override to perform additional dataset validation."""
 
     # endregion constructors -----------------------------------------------------------
 
@@ -417,7 +415,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     # region properties ----------------------------------------------------------------
     @property
     def version(self) -> str | None:
-        r"""The selected dataset version; ``None`` denotes an unversioned dataset."""
+        r"""The selected dataset version; `None` denotes an unversioned dataset."""
         return self._version
 
     @property
@@ -442,7 +440,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     @cached_property
     def dataset_paths(self) -> dict[Key, Path]:
-        r"""Absolute paths to the raw dataset file(s)."""
+        r"""Absolute paths to the cleaned dataset files."""
         return {
             key: self.DATASET_DIR / f"{key}.{self.DEFAULT_FILE_FORMAT}"
             for key in self.table_names
@@ -484,34 +482,34 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     # region dunder methods ------------------------------------------------------------
     def __dir__(self) -> list[str]:
-        r"""Dynamically add table names to dir()."""
+        r"""Include table names in `dir()` when key attributes are enabled."""
         if self._enable_key_attributes:
             return list(super().__dir__()) + list(self.table_names)
         return list(super().__dir__())
 
     def __getattr__(self, key: Key, /) -> T:
-        r"""Get attribute."""
+        r"""Resolve a table key as an attribute when key attributes are enabled."""
         if self._enable_key_attributes and key in self.table_names:
             return self.tables[key]
         return self.__getattribute__(key)
 
     def __len__(self) -> int:
-        r"""Return the number of samples in the dataset."""
+        r"""Return the number of tables in the dataset."""
         return len(self.tables)
 
     def __iter__(self) -> Iterator[Key]:
-        r"""Return an iterator over the dataset."""
+        r"""Return an iterator over the table keys."""
         return iter(self.tables)
 
     def __getitem__(self, key: Key, /) -> T:
-        r"""Return the sample at index `idx`."""
+        r"""Return the table associated with `key`; raise `KeyError` for unknown keys."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
-            raise KeyError(f"Key {key} not a member of {self.ID}!")
+            raise KeyError(f"Key {key} not a member.")
         return self.tables[key]
 
     def __repr__(self) -> str:
-        r"""Pretty Print."""
+        r"""Return a formatted representation of the dataset tables."""
         return repr_mapping(self.tables, wrapped=self, modifier=self.version)
 
     # endregion dunder methods ---------------------------------------------------------
@@ -587,7 +585,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         Subclasses define the cleaning logic for each key.
 
         If a table is returned, `self.store_table` is used to write it to disk.
-        If manually writing the table to disk, return None.
+        If manually writing the table to disk, return `None`.
         """
         raise NotImplementedError
 
@@ -604,8 +602,8 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         r"""Create the preprocessed table for the selected key.
 
         Args:
-            key: The key of the dataset to clean. If None, clean all datasets.
-            force: Force cleaning of dataset.
+            key: The table key. If `None`, clean all tables.
+            force: Recreate tables even when cleaned files already exist.
             validate: Validate the dataset after cleaning.
             validate_rawdata: Validate the raw data files before cleaning.
         """
@@ -705,16 +703,16 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         validate: bool = True,
         initializing: bool = False,
     ) -> T | dict[Key, T]:
-        r"""Load the selected DATASET_OBJECT.
+        r"""Load one table, or all tables when `key` is `None`.
 
         Args:
-            key: The key associated with the datset
+            key: The table key. If `None`, load all tables.
             force: Reload the dataset even if it already exists.
-            validate: Validate the dataset against hash.
+            validate: Validate stored files against available reference hashes.
             initializing: Whether this is the first time the dataset is being loaded.
 
         Returns:
-            The loaded dataset
+            The loaded table, or a dictionary of tables when `key` is `None`.
         """
         # key=None: load all tables.
         if key is None:
@@ -766,7 +764,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     @cached_property
     def dataset_valid(self) -> bool:
-        r"""Check if dataset files exist."""
+        r"""Check that cleaned dataset files pass validation."""
         return self.validate_dataset()
 
     @cached_property

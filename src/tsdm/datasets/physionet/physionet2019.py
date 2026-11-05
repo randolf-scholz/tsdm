@@ -1,7 +1,6 @@
 r"""Physionet Challenge 2019.
 
-Physionet Challenge 2019 Data Set
-=================================
+## Physionet Challenge 2019 Data Set
 
 The Challenge data repository contains one file per subject (e.g. training/p00101.psv for the
 training data). The complete training database (42 MB) consists of two parts: training set A
@@ -14,25 +13,19 @@ measurements at the same time (e.g., heart rate and oxygen level at the same tim
 
 The table is formatted in the following way:
 
-+-----+-------+------+-----+-------------+--------+-------------+
 | HR  | O2Sat | Temp | ... | HospAdmTime | ICULOS | SepsisLabel |
-+=====+=======+======+=====+=============+========+=============+
+|-----|-------|------|-----|-------------|--------|-------------|
 | NaN | NaN   | NaN  | ... | -50         | 1      | 0           |
-+-----+-------+------+-----+-------------+--------+-------------+
 | 86  | 98    | NaN  | ... | -50         | 2      | 0           |
-+-----+-------+------+-----+-------------+--------+-------------+
 | 75  | NaN   | NaN  | ... | -50         | 3      | 1           |
-+-----+-------+------+-----+-------------+--------+-------------+
 | 99  | 100   | 35.5 | ... | -50         | 4      | 1           |
-+-----+-------+------+-----+-------------+--------+-------------+
 
-There are 40 time-dependent variables HR, O2Sat, Temp ..., HospAdmTime, which are described here.
-The final column, SepsisLabel, indicates the onset of sepsis according to the Sepsis-3 definition,
+There are 40 predictor columns, including vital signs, laboratory values, and demographics.
+The final column, SepsisLabel, flags sepsis beginning six hours before the defined onset,
 where 1 indicates sepsis and 0 indicates no sepsis. Entries of NaN (not a number) indicate that
 there was no recorded measurement of a variable at the time interval.
 
-More details
-------------
+### More details
 
 Data used in the competition is sourced from ICU patients in three separate hospital systems.
 Data from two hospital systems will be publicly available; however, one data set will be censored
@@ -43,118 +36,63 @@ which are defined in the tables below.
 
 The following time points are defined for each patient:
 
-tsuspicion
+- $tₛ$: clinical suspicion of infection, identified as the earlier of IV
+  antibiotics and blood cultures. Cultures must follow antibiotics within 24 hours,
+  or antibiotics must follow cultures within 72 hours. Antibiotics must be
+  administered for at least 72 consecutive hours.
+- $tₒ$: end organ damage, identified by a two-point deterioration in SOFA score
+  within a 24-hour period.
+- $tₑ$: sepsis onset, defined as $\min(tₛ, tₒ)$ when $tₛ − 24 ≤ tₒ ≤ tₛ + 12$,
+  with times measured in hours. Otherwise, the patient is not marked as having sepsis.
 
-    1. Clinical suspicion of infection, identified as the earlier timestamp of IV antibiotics and
-       blood cultures within a specified duration.
-    2. If antibiotics were given first, then the cultures must have been obtained within 24 hours.
-       If cultures were obtained first, then antibiotics must have been subsequently ordered within
-       72 hours.
-    3. Antibiotics must have been administered for at least 72 consecutive hours to be considered.
+### Columns in each training file
 
-tSOFA
+Vital signs occupy columns 1–8, laboratory values columns 9–34, demographics
+columns 35–40, and the outcome column 41.
 
-    The occurrence of end organ damage as identified by a two-point deterioration in SOFA score
-    within a 24h period.
-
-tsepsis
-
-    The onset time of sepsis is the earlier of tsuspicion and tSOFA as long as tSOFA occurs no more
-    than 24 hours before or 12 hours after tsuspicion; otherwise, the patient is not marked as a
-    sepsis patient. Specifically, if $t_{\text{suspicion}}−24 ≤ t_{\text{SOFA}} ≤ t_{\text{suspicion}}+12$,
-    then $t_{\text{sepsis}} = \min(t_{\text{suspicion}}, t_{\text{SOFA}})$.
-
-Table 1: Columns in each training data file. Vital signs (columns 1-8)
-HR 	Heart rate (beats per minute)
-
-+------------------+------------------------------------------------------------------+
-| O2Sat            | Pulse oximetry (%)                                               |
-+==================+==================================================================+
-| Temp             | Temperature (Deg C)                                              |
-+------------------+------------------------------------------------------------------+
-| SBP              | Systolic BP (mm Hg)                                              |
-+------------------+------------------------------------------------------------------+
-| MAP              | Mean arterial pressure (mm Hg)                                   |
-+------------------+------------------------------------------------------------------+
-| DBP              | Diastolic BP (mm Hg)                                             |
-+------------------+------------------------------------------------------------------+
-| Resp             | Respiration rate (breaths per minute)                            |
-+------------------+------------------------------------------------------------------+
-| EtCO2            | End tidal carbon dioxide (mm Hg)                                 |
-+------------------+------------------------------------------------------------------+
-| Laboratory       | values (columns 9-34)                                            |
-+------------------+------------------------------------------------------------------+
-| BaseExcess       | Measure of excess bicarbonate (mmol/L)                           |
-+------------------+------------------------------------------------------------------+
-| HCO3             | Bicarbonate (mmol/L)                                             |
-+------------------+------------------------------------------------------------------+
-| FiO2             | Fraction of inspired oxygen (%)                                  |
-+------------------+------------------------------------------------------------------+
-| pH               | N/A                                                              |
-+------------------+------------------------------------------------------------------+
-| PaCO2            | Partial pressure of carbon dioxide from arterial blood (mm Hg)   |
-+------------------+------------------------------------------------------------------+
-| SaO2             | Oxygen saturation from arterial blood (%)                        |
-+------------------+------------------------------------------------------------------+
-| AST              | Aspartate transaminase (IU/L)                                    |
-+------------------+------------------------------------------------------------------+
-| BUN              | Blood urea nitrogen (mg/dL)                                      |
-+------------------+------------------------------------------------------------------+
-| Alkalinephos     | Alkaline phosphatase (IU/L)                                      |
-+------------------+------------------------------------------------------------------+
-| Calcium          | (mg/dL)                                                          |
-+------------------+------------------------------------------------------------------+
-| Chloride         | (mmol/L)                                                         |
-+------------------+------------------------------------------------------------------+
-| Creatinine       | (mg/dL)                                                          |
-+------------------+------------------------------------------------------------------+
-| Bilirubin_direct | Bilirubin direct (mg/dL)                                         |
-+------------------+------------------------------------------------------------------+
-| Glucose          | Serum glucose (mg/dL)                                            |
-+------------------+------------------------------------------------------------------+
-| Lactate          | Lactic acid (mg/dL)                                              |
-+------------------+------------------------------------------------------------------+
-| Magnesium        | (mmol/dL)                                                        |
-+------------------+------------------------------------------------------------------+
-| Phosphate        | (mg/dL)                                                          |
-+------------------+------------------------------------------------------------------+
-| Potassium        | (mmol/L)                                                         |
-+------------------+------------------------------------------------------------------+
-| Bilirubin_total  | Total bilirubin (mg/dL)                                          |
-+------------------+------------------------------------------------------------------+
-| TroponinI        | Troponin I (ng/mL)                                               |
-+------------------+------------------------------------------------------------------+
-| Hct              | Hematocrit (%)                                                   |
-+------------------+------------------------------------------------------------------+
-| Hgb              | Hemoglobin (g/dL)                                                |
-+------------------+------------------------------------------------------------------+
-| PTT              | partial thromboplastin time (seconds)                            |
-+------------------+------------------------------------------------------------------+
-| WBC              | Leukocyte count (count*10³/µL)                                   |
-+------------------+------------------------------------------------------------------+
-| Fibrinogen       | (mg/dL)                                                          |
-+------------------+------------------------------------------------------------------+
-| Platelets        | (count*10³/µL)                                                   |
-+------------------+------------------------------------------------------------------+
-| Demographics     | (columns 35-40)                                                  |
-+------------------+------------------------------------------------------------------+
-| Age              | Years (100 for patients 90 or above)                             |
-+------------------+------------------------------------------------------------------+
-| Gender           | Female (0) or Male (1)                                           |
-+------------------+------------------------------------------------------------------+
-| Unit1            | Administrative identifier for ICU unit (MICU)                    |
-+------------------+------------------------------------------------------------------+
-| Unit2            | Administrative identifier for ICU unit (SICU)                    |
-+------------------+------------------------------------------------------------------+
-| HospAdmTime      | Hours between hospital admit and ICU admit                       |
-+------------------+------------------------------------------------------------------+
-| ICULOS           | ICU length-of-stay (hours since ICU admit)                       |
-+------------------+------------------------------------------------------------------+
-| Outcome          | (column 41)                                                      |
-+------------------+------------------------------------------------------------------+
-| SepsisLabel      | For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and         |
-|                  | 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0.     |
-+------------------+------------------------------------------------------------------+
+| Field            | Description                                                    |
+|------------------|----------------------------------------------------------------|
+| HR               | Heart rate (beats per minute)                                  |
+| O2Sat            | Pulse oximetry (%)                                             |
+| Temp             | Temperature (Deg C)                                            |
+| SBP              | Systolic BP (mm Hg)                                            |
+| MAP              | Mean arterial pressure (mm Hg)                                 |
+| DBP              | Diastolic BP (mm Hg)                                           |
+| Resp             | Respiration rate (breaths per minute)                          |
+| EtCO2            | End tidal carbon dioxide (mm Hg)                               |
+| BaseExcess       | Measure of excess bicarbonate (mmol/L)                         |
+| HCO3             | Bicarbonate (mmol/L)                                           |
+| FiO2             | Fraction of inspired oxygen (%)                                |
+| pH               | N/A                                                            |
+| PaCO2            | Partial pressure of carbon dioxide from arterial blood (mm Hg) |
+| SaO2             | Oxygen saturation from arterial blood (%)                      |
+| AST              | Aspartate transaminase (IU/L)                                  |
+| BUN              | Blood urea nitrogen (mg/dL)                                    |
+| Alkalinephos     | Alkaline phosphatase (IU/L)                                    |
+| Calcium          | (mg/dL)                                                        |
+| Chloride         | (mmol/L)                                                       |
+| Creatinine       | (mg/dL)                                                        |
+| Bilirubin_direct | Bilirubin direct (mg/dL)                                       |
+| Glucose          | Serum glucose (mg/dL)                                          |
+| Lactate          | Lactic acid (mg/dL)                                            |
+| Magnesium        | (mmol/dL)                                                      |
+| Phosphate        | (mg/dL)                                                        |
+| Potassium        | (mmol/L)                                                       |
+| Bilirubin_total  | Total bilirubin (mg/dL)                                        |
+| TroponinI        | Troponin I (ng/mL)                                             |
+| Hct              | Hematocrit (%)                                                 |
+| Hgb              | Hemoglobin (g/dL)                                              |
+| PTT              | partial thromboplastin time (seconds)                          |
+| WBC              | Leukocyte count (count*10³/µL)                                 |
+| Fibrinogen       | (mg/dL)                                                        |
+| Platelets        | (count*10³/µL)                                                 |
+| Age              | Years (100 for patients 90 or above)                           |
+| Gender           | Female (0) or Male (1)                                         |
+| Unit1            | Administrative identifier for ICU unit (MICU)                  |
+| Unit2            | Administrative identifier for ICU unit (SICU)                  |
+| HospAdmTime      | Hours between hospital admit and ICU admit                     |
+| ICULOS           | ICU length-of-stay (hours since ICU admit)                     |
+| SepsisLabel      | 1 from six hours before sepsis onset; 0 otherwise.             |
 """
 
 __all__ = [
@@ -308,28 +246,23 @@ class PhysioNet2019(PolarsDataset[Key]):
 
     The table is formatted in the following way:
 
-    +-----+-------+------+-----+-------------+--------+-------------+
     | HR  | O2Sat | Temp | ... | HospAdmTime | ICULOS | SepsisLabel |
-    +=====+=======+======+=====+=============+========+=============+
+    |-----|-------|------|-----|-------------|--------|-------------|
     | NaN | NaN   | NaN  | ... | -50         | 1      | 0           |
-    +-----+-------+------+-----+-------------+--------+-------------+
     | 86  | 98    | NaN  | ... | -50         | 2      | 0           |
-    +-----+-------+------+-----+-------------+--------+-------------+
     | 75  | NaN   | NaN  | ... | -50         | 3      | 1           |
-    +-----+-------+------+-----+-------------+--------+-------------+
     | 99  | 100   | 35.5 | ... | -50         | 4      | 1           |
-    +-----+-------+------+-----+-------------+--------+-------------+
 
-    There are 40 time-dependent variables HR, O2Sat, Temp, …, HospAdmTime which are described here.
-    The final column, SepsisLabel, indicates the onset of sepsis according to the Sepsis-3
-    definition, where 1 indicates sepsis and 0 indicates no sepsis. Entries of NaN (not a number)
+    There are 40 predictor columns, including vital signs, laboratory values, and demographics.
+    The final column, `SepsisLabel`, is 1 from six hours before sepsis onset and 0 otherwise.
+    Entries of NaN (not a number)
     indicate that there was no recorded measurement of a variable at the time interval.
     """
 
     SOURCE_URL = r"https://physionet.org/files/challenge-2019/1.0.0/training/"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""URL from which the dataset can be downloaded."""
     INFO_URL = r"https://physionet.org/content/challenge-2019/1.0.0/"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = ["training_setA.zip", "training_setB.zip"]
     rawdata_hashes = {

@@ -1,46 +1,59 @@
-r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
+r"""Daily freeway lane occupancy measurements from the San Francisco Bay Area.
 
-+---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-| **Data Set Characteristics:**   | Multivariate, Time-Series | **Number of Instances:**  | 440    | **Area:**               | Computer   |
-+---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-| **Attribute Characteristics:**  | Real                      | **Number of Attributes:** | 138672 | **Date Donated**        | 2011-05-22 |
-+---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-| **Associated Tasks:**           | Classification            | **Missing Values?**       | N/A    | **Number of Web Hits:** | 79749      |
-+---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
+The dataset contains 440 daily records with occupancy rates between 0 and 1.
 
-Source
-------
+| Property                       | Value                     |
+|--------------------------------|---------------------------|
+| **Data Set Characteristics:**  | Multivariate, Time-Series |
+| **Number of Instances:**       | 440                       |
+| **Area:**                      | Computer                  |
+| **Attribute Characteristics:** | Real                      |
+| **Number of Attributes:**      | 138672                    |
+| **Date Donated**               | 2011-05-22                |
+| **Associated Tasks:**          | Classification            |
+| **Missing Values?**            | N/A                       |
+| **Number of Web Hits:**        | 79749                     |
+
+### Source
+
 Source: California Department of Transportation, www.pems.dot.ca.gov
 Creator: Marco Cuturi, Kyoto University, mcuturi '@' i.kyoto-u.ac.jp
 
-Data Set Information
---------------------
-We have downloaded 15 months worth of daily data from the California Department of Transportation PEMS website, [Web Link], The data describes the occupancy
-rate, between 0 and 1, of different car lanes of San Francisco bay area freeways. The measurements cover the period from Jan. 1st 2008 to Mar. 30th 2009 and are sampled every 10 minutes. We consider each day in this database as a single time series of dimension 963 (the number of sensors which functioned consistently throughout the studied period) and length 6 x 24=144. We remove public holidays from the dataset, as well
-as two days with anomalies (March 8th 2009 and March 9th 2008) where all sensors were muted between 2:00 and 3:00 AM. This results in a database of 440 time series.
+### Data Set Information
 
-The task we propose on this dataset is to classify each observed day as the correct day of the week, from Monday to Sunday, e.g. label it with an integer in {1,2,3,4,5,6,7}.
+The California Department of Transportation PEMS data describe freeway lane occupancy
+rates between 0 and 1, sampled every ten minutes at 963 stations. Each daily record
+contains 144 measurements per station. The released dataset contains 440 daily records.
 
-I will keep separate copies of this database on my website in a Matlab format. If you use Matlab, it might be more convenient to consider these .mat files directly.
+The source description gives a date range of 2008-01-01 through 2009-03-30, excluding
+holidays and two anomaly days. The corrected calendar used by this loader differs;
+see `Traffic.clean_timeseries` for the implemented date and weekday conventions.
 
-Data-Format
------------
-There are two files for each fold, the data file and the labels file. We have key the 440 time series between train and test folds, but you are of course free to merge them to consider a different cross validation setting.
-- The PEMS_train textfile has 263 lines. Each line describes a time-series provided as a matrix. The matrix syntax is that of Matlab, e.g. [ a b ; c d] is the matrix with row vectors [a b] and [c d] in that order. Each matrix describes the different occupancies rates (963 lines, one for each station/detector) sampled every 10 minutes during the day (144 columns).
-- The PEMS_trainlabel text describes, for each day of measurements described above, the day of the week on which the data was sampled, namely an integer between 1 (Mon.) and 7 (Sun.).
+The classification task is to predict the day of the week for each daily record.
 
-- PEMS_test and PEMS_testlabels are formatted in the same way, except that there are 173 test instances.
+### Data-Format
 
-- The permutation that I used to shuffle the dataset is given in the randperm file. If you need to rearrange the data so that it follows the calendar order, you should merge train and test samples and reorder them using the inverse permutation of randperm.
+Each split has a data file and a label file. The 440 daily records can be merged
+for a different cross-validation scheme.
 
-Attribute Information
----------------------
-Each attribute describes the measurement of the occupancy rate (between 0 and 1) of a captor location as recorded by a measuring station, at a given timestamp in time during the day. The ID of each station is given in the stations_list text file. For more information on the location (GPS, Highway, Direction) of each station please refer to the PEMS website. There are 963 (stations) x 144 (timestamps) = 138.672 attributes for each record.
+- `PEMS_train` contains 263 daily matrices in MATLAB syntax. For example,
+  `[a b; c d]` has row vectors `[a b]` and `[c d]`. Each matrix has 963 rows
+  (stations) and 144 columns (timestamps).
+- `PEMS_trainlabels` gives one weekday code per training record.
+- `PEMS_test` and `PEMS_testlabels` use the same format for 173 test records.
+- `randperm` gives the shuffle permutation. Merge the splits and apply its inverse
+  to restore chronological order.
 
-Relevant Papers
----------------
+### Attribute Information
+
+Each attribute is an occupancy measurement at one station and timestamp.
+Station identifiers are stored in `stations_list`; the PEMS website provides location
+details. Each daily record contains 963 × 144 = 138,672 measurements.
+
+### Relevant Papers
+
 M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference on Machine Learning 2011.
-"""  # ruff: ignore[E501, W505]
+"""
 
 __all__ = ["Traffic"]
 
@@ -60,21 +73,27 @@ type Traffic_Keys = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
 class Traffic(PolarsDataset[Traffic_Keys]):
-    r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
+    r"""Daily freeway lane occupancy measurements from the San Francisco Bay Area.
 
-    +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    | **Data Set Characteristics:**   | Multivariate, Time-Series | **Number of Instances:**  | 440    | **Area:**               | Computer   |
-    +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    | **Attribute Characteristics:**  | Real                      | **Number of Attributes:** | 138672 | **Date Donated**        | 2011-05-22 |
-    +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    | **Associated Tasks:**           | Classification            | **Missing Values?**       | N/A    | **Number of Web Hits:** | 79749      |
-    +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    """  # ruff: ignore[E501, W505]
+    The dataset contains 440 daily records with occupancy rates between 0 and 1.
+
+    | Property                       | Value                     |
+    |--------------------------------|---------------------------|
+    | **Data Set Characteristics:**  | Multivariate, Time-Series |
+    | **Number of Instances:**       | 440                       |
+    | **Area:**                      | Computer                  |
+    | **Attribute Characteristics:** | Real                      |
+    | **Number of Attributes:**      | 138672                    |
+    | **Date Donated**               | 2011-05-22                |
+    | **Associated Tasks:**          | Classification            |
+    | **Missing Values?**            | N/A                       |
+    | **Number of Web Hits:**        | 79749                     |
+    """
 
     SOURCE_URL = r"https://archive.ics.uci.edu/static/public/204/"
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
     INFO_URL = r"https://archive.ics.uci.edu/dataset/204/pems+sf"
-    r"""HTTP address containing additional information about the dataset."""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = ["pems+sf.zip"]
     rawdata_hashes = {
@@ -228,70 +247,21 @@ class Traffic(PolarsDataset[Traffic_Keys]):
                 raise KeyError(f"Key {key} unknown! Must be one of {self.table_names}")
 
     def clean_timeseries(self) -> pl.DataFrame:
-        r"""Create DataFrame from raw data.
+        r"""Create a timeseries table from the raw daily occupancy matrices.
+
+        Each of the 440 daily records contains a 963 × 144 matrix: 963 stations
+        sampled every ten minutes. The permutation tables restore calendar order.
 
         Notes:
-            Sampling rate = 10 minutes => 144 samples/day
+            With `use_corrected_dates=True`, weekday codes run from Sunday (1)
+            to Saturday (7). Dates span 2008-01-01 through 2009-03-26, excluding
+            the eleven dates listed in `_make_dates`. These exclusions were
+            inferred by comparing weekday labels after undoing the permutation;
+            the reasons for some exclusions remain unknown.
 
-        Despite the description of the dataset stating:
-
-        The task we propose on this dataset is to classify each observed day as the correct day of the week,
-        from Monday to Sunday, e.g. label it with an integer in {1,2,3,4,5,6,7}.
-
-        In truth, '1' encodes as Sunday and '7' as Saturday.
-
-        PEMS_train: 267 rows
-
-        - each row is data for 1 day.
-        - each row encodes a 963×144 matrix (stations×timestamps)
-
-        PEMS_test: same but only 172 rows
-        station_labels: labels of the 963 stations
-
-        In total, 440 days of observations.
-
-        - original data range is 455 days: 2008-01-01 - 2009-03-30 (15 months)
-        - authors manually removed holidays as well as 2 anomalies: 2008-03-09 and 2009-03-08.
-        - in total 10 days missing.
-
-        The authors of N-BEATS guesstimate the missing days to be:
-
-        1. Jan. 1, 2008 (New Year’s Day)
-        2. Jan. 21, 2008 (Martin Luther King Jr. Day)
-        3. Feb. 18, 2008 (Washington’s Birthday)
-        4. Mar. 9, 2008 (Anomaly day)
-        5. May 26, 2008 (Memorial Day)
-        6. Jul. 4, 2008 (Independence Day)
-        7. Sep. 1, 2008 (Labor Day)
-        8. Oct. 13, 2008 (Columbus Day)
-        9. Nov. 11, 2008 (Veterans Day)
-        10. Nov. 27, 2008 (Thanksgiving)
-        11. Dec. 25, 2008 (Christmas Day)
-        12. Jan. 1, 2009 (New Year’s Day)
-        13. Jan. 19, 2009 (Martin Luther King Jr. Day)
-        14. Feb. 16, 2009 (Washington’s Birthday)
-        15. Mar. 8, 2009 (Anomaly day)
-
-        However, there was a big mistake made: they assumed the value `1` encodes
-        Monday, when it actually encodes Sunday.
-
-        The true missing dates appear to be by reverse-engineering:
-
-        - "2008-01-02": "1 day off New Year’s Day",
-        - "2008-01-22": "1 day off Martin Luther King Jr. Day",
-        - "2008-02-19": "1 day off Washington’s Birthday",
-        - "2008-03-10": "1 day off anomaly + wrong year",
-        - "2008-05-27": "1 day off Memorial Day",
-        - "2008-07-05": "1 day off Independence Day",
-        - "2008-09-02": "1 day off Labor Day",
-        - "2008-10-21": "???",
-        - "2008-11-18": "???",
-        - "2008-12-08": "???",
-        - "2009-02-24": "???",
-
-        The true anomalies were found by iteratively adding days one by one,
-        Each time checking when the first date was when ``labels[invperm].map(weekdays)``
-        didn't match with ``dates.day_name()``
+            With `use_corrected_dates=False`, codes run from Monday (1) to
+            Sunday (7). The date range ends on 2009-03-30 and excludes the
+            fifteen holidays and anomaly dates listed in `_make_dates`.
         """
         randperm = self.randperm.to_series(0)
         dates = self.dates.gather(randperm)

@@ -1,7 +1,7 @@
 r"""Datasets from the MIMIC project.
 
 References:
-    MIMIC-IV dataset <https://physionet.org/content/mimiciv>
+    - [MIMIC-IV dataset](https://physionet.org/content/mimiciv)
 """
 
 __all__ = [

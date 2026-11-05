@@ -35,7 +35,7 @@ type MIMIC_III_Zhang2024_Key = Literal[
 class MIMIC_III_Record(NamedTuple):
     r"""One patient's observations, with a variable number K of timestamps.
 
-    ``timestamps`` has shape (K,); ``values`` and ``mask`` have shape (K, 96).
+    `timestamps` has shape (K,); `values` and `mask` have shape (K, 96).
     Timestamps and values retain their source floating dtype. Masks are Boolean;
     unobserved values retain their source zero encoding.
 
@@ -224,9 +224,9 @@ class MIMIC_III_Zhang2024(BaseDataset[MIMIC_III_Zhang2024_Key, object]):
     def store_table(self, key: MIMIC_III_Zhang2024_Key, table: object, /) -> None:
         r"""Store documents as text and records as a portable packed dictionary.
 
-        The PT dictionary contains ``ids`` and ``lengths`` lists plus concatenated
-        ``timestamps``, ``values``, and Boolean ``mask`` tensors. Patient boundaries
-        are given by ``lengths``. This avoids serializing three tensors per patient.
+        The PT dictionary contains `ids` and `lengths` lists plus concatenated
+        `timestamps`, `values`, and Boolean `mask` tensors. Patient boundaries
+        are given by `lengths`. This avoids serializing three tensors per patient.
         """
         if key in {"LICENSE", "README"}:
             self.dataset_paths[key].write_text(cast("str", table), encoding="utf-8")

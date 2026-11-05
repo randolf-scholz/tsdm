@@ -1,7 +1,6 @@
 r"""Physionet Challenge 2012.
 
-Physionet Challenge 2012 Data Set
-=================================
+## Physionet Challenge 2012 Data Set
 
 The development of methods for prediction of mortality rates in Intensive Care Unit (ICU) populations has been
 motivated primarily by the need to compare the efficacy of medications, care guidelines, surgery, and other
@@ -15,8 +14,7 @@ By contrast, the focus of the PhysioNet/CinC Challenge 2012 is to develop method
 hospital mortality. Participants will use information collected during the first two days of an ICU stay to predict
 which patients survive their hospitalizations, and which patients do not.
 
-Data for the Challenge
-----------------------
+### Data for the Challenge
 
 The data used for the challenge consist of records from 12,000 ICU stays. All patients were
 adults who were admitted for a wide variety of reasons to cardiac, medical, surgical, and
@@ -50,22 +48,21 @@ challenge participants.
 All valid values for general descriptors, time series variables, and outcome-related descriptors are non-negative.
 A value of -1 indicates missing or unknown data (for example, if a patient's height was not recorded).
 
-General descriptors
--------------------
+### General descriptors
 
 As noted, these six descriptors are collected at the time the patient is admitted to the ICU.
 Their associated time-stamps are set to 00:00 (thus they appear at the beginning of each patient's record).
 
-RecordID (a unique integer for each ICU stay)
-Age (years)
-Gender (0: female, or 1: male)
-Height (cm)
-ICUType (1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU)
-Weight (kg)*.
+- `RecordID` (a unique integer for each ICU stay)
+- `Age` (years)
+- `Gender` (0: female, or 1: male)
+- `Height` (cm)
+- `ICUType` (1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU)
+- `Weight` (kg)
+
 The ICUType was added for use in Phase 2; it specifies the type of ICU to which the patient has been admitted.
 
-Time Series
------------
+### Time Series
 
 These 37 variables may be observed once, more than once, or not at all in some cases:
 
@@ -105,7 +102,7 @@ These 37 variables may be observed once, more than once, or not at all in some c
 - TropT [Troponin-T (μg/L)]
 - Urine [Urine output (mL)]
 - WBC [White blood cell count (cells/nL)]
-- Weight (kg)*
+- Weight (kg)
 
 The time series measurements are recorded in chronological order within each record, and the associated time stamps
 indicate the elapsed time since admission to the ICU. Measurements may be recorded at regular intervals ranging from
@@ -117,8 +114,7 @@ may be recorded with the same or only slightly different time-stamps. Occasional
 Note that Weight is both a general descriptor (recorded on admission) and a time series variable
 (often measured hourly, for estimating fluid balance).
 
-Outcome-related Descriptors
----------------------------
+### Outcome-related Descriptors
 
 The outcome-related descriptors are kept in a separate CSV text file for each of the three record sets; as noted, only
 the file associated with training set A is available to participants. Each line of the outcomes file contains these
@@ -136,7 +132,7 @@ The Length of stay is the number of days between the patient's admission to the 
 If the patient's death was recorded (in or out of hospital), then Survival is the number of days between ICU admission
 and death; otherwise, Survival is assigned the value -1. Since patients who spent less than 48 hours in the ICU have
 been excluded, Length of stay and Survival never have the values 0 or 1 in the challenge data sets.
-Given these definitions and constraints,
+These definitions imply the following outcome labels:
 
 - Survival > Length of stay  =>  Survivor
 - Survival = -1  =>  Survivor
@@ -275,33 +271,21 @@ class PhysioNet2012(PolarsDataset[Key]):
     Each training data file provides two tables.
     The first table provides general descriptors of patients:
 
-    +----------+-----+--------+--------+---------+--------+
     | RecordID | Age | Gender | Height | ICUType | Weight |
-    +==========+=====+========+========+=========+========+
+    |----------|-----|--------|--------|---------|--------|
     | 141834   | 52  | 1.0    | 172.7  | 2       | 73.0   |
-    +----------+-----+--------+--------+---------+--------+
     | 133786   | 46  | 0.0    | 157.5  | 1       | 52.3   |
-    +----------+-----+--------+--------+---------+--------+
     | 141492   | 84  | 0.0    | 152.4  | 3       | 61.2   |
-    +----------+-----+--------+--------+---------+--------+
     | 142386   | 87  | 0.0    | 160.0  | 4       | 73.0   |
-    +----------+-----+--------+--------+---------+--------+
     | 142258   | 71  | 1.0    | NaN    | 3       | 72.9   |
-    +----------+-----+--------+--------+---------+--------+
     | ...      | ... | ...    | ...    | ...     | ...    |
-    +----------+-----+--------+--------+---------+--------+
     | 142430   | 39  | 0.0    | 157.5  | 2       | 65.9   |
-    +----------+-----+--------+--------+---------+--------+
     | 134614   | 77  | 0.0    | 165.1  | 1       | 66.6   |
-    +----------+-----+--------+--------+---------+--------+
     | 139802   | 57  | 1.0    | NaN    | 4       | NaN    |
-    +----------+-----+--------+--------+---------+--------+
     | 136653   | 57  | 1.0    | NaN    | 3       | 103.9  |
-    +----------+-----+--------+--------+---------+--------+
     | 136047   | 67  | 1.0    | NaN    | 3       | 169.0  |
-    +----------+-----+--------+--------+---------+--------+
 
-    where `RecordID` defines unique ID of an admission.
+    `RecordID` uniquely identifies an admission.
 
     The second table contains measurements over time, each column of the table provides
     a sequence of measurements over time (e.g., arterial pH), where the
@@ -310,37 +294,26 @@ class PhysioNet2012(PolarsDataset[Key]):
 
     The table is formatted in the following way:
 
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     | RecordID | Time | BUN | Creatinine | DiasABP | ... | Cholesterol | TroponinT | TroponinI |
-    +==========+======+=====+============+=========+=====+=============+===========+===========+
+    |----------|------|-----|------------|---------|-----|-------------|-----------|-----------|
     | 141834   | 27   | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 107  | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 112  | NaN | NaN        | 77.0    | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 127  | NaN | NaN        | 81.0    | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 142  | NaN | NaN        | 74.0    | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     | ...      |      | ... | ...        | ...     | ... | ...         | ...       | ...       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     | 136047   | 2618 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 2678 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 2738 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
     |          | 2798 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
-    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
 
     Entries of NaN (not a number) indicate that there was no recorded measurement of a variable at the time.
     """
 
     SOURCE_URL = r"https://archive.physionet.org/challenge/2012/"
-    r"""HTTP address from where the dataset can be downloaded."""
+    r"""URL from which the dataset can be downloaded."""
     INFO_URL = r"https://archive.physionet.org/challenge/2012/"
-    r"""HTTP address containing additional information about the dataset."""
+    r"""URL containing additional information about the dataset."""
 
     rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
     rawdata_hashes = {
