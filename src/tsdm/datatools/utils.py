@@ -58,16 +58,16 @@ def random_partition[K](
 ) -> tuple[list[K], ...]:
     r"""Create a random partition for a dataset.
 
-    Exactly one of ``sizes`` or ``ratios`` must be provided. Sizes are absolute
+    Exactly one of `sizes` or `ratios` must be provided. Sizes are absolute
     partition counts and must sum to the number of keys. Ratios are normalized
     weights used to distribute all keys between the partitions.
 
     Args:
         keys: Keys to distribute among the partitions.
         sizes: Absolute partition counts. The counts must be non-negative and
-            sum to the number of keys. Mutually exclusive with ``ratios``.
+            sum to the number of keys. Mutually exclusive with `ratios`.
         ratios: Relative partition weights. The weights must be non-negative
-            and not all zero. Mutually exclusive with ``sizes``.
+            and not all zero. Mutually exclusive with `sizes`.
         rng: Random seed or generator used to shuffle the keys.
 
     Returns:
@@ -148,7 +148,7 @@ def describe(
     *,
     quantiles: tuple[float, ...] = (0, 0.01, 0.5, 0.99, 1),
 ) -> pd.DataFrame:
-    r"""Describe a DataFrame on a per column basis."""
+    r"""Compute summary statistics for a Series or each column of a DataFrame."""
     if isinstance(s, pd.DataFrame):
         df = s
         return pd.concat([describe(df[col]) for col in df])
@@ -357,7 +357,7 @@ def validate_schema(
 
 @wraps(Timedelta)
 def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Timedelta:
-    r"""Utility function that ensures that the constructor does not return NaT."""
+    r"""Construct a `pandas.Timedelta`, raising `TypeError` if it returns `NaT`."""
     td = (
         Timedelta(unit=unit, **kwargs)
         if value is Ellipsis
@@ -370,7 +370,7 @@ def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Ti
 
 @wraps(Timestamp)
 def timestamp(value: Any = ..., **kwargs: Any) -> Timestamp:
-    r"""Utility function that ensures that the constructor does not return NaT."""
+    r"""Construct a `pandas.Timestamp`, raising `TypeError` if it returns `NaT`."""
     ts = Timestamp(**kwargs) if value is Ellipsis else Timestamp(value, **kwargs)
     if isinstance(ts, NaTType):
         raise TypeError("Constructor returned NaT")

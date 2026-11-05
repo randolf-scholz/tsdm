@@ -23,7 +23,7 @@ type Loader[T] = Callable[Concatenate[FilePath | FileStream, ...], T]
 def _choose_default_writer[T: pa.Table | pd.DataFrame | pl.DataFrame](
     table: T, extension: str
 ) -> Writer[T]:
-    r"""Default writer function that uses the extension of the path."""
+    r"""Choose a writer for the table type and file extension."""
     match table, extension:
         case pa.Table(), "parquet":
             return pyarrow_parquet.write_table
@@ -53,9 +53,10 @@ def serialize_table[T: pa.Array | pl.DataFrame | pd.DataFrame | Any](
     Args:
         table: Table to serialize.
         path_or_buf: Path or buffer to write to.
-        writer: Writer to use.
-            If None, the extension of the path is used to determine the writer.
-            Pass string like 'csv' to use the corresponding `pandas` writer.
+        writer: Callable writer or format name, such as `"csv"`.
+            Format names select a writer for the table's backend. If `None`,
+            infer the format from the path's extension. An explicit writer or
+            format is required for buffers without a usable path.
         **writer_kwargs: Additional keyword arguments to pass to the writer.
     """
     match writer:
@@ -81,7 +82,7 @@ def serialize_table[T: pa.Array | pl.DataFrame | pd.DataFrame | Any](
 
 
 def _choose_default_loader(extension: str, /) -> Loader[Any]:
-    r"""Default loader function that uses the extension of the path."""
+    r"""Choose a pandas reader for the file extension."""
     if (loader := getattr(pd, f"read_{extension}", None)) is not None:
         return loader
 

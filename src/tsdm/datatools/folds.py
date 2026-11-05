@@ -1,4 +1,4 @@
-r"""Utility function to process folds and splits."""
+r"""Utility functions for processing folds and splits."""
 
 __all__ = [
     # Functions
@@ -24,7 +24,11 @@ def is_partition[T](
     *,
     union: Optional[Collection[T]] = None,
 ) -> bool:
-    r"""Check if partition is a valid partition of union."""
+    r"""Check that the parts are disjoint and contain no duplicate elements.
+
+    If `union` is provided, also check that the parts cover it exactly.
+    The input must support repeated iteration because it is traversed twice.
+    """
     sets = (set(p) for p in partition)
     part_union = set().union(*sets)
 
@@ -36,18 +40,28 @@ def is_partition[T](
 def folds_from_groups(
     groups: Series, /, *, num_folds: int = 5, seed: Optional[int] = None, **splits: int
 ) -> Sequence[Mapping[str, Series]]:
-    r"""Create folds from a Series of groups.
+    r"""Create folds while keeping samples with the same group label together.
+
+    Pass a Series with one group label per sample, for example a replicate
+    identifier for each measurement. Split weights apply to groups; sample
+    counts can differ from these proportions when group sizes differ.
 
     Args:
         groups: Series of group labels.
         num_folds: Number of folds to create.
         seed: Seed for the random number generator.
-        splits: Relative number of samples in each split.
-            E.g. ``folds_from_groups(groups, train=7, valid=2, test=1)`` uses 7/10 of the
-            samples for training, 2/10 for validation and 1/10 for testing.
+        **splits: Relative number of group chunks in each split.
+            For example, `folds_from_groups(groups, train=7, valid=2, test=1)`
+            assigns seven of ten chunks to training, two to validation, and one
+            to testing. Chunks contain approximately equal numbers of groups.
 
-    This is useful when the data needs to be grouped, e.g. due to replicate experiments.
-    Simply use `pandas.groupby` and pass the result to this function.
+    Returns:
+        One mapping per fold, from split names to boolean Series aligned with
+        `groups`. All samples with the same group label belong to the same split.
+
+    Raises:
+        ValueError: If no splits are provided or the sum of split weights is not
+            a multiple of `num_folds`.
     """
     if not splits:
         raise ValueError("No splits provided!")
@@ -91,30 +105,29 @@ def folds_as_frame(
     r"""Create a table holding the fold information.
 
     Args:
-        folds: a list of dictionaries, where each dictionary holds the split information,
-            e.g. is a dictionary like {train: train_indices, test: test_indices}
-            or   is a dictionary like {train: train_mask,    test: test_mask}
-        sparse: If True, return a sparse table.
-        index: The index of the time-series collection. Attempts to infer the index if not given.
+        folds: Non-empty sequence of non-empty mappings from split names to
+            sample indices or boolean masks. All splits must use the same
+            representation. For example, `{"train": train_mask, "test": test_mask}`.
+        index: Sample index. If omitted, infer it from the first fold's indices
+            or the first mask's index, using positional indices for array masks.
+        sparse: If `True`, return boolean split-membership columns instead of
+            split labels.
 
     Returns:
-        DataFrame with the schema
-            index: metaindex of the time-series collection
-            columns: fold number
-            values: train/valid/test
+        A DataFrame indexed by sample, with one column per fold and split names
+        as values. Unassigned samples have missing values; later splits overwrite
+        earlier ones if they overlap. With `sparse=True`, columns have a two-level
+        index of fold number and split name, and values indicate membership.
 
-    Example:
-        +------+-------+-------+-------+-------+-------+
-        | fold | 0     | 1     | 2     | 3     | 4     |
-        +======+=======+=======+=======+=======+=======+
-        | TS₁  | train | valid |  test | train | valid |
-        +------+-------+-------+-------+-------+-------+
-        | TS₂  | test  | train | valid | test  | train |
-        +------+-------+-------+-------+-------+-------+
-        | ...  |       |       |       |       |       |
-        +------+-------+-------+-------+-------+-------+
-        | TS₄  | valid | test  | train | valid |  test |
-        +------+-------+-------+-------+-------+-------+
+    Examples:
+        A table of split labels with one column per fold:
+
+        | Sample | 0     | 1     | 2     | 3     | 4     |
+        | ------ | ----- | ----- | ----- | ----- | ----- |
+        | TS₁    | train | valid | test  | train | valid |
+        | TS₂    | test  | train | valid | test  | train |
+        | …      |       |       |       |       |       |
+        | TS₄    | valid | test  | train | valid | test  |
     """
     # test if the indices are given as boolean masks or as indices
     first_fold = next(iter(folds))
@@ -157,7 +170,12 @@ def folds_as_frame(
 
 
 def folds_as_sparse_frame(df: DataFrame, /) -> DataFrame:
-    r"""Create a sparse table holding the fold information."""
+    r"""Expand fold labels into boolean split-membership columns.
+
+    Append a `partition` level to the column index, with one column for each
+    observed split label in each fold. Missing labels do not create a partition.
+    The result uses boolean columns rather than pandas sparse dtypes.
+    """
     # TODO: simplify this code. It should just be pd.concat(folds)
     # get categoricals
     categories = {col: s.astype("category").cat.categories for col, s in df.items()}

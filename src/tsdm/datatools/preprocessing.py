@@ -312,7 +312,11 @@ def remove_outliers[
 def strip_whitespace[T: pa.Array | pa.Table | pd.Series | pd.DataFrame](
     table: T, /, *cols: str
 ) -> T:
-    r"""Strip whitespace from all string columns in a table or frame."""
+    r"""Strip whitespace from string values in an array, Series, or table.
+
+    For tables, restrict processing to `cols` if provided; otherwise process all
+    string columns. Column names cannot be supplied for an array or Series.
+    """
     match table:
         case pa.Table() as table:
             return B.pyarrow.strip_whitespace_table(table, *cols)
@@ -352,13 +356,22 @@ def get_integer_cols(table: pd.DataFrame, /) -> set[str]:
 
 
 def aggregate_nondestructive(df: pd.DataFrame, /) -> pd.DataFrame:
-    r"""Aggregate multiple simulataneous measurements in a non-destructive way.
+    r"""Compact simultaneous measurements while preserving each column's values.
 
-    Given a `pd.DataFrame` of size $m×k$, this will construct a new pd.DataFrame of size $m'×k$,
-    where ``m' = max(df.notna().sum())`` is the maximal number of measured not-null values.
+    Given a `pandas.DataFrame` of size $m×k$, construct a new DataFrame of size
+    $m′×k$, where `m′ = max(df.notna().sum())` is the largest count of non-null
+    values in any column. Preserve the order of non-null values within each
+    column and pad shorter columns with missing values.
 
-    For example::
+    Note:
+        All rows should represent simultaneous measurements. Columns are compacted
+        independently, so relationships between values in the same input row are
+        not preserved. The output uses the first $m′$ index labels of the input.
 
+    Examples:
+        Compact the following measurements:
+
+        ```text
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
         elapsed_time
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>  4.578233   <NA>          <NA>  <NA>
@@ -370,13 +383,16 @@ def aggregate_nondestructive(df: pd.DataFrame, /) -> pd.DataFrame:
         2020-12-09 09:48:38      <NA>  <NA>  <NA>    1112.5      <NA>   <NA>          <NA>  <NA>
         2020-12-09 09:48:38      <NA>  <NA>  <NA>     912.5      <NA>   <NA>          <NA>  <NA>
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>  4.554859   <NA>          <NA>  <NA>
+        ```
 
-    becomes::
+        The result is:
 
+        ```text
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
         elapsed_time
         2020-12-09 09:48:38  0.116585  <NA>  <NA>    1112.5  4.578233  0.445           200  <NA>
         2020-12-09 09:48:38  0.114842  <NA>  <NA>     912.5  4.554859  0.485          <NA>  <NA>
+        ```
     """
     mask = df.notna()
     nitems = mask.sum()

@@ -1,4 +1,4 @@
-r"""Generic Dataset classes."""
+r"""Generic dataset types, protocols, and access utilities."""
 
 __all__ = [
     # ABCs & Protocols
@@ -36,13 +36,12 @@ r"""Type alias for a generic dataset."""
 
 @runtime_checkable
 class MapDataset[K, V](Protocol):  # +V
-    r"""Protocol version of `torch.utils.data.Dataset` with a ``keys()`` method.
+    r"""Protocol for a map-style dataset with an explicit `keys()` method.
 
     Note:
-        We deviate from the original in that we require a ``keys()`` method.
-        Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
-        simply makes the assumption that the dataset is indexed by integers.
-        But this is simply wrong for many use cases such as dictionaries or DataFrames.
+        The `keys()` method exposes valid keys for datasets whose keys need not
+        be consecutive integers, such as dictionaries. This extends the interface
+        of `torch.utils.data.Dataset`, which does not require `keys()`.
     """
 
     @abstractmethod
@@ -60,10 +59,10 @@ class MapDataset[K, V](Protocol):  # +V
 
 @runtime_checkable
 class PandasDataset[K, V](Protocol):  # K, +V
-    r"""Protocol version of `pandas.DataFrame` / `Series`.
+    r"""Protocol for row access to a `pandas.DataFrame` or `pandas.Series`.
 
-    Note that in particular, `__getitem__` is not present, as it returns columns,
-    but we are usually interested in the rows.
+    Access rows through `loc` and `iloc`. The protocol omits `__getitem__`
+    because a DataFrame uses it to select columns rather than rows.
     """
 
     def __array__(self) -> NDArray[Any]: ...
@@ -80,9 +79,9 @@ class PandasDataset[K, V](Protocol):  # K, +V
 class CallableDataset[K, V]:
     r"""Adapt a key-to-value callable to a map-style dataset.
 
-    The wrapped function remains publicly available through the function
+    The wrapped function remains publicly available through the `function`
     attribute. This is useful when a sampler supplies arbitrary keys to a
-    PyTorch DataLoader.
+    PyTorch `DataLoader`.
     """
 
     def __init__(self, function: Callable[[K], V], /) -> None:
@@ -97,12 +96,14 @@ def get_index[K, V](dataset: TabularDataset[K, V], /) -> list[K]: ...  # pyright
 @overload
 def get_index[V](dataset: SequentialDataset[V], /) -> list[int]: ...
 def get_index(dataset: Dataset, /) -> list:
-    r"""Return an index object for the dataset.
+    r"""Return the dataset's keys as a list.
 
-    We support the following data types:
-        - Series, DataFrame.
-        - Mapping Types
-        - Iterable Types
+    - For pandas-like datasets, return the row index labels.
+    - For map-style datasets, return the keys in iteration order.
+    - For vector-like datasets, return consecutive integers starting at zero.
+
+    Raises:
+        TypeError: If the dataset does not implement a supported protocol.
     """
     match dataset:
         # NOTE: Series and DataFrame satisfy the MapDataset protocol.

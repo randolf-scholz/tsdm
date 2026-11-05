@@ -1,4 +1,4 @@
-r"""Subclasses of `torch.util.data.Dataset`."""
+r"""Dataset protocols and utilities for splitting, preprocessing, and serializing data."""
 
 __all__ = [
     # Modules
