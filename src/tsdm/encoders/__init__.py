@@ -1,8 +1,8 @@
 r"""Implementation of Encoders.
 
-Role & Specification
---------------------
-Encoders are used in multiple contexts
+## Role & Specification
+
+Encoders are used in multiple contexts:
 
 - Perform preprocessing for task objects: For example, a task might ask to evaluate on
   standardized features. In this case, a pre_encoder object is associated with the task that
@@ -12,9 +12,10 @@ Encoders are used in multiple contexts
 
 Specification:
 
-- Encoders **must** be reversible.
-- Modules that are not reversible, we call transformations.
-- Example: Convert logit output of a NN to a class prediction.
+- Encoders provide both encoding and decoding operations.
+- Exact reversibility depends on the transform and its input domain.
+- A transformation such as converting neural-network logits to a class prediction
+  discards information and cannot have an exact inverse.
 
 Note:
     Some important unit kinds:
@@ -36,41 +37,40 @@ Note:
         - support: (0, +∞)
         - dimensionless: True
         - ordered: True
-        - Encoders: `Logarithm`
+        - Encoders: `LogEncoder`
     - percent
         - support: [0, 100]
         - dimensionless: True
         - ordered: True
-        - Encoders: ``Logit @ MinMaxScalar[0, 100]``, ``HardLogit @ MinMaxScalar[0, 100]``
+        - Encoders: `MinMaxScaler` followed by `LogitBoxCoxEncoder`
     - bounded
         - support: [a, b]
         - dimensionless: False
         - ordered: True
-        - Encoders: ``Logit @ MinMaxScalar[a, b]``, ``HardLogit @ MinMaxScalar[a, b]``
+        - Encoders: `MinMaxScaler` followed by `LogitBoxCoxEncoder`
     - linear
         - support: (-∞, +∞)
         - dimensionless: False
         - ordered: True
-        - Encoders: `StandardScalar` (diagonal or full covariance)
+        - Encoders: `StandardScaler`
     - category
         - support: $\{1, …, K\}$
         - dimensionless: `True`
         - ordered: `False`
-        - Encoders: `OneHotEncoder`
+        - Encoders: one-hot encoding
     - ordinal
         - support: $\{1, …, K\}$
         - dimensionless: `True`
         - ordered: `True`
-        - Encoders: `OrdinalEncoder`, `PositionalEncoder`
+        - Encoders: ordinal or positional encoding
     - cyclic
         - support: $[0, 2π)$
         - dimensionless: `True`
         - ordered: `False`
-        - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
+        - Encoders: `PeriodicEncoder`
 
 See Also:
-    - `tsdm.encoders.functional` for functional implementations.
-    - `tsdm.encoders` for modular implementations.
+    `tsdm.encoders.base` for encoder protocols and composition operators.
 """
 
 #  TODO: Add more encoders

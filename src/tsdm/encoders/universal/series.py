@@ -65,32 +65,19 @@ class StandardScaler[T: FloatArray](FittableEncoder[T, T]):
 @pprint_repr
 @dataclass(slots=True)
 class MinMaxScaler[T: FloatArray](FittableEncoder[T, T]):
-    r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
+    r"""Map $[xₘᵢₙ, xₘₐₓ]$ linearly to $[yₘᵢₙ, yₘₐₓ]$ (default: $[0, 1]$).
 
-    If x_min and/or x_max are provided at initialization, they are marked as
+    If `xmin` and/or `xmax` are provided at initialization, they are marked as
     "fitted" and will not be re-computed during the fit method.
 
     Note:
-        In the edge case when fitting to a single value, we set the scale such that
-        the encoded value is ½(y_min + y_max).
+        For distinct input bounds, the transform is:
 
-    Note:
-        Generally, the transformation is given by the formula:
+        $$ y = \frac{yₘₐₓ-yₘᵢₙ}{xₘₐₓ-xₘᵢₙ}(x-x̄) + ȳ $$
 
-        .. math:: x ↦ \frac{x - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ
-
-        We transform the formula, to cater to the edge case, by extending with the
-        average of the min and max x-values:
-
-        .. math::
-            \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - xₘᵢₙ) + yₘᵢₙ \\
-            = \frac{x +½(xₘₐₓ - xₘᵢₙ) -½(xₘₐₓ - xₘᵢₙ) - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
-            = ½(yₘₐₓ - yₘᵢₙ) + \frac{x - ½(xₘₐₓ + xₘᵢₙ)}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
-            = \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - x̄) + ȳ \\
-            = γ⋅(x - x̄) + ȳ
-
-        In particular, when $xₘᵢₙ = xₘₐₓ$, we have $x̄ = xₘᵢₙ = xₘₐₓ$, and formally set
-        the scale to 1, making the transform $x ↦ x + (ȳ - x̄)$
+        Here $x̄ = ½(xₘₐₓ+xₘᵢₙ)$ and $ȳ = ½(yₘₐₓ+yₘᵢₙ)$.
+        Equal input bounds cause division by zero during fitting; this implementation
+        does not provide a constant-input fallback.
     """
 
     ymin: float = 0.0

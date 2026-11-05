@@ -21,26 +21,24 @@ class BoundaryEncoder(FittableEncoder[Any, Any]):
     r"""Clip or mask values outside a given range.
 
     Args:
-        lower_bound: the lower boundary. If not provided, it is determined by the mask/data.
-        upper_bound: the upper boundary. If not provided, it is determined by the mask/data.
+        lower_bound: the lower boundary. If not provided, it is determined by the fitting data.
+        upper_bound: the upper boundary. If not provided, it is determined by the fitting data.
         lower_included: whether the lower boundary is included in the range.
         upper_included: whether the upper boundary is included in the range.
-        mode: one of ``'mask'`` or ``'clip'``, or a tuple of two of them for lower and upper.
-            - If ``mode='mask'``, then values outside the boundary will be replaced by `NA`.
-            - If ``mode='clip'``, then values outside the boundary will be clipped to it.
+        mode: Either `'mask'` or `'clip'`, or a pair specifying the lower and upper modes.
+            Masking replaces out-of-range values with `NA`; clipping moves them to the boundary.
 
     Note:
-        requires_fit: whether the data should determine the lower/upper bounds/values.
-            - if lower/upper not provided, then they are determined by the data.
-            - if lower_substitute/upper_substitute not provided, then they are determined by the data.
+        Fitting is required when either bound is omitted. Missing bounds are
+        determined from the minimum and maximum of the fitting data.
 
     Examples:
-        - ``BoundaryEncoder()`` will mask values outside the range ``[data_min, data_max]``
-        - ``BoundaryEncoder(mode='clip')`` will clip values to the range ``[data_min, data_max]``
-        - ``BoundaryEncoder(0, 1)`` will mask values outside the range ``[0, 1]``
-        - ``BoundaryEncoder(0, 1, mode='clip')`` will clip values to the range ``[0, 1]``
-        - ``BoundaryEncoder(0, 1, mode=('mask', 'clip'))`` will mask values below 0 and clip values above 1 to 1.
-        - ``BoundaryEncoder(0, mode=('mask', 'clip'))`` will mask values below 0 and clip values above 1 to `data_max`.
+        - `BoundaryEncoder()` will mask values outside the range `[data_min, data_max]`
+        - `BoundaryEncoder(mode='clip')` will clip values to the range `[data_min, data_max]`
+        - `BoundaryEncoder(0, 1)` will mask values outside the range `[0, 1]`
+        - `BoundaryEncoder(0, 1, mode='clip')` will clip values to the range `[0, 1]`
+        - `BoundaryEncoder(0, 1, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to 1.
+        - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
     class MODES(StrEnum):

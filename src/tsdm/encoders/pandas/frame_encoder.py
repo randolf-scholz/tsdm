@@ -1,4 +1,4 @@
-r"""Encoder for columns-wise transforms."""
+r"""Encoder for column-wise transforms."""
 
 __all__ = ["FrameEncoder"]
 
@@ -20,10 +20,8 @@ class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
     both data columns and named index levels. All fields not assigned an encoder pass through
     unchanged. The original index and dtypes are restored when decoding.
 
-    Args:
-        encoders: A mapping from column or named index-level labels to their encoders.
-
     Examples:
+        ```pycon
         >>> from pandas import DataFrame
         >>> from pandas.testing import assert_frame_equal
         >>> from tsdm.encoders import wrap
@@ -35,16 +33,15 @@ class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
         >>> encoded.to_dict("list")
         {'value': [2, 3], 'label': ['a', 'b']}
         >>> assert_frame_equal(frame, encoder.decode(encoded))
+        ```
 
     Note:
-        ``...`` (`Ellipsis`) is treated as an ordinary mapping key, not as a wildcard for unassigned
-        columns. Thus, it only targets a column literally labelled ``...``; otherwise, fitting or
+        `...` (`Ellipsis`) is treated as an ordinary mapping key, not as a wildcard for unassigned
+        columns. Thus, it only targets a column literally labelled `...`; otherwise, fitting or
         transforming raises `KeyError`.
 
     Todo:
-        We want encoding groups, so for example, applying an encoder to a group of columns.
-
-        - [ ] Add support for groups of column-encoders
+        Add support for applying one encoder to a group of columns.
 
     See Also:
         Similar to `sklearn.compose.ColumnTransformer`.

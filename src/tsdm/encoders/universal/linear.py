@@ -21,10 +21,10 @@ type FloatArray = Any
 
 
 def _reduce_param(param: Any, selection: Any) -> Any:
-    r"""Perform a reduction on a parameter.
+    r"""Select parameter entries while leaving scalar parameters unchanged.
 
-    For example, given tensor T, axis and selection, then this returns the slice of the tensor
-    that satisfies the selection.
+    Array parameters are indexed with `selection`. Python scalars and
+    zero-dimensional arrays are returned unchanged.
     """
     match param:
         case (int() | float()) as scalar:
@@ -40,13 +40,12 @@ def _reduce_param(param: Any, selection: Any) -> Any:
 @pprint_repr
 @dataclass(slots=True, frozen=True)
 class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
-    r"""Maps the data linearly $x ↦ σ⋅x + μ$.
+    r"""Map data linearly as $x ↦ σ⋅x + μ$.
 
     Args:
-        loc: the offset.
-        scale: the scaling factor.
-        axis: the axis along which to perform the operation. both μ and σ must have
-            shapes that can be broadcasted to the shape of the data along these axes.
+        loc: The offset $μ$, broadcastable to the input shape.
+        scale: The factor $σ$, broadcastable to the input shape.
+        axis: Must be `None`; explicit axis selection is not implemented.
     """
 
     loc: Any = 0.0
@@ -63,19 +62,12 @@ class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
             raise NotImplementedError("Axis not implemented yet.")
 
     def __getitem__(self, item: Any, /) -> LinearScaler[Arr]:
-        r"""Return a slice of the LinearScaler.
+        r"""Return a scaler with sliced parameters.
 
         Args:
-            item: the slice, which is taken directly from the parameters.
-                If the parameters are scalars, then we return the same scaler.
-                E.g. taking slice encoder[:5] when loc and scale are scalars simply returns the same encoder.
-                However, encoder[5] will have to modify the axis, since the new encoder will only operate
-                on the 5th-entry along the first axis.
-
-        Examples:
-            - axis is (-2, -1) and data shape is (10, 20, 30, 40). Then
-              loc/scale must be broadcastable to (30, 40), i.e. allowed shapes are
-              (), (1,), (1,1), (30,), (30,1), (1,40), (30,40).
+            item: Selection applied to array-valued `loc` and `scale` parameters.
+                Scalar parameters remain unchanged. The returned scaler must still
+                satisfy the constructor's axis restrictions.
         """
         axis = reduce_axes(self.axis, item)
         loc = _reduce_param(self.loc, item)
@@ -92,9 +84,11 @@ class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
 @pprint_repr
 @dataclass(slots=True)
 class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
-    r"""Transforms data linearly x ↦ (x-μ)/σ.
+    r"""Transform data linearly as $x ↦ (x-μ)/σ$.
 
-    axis: tuple[int, ...] determines the shape of the mean and stdv.
+    `axis` specifies the axes retained in the fitted mean and standard deviation.
+    The remaining axes are reduced. `axis=()` fits global statistics; `axis=None`
+    retains every axis. The fitted parameters must broadcast to the input shape.
     """
 
     mean: Any = UNDEFINED
@@ -105,7 +99,7 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     _: KW_ONLY
 
     axis: Axis = ()
-    r"""The axis to perform the scaling. If None, automatically select the axis."""
+    r"""Axes retained in the fitted statistics. `None` retains all axes."""
 
     mean_learnable: bool = field(init=False)
     stdv_learnable: bool = field(init=False)
@@ -115,7 +109,7 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
         self.stdv_learnable = self.stdv is UNDEFINED
 
     def __getitem__(self, item: Any, /) -> StandardScaler[Arr]:
-        r"""Return a slice of the Standardizer."""
+        r"""Return a slice of the StandardScaler."""
         mean = _reduce_param(self.mean, item)
         stdv = _reduce_param(self.stdv, item)
         axis = reduce_axes(self.axis, item)
@@ -148,9 +142,9 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
 @pprint_repr
 @dataclass(slots=True)
 class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
-    r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
+    r"""Map $[xₘᵢₙ, xₘₐₓ]$ linearly to $[yₘᵢₙ, yₘₐₓ]$ (default: $[0, 1]$).
 
-    If x_min and/or x_max are provided at initialization, they are marked as
+    If `xmin` and/or `xmax` are provided at initialization, they are marked as
     "fitted" and will not be re-computed during the fit method.
 
     Examples:
@@ -161,22 +155,20 @@ class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
 
     Note:
         In the edge case when fitting to a single value, we set the scale such that
-        the encoded value is ½(y_min + y_max).
+        the encoded value is $½(yₘᵢₙ + yₘₐₓ)$.
 
     Note:
         Generally, the transformation is given by the formula:
 
-        .. math:: x ↦ \frac{x - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ
+        $$ x ↦ \frac{x - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ $$
 
-        We transform the formula, to cater to the edge case, by extending with the
-        average of the min and max x-values:
+        Centering at the input and output midpoints gives an equivalent formula:
 
-        .. math::
-            \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - xₘᵢₙ) + yₘᵢₙ \\
-            = \frac{x +½(xₘₐₓ - xₘᵢₙ) -½(xₘₐₓ - xₘᵢₙ) - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
-            = ½(yₘₐₓ - yₘᵢₙ) + \frac{x - ½(xₘₐₓ + xₘᵢₙ)}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
-            = \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - x̄) + ȳ \\
-            = γ⋅(x - x̄) + ȳ
+        $$\begin{aligned}
+            y &= \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - x̄) + ȳ \\
+            x̄ &= ½(xₘₐₓ + xₘᵢₙ) \\
+            ȳ &= ½(yₘₐₓ + yₘᵢₙ)
+        \end{aligned}$$
 
         In particular, when xₘᵢₙ = xₘₐₓ, we have x̄ = xₘᵢₙ = xₘₐₓ, and formally set
         the scale to 1, making the transform x ↦ x + (ȳ - x̄)

@@ -1,7 +1,7 @@
 r"""Future serialization module.
 
-Long Term Goals
----------------
+## Long Term Goals
+
 - allow for serialization of encoders without pickling
     - save parameters as files (JSON, npz, etc.)
     - create a "from_parameters" classmethod that creates an encoder from parameters

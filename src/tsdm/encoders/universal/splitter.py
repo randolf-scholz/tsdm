@@ -10,8 +10,8 @@ Numerical Encoders should be able to be applied with different backends such as
 
 To ensure performance during encoding/decoding, the backend should be fixed.
 
-Goals
-=====
+## Goals
+
 - numerical encoders should allow for different backends: numpy, pandas, torch, etc.
 - numerical encoders should be vectorized and fast
 - we should be able to "slice" vectorized encoders just like we slice numpy arrays

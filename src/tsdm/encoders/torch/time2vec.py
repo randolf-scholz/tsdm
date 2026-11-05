@@ -14,13 +14,13 @@ from tsdm.pprint import pprint_repr
 
 
 class Time2Vec(nn.Module):
-    r"""Learnable Time Encoding.
+    r"""Learn a vector representation of time.
 
     References:
-      - | Time2Vec: Learning a Vector Representation of Time
-        | Seyed Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet
-        | Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, Marcus Brubaker
-        | https://arxiv.org/abs/1907.05321
+      - Time2Vec: Learning a Vector Representation of Time \
+        Seyed Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet \
+        Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, Marcus Brubaker \
+        <https://arxiv.org/abs/1907.05321>
     """
 
     # Constants

@@ -1,76 +1,47 @@
-r"""Base Classes for Encoders.
+r"""Base classes and composition operators for encoders.
 
-Some special encoders that can be considered are:
+Encoders expose `encode` and `decode` methods. The composition operators are:
 
-- inverse encoders: ``~f(x) = f⁻¹(x)``
-- chaining encoders: ``(f @ g)(x) = g(f(x))``
-- piping encoders: ``(f >> g)(x) = f(g(x))``
-- parallel encoders: ``(f | g)((x, y)) = (f(x), g(y))``
-- joint encoders: ``(f & g)(x) = (f(x), g(x))``
-  - inversion requires an aggregation function: ``(f & g)⁻¹(y) = agg(f⁻¹(y), g⁻¹(y))``
-  - in principle, one can use any element from the tuple.
-  - but higher numerical precision can be achieved by aggregation.
-  - default aggregation is to use a random element from the tuple.
+- Inversion: `(~f).encode(y) = f.decode(y)`.
+- Piping: `(f >> g).encode(x) = g.encode(f.encode(x))`.
+- Parallel application: `(f ^ g).encode((x, y)) = (f.encode(x), g.encode(y))`.
+- Forking: `(f | g).encode(x) = (f.encode(x), g.encode(x))`.
+- Reduction: `(f & g).encode((x, y)) = reduction((f.encode(x), g.encode(y)))`.
+- Repetition: `f ** n` applies `n` copies in sequence.
+- Replication: `f % n` applies `n` copies to separate tuple elements.
+- Duplication: `f * n` applies `n` copies to the same input.
+- Folding: `f // n` applies `n` copies to separate inputs and reduces the outputs.
 
-
-Note on `BaseEncoder`:
-- will wrap the `fit`, `encode`, and `decode` methods.
-    - if the encoder requires fitting, encode/decode will raise an error if not fitted.
-    - if the encoder does not require fitting,
+The default reduction selects a random element. Reductions can discard information;
+decoding then provides a reconstruction rather than an exact inverse for arbitrary inputs.
+An aggregation function can also reconcile small differences caused by floating-point rounding.
 
 Note:
-    Golden Rule for implementation: init/fit can be slow, but transform should be fast.
-    Use specialization/dispatch to ensure fast transforms.
+    `BaseEncoder` wraps `fit`, `encode`, and `decode`. Encoders that require fitting
+    raise an error if encoding or decoding is attempted before fitting. Static encoders
+    can encode and decode immediately.
 
-Remark
-======
-Typing Encoders can be challenging, because not all types might be defined at
-the time of instantiation. Often, the type of the encoder is only known after
-fitting it to some data.
+Note:
+    Initialization and fitting may be slow, but encoding and decoding should be fast.
+    Use specialization or dispatch to keep these operations efficient.
 
-There are multiple ways to handle this:
+## Typing encoders
 
-1. Make fit return the encoder with the correct type.
-   - Note that this would be a breaking change, since for instance sklearn encoders
-     return `None` after fitting.
-2. Add Manual `__new__` overloads that fall back to an upper bound type.
-   - in the future, we can use the default type (PEP 696)
-3. Use a polymorphic instead of a generic type.
-   For example, we can have ``StandardScalar(Encoder[NumericalArray, NumericalArray])``
-   and then set ``def encoder[Arr: NumericalArray](x: Arr) -> Arr: ...``
+An encoder's concrete input and output types may become known only after fitting.
+Possible approaches include returning a more precisely typed encoder from `fit`,
+adding `__new__` overloads, or using polymorphic methods instead of generic classes.
+Changing the return type of `fit` would change this package's API, which currently
+returns `None`.
 
-The use of polymorphic encoders also has effects on the chaining of encoders.
-What is [T → T] >> [DataFrame → DataFrame]?
+Polymorphism also complicates composition. For example, composing an encoder of
+type `T → T` with one of type `DataFrame → DataFrame` should yield an encoder of
+type `DataFrame → DataFrame`, but type checkers may struggle to infer this.
+Expressing the general case may require higher-kinded types.
 
-1. Should it be allowed?
-2. If so, what is the type?
+## Proposed arithmetic operators
 
-The only sensible answer to (2) is that it should be [DataFrame → DataFrame].
-However it might be difficult for a type-checker to infer this correctly.
-In principle, this would require some form of higher kinded types, then we could write an overload
-of the form ``(self: Poly[X], other: [X, Y]) -> Encoder[X, Y]: ...``.
-Here, ``Poly[T]`` is a protocol describing a polymorphic encoder, with ``X`` being the upper bound.
-That is, the encode signature is ``Poly[T].encode[T: X](x: X) -> X: ...``.
-
-Polymorphic encoders might be problematic for this very reason, and possibly should be avoided.
-
-
-
-Remark: naming conventions:
-
-- For ``OP(Encoder, Encoder)`` we use boolean/bitwise operators like ``@``, ``|``, ``&``, ``~``, ``*``, and ``**``.
-- For ``OP(Enocder, int)`` we use integer operators like ``*``, ``**``, ``%``, ``//``.
-
-# @: tensor product? (allows us to not having to define scalar multiplication separately?)
-#    - nice equivalence to being compositon of linear maps.
-#    So (f @ Tensor) is equivalent to ``f >> LinearMap(Tensor)``.
-# +: sum
-# -: ?
-# / num: ? reduce?
-# % num: ? reduce?
-# // num: ? concurrent/duplicate?
-# ** num: repeat (>>)
-# * num: duplicate? (⇝ similar to (x,) * n)
+Addition, subtraction, and tensor contraction with `@` are design proposals.
+Their operator methods currently raise `NotImplementedError`.
 """
 # ruff: file-ignore[E501]
 
@@ -481,37 +452,47 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     def __invert__(self) -> BaseEncoder[Y, X]:
         r"""Return the inverse encoder (i.e. decoder).
 
-        See Also: `InverseEncoder`
+        See Also:
+            `InverseEncoder`
         """
         return invert(self)
 
     # region SISO ----------------------------------------------------------------------
     def __rshift__[U, V, W](self: Encoder[U, V], other: Encoder[V, W], /) -> Pipe[U, W]:
-        r"""Apply encoders in order (``>>``).
+        r"""Apply encoders in order (`>>`).
 
-            x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
+        ```text
+        x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
+        ```
 
-        See Also: `Pipe`, `pipe`
+        See Also:
+            `Pipe`, `pipe`
         """
         return pipe(self, other)
 
     def __rrshift__[U, V, W](
         self: Encoder[V, W], other: Encoder[U, V], /
     ) -> Pipe[U, W]:
-        r"""Apply encoders in order (``>>``).
+        r"""Apply encoders in order (`>>`).
 
-            x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
+        ```text
+        x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
+        ```
 
-        See Also: `Pipe`, `pipe`
+        See Also:
+            `Pipe`, `pipe`
         """
         return pipe(other, self)
 
     def __pow__[T](self: Encoder[T, T], num: int, /) -> Repeat[T]:
-        r"""Repeat an encoder n times (``**``).
+        r"""Repeat an encoder n times (`**`).
 
-            x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
+        ```text
+        x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
+        ```
 
-        See Also: `Repeat`, `repeat`
+        See Also:
+            `Repeat`, `repeat`
         """
         return repeat(self, num)
 
@@ -521,36 +502,45 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     def __xor__[X2, Y2](self, other: Encoder[X2, Y2], /) -> Parallel[tuple[X, X2], tuple[Y, Y2]]:  # fmt: skip
         r"""Return product encoders.
 
-            x₁ ───▶ f₁(x₁)
-            x₂ ───▶ f₂(x₂)
-            ⋮         ⋮
-            xₙ ───▶ fₙ(xₙ)
+        ```text
+        x₁ ───▶ f₁(x₁)
+        x₂ ───▶ f₂(x₂)
+        ⋮         ⋮
+        xₙ ───▶ fₙ(xₙ)
+        ```
 
-        See Also: `Parallel`
+        See Also:
+            `Parallel`
         """
         return parallel(self, other)
 
     def __rxor__[X2, Y2](self, other: Encoder[X2, Y2], /) -> Parallel[tuple[X2, X], tuple[Y2, Y]]:  # fmt: skip
         r"""Return product encoders.
 
-            x₁ ───▶ f₁(x₁)
-            x₂ ───▶ f₂(x₂)
-            ⋮         ⋮
-            xₙ ───▶ fₙ(xₙ)
+        ```text
+        x₁ ───▶ f₁(x₁)
+        x₂ ───▶ f₂(x₂)
+        ⋮         ⋮
+        xₙ ───▶ fₙ(xₙ)
+        ```
 
-        See Also: `Parallel`
+        See Also:
+            `Parallel`
         """
         return parallel(other, self)
 
     def __mod__(self, num: int, /) -> Parallel[tuple[X, ...], tuple[Y, ...]]:
-        r"""Fork the encoder into multiple encoders (``*``).
+        r"""Apply copies of the encoder to separate inputs (`%`).
 
-            x₁ ───▶ f(x₁)
-            x₂ ───▶ f(x₂)
-            ⋮        ⋮
-            xₙ ───▶ f(xₙ)
+        ```text
+        x₁ ───▶ f(x₁)
+        x₂ ───▶ f(x₂)
+        ⋮        ⋮
+        xₙ ───▶ f(xₙ)
+        ```
 
-        See Also: `Replicate`, `Parallel`
+        See Also:
+            `Replicate`, `Parallel`
         """
         return replicate(self, num)
 
@@ -559,14 +549,17 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # region SIMO ----------------------------------------------------------------------
     # TODO: automatically combine ``e1 & e2 & e3`` into a single meet?
     def __or__[Y2](self, other: Encoder[X, Y2], /) -> Fork[X, tuple[Y, Y2]]:
-        r"""Execute multiple encoders with the same input (``&``).
+        r"""Execute multiple encoders with the same input (`|`).
 
-                  ┌────▶ f₁(x)
-            x ────┼────▶ f₂(x)
-                  │        ⋮
-                  └────▶ fₙ(x)
+        ```text
+              ┌────▶ f₁(x)
+        x ────┼────▶ f₂(x)
+              │        ⋮
+              └────▶ fₙ(x)
+        ```
 
-        See Also: `Fork`
+        See Also:
+            `Fork`
         """
         # FIXME: mypy does not predict correct return type...
         result = fork(self, other)
@@ -575,14 +568,17 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
     # TODO: automatically combine ``e1 & e2 & e3`` into a single meet?
     def __ror__[Y2](self, other: Encoder[X, Y2], /) -> Fork[X, tuple[Y2, Y]]:
-        r"""Execute multiple encoders with the same input (``&``).
+        r"""Execute multiple encoders with the same input (`|`).
 
-                  ┌────▶ f₁(x)
-            x ────┼────▶ f₂(x)
-                  │        ⋮
-                  └────▶ fₙ(x)
+        ```text
+              ┌────▶ f₁(x)
+        x ────┼────▶ f₂(x)
+              │        ⋮
+              └────▶ fₙ(x)
+        ```
 
-        See Also: `Fork`
+        See Also:
+            `Fork`
         """
         # FIXME: mypy does not predict correct return type...
         result = fork(other, self)
@@ -590,14 +586,17 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         return result
 
     def __mul__(self, other: int, /) -> Fork[X, tuple[Y, ...]]:
-        r"""Duplicate the encoder multiple times (``%``).
+        r"""Duplicate the encoder multiple times (`*`).
 
-                  ┌────▶ f(x)
-            x ────┼────▶ f(x)
-                  │        ⋮
-                  └────▶ f(x)
+        ```text
+              ┌────▶ f(x)
+        x ────┼────▶ f(x)
+              │        ⋮
+              └────▶ f(x)
+        ```
 
-        See Also: `Duplicate`, `Fork`
+        See Also:
+            `Duplicate`, `Fork`
         """
         return duplicate(self, other)
 
@@ -605,39 +604,48 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
     # region MISO ----------------------------------------------------------------------
     def __and__[X2](self, other: Encoder[X2, Y], /) -> Meet[tuple[X, X2], Y]:
-        r"""Combine two encoders into a single encoder (``&``).
+        r"""Combine two encoders into a single encoder (`&`).
 
-            x₁ ────┐
-            x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-            ⋮      │
-            xₙ ────┘
+        ```text
+        x₁ ────┐
+        x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
+        ⋮      │
+        xₙ ────┘
+        ```
 
-        See Also: `Meet`
+        See Also:
+            `Meet`
         """
         return meet(self, other)
 
     def __rand__[X2](self, other: Encoder[X2, Y], /) -> Meet[tuple[X2, X], Y]:
-        r"""Combine two encoders into a single encoder (``&``).
+        r"""Combine two encoders into a single encoder (`&`).
 
-            x₁ ────┐
-            x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-            ⋮      │
-            xₙ ────┘
+        ```text
+        x₁ ────┐
+        x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
+        ⋮      │
+        xₙ ────┘
+        ```
 
-        See Also: `Meet`
+        See Also:
+            `Meet`
         """
         return meet(other, self)
 
     # TODO: possibly better to use reduction rather than integer RHS.
     def __floordiv__(self, other: int, /) -> Meet[tuple[X, ...], Y]:
-        r"""Aggregate multiple outputs via reduction  (``//``).
+        r"""Aggregate multiple outputs via reduction (`//`).
 
-            x₁ ────┐
-            x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-             ⋮     │
-            xₙ ────┘
+        ```text
+        x₁ ────┐
+        x₂ ────┼────▶ choice([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
+         ⋮     │
+        xₙ ────┘
+        ```
 
-        See Also: `Meet`
+        See Also:
+            `Meet`
         """
         return fold(self, other)
 
@@ -645,64 +653,84 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
     # region arithmetic methods --------------------------------------------------------
     def __add__(self, other: Any, /) -> Any:
-        r"""Add two encoders together (``+``).
+        r"""Add two encoders together (`+`).
 
-            x ───▶ f(x) + g(x)
+        ```text
+        x ───▶ f(x) + g(x)
+        ```
 
-        See Also: `Sum`, `add`
+        See Also:
+            `Sum`, `add`
         """
         raise NotImplementedError
 
     def __radd__(self, other: Any, /) -> Any:
-        r"""Add two encoders together (``+``).
+        r"""Add two encoders together (`+`).
 
-            x ───▶ f(x) + g(x)
+        ```text
+        x ───▶ f(x) + g(x)
+        ```
 
-        See Also: `Sum`, `add`
+        See Also:
+            `Sum`, `add`
         """
         raise NotImplementedError
 
     def __sub__(self, other: Any, /) -> Any:
-        r"""Subtract two encoders (``-``).
+        r"""Subtract two encoders (`-`).
 
-            x ───▶ f(x) - g(x)
+        ```text
+        x ───▶ f(x) - g(x)
+        ```
 
-        See Also: `Difference`, `subtract`
+        See Also:
+            `Difference`, `subtract`
         """
         raise NotImplementedError
 
     def __rsub__(self, other: Any, /) -> Any:
-        r"""Subtract two encoders (``-``).
+        r"""Subtract two encoders (`-`).
 
-            x ───▶ f(x) - g(x)
+        ```text
+        x ───▶ f(x) - g(x)
+        ```
 
-        See Also: `Difference`, `subtract`
+        See Also:
+            `Difference`, `subtract`
         """
         raise NotImplementedError
 
     def __matmul__(self, other: Any, /) -> Pipe:
-        r"""Apply reducing tensor contraction (``@``) (MISO).
+        r"""Apply reducing tensor contraction (`@`) (MISO).
 
-            f @ Tensor  ≝  f >> LinearMap(Tensor, upper_indices="ALL")
-            f @ (Tensor, sig)  ≝  f >> LinearMap(Tensor, sig)
+        ```text
+        f @ Tensor  ≝  f >> LinearMap(Tensor, upper_indices="ALL")
+        f @ (Tensor, sig)  ≝  f >> LinearMap(Tensor, sig)
+        ```
 
         Note:
             Scalar multiplication can be realized using rank-0 tensors.
 
-            (2 @ f) ≝ x ───▶ 2x ───▶ f(2x)
-            (f @ 2) ≝ x ───▶ f(x) ───▶ 2f(x)
+        ```text
+        (2 @ f) ≝ x ───▶ 2x ───▶ f(2x)
+        (f @ 2) ≝ x ───▶ f(x) ───▶ 2f(x)
+        ```
 
-        See Also : `LinearMap`, `linear_map`, `Pipe`
+        See Also:
+            `LinearMap`, `linear_map`, `Pipe`
         """
         raise NotImplementedError
 
     def __rmatmul__(self, other: Any, /) -> Pipe:
-        r"""Apply tensor contraction (``@``).
+        r"""Apply tensor contraction (`@`).
 
-            Tensor @ f  ≝  LinearMap(Tensor, lower_indices="ALL") >> f
-            (Tensor, sig) @ f  ≝  LinearMap(Tensor, sig) >> f
+        ```text
+        Tensor @ f  ≝  LinearMap(Tensor, lower_indices="ALL") >> f
+        (Tensor, sig) @ f  ≝  LinearMap(Tensor, sig) >> f
+        ```
 
-        See Also : `LinearMap`, `linear_map`, `Pipe`
+        See Also:
+            `LinearMap`, `linear_map`, `Pipe`
         """
         raise NotImplementedError
 
@@ -712,58 +740,66 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
     # region fluent interface ----------------------------------------------------------
     # region magic methods -------------------------------------------------------------
     def pipe[Z](self, other: Encoder[Y, Z], /) -> Pipe[X, Z]:
-        r"""Chain the encoder with another encoder (``>>``).
+        r"""Chain the encoder with another encoder (`>>`).
 
-        See Also: `Pipe`, `__rshift__`
+        See Also:
+            `Pipe`, `__rshift__`
         """
         return self >> other
 
     def repeat[T](self: Encoder[T, T], num: int, /) -> Repeat[T]:
-        r"""Repeat the encoder multiple times (``**``).
+        r"""Repeat the encoder multiple times (`**`).
 
-        See Also: `Repeat`, `__pow__`
+        See Also:
+            `Repeat`, `__pow__`
         """
         return repeat(self, num)
 
     def parallel[X2, Y2](self, other: Encoder[X2, Y2], /) -> Parallel[tuple[X, X2], tuple[Y, Y2]]:  # fmt: skip
-        r"""Combine two encoders into a single encoder (``^``).
+        r"""Combine two encoders into a single encoder (`^`).
 
-        See Also: `Parallel`, `__xor__`
+        See Also:
+            `Parallel`, `__xor__`
         """
         return parallel(self, other)
 
     def replicate(self, num: int, /) -> Parallel[tuple[X, ...], tuple[Y, ...]]:
-        r"""Replicate the encoder multiple times (``%``).
+        r"""Replicate the encoder multiple times (`%`).
 
-        See Also: `Replicate`, `__mod__`
+        See Also:
+            `Replicate`, `__mod__`
         """
         return replicate(self, num)
 
     def fork[Y2](self, other: Encoder[X, Y2], /) -> Fork[X, tuple[Y, Y2]]:
-        r"""Execute multiple encoders with the same input (``|``).
+        r"""Execute multiple encoders with the same input (`|`).
 
-        See Also: `Fork`, `__or__`
+        See Also:
+            `Fork`, `__or__`
         """
         return fork(self, other)
 
     def duplicate(self, num: int, /) -> Fork[X, tuple[Y, ...]]:
-        r"""Duplicate the encoder multiple times (``*``).
+        r"""Duplicate the encoder multiple times (`*`).
 
-        See Also: `Duplicate`, `Fork`, `__mul__`
+        See Also:
+            `Duplicate`, `Fork`, `__mul__`
         """
         return duplicate(self, num)
 
     def meet[X2](self, other: Encoder[X2, Y], /) -> Meet[tuple[X, X2], Y]:
-        r"""Combine two encoders into a single encoder (``&``).
+        r"""Combine two encoders into a single encoder (`&`).
 
-        See Also: `Meet`, `__and__`
+        See Also:
+            `Meet`, `__and__`
         """
         return meet(self, other)
 
     def fold(self, num: int, /) -> Meet[tuple[X, ...], Y]:
-        r"""Aggregate multiple outputs via reduction (``//``).
+        r"""Aggregate multiple outputs via reduction (`//`).
 
-        See Also: `Fold`, `__floordiv__`
+        See Also:
+            `Fold`, `__floordiv__`
         """
         return fold(self, num)
 
@@ -1033,7 +1069,7 @@ def wrap[X = Any, Y = Any](
     encoder: SupportsEncode[X, Y] | Fn[[X], Y] | None = None,
     decoder: SupportsEncode[Y, X] | Fn[[Y], X] | None = None,
 ) -> BaseEncoder[X, Y]:
-    r"""Wrap a (pair of) function as an encoder.
+    r"""Wrap an encoding function and an optional decoding function as an encoder.
 
     This will create a `WrappedEncoder` that calls the function `fn` on the input data.
     """
@@ -1048,17 +1084,21 @@ class MappedEncoder[
 ](EncoderDict[MappingIn, MappingOut, str, Encoder]):  # Encoder[X, Y]
     r"""Maps encoders to keys.
 
-        (k₁, x₂) ────▶ f_{k₁}(x₁)
-        (k₂, x₂) ────▶ f_{k₂}(x₂)
-            ⋮              ⋮
-        (kₙ, xₙ) ────▶ f_{kₙ}(xₙ)
+    ```text
+    (k₁, x₁) ────▶ fₖ₁(x₁)
+    (k₂, x₂) ────▶ fₖ₂(x₂)
+        ⋮              ⋮
+    (kₙ, xₙ) ────▶ fₖₙ(xₙ)
+    ```
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import MappedEncoder, wrap
         >>> e1 = wrap(lambda x: f"{x} + 1")
         >>> e2 = wrap(lambda x: f"2 * {x}")
         >>> enc = MappedEncoder({"key1": e1, "key2": e2})
         >>> assert enc({"key1": "a", "key2": "b"}) == {"key1": "a + 1", "key2": "2 * b"}
+        ```
     """
 
     @classmethod
@@ -1109,12 +1149,15 @@ def map_encoders[X, Y](
 ) -> MappedEncoder[Mapping[str, X], Mapping[str, Y]]:
     r"""Map encoders.
 
-        (k₁, x₂) ────▶ f_{k₁}(x₁)
-        (k₂, x₂) ────▶ f_{k₂}(x₂)
-                   ⋮
-        (kₙ, xₙ) ────▶ f_{kₙ}(xₙ)
+    ```text
+    (k₁, x₁) ────▶ fₖ₁(x₁)
+    (k₂, x₂) ────▶ fₖ₂(x₂)
+               ⋮
+    (kₙ, xₙ) ────▶ fₖₙ(xₙ)
+    ```
 
-    See Also: `MappedEncoder`
+    See Also:
+        `MappedEncoder`
     """
     return MappedEncoder(encoders)
 
@@ -1221,7 +1264,8 @@ class InverseEncoder[X, Y](FittableEncoder[Y, X]):
     r"""Applies an encoder in reverse.
 
     Example:
-        >>> from tsdm.encoders import wrap
+        ```pycon
+        >>> from tsdm.encoders import WrappedEncoder
         >>> enc = WrappedEncoder(
         ...     encoder=lambda x: f"{x} + 1",
         ...     decoder=lambda y: f"{y} - 1",
@@ -1231,6 +1275,7 @@ class InverseEncoder[X, Y](FittableEncoder[Y, X]):
         >>> assert enc("a") == "a - 1"
         >>> enc = ~enc
         >>> assert enc("a") == "a + 1"
+        ```
     """
 
     FIELDS: ClassVar[frozenset[str]] = frozenset({"encoder"})
@@ -1274,13 +1319,15 @@ def invert[X, Y](encoder: Encoder[X, Y], /) -> BaseEncoder[Y, X]:
 class Diagonal(StaticEncoder[Any, tuple[Any, ...]]):
     r"""Encodes the input into a tuple of itself (SIMO).
 
-             ┌───▶ x
-        x ───┼───▶ x
-             │     ⋮
-             └───▶ x
+    ```text
+         ┌───▶ x
+    x ───┼───▶ x
+         │     ⋮
+         └───▶ x
+    ```
 
     Note:
-        ``Diagonal(n)`` is equivalent to ``Fork(ID, n)``, where `ID` is the identity encoder.
+        `Diagonal(n)` is equivalent to `Duplicate(ID, n)`, where `ID` is the identity encoder.
 
     Note:
         In practice, when working with float arrays, we need to be careful how to select
@@ -1325,18 +1372,22 @@ def diagonal[T](num: int, /, reduction: Reduction[tuple[T, ...], T] = random.cho
 class Choice(StaticEncoder[tuple[Any, ...], Any]):
     r"""Encoder that randomly selects one of the input values.
 
-        x₁ ────┐
-        x₂ ────┼────▶ choice(x₁, x₂, ..., xₙ)
-        ⋮      │
-        xₙ ────┘
+    ```text
+    x₁ ────┐
+    x₂ ────┼────▶ choice(x₁, x₂, ..., xₙ)
+    ⋮      │
+    xₙ ────┘
+    ```
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Choice
         >>> enc = Choice(3)
         >>> assert enc((1, 2, 3)) in (1, 2, 3)
         >>> enc = Choice()  # variable number of elements
         >>> assert enc((1, 2)) in (1, 2)
         >>> assert enc((1, 2, 3, 4)) in (1, 2, 3, 4)
+        ```
     """
 
     num: Final[int | None] = None
@@ -1380,35 +1431,30 @@ def choice(num: int | None = None, /) -> Choice:
 class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     r"""Represents function composition of encoders.
 
-        x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
+    ```text
+    x ───▶ f₁ ───▶ f₂ ───▶ ... ───▶ fₙ ───▶ y
+    ```
 
     Example:
-        >>> from tsdm.encoders import Pipe, wrap
+        ```pycon
+        >>> from tsdm.encoders import wrap
         >>> e1 = wrap(lambda x: f"({x}) + 1")
         >>> e2 = wrap(lambda x: f"2 * ({x})")
         >>> enc = e1 >> e2
         >>> assert enc("a") == "2 * ((a) + 1)"
         >>> enc = e2 >> e1
         >>> assert enc("a") == "(2 * (a)) + 1"
+        ```
 
-
-    Note that the order is reversed compared to the ``@``-operator.
 
     Note:
-        $≫$ is associative: $(A ≫ B) ≫ C = A ≫ (B ≫ C)$
+        `A >> B` applies `A` first and `B` second. Piping is associative:
 
-        .. math::
-            ((A ≫ B) ≫ C)(x) = C((A ≫ B)(x)) = C(B(A(x)))  \\
-            (A ≫ (B ≫ C))(x) = (B ≫ C)(A(x)) = C(B(A(x)))
+        $$ ((A ≫ B) ≫ C)(x) = (A ≫ (B ≫ C))(x) = C(B(A(x))) $$
 
-        .. details:: inverse law: $~(A >> B) == ~B >> ~A$
+        For invertible encoders, `~(A >> B) = ~B >> ~A`:
 
-            .. math::
-                &∼(A >> B).encode(x) \\
-                    &= (A >> B).decode(x) \\
-                    &= B.decode(A.decode(x)) \\
-                    &= ∼B.encode(∼~A.encode(x)) \\
-                    &= (∼B >> ∼A).encode(x)
+        $$ (A ≫ B)⁻¹(y) = A⁻¹(B⁻¹(y)) $$
     """
 
     def get_slice(self, arg: slice, /) -> Pipe:
@@ -1514,7 +1560,8 @@ def pipe(*es: Encoder) -> Pipe: ...
 def pipe(*es: Encoder) -> Pipe:
     r"""Pipe encoders.
 
-    See Also: `Pipe`
+    See Also:
+        `Pipe`
     """
     # simplify nested pipes/chains ``e >> (f >> g) = (e >> f) >> g``.
     encoders: list[Encoder] = []
@@ -1529,11 +1576,13 @@ def pipe(*es: Encoder) -> Pipe:
 
 @pprint_repr
 class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
-    r"""Repeat copies of an encoder n times (``**``).
+    r"""Repeat copies of an encoder n times (`**`).
 
-        x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
+    ```text
+    x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
+    ```
 
-    Equivalent to ``f >> f >> ... >> f`` (n times).
+    Equivalent to `f >> f >> ... >> f` (n times).
     """
 
     encoder: E
@@ -1575,11 +1624,14 @@ class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
 
 
 def repeat[T](e: Encoder[T, T], n: int, /) -> Repeat[T]:
-    r"""Repeat an encoder n times (``**``).
+    r"""Repeat an encoder n times (`**`).
 
-        x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
+    ```text
+    x ───▶ f ──▶ f(x) ──▶ f(f(x)) ──▶ ... ──▶ fⁿ(x)
+    ```
 
-    See Also: `Repeat`
+    See Also:
+        `Repeat`
     """
     return Repeat(e, n)
 
@@ -1599,25 +1651,28 @@ class Parallel[
 ](EncoderList[TupleIn, TupleOut, E]):
     r"""Apply multiple encoders in parallel on tuples of data (MIMO).
 
-        x₁ ────▶ f₁(x₁)
-        x₂ ────▶ f₂(x₂)
-             ⋮
-        xₙ ────▶ fₙ(xₙ)
+    ```text
+    x₁ ────▶ f₁(x₁)
+    x₂ ────▶ f₂(x₂)
+         ⋮
+    xₙ ────▶ fₙ(xₙ)
+    ```
 
-    .. math::
-        Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) ⟶ Fun(X₁×…×Xₙ，Y₁×…×Yₙ)  \\
-        (f₁，…，fₙ) ⟶ parallel(f₁，…，fₙ)
-
-        parallel(f₁，…，fₙ):
-            X₁×…×Xₙ ⟶ Y₁×…×Yₙ   \\
-            (x₁，…，xₙ) ⟶ (f₁(x₁)，…，fₙ(xₙ))
+    $$\begin{aligned}
+        Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) &⟶ Fun(X₁×…×Xₙ，Y₁×…×Yₙ) \\
+        (f₁，…，fₙ) &⟶ \op{parallel}(f₁，…，fₙ) \\
+        \op{parallel}(f₁，…，fₙ): X₁×…×Xₙ &⟶ Y₁×…×Yₙ \\
+        (x₁，…，xₙ) &⟶ (f₁(x₁)，…，fₙ(xₙ))
+    \end{aligned}$$
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Parallel, wrap
         >>> e1 = wrap(lambda x: f"{x} + 1")
         >>> e2 = wrap(lambda x: f"2 * {x}")
         >>> enc = e1 ^ e2
         >>> assert enc(("a", "b")) == ("a + 1", "2 * b")
+        ```
     """
 
     def get_slice[U, V](
@@ -1682,12 +1737,15 @@ def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]: ...
 def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]:
     r"""Apply multiple encoders in parallel on tuples of data (MIMO).
 
-        x₁ ────▶ f₁(x₁)
-        x₂ ────▶ f₂(x₂)
-             ⋮
-        xₙ ────▶ fₙ(xₙ)
+    ```text
+    x₁ ────▶ f₁(x₁)
+    x₂ ────▶ f₂(x₂)
+         ⋮
+    xₙ ────▶ fₙ(xₙ)
+    ```
 
-    See Also: `Parallel`
+    See Also:
+        `Parallel`
     """
     return Parallel(encoders)
 
@@ -1699,16 +1757,20 @@ class Replicate[
 ](Parallel[TupleIn, TupleOut]):
     r"""Apply copies of single encoder in parallel to multiple inputs (MIMO).
 
-        x₁ ────▶ f(x₁)
-        x₂ ────▶ f(x₂)
-             ⋮
-        xₙ ────▶ f(xₙ)
+    ```text
+    x₁ ────▶ f(x₁)
+    x₂ ────▶ f(x₂)
+         ⋮
+    xₙ ────▶ f(xₙ)
+    ```
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Replicate, wrap
         >>> e = wrap(lambda x: f"{x} + 1")
         >>> enc = e % 3
         >>> assert enc(("a", "b", "c")) == ("a + 1", "b + 1", "c + 1")
+        ```
     """
 
     kind: Final[type[Encoder]]
@@ -1797,10 +1859,12 @@ def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple[X, ...], t
 def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple, tuple]:
     r"""Create copies of an Encoder in parallel.
 
-        x₁ ────▶ f(x₁)
-        x₂ ────▶ f(x₂)
-             ⋮
-        xₙ ────▶ f(xₙ)
+    ```text
+    x₁ ────▶ f(x₁)
+    x₂ ────▶ f(x₂)
+         ⋮
+    xₙ ────▶ f(xₙ)
+    ```
 
     Args:
         e: The encoder to duplicate.
@@ -1863,25 +1927,27 @@ class Fork[
 ](EncoderList[X, TupleOut, E]):
     r"""Apply multiple encoders to the same input (SIMO).
 
-              ┌────▶ f₁(x)
-        x ────┼────▶ f₂(x)
-              │        ⋮
-              └────▶ fₙ(x)
+    ```text
+          ┌────▶ f₁(x)
+    x ────┼────▶ f₂(x)
+          │        ⋮
+          └────▶ fₙ(x)
+    ```
 
-    .. math::
-        Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) ⟶ Fun(X₁∩…∩Xₙ，Y₁×…×Yₙ)  \\
-        (f₁，…，fₙ) ⟼ fork(f₁，…，fₙ)
-
-        fork(f₁，…，fₙ):
-            X₁∩…∩Xₙ ⟶ Y₁×…×Yₙ   \\
-            x ⟼ (f₁(x), ..., fₙ(x))
+    $$\begin{aligned}
+        Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) &⟶ Fun(X₁∩…∩Xₙ，Y₁×…×Yₙ) \\
+        (f₁，…，fₙ) &⟼ \op{fork}(f₁，…，fₙ) \\
+        \op{fork}(f₁，…，fₙ): X₁∩…∩Xₙ &⟶ Y₁×…×Yₙ \\
+        x &⟼ (f₁(x), ..., fₙ(x))
+    \end{aligned}$$
 
     Note:
-        `Fork` is essentially a heterogeneous `Split` encoder.
-        ``Fork(f1, ..., fn)`` is equivalent to ``Diagonal(n) >> Parallel(f1, ..., fn)``.
-        Hence, ``~Fork(f1, ..., fn) = Parallel(~f1, ..., ~fn) >> Choice(n)``.
+        `Fork` is essentially a heterogeneous `Duplicate` encoder.
+        `Fork(f1, ..., fn)` is equivalent to `Diagonal(n) >> Parallel(f1, ..., fn)`.
+        Hence, `~Fork(f1, ..., fn) = Parallel(~f1, ..., ~fn) >> Choice(n)`.
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Fork, wrap
         >>> e1 = wrap(lambda x: f"{x} + 1")
         >>> e2 = wrap(lambda x: f"2 * {x}")
@@ -1890,6 +1956,7 @@ class Fork[
         >>> assert enc("a") == ("a + 1", "2 * a", "a**3")
         >>> enc = e1 | e2
         >>> assert enc("a") == ("a + 1", "2 * a")
+        ```
     """
 
     reduction: Final[Reduction[tuple[X, ...], X]]
@@ -1972,12 +2039,15 @@ def fork[X, Y](*es: Encoder[X, Y]) -> Fork[X, tuple[Y, ...]]: ...
 def fork[X, Y](*encoders: Encoder[X, Y]) -> Fork[X, tuple]:
     r"""Apply multiple encoders to the same input (SIMO).
 
-              ┌────▶ f₁(x)
-        x ────┼────▶ f₂(x)
-              │        ⋮
-              └────▶ fₙ(x)
+    ```text
+          ┌────▶ f₁(x)
+    x ────┼────▶ f₂(x)
+          │        ⋮
+          └────▶ fₙ(x)
+    ```
 
-    See Also:  `Fork`
+    See Also:
+        `Fork`
     """
     return Fork(*encoders)
 
@@ -1991,29 +2061,32 @@ class Duplicate[
 ](Fork[X, Ys, E]):
     r"""Apply copies of a single encoder to the same input (SIMO).
 
-              ┌────▶ f(x)
-        x ────┼────▶ f(x)
-              │        ⋮
-              └────▶ f(x)
+    ```text
+          ┌────▶ f(x)
+    x ────┼────▶ f(x)
+          │        ⋮
+          └────▶ f(x)
+    ```
 
-    .. math::
-        Fun(X，Y) × ℕ ⟶ Fun(X，Y×…×Y)
-        (f，n) ⟼ duplicate(f, n)
-
-        duplicate(f, n):
-            X ⟶ Y×…×Y
-            x ⟼ (f(x), ..., f(x))
+    $$\begin{aligned}
+        Fun(X，Y) × ℕ &⟶ Fun(X，Y×…×Y) \\
+        (f，n) &⟼ \op{duplicate}(f, n) \\
+        \op{duplicate}(f, n): X &⟶ Y×…×Y \\
+        x &⟼ (f(x), ..., f(x))
+    \end{aligned}$$
 
     Note:
-        `Split` is essentially a homogeneous `Fork` encoder.
-        ``Split(f, n)`` is equivalent to ``Diagonal(n) >> Replicate(f, n)``.
-        Hence, ``~Split(f, n) = Duplicate(~f, n) >> Choice(n) = Fold(~f, n)``.
+        `Duplicate` is a homogeneous `Fork` encoder. `Duplicate(f, n)` is
+        equivalent to `Diagonal(n) >> Replicate(f, n)`. Its inverse is a `Fold`
+        over inverse copies, using the same reduction to reconstruct the input.
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Duplicate, wrap
         >>> e = wrap(lambda x: f"{x} + 1")
         >>> enc = e * 3
         >>> assert enc("a") == ("a + 1", "a + 1", "a + 1")
+        ```
     """
 
     num: Final[int]
@@ -2115,10 +2188,12 @@ def duplicate[X, Y](
 ) -> Fork[X, tuple]:
     r"""Apply copies of a single encoder to the same input (SIMO).
 
-              ┌────▶ f(x)
-        x ────┼────▶ f(x)
-              │        ⋮
-              └────▶ f(x)
+    ```text
+          ┌────▶ f(x)
+    x ────┼────▶ f(x)
+          │        ⋮
+          └────▶ f(x)
+    ```
 
     Args:
         e: The encoder to fork.
@@ -2126,7 +2201,7 @@ def duplicate[X, Y](
         reduction: The function to reduce the tuple back to the original input.
 
     Returns:
-        A `Fork` encoder that applies the same encoder to the input multiple times.
+        A `Duplicate` encoder that applies copies of the encoder to the same input.
     """
     return Duplicate(e, num, reduction=reduction)
 
@@ -2188,19 +2263,17 @@ def duplicate[X, Y](
 class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
     r"""Combine the outputs of multiple encoders into a single value (MISO).
 
-        x₁ ────┐
-        x₂ ────┼────▶ reduction([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-        ⋮      │
-        xₙ ────┘
+    ```text
+    x₁ ────┐
+    x₂ ────┼────▶ reduction([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
+    ⋮      │
+    xₙ ────┘
+    ```
 
-    .. math::
-            Fun(X₁，Y₁) × … × Fun(Xₙ，Yₙ) ⟶ Fun(X₁×…×Xₙ，Y₁∪…∪Yₙ)  \\
-            (f₁，…，fₙ) ⟼ join(f₁，…，fₙ)
-
-        join(f₁，…，fₙ):
-            X₁×…×Xₙ ⟶ Y₁∪…∪Yₙ \\
-            x ⟼ reduction(f₁(x), …, fₙ(x))
-
+    $$\begin{aligned}
+        \op{meet}(f₁, …, fₙ)\colon X₁ × … × Xₙ &⟶ Y \\
+        (x₁, …, xₙ) &⟼ \op{reduction}(f₁(x₁), …, fₙ(xₙ))
+    \end{aligned}$$
 
     Assumptions:
         - All encoders map into the same type `Y`.
@@ -2208,10 +2281,12 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
 
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Meet, wrap
         >>> e = wrap(lambda x: f"({x} + 1)")
         >>> enc = Meet(e, e, e, reduction="*".join)
         >>> assert enc(("a", "b", "c")) == "(a + 1)*(b + 1)*(c + 1)"
+        ```
 
     Examples:
         - `random.choice` for generic data
@@ -2317,42 +2392,46 @@ def meet[Y](
 ) -> Meet[tuple, Any]:
     r"""Combine the outputs of multiple encoders into a single value (MISO).
 
-        x₁ ────┐
-        x₂ ────┼────▶ reduction([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
-        ⋮     │
-        xₙ ────┘
+    ```text
+    x₁ ────┐
+    x₂ ────┼────▶ reduction([f₁(x₁), f₂(x₂), ..., fₙ(xₙ)])
+    ⋮      │
+    xₙ ────┘
+    ```
 
-    See Also: `Join`
+    See Also:
+        `Meet`
     """
     return Meet(*es, reduction=reduction)
 
 
 class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
-    r"""Apply copies of a single encoder to multiple inputs and reduces (MISO).
+    r"""Apply copies of a single encoder to separate inputs and reduce the outputs (MISO).
 
-        x₁ ────┐
-        x₂ ────┼────▶ reduction([f(x₁), f(x₂), ..., f(xₙ)])
-        ⋮      │
-        xₙ ────┘
+    ```text
+    x₁ ────┐
+    x₂ ────┼────▶ reduction([f(x₁), f(x₂), ..., f(xₙ)])
+    ⋮      │
+    xₙ ────┘
+    ```
 
-    .. math::
-        Fun(X，Y) × ℕ ⟶ Fun(X×…×X，Y)
-        (f, n) ⟼ fold(f, n)
-
-        fold(f, n):
-            X×…×X ⟶ Y
-            x ⟼ reduction(f(x), …, f(x))
+    $$\begin{aligned}
+        \op{fold}(f, n)\colon  Xⁿ &⟶ Y \\
+        (x₁, …, xₙ) &⟼ \op{reduction}(f(x₁), …, f(xₙ))
+    \end{aligned}$$
 
     Note:
-        `Fold` is essentially a homogeneous `Join` encoder.
-        ``Fold(f, n)`` is equivalent to ``Duplicate(f, n) >> Choice(n)``.
-        Hence, ``~Fold(f, n) = Diagonal(n) >> Duplicate(~f, n) = Split(~f, n)``.
+        `Fold` is a homogeneous `Meet` encoder. It applies a copy of `f` to each
+        input and then reduces the results. Decoding applies each copy's decoder
+        to the same reduced value; arbitrary reductions need not be invertible.
 
     Example:
+        ```pycon
         >>> from tsdm.encoders import Fold, wrap
         >>> e = wrap(lambda x: f"({x} + 1)")
         >>> enc = Fold(e, 3, reduction="*".join)
         >>> assert enc(("a", "b", "c")) == "(a + 1)*(b + 1)*(c + 1)"
+        ```
     """
 
     kind: Final[type[Encoder[Any, Y]]]
@@ -2459,12 +2538,14 @@ def fold[X, Y](
 def fold[X, Y](
     e: Encoder[X, Y], num: int, /, *, reduction: Reduction[tuple, Y] = random.choice
 ) -> Meet[tuple, Y]:
-    r"""Apply copies of a single encoder to multiple inputs and reduces (MISO).
+    r"""Apply copies of a single encoder to separate inputs and reduce the outputs (MISO).
 
-        x₁ ────┐
-        x₂ ────┼────▶ reduction([f(x₁), f(x₂), ..., f(xₙ)])
-        ⋮      │
-        xₙ ────┘
+    ```text
+    x₁ ────┐
+    x₂ ────┼────▶ reduction([f(x₁), f(x₂), ..., f(xₙ)])
+    ⋮      │
+    xₙ ────┘
+    ```
 
     Args:
         e: The encoder to fork.

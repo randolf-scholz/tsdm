@@ -24,7 +24,7 @@ class CSVEncoder(StaticEncoder[pd.DataFrame, Path]):
     DEFAULT_WRITE_OPTIONS: ClassVar[dict] = {"index": False}
 
     path_generator: Callable[[pd.DataFrame], Path]
-    r"""The generates the name for the CSV file."""
+    r"""The function that generates the CSV filename."""
 
     _: KW_ONLY
 

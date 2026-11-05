@@ -17,10 +17,11 @@ from tsdm.pprint import pprint_repr
 @pprint_repr
 @dataclass(slots=True, init=False)
 class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
-    r"""Converts wide DataFrame to a tall DataFrame.
+    r"""Convert a wide DataFrame to a tall DataFrame.
 
-    Requires that all columns share the same data type.
-    If sparse, then
+    All columns must share the same data type. Missing values are omitted from
+    the tall representation. If `sparse=True`, variable labels are represented
+    by sparse one-hot columns instead of a categorical variable column.
     """
 
     sparse: bool = False
@@ -32,7 +33,7 @@ class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
 
     # derived fields
     value_dtype: Any = field(init=False, default=UNDEFINED)
-    r"""The dtype of the variable column."""
+    r"""The dtype of the value column."""
     original_schema: pd.Series = field(init=False, default=UNDEFINED)
     r"""The original schema (column -> dtype)."""
     categories: pd.CategoricalDtype = field(init=False, default=UNDEFINED)
@@ -138,7 +139,7 @@ class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     original_schema: Mapping[str, Any] = field(init=False, default=UNDEFINED)
     r"""The original dtypes."""
     value_dtype: Any = field(init=False, default=UNDEFINED)
-    r"""The dtype of the variable column."""
+    r"""The dtype of the value column."""
 
     def __init__(
         self,

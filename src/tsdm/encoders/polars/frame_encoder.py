@@ -24,13 +24,11 @@ class FrameEncoder[K: str](
     r"""Encode a Polars DataFrame by column-wise transformations.
 
     Each configured encoder receives the corresponding column as a Polars
-    :class:`Series`. All columns without an encoder pass through unchanged. The
+    `Series`. All columns without an encoder pass through unchanged. The
     fitted column dtypes are restored when decoding.
 
-    Args:
-        encoders: A mapping from column names to their encoders.
-
     Examples:
+        ```pycon
         >>> import polars as pl
         >>> from polars.testing import assert_frame_equal
         >>> from tsdm.encoders import wrap
@@ -41,15 +39,13 @@ class FrameEncoder[K: str](
         >>> encoded.to_dict(as_series=False)
         {'id': [10, 20], 'value': [2, 3], 'label': ['a', 'b']}
         >>> assert_frame_equal(frame, encoder.decode(encoded))
+        ```
 
     Todo:
-        We want encoding groups, so for example, applying an encoder to a group
-        of columns.
-
-        - [ ] Add support for groups of column-encoders
+        Add support for applying one encoder to a group of columns.
 
     See Also:
-        Similar to :class:`sklearn.compose.ColumnTransformer`.
+        Similar to `sklearn.compose.ColumnTransformer`.
     """
 
     # fitted attributes

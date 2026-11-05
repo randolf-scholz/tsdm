@@ -33,7 +33,7 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
 
     Note:
-        - This encoder requires that the DataFrame is canonically indexed. (i.e. ``index = range(len(df))``)
+        - This encoder requires that the DataFrame is canonically indexed. (i.e. `index = range(len(df))`)
         - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
@@ -70,14 +70,15 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
 
     Note:
         - Each column must be assigned to exactly one group.
-        - The special value ``...`` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
+        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
         - Encoding the index is mandatory, except if the data is canonically indexed.
-          (i.e. ``index = RangeIndex(len(df))``)
+          (i.e. `index = RangeIndex(len(df))`)
         - This Encoder is basically equivalent to `FrameAsDict` followed by `MapEncoders` wrapping `FrameAsTensor`
           for each group, but it also encodes the index.
         - Missing columns are allowed (submodular), and will be filled with `NAN`-values if the datatype allows it.
 
     Example:
+        ```pycon
         >>> from pandas import DataFrame
         >>> from tsdm.encoders.pandas import FrameAsTensorDict
         >>> df = DataFrame(
@@ -100,6 +101,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
         >>> assert isinstance(encoded, dict)
         >>> decoded = encoder.decode(encoded)
         >>> pd.testing.assert_frame_equal(df, decoded)
+        ```
     """
 
     # Attributes (type hints represent post-fit attributes)
@@ -181,11 +183,10 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
             raise ValueError(f"Extra columns {extra_cols}!")
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
-        r"""Encode a DataFrame as a dict of Tensors.
+        r"""Encode a DataFrame as a dictionary of tensors.
 
-        The encode method ensures treatment of missingness:
-        if columns in the dataframe are missing, the correponding tensor columns
-        will be filled with `NAN`-values if the datatype allows it.
+        Each group contains the columns selected by the fitted schema. All selected
+        columns must be present; missing columns raise `KeyError`.
         """
         data = data.reset_index()
         return {
@@ -227,9 +228,9 @@ class FrameDTypeConverter(FittableEncoder[DataFrame, DataFrame]):
 
     Note:
         - If a column is not present, it will be ignored.
-        - If ``...`` (`Ellipsis`) is given,
+        - If `...` (`Ellipsis`) is given,
           all unspecified columns will be converted to the given dtype.
-          (Ellipsis will be removed during ``.fit()``)
+          (Ellipsis will be removed during `.fit()`)
     """
 
     target_dtypes: dict[Any, PandasDTypeArg] = UNDEFINED
@@ -293,11 +294,11 @@ def get_ellipsis_cols[T](
 @pprint_repr
 @dataclass(slots=True, init=False)
 class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
-    """Encodes a DataFrame as a dict of DataFrames.
+    r"""Encodes a DataFrame as a dict of DataFrames.
 
     Note:
         - Each column must be assigned to exactly one group.
-        - The special value ``...`` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
+        - The special value `...` (`Ellipsis`) can be used to indicate that all unspecified columns belong to a group.
     """
 
     # Attributes (type hints represent post-fit attributes)
@@ -337,11 +338,10 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
             raise ValueError(f"Extra columns {extra_cols}!")
 
     def encode(self, data: DataFrame, /) -> dict[str, DataFrame]:
-        r"""Encode a DataFrame as a dict of Tensors.
+        r"""Encode a DataFrame as a dictionary of DataFrames.
 
-        The encode method ensures treatment of missingness:
-        if columns in the dataframe are missing, the correponding tensor columns
-        will be filled with `NAN`-values if the datatype allows it.
+        Each group contains the columns selected by the fitted schema. All selected
+        columns must be present; missing columns raise `KeyError`.
         """
         return {key: data[cols] for key, cols in self.target_schema.items()}
 
