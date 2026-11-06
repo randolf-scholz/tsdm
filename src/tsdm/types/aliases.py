@@ -1,4 +1,4 @@
-r"""Collection of Useful Type Aliases."""
+r"""Common type aliases for paths, shapes, mappings, and tensor indices."""
 
 __all__ = [
     # path types
@@ -7,7 +7,6 @@ __all__ = [
     # argument types
     "DictArg",
     "Axis",
-    "Size",
     "IndexArg1D",
     "IndexArgND",
 ]
@@ -19,16 +18,14 @@ from types import EllipsisType
 from typing import IO
 
 type FilePath = str | os.PathLike[str]
-r"""Type Alias for path-like objects pointing to file."""
+r"""Type alias for strings and path-like objects identifying files."""
 type FileStream = IO[bytes] | BytesIO
-r"""Type Alias for file-like objects."""
+r"""Type alias for binary file-like objects."""
 type Axis = None | int | tuple[int, ...]
-r"""Type Alias for axestype ."""
-type Size = int | tuple[int, ...]
-r"""Type Alias for size-like objects (note: ``sample(size=None)`` creates scalar."""
+r"""Type alias for a single axis, a tuple of axes, or `None` for all axes."""
 type DictArg[K, V] = Mapping[K, V] | Iterable[tuple[K, V]]
-r"""Type Alias for dictionary-like arguments."""
+r"""Type alias for mappings or iterables of key-value pairs."""
 type IndexArg1D = None | int | slice | range | list[int] | list[bool] | EllipsisType
-r"""Type alias for `__getitem__` argument for tensors."""
+r"""Type alias for a tensor index along a single dimension."""
 type IndexArgND = IndexArg1D | tuple[IndexArg1D, ...]
-r"""Indexer that always returns a sub-tensor."""
+r"""Type alias for a single tensor index or a tuple of indices."""

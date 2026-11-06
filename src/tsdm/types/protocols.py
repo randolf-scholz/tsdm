@@ -92,7 +92,7 @@ class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
 
 @runtime_checkable
 class SupportsLenAndGetItem[V](Protocol):  # +V
-    r"""Protocol for objects that support integer based `__getitem__` and `__len__`."""
+    r"""Protocol for objects with integer indexing and `__len__`."""
 
     @abstractmethod
     def __len__(self) -> int: ...
@@ -113,7 +113,7 @@ class SupportsSlicing[V](SupportsGetItem[int, V], Protocol):  # +V
 
 @runtime_checkable
 class SupportsShape(Protocol):
-    r"""Protocol for objects that support shape."""
+    r"""Protocol for objects with a `shape` property containing integer dimensions."""
 
     @property
     @abstractmethod
@@ -122,7 +122,7 @@ class SupportsShape(Protocol):
 
 @runtime_checkable
 class SupportsNdim(Protocol):
-    r"""We just test for ndim, since e.g. tf.Tensor does not have ndim."""
+    r"""Protocol for objects with an integer `ndim` property."""
 
     @property
     @abstractmethod
@@ -140,7 +140,7 @@ class SupportsDevice[DeviceT = Any](Protocol):
 
 @runtime_checkable
 class SupportsDtype[DTypeT = Any](Protocol):
-    r"""We just test for dtype, since e.g. tf.Tensor does not have ndim.
+    r"""Protocol for objects with a `dtype` property.
 
     Examples:
         - `numpy.ndarray`
@@ -148,10 +148,8 @@ class SupportsDtype[DTypeT = Any](Protocol):
         - `polars.Series`
         - `torch.Tensor`
 
-    Examples: (Counter-Examples)
-        - `pandas.DataFrame`
-        - `polars.DataFrame`
-        - `pyarrow.Array`
+        Counterexamples include `pandas.DataFrame`, `polars.DataFrame`, and
+        `pyarrow.Array`, which do not expose a `dtype` property.
     """
 
     @property
@@ -164,12 +162,12 @@ class SupportsArray[ScalarT: np.generic](Protocol):
     r"""Protocol for objects that support `__array__`.
 
     References:
-        https://numpy.org/doc/stable/reference/c-api/array.html
+        - [NumPy array C API](https://numpy.org/doc/stable/reference/c-api/array.html)
     """
 
     @abstractmethod
     def __array__(self) -> NDArray[ScalarT]:
-        r"""Return the array of the tensor."""
+        r"""Return a NumPy array representation of the object."""
         ...
 
 
@@ -177,8 +175,8 @@ class SupportsArray[ScalarT: np.generic](Protocol):
 class SupportsArrayUfunc(SupportsArray, Protocol):
     r"""Protocol for objects that support `__array_ufunc__`.
 
-    Notably, numpy functions like `numpy.exp` can be directly applied to such objects.
-    The main example are `pandas.Series` and `pandas.DataFrame`.
+    NumPy ufuncs such as `numpy.exp` dispatch to this method. Examples include
+    `pandas.Series` and `pandas.DataFrame`.
 
     Examples:
         - `numpy.ndarray`
@@ -187,14 +185,11 @@ class SupportsArrayUfunc(SupportsArray, Protocol):
         - `pandas.Series`
         - `polars.Series`
 
-    Examples: (Couter-Examples)
-        - `polars.DataFrame`
-        - `pyarrow.Array`
-        - `pyarrow.Table`
-        - `torch.Tensor`
+        Counterexamples include `polars.DataFrame`, `pyarrow.Array`,
+        `pyarrow.Table`, and `torch.Tensor`.
 
     References:
-        https://numpy.org/doc/stable/reference/ufuncs.html
+        - [NumPy universal functions](https://numpy.org/doc/stable/reference/ufuncs.html)
     """
 
     @abstractmethod
@@ -215,7 +210,7 @@ class SupportsDataFrame[DataFrameT = Any](Protocol):
     r"""Protocol for objects that support `__dataframe__`.
 
     References:
-        https://data-apis.org/dataframe-protocol/latest/index.html
+        - [DataFrame interchange protocol](https://data-apis.org/dataframe-protocol/latest/index.html)
     """
 
     @abstractmethod
@@ -224,11 +219,10 @@ class SupportsDataFrame[DataFrameT = Any](Protocol):
 
 @runtime_checkable
 class SupportsItem[Scalar](Protocol):  # +T
-    r"""Protocol for objects that support ``.item()``.
+    r"""Protocol for objects that support `item()`.
 
-    Return the scalar value the tensor if it only has a single element.
-
-    If the tensor has more than one element, raise an error.
+    For tensors, `item()` returns the scalar value when there is exactly one
+    element and raises an error otherwise, including for empty tensors.
     """
 
     @abstractmethod
@@ -237,7 +231,7 @@ class SupportsItem[Scalar](Protocol):  # +T
 
 @runtime_checkable
 class SupportsRound(Protocol):
-    r"""Protocol for objects that support `round`."""
+    r"""Protocol for objects with a `round()` method accepting optional `decimals`."""
 
     # FIXME: https://github.com/python/typing/discussions/1782
     @overload
@@ -249,7 +243,24 @@ class SupportsRound(Protocol):
 
 
 def implements[T](cls: type[T], /, *protos: type | GenericAlias) -> type[T]:
-    r"""Check if a class implements a protocol."""
+    r"""Check a class against runtime-checkable protocols and return the class.
+
+    Parameterized generic aliases are checked using their origin. Protocols
+    without runtime checking enabled are accepted without a subclass check.
+
+    Args:
+        cls: Class to check.
+        *protos: Protocol types or parameterized generic aliases to check against.
+
+    Returns:
+        The input class, unchanged.
+
+    Raises:
+        TypeError: If an argument in `protos` is not a protocol, or if a protocol
+            does not support `issubclass` checks.
+        AssertionError: If `cls` fails a runtime subclass check. These assertions
+            are skipped when Python is run with optimization enabled.
+    """
     for proto in protos:
         if isinstance(proto, GenericAlias):
             proto = get_origin(proto)  # ruff: ignore[PLW2901]

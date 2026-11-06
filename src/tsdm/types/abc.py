@@ -41,7 +41,7 @@ from .protocols import SupportsKeysAndGetItem
 
 @runtime_checkable
 class BaseBuffer(Protocol):
-    r"""Base class for ReadBuffer and WriteBuffer."""
+    r"""Base protocol for `ReadBuffer` and `WriteBuffer`."""
 
     # SEE: WriteBuffer from https://github.com/pandas-dev/pandas/blob/main/pandas/_typing.py
     # SEE: SupportsWrite from https://github.com/python/typeshed/blob/main/stdlib/_typeshed/__init__.pyi
@@ -85,13 +85,12 @@ class _VecMeta(ProtocolMeta):
 class Vec[T](Protocol, metaclass=_VecMeta):  # +T
     r"""Alternative to `Sequence` without `__reversed__`, `index` and `count`.
 
-    We remove these methods, as they are not present on certain vector data structures,
-    for example, `__reversed__` is not present on `pandas.Index`.
+    These methods are omitted to accommodate vector data structures that do not
+    implement the full `collections.abc.Sequence` interface.
 
     Note:
-        This class uses special casing code that ensures `str`, `bytes` and `Mapping`
-        types are not considered as subtypes. Any class considered a subclass of `Mapping`
-        will fail `issubclass`, in particular also `dict`.
+        Runtime subclass checks exclude `str`, `bytes`, and `Mapping` subclasses,
+        including `dict`.
 
     Examples:
         - `list`
@@ -99,9 +98,9 @@ class Vec[T](Protocol, metaclass=_VecMeta):  # +T
         - `numpy.ndarray`
         - `pandas.Index`
         - `pandas.Series` (with integer index)
-    Counter-Example:
-        - `str` / `bytes` (`__contains__` incompatible)
-        - `dict`
+
+        Counterexamples include `str`, `bytes`, and `dict`, which are excluded
+        by the runtime subclass check.
     """
 
     @abstractmethod
@@ -128,12 +127,9 @@ class Vec[T](Protocol, metaclass=_VecMeta):  # +T
 class Seq[T](Protocol):  # +T
     r"""Protocol version of `collections.abc.Sequence`.
 
-    Note:
-        Only compatible with ``tuple[T, ...]``, not ``tuple[*Ts]`` when using pyright.
-
     References:
-        - https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
-        - https://github.com/python/cpython/blob/main/Lib/_collections_abc.py
+        - [Typeshed typing stubs](https://github.com/python/typeshed/blob/main/stdlib/typing.pyi)
+        - [CPython collection ABCs](https://github.com/python/cpython/blob/main/Lib/_collections_abc.py)
     """
 
     @abstractmethod

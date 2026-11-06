@@ -1,4 +1,4 @@
-r"""Generic types for type hints, etc."""
+r"""Type aliases, protocols, and runtime type checks for TSDM."""
 
 __all__ = [
     # Submodules

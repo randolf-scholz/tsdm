@@ -34,8 +34,8 @@ r"""Type Alias for fields that are fitted automatically."""
 # endregion type qualifiers ------------------------------------------------------------
 
 
-class _DataclassMeta(ProtocolMeta):
-    r"""Metaclass for `Dataclass`."""
+class _DataclassTypeMeta(ProtocolMeta):
+    r"""Metaclass implementing runtime checks for `DataclassType`."""
 
     def __instancecheck__(cls, instance: object, /) -> TypeIs[DataclassType]:  # ruff: ignore[N805]
         return cls.__subclasscheck__(type(instance))
@@ -46,10 +46,12 @@ class _DataclassMeta(ProtocolMeta):
 
 
 @runtime_checkable
-class DataclassType(Protocol, metaclass=_DataclassMeta):
-    r"""Protocol for anonymous dataclasses.
+class DataclassType(Protocol, metaclass=_DataclassTypeMeta):
+    r"""Protocol for dataclasses without requiring a specific dataclass type.
 
-    Similar to `DataClassInstance` from typeshed, but allows isinstance and issubclass.
+    Similar to `DataclassInstance` from typeshed, with support for `isinstance`
+    and `issubclass`. Runtime checks require a `__dataclass_fields__` attribute
+    whose value is a dictionary; they do not validate individual fields.
     """
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]] = {}
@@ -61,7 +63,7 @@ def is_dataclass(obj: type, /) -> TypeIs[type[DataclassType]]: ...
 @overload
 def is_dataclass(obj: object, /) -> TypeIs[DataclassType]: ...
 def is_dataclass(obj: object, /) -> TypeIs[DataclassType] | TypeIs[type[DataclassType]]:
-    r"""Check if the object is a dataclass."""
+    r"""Check whether an object or class satisfies `DataclassType` at runtime."""
     if isinstance(obj, type):
         return issubclass(obj, DataclassType)  # type: ignore
     return issubclass(type(obj), DataclassType)  # type: ignore

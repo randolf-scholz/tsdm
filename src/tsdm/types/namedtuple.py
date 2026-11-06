@@ -1,4 +1,4 @@
-r"""NamedTuple Protocol and utilities."""
+r"""Named tuple protocol and utilities."""
 
 __all__ = [
     "NamedTupleType",
@@ -22,12 +22,12 @@ from typing import (
 )
 
 
-class _NTupleMeta(ProtocolMeta):
-    r"""Metaclass for `NTuple`.
+class _NamedTupleTypeMeta(ProtocolMeta):
+    r"""Metaclass implementing runtime checks for `NamedTupleType`.
 
     Note:
-        We use this as an alternative to defining `__subclasshook__`
-        See https://github.com/python/cpython/issues/106363
+        This metaclass provides an alternative to defining `__subclasshook__`.
+        See [CPython issue 106363](https://github.com/python/cpython/issues/106363).
     """
 
     _fields: ClassVar[tuple[str, ...]] = ()
@@ -44,11 +44,14 @@ class _NTupleMeta(ProtocolMeta):
 
 
 @runtime_checkable  # FIXME: Use TypeVarTuple
-class NamedTupleType[T](Protocol, metaclass=_NTupleMeta):  # +T
-    r"""Protocol for anonymous namedtuple.
+class NamedTupleType[T](Protocol, metaclass=_NamedTupleTypeMeta):  # +T
+    r"""Protocol for named tuples without requiring a specific named tuple type.
+
+    Runtime checks accept structural protocol matches or classes with
+    `typing.NamedTuple` among their original bases.
 
     References:
-        - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
+        - [Typeshed built-in type stubs](https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi)
     """
 
     # FIXME: Problems if denoted as  tuple[str, ...]
@@ -89,7 +92,7 @@ def is_namedtuple(obj: object, /) -> TypeIs[NamedTupleType]: ...
 def is_namedtuple(
     obj: object, /
 ) -> TypeIs[NamedTupleType] | TypeIs[type[NamedTupleType]]:
-    r"""Check if the object is a namedtuple."""
+    r"""Check whether an object or class satisfies `NamedTupleType` at runtime."""
     if isinstance(obj, type):
         return issubclass(obj, NamedTupleType)  # type: ignore
     return issubclass(type(obj), NamedTupleType)  # type: ignore
