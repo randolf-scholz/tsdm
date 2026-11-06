@@ -1,31 +1,17 @@
-r"""Loss functions for sequential data.
+r"""Loss functions for masked, variable-length sequences.
 
-We have some data sets where the number of samples can vary drastically between channels.
-In that case, since we want the model still to be able to predict different channels,
-one should normalize the per-channel loss.
+Sequences are stored in dense tensors with explicit time and channel axes.
+Use a boolean mask to exclude padding and missing observations. Predictions
+must be valid wherever the mask selects a target; NaNs are not masked
+automatically.
 
-a general Lₚ loss could look like:
+Observation counts can vary substantially between channels. The general
+`lp_loss` defaults to channel-prevalence normalization so that frequently
+observed channels do not dominate solely because they have more observations.
+Other normalization schemes are described by `Normalization`.
 
-Nₙₖ = ∑ₜmₙₜₖ
-Iₙₖ = [Nₙₖ > 0]
-Sₖ = ∑ₙIₙₖ
-
-ℓₚ = ( ∑ₙ (1/K) ∑ₖ ( [Nₙₖ>0]  / )    ∑ₜ mₙₜₖ|xₙₜₖ|ᵖ )^{1/p}
-
-Iₙₖ = Anyₜ(mₙₜₖ) = 1-∏ₜ(1-mₙₜₖ)  # was any value observed in channel k for batch element n
-Kₙ = ∑ₖ Iₙₖ  # number of channels with at least one observation for batch element n.
-Sₖ = ∑ₙ Iₙₖ  # number of batch elements with at least one obervation in channel k.
-
-Wₙ = ∑ₖIₙₖwₖ  # per sample total channel weight.
-
-
-
-
-Since batch elements can be of different lengths, we need to be careful about the
-computation of the loss. We add a mask argument.
-
-Typically, the mask should agree with the arguments provided by `targets` and `predictions`
-should provide arguments for these positions.
+Sequence penalties produce one value per sample. `Reduction` then combines
+those values, optionally using sample weights.
 """
 
 __all__ = [
@@ -82,31 +68,33 @@ def lp_loss(
     channel_weights: Tensor | None = None,  # Float[*D]
     sample_weights: Tensor | None = None,  # Float[...]
 ) -> Tensor:  # Float[()]
-    r"""Compute the reduced time-normalized $p$-norm of prediction residuals.
+    r"""Reduce normalized sequence residual norms over the batch dimensions.
 
-    .. math:: ℓₚ(x̂, x) ≔ 𝔼[‖x̂ - x‖ₚ]
+    $$ 𝓛ₚ(x̂，x) ≔ Ψ\bigl((ℓₚ^*(x̂ₙ-xₙ))ₙ\bigr) $$
 
-    The arguments other than ``predictions``, ``targets``, and ``reduction``
-    are forwarded to :func:`lp_norm`. ``reduction`` aggregates over the batch
-    dimensions of the resulting norms.
+    Here $ℓₚ^*$ is the normalized sequence norm and $Ψ$ is the outer sample
+    reduction. With `relative=True`, each penalty is divided by $ℓₚ^*(xₙ)$
+    before applying $Ψ$.
+
+    Compute per-sequence errors with `tsdm.losses.penalties.sequence.lp_error`,
+    then apply `Reduction` with `sample_weights`. The default reduction is a mean.
+    The norm defaults to channel-prevalence normalization; with `relative=True`,
+    divide each residual norm by the corresponding target norm. A zero target norm
+    can produce NaN or infinity.
 
     Args:
-        predictions: Predicted time series.
-        targets: Target time series.
-        time_dim: Tensor axis of the time dimension.
-        channel_dim: Tensor axes of the channel dimensions.
-
-        p: Order of the norm.
-        relative: If ``True``, divide each residual norm by the corresponding
-            target norm, computing $‖x̂ - x‖ₚ / ‖x‖ₚ$.
-        mask: Optional boolean mask indicating valid values.
-
-        reduction: Aggregation applied to the per-sequence losses.
-        normalization: Time-series normalization applied within each norm.
-
-        time_weights: Optional weights applied to time steps.
-        channel_weights: Optional weights applied within each channel norm.
-        sample_weights: Optional weights applied to each sample.
+        predictions: Predicted sequences of shape `(..., $N, *D)`.
+        targets: Target sequences of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        p: Finite nonzero norm order.
+        relative: Whether to divide by the corresponding target norm.
+        mask: Boolean tensor selecting valid observations; NaNs are not inferred.
+        reduction: Aggregation applied to the per-sequence errors.
+        normalization: Normalization applied to the powered values within each norm.
+        time_weights: Optional importance weights for time steps.
+        channel_weights: Optional importance weights for channels.
+        sample_weights: Optional weights for the outer sample reduction.
     """
     errors = lp_error(
         predictions=predictions,
@@ -250,12 +238,14 @@ def nd_loss(
 
 
 class SeparableLoss(BaseSequenceLoss):
-    r"""Base class for separable time-series loss with a reduction over samples.
+    r"""Base class for separable losses with a reduction over samples.
 
-    Note:
-        A loss is separable if there is no interaction between batch elements,
-        i.e. $ℒ(x̂, x) = Reduce(ℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
-        and a reduction function Reduce.
+    $$ 𝓛(x̂,x) = \op{Reduce}\bigl((ℓ(x̂ₙ,xₙ))ₙ\bigr) $$
+
+    Apply a penalty independently to each prediction-target pair, then combine the
+    resulting values using `Reduction`, optionally with sample weights.
+
+    The penalty operates within a sample; the outer reduction combines samples.
     """
 
     penalty: SequencePenalty
@@ -318,16 +308,26 @@ class SeparableLoss(BaseSequenceLoss):
 
 
 class L2_Loss(SeparableLoss):
-    r"""Mean Euclidean error.
+    r"""Mean Euclidean error for each sequence pair.
 
-    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
+    $$ ℓ₂(x̂，x) ≔ Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂ $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
+
+    The class applies `Reduction.MEAN` to these per-sequence penalties. Optional
+    `sample_weights` passed to `forward` give a weighted mean over the samples.
+
+    Args:
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
     """
 
     penalty = staticmethod(l2_error)
@@ -335,16 +335,26 @@ class L2_Loss(SeparableLoss):
 
 
 class MAE_Loss(SeparableLoss):
-    r"""Mean absolute error.
+    r"""Mean absolute error for each sequence pair.
 
-    .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₁
+    $$ \mae(x̂，x) ≔ Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₁ $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
+
+    The class applies `Reduction.MEAN` to these per-sequence penalties. Optional
+    `sample_weights` passed to `forward` give a weighted mean over the samples.
+
+    Args:
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
     """
 
     penalty = staticmethod(mae)
@@ -352,16 +362,26 @@ class MAE_Loss(SeparableLoss):
 
 
 class MSE_Loss(SeparableLoss):
-    r"""Mean square error.
+    r"""Mean squared error for each sequence pair.
 
-    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²
+    $$ \mse(x̂，x) ≔ Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂² $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₂²
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
+
+    The class applies `Reduction.MEAN` to these per-sequence penalties. Optional
+    `sample_weights` passed to `forward` give a weighted mean over the samples.
+
+    Args:
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
     """
 
     penalty = staticmethod(mse)
@@ -369,22 +389,28 @@ class MSE_Loss(SeparableLoss):
 
 
 class RMSE_Loss(SeparableLoss):
-    r"""Root mean square error.
+    r"""Root mean squared error for each sequence pair.
 
-    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} ]
+    $$ \op{RMSE}(x̂，x) ≔ \sqrt{Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂²} $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ 𝔼[ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² } ]
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
+
+    The class applies `Reduction.MEAN` to these per-sequence penalties. Optional
+    `sample_weights` passed to `forward` give a weighted mean over the samples.
+
+    The square root is taken within each sequence before the sample mean.
 
     Args:
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels; use ``()`` for a
-            univariate time series.
-        reduction:
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
     """
 
     penalty = staticmethod(rmse)
@@ -392,31 +418,29 @@ class RMSE_Loss(SeparableLoss):
 
 
 class NRMSE_Loss(SeparableLoss):
-    r"""Compute the normalized root mean square error.
+    r"""Normalized root mean squared error for each sequence pair.
 
-    .. math:: \nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
+    $$ \nrmse(x̂，x) ≔ \frac{ \sqrt{Tₘ⁻¹∑ₜ‖mₜ⊙(x̂ₜ-xₜ)‖₂²} }{ Tₘ⁻¹∑ₜ‖mₜ⊙xₜ‖₁ } $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \nrmse(x̂，x) ≔ \frac
-        { \sqrt{ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
-        { \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across the channel axes; averaging uses the number of
+    observed time steps. Selected values must be finite.
+
+    A zero target norm can produce NaN or infinity. An entirely masked
+    sequence produces NaN because both norms are zero.
+
+    The class applies `Reduction.MEAN` to these per-sequence penalties. Optional
+    `sample_weights` passed to `forward` give a weighted mean over the samples.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values of shape ``[..., N, *D]``.
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels;
-            use ``()`` for a univariate time series.
-        mask: Boolean mask selecting values that contribute to the error.
-            All selected values should be finite and not null.
-
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
-
-    where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
     """
 
     penalty = staticmethod(nrmse)
@@ -424,24 +448,29 @@ class NRMSE_Loss(SeparableLoss):
 
 
 class ND_Loss(SeparableLoss):
-    r"""Compute the normalized deviation.
+    r"""Normalized deviation for each sequence pair.
 
-    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}
+    $$ \nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ-xₜ)‖₁ }{ ∑ₜ ‖mₜ⊙xₜ‖₁ } $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₁ }{ ∑ₜ‖mₜ⊙xₜ‖₁ }
+    The ratio normalizes total absolute residuals by total absolute target values.
+    Selected values must be finite.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    A zero target norm can produce NaN or infinity. An entirely masked
+    sequence produces NaN because both norms are zero.
 
-    Note:
-        This loss is equivalent to `lp_loss` with ``p=1``, ``relative=True``,
-        and ``normalization=observation_count``.
+    This penalty equals `lp_error` with `p=1`, `relative=True`, and
+    `normalization=Normalization.OBSERVATION_COUNT`.
 
-        .. math:: nd(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
+    The class applies `Reduction.MEAN` to these per-sequence penalties. Optional
+    `sample_weights` passed to `forward` give a weighted mean over the samples.
 
-        where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
+    Args:
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
     """
 
     penalty = staticmethod(nd)

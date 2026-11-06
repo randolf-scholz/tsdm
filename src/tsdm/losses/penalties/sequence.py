@@ -24,31 +24,24 @@ from torch import Tensor
 
 
 class Normalization(StrEnum):
-    r"""Built-in normalization schemes for sequence penalties.
+    r"""Built-in divisors for powered sequence values.
 
-    - ``sequence_length``: Divide by the number of time steps with at least one observed channel
+    Let $T$ be the sequence length, $K$ the total number of channels, and $mₜₖ$
+    the validity mask. With no mask, treat every entry as observed. The divisor
+    $sₜₖ$ for each scheme is:
 
-            $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛ⋁ⱼmₛⱼ$.
+    - `none`: $sₜₖ=1$; retain the unnormalized values.
+    - `sequence_length`: $sₜₖ=∑ₛ⋁ⱼmₛⱼ$, or $T$ without a mask.
+        Give sequences equal total time weight regardless of their observed length.
+    - `channel_prevalence`: $sₜₖ=∑ₛmₛₖ$, or $T$ without a mask.
+        Normalize each channel by its observation count.
+    - `timepoint_coverage`: $sₜₖ=(∑ₛ⋁ⱼmₛⱼ)(∑ⱼmₜⱼ)$, or $TK$ without a mask.
+        Give each observed time point equal total weight across its observed channels.
+    - `observation_count`: $sₜₖ=∑ₛⱼmₛⱼ$, or $T⋅K$ without a mask.
+        Compute a mean over all observed values.
 
-      Use it to give padded sequences equal weight regardless of their length.
-
-    - ``channel_prevalence``: Divide each channel by its number of observations
-
-            $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛmₛₖ$.
-
-      Use it to prevent frequently observed channels from dominating sparse channels.
-
-    - ``timepoint_coverage``: Divide by both sequence length and the number of observed channels at each time step
-
-            $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ (∑ₛ⋁ⱼmₛⱼ)⋅(∑ⱼmₜⱼ)$
-
-      Use it to give each observed time point equal weight.
-
-    - ``observation_count``: Divide by the total number of observed values
-
-            $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ ∑ₛⱼmₛⱼ$.
-
-      Use it to compute a global mean over observations.
+    Divisors computed from a mask are clamped to at least one. The reciprocal
+    $γₜₖ=1/sₜₖ$ is the normalization factor used in sequence norms.
     """
 
     NONE = "none"
@@ -154,42 +147,32 @@ def lp_norm(
     channel_weights: Tensor | None = None,  # Float[*D]
     normalization: Normalization | Tensor | None = Normalization.CHANNEL_PREVALENCE,
 ) -> Tensor:  # Float[...]
-    r"""Compute time-normalized lp-norm for sequence space $\Seq(Y)$.
+    r"""Compute a normalized entry-wise norm over time and channel axes.
 
-    .. math:: ℓₚ^*(x) = \Bigl( ∑ₜ wₜᵗⁱᵐᵉ ∑ₖ wₖᶜʰ γₜₖ (mₜₖ⊙|xₜₖ|ᵖ) \Bigr)^{1/p}
+    $$ ℓₚ^*(x) ≔ \Bigl(∑ₜ wₜ^{\sf time}∑ₖ wₖ^{\sf channel}γₜₖ(mₜₖ⊙|xₜₖ|ᵖ)\Bigr)^{1/p} $$
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
+
+    The factor $γₜₖ=1/sₜₖ$ is the reciprocal divisor specified by `Normalization`.
+    Missing weights are one. Masked entries are excluded before taking powers.
+    An entirely masked sequence returns zero, including for negative orders.
 
     Args:
-        x: Tensor of shape ``[..., $N, *D]``.
-        p: Order of the norm. Note: $p∈\{0, ±∞\}$ are currently not implemented.
-        mask: Boolean mask indicating valid values.
-        time_dim: Required tensor axis of the time dimension.
-        time_weights: Importance weight $wₜᵗⁱᵐᵉ$ for each time step.
-        channel_dim: Required tensor axes of the channel dimensions. Use ``()``
-            for an univariate time series.
-        channel_weights: Importance weight $wₖᶜʰ$ for each channel.
-        normalization: Normalization applied to the powered values. ``None``
-            performs no normalization ($sₜₖ=1$). The built-in schemes are:
-
-            - ``none``: $γₜₖ = 1$.
-            - ``sequence_length``: Divide by the number of time steps with at
-              least one observed channel $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛ⋁ⱼmₛⱼ$.
-              Use it to give padded sequences equal weight regardless of their length.
-            - ``channel_prevalence``: Divide each channel by its number of observations
-              $sₜₖ ≔ T$ if no mask else $sₜₖ ≔ ∑ₛmₛₖ$.
-              Use it to prevent frequently observed channels from dominating sparse channels.
-            - ``timepoint_coverage``: Divide by both sequence length and the
-              number of observed channels at each time step
-              $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ (∑ₛ⋁ⱼmₛⱼ)⋅(∑ⱼmₜⱼ)$.
-              Use it to give each observed time point equal weight.
-            - ``observation_count``: Divide by the total number of observed
-              values $sₜₖ ≔ T⋅K$ if no mask, else $sₜₖ ≔ ∑ₛⱼmₛⱼ$.
-              Use it to compute a global mean over observations.
-
-            A custom tensor is reserved for a future user-defined normalization
-            scheme and currently raises ``NotImplementedError``.
+        x: Tensor of shape `(..., $N, *D)`, with the specified time and channel axes.
+        time_dim: Axis containing time steps, disjoint from the channel axes.
+        channel_dim: Channel axes, strictly increasing after normalizing negative
+            indices and without duplicates. Use `()` for a univariate series.
+        p: Finite nonzero norm order. Zero and infinite orders raise
+            `NotImplementedError`; NaN raises `ValueError`.
+        mask: Boolean tensor of the same shape as `x`, selecting valid entries.
+        time_weights: Nonnegative importance weights aligned with the trailing
+            nonchannel axes, including the time axis for the usual data layout.
+        channel_weights: Nonnegative importance weights, with one axis per channel axis.
+        normalization: A `Normalization` scheme or its string value, applied before
+            weighting and summation. `None` disables normalization. A custom tensor
+            currently raises `NotImplementedError`.
     """
     assert mask is None or mask.shape == x.shape
     time_dim, ch_dims = _normalize_dims(
@@ -267,7 +250,7 @@ def lp_error(
     # weights:
     time_weights: Tensor | None = None,  # Float[..., $N]
     channel_weights: Tensor | None = None,  # Float[*D]
-) -> Tensor:  # Float[()]
+) -> Tensor:  # Float
     norms = lp_norm(
         predictions - targets,
         p=p,
@@ -302,19 +285,24 @@ def quantile_error(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Quantile error, aggregated over time and channels.
+    r"""Compute a time-averaged pinball penalty, summed over channels.
 
-    This is analogous to the mean absolute error, but with asymmetric penalties for over- and under-prediction.
-    For a quantile $q ∈ (0, 1)$, the quantile error is defined as:
+    $$ ℓ_q(x̂，x) ≔ Tₘ⁻¹∑ₜ∑ₖ mₜₖ⊙ρ_q(x̂ₜₖ-xₜₖ) $$
 
-    .. math:: ρ_q(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ∑ₖ \max(-(1-q)(x̂ₜ - xₜ), q(x̂ₜ - xₜ))
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    the masked version is defined as
+    For residuals $rₜₖ=x̂ₜₖ-xₜₖ$, define $ρ_q(r)=\max((q-1)r，qr)$.
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    .. math:: ρ_q(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ∑ₖ mₜₖ⊙ρ_q(x̂ₜₖ - xₜₖ)
+    For nonnegative residuals the coefficient is $q$; for negative residuals it is
+    $1-q$. Thus, with this residual sign, the optimal constant prediction targets
+    quantile $1-q$. Supply $q∈[0,1]$; this function does not validate that interval.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Predictions, targets, and any mask must have the same shape. An entirely
+    masked sequence produces zero. Use `channel_dim=()` for a univariate sequence.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -352,25 +340,26 @@ def mae(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Mean absolute error.
+    r"""Mean absolute error for each sequence pair.
 
-    .. math:: \mae(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₁ = ‖x̂ - x‖_{1,1⁎}
+    $$ \mae(x̂，x) ≔ Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₁ $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \mae(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₁
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values of shape ``[..., N, *D]``.
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels;
-            use ``()`` for a univariate time series.
-        mask: Boolean mask selecting values that contribute to the error.
-            All selected values should be finite and not null.
+        predictions: Predicted values of shape `(..., $N, *D)`.
+        targets: Target values of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        mask: Boolean tensor of the same shape as the data, selecting valid entries.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -408,25 +397,26 @@ def l2_error(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Mean euclidean error.
+    r"""Mean Euclidean error for each sequence pair.
 
-    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂ = ‖x̂ - x‖_{2,1⁎}
+    $$ ℓ₂(x̂，x) ≔ Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂ $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: ℓ(x̂，x) ≔ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values of shape ``[..., N, *D]``.
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels;
-            use ``()`` for a univariate time series.
-        mask: Boolean mask selecting values that contribute to the error.
-            All selected values should be finite and not null.
+        predictions: Predicted values of shape `(..., $N, *D)`.
+        targets: Target values of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        mask: Boolean tensor of the same shape as the data, selecting valid entries.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -465,25 +455,26 @@ def mse(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Mean square error.
+    r"""Mean squared error for each sequence pair.
 
-    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{T} ∑ₜ ‖x̂ₜ - xₜ‖₂² = ‖x̂ - x‖²_{2,2⁎}
+    $$ \mse(x̂，x) ≔ Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂² $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \𝗆𝗌𝖾(x̂，x) ≔ \tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ⊙(x̂ₜ - xₜ)‖₂²
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values of shape ``[..., N, *D]``.
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels;
-            use ``()`` for a univariate time series.
-        mask: Boolean mask selecting values that contribute to the error.
-            All selected values should be finite and not null.
+        predictions: Predicted values of shape `(..., $N, *D)`.
+        targets: Target values of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        mask: Boolean tensor of the same shape as the data, selecting valid entries.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -506,25 +497,26 @@ def rmse(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Root mean square error.
+    r"""Root mean squared error for each sequence pair.
 
-    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{T} ∑ₜ ‖x̂ₜ - x₂‖₂²} = ‖x̂ - x‖_{2,2⁎}
+    $$ \op{RMSE}(x̂，x) ≔ \sqrt{Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂²} $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{\tfrac{1}{∑ₜ⋁ₖmₜₖ} ∑ₜ ‖mₜ ⊙(x̂ₜ - xₜ)‖₂² }
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across channel axes; averaging is over observed time steps.
+    Selected values must be finite; an entirely masked sequence produces zero.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values of shape ``[..., N, *D]``.
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels;
-            use ``()`` for a univariate time series.
-        mask: Boolean mask selecting values that contribute to the error.
-            All selected values should be finite and not null.
+        predictions: Predicted values of shape `(..., $N, *D)`.
+        targets: Target values of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        mask: Boolean tensor of the same shape as the data, selecting valid entries.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -562,24 +554,29 @@ def nd(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Compute the normalized deviation.
+    r"""Normalized deviation for each sequence pair.
 
-    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖x̂ₜ - xₜ‖₁ }{ ∑ₜ‖xₜ‖₁ } = \frac{‖x̂-x‖_{1,1⁎}}{‖x‖_{1,1⁎}}
+    $$ \nd(x̂，x) ≔ \frac{∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₁}{∑ₜ ‖mₜ⊙xₜ‖₁} $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \nd(x̂，x) ≔ \frac{ ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₁ }{ ∑ₜ‖mₜ⊙xₜ‖₁ }
+    The ratio normalizes total absolute residuals by total absolute target values.
+    Selected values must be finite.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    A zero target norm can produce NaN or infinity. An entirely masked
+    sequence produces NaN because both norms are zero.
 
-    Note:
-        This loss is equivalent to `lp_loss` with ``p=1``, ``relative=True``,
-        and ``normalization=observation_count``.
+    This penalty equals `lp_error` with `p=1`, `relative=True`, and
+    `normalization=Normalization.OBSERVATION_COUNT`.
 
-        .. math:: nd(x̂，x) ≔ \frac{‖x̂ - x‖_{1⁎}}{‖x‖_{1⁎}}
-
-        where $‖x‖_{p⁎} ≔ \sqrt[p]{(1/T)∑ₜₖ|xₜₖ|ᵖ}$ is a scaled $p$-norm of the tensor.
+    Args:
+        predictions: Predicted values of shape `(..., $N, *D)`.
+        targets: Target values of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        mask: Boolean tensor of the same shape as the data, selecting valid entries.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape
@@ -611,31 +608,29 @@ def nrmse(
     channel_dim: int | tuple[int, ...] = -1,
     mask: Tensor | None = None,  # Bool[..., $N, *D]
 ) -> Tensor:  # Float[...]
-    r"""Compute the normalized root mean square error.
+    r"""Normalized root mean squared error for each sequence pair.
 
-    .. math:: \nrmse(x̂，x) ≔ \frac{ \sqrt{ T⁻¹ ∑ₜ‖x̂ₜ - xₜ‖² } }{ T⁻¹ ∑ₜ‖xₜ‖₁ }
+    $$ \nrmse(x̂，x) ≔ \frac{\sqrt{Tₘ⁻¹∑ₜ ‖mₜ⊙(x̂ₜ-xₜ)‖₂²}}{Tₘ⁻¹∑ₜ ‖mₜ⊙xₜ‖₁} $$
 
-    the masked version is defined as
+    Here $m⊙z$ denotes element-wise masked selection via `torch.where(m, z, 0)`,
+    so masked NaNs and infinities do not contribute; in particular, $0⊙\nan=0$.
+    Without a mask, every entry is selected, including NaNs.
 
-    .. math:: \nrmse(x̂，x) ≔ \frac
-        { \sqrt{ \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙(x̂ₜ - xₜ)‖₂² } }
-        { \tfrac{1}{∑ₛ⋁ₖmₛₖ} ∑ₜ‖mₜ⊙xₜ‖₁ }
+    $Tₘ=\max(1,∑ₜ⋁ₖmₜₖ)$ counts time steps with an observed channel, clamped to one.
+    Without a mask, $Tₘ=T$, where $T$ is the size of the `time_dim` axis.
 
-    where $m ⊙ z ≔ \where(m, z, 0)$ denotes elementwise masked selection. Thus,
-    masked ``NaN`` and infinite entries do not contribute; in particular, $0 ⊙ 𝙽𝚊𝙽 = 0$.
+    Channel norms sum across the channel axes; averaging uses the number of
+    observed time steps. Selected values must be finite.
+
+    A zero target norm can produce NaN or infinity. An entirely masked
+    sequence produces NaN because both norms are zero.
 
     Args:
-        predictions: Predicted values of shape ``[..., N, *D]``.
-        targets: Target values of shape ``[..., N, *D]``.
-        time_dim: Tensor axis containing the time steps.
-        channel_dim: Tensor axes containing the channels;
-            use ``()`` for a univariate time series.
-        mask: Boolean mask selecting values that contribute to the error.
-            All selected values should be finite and not null.
-
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x̂，x) ≔ \frac{ ‖x̂-x‖_{2⁎} }{ ‖x‖_{1⁎} }
-
-    where $‖x‖_{p⁎} ≔ \sqrt[p]{ (1/T)∑ₜₖ|xₜₖ|ᵖ }$ is a scaled $p$-norm of the tensor.
+        predictions: Predicted values of shape `(..., $N, *D)`.
+        targets: Target values of the same shape as `predictions`.
+        time_dim: Tensor axis containing time steps.
+        channel_dim: Tensor axes containing channels; use `()` for univariate data.
+        mask: Boolean tensor of the same shape as the data, selecting valid entries.
     """
     assert predictions.shape == targets.shape
     assert mask is None or mask.shape == predictions.shape

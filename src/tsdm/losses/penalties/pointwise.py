@@ -26,9 +26,9 @@ def quantile_error(
         ValueError: If $q∉[0,1]$.
 
     References:
-        - Deep State Space Models for Time Series Forecasting \
-          Syama Sundar Rangapuram et al. \
-          Advances in Neural Information Processing Systems 31 (NeurIPS 2018) \
+        - Deep State Space Models for Time Series Forecasting <br>
+          Syama Sundar Rangapuram et al. <br>
+          Advances in Neural Information Processing Systems 31 (NeurIPS 2018) <br>
           <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>
     """
     if not (0.0 <= q <= 1.0):
