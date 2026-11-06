@@ -1,46 +1,44 @@
-r"""MIMIC-III Forecasting Task as described by Bilos et al. (2021) [1]_.
+r"""MIMIC-IV forecasting task as described by Bilos et al. (2021) [^1].
 
-Evaluation Protocol
--------------------
+### Evaluation Protocol
 
-.. epigraph::
+> Filtering approach. Following De Brouwer et al. [16], we use clinical database MIMIC-III [35],
+> pre-processed to contain 21250 patients’ time series, with 96 features. We also process newly released
+> MIMIC-IV [25, 36] to obtain 17874 patients. The details are in Appendix D.2. The goal is to predict
+> the next three measurements in the 12-hour interval after the observation window of 36 hours.
+>
+> Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Additionally,
+> we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
+> worse. The reason might be because it is missing GRU flow properties, such as boundedness. Similarly,
+> an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
+> that the model with GRU flow requires 60% less time to run one training epoch.
 
-    Filtering approach. Following De Brouwer et al. [16], we use clinical database MIMIC-III [35],
-    pre-processed to contain 21250 patients’ time series, with 96 features. We also process newly released
-    MIMIC-IV [25, 36] to obtain 17874 patients. The details are in Appendix D.2. The goal is to predict
-    the next three measurements in the 12-hour interval after the observation window of 36 hours.
+### Notes
 
-    Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Additionally,
-    we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
-    worse. The reason might be because it is missing GRU flow properties, such as boundedness. Similarly,
-    an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
-    that the model with GRU flow requires 60% less time to run one training epoch.
+- The authors' code is available at [^2].
+- The authors use a 70/15/15 split for train/valid/test. This is not mentioned in the paper but can
+    be seen in the code. Moreover, the authors use the same random seed (0) for each fold [^3].
+    The fixed seed produces identical partitions across folds:
 
-Notes:
-    - Authors code is available at [2]_.
-    - The authors use a 70/15/15 split for train/valid/test. This is not mentioned in the paper but can
-      be seen in the code. Moreover, the authors (accidentally?) use the same random seed (0) for each fold [3]_.
-      This explains the low reported values for the standard deviation::
+    ```python
+    train_idx, eval_idx = train_test_split(
+        full_data.index.unique(), test_size=0.3, random_state=0
+    )
+    val_idx, test_idx = train_test_split(
+        full_data.loc[eval_idx].index.unique(), test_size=0.5, random_state=0
+    )
+    ```
 
-            train_idx, eval_idx = train_test_split(
-                full_data.index.unique(),
-                test_size=0.3,
-                random_state=0
-            )
-            val_idx, test_idx = train_test_split(
-                full_data.loc[eval_idx].index.unique(),
-                test_size=0.5,
-                random_state=0
-            )
-    - on MIMIC-IV, the authors remove 5-sigma outliers, cf. [4]_
+- On MIMIC-IV, the authors remove 5-sigma outliers, see [^4].
 
-References:
-    .. [1] | `Neural Flows: Efficient Alternative to Neural ODEs <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
-           | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann.
-           | `Advances in Neural Information Processing Systems 2021 <https://proceedings.neurips.cc/paper/2021>`_
-    .. [2] https://github.com/mbilos/neural-flows-experiments/
-    .. [3] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-    .. [4] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L55-L63
+### References
+
+[^1]: [Neural Flows: Efficient Alternative to Neural ODEs](https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html)
+    Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann.
+    [Advances in Neural Information Processing Systems 2021](https://proceedings.neurips.cc/paper/2021)
+[^2]: <https://github.com/mbilos/neural-flows-experiments/>
+[^3]: <https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67>
+[^4]: <https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L55-L63>
 """
 
 __all__ = [
@@ -75,7 +73,7 @@ from tsdm.timeseries.pandas import TimeSeriesCollection, mimic_iv_bilos2021
 
 @pprint_repr
 class Inputs(NamedTuple):
-    r"""A single sample of the data."""
+    r"""Observation times and values, together with requested target times."""
 
     t: Tensor
     x: Tensor
@@ -128,7 +126,7 @@ class MIMIC_IV_SampleGenerator:
 
 @pprint_repr
 class Batch(NamedTuple):
-    r"""A single sample of the data."""
+    r"""A batch of input and target tensors with timestamps and masks."""
 
     x_time: Tensor  # B×N:   the input timestamps.
     x_vals: Tensor  # B×N×D: the input values.
@@ -141,9 +139,14 @@ class Batch(NamedTuple):
 
 @deprecated("Consider using tasks.utils.collate_timeseries instead.")
 def mimic_collate(batch: list[Sample], /) -> Batch:
-    r"""Collate tensors into batch.
+    r"""Collate samples into padded input and target tensors.
 
-    Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
+    Merge observation and target times into a sorted input timeline, filling input
+    values at target times with `NaN`. Keep target values separately and construct
+    masks from their finite entries. Pad variable-length sequences to the longest
+    sequence in the batch; input and target value padding uses `NaN`.
+
+    The returned tensors are squeezed, so singleton dimensions are removed.
     """
     x_vals: list[Tensor] = []
     y_vals: list[Tensor] = []
@@ -195,7 +198,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class MIMIC_IV_Bilos2021(
     TimeSeriesTask[SplitID, TimeSeriesCollection[int], int, Sample, Batch]
 ):
-    r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
+    r"""Forecasting task on the preprocessed MIMIC-IV dataset used by Biloš et al. (2021)."""
 
     dataset: TimeSeriesCollection[int]
     preprocessor: FrameEncoder | None

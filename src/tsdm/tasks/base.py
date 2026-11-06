@@ -1,102 +1,64 @@
-r"""Tasks make running experiments easy & reproducible.
+r"""Protocols and base classes for reproducible time-series experiments.
 
-Task = Dataset + Evaluation Protocol
+A task combines a dataset with its partitions, sampling procedure, batch
+construction, and evaluation metric. Error functions receive predictions first
+and targets second; lower values indicate better predictions.
 
-For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
-and a test_loader object. We decided to use a dataloader instead of, say, a key to cater to the question of
-forecasting horizons.
+### Decomposable metrics
 
+Mean squared error can be computed per sample and then averaged across the
+dataset. The following example assumes equally weighted samples and finite
+tensors of shape `(batch, ...)`:
 
-Forecasting Model
------------------
+```python
+residuals = [
+    (model(inputs) - targets).square().flatten(start_dim=1).mean(dim=1)
+    for inputs, targets in test_loader
+]
+score = torch.cat(residuals).mean()
+```
 
+### Non-decomposable metrics
 
-Decomposable METRICS
---------------------
+Metrics such as area under the receiver operating characteristic curve (AUROC)
+must account for predictions across batches. Concatenate predictions and targets
+before passing them to an appropriate metric implementation:
 
-.. admonition:: **Example** Mean Square Error (MSE)
+```python
+outputs = [(model(inputs), targets) for inputs, targets in test_loader]
+predictions = torch.cat([prediction for prediction, _ in outputs])
+targets = torch.cat([target for _, target in outputs])
+score = test_metric(predictions, targets)
+```
 
-    .. code-block:: python
+These examples require a non-empty test loader. Metrics that support streaming
+updates may accumulate their state instead of retaining all predictions.
 
-        dims = (1, ...)  # sum over all axes except batch dimension
-        # y, yhat are of shape (B, ...)
-        test_metric = lambda yhat, y: torch.sum((yhat - y) ** 2, dim=dims)
-        accumulation = torch.mean
+### Encoders and data loaders
 
-.. admonition:: **Recipe**
+Encoders convert raw observations into model inputs. When several tensors
+represent the same observations, their sample axes must remain aligned.
+Fit preprocessing on the training partition and reuse it for the associated
+validation and test partitions to avoid data leakage.
 
-    .. code-block:: python
+A sampler yields identifiers into a sample generator. The generator constructs
+samples from a dataset partition, and the collate function combines those
+samples into a batch. `TimeSeriesTask.make_dataloader` connects these components
+using `torch.utils.data.DataLoader`.
 
-        r = []
-        for x, y in dataloader:
-            r.append(test_metric(model(x), y))
+### Flowchart sketch
 
-        score = accumulation(torch.concat(r, dim=BATCHDIM))
-
-Non-decomposable METRICS
-------------------------
-
-.. admonition:: **Example** Area Under the Receiver Operating Characteristic Curve (AUROC)
-
-    .. code-block:: python
-
-        test_metric = (
-            torch.AUROC()
-        )  # expects two tensors of shape (N, ...) or (N, C, ...)
-        score = test_metric([(model(x), y) for x, y in test_loader])
-        # accumulation = None or identity function (tbd.)
-
-.. admonition:: **Recipe**
-
-    .. code-block:: python
-
-        ys, yhats = []
-        for x, y in dataloader:
-            ys.append(y)
-            yhats.append(model(x))
-
-        ys = torch.concat(ys, dim=BATCHDIM)
-        yhats = torch.concat(yhats, dim=BATCHDIM)
-        score = test_metric(yhats, ys)
-
-Normal Encoder
---------------
-
-A normal pre_encoder is a pre_encoder with the property that all output tensors
-share the same index axis.
-
-I.e. it has a signature of the form ``list[tensor[n, ...]] -> list[tensor[n, ...]]``.
-Pre-Encoder: Map DataFrame to torch.util.data.Dataset
-
-Default DataLoader Creation
----------------------------
-
-.. code-block:: python
-
-    data = pre_processor.encode(data)  # `DataFrame` to `DataFrame`
-    data = pre_encoder.encode(data)  # `DataFrame` to `DataSet`
-    dataset = TensorDataset(*inputs, targets)
-    sampler = SequenceSampler(tuple[TimeTensor], tuple[StaticTensor])
-    dataloader = DataLoader(dataset, sampler=sampler, collate=...)
-    batch = next(dataloader)
-
-The whole responsibility of this class is to use a key from the "sampler" and
-create a `Sample` from the `TimeSeriesCollection`.
-
-**`Flowchart Sketch <image_link_>`_**
-
-.. literalinclude:: ../content/diagrams/flowchart.txt
-.. _image_link:
-    https://asciiflow.com/#/share/eJzdWLtu2zAU%2FRWBUwtkcbu0XjwEqLcgQJJNQKDKTEtUL0gMEDcIYBgdO3AQXA0dM2bqWOhr9CWVKZEixYeo
-    eKsgxBLJe3nv4bmHYh5BEsQQLJP7KDoDUbCFOViCRx88%2BGD58f3izAfb9undh%2BMThg%2B4ffGBZ7ua8mdT7txuYjYhvp84TXH425T7T2m0WcME5g
-    FO86b8PXbHBxXtr9XzvvspnXOomCU3eeFd7Uxz4DBh1EdlCZpOtL9GMbyCOYLFeRpFMMQoTQQwnl%2B5SkOqdBp3aEZwcLzkfJpDrVmRYQxfk1kRE1ua
-    xLtD2OZSxz4xIgEDSq2rLELYSMBhSGHiJkzCdANzPTtH6z9zCSojP3cKe19Ua208tTUGYmKqLhdbOU5R3%2Bjs5Krb0RxnEdt9LTTh6rOU2idU4Ni%2F
-    Wq1UjwoWRDJQXixVMZ6PTXaoxZkoob%2FB7YKRva%2FFfpT4IloUQZxFcCFUCFHGmyvaKrWkw0MhbcXa57KFibK5DCrP2TfpwPwc4PCrx8W8g4NrySDe
-    fUsnKnSQTnhEsZdtwnZvCDC8vRP2BtpxDZMizVkA5sT0eZkwdqmJCaSm0RadHceeX95IDGUolCI%2FL1j%2BUlVqR3eLcSHgq9rI0XH1UARUw0LjZeWX
-    yUS3nZ52ufh8E6bZ1sOUQ4WHU299efPWyScF63%2B%2BhzyHJysybgI8y7R3oMhkLfg%2BddekpYKD%2FAvUfuhIt7h5ElMSokMuYpqEBu207aXTpdTZ
-    sr9TcjSpR9Xg1A3aPhsmxAYxty1%2FF5Yk6xvYf1pa3Yk7BIYFvo0hzlHIt6M1U1R7QgYWOZOLSHnYQa6ml2rsesYWZTnsVPLmgJLsnhOetsQt4JHYkO
-    Vwg%2Bh5jBeGWAC17FxPW5OjIVwXvlf6HkOzzl5cnFl1NkbXwuPDHwu7X3NiOMmWfnvqj6nqDBMC7BkG2f7fMQb1Oc0witF3el5sfv0Qu6K0KCbzVF1q
-    iWKgig%2BewNM%2FqIfMMw%3D%3D)
+```text
+dataset → partitions → sample generator ← sampler
+                            ↓
+                          samples
+                            ↓
+                       collate function ← training-fitted encoder
+                            ↓
+                          batch → model → predictions
+                            ↓                 ↓
+                          targets → error function
+```
 """
 
 __all__ = [
@@ -169,15 +131,13 @@ class Task[
     r"""Protocol for tasks.
 
     Type Parameters:
-        DatasetT: The type of the raw dataset.
-        SplitKey: The key to identify a split within a dataset, e.g.
-            - A single SplitType like "train" or "test"
-            - A tuple like (2, "test") for the test partition of the second fold
-            - longer tuples when performing nested cross-validation.
-        SampleID: The random input for the sampler.
-        SampleT: The type of sample returned by the generator.
-            (e.g. ``tuple[InputType, TargetType]``)
-        BatchT: The batched data type returned by the dataloaders
+        SplitKey: The key identifying a dataset partition, such as `"train"`,
+            `(2, "test")`, or a longer tuple for nested cross-validation.
+        DatasetT: The type of the raw dataset and its partitions.
+        SampleID: The identifier yielded by a sampler and accepted by a generator.
+        SampleT: The sample returned by a generator, such as a pair of inputs and targets.
+        BatchT: The batch returned by a data loader.
+        TargetT: The type of predictions and targets accepted by the error function.
     """
 
     @property  # the raw datase
@@ -202,9 +162,9 @@ class Task[
 
     @property
     def error_fn(self) -> Callable[[TargetT, TargetT], SupportsFloat]:
-        """Compare predictions and targets; lower is better.
+        r"""Compare predictions and targets; lower is better.
 
-        Arguments are ordered as (predictions, targets).
+        Arguments are ordered as `(predictions, targets)`.
         """
         ...
 
@@ -218,48 +178,36 @@ class TimeSeriesTask[
     SampleT = Any,
     BatchT = list[SampleT],
 ]:
-    r"""Abstract Base Class for Tasks.
+    r"""Base class for time-series tasks.
 
     Type Parameters:
-        SplitKey
-        SampleID
-        SampleT
-        BatchT
+        SplitKey: The key identifying a dataset partition.
+        DatasetT: The type of the raw dataset and its partitions.
+        SampleID: The identifier yielded by a sampler and accepted by a generator.
+        SampleT: The sample returned by a generator.
+        BatchT: The batch produced by a collate function.
 
-    A task has the following responsibilities:
+    A task provides the following components:
 
-    - Provide a dataset
-        - All splits should be derived from the same dataset
-    - Provide splits of the dataset, usually one of the following:
-        - train, test
-        - train, validation, test
-        - cross-validation + train/(valid)/test: (0, train), (0, test), ..., (n, train), (n, test)
-        - nested cross-validation: (0, 0), (0, 1), ..., (0, n), (1, 0), ..., (n, n)
-    - Provide a metric for evaluation
-        - must be of the form ``Callable[[target, prediction], Scalar]``
-    - Provide a `torch.utils.data.DataLoader` for each split
-        - Provide a `torch.utils.data.Dataset` for each split
-            - Dataset should return `Sample` objects providing context and target values.
-        - Provide a `torch.utils.data.Sampler` for each split
-            - Sampler should return indices into the dataset
-    - Optional: Task specific encoder/decoder
-        - Since we use raw format, such an encoder might be necessary to even meaningfully
-          compute the target metric
-        - For examples, tasks may ask for an MSE-loss on standardized data, or a cross-entropy for
-          categorical data. In such cases, the task should provide an encoder/decoder to convert the
-          data to the desired format.
-        - For the simple case when both the input and the target are DataFrames, the task should
-          provide DataFrameEncoders, one for each of the index / timeseries / metadata.
-        - Encoders must be fit on the training data, but also transform the test data.
-            - Need a way to associate a train split to each test/valid split.
-            - CONVENTION: a split key is either a partition name or a sequence of the form
-              ``[*fold_ids, partition]``. Only the final element identifies the partition; all
-              preceding elements identify the cross-validation fold. The partition must be a
-              recognized `SplitType` value or alias.
+    - A dataset and partitions derived from it, such as training, validation, and
+        test partitions, optionally organized into cross-validation folds.
+    - An error function of the form `error_fn(predictions, targets)` that returns
+        a scalar, with lower values indicating better predictions.
+    - A sample generator, sampler, collate function, and data loader for each split.
+        The sampler yields identifiers accepted by the generator, which returns
+        samples containing context and target values.
+    - Optional encoders and decoders that convert data into the representation
+        required by the model or metric. Fit encoders on the training partition and
+        reuse them for the associated validation and test partitions.
 
-    To make this simpler, we first consider the `Mapping` interface,
-    i.e. all the samplers are of fixed sized. and the dataset is a `Mapping` type.
-    We do not support `torch.utils.data.IterableDataset`, as this point.
+    By convention, a split key is a partition name or a sequence of the form
+    `[*fold_ids, partition]`. The final element identifies the partition; preceding
+    elements identify the cross-validation fold. Partition names should be
+    recognized `SplitType` values or aliases. Subclasses implement `is_train_split`
+    to identify their training partitions.
+
+    Sample generators must support lookup by sample identifier. This base class
+    does not support `torch.utils.data.IterableDataset` generators.
     """
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
@@ -277,19 +225,19 @@ class TimeSeriesTask[
     error_fn: Callable
 
     partitions: Mapping[SplitKey, DatasetT] = field(init=False)
-    r"""Dictionary holding `Fold` associated with each key (index for split)."""
+    r"""Dataset partition associated with each split key."""
     collate_fns: Mapping[SplitKey, Callable[[list[SampleT]], BatchT]] = field(
         init=False
     )
     r"""Collate function used to create batches from samples."""
     dataloaders: Mapping[SplitKey, Iterable[BatchT]] = field(init=False)
-    r"""Dictionary holding `DataLoader` associated with each key."""
+    r"""Data loader associated with each split key."""
     generators: Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]] = field(
         init=False
     )
     r"""Dictionary holding the sample generator associated with each key."""
     samplers: Mapping[SplitKey, Sampler[SampleID]] = field(init=False)
-    r"""Dictionary holding `Sampler` associated with each key."""
+    r"""Sampler associated with each split key."""
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
@@ -331,7 +279,7 @@ class TimeSeriesTask[
 
     @abstractmethod
     def make_partition(self, key: SplitKey, /) -> DatasetT:
-        r"""Return the sub-dataset associated with the specified split like ``(0, "train")``."""
+        r"""Return the sub-dataset associated with the specified split like `(0, "train")`."""
         raise NotImplementedError
 
     @abstractmethod
@@ -349,7 +297,7 @@ class TimeSeriesTask[
 
         Note:
             `collate_fn` is allowed to be key-dependent for cases when an encoder
-             fitted on the training split is used to transform the validation/test splits.
+            fitted on the training split is used to transform the validation/test splits.
         """
         return lambda x: x  # type: ignore
 
@@ -408,5 +356,5 @@ if TYPE_CHECKING:
         SampleT,
         BatchT,
     ]:
-        r"""Upcast a TimeSeriesTask to a ForecastingTask."""
+        r"""Upcast a `TimeSeriesTask` to the `Task` protocol."""
         return task

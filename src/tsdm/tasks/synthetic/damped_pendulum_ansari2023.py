@@ -1,10 +1,10 @@
 r"""Forecasting task on synthetic damped pendulum data.
 
 References:
-    - Neural Continuous-Discrete State Space Models
-      Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
-      Proceedings of the 40th International Conference on Machine Learning
-      https://proceedings.mlr.press/v202/ansari23a.html
+    - Neural Continuous-Discrete State Space Models <br>
+      Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh <br>
+      Proceedings of the 40th International Conference on Machine Learning <br>
+      https://proceedings.mlr.press/v202/ansari23a.html <br>
       https://github.com/clear-nus/NCDSSM
 """
 
@@ -46,21 +46,22 @@ class DampedPendulum_Ansari2023(
     r"""Forecasting task on synthetic damped pendulum data.
 
     Note:
-        - This uses scipy's builtin RK45 solver, instead of RK4.
-        - The individual time series are only 150 steps long, so the whole sequence is returned
+        - The data generator uses SciPy's built-in RK45 solver rather than RK4.
+        - Each sampled trajectory is split into an observation window of 10 seconds
+            and a prediction window of 5 seconds by default.
 
-    .. epigraph::
+    ### Evaluation Protocol
 
-        [section 5.1] We trained all the models on 10s/5s sequences (with a discretization of 0.1s)
-        for bouncing ball/damped pendulum with 0%, 30%, 50% and 80% timesteps missing at random to
-        simulate irregularly-sampled data. The models were evaluated on imputation of the missing
-        timesteps and forecasts of 20s/10s beyond the training regime for bouncing ball/damped pendulum.
-
-        [table 1] Imputation and forecasting results for bouncing ball and damped pendulum datasets
-        averaged over 50 sample trajectories. Mean ± standard deviation are computed over 5 independent runs.
-
-        [Appendix C.1] The training, validation, and test datasets consist of 5000, 1000, and 1000
-        sequences of length 15s each, respectively.
+    > [section 5.1] We trained all the models on 10s/5s sequences (with a discretization of 0.1s)
+    > for bouncing ball/damped pendulum with 0%, 30%, 50% and 80% timesteps missing at random to
+    > simulate irregularly-sampled data. The models were evaluated on imputation of the missing
+    > timesteps and forecasts of 20s/10s beyond the training regime for bouncing ball/damped pendulum.
+    >
+    > [table 1] Imputation and forecasting results for bouncing ball and damped pendulum datasets
+    > averaged over 50 sample trajectories. Mean ± standard deviation are computed over 5 independent runs.
+    >
+    > [Appendix C.1] The training, validation, and test datasets consist of 5000, 1000, and 1000
+    > sequences of length 15s each, respectively.
     """
 
     num_folds: int = 5

@@ -1,51 +1,51 @@
-r"""USHCN Forecasting Task as described by De Brouwer et al. (2019) [1]_.
+r"""USHCN forecasting task as described by De Brouwer et al. (2019) [^1].
 
-Evaluation Protocol
--------------------
+### Evaluation protocol
 
-.. epigraph::
+> 5.3 Climate forecast
+>
+> From short-term weather forecast to long-range prediction or assessment of systemic
+> changes, such as global warming, climatic data has always been a popular application for
+> time-series analysis. This data is often considered to be regularly sampled over long
+> periods of time, which facilitates their statistical analysis. Yet, this assumption does
+> not usually hold in practice. Missing data are a problem that is repeatedly encountered in
+> climate research because of, among others, measurement errors, sensor failure, or faulty
+> data acquisition. The actual data is then sporadic and researchers usually resort to
+> imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
+>
+> We use the publicly available United States Historical Climatology Network (USHCN) daily
+> data set (Menne et al.), which contains measurements of 5 climate variables
+> (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
+> stations scattered over the United States. We selected a subset of 1,114 stations and an
+> observation window of 4 years (between 1996 and 2000). To make the time series sporadic, we
+> subsample the data such that each station has an average of around 60 observations over
+> those 4 years. Appendix L contains additional details regarding this procedure.
+> The task is then to predict the next 3 measurements after the first 3 years of observation.
 
-    5.3 Climate forecast
+### Notes
 
-    From short-term weather forecast to long-range prediction or assessment of systemic
-    changes, such as global warming, climatic data has always been a popular application for
-    time-series analysis. This data is often considered to be regularly sampled over long
-    periods of time, which facilitates their statistical analysis. Yet, this assumption does
-    not usually hold in practice. Missing data are a problem that is repeatedly encountered in
-    climate research because of, among others, measurement errors, sensor failure, or faulty
-    data acquisition. The actual data is then sporadic and researchers usually resort to
-    imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
+- The authors' code is available at [^2].
+- The related MIMIC-III preprocessing script is discussed in
+    [issue 15](https://github.com/edebrouwer/gru_ode_bayes/issues/15).
+    Its equivalence to the climate preprocessing script has not been established.
 
-    We use the publicly available United States Historical Climatology Network (USHCN) daily
-    data set (Menne et al.), which contains measurements of 5 climate variables
-    (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
-    stations scattered over the United States. We selected a subset of 1,114 stations and an
-    observation window of 4 years (between 1996 and 2000). To make the time series sporadic, we
-    subsample the data such that each station has an average of around 60 observations over
-    those 4 years. Appendix L contains additional details regarding this procedure.
-    The task is then to predict the next 3 measurements after the first 3 years of observation.
+- The train/valid/test split is 72/18/10. The authors write:
 
-Notes:
-    - Authors code is available at [2]_.
-    - The author's code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
-      https://github.com/edebrouwer/gru_ode_bayes/issues/15, but the authors are not responding.
-      We assume the MIMIC-III pre-processing script is similar/the same as the one for the Climate dataset.
+    > We report the performance using 5-fold cross-validation. Hyperparameters
+    > (dropout and weight decay) are chosen
+    > using an inner holdout validation set (20%), and performance is assessed on a left-out test set (10%).
 
-    - The train/valid/test split is 62/18/10. The authors write:
+    Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [^3]
+- The random seed is fixed to 432 at the start of the splitting process. [^3]
 
-        We report the performance using 5-fold cross-validation. Hyperparameters (dropout and weight decay) are chosen
-        using an inner holdout validation set (20%), and performance is assessed on a left-out test set (10%).
+### References
 
-      Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [3]_
-    - The random seed is fixed to 432 at the start of the splitting process. [3]_
-
-References:
-    .. [1] | GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series
-           | <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>_
-           | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
-           | `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
-    .. [2] https://github.com/edebrouwer/gru_ode_bayes
-    .. [3] https://github.com/edebrouwer/gru_ode_bayes/blob/master/data_preproc/Climate/generate_folds.py
+[^1]: GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series
+    <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>
+    De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
+    [Advances in Neural Information Processing Systems 2019](https://proceedings.neurips.cc/paper/2019)
+[^2]: <https://github.com/edebrouwer/gru_ode_bayes>
+[^3]: <https://github.com/edebrouwer/gru_ode_bayes/blob/master/data_preproc/Climate/generate_folds.py>
 """
 
 __all__ = [
@@ -78,7 +78,7 @@ from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
 
 @pprint_repr
 class Inputs(NamedTuple):
-    r"""A single sample of the data."""
+    r"""Observation times and values, together with requested target times."""
 
     t: Tensor
     x: Tensor
@@ -97,7 +97,7 @@ class Sample(NamedTuple):
 
 @pprint_repr
 class Batch(NamedTuple):
-    r"""A single sample of the data."""
+    r"""A batch of input and target tensors with timestamps and masks."""
 
     x_time: Tensor  # B×N:   the input timestamps.
     x_vals: Tensor  # B×N×D: the input values.
@@ -142,9 +142,14 @@ class USHCN_SampleGenerator:
 
 @deprecated("Consider using tasks.utils.collate_timeseries instead.")
 def ushcn_collate(batch: list[Sample]) -> Batch:
-    r"""Collate tensors into batch.
+    r"""Collate samples into padded input and target tensors.
 
-    Transform the data slightly: ``t, x, t_target → T, X where X[t_target:] = NAN``.
+    Merge observation and target times into a sorted input timeline, filling input
+    values at target times with `NaN`. Keep target values separately and construct
+    masks from their finite entries. Pad variable-length sequences to the longest
+    sequence in the batch; input and target value padding uses `NaN`.
+
+    The returned tensors are squeezed, so singleton dimensions are removed.
     """
     x_vals: list[Tensor] = []
     y_vals: list[Tensor] = []
@@ -196,7 +201,7 @@ type SplitID = tuple[int, Literal["train", "valid", "test"]]
 class USHCN_DeBrouwer2019(
     TimeSeriesTask[SplitID, TimeSeriesCollection[int], int, Sample, Batch]
 ):
-    r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
+    r"""USHCN forecasting task as described by De Brouwer et al. (2019)."""
 
     observation_time = 150
     prediction_steps = 3

@@ -1,4 +1,4 @@
-r"""Implementation of the kiwi task."""
+r"""Forecasting task for the in silico bioreactor dataset."""
 
 __all__ = ["InSilicoTask"]
 
@@ -32,12 +32,12 @@ type SampleID = tuple[int, list[NDArray[np.bool_]]]
 class InSilicoTask(
     TimeSeriesTask[SplitID, TimeSeriesCollection[int], SampleID, SplitTimeData]
 ):
-    r"""Task for the KIWI dataset."""
+    r"""Forecast biomass and product in simulated bioreactor trajectories."""
 
     observation_horizon: str = "2h"
-    r"""The number of datapoints observed during prediction."""
+    r"""Duration of the observation window, expressed as a pandas timedelta string."""
     forecasting_horizon: str = "1h"
-    r"""The number of datapoints the model should forecast."""
+    r"""Duration of the forecasting window, expressed as a pandas timedelta string."""
 
     def __init__(
         self,

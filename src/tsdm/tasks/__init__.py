@@ -1,32 +1,12 @@
-r"""Tasks make running experiments easy & reproducible.
+r"""Tasks combine datasets with reproducible evaluation protocols.
 
-Task = Dataset + Evaluation Protocol
+A task provides dataset partitions, sample generators, samplers, data loaders,
+and an error function. Samplers select sample identifiers; generators use those
+identifiers to assemble inputs and targets. Collate functions combine samples
+into batches and may apply encoders fitted on the associated training partition.
 
-For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
-and a test_loader object. We decided to use a dataloader instead of, say, a key to cater to the question of
-forecasting horizons.
-
-.. note::
-
-    One thing that is weird about torch's way to approach the issue is that there
-    are two separated functionalities: sampling rows and selecting columns.
-    In principle, the sampler could do both, supposedly.
-    However, the TaskDataset is really responsible for creating the sample.
-
-.. admonition:: Idea
-
-    The Pre-Encoder must work in the following way:
-
-    - ``tuple[TimeTensor] → tuple[TimeTensor]`` row-wise!
-    - ``tuple[Tensor] → tuple[Tensor]``.
-
-
-More generally, eligible inputs are:
-
-- `DataFrame`, `TimeTensor`, ``tuple[DataFrame]``, ``tuple[TimeTensor]``
-- Product-types.
-
-Must return a `NamedTuple` that agrees with the original column names!
+For forecasting, the observation horizon determines the available context and
+the forecasting horizon determines the target interval.
 """
 
 __all__ = [

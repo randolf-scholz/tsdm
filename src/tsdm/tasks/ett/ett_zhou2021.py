@@ -39,60 +39,42 @@ class ETT_Zhou2021(
         tuple[Tensor, ...],
     ]
 ):
-    r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
+    r"""Forecast oil temperature on the Electricity Transformer Temperature dataset.
 
-    Paper
-    -----
+    References:
+        - Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting <br>
+          Haoyi Zhou, Shanghang Zhang, Jieqi Peng, Shuai Zhang, Jianxin Li, Hui Xiong, Wancai Zhang <br>
+          <https://ojs.aaai.org/index.php/AAAI/article/view/17325>
 
-    - | Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting
-      | Haoyi Zhou, Shanghang Zhang, Jieqi Peng, Shuai Zhang, Jianxin Li, Hui Xiong, Wancai Zhang
-      | https://ojs.aaai.org/index.php/AAAI/article/view/17325
+    ### Evaluation Protocol
 
-    Evaluation Protocol
-    -------------------
+    The dataset contains oil temperature and six power-load features. `ETTh1` and
+    `ETTh2` are sampled hourly; `ETTm1` and `ETTm2` are sampled every 15 minutes.
+    The training, validation, and test partitions span 12, 4, and 4 months,
+    respectively. The shared preprocessing encoder is fitted on the training partition.
 
-    .. epigraph::
+    Observation and forecasting horizons are specified as numbers of time steps,
+    so their durations depend on the dataset's sampling frequency. The default
+    observation horizon is 96 steps and the default forecasting horizon is 24 steps.
 
-        ETT (Electricity Transformer Temperature)2: The ETT is a crucial indicator in
-        the electric power long-term deployment. We collected 2-year data from two
-        separated counties in China. To explore the granularity on the LSTF problem,
-        we create separate dataset as {ETTh1, ETTh2} for 1-hour-level and ETTm1 for
-        15-minute-level. Each data point consists of the target value ”oil temperature”
-        and 6 power load features. The train/val/test is 12/4/4 months
+    The paper standardizes each variable to mean zero and standard deviation one.
+    It considers recurrent input lengths of 24, 48, 96, 168, 336, and 720 steps for
+    the hourly datasets, and 24, 48, 96, 192, 288, and 672 steps for the minute datasets.
+    Decoder start tokens are truncated from the encoder input and must be shorter
+    than that input.
 
-        **Setup:** The input of each dataset is zero-mean normalized.
+    The paper considers encoder input and decoder start-token lengths of 24, 48,
+    96, 168, 336, 480, and 720 steps for the hourly datasets, and 24, 48, 96, 192,
+    288, 480, and 672 steps for the minute datasets.
 
-        For all methods, the input length of recurrent component is chosen from
-        {24, 48, 96, 168, 336, 720} for the ETTh1, ETTh2, Weather and Electricity
-        dataset, and chosen from {24, 48, 96, 192, 288, 672} for the ETTm dataset.
+    ### Test Metrics
 
-        The length of preprocessor’s input sequence and decoder’s start token is chosen from
-        {24, 48, 96, 168, 336, 480, 720} for the ETTh1, ETTh2, Weather and ECL dataset,
-        and {24, 48, 96, 192, 288, 480, 672}for the ETTm dataset.
+    For $n$ scalar predictions $ŷᵢ$ and targets $yᵢ$, the paper reports:
 
-        In the experiment, the decoder’s start token is a segment truncated from the
-        preprocessor’s input sequence, so the length of decoder’s start token must be less
-        than the length of preprocessor’s input.
+    - Mean squared error: $\frac{1}{n} ∑ᵢ₌₁ⁿ |ŷᵢ - yᵢ|²$.
+    - Mean absolute error: $\frac{1}{n} ∑ᵢ₌₁ⁿ |ŷᵢ - yᵢ|$.
 
-        Appendix E
-        [...]
-        All the dataset are performed standardization such that the mean of variable
-        is 0 and the standard deviation is 1.
-
-    **Forecasting Horizon:** {1d, 2d, 7d, 14d, 30d, 40d}
-    **Observation Horizon:**
-    **Input_Length**: {24, 48, 96, 168, 336, 720}
-
-    Test-Metric
-    -----------
-
-    - MSE: $⅟ₙ∑ᵢ₌₁ⁿ \abs{ŷ - y}ⁿ$
-    - MAE: $⅟ₙ∑ᵢ₌₁ⁿ \abs{ŷ - y}$
-
-    Results
-    -------
-
-    TODO: add results
+    This implementation uses `torch.nn.MSELoss` as its error function.
     """
 
     accumulation_function: Callable[..., Tensor]

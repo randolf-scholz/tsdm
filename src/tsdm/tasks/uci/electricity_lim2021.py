@@ -1,4 +1,4 @@
-r"""Code for the electricty task from the paper "Temporal Fusion Transformer" by Lim et al. (2021)."""
+r"""Code for the electricity task from the paper "Temporal Fusion Transformers" by Lim et al. (2021)."""
 
 __all__ = [
     # CLASSES
@@ -26,7 +26,7 @@ from tsdm.timeseries.pandas import TimeSeries, electricity
 
 @pprint_repr
 class Batch(NamedTuple):
-    r"""A single sample of the data."""
+    r"""A batch of input and target tensors with timestamps and masks."""
 
     x_time: Tensor  # B×N:   the input timestamps.
     x_vals: Tensor  # B×N×D: the input values.
@@ -45,68 +45,55 @@ class ElectricityLim2021(
 ):
     r"""Experiments as performed by the "TFT" paper.
 
-    Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
-    whereas in the TRMF paper, the hourly aggregation is done via plain summation.
+    References:
+        - Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting <br>
+          Lim et al. <br>
+          International Journal of Forecasting 2021 <br>
+          <https://www.sciencedirect.com/science/article/pii/S0169207021000637>
 
-    .. epigraph:: We convert the data to reflect hourly consumption, by aggregating blocks of 4 columns
+    ### Implementation notes
 
-    Issues:
+    - Hourly observations are aggregated with the mean. The TRMF description says
+        that blocks of four quarter-hourly readings are aggregated but does not
+        specify the operation in the quoted passage. Since readings are in kW,
+        energy consumption in kWh requires accounting for the sampling interval.
+    - Training ends at `2014-08-08`; validation ends at `2014-09-01`. These are
+        chronological partitions rather than a random 90%/10% split of windows.
+    - The preprocessing encoder is fitted on the training partition.
+    - Validation and test partitions include the preceding seven days as context.
+        Test targets span the seven days beginning on `2014-09-01`; the sampler
+        advances by one day with a seven-day observation window and a one-day
+        forecasting window.
+    - The error function computes normalized absolute error on the tensors passed
+        to it. Callers must decode predictions and targets to evaluate on the
+        original scale.
 
-    - They report in the paper: 90% train, 10% validation. However, this is wrong.
-      They split the array not on the % of samples, but instead they use the first 218 days
-      as train and the following 23 days ("2014-08-08" ≤ t < "2014-09-01" ) as validation,
-      leading to a split of 90.12% train and 9.88% validation.
-    - preprocessing: what partitions of the dataset are mean and variance computed over?
-      train? train+validation?
-    - Since the values are in kW, an hourly value would correspond to summing the values.
-    - Testing: How exactly is the loss computed? From the description, it cannot be
-      precisely inferred. Looking inside the code reveals that the test split is actually the
-      last 14 days, which makes sense given that the observation period is 7 days. However,
-      the paper does not mention the stride. Given the description:
-      "we use the past week (i.e. 168 hours) to forecast over the next 24 hours."
-      Does not tell the stride, i.e. how much the sliding window is moved. We assume this to be
-      24h.
-    - Is the loss computed on the original scale, or on the pre-processed (i.e. z-score normalized)
-      scale? The code reveals that apparently the loss is computed on the original scale!
+    ### Evaluation protocol
 
-    Paper
-    -----
-    - | Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting
-      | Lim et al.
-      | International Journal of Forecasting 2021
-      | https://www.sciencedirect.com/science/article/pii/S0169207021000637
+    > In accordance with [9], we use the past week (i.e. 168 hours) to
+    > forecast over the next 24 hours.
+    >
+    > Electricity: Per [9], we use 500k samples taken between 2014-01-01 to 2014-09-01 – using
+    > the first 90% for training, and the last 10% as a validation set. Testing is done over the
+    > 7 days immediately following the training set – as described in [9, 32]. Given the large
+    > differences in magnitude between trajectories, we also apply z-score normalization
+    > separately to each entity for real-valued inputs. In line with previous work, we consider
+    > the electricity usage, day-of-week, hour-of-day and a time index – i.e. the number of
+    > time steps from the first observation – as real-valued inputs, and treat the entity
+    > identifier as a categorical variable.
 
-    Evaluation Protocol
-    -------------------
-    .. epigraph::
+    ### Test metrics
 
-        In accordance with [9], we use the past week (i.e. 168 hours) to
-        forecast over the next 24 hours.
+    Evaluation uses quantile risk at $q=0.5$ and $q=0.9$ (P50 and P90):
 
-        Electricity: Per [9], we use 500k samples taken between 2014-01-01 to 2014-09-01 – using
-        the first 90% for training, and the last 10% as a validation set. Testing is done over the
-        7 days immediately following the training set – as described in [9, 32]. Given the large
-        differences in magnitude between trajectories, we also apply z-score normalization
-        separately to each entity for real-valued inputs. In line with previous work, we consider
-        the electricity usage, day-of-week, hour-of-day and a time index – i.e. the number of
-        time steps from the first observation – as real-valued inputs, and treat the entity
-        identifier as a categorical variable.
+    $$ q-\text{Risk} = 2\frac{∑_{yₜ} ∑_{τ} QL(y(t), ŷ(t-τ), q)}{∑_y ∑_{τ} |y(t)|} $$
 
-    Test-Metric
-    -----------
-    Evaluation: $q$-Risk ($q=50$ and $q=90$)
+    ### Results
 
-    .. math:: q-Risk = 2\frac{∑_{y_t} ∑_{τ} QL(y(t), ŷ(t-τ), q)}{∑_y ∑_{τ} |y(t)|}
-
-    Results
-    -------
-    +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     | Model | ARIMA | ConvTrans | DSSM  | DeepAR | ETS   | MQRNN | Seq2Seq | TFT   | TRMF  |
-    +=======+=======+===========+=======+========+=======+=======+=========+=======+=======+
+    |-------|-------|-----------|-------|--------|-------|-------|---------|-------|-------|
     | P50   | 0.154 | 0.059     | 0.083 | 0.075  | 0.102 | 0.077 | 0.067   | 0.055 | 0.084 |
-    +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     | P90   | 0.102 | 0.034     | 0.056 | 0.400  | 0.077 | 0.036 | 0.036   | 0.027 | NaN   |
-    +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     """
 
     def __init__(self) -> None:
@@ -131,7 +118,7 @@ class ElectricityLim2021(
         return tuple(self.masks)
 
     def is_train_split(self, key: SplitID) -> bool:
-        r"""The joint partition combines training and validation data."""
+        r"""Return whether the split is `"train"` or the combined `"joint"` partition."""
         return key in {"train", "joint"}
 
     @cached_property

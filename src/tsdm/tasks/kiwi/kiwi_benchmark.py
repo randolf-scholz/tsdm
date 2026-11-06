@@ -48,7 +48,7 @@ from tsdm.utils import LazyDict
 
 @pprint_repr
 class Batch(NamedTuple):
-    r"""A single sample of the data."""
+    r"""A batch of input and target tensors with timestamps and masks."""
 
     x_time: Tensor  # B×N:   the input timestamps.
     x_vals: Tensor  # B×N×D: the input values.
@@ -69,7 +69,8 @@ class KiwiBenchmark(
 ):
     r"""Task for the KIWI dataset.
 
-    The task is to forecast the observables inside the forecasting horizon.
+    Forecast the configured target channels over the forecasting horizon using
+    observed channels and covariates known in advance.
     """
 
     dataset: TimeSeriesCollection[tuple[int, int]]
@@ -201,7 +202,7 @@ class KiwiBenchmark(
 
     @cached_property
     def split_masks(self) -> DataFrame:
-        r"""Group by RunID and color which indicates replicates."""
+        r"""Create split masks that keep replicates with the same `run_id` and `color` together."""
         md = self.dataset.static_covariates
         if md is None:
             raise ValueError("KIWI fold generation requires static covariates.")
