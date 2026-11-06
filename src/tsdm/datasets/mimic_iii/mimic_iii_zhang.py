@@ -1,10 +1,10 @@
 r"""MIMIC-III processed version of Zhang et al. (ICML 2024).
 
 References:
-    - Irregular Multivariate Time Series Forecasting: \
-      A Transformable Patching Graph Neural Networks Approach \
-      Weijia Zhang, Chenlong Yin, Hao Liu, Xiaofang Zhou, Hui Xiong \
-      Proceedings of the 41st International Conference on Machine Learning \
+    - Irregular Multivariate Time Series Forecasting: <br>
+      A Transformable Patching Graph Neural Networks Approach <br>
+      Weijia Zhang, Chenlong Yin, Hao Liu, Xiaofang Zhou, Hui Xiong <br>
+      Proceedings of the 41st International Conference on Machine Learning <br>
       <https://proceedings.mlr.press/v235/zhang24bw.html>
     - <https://github.com/usail-hkust/t-PatchGNN>
     - <https://physionet.org/content/mimic-iii-ext-tpatchgnn/1.0.0/>

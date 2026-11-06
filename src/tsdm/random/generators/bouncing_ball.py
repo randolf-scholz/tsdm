@@ -2,10 +2,10 @@ r"""Bouncing Ball Simulation.
 
 References:
     - [Bouncing ball example](https://github.com/rtqichen/torchdiffeq/blob/master/examples/bouncing_ball.py).
-    - Neural Continuous-Discrete State Space Models \
-      Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh \
-      Proceedings of the 40th International Conference on Machine Learning \
-      <https://proceedings.mlr.press/v202/ansari23a.html> \
+    - Neural Continuous-Discrete State Space Models <br>
+      Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh <br>
+      Proceedings of the 40th International Conference on Machine Learning <br>
+      <https://proceedings.mlr.press/v202/ansari23a.html> <br>
       <https://github.com/clear-nus/NCDSSM>
 """
 

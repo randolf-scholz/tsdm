@@ -263,9 +263,9 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
             and 5σ outliers removed.
 
     References:
-        - Neural Flows: Efficient Alternative to Neural ODEs \
-          Biloš et al. \
-          NeurIPS 2021 \
+        - Neural Flows: Efficient Alternative to Neural ODEs <br>
+          Biloš et al. <br>
+          NeurIPS 2021 <br>
           <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>
     """
 

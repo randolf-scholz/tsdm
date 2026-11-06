@@ -44,9 +44,9 @@ def erank(x: Tensor, /) -> Tensor:
     entropy. A matrix whose singular values are all zero produces NaN.
 
     References:
-        - `The effective rank: A measure of effective dimensionality \
-          Olivier Roy, Martin Vetterli \
-          `15th European Signal Processing Conference (EUSIPCO), 2007 \
+        - `The effective rank: A measure of effective dimensionality <br>
+          Olivier Roy, Martin Vetterli <br>
+          `15th European Signal Processing Conference (EUSIPCO), 2007 <br>
           <https://ieeexplore.ieee.org/document/7098875>
     """
     σ = torch.linalg.svdvals(x)
@@ -204,8 +204,8 @@ def stiffness_ratio(x: Tensor, /) -> Tensor:
     All eigenvalues must satisfy $\Re(λᵢ)<0$; otherwise return NaN.
 
     References:
-        - J. D. Lambert \
-          Numerical Methods for Ordinary Differential Systems: The Initial Value Problem \
+        - J. D. Lambert <br>
+          Numerical Methods for Ordinary Differential Systems: The Initial Value Problem <br>
           ISBN: 978-0-471-92990-1
     """
     x = x.to(dtype=torch.complex128)
@@ -281,8 +281,8 @@ def logarithmic_norm(
     References:
         - [Logarithmic norm](https://en.wikipedia.org/wiki/Logarithmic_norm).
         - [What Is the Logarithmic Norm?](https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/).
-        - The logarithmic norm. History and modern theory \
-          Gustaf Söderlind, BIT Numerical Mathematics, 2006 \
+        - The logarithmic norm. History and modern theory <br>
+          Gustaf Söderlind, BIT Numerical Mathematics, 2006 <br>
           <https://link.springer.com/article/10.1007/s10543-006-0069-9>
     """
     if scaled:

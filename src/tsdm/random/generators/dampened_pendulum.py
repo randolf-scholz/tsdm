@@ -61,18 +61,18 @@ class DampedPendulum(BaseIVP_Generator):
         equations also describe rotations that cross the upper position.
 
     References:
-        - Neural Continuous-Discrete State Space Models \
-          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh \
-          Proceedings of the 40th International Conference on Machine Learning \
-          <https://proceedings.mlr.press/v202/ansari23a.html> \
+        - Neural Continuous-Discrete State Space Models <br>
+          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh <br>
+          Proceedings of the 40th International Conference on Machine Learning <br>
+          <https://proceedings.mlr.press/v202/ansari23a.html> <br>
           <https://github.com/clear-nus/NCDSSM>
-        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data \
-          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt \
-          ICLR 2017 \
+        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data <br>
+          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt <br>
+          ICLR 2017 <br>
           <https://openreview.net/forum?id=HyTqHL5xg>
-        - Deep Rao-Blackwellised Particle Filters for Time Series Forecasting \
-          Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus \
-          NeurIPS 2020 \
+        - Deep Rao-Blackwellised Particle Filters for Time Series Forecasting <br>
+          Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus <br>
+          NeurIPS 2020 <br>
           <https://proceedings.neurips.cc/paper/2020/hash/afb0b97df87090596ae7c503f60bb23f-Abstract.html>
           <https://dl.acm.org/doi/10.5555/3495724.3497013>
     """
