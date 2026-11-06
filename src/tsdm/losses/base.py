@@ -1,4 +1,4 @@
-r"""Base class for a loss function."""
+r"""Protocols, reductions, and base classes for tensor and sequence losses."""
 
 __all__ = [
     # Protocols
@@ -53,9 +53,12 @@ class SequencePenalty(Protocol):
 
 
 class Loss(Protocol):
-    r"""Protocol for losses on arbitrary data.
+    r"""Protocol for scalar losses on target and prediction tensors.
 
-    .. math:: ℓ：Y×Y ⟶ ℝ_{≥0}
+    $$ ℓ：Y×Y ⟶ ℝ_{≥0} $$
+
+    Implementations accept keyword-only `predictions` and `targets` and return a
+    scalar tensor. Nonnegativity is a convention of the loss interface.
     """
 
     def __call__(
@@ -67,29 +70,21 @@ class Loss(Protocol):
 
 
 class SequenceLoss(Protocol):
-    r"""Protocol for a loss function on sequences of variable length.
+    r"""Protocol for scalar losses on pairs of variable-length sequences.
 
-    .. math:: ℓ： \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0}
+    $$ ℓ：\Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0} $$
 
-    Note:
-        $\Seq(Y)$ denotes the set of all finite sequences over $Y$
+    The finite sequence space is the disjoint union
 
-        .. math:: \Seq(Y) ≔ ∐_{n∈ℕ} Yⁿ ≙ ⋃_{n∈ℕ} Yⁿ
+    $$ \Seq(Y) ≔ ∐_{n∈ℕ}Yⁿ $$
 
-        and the fiber product $×_ℕ$ denotes the set of all pairs of same length sequences:
+    The fiber product pairs $u∈\Seq(U)$ and $v∈\Seq(V)$ of equal length:
 
-        .. math:: \Seq(U) ×_ℕ \Seq(V) ≔ {(u, v) ∈ \Seq(U) × \Seq(V) : \abs{u} = \abs{v}}
+    $$ \Seq(U) ×_ℕ \Seq(V) ≔ \{(u,v): |u|=|v|\} $$
 
-    Remark:
-        The categorical coproduct $∐_{n∈ℕ}Xⁿ$ is used to formally define the finite
-        sequence space. As a set, this is just identical to the union $⋃_{n∈ℕ} Xⁿ$.
-        However, if $X$ has additional structure, such as being a topological vector
-        space, then this induces structure on the finite sequence space.
-
-    Args:
-        predictions: Predictions of shape (..., *d), possibly padded NaN.
-        targets: Targets of shape (..., *d), possibly padded NaN.
-        mask: Mask of shape (..., *d), marking valid values.
+    The disjoint union retains the length of each sequence. Additional structure on
+    the component spaces can be carried to the sequence space through a coproduct.
+    Batches use padded tensors and an optional mask to represent variable lengths.
     """
 
     def __call__(
@@ -99,33 +94,33 @@ class SequenceLoss(Protocol):
         targets: Tensor,  # Float[..., $N, *D], possibly padded NaN
         mask: Tensor | None = None,  # Bool[..., $N, *D]
     ) -> Tensor:  # Float[()]
-        r"""Compute a loss between the predictions and the targets.
+        r"""Compute a scalar loss over paired sequences of variable length.
 
-        A time series loss function acts on sequences of variable length.
-        Given a collection of pairs of sequences $(x_n,x̂_n)∈⋃_{T∈ℕ}(V⊕V)^T$,
-        returns a single scalar. Each pair $(x_n,x̂_n)$ is of equal length $T_n$,
-        but different pairs may have different lengths.
+        Each prediction-target pair has the same length, while different pairs may
+        have different lengths. Use NaN padding and an explicit validity mask to
+        represent ragged batches in dense tensors. Implementations determine how
+        missing values are handled when a mask is omitted.
 
-        In principle, this means that nested/ragged tensors are required.
-        However, for the sake of simplicity, we assume that the tensors are
-        padded with missing values, such that they are of equal length.
+        Args:
+            predictions: Predicted sequences of shape `(..., $N, *D)`.
+            targets: Target sequences of shape `(..., $N, *D)`.
+            mask: Boolean tensor marking valid entries, with the same shape as the data.
         """
         ...
 
 
 class TimeSeriesLoss(Protocol):
-    r"""Protocol for a loss function on sequences of variable length with time information.
+    r"""Protocol for variable-length sequence losses with observation times.
 
-    .. math:: ℓ： \Seq(T) ×_ℕ \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0}
+    $$ ℓ：\Seq(T) ×_ℕ \Seq(Y) ×_ℕ \Seq(Y) ⟶ ℝ_{≥0} $$
 
-    Suitable for continuous-time objectives whose weighting or
-    discounting depends on observation/prediction times.
+    The fiber products require time, prediction, and target sequences to have equal
+    lengths within each sample. This interface supports continuous-time objectives
+    whose weighting or discounting depends on observation or prediction times.
 
-    Args:
-        predictions: Predictions of shape (..., *d), possibly padded NaN.
-        targets: Targets of shape (..., *d), possibly padded NaN.
-        time_steps: Time steps of shape (..., *d), possibly padded NaN.
-        mask: Mask of shape (..., *d), marking valid values.
+    Predictions and targets have shape `(..., $N, *D)`; `time_steps` has shape
+    `(..., $N)`. These tensors may use NaN padding. The optional boolean `mask`
+    has the data shape and marks valid entries. Implementations return a scalar tensor.
     """
 
     def __call__(
@@ -139,7 +134,7 @@ class TimeSeriesLoss(Protocol):
 
 
 class Reduction(StrEnum):
-    r"""Reduction methods for seperable losses."""
+    r"""Reduction methods for separable losses."""
 
     SUM = "sum"
     MEAN = "mean"
@@ -152,7 +147,13 @@ class Reduction(StrEnum):
         *,
         weights: Tensor | None = None,  # Float[...]
     ) -> Tensor:  # Float[()]
-        r"""Apply an optional sample weight and outer reduction to losses."""
+        r"""Apply optional sample weights and reduce per-sample losses.
+
+        Weights must broadcast to `values.shape`. `NONE` returns the element-wise
+        weighted values, `SUM` sums them, and `MEAN` divides their sum by the sum of
+        the broadcast weights. Without weights, use the ordinary sum or mean.
+        Zero total weight is not guarded against and can produce NaN or infinity.
+        """
         if weights is not None:
             weights = torch.broadcast_to(weights, values.shape)
 
@@ -179,13 +180,13 @@ class BaseLoss(nn.Module, Loss):
     r"""Base class for loss functions."""
 
     feature_weights: Tensor | None
-    r"""PARAM: Optional weight-vector."""
+    r"""Optional nontrainable feature-weight tensor."""
 
     # Constants
     dim: Final[tuple[int, ...]]
     r"""CONST: The axes over which the loss is computed."""
     scaled: Final[bool]
-    r"""CONST: Whether to normalize the channel axis."""
+    r"""CONST: Whether to normalize powered sums by the number of active features."""
 
     def __init__(
         self,
@@ -233,23 +234,23 @@ class BaseLoss(nn.Module, Loss):
 
 
 class BaseSequenceLoss(nn.Module, SequenceLoss):
-    r"""Base class for a sequence losses.
+    r"""Base class storing time and channel axes for sequence losses.
 
-    Because the loss is computed over a sequence of variable length, the default is to normalize
-    the loss by the sequence length, so that loss values are comparable across sequences.
-    This class can be used to express decomposable losses of the form
+    Concrete losses specify how to aggregate per-time penalties, for example
 
-    .. math:: 𝓛(x̂，x) ≔ ℓ(x̂ₜ, xₜ)
+    $$ 𝓛(x̂,x) ≔ 𝐀ₜ\bigl(ℓ(x̂ₜ，xₜ)\bigr) $$
 
-    By default, the aggregation $𝐀_t$ is the mean over the time-axes $𝐄_t$, but simply
-    summing over the time-axes is also possible.
+    Here $𝐀ₜ$ is an aggregation operator like the a mean or sum over time.
+    Length normalization can make losses comparable across sequences of different lengths.
+    This base class stores axis selections and checks that the supplied time axis is not among
+    the channel axes; subclasses implement the loss and its normalization.
     """
 
     # Constants
     time_dim: Final[int]
-    r"""CONST: The time-axes over which the loss is computed."""
+    r"""CONST: The time axis over which the loss is computed."""
     channel_dim: Final[tuple[int, ...]]
-    r"""CONST: The channel-axes over which the loss is computed."""
+    r"""CONST: The channel axes over which the loss is computed."""
 
     def __init__(self, *, time_dim: int, channel_dim: int | tuple[int, ...]) -> None:
         super().__init__()

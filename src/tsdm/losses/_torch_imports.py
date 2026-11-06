@@ -1,4 +1,4 @@
-r"""Metrics imported from torch."""
+r"""Registries of PyTorch loss functions, modules, and aliases."""
 
 __all__ = [
     # Constants
@@ -17,7 +17,7 @@ from torch import Tensor, nn
 
 
 class NN_Metric(Protocol):
-    r"""Protocol for a loss function."""
+    r"""Protocol for a PyTorch-style loss module with a `forward` method."""
 
     def forward(self, predictions: Tensor, targets: Tensor, /) -> Tensor: ...
 
@@ -50,7 +50,7 @@ TORCH_SPECIAL_LOSSES_FUNCTIONAL: dict[str, Callable[..., Tensor]] = {
     "triplet_margin"               : nn.functional.triplet_margin_loss,
     "triplet_margin_with_distance" : nn.functional.triplet_margin_with_distance_loss,
 }  # fmt: skip
-r"""Special losses that do not represent usual loss functions."""
+r"""Functional losses requiring additional inputs or specialized argument signatures."""
 
 TORCH_ALIASES_FUNCTIONAL: dict[str, Callable[[Tensor, Tensor], Tensor]] = {
     "mae"  : nn.functional.l1_loss,
@@ -97,4 +97,4 @@ TORCH_SPECIAL_LOSSES: dict[str, type[nn.Module]] = {
     "TripletMargin"             : nn.TripletMarginLoss,
     "TripletMarginWithDistance" : nn.TripletMarginWithDistanceLoss,
 }  # fmt: skip
-r"""Special losses that do not represent usual loss functions."""
+r"""Loss modules requiring additional inputs or specialized argument signatures."""

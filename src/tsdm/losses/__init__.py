@@ -1,44 +1,46 @@
-r"""Implementation of loss functions.
+r"""Penalties and losses for vector and sequence data.
 
-Contains losses in both modular and functional form.
+A **penalty** measures the discrepancy between one prediction $ŷ$ and its
+target $y$. It reduces the feature or sequence dimensions to a nonnegative value:
 
-Theory
-------
-We define the following
+$$ ℓ：𝓨×𝓨 ⟶ ℝ_{≥0} $$
 
-1. A metric is a function
+Applied to a batch of $N$ prediction-target pairs, a penalty produces one value
+$rₙ=ℓ(ŷₙ,yₙ)$ per sample, retaining the batch dimensions. Write $Ŷ=(ŷₙ)ₙ₌₁ᴺ$
+and $Y=(yₙ)ₙ₌₁ᴺ$ for the batch. A **separable loss** combines these penalties
+using an outer reduction $Ψ$:
 
-    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)ⁿ ⟶ ℝ_{≥0}
-        \qq{s.t.} \text{$𝔪(ŷ，y) = 0$ if and only if $yₙ=ŷₙ ∀n=1:N$}
+$$ 𝓛(Ŷ,Y) = Ψ\bigl((ℓ(ŷₙ,yₙ))ₙ₌₁ᴺ\bigr) $$
 
-    I.e., a function that takes a finite number of pairs $(ŷₙ，yₙ)_{n=1:N}$
-    and returns a non-negative scalar. We denote $Y≔(yₙ)ₙ$ and $Ŷ≔(ŷₙ)ₙ$
-    and write $𝔪(ŷ，y)$ for the metric value.
+`Reduction` provides three choices:
 
-2. A metric is called **decomposable**, if and only if it can be written as a composition
-   of an **aggregation function** $Ψ$ and an **intance-wise loss function** $ℓ$:
+- `SUM`: Sum the per-sample penalties.
+- `MEAN`: Average the per-sample penalties.
+- `NONE`: Retain the per-sample penalties without an outer reduction.
 
-    .. math:: 𝔪 = Ψ∘(ℓ×𝗂𝖽) \qq{with} ℓ：𝓨×𝓨 ⟶ ℝ_{≥0} \qq{and} Ψ：⋃_{n∈ℕ}ℝⁿ ⟶ ℝ_{≥0}
+Optional nonnegative sample weights $wₙ$ act in this outer reduction. The weighted sum and
+mean are
 
-    I.e. the function $ℓ$ is applied element-wise to all pairs $(y, ŷ)$ and the function $Ψ$
-    accumulates the results. Typical choices of $ψ$ are:
+$$\begin{aligned}
+    𝓛_{\mathrm{sum}}(Ŷ,Y) &≔ ∑ₙ₌₁ᴺ wₙℓ(ŷₙ,yₙ) \\
+    𝓛_{\mathrm{mean}}(Ŷ,Y) &≔ \frac{∑ₙ₌₁ᴺ wₙℓ(ŷₙ,yₙ)}{∑ₙ₌₁ᴺ wₙ}
+\end{aligned}$$
 
-    - sum: $Ψ(r) = ∑ₙ rₙ$
-    - mean: $Ψ(r) = \frac{1}{N} ∑ₙ rₙ$
-    - median: $Ψ(r) = 𝐌ₙ rₙ ≔ \Median((rₙ)_{n=1:N})$
+The weighted mean requires positive total weight. With `NONE`, sample weights
+multiply the individual penalties. Feature, channel, and time weights instead
+act within each penalty, before the outer reduction.
 
-3. A metric is called **instance-wise** if it can be written in the form
+The `pointwise` module reduces selected feature axes independently for each
+sample. The `sequence` module also accounts for time axes, masks, and sequence
+normalization, allowing batches of sequences with different observed lengths.
+The custom penalties use explicit boolean masks to exclude missing observations;
+NaN padding alone does not identify valid entries.
 
-    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)ⁿ ⟶ ℝ_{≥0}, 𝔪(ŷ，y) = ∑ₙ ω(n,N) ℓ(ŷₙ，yₙ)
-
-    with a weight function $ω：ℕ×ℕ ⟶ ℝ_{≥0}$ and an instance-wise loss function $ℓ$.
-
-4. A metric is called a loss-function, if and only if
-
-   - It is differentiable almost everywhere.
-   - It is non-constant, at least on some open set.
-
-Note that in the context of time-series, we allow the accumulator to depend on the time variable.
+Losses are available as functions and as PyTorch modules. The `penalties`
+subpackage provides the underlying norms and per-sequence errors, while `base`
+defines the shared protocols, base classes, and reductions. The registries below
+collect the available custom losses and penalties, along with imported PyTorch
+losses and their aliases.
 """
 
 __all__ = [
