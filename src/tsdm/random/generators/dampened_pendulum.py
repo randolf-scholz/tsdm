@@ -1,7 +1,7 @@
-r"""Dampened Pendulum Simulation.
+r"""Damped pendulum simulation.
 
 References:
-    - https://en.wikipedia.org/wiki/Pendulum_(mechanics)
+    - [Pendulum mechanics](https://en.wikipedia.org/wiki/Pendulum_(mechanics)).
 """
 
 __all__ = ["DampedPendulum", "DampedPendulumXY"]
@@ -13,87 +13,68 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, truncnorm
 
 from tsdm.random.distributions import RV
-from tsdm.types.aliases import Size
 
-from .base import BaseIVP_Generator
+from .base import BaseIVP_Generator, Size
 
 
 @dataclass(slots=True)
 class DampedPendulum(BaseIVP_Generator):
-    r"""Dampened Pendulum Simulation.
+    r"""Damped pendulum simulation.
 
-    The dampended pendulum is an autonomous system with two degrees of freedom.
+    The pendulum has one mechanical degree of freedom, represented by the angle
+    $θ$ and angular velocity $ω$:
 
-    .. math::
-        dθ/dt = ω
-        dω/dt = -(g/l)⋅sin(θ) - (γ/m)⋅ω
+    $$\begin{aligned}
+    dθ/dt &= ω \\
+    dω/dt &= -(g/l)\sin θ - (γ/m)ω
+    \end{aligned}$$
 
-    Note: (Second equilibrium)
-        Usually the top position is an unstable equilibrium.
-        For the dampened pendulum, the jacobian of the vector field at θ=π, ω=0 is
+    Note:
+        At the upper equilibrium $θ=π$, $ω=0$, the Jacobian is
 
-        .. math::
-            J = [[0, 1], [-(g/l)\cos θ, -γ/m]]
-              = [[0, 1], [g/l, -γ/m]]
+        $$ J = \begin{pmatrix}0 & 1 \\ g/l & -γ/m\end{pmatrix} $$
 
-        Applying the formula for the eigenvalues of a 2x2 matrix,
+        Its eigenvalues are
 
-        .. math:: λ = ½(tr J ± √{(tr J)² - 4⋅det J})
+        $$ λ = \frac{1}{2}\left(-γ/m ± \sqrt{γ²/m² + 4g/l}\right) $$
 
-        We get
+        For positive $g$, $l$, and $m$ and nonnegative damping $γ$, one eigenvalue
+        is positive. The upper equilibrium is therefore unstable.
 
-        .. math:: λ = ½(-γ/m ± √{γ²/m² + 4g/l})
+        The vector field is periodic in $θ$ with period $2π$. Numerical solutions
+        retain an unwrapped angle, which can grow beyond a single revolution.
 
-        The equilibrium is stable if Re(λ)<0, so in this case iff
+        The mechanical energy is
 
-        .. math::
-            ½(-γ/m ± √{γ²/m² + 4g/l}) < 0
-            ⟺ √{γ²/m² + 4g/l}) < γ/m
-            ⟺ 4g/l < 0
+        $$ E = mgl(1 - \cos θ) + \frac{1}{2}ml²ω² $$
 
-        which is obviously false. Hence, the top position is a stable equilibrium.
+        The energy at the upper equilibrium is $E* = 2mgl$. To restrict the motion
+        below this energy, choose initial conditions satisfying
 
-    Note: (periodicity)
-        These equations are periodic with a period of 2π.
-        in particular, quite annoyingly, when solving numerically we can
-        get rather large values for θ. This could be avoided by using a
-        different coordinate system, but we don't do that here.
+        $$\begin{aligned}
+            E₀ &< E* \\
+            1 + \cos θ₀ &> \frac{l}{2g}ω₀² \\
+            |ω₀| &< \sqrt{2(g/l)(1 + \cos θ₀)}
+        \end{aligned}$$
 
-    Warning:
-        This variant leads to un-physical results.
-        This is because the equations only work if the pendulum cannot cross
-        the top position.
-
-    Note: (critical energy)
-        The energy of the pendulum at position θ and velocity ω is
-
-        .. math:: E = m⋅g⋅l⋅(1 - cos θ) + ½⋅m⋅l²⋅ω²
-
-        The critical energy is the energy at the top position, i.e. θ=π, ω=0.
-
-        Therefore, we need to choose the initial conditions such that the
-        energy is below the critical energy.
-
-        .. math:: E* > E₀
-            ⟺ 2⋅m⋅g⋅l > m⋅g⋅l⋅(1 - cos θ₀) + ½⋅m⋅l²⋅ω₀²
-            ⟺ 1 + cos θ₀ > ½⋅(l/g)⋅ω₀²
-            ⟺ ω₀ < √{ 2(g/l)(1 + cos θ₀) }
+        This restriction is optional and is not enforced by the generator. The
+        equations also describe rotations that cross the upper position.
 
     References:
-        - Neural Continuous-Discrete State Space Models
-          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
-          Proceedings of the 40th International Conference on Machine Learning
-          https://proceedings.mlr.press/v202/ansari23a.html
-          https://github.com/clear-nus/NCDSSM
-        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data
-          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt
-          ICLR 2017
-          https://openreview.net/forum?id=HyTqHL5xg
-        - Deep Rao-Blackwellised Particle Filters for Time Series Forecasting
-          Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus
-          NeurIPS 2020
-          https://proceedings.neurips.cc/paper/2020/hash/afb0b97df87090596ae7c503f60bb23f-Abstract.html
-          https://dl.acm.org/doi/10.5555/3495724.3497013
+        - Neural Continuous-Discrete State Space Models \
+          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh \
+          Proceedings of the 40th International Conference on Machine Learning \
+          <https://proceedings.mlr.press/v202/ansari23a.html> \
+          <https://github.com/clear-nus/NCDSSM>
+        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data \
+          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt \
+          ICLR 2017 \
+          <https://openreview.net/forum?id=HyTqHL5xg>
+        - Deep Rao-Blackwellised Particle Filters for Time Series Forecasting \
+          Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus \
+          NeurIPS 2020 \
+          <https://proceedings.neurips.cc/paper/2020/hash/afb0b97df87090596ae7c503f60bb23f-Abstract.html>
+          <https://dl.acm.org/doi/10.5555/3495724.3497013>
     """
 
     _: KW_ONLY
@@ -120,7 +101,7 @@ class DampedPendulum(BaseIVP_Generator):
     r"""Noise distribution."""
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
-        r"""Generate (multiple) initial state(s) y₀."""
+        r"""Generate one or more initial states $y₀$."""
         p = self.initial_state_dist
         theta0 = self.theta0 + p.rvs(size=size, random_state=self.rng).clip(-2, +2)
         omega0 = self.omega0 * p.rvs(size=size, random_state=self.rng).clip(-2, +2)
@@ -136,9 +117,10 @@ class DampedPendulum(BaseIVP_Generator):
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the pendulum.
 
-        sub-signatures:
-            - ``[(...), (2, ) -> (..., 2)``
-            - ``[(,), (..., 2) -> (..., 2)``
+        Supported input and output shapes include:
+
+        - `[(...,), (2,)] -> (..., 2)`
+        - `[(), (..., 2)] -> (..., 2)`
         """
         t = np.asarray(t)
         y = np.asarray(state)
@@ -158,9 +140,9 @@ class DampedPendulum(BaseIVP_Generator):
 
 
 class DampedPendulumXY(DampedPendulum):
-    r"""Dampened Pendulum Simulation.
+    r"""Damped pendulum simulation.
 
-    This variant returns only cartesian coordinates.
+    This variant returns only Cartesian coordinates.
     """
 
     def _make_observations_impl(
@@ -188,7 +170,7 @@ class DampedPendulumXY(DampedPendulum):
         return np.asarray(result)
 
     def validate_observations(self, values: NDArray, /) -> None:
-        r"""Validate constraints on the parameters."""
+        r"""Validate constraints on the observations."""
         if values.min() < -self.length:
             raise ValueError(f"Minimum value {values.min()} < -{self.length}")
         if values.max() > +self.length:

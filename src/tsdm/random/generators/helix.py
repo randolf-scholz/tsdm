@@ -9,35 +9,35 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import multivariate_normal
 
 from tsdm.random.distributions import RV
-from tsdm.types.aliases import Size
 
-from .base import BaseIVP_Generator
+from .base import BaseIVP_Generator, Size
 
 
 @dataclass(slots=True)
 class Helix(BaseIVP_Generator):
-    r"""Helix Motion Simulation.
+    r"""Helix motion simulation.
 
-    The particle moves at constant speed in the given direction, and follows a circular path
-    in the orthogonal plane.
+    The particle moves at constant speed along the given direction and follows a
+    circular path in the orthogonal plane. In coordinates aligned with that direction,
+    the ideal trajectory is
 
-    In the standard setting, the motion is given by:
+    $$\begin{aligned}
+        x(t) &= r\cos(ωt + ϕ) \\
+        y(t) &= r\sin(ωt + ϕ) \\
+        z(t) &= ρt
+    \end{aligned}$$
 
-    .. math::
-         x(t) = r⋅cos(ωt + φ)
-         y(t) = r⋅sin(ωt + φ)
-         z(t) = ρ⋅t
+    The corresponding differential equations are
 
-     Corresponding to the following system of differential equations:
+    $$\begin{aligned}
+        \dot{x} &= -ωy \\
+        \dot{y} &= ωx \\
+        \dot{z} &= ρ
+    \end{aligned}$$
 
-    .. math::
-        \dot{x} = -ω⋅y
-        \dot{y} = +ω⋅x
-        \dot{z} = ρ
-
-    Remark:
-        The required orthogonal basis is computed using the revised Frisvad algorithm.
-        See https://jcgt.org/published/0006/01/01/.
+    Note:
+        The orthogonal basis is computed using the
+        [revised Frisvad algorithm](https://jcgt.org/published/0006/01/01/).
     """
 
     angular_velocity: float = 1.0
@@ -83,7 +83,7 @@ class Helix(BaseIVP_Generator):
         return p.rvs(size=size, random_state=self.rng)
 
     def _make_observations_impl(self, state: NDArray, /) -> NDArray:
-        r"""Additive noise."""
+        r"""Add observation noise to the solution."""
         p = self.observation_noise_dist
         return state + p.rvs(size=state.shape, random_state=self.rng)
 

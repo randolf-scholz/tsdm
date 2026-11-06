@@ -1,7 +1,7 @@
 r"""Lotka–Volterra Simulation.
 
 References:
-    - https://en.wikipedia.org/wiki/Lotka-Volterra_equations
+    - [Lotka–Volterra equations](https://en.wikipedia.org/wiki/Lotka-Volterra_equations).
 """
 
 __all__ = ["LotkaVolterra"]
@@ -14,25 +14,24 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
 
 from tsdm.random.distributions import RV
-from tsdm.types.aliases import Size
 
-from .base import BaseIVP_Generator
+from .base import BaseIVP_Generator, Size
 
 
 @dataclass(slots=True)
 class LotkaVolterra(BaseIVP_Generator):
-    r"""Lotka-Volterra Equations Simulation.
+    r"""Lotka–Volterra predator–prey simulation.
 
-    The Lotka–Volterra equations, also known as the predator–prey equations, are a pair of
-    first-order, non-linear, differential equations frequently used to describe the dynamics of
-    biological systems in which two species interact, one as a predator and the other as prey.
+    The Lotka–Volterra equations are a pair of first-order nonlinear differential
+    equations describing two interacting species, one predator and one prey:
 
-    .. math::
-        \dot{x} = α⋅x - β⋅x⋅y
-        \dot{y} = δ⋅x⋅y - γ⋅y
+    $$\begin{aligned}
+        \dot{x} &= αx - βxy \\
+        \dot{y} &= δxy - γy
+    \end{aligned}$$
 
-    Here, x is the number of prey, y is the number of predators, and α, β, γ, δ are positive
-    real parameters describing the interaction of the two species.
+    Here, $x$ is the prey population, $y$ is the predator population, and
+    $α$, $β$, $γ$, and $δ$ are positive real parameters describing their interaction.
     """
 
     X_MIN: ClassVar[float] = 0.0
@@ -40,7 +39,7 @@ class LotkaVolterra(BaseIVP_Generator):
     _: KW_ONLY
 
     alpha: float = 1.0
-    r"""Prey reproduciton rate."""
+    r"""Prey reproduction rate."""
     beta: float = 0.5
     r"""Prey capture rate."""
     gamma: float = 0.7
@@ -48,9 +47,9 @@ class LotkaVolterra(BaseIVP_Generator):
     delta: float = 0.3
     r"""Predator feeding rate."""
     prey0: float = 1.0
-    r"""Initial angle."""
+    r"""Baseline initial prey population."""
     predator0: float = 1.0
-    r"""Initial angular velocity."""
+    r"""Baseline initial predator population."""
 
     @property
     def observation_noise_dist(self) -> RV:
@@ -63,7 +62,7 @@ class LotkaVolterra(BaseIVP_Generator):
         return univariate_normal(loc=0, scale=1)
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
-        r"""Generate (multiple) initial state(s) y₀."""
+        r"""Generate one or more initial states $y₀$."""
         p = self.initial_state_dist
         prey_noise = p.rvs(size=size, random_state=self.rng).clip(-2, +2)
         predator_noise = p.rvs(size=size, random_state=self.rng).clip(-2, +2)
@@ -79,11 +78,12 @@ class LotkaVolterra(BaseIVP_Generator):
 
     # Float[..., $N], Float[..., $N, 2] -> Float[..., $N, 2]
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
-        r"""Vector field of the pendulum.
+        r"""Vector field of the Lotka–Volterra model.
 
-        sub-signatures:
-            - ``[(...,), (2, ) -> (..., 2)``
-            - ``[(,), (..., 2) -> (..., 2)``
+        Supported input and output shapes include:
+
+        - `[(...,), (2,)] -> (..., 2)`
+        - `[(), (..., 2)] -> (..., 2)`
         """
         t = np.asarray(t)
         state = np.asarray(state)
@@ -107,6 +107,6 @@ class LotkaVolterra(BaseIVP_Generator):
         return x.clip(min=self.X_MIN)
 
     def validate_solution(self, x: NDArray, /) -> None:
-        r"""Validate constraints on the parameters."""
+        r"""Validate constraints on the solution."""
         if (x_min := x.min()) < self.X_MIN:
             raise ValueError(f"Lower bound violated: {x_min}.")

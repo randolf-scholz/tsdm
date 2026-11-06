@@ -1,12 +1,12 @@
 r"""Bouncing Ball Simulation.
 
 References:
-    - https://github.com/rtqichen/torchdiffeq/blob/master/examples/bouncing_ball.py
-    - Neural Continuous-Discrete State Space Models
-      Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
-      Proceedings of the 40th International Conference on Machine Learning
-      https://proceedings.mlr.press/v202/ansari23a.html
-      https://github.com/clear-nus/NCDSSM
+    - [Bouncing ball example](https://github.com/rtqichen/torchdiffeq/blob/master/examples/bouncing_ball.py).
+    - Neural Continuous-Discrete State Space Models \
+      Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh \
+      Proceedings of the 40th International Conference on Machine Learning \
+      <https://proceedings.mlr.press/v202/ansari23a.html> \
+      <https://github.com/clear-nus/NCDSSM>
 """
 
 __all__ = ["BouncingBall"]
@@ -18,25 +18,19 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import truncnorm
 
-from tsdm.types.aliases import Size
-
-from .base import BaseIVP_Generator
+from .base import BaseIVP_Generator, Size
 
 
 @dataclass(slots=True)
 class BouncingBall(BaseIVP_Generator):
-    r"""Bouncing Ball Simulation.
+    r"""Bouncing ball simulation.
 
-    NOTE: This simulation differs from the reference in two regards:
+    The position $x$ and noisy observation $y$ stay within $[-1, 1]$.
+    Bounce times are computed exactly, and each bounce reverses the velocity.
+    Observations $yₖ$ are sampled from a truncated normal distribution.
 
-    1. The original didn't ensure that x∈[-1,+1].
-    2. The original didn't ensure that y∈[-1,+1].
-
-    We fix ① by computing the exact time of the bounce and then
-    setting the velocity to the negative of the previous velocity.
-    We fix ② by sampling yₖ from a truncated normal distribution.
-
-    For a given velocity v₀, the period is $2/\abs{v₀}$.
+    For an initial velocity $v₀ ≠ 0$, the full period is
+    $2(xₘₐₓ - xₘᵢₙ)/|v₀|$, or $4/|v₀|$ for the default bounds.
     """
 
     _: KW_ONLY
@@ -46,14 +40,14 @@ class BouncingBall(BaseIVP_Generator):
     x_max: Final[float] = +1.0
     r"""Upper bound of the ball's position."""
     v_min: Final[float] = 0.05
-    r"""Minimum velocity of the ball."""
+    r"""Minimum speed of the ball."""
     v_max: Final[float] = 0.5
-    r"""Maximum velocity of the ball."""
+    r"""Maximum speed of the ball."""
     y_noise: Final[float] = 0.05
     r"""Standard deviation of the observation noise."""
 
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
-        r"""Generate (multiple) initial state(s) y₀."""
+        r"""Generate one or more initial states $y₀$."""
         x0 = self.rng.uniform(low=self.x_min, high=self.x_max, size=size)
         d0 = self.rng.choice([-1, 1], size=size)
         v0 = d0 * self.rng.uniform(low=self.v_min, high=self.v_max, size=size)
@@ -72,7 +66,8 @@ class BouncingBall(BaseIVP_Generator):
     def _solve_ivp_impl(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
         r"""Solve the initial value problem.
 
-        NOTE: possibly not properly vectorized.
+        Note:
+            Vectorization across arbitrary batch shapes has not been verified.
         """
         # cast to array
         t = np.asarray(t)
@@ -123,7 +118,7 @@ class BouncingBall(BaseIVP_Generator):
         return np.stack([x, v], axis=-1)
 
     def validate_solution(self, sol: NDArray, /) -> None:
-        r"""Validate constraints on the parameters."""
+        r"""Validate constraints on the solution."""
         x = sol[..., 0]
         if (x_min := x.min()) < self.x_min:
             raise ValueError(f"Lower bound violated: {x_min}<{self.x_min}.")

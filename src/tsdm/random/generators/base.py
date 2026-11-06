@@ -1,26 +1,20 @@
-r"""Generators for synthetic time series dataset.
+r"""Generators for synthetic time series datasets.
 
-Contrary to `tsdm.dataset`, which contains static, real-world dataset, this module
-contains generators for synthetic dataset. By design, each generator consists of
+Unlike `tsdm.datasets`, which provides static datasets, this module provides
+configurable generators for sampling synthetic data from a ground-truth
+distribution $p(x, y)$. Such distributions can also be used to study Bayes error,
+the minimum achievable prediction error.
 
-- Configuration parameters, e.g. number of dimensions etc.
-- Allows sampling from the data ground truth distribution $p(x,y)$.
-- Allows estimating the Bayes Error, i.e. the best performance possible on the dataset.
-
-
-Note: Constrained differential equations:
-
-- initial conditions are necessary to get unqiue solutions.
-- however, instead of initial conditions, why not consider a constraint like minimizing some
-  arbitrary error term?
-  -> existence & uniquness of solutions?
-
+Note:
+    Initial conditions select a solution of a differential equation when the
+    relevant existence and uniqueness assumptions hold. Replacing initial
+    conditions with an optimization constraint requires a separate analysis
+    of existence and uniqueness.
 """
 
-# note multiplying a diagonal matrix from the right is equivalent to scaling the rows
-#  multiplication from the left scales the columns
-
 __all__ = [
+    # Types
+    "Size",
     # ABCs & Protocols
     "FrozenIVPSolver",
     "IVP_Generator",
@@ -47,7 +41,14 @@ from scipy.integrate import solve_ivp as scipy_solve_ivp
 from tsdm.constants import RNG
 from tsdm.pprint import pprint_repr
 from tsdm.random.distributions import TimeSeriesRV
-from tsdm.types.aliases import Size
+
+type Size = int | tuple[int, ...]
+r"""Type alias for a size specified as an integer or a tuple of dimensions.
+
+Note:
+    `None` is not included in this alias. Sampling APIs may accept `size=None`
+    separately to request a scalar.
+"""
 
 
 class ODE[T](Protocol):  # +T
@@ -56,19 +57,20 @@ class ODE[T](Protocol):  # +T
     @abstractmethod
     # Float[$N], Float[..., $N,*D] -> Float[..., $N,*D]
     def __call__(self, /, t: ArrayLike, state: ArrayLike) -> T:
-        r"""Evaluate the vector field at given time and state.
+        r"""Evaluate the vector field at the given time and state.
 
-        Sub-signatures:
-            - ``[(,), (..., *D) -> (..., *D)``
-            - ``[(...,), (*D,) -> (..., *D)``
-            - ``[(,), (*D,) -> (*D,)``
+        Supported input and output shapes include:
+
+        - `[(), (..., *D)] -> (..., *D)`
+        - `[(...,), (*D,)] -> (..., *D)`
+        - `[(), (*D,)] -> (*D,)`
 
         Args:
-            t: list of time stamps
-            state: state of the system at time t
+            t: Scalar time or array of timestamps.
+            state: State of the system at time $t$.
 
         Returns:
-            $f(t, y(t))$ value of the vector field at time $t$ and state $y(t)$.
+            The vector field $f(t, y(t))$ at time $t$ and state $y(t)$.
         """
         ...
 
@@ -76,24 +78,21 @@ class ODE[T](Protocol):  # +T
 class IVP_Solver[T](Protocol):  # +T
     r"""Protocol for initial value problem solvers.
 
-    This is designed to be compatible with several solvers from different libraries:
+    Adapters can expose solvers from different libraries through this interface.
+    The underlying libraries use different conventions:
 
-    Examples:
-        - `scipy.integrate.odeint`
-            - expects system-component to be ``Callable[[t, y], ...]`` or ``Callable[[t, y], ...]``
-        - `scipy.integrate.solve_ivp`
-            - expects system to be ``Callable[[t, y], ...]``
-        - `torchdiffeq.odeint`
-            - expects system to be ``Callable[[t, y], ...]``
-        - `torchsde.sdeint`
-            - expects system to be SDE object with methods
-                - ``f(self, t, y) -> ...`` (drift)
-                - ``g(self, t, y) -> ...`` (diffusion)
-        - `brainpy.sdeint` decorated functions
+    - `scipy.integrate.odeint` accepts a function of `(y, t)` by default,
+        or `(t, y)` with `tfirst=True`.
+    - `scipy.integrate.solve_ivp` and `torchdiffeq.odeint` accept a function
+        of `(t, y)`.
+    - `torchsde.sdeint` accepts an SDE object with drift method `f(t, y)`
+        and diffusion method `g(t, y)`.
+    - `brainpy.sdeint` provides decorated integration functions.
 
     Note:
-        - `scipy.integrate.solve_ivp` has y0 before t, therefore, we require that
-          `y0` is passed as a keyword argument.
+        This protocol takes evaluation times as its second positional argument and
+        requires `y0` as a keyword argument. Adapters must translate that convention
+        to the underlying solver's signature.
     """
 
     @abstractmethod
@@ -102,18 +101,18 @@ class IVP_Solver[T](Protocol):  # +T
         r"""Solve the initial value problem.
 
         Args:
-            system: Some object that represents the dynamics of the systems.
-            t: sorted list of N time points at which to solve for y.
-            y0: Initial state at t[0], tensor of shape ``(..., *D)``.
+            system: Object representing the dynamics of the system.
+            t: Sorted sequence of $N$ evaluation times.
+            y0: Initial state at `t[0]`, tensor of shape `(..., *D)`.
 
         Returns:
-            array-like object y[t_i] containing the solution of the initial value problem.
+            Array-like object `y[tᵢ]` containing the solution of the initial value problem.
         """
         ...
 
 
 class FrozenIVPSolver[T](Protocol):
-    r"""Frozen version of the IVP_Solver Protocol."""
+    r"""Protocol for an IVP solver with a fixed system."""
 
     def __call__(self, t: T, /, *, y0: T) -> T: ...
 
@@ -121,7 +120,7 @@ class FrozenIVPSolver[T](Protocol):
 @pprint_repr
 @dataclass(slots=True, frozen=True)
 class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
-    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    r"""Wrap `scipy.integrate.solve_ivp` with a fixed system and solver options."""
 
     class METHODS(StrEnum):
         r"""Methods for solving the initial value problem."""
@@ -157,7 +156,7 @@ class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
 
 
 def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> NDArray:
-    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    r"""Wrapped version of `scipy.integrate.solve_ivp` that matches the `IVP_Solver` protocol."""
     y0 = np.asarray(y0)
     t_eval = np.asarray(t)
     t_span = (t_eval.min(), t_eval.max())
@@ -168,27 +167,23 @@ def solve_ivp(system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any) -> 
 
 @runtime_checkable
 class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
-    r"""Protocol for Generators that solve Initial Value Problems (IVP).
+    r"""Protocol for generators that solve initial value problems (IVPs).
 
-    Needs to implement the following things:
+    Implementations provide the following methods:
 
-    - `get_initial_state` to generate initial states x₀
-    - `solve_ivp` to solve the initial value problem
-    - `make_observations` to create observations from the solution
+    - `get_initial_state` generates initial states $x₀$.
+    - `solve_ivp` solves the initial value problem.
+    - `make_observations` creates observations from the solution.
 
-    The goal is a general framework that works for both ODEs, SDEs, and discrete-time systems.
-    Thus, an IVP-Generator may incorporate multiple random distributions:
+    The framework is intended for ODEs, SDEs, and discrete-time systems. A generator
+    may incorporate distributions for the initial state, observation noise, and
+    process noise.
 
-    - a distribution for the initial state x₀
-    - a distribution for the observation noise
-    - a distribution for the process noise
-
-    Examples:
-        Nonlinear ODE
-
-        .. math::
-             \dot{x}(t) &= f(t, x(t)) \\
-                   y(t) &= g(t, x(t))
+    Example:  A nonlinear ODE with an observation function
+        $$\begin{aligned}
+            \dot{x}(t) &= f(t, x(t)) \\
+            y(t) &= g(t, x(t))
+        \end{aligned}$$
     """
 
     # region abstract methods ----------------------------------------------------------
@@ -235,10 +230,10 @@ class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
 
 
 class BaseIVP_Generator(IVP_Generator[NDArray]):
-    r"""Base class for IVP_Generators based on numpy."""
+    r"""Base class for IVP generators using NumPy arrays."""
 
     rng: Generator = RNG
-    r"""the internal Random Number Generator."""
+    r"""Internal random number generator."""
 
     @property
     def ivp_solver(self) -> IVP_Solver[NDArray]:
@@ -252,7 +247,7 @@ class BaseIVP_Generator(IVP_Generator[NDArray]):
     # region implementation ------------------------------------------------------------
     @abstractmethod
     def _get_initial_state_impl(self, *, size: Size = ()) -> NDArray:
-        r"""Generate (multiple) initial state(s) y₀."""
+        r"""Generate one or more initial states $y₀$."""
         ...
 
     @abstractmethod
@@ -285,7 +280,7 @@ class BaseIVP_Generator(IVP_Generator[NDArray]):
 
     @final
     def get_initial_state(self, size: Size = ()) -> NDArray:
-        r"""Generate (multiple) initial state(s) y₀."""
+        r"""Generate one or more initial states $y₀$."""
         # get the initial state
         y0 = self._get_initial_state_impl(size=size)
         # project onto the constraint set
@@ -336,9 +331,9 @@ class BaseIVP_Generator(IVP_Generator[NDArray]):
         r"""Validate constraints on the initial state."""
 
     def validate_observations(self, obs: NDArray, /) -> None:
-        r"""Validate constraints on the parameters."""
+        r"""Validate constraints on the observations."""
 
     def validate_solution(self, state: NDArray, /) -> None:
-        r"""Validate constraints on the parameters."""
+        r"""Validate constraints on the solution."""
 
     # endregion validation and projection ----------------------------------------------

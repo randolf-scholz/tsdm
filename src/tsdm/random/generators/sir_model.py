@@ -9,28 +9,30 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from tsdm.random.distributions import Dirichlet
-from tsdm.types.aliases import Size
 
-from .base import BaseIVP_Generator
+from .base import BaseIVP_Generator, Size
 
 
 @dataclass(slots=True)
 class SIR(BaseIVP_Generator):
     r"""SIR model from epidemiology.
 
-    .. math::
-        \dot{S} &= -β⋅I⋅S        \\
-        \dot{I} &= +β⋅I⋅S - α⋅I  \\
-        \dot{R} &= α⋅I           \\
+    $$\begin{aligned}
+        \dot{S} &= -βIS \\
+        \dot{I} &= βIS - αI \\
+        \dot{R} &= αI \\
         S + I + R &= 1
+    \end{aligned}$$
 
-    S: susceptible population (fraction)
-    I: infected population (fraction)
-    R: recovered population (fraction)
-    α: recovery rate (probability of recovery per unit time)
-    β: transmission rate (probability of transmission per contact per unit time)
-    𝓡₀ = β / α is the basic reproduction number.
-    -dS/dt: incidence rate
+    The compartments are population fractions:
+
+    - $S$: susceptible population.
+    - $I$: infected population.
+    - $R$: recovered population.
+
+    The parameter $α$ is the recovery rate, and $β$ is the transmission rate.
+    For $α > 0$, $𝓡₀ = β/α$ is the basic reproduction number in a fully
+    susceptible population. The incidence rate is $-dS/dt = βIS$.
     """
 
     X_MIN: ClassVar[float] = 0.0
@@ -46,9 +48,12 @@ class SIR(BaseIVP_Generator):
     def _get_initial_state_impl(
         self, *, size: Size = (), weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
-        r"""Generate (multiple) initial state(s) y₀.
+        r"""Generate one or more initial states $y₀$.
 
-        We simply use a Dirichlet distribution with parameters 100:1:0.
+        The normalized gamma draws use concentration weights `weights`, defaulting
+        to `(100, 1, 0)`. A zero weight fixes that compartment at zero; the default
+        therefore has no recovered population. The weights must be nonnegative,
+        with at least one positive entry.
         """
         return Dirichlet.rvs(weights, size=size, random_state=self.rng)
 
@@ -57,8 +62,8 @@ class SIR(BaseIVP_Generator):
     ) -> NDArray:
         r"""Create observations from the solution.
 
-        We sample from a dirichlet distribution with parameters
-        [S, I, R]/noise.
+        Sample normalized gamma draws with concentration weights `[S, I, R] / noise`.
+        The noise scale must be positive. Zero population fractions remain zero.
         """
         return Dirichlet.rvs(sir / noise, random_state=self.rng)
 
@@ -93,7 +98,7 @@ class SIR(BaseIVP_Generator):
         return x
 
     def validate_solution(self, x: NDArray, /) -> None:
-        r"""Validate constraints on the parameters."""
+        r"""Validate constraints on the solution."""
         if (x_min := x.min()) < self.X_MIN:
             raise ValueError(f"Lower bound violated: {x_min}.")
         if (x_max := x.max()) > self.X_MAX:

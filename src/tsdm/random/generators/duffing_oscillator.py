@@ -15,7 +15,7 @@ class DuffingOscillator(BaseIVP_Generator):
     r"""Duffing Oscillator Simulation.
 
     References:
-        - https://en.wikipedia.org/wiki/Duffing_equation
+        - [Duffing equation](https://en.wikipedia.org/wiki/Duffing_equation).
     """
 
     _: KW_ONLY
@@ -25,7 +25,7 @@ class DuffingOscillator(BaseIVP_Generator):
     beta: float = 1.0
     r"""Nonlinear stiffness."""
     delta: float = 0.0
-    r"""Damping coefficient  (default: undamped)."""
+    r"""Damping coefficient (default: undamped)."""
     gamma: float = 0.0
     r"""Amplitude of periodic driving force (default: no driving force)."""
     omega: float = 1.0
