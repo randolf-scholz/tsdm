@@ -93,30 +93,25 @@ class LazyValue[V]:  # +V
         return arg
 
     def __repr__(self) -> str:
-        r"""Return a string representation of the function."""
+        r"""Return a placeholder representation with the value's type hint."""
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
 @pprint_repr
 class LazyDict[K = Any, V = Any](dict[K, V]):
-    r"""A Lazy Dictionary implementation.
+    r"""Dictionary that evaluates and caches lazily registered values on access.
+
+    Use `new` or `set_lazy` to register callables that can be invoked without
+    arguments. To supply arguments, wrap the callable in a `LazyValue` or pass
+    `args` and `kwargs` to `set_lazy`. Use `from_func` to pass each key as
+    the first argument to a shared function.
 
     Note:
-        - Getter methods `__getitem__`, ``.pop()`` and ``.get()`` trigger the lazy evaluation.
-        - View-operations ``.values()`` and ``.items()`` do not!
-        - Using `__setitem__` or ``.setdefault`` does not create `LazyValue` entries.
-        - Use ``.get_lazy`` and ``.set_lazy`` to lookup/create `LazyValue` entries.
-
-    Values are allowed to be one of the following:
-
-    - LazyFunction
-    - Callable that takes exactly 0 mandatory args
-    - Callable that takes exactly 1 mandatory positional arg and no mandatory kwargs
-      - In this case, the key will be used as the first argument
-    - tuple of the form tuple[Callable] as above
-    - tuple of the form tuple[Callable, tuple]
-    - tuple of the form tuple[Callable, dict]
-    - tuple of the form tuple[Callable, tuple, dict]
+        - `__getitem__`, `get`, `pop`, and `popitem` evaluate lazy values.
+        - `values` and `items` return views without evaluating lazy values.
+        - `__setitem__` and `setdefault` store values as supplied; they do not
+          wrap callables in `LazyValue`.
+        - `get_lazy` retrieves a stored value without evaluating it.
     """
 
     @overload
@@ -164,8 +159,8 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
         Args:
             iterable: The keys to use.
             func: The function to use. The first argument is the key.
-            args: Additonal fixed positional arguments to pass to the function.
-            kwargs: Additonal fixed keyword arguments to pass to the function.
+            args: Additional fixed positional arguments to pass to the function.
+            kwargs: Additional fixed keyword arguments to pass to the function.
             type_hint: The type hint of the values. Default: infer from `func`.
         """
         type_hint = get_return_typehint(func) if type_hint is None else type_hint
@@ -200,7 +195,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     def get_lazy[T](
         self, key: K, default: Optional[T] = None, /
     ) -> V | LazyValue[V] | T | None:
-        r"""Get the value for the key lazily."""
+        r"""Return the stored value or default without triggering lazy evaluation."""
         return super().get(key, default)
 
     def set_lazy(
@@ -281,5 +276,8 @@ def lazy_dict[K = Never, V = Any](
     /,
     **kwargs: Lazy[V],
 ) -> LazyDict[K, V] | LazyDict[K | str, V]:
-    r"""Create a new LazyDict from an iterable of keys and a Lazy."""
+    r"""Create a LazyDict from a mapping or iterable of key-callable pairs.
+
+    Keyword arguments register additional lazy values under string keys.
+    """
     return LazyDict.new(arg, **kwargs)

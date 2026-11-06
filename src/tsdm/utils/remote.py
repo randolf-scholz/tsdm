@@ -313,7 +313,11 @@ def _download_io(
 
 
 class _delete_if_failed(AbstractContextManager):
-    r"""Context manager for downloading a file from a URL to an IO stream using httpx."""
+    r"""Delete a newly created file if an exception leaves the context.
+
+    The path must not exist on entry and must exist on exit. Exceptions propagate
+    after the partial file is deleted.
+    """
 
     def __init__(self, path: Path, /) -> None:
         self.path = path
@@ -351,7 +355,8 @@ def _get_content_length(response: Response, /) -> Optional[int]:
 def _url_to_relative_path(base_url: str, file_url: str) -> PurePosixPath:
     r"""Convert a URL to a relative path based on a base URL.
 
-    Robost alternative to ``os.path.relpath(base_url, url)``.
+    Decode URL paths before computing the relative path. Both URLs must share
+    a scheme and host, and the file path must lie under the base path.
     """
     base = urlparse(base_url)
     file = urlparse(file_url)
@@ -379,7 +384,7 @@ class _LinkParser(HTMLParser):
 
 
 def _yield_suburls(url: str, /, *, client: Client) -> Iterator[str]:
-    r"""Yield recursively suburls from an url using httpx."""
+    r"""Recursively yield file URLs from linked directory listings using httpx."""
     response = client.get(url)
     response.raise_for_status()
 

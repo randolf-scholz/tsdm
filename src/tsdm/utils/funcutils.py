@@ -49,7 +49,7 @@ VAR_POSITIONAL: Final = Parameter.VAR_POSITIONAL
 
 
 class TaggedCallable[**P, R](Protocol):
-    r"""Protocol for callables with a ``__tags__`` dictionary."""
+    r"""Protocol for callables with a `__tags__` dictionary."""
 
     __tags__: dict[str, Any]
 
@@ -70,7 +70,7 @@ def tags(**kwargs: object) -> _MapsToTagged:
 
 
 def accepts_varkwargs(func: Fn[..., Any], /) -> bool:
-    r"""Check if function accepts kwargs."""
+    r"""Check whether a function accepts arbitrary keyword arguments."""
     sig = inspect.signature(func)
     return any(p.kind is VAR_KEYWORD for p in sig.parameters.values())
 
@@ -99,7 +99,7 @@ def dataclass_args_kwargs(
 
 
 def get_parameter_kind(s: str | ParameterKind, /) -> set[ParameterKind]:
-    r"""Get parameter kind from string."""
+    r"""Return the parameter kinds selected by a kind or string alias."""
     if isinstance(s, ParameterKind):
         return {s}
 
@@ -172,7 +172,7 @@ def get_mandatory_kwargs(func: Fn, /) -> set[str]:
 
 
 def get_parameter(func: Fn, name: str, /) -> Parameter:
-    r"""Get parameter from function."""
+    r"""Get a named parameter from a function's signature."""
     sig = inspect.signature(func)
     if name not in sig.parameters:
         raise ValueError(f"{func=} takes np argument named {name!r}.")
@@ -180,14 +180,14 @@ def get_parameter(func: Fn, name: str, /) -> Parameter:
 
 
 def yield_return_nodes(nodes: Iterable[AST], /) -> Iterator[Return]:
-    r"""Yields all exit points of a function as ast nodes."""
+    r"""Yield return statements from an iterable of AST nodes."""
     for node in nodes:
         if isinstance(node, Return):
             yield node
 
 
 def _yield_names(nodes: Iterable[AST], /) -> Iterator[str]:
-    r"""Yields variable names from ast nodes."""
+    r"""Yield identifiers from AST name nodes."""
     for obj in nodes:
         match obj:
             case Name(id=name):
@@ -197,7 +197,11 @@ def _yield_names(nodes: Iterable[AST], /) -> Iterator[str]:
 
 
 def get_exit_point_names(func: Fn, /) -> set[tuple[str, ...]]:
-    r"""Return the variable names used in exit nodes."""
+    r"""Return the variable names in tuple-valued return statements.
+
+    Each return value must be a tuple of names. Other return values raise
+    `TypeError`.
+    """
     tree = ast.parse(getsource(func))
     iter_nodes = ast.walk(tree)
 
@@ -212,7 +216,11 @@ def get_exit_point_names(func: Fn, /) -> set[tuple[str, ...]]:
 
 
 def get_return_typehint(func: Fn, /) -> Any:
-    r"""Get the return typehint of a function."""
+    r"""Return a function's return annotation for display.
+
+    Return `"Unknown"` when no annotation is present and the type's name when
+    the annotation is a type. Other annotations are returned unchanged.
+    """
     sig = inspect.signature(func)
     ann = sig.return_annotation
 
@@ -230,7 +238,7 @@ def is_mandatory_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_mandatory_arg(func: Fn, name: str, /) -> bool: ...
 def is_mandatory_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool:
-    r"""Check if parameter is mandatory."""
+    r"""Check whether a parameter is required and nonvariadic."""
     match arg, name:
         case Parameter(kind=kind, default=default), None:
             return default is Parameter.empty and kind not in {
@@ -249,7 +257,7 @@ def is_positional_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_arg(func: Fn, name: str, /) -> bool: ...
 def is_positional_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool:
-    r"""Check if parameter is positional argument."""
+    r"""Check whether a parameter accepts positional arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {
@@ -269,7 +277,7 @@ def is_positional_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_only_arg(func: Fn, name: str, /) -> bool: ...
 def is_positional_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
-    r"""Check if parameter is positional only argument."""
+    r"""Check whether a parameter accepts only positional arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
@@ -285,7 +293,7 @@ def is_keyword_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_arg(func: Fn, name: str, /) -> bool: ...
 def is_keyword_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
-    r"""Check if parameter is keyword argument."""
+    r"""Check whether a parameter accepts keyword arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {
@@ -305,7 +313,7 @@ def is_keyword_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_only_arg(func: Fn, name: str, /) -> bool: ...
 def is_keyword_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
-    r"""Check if parameter is keyword-only argument."""
+    r"""Check whether a parameter accepts only keyword arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {KEYWORD_ONLY, VAR_KEYWORD}
@@ -321,7 +329,7 @@ def is_variadic_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_variadic_arg(func: Fn, name: str, /) -> bool: ...
 def is_variadic_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
-    r"""Check if parameter is variadic argument."""
+    r"""Check whether a parameter accepts variadic arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
             return kind in {VAR_POSITIONAL, VAR_KEYWORD}
@@ -333,13 +341,15 @@ def is_variadic_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
 
 
 def prod_fn(*funcs: Fn[[Any], Any]) -> Fn[[tuple], tuple]:
-    r"""Cartesian Product of Functions.
+    r"""Return a function that applies each supplied function to its matching input.
 
-    It is assumed every function takes a single positional argument.
+    Each function must accept a single positional argument. The returned function
+    takes a tuple with one input per function and returns a tuple of results.
+    A mismatched number of inputs raises `ValueError`.
     """
 
     def __prod_fn(args: tuple, /) -> tuple:
-        r"""Argument is a tuple with the input for each function."""
+        r"""Apply each function to the corresponding item in the input tuple."""
         return tuple(f(arg) for f, arg in zip(funcs, args, strict=True))
 
     return __prod_fn
@@ -354,16 +364,21 @@ def recurse_on_nested_builtin[T, R](
     # optional arguments
     leaf_priotizied: bool = False,
 ) -> NestedBuiltin[R]:
-    r"""Recursively apply a function to a nested data structures.
+    r"""Recursively apply a function to the leaves of a nested data structure.
 
     Args:
         arg: Nested data structure to apply the function to.
         leaf_fn: Function to apply to the leaf nodes.
         leaf_type: Type of the leaf nodes.
-        leaf_priotizied: Whether to check for leaf-type first or last.
+        leaf_priotizied: Whether to check the leaf type before container types.
+            If false, supported containers are traversed even if they match
+            `leaf_type`.
 
     Returns:
-        Nested data structure.
+        A structure with the same container types and transformed leaf values.
+
+    Raises:
+        TypeError: If a value is neither a supported builtin container nor a leaf.
     """
 
     def recurse(obj: NestedBuiltin[T], /) -> NestedBuiltin[R]:

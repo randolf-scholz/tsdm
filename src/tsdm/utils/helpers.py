@@ -53,34 +53,46 @@ def flatten_dict[Key, Key_flat](
     r"""Flatten dictionaries recursively.
 
     Args:
-        d: dictionary to flatten
-        recursive: whether to flatten recursively.
-            If `recursive` is an integer, flattens that many levels.
-        join_fn: function to join keys
-            Defaults to ``'.'.join``, implicitly assuming that all keys are strings.
-        split_fn: function to split keys
-            Defaults to ``str.split('.')``, implicitly assuming that all keys are strings.
+        d: Dictionary to flatten.
+        recursive: Whether to flatten all levels.
+            An integer specifies the maximum path length to flatten; `1`
+            preserves the top-level structure.
+        join_fn: Function to join keys.
+            Defaults to `'.'.join`, implicitly assuming that all keys are strings.
+        split_fn: Function to split keys.
+            Defaults to `lambda s: s.split(".")`, assuming that all keys are strings.
 
-    Example: flattening with string keys.
-        When ``join_fn`` and ``split_fn`` are not provided, they default to
-        ``join_fn = ".".join`` and ``split_fn = lambda s: s.split(".")``,
+    Example: Flattening with string keys.
+        When `join_fn` and `split_fn` are not provided, they default to
+        `join_fn = ".".join` and `split_fn = lambda s: s.split(".")`,
         implicitly assuming that all keys are strings.
-        This will combine string keys like ``"a"`` and ``"b"`` into ``"a.b"``.
+        This will combine string keys like `"a"` and `"b"` into `"a.b"`.
 
+        ```pycon
         >>> flatten_dict({"a": {"b": 1, "c": 2}})
         {'a.b': 1, 'a.c': 2}
 
+        ```
+
+        ```pycon
         >>> flatten_dict({"a": {"b": {"x": 2}, "c": 2}})
         {'a.b.x': 2, 'a.c': 2}
 
-    Example: flattening with custom key functions.
-        Using ``join_fn = tuple`` and ``split_fn = lambda s: s`` will combine
-        keys like ``("a", "b")`` and ``("a", "c")`` into ``("a", "b", "c")``.
+        ```
+
+    Example: Flattening with custom key functions.
+        Using `join_fn = tuple` and `split_fn = lambda s: s` combines
+        keys such as `"a"`, `"b"`, and `"c"` along a nested path into
+        the tuple `("a", "b", "c")`.
         This choice works for arbitrary key types.
 
+        ```pycon
         >>> flatten_dict({"a": {"b": 1, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
         {('a', 'b'): 1, ('a', 'c'): 2}
 
+        ```
+
+        ```pycon
         >>> flatten_dict(
         ...     {"a": {"b": {"x": 2}, "c": 2}},
         ...     join_fn=tuple,
@@ -88,21 +100,32 @@ def flatten_dict[Key, Key_flat](
         ... )
         {('a', 'b', 'x'): 2, ('a', 'c'): 2}
 
-    Example: partial flattening with ``recursive``.
+        ```
+
+    Example: Partial flattening with `recursive`.
+        ```pycon
         >>> flatten_dict({"a": {"i": {"x": 0}, "b": {"y": 1}}})
         {'a.i.x': 0, 'a.b.y': 1}
 
+        ```
+
+        ```pycon
         >>> flatten_dict(
         ...     {"a": {"i": {"x": 0}, "b": {"y": 1}}},
         ...     recursive=2,
         ... )
         {'a.i': {'x': 0}, 'a.b': {'y': 1}}
 
+        ```
+
+        ```pycon
         >>> flatten_dict(
         ...     {"a": {"i": {"x": 0}, "b": {"y": 1}}},
         ...     recursive=1,
         ... )
         {'a': {'i': {'x': 0}, 'b': {'y': 1}}}
+
+        ```
     """
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[Key_flat, Any] = {}
@@ -150,17 +173,34 @@ def unflatten_dict[Key, Key_flat](
 ) -> NestedDict[Key, Any]:
     r"""Unflatten dictionaries recursively.
 
+    Args:
+        d: Dictionary with compound keys to expand.
+        recursive: Whether to expand all key components.
+            An integer specifies how many levels to expand, leaving the remaining
+            components joined as keys.
+        join_fn: Function to join remaining key components. Defaults to `".".join`.
+        split_fn: Function to split compound keys. Defaults to splitting on `"."`.
+
+    Raises:
+        KeyError: If an expanded key conflicts with an existing value.
+
     Example: Unflattening with string keys.
-        When ``join_fn`` and ``split_fn`` are not provided, they default to
-        ``join_fn = ".".join`` and ``split_fn = lambda s: s.split(".")``,
+        When `join_fn` and `split_fn` are not provided, they default to
+        `join_fn = ".".join` and `split_fn = lambda s: s.split(".")`,
         implicitly assuming that all keys are strings.
-        This will split up keys like ``"a.b"`` into ``{"a": {"b": ...}}``.
+        This will split up keys like `"a.b"` into `{"a": {"b": ...}}`.
+
+        ```pycon
         >>> unflatten_dict({"a.b": 1, "a.c": 2})
         {'a': {'b': 1, 'c': 2}}
 
-    Example: unflattening with custom join function.
-        Using ``join_fn = tuple`` and ``split_fn = lambda s: s`` will split up
-        keys like ``("a", "b", "c")`` into ``{"a": {"b": {"c": ...}}}``.
+        ```
+
+    Example: Unflattening with custom key functions.
+        Using `join_fn = tuple` and `split_fn = lambda s: s` will split up
+        keys like `("a", "b", "c")` into `{"a": {"b": {"c": ...}}}`.
+
+        ```pycon
         >>> unflatten_dict(
         ...     {("a", 17): "foo", ("a", 18): "bar"},
         ...     join_fn=tuple,
@@ -168,15 +208,26 @@ def unflatten_dict[Key, Key_flat](
         ... )
         {'a': {17: 'foo', 18: 'bar'}}
 
-    Example: partial unflattening with ``recursive``.
+        ```
+
+    Example: Partial unflattening with `recursive`.
+        ```pycon
         >>> unflatten_dict({"a.b.c.d": 0, "a.x.y.z": 1})
         {'a': {'b': {'c': {'d': 0}}, 'x': {'y': {'z': 1}}}}
 
+        ```
+
+        ```pycon
         >>> unflatten_dict({"a.b.c.d": 0, "a.x.y.z": 1}, recursive=2)
         {'a': {'b': {'c.d': 0}, 'x': {'y.z': 1}}}
 
+        ```
+
+        ```pycon
         >>> unflatten_dict({"a.b.c.d": 0, "a.x.y.z": 1}, recursive=1)
         {'a': {'b.c.d': 0, 'x.y.z': 1}}
+
+        ```
     """
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[Key, Any] = {}
@@ -205,7 +256,9 @@ def unflatten_dict[Key, Key_flat](
 def nested_paths_exist(paths: Nested[Optional[FilePath]], /) -> bool:
     r"""Check whether the files exist.
 
-    The input can be arbitrarily nested data-structure with `Path` in leaves.
+    The input may contain arbitrarily nested mappings and iterables with strings
+    or `Path` objects as leaves. Mapping keys are ignored. `None` and empty
+    containers are treated as having no missing paths.
     """
     match paths:
         case None:
@@ -223,15 +276,14 @@ def nested_paths_exist(paths: Nested[Optional[FilePath]], /) -> bool:
 
 
 def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[V]]:
-    r"""Fast way to 'transpose' a list of dictionaries.
+    r"""Collect values from dictionaries into one list per key.
 
-    Assumptions:
-        - all dictionaries have the same keys
-        - the keys are always in the same order
-        - at least one item in the input
-        - can iterate multiple times over lst
+    Note:
+        The input must be nonempty and support repeated iteration. Every
+        dictionary must contain the same keys in the same order.
 
     Example:
+        ```pycon
         >>> list_of_dicts = [
         ...     {"name": "Alice",   "age": 30},
         ...     {"name": "Bob",     "age": 25},
@@ -239,6 +291,8 @@ def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[
         ... ]  # fmt: skip
         >>> transpose_list_of_dicts(list_of_dicts)
         {'name': ['Alice', 'Bob', 'Charlie'], 'age': [30, 25, 35]}
+
+        ```
     """
     keys = next(iter(lst)).keys()
     values = map(list, zip(*(d.values() for d in lst), strict=True))
@@ -246,7 +300,11 @@ def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[
 
 
 def prompt_yes_no(question: str, /, *, default: bool) -> bool:
-    r"""Ask a yes/no question and returns answer as bool."""
+    r"""Ask a yes/no question and return the answer as a boolean.
+
+    Empty input selects `default`. Raise `RuntimeError` after three invalid
+    responses.
+    """
     responses = {"y": True, "yes": True, "n": False, "no": False}
     prompt = "([y]/n)" if default else "(y/[n])"
 
@@ -279,7 +337,9 @@ def prompt_choice(
 ) -> str:
     r"""Ask the user to pick an option.
 
-    If ``pick_by_number=True``, then will allow the user to pick the choice by number.
+    If `pick_by_number=True`, the user may enter the displayed number of a choice.
+    Raise `RuntimeError` after three invalid responses. The default choice is
+    marked in the prompt, but empty input does not select it.
     """
     choices = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))
@@ -313,9 +373,10 @@ def prompt_choice(
 
 
 def is_dunder(name: str, /) -> bool:
-    r"""Check if the name is a dunder method.
+    r"""Check whether a valid identifier has exactly two boundary underscores.
 
-    Equivalent to the regex pattern: ``^__.*__$``
+    The name must contain at least one character between the leading and trailing
+    underscore pairs. Names with three leading or trailing underscores are excluded.
     """
     return (
         name.isidentifier()
@@ -328,9 +389,10 @@ def is_dunder(name: str, /) -> bool:
 
 
 def is_private(name: str, /) -> bool:
-    r"""Check if the name is a private method.
+    r"""Check whether a valid identifier starts with a single underscore.
 
-    Equivalent to the regex pattern: ``^_.*[^_]$``
+    A lone underscore and names starting with two underscores are excluded.
+    Trailing underscores are allowed.
     """
     return (
         name.isidentifier()

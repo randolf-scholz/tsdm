@@ -13,7 +13,13 @@ from typing import ClassVar, Never, Self, cast, overload
 
 
 class timer[ExitT: bool | None = None](ContextDecorator):
-    r"""Context manager for timing a block of code."""
+    r"""Context manager for timing a block of code.
+
+    If supplied, `timeout` must be positive and uses `SIGALRM` to interrupt the
+    block. The timer suppresses its own timeout exception on exit; other
+    exceptions propagate. Garbage collection is disabled only when
+    `disable_gc=True`.
+    """
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
 
@@ -53,7 +59,7 @@ class timer[ExitT: bool | None = None](ContextDecorator):
         raise self.exception
 
     def __enter__(self) -> Self:
-        r"""Disable garbage collection and start the timer."""
+        r"""Start the timer, optionally disabling garbage collection and setting an alarm."""
         # flush pending writes
         sys.stdout.flush()
         sys.stderr.flush()
@@ -84,7 +90,7 @@ class timer[ExitT: bool | None = None](ContextDecorator):
         exc_tb: TracebackType | None,
         /,
     ) -> ExitT:
-        r"""Stop the timer and re-enable garbage collection."""
+        r"""Stop timing, restore alarms, and re-enable GC if it was disabled here."""
         self.end_time = perf_counter_ns()
 
         if self.timeout is not None:
@@ -107,14 +113,21 @@ class timer[ExitT: bool | None = None](ContextDecorator):
 
     @property
     def remaining_time(self) -> float | None:
-        r"""Remaining time in seconds."""
+        r"""Remaining time in seconds, or `None` when no timeout is configured.
+
+        The value can be negative after the timeout has elapsed.
+        """
         if self.timeout is None:
             return None
         return self.timeout - self.elapsed_seconds
 
     @property
     def elapsed_time(self) -> int:
-        r"""Elapsed time in nanoseconds."""
+        r"""Elapsed time in nanoseconds.
+
+        Raises:
+            RuntimeError: If run before the timer starts (at the end of `__enter__`)
+        """
         if self.start_time is None:
             raise RuntimeError("Timer has not been started!")
         if self.end_time is None:
