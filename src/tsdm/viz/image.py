@@ -25,12 +25,26 @@ def kernel_heatmap(
     fmt: Literal["HWC", "CHW"] = "HWC",
     cmap: str | colors.Colormap = "seismic",
 ) -> NDArray:  # Float[..., $H, $W, 3] if "HWC" or Float[..., 3, $H, $W] if "CHW"
-    r"""Create heatmap of given matrix.
+    r"""Map a matrix to an RGB heatmap.
 
-    By default, the data is linearly transformed to a normal distribution $𝓝(½,⅙)$,
-    which ensures that 99.7% of the data lies in the interval $[0,1]$, and then clipped.
+    Values are centered at ½, scaled by six times the input's standard deviation,
+    and clipped to $[0, 1]$ before applying the colormap. For normally distributed
+    input, approximately 99.7% of values lie in this interval before clipping.
+    This affine transformation does not make arbitrary input normally distributed.
 
-    Use `fmt` to specify whether the input is height×width×channels or channels×height×width.
+    Args:
+        kernel: Matrix of scalar values. Values must be finite and have nonzero
+            standard deviation for the normalization to be well-defined.
+        fmt: Output layout. `"HWC"` appends the RGB channel axis; `"CHW"` places
+            it first. This option does not change how the input is interpreted.
+        cmap: Registered colormap name or a Matplotlib colormap.
+
+    Returns:
+        RGB array with values in $[0, 1]$. For input of shape `(H, W)`, the
+        output has shape `(H, W, 3)` or `(3, H, W)`, according to `fmt`.
+
+    Raises:
+        ValueError: If `fmt` is neither `"HWC"` nor `"CHW"`.
     """
     # This transformation is chosen because by the 68–95–99.7 rule,
     # for k=6=2⋅3 roughly 99.7% of the probability mass will lie in the interval [0, 1]
@@ -62,17 +76,25 @@ def rasterize(
     px: int = 512,
     py: int = 512,
 ) -> np.ndarray:
-    r"""Convert a figure to image with specific pixel size.
+    r"""Render a figure as an RGBA image using the Agg backend.
 
-    The dpi setting will be automatically determined as the average of the
-    horizontal and vertical dpi.
+    The figure's size and DPI are changed in place. The DPI is the floored
+    arithmetic mean of `px / w` and `py / h`. Choose dimensions whose Agg
+    render size agrees with `(px, py)`; arbitrary combinations of physical
+    and pixel dimensions are not guaranteed to work.
 
     Args:
         fig: Figure to rasterize.
-        w: Width of the figure in inches.
-        h: Height of the figure in inches.
-        px: Width of the figure in pixels.
-        py: Height of the figure in pixels.
+        w: Positive width of the figure in inches.
+        h: Positive height of the figure in inches.
+        px: Requested width of the image in pixels.
+        py: Requested height of the image in pixels.
+
+    Returns:
+        Array of shape `(py, px, 4)` with `uint8` RGBA values.
+
+    Raises:
+        ValueError: If the rendered buffer cannot be reshaped to `(py, px, 4)`.
     """
     dpi = (px / w + py / h) // 2  # compromise
     fig.set_dpi(dpi)

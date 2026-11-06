@@ -44,7 +44,12 @@ MATPLOTLIB_CONFIG: dict[RcKeyType, Any] = {
 
 
 def enable_latex_plotting() -> None:
-    r"""Enable matplotlib to use LaTeX for rendering."""
+    r"""Configure Matplotlib to render with LaTeX using the PGF backend.
+
+    If `lualatex` is available, apply `MATPLOTLIB_CONFIG` and select the PGF
+    backend globally. Emit a warning if `lualatex` is missing or configuration
+    raises `ValueError`.
+    """
     try:
         if shutil.which("lualatex") is not None:
             mpl.rcParams.update(MATPLOTLIB_CONFIG)

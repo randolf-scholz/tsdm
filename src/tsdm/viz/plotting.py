@@ -49,16 +49,29 @@ def visualize_distribution(
     print_stats: bool = True,
     extra_stats: Optional[dict] = None,
 ) -> None:
-    r"""Plot the distribution of x in the given figure axes.
+    r"""Plot a density histogram of the data on the supplied axes.
+
+    The data is flattened and NaNs are removed. Bin edges are based on the first
+    and 99th percentiles, so the histogram may omit values outside that range.
+    After removing NaNs, the values must be finite and yield distinct bin edges.
+    Logarithmic histograms require positive values.
 
     Args:
         data: Data to plot.
         ax: Axes to plot into.
-        num_bins: Number of bins to use for histogram.
-        log: If True, use log base 10.
-        loc: Location of 'stats' text.
-        print_stats: Add table of mean, std, min, max, median, mode to plot
-        extra_stats: Additional things to add to the 'stats' table
+        num_bins: Number of bin edges, giving `num_bins - 1` histogram bins.
+        log: Whether to use base-10 logarithmic bin edges and logarithmic scales
+            on both axes.
+        loc: Location of the statistics text box.
+        print_stats: Whether to add a table of the NaN fraction, mode, minimum,
+            median, maximum, mean, and standard deviation.
+        extra_stats: Additional entries for the statistics table. Matching keys
+            override the computed entries. Ignored when `print_stats=False`.
+
+    Note:
+        In logarithmic mode, statistics other than the NaN fraction describe the
+        values retained after filtering by the logarithmic bin range. Otherwise,
+        they describe all non-NaN values.
     """
     if isinstance(data, Tensor):
         data = data.detach().cpu().numpy()
@@ -129,10 +142,28 @@ def shared_grid_plot(
     subplots_kwargs: Mapping[str, Any] = EMPTY_MAP,
     # FIXME: https://github.com/numpy/numpy/issues/24738
 ) -> tuple[Figure, NDArray]:
-    r"""Create a compute_grid plot with shared axes and row/col headers.
+    r"""Create a grid of plots with shared axes and optional row and column headers.
+
+    Args:
+        data: Array whose first two dimensions select the subplot row and column.
+            Two-dimensional input is treated as a single row of plots, with one
+            plot per original row of data.
+        plot_func: Function called as `plot_func(data_slice, ax=ax, **plot_kwargs)`
+            for each subplot.
+        plot_kwargs: Additional keyword arguments for `plot_func`.
+        titles: Subplot titles in row-major order, with one title per subplot.
+        row_headers: One header per subplot row.
+        col_headers: One header per subplot column.
+        xlabels: One x-axis label per column, applied to the bottom row.
+        ylabels: One y-axis label per row, applied to the leftmost column.
+        subplots_kwargs: Options for `matplotlib.pyplot.subplots`. By default,
+            x-axes are shared within columns and y-axes within rows.
+
+    Returns:
+        The figure and a two-dimensional array of subplot axes.
 
     References:
-        - https://stackoverflow.com/a/25814386
+        - [Row and column headers for Matplotlib subplots](https://stackoverflow.com/a/25814386).
     """
     array = np.array(data)
 
@@ -216,14 +247,21 @@ def plot_spectrum(
     figure_kwargs: Mapping[str, Any] = EMPTY_MAP,
     scatter_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> Figure:
-    r"""Create a scatter-plot of complex matrix eigenvalues.
+    r"""Plot a square matrix's eigenvalues in the complex plane.
 
     Args:
-        kernel: Tensor
-        style: Which matplotlib style to use.
-        axis_kwargs: Keyword-Arguments to pass to `Axes.set`
-        figure_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
-        scatter_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
+        kernel: Two-dimensional square tensor or NumPy array. NumPy arrays are
+            converted to tensors with dtype `torch.float32`.
+        style: Matplotlib style to apply while creating the plot.
+        axis_kwargs: Keyword arguments for `Axes.set`.
+        figure_kwargs: Keyword arguments for `matplotlib.pyplot.subplots`.
+        scatter_kwargs: Keyword arguments for `Axes.scatter`.
+
+    Returns:
+        Figure containing the eigenvalue scatter plot.
+
+    Raises:
+        ValueError: If `kernel` is not a two-dimensional square matrix.
     """
     axis_opts: dict[str, Any] = {
         "xlim": (-2.5, +2.5),
@@ -263,7 +301,17 @@ def plot_spectrum(
 
 
 def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
-    r"""Center axes in the figure."""
+    r"""Move the left and bottom spines of every subplot to the data origin.
+
+    Hide the top and right spines and add arrowhead markers to the visible axes.
+
+    Args:
+        fig: Figure to modify in place.
+        remove_labels: Whether to clear the x-axis and y-axis labels.
+
+    Returns:
+        The modified input figure.
+    """
     for ax in fig.axes:
         if remove_labels:
             ax.set(xlabel="", ylabel="")
