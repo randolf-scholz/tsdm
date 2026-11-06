@@ -21,6 +21,7 @@ from typing import (
     Any,
     ClassVar,
     Concatenate,
+    Final,
     Never,
     Optional,
     Self,
@@ -39,18 +40,19 @@ type Lazy[V] = Callable[[], V]
 class LazyValue[V]:  # +V
     r"""A placeholder for uninitialized values."""
 
+    MARKER: ClassVar[Final] = sentinel("MARKER")  # marker for uninitialized value
+
     func: Callable[..., V]
     args: tuple[Any, ...]
     kwargs: dict[str, Any]
     type_hint: str
 
     # private
-    __marker: ClassVar[object] = object()  # marker for uninitialized value
-    _value: Any
+    _value: V | MARKER  # pyrefly: ignore[not-a-type]
 
     @property
     def value(self) -> V:
-        if self._value is self.__marker:
+        if self._value is self.MARKER:
             try:
                 value = self.func(*self.args, **self.kwargs)
             except Exception as exc:
@@ -77,7 +79,7 @@ class LazyValue[V]:  # +V
         self.type_hint = (
             get_return_typehint(self.func) if type_hint is None else type_hint
         )
-        self._value = self.__marker
+        self._value = self.MARKER
 
         # validation
         if isinstance(func, LazyValue) and (self.args or self.kwargs):
