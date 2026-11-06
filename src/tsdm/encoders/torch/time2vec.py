@@ -17,9 +17,9 @@ class Time2Vec(nn.Module):
     r"""Learn a vector representation of time.
 
     References:
-      - Time2Vec: Learning a Vector Representation of Time \
-        Seyed Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet \
-        Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, Marcus Brubaker \
+      - Time2Vec: Learning a Vector Representation of Time <br>
+        Seyed Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet <br>
+        Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, Marcus Brubaker <br>
         <https://arxiv.org/abs/1907.05321>
     """
 
