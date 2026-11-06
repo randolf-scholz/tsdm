@@ -16,17 +16,20 @@ def quantile_error(
     *,
     q: float = 0.5,
 ) -> Tensor:  # Float[...]
-    r"""Return the q-quantile / pinball loss.
+    r"""Return the element-wise pinball penalty for a residual tensor.
 
-    For a residual scalar $r=x̂-x$, this is just:
+    For the residual $r=x̂-x$, the q-quantile errors is:
 
-    .. math:: ρ_q(r) ≔ ⟦r ≤ 0 \? q⋅|r| : (1-q)⋅|r| ⟧ = \max( (q-1)r, qr)
+    $$ ρ_q(r) ≔ ⟦r ≤ 0 \? q⋅|r| : (1-q)⋅|r| ⟧ = \max( (q-1)r, qr) $$
+
+    Raises:
+        ValueError: If $q∉[0,1]$.
 
     References:
-        - | Deep State Space Models for Time Series Forecasting
-          | Syama Sundar Rangapuram et al.
-          | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+        - Deep State Space Models for Time Series Forecasting \
+          Syama Sundar Rangapuram et al. \
+          Advances in Neural Information Processing Systems 31 (NeurIPS 2018) \
+          <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>
     """
     if not (0.0 <= q <= 1.0):
         raise ValueError(f"q must be in [0, 1], but got {q}")
@@ -44,32 +47,33 @@ def lp_norm(
     weight: Tensor | None = None,  # Float[..., *D] or Float[*D], non-negative
     scaled: bool = False,
 ) -> Tensor:  # Float[...]
-    r"""Compute (possibly scaled) Lₚ-norm.
+    r"""Compute a masked, weighted entry-wise norm along `dim`.
 
-    .. math:: ‖x‖ₚ     ≔ \sqrt[p]{∑ₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{p⁎} ≔ \sqrt[p]{(1/K)∑ₖ|xₖ|ᵖ}
+    Without masks or weights, the ordinary and scaled forms are
 
-    And masked versions:
+    $$\begin{aligned}
+        ‖x‖ₚ &≔ \Bigl(∑ₖ |xₖ|ᵖ\Bigr)^{1/p} \\
+        ‖x‖_{p⁎} &≔ \Bigl(K⁻¹∑ₖ |xₖ|ᵖ\Bigr)^{1/p}
+    \end{aligned}$$
 
-    .. math:: ‖x‖_{m,p}  ≔ \sqrt[p]{∑ₖ ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
-    .. math:: ‖x‖_{m,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ) ∑ₖ⟦mₖ \? |xₖ|ᵖ : 0⟧ }
+    For masks and weights, let $A$ contain entries selected by the mask whose
+    weights are nonzero. Omitted masks select all entries; omitted weights are one.
+    Then the general forms are
 
-    Moreover, one can introduce channel weights:
+    $$\begin{aligned}
+        ‖x‖_{m,w,p} &≔ \Bigl(∑_{k∈A} wₖ|xₖ|ᵖ\Bigr)^{1/p} \\
+        ‖x‖_{m,w,p⁎} &≔ \Bigl(|A|⁻¹∑_{k∈A} wₖ|xₖ|ᵖ\Bigr)^{1/p}
+    \end{aligned}$$
 
-    .. math:: ‖x‖_{w,p}  ≔ \sqrt[p]{∑ₖwₖ|xₖ|ᵖ}
-    .. math:: ‖x‖_{w,p⁎} ≔ \sqrt[p]{(1/∑ⱼ⟦wⱼ≠0⟧)∑ₖwₖ|xₖ|ᵖ}
+    Inactive values are selected out before taking powers, so masked NaNs and
+    infinities do not contribute. Weights should be nonnegative, broadcast to the
+    data shape, and have one axis per dimension in `dim`. Scaling counts active
+    entries rather than summing their weights. A scaled reduction with no active
+    entries raises `ValueError`.
 
-    and with both weights and masks:
-
-    .. math:: ‖x‖_{m,w,p}  ≔ \sqrt[p]{∑ₖ wₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
-    .. math:: ‖x‖_{m,w,p⁎} ≔ \sqrt[p]{(1/∑ⱼmⱼ&(wⱼ≠0)) ∑ₖwₖ⟦mₖ&(wₖ≠0) \? |xₖ|ᵖ : 0⟧ }
-
-    Note:
-        For weighted scaled norms, zero-weight entries are treated as masked:
-        the denominator is ``sum(weight != 0)`` without a mask,
-        and ``sum(mask & (weight != 0))`` with one.
-
-        An empty ``dim`` tuple performs no inner reduction.
+    Finite nonzero positive and negative orders are supported. Orders zero and
+    positive or negative infinity raise `NotImplementedError`; NaN raises
+    `ValueError`. An empty `dim` tuple performs no inner sum.
     """
     dims = (dim,) if isinstance(dim, int) else dim
 
