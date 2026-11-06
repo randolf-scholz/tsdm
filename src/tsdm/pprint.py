@@ -1,39 +1,43 @@
 r"""Pretty printing utility for generic types.
 
-Provides functions for pretty printing
+Provides functions for pretty printing:
 
 - Sequences
 - Mappings
 - Sets
 - Dataclasses
 - Namedtuples
-- Arrays (numpy, torch, pandas, polars)
-  (provides a short form representation that shows that shape and dtype, but not the data)
+- Arrays (NumPy, PyTorch, pandas, Polars), summarized by shape and dtype;
+    single-element arrays also show their value.
 - DTypes (numpy, torch, pandas, polars)
 
-The output format is of the form Type@Modifier<Identifier>(values)
+The general output format is `Type@Modifier<Identifier>(values)`, with optional
+components depending on the object and formatting options. Builtin containers
+use their usual delimiters without a type prefix.
 
 Examples:
-    Type<Mapping>(
+    ```text
+    Type<mapping>(
         key1: value1,
         key2: value2,
         ...,
         keyN: valueN,
     )
 
-    Type<Sequence>(
+    Type<sequence>(
         value1,
         value2,
         ...,
         valueN,
     )
 
-    Type<Set>(
+    Type<set>(
         value1,
         value2,
         ...,
         valueN,
     )
+    ```
 """
 
 __all__ = [
@@ -102,17 +106,17 @@ from .types import (
 )
 
 MAXITEMS: Final[int] = 20
-r"""Default maxitems for repr_funcs."""
+r"""Default item limit for multiline representations."""
 MAXITEMS_INLINE: Final[int] = 5
-r"""Default maxitems for repr_funcs."""
+r"""Default item limit for inline representations."""
 LINEBREAKS: Final[bool] = True
-r"""Default linebreaks for repr_funcs."""
+r"""Default preference for line breaks in representations."""
 INDENT: Final[int] = 4
-r"""Default indentation for repr_funcs."""
+r"""Default number of spaces added at each nesting level."""
 RECURSIVE: Final[bool | int] = 1
-r"""Default recursive for repr_funcs."""
+r"""Default recursion depth for nested representations."""
 ALIGN: Final[bool] = True
-r"""Default align for repr_mapping."""
+r"""Whether mapping keys are aligned by default."""
 
 
 class Identifiers(Enum):
@@ -149,7 +153,8 @@ class Types(Enum):
 class ReprProtocol(Protocol):
     r"""Protocol for recursive repr functions.
 
-    The output string is of the form ``Title@Modifier<Identifier>[generics](values)``
+    The general output form is `Title@Modifier<Identifier>(values)`, with
+    components and delimiters depending on the represented object.
     """
 
     def __call__(
@@ -183,7 +188,7 @@ def _is_builtin_singleton(obj: object, /) -> bool:
 
 
 def _is_builtin(obj: object, /) -> bool:
-    r"""Check if the object is a builtin constant."""
+    r"""Check for a builtin singleton, builtin function, or builtin type."""
     return (
         is_builtin_function(obj)
         or _is_builtin_singleton(obj)
@@ -216,7 +221,7 @@ def _is_nan(obj: object, /) -> bool:
 
 
 def _is_dtype(arg: object, /) -> bool:
-    r"""Check if a string is a valid dtype."""
+    r"""Check whether an object is a supported dtype instance or Polars dtype class."""
     return isinstance(
         arg,
         np.dtype
@@ -281,7 +286,7 @@ def repr_shortform(
     recursive: bool | int = False,
     **_: Any,
 ) -> str:
-    r"""Return a shorthed string representation using an object's type."""
+    r"""Return a compact representation using a value or its type name."""
     match obj:
         case str(string):
             return string
@@ -312,13 +317,17 @@ def repr_generic(
 ) -> str:
     r"""Return a string representation of an object.
 
-    Special casing for a bunch of cases.
+    Dispatch to specialized formatters for scalars, arrays, containers,
+    dataclasses, named tuples, and dtypes. Use `fallback` for unsupported objects.
 
     Examples:
+        ```pycon
         >>> repr_generic(1)
         '1'
         >>> repr_generic(3.14)
         '3.14'
+
+        ```
     """
     x = kwargs.get("wrapped", obj)
 
@@ -372,37 +381,33 @@ def repr_mapping(
         obj: Mapping object.
         align: Align keys and values.
         identifier: Identifier of the object.
-        indent: Indentation level.
-        linebreaks: Use linebreaks.
-        maxitems: Maximum number of items to print.
+        indent: Number of spaces prefixed to continuation lines.
+        linebreaks: Whether to split items across lines. If omitted, follow
+            `recursive`. Empty mappings are always inline.
+        maxitems: Item limit used to truncate long mappings.
         modifier: Modifier of the object.
-        padding: Padding between keys and values.
-        recursive: Recursively print values.
+        padding: Number of spaces added at each nesting level.
+        recursive: Whether to format nested values recursively, or an integer
+            limiting the recursion depth.
         repr_fn: Function to use for printing values.
         title: Title of the object.
-        wrapped: Object to wrap the mapping in.
+        wrapped: Object whose type supplies the default title and delimiters.
 
-    Notes:
-        - if recursive=True:  Name<Mapping>{key: repr_short(value), ...}
-        - if recursive=False: Name<Mapping>{key: repr_object(value), ...}
+    Note:
+        Unless `repr_fn` is supplied, recursive formatting uses `repr_generic`
+        for values; nonrecursive formatting uses `repr_shortform`. Keys are
+        rendered with `str`. Builtin dictionaries use braces without a title
+        or identifier.
 
-        type only
+    Examples:
+        Schematic output for a custom mapping:
 
-             name<Mapping>
-
-        value-type
-
-            name<Mapping>:
-                key1: repr_type(value1)
-                key2: repr_type(value2)
-                key3: repr_type(value3)
-
-        fully recursive:
-
-            name<Mapping>(
-                key1: repr_func(value1)
-                key2: repr_func(value2)
-                key3: repr_func(value3)
+        ```text
+        Name<mapping>(
+            key1: value1,
+            key2: value2,
+        )
+        ```
     """
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
@@ -534,28 +539,36 @@ def repr_sequence(
 ) -> str:
     r"""Return a string representation of a sequence object.
 
-    - if recursive=`True`:  ``Name<Sequence>(repr_short(item1), ...)``
-    - if recursive=`False`: ``Name<Sequence>(repr_object(item1), ...)``
+    Unless `repr_fn` is supplied, `recursive=False` formats items with
+    `repr_shortform`, while `recursive=True` uses `repr_generic`. A positive
+    integer limits the recursion depth. With `linebreaks=None`, recursive
+    representations use line breaks; empty sequences are always inline.
 
-    semi recursive::
+    Builtin lists use brackets and tuples use parentheses, without a title or
+    identifier. Custom sequences use their type name and an optional
+    `<sequence>` identifier. Long sequences show head and tail items separated
+    by an ellipsis.
 
-        name<Sequence>(
-            object<Sequence>(item1, item2, ...),
-            object<tuple>(item1, item2, ...),
-            object<Mapping>(key1: value1, ...),
-        )
+    Examples:
+        Schematic nonrecursive output abbreviates nested containers:
 
-    fully recursive::
+        ```text
+        Name<sequence>(list(), dict())
+        ```
 
-        name<Sequence>(
-            object<Sequence>(
+        Recursive output expands nested values, with line breaks when enabled:
+
+        ```text
+        Name<sequence>(
+            [
                 1,
                 2,
-            ),
-            object<Mapping>(
+            ],
+            {
                 key: value,
-            ),
+            },
         )
+        ```
     """
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
@@ -808,8 +821,9 @@ def repr_dataclass(
 ) -> str:
     r"""Return a string representation of a dataclass object.
 
-    - recursive=`False`:  ``Name<dataclass>(item1, item2, ...)``
-    - recursive=`True`: ``Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)``
+    With `recursive=False`, show field names without values. Otherwise, format
+    a mapping from field names to values recursively. Fields marked
+    `repr=False` are omitted in both cases.
     """
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
@@ -879,8 +893,9 @@ def repr_namedtuple(
 ) -> str:
     r"""Return a string representation of a namedtuple object.
 
-    - recursive=True:  Name<tuple>(item1, item2, ...)
-    - recursive=False: Name<tuple>(item1=repr(item1), item2=repr(item2), ...)
+    With `recursive=False`, show field names without values. Otherwise, format
+    the named tuple's field-value mapping recursively. Recursive output uses the
+    `<namedtuple>` identifier by default.
     """
     # set type & wrapped
     wrapped = obj if wrapped is None else wrapped
@@ -941,7 +956,11 @@ def repr_array(
     show_device: bool = False,
     **_: Any,
 ) -> str:
-    r"""Return a string representation of an array object."""
+    r"""Summarize an array or lazy polars frame by its type, shape, and dtypes.
+
+    Single-element arrays also show their value. Empty and single-element arrays
+    omit dtypes. Lazy frames show an unknown row count without collecting data.
+    """
     maxitems = MAXITEMS_INLINE if maxitems is None else maxitems
 
     # set type
@@ -1063,7 +1082,7 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
 def pprint_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
-    r"""Add appropriate __repr__ to class."""
+    r"""Install a `__repr__` using `repr_sequence` on a Sequence subclass."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
@@ -1074,7 +1093,7 @@ def pprint_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
 def pprint_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
-    r"""Add appropriate __repr__ to class."""
+    r"""Install a `__repr__` using `repr_mapping` on a Mapping subclass."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
 
@@ -1085,7 +1104,7 @@ def pprint_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
 def pprint_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
-    r"""Add appropriate __repr__ to class."""
+    r"""Install a `__repr__` using `repr_set` on a Set subclass."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
 
@@ -1096,7 +1115,7 @@ def pprint_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
 def pprint_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
-    r"""Add appropriate __repr__ to class."""
+    r"""Install a `__repr__` using `repr_dataclass` on a dataclass."""
     if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
@@ -1107,7 +1126,7 @@ def pprint_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
 def pprint_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cls:
-    r"""Add appropriate __repr__ to class."""
+    r"""Install a `__repr__` using `repr_namedtuple` on a named tuple class."""
     if not (isinstance(cls, type) and is_namedtuple(cls)):
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
 
@@ -1118,7 +1137,11 @@ def pprint_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cl
 @decorator  # pyrefly: ignore[bad-argument-type]
 # def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
 def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
-    r"""Add appropriate __repr__ to class."""
+    r"""Install a `__repr__` selected from the class's supported object category.
+
+    Forward `kwds` to the selected formatter. Return the modified class, or
+    raise `TypeError` for unsupported classes and nonclass inputs.
+    """
     if not isinstance(cls, type):
         raise TypeError("Must be a class!")
 

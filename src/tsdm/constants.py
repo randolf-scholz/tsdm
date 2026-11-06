@@ -16,6 +16,6 @@ from numpy.random import Generator
 RNG: Final[Generator] = np.random.default_rng()
 r"""Default random number generator."""
 EMPTY_MAP: Final[Mapping[Any, Never]] = frozendict()
-r"""Constant: Immutable empty `Mapping`, use as default in function signatures."""
+r"""Immutable empty mapping for use as a default argument."""
 UNDEFINED: Final[Any] = sentinel("UNDEFINED")
-r"""CONST: Default value for optional arguments."""
+r"""Sentinel distinguishing an omitted argument from an explicitly supplied value."""

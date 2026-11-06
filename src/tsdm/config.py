@@ -1,6 +1,6 @@
 r"""TSDM configuration, read once at import time.
 
-Set ``TSDM_ROOT_DIR`` before importing tsdm to override the storage root.
+Set `TSDM_ROOT_DIR` before importing `tsdm` to override the storage root.
 """
 
 __all__ = [
@@ -45,11 +45,11 @@ r"""Path where imported datasets are stored."""
 DEFAULT_HASH_METHOD: Final[str] = "sha256"
 r"""Default hash method for file integrity checks."""
 DEFAULT_CHUNK_SIZE: Final[int] = 1024 * 1024
-r"""Default chunk size for file integrity checks."""
+r"""Default chunk size in bytes for file integrity checks."""
 
 
 class DATASET_PATHS(StrEnum):
-    r"""Keys for dataset schema."""
+    r"""Names of the storage directories associated with a dataset."""
 
     ROOT = "root"
     r"""Root data directory."""

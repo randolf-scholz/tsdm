@@ -29,16 +29,16 @@ from .types import FilePath, FileStream, SupportsShape
 
 
 class ValidationError(ValueError):
-    r"""Validation error for hash validation."""
+    r"""Exception raised when a hash, shape, or schema check fails."""
 
 
 class ErrorHandler:
-    r"""Validation mode for hash validation."""
+    r"""Handle validation messages by ignoring, logging, warning, or raising."""
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}/{__qualname__}")
 
     class MODE(StrEnum):
-        r"""Validation mode for hash validation."""
+        r"""Supported ways to handle validation messages."""
 
         IGNORE = "ignore"
         LOG = "log"
@@ -50,7 +50,7 @@ class ErrorHandler:
     type Mode = "MODE" | Literal["ignore", "log", "warn", "raise"]
 
     mode: MODE
-    r"""Validation mode for hash validation."""
+    r"""Selected validation message policy."""
 
     def __init__(
         self,
@@ -65,7 +65,11 @@ class ErrorHandler:
         self.postfix = postfix
 
     def emit(self, msg: str, /, *, valid: bool = False) -> None:
-        r"""Emit a validation message according to the selected mode."""
+        r"""Emit a validation message according to the selected mode.
+
+        Raise or warn only when `valid=False`. Log mode records both successful
+        and failed checks, while ignore mode discards all messages.
+        """
         msg = f"{self.prefix}{msg}{self.postfix}"
 
         match self.mode:
@@ -92,7 +96,11 @@ def make_error_handler(
 def make_error_handler(
     arg: ErrorHandler | ErrorHandler.Mode, /, *, prefix: str = "", postfix: str = ""
 ) -> ErrorHandler:
-    r"""Create a new `ErrorHandler` from an existing one or from a mode."""
+    r"""Return an existing error handler or create one from a mode.
+
+    When `arg` is already an `ErrorHandler`, return it unchanged and ignore
+    `prefix` and `postfix`.
+    """
     match arg:
         case ErrorHandler() as handler:
             return handler
@@ -109,16 +117,21 @@ def validate_hash(
 ) -> bool:
     r"""Compare a hash value against a reference hash value.
 
+    Compare digest strings exactly, including case. Algorithm-name differences
+    are reported in the diagnostic message; the result depends on the digest
+    strings. Two missing hashes pass, while exactly one missing hash fails.
+
     Args:
         hash_value: The hash value to validate.
         expected_hash: The reference hash value.
-        errors: How to handle errors, one of "ignore", "log", "warn", "raise".
+        errors: Existing error handler or one of `"ignore"`, `"log"`, `"warn"`,
+            and `"raise"`.
 
     Returns:
-        bool: True if the hash matches the reference hash, False otherwise.
+        Whether the digest strings match, or both hashes are missing.
 
     Raises:
-        ValidationError: If errors="raise" and the hash does not match the reference hash.
+        ValidationError: If `errors="raise"` and the digest comparison fails.
     """
     error_handler = make_error_handler(errors)
     actual_hash = Hash.from_value(hash_value)
@@ -171,21 +184,29 @@ def validate_file_hash(
     errors: ErrorHandler.Mode = "raise",
     skipif_no_reference: bool = False,
 ) -> bool:
-    r"""Validate file(s), given reference hash value(s).
+    r"""Validate a file or binary stream against a reference hash.
+
+    Paths ending in `.parquet` are rejected because their binary representation
+    is not stable. Streams must support seeking; their original position is
+    restored even if reading fails.
 
     Args:
         path_or_stream: The file or binary stream to validate. Streams are hashed from the
             beginning and returned to their original position afterwards.
         expected_hash: The reference hash value.
-        hash_algorithm: The hash algorithm to use.
-        errors: How to handle errors. Can be "warn", "raise", "log" or "ignore". (default: "warn")
-        skipif_no_reference: If True, skip validation if no reference hash is given.
+        hash_algorithm: Algorithm to use. If omitted, use the reference algorithm
+            when available; otherwise warn and use `config.DEFAULT_HASH_METHOD`.
+        errors: Message policy: `"warn"`, `"raise"`, `"log"`, or `"ignore"`.
+            Defaults to `"raise"`.
+        skipif_no_reference: Whether to return `True` without hashing when the
+            reference hash is missing.
 
     Returns:
-        bool: True if the hash matches the reference hash, False otherwise.
+        Whether the digest matches, or validation was explicitly skipped.
 
     Raises:
-        ValidationError: If errors="raise" and the table hash does not match the reference hash.
+        ValidationError: If `errors="raise"` and the file is rejected or its
+            digest does not match the reference.
     """
     # region input validation ----------------------------------------------------------
     match path_or_stream:
@@ -257,15 +278,17 @@ def validate_table_hash(
     Args:
         table: The table to validate.
         expected_hash: The reference hash value.
-        hash_algorithm: The hash algorithm to use.
-        errors: How to handle errors, one of "ignore", "log", "warn", "raise".
-        skipif_no_reference: If True, skip validation if no reference hash is given.
+        hash_algorithm: Algorithm to use. If omitted, use the reference algorithm
+            when available; otherwise warn and use `config.DEFAULT_HASH_METHOD`.
+        errors: Message policy: `"ignore"`, `"log"`, `"warn"`, or `"raise"`.
+        skipif_no_reference: Whether to return `True` without hashing when the
+            reference hash is missing.
 
     Returns:
-        bool: True if the hash matches the reference hash, False otherwise.
+        Whether the digest matches, or validation was explicitly skipped.
 
     Raises:
-        ValidationError: If errors="raise" and the table hash does not match the reference hash.
+        ValidationError: If `errors="raise"` and the digest does not match.
     """
     # Try to determine the hash algorithm from the array type
     cls = type(table)
@@ -307,7 +330,15 @@ def validate_table_shape(
     *,
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
-    r"""Validate the shape of a table-like object, given a reference shape value."""
+    r"""Compare an object's shape with a reference shape.
+
+    A missing reference shape skips comparison and returns `True`. Otherwise,
+    return whether the shapes match, handling failures according to `errors`.
+
+    Raises:
+        TypeError: If the object does not expose a supported shape.
+        ValidationError: If `errors="raise"` and the shapes differ.
+    """
     error_handler = make_error_handler(errors)
 
     match table:
@@ -339,18 +370,26 @@ def validate_table_schema(
     expected_schema: Sequence[str] | Mapping[str, Any] | None,
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
-    r"""Validate the schema of a table object, given schema values from a table.
+    r"""Compare a table's column names and dtypes with a reference schema.
+
+    Column order is ignored. Reference names that identify index columns are
+    allowed even when absent from the table's data columns. Dtype checks skip
+    any column whose actual or expected dtype is `None`.
+
+    A missing reference does not automatically pass: it fails when the table
+    exposes columns or dtypes for which no reference was supplied.
 
     Args:
         table: The table to validate.
-        expected_schema: Checks if the columns and dtypes of the table match the reference schema.
-        errors: How to handle errors, one of "ignore", "log", "warn", "raise".
+        expected_schema: Mapping from column names to expected dtypes, a sequence
+            of column names for a names-only check, or `None`.
+        errors: Message policy: `"ignore"`, `"log"`, `"warn"`, or `"raise"`.
 
     Returns:
-        bool: True if the schema matches the reference schema, False otherwise.
+        Whether both column and dtype checks pass.
 
     Raises:
-        ValidationError: If errors="raise" and the table schema does not match the reference schema.
+        ValidationError: If `errors="raise"` and either schema check fails.
     """
     error_handler = make_error_handler(errors)
 

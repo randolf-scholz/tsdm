@@ -76,7 +76,7 @@ from numpy.typing import NDArray
 from .types import DataclassType, FilePath, FileStream, SupportsArray
 
 HEXDIGITS = "0123456789ABCDEF"
-r"""Upppercase hexadecimal digits."""
+r"""Uppercase hexadecimal digits."""
 
 HASH_REGEX: Final[re.Pattern] = re.compile(
     r"^(?:(?P<alg>\w+):)?(?P<value>[0-9A-Za-z]+)$"
@@ -112,7 +112,15 @@ class Hash(NamedTuple):
     def from_value(cls, arg: str | bytes | Hash, /) -> Hash: ...
     @classmethod
     def from_value(cls, arg: str | bytes | Hash | None, /) -> Hash | None:
-        r"""Create a `Hash` from a string or integer value."""
+        r"""Parse a hash string or encode digest bytes as hexadecimal.
+
+        Strings have the form `value` or `algorithm:value`, with an alphanumeric
+        value. Existing `Hash` objects and `None` are returned unchanged.
+
+        Raises:
+            ValueError: If a string does not match the hash syntax.
+            TypeError: If the argument has an unsupported type.
+        """
         match arg:
             case None:
                 return None
@@ -129,7 +137,12 @@ class Hash(NamedTuple):
                 raise TypeError(f"Cannot create Hash from {type(arg)}.")
 
     def to_int(self, *, base: Optional[int] = None) -> int:
-        r"""Convert a string to an integer, autodetecting the base if necessary."""
+        r"""Convert the stored hash value to an integer.
+
+        If `base` is omitted, try bases 2, 8, 10, 16, and 36 in that order,
+        selecting the first whose alphabet contains every character. Base-36
+        autodetection accepts lowercase letters only.
+        """
         value = self.hash_value
         # if only decimals:
         if base is None:
@@ -156,12 +169,15 @@ class Hash(NamedTuple):
 
 
 def to_alphanumeric(n: int, /, *, chars: str = HEXDIGITS) -> str:
-    r"""Convert integer to alphanumeric code.
+    r"""Encode a signed 64-bit integer using a configurable digit alphabet.
 
-    Note:
-        We assume n is an int64. We first convert it to uint64, then to base 36.
-        Doubling the alphabet size generally reduces the length of the code by
-        a factor of $1 + 1/log₂B$, where $B$ is the alphabet size.
+    Add $2⁶³$ to shift the signed range to the unsigned 64-bit range, then encode
+    in base `len(chars)`. Left-pad with `chars[0]` to the width required by
+    $2⁶⁴ - 1$. The default alphabet produces hexadecimal codes.
+
+    Args:
+        n: Integer in the range $[-2⁶³, 2⁶³ - 1]$.
+        chars: Alphabet of at least two distinct characters, ordered by digit value.
     """
     # int64  range: [-2⁶³, 2⁶³-1] = [-9,223,372,036,854,775,808, +9,223,372,036,854,775,807]
     # uint64 range: [0,    2⁶⁴-1] = [0, 18446744073709551615]
@@ -173,12 +189,16 @@ def to_alphanumeric(n: int, /, *, chars: str = HEXDIGITS) -> str:
 
 
 def to_base(n: int, base: int, /) -> list[int]:
-    r"""Convert non-negative integer to any basis.
+    r"""Return the most significant digit first in an integer's base representation.
 
-    The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
+    The base must be at least 2. Zero is represented by `[0]`. The result
+    satisfies `n = sum(d * base**k for k, d in enumerate(reversed(digits)))`.
+
+    Raises:
+        ValueError: If `n` is negative.
 
     References:
-        - https://stackoverflow.com/a/28666223
+        - [Converting an integer to another base](https://stackoverflow.com/a/28666223).
     """
     if n < 0:
         raise ValueError("n must be non-negative!")
@@ -274,23 +294,29 @@ def tokenize_dataclass(arg: DataclassType, hasher: str | Hasher, /) -> bytes:
 
 
 def tokenize_mapping(arg: Mapping[Any, object], hasher: str | Hasher, /) -> bytes:
-    r"""Hash a `Mapping` of hashable objects in a permutation invariant manner."""
+    r"""Return digest bytes for a mapping, independent of item order.
+
+    Keys and values must be supported by `tokenize_object`; they need not be
+    hashable Python objects.
+    """
     return tokenize_set(arg.items(), hasher)
 
 
 def tokenize_set(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
-    r"""Hash an `Iterable` of hashable objects in a permutation invariant manner.
+    r"""Return digest bytes for an iterable, independent of element order.
 
-    Discards multiplicity of elements.
+    Deduplicate elements by their tokens, discarding multiplicity. Elements must
+    be supported by `tokenize_object`.
     """
     set_of_hashes = {tokenize_object(y, hasher) for y in arg}
     return tokenize_collection(sorted(set_of_hashes), hasher)
 
 
 def tokenize_multiset(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
-    r"""Hash an `Iterable` of hashable objects in a permutation invariant manner.
+    r"""Return digest bytes for an iterable, independent of element order.
 
-    Takes multiplicity of elements into account.
+    Preserve the multiplicity of element tokens. Elements must be supported by
+    `tokenize_object`.
     """
     # We use counter as a proxy for multisets, do deal with duplicates in x.
     mdict: Counter[bytes] = Counter(tokenize_object(y, hasher) for y in arg)
@@ -298,14 +324,18 @@ def tokenize_multiset(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
 
 
 def tokenize_collection(arg: Iterable[object], hasher: str | Hasher, /) -> bytes:
-    r"""Hash a `Collection` of hashable objects in an order-dependent manner."""
+    r"""Return digest bytes for supported iterable elements in their supplied order."""
     hash_algorithm = hasher if isinstance(hasher, str) else hasher.name
     byte_stream = (tokenize_object(item, hashlib.new(hash_algorithm)) for item in arg)
     return tokenize_byte_stream(byte_stream, hasher)
 
 
 def tokenize_byte_stream(arg: Iterable[bytes], hasher: str | Hasher, /) -> bytes:
-    r"""Hash a stream of bytes in an order-dependent manner."""
+    r"""Hash concatenated byte chunks in order using a fresh hasher.
+
+    Chunk boundaries do not affect the digest. A supplied hasher contributes its
+    algorithm name only; its state is neither used nor modified.
+    """
     # NOTE: This is the only place the hasher actually gets used.
     hash_algorithm = hasher if isinstance(hasher, str) else hasher.name
     collection_hasher = hashlib.new(hash_algorithm)
@@ -328,14 +358,17 @@ def tokenize_pandas(
     *,
     index: bool = True,
 ) -> bytes:
-    r"""Hash pandas object to a single number.
+    r"""Return digest bytes for a pandas Index, Series, or DataFrame.
 
-    If row_invariant is True, then the hash is invariant to the order of the rows.
-    If col_invariant is True, then the hash is invariant to the order of the columns.
+    Index and Series values are tokenized in order. For a Series, `index=True`
+    includes the index labels by tokenizing label-value pairs.
 
-    .. math:: hash(PX) = hash(X) and hash(XQ) = hash(X)
+    A DataFrame is converted to a nested dictionary and tokenized as a mapping,
+    so mapping item order does not affect the digest. The `index` option is
+    forwarded to `DataFrame.to_dict` and is subject to that method's restrictions.
 
-    for permutation matrices $P$ and $Q$ respectively.
+    Raises:
+        TypeError: If the object is not a supported pandas type.
     """
     match arg:
         case pd.Series():
@@ -362,7 +395,7 @@ def tokenize_polars(arg: pl.DataFrame | pl.Series, hasher: str | Hasher, /) -> b
 def tokenize_pyarrow(
     arg: pa.Scalar | pa.Array | pa.Table, hasher: str | Hasher, /
 ) -> bytes:
-    r"""Hash a pyarrow array."""
+    r"""Return digest bytes for a PyArrow scalar, array, chunked array, or table."""
     match arg:
         case pa.Scalar():
             return tokenize_object(arg.as_py(), hasher)
@@ -375,7 +408,11 @@ def tokenize_pyarrow(
 
 
 def tokenize_array(array: SupportsArray, hasher: str | Hasher, /) -> bytes:
-    r"""Hash an array like object (pandas/numpy/pyarrow/etc.)."""
+    r"""Return digest bytes for a supported array or table.
+
+    Dispatch to the pandas, PyArrow, or Polars tokenizer when applicable.
+    Otherwise, convert objects implementing `__array__` to NumPy arrays.
+    """
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
 
     match array:
@@ -414,7 +451,7 @@ def tokenize_object(x: object, hasher: str | Hasher, /) -> bytes:
 
 
 def hash_array(array: SupportsArray, hasher: str | Hasher, /) -> Hash:
-    r"""Hash an array like object (pandas/numpy/pyarrow/etc.)."""
+    r"""Return a hexadecimal hash and algorithm name for a supported array or table."""
     hasher = hashlib.new(hasher if isinstance(hasher, str) else hasher.name)
     hash_value = tokenize_array(array, hasher).hex()
     return Hash(hash_value, hasher.name)
@@ -427,7 +464,14 @@ def hash_file(
     *,
     block_size: int = 65536,
 ) -> Hash:
-    r"""Calculate the SHA256-hash of a file."""
+    r"""Hash a file's bytes, using SHA-256 by default.
+
+    Read the file in blocks of `block_size` bytes, which must be positive.
+    A supplied hasher is updated in place, including any existing state.
+
+    Returns:
+        The hexadecimal digest and algorithm name.
+    """
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
 
     with open(filepath, "rb") as file_handle:
@@ -448,6 +492,7 @@ def hash_zip_contents(
     r"""Hash the *contents* of a zip archive (stable w.r.t. zip metadata).
 
     The resulting digest depends only on:
+
     - the member names
     - the uncompressed bytes of each member
 
