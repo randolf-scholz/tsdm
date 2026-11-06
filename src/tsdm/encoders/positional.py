@@ -17,11 +17,18 @@ from .base import StaticEncoder
 @pprint_repr
 @dataclass(slots=True, init=False)
 class PositionalEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
-    r"""Positional encoding.
+    r"""Encode time using sine and cosine components.
 
-    .. math::
-        x₂ₖ(t)   &:=\sin \left(\frac{t}{t^{2k/τ}}\right) \\
-        x₂ₖ₊₁(t) &:=\cos \left(\frac{t}{t^{2k/τ}}\right)
+    $$\begin{aligned}
+        sₖ &= τ^{-2k/d} \\
+        z(t) &= (\sin(s₀t), …, \sin(sₘ₋₁t), \cos(s₀t), …, \cos(sₘ₋₁t))
+    \end{aligned}$$
+
+    Here $d$ is `num_dim`, $τ$ is `scale`, and $m$ is the length of
+    `arange(0, num_dim + 2, 2)`. Use a positive dimension and scale.
+    The output has $2m$ components along its last axis.
+    Decoding uses the arcsine of the first component, so it recovers the input
+    only on $[-π/2, π/2]$.
     """
 
     # Constants

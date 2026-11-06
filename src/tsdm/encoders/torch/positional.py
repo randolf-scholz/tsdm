@@ -14,19 +14,18 @@ from tsdm.pprint import pprint_repr
 
 
 class PositionalEncoding(nn.Module):
-    r"""Positional encoding.
+    r"""Encode time using sine and cosine components.
 
-    .. math::
-        x_{2k}(t)   &≔\sin \left(\frac{t}{t^{2k/τ}}\right) \\
-        x_{2k+1}(t) &≔\cos \left(\frac{t}{t^{2k/τ}}\right)
+    $$\begin{aligned}
+        sₖ &= τ^{-2k/(d-2)} \\
+        z(t) &= (\sin(s₀t), …, \sin(sₘ₋₁t), \cos(s₀t), …, \cos(sₘ₋₁t))
+    \end{aligned}$$
+
+    Here $d$ is `num_dim`, $m = d/2$, $τ$ is `scale`, and $k = 0, …, m-1$.
+    Use an even `num_dim` greater than two and a positive scale.
+    Decoding uses the arcsine of the first component, so it recovers the input
+    only on $[-π/2, π/2]$.
     """
-
-    HP: dict = {
-        "__name__": __qualname__,
-        "__module__": __name__,
-        "num_dim": int,
-        "scale": float,
-    }
 
     # Constants
     num_dim: Final[int]
@@ -72,7 +71,11 @@ class PositionalEncoding(nn.Module):
 @pprint_repr
 @dataclass(slots=True)
 class PositionalEncoder(StaticEncoder[Tensor, Tensor]):
-    r"""Wraps PositionalEncoder encoder."""
+    r"""Wrap `PositionalEncoding` as a static encoder.
+
+    The wrapped module concatenates sine components followed by cosine components.
+    Its dimension, scale, and decoding restrictions also apply here.
+    """
 
     _: KW_ONLY
 
