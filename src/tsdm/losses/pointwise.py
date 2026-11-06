@@ -1,7 +1,8 @@
-r"""Implementation of losses that are applies pointwise.
+r"""Losses applied independently to vector-valued samples.
 
-These can still be used for sequential data, however, note that in this case
-the sequence dimension is simply treated as any other a batch dimension.
+The selected feature axes are reduced within each sample, followed by a batch
+reduction. For sequence data, the time axis is treated as a batch axis unless
+it is included explicitly in the feature axes.
 """
 
 __all__ = [
@@ -75,23 +76,26 @@ def lp_loss(
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted $p$-norm loss.
 
-    .. math:: ℓₚ(x̂，x) ≔ \E[‖x̂ - x‖ₚ]
+    For unweighted samples with the default mean reduction and unscaled norms:
 
-    ``channel_weight`` is applied within the $p$-norm along ``dim``. ``weight``
-    is applied to the resulting per-sample losses before ``reduction``.
+    $$ ℓₚ(x̂,x) ≔ 𝔼[‖x̂ - x‖ₚ] $$
+
+    `feature_weights` applies within the norm along `dim`. `sample_weights` applies
+    to the per-sample losses through `Reduction`. With `relative=True`, divide each
+    residual norm by the corresponding target norm; zero target norms can produce
+    NaN or infinity. Masking is explicit; NaNs are not detected automatically.
 
     Args:
         predictions: Predicted values.
         targets: Target values.
-        p: Order of the norm.
+        p: Finite nonzero norm order.
         dim: Tensor axes reduced within each sample.
-        mask: Boolean mask indicating valid values.
-        sample_weights: Optional weights applied to the per-sample losses.
-        feature_weights: Optional weights applied within each sample norm.
-        reduction: Aggregation applied to the per-sample losses.
-        scaled: Whether to scale each norm by its number of active entries.
-        relative: If ``True``, divide each residual norm by the corresponding
-            target norm, computing $‖x̂ - x‖ₚ / ‖x‖ₚ$.
+        mask: Boolean mask selecting valid entries.
+        sample_weights: Optional weights for the outer sample reduction.
+        feature_weights: Optional nonnegative weights within each sample norm.
+        reduction: Aggregation applied to per-sample losses.
+        scaled: Whether to divide the powered sum by the number of active entries.
+        relative: Whether to divide by the corresponding target norm ($‖x̂ - x‖ₚ / ‖x‖ₚ$).
     """
     errors = lp_error(
         predictions=predictions,
@@ -119,7 +123,7 @@ def mae_loss(
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted mean absolute error.
 
-    .. math:: \mae(x̂，x) ≔ \E[‖x̂ - x‖₁]
+    $$ \mae(x̂，x) ≔ 𝔼[‖x̂ - x‖₁] $$
 
     This is minimized by the marginal median of the distribution.
     """
@@ -146,9 +150,9 @@ def l2_loss(
     scaled: bool = False,
     reduction: Reduction = Reduction.MEAN,
 ) -> Tensor:  # Float[()]
-    r"""Compute the mean euclidean distance.
+    r"""Compute the mean Euclidean distance.
 
-    .. math:: ℓ₂(x̂，x) ≔ \E[‖x̂ - x‖₂]
+    $$ ℓ₂(x̂，x) ≔ 𝔼[‖x̂ - x‖₂] $$
 
     This is minimized by the geometric median of the distribution.
     """
@@ -177,7 +181,7 @@ def mse_loss(
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted mean squared error.
 
-    .. math:: \mse(x̂，x) ≔ \E[‖x̂ - x‖₂²]
+    $$ \mse(x̂，x) ≔ 𝔼[‖x̂ - x‖₂²] $$
 
     This is minimized by the mean of the distribution.
     """
@@ -206,7 +210,7 @@ def rmse_loss(
 ) -> Tensor:  # Float[()]
     r"""Compute the sample-weighted root mean squared error.
 
-    .. math:: \𝗋𝗆𝗌𝖾(x̂，x) ≔ \sqrt{ \E[‖x̂ - x‖₂²] }
+    $$ \rmse(x̂，x) ≔ \sqrt{ 𝔼[‖x̂ - x‖₂²] } $$
     """
     errors = lp_error(
         predictions=predictions,
@@ -221,12 +225,14 @@ def rmse_loss(
 
 
 class SeparableLoss(nn.Module, Loss):
-    r"""Base class for separable loss function with reduction over samples.
+    r"""Base class for separable losses with a reduction over samples.
 
-    Note:
-        A loss is separable if there is no interaction between batch elements,
-        i.e. $ℒ(x̂, x) = Reduce(wₙℓ(x̂ₙ, xₙ)ₙ})$ for some per sample loss ℓ
-        and a reduction function Reduce.
+    Apply a penalty independently to each prediction-target pair, then combine the
+    resulting values using `Reduction`, optionally with sample weights:
+
+    $$ 𝓛(x̂,x) = \op{Reduce}\bigl((ℓ(x̂ₙ,xₙ))ₙ\bigr) $$
+
+    The penalty operates within a sample; the outer reduction combines samples.
     """
 
     penalty: Penalty
@@ -303,17 +309,18 @@ class LP_Loss(BaseLoss):
 
 
 class MAE_Loss(BaseLoss):
-    r"""Mean Absolute Error.
+    r"""Mean absolute error between vector-valued samples.
 
-    Given two random vectors $x̂,x∈ℝᴷ$, the mean absolute error is defined as:
+    For the default unscaled norm and an unweighted sample mean:
 
-    .. math:: \mae(x̂，x) ≔ \E[‖x̂ - x‖₁]
+    $$ \mae(x̂,x) ≔ 𝔼[‖x̂ - x‖₁] $$
 
-    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
+    The empirical estimate from $N$ samples is
 
-    .. math:: \mae(x̂，x) ∼ \frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖
+    $$ \widehat{\mae} = N⁻¹∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖₁ $$
 
-    If weights are provided, then the norm $‖z‖² ≔ ∑ₖ wₖ\abs{zₖ}²$ is used.
+    Feature weights give the inner sum $∑ₖ wₖ|zₖ|$. With `scaled=True`, divide
+    that sum by the number of active features. Sample weights affect the outer mean.
     """
 
     def forward(
@@ -335,13 +342,14 @@ class MAE_Loss(BaseLoss):
 
 
 class L2_Loss(BaseLoss):
-    r"""Mean Euclidean Distance.
+    r"""Mean Euclidean distance between vector-valued samples.
 
-    Given two random vectors $x̂,x∈ℝᴷ$, the median loss:
+    For the default unscaled norm and an unweighted sample mean:
 
-    .. math:: ℓ₂(x̂，x) ≔ \E[‖x̂ - x‖₂]
+    $$ ℓ₂(x̂,x) ≔ 𝔼[‖x̂ - x‖₂] $$
 
-    This is minimized by the geometric median of the distribution.
+    As a function of a constant prediction, this objective is minimized by a
+    geometric median of the target distribution.
     """
 
     def forward(
@@ -363,13 +371,14 @@ class L2_Loss(BaseLoss):
 
 
 class MSE_Loss(BaseLoss):
-    r"""Mean Squared Error.
+    r"""Mean squared error between vector-valued samples.
 
-    Given two random vectors $x̂,x∈ℝᴷ$, the MSE loss:
+    For the default unscaled norm and an unweighted sample mean:
 
-    .. math:: \mse(x̂，x) ≔ \E[‖x̂ - x‖₂²]
+    $$ \mse(x̂,x) ≔ 𝔼[‖x̂ - x‖₂²] $$
 
-    This is minimized by the mean of the distribution.
+    As a function of a constant prediction, this objective is minimized by the
+    mean of the target distribution.
     """
 
     def forward(
@@ -391,15 +400,17 @@ class MSE_Loss(BaseLoss):
 
 
 class RMSE_Loss(BaseLoss):
-    r"""Root Mean Square Error.
+    r"""Root mean squared error between vector-valued samples.
 
-    Given two random vectors $x̂,x∈ℝᴷ$, the root-mean-square error is defined as:
+    For the default unscaled norm and an unweighted sample mean:
 
-    .. math:: \rmse(x̂，x) ≔ \sqrt{\E[‖x̂ - x‖²]}
+    $$ \rmse(x̂,x) ≔ \sqrt{𝔼[‖x̂ - x‖₂²]} $$
 
-    Given $N$ random samples $x_1, …, x_N$ and $x̂_1, …, x̂_N$, it can be estimated as:
+    The empirical estimate from $N$ samples is
 
-    .. math:: \rmse(x̂，x) ∼ \sqrt{\frac{1}{N}∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖²}
+    $$ \widehat{\rmse} = \sqrt{N⁻¹∑ₙ₌₁ᴺ ‖x̂ₙ - xₙ‖₂²} $$
+
+    The square root is applied after the outer sample reduction.
     """
 
     def forward(
