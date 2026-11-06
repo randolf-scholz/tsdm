@@ -1,8 +1,9 @@
 r"""PyTorch tensor structures, conversions, and batching for prediction samples.
 
 This module implements the abstract split, merged, and triplet sample layouts
-with tensors. It converts between layouts and collates variable-length
-samples into padded batches for time-series prediction models.
+with tensors and collates variable-length split samples into padded batches.
+Conversion functions between layouts are placeholders that raise
+`NotImplementedError`.
 """
 
 __all__ = [
@@ -39,26 +40,32 @@ type AbstractTripletSample = abstract.TripletTimeData[Tensor]
 
 @pprint_repr
 class SplitTimeData(NamedTuple):
-    r"""A single sample of time series data.
+    r"""A prediction sample with separate context and query time axes.
 
-    Examples:
-        time series forecasting/imputation::
-
-            yhat = model(
-                sample.query_times,
-                sample.context_times,
-                sample.context_values,
-            )
-            loss = d(sample.target_values, yhat)
+    Leading dimensions represent optional batch axes. A `$` prefix marks a
+    dynamic dimension that may vary between samples. `$N` and `$K` are the
+    context and query lengths; `D` and `F` are their channel counts, and `M`
+    is the number of static covariates. Within each sample, timestamps are
+    non-decreasing. Padded values and timestamps use `NaN`; masks use `False`.
 
     Attributes:
-        context_times:     Float[..., $N], padded NaN, non-decreasing
-        context_values:    Float[..., $N, D], padded NaN
-        context_mask:      Bool[..., $N, D], padded False
-        query_times:       Float[..., $K], padded NaN, non-decreasing
-        query_mask:        Bool[..., $K, F],  padded False
-        target_values:     Float[..., $K, F],  padded NaN
-        static_covariates: Float[..., M],  padded NaN
+        context_times: Timestamps of type `Float[..., $N]`.
+        context_values: Context values of type `Float[..., $N, D]`.
+        context_mask: Availability mask of type `Bool[..., $N, D]`.
+        query_times: Query timestamps of type `Float[..., $K]`.
+        query_mask: Target mask of type `Bool[..., $K, F]`.
+        target_values: Targets of type `Float[..., $K, F]`, or `None`.
+        static_covariates: Covariates of type `Float[..., M]`, or `None`.
+
+    Example:
+        ```python
+        yhat = model(
+            sample.query_times,
+            sample.context_times,
+            sample.context_values,
+        )
+        loss = d(sample.target_values, yhat)
+        ```
     """
 
     context_times: Tensor
@@ -110,24 +117,27 @@ class SplitTimeData(NamedTuple):
 
 @pprint_repr
 class MergedTimeData(NamedTuple):
-    r"""A single sample of time series data.
+    r"""A prediction sample with a shared context and query time axis.
 
-    Examples:
-        time series forecasting/imputation::
-
-            yhat = model(
-                sample.timestamps,
-                sample.context_values,
-            )
-            loss = d(sample.target_values, yhat)
+    Leading dimensions represent optional batch axes. A `$` prefix marks a
+    dynamic dimension that may vary between samples. `$T` is the shared
+    sequence length, `D` and `E` are the context and target channel counts,
+    and `M` is the number of static covariates. Within each sample, timestamps
+    are non-decreasing. Padded values and timestamps use `NaN`; masks use `False`.
 
     Attributes:
-        timestamps:        Float[..., $T], padded NaN, non-decreasing
-        context_mask:      Bool[..., $T, D], padded False
-        context_values:    Float[..., $T, D], padded NaN
-        query_mask:        Bool[..., $T, E], padded False
-        target_values:     Float[..., $T, E], padded NaN
-        static_covariates: Float[..., M], padded NaN
+        timestamps: Timestamps of type `Float[..., $T]`.
+        context_mask: Availability mask of type `Bool[..., $T, D]`.
+        context_values: Context values of type `Float[..., $T, D]`.
+        query_mask: Target mask of type `Bool[..., $T, E]`.
+        target_values: Targets of type `Float[..., $T, E]`, or `None`.
+        static_covariates: Covariates of type `Float[..., M]`, or `None`.
+
+    Example:
+        ```python
+        yhat = model(sample.timestamps, sample.context_values)
+        loss = d(sample.target_values, yhat)
+        ```
     """
 
     timestamps: Tensor
@@ -179,26 +189,34 @@ class MergedTimeData(NamedTuple):
 
 @pprint_repr
 class TripletTimeData(NamedTuple):
-    r"""A single sample of time series data.
+    r"""A prediction sample represented by time, channel, and value triplets.
 
-    Examples:
-        time series forecasting/imputation::
-
-            yhat = model(
-                sample.query_times,
-                sample.context_times,
-                sample.context_values,
-            )
-            loss = d(sample.target_values, yhat)
+    Leading dimensions represent optional batch axes. A `$` prefix marks a
+    dynamic dimension that may vary between samples. `$X` and `$Q` are the
+    numbers of context and query triplets, and `M` is the number of static
+    covariates. Within each sample, timestamps are non-decreasing. Padded
+    values and timestamps use `NaN`; channel indices use `-1`.
 
     Attributes:
-        context_times:     Float[..., $X], padded NaN, non-decreasing
-        context_channels:  Long[..., $X], padded -1
-        context_values:    Float[..., $X], padded NaN
-        query_times:       Float[..., $Q], padded NaN, non-decreasing
-        query_channels:    Long[..., $Q], padded -1
-        target_values:     Float[..., $Q], padded NaN
-        static_covariates: Float[..., M], padded NaN
+        context_times: Timestamps of type `Float[..., $X]`.
+        context_channels: Channel indices of type `Long[..., $X]`.
+        context_values: Context values of type `Float[..., $X]`.
+        query_times: Query timestamps of type `Float[..., $Q]`.
+        query_channels: Channel indices of type `Long[..., $Q]`.
+        target_values: Targets of type `Float[..., $Q]`, or `None`.
+        static_covariates: Covariates of type `Float[..., M]`, or `None`.
+
+    Example:
+        ```python
+        yhat = model(
+            sample.query_times,
+            sample.query_channels,
+            sample.context_times,
+            sample.context_channels,
+            sample.context_values,
+        )
+        loss = d(sample.target_values, yhat)
+        ```
     """
 
     context_times: Tensor
@@ -277,29 +295,33 @@ def triplet_to_merged(sample: AbstractTripletSample) -> MergedTimeData:
 class PaddedBatch(NamedTuple):
     r"""A padded batch of samples.
 
-    Note:
-        - B: batch-size
-        - T: maximum sequence length (= N + K)
-        - D: input dimension
-        - K: target dimension
-
-    Example:
-        t, x, y, mq, mx, my = collate_timeseries(batch)
-        yhat = model(t, x)  # predict for the whole padded batch
-        r = where(my, y-yhat, 0)  # set residual to zero for missing values
-        loss = r.abs().pow(2).sum()  # compute the loss
+    `B` is the batch size, `$T` the maximum combined context and query length,
+    `$K` the maximum query length, `D` the input channel count, `F` the target
+    channel count, and `M` the number of static covariates. A `$` prefix marks
+    a dynamic dimension that may vary between batches. Shapes below are
+    shown before `collate_timeseries` removes singleton dimensions with
+    `squeeze()`. Values are padded with `NaN`, timestamps with zero, and
+    masks with `False`.
 
     Attributes:
-        t (Float[B×T]):   Combined timestamps of inputs and targets.
-        x (Float[B×T×D]): The inputs for all timesteps.
-        y (Float[B×T×F]): The targets for the target timesteps.
-        mq (Bool[B×T]):   The 'queries' mask, True if the given time stamp is a query.
-        mx (Bool[B×T×D]): The 'inputs' mask, True indicates an observation, False a missing value.
-        my (Bool[B×T×F]): The 'targets' mask, True indicates a target, False a missing value.
-        static_covariates (Optional[Float[B×M]]): Stacked static covariates.
+        t: Combined input and query timestamps of type `Float[B, $T]`.
+        x: Input values on the combined time axis, of type `Float[B, $T, D]`.
+        y: Target values on the query time axis, of type `Float[B, $K, F]`.
+        mq: Mask of type `Bool[B, $T]`, true at query entries with targets.
+        mx: Input availability mask of type `Bool[B, $T, D]`.
+        my: Target availability mask of type `Bool[B, $K, F]`.
+        static_covariates: Stacked covariates of type `Float[B, M]`, or `None`.
 
-    In this context, 'query' means that the model should predict the value at this time stamp.
-    Consequently, `mq` is identical to or-reducing `my` along the target dimension.
+    The input and query axes remain separate for targets: `mq` marks query
+    entries on the combined axis, while `my` marks values on the query axis.
+
+    Example: Compute a masked loss from predictions on the query axis
+        ```python
+        padded = collate_timeseries(batch)
+        yhat = model(padded)  # return predictions aligned with padded.y
+        residual = torch.where(padded.my, padded.y - yhat, 0)
+        loss = residual.abs().pow(2).sum()
+        ```
     """
 
     t: Tensor  # B×N:   the padded timestamps/queries.
@@ -312,10 +334,24 @@ class PaddedBatch(NamedTuple):
 
 
 def collate_timeseries(batch: list[SplitTimeData]) -> PaddedBatch:
-    r"""Collate timeseries samples into padded batch.
+    r"""Collate unbatched split samples into a padded batch.
 
-    Assumptions:
-        - `query_times` is sorted.
+    Context and query timestamps are concatenated and sorted for each sample.
+    Overlapping timestamps remain separate entries. Target values and masks
+    retain the query time axis, so `query_times` must already be sorted.
+    All samples must have compatible channel dimensions. If static covariates
+    are supplied, provide them for every sample to retain batch alignment.
+
+    Args:
+        batch: A non-empty list of unbatched samples with target values.
+
+    Returns:
+        Padded tensors with singleton dimensions removed by `squeeze()`.
+        Static covariates are stacked without squeezing, or are `None` when
+        absent from every sample.
+
+    Raises:
+        ValueError: If a sample has no target values.
     """
     masks_inputs: list[Tensor] = []
     masks_queries: list[Tensor] = []

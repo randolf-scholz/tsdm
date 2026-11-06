@@ -49,7 +49,11 @@ class SplitTimeData(abstract.SplitTimeData[Series | DataFrame]):
     r"""Static covariates associated with the time series."""
 
     def drop_null_rows(self) -> Self:
-        r"""Drop rows that contain only NAN values."""
+        r"""Drop rows whose context or target values are all missing.
+
+        Filter each time axis and its masks together with the corresponding
+        values. If targets are absent, leave the query times and mask unchanged.
+        """
         context_values = self.context_values.dropna(how="all")
 
         if self.target_values is None:
@@ -105,7 +109,7 @@ def make_sample(
 
     Note:
         This low-level function does not validate the selected columns. Use
-        make_sample_factory when creating many samples from one dataset.
+        `make_sample_factory` when creating many samples from one dataset.
     """
     match dataset:
         case TimeSeries() as tsd:
@@ -196,7 +200,7 @@ def make_sample_factory(
 
     The selected columns are normalized and validated once when the factory is
     created. The returned map-style dataset accepts the same sample key as
-    make_sample and is suitable for use with a sampler or DataLoader.
+    `make_sample` and is suitable for use with a sampler or `DataLoader`.
 
     Args:
         dataset: A single time series or a collection of time series.

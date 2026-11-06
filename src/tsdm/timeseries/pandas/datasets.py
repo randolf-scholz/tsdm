@@ -49,12 +49,12 @@ from tsdm.timeseries.abstract import RangeSelector
 @pprint_repr
 @dataclass(slots=True, frozen=True)
 class TimeSeries[TimeT = Any]:
-    r"""Abstract Base Class for TimeSeriesDatasets.
+    r"""A single time series backed by a pandas DataFrame.
 
-    A TimeSeriesDataset is a dataset that contains time series data and metadata.
-    More specifically, it is a tuple (TS, M) where TS is a time series and M is the metadata.
-
-    For a given time-index, the time series data is a vector of measurements.
+    Rows are indexed by timestamps and columns contain measurement channels.
+    Optional tables describe the channels, static covariates, and their metadata.
+    The time index must not be a `MultiIndex`; use `TimeSeriesCollection` for
+    data indexed by both series identifiers and timestamps.
     """
 
     FIELDS: ClassVar[frozenset[str]] = frozenset(
@@ -65,7 +65,7 @@ class TimeSeries[TimeT = Any]:
             "static_covariates_metadata",
         }
     )
-    r"""The essential fields of the time series collection."""
+    r"""The essential fields of the time series."""
 
     name: str | None = None
     r"""The name of the dataset."""
@@ -76,11 +76,11 @@ class TimeSeries[TimeT = Any]:
     timeseries: DataFrame
     r"""The time series data."""
     timeseries_metadata: DataFrame | None = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
+    r"""Metadata for each measurement channel, such as its device or unit."""
     static_covariates: DataFrame | None = None
-    r"""The metadata of the dataset."""
+    r"""Static covariates associated with the time series."""
     static_covariates_metadata: DataFrame | None = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    r"""Metadata describing each static covariate, such as its device or unit."""
 
     # derived fields
     timeindex: Series = field(init=False)
@@ -100,7 +100,7 @@ class TimeSeries[TimeT = Any]:
         )
 
     def __post_init__(self) -> None:
-        r"""Post init."""
+        r"""Validate the data, infer the time index, and reject undefined fields."""
         if not isinstance(self.timeseries, DataFrame):
             raise TypeError(
                 f"Expected timeseries to be a pandas DataFrame,"
@@ -159,7 +159,7 @@ class TimeSeries[TimeT = Any]:
         return cast("Self", TimeSeries(**sliced))
 
     def _check_keys(self, keys: list[TimeT] | Index, /) -> None:
-        r"""Raise ``KeyError`` when a label is not present in the time index."""
+        r"""Raise `KeyError` when a label is not present in the time index."""
         if missing_keys := [key for key in keys if key not in self.timeindex]:
             raise KeyError(missing_keys)
 
@@ -190,10 +190,11 @@ class TimeSeries[TimeT = Any]:
 @pprint_repr
 @dataclass(slots=True, frozen=True)
 class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
-    r"""Class for **equimodal** TimeSeriesCollections.
+    r"""A pandas collection of time series with a shared schema.
 
-    A `TimeSeriesCollection` is a collection of `TimeSeries` objects.
-    `Equimodal` means that all time series share the same schema (i.e. subset of variables).
+    All series share the same measurement columns. The data must have a
+    `MultiIndex` whose final level contains timestamps and whose preceding
+    levels identify the series.
     """
 
     FIELDS: ClassVar[frozenset[str]] = frozenset(
@@ -217,15 +218,15 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     timeseries: DataFrame
     r"""The collection of time series data."""
     timeseries_metadata: DataFrame | None = None
-    r"""Data associated with each channel such as measurement device, unit, etc."""
+    r"""Metadata for each measurement channel, such as its device or unit."""
     static_covariates: DataFrame | None = None
     r"""The static covariates associated with each timeseries."""
     static_covariates_metadata: DataFrame | None = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    r"""Metadata describing each static covariate, such as its device or unit."""
     constants: DataFrame | None = None
     r"""Additional data that is independent of the metaindex."""
     constants_metadata: DataFrame | None = None
-    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+    r"""Metadata describing the collection-wide constants."""
 
     # derived fields
     timeindex: Series = field(init=False)
@@ -235,7 +236,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
 
     @classmethod
     def from_dataset(cls, arg: Dataset | type[Dataset], /) -> Self:
-        r"""Create a TimeSeries from a Dataset."""
+        r"""Create a `TimeSeriesCollection` from a `Dataset`, skipping extra tables."""
         ds = arg() if isinstance(arg, type) else arg
 
         if superfluous_names := (set(ds.table_names) - cls.FIELDS):
@@ -248,7 +249,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
         return cls(ds.name, **{k: ds.tables.get(k, None) for k in cls.FIELDS})
 
     def __post_init__(self) -> None:
-        r"""Post init."""
+        r"""Infer indices, check static covariates, and reject undefined fields."""
         if not isinstance(self.timeseries, DataFrame):
             raise TypeError(
                 f"Expected timeseries to be a pandas DataFrame,"
@@ -271,7 +272,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
         return len(self.metaindex)
 
     def __iter__(self) -> Iterator[Any]:
-        r"""Iterate over the timeseries in the collection."""
+        r"""Iterate over the series identifiers in the collection."""
         return iter(self.metaindex)
 
     def __contains__(self, key: object, /) -> bool:
@@ -294,7 +295,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
         return self.timeindex.index.unique()
 
     def _validate_static_covariates(self) -> None:
-        r"""Ensure that the static covariates index is a subset of the metaindex."""
+        r"""Check the static covariates type and warn about unused or missing keys."""
         match self.static_covariates:
             case None: ...  # fmt: skip
             case DataFrame() as static_cov:
@@ -327,7 +328,12 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     def __getitem__(
         self, key: KeyT | RangeSelector[KeyT], /
     ) -> Self | TimeSeries[TimeT]:
-        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        r"""Select one time series or a subset of the collection.
+
+        A scalar key returns a `TimeSeries`. Lists, boolean masks, slices,
+        and pandas Series select a `TimeSeriesCollection`. Slice stop labels
+        are included, and boolean masks must match the collection length.
+        """
         match key:
             case slice() as s:
                 labels = self._select_slice(s)
@@ -362,7 +368,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
                 )
 
     def _check_keys(self, keys: list[Any] | Index, /) -> None:
-        r"""Raise ``KeyError`` when a label is not present in the meta index."""
+        r"""Raise `KeyError` when a label is not present in the meta index."""
         if missing_keys := [key for key in keys if key not in self.metaindex]:
             raise KeyError(missing_keys)
 
@@ -373,7 +379,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
         return self.static_covariates.loc[keys]
 
     def _subset(self, keys: list[KeyT] | Index, /) -> Self:
-        r"""Return the collection restricted to ``keys``."""
+        r"""Return the collection restricted to `keys`."""
         self._check_keys(keys)
         sliced = (  # formatting
             {k: v for k, v in asdict(self).items() if k in self.FIELDS}

@@ -26,13 +26,13 @@ type RangeSelector[T] = slice[T] | list[T] | list[bool]
 class TimeSeries[TimeT, TableT](Protocol):
     r"""Protocol for time series objects.
 
-    Describes a single time series implemented as a Table-like object, indexed by time.
+    Describes a single time series implemented as a table indexed by time.
 
     Attributes:
         timeseries: The time series data.
-        timeseries_metadata: Data associated with the time such as measurement device, unit, etc.
-        static_covariates: The metadata of the dataset.
-        static_covariates_metadata: Data associated with each metadata such as measurement device, unit, etc.
+        timeseries_metadata: Metadata for each measurement channel, such as its device or unit.
+        static_covariates: Static covariates associated with the time series.
+        static_covariates_metadata: Metadata describing each static covariate.
         timeindex: The time index of the time series.
     """
 
@@ -71,14 +71,13 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
 
     Attributes:
         timeseries: The collection of time series data.
-        timeseries_metadata: Data associated with each channel such as measurement device, unit, etc.
+        timeseries_metadata: Metadata for each measurement channel, such as its device or unit.
         static_covariates: The static covariates associated with each time series.
-        static_covariates_metadata: Data associated with each metadata such as measurement device, unit, etc.
+        static_covariates_metadata: Metadata describing each static covariate.
         constants: Additional data that is independent of the metaindex.
-        constants_metadata: Data associated with each global metadata such as measurement device, unit, etc.
+        constants_metadata: Metadata describing the collection-wide constants.
         timeindex: The time index of the time series.
-        metaindex: The meta index of the time series collection.
-
+        metaindex: The index of series identifiers in the collection.
     """
 
     FIELDS: ClassVar[frozenset[str]]
@@ -125,16 +124,22 @@ class TimeSeriesCollection[KeyT, TableT](Protocol):
 
 
 class SplitTimeData[ArrayT](Protocol):
-    r"""Protocol for forecasting requests.
+    r"""Protocol for a prediction sample with separate context and query time axes.
+
+    Leading dimensions represent optional batch axes. A `$` prefix marks a
+    dynamic dimension that may vary between samples. `$N` and `$K` are the
+    context and query lengths; `D` and `F` are their channel counts, and `M`
+    is the number of static covariates. Within each sample, timestamps are
+    non-decreasing. Padded values and timestamps use `NaN`; masks use `False`.
 
     Attributes:
-        context_times:     Float[..., $N], padded NaN, non-decreasing
-        context_values:    Float[..., $N, D], padded NaN
-        context_mask:      Bool[..., $N, D], padded False
-        query_times:       Float[..., $K], padded NaN, non-decreasing
-        query_mask:        Bool[..., $K, F],  padded False
-        target_values:     Float[..., $K, F],  padded NaN
-        static_covariates: Float[..., M],  padded NaN
+        context_times: Timestamps of type `Float[..., $N]`.
+        context_values: Context values of type `Float[..., $N, D]`.
+        context_mask: Availability mask of type `Bool[..., $N, D]`.
+        query_times: Query timestamps of type `Float[..., $K]`.
+        query_mask: Target mask of type `Bool[..., $K, F]`.
+        target_values: Targets of type `Float[..., $K, F]`, or `None`.
+        static_covariates: Time-independent variables of type `Float[..., M]`, or `None`.
     """
 
     # TODO: Use typing.ReadOnly (PEP 767)
@@ -158,15 +163,21 @@ class SplitTimeData[ArrayT](Protocol):
 
 
 class MergedTimeData[ArrayT](Protocol):
-    r"""Protocol for joint time representation.
+    r"""Protocol for a prediction sample with a shared context and query time axis.
+
+    Leading dimensions represent optional batch axes. A `$` prefix marks a
+    dynamic dimension that may vary between samples. `$T` is the shared
+    sequence length, `D` and `E` are the context and target channel counts,
+    and `M` is the number of static covariates. Within each sample, timestamps
+    are non-decreasing. Padded values and timestamps use `NaN`; masks use `False`.
 
     Attributes:
-        timestamps:        Float[..., $T], padded NaN, non-decreasing
-        context_mask:      Bool[..., $T, D], padded False
-        context_values:    Float[..., $T, D], padded NaN
-        query_mask:        Bool[..., $T, E], padded False
-        target_values:     Float[..., $T, E], padded NaN
-        static_covariates: Float[..., M], padded NaN
+        timestamps: Timestamps of type `Float[..., $T]`.
+        context_mask: Availability mask of type `Bool[..., $T, D]`.
+        context_values: Context values of type `Float[..., $T, D]`.
+        query_mask: Target mask of type `Bool[..., $T, E]`.
+        target_values: Targets of type `Float[..., $T, E]`, or `None`.
+        static_covariates: Time-independent variables of type `Float[..., M]`, or `None`.
     """
 
     # TODO: Use typing.ReadOnly (PEP 767)
@@ -189,19 +200,22 @@ class MergedTimeData[ArrayT](Protocol):
 
 
 class TripletTimeData[ArrayT](Protocol):
-    r"""Protocol for triplet representation.
+    r"""Protocol for a prediction sample represented by time, channel, and value triplets.
 
-    Tall data format that stacks context and query data into a 3 column representation of
-    (time, channel, value) triplets.
+    Leading dimensions represent optional batch axes. A `$` prefix marks a
+    dynamic dimension that may vary between samples. `$X` and `$Q` are the
+    numbers of context and query triplets, and `M` is the number of static
+    covariates. Within each sample, timestamps are non-decreasing. Padded
+    values and timestamps use `NaN`; channel indices use `-1`.
 
     Attributes:
-        context_times:     Float[..., $X], padded NaN, non-decreasing
-        context_channels:  Long[..., $X], padded -1
-        context_values:    Float[..., $X], padded NaN
-        query_times:       Float[..., $Q], padded NaN, non-decreasing
-        query_channels:    Long[..., $Q], padded -1
-        target_values:     Float[..., $Q], padded NaN
-        static_covariates: Float[..., M], padded NaN
+        context_times: Timestamps of type `Float[..., $X]`.
+        context_channels: Channel indices of type `Long[..., $X]`.
+        context_values: Context values of type `Float[..., $X]`.
+        query_times: Query timestamps of type `Float[..., $Q]`.
+        query_channels: Channel indices of type `Long[..., $Q]`.
+        target_values: Targets of type `Float[..., $Q]`, or `None`.
+        static_covariates: Time-independent variables of type `Float[..., M]`, or `None`.
     """
 
     # TODO: Use typing.ReadOnly (PEP 767)

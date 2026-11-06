@@ -49,8 +49,8 @@ from tsdm.timeseries.abstract import RangeSelector
 class TimeSeries[TimeT = Any]:
     r"""A single time series backed by a Polars DataFrame.
 
-    Polars does not have a dedicated row index. ``time_column`` identifies the
-    timestamp column contained in ``timeseries``; ``timeindex`` is inferred
+    Polars does not have a dedicated row index. `time_column` identifies the
+    timestamp column contained in `timeseries`; `timeindex` is inferred
     from that row-aligned column.
     """
 
@@ -72,7 +72,7 @@ class TimeSeries[TimeT = Any]:
     timeseries: pl.DataFrame
     r"""The time series table, including its timestamp columns."""
     time_column: str
-    r"""The timestamp column in ``timeseries``."""
+    r"""The timestamp column in `timeseries`."""
     timeseries_metadata: pl.DataFrame | None = None
     r"""Data associated with the time series variables."""
     static_covariates: pl.DataFrame | None = None
@@ -119,7 +119,7 @@ class TimeSeries[TimeT = Any]:
         A scalar selects one timestamp, a list selects multiple timestamps, a
         boolean list selects rows, and a slice is resolved against the ordered
         distinct timestamps. Slice stop labels are included, matching
-        ``pandas.DataFrame.loc``.
+        `pandas.DataFrame.loc`.
         """
         match key:
             case slice() as s:
@@ -154,7 +154,7 @@ class TimeSeries[TimeT = Any]:
         )
 
     def _check_keys(self, keys: list[TimeT] | pl.Series, /) -> None:
-        r"""Raise ``KeyError`` when a label is not present in an index."""
+        r"""Raise `KeyError` when a label is not present in an index."""
         if missing_keys := [key for key in keys if key not in self.timeindex]:
             raise KeyError(missing_keys)
 
@@ -173,10 +173,10 @@ class TimeSeries[TimeT = Any]:
 class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     r"""A collection of time series backed by a Polars DataFrame.
 
-    Polars does not have a dedicated row index. ``time_column`` and
-    ``meta_columns`` identify the row-aligned timestamp and collection-key
-    columns contained in ``timeseries``. Their pairing replaces Pandas'
-    two-level ``MultiIndex``.
+    Polars does not have a dedicated row index. `time_column` and
+    `meta_columns` identify the row-aligned timestamp and collection-key
+    columns contained in `timeseries`. Together they serve the role of a
+    pandas `MultiIndex` with series identifiers followed by timestamps.
     """
 
     FIELDS: ClassVar[frozenset[str]] = frozenset(
@@ -199,9 +199,9 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     timeseries: pl.DataFrame
     r"""The collection's time series table, including its index columns."""
     time_column: str
-    r"""The timestamp column in ``timeseries``."""
+    r"""The timestamp column in `timeseries`."""
     meta_columns: list[str]
-    r"""The collection-key columns in ``timeseries``."""
+    r"""The collection-key columns in `timeseries`."""
     timeseries_metadata: pl.DataFrame | None = None
     r"""Data associated with the time series variables."""
     static_covariates: pl.DataFrame | None = None
@@ -216,7 +216,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     timeindex: pl.Series = field(init=False)
     r"""The distinct timestamps in order of appearance."""
     metaindex: pl.DataFrame = field(init=False)
-    r"""The distinct collection identifiers inferred from ``timeseries``."""
+    r"""The distinct collection identifiers inferred from `timeseries`."""
 
     def __post_init__(self) -> None:
         r"""Validate collection columns and infer its derived indices."""
@@ -307,8 +307,8 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     ) -> TimeSeries[TimeT] | Self:
         r"""Select one time series or a subset of the collection.
 
-        Scalar keys return a :class:`PolarsTS`; lists and slices return a
-        :class:`PolarsTSC`. A boolean list selects collection identifiers by
+        Scalar keys return a `TimeSeries`; lists and slices return a
+        `TimeSeriesCollection`. A boolean list selects collection identifiers by
         their order in the metaindex.
         """
         match key:
@@ -350,7 +350,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
                 )
 
     def _check_keys(self, keys: Sequence[KeyT] | pl.Series, /) -> None:
-        r"""Raise ``KeyError`` when a label is not present in an index."""
+        r"""Raise `KeyError` when a label is not present in an index."""
         if missing_keys := [key for key in keys if key not in self]:
             raise KeyError(missing_keys)
 
@@ -364,7 +364,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
         return self.static_covariates.filter(mask)
 
     def _subset(self, keys: Sequence[KeyT] | pl.Series, /) -> Self:
-        r"""Return the collection restricted to ``keys``."""
+        r"""Return the collection restricted to `keys`."""
         self._check_keys(keys)
         key_frame = self._key_frame(keys)
         sliced = {
@@ -383,7 +383,7 @@ class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
         )
 
     def _key_frame(self, keys: Sequence[KeyT] | pl.Series, /) -> pl.DataFrame:
-        r"""Convert collection keys to a table indexed by ``meta_columns``."""
+        r"""Convert collection keys to a table indexed by `meta_columns`."""
         if not len(keys):
             return self.metaindex.head(0)
         match self.metaindex.width:
