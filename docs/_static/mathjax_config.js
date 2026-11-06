@@ -242,9 +242,11 @@ window.MathJax = {
 
 // This integrates MathJax with instant navigation.
 // See: https://zensical.org/docs/authoring/math/
+// Adapted for MathJax 4: await startup to avoid refresh races, and await typesetting
+// so this callback completes after rendering. Omit clearCache() to preserve the
+// layout styles needed by equations already rendered during startup.
 document$.subscribe(async () => {
     await MathJax.startup.promise;
-    MathJax.startup.output.clearCache()
     MathJax.typesetClear()
     MathJax.texReset()
     await MathJax.typesetPromise()
