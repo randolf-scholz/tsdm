@@ -1,4 +1,4 @@
-r"""Test for checking how regular time series is."""
+r"""Tests and measures of time series regularity."""
 
 __all__ = [
     # Functions
@@ -24,14 +24,18 @@ from scipy import stats
 def approx_float_gcd(
     a: ArrayLike, /, *, rtol: float = 1e-05, atol: float = 1e-08
 ) -> float:
-    r"""Compute approximate GCD of multiple floats.
+    r"""Compute an approximate greatest common divisor (GCD) of multiple floats.
 
-    .. math:: 𝗀𝖼𝖽_ϵ(x) = 𝗆𝖺𝗑\{y∣ ∀i : 𝖽𝗂𝗌𝗍(x_i, yℤ)≤ϵ\}
+    The intended quantity is
 
-    .. warning:: This implementation does not work 100% correctly yet!
+    $$ \operatorname{gcd}_ϵ(x) = \max\{y > 0 ∣ ∀i : \operatorname{dist}(xᵢ, yℤ) ≤ ϵ\} $$
+
+    Warning:
+        This experimental implementation is not reliable for all inputs and emits
+        a `RuntimeWarning` whenever it is called.
 
     References:
-        - https://stackoverflow.com/q/45323619
+        - [Approximate GCD of floating-point numbers](https://stackoverflow.com/q/45323619).
     """
     warnings.warn(
         "The implementation of approx_float_gcd does not work 100% correctly yet!",
@@ -99,7 +103,7 @@ def float_gcd(a: ArrayLike, /) -> float:
 
 
 def is_quasiregular(a: ArrayLike, /) -> bool:
-    r"""Test if time series is quasi-regular.
+    r"""Test whether a time series is quasi-regular.
 
     By definition, this is the case if all timedeltas are
     integer multiples of the minimal, non-zero timedelta of the series.
@@ -113,7 +117,7 @@ def is_quasiregular(a: ArrayLike, /) -> bool:
 
 
 def is_regular(a: ArrayLike) -> bool:
-    r"""Test if time series is regular, i.e. iff $Δt_i$ is constant."""
+    r"""Test whether a time series is regular, with constant time differences $Δtᵢ$."""
     t = np.asanyarray(a)
     dt = np.diff(t)
     return bool(np.all(dt == np.min(dt)))
@@ -122,14 +126,25 @@ def is_regular(a: ArrayLike) -> bool:
 def regularity_coefficient(a: ArrayLike, /, *, ignore_duplicates: bool = True) -> float:
     r"""Compute the regularity coefficient of a time series.
 
-    The regularity coefficient is equal to the ratio of length of the smallest regular time-series
-    that contains s and the length of s.
+    For ordered timestamps $t₀, …, tₙ$, let $h$ be the GCD of their positive
+    time differences and $m$ the number of differences retained for normalization.
+    The coefficient compares the number of grid intervals needed to span the series
+    with the number of observed intervals:
 
-    .. math:: κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
+    $$ κ(𝐭) = \frac{tₙ - t₀}{hm} $$
 
-    In particular, if the time-series is regular, $κ=1$, and if it is irregular, $κ=∞$.
-    To make the time-series regular, one would have to insert additional
-    $(κ(𝐭)-1)\abs{𝐭}$-many data-points.
+    With strictly increasing timestamps, $κ=1$ for a regular series. A series with
+    gaps on a common grid has a finite coefficient greater than one; irregularity
+    does not in general imply $κ=∞$. For strictly increasing timestamps, filling
+    the grid requires $(κ(𝐭)-1)m$ additional timestamps.
+
+    Args:
+        a: Nondecreasing timestamps containing at least one positive time difference.
+        ignore_duplicates: Whether to exclude zero differences from $m$.
+
+    Note:
+        Duplicate timestamps are always excluded from the GCD calculation.
+        When `ignore_duplicates=False`, they still count toward $m$.
     """
     s = np.asanyarray(a)
     gcd = time_gcd(s)
@@ -142,7 +157,11 @@ def regularity_coefficient(a: ArrayLike, /, *, ignore_duplicates: bool = True) -
 
 
 def time_gcd(a: ArrayLike, /) -> float:
-    r"""Compute the greatest common divisor of datetime64/int/float data."""
+    r"""Compute the GCD of positive differences between successive timestamps.
+
+    The input may contain datetime, integer, or floating-point values. Duplicate
+    timestamps are ignored. At least one positive difference is required.
+    """
     t = np.asanyarray(a)
     dt = np.diff(t)
     zero = np.array(0, dtype=dt.dtype)
@@ -161,14 +180,14 @@ def time_gcd(a: ArrayLike, /) -> float:
 
 
 def irregularity_coefficient(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
-    r"""Compute the irregularity coefficient of a time differences.
+    r"""Compute the irregularity coefficient of time differences.
 
     Args:
-        a: Sequence of time stamps
-        drop_zero: Whether to drop zero time differences (default: True)
+        a: Sequence of timestamps.
+        drop_zero: Whether to drop zero time differences (default: `True`).
 
     Returns:
-        γ(T) = \max(∆T) / \gcd(∆T)
+        $γ(T) = \max(∆T) / \gcd(∆T)$.
     """
     t = np.asanyarray(a)
     dt = np.diff(t)
@@ -188,14 +207,14 @@ def irregularity_coefficient(a: ArrayLike, /, *, drop_zero: bool = True) -> floa
 
 
 def coefficient_of_variation(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
-    r"""Compute the coefficient of variation of a time differences.
+    r"""Compute the coefficient of variation of time differences.
 
     Args:
-        a: Sequence of time stamps
-        drop_zero: Whether to drop zero time differences (default: True)
+        a: Sequence of timestamps.
+        drop_zero: Whether to drop zero time differences (default: `True`).
 
     Returns:
-        γ(T) = σ(∆T) / μ(∆T)
+        $γ(T) = σ(∆T) / μ(∆T)$.
     """
     t = np.asanyarray(a)
     dt = np.diff(t)
@@ -207,14 +226,14 @@ def coefficient_of_variation(a: ArrayLike, /, *, drop_zero: bool = True) -> floa
 
 
 def geometric_std(a: ArrayLike, /, *, drop_zero: bool = True) -> float:
-    r"""Compute the geometric standard deviation of a time differences.
+    r"""Compute the geometric standard deviation of time differences.
 
     Args:
-        a: Sequence of time stamps
-        drop_zero: Whether to drop zero time differences (default: True)
+        a: Sequence of timestamps.
+        drop_zero: Whether to drop zero time differences (default: `True`).
 
     Returns:
-        σ_g(T) = exp(σ(log(∆T)))
+        The geometric standard deviation $\exp(σ(\log(∆T)))$.
     """
     t = np.asanyarray(a)
     dt = t[1:] - t[:-1]

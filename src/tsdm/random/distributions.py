@@ -1,6 +1,8 @@
 r"""Probability distributions."""
 
 __all__ = [
+    # Types
+    "Size",
     # ABCs & Protocols
     "RV",
     "TimeSeriesRV",
@@ -17,12 +19,13 @@ from numpy.random import Generator
 from numpy.typing import ArrayLike, NDArray
 
 from tsdm.constants import RNG
-from tsdm.types.aliases import Size
+
+type Size = int | tuple[int, ...]
 
 
 @runtime_checkable
 class RV[T](Protocol):  # +T
-    r"""Protocol for random variable."""
+    r"""Protocol for a random variable."""
 
     @abstractmethod
     def rvs(
@@ -32,7 +35,7 @@ class RV[T](Protocol):  # +T
 
 @runtime_checkable
 class TimeSeriesRV[T](Protocol):  # +T
-    r"""Protocol for time series random variable $p(x∣t)$."""
+    r"""Protocol for a time series random variable $p(x∣t)$."""
 
     @abstractmethod
     def rvs(
@@ -62,11 +65,11 @@ class Distribution[T](RV[T], Protocol):  # +T
         raise NotImplementedError
 
     def moment(self, order: int, /) -> T:
-        r"""Non-central moment of order n."""
+        r"""Noncentral moment of the given `order`."""
         raise NotImplementedError
 
     def pdf(self, x: ArrayLike, /) -> T:
-        r"""Probability density function at x of the given RV."""
+        r"""Probability density function at `x` of the given RV."""
         raise NotImplementedError
 
     def cdf(self, x: ArrayLike, /) -> T:
@@ -74,23 +77,23 @@ class Distribution[T](RV[T], Protocol):  # +T
         raise NotImplementedError
 
     def ppf(self, q: ArrayLike, /) -> T:
-        r"""Percent point function (inverse of `cdf`) at q of the given RV."""
+        r"""Percent point function (inverse of `cdf`) at `q` of the given RV."""
         raise NotImplementedError
 
     def sf(self, x: ArrayLike, /) -> T:
-        r"""Survival function (1 - `cdf`) at x of the given RV."""
+        r"""Survival function $1 - F(x)$, where $F$ is the CDF of the given RV."""
         raise NotImplementedError
 
     def isf(self, q: ArrayLike, /) -> T:
-        r"""Inverse survival function at q of the given RV."""
+        r"""Inverse survival function at `q` of the given RV."""
         raise NotImplementedError
 
     def logpdf(self, x: ArrayLike, /) -> T:
-        r"""Log of the probability density function at x of the given RV."""
+        r"""Log of the probability density function at `x` of the given RV."""
         raise NotImplementedError
 
     def logcdf(self, x: ArrayLike, /) -> T:
-        r"""Log of the cumulative distribution function at x of the given RV."""
+        r"""Log of the cumulative distribution function at `x` of the given RV."""
         raise NotImplementedError
 
     def logsf(self, x: ArrayLike, /) -> T:
