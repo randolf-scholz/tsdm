@@ -1,4 +1,4 @@
-r"""Samplers for from sampling datasets and timeseries.
+r"""Samplers for datasets and time series.
 
 Note:
     These are often used to sample keys used for indexing into a dataset,

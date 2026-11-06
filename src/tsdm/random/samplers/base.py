@@ -21,7 +21,7 @@ from tsdm.constants import RNG
 class Sampler[T](Protocol):  # +T
     r"""Define the interface shared by all sampler implementations.
 
-    This protocol is compatible in spirit with ``torch.utils.data.Sampler`` and
+    This protocol is compatible in spirit with `torch.utils.data.Sampler` and
     additionally requires controls for shuffling and random-number generation.
     """
 

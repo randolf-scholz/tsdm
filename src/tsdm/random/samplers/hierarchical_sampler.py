@@ -1,7 +1,7 @@
 r"""Sampling and dataset adapters for two-level collections.
 
 These utilities treat a mapping of datasets as a flat collection of
-``(outer_key, inner_key)`` pairs while retaining access to its nested layout.
+`(outer_key, inner_key)` pairs while retaining access to its nested layout.
 """
 
 __all__ = ["HierarchicalSampler", "HierarchicalDataset"]
@@ -27,17 +27,19 @@ from .random_sampler import RandomSampler
 class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Flatten a mapping of datasets into pairs of outer and inner keys.
 
-    Each nested dataset has its own sampler. With ``early_stop=False`` every
-    nested sampler is exhausted; with ``early_stop=True`` all groups contribute
+    Each nested dataset has its own sampler. With `early_stop=False` every
+    nested sampler is exhausted; with `early_stop=True` all groups contribute
     the same number of samples.
 
     Example:
+        ```pycon
         >>> from tsdm.random.samplers import HierarchicalSampler, RandomSampler
         >>> sampler = HierarchicalSampler(
         ...     {"A": [1, 2, 3], "B": [4, 5, 6]}, shuffle=False
         ... )
         >>> list(sampler)
         [('A', 1), ('A', 2), ('A', 3), ('B', 4), ('B', 5), ('B', 6)]
+        ```
 
     Args:
         data: Mapping from outer keys to datasets.
@@ -139,7 +141,7 @@ class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
 
     An outer key returns its complete nested dataset. A pair of outer and inner
     keys returns the sample from that dataset, equivalent to
-    ``datasets[outer_key][inner_key]``.
+    `datasets[outer_key][inner_key]`.
     """
 
     datasets: Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]]
@@ -167,7 +169,7 @@ class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
     def __getitem__(self, key: OuterKeyT | tuple[OuterKeyT, InnerKeyT], /) -> Any:
         r"""Return a nested dataset or one of its samples by key.
 
-        A single key returns the corresponding dataset; an ``(outer, inner)``
+        A single key returns the corresponding dataset; an `(outer, inner)`
         tuple returns the nested sample.
         """
         match key:

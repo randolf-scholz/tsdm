@@ -51,18 +51,18 @@ def sample_timestamps(
 ) -> NDArray[np.datetime64]:
     r"""Sample timestamps from a regular grid within a time interval.
 
-    When ``stop`` is omitted, the interval spans one day from ``start``. The
+    When `stop` is omitted, the interval spans one day from `start`. The
     optional boundary flags reserve the first and final grid points, respectively;
     all remaining timestamps are drawn uniformly from the interior grid.
 
     Args:
         start: Inclusive lower bound of the sampling interval.
-        stop: Inclusive upper bound; defaults to one day after ``start``.
+        stop: Inclusive upper bound; defaults to one day after `start`.
         size: Number of timestamps to return.
         freq: Spacing of the candidate timestamp grid.
         replace: Whether non-boundary timestamps may be selected repeatedly.
-        include_start: Whether to include ``start`` in the result.
-        include_final: Whether to include ``stop`` in the result.
+        include_start: Whether to include `start` in the result.
+        include_final: Whether to include `stop` in the result.
     """
     start_dt = timestamp(start)
     final_dt = start_dt + timedelta("24h") if stop is None else timestamp(stop)
@@ -102,7 +102,7 @@ def sample_timedeltas(
 ) -> NDArray[np.timedelta64]:
     r"""Sample timedeltas from a regularly spaced interval.
 
-    Both bounds are rounded to ``freq`` before constructing the candidate grid.
+    Both bounds are rounded to `freq` before constructing the candidate grid.
     """
     low_dt = timedelta(low)
     high_dt = timedelta(high)
@@ -156,7 +156,7 @@ r"""NATO-style words used when generating synthetic string arrays."""
 def random_data(
     size: tuple[int], *, dtype: DTypeLike = float, missing: float = 0.0
 ) -> NDArray:
-    r"""Create a synthetic NumPy array with values appropriate for ``dtype``.
+    r"""Create a synthetic NumPy array with values appropriate for `dtype`.
 
     Integer, floating-point, boolean, and string dtypes are supported. Missing
     value generation is reserved for future implementation.

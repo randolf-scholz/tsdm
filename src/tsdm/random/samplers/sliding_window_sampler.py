@@ -55,11 +55,11 @@ def compute_grid[TD: SpanLikeScalar](
     *,
     offset: Optional[str | TimeLikeScalar[TD]] = None,
 ) -> list[int]:
-    r"""Return grid offsets that keep ``offset + k * step`` within the bounds.
+    r"""Return grid offsets that keep `offset + k * step` within the bounds.
 
-    ``offset`` defaults to ``tmin`` and must lie within the closed interval
-    ``[tmin, tmax]``. Positive and negative steps are both supported; a zero
-    step raises :class:`ValueError`.
+    `offset` defaults to `tmin` and must lie within the closed interval
+    `[tmin, tmax]`. Positive and negative steps are both supported; a zero
+    step raises `ValueError`.
 
     Args:
         tmin: Inclusive lower bound of the coordinate range.
@@ -144,9 +144,9 @@ class SlidingWindowSampler[
 ](BaseSampler):
     r"""Generate half-open time windows that slide across ordered coordinates.
 
-    A scalar ``horizons`` value produces one window per grid position; a sequence
+    A scalar `horizons` value produces one window per grid position; a sequence
     produces contiguous horizons and yields one representation for each. Windows
-    are closed on the left and open on the right. The ``mode`` chooses whether a
+    are closed on the left and open on the right. The `mode` chooses whether a
     window is returned as bounds, a slice, an interval, matching positions, their
     indices, or a boolean mask.
 
@@ -157,7 +157,7 @@ class SlidingWindowSampler[
         stride: Distance by which the complete window advances between samples.
         drop_last: Exclude a final window unless all of its horizons fit in range.
         shuffle: Whether to randomize the order of window positions.
-        rng: Generator used when ``shuffle`` is enabled.
+        rng: Generator used when `shuffle` is enabled.
     """
 
     # NOTE: type checkers seem to break if we do not use 'TypeAlias' here.
