@@ -13,4 +13,7 @@
       </map>
     </option>
   </component>
+  <component name="RuffConfiguration">
+    <option name="formatSortImports" value="true" />
+  </component>
 </project>
