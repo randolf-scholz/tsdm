@@ -1,4 +1,4 @@
-r"""Implements `pyarrow`-backend for tsdm."""
+r"""PyArrow backend implementation."""
 
 __all__ = [
     # Constants
@@ -118,37 +118,50 @@ def strip_whitespace[T: Table | AnyArray](obj: T, /, *cols: str) -> T:
 
 
 def false_like(arr: AnyArray, /) -> BooleanArray:
-    r"""Creates a `BooleanArray` of False values with the same length as arr."""
+    r"""Create a boolean array of `False` values with the same length as `arr`."""
     m = arr.is_valid()
     return pc.xor(m, m)
 
 
 def true_like(arr: AnyArray, /) -> BooleanArray:
-    r"""Creates a `BooleanArray` of True values with the same length as arr."""
+    r"""Create a boolean array of `True` values with the same length as `arr`."""
     return pc.invert(false_like(arr))
 
 
 def full_like[A: AnyArray](arr: A, /, *, fill_value: Scalar) -> A:
-    r"""Creates an `Array` of `fill_value` with the same length as arr."""
+    r"""Create an array filled with `fill_value`, including at input nulls.
+
+    Preserve the input length, container kind, and chunk lengths. Use the dtype
+    of `fill_value`, except that an untyped null uses the input dtype. Python
+    values are converted to Arrow scalars before filling.
+    """
     if not isinstance(fill_value, Scalar):
         fill_value = pa.scalar(fill_value)
-    if fill_value is NA:
+    if pa.types.is_null(fill_value.type):
         fill_value = fill_value.cast(arr.type)
-    if fill_value.type == arr.type:
-        return pc.replace_with_mask(arr, false_like(arr), fill_value)
-    empty = null_like(arr).cast(fill_value.type)
-    return pc.replace_with_mask(empty, true_like(arr), fill_value)
+    match arr:
+        case ChunkedArray(chunks=chunks):
+            return pa.chunked_array(
+                [full_like(chunk, fill_value=fill_value) for chunk in chunks],
+                type=fill_value.type,
+            )
+        case Array() if len(arr) == 0:
+            return pa.nulls(0, type=fill_value.type)
+        case _:
+            return pa.repeat(fill_value, len(arr))
 
 
 def null_like[A: AnyArray](arr: A, /) -> A:
-    r"""Creates an `Array` of null-values with the same length as arr."""
+    r"""Create an all-null array with the input dtype, length, and chunk lengths."""
     return full_like(arr, fill_value=NA)
 
 
 def where[T: AnyArray](mask: Mask, x: T | Scalar, y: T | Scalar = NA, /) -> T:
-    r"""Select elements from x or y depending on mask.
+    r"""Replace elements of `x` with values from `y` where `mask` is true.
 
-    arrow_where(mask, x, y) is roughly equivalent to x.where(mask, y).
+    This wrapper follows `pyarrow.compute.replace_with_mask`: false mask entries
+    retain `x`, and null mask entries produce nulls. With the default `y`, true
+    mask entries are replaced with nulls.
     """
     return pc.replace_with_mask(x, mask, y)
 
@@ -171,7 +184,12 @@ def select_outliers_array(
     lower_inclusive: bool | None,
     upper_inclusive: bool | None,
 ) -> BooleanAnyArray:
-    r"""Detect outliers in an Arrow array, given boundary values."""
+    r"""Return a boolean mask identifying values outside the supplied bounds.
+
+    A bound of `None` leaves that side unbounded. Inclusive bounds admit values
+    equal to the boundary. Nulls and values in nonnumeric arrays are not marked
+    as outliers.
+    """
     if not _is_real_numeric_array(s):
         return false_like(s)
 
@@ -246,7 +264,10 @@ def remove_outliers_array[A: AnyArray](
 ) -> A:
     r"""Remove outliers from an Arrow array, given boundary values.
 
-    ``inplace`` is accepted for API compatibility. Arrow arrays are immutable.
+    Outliers are replaced with nulls and, when `drop=True`, removed. If both
+    bounds are `None`, return the input unchanged.
+
+    `inplace` is accepted for API compatibility and ignored. Arrow arrays are immutable.
     """
     del inplace
     if lower_bound is None and upper_bound is None:
@@ -295,7 +316,11 @@ def remove_outliers_table(
 ) -> Table:
     r"""Remove outliers from an Arrow table, given boundary values.
 
-    ``inplace`` is accepted for API compatibility. Arrow tables are immutable.
+    Outlying cells are replaced with nulls. When `drop=True`, remove rows only
+    if every column is marked as an outlier. All columns must have entries in
+    each bounds mapping.
+
+    `inplace` is accepted for API compatibility and ignored. Arrow tables are immutable.
     """
     del inplace
     given_bounds = set.intersection(
@@ -342,7 +367,15 @@ def force_cast(x: Table, /, **dtypes: DataType | str) -> Table: ...
 def force_cast[T: AnyArray | Table](
     x: T, dtype: Optional[DataType | str] = None, /, **dtypes: DataType | str
 ) -> T:
-    r"""Cast an array or table to the given data type, replacing non-castable elements with null."""
+    r"""Cast an array or selected table columns using permissive cast options.
+
+    Allow truncation of floating-point, decimal, and time values, as well as
+    invalid UTF-8. Other invalid conversions can still raise an Arrow exception;
+    they are not replaced with nulls.
+
+    Array input requires `dtype`; table input accepts column dtypes as keyword
+    arguments and retains the dtypes of unspecified columns.
+    """
     match x:
         case (Array() | ChunkedArray()) as array:
             if dtypes:
@@ -386,7 +419,11 @@ def force_cast[T: AnyArray | Table](
 def cast_column(
     table: Table, col: str, dtype: DataType | str, /, *, safe: bool
 ) -> Table:
-    r"""Concatenate columns into a new column."""
+    r"""Cast one column and return a table with that column replaced.
+
+    Dictionary dtypes trigger dictionary encoding. Other dtypes use Arrow's
+    cast operation with the supplied `safe` flag.
+    """
     try:
         casted_column = (
             table[col].combine_chunks().dictionary_encode()
@@ -418,7 +455,11 @@ def cast_columns(table: Table, /, **dtypes: DataType | str) -> Table:
 
 
 def unsafe_cast_columns(table: Table, /, **dtypes: DataType | str) -> Table:
-    r"""Cast columns to the given data types, replacing non-castable elements with null."""
+    r"""Cast selected columns with Arrow's safety checks disabled.
+
+    Invalid conversions can still raise an Arrow exception; they are not
+    replaced with nulls. Unspecified columns retain their dtypes.
+    """
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types, strict=True))
     if unknown_keys := set(dtypes.keys()) - set(current_dtypes.keys()):
@@ -445,14 +486,17 @@ def is_string_array(arr: AnyArray, /) -> bool:
 
 
 def compute_entropy(value_counts: AnyArray, /) -> float:
-    r"""Compute the normalized entropy using a value_counts array.
+    r"""Compute normalized entropy from an Arrow `value_counts` array.
 
-    .. math:: ∑ᵢ₌₁ⁿ -pᵢ \log₂(pᵢ)/\log₂(n)
+    $$ -∑ᵢ₌₁ⁿ pᵢ \log₂(pᵢ) / \log₂(n) $$
+
+    Here, $n$ is the number of distinct values and $pᵢ$ is the relative frequency
+    of the $i$-th value.
 
     Note:
-        Since entropy is maximized for a uniform distribution, and the entropy
-        of a uniform distribution of n choices is log₂(n), the normalization
-        ensures that the entropy is in the range [0, 1].
+        For positive counts and $n > 1$, the result lies in $[0, 1]$ and is
+        maximized by a uniform distribution. Empty inputs, zero counts, and
+        $n = 1$ are not handled specially and may produce `NaN` or raise an exception.
     """
     counts = pc.struct_field(value_counts, 1)
 
@@ -519,7 +563,10 @@ def set_nulls_series[A: AnyArray](series: A, values: Sequence, /) -> A:
 
 
 def set_nulls(table: Table, /, **cols: Sequence) -> Table:
-    r"""For given columns set all matching values ito null."""
+    r"""Set matching values to null in each specified column.
+
+    Keyword arguments map column names to the values to replace.
+    """
     for col, values in cols.items():
         table = table.set_column(
             table.column_names.index(col),

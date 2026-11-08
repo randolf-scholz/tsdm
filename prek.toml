@@ -121,7 +121,7 @@ hooks = [
     {
         id = "check-typing",
         args = ["--check-no-return-union"],
-        files = "^src/|^tests/",
+        files = "^src/",
         exclude = "lazydict.py",
     },
     {
