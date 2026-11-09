@@ -192,6 +192,10 @@ window.MathJax = {
         inlineMath: [["\\(", "\\)"]],
         displayMath: [["\\[", "\\]"]],
         macros: {
+            // constants
+            emp: "\\mathsf{emp}",  // empirical distribution
+            obs: "\\mathsf{obs}",  // observed distribution
+            nan: "\\texttt{NaN}",
             // operators
             Cov: "\\operatorname{Cov}",  // covariance
             E: "\\operatorname{\\mathbf{E}}",  // expected value
@@ -208,7 +212,6 @@ window.MathJax = {
             logsumexp: "\\operatorname{logsumexp}",
             mae: "\\operatorname{\\mathbf{MAE}}",  // mean absolute error
             mse: "\\operatorname{\\mathbf{MSE}}",  // mean squared error
-            nan: "\\texttt{NaN}",
             nd: "\\operatorname{\\mathbf{ND}}",
             nrmse: "\\operatorname{\\mathbf{NRMSE}}",
             orth: "\\operatorname{orth}",  // orthogonal projection / QR decom
