@@ -75,6 +75,7 @@ docs = [
     "zensical>=0.1.0",
 ]
 linters = [
+    "mdformat>=1.0.0",
     "packaging>=26.3", # for some git hooks
     "prek>=0.5.10",
     "ruff>=0.17.4",
@@ -142,48 +143,6 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = true
 docstring-code-line-length = "dynamic"
-
-[tool.ruff.lint.per-file-ignores]
-"src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
-"src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
-"src/tsdm/models/*" = ["N803"]
-"src/tsdm/types/*" = ["ERA001"]
-"**/test*" = [
-    "D100",
-    "D101",
-    "D104",
-    "D106",
-    "PYI042",
-    "RUF046",
-    "S101",
-    "SIM300",
-    "T20",
-    "UP018",
-    "RUF046",
-]
-
-[tool.ruff.lint.pylint]
-allow-dunder-method-names = [
-    "__array__",
-    "__array_ufunc__",
-    "__dataframe__",
-    "_repr_html_",
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.pycodestyle]
-max-doc-length = 120
-max-line-length = 120
-ignore-overlong-task-comments = true
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = false
-mark-parentheses = false
-
-[tool.ruff.lint.isort]
-combine-as-imports = true
 
 [tool.ruff.lint]
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -336,6 +295,48 @@ ignore = [
     # pyupgrade
     "UP045", # Use `X | Y` for type annotations
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
+"src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
+"src/tsdm/models/*" = ["N803"]
+"src/tsdm/types/*" = ["ERA001"]
+"**/test*" = [
+    "D100",
+    "D101",
+    "D104",
+    "D106",
+    "PYI042",
+    "RUF046",
+    "S101",
+    "SIM300",
+    "T20",
+    "UP018",
+    "RUF046",
+]
+
+[tool.ruff.lint.pylint]
+allow-dunder-method-names = [
+    "__array__",
+    "__array_ufunc__",
+    "__dataframe__",
+    "_repr_html_",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 120
+max-line-length = 120
+ignore-overlong-task-comments = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
 # endregion ruff
 
 [tool.uv]
