@@ -44,6 +44,17 @@ git switch -c feature-xyz
 Source code lives in `src/`, and tests live in `tests/`. Add or update tests
 for behavior affected by your change.
 
+### Testing conventions
+
+Prefer tests that use real components and small, deterministic inputs.
+Use pytest fixtures and temporary files or directories to isolate tests, and
+close resources with context managers or fixture teardown.
+
+Mocking is discouraged, including `unittest.mock` (`Mock`, `MagicMock`,
+`patch`) and monkeypatching when real components or fixtures can exercise the
+behavior. Assert observable results and state rather than mocked call counts
+or private implementation details.
+
 ### Run the checks
 
 Run the test suite with `pytest`:

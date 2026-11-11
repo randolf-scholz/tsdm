@@ -64,6 +64,14 @@ This file describes project conventions for automated agents contributing to `ts
   `$$\n\begin{aligned}\n <eq>\n \end{aligned}\n$$`
 - Equations shouldn't have a trailing dot.
 
+## Testing conventions
+
+- Mocking is discouraged. Avoid `unittest.mock` (`Mock`, `MagicMock`, `patch`) and monkeypatching when real
+  components or fixtures can exercise the behavior.
+- Prefer small, deterministic inputs, real components, and pytest fixtures. Use temporary files and directories
+  for filesystem tests, and context managers or fixture teardown to close resources.
+- Assert observable results and state rather than mocked call counts or private implementation details.
+
 ## Running tests, formatting, and linting
 
 - use `uv run <tool>` for all project-local Python commands, including `python`, `pytest`, `ruff`, `pyrefly`, and
