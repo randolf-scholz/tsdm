@@ -255,6 +255,27 @@ def _get_dtypes(table: object) -> list[object]:
             raise TypeError(f"Unsupported object type {type(table)}.")
 
 
+def repr_dtype(dtype: object, /) -> str:
+    r"""Return a string representation of a dtype object."""
+    match dtype:
+        case SupportsDtype(dtype=dtype):
+            return repr_dtype(dtype)
+        case torch.dtype():
+            return repr(dtype).lstrip("torch.")
+        case str(string):
+            return string
+        # These are too verbose.
+        case pd.ArrowDtype() as wrapped_arrow_dtype:
+            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
+        # Some special casing for dictionary types.
+        case pa.DictionaryType(index_type=index_type, value_type=value_type):
+            return f"dict[{index_type!s},{value_type!s}]"
+        case type() as cls:
+            return cls.__name__
+        case _:
+            return str(dtype)
+
+
 def get_identifier(obj: object, /, **_: Any) -> str:
     r"""Return the identifier of an object."""
     match obj:
@@ -1045,27 +1066,6 @@ def repr_array(
     # Scalar@device<shape>(value)
     # PlainScalar@device(value)
     return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
-
-
-def repr_dtype(dtype: object, /) -> str:
-    r"""Return a string representation of a dtype object."""
-    match dtype:
-        case SupportsDtype(dtype=dtype):
-            return repr_dtype(dtype)
-        case torch.dtype():
-            return repr(dtype).lstrip("torch.")
-        case str(string):
-            return string
-        # These are too verbose.
-        case pd.ArrowDtype() as wrapped_arrow_dtype:
-            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
-        # Some special casing for dictionary types.
-        case pa.DictionaryType(index_type=index_type, value_type=value_type):
-            return f"dict[{index_type!s},{value_type!s}]"
-        case type() as cls:
-            return cls.__name__
-        case _:
-            return str(dtype)
 
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
