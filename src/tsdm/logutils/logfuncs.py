@@ -50,6 +50,7 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
+from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 from tsdm.utils import transpose_list_of_dicts
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
@@ -96,7 +97,7 @@ def is_logfunc(func: object, /) -> TypeIs[LogFunction]:
 
 def log_config(
     step: int | str,
-    writer: SummaryWriter | Path,
+    writer: SummaryWriter | FilePath,
     /,
     config: JSON,
     *,
@@ -459,7 +460,7 @@ def log_values(
 
 def log_table(
     step: int,
-    writer: SummaryWriter | Path,
+    writer: SummaryWriter | FilePath,
     /,
     table: Any,
     *,

@@ -10,6 +10,12 @@ Most callback classes take the logged object as a positional constructor argumen
 a callable that returns a figure. Use the `callback(step, **state_dict)` entry
 point to apply frequency checks. Calling `__call__` directly bypasses the
 frequency check supplied by `BaseCallback`.
+
+Fields may generally be reassigned between calls. `Final` annotations mark
+bindings tied to initialized schemas, shared table identities, or persisted
+selection state. These are static typing constraints; referenced objects remain
+mutable. In particular, update shared histories in place and keep evaluation
+split and metric names unchanged. Execution frequencies remain mutable.
 """
 
 __all__ = [
@@ -56,6 +62,7 @@ from typing import (
     Any,
     ClassVar,
     Concatenate,
+    Final,
     Literal,
     Optional,
     Protocol,
@@ -196,7 +203,11 @@ def is_callback(obj: object, /) -> TypeIs[Callback]:
 @pprint_repr
 @dataclass(slots=True)
 class BaseCallback:
-    r"""Base class for callbacks."""
+    r"""Base class with a mutable, keyword-only execution frequency.
+
+    Subclasses inherit `frequency` in their generated dataclass constructors.
+    Individual subclasses mark initialization-dependent bindings with `Final`.
+    """
 
     LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the class."""
@@ -313,7 +324,7 @@ class ConfigCallback(BaseCallback):
 
     _: KW_ONLY
 
-    writer: SummaryWriter | Path
+    writer: SummaryWriter | FilePath
 
     # Optional parameters
     fmt: Literal["json", "yaml", "toml"] = "yaml"
@@ -347,6 +358,9 @@ class BestEpochTracker(BaseCallback):
     These table invariants are assumed, not validated. Append new evaluations
     in place and keep the schema and existing rows unchanged.
     All owned DataFrames likewise retain their identity through in-place appends.
+    Selection settings and the writer are fixed: changing them would mix
+    incompatible selection criteria or redirect CSV appends away from the
+    header created during initialization. Logging names may change between calls.
 
     Calling with a step label processes all unseen rows through that exact step;
     row positions are never interpreted as step labels. Repeated calls for an
@@ -368,21 +382,21 @@ class BestEpochTracker(BaseCallback):
     in-memory appends, so failed CSV writes leave the shared tables unchanged.
     """
 
-    history: pl.DataFrame
+    history: Final[pl.DataFrame]
 
     _: KW_ONLY
 
-    selection_column: str
-    mode: Literal["min", "max"] = "min"
-    window: int = 1
-    min_periods: int = 1
-    writer: Optional[SummaryWriter] = None
-    name: str = "score"
-    prefix: str = ""
-    postfix: str = ""
+    selection_column: Final[str]
+    mode: Final[Literal["min", "max"]] = "min"
+    window: Final[int] = 1
+    min_periods: Final[int] = 1
+    writer: Final[Optional[SummaryWriter]] = None
+    name: Final[str] = "score"
+    prefix: Final[str] = ""
+    postfix: Final[str] = ""
 
-    best_history: pl.DataFrame = field(init=False)
-    processed_history: pl.DataFrame = field(init=False, repr=False)
+    best_history: Final[pl.DataFrame] = field(init=False)
+    processed_history: Final[pl.DataFrame] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         r"""Prepare stable output tables for the supplied history."""
@@ -391,10 +405,10 @@ class BestEpochTracker(BaseCallback):
             raise ValueError("Require window >= 1 and 1 <= min_periods <= window.")
         if self.mode not in {"min", "max"}:
             raise ValueError(f"Unknown selection mode: {self.mode}.")
-        self.processed_history = pl.DataFrame(
+        self.processed_history = pl.DataFrame(  # type: ignore
             schema={"step": schema["step"], self.selection_column: pl.Float64()}
         )
-        self.best_history = pl.DataFrame(
+        self.best_history = pl.DataFrame(  # type: ignore
             schema={
                 "step": schema["step"],
                 **{
@@ -433,8 +447,7 @@ class BestEpochTracker(BaseCallback):
     @property
     def selection_value(self) -> Optional[float]:
         r"""Look up the winning processed value using the latest `best_step`."""
-        best_step = self.best_history["best_step"].last()
-        if best_step is None:
+        if (best_step := self.best_history["best_step"].item(-1)) is None:
             return None
 
         # Processed history mirrors the shared history's prefix, so indices agree.
@@ -529,6 +542,10 @@ class EvaluationCallback(BaseCallback):
     columns named `split/metric`. Split names must be valid identifiers. The
     DataFrame reference remains stable; rows are appended in place and step
     labels must strictly increase. Treat existing rows and the schema as read-only.
+    Dataloader and metric bindings are fixed because their keys define the schema;
+    keep those keys unchanged when mutating the mappings. The writer is fixed
+    because its log directory contains the initialized CSV header. The model,
+    prediction function, and logging names may change between evaluations.
 
     Initialization creates `history.csv` with its header in `writer.log_dir`,
     refusing to overwrite an existing file. Each append writes only the new row.
@@ -536,18 +553,18 @@ class EvaluationCallback(BaseCallback):
     to select and persist winning rows.
     """
 
-    model: nn.Module
+    model: Final[nn.Module]
 
     _: KW_ONLY
 
-    predict_fn: Callable[..., tuple[Tensor, Tensor]]
-    dataloaders: Mapping[str, DataLoader]
-    metrics: Mapping[str, Loss]
-    writer: SummaryWriter
-    name: str = "metrics"
-    prefix: str = ""
-    postfix: str = ""
-    history: pl.DataFrame = field(init=False)
+    predict_fn: Final[Callable[..., tuple[Tensor, Tensor]]]
+    dataloaders: Final[Mapping[str, DataLoader]]
+    metrics: Final[Mapping[str, Loss]]
+    writer: Final[SummaryWriter]
+    name: Final[str] = "metrics"
+    prefix: Final[str] = ""
+    postfix: Final[str] = ""
+    history: Final[pl.DataFrame] = field(init=False)
 
     def __post_init__(self) -> None:
         r"""Validate the configuration and initialize the raw table and CSV header."""
@@ -558,7 +575,7 @@ class EvaluationCallback(BaseCallback):
             raise ValueError(f"Split names must be valid identifiers, got {invalid}.")
 
         # initialize the history table with the correct schema
-        self.history = pl.DataFrame(
+        self.history = pl.DataFrame(  # type: ignore
             schema={
                 "step": pl.Int64,
                 **{
@@ -951,7 +968,7 @@ class TableCallback(BaseCallback):
 
     _: KW_ONLY
 
-    writer: SummaryWriter | Path
+    writer: SummaryWriter | FilePath
 
     # Optional Parameters
     options: Optional[dict[str, Any]] = None
