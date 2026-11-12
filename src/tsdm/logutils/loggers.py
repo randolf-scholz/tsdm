@@ -192,6 +192,16 @@ class DefaultLogger(BaseLogger):
         self.callbacks["epoch"].extend(self.make_default_epoch_callbacks())
         self.callbacks["result"].extend(self.make_default_result_callbacks())
 
+    def log_results(self, step: int, /, **state_dict: Any) -> None:
+        r"""Process pending evaluations before logging the experiment's results.
+
+        Final selection includes every available evaluation, regardless of the
+        best-epoch callback's execution frequency.
+        """
+        if self.best_epoch is not None and not self.best_epoch.history.is_empty():
+            self.best_epoch(self.best_epoch.history["step"][-1])
+        super().log_results(step, **state_dict)
+
     def make_default_batch_callbacks(self) -> Iterator[Callback]:
         r"""Yield the default batch callbacks."""
         if self.metrics is not None:
@@ -203,14 +213,10 @@ class DefaultLogger(BaseLogger):
 
     def make_default_result_callbacks(self) -> Iterator[Callback]:
         r"""Yield the default result callbacks."""
-        if (
-            self.history is not None
-            and self.hparam_dict is not None
-            and self.best_epoch is not None
-        ):
+        if self.best_history is not None and self.hparam_dict is not None:
             yield HParamCallback(
                 self.hparam_dict,
-                best_epoch=self.best_epoch,
+                history=self.best_history,
                 writer=self.writer,
             )
 

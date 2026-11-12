@@ -467,25 +467,33 @@ def test_tracker_failed_write_preserves_shared_tables(
     )
 
 
+@pytest.mark.parametrize("finalize", [False, True])
 def test_callback_frequencies_and_final_reporting(
-    tmp_path: Path, writers: WriterFactory
+    tmp_path: Path, *, finalize: bool, writers: WriterFactory
 ) -> None:
     model = nn.Linear(1, 1, bias=False)
-    evaluation = EvaluationCallback(
-        model,
+    logger = DefaultLogger(
+        log_dir=tmp_path,
+        results_dir=tmp_path,
+        checkpoint_dir=tmp_path,
+        model=model,
         predict_fn=predict,
         dataloaders=dict.fromkeys(scores(0), make_loader()),
         metrics={"loss": mse, "error": mae},
         writer=writers(tmp_path),
-        frequency=2,
-    )
-    tracker = BestEpochTracker(
-        evaluation.history,
         selection_column="holdout/loss",
-        window=3,
-        frequency=4,
-        writer=evaluation.writer,
+        selection_window=3,
+        hparam_dict={"lr": 0.1},
     )
+    evaluation = next(
+        cb for cb in logger["epoch"] if isinstance(cb, EvaluationCallback)
+    )
+    tracker = logger.best_epoch
+    assert tracker is not None
+    evaluation.frequency = 2
+    tracker.frequency = 4
+    hparams = next(cb for cb in logger["result"] if isinstance(cb, HParamCallback))
+    assert hparams.history is tracker.best_history
     callbacks = CallbackList([evaluation, tracker])
     weights = {2: 4.0, 4: 2.0, 6: 3.0}
     for step in range(1, 7):
@@ -495,14 +503,23 @@ def test_callback_frequencies_and_final_reporting(
         callbacks.callback(step)
     assert evaluation.history["step"].to_list() == [2, 4, 6]
     assert tracker.processed_history["step"].to_list() == [2, 4]
-    hparams = HParamCallback({"lr": 0.1}, best_epoch=tracker, writer=evaluation.writer)
-    hparams(7)
-    assert tracker.processed_history["step"].to_list() == [2, 4, 6]
-    assert tracker.best["best_step"].item() == 6
+    raw_history = evaluation.history.clone()
+    if finalize:
+        logger.log_results(7)
+    else:
+        hparams(7)
+    assert_frame_equal(evaluation.history, raw_history)
+    assert tracker.processed_history["step"].to_list() == (
+        [2, 4, 6] if finalize else [2, 4]
+    )
+    assert tracker.best["best_step"].item() == (6 if finalize else 4)
+    selected_scores = (
+        {"loss": 4.0, "error": 2.0} if finalize else {"loss": 1.0, "error": 1.0}
+    )
     expected = {
         f"{split}/{metric}": value
         for split in scores(0)
-        for metric, value in {"loss": 4.0, "error": 2.0}.items()
+        for metric, value in selected_scores.items()
     }
     assert tracker.best.drop("step", "best_step").row(0, named=True) == expected
     assert yaml.safe_load((tmp_path / "7.yaml").read_text()) == expected
@@ -512,19 +529,45 @@ def test_callback_frequencies_and_final_reporting(
         assert events.Scalars(f"metrics:hparam/{column}")[-1].value == value
 
 
-@pytest.mark.parametrize("history", [frame(1, 0).clear(), frame(1, float("nan"))])
-def test_hparam_reporting_requires_a_selected_epoch(
-    tmp_path: Path, *, history: pl.DataFrame, writers: WriterFactory
+@pytest.mark.parametrize("selected", [False, True])
+def test_hparam_reporting_requires_a_nonempty_history(
+    tmp_path: Path, *, selected: bool, writers: WriterFactory
 ) -> None:
+    history = frame(1, 0).clear()
     tracker = BestEpochTracker(history, selection_column="holdout/loss")
-    callback = HParamCallback({}, best_epoch=tracker, writer=writers(tmp_path))
-    with pytest.raises(ValueError, match="requires a selected epoch"):
+    callback = HParamCallback(
+        {},
+        history=tracker.best_history if selected else history,
+        writer=writers(tmp_path),
+    )
+    with pytest.raises(ValueError, match="requires a nonempty history"):
         callback(1)
     assert not (tmp_path / "1.yaml").exists()
 
 
-def test_hparam_reporting_uses_original_row_and_arbitrary_columns(
-    tmp_path: Path, writers: WriterFactory
+@pytest.mark.parametrize("selected", [False, True])
+def test_hparam_reporting_allows_missing_scores(
+    tmp_path: Path, *, selected: bool, writers: WriterFactory
+) -> None:
+    evaluation = make_evaluation(writers(tmp_path))
+    tracker = BestEpochTracker(evaluation.history, selection_column="holdout/loss")
+    source = tracker.best_history if selected else evaluation.history
+    callback = HParamCallback({}, history=source, writer=evaluation.writer)
+    evaluation.append_history(3, scores(float("nan"), float("nan")))
+    tracker(3)
+    callback(7)
+    saved = yaml.safe_load((tmp_path / "7.yaml").read_text())
+    assert set(saved) == set(evaluation.history.columns[1:])
+    assert all(isnan(value) for value in saved.values())
+    evaluation.writer.flush()
+    events = event_accumulator.EventAccumulator(str(tmp_path)).Reload()
+    for column in saved:
+        assert isnan(events.Scalars(f"metrics:hparam/{column}")[-1].value)
+
+
+@pytest.mark.parametrize("selected", [False, True])
+def test_hparam_reporting_uses_latest_history_row_and_arbitrary_columns(
+    tmp_path: Path, *, selected: bool, writers: WriterFactory
 ) -> None:
     history = pl.DataFrame(
         {
@@ -535,11 +578,18 @@ def test_hparam_reporting_uses_original_row_and_arbitrary_columns(
         }
     )
     tracker = BestEpochTracker(history, selection_column="objective", window=3)
+    tracker(35)
     writer = writers(tmp_path)
-    callback = HParamCallback({"lr": 0.1}, best_epoch=tracker, writer=writer)
+    source = tracker.best_history if selected else history
+    callback = HParamCallback({"lr": 0.1}, history=source, writer=writer)
+    assert callback.history is source
     callback(35)
     assert tracker.best["best_step"].item() == 25
-    expected = history.filter(pl.col("step") == 25).drop("step").row(0, named=True)
+    expected = (
+        history.filter(pl.col("step") == (25 if selected else 35))
+        .drop("step")
+        .row(0, named=True)
+    )
     assert yaml.safe_load((tmp_path / "35.yaml").read_text()) == expected
     writer.flush()
     events = event_accumulator.EventAccumulator(str(tmp_path)).Reload()

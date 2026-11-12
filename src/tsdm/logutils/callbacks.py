@@ -438,7 +438,7 @@ class BestEpochTracker(BaseCallback):
             return None
 
         # Processed history mirrors the shared history's prefix, so indices agree.
-        position = self.get_step_index(best_step)
+        position = self.get_step_index(int(best_step))
         return self.processed_history[self.selection_column].item(position)
 
     def __call__(self, step: int, /, **_: Any) -> None:
@@ -705,30 +705,30 @@ class CheckpointCallback(BaseCallback):
 
 @dataclass(slots=True)
 class HParamCallback(BaseCallback):
-    r"""Log hyperparameters and the evaluation tracker's selected raw scores.
+    r"""Log hyperparameters and the latest scores from a shared history table.
 
-    Use the same `best_epoch` callback for online and final reporting. Retrieve
-    the selected epoch's scores from the original history table, retaining all
-    metric names unchanged. YAML output excludes only the `step` column.
+    Retain `history` by reference; append rows in place to keep it current.
+    The table must contain a `step` column; remaining columns contain scores.
+    Supply an evaluation's `history` for raw scores or a tracker's `best_history`
+    for selected scores. The `step` column and optional `best_step` metadata are
+    excluded from output. Empty histories raise `ValueError`; missing scores
+    are reported without requiring a selected epoch.
+    The caller must update the history before reporting; this callback only
+    reads its latest row. The reporting `step` need not match that row's step.
     """
 
     hparam_dict: JSON
 
     _: KW_ONLY
 
-    best_epoch: BestEpochTracker
+    history: pl.DataFrame
     writer: SummaryWriter
 
     def __call__(self, step: int, /, **_: Any) -> None:
-        # Include evaluations since the tracker last ran, regardless of frequency.
-        history = self.best_epoch.history
-        if not history.is_empty():
-            self.best_epoch(history["step"][-1])
-        best_step = self.best_epoch.best_history["best_step"].last()
-        if best_step is None:
-            raise ValueError("Hyperparameter logging requires a selected epoch.")
-        position = self.best_epoch.get_step_index(best_step)
-        scores = history.drop("step").row(position, named=True)
+        if self.history.is_empty():
+            raise ValueError("Hyperparameter logging requires a nonempty history.")
+        scores = self.history.drop("step").row(-1, named=True)
+        scores.pop("best_step", None)
         metric_dict = {
             f"metrics:hparam/{column}": nan if value is None else float(value)
             for column, value in scores.items()
