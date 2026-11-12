@@ -360,7 +360,8 @@ class BestEpochTracker(BaseCallback):
     All owned DataFrames likewise retain their identity through in-place appends.
     Selection settings and the writer are fixed: changing them would mix
     incompatible selection criteria or redirect CSV appends away from the
-    header created during initialization. Logging names may change between calls.
+    header created during initialization. Logging names are also fixed;
+    the inherited execution frequency remains mutable.
 
     Calling with a step label processes all unseen rows through that exact step;
     row positions are never interpreted as step labels. Repeated calls for an
@@ -447,11 +448,11 @@ class BestEpochTracker(BaseCallback):
     @property
     def selection_value(self) -> Optional[float]:
         r"""Look up the winning processed value using the latest `best_step`."""
-        if (best_step := self.best_history["best_step"].item(-1)) is None:
+        if (best_step := self.best_history["best_step"].last()) is None:
             return None
 
         # Processed history mirrors the shared history's prefix, so indices agree.
-        position = self.get_step_index(int(best_step))
+        position = self.get_step_index(int(best_step))  # type: ignore
         return self.processed_history[self.selection_column].item(position)
 
     def __call__(self, step: int, /, **_: Any) -> None:
@@ -545,7 +546,8 @@ class EvaluationCallback(BaseCallback):
     Dataloader and metric bindings are fixed because their keys define the schema;
     keep those keys unchanged when mutating the mappings. The writer is fixed
     because its log directory contains the initialized CSV header. The model,
-    prediction function, and logging names may change between evaluations.
+    prediction function, and logging names are also fixed bindings. Model state
+    may change in place between evaluations, as may the execution frequency.
 
     Initialization creates `history.csv` with its header in `writer.log_dir`,
     refusing to overwrite an existing file. Each append writes only the new row.
@@ -722,16 +724,16 @@ class CheckpointCallback(BaseCallback):
 
 @dataclass(slots=True)
 class HParamCallback(BaseCallback):
-    r"""Log hyperparameters and the latest scores from a shared history table.
+    r"""Log hyperparameters and scores for a given step in a shared history table.
 
     Retain `history` by reference; append rows in place to keep it current.
-    The table must contain a `step` column; remaining columns contain scores.
+    The table must contain unique `step` values; remaining columns contain scores.
     Supply an evaluation's `history` for raw scores or a tracker's `best_history`
-    for selected scores. The `step` column and optional `best_step` metadata are
-    excluded from output. Empty histories raise `ValueError`; missing scores
-    are reported without requiring a selected epoch.
-    The caller must update the history before reporting; this callback only
-    reads its latest row. The reporting `step` need not match that row's step.
+    for selected scores. Only `step` is excluded from output; `best_step` is
+    retained as an integer when an epoch has been selected. Nulls are preserved
+    in YAML and omitted from TensorBoard, which requires numeric scalar values.
+    The caller must update the history before reporting. Empty histories raise
+    `ValueError`; absent steps raise `polars.exceptions.NoRowsReturnedError`.
     """
 
     hparam_dict: JSON
@@ -744,11 +746,12 @@ class HParamCallback(BaseCallback):
     def __call__(self, step: int, /, **_: Any) -> None:
         if self.history.is_empty():
             raise ValueError("Hyperparameter logging requires a nonempty history.")
-        scores = self.history.drop("step").row(-1, named=True)
-        scores.pop("best_step", None)
+        scores = self.history.row(by_predicate=pl.col("step") == step, named=True)
+        scores.pop("step")
         metric_dict = {
-            f"metrics:hparam/{column}": nan if value is None else float(value)
+            f"metrics:hparam/{column}": value
             for column, value in scores.items()
+            if value is not None
         }
 
         run_name = Path(self.writer.log_dir).absolute()
@@ -882,9 +885,7 @@ class ModelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, step: int, /, **state_dict: Any) -> None:
-        if "model" in state_dict:
-            self.model = state_dict["model"]
+    def __call__(self, step: int, /, **_: Any) -> None:
         log_model(
             step,
             self.writer,
@@ -914,9 +915,7 @@ class OptimizerCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, step: int, /, **state_dict: Any) -> None:
-        if "optimizer" in state_dict:
-            self.optimizer = state_dict["optimizer"]
+    def __call__(self, step: int, /, **_: Any) -> None:
         log_optimizer(
             step,
             self.writer,

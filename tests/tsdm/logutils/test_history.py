@@ -504,10 +504,11 @@ def test_callback_frequencies_and_final_reporting(
     assert evaluation.history["step"].to_list() == [2, 4, 6]
     assert tracker.processed_history["step"].to_list() == [2, 4]
     raw_history = evaluation.history.clone()
+    report_step = 6 if finalize else 4
     if finalize:
-        logger.log_results(7)
+        logger.log_results(report_step)
     else:
-        hparams(7)
+        hparams(report_step)
     assert_frame_equal(evaluation.history, raw_history)
     assert tracker.processed_history["step"].to_list() == (
         [2, 4, 6] if finalize else [2, 4]
@@ -522,7 +523,10 @@ def test_callback_frequencies_and_final_reporting(
         for metric, value in selected_scores.items()
     }
     assert tracker.best.drop("step", "best_step").row(0, named=True) == expected
-    assert yaml.safe_load((tmp_path / "7.yaml").read_text()) == expected
+    expected["best_step"] = report_step
+    saved = yaml.safe_load((tmp_path / f"{report_step}.yaml").read_text())
+    assert saved == expected
+    assert type(saved["best_step"]) is int
     evaluation.writer.flush()
     events = event_accumulator.EventAccumulator(str(tmp_path)).Reload()
     for column, value in expected.items():
@@ -555,25 +559,30 @@ def test_hparam_reporting_allows_missing_scores(
     callback = HParamCallback({}, history=source, writer=evaluation.writer)
     evaluation.append_history(3, scores(float("nan"), float("nan")))
     tracker(3)
-    callback(7)
-    saved = yaml.safe_load((tmp_path / "7.yaml").read_text())
+    callback(3)
+    saved = yaml.safe_load((tmp_path / "3.yaml").read_text())
+    if selected:
+        assert saved.pop("best_step") is None
     assert set(saved) == set(evaluation.history.columns[1:])
     assert all(isnan(value) for value in saved.values())
     evaluation.writer.flush()
     events = event_accumulator.EventAccumulator(str(tmp_path)).Reload()
+    assert "metrics:hparam/best_step" not in events.Tags()["scalars"]
     for column in saved:
         assert isnan(events.Scalars(f"metrics:hparam/{column}")[-1].value)
 
 
+@pytest.mark.parametrize("report_step", [15, 35])
 @pytest.mark.parametrize("selected", [False, True])
-def test_hparam_reporting_uses_latest_history_row_and_arbitrary_columns(
-    tmp_path: Path, *, selected: bool, writers: WriterFactory
+def test_hparam_reporting_selects_exact_step_and_preserves_score_types(
+    tmp_path: Path, *, report_step: int, selected: bool, writers: WriterFactory
 ) -> None:
     history = pl.DataFrame(
         {
             "step": [5, 15, 25, 35],
             "objective": [9.0, 1.0, 4.0, 20.0],
             "quality": [100.0, 70.0, 80.0, 60.0],
+            "count": [100, 200, 300, 400],
             "another metric/with/slashes": [1.0, 2.0, 3.0, 4.0],
         }
     )
@@ -583,18 +592,50 @@ def test_hparam_reporting_uses_latest_history_row_and_arbitrary_columns(
     source = tracker.best_history if selected else history
     callback = HParamCallback({"lr": 0.1}, history=source, writer=writer)
     assert callback.history is source
-    callback(35)
+    callback(report_step)
     assert tracker.best["best_step"].item() == 25
+    winning_step = 15 if report_step == 15 else 25
     expected = (
-        history.filter(pl.col("step") == (25 if selected else 35))
+        history.filter(pl.col("step") == (winning_step if selected else report_step))
         .drop("step")
         .row(0, named=True)
     )
-    assert yaml.safe_load((tmp_path / "35.yaml").read_text()) == expected
+    if selected:
+        expected["best_step"] = winning_step
+    saved = yaml.safe_load((tmp_path / f"{report_step}.yaml").read_text())
+    assert saved == expected
+    for column, value in expected.items():
+        assert type(saved[column]) is type(value)
     writer.flush()
     events = event_accumulator.EventAccumulator(str(tmp_path)).Reload()
     for column, value in expected.items():
         assert events.Scalars(f"metrics:hparam/{column}")[-1].value == value
+
+
+def test_hparam_reporting_preserves_null_scores(
+    tmp_path: Path, *, writers: WriterFactory
+) -> None:
+    history = pl.DataFrame({"step": [3], "score": [None], "best_step": [3]})
+    writer = writers(tmp_path)
+    callback = HParamCallback({}, history=history, writer=writer)
+    callback(3)
+    saved = yaml.safe_load((tmp_path / "3.yaml").read_text())
+    assert saved == {"score": None, "best_step": 3}
+    assert type(saved["best_step"]) is int
+    writer.flush()
+    events = event_accumulator.EventAccumulator(str(tmp_path)).Reload()
+    assert events.Tags()["scalars"] == ["metrics:hparam/best_step"]
+    assert events.Scalars("metrics:hparam/best_step")[-1].value == 3
+
+
+def test_hparam_reporting_requires_an_existing_step(
+    tmp_path: Path, *, writers: WriterFactory
+) -> None:
+    history = pl.DataFrame({"step": [10, 20], "score": [1.0, 2.0]})
+    callback = HParamCallback({}, history=history, writer=writers(tmp_path))
+    with pytest.raises(pl.exceptions.NoRowsReturnedError, match="returned no rows"):
+        callback(15)
+    assert not (tmp_path / "15.yaml").exists()
 
 
 @pytest.mark.parametrize("track", [False, True])
