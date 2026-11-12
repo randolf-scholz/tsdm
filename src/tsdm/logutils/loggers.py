@@ -39,7 +39,7 @@ from collections.abc import Callable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Any, ClassVar, Optional, Protocol
 
-from pandas import DataFrame, MultiIndex
+import polars as pl
 from torch import Tensor
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
@@ -53,6 +53,7 @@ from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 
 from .callbacks import (
+    BestEpochTracker,
     Callback,
     CallbackList,
     CallbackSequence,
@@ -141,8 +142,16 @@ class DefaultLogger(BaseLogger):
     r"""Dataloaders used for evaluation."""
     kernel: Optional[Tensor] = None
     r"""Kernel used for the model."""
-    history: Optional[DataFrame] = None
-    r"""History of the training process."""
+    history: Optional[pl.DataFrame] = field(default=None, init=False)
+    r"""Raw history owned and constructed by the evaluation callback, when present."""
+    best_history: Optional[pl.DataFrame] = field(default=None, init=False)
+    r"""Winning-row history owned by the optional best-epoch callback."""
+    selection_column: Optional[str] = None
+    r"""Enable best-epoch tracking for this score column when supplied."""
+    selection_window: int = 1
+    r"""Number of evaluations used to smooth the selection column."""
+    best_epoch: Optional[BestEpochTracker] = field(default=None, init=False)
+    r"""Optional best-epoch callback, constructed after the evaluation callback."""
     hparam_dict: Optional[dict[str, Any]] = None
     r"""Hyperparameters used for the experiment."""
     lr_scheduler: Optional[LRScheduler] = None
@@ -178,15 +187,6 @@ class DefaultLogger(BaseLogger):
         if self.checkpointable_objects is not None and objects:
             self.checkpointable_objects = objects | dict(self.checkpointable_objects)
 
-        if (
-            self.history is None
-            and self.metrics is not None
-            and self.dataloaders is not None
-        ):
-            self.history = DataFrame(
-                columns=MultiIndex.from_product([self.dataloaders, self.metrics])
-            )
-
         # set default callbacks
         self.callbacks["batch"].extend(self.make_default_batch_callbacks())
         self.callbacks["epoch"].extend(self.make_default_epoch_callbacks())
@@ -203,9 +203,15 @@ class DefaultLogger(BaseLogger):
 
     def make_default_result_callbacks(self) -> Iterator[Callback]:
         r"""Yield the default result callbacks."""
-        if self.history is not None and self.hparam_dict is not None:
+        if (
+            self.history is not None
+            and self.hparam_dict is not None
+            and self.best_epoch is not None
+        ):
             yield HParamCallback(
-                self.hparam_dict, history=self.history, writer=self.writer
+                self.hparam_dict,
+                best_epoch=self.best_epoch,
+                writer=self.writer,
             )
 
     def make_default_epoch_callbacks(self) -> Iterator[Callback]:
@@ -215,16 +221,25 @@ class DefaultLogger(BaseLogger):
             and self.model is not None
             and self.dataloaders is not None
             and self.predict_fn is not None
-            and self.history is not None
         ):
-            yield EvaluationCallback(
+            callback = EvaluationCallback(
                 model=self.model,
                 writer=self.writer,
                 metrics=self.metrics,
                 dataloaders=self.dataloaders,
-                history=self.history,
                 predict_fn=self.predict_fn,
             )
+            self.history = callback.history
+            yield callback
+            if self.selection_column is not None:
+                self.best_epoch = BestEpochTracker(
+                    callback.history,
+                    selection_column=self.selection_column,
+                    window=self.selection_window,
+                    writer=self.writer,
+                )
+                self.best_history = self.best_epoch.best_history
+                yield self.best_epoch
 
         if self.lr_scheduler is not None:
             yield LRSchedulerCallback(self.lr_scheduler, writer=self.writer)

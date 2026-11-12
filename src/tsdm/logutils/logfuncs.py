@@ -438,7 +438,7 @@ def log_values(
     step: int,
     writer: SummaryWriter,
     /,
-    scalars: Mapping[str, Tensor],
+    scalars: Mapping[str, Tensor | float],
     *,
     key: str = "",
     name: str = "metrics",
@@ -447,6 +447,7 @@ def log_values(
 ) -> None:
     r"""Log a mapping of precomputed scalar values to TensorBoard.
 
+    Values may be Python numbers or scalar tensors.
     Each entry is logged at `step` under `{identifier}:{entry_name}/{key}`.
     In the identifier, optional `prefix` and `postfix` surround `name`,
     separated by colons.

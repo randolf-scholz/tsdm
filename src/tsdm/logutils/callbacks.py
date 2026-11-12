@@ -18,6 +18,7 @@ __all__ = [
     "Callback",
     "CallbackSequence",
     "CallbackList",
+    "BestEpochTracker",
     # Callbacks
     "CheckpointCallback",
     "ConfigCallback",
@@ -49,6 +50,7 @@ from collections.abc import (
 )
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
+from math import nan
 from pathlib import Path
 from typing import (
     Any,
@@ -65,10 +67,10 @@ from typing import (
     runtime_checkable,
 )
 
+import polars as pl
 import torch
 import yaml
 from matplotlib.figure import Figure
-from pandas import DataFrame, MultiIndex, Series
 from torch import Tensor, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
@@ -76,7 +78,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
-from tsdm.constants import EMPTY_MAP, UNDEFINED
+from tsdm.constants import EMPTY_MAP
 from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
@@ -332,17 +334,209 @@ class ConfigCallback(BaseCallback):
         )
 
 
-@dataclass(slots=True)
-class EvaluationCallback(BaseCallback):
-    r"""Evaluate data splits, log metrics to TensorBoard, and save the history.
+type MetricScores = Mapping[str, Mapping[str, float]]
 
-    Call `predict_fn(model, batch)` for each batch to obtain targets and
-    predictions. The history has step indices and `(split, metric)` columns.
-    Selecting best epochs requires exactly one split named `val`, `valid`, or
-    `validation`, ignoring case. Metrics are treated as losses to minimize.
+
+@dataclass(slots=True)
+class BestEpochTracker(BaseCallback):
+    r"""Select one winning raw row from a shared, append-only history table.
+
+    `history` is retained by reference. The caller must supply a valid table:
+    `step` is integer, non-null, unique, and strictly increasing; `selection_column`
+    and every other tracked metric are numeric. `best_step` is reserved for output.
+    These table invariants are assumed, not validated. Append new evaluations
+    in place and keep the schema and existing rows unchanged.
+    All owned DataFrames likewise retain their identity through in-place appends.
+
+    Calling with a step label processes all unseen rows through that exact step;
+    row positions are never interpreted as step labels. Repeated calls for an
+    already processed step are no-ops. Unknown steps raise `KeyError`. This also
+    supports pre-existing tables and tracking less often than evaluation.
+
+    Selection defaults to unsmoothed values. Larger windows count evaluations,
+    not step-label distance. Nonfinite values occupy window positions but are
+    excluded from means; a nonfinite current value cannot win. Ties keep the
+    earliest winner. All reported scores are copied from the winning raw row.
+    Once a winner exists, `best_step` is automatically nondecreasing: it either
+    stays unchanged or advances to the newer step on strict improvement.
+
+    `processed_history` stores each step's processed selection value. `best_history`
+    matches the raw schema, with `step` first and an additional `best_step` column.
+    Before a winner exists, floating scores are NaN and other scores are null.
+    An optional writer enables best-score logging and creates `best_history.csv`
+    with its header during initialization. Persistence and logging precede
+    in-memory appends, so failed CSV writes leave the shared tables unchanged.
     """
 
-    model: nn.Module  # mutable
+    history: pl.DataFrame
+
+    _: KW_ONLY
+
+    selection_column: str
+    mode: Literal["min", "max"] = "min"
+    window: int = 1
+    min_periods: int = 1
+    writer: Optional[SummaryWriter] = None
+    name: str = "score"
+    prefix: str = ""
+    postfix: str = ""
+
+    best_history: pl.DataFrame = field(init=False)
+    processed_history: pl.DataFrame = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        r"""Prepare stable output tables for the supplied history."""
+        schema = self.history.schema
+        if self.window < 1 or not 1 <= self.min_periods <= self.window:
+            raise ValueError("Require window >= 1 and 1 <= min_periods <= window.")
+        if self.mode not in {"min", "max"}:
+            raise ValueError(f"Unknown selection mode: {self.mode}.")
+        self.processed_history = pl.DataFrame(
+            schema={"step": schema["step"], self.selection_column: pl.Float64()}
+        )
+        self.best_history = pl.DataFrame(
+            schema={
+                "step": schema["step"],
+                **{
+                    column: dtype
+                    for column, dtype in schema.items()
+                    if column != "step"
+                },
+                "best_step": schema["step"],
+            }
+        )
+
+        # initialize the best_history.csv file if a writer is provided
+        if self.writer is not None:
+            path = Path(self.writer.log_dir) / "best_history.csv"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("x", encoding="utf-8", newline="") as file:
+                self.best_history.write_csv(file)
+
+    def get_step_index(self, step: int, /) -> int:
+        r"""Return the row position of an exact step label in the sorted history.
+
+        Raises:
+            KeyError: If the history contains no evaluation with this step label.
+        """
+        steps = self.history["step"]
+        position = int(steps.search_sorted(step))
+        if position == len(steps) or steps[position] != step:
+            raise KeyError(f"No evaluation for step {step}.")
+        return position
+
+    @property
+    def best(self) -> pl.DataFrame:
+        r"""Return the latest winning-row result without retaining another table."""
+        return self.best_history.tail(1)
+
+    @property
+    def selection_value(self) -> Optional[float]:
+        r"""Look up the winning processed value using the latest `best_step`."""
+        best_step = self.best_history["best_step"].last()
+        if best_step is None:
+            return None
+
+        # Processed history mirrors the shared history's prefix, so indices agree.
+        position = self.get_step_index(best_step)
+        return self.processed_history[self.selection_column].item(position)
+
+    def __call__(self, step: int, /, **_: Any) -> None:
+        r"""Process unseen evaluations through the row whose step equals `step`."""
+        processed_rows = self.processed_history.height
+        target = self.get_step_index(step)
+
+        # The output row count is also the cursor. Catch up skipped evaluations
+        # individually, so each receives its own bounded smoothing window.
+        for position in range(processed_rows, target + 1):
+            start = max(0, position - self.window + 1)
+            recent = self.history.slice(start, position - start + 1)
+            processed, selected = self._process(recent)
+
+            # Persist before mutating the shared table so failed writes can be retried.
+            if self.writer is not None:
+                path = Path(self.writer.log_dir) / "best_history.csv"
+                with path.open("a", encoding="utf-8", newline="") as file:
+                    selected.write_csv(file, include_header=False)
+
+                scores = selected.drop("step", "best_step").row(0, named=True)
+                for column, value in scores.items():
+                    split, metric = (
+                        column.split("/", maxsplit=1) if "/" in column else ("", column)
+                    )
+                    log_values(
+                        selected["step"].item(),
+                        self.writer,
+                        scalars={metric: nan if value is None else float(value)},
+                        key=split,
+                        name=self.name,
+                        prefix=self.prefix,
+                        postfix=self.postfix,
+                    )
+
+            self.processed_history.vstack(processed, in_place=True)
+            self.best_history.vstack(selected, in_place=True)
+
+    def _process(self, recent: pl.DataFrame, /) -> tuple[pl.DataFrame, pl.DataFrame]:
+        r"""Prepare one processed value and winning row without mutating state."""
+        current = recent.tail(1).select(self.best_history.columns[:-1])
+
+        # Start with the previous winner, advancing only the reporting step.
+        # Before the first winner, retain the score dtypes with missing values.
+        if self.best_history.is_empty():
+            selected = current.select(
+                "step",
+                *(
+                    pl.lit(nan if dtype.is_float() else None, dtype=dtype).alias(column)
+                    for column, dtype in current.schema.items()
+                    if column != "step"
+                ),
+                pl.lit(None, dtype=current.schema["step"]).alias("best_step"),
+            )
+        else:
+            selected = self.best.with_columns(current["step"])
+
+        # Smooth only the selection column over the supplied trailing window.
+        # Nonfinite observations occupy positions but do not enter the mean.
+        value = pl.col(self.selection_column)
+        processed = recent.select(
+            pl.col("step").last(),
+            pl.when(value.is_finite().sum() >= self.min_periods)
+            .then(value.filter(value.is_finite()).mean().cast(pl.Float64))
+            .otherwise(None),
+        )
+        criterion = processed[self.selection_column].item()
+
+        # Keep the processed value for debugging, even if this raw row cannot win.
+        if criterion is None or not current[self.selection_column].is_finite().item():
+            return processed, selected
+
+        # Compare against the winning processed value, preserving early ties.
+        # On improvement, copy every score from the raw row without smoothing.
+        previous = self.selection_value
+        if previous is None or (
+            criterion < previous if self.mode == "min" else criterion > previous
+        ):
+            selected = current.with_columns(pl.col("step").alias("best_step"))
+        return processed, selected
+
+
+@dataclass(slots=True)
+class EvaluationCallback(BaseCallback):
+    r"""Evaluate splits and append raw scores independently of best-epoch selection.
+
+    `history` has one row per evaluation, with `step` first and Float64 score
+    columns named `split/metric`. Split names must be valid identifiers. The
+    DataFrame reference remains stable; rows are appended in place and step
+    labels must strictly increase. Treat existing rows and the schema as read-only.
+
+    Initialization creates `history.csv` with its header in `writer.log_dir`,
+    refusing to overwrite an existing file. Each append writes only the new row.
+    Register an optional `BestEpochTracker(history, ...)` after this callback
+    to select and persist winning rows.
+    """
+
+    model: nn.Module
 
     _: KW_ONLY
 
@@ -350,104 +544,97 @@ class EvaluationCallback(BaseCallback):
     dataloaders: Mapping[str, DataLoader]
     metrics: Mapping[str, Loss]
     writer: SummaryWriter
-
-    # Optional parameters
-    # index:Index[step], columns:MultiIndex[key, metric]
-    history: DataFrame = UNDEFINED
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
-
-    # non-init fields
-    # index:Index[step], columns:MultiIndex[key, metric]
-    best_epoch: DataFrame = field(init=False)
+    history: pl.DataFrame = field(init=False)
 
     def __post_init__(self) -> None:
-        r"""Initialize the history tables and recompute results for existing steps."""
-        if self.history is UNDEFINED:
-            self.history = DataFrame(
-                columns=MultiIndex.from_product([self.dataloaders, self.metrics])
-            )
-        self.best_epoch = self.history.copy()
+        r"""Validate the configuration and initialize the raw table and CSV header."""
+        # Complete configuration checks before creating any files.
+        if not self.dataloaders or not self.metrics:
+            raise ValueError("Evaluation requires at least one dataloader and metric.")
+        if invalid := [split for split in self.dataloaders if not split.isidentifier()]:
+            raise ValueError(f"Split names must be valid identifiers, got {invalid}.")
 
-        for i in self.history.index:
-            self.compute_results(i)
+        # initialize the history table with the correct schema
+        self.history = pl.DataFrame(
+            schema={
+                "step": pl.Int64,
+                **{
+                    f"{split}/{metric}": pl.Float64
+                    for split in self.dataloaders
+                    for metric in self.metrics
+                },
+            }
+        )
+
+        # initialize the CSV header in the log directory
+        path = Path(self.writer.log_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        with (path / "history.csv").open("x", encoding="utf-8", newline="") as file:
+            self.history.write_csv(file)
 
     def __call__(self, step: int, /, **_: Any) -> None:
-        # update the history
-        self.compute_results(step)
-        self.compute_best_epoch(step)
+        scores = self.compute_results()
+        self.append_history(step, scores)
 
-        for key in self.dataloaders:
+        for split, values in scores.items():
             log_values(
                 step,
                 self.writer,
-                scalars=self.history.loc[step, key].to_dict(),
-                key=key,
+                scalars=values,
+                key=split,
                 name=self.name,
                 prefix=self.prefix,
                 postfix=self.postfix,
             )
-            log_values(
-                step,
-                self.writer,
-                scalars=self.best_epoch.loc[step, key].to_dict(),
-                key=key,
-                name="score",
-                prefix=self.prefix,
-                postfix=self.postfix,
+
+    def append_history(self, step: int, scores: MetricScores, /) -> None:
+        r"""Persist one complete raw evaluation, then append it in place."""
+        if not self.history.is_empty() and step <= (
+            last_step := self.history["step"][-1]
+        ):
+            raise ValueError(f"Expected a step after {last_step}, got {step}.")
+
+        if scores.keys() != self.dataloaders.keys() or any(
+            values.keys() != self.metrics.keys() for values in scores.values()
+        ):
+            raise ValueError(
+                "Scores must match all configured dataloaders and metrics."
             )
 
-        path = Path(self.writer.log_dir) / f"history-{step}.parquet"
-        self.history.to_parquet(path)
+        row = {
+            "step": step,
+            **{
+                f"{split}/{metric}": value
+                for split, values in scores.items()
+                for metric, value in values.items()
+            },
+        }
+        batch = pl.DataFrame([row], schema=self.history.schema)
 
-    def _get_validation_key(self) -> str:
-        # make sure there is exactly one validation split.
-        candidate: str | None = None
-        for key in self.dataloaders:
-            if key.lower() in {"val", "valid", "validation"}:
-                if candidate is not None:
-                    raise ValueError(
-                        f"Found multiple validation splits: {candidate} and {key}!"
-                    )
-                candidate = key
-        if candidate is None:
-            raise ValueError("Could not find a validation split!")
-        return candidate
+        # Persist before mutating the shared table so failed writes can be retried.
+        path = Path(self.writer.log_dir) / "history.csv"
+        with path.open("a", encoding="utf-8", newline="") as file:
+            batch.write_csv(file, include_header=False)
+        self.history.vstack(batch, in_place=True)
 
     @torch.no_grad()
-    def compute_results(self, step: int) -> None:
-        r"""Evaluate every data split and store its metrics in `history` at `step`."""
-        for key, dataloader in self.dataloaders.items():
+    def compute_results(self) -> MetricScores:
+        r"""Evaluate every split without downcasting scalar metric results."""
+        scores: dict[str, dict[str, float]] = {}
+        for split, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
-            scalars = {
-                key: metric(predictions=result.predictions, targets=result.targets)
-                for key, metric in self.metrics.items()
+            scores[split] = {
+                name: float(
+                    metric(predictions=result.predictions, targets=result.targets)
+                    .cpu()
+                    .item()
+                )
+                for name, metric in self.metrics.items()
             }
-            for metric, value in scalars.items():
-                self.history.loc[step, (key, metric)] = value.cpu().item()
-
-    def compute_best_epoch(self, step: int) -> None:
-        r"""Store split scores from the best validation epoch for each metric.
-
-        Consider history rows with indices at most `step`. Choose an epoch for
-        each metric by minimizing its trailing five-row validation mean, allowing
-        windows with a single observation. Store the unsmoothed scores from those
-        epochs across all splits in `best_epoch` at `step`.
-        """
-        # unoptimized...
-        mask = self.history.index <= step
-        validation_key = self._get_validation_key()
-        best_epochs = (
-            self.history.loc[mask, validation_key]
-            .rolling(5, min_periods=1)
-            .mean()
-            .idxmin()
-        )
-        for key in self.dataloaders:
-            for metric in self.metrics:
-                best_value = self.history.loc[best_epochs[metric], (key, metric)]
-                self.best_epoch.loc[step, (key, metric)] = best_value
+        return scores
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredictions:
@@ -518,42 +705,37 @@ class CheckpointCallback(BaseCallback):
 
 @dataclass(slots=True)
 class HParamCallback(BaseCallback):
-    r"""Callback to log hyperparameters to TensorBoard."""
+    r"""Log hyperparameters and the evaluation tracker's selected raw scores.
+
+    Use the same `best_epoch` callback for online and final reporting. Retrieve
+    the selected epoch's scores from the original history table, retaining all
+    metric names unchanged. YAML output excludes only the `step` column.
+    """
 
     hparam_dict: JSON
 
     _: KW_ONLY
 
-    history: DataFrame
-    r"""Metric history with `(split, metric)` columns for `train`, `valid`, and `test`."""
+    best_epoch: BestEpochTracker
     writer: SummaryWriter
 
-    def __post_init__(self) -> None:
-        r"""Validate the inputs."""
-        if not isinstance(self.history, DataFrame):
-            raise TypeError("histry must be a DataFrame!")
-        if not isinstance(self.history.columns, MultiIndex):
-            raise TypeError("history columns must be a MultiIndex!")
-
-        splits = set(self.history.columns.levels[0])
-        metrics = set(self.history.columns.levels[1])
-
-        if splits != {"train", "valid", "test"}:
-            raise ValueError("splits must be {'train', 'valid', 'test'}")
-
-        if set(self.history.columns) != set(MultiIndex.from_product([splits, metrics])):
-            raise ValueError(
-                f"history columns must be a MultiIndex with {splits=} and {metrics=}"
-            )
-
     def __call__(self, step: int, /, **_: Any) -> None:
-        scores = self.scores
-        metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+        # Include evaluations since the tracker last ran, regardless of frequency.
+        history = self.best_epoch.history
+        if not history.is_empty():
+            self.best_epoch(history["step"][-1])
+        best_step = self.best_epoch.best_history["best_step"].last()
+        if best_step is None:
+            raise ValueError("Hyperparameter logging requires a selected epoch.")
+        position = self.best_epoch.get_step_index(best_step)
+        scores = history.drop("step").row(position, named=True)
+        metric_dict = {
+            f"metrics:hparam/{column}": nan if value is None else float(value)
+            for column, value in scores.items()
+        }
 
         run_name = Path(self.writer.log_dir).absolute()
-        path = run_name / f"{step}.yaml"
-
-        with path.open("w", encoding="utf8") as file:
+        with (run_name / f"{step}.yaml").open("w", encoding="utf8") as file:
             yaml.safe_dump(scores, file)
 
         self.writer.add_hparams(
@@ -561,25 +743,6 @@ class HParamCallback(BaseCallback):
             metric_dict=metric_dict,
             run_name=run_name,
         )
-
-    @property
-    def scores(self) -> dict[str, dict[str, float]]:
-        r"""Scores at epochs minimizing centered five-row validation means.
-
-        Select an epoch independently for each metric, then return that epoch's
-        unsmoothed scores for `train`, `valid`, and `test`. The rolling mean uses
-        full windows, so at least five history rows with valid values are needed
-        for each metric to select an epoch.
-        """
-        best_epochs: Series = self.history.rolling(5, center=True).mean().idxmin()
-
-        return {
-            split: {
-                str(metric): float(self.history.loc[idx, (split, metric)])
-                for metric, idx in best_epochs["valid"].items()
-            }
-            for split in ("train", "valid", "test")
-        }
 
 
 @dataclass(slots=True)

@@ -24,6 +24,7 @@ __all__ += loggers.__all__
 __all__ += utils.__all__
 
 CALLBACKS: dict[str, type[callbacks.Callback]] = {
+    "BestEpochTracker"    : callbacks.BestEpochTracker,
     "CallbackList"        : callbacks.CallbackList,
     "CheckpointCallback"  : callbacks.CheckpointCallback,
     "ConfigCallback"      : callbacks.ConfigCallback,
