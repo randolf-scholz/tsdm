@@ -1,7 +1,7 @@
 [project]
 docs_dir = "build/markdown"
 site_dir = "build/zensical"
-# The build script stages Markdown and static assets without legacy Sphinx files.
+# The build script stages authored Markdown, generated API pages, and static assets.
 site_name = "tsdm"
 site_description = "Time-Series Datasets and Models"
 site_url = "https://github.com/randolf-scholz/tsdm"

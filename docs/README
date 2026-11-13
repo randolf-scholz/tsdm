@@ -1,35 +1,14 @@
-# Notes on Documentation
+# Building documentation
 
-There are many different packages for sphinx to automatically build documentation
+Run these commands from the repository root:
 
-- autodoc
-- autodoc2
-- autoapi
-- automodapi
-- autoapisummary
-- autosummary + recursion <https://github.com/JamesALeedham/Sphinx-Autosummary-Recursion/tree/master>
-- autopackagesummary
+- `just docs::make` (or `just docs::zensical`) builds the Zensical site
+  in `docs/build/zensical`, staging Markdown and API pages in `docs/build/markdown`.
+- `just docs::clean` (or `just docs::zensical-clean`) removes the generated site
+  and staged Markdown.
 
-Some comparison of features we want:
+From this directory, omit the `docs::` prefix. The build commands accept extra
+arguments for Zensical.
 
-- single page per class / function
-- nicely formatted signatures
-  - abbreviated typehints
-  - PEP 695 style typehints
-- links to properly formatted source code
-
-TODOS:
-
-- links to source code missing?!
-
-FINDINGS:
-
-- `autosummary` doesn't work well.
-  - methods are missing
-  - links to source code missing
-  - ...
-  - it is decently fast though
-  - probably some template customization required.
-- `autoapi` is nice for creating separate pages per class/function/method
-  - very slow compile times though...
-  - hyperlinks missing
+Zensical uses `zensical.toml`, the top-level Markdown files, `_static`, `overrides`,
+and `scripts`. Legacy Sphinx content is archived in `sphinx` and is not built.

@@ -27,11 +27,9 @@ _*/
 *.pk
 *.pickle
 
-# sphinx build files
-docs/apidoc/
-docs/autoapi/
+# documentation assets and archived content
 !docs/_static/
-!docs/_templates/
+!docs/sphinx/_static/
 
 # Project related Files
 dev/**/*.parquet
@@ -126,9 +124,6 @@ instance/
 
 # Scrapy stuff:
 .scrapy
-
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 .pybuilder/

@@ -1,5 +1,4 @@
 #!/usr/bin/env -S just --justfile
-export PYTORCH_JIT := "0"
 BUILD_DIR := "./build"
 
 [default]
@@ -7,7 +6,7 @@ BUILD_DIR := "./build"
 help:
     @just --justfile {{ justfile() }} --list --unsorted
 
-[doc("Build the Zensical documentation (the default builder).")]
+[doc("Build the documentation with Zensical.")]
 make *zensical_args: (zensical zensical_args)
 
 [doc("Build the Zensical site with generated API Markdown and strict validation.")]
@@ -19,26 +18,5 @@ zensical *zensical_args: zensical-clean
 zensical-clean:
     rm -rf {{ BUILD_DIR }}/zensical {{ BUILD_DIR }}/markdown
 
-[doc('Clean Sphinx build artifacts.')]
-clean:
-    #!/usr/bin/env bash
-    set -eu
-
-    mkdir -p "{{ BUILD_DIR }}"
-    rm -rf _previous_build
-    mv "{{ BUILD_DIR }}" _previous_build
-
-    rm -rf "{{ BUILD_DIR }}"
-    rm -rf _autosummary
-    rm -rf autoapi
-    rm -rf apidoc
-    rm -rf api
-
-[doc('Rebuild the Sphinx API docs and HTML output.')]
-sphinx *sphinx_args: clean
-    #!/usr/bin/env bash
-    set -eu
-
-    sphinx_opts=(-w .sphinx/warnings.txt)
-    uv run sphinx-apidoc --separate -o apidoc/ ../src/
-    uv run sphinx-build -M html . "{{ BUILD_DIR }}" "${sphinx_opts[@]}" {{ sphinx_args }}
+[doc('Clean all documentation build artifacts.')]
+clean: zensical-clean

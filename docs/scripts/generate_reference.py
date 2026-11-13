@@ -338,7 +338,7 @@ def document_module_definitions(
 
 def main() -> None:
     r"""Stage authored Markdown and assets, then generate the public API pages."""
-    # Zensical reads only this staging directory, keeping Sphinx tooling out.
+    # Zensical reads only staged pages and assets, leaving archived content out.
     docs_dir = ROOT_DIR / "docs"
     staging_dir = mkdocs_gen_files.DOCS_DIR
     staging_dir.mkdir(parents=True, exist_ok=True)
@@ -348,7 +348,6 @@ def main() -> None:
         docs_dir / "_static",
         staging_dir / "_static",
         dirs_exist_ok=True,
-        ignore=shutil.ignore_patterns("*.rst"),
     )
 
     # Discover all targets before writing pages so forward references can resolve.
