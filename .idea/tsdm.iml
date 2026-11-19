@@ -81,6 +81,8 @@
       <excludeFolder url="file://$MODULE_DIR$/dev" />
       <excludeFolder url="file://$MODULE_DIR$/tests/.hypothesis" />
       <excludeFolder url="file://$MODULE_DIR$/docs/build" />
+      <excludeFolder url="file://$MODULE_DIR$/.reports" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/.cache" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="uv (tsdm)" jdkType="Python SDK" />
