@@ -2,7 +2,7 @@
 # See https://prek.j178.dev for more information.
 #:schema https://www.schemastore.org/prek.json
 
-exclude = ".idea/|.vscode/"
+exclude = '\.idea/|\.vscode/'
 minimum_prek_version = "0.5.10"
 fail_fast = false
 update.cooldown_days = 7
@@ -46,22 +46,13 @@ hooks = [
 ]
 
 [[repos]]
-repo = "local"
-hooks = [
-    {
-        id = "pandas-avoid-numpy-nullable-types",
-        name = "pandas-avoid-numpy-nullable-types",
-        description = "Use pyarrow types instead of numpy nullable types in pandas.",
-        language = "pygrep",
-        entry = 'dtype="(boolean|U?Int(8|16|32|64)|Float(32|64))"',
-        exclude = "^tests/",
-        types = ["python"],
-    },
-]
+repo = "https://github.com/deshaw/nbstripout-fast.git"
+rev = "v1.1.2"
+hooks = [{ id = "nbstripout-fast", exclude = "^docs/|^experiments/" }]
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.17.3"
+rev = "v0.17.4"
 hooks = [
     {
         id = "ruff-check",
@@ -75,7 +66,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/astral-sh/uv-pre-commit"
-rev = "0.13.6"
+rev = "0.13.7"
 hooks = [
     { id = "uv-lock" },
     {
@@ -101,10 +92,7 @@ hooks = [
     },
 ]
 
-[[repos]]
-repo = "https://github.com/deshaw/nbstripout-fast.git"
-rev = "v1.1.2"
-hooks = [{ id = "nbstripout-fast", exclude = "^docs/|^experiments/" }]
+
 
 [[repos]]
 repo = "https://github.com/randolf-scholz/assorted-hooks.git"

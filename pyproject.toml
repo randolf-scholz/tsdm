@@ -26,9 +26,9 @@ classifiers = [
 
 requires-python = ">=3.15,<3.16"
 dependencies = [
-    "httpx2>=2.16.0",
+    "httpx2>=2.16.2",
     "matplotlib>=3.11.2",
-    "numpy>=2.5.4",
+    "numpy>=2.5.5",
     "pandas>=3.1.1",
     "polars>=2.1.0",
     "pyarrow>=26.0.1",
@@ -57,13 +57,13 @@ misc = [
 docs = [
     "mkdocstrings[python]>=1.0.8",
     "pygments>=2.21.0",
-    "zensical>=0.1.1",
+    "zensical>=0.1.2",
 ]
 linters = [
     "mdformat>=1.0.0",
     "packaging>=26.3", # for some git hooks
-    "prek>=0.5.10",
-    "ruff>=0.17.5",
+    "prek>=0.5.11",
+    "ruff>=0.17.6",
     "tach>=0.35.3",
 ]
 tests = [
@@ -81,17 +81,17 @@ tests = [
 ]
 typing = [
     "mypy>=2.4.1",
-    "pyrefly>=1.4.1",
+    "pyrefly>=1.5.0",
     "pyright>=1.1.414",
     "scipy-stubs>=1.18.1.1",
-    "ty>=0.0.102",
+    "ty>=0.0.107",
     "types-colorama>=0.4.15.20260508",
     "types-gevent>=26.9.0.20261107",
-    "types-networkx>=3.6.1.20261108",
+    "types-networkx>=3.6.1.20261119",
     "types-pexpect>=4.9.0.20260518",
     "types-protobuf>=7.35.1.20260906",
     "types-psutil>=7.2.2.20261111",
-    "types-pygments>=2.21.0.20260819",
+    "types-pygments>=2.21.0.20261115",
     "types-pytz>=2026.6.0.20261031",
     "types-pyyaml>=6.0.12.20261113",
     "types-tqdm>=4.70.0.20261106",

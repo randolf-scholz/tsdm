@@ -13,19 +13,19 @@ cuda-toolkit==13.2.2 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==4.2.10
+filelock==4.2.12
     # via torch
 fonttools==4.68.0
     # via matplotlib
 fsspec==2026.9.0
     # via torch
-grpcio==1.85.1
+grpcio==1.85.3
     # via tensorboard
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
-httpcore2==2.16.0 ; sys_platform != 'emscripten'
+httpcore2==2.16.2 ; sys_platform != 'emscripten'
     # via httpx2
-httpx2==2.16.0
+httpx2==2.16.2
     # via tsdm
 httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'
     # via httpx2
@@ -49,7 +49,7 @@ mpmath==1.3.0
     # via sympy
 networkx==3.7
     # via torch
-numpy==2.5.4
+numpy==2.5.5
     # via
     #   contourpy
     #   matplotlib
