@@ -149,7 +149,7 @@ class Task[
     @property
     def generators(self) -> Mapping[SplitKey, SupportsGetItem[SampleID, SampleT]]: ...
 
-    def make_dataloader[T = BatchT](
+    def make_dataloader[T](
         self,
         key: SplitKey,
         /,
@@ -301,7 +301,7 @@ class TimeSeriesTask[
         """
         return lambda x: x  # type: ignore
 
-    def make_dataloader[T = BatchT](
+    def make_dataloader[T](
         self,
         key: SplitKey,
         /,

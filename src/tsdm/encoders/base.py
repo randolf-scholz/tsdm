@@ -310,7 +310,7 @@ class EncoderMeta(ProtocolMeta):
             namespace["FIELDS"] = cls.FIELDS
 
         new_type = super().__new__(cls, name, bases, namespace, **kwds)
-        new_type.__annotations__["FIELDS"] = ClassVar[frozenset[str]]  # pyrefly: ignore[invalid-annotation]
+        new_type.__annotations__["FIELDS"] = ClassVar[frozenset[str]]
         return new_type
 
 

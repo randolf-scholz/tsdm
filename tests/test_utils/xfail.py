@@ -45,7 +45,7 @@ class pytest_xfail(AbstractContextManager):
             else (
                 (raises,)
                 if (isinstance(raises, type) and issubclass(raises, BaseException))
-                else tuple(raises)  # pyrefly: ignore[bad-argument-type]
+                else tuple(raises)
             )
         )
         self.defer_xfail: bool = defer_xfail

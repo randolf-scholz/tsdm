@@ -252,7 +252,7 @@ class MIMIC_III_Zhang2024(BaseDataset[MIMIC_III_Zhang2024_Key, object]):
             raise TypeError(f"Expected a Polars DataFrame for {key!r}.")
 
     @overload
-    def load_table(self, key: Literal["mimic"], /) -> list[MIMIC_III_Record]: ...
+    def load_table(self, key: Literal["mimic"], /) -> list[MIMIC_III_Record]: ...  # pyrefly: ignore[bad-override]
     @overload
     def load_table(self, key: Literal["LICENSE", "README"], /) -> str: ...
     @overload

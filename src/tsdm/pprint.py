@@ -1153,13 +1153,13 @@ def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
         repr_func = repr_namedtuple
     elif issubclass(cls, Mapping):
         repr_func = repr_mapping
-    elif issubclass(cls, SupportsArray):
+    elif issubclass(cls, SupportsArray):  # pyrefly: ignore[bad-argument-type]
         repr_func = repr_array
-    elif issubclass(cls, Sequence):
+    elif issubclass(cls, Sequence):  # pyrefly: ignore[bad-argument-type]
         repr_func = repr_sequence
-    elif issubclass(cls, AbstractSet):
+    elif issubclass(cls, AbstractSet):  # pyrefly: ignore[bad-argument-type]
         repr_func = repr_set
-    elif issubclass(cls, type):
+    elif issubclass(cls, type):  # pyrefly: ignore[bad-argument-type]
         repr_func = repr_shortform
     else:
         raise TypeError(f"Unsupported type {cls}.")

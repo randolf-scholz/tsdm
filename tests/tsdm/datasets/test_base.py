@@ -83,7 +83,7 @@ def test_dataset_required_attributes_determine_abstractness() -> None:
             return ()
 
         @cached_property
-        def table_names(self) -> Collection[str]:  # pyrefly: ignore[bad-override]
+        def table_names(self) -> Collection[str]:
             return ()
 
     assert isabstract(MissingAttributes)
