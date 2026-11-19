@@ -4,6 +4,9 @@
 # temporary files / directories
 tmp*.*
 tmp*/
+# Drawio editor backups and temporary files
+*.drawio.bkp
+*.drawio.dtmp
 # private/hidden directories
 _*/
 .*/
@@ -11,6 +14,8 @@ _*/
 !.vscode/
 !.github/
 
+# jupyter notebooks
+*.ipynb
 # zip files
 *.zip
 !src/**/*.zip
@@ -26,10 +31,6 @@ _*/
 # pickle files
 *.pk
 *.pickle
-
-# documentation assets and archived content
-!docs/_static/
-!docs/sphinx/_static/
 
 # Project related Files
 dev/**/*.parquet

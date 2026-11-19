@@ -27,7 +27,7 @@ hooks = [
     { id = "check-vcs-permalinks" },
     { id = "check-yaml" },
     { id = "check-xml" },
-    # { id = "deny-filename-pattern" },
+    { id = "deny-filename-pattern", types = ['jupyter'], args = ['.*'] },
     # { id = "deny-pattern" },
     # { id = "replace-pattern" },
     # { id = "require-filename-pattern" },
@@ -44,11 +44,6 @@ hooks = [
     { id = "check-executables-have-shebangs" },
     { id = "check-shebang-scripts-are-executable" },
 ]
-
-[[repos]]
-repo = "https://github.com/deshaw/nbstripout-fast.git"
-rev = "v1.1.2"
-hooks = [{ id = "nbstripout-fast", exclude = "^docs/|^experiments/" }]
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
