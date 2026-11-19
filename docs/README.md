@@ -10,14 +10,20 @@ Run these commands from the repository root:
 From this directory, omit the `docs::` prefix. The build commands accept extra
 arguments for Zensical.
 
-Published pages and assets live in `content/`. The build copies that directory
-recursively into `build/sources/`, then adds generated API pages and navigation.
-The generator reads the staging path from `docs_dir` in `zensical.toml`. Each run
-replaces the staged sources so renamed or deleted pages do not linger. Zensical
-renders those sources into `build/site/` and reuses its cache during normal builds.
+Authored pages and their attachments live in `content/`. The build runs
+`prepare_sources.py`, which copies that directory recursively into `build/sources/`,
+stages theme assets, and generates API reference Markdown and `reference/SUMMARY.md`
+navigation from the Python source. It reads the staging path from `docs_dir` in
+`zensical.toml`. Each run replaces the staged sources so renamed or deleted pages
+do not linger. Zensical renders those sources into `build/site/` and reuses its
+cache during normal builds.
 
-Theme templates live in `overrides/`, and build tooling lives in `scripts/`.
-Unpublished research material, notebooks, and diagram sources live in `notes/`.
+Site appearance and rendering live in `theme/`: HTML templates in `templates/`,
+stylesheets in `css/`, and MathJax configuration directly in `mathjax_config.js`.
+The build stages stylesheets under `build/sources/assets/css/` and the MathJax
+configuration at `build/sources/assets/mathjax_config.js`. Zensical loads templates
+directly from `theme/templates/`; they are not copied into the site sources.
+
 To publish an image or downloadable document, place it under `content/assets/`
 and link it from a page. This README contains maintainer instructions and is not
 copied into the site.

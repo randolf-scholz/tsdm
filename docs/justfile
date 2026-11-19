@@ -9,12 +9,10 @@ help:
 alias make := build
 
 [doc("Build the Zensical site with generated API Markdown and strict validation.")]
-build *zensical_args: _prepare
+build *zensical_args:
+    # Stage authored pages and theme assets, and generate API Markdown and navigation.
+    uv run python prepare_sources.py
     uv run zensical build --strict --config-file zensical.toml {{ zensical_args }}
-
-[private]
-_prepare:
-    uv run python scripts/generate_reference.py
 
 [doc('Clean all documentation build artifacts.')]
 clean:

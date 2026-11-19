@@ -1,4 +1,4 @@
-r"""Generate Zensical API pages for public modules, classes, and functions."""
+r"""Prepare Zensical sources: stage content and assets, and generate API Markdown."""
 # ruff: noqa: INP001
 
 import ast
@@ -10,8 +10,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
 
-DOCS_DIR = Path(__file__).resolve().parents[1]
+DOCS_DIR = Path(__file__).resolve().parent
 SOURCE_DIR = DOCS_DIR.parent / "src"
+THEME_DIR = DOCS_DIR / "theme"
 REFERENCE_DIR = Path("reference")
 REFERENCE_INDEX = REFERENCE_DIR / "index.md"
 type NavigationTree = dict[str, str | NavigationTree]
@@ -381,6 +382,12 @@ def main() -> None:
     if staging_dir.exists():
         shutil.rmtree(staging_dir)
     shutil.copytree(DOCS_DIR / "content", staging_dir)
+
+    # Publish browser assets separately from the theme's HTML templates.
+    shutil.copytree(THEME_DIR / "css", staging_dir / "assets/css", dirs_exist_ok=True)
+    shutil.copy2(
+        THEME_DIR / "mathjax_config.js", staging_dir / "assets/mathjax_config.js"
+    )
 
     # Discover all targets before writing pages so forward references can resolve.
     modules = get_modules(SOURCE_DIR)
