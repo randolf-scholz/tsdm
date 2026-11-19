@@ -1,6 +1,6 @@
 [project]
-docs_dir = "build/markdown"
-site_dir = "build/zensical"
+docs_dir = "build/sources"
+site_dir = "build/site"
 # The build script stages authored Markdown, generated API pages, and static assets.
 site_name = "tsdm"
 site_description = "Time-Series Datasets and Models"
@@ -8,16 +8,20 @@ site_url = "https://github.com/randolf-scholz/tsdm"
 site_author = "Randolf Scholz"
 repo_url = "https://github.com/randolf-scholz/tsdm"
 repo_name = "randolf-scholz/tsdm"
-extra_css = ["_static/footer-navigation.css", "_static/signatures.css"]
+extra_css = ["assets/css/footer-navigation.css", "assets/css/signatures.css"]
 
 # The configuration must be loaded before the MathJax runtime.
 extra_javascript = [
-    "_static/mathjax_config.js",
+    "assets/js/mathjax_config.js",
     "https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js",
 ]
 
 nav = [
     { "Home" = "index.md" },
+    { "Technical notes" = [
+        { "Conventions" = "conventions.md" },
+        { "Encoders" = "encoders.md" },
+    ] },
     { "API reference" = "reference/" },
 ]
 

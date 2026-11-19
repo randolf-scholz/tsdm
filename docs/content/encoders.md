@@ -1,4 +1,4 @@
-# Technical Note
+# Encoders
 
 The encoders-library shares a lot of similarity with sklearn's `preprocessing` and `pipeline` module. The main
 difference is that the encoders-library is designed to work with `pandas` DataFrames and Series, while sklearn's

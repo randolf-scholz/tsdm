@@ -1,19 +1,54 @@
 r"""Generate Zensical API pages for public modules, classes, and functions."""
+# ruff: noqa: INP001
 
 import ast
 import posixpath
 import shutil
+import tomllib
 from collections.abc import Collection, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
 
-import mkdocs_gen_files
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-SOURCE_DIR = ROOT_DIR / "src"
+DOCS_DIR = Path(__file__).resolve().parents[1]
+SOURCE_DIR = DOCS_DIR.parent / "src"
 REFERENCE_DIR = Path("reference")
 REFERENCE_INDEX = REFERENCE_DIR / "index.md"
+type NavigationTree = dict[str, str | NavigationTree]
+
+
+class Navigation:
+    r"""Build a literate navigation file from assigned page paths."""
+
+    def __init__(self) -> None:
+        self.entries: dict[tuple[str, ...], str] = {}
+
+    def __setitem__(self, parts: tuple[str, ...], path: str) -> None:
+        self.entries[parts] = path
+
+    def build_literate_nav(self) -> list[str]:
+        tree: NavigationTree = {}
+        for parts, path in self.entries.items():
+            current = tree
+            for part in parts:
+                child = current.setdefault(part, {})
+                assert isinstance(child, dict)
+                current = child
+            current["__path__"] = path
+
+        return self.render(tree)
+
+    def render(self, nodes: NavigationTree, level: int = 0) -> list[str]:
+        lines: list[str] = []
+        for name, node in nodes.items():
+            if name == "__path__":
+                continue
+            assert isinstance(node, dict)
+            path = node.get("__path__")
+            label = f"[{name}]({path})" if isinstance(path, str) else name
+            lines.append(f"{'    ' * level}- {label}\n")
+            lines.extend(self.render(node, level + 1))
+        return lines
 
 
 @dataclass(frozen=True)
@@ -26,18 +61,17 @@ class Module:
     is_package: bool
     kinds: Mapping[str, str]
     nodes: Sequence[ast.stmt]
-    source_path: Path
 
 
 def write_page(
     identifier: str,
     doc_path: Path,
     *,
-    source_path: Path,
+    output_dir: Path,
     nav_parts: tuple[str, ...],
     symbol_type: str,
     members: Sequence[str] = (),
-    nav: mkdocs_gen_files.Nav,
+    nav: Navigation,
     documented_identifiers: set[str],
 ) -> None:
     r"""Create an API page and navigation entry; empty `members` omit the override."""
@@ -47,7 +81,9 @@ def write_page(
 
     documented_identifiers.add(identifier)
     nav[nav_parts] = doc_path.relative_to(REFERENCE_DIR).as_posix()
-    with mkdocs_gen_files.open(doc_path, "w") as file:
+    output_path = output_dir / doc_path
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as file:
         title = identifier.rsplit(".", 1)[-1]
         file.write(
             f"---\ntitle: {title}\nsymbol_type: {symbol_type}\n---\n\n"
@@ -58,7 +94,6 @@ def write_page(
                 "    options:\n      members:\n"
                 + "".join(f"        - {name!r}\n" for name in members)
             )
-    mkdocs_gen_files.set_edit_path(doc_path, source_path.relative_to(ROOT_DIR))
 
 
 def get_exports(nodes: Sequence[ast.stmt]) -> list[str]:
@@ -153,7 +188,6 @@ def get_modules(source_dir: Path, /) -> dict[str, Module]:
             is_package=is_package,
             kinds=get_kinds(tree.body, exports),
             nodes=tree.body,
-            source_path=source_path,
         )
     return modules
 
@@ -301,8 +335,9 @@ def write_contents(
 def document_module_definitions(
     module: Module,
     *,
+    output_dir: Path,
     page_paths: Mapping[str, Path],
-    nav: mkdocs_gen_files.Nav,
+    nav: Navigation,
     documented_identifiers: set[str],
 ) -> None:
     r"""Create pages for public module-level classes and functions."""
@@ -327,7 +362,7 @@ def document_module_definitions(
         write_page(
             identifier,
             page_paths[identifier],
-            source_path=module.source_path,
+            output_dir=output_dir,
             nav_parts=(*module.identifier.split("."), node.name),
             symbol_type=symbol_type,
             members=members,
@@ -338,22 +373,19 @@ def document_module_definitions(
 
 def main() -> None:
     r"""Stage authored Markdown and assets, then generate the public API pages."""
-    # Zensical reads only staged pages and assets, leaving archived content out.
-    docs_dir = ROOT_DIR / "docs"
-    staging_dir = mkdocs_gen_files.DOCS_DIR
-    staging_dir.mkdir(parents=True, exist_ok=True)
-    for path in docs_dir.glob("*.md"):
-        shutil.copy2(path, staging_dir / path.name)
-    shutil.copytree(
-        docs_dir / "_static",
-        staging_dir / "_static",
-        dirs_exist_ok=True,
-    )
+    with (DOCS_DIR / "zensical.toml").open("rb") as file:
+        config = tomllib.load(file)
+    staging_dir = DOCS_DIR / config["project"]["docs_dir"]
+
+    # Recreate staged sources so deleted pages and assets cannot survive a rebuild.
+    if staging_dir.exists():
+        shutil.rmtree(staging_dir)
+    shutil.copytree(DOCS_DIR / "content", staging_dir)
 
     # Discover all targets before writing pages so forward references can resolve.
     modules = get_modules(SOURCE_DIR)
     page_paths = get_page_paths(modules)
-    nav = mkdocs_gen_files.Nav()
+    nav = Navigation()
     documented_identifiers: set[str] = set()
 
     # Generate each module's overview, then its class and function pages.
@@ -361,23 +393,25 @@ def main() -> None:
         write_page(
             module.identifier,
             module.doc_path,
-            source_path=module.source_path,
+            output_dir=staging_dir,
             nav_parts=tuple(module.identifier.split(".")),
             symbol_type="module",
             nav=nav,
             documented_identifiers=documented_identifiers,
         )
-        with mkdocs_gen_files.open(module.doc_path, "a") as file:
+        with (staging_dir / module.doc_path).open("a", encoding="utf-8") as file:
             write_contents(module, file, modules=modules, page_paths=page_paths)
         document_module_definitions(
             module,
+            output_dir=staging_dir,
             page_paths=page_paths,
             nav=nav,
             documented_identifiers=documented_identifiers,
         )
 
     # The reference landing page lists only top-level packages.
-    with mkdocs_gen_files.open(REFERENCE_INDEX, "w") as file:
+    (staging_dir / REFERENCE_DIR).mkdir(parents=True, exist_ok=True)
+    with (staging_dir / REFERENCE_INDEX).open("w", encoding="utf-8") as file:
         file.write("# API reference\n\n## Packages\n\n")
         for module in modules.values():
             if "." not in module.identifier:
@@ -385,7 +419,9 @@ def main() -> None:
                 file.write(f"- [{module.identifier}]({path})\n")
 
     # Literate navigation mirrors the generated page hierarchy.
-    with mkdocs_gen_files.open(REFERENCE_DIR / "SUMMARY.md", "w") as file:
+    with (staging_dir / REFERENCE_DIR / "SUMMARY.md").open(
+        "w", encoding="utf-8"
+    ) as file:
         file.write("- [API reference](index.md)\n" + "".join(nav.build_literate_nav()))
 
 

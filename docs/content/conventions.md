@@ -1,4 +1,4 @@
-# Technical Note
+# Conventions
 
 ## Naming Conventions
 
