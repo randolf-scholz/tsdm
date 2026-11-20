@@ -7,6 +7,7 @@ from typing import Any, NamedTuple
 import numpy as np
 import pandas as pd
 import polars as pl
+import pyarrow as pa
 import pytest
 import torch
 
@@ -199,22 +200,33 @@ def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
     assert result in expected
 
 
+DICT_TYPE = pa.dictionary(pa.int32(), pa.string())
+TABLE_DATA = {"name": ["foo", "bar"], "value": [0.2, 0.3], "ID": [1, 2]}
+
+
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
-        (np.array(1.25)                         , "ndarray(1.25)"                      ),
-        (torch.tensor(1.25)                     , "Tensor(1.25)"                       ),
-        (np.array([])                           , "ndarray<0>"                         ),
-        (np.array([[]])                         , "ndarray<1,0>"                       ),
-        (np.empty((0, 0))                       , "ndarray<0,0>"                       ),
-        (np.array([1.25])                       , "ndarray<1>(1.25)"                   ),
-        (np.array([[1.25]])                     , "ndarray<1,1>(1.25)"                 ),
-        (np.array([1, 2, 3])                    , "ndarray<3>[int64]"                  ),
-        (np.array([[1.4, 2.3], [3.2, 4.1]])     , "ndarray<2,2>[float64]"              ),
-        (torch.tensor([1, 2, 3])                , "Tensor<3>[int64]"                   ),
-        (torch.tensor([[1.4, 2.3], [3.2, 4.1]]) , "Tensor<2,2>[float32]"               ),
-        (pd.DataFrame([[0, "foo", 1.25]])       , "DataFrame<1,3>[int64, str, float64]"),
-        (pd.Series([1, 2, 3])                   , "Series<3>[int64]"                   ),
+        (np.array(1.25)                              , "ndarray(1.25)"                      ),
+        (torch.tensor(1.25)                          , "Tensor(1.25)"                       ),
+        (np.array([])                                , "ndarray<0>"                         ),
+        (np.array([[]])                              , "ndarray<1,0>"                       ),
+        (np.empty((0, 0))                            , "ndarray<0,0>"                       ),
+        (np.array([1.25])                            , "ndarray<1>(1.25)"                   ),
+        (np.array([[1.25]])                          , "ndarray<1,1>(1.25)"                 ),
+        (np.array([1, 2, 3])                         , "ndarray<3>[int64]"                  ),
+        (np.array([[1.4, 2.3], [3.2, 4.1]])          , "ndarray<2,2>[float64]"              ),
+        (torch.tensor([1, 2, 3])                     , "Tensor<3>[int64]"                   ),
+        (torch.tensor([[1.4, 2.3], [3.2, 4.1]])      , "Tensor<2,2>[float32]"               ),
+        (pd.DataFrame(TABLE_DATA)                    , "DataFrame<2,3>[str, float64, int64]"),
+        (pd.Series([1, 2, 3])                        , "Series<3>[int64]"                   ),
+        (pd.Series([1, 2, 3], dtype="int32[pyarrow]"), "Series<3>[int32]"                   ),
+        (pa.array([1,2,3], type=pa.int16())          , "Int16Array<3>[int16]"               ),
+        (pl.Series([1, 2, 3])                        , "Series<3>[Int64]"                   ),
+        (pl.Series(["foo", "bar"])                   , "Series<2>[String]"                  ),
+        (pl.DataFrame(TABLE_DATA)                    , "DataFrame<2,3>[String, Float64, Int64]"),
+        (pa.array(["foo", "bar"], type=DICT_TYPE)    , "DictionaryArray<2>[dict[int32,string]]"),
+        (pa.table(TABLE_DATA)                        , "Table<2,3>[STRING8, FLOAT64, INT64]")
     ],
 )  # fmt: skip
 def test_pprint_array(obj: SupportsArray, expected: str) -> None:

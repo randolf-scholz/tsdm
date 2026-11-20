@@ -235,10 +235,14 @@ def _is_dtype(arg: object, /) -> bool:
 
 def _get_dtypes(table: object) -> list[object]:
     match table:
-        # DataFrame-like
+        case HasDType(dtype=dtype):
+            # pd.Series, torch.Tensor, np.ndarray
+            return [dtype]
+
         case HasDTypes(dtypes=dtypes):
-            # pd.DataFrame, pd.MultiIndex, pl.DataFrame
+            # pd.DataFrame, pd.MultiIndex, pl.DataFrame (⚠️ pd.Series also)
             return list(dtypes)
+
         case SupportsDataFrame() as supports_frame:
             # https://data-apis.org/dataframe-protocol/latest/API.html
             frame = supports_frame.__dataframe__()
@@ -246,13 +250,14 @@ def _get_dtypes(table: object) -> list[object]:
             dypes = [col.dtype for col in frame.get_columns()]
             # use f"{kind.name}{size} for each col
             return [f"{kind.name}{size}" for kind, size, _, _ in dypes]
-        case HasDType(dtype=dtype):
-            return [dtype]
-        case SupportsArray() as array:
-            return [array.__array__().dtype]
+
         case object(type=dtype):  # type: ignore
             # pa.Array
             return [dtype]
+
+        case SupportsArray() as array:
+            return [array.__array__().dtype]
+
         case _:
             raise TypeError(f"Unsupported object type {type(table)}.")
 
@@ -260,22 +265,25 @@ def _get_dtypes(table: object) -> list[object]:
 def repr_dtype(dtype: object, /) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
+        case str(string):
+            # strip leading module e.g. `torch.int32` -> `int32`
+            string = string.removeprefix("torch.")
+            # strip trailing `[pyarrow]`, e.g. `int32[pyarrow]` -> `int32`
+            string = string.removesuffix("[pyarrow]")
+            return string
+
         case HasDType(dtype=dtype):
             return repr_dtype(dtype)
-        case torch.dtype():
-            return repr(dtype).lstrip("torch.")
-        case str(string):
-            return string
-        # These are too verbose.
-        case pd.ArrowDtype() as wrapped_arrow_dtype:
-            return repr_dtype(wrapped_arrow_dtype.pyarrow_dtype)
-        # Some special casing for dictionary types.
-        case pa.DictionaryType(index_type=index_type, value_type=value_type):
+
+        case object(index_type=index_type, value_type=value_type):  # type: ignore
+            # special casing for pa.DictionaryType
             return f"dict[{index_type!s},{value_type!s}]"
+
         case type() as cls:
             return cls.__name__
+
         case _:
-            return str(dtype)
+            return repr_dtype(str(dtype))
 
 
 def get_identifier(obj: object, /, **_: Any) -> str:
@@ -317,8 +325,6 @@ def repr_shortform(
             return cls.__name__
         case builtin if _is_builtin(builtin):
             return repr(builtin)
-        case SupportsArray() as arr if arr.__array__().size <= 1:
-            return repr(arr.__array__().item())
         case dtype if _is_dtype(dtype):
             return repr_dtype(dtype)
         case nan if _is_nan(obj):
