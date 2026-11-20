@@ -1,9 +1,13 @@
 r"""Tests for :mod:`tsdm.testing.validation`."""
 
+import csv
+import gzip
 import warnings
 from collections.abc import Mapping
 from hashlib import sha256
 from io import BytesIO
+from os import fdopen, pipe
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -13,9 +17,80 @@ import pytest
 
 from tsdm.validation import (
     ValidationError,
+    validate_csv_header,
     validate_file_hash,
     validate_table_schema,
 )
+
+
+@pytest.mark.parametrize(
+    ("content", "columns", "separator"),
+    [
+        (b"a,b\n1,2\n", ["a", "b"], ","),
+        (b'"a,b","say ""hi"""\r\n1,2\r\n', ["a,b", 'say "hi"'], ","),
+        (b'"a\nb";c\n1;2\n', ["a\nb", "c"], ";"),
+        ("\ufeffα;β\r1;2\r".encode(), ["α", "β"], ";"),
+        (b"a,a,\n", ["a", "a", ""], ","),
+    ],
+)
+def test_validate_csv_header(
+    tmp_path: Path, content: bytes, columns: list[str], separator: str
+) -> None:
+    r"""Paths and binary streams support CSV quoting, UTF-8, and delimiters."""
+    path = tmp_path / "table.csv"
+    path.write_bytes(content)
+    validate_csv_header(path, columns, separator=separator)
+    validate_csv_header(str(path), iter(columns), separator=separator)
+
+    with BytesIO(b"prefix\n" + content) as stream:
+        stream.seek(7)
+        validate_csv_header(stream, columns, separator=separator)
+        assert stream.tell() == 7
+        assert stream.read() == content
+
+
+@pytest.mark.parametrize(
+    ("content", "columns", "error", "message"),
+    [
+        (b"a,b\n", ["a", "c"], ValueError, "missing: \\['c'\\]"),
+        (b"a,b\n", ["a"], ValueError, "superfluous: \\['b'\\]"),
+        (b"a,b\n", ["b", "a"], ValueError, "different orders"),
+        (b"a,a\n", ["a"], ValueError, "different numbers"),
+        (b"", [], ValueError, "empty"),
+        (b'"unterminated\n', ["a"], csv.Error, "unexpected end"),
+        (b"\xff\n", ["a"], UnicodeDecodeError, "codec can't decode"),
+    ],
+)
+def test_validate_csv_header_failure(
+    content: bytes, columns: list[str], error: type[Exception], message: str
+) -> None:
+    r"""Failures report mismatches and leave the stream open at its position."""
+    with BytesIO(b"prefix\n" + content) as stream:
+        stream.seek(7)
+        with pytest.raises(error, match=message):
+            validate_csv_header(stream, columns)
+        assert stream.tell() == 7
+        assert stream.read() == content
+
+
+def test_validate_csv_header_compressed_stream() -> None:
+    r"""Compressed binary streams remain usable after header validation."""
+    with (
+        BytesIO(gzip.compress(b"a,b\n1,2\n")) as compressed,
+        gzip.open(compressed, "rb") as stream,
+    ):
+        validate_csv_header(stream, ["a", "b"])
+        assert stream.tell() == 0
+        assert stream.read() == b"a,b\n1,2\n"
+
+
+def test_validate_csv_header_non_seekable() -> None:
+    r"""Non-seekable streams are rejected without closing or reading them."""
+    read_fd, write_fd = pipe()
+    with fdopen(read_fd, "rb") as stream, fdopen(write_fd, "wb"):
+        with pytest.raises(ValueError, match="non-seekable"):
+            validate_csv_header(stream, ["a"])
+        assert not stream.closed
 
 
 def test_validate_file_hash_stream_restores_position() -> None:

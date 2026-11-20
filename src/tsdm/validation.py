@@ -14,16 +14,16 @@ __all__ = [
     "validate_table_shape",
 ]
 
+import csv
 import hashlib
 import logging
 import warnings
 from collections.abc import Iterable, Mapping
 from enum import StrEnum
-from os import PathLike, fspath
+from io import TextIOWrapper
+from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
-
-import polars as pl
 
 from . import config
 from .datatools import infer_schema
@@ -442,9 +442,13 @@ def validate_csv_header(
 ) -> None:
     r"""Validate that a CSV header exactly matches a schema.
 
+    Read the first CSV record as UTF-8, allowing a byte-order mark. Streams
+    are read from their current position and restored afterwards, even on
+    failure, and remain open.
+
     Args:
         file: CSV path or seekable file-like object.
-        schema: Expected column names and data types, in CSV order.
+        schema: Expected column names, in CSV order.
         separator: CSV field separator.
 
     Raises:
@@ -453,13 +457,9 @@ def validate_csv_header(
     """
     match file:
         case str() | PathLike():
-            actual_columns = pl.read_csv(
-                fspath(file),
-                has_header=True,
-                infer_schema=False,
-                n_rows=0,
-                separator=separator,
-            ).columns
+            with open(file, "rb") as stream:
+                validate_csv_header(stream, schema, separator=separator)
+            return
         case stream:
             if not stream.seekable():
                 raise ValueError(
@@ -467,28 +467,33 @@ def validate_csv_header(
                 )
 
             position = stream.tell()
+            text_stream = TextIOWrapper(stream, encoding="utf-8-sig", newline="")
             try:
-                actual_columns = pl.read_csv(
-                    stream,
-                    has_header=True,
-                    infer_schema=False,
-                    n_rows=0,
-                    separator=separator,
-                ).columns
+                reader = csv.reader(text_stream, delimiter=separator, strict=True)
+                actual_columns = next(reader, None)
             finally:
+                text_stream.detach()
                 stream.seek(position)
-                assert stream.tell() == position
+
+    if actual_columns is None:
+        raise ValueError("CSV file is empty; expected a header.")
 
     expected_columns = list(schema)
-    missing_cols = set(actual_columns) - set(expected_columns)
-    superfluous_cols = set(expected_columns) - set(actual_columns)
+    missing_cols = set(expected_columns) - set(actual_columns)
+    superfluous_cols = set(actual_columns) - set(expected_columns)
     if missing_cols or superfluous_cols:
         raise ValueError(
             "CSV header does not match schema: "
             f"\n\t    missing: {sorted(missing_cols)!r}"
             f"\n\tsuperfluous: {sorted(superfluous_cols)!r}"
         )
-    assert len(actual_columns) == len(expected_columns)
+
+    if len(actual_columns) != len(expected_columns):
+        raise ValueError(
+            "CSV header and schema have different numbers of columns: "
+            f"\n\texpected: {expected_columns!r}"
+            f"\n\t  actual: {actual_columns!r}"
+        )
 
     if actual_columns != expected_columns:
         raise ValueError(
