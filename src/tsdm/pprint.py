@@ -272,15 +272,15 @@ def get_identifier(obj: object, /, **_: Any) -> str:
 def _as_number(arg: object) -> complex | float | int | None:
     try:  # SupportsIndex
         return arg.__index__()  # type: ignore
-    except:
+    except Exception:  # ruff: ignore[S110]
         pass
     try:  # SupportsFloat
         return arg.__float__()  # type: ignore
-    except:
+    except Exception:  # ruff: ignore[S110]
         pass
     try:  # SupportsComplex
         return arg.__complex__()  # type: ignore
-    except:
+    except Exception:  # ruff: ignore[S110]
         pass
     return None
 
