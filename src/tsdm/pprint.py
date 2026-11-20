@@ -89,8 +89,6 @@ from .decorator import decorator
 from .types import (
     DataclassType,
     HasDevice,
-    HasDType,
-    HasDTypes,
     HasShape,
     NamedTupleType,
     SupportsArray,
@@ -195,11 +193,11 @@ def _is_python_scalar(arg: object, /) -> bool:
 
 def _get_dtypes(table: object) -> list[object]:
     match table:
-        case HasDType(dtype=dtype):
+        case object(dtype=dtype):  # type: ignore
             # pd.Series, torch.Tensor, np.ndarray
             return [dtype]
 
-        case HasDTypes(dtypes=dtypes):
+        case object(dtypes=dtypes):  # type: ignore
             # pd.DataFrame, pd.MultiIndex, pl.DataFrame (⚠️ pd.Series also)
             return list(dtypes)
 
@@ -232,7 +230,7 @@ def repr_dtype(dtype: object, /) -> str:
             string = string.removesuffix("[pyarrow]")
             return string
 
-        case HasDType(dtype=dtype):
+        case object(dtype=dtype):  # type: ignore
             return repr_dtype(dtype)
 
         case object(index_type=index_type, value_type=value_type):  # type: ignore
