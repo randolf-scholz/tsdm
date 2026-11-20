@@ -10,7 +10,7 @@ alias make := build
 
 [doc("Build the Zensical site with generated API Markdown and strict validation.")]
 build *zensical_args:
-    # Stage authored pages and theme assets, and generate API Markdown and navigation.
+    # Stage authored pages and static files, and generate API Markdown and navigation.
     uv run python prepare_sources.py
     uv run zensical build --strict --config-file zensical.toml {{ zensical_args }}
 

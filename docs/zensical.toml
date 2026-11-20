@@ -8,11 +8,14 @@ site_url = "https://github.com/randolf-scholz/tsdm"
 site_author = "Randolf Scholz"
 repo_url = "https://github.com/randolf-scholz/tsdm"
 repo_name = "randolf-scholz/tsdm"
-extra_css = ["assets/css/adjacent-navigation.css", "assets/css/signatures.css"]
+extra_css = [
+    "static/css/adjacent-navigation.css",
+    "static/css/signatures.css",
+]
 
 # The configuration must be loaded before the MathJax runtime.
 extra_javascript = [
-    "assets/mathjax_config.js",
+    "static/mathjax_config.js",
     "https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js",
 ]
 
@@ -26,7 +29,7 @@ nav = [
 ]
 
 [project.theme]
-custom_dir = "theme/templates"
+custom_dir = "templates"
 language = "en"
 features = [
     "content.code.copy",
