@@ -28,7 +28,8 @@ from torch import Tensor
 
 from tsdm import backend as B, constants
 from tsdm.types import SupportsArray
-from tsdm.types.callbacks import (
+
+from .schemas import (
     ApplyAlongAxes,
     ArraySplitProto,
     CastProto,

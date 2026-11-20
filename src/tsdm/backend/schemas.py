@@ -5,7 +5,6 @@ __all__ = [
     "NullMap",
     "SelfMap",
     "Lazy",
-    "Polymorphism",
     # callback-protocols
     "ApplyAlongAxes",
     "ArraySplitProto",
@@ -25,7 +24,7 @@ from typing import Any, Protocol
 
 from numpy.typing import ArrayLike
 
-from .aliases import Axis
+from tsdm.types.aliases import Axis
 
 
 # region generic callback-protocols ----------------------------------------------------
@@ -33,12 +32,6 @@ class Lazy[T](Protocol):  # +T
     r"""Protocol for callables that take no arguments and return a value of type `T`."""
 
     def __call__(self, /) -> T: ...
-
-
-class Polymorphism[**P = []](Protocol):
-    r"""Protocol for callables that preserve the type of their first argument."""
-
-    def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
 
 
 class NullMap[T](Protocol):  # -T

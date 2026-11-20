@@ -4,7 +4,6 @@ __all__ = [
     # Submodules
     "abc",
     "aliases",
-    "callbacks",
     "dataclass",
     "namedtuple",
     "protocols",
@@ -16,7 +15,7 @@ __all__ = [
     "is_namedtuple",
 ]
 
-from . import abc, aliases, callbacks, dataclass, namedtuple, nested, protocols
+from . import abc, aliases, dataclass, namedtuple, nested, protocols
 from .aliases import *  # ruff: ignore[F403]
 from .dataclass import DataclassType, is_dataclass
 from .namedtuple import NamedTupleType, is_namedtuple
