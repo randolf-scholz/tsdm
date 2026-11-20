@@ -29,10 +29,7 @@ from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 from scipy import stats
 
-from tsdm.types import (
-    FilePath,
-    FileStream,
-)
+from tsdm.types import FilePath, FileStream
 
 
 @overload
