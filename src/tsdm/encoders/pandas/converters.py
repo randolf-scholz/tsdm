@@ -54,9 +54,8 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
 
     def decode(self, data: Tensor, /) -> DataFrame:
         array = data.detach().cpu().numpy()
-        return DataFrame(array, columns=self.original_schema).astype(
-            self.original_schema
-        )
+        df = DataFrame(array, columns=self.original_schema)
+        return df.astype(self.original_schema)
 
 
 @pprint_repr

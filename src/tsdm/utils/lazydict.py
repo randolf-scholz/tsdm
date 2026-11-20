@@ -48,7 +48,7 @@ class LazyValue[V]:  # +V
     type_hint: str
 
     # private
-    _value: V | MARKER  # pyrefly: ignore[not-a-type]
+    _value: V | MARKER  # type: ignore
 
     @property
     def value(self) -> V:
