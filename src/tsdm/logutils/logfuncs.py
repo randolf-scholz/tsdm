@@ -34,8 +34,8 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
+from tsdm.backend.serialize import serialize_table
 from tsdm.constants import EMPTY_MAP
-from tsdm.datatools.serialize import serialize_table
 from tsdm.linalg import (
     col_corr,
     erank,
