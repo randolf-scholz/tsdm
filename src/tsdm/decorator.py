@@ -2,6 +2,7 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
+    "Polymorphism",
     "Decorator",
     "DecoratorError",
     "ParametrizedDecorator",
@@ -18,7 +19,11 @@ from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Protocol, Self, overload
 
-from .types.callbacks import Polymorphism
+
+class Polymorphism[**P = []](Protocol):
+    r"""Protocol for callables that preserve the type of their first argument."""
+
+    def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
 
 
 def rpartial[**P, R](  # +R
