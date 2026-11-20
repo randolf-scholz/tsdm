@@ -85,8 +85,8 @@ def lp_norm(
     match mask, weight:
         case None, None: active = None
         case _,    None: active = mask
-        case None, _   : active = weight != 0  # type: ignore
-        case _,    _   : active = mask & (weight != 0)  # type: ignore
+        case None, _   : active = weight != 0  # ty: ignore[invalid-assignment]
+        case _,    _   : active = mask & (weight != 0)  # ty: ignore[unsupported-operator]
     # fmt: on
 
     if p != p:
