@@ -76,7 +76,7 @@ def _strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
     return table
 
 
-def _strip_whitespace_array[A: (Array, ChunkedArray)](arr: A, /) -> A:
+def _strip_whitespace_array[A: Array | ChunkedArray](arr: A, /) -> A:
     r"""Strip whitespace from all string elements in an array."""
     match arr:
         case ChunkedArray(chunks=chunks):
@@ -97,7 +97,7 @@ def _strip_whitespace_array[A: (Array, ChunkedArray)](arr: A, /) -> A:
 
 
 @overload
-def strip_whitespace[A: (Array, ChunkedArray)](obj: A, /) -> A: ...
+def strip_whitespace[A: Array | ChunkedArray](obj: A, /) -> A: ...
 @overload
 def strip_whitespace[T: Table](obj: T, /, *cols: str) -> T: ...
 def strip_whitespace(obj: Table | AnyArray, /, *cols: str) -> Table | AnyArray:

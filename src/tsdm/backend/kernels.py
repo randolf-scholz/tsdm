@@ -229,7 +229,7 @@ class Backend[T]:
     true_like: SelfMap[T]
 
     # string operations
-    strip_whitespace: StripWhitespaceProto[T]
+    strip_whitespace: StripWhitespaceProto[T, T]
     apply_along_axes: ApplyAlongAxes[T]
 
     # array construction

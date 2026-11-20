@@ -202,7 +202,10 @@ class RemoveOutliersProto[ArrayT, TableT](Protocol):
     ) -> TableT: ...
 
 
-class StripWhitespaceProto[T](Protocol):
-    r"""Trim string values in an object, optionally selecting table columns."""
+class StripWhitespaceProto[ArrayT, TableT](Protocol):
+    r"""Trim string values, accepting column names only for tables."""
 
-    def __call__(self, obj: T, /, *cols: str) -> T: ...
+    @overload
+    def __call__(self, obj: ArrayT, /) -> ArrayT: ...
+    @overload
+    def __call__(self, obj: TableT, /, *cols: str) -> TableT: ...

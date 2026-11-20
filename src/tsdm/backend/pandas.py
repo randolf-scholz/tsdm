@@ -224,7 +224,13 @@ def _strip_whitespace_dataframe[DF: DataFrame](frame: DF, /, *cols: str) -> DF:
     )
 
 
-def strip_whitespace[P: PandasType](obj: P, /, *cols: str) -> P:
+@overload
+def strip_whitespace[T: Series | Index](obj: T, /) -> T: ...
+@overload
+def strip_whitespace[F: DataFrame](obj: F, /, *cols: str) -> F: ...
+def strip_whitespace(
+    obj: Series | Index | DataFrame, /, *cols: str
+) -> Series | Index | DataFrame:
     r"""Strip string values, restricting DataFrame processing to `cols` if given."""
     if cols and not isinstance(obj, DataFrame):
         raise ValueError("Cannot specify columns for a Series or Index.")
