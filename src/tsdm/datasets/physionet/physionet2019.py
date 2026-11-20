@@ -118,10 +118,9 @@ from tqdm.auto import tqdm
 
 import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import validate_schema
 from tsdm.hashutils import hash_zip_contents
 from tsdm.utils import remote
-from tsdm.validation import ErrorHandler, validate_hash
+from tsdm.validation import ErrorHandler, validate_csv_header, validate_hash
 
 TIMESERIES_METADATA = [
     ("patient",          None, None, None, None, None,      "Patient identifier"                         ),
@@ -306,7 +305,7 @@ class PhysioNet2019(PolarsDataset[Key]):
     ) -> pl.DataFrame:
         r"""Read a single patient file from the archive."""
         with archive.open(compressed_file) as file:
-            validate_schema(file, self.rawdata_schema, separator="|")
+            validate_csv_header(file, self.rawdata_schema, separator="|")
             return (
                 pl.read_csv(
                     file,

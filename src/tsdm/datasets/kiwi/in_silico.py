@@ -16,7 +16,7 @@ import polars as pl
 
 import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
@@ -108,7 +108,7 @@ class InSilico(PolarsDataset[KEY]):
             for fname in files.namelist():
                 run_id = int(fname.removesuffix(".csv"))
                 with files.open(fname) as file:
-                    validate_schema(file, rawdata_schema)
+                    validate_csv_header(file, rawdata_schema)
                     runs.append(
                         pl.read_csv(
                             file,

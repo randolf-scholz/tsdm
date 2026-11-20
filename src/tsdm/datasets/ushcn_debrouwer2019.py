@@ -6,7 +6,7 @@ from typing import Literal
 
 import polars as pl
 
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 from .base import PolarsDataset
 
@@ -75,7 +75,7 @@ class USHCN_DeBrouwer2019(PolarsDataset[Literal["timeseries"]]):
         rawdata_schema = self.rawdata_schemas[fname]
         target_schema = self.table_schemas["timeseries"]
         rawdata_path = self.rawdata_paths[fname]
-        validate_schema(rawdata_path, rawdata_schema)
+        validate_csv_header(rawdata_path, rawdata_schema)
         table = pl.read_csv(rawdata_path, schema=rawdata_schema)
 
         return table.select(

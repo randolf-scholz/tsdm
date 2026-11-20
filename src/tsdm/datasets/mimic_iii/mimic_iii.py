@@ -44,9 +44,8 @@ from zipfile import ZipFile
 import polars as pl
 
 from tsdm.datasets.base import BaseDataset
-from tsdm.datatools import validate_schema
 from tsdm.utils import remote
-from tsdm.validation import validate_file_hash
+from tsdm.validation import validate_csv_header, validate_file_hash
 
 type MIMIC_III_Key = Literal[
     "SHA256SUMS",
@@ -583,7 +582,7 @@ class MIMIC_III(BaseDataset[MIMIC_III_Key, pl.LazyFrame]):
                         expected_hash,
                         hash_algorithm="sha256",
                     )
-                    validate_schema(compressed_file, schema)
+                    validate_csv_header(compressed_file, schema)
                     table = pl.scan_csv(
                         compressed_file,
                         schema=schema,

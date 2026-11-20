@@ -9,7 +9,7 @@ from typing import Literal
 
 import polars as pl
 
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 from .base import PolarsDataset
 
@@ -73,7 +73,7 @@ class ETT(PolarsDataset[ETT_Key]):
         r"""Load an ETT CSV file as a Polars DataFrame."""
         rawdata_path = self.rawdata_paths[f"{key}.csv"]
         rawdata_schema = self.rawdata_schemas[f"{key}.csv"]
-        validate_schema(rawdata_path, rawdata_schema)
+        validate_csv_header(rawdata_path, rawdata_schema)
         return pl.read_csv(
             rawdata_path,
             schema=rawdata_schema,

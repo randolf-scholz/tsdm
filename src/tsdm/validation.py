@@ -6,6 +6,7 @@ __all__ = [
     "ValidationError",
     # functions
     "make_error_handler",
+    "validate_csv_header",
     "validate_file_hash",
     "validate_hash",
     "validate_table_hash",
@@ -16,14 +17,16 @@ __all__ = [
 import hashlib
 import logging
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from enum import StrEnum
-from os import PathLike
+from os import PathLike, fspath
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
+import polars as pl
+
 from . import config
-from .datatools import get_schema
+from .datatools import infer_schema
 from .hashutils import Hash, hash_array, hash_file
 from .types import FilePath, FileStream, HasShape
 
@@ -367,22 +370,19 @@ def validate_table_schema(
     table: Any,
     /,
     *,
-    expected_schema: Sequence[str] | Mapping[str, Any] | None,
+    expected_schema: Mapping[str, Any | None],
     errors: ErrorHandler.Mode = "warn",
 ) -> bool:
     r"""Compare a table's column names and dtypes with a reference schema.
 
-    Column order is ignored. Reference names that identify index columns are
-    allowed even when absent from the table's data columns. Dtype checks skip
-    any column whose actual or expected dtype is `None`.
-
-    A missing reference does not automatically pass: it fails when the table
-    exposes columns or dtypes for which no reference was supplied.
+    Column order is ignored. Column names must match exactly; index columns
+    are not inspected separately. An expected dtype of `None` skips the dtype
+    check for that column, but the column must still be present.
 
     Args:
         table: The table to validate.
-        expected_schema: Mapping from column names to expected dtypes, a sequence
-            of column names for a names-only check, or `None`.
+        expected_schema: Mapping from column names to expected dtypes. Use
+            `None` for a names-only check of an individual column.
         errors: Message policy: `"ignore"`, `"log"`, `"warn"`, or `"raise"`.
 
     Returns:
@@ -393,97 +393,106 @@ def validate_table_schema(
     """
     error_handler = make_error_handler(errors)
 
-    actual_columns: Sequence | None
-    expected_columns: Sequence | None
-    actual_dtypes: Mapping | None
-    expected_dtypes: Mapping | None
-    index_columns: Sequence
-
-    actual_columns, actual_dtypes, index_columns = get_schema(table)
-
-    # get reference columns and dtypes
-    match expected_schema:
-        case Mapping() as mapping:
-            expected_columns = list(mapping.keys())
-            expected_dtypes = mapping
-        case Sequence() as seq:
-            expected_columns = seq
-            expected_dtypes = dict.fromkeys(seq)
-        case None:
-            expected_columns = None
-            expected_dtypes = None
-        case _:
-            raise TypeError(f"Invalid reference schema type! {type(expected_schema)=}")
+    actual_schema = infer_schema(table)
 
     # Validate columns.
-    match actual_columns, expected_columns:
-        case None, None:
-            msg = "No columns in actual table and no reference columns given, skipping column validation."
-            columns_match = True
-        case _, None:
-            msg = "No reference columns given, skipping column validation."
-            columns_match = False
-        case None, _:
-            msg = "No columns in actual table, but reference columns given!"
-            columns_match = False
-        case _, _:
-            assert actual_columns is not None  # needed for type checker
-            assert expected_columns is not None  # needed for type checker
-            missing_columns = set(expected_columns) - set(actual_columns)
-            missing_columns = missing_columns - set(index_columns)
-            superfluous_columns = set(actual_columns) - set(expected_columns)
-            if columns_match := not missing_columns and not superfluous_columns:
-                msg = "Table columns validated successfully."
-            else:
-                msg = "Table columns do not match reference columns!"
-                if missing_columns:
-                    msg += f"\n\tMissing columns: {sorted(missing_columns)!r}"
-                if superfluous_columns:
-                    msg += f"\n\tSuperfluous columns: {sorted(superfluous_columns)!r}"
+    missing_columns = set(expected_schema) - set(actual_schema)
+    superfluous_columns = set(actual_schema) - set(expected_schema)
+    columns_match = not missing_columns and not superfluous_columns
+    if columns_match:
+        msg = "Table columns validated successfully."
+    else:
+        msg = "Table columns do not match reference columns!"
+        if missing_columns:
+            msg += f"\n\tMissing columns: {sorted(missing_columns)!r}"
+        if superfluous_columns:
+            msg += f"\n\tSuperfluous columns: {sorted(superfluous_columns)!r}"
     error_handler.emit(msg, valid=columns_match)
 
     # Validate dtypes (for matching columns only).
-    match actual_dtypes, expected_dtypes:
-        case None, None:
-            msg_dtypes = "No dtypes in actual table and no reference dtypes given, skipping dtype validation."
-            dtypes_match = True
-        case _, None:
-            msg_dtypes = "No reference dtypes given, skipping dtype validation."
-            dtypes_match = False
-        case None, _:
-            msg_dtypes = "No dtypes in actual table, but reference dtypes given!"
-            dtypes_match = False
-        case _, _:
-            assert actual_dtypes is not None  # needed for type checker
-            assert expected_dtypes is not None  # needed for type checker
-            bad_dtypes = {}
-            for actual_col, actual_dtype in actual_dtypes.items():
-                if actual_col not in expected_dtypes:
-                    continue  # skip superfluous columns
-                expected_dtype = expected_dtypes[actual_col]
-
-                match actual_dtype, expected_dtype:
-                    case None, None:
-                        continue  # skip dtype validation for this column
-                    case _, None:
-                        continue  # skip dtype validation for this column
-                    case None, _:
-                        continue  # skip dtype validation for this column
-                    case _, _:
-                        if actual_dtype != expected_dtype:
-                            bad_dtypes[actual_col] = (actual_dtype, expected_dtype)
-
-            if dtypes_match := not bad_dtypes:
-                msg_dtypes = "Table dtypes validated successfully."
-            else:
-                msg_dtypes = "Table dtypes do not match reference dtypes for columns:\n"
-                for col, (actual_dtype, expected_dtype) in bad_dtypes.items():
-                    msg_dtypes += (
-                        f"\tColumn {col!r}:"
-                        f" actual dtype={actual_dtype!r},"
-                        f" expected dtype={expected_dtype!r}\n"
-                    )
+    bad_dtypes = {
+        col: (actual_schema[col], expected_dtype)
+        for col, expected_dtype in expected_schema.items()
+        if col in actual_schema
+        and expected_dtype is not None
+        and actual_schema[col] != expected_dtype
+    }
+    dtypes_match = not bad_dtypes
+    if dtypes_match:
+        msg_dtypes = "Table dtypes validated successfully."
+    else:
+        msg_dtypes = "Table dtypes do not match reference dtypes for columns:\n"
+        msg_dtypes += "".join(
+            f"\tColumn {col!r}: actual dtype={actual_dtype!r},"
+            f" expected dtype={expected_dtype!r}\n"
+            for col, (actual_dtype, expected_dtype) in bad_dtypes.items()
+        )
 
     error_handler.emit(msg_dtypes, valid=dtypes_match)
 
     return columns_match and dtypes_match
+
+
+def validate_csv_header(
+    file: FilePath | FileStream,
+    schema: Iterable[str],
+    /,
+    *,
+    separator: str = ",",
+) -> None:
+    r"""Validate that a CSV header exactly matches a schema.
+
+    Args:
+        file: CSV path or seekable file-like object.
+        schema: Expected column names and data types, in CSV order.
+        separator: CSV field separator.
+
+    Raises:
+        ValueError: If the file is not seekable or its header does not match the
+            schema's columns and order.
+    """
+    match file:
+        case str() | PathLike():
+            actual_columns = pl.read_csv(
+                fspath(file),
+                has_header=True,
+                infer_schema=False,
+                n_rows=0,
+                separator=separator,
+            ).columns
+        case stream:
+            if not stream.seekable():
+                raise ValueError(
+                    "Cannot validate the header of a non-seekable CSV stream."
+                )
+
+            position = stream.tell()
+            try:
+                actual_columns = pl.read_csv(
+                    stream,
+                    has_header=True,
+                    infer_schema=False,
+                    n_rows=0,
+                    separator=separator,
+                ).columns
+            finally:
+                stream.seek(position)
+                assert stream.tell() == position
+
+    expected_columns = list(schema)
+    missing_cols = set(actual_columns) - set(expected_columns)
+    superfluous_cols = set(expected_columns) - set(actual_columns)
+    if missing_cols or superfluous_cols:
+        raise ValueError(
+            "CSV header does not match schema: "
+            f"\n\t    missing: {sorted(missing_cols)!r}"
+            f"\n\tsuperfluous: {sorted(superfluous_cols)!r}"
+        )
+    assert len(actual_columns) == len(expected_columns)
+
+    if actual_columns != expected_columns:
+        raise ValueError(
+            "CSV header and schema columns are in different orders: "
+            f"\n\texpected: {expected_columns!r}"
+            f"\n\t  actual: {actual_columns!r}"
+        )

@@ -49,7 +49,7 @@ import polars as pl
 from matplotlib.axes import Axes
 
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 
 class Electricity(PolarsDataset[Literal["timeseries"]]):
@@ -140,7 +140,7 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
             ZipFile(rawdata_path) as archive,
             archive.open("LD2011_2014.txt") as file,
         ):
-            validate_schema(file, rawdata_schema, separator=";")
+            validate_csv_header(file, rawdata_schema, separator=";")
             ts = (
                 pl.read_csv(
                     file,

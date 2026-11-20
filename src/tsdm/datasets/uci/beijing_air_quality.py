@@ -66,7 +66,7 @@ import polars as pl
 
 import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 RAWDATA_SCHEMA =  {
     "No"      : pl.UInt16,
@@ -203,7 +203,7 @@ class BeijingAirQuality(PolarsDataset[Key]):
                     continue
 
                 with compressed_archive.open(csv_file) as compressed_file:
-                    validate_schema(compressed_file, rawdata_schema)
+                    validate_csv_header(compressed_file, rawdata_schema)
                     stations.append(
                         pl.read_csv(
                             compressed_file,

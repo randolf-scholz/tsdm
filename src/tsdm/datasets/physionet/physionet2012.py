@@ -160,7 +160,7 @@ from tqdm.auto import tqdm
 
 import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 TIMESERIES_METADATA = [
     # variable, lower, upper, lower_included, upper_included, unit, description
@@ -374,7 +374,7 @@ class PhysioNet2012(PolarsDataset[Key]):
                     # Time, Parameter, Value
                     # 00:00, RecordID, NUM
                     # <actual measurements> ...
-                    validate_schema(file, self.rawdata_schema)
+                    validate_csv_header(file, self.rawdata_schema)
                     df = pl.read_csv(file, schema=self.rawdata_schema).fill_nan(None)
                 if record_id != df.item(0, "Value"):
                     raise ValueError("RecordID mismatch!")

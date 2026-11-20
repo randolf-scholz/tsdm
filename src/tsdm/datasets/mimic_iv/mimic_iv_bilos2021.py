@@ -32,7 +32,7 @@ from typing import Literal, Self
 import polars as pl
 
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import validate_schema
+from tsdm.validation import validate_csv_header
 
 from .mimic_iv import MIMIC_IV
 
@@ -308,7 +308,7 @@ class MIMIC_IV_Bilos2021(PolarsDataset[Key]):
             )
 
         # read the pre-processed CSV file.
-        validate_schema(source_path, RAWDATA_SCHEMA)
+        validate_csv_header(source_path, RAWDATA_SCHEMA)
         csv_schema = {**RAWDATA_SCHEMA, "hadm_id": pl.Float64}
         raw_timeseries = (
             pl.read_csv(source_path, schema=csv_schema)

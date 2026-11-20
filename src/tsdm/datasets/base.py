@@ -943,10 +943,9 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
         self.LOGGER.debug(f"{key=} Validating table schema")
         try:
-            schema_matches = validate_table_schema(
-                self.tables[key],
-                expected_schema=self.table_schemas.get(key),
-                errors=errors,
+            schema = self.table_schemas.get(key)
+            schema_matches = schema is None or validate_table_schema(
+                self.tables[key], expected_schema=schema, errors=errors
             )
         except ValidationError as exc2:
             schema_matches = False

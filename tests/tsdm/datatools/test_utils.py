@@ -6,7 +6,7 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.datatools import get_schema, random_partition
+from tsdm.datatools import infer_schema, random_partition
 
 
 def test_random_partition_dictionary_keys() -> None:
@@ -56,50 +56,31 @@ def test_random_partition_tensor_and_labels() -> None:
 
 
 @pytest.mark.parametrize(
-    ("table", "expected_columns", "expected_dtypes", "expected_index_columns"),
+    ("table", "expected_schema"),
     [
         (
             pd.MultiIndex.from_arrays([[1, 2], [3, 4]], names=["left", "right"]),
-            ["left", "right"],
             {"left": pd.Series([1]).dtype, "right": pd.Series([1]).dtype},
-            [],
         ),
-        (pd.Index([1, 2], name="id"), ["id"], {"id": pd.Series([1]).dtype}, []),
+        (pd.Index([1, 2], name="id"), {"id": pd.Series([1]).dtype}),
         (
             pd.Series([1, 2], name="value", index=pd.Index([3, 4], name="id")),
-            ["value"],
             {"value": pd.Series([1]).dtype},
-            ["id"],
         ),
         (
             pd.DataFrame({"value": [1, 2]}, index=pd.Index([3, 4], name="id")),
-            ["value"],
             {"value": pd.Series([1]).dtype},
-            ["id"],
         ),
         (
             pa.table({"value": [1, 2]}),
-            ["value"],
             {"value": pa.int64()},
-            [],
         ),
         (
             pl.DataFrame({"value": [1, 2]}),
-            ["value"],
             {"value": pl.Int64},
-            [],
         ),
     ],
 )
-def test_get_schema(
-    table,
-    expected_columns,
-    expected_dtypes,
-    expected_index_columns,
-) -> None:
+def test_infer_schema(table, expected_schema) -> None:
     r"""Extract schema information from each supported table type."""
-    columns, dtypes, index_columns = get_schema(table)
-
-    assert columns == expected_columns
-    assert dtypes == expected_dtypes
-    assert index_columns == expected_index_columns
+    assert infer_schema(table) == expected_schema
