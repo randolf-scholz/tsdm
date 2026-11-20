@@ -1,8 +1,9 @@
 r"""Test the logutils module."""
 
-import tempfile
+from functools import partial
 from pathlib import Path
 
+import pytest
 import torch
 from pandas import DataFrame
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -49,21 +50,38 @@ def test_default_logger() -> None:
     print(logger)
 
 
-def test_log_table() -> None:
-    r"""Serialize tables through the shared table-serialization utility."""
+def test_log_table(tmp_path: Path) -> None:
+    r"""Serialize a pandas table with options bound to the serializer."""
     table = DataFrame({"values": [1, 2]})
 
-    with tempfile.TemporaryDirectory() as directory:
-        path = Path(directory)
-        log_table(
-            3,
-            path,
-            table,
-            filetype="csv",
-            options={"index": False},
-            name="metrics",
-            prefix="validation",
-            postfix="final",
-        )
+    log_table(
+        3,
+        tmp_path,
+        table,
+        serializer=partial(DataFrame.to_csv, index=False),
+        name="metrics.csv",
+        prefix="validation",
+        postfix="final",
+    )
 
-        assert (path / "validation:metrics:final-3.csv").read_text() == "values\n1\n2\n"
+    assert (tmp_path / "validation:metrics:final-3.csv").read_text() == "values\n1\n2\n"
+
+
+@pytest.mark.parametrize(
+    ("name", "filename"),
+    [
+        ("metrics.csv.gz", "metrics-3.csv.gz"),
+        ("metrics", "metrics-3"),
+        ("", "3"),
+    ],
+)
+def test_log_table_filename(tmp_path: Path, name: str, filename: str) -> None:
+    r"""Preserve filename suffixes and support arbitrary serializer return values."""
+
+    def serialize(table: str, path: Path, /) -> int:
+        return path.write_text(table)
+
+    with SummaryWriter(tmp_path) as writer:
+        log_table(3, writer, "values\n1\n2\n", serializer=serialize, name=name)
+
+    assert (tmp_path / filename).read_text() == "values\n1\n2\n"

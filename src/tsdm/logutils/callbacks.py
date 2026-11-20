@@ -960,19 +960,23 @@ class ScalarsCallback(BaseCallback):
 
 
 @dataclass(slots=True)
-class TableCallback(BaseCallback):
-    r"""Callback to log a table to disk."""
+class TableCallback[T](BaseCallback):
+    r"""Log a table to disk using the supplied serializer.
 
-    table: Any
+    Include the desired suffix in `name`, for example `"tables.parquet"`.
+    Configure backend options on `serializer`, for example with
+    `functools.partial`.
+    """
+
+    table: T
 
     _: KW_ONLY
 
     writer: SummaryWriter | FilePath
+    serializer: Callable[[T, Path], object]
+    name: str
 
     # Optional Parameters
-    options: Optional[dict[str, Any]] = None
-    filetype: str = "parquet"
-    name: str = "tables"
     prefix: str = ""
     postfix: str = ""
 
@@ -981,8 +985,7 @@ class TableCallback(BaseCallback):
             step,
             self.writer,
             table=self.table,
-            options=self.options,
-            filetype=self.filetype,
+            serializer=self.serializer,
             name=self.name,
             prefix=self.prefix,
             postfix=self.postfix,

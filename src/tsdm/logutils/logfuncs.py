@@ -20,7 +20,7 @@ __all__ = [
 import inspect
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from inspect import Parameter
 from pathlib import Path
 from typing import Any, Literal, Optional, Protocol, TypeIs
@@ -34,7 +34,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.backend.serialize import serialize_table
 from tsdm.constants import EMPTY_MAP
 from tsdm.linalg import (
     col_corr,
@@ -458,15 +457,14 @@ def log_values(
         writer.add_scalar(f"{identifier}:{ident}/{key}", scalar, step)
 
 
-def log_table(
+def log_table[T](
     step: int,
     writer: SummaryWriter | FilePath,
     /,
-    table: Any,
+    table: T,
     *,
-    options: Optional[dict[str, Any]] = None,
-    filetype: str = "parquet",
-    name: str = "tables",
+    serializer: Callable[[T, Path], object],
+    name: str,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -474,14 +472,22 @@ def log_table(
 
     Use `writer.log_dir` when given a `SummaryWriter`, or the supplied path
     otherwise. The destination directory must already exist. The filename is
-    `{identifier}-{step}.{filetype}`, with the hyphen omitted for an empty
-    identifier. Pass `options` to `tsdm.datatools.serialize.serialize_table`.
+    `{identifier}-{step}{suffix}`, with the hyphen omitted for an empty
+    identifier. The suffix is taken from `name`, so `name="metrics.csv"`
+    produces `metrics-3.csv` at step 3. Names without a suffix produce
+    extensionless files. Optional `prefix` and `postfix` surround the name's
+    stem, separated by colons.
+
+    Call `serializer(table, path)` to write the file; its return value is
+    ignored. Configure serialization options on the callable, for example
+    with `functools.partial`. The suffix does not select the serializer.
     """
-    options = {} if options is None else options
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
+    suffix = "".join(Path(name).suffixes)
+    stem = name.removesuffix(suffix)
+    identifier = f"{prefix + ':' * bool(prefix)}{stem}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path /= f"{identifier + '-' * bool(identifier)}{step}.{filetype}"
-    serialize_table(table, path, **options)
+    path /= f"{identifier + '-' * bool(identifier)}{step}{suffix}"
+    serializer(table, path)
 
 
 def log_plot(
