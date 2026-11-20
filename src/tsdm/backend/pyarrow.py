@@ -49,9 +49,6 @@ from pyarrow import (
 from pyarrow.types import lib as pyarrow_lib
 from tqdm import tqdm
 
-from tsdm.constants import UNDEFINED
-
-from .schemas import OutlierBound, OutlierInclusive
 from .util import get_outlier_options
 
 STR = pa.string()
@@ -59,7 +56,6 @@ TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
 
 type AnyArray = Array | ChunkedArray
-type BooleanAnyArray = BooleanArray | ChunkedArray
 type Mask = bool | list[bool] | BooleanArray | BooleanScalar
 
 
@@ -118,8 +114,10 @@ def strip_whitespace(obj: Table | AnyArray, /, *cols: str) -> Table | AnyArray:
 
 
 def false_like(arr: AnyArray, /) -> BooleanArray:
-    r"""Create a boolean array of `False` values with the same length as `arr`."""
+    r"""Create a non-chunked boolean array of `False` values, including at nulls."""
     m = arr.is_valid()
+    if isinstance(m, ChunkedArray):
+        m = m.combine_chunks()
     return pc.xor(m, m)
 
 
@@ -183,12 +181,12 @@ def _select_outliers_array(
     upper_bound: float | None,
     lower_inclusive: bool | None,
     upper_inclusive: bool | None,
-) -> BooleanAnyArray:
+) -> BooleanArray:
     r"""Return a boolean mask identifying values outside the supplied bounds.
 
     A bound of `None` leaves that side unbounded. Inclusive bounds admit values
     equal to the boundary. Nulls and values in nonnumeric arrays are not marked
-    as outliers.
+    as outliers. The returned mask is non-chunked, even for chunked inputs.
     """
     if not _is_real_numeric_array(s):
         return false_like(s)
@@ -215,7 +213,8 @@ def _select_outliers_array(
         case _:
             raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
 
-    return pc.or_(mask_lower, mask_upper)
+    mask = pc.or_(mask_lower, mask_upper)
+    return mask.combine_chunks() if isinstance(mask, ChunkedArray) else mask
 
 
 def _select_outliers_table(
@@ -256,7 +255,6 @@ def _remove_outliers_array[A: AnyArray](
     /,
     *,
     drop: bool = True,
-    inplace: bool = False,
     lower_bound: float | None,
     upper_bound: float | None,
     lower_inclusive: bool | None,
@@ -267,9 +265,8 @@ def _remove_outliers_array[A: AnyArray](
     Outliers are replaced with nulls and, when `drop=True`, removed. If both
     bounds are `None`, return the input unchanged.
 
-    `inplace` is accepted for API compatibility and ignored. Arrow arrays are immutable.
+    The input is not modified.
     """
-    del inplace
     if lower_bound is None and upper_bound is None:
         return s
     if isinstance(s, ChunkedArray):
@@ -307,42 +304,40 @@ def _remove_outliers_table(
     /,
     *,
     drop: bool = True,
-    inplace: bool = False,
     lower_bound: Mapping[str, float | None],
     upper_bound: Mapping[str, float | None],
     lower_inclusive: Mapping[str, bool | None],
     upper_inclusive: Mapping[str, bool | None],
-    erroron_extra_bounds: bool = False,
 ) -> Table:
     r"""Remove outliers from an Arrow table, given boundary values.
 
     Outlying cells are replaced with nulls. When `drop=True`, remove rows only
-    if every column is marked as an outlier. All columns must have entries in
-    each bounds mapping.
+    if every bounded column is marked as an outlier. Each bounded column must
+    occur in all four mappings. Unknown columns raise `ValueError`.
 
-    `inplace` is accepted for API compatibility and ignored. Arrow tables are immutable.
+    The input is not modified.
     """
-    del inplace
-    given_bounds = set.intersection(
+    given_bounds = set.union(
         *(
             set(bounds)
             for bounds in (lower_bound, upper_bound, lower_inclusive, upper_inclusive)
         )
     )
-    if missing_bounds := set(df.column_names) - given_bounds:
-        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
-    if erroron_extra_bounds and (extra_bounds := given_bounds - set(df.column_names)):
+    if extra_bounds := given_bounds - set(df.column_names):
         raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
+    if not given_bounds:
+        return df
+    columns = [column for column in df.column_names if column in given_bounds]
 
     mask = _select_outliers_table(
-        df,
+        df.select(columns),
         lower_bound=lower_bound,
         upper_bound=upper_bound,
         lower_inclusive=lower_inclusive,
         upper_inclusive=upper_inclusive,
     )
     result = df
-    for column in df.column_names:
+    for column in mask.column_names:
         result = result.set_column(
             result.column_names.index(column),
             column,
@@ -608,42 +603,47 @@ def table_info(table: Table, /) -> None:
 
 @overload
 def select_outliers(
-    obj: AnyArray,
-    limits: Table | Mapping[str, Any] = ...,
-    /,
-    *,
-    lower_bound: Optional[OutlierBound] = ...,
-    upper_bound: Optional[OutlierBound] = ...,
-    lower_inclusive: Optional[OutlierInclusive] = ...,
-    upper_inclusive: Optional[OutlierInclusive] = ...,
-) -> BooleanAnyArray: ...
+    obj: AnyArray, limits: Table | Mapping[str, Any], /
+) -> BooleanArray: ...
 @overload
-def select_outliers(  # type: ignore[overload-cannot-match]
-    obj: Table,
-    limits: Table | Mapping[str, Any] = ...,
+def select_outliers(obj: Table, limits: Table | Mapping[str, Any], /) -> Table: ...
+@overload
+def select_outliers(
+    obj: AnyArray,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = ...,
-    upper_bound: Optional[OutlierBound] = ...,
-    lower_inclusive: Optional[OutlierInclusive] = ...,
-    upper_inclusive: Optional[OutlierInclusive] = ...,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+) -> BooleanArray: ...
+@overload
+def select_outliers(
+    obj: Table,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
 ) -> Table: ...
 def select_outliers(
     obj: AnyArray | Table,
-    limits: Table | Mapping[str, Any] = UNDEFINED,
+    limits: Table | Mapping[str, Any] | None = None,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = UNDEFINED,
-    upper_bound: Optional[OutlierBound] = UNDEFINED,
-    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
-    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
-) -> BooleanAnyArray | Table:
+    lower_bound: Mapping[Any, float | None] | float | None = None,
+    upper_bound: Mapping[Any, float | None] | float | None = None,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None = None,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None = None,
+) -> BooleanArray | Table:
     r"""Detect outliers using a limits table/mapping or keyword bounds.
 
     Supply either `limits` or all four keyword bounds. A `None` bound leaves
     that side unbounded. Limits tables must be PyArrow tables and identify
     columns with `variable`. Mappings may contain either the four bound names
-    or per-variable boundary information.
+    or per-variable boundary information. With `limits`, all boundary keywords
+    must be `None`. Finite bounds require an explicit inclusivity flag.
     """
     if isinstance(limits, Table):
         columns = limits.to_pydict()
@@ -668,24 +668,58 @@ def select_outliers(
             raise TypeError(f"Expected AnyArray or Table, got {type(obj)}.")
 
 
-def remove_outliers[T: AnyArray | Table](
-    obj: T,
-    limits: Table | Mapping[str, Any] = UNDEFINED,
+@overload
+def remove_outliers[A: AnyArray](
+    obj: A, limits: Table | Mapping[str, Any], /, *, drop: bool = ...
+) -> A: ...
+@overload
+def remove_outliers[F: Table](
+    obj: F, limits: Table | Mapping[str, Any], /, *, drop: bool = ...
+) -> F: ...
+@overload
+def remove_outliers[A: AnyArray](
+    obj: A,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = UNDEFINED,
-    upper_bound: Optional[OutlierBound] = UNDEFINED,
-    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
-    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+    drop: bool = ...,
+) -> A: ...
+@overload
+def remove_outliers[F: Table](
+    obj: F,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
+    drop: bool = ...,
+) -> F: ...
+def remove_outliers[T: AnyArray | Table](
+    obj: T,
+    limits: Table | Mapping[str, Any] | None = None,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None] | float | None = None,
+    upper_bound: Mapping[Any, float | None] | float | None = None,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None = None,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None = None,
     drop: bool = True,
-    inplace: bool = False,
 ) -> T:
     r"""Remove outliers using a limits table/mapping or keyword bounds.
 
     Supply either `limits` or all four keyword bounds. A `None` bound leaves
     that side unbounded. Limits tables must be PyArrow tables and identify
     columns with `variable`. Mappings may contain either the four bound names
-    or per-variable boundary information.
+    or per-variable boundary information. With `limits`, all boundary keywords
+    must be `None`. Finite bounds require an explicit inclusivity flag.
+
+    For tables, supply complete bounds for any subset of columns. Other columns
+    are retained unchanged. Bounds for unknown columns raise `ValueError`.
+    With `drop=True`, drop rows where every bounded column is an outlier.
     """
     if isinstance(limits, Table):
         columns = limits.to_pydict()
@@ -703,8 +737,8 @@ def remove_outliers[T: AnyArray | Table](
     )
     match obj:
         case Array() | ChunkedArray():
-            return _remove_outliers_array(obj, drop=drop, inplace=inplace, **options)
+            return _remove_outliers_array(obj, drop=drop, **options)
         case Table():
-            return _remove_outliers_table(obj, drop=drop, inplace=inplace, **options)
+            return _remove_outliers_table(obj, drop=drop, **options)
         case _:
             raise TypeError(f"Expected AnyArray or Table, got {type(obj)}.")

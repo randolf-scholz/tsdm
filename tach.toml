@@ -47,19 +47,18 @@ depends_on = [
     "tsdm.random",
     "tsdm.types",
     "tsdm.hashutils",
-    "tsdm.validation",
+    "tsdm.validation", "tsdm.backend",
 ]
 
 [[modules]]
 path = "tsdm.datatools"
 depends_on = [
-    "tsdm.backend",
     "tsdm.types",
 ]
 
 [[modules]]
 path = "tsdm.decorator"
-depends_on = ["tsdm.types"]
+depends_on = []
 
 [[modules]]
 path = "tsdm.encoders"

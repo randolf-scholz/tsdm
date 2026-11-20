@@ -208,8 +208,8 @@ class Backend[T]:
     NAME: BackendID
 
     # KERNELS
-    select_outliers: SelectOutliersProto[T]
-    remove_outliers: RemoveOutliersProto[T]
+    select_outliers: SelectOutliersProto[T, T]
+    remove_outliers: RemoveOutliersProto[T, T]
     clip: ClipProto[T]
     drop_null: SelfMap[T]
     is_null: SelfMap[T]

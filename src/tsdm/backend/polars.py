@@ -13,15 +13,13 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
-from typing import Any, Optional, cast as type_cast, overload
+from typing import Any, cast as type_cast, overload
 
 import polars as pl
 from polars import DataFrame, Series
 
-from tsdm.constants import UNDEFINED
 from tsdm.types.aliases import Axis
 
-from .schemas import OutlierBound, OutlierInclusive
 from .util import get_outlier_options
 
 
@@ -160,7 +158,6 @@ def _remove_outliers_series[S: Series](
     /,
     *,
     drop: bool = True,
-    inplace: bool = False,
     lower_bound: float | None,
     upper_bound: float | None,
     lower_inclusive: bool | None,
@@ -171,9 +168,8 @@ def _remove_outliers_series[S: Series](
     Outliers are replaced with nulls and, when `drop=True`, removed. If both
     bounds are `None`, return the input unchanged.
 
-    `inplace` is accepted for API compatibility and ignored; the input is not modified.
+    The input is not modified.
     """
-    del inplace
     if lower_bound is None and upper_bound is None:
         return s
     if (
@@ -201,35 +197,33 @@ def _remove_outliers_dataframe[T: DataFrame](
     /,
     *,
     drop: bool = True,
-    inplace: bool = False,
     lower_bound: Mapping[str, float | None],
     upper_bound: Mapping[str, float | None],
     lower_inclusive: Mapping[str, bool | None],
     upper_inclusive: Mapping[str, bool | None],
-    erroron_extra_bounds: bool = False,
 ) -> T:
     r"""Remove outliers from a DataFrame, given boundary values.
 
     Outlying cells are replaced with nulls. When `drop=True`, remove rows only
-    if every column is marked as an outlier. All columns must have entries in
-    each bounds mapping.
+    if every bounded column is marked as an outlier. Each bounded column must
+    occur in all four mappings. Unknown columns raise `ValueError`.
 
-    `inplace` is accepted for API compatibility and ignored; the input is not modified.
+    The input is not modified.
     """
-    del inplace
-    given_bounds = set.intersection(
+    given_bounds = set.union(
         *(
             set(bounds)
             for bounds in (lower_bound, upper_bound, lower_inclusive, upper_inclusive)
         )
     )
-    if missing_bounds := set(df.columns) - given_bounds:
-        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
-    if erroron_extra_bounds and (extra_bounds := given_bounds - set(df.columns)):
+    if extra_bounds := given_bounds - set(df.columns):
         raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
+    if not given_bounds:
+        return df
+    columns = [column for column in df.columns if column in given_bounds]
 
     mask = _select_outliers_dataframe(
-        df,
+        df.select(columns),
         lower_bound=lower_bound,
         upper_bound=upper_bound,
         lower_inclusive=lower_inclusive,
@@ -240,7 +234,7 @@ def _remove_outliers_dataframe[T: DataFrame](
         .then(None)
         .otherwise(pl.col(column))
         .alias(column)
-        for column in df.columns
+        for column in mask.columns
     )
     if not drop:
         return type_cast("T", result)
@@ -251,42 +245,49 @@ def _remove_outliers_dataframe[T: DataFrame](
 
 @overload
 def select_outliers(
+    obj: Series, limits: DataFrame | Mapping[str, Any], /
+) -> Series: ...
+@overload
+def select_outliers(
+    obj: DataFrame, limits: DataFrame | Mapping[str, Any], /
+) -> DataFrame: ...
+@overload
+def select_outliers(
     obj: Series,
-    limits: DataFrame | Mapping[str, Any] = ...,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = ...,
-    upper_bound: Optional[OutlierBound] = ...,
-    lower_inclusive: Optional[OutlierInclusive] = ...,
-    upper_inclusive: Optional[OutlierInclusive] = ...,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
 ) -> Series: ...
 @overload
 def select_outliers(
     obj: DataFrame,
-    limits: DataFrame | Mapping[str, Any] = ...,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = ...,
-    upper_bound: Optional[OutlierBound] = ...,
-    lower_inclusive: Optional[OutlierInclusive] = ...,
-    upper_inclusive: Optional[OutlierInclusive] = ...,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
 ) -> DataFrame: ...
 def select_outliers(
     obj: Series | DataFrame,
-    limits: DataFrame | Mapping[str, Any] = UNDEFINED,
+    limits: DataFrame | Mapping[str, Any] | None = None,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = UNDEFINED,
-    upper_bound: Optional[OutlierBound] = UNDEFINED,
-    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
-    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    lower_bound: Mapping[Any, float | None] | float | None = None,
+    upper_bound: Mapping[Any, float | None] | float | None = None,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None = None,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None = None,
 ) -> Series | DataFrame:
     r"""Detect outliers using a limits table/mapping or keyword bounds.
 
     Supply either `limits` or all four keyword bounds. A `None` bound leaves
     that side unbounded. Limits tables must be Polars tables and identify
     columns with `variable`. Mappings may contain either the four bound names
-    or per-variable boundary information.
+    or per-variable boundary information. With `limits`, all boundary keywords
+    must be `None`. Finite bounds require an explicit inclusivity flag.
     """
     if isinstance(limits, DataFrame):
         columns = limits.to_dict(as_series=False)
@@ -311,24 +312,58 @@ def select_outliers(
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
 
 
-def remove_outliers[T: Series | DataFrame](
-    obj: T,
-    limits: DataFrame | Mapping[str, Any] = UNDEFINED,
+@overload
+def remove_outliers[A: Series](
+    obj: A, limits: DataFrame | Mapping[str, Any], /, *, drop: bool = ...
+) -> A: ...
+@overload
+def remove_outliers[F: DataFrame](
+    obj: F, limits: DataFrame | Mapping[str, Any], /, *, drop: bool = ...
+) -> F: ...
+@overload
+def remove_outliers[A: Series](
+    obj: A,
     /,
     *,
-    lower_bound: Optional[OutlierBound] = UNDEFINED,
-    upper_bound: Optional[OutlierBound] = UNDEFINED,
-    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
-    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool | None,
+    upper_inclusive: bool | None,
+    drop: bool = ...,
+) -> A: ...
+@overload
+def remove_outliers[F: DataFrame](
+    obj: F,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool | None],
+    upper_inclusive: Mapping[Any, bool | None],
+    drop: bool = ...,
+) -> F: ...
+def remove_outliers[T: Series | DataFrame](
+    obj: T,
+    limits: DataFrame | Mapping[str, Any] | None = None,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None] | float | None = None,
+    upper_bound: Mapping[Any, float | None] | float | None = None,
+    lower_inclusive: Mapping[Any, bool | None] | bool | None = None,
+    upper_inclusive: Mapping[Any, bool | None] | bool | None = None,
     drop: bool = True,
-    inplace: bool = False,
 ) -> T:
     r"""Remove outliers using a limits table/mapping or keyword bounds.
 
     Supply either `limits` or all four keyword bounds. A `None` bound leaves
     that side unbounded. Limits tables must be Polars tables and identify
     columns with `variable`. Mappings may contain either the four bound names
-    or per-variable boundary information.
+    or per-variable boundary information. With `limits`, all boundary keywords
+    must be `None`. Finite bounds require an explicit inclusivity flag.
+
+    For tables, supply complete bounds for any subset of columns. Other columns
+    are retained unchanged. Bounds for unknown columns raise `ValueError`.
+    With `drop=True`, drop rows where every bounded column is an outlier.
     """
     if isinstance(limits, DataFrame):
         columns = limits.to_dict(as_series=False)
@@ -346,11 +381,9 @@ def remove_outliers[T: Series | DataFrame](
     )
     match obj:
         case Series():
-            return _remove_outliers_series(obj, drop=drop, inplace=inplace, **options)
+            return _remove_outliers_series(obj, drop=drop, **options)
         case DataFrame():
-            return _remove_outliers_dataframe(
-                obj, drop=drop, inplace=inplace, **options
-            )
+            return _remove_outliers_dataframe(obj, drop=drop, **options)
         case _:
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
 

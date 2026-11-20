@@ -2,8 +2,6 @@ r"""Callback protocols for TSDM."""
 
 __all__ = [
     "BoundaryInformation",
-    "OutlierBound",
-    "OutlierInclusive",
     "SelectOutliersProto",
     "RemoveOutliersProto",
     "StripWhitespaceProto",
@@ -26,7 +24,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable as Fn, Mapping
-from typing import Any, Optional, Protocol, TypedDict
+from typing import Any, Protocol, TypedDict, overload
 
 from numpy.typing import ArrayLike
 
@@ -134,42 +132,74 @@ class BoundaryInformation(TypedDict):
     upper_inclusive: bool | None
 
 
-type OutlierBound = float | Mapping[Any, float | None]
-type OutlierInclusive = bool | Mapping[Any, bool | None]
+class SelectOutliersProto[ArrayT, TableT, MaskT = ArrayT](Protocol):
+    r"""Detect outliers using scalar array bounds or per-column table bounds."""
 
-
-class SelectOutliersProto[T, MaskT = T](Protocol):
-    r"""Detect outliers using a limits table/mapping or four keyword bounds."""
-
+    @overload
+    def __call__(self, obj: ArrayT, limits: TableT | Mapping[str, Any], /) -> MaskT: ...
+    @overload
+    def __call__(
+        self, obj: TableT, limits: TableT | Mapping[str, Any], /
+    ) -> TableT: ...
+    @overload
     def __call__(
         self,
-        obj: T,
-        limits: Any = ...,
+        obj: ArrayT,
         /,
         *,
-        lower_bound: Optional[OutlierBound] = ...,
-        upper_bound: Optional[OutlierBound] = ...,
-        lower_inclusive: Optional[OutlierInclusive] = ...,
-        upper_inclusive: Optional[OutlierInclusive] = ...,
+        lower_bound: float | None,
+        upper_bound: float | None,
+        lower_inclusive: bool | None,
+        upper_inclusive: bool | None,
     ) -> MaskT: ...
-
-
-class RemoveOutliersProto[T](Protocol):
-    r"""Replace outliers with nulls, optionally dropping outlying rows."""
-
+    @overload
     def __call__(
         self,
-        obj: T,
-        limits: Any = ...,
+        obj: TableT,
         /,
         *,
-        lower_bound: Optional[OutlierBound] = ...,
-        upper_bound: Optional[OutlierBound] = ...,
-        lower_inclusive: Optional[OutlierInclusive] = ...,
-        upper_inclusive: Optional[OutlierInclusive] = ...,
+        lower_bound: Mapping[Any, float | None],
+        upper_bound: Mapping[Any, float | None],
+        lower_inclusive: Mapping[Any, bool | None],
+        upper_inclusive: Mapping[Any, bool | None],
+    ) -> TableT: ...
+
+
+class RemoveOutliersProto[ArrayT, TableT](Protocol):
+    r"""Remove outliers using scalar array bounds or per-column table bounds."""
+
+    @overload
+    def __call__(
+        self, obj: ArrayT, limits: TableT | Mapping[str, Any], /, *, drop: bool = ...
+    ) -> ArrayT: ...
+    @overload
+    def __call__(
+        self, obj: TableT, limits: TableT | Mapping[str, Any], /, *, drop: bool = ...
+    ) -> TableT: ...
+    @overload
+    def __call__(
+        self,
+        obj: ArrayT,
+        /,
+        *,
+        lower_bound: float | None,
+        upper_bound: float | None,
+        lower_inclusive: bool | None,
+        upper_inclusive: bool | None,
         drop: bool = ...,
-        inplace: bool = ...,
-    ) -> T: ...
+    ) -> ArrayT: ...
+    @overload
+    def __call__(
+        self,
+        obj: TableT,
+        /,
+        *,
+        lower_bound: Mapping[Any, float | None],
+        upper_bound: Mapping[Any, float | None],
+        lower_inclusive: Mapping[Any, bool | None],
+        upper_inclusive: Mapping[Any, bool | None],
+        drop: bool = ...,
+    ) -> TableT: ...
 
 
 class StripWhitespaceProto[T](Protocol):
