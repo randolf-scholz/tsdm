@@ -1707,7 +1707,7 @@ class Parallel[
         match self:
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
-                    encoder=lambda _: (),  # type: ignore
+                    encoder=lambda _: (),
                     decoder=lambda _: (),
                 )
 
@@ -1831,7 +1831,7 @@ class Replicate[
         match self:
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
-                    encoder=lambda _: (),  # type: ignore
+                    encoder=lambda _: (),
                     decoder=lambda _: (),
                 )
 
