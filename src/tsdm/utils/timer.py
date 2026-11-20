@@ -12,7 +12,7 @@ from types import FrameType, TracebackType
 from typing import ClassVar, Never, Self, cast, overload
 
 
-class timer[ExitT: bool | None = None](ContextDecorator):
+class timer[ExitT: (bool, None) = None](ContextDecorator):
     r"""Context manager for timing a block of code.
 
     If supplied, `timeout` must be positive and uses `SIGALRM` to interrupt the
