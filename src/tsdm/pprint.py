@@ -94,13 +94,14 @@ import torch
 from .decorator import decorator
 from .types import (
     DataclassType,
+    HasDevice,
+    HasDType,
+    HasDTypes,
+    HasShape,
     NamedTupleType,
     SupportsArray,
     SupportsDataFrame,
-    SupportsDevice,
-    SupportsDtype,
     SupportsItem,
-    SupportsShape,
     is_dataclass,
     is_namedtuple,
 )
@@ -235,22 +236,23 @@ def _is_dtype(arg: object, /) -> bool:
 def _get_dtypes(table: object) -> list[object]:
     match table:
         # DataFrame-like
-        case pd.DataFrame(dtypes=dtypes) | pd.MultiIndex(dtypes=dtypes):
-            return list(dtypes)
-        case pa.Table(schema=schema):
-            return list(schema.types)
-        case pl.DataFrame(dtypes=dtypes):
+        case HasDTypes(dtypes=dtypes):
+            # pd.DataFrame, pd.MultiIndex, pl.DataFrame
             return list(dtypes)
         case SupportsDataFrame() as supports_frame:
-            frame: pd.DataFrame = supports_frame.__dataframe__()
-            return list(frame.dtypes)
-        # Tensor-like
-        case pa.Array(type=dtype):
-            return [dtype]
-        case SupportsDtype(dtype=dtype):
+            # https://data-apis.org/dataframe-protocol/latest/API.html
+            frame = supports_frame.__dataframe__()
+            # Dtype = Tuple[DtypeKind, int, str, str]
+            dypes = [col.dtype for col in frame.get_columns()]
+            # use f"{kind.name}{size} for each col
+            return [f"{kind.name}{size}" for kind, size, _, _ in dypes]
+        case HasDType(dtype=dtype):
             return [dtype]
         case SupportsArray() as array:
             return [array.__array__().dtype]
+        case object(type=dtype):  # type: ignore
+            # pa.Array
+            return [dtype]
         case _:
             raise TypeError(f"Unsupported object type {type(table)}.")
 
@@ -258,7 +260,7 @@ def _get_dtypes(table: object) -> list[object]:
 def repr_dtype(dtype: object, /) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
-        case SupportsDtype(dtype=dtype):
+        case HasDType(dtype=dtype):
             return repr_dtype(dtype)
         case torch.dtype():
             return repr(dtype).lstrip("torch.")
@@ -1008,9 +1010,7 @@ def repr_array(
     # if multidimensional: <dim1, dim2, ...>
     # if plain scalar: none
     shape: tuple[int, ...] = (
-        tuple(obj.shape)
-        if isinstance(obj, SupportsShape)
-        else tuple(obj.__array__().shape)
+        tuple(obj.shape) if isinstance(obj, HasShape) else tuple(obj.__array__().shape)
     )
     match identifier, len(shape):
         case None, _:
@@ -1023,7 +1023,7 @@ def repr_array(
         device_repr = ""
     else:
         match modifier, obj:
-            case None, SupportsDevice(device=device):
+            case None, HasDevice(device=device):
                 device_repr = f"@{device}"
             case _:
                 device_repr = f"@{modifier}" if modifier is not None else ""

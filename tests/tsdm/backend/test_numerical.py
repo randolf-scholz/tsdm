@@ -7,9 +7,9 @@ import pytest
 import torch
 
 from tsdm.backend.generic import is_singleton
-from tsdm.types import SupportsShape
+from tsdm.types import HasShape
 
-CASES: dict[str, tuple[SupportsShape, bool]] = {
+CASES: dict[str, tuple[HasShape, bool]] = {
     "ndarray-()"       : (np.array(1)                        , True),
     "ndarray-(0,)"     : (np.array([])                       , False),
     "ndarray-(1, 0)"   : (np.array([[]])                     , False),

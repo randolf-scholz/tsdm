@@ -25,7 +25,7 @@ from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 from . import config
 from .datatools import get_schema
 from .hashutils import Hash, hash_array, hash_file
-from .types import FilePath, FileStream, SupportsShape
+from .types import FilePath, FileStream, HasShape
 
 
 class ValidationError(ValueError):
@@ -324,7 +324,7 @@ def validate_table_hash(
 
 
 def validate_table_shape(
-    table: SupportsShape,
+    table: HasShape,
     /,
     expected_shape: tuple[int, ...] | None,
     *,
@@ -342,7 +342,7 @@ def validate_table_shape(
     error_handler = make_error_handler(errors)
 
     match table:
-        case SupportsShape(shape=actual_shape):
+        case HasShape(shape=actual_shape):
             pass
         case _:
             raise TypeError(f"Cannot get shape of object of type {type(table)}!")

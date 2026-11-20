@@ -17,23 +17,23 @@ __all__ = [
 from math import prod
 from typing import Any, cast
 
-from tsdm.types import SupportsEquality, SupportsShape
+from tsdm.types import HasShape, SupportsEquality
 
 type FloatArray = Any
 type BooleanArray = Any
 
 
-def ndim(x: SupportsShape, /) -> int:
+def ndim(x: HasShape, /) -> int:
     r"""Return the number of dimensions of an object with a `shape` attribute."""
     return len(x.shape)
 
 
-def numel(x: SupportsShape, /) -> int:
+def numel(x: HasShape, /) -> int:
     r"""Return the number of elements of an object with a `shape` attribute."""
     return prod(x.shape)
 
 
-def is_singleton(x: SupportsShape, /) -> bool:
+def is_singleton(x: HasShape, /) -> bool:
     r"""Determine whether an object with a `shape` attribute has one element."""
     return prod(x.shape) == 1
 

@@ -11,15 +11,16 @@ __all__ = [
     "SupportsEquality",
     "SupportsComparison",
     # Mixins
+    "HasDType",
+    "HasDTypes",
+    "HasDevice",
+    "HasNDim",
+    "HasShape",
     "SupportsArray",
     "SupportsArrayUfunc",
     "SupportsDataFrame",
-    "SupportsDevice",
-    "SupportsDtype",
     "SupportsItem",
-    "SupportsNdim",
     "SupportsRound",
-    "SupportsShape",
     # functions
     "implements",
 ]
@@ -112,7 +113,7 @@ class SupportsSlicing[V](SupportsGetItem[int, V], Protocol):  # +V
 
 
 @runtime_checkable
-class SupportsShape(Protocol):
+class HasShape(Protocol):
     r"""Protocol for objects with a `shape` property containing integer dimensions."""
 
     @property
@@ -121,7 +122,7 @@ class SupportsShape(Protocol):
 
 
 @runtime_checkable
-class SupportsNdim(Protocol):
+class HasNDim(Protocol):
     r"""Protocol for objects with an integer `ndim` property."""
 
     @property
@@ -130,7 +131,7 @@ class SupportsNdim(Protocol):
 
 
 @runtime_checkable
-class SupportsDevice[DeviceT = Any](Protocol):
+class HasDevice[DeviceT = Any](Protocol):
     r"""Protocol for objects that support `device`."""
 
     @property
@@ -139,7 +140,7 @@ class SupportsDevice[DeviceT = Any](Protocol):
 
 
 @runtime_checkable
-class SupportsDtype[DTypeT = Any](Protocol):
+class HasDType[DTypeT = Any](Protocol):
     r"""Protocol for objects with a `dtype` property.
 
     Examples:
@@ -155,6 +156,20 @@ class SupportsDtype[DTypeT = Any](Protocol):
     @property
     @abstractmethod
     def dtype(self) -> DTypeT: ...
+
+
+@runtime_checkable
+class HasDTypes[DTypeT = Any](Protocol):
+    r"""Protocol for objects with a `dtypes` property.
+
+    Examples:
+        - `pandas.DataFrame`
+        - `polars.DataFrame`
+    """
+
+    @property
+    @abstractmethod
+    def dtypes(self) -> Collection[DTypeT]: ...
 
 
 @runtime_checkable
