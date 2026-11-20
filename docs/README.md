@@ -18,6 +18,12 @@ navigation from the Python source. It reads the staging path from `docs_dir` in
 do not linger. Zensical renders those sources into `build/site/` and reuses its
 cache during normal builds.
 
+The home, contributing, and license pages in `content/` are relative symlinks:
+`README.md` → `../../README.md`, `CONTRIBUTING.md` → `../../CONTRIBUTING.md`,
+and `LICENSE.md` → `../../LICENSE`. Edit the root files to update these pages.
+Staging follows the symlinks and copies their contents without rewriting links.
+Technical notes live in `content/notes/`.
+
 Browser files live in `static/`: stylesheets in `static/css/` and MathJax
 configuration in `static/mathjax_config.js`. The build copies the entire
 directory into `build/sources/static/`, preserving its layout. Local static paths

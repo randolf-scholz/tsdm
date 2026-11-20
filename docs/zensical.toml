@@ -20,12 +20,14 @@ extra_javascript = [
 ]
 
 nav = [
-    { "Home" = "index.md" },
+    { "Home" = "README.md" },
     { "Technical notes" = [
-        { "Conventions" = "conventions.md" },
-        { "Encoders" = "encoders.md" },
+        { "Conventions" = "notes/conventions.md" },
+        { "Encoders" = "notes/encoders.md" },
     ] },
     { "API reference" = "reference/" },
+    { "Contributing" = "CONTRIBUTING.md" },
+    { "License" = "LICENSE.md" },
 ]
 
 [project.theme]
