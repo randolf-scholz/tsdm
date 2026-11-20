@@ -236,7 +236,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     def get(self, key: K, /, default: None = ...) -> V | None: ...
     @overload
     def get[T](self, key: K, /, default: T) -> V | T: ...
-    def get[T](self, key: K, /, default: Optional[T | V] = None) -> V | T | None:  # ty: ignore[invalid-method-override]
+    def get[T](self, key: K, /, default: Optional[T | V] = None) -> V | T | None:  # ty: ignore[incompatible-method-override]
         r"""Get the value of the key."""
         try:
             return self[key]
@@ -249,7 +249,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     def pop(self, key: K, default: V, /) -> V: ...
     @overload
     def pop[T](self, key: K, default: T, /) -> V | T: ...
-    def pop[T](self, key: K, /, *args: *tuple[V | T, ...]) -> V | T:  # ty: ignore[invalid-method-override]
+    def pop[T](self, key: K, /, *args: *tuple[V | T, ...]) -> V | T:  # ty: ignore[incompatible-method-override]
         r"""Pop the value of the key."""
         value = super().pop(key, *args)
         return LazyValue.unwrap(value)

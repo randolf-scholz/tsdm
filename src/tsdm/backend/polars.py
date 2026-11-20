@@ -55,7 +55,7 @@ def cast(s: Series, /, dtype: Any) -> Series: ...
 def cast(df: DataFrame, /, dtype: Any) -> DataFrame: ...
 def cast[T: (Series, DataFrame)](x: T, /, dtype: Any) -> T:
     r"""Cast a polars object to a different dtype."""
-    return x.cast(dtype)  # ty: ignore[invalid-return-type]
+    return x.cast(dtype)  # ty: ignore[invalid-explicit-return]
 
 
 @overload
@@ -67,7 +67,7 @@ def drop_null[T: (Series, DataFrame)](x: T, /) -> T:
 
     Floating-point `NaN` values are retained.
     """
-    return x.drop_nulls()  # ty: ignore[invalid-return-type]
+    return x.drop_nulls()  # ty: ignore[invalid-explicit-return]
 
 
 def is_null(x: Series, /) -> Series:

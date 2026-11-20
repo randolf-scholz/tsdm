@@ -368,10 +368,10 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
 
         @wraps(method)
         def wrapper(self: T, /, *args: P.args, **kwargs: P.kwargs) -> R:
-            for hook in self.pre_hooks[method.__name__]:  # ty: ignore[unresolved-attribute]
+            for hook in self.pre_hooks[method.__name__]:  # ty: ignore[missing-attribute]
                 hook(self)
             result = method(self, *args, **kwargs)
-            for hook in self.post_hooks[method.__name__]:  # ty: ignore[unresolved-attribute]
+            for hook in self.post_hooks[method.__name__]:  # ty: ignore[missing-attribute]
                 hook(self)
             return result
 
@@ -1598,7 +1598,7 @@ class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
         self.num = num
         super().__init__([deepcopy(encoder) for _ in range(num)])
 
-    def get_slice[V](self: Repeat[V], arg: slice, /) -> Repeat[V]:  # ty: ignore[invalid-method-override]
+    def get_slice[V](self: Repeat[V], arg: slice, /) -> Repeat[V]:  # ty: ignore[incompatible-method-override]
         num = len(self.encoders[arg])
         return Repeat(self.encoder, num)
 
@@ -1708,7 +1708,7 @@ class Parallel[
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
                     encoder=lambda _: (),  # type: ignore
-                    decoder=lambda _: (),  # ty: ignore[invalid-argument-type]
+                    decoder=lambda _: (),
                 )
 
             case [encoder]:
@@ -1832,7 +1832,7 @@ class Replicate[
             case []:
                 return wrap(  # pyrefly: ignore[bad-return]
                     encoder=lambda _: (),  # type: ignore
-                    decoder=lambda _: (),  # ty: ignore[invalid-argument-type]
+                    decoder=lambda _: (),
                 )
 
             case [encoder]:
@@ -2136,7 +2136,7 @@ class Duplicate[
         super(Duplicate, new).__init__(*encoders, reduction=reduction)
         return new
 
-    def get_slice[U, V](  # ty: ignore[invalid-method-override]
+    def get_slice[U, V](  # ty: ignore[incompatible-method-override]
         self: Duplicate[U, tuple[V, ...]], arg: slice, /
     ) -> Duplicate[U, tuple[V, ...]]:
         return Duplicate.new(encoders=self.encoders[arg], reduction=self.reduction)

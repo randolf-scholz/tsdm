@@ -1119,7 +1119,7 @@ def pprint_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
     if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
-    cls.__repr__ = partial(repr_dataclass, **kwds)  # ty: ignore[invalid-assignment]
+    cls.__repr__ = partial(repr_dataclass, **kwds)
     return cls
 
 

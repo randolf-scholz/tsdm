@@ -100,7 +100,7 @@ def deserialize_table[T = pd.DataFrame](
     match loader:
         # call the provided loader function
         case loader_impl if callable(loader_impl):
-            return loader_impl(path_or_buf, **loader_kwargs)  # ty: ignore[invalid-return-type]
+            return loader_impl(path_or_buf, **loader_kwargs)  # ty: ignore[invalid-explicit-return]
 
         # use default loader for the extension
         case str(extension):

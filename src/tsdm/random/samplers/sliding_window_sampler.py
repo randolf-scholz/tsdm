@@ -645,7 +645,7 @@ class SlidingWindowSampler[
     # def __iter__(self: SlidingWindowSampler[DType, MODE, HORIZON], /) -> Iterator[Any]: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
-    def __iter__(self, /) -> Iterator[Any]:  # ty: ignore[invalid-method-override]
+    def __iter__(self, /) -> Iterator[Any]:  # ty: ignore[incompatible-method-override]
         r"""Yield the requested representation for each eligible time window.
 
         Multi-horizon samplers yield a list of adjacent window representations;
