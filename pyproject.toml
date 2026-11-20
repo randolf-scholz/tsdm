@@ -338,12 +338,12 @@ output-format = "concise"
 
 [tool.ty.analysis]
 respect-type-ignore-comments = true
-allowed-unresolved-imports = ["pyarrow.compute.*"]
+allowed-unresolved-imports = ["pyarrow.compute.**"]
 replace-imports-with-any = [
-    "pandas.*",
-    "pyarrow.*",
-    "pytest_benchmark.*",
-    "sklearn.*",
+    "pandas.**",
+    "pyarrow.**",
+    "pytest_benchmark.**",
+    "sklearn.**",
 ]
 
 [tool.pyrefly]
