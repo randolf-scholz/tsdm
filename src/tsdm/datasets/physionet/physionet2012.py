@@ -158,8 +158,9 @@ from typing import Literal, Optional
 import polars as pl
 from tqdm.auto import tqdm
 
+import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import remove_outliers, validate_schema
+from tsdm.datatools import validate_schema
 
 TIMESERIES_METADATA = [
     # variable, lower, upper, lower_included, upper_included, unit, description
@@ -495,13 +496,13 @@ class PhysioNet2012(PolarsDataset[Key]):
                 )
             case "timeseries":
                 self.LOGGER.info("Removing outliers from timeseries.")
-                return remove_outliers(
+                return B.polars.remove_outliers(
                     self.raw_timeseries,
                     self.timeseries_metadata,
                 )
             case "static_covariates":
                 self.LOGGER.info("Removing outliers from static_covariates.")
-                return remove_outliers(
+                return B.polars.remove_outliers(
                     self.raw_metadata,
                     self.static_covariates_metadata,
                 )

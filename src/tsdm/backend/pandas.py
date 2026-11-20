@@ -19,18 +19,12 @@ __all__ = [
     "nanmin",
     "nanstd",
     "null_like",
+    "remove_outliers",
     "scalar",
+    "select_outliers",
     "strip_whitespace",
     "true_like",
     "where",
-    # auxiliary functions
-    "select_outliers_series",
-    "select_outliers_dataframe",
-    "remove_outliers_series",
-    "remove_outliers_dataframe",
-    "strip_whitespace_index",
-    "strip_whitespace_series",
-    "strip_whitespace_dataframe",
 ]
 
 import logging
@@ -38,7 +32,7 @@ import operator
 import warnings
 from collections.abc import Mapping
 from functools import reduce
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, Optional, overload
 
 import numpy as np
 import pandas as pd
@@ -46,7 +40,11 @@ from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, MultiIndex, NaT, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
+from tsdm.constants import UNDEFINED
 from tsdm.types.aliases import Axis
+
+from .schemas import OutlierBound, OutlierInclusive
+from .util import get_outlier_options
 
 __logger__ = logging.getLogger(__name__)
 
@@ -207,42 +205,43 @@ def copy_like[P: PandasType](x: ArrayLike, ref: P, /) -> P:
             raise TypeError(f"Expected {PANDAS_TYPE}, got {type(ref)}.")
 
 
-# region auxiliary functions -----------------------------------------------------------
-def strip_whitespace_index[I: Index](index: I, /) -> I:
+def _strip_whitespace_index[I: Index](index: I, /) -> I:
     r"""Strip whitespace from all string elements in an Index."""
     if index.dtype == "string":
         return index.str.strip()
     return index
 
 
-def strip_whitespace_series[S: Series](series: S, /) -> S:
+def _strip_whitespace_series[S: Series](series: S, /) -> S:
     r"""Strip whitespace from all string elements in a Series."""
     if series.dtype == "string":
         return series.str.strip()
     return series
 
 
-def strip_whitespace_dataframe[DF: DataFrame](frame: DF, /, *cols: str) -> DF:
+def _strip_whitespace_dataframe[DF: DataFrame](frame: DF, /, *cols: str) -> DF:
     r"""Strip whitespace from selected columns in a DataFrame."""
     return frame.assign(
-        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
+        **{col: _strip_whitespace_series(frame[col]) for col in (cols or frame)}
     )
 
 
-def strip_whitespace[P: PandasType](x: P, /) -> P:
-    r"""Strip whitespace from all string elements in a `pandas` object."""
-    match x:
+def strip_whitespace[P: PandasType](obj: P, /, *cols: str) -> P:
+    r"""Strip string values, restricting DataFrame processing to `cols` if given."""
+    if cols and not isinstance(obj, DataFrame):
+        raise ValueError("Cannot specify columns for a Series or Index.")
+    match obj:
         case DataFrame() as df:
-            return strip_whitespace_dataframe(df)
+            return _strip_whitespace_dataframe(df, *cols)
         case Series() as s:
-            return strip_whitespace_series(s)
+            return _strip_whitespace_series(s)
         case Index() as idx:
-            return strip_whitespace_index(idx)
+            return _strip_whitespace_index(idx)
         case _:
-            raise TypeError(f"Expected {PANDAS_TYPE}, got {type(x)}.")
+            raise TypeError(f"Expected {PANDAS_TYPE}, got {type(obj)}.")
 
 
-def select_outliers_series(
+def _select_outliers_series(
     s: Series,
     /,
     *,
@@ -292,7 +291,7 @@ def select_outliers_series(
     return mask_lower | mask_upper
 
 
-def select_outliers_dataframe(
+def _select_outliers_dataframe(
     df: DataFrame,
     /,
     *,
@@ -315,7 +314,7 @@ def select_outliers_dataframe(
     exceptions: dict[str, Exception] = {}
     for col in df.columns:
         try:
-            mask[col] = select_outliers_series(
+            mask[col] = _select_outliers_series(
                 df[col],
                 lower_bound=lower_bound[col],
                 upper_bound=upper_bound[col],
@@ -331,7 +330,7 @@ def select_outliers_dataframe(
     return mask
 
 
-def remove_outliers_series[S: Series](
+def _remove_outliers_series[S: Series](
     s: S,
     /,
     *,
@@ -364,7 +363,7 @@ def remove_outliers_series[S: Series](
     s = s.copy() if inplace else s
 
     # compute mask for values that are considered outliers
-    mask = select_outliers_series(
+    mask = _select_outliers_series(
         s,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -382,7 +381,7 @@ def remove_outliers_series[S: Series](
     return s
 
 
-def remove_outliers_dataframe[F: DataFrame](
+def _remove_outliers_dataframe[F: DataFrame](
     df: F,
     /,
     *,
@@ -410,7 +409,7 @@ def remove_outliers_dataframe[F: DataFrame](
         raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
     # compute mask for values that are considered outliers
-    mask = select_outliers_dataframe(
+    mask = _select_outliers_dataframe(
         df,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -432,4 +431,101 @@ def remove_outliers_dataframe[F: DataFrame](
     return df
 
 
-# endregion auxiliary functions --------------------------------------------------------
+@overload
+def select_outliers(
+    obj: Series,
+    limits: DataFrame | Mapping[str, Any] = ...,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = ...,
+    upper_bound: Optional[OutlierBound] = ...,
+    lower_inclusive: Optional[OutlierInclusive] = ...,
+    upper_inclusive: Optional[OutlierInclusive] = ...,
+) -> Series: ...
+@overload
+def select_outliers(  # type: ignore[overload-cannot-match]
+    obj: DataFrame,
+    limits: DataFrame | Mapping[str, Any] = ...,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = ...,
+    upper_bound: Optional[OutlierBound] = ...,
+    lower_inclusive: Optional[OutlierInclusive] = ...,
+    upper_inclusive: Optional[OutlierInclusive] = ...,
+) -> DataFrame: ...
+def select_outliers(
+    obj: Series | DataFrame,
+    limits: DataFrame | Mapping[str, Any] = UNDEFINED,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = UNDEFINED,
+    upper_bound: Optional[OutlierBound] = UNDEFINED,
+    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+) -> Series | DataFrame:
+    r"""Detect outliers using a limits table/mapping or keyword bounds.
+
+    Supply either `limits` or all four keyword bounds. A `None` bound leaves
+    that side unbounded. Limits tables must be pandas tables and identify
+    columns with `variable`. Mappings may contain either the four bound names
+    or per-variable boundary information.
+    Limits tables may instead use their index to identify variables.
+    """
+    if isinstance(limits, DataFrame):
+        frame = limits.set_index("variable") if "variable" in limits else limits
+        limits = frame.to_dict()
+    options = get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    match obj:
+        case Series():
+            return _select_outliers_series(obj, **options)
+        case DataFrame():
+            return _select_outliers_dataframe(obj, **options)
+        case _:
+            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
+
+
+def remove_outliers[T: Series | DataFrame](
+    obj: T,
+    limits: DataFrame | Mapping[str, Any] = UNDEFINED,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = UNDEFINED,
+    upper_bound: Optional[OutlierBound] = UNDEFINED,
+    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    drop: bool = True,
+    inplace: bool = False,
+) -> T:
+    r"""Remove outliers using a limits table/mapping or keyword bounds.
+
+    Supply either `limits` or all four keyword bounds. A `None` bound leaves
+    that side unbounded. Limits tables must be pandas tables and identify
+    columns with `variable`. Mappings may contain either the four bound names
+    or per-variable boundary information.
+    Limits tables may instead use their index to identify variables.
+    """
+    if isinstance(limits, DataFrame):
+        frame = limits.set_index("variable") if "variable" in limits else limits
+        limits = frame.to_dict()
+    options = get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    match obj:
+        case Series():
+            return _remove_outliers_series(obj, drop=drop, inplace=inplace, **options)
+        case DataFrame():
+            return _remove_outliers_dataframe(
+                obj, drop=drop, inplace=inplace, **options
+            )
+        case _:
+            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")

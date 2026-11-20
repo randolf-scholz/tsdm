@@ -1,25 +1,28 @@
 r"""Polars backend implementation."""
 
 __all__ = [
-    "nanmin",
-    "nanmax",
     "cast",
     "drop_null",
     "is_null",
-    "remove_outliers_dataframe",
-    "remove_outliers_series",
+    "nanmax",
+    "nanmin",
+    "remove_outliers",
     "scalar",
-    "select_outliers_dataframe",
-    "select_outliers_series",
+    "select_outliers",
+    "strip_whitespace",
 ]
 
 from collections.abc import Mapping
-from typing import Any, cast as type_cast, overload
+from typing import Any, Optional, cast as type_cast, overload
 
 import polars as pl
 from polars import DataFrame, Series
 
+from tsdm.constants import UNDEFINED
 from tsdm.types.aliases import Axis
+
+from .schemas import OutlierBound, OutlierInclusive
+from .util import get_outlier_options
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:
@@ -78,7 +81,7 @@ def is_null(x: Series, /) -> Series:
     return x.is_null()
 
 
-def select_outliers_series(
+def _select_outliers_series(
     s: Series,
     /,
     *,
@@ -119,7 +122,7 @@ def select_outliers_series(
     return mask_lower | mask_upper
 
 
-def select_outliers_dataframe(
+def _select_outliers_dataframe(
     df: DataFrame,
     /,
     *,
@@ -140,7 +143,7 @@ def select_outliers_dataframe(
 
     return DataFrame(
         {
-            column: select_outliers_series(
+            column: _select_outliers_series(
                 df.get_column(column),
                 lower_bound=lower_bound[column],
                 upper_bound=upper_bound[column],
@@ -152,7 +155,7 @@ def select_outliers_dataframe(
     )
 
 
-def remove_outliers_series[S: Series](
+def _remove_outliers_series[S: Series](
     s: S,
     /,
     *,
@@ -182,7 +185,7 @@ def remove_outliers_series[S: Series](
             f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
         )
 
-    mask = select_outliers_series(
+    mask = _select_outliers_series(
         s,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -193,7 +196,7 @@ def remove_outliers_series[S: Series](
     return type_cast("S", result.filter(~mask) if drop else result)
 
 
-def remove_outliers_dataframe[T: DataFrame](
+def _remove_outliers_dataframe[T: DataFrame](
     df: T,
     /,
     *,
@@ -225,7 +228,7 @@ def remove_outliers_dataframe[T: DataFrame](
     if erroron_extra_bounds and (extra_bounds := given_bounds - set(df.columns)):
         raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
-    mask = select_outliers_dataframe(
+    mask = _select_outliers_dataframe(
         df,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -244,3 +247,131 @@ def remove_outliers_dataframe[T: DataFrame](
 
     row_mask = mask.select(pl.all_horizontal(pl.all()).alias("outlier")).to_series()
     return type_cast("T", result.filter(~row_mask))
+
+
+@overload
+def select_outliers(
+    obj: Series,
+    limits: DataFrame | Mapping[str, Any] = ...,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = ...,
+    upper_bound: Optional[OutlierBound] = ...,
+    lower_inclusive: Optional[OutlierInclusive] = ...,
+    upper_inclusive: Optional[OutlierInclusive] = ...,
+) -> Series: ...
+@overload
+def select_outliers(
+    obj: DataFrame,
+    limits: DataFrame | Mapping[str, Any] = ...,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = ...,
+    upper_bound: Optional[OutlierBound] = ...,
+    lower_inclusive: Optional[OutlierInclusive] = ...,
+    upper_inclusive: Optional[OutlierInclusive] = ...,
+) -> DataFrame: ...
+def select_outliers(
+    obj: Series | DataFrame,
+    limits: DataFrame | Mapping[str, Any] = UNDEFINED,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = UNDEFINED,
+    upper_bound: Optional[OutlierBound] = UNDEFINED,
+    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+) -> Series | DataFrame:
+    r"""Detect outliers using a limits table/mapping or keyword bounds.
+
+    Supply either `limits` or all four keyword bounds. A `None` bound leaves
+    that side unbounded. Limits tables must be Polars tables and identify
+    columns with `variable`. Mappings may contain either the four bound names
+    or per-variable boundary information.
+    """
+    if isinstance(limits, DataFrame):
+        columns = limits.to_dict(as_series=False)
+        variables = columns.pop("variable")
+        limits = {
+            key: dict(zip(variables, values, strict=True))
+            for key, values in columns.items()
+        }
+    options = get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    match obj:
+        case Series():
+            return _select_outliers_series(obj, **options)
+        case DataFrame():
+            return _select_outliers_dataframe(obj, **options)
+        case _:
+            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
+
+
+def remove_outliers[T: Series | DataFrame](
+    obj: T,
+    limits: DataFrame | Mapping[str, Any] = UNDEFINED,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = UNDEFINED,
+    upper_bound: Optional[OutlierBound] = UNDEFINED,
+    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    drop: bool = True,
+    inplace: bool = False,
+) -> T:
+    r"""Remove outliers using a limits table/mapping or keyword bounds.
+
+    Supply either `limits` or all four keyword bounds. A `None` bound leaves
+    that side unbounded. Limits tables must be Polars tables and identify
+    columns with `variable`. Mappings may contain either the four bound names
+    or per-variable boundary information.
+    """
+    if isinstance(limits, DataFrame):
+        columns = limits.to_dict(as_series=False)
+        variables = columns.pop("variable")
+        limits = {
+            key: dict(zip(variables, values, strict=True))
+            for key, values in columns.items()
+        }
+    options = get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    match obj:
+        case Series():
+            return _remove_outliers_series(obj, drop=drop, inplace=inplace, **options)
+        case DataFrame():
+            return _remove_outliers_dataframe(
+                obj, drop=drop, inplace=inplace, **options
+            )
+        case _:
+            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
+
+
+def strip_whitespace[T: (Series, DataFrame)](obj: T, /, *cols: str) -> T:
+    r"""Trim string values, optionally restricting processing to selected columns.
+
+    Nonstrings and null values are preserved. Column names are only accepted
+    for DataFrames.
+    """
+    match obj:
+        case DataFrame():
+            columns = cols or obj.columns
+            return obj.with_columns(
+                pl.col(column).str.strip_chars()
+                for column in columns
+                if obj.schema[column] == pl.String
+            )
+        case Series():
+            if cols:
+                raise ValueError("Cannot specify columns for a Series.")
+            return obj.str.strip_chars() if obj.dtype == pl.String else obj
+        case _:
+            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")

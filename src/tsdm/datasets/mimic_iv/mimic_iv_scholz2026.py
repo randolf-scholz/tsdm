@@ -12,6 +12,7 @@ from typing import Any
 
 import polars as pl
 
+import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
 
 from .mimic_iv import (
@@ -159,16 +160,6 @@ NULL_VALUES = [
 ]
 
 
-def _strip_whitespace(table: pl.DataFrame, /, *columns: str) -> pl.DataFrame:
-    r"""Strip whitespace from selected columns, or every string column by default."""
-    expressions = (
-        pl.col(*columns).str.strip_chars()
-        if columns
-        else pl.col(pl.String).str.strip_chars()
-    )
-    return table.with_columns(expressions)
-
-
 def _assert_columns_equal(table: pl.DataFrame, /, *, left: str, right: str) -> None:
     r"""Raise an error unless two non-null columns contain identical values."""
     equal = table.select((pl.col(left) == pl.col(right)).all()).item()
@@ -279,7 +270,7 @@ class MIMIC_IV_Scholz2026(PolarsDataset[MIMIC_IV_Key]):
                     "infusion_rate",
                     "infusion_rate_adjustment_amount",
                 ]
-                table = _strip_whitespace(table, *cols).with_columns(
+                table = B.polars.strip_whitespace(table, *cols).with_columns(
                     pl.col(column).cast(pl.Float32, strict=False) for column in cols
                 )
             case "hcpcsevents":
@@ -291,7 +282,7 @@ class MIMIC_IV_Scholz2026(PolarsDataset[MIMIC_IV_Key]):
                         pl.col("value", "valuenum", "valueuom").is_not_null()
                     )
                 )
-                table = _strip_whitespace(table).with_columns(
+                table = B.polars.strip_whitespace(table).with_columns(
                     pl.col("value").cast(pl.Float32)
                 )
                 _assert_columns_equal(table, left="value", right="valuenum")

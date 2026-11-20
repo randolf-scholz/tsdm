@@ -64,8 +64,9 @@ from zipfile import ZipFile
 
 import polars as pl
 
+import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import remove_outliers, validate_schema
+from tsdm.datatools import validate_schema
 
 RAWDATA_SCHEMA =  {
     "No"      : pl.UInt16,
@@ -226,7 +227,7 @@ class BeijingAirQuality(PolarsDataset[Key]):
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_metadata)
+        ts = B.polars.remove_outliers(ts, self.timeseries_metadata)
 
         # ensure table_schema is met
         if missing_cols := (target_schema.keys() - set(ts.columns)):

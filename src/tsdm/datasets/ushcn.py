@@ -24,7 +24,7 @@ from typing import Literal, Optional
 
 import polars as pl
 
-from tsdm.datatools import remove_outliers
+import tsdm.backend as B
 from tsdm.types.aliases import FilePath, FileStream
 
 from .base import PolarsDataset
@@ -457,7 +457,7 @@ class USHCN(PolarsDataset[Key]):
 
         self.LOGGER.info("Removing outliers from static_covariates.")
         covariate_columns = [column for column in target_schema if column != "COOP_ID"]
-        covariates = remove_outliers(
+        covariates = B.polars.remove_outliers(
             static_covariates.select(*covariate_columns), metadata, drop=False
         )
 
@@ -505,7 +505,7 @@ class USHCN(PolarsDataset[Key]):
         value_columns = [
             column for column, *_ in TIMESERIES_METADATA if column not in index_columns
         ]
-        values = remove_outliers(
+        values = B.polars.remove_outliers(
             ts.select(*value_columns), self.timeseries_metadata, drop=False
         )
 

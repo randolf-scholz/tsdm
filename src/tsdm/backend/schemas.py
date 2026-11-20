@@ -1,6 +1,12 @@
 r"""Callback protocols for TSDM."""
 
 __all__ = [
+    "BoundaryInformation",
+    "OutlierBound",
+    "OutlierInclusive",
+    "SelectOutliersProto",
+    "RemoveOutliersProto",
+    "StripWhitespaceProto",
     # generic callback-protocols
     "NullMap",
     "SelfMap",
@@ -19,8 +25,8 @@ __all__ = [
     "WhereProto",
 ]
 
-from collections.abc import Callable as Fn
-from typing import Any, Protocol
+from collections.abc import Callable as Fn, Mapping
+from typing import Any, Optional, Protocol, TypedDict
 
 from numpy.typing import ArrayLike
 
@@ -117,3 +123,56 @@ class FullLikeProto[T](Protocol):  # T
     r"""Callback protocol for the `full_like` function."""
 
     def __call__(self, x: T, /, *, fill_value: Any) -> T: ...
+
+
+class BoundaryInformation(TypedDict):
+    r"""Bounds for one variable; `None` leaves a side unbounded."""
+
+    lower_bound: float | None
+    upper_bound: float | None
+    lower_inclusive: bool | None
+    upper_inclusive: bool | None
+
+
+type OutlierBound = float | Mapping[Any, float | None]
+type OutlierInclusive = bool | Mapping[Any, bool | None]
+
+
+class SelectOutliersProto[T, MaskT = T](Protocol):
+    r"""Detect outliers using a limits table/mapping or four keyword bounds."""
+
+    def __call__(
+        self,
+        obj: T,
+        limits: Any = ...,
+        /,
+        *,
+        lower_bound: Optional[OutlierBound] = ...,
+        upper_bound: Optional[OutlierBound] = ...,
+        lower_inclusive: Optional[OutlierInclusive] = ...,
+        upper_inclusive: Optional[OutlierInclusive] = ...,
+    ) -> MaskT: ...
+
+
+class RemoveOutliersProto[T](Protocol):
+    r"""Replace outliers with nulls, optionally dropping outlying rows."""
+
+    def __call__(
+        self,
+        obj: T,
+        limits: Any = ...,
+        /,
+        *,
+        lower_bound: Optional[OutlierBound] = ...,
+        upper_bound: Optional[OutlierBound] = ...,
+        lower_inclusive: Optional[OutlierInclusive] = ...,
+        upper_inclusive: Optional[OutlierInclusive] = ...,
+        drop: bool = ...,
+        inplace: bool = ...,
+    ) -> T: ...
+
+
+class StripWhitespaceProto[T](Protocol):
+    r"""Trim string values in an object, optionally selecting table columns."""
+
+    def __call__(self, obj: T, /, *cols: str) -> T: ...

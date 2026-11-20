@@ -17,21 +17,16 @@ __all__ = [
     "is_string_array",
     "null_like",
     "or_",
-    "remove_outliers_table",
-    "remove_outliers_array",
+    "remove_outliers",
     "scalar",
-    "select_outliers_table",
-    "select_outliers_array",
-    "set_nulls",
+    "select_outliers",
+    "set_nulls_table",
     "set_nulls_series",
     "strip_whitespace",
     "table_info",
     "true_like",
     "unsafe_cast_columns",
     "where",
-    # auxiliary Functions
-    "strip_whitespace_table",
-    "strip_whitespace_array",
 ]
 
 from collections.abc import Iterable, Mapping, Sequence
@@ -54,6 +49,11 @@ from pyarrow import (
 from pyarrow.types import lib as pyarrow_lib
 from tqdm import tqdm
 
+from tsdm.constants import UNDEFINED
+
+from .schemas import OutlierBound, OutlierInclusive
+from .util import get_outlier_options
+
 STR = pa.string()
 TEXT = pa.large_string()
 STRING_TYPES = frozenset({STR, TEXT})
@@ -67,7 +67,7 @@ def scalar(x: Any, /, dtype: DataType | str) -> Scalar:
     return pa.scalar(x, type=dtype)
 
 
-def strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
+def _strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
     r"""Strip whitespace from selected columns in table."""
     for col in cols or table.column_names:
         if is_string_array(table[col]):
@@ -75,16 +75,16 @@ def strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
             table = table.set_column(
                 table.column_names.index(col),
                 col,
-                strip_whitespace_array(table[col]),
+                _strip_whitespace_array(table[col]),
             )
     return table
 
 
-def strip_whitespace_array[A: (Array, ChunkedArray)](arr: A, /) -> A:
+def _strip_whitespace_array[A: (Array, ChunkedArray)](arr: A, /) -> A:
     r"""Strip whitespace from all string elements in an array."""
     match arr:
         case ChunkedArray(chunks=chunks):
-            return pa.chunked_array(map(strip_whitespace_array, chunks))
+            return pa.chunked_array(map(_strip_whitespace_array, chunks))
         case ListArray(type=dtype) if dtype.value_type in STRING_TYPES:
             return pa.array(map(pc.utf8_trim_whitespace, arr), type=dtype)
         case DictionaryArray(type=dtype, indices=indices, dictionary=dictionary) if (
@@ -108,11 +108,11 @@ def strip_whitespace(obj: Table | AnyArray, /, *cols: str) -> Table | AnyArray:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
         case Table() as table:
-            return strip_whitespace_table(table, *cols)
+            return _strip_whitespace_table(table, *cols)
         case (Array() | ChunkedArray()) as array:
             if cols:
                 raise ValueError("Cannot specify columns for an Array.")
-            return strip_whitespace_array(array)
+            return _strip_whitespace_array(array)
         case _:
             raise TypeError(f"Expected Array or Table, got {type(obj)}.")
 
@@ -175,7 +175,7 @@ def _is_real_numeric_array(arr: AnyArray, /) -> bool:
     )
 
 
-def select_outliers_array(
+def _select_outliers_array(
     s: AnyArray,
     /,
     *,
@@ -218,7 +218,7 @@ def select_outliers_array(
     return pc.or_(mask_lower, mask_upper)
 
 
-def select_outliers_table(
+def _select_outliers_table(
     df: Table,
     /,
     *,
@@ -239,7 +239,7 @@ def select_outliers_table(
 
     return pa.table(
         {
-            column: select_outliers_array(
+            column: _select_outliers_array(
                 df[column],
                 lower_bound=lower_bound[column],
                 upper_bound=upper_bound[column],
@@ -251,7 +251,7 @@ def select_outliers_table(
     )
 
 
-def remove_outliers_array[A: AnyArray](
+def _remove_outliers_array[A: AnyArray](
     s: A,
     /,
     *,
@@ -273,7 +273,7 @@ def remove_outliers_array[A: AnyArray](
     if lower_bound is None and upper_bound is None:
         return s
     if isinstance(s, ChunkedArray):
-        result = remove_outliers_array(
+        result = _remove_outliers_array(
             s.combine_chunks(),
             drop=drop,
             lower_bound=lower_bound,
@@ -291,7 +291,7 @@ def remove_outliers_array[A: AnyArray](
             f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
         )
 
-    mask = select_outliers_array(
+    mask = _select_outliers_array(
         s,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -302,7 +302,7 @@ def remove_outliers_array[A: AnyArray](
     return pc.filter(result, pc.invert(mask)) if drop else result
 
 
-def remove_outliers_table(
+def _remove_outliers_table(
     df: Table,
     /,
     *,
@@ -334,7 +334,7 @@ def remove_outliers_table(
     if erroron_extra_bounds and (extra_bounds := given_bounds - set(df.column_names)):
         raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
-    mask = select_outliers_table(
+    mask = _select_outliers_table(
         df,
         lower_bound=lower_bound,
         upper_bound=upper_bound,
@@ -567,7 +567,7 @@ def set_nulls_series[A: AnyArray](series: A, values: Sequence, /) -> A:
     return pc.replace_with_mask(series, mask, null)
 
 
-def set_nulls(table: Table, /, **cols: Sequence) -> Table:
+def set_nulls_table(table: Table, /, **cols: Sequence) -> Table:
     r"""Set matching values to null in each specified column.
 
     Keyword arguments map column names to the values to replace.
@@ -604,3 +604,107 @@ def table_info(table: Table, /) -> None:
             f"{name:{max_keylen}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:8.3%})"
             f"  {entropy=:8.3%}  {dtype=:s}"
         )
+
+
+@overload
+def select_outliers(
+    obj: AnyArray,
+    limits: Table | Mapping[str, Any] = ...,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = ...,
+    upper_bound: Optional[OutlierBound] = ...,
+    lower_inclusive: Optional[OutlierInclusive] = ...,
+    upper_inclusive: Optional[OutlierInclusive] = ...,
+) -> BooleanAnyArray: ...
+@overload
+def select_outliers(  # type: ignore[overload-cannot-match]
+    obj: Table,
+    limits: Table | Mapping[str, Any] = ...,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = ...,
+    upper_bound: Optional[OutlierBound] = ...,
+    lower_inclusive: Optional[OutlierInclusive] = ...,
+    upper_inclusive: Optional[OutlierInclusive] = ...,
+) -> Table: ...
+def select_outliers(
+    obj: AnyArray | Table,
+    limits: Table | Mapping[str, Any] = UNDEFINED,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = UNDEFINED,
+    upper_bound: Optional[OutlierBound] = UNDEFINED,
+    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+) -> BooleanAnyArray | Table:
+    r"""Detect outliers using a limits table/mapping or keyword bounds.
+
+    Supply either `limits` or all four keyword bounds. A `None` bound leaves
+    that side unbounded. Limits tables must be PyArrow tables and identify
+    columns with `variable`. Mappings may contain either the four bound names
+    or per-variable boundary information.
+    """
+    if isinstance(limits, Table):
+        columns = limits.to_pydict()
+        variables = columns.pop("variable")
+        limits = {
+            key: dict(zip(variables, values, strict=True))
+            for key, values in columns.items()
+        }
+    options = get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    match obj:
+        case Array() | ChunkedArray():
+            return _select_outliers_array(obj, **options)
+        case Table():
+            return _select_outliers_table(obj, **options)
+        case _:
+            raise TypeError(f"Expected AnyArray or Table, got {type(obj)}.")
+
+
+def remove_outliers[T: AnyArray | Table](
+    obj: T,
+    limits: Table | Mapping[str, Any] = UNDEFINED,
+    /,
+    *,
+    lower_bound: Optional[OutlierBound] = UNDEFINED,
+    upper_bound: Optional[OutlierBound] = UNDEFINED,
+    lower_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    upper_inclusive: Optional[OutlierInclusive] = UNDEFINED,
+    drop: bool = True,
+    inplace: bool = False,
+) -> T:
+    r"""Remove outliers using a limits table/mapping or keyword bounds.
+
+    Supply either `limits` or all four keyword bounds. A `None` bound leaves
+    that side unbounded. Limits tables must be PyArrow tables and identify
+    columns with `variable`. Mappings may contain either the four bound names
+    or per-variable boundary information.
+    """
+    if isinstance(limits, Table):
+        columns = limits.to_pydict()
+        variables = columns.pop("variable")
+        limits = {
+            key: dict(zip(variables, values, strict=True))
+            for key, values in columns.items()
+        }
+    options = get_outlier_options(
+        limits,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+    match obj:
+        case Array() | ChunkedArray():
+            return _remove_outliers_array(obj, drop=drop, inplace=inplace, **options)
+        case Table():
+            return _remove_outliers_table(obj, drop=drop, inplace=inplace, **options)
+        case _:
+            raise TypeError(f"Expected AnyArray or Table, got {type(obj)}.")

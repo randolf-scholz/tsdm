@@ -12,11 +12,12 @@ __all__ = [
     "polars",
     "pyarrow",
     "torch",
+    "util",
     "kernels",
 ]
 
 
-from . import generic, numpy, pandas, polars, pyarrow, torch  # ruff: ignore[I001]
+from . import generic, numpy, pandas, polars, pyarrow, torch, util  # ruff: ignore[I001]
 from . import kernels  # must be imported last
 from .kernels import *  # ruff: ignore[F403]
 

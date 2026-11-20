@@ -14,8 +14,9 @@ from zipfile import ZipFile
 
 import polars as pl
 
+import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import remove_outliers, validate_schema
+from tsdm.datatools import validate_schema
 
 type KEY = Literal["timeseries", "timeseries_metadata"]
 
@@ -119,7 +120,7 @@ class InSilico(PolarsDataset[KEY]):
                     )
 
         ts = pl.concat(runs).sort("run_id", "time")
-        return remove_outliers(ts, self.timeseries_metadata)
+        return B.polars.remove_outliers(ts, self.timeseries_metadata)
 
     @staticmethod
     def clean_timeseries_metadata() -> pl.DataFrame:

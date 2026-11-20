@@ -116,8 +116,9 @@ from zipfile import ZipFile
 import polars as pl
 from tqdm.auto import tqdm
 
+import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.datatools import remove_outliers, validate_schema
+from tsdm.datatools import validate_schema
 from tsdm.hashutils import hash_zip_contents
 from tsdm.utils import remote
 from tsdm.validation import ErrorHandler, validate_hash
@@ -358,7 +359,7 @@ class PhysioNet2019(PolarsDataset[Key]):
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_metadata)
+        ts = B.polars.remove_outliers(ts, self.timeseries_metadata)
 
         self.LOGGER.info("Creating Static_Covariates Table.")
         self.LOGGER.info("Validating Static_Covariates is constant.")
@@ -378,7 +379,7 @@ class PhysioNet2019(PolarsDataset[Key]):
         )
 
         self.LOGGER.info("Removing outliers from static_covariates.")
-        md = remove_outliers(md, self.static_covariates_metadata)
+        md = B.polars.remove_outliers(md, self.static_covariates_metadata)
 
         self.LOGGER.info("Finalizing static_covariates table.")
         md = (
@@ -411,10 +412,12 @@ class PhysioNet2019(PolarsDataset[Key]):
                 )
             case "timeseries":
                 self.LOGGER.info("Removing outliers from timeseries.")
-                return remove_outliers(self.raw_timeseries, self.timeseries_metadata)
+                return B.polars.remove_outliers(
+                    self.raw_timeseries, self.timeseries_metadata
+                )
             case "static_covariates":
                 self.LOGGER.info("Removing outliers from static_covariates.")
-                return remove_outliers(
+                return B.polars.remove_outliers(
                     self.raw_metadata, self.static_covariates_metadata
                 )
             case "raw_timeseries" | "raw_metadata":

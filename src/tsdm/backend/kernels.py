@@ -38,8 +38,11 @@ from .schemas import (
     ContractionProto,
     CopyLikeProto,
     FullLikeProto,
+    RemoveOutliersProto,
     ScalarProto,
+    SelectOutliersProto,
     SelfMap,
+    StripWhitespaceProto,
     ToTensorProto,
     WhereProto,
 )
@@ -52,6 +55,18 @@ r"""A tuple of the supported backends."""
 
 class Kernels:  # TODO: how to make this more elegant?
     r"""A collection of kernels for numerical operations."""
+
+    select_outliers: dict[BackendID, SelectOutliersProto] = {
+        "arrow": B.pyarrow.select_outliers,
+        "pandas": B.pandas.select_outliers,
+        "polars": B.polars.select_outliers,
+    }
+
+    remove_outliers: dict[BackendID, RemoveOutliersProto] = {
+        "arrow": B.pyarrow.remove_outliers,
+        "pandas": B.pandas.remove_outliers,
+        "polars": B.polars.remove_outliers,
+    }
 
     clip: dict[BackendID, ClipProto] = {
         "numpy": np.clip,
@@ -135,8 +150,9 @@ class Kernels:  # TODO: how to make this more elegant?
         "torch": pt.where,
     }
 
-    strip_whitespace: dict[BackendID, SelfMap] = {
+    strip_whitespace: dict[BackendID, StripWhitespaceProto] = {
         "pandas": B.pandas.strip_whitespace,
+        "polars": B.polars.strip_whitespace,
         "arrow": B.pyarrow.strip_whitespace,
     }
 
@@ -192,6 +208,8 @@ class Backend[T]:
     NAME: BackendID
 
     # KERNELS
+    select_outliers: SelectOutliersProto[T]
+    remove_outliers: RemoveOutliersProto[T]
     clip: ClipProto[T]
     drop_null: SelfMap[T]
     is_null: SelfMap[T]
@@ -211,7 +229,7 @@ class Backend[T]:
     true_like: SelfMap[T]
 
     # string operations
-    strip_whitespace: SelfMap[T]
+    strip_whitespace: StripWhitespaceProto[T]
     apply_along_axes: ApplyAlongAxes[T]
 
     # array construction
@@ -258,7 +276,7 @@ def _gather_types(obj: object, /) -> set[BackendID]:
             return {"pandas"}
         case pl.Series() | pl.DataFrame():
             return {"polars"}
-        case pa.Array() | pa.Table():
+        case pa.Array() | pa.ChunkedArray() | pa.Table():
             return {"arrow"}
         case ndarray():
             return {"numpy"}
