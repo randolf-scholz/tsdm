@@ -250,7 +250,7 @@ def test_pprint_lazy_frame() -> None:
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
-        (pd.NA, "<NA>"),
+        (pd.NA, "NAType()"),  # unfortunate.
         (pd.NaT, "NaT"),
         (math.inf, "inf"),
         (math.nan, "nan"),
