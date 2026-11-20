@@ -10,6 +10,7 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 `is_nan` can be tested via ``x != x``.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -18,7 +19,6 @@ import pytest
 import torch
 
 from tsdm.backend.generic import false_like, true_like
-from tsdm.types.callbacks import SelfMap
 
 DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
 TIME = np.array(DATA) * np.timedelta64(1, "s")
@@ -34,7 +34,7 @@ TIME = np.array(DATA) * np.timedelta64(1, "s")
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_make_ones_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_make_ones_like[T](data: T, expected: T, formula: Callable[[T], T]) -> None:
     r"""Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -44,7 +44,7 @@ def test_make_ones_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> No
     However, ``x**0`` is not implemented for time-delta types.
     What could work
     """
-    result = formula(data)
+    result: Any = formula(data)
     assert all(result == expected)
 
 
@@ -58,7 +58,7 @@ def test_make_ones_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> No
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_zeros_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_zeros_like[T](data: T, expected: T, formula: Callable[[T], T]) -> None:
     r"""Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -67,7 +67,7 @@ def test_zeros_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     - ``0 * x``      # keeps NANs, introduces NaNs for inf
     - ``0 ** x``  # doesn't for negatives, keeps NANs
     """
-    result = formula(data)
+    result: Any = formula(data)
     assert all(result == expected)
 
 
@@ -87,14 +87,14 @@ def test_zeros_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_true_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_true_like[T](data: T, expected: T, formula: Callable[[T], T]) -> None:
     r"""Analogous to ``ones_like(x, dtype=bool)``.
 
     Candidates:
     - ``where(x != x, x != x, x == x)``
     - ``x == x | x != x``
     """
-    result = formula(data)
+    result: Any = formula(data)
     assert all(result == expected)
 
 
@@ -114,12 +114,12 @@ def test_true_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_false_like[T: Any](data: T, expected: T, formula: SelfMap[T]) -> None:
+def test_false_like[T](data: T, expected: T, formula: Callable[[T], T]) -> None:
     r"""Analogous to ``zeros_like(x, dtype=bool)``.
 
     Candidates:
     - XOR-trick: (x==x) ^ (x==x)
     - (x==x) & (x!=x)
     """
-    result = formula(data)
+    result: Any = formula(data)
     assert all(result == expected)
