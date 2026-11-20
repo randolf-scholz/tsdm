@@ -4,7 +4,6 @@ __all__ = ["SocialTimeEncoder", "PeriodicSocialTimeEncoder"]
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from types import MappingProxyType
 from typing import ClassVar
 
 import pandas as pd
@@ -70,7 +69,7 @@ class SocialTimeEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
 class PeriodicSocialTimeEncoder(WrappedEncoder[pd.Series, pd.DataFrame]):
     r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""
 
-    DEFAULT_FREQUENCIES: ClassVar[Mapping[str, int]] = MappingProxyType({
+    DEFAULT_FREQUENCIES: ClassVar[Mapping[str, int]] = frozendict({
         "year"        : 1,
         "month"       : 12,
         "weekday"     : 7,
