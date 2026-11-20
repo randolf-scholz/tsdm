@@ -886,6 +886,9 @@ class EncoderList[
     3. Independent extra data.
     """
 
+    def __init__(self, encoders: Iterable[E] = (), /) -> None:
+        self._encoders: Final[Sequence[E]] = list(encoders)
+
     @classmethod
     def new[E2: Encoder](
         cls: type[EncoderList], /, *, encoders: Iterable[E2]
@@ -917,9 +920,6 @@ class EncoderList[
         return any(e.requires_fit for e in self)
 
     #  region abstract implementation --------------------------------------------------
-    def __init__(self, encoders: Iterable[E] = (), /) -> None:
-        self._encoders: Final[Sequence[E]] = list(encoders)
-
     def __len__(self) -> int:
         return len(self._encoders)
 
@@ -1706,7 +1706,7 @@ class Parallel[
         #   Cannot annotate return type as Self!
         match self:
             case []:
-                return wrap(  # pyrefly: ignore[bad-return]
+                return wrap(  # type: ignore
                     encoder=lambda _: (),
                     decoder=lambda _: (),
                 )
@@ -1719,7 +1719,7 @@ class Parallel[
                 )
 
             case _:
-                return Parallel(map(simplify, self))
+                return Parallel(map(simplify, self))  # ty: ignore[invalid-argument-type]
 
 
 # fmt: off
@@ -1830,7 +1830,7 @@ class Replicate[
         r"""Simplify the replicate encoder."""
         match self:
             case []:
-                return wrap(  # pyrefly: ignore[bad-return]
+                return wrap(  # type: ignore
                     encoder=lambda _: (),
                     decoder=lambda _: (),
                 )

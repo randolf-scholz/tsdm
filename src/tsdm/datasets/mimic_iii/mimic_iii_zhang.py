@@ -259,7 +259,7 @@ class MIMIC_III_Zhang2024(BaseDataset[MIMIC_III_Zhang2024_Key, object]):
     def load_table(
         self, key: Literal["SHA256SUMS", "full_dataset", "variable_dict"], /
     ) -> pl.DataFrame: ...
-    def load_table(self, key: MIMIC_III_Zhang2024_Key, /) -> object:
+    def load_table(self, key: MIMIC_III_Zhang2024_Key, /) -> object:  # ty: ignore[incompatible-method-override]
         r"""Load documents, tables, or patient views over memory-mapped tensors.
 
         Older list-based PT files remain readable, but must be reprocessed to use
