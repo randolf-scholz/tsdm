@@ -27,7 +27,6 @@ from numpy.typing import ArrayLike
 from tsdm.types.aliases import Axis
 
 
-# region generic callback-protocols ----------------------------------------------------
 class Lazy[T](Protocol):  # +T
     r"""Protocol for callables that take no arguments and return a value of type `T`."""
 
@@ -46,10 +45,6 @@ class SelfMap[T](Protocol):  # T
     def __call__(self, x: T, /) -> T: ...
 
 
-# endregion generic callback protocols -------------------------------------------------
-
-
-# region Callback-Protocols ------------------------------------------------------------
 class CastProto[T](Protocol):  # T
     r"""Callback protocol for the `cast` function."""
 
@@ -122,6 +117,3 @@ class FullLikeProto[T](Protocol):  # T
     r"""Callback protocol for the `full_like` function."""
 
     def __call__(self, x: T, /, *, fill_value: Any) -> T: ...
-
-
-# endregion Callback-Protocols ---------------------------------------------------------
