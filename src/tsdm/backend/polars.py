@@ -388,7 +388,11 @@ def remove_outliers[T: Series | DataFrame](
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
 
 
-def strip_whitespace[T: (Series, DataFrame)](obj: T, /, *cols: str) -> T:
+@overload
+def strip_whitespace[S: Series](obj: S, /) -> S: ...
+@overload
+def strip_whitespace[F: DataFrame](obj: F, /, *cols: str) -> F: ...
+def strip_whitespace(obj: Series | DataFrame, /, *cols: str) -> Series | DataFrame:
     r"""Trim string values, optionally restricting processing to selected columns.
 
     Nonstrings and null values are preserved. Column names are only accepted
