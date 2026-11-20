@@ -435,7 +435,7 @@ class BestEpochTracker(BaseCallback):
             KeyError: If the history contains no evaluation with this step label.
         """
         steps = self.history["step"]
-        position = int(steps.search_sorted(step))
+        position = steps.search_sorted(step)
         if position == len(steps) or steps[position] != step:
             raise KeyError(f"No evaluation for step {step}.")
         return position
