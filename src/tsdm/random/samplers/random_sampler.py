@@ -9,7 +9,7 @@ from typing import Final
 from numpy.random import Generator
 
 from tsdm.constants import RNG
-from tsdm.datatools import Dataset, PandasDataset, get_index
+from tsdm.datatools import Dataset, get_index
 from tsdm.pprint import pprint_repr
 
 from .base import BaseSampler
@@ -41,9 +41,7 @@ class RandomSampler[T](BaseSampler[T]):  # +T
 
     def __iter__(self) -> Iterator[T]:
         perm = self.rng.permutation(self.size) if self.shuffle else range(self.size)
-
-        # avoids attribute lookup in the loop
-        data = self.data.loc if isinstance(self.data, PandasDataset) else self.data
+        data = self.data
         index = self.index
 
         for n in perm:

@@ -4,9 +4,6 @@ __all__ = [
     # ABCs & Protocols
     "Dataset",
     "MapDataset",
-    "PandasDataset",
-    "SequentialDataset",
-    "TabularDataset",
     # Classes
     "CallableDataset",
     # Functions
@@ -19,18 +16,9 @@ from abc import abstractmethod
 from collections.abc import Callable, Collection
 from typing import Any, Protocol, overload, runtime_checkable
 
-from numpy.typing import NDArray
-
 from tsdm.types.abc import Vec
-from tsdm.types.protocols import SupportsGetItem, SupportsSlicing
 
-type TabularDataset[K, V] = MapDataset[K, V] | PandasDataset[K, V]  # K, +V
-r"""Type alias for a "tabular" dataset."""
-
-type SequentialDataset[V] = Vec[V] | PandasDataset[Any, V]  # +V
-r"""Type alias for a sequential dataset."""
-
-type Dataset[V] = Vec[V] | MapDataset[Any, V] | PandasDataset[Any, V]  # +V
+type Dataset[V] = Vec[V] | MapDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
 
 
@@ -57,25 +45,6 @@ class MapDataset[K, V](Protocol):  # +V
         ...
 
 
-@runtime_checkable
-class PandasDataset[K, V](Protocol):  # K, +V
-    r"""Protocol for row access to a `pandas.DataFrame` or `pandas.Series`.
-
-    Access rows through `loc` and `iloc`. The protocol omits `__getitem__`
-    because a DataFrame uses it to select columns rather than rows.
-    """
-
-    def __array__(self) -> NDArray[Any]: ...
-    def __len__(self) -> int: ...
-
-    @property
-    def index(self) -> Vec[K]: ...
-    @property
-    def loc(self) -> SupportsGetItem[K, V]: ...
-    @property
-    def iloc(self) -> SupportsSlicing[V]: ...
-
-
 class CallableDataset[K, V]:
     r"""Adapt a key-to-value callable to a map-style dataset.
 
@@ -92,9 +61,9 @@ class CallableDataset[K, V]:
 
 
 @overload
-def get_index[K, V](dataset: TabularDataset[K, V], /) -> list[K]: ...  # pyright: ignore[reportOverlappingOverload]
+def get_index[K, V](dataset: MapDataset[K, V], /) -> list[K]: ...  # pyright: ignore[reportOverlappingOverload]
 @overload
-def get_index[V](dataset: SequentialDataset[V], /) -> list[int]: ...
+def get_index[V](dataset: Vec[V], /) -> list[int]: ...
 def get_index(dataset: Dataset, /) -> list:
     r"""Return the dataset's keys as a list.
 
@@ -107,8 +76,6 @@ def get_index(dataset: Dataset, /) -> list:
     """
     match dataset:
         # NOTE: Series and DataFrame satisfy the MapDataset protocol.
-        case PandasDataset() as pandas_dataset:
-            return list(pandas_dataset.index)
         case MapDataset() as map_dataset:
             return list(map_dataset.keys())
         case Vec() as iterable_dataset:
@@ -120,8 +87,6 @@ def get_index(dataset: Dataset, /) -> list:
 def get_first_sample[T](dataset: Dataset[T], /) -> T:
     r"""Return the first element of the dataset."""
     match dataset:
-        case PandasDataset() as pandas_dataset:
-            return pandas_dataset.iloc[0]
         case MapDataset() as map_dataset:
             return map_dataset[next(iter(map_dataset.keys()))]
         case Vec() as iterable_dataset:
@@ -133,8 +98,6 @@ def get_first_sample[T](dataset: Dataset[T], /) -> T:
 def get_last_sample[T](dataset: Dataset[T], /) -> T:
     r"""Return the last element of the dataset."""
     match dataset:
-        case PandasDataset() as pandas_dataset:
-            return pandas_dataset.iloc[-1]
         case MapDataset() as map_dataset:
             *_, last_key = map_dataset.keys()
             return map_dataset[last_key]
