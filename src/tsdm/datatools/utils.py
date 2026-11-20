@@ -20,8 +20,6 @@ from numpy.random import Generator
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 
-from tsdm.types import HasDTypes
-
 
 @overload
 def random_partition[K](
@@ -111,7 +109,7 @@ def infer_schema(table: Any, /) -> Mapping[Any, Any]:
             # pl.DataFrame
             return dict(schema)
 
-        case HasDTypes(dtypes=dtypes) if isinstance(dtypes, Iterable):
+        case object(dtypes=Iterable() as dtypes):  # type: ignore
             # pd.MultiIndex, pd.DataFrame
             return dict(dtypes)
 
