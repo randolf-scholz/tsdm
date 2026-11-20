@@ -1,5 +1,6 @@
 r"""Test tsdm.utils.pprint."""
 
+import math
 from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
 from typing import Any, NamedTuple
@@ -20,6 +21,7 @@ from tsdm.pprint import (
     repr_namedtuple,
     repr_sequence,
     repr_set,
+    repr_shortform,
 )
 from tsdm.types import SupportsArray
 from tsdm.types.dataclass import DataclassType
@@ -243,3 +245,18 @@ def test_pprint_lazy_frame() -> None:
 
     assert repr_array(frame) == expected
     assert repr_generic(frame) == expected
+
+
+@pytest.mark.parametrize(
+    ("obj", "expected"),
+    [
+        (pd.NA, "<NA>"),
+        (pd.NaT, "NaT"),
+        (math.inf, "inf"),
+        (math.nan, "nan"),
+        (None, "None"),
+    ],
+)
+def test_print_scalar(obj, expected: str) -> None:
+    assert repr_generic(obj) == expected
+    assert repr_shortform(obj) == expected

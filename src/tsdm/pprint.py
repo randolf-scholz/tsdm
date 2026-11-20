@@ -73,23 +73,17 @@ __all__ = [
     "pprint_set",
 ]
 
-import builtins
 import dataclasses
 import datetime as dt
-import math
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
 from functools import partial
 from inspect import isbuiltin as is_builtin_function
 from math import prod
 from types import FunctionType
-from typing import Any, Final, Optional, Protocol, SupportsFloat
+from typing import Any, Final, Optional, Protocol
 
-import numpy as np
-import pandas as pd
-import polars as pl
-import pyarrow as pa
-import torch
+from polars import LazyFrame
 
 from .decorator import decorator
 from .types import (
@@ -188,49 +182,15 @@ def _is_builtin_singleton(obj: object, /) -> bool:
     )
 
 
-def _is_builtin(obj: object, /) -> bool:
-    r"""Check for a builtin singleton, builtin function, or builtin type."""
+def _is_python_scalar(arg: object, /) -> bool:
     return (
-        is_builtin_function(obj)
-        or _is_builtin_singleton(obj)
-        or (isinstance(obj, type) and obj in builtins.__dict__.values())
-    )
-
-
-def _is_scalar(obj: object, /) -> bool:
-    r"""Check if an object is a basic type."""
-    return (
-        _is_builtin_singleton(obj)
+        arg is None
+        or arg is Ellipsis
+        or arg is NotImplemented
         or isinstance(
-            obj, bool | int | float | complex | str | bytes | dt.datetime | dt.timedelta
+            arg, bool | int | float | complex | str | bytes | dt.datetime | dt.timedelta
         )
-        or np.isscalar(obj)
-        or obj is pd.NA
-        or obj is pd.NaT
     )
-
-
-def _is_nan(obj: object, /) -> bool:
-    r"""Check if an object is NaN."""
-    return (
-        math.isnan(float(obj))
-        if isinstance(obj, SupportsFloat)
-        else np.isnan(obj)
-        if isinstance(obj, np.generic)
-        else obj is pd.NA
-    )
-
-
-def _is_dtype(arg: object, /) -> bool:
-    r"""Check whether an object is a supported dtype instance or Polars dtype class."""
-    return isinstance(
-        arg,
-        np.dtype
-        | torch.dtype
-        | pa.DataType
-        | pd.api.extensions.ExtensionDtype
-        | pl.DataType,
-    ) or (isinstance(arg, type) and issubclass(arg, pl.DataType))
 
 
 def _get_dtypes(table: object) -> list[object]:
@@ -309,6 +269,22 @@ def get_identifier(obj: object, /, **_: Any) -> str:
             return ""
 
 
+def _as_number(arg: object) -> complex | float | int | None:
+    try:  # SupportsIndex
+        return arg.__index__()  # type: ignore
+    except:
+        pass
+    try:  # SupportsFloat
+        return arg.__float__()  # type: ignore
+    except:
+        pass
+    try:  # SupportsComplex
+        return arg.__complex__()  # type: ignore
+    except:
+        pass
+    return None
+
+
 def repr_shortform(
     obj: object,
     /,
@@ -319,18 +295,22 @@ def repr_shortform(
 ) -> str:
     r"""Return a compact representation using a value or its type name."""
     match obj:
-        case str(string):
-            return string
         case type() as cls:
             return cls.__name__
-        case builtin if _is_builtin(builtin):
-            return repr(builtin)
-        case dtype if _is_dtype(dtype):
-            return repr_dtype(dtype)
-        case nan if _is_nan(obj):
-            return repr(nan)
+
+        # functions like len, map, etc.
+        case _ if is_builtin_function(obj):
+            return repr(obj)
+
+        # python_scalars
+        case _ if _is_python_scalar(obj):
+            return repr(obj)
+
+        # 3rd party int/float/complex
+        case _ if (value := _as_number(obj)) is not None:
+            return repr(value)
+
         case _:
-            # set identifier
             if identifier is None:
                 identifier = get_identifier(obj) * bool(recursive)
 
@@ -363,9 +343,16 @@ def repr_generic(
     match x:
         case type() as cls:
             return cls.__name__
-        case basic if _is_scalar(basic):  # scalars, strings, etc.
-            return repr(basic)
-        case pl.LazyFrame() as frame:
+
+        # functions like len, map, etc.
+        case _ if is_builtin_function(obj):
+            return repr(obj)
+
+        # python_scalars
+        case _ if _is_python_scalar(obj):
+            return repr(obj)
+
+        case LazyFrame() as frame:
             return repr_array(frame, **kwargs)
         case SupportsArray() as array:
             return repr_array(array, **kwargs)
@@ -379,8 +366,6 @@ def repr_generic(
             return repr_sequence(sequence, **kwargs)
         case AbstractSet() as set_:
             return repr_set(set_, **kwargs)
-        case dtype if _is_dtype(dtype):
-            return repr_dtype(dtype)
         case _:
             # avoid recursion:
             if fallback is repr:
@@ -975,7 +960,7 @@ def repr_namedtuple(
 
 
 def repr_array(
-    obj: SupportsArray | pl.LazyFrame,
+    obj: SupportsArray | LazyFrame,
     /,
     *,
     modifier: Optional[str] = None,
@@ -998,7 +983,7 @@ def repr_array(
     # get the type-repr
     type_repr = title if title is not None else cls.__name__
 
-    if isinstance(obj, pl.LazyFrame):
+    if isinstance(obj, LazyFrame):
         schema = obj.collect_schema()
         shape_repr = f"<*,{len(schema)}>" if identifier is None else identifier
         vals = [repr_dtype(dtype) for dtype in schema.values()]
