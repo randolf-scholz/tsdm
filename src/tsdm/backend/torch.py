@@ -3,7 +3,7 @@ r"""PyTorch backend implementations for tsdm."""
 __all__ = [
     # Constants
     "EPS",
-    # Functions
+    # kernels
     "apply_along_axes",
     "copy_like",
     "drop_null",
@@ -11,7 +11,7 @@ __all__ = [
     "nanmin",
     "nanstd",
     "scalar",
-    # utils
+    # extras
 ]
 
 from collections.abc import Callable as Fn

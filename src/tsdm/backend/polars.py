@@ -1,6 +1,7 @@
 r"""Polars backend implementation."""
 
 __all__ = [
+    # kernels
     "cast",
     "drop_null",
     "is_null",
@@ -10,6 +11,7 @@ __all__ = [
     "scalar",
     "select_outliers",
     "strip_whitespace",
+    # extras
 ]
 
 from collections.abc import Mapping

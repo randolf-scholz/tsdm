@@ -4,11 +4,12 @@ __all__ = [
     # types
     "NumpyDtype",
     "NumpyDtypeArg",
-    # Functions
-    "scalar",
-    "drop_null",
-    "copy_like",
+    # kernels
     "apply_along_axes",
+    "copy_like",
+    "drop_null",
+    "scalar",
+    # extras
     "round_relative",
 ]
 

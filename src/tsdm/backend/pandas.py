@@ -13,7 +13,6 @@ __all__ = [
     "copy_like",
     "drop_null",
     "false_like",
-    "infer_axes",
     "nanmax",
     "nanmean",
     "nanmin",
@@ -28,6 +27,7 @@ __all__ = [
     # extras
     "aggregate_nondestructive",
     "get_integer_cols",
+    "infer_axes",
     "is_integer_series",
 ]
 
