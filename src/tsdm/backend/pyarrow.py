@@ -80,7 +80,7 @@ def strip_whitespace_table[T: Table](table: T, /, *cols: str) -> T:
     return table
 
 
-def strip_whitespace_array[A: AnyArray](arr: A, /) -> A:
+def strip_whitespace_array[A: (Array, ChunkedArray)](arr: A, /) -> A:
     r"""Strip whitespace from all string elements in an array."""
     match arr:
         case ChunkedArray(chunks=chunks):
@@ -101,10 +101,10 @@ def strip_whitespace_array[A: AnyArray](arr: A, /) -> A:
 
 
 @overload
-def strip_whitespace[A: AnyArray](obj: A, /) -> A: ...
+def strip_whitespace[A: (Array, ChunkedArray)](obj: A, /) -> A: ...
 @overload
 def strip_whitespace[T: Table](obj: T, /, *cols: str) -> T: ...
-def strip_whitespace[T: Table | AnyArray](obj: T, /, *cols: str) -> T:
+def strip_whitespace(obj: Table | AnyArray, /, *cols: str) -> Table | AnyArray:
     r"""Strip whitespace from all string elements in an arrow object."""
     match obj:
         case Table() as table:
@@ -361,12 +361,17 @@ def remove_outliers_table(
 
 
 @overload
-def force_cast[A: AnyArray | Table](x: A, dtype: DataType | str, /) -> A: ...
+def force_cast[A: (Array, ChunkedArray, Table)](
+    x: A, dtype: DataType | str, /
+) -> A: ...
 @overload
 def force_cast(x: Table, /, **dtypes: DataType | str) -> Table: ...
-def force_cast[T: AnyArray | Table](
-    x: T, dtype: Optional[DataType | str] = None, /, **dtypes: DataType | str
-) -> T:
+def force_cast(
+    x: AnyArray | Table,
+    dtype: Optional[DataType | str] = None,
+    /,
+    **dtypes: DataType | str,
+) -> AnyArray | Table:
     r"""Cast an array or selected table columns using permissive cast options.
 
     Allow truncation of floating-point, decimal, and time values, as well as
