@@ -22,7 +22,7 @@ __all__ = ["FoldKey", "Folds", "repeated_random_folds", "rotating_folds"]
 from collections.abc import Collection, Mapping, Sequence, Set as AbstractSet
 from math import floor, fsum, isfinite
 from random import Random
-from typing import Optional
+from typing import Any, Optional
 
 from .base import SplitType
 
@@ -30,7 +30,7 @@ type FoldKey = tuple[*tuple[int, ...], SplitType]
 type Folds[K] = dict[FoldKey, list[K]]
 
 
-def _normalize_weights[StringT: str, V](
+def _normalize_weights[StringT: str, V: float](
     values: Mapping[StringT, V], /
 ) -> dict[SplitType, V]:
     r"""Normalize split names, preserving values and insertion order.
@@ -55,7 +55,7 @@ def _normalize_weights[StringT: str, V](
 
 
 def _validate_args(
-    keys: Collection, groups: Mapping, seed: int, num_folds: int
+    keys: Collection, groups: Mapping | None, seed: int, num_folds: int
 ) -> None:
     r"""Validate keys."""
     if not isinstance(num_folds, int) or num_folds <= 0:
@@ -70,15 +70,15 @@ def _validate_args(
         raise ValueError("groups must map exactly the supplied collection identifiers.")
 
 
-def rotating_folds[StringT: str, K](
+def rotating_folds[K](
     keys: Collection[K],
     /,
     *,
-    chunks: Mapping[StringT, int],
+    chunks: Mapping[Any, int],  # Mapping[str & Any, int]
     num_folds: int,
     seed: int,
-    groups: Optional[Mapping[K, object]] = None,
     fold_prefix: Sequence[int] = (),
+    groups: Mapping[K, object] | None = None,
 ) -> Folds[K]:
     r"""Partition collection elements by rotating shuffled group chunks.
 
@@ -93,8 +93,7 @@ def rotating_folds[StringT: str, K](
             chunk counts. Their positive sum must be divisible by `num_folds`.
         num_folds: Positive number of folds.
         seed: Required integer seed for a fresh local random generator.
-        groups: Optional mapping from every identifier to a stable, hashable
-            group label.
+        groups: Optional mapping from every identifier to a stable group label.
         fold_prefix: Non-negative outer fold indices prepended to generated keys.
 
     Splits assigned zero chunks and empty inputs are retained as empty lists. Too few
@@ -161,7 +160,7 @@ def rotating_folds[StringT: str, K](
     for fold in range(num_folds):
         # Retain empty splits, then rotate chunk boundaries and collect
         # identifiers in their original order in one pass.
-        result.update({(*fold_prefix, fold, split): [] for split in chunks})
+        result.update({(*fold_prefix, fold, split): [] for split in chunks})  # pyrefly: ignore[no-matching-overload]
         for key, label in labels.items():
             chunk = chunk_by_group[label]
             split = chunk_splits[(chunk - fold * step) % num_chunks]
@@ -170,11 +169,11 @@ def rotating_folds[StringT: str, K](
     return result
 
 
-def repeated_random_folds[StringT: str, K](
+def repeated_random_folds[K](
     keys: Collection[K],
     /,
     *,
-    ratios: Mapping[StringT, float],
+    ratios: Mapping[Any, float],  # Mapping[str & Any, float]
     num_folds: int,
     seed: int,
     groups: Optional[Mapping[K, object]] = None,
@@ -263,7 +262,7 @@ def repeated_random_folds[StringT: str, K](
 
         # Retain empty splits, then collect identifiers in one pass to preserve
         # input order without scanning all elements separately for each split.
-        result.update({(*fold_prefix, fold, split): [] for split in ratios})
+        result.update({(*fold_prefix, fold, split): [] for split in ratios})  # pyrefly: ignore[no-matching-overload]
         for key, label in labels.items():
             split = assignments[label]
             result[(*fold_prefix, fold, split)].append(key)
