@@ -11,7 +11,7 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.types.abc import Vec
+from tsdm.datatools.collections import IndexableDataset
 
 EXPECTED_BUILTINS: dict[type, bool] = {
     EllipsisType       : False,
@@ -75,8 +75,8 @@ EXTECTED_COLLECTIONS: dict[type, bool] = {
 
 EXPECTED_3RD_PARTY: dict[type, bool] = {
     np.ndarray      : True,
-    pa.Array        : False,  # lacks __contains__
-    pa.ChunkedArray : False,  # lacks __contains__
+    pa.Array        : True,  # lacks __contains__
+    pa.ChunkedArray : True,  # lacks __contains__
     pd.DataFrame    : True,
     pd.Index        : True,
     pd.Series       : True,
@@ -97,9 +97,53 @@ EXPECTED_3RD_PARTY: dict[type, bool] = {
 )
 def test_satisfies_array_protocol(*, cls: type, expected: bool) -> None:
     if expected:
-        assert issubclass(cls, Vec)
+        assert issubclass(cls, IndexableDataset)
     else:
-        assert not issubclass(cls, Vec)
+        assert not issubclass(cls, IndexableDataset)
+
+
+@pytest.mark.parametrize(
+    "arg",
+    [
+        pytest.param([], id="empty-list"),
+        pytest.param([1, 2], id="integer-list"),
+        pytest.param([torch.tensor([1, 2]), torch.tensor([3, 4])], id="tensor-list"),
+        pytest.param((1, 2), id="tuple"),
+        pytest.param(range(2), id="range"),
+        pytest.param(np.array([1, 2]), id="numpy-array"),
+        pytest.param(pa.array([1, 2]), id="arrow-array"),
+        pytest.param(pa.chunked_array([[1], [2]]), id="arrow-chunked-array"),
+    ],
+)
+def test_indexable_dataset_accepts_instances(*, arg: object) -> None:
+    assert isinstance(arg, IndexableDataset)
+
+
+@pytest.mark.parametrize(
+    "arg",
+    [
+        pytest.param("", id="empty-string"),
+        pytest.param("abc", id="string"),
+        pytest.param(b"", id="empty-bytes"),
+        pytest.param(b"abc", id="bytes"),
+        pytest.param(set(), id="empty-set"),
+        pytest.param({1, 2}, id="integer-set"),
+        pytest.param({}, id="empty-dict"),
+        pytest.param({"sample": torch.tensor([1, 2])}, id="tensor-dict"),
+        pytest.param({0: 1, 1: 2}, id="integer-dict"),
+        pytest.param(collections.UserDict({0: 1}), id="user-dict"),
+        pytest.param(collections.ChainMap({0: 1}), id="chain-map"),
+    ],
+)
+def test_indexable_dataset_rejects_instances(*, arg: object) -> None:
+    assert not isinstance(arg, IndexableDataset)
+
+
+def type_indexable_dataset_assignable() -> None:
+    _integers: IndexableDataset[int] = [1, 2]
+    _tensors: IndexableDataset[torch.Tensor] = [torch.tensor([1, 2])]
+    _string: IndexableDataset[str] = "abc"  # type: ignore[assignment]
+    _bytes: IndexableDataset[int] = b"abc"  # type: ignore[assignment]
 
 
 def test_array_collections_abc() -> None:
@@ -108,46 +152,46 @@ def test_array_collections_abc() -> None:
             continue
         cls = getattr(collections, name)
         if isinstance(cls, type):
-            print(f"{name}: {issubclass(cls, Vec)}")
+            print(f"{name}: {issubclass(cls, IndexableDataset)}")
 
 
 def type_array_assignable() -> None:
     # builtins
     # _00: type[Array] = bytes  # ❌ __contains__
     # _01: type[Array] = dict  # ❌ __getitem__
-    _02: type[Vec] = list
-    _03: type[Vec] = range
+    _02: type[IndexableDataset] = list
+    _03: type[IndexableDataset] = range
     # _04: type[Array] = str  # ❌ __contains__
-    _05: type[Vec] = tuple
+    _05: type[IndexableDataset] = tuple
     # collections.abc
     # _06: type[Array] = abc.Mapping  # __getitem__ does not support slicing
     # _07: type[Array] = abc.MutableMapping  # __getitem__ does not support slicing
-    _08: type[Vec] = abc.MutableSequence
-    _09: type[Vec] = abc.Sequence
+    _08: type[IndexableDataset] = abc.MutableSequence
+    _09: type[IndexableDataset] = abc.Sequence
     # collections
     # _10: type[Array] = collections.ChainMap  # __getitem__ does not support slicing
     # _11: type[Array] = collections.Counter  # __getitem__ does not support slicing
     # _11: type[Array] = collections.OrderedDict  # __getitem__ does not support slicing
     # _12: type[Array] = collections.UserDict  # __getitem__ does not support slicing
-    _13: type[Vec] = collections.UserList
-    _14: type[Vec] = collections.UserString
+    _13: type[IndexableDataset] = collections.UserList
+    _14: type[IndexableDataset] = collections.UserString
     # _15: type[Array] = collections.defaultdict  # __getitem__ does not support slicing
     # _16: type[Array] = collections.deque  # __getitem__ does not support slicing
     # 3rd party
-    _17: type[Vec] = np.ndarray
-    _18: type[Vec] = pa.Array
-    _19: type[Vec] = pa.ChunkedArray
-    _20: type[Vec] = pd.DataFrame
-    _21: type[Vec] = pd.Index
-    _22: type[Vec] = pd.Series
-    _23: type[Vec] = pl.Series
-    _24: type[Vec] = torch.Tensor
+    _17: type[IndexableDataset] = np.ndarray
+    _18: type[IndexableDataset] = pa.Array
+    _19: type[IndexableDataset] = pa.ChunkedArray
+    _20: type[IndexableDataset] = pd.DataFrame
+    _21: type[IndexableDataset] = pd.Index
+    _22: type[IndexableDataset] = pd.Series
+    _23: type[IndexableDataset] = pl.Series
+    _24: type[IndexableDataset] = torch.Tensor
     # check
 
 
 def type_integer_array_assignable() -> None:
-    _0: Vec[int]
-    _1: Vec[int] = (1, 2)
-    _2: Vec[int] = tuple([1, 2])  # ruff: ignore[C409]
-    _3: Vec[int] = [1, 2]
-    _4: Vec[int] = range(2)
+    _0: IndexableDataset[int]
+    _1: IndexableDataset[int] = (1, 2)
+    _2: IndexableDataset[int] = tuple([1, 2])  # ruff: ignore[C409]
+    _3: IndexableDataset[int] = [1, 2]
+    _4: IndexableDataset[int] = range(2)

@@ -35,8 +35,9 @@ from numpy.typing import NDArray
 
 from tsdm.constants import RNG
 from tsdm.datatools import get_first_sample, get_last_sample, timedelta, timestamp
+from tsdm.datatools.collections import IndexableDataset
 from tsdm.types import SupportsArray
-from tsdm.types.abc import Vec
+from tsdm.types.abc import Seq
 from tsdm.utils.interval import HalfOpenInterval, Interval
 
 from .base import BaseSampler
@@ -415,78 +416,78 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["mask", MODE.MASK],
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, I, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["interval", MODE.INTERVAL],
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["index", MODE.INDEX],
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["points", MODE.POINTS],
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         @overload  # unknown mode
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, MULTI],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: MODE | Mode | str,
-            horizons: Vec[str] | Vec[TD],
+            horizons: Seq[str | TD],
             stride: str | TD, shuffle: bool = ..., drop_last: bool = ..., rng: Generator = ...,
         ) -> None: ...
         # HORIZON=ONE ------------------------------------------------------------------
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, ONE],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
@@ -496,7 +497,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, ONE],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
@@ -506,7 +507,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, ONE],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["mask", MODE.MASK],
@@ -516,7 +517,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, ONE],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["index", MODE.INDEX],
@@ -526,7 +527,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, ONE],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: Literal["points", MODE.POINTS],
@@ -536,7 +537,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, ONE],
-            data_source: Vec[DT] | SupportsArray,
+            data_source: IndexableDataset[DT] | SupportsArray,
             /,
             *,
             mode: MODE | Mode | str,
@@ -548,11 +549,11 @@ class SlidingWindowSampler[
 
     def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
         self,
-        data_source: Vec[DT] | SupportsArray,
+        data_source: IndexableDataset[DT] | SupportsArray,
         /,
         *,
         mode: ModeVar | Mode | str,
-        horizons: str | TD | Vec[str] | Vec[TD],
+        horizons: Seq[str | TD] | str | TD,
         stride: str | TD,
         drop_last: bool = False,
         shuffle: bool = False,

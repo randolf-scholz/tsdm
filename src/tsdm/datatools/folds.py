@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from tsdm.types.abc import Vec
+from .collections import IndexableDataset
 
 
 def is_partition[T](
@@ -99,7 +99,7 @@ def folds_as_frame(
     folds: Sequence[Mapping[str, Series]],
     /,
     *,
-    index: Vec[SupportsIndex] | None = None,
+    index: IndexableDataset[SupportsIndex] | None = None,
     sparse: bool = False,
 ) -> DataFrame:
     r"""Create a table holding the fold information.

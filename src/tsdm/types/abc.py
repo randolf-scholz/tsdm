@@ -1,12 +1,10 @@
 r"""Protocol variants of common ABCs."""
-# ruff: file-ignore[N805]
 
 __all__ = [
     "BaseBuffer",
     "ReadBuffer",
     "WriteBuffer",
     "Buffer",
-    "Vec",
     "Seq",
     "MutSeq",
     "Map",
@@ -29,8 +27,6 @@ from typing import (
     Optional,
     Protocol,
     Self,
-    TypeIs,
-    _ProtocolMeta as ProtocolMeta,
     cast,
     overload,
     runtime_checkable,
@@ -74,58 +70,11 @@ class Buffer[io: (str, bytes)](ReadBuffer[io], WriteBuffer[io], Protocol):
     r"""Protocol for objects that support reading and writing."""
 
 
-class _VecMeta(ProtocolMeta):
-    def __subclasscheck__(cls, other: type, /) -> TypeIs[type[Vec]]:
-        if issubclass(other, str | bytes | Mapping):
-            return False
-        return super().__subclasscheck__(other)
-
-
-@runtime_checkable
-class Vec[T](Protocol, metaclass=_VecMeta):  # +T
-    r"""Alternative to `Sequence` without `__reversed__`, `index` and `count`.
-
-    These methods are omitted to accommodate vector data structures that do not
-    implement the full `collections.abc.Sequence` interface.
-
-    Note:
-        Runtime subclass checks exclude `str`, `bytes`, and `Mapping` subclasses,
-        including `dict`.
-
-    Examples:
-        - `list`
-        - `tuple`
-        - `numpy.ndarray`
-        - `pandas.Index`
-        - `pandas.Series` (with integer index)
-
-        Counterexamples include `str`, `bytes`, and `dict`, which are excluded
-        by the runtime subclass check.
-    """
-
-    @abstractmethod
-    def __len__(self) -> int: ...
-
-    # Mixin methods
-    def __iter__(self) -> Iterator[T]:
-        for i in range(len(self)):
-            yield self[i]
-
-    def __contains__(self, value: object, /) -> bool:
-        return any(x == value or x is value for x in self)
-
-    @overload
-    @abstractmethod
-    def __getitem__(self, index: int, /) -> T: ...
-    @overload
-    @abstractmethod
-    # NOTE: not "-> Self" to ensure compatibility with tuple.
-    def __getitem__(self, index: slice, /) -> Vec[T]: ...
-
-
 @runtime_checkable
 class Seq[T](Protocol):  # +T
     r"""Protocol version of `collections.abc.Sequence`.
+
+    Does not match `str` or `bytes`.
 
     References:
         - [Typeshed typing stubs](https://github.com/python/typeshed/blob/main/stdlib/typing.pyi)
@@ -143,7 +92,7 @@ class Seq[T](Protocol):  # +T
     def __getitem__(self, index: int, /) -> T: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice, /) -> Self: ...
+    def __getitem__(self, index: slice, /) -> Seq[T]: ...
 
 
 @runtime_checkable

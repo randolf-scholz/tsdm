@@ -10,8 +10,8 @@ import pytest
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
+from tsdm.datatools.collections import IndexableDataset
 from tsdm.random.samplers import SlidingWindowSampler
-from tsdm.types.abc import Vec
 
 MODE = SlidingWindowSampler.MODE
 type B = Literal[MODE.BOUNDS]  # -> tuple[DT, DT]
@@ -806,7 +806,7 @@ def test_sliding_window_sampler_continuous(
 
 # dates 2020-01-01 to 2020-01-10
 PYTHON_DATES = [dt.datetime(2020, 1, 1) + dt.timedelta(days=i) for i in range(10)]
-DATETIME_DATA: dict[str, Vec[Any]] = {
+DATETIME_DATA: dict[str, IndexableDataset] = {
     "list-python"     : PYTHON_DATES,
     "list-pandas"     : [pd.Timestamp(d) for d in PYTHON_DATES],
     "numpy"           : np.array(PYTHON_DATES, dtype="datetime64[ns]"),
@@ -871,7 +871,7 @@ def test_datetime_data(case: str, mode: MODE) -> None:
 
 # increasing data with random step size
 PYTHON_INTEGERS = [-7, 0, 3, 4, 6, 11, 12, 14, 18, 20, 21]
-INTEGER_DATA: dict[str, Vec[Any]] = {
+INTEGER_DATA: dict[str, IndexableDataset] = {
     "python-int": PYTHON_INTEGERS,
     "numpy-int64": np.array(PYTHON_INTEGERS, dtype=np.int64),
     "numpy-int32": np.array(PYTHON_INTEGERS, dtype=np.int32),
@@ -931,7 +931,7 @@ def test_integer_data(example: str, mode: MODE) -> None:
 
 
 PYTHON_FLOATS = [-2.3, 0.1, 4.2, 5.3, 5.5, 5.6, 6.0, 8.4, 10.7]
-FLOAT_DATA: dict[str, Vec[Any]] = {
+FLOAT_DATA: dict[str, IndexableDataset] = {
     "python-float": PYTHON_FLOATS,
     "numpy-float64": np.array(PYTHON_FLOATS, dtype=np.float64),
     "numpy-float32": np.array(PYTHON_FLOATS, dtype=np.float32),

@@ -10,7 +10,7 @@ from tsdm.random.samplers import RandomSampler
 
 if TYPE_CHECKING:
     from tsdm.datatools import MapDataset
-    from tsdm.types.abc import Vec
+    from tsdm.datatools.collections import IndexableDataset
 
 PYTHON_STRINGS = ["foo", "bar", "baz", "qux", "quux", "quuz", "corge", "grault"]
 MAPPED_STRINGS = {2 * k + 1: s for k, s in enumerate(PYTHON_STRINGS)}  # generic index
@@ -120,7 +120,7 @@ def test_map_data_no_typehint() -> None:
 
 
 def test_seq_data() -> None:
-    data: Vec[str] = ["foo", "bar"]
+    data: IndexableDataset[str] = ["foo", "bar"]
     sampler = RandomSampler(data)
     assert_type(sampler, RandomSampler[str])
     # check that we can iterate over the values
