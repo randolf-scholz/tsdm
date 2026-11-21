@@ -139,11 +139,9 @@ def test_indexable_dataset_rejects_instances(*, arg: object) -> None:
     assert not isinstance(arg, IndexableDataset)
 
 
-def type_indexable_dataset_assignable() -> None:
+def check_indexable_dataset_assignable() -> None:
     _integers: IndexableDataset[int] = [1, 2]
     _tensors: IndexableDataset[torch.Tensor] = [torch.tensor([1, 2])]
-    _string: IndexableDataset[str] = "abc"  # type: ignore[assignment]
-    _bytes: IndexableDataset[int] = b"abc"  # type: ignore[assignment]
 
 
 def test_array_collections_abc() -> None:
@@ -155,7 +153,7 @@ def test_array_collections_abc() -> None:
             print(f"{name}: {issubclass(cls, IndexableDataset)}")
 
 
-def type_array_assignable() -> None:
+def check_array_assignable() -> None:
     # builtins
     # _00: type[Array] = bytes  # ❌ __contains__
     # _01: type[Array] = dict  # ❌ __getitem__
@@ -189,7 +187,7 @@ def type_array_assignable() -> None:
     # check
 
 
-def type_integer_array_assignable() -> None:
+def check_integer_array_assignable() -> None:
     _0: IndexableDataset[int]
     _1: IndexableDataset[int] = (1, 2)
     _2: IndexableDataset[int] = tuple([1, 2])  # ruff: ignore[C409]

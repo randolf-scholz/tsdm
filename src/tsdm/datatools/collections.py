@@ -74,25 +74,20 @@ class IndexableDataset[T](Protocol, metaclass=_IndexableDatasetMeta):  # +T
     Unlike `collections.abc.Sequence`, this protocol does not require
     `__reversed__`, `index`, or `count`.
 
-    Membership accepts arbitrary objects, which excludes `str` during static
-    type checking. The default implementation checks identity before equality,
-    like `list`. Equality comparisons that return arrays or tensors may raise
-    an error when converted to `bool`.
 
     Note:
-        Runtime instance and subclass checks exclude `str`, `bytes`, and
-        `Mapping` subclasses, including `dict`. They check method presence, but
-        cannot verify the indexing or iteration semantics.
+        Runtime `isinstance` and `issubclass` checks explicitly exclude
+        `str`, `bytes` and `collections.abc.Mapping`.
+        However, at type checking time, `str` and `bytes` are accepted.
 
     Examples:
-        - `list`
-        - `tuple`
-        - `numpy.ndarray`
-        - `pandas.Index`
-        - `pandas.Series` (with index labels matching `range(len(dataset))`)
+        - `list`, `tuple`
+        - `numpy.ndarray`, `torch.Tensor`
+        - `pandas.Index`, `pandas.Series`, `polars.Array`, `polars.Series`
 
-        Counterexamples include `str`, `bytes`, and `dict`, which are excluded
-        by the runtime checks.
+    Counter-Examples:
+        - `dict`, `set`, `collections.abc.Mapping`
+        - `str`, `bytes` (at runtime)
     """
 
     @abstractmethod
@@ -103,7 +98,7 @@ class IndexableDataset[T](Protocol, metaclass=_IndexableDatasetMeta):  # +T
         for i in range(len(self)):
             yield self[i]
 
-    # excluded to allow matching pyarrow.array.
+    # Note: excluded to allow matching pyarrow.array.
     # def __contains__(self, value: object, /) -> bool:
     #     return any(x == value for x in self)
 

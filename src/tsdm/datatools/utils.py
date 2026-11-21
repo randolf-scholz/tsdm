@@ -2,7 +2,6 @@ r"""Generic data utilities."""
 
 __all__ = [
     "date_range",
-    "infer_schema",
     "timedelta",
     "timedelta_range",
     "timestamp",
@@ -11,7 +10,7 @@ __all__ = [
 
 import datetime as dt
 import operator
-from collections.abc import Collection, Iterable, Mapping, Sequence
+from collections.abc import Collection, Sequence
 from functools import wraps
 from typing import Any, Optional, SupportsFloat, SupportsIndex, overload
 
@@ -91,38 +90,6 @@ def random_partition[K](
     return tuple(
         [key_map[i] for i in partition] for partition in np.split(indices, cuts)
     )
-
-
-def infer_schema(table: Any, /) -> Mapping[Any, Any]:
-    r"""Infer a mapping from column names to dtypes for a table-like object.
-
-    A table's index is not included. Pass an index directly to infer its schema.
-
-    Returns:
-        A mapping from column names to dtypes.
-
-    Raises:
-        NotImplementedError: If the table type is not supported.
-    """
-    match table:
-        case object(schema=Mapping() as schema):  # type: ignore
-            # pl.DataFrame
-            return dict(schema)
-
-        case object(dtypes=Iterable() as dtypes):  # type: ignore
-            # pd.MultiIndex, pd.DataFrame
-            return dict(dtypes)
-
-        case object(name=name, dtype=dtype):  # type: ignore
-            # pd.Series, pd.Index, pl.Series
-            return {name: dtype}
-
-        case object(schema=schema):  # type: ignore
-            # pa.Table
-            return dict(zip(schema.names, schema.types, strict=True))
-
-        case _:
-            raise NotImplementedError(f"Cannot get schema for {type(table)} objects!")
 
 
 @wraps(Timedelta)

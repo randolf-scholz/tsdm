@@ -26,7 +26,6 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, assert_never, overload
 
 from . import config
-from .datatools import infer_schema
 from .hashutils import Hash, hash_array, hash_file
 from .types import FilePath, FileStream, HasShape
 
@@ -366,6 +365,38 @@ def validate_table_shape(
     return shapes_match
 
 
+def _infer_schema(table: Any, /) -> Mapping[Any, Any]:
+    r"""Infer a mapping from column names to dtypes for a table-like object.
+
+    A table's index is not included. Pass an index directly to infer its schema.
+
+    Returns:
+        A mapping from column names to dtypes.
+
+    Raises:
+        NotImplementedError: If the table type is not supported.
+    """
+    match table:
+        case object(schema=Mapping() as schema):  # type: ignore
+            # pl.DataFrame
+            return dict(schema)
+
+        case object(dtypes=Iterable() as dtypes):  # type: ignore
+            # pd.MultiIndex, pd.DataFrame
+            return dict(dtypes)
+
+        case object(name=name, dtype=dtype):  # type: ignore
+            # pd.Series, pd.Index, pl.Series
+            return {name: dtype}
+
+        case object(schema=schema):  # type: ignore
+            # pa.Table
+            return dict(zip(schema.names, schema.types, strict=True))
+
+        case _:
+            raise NotImplementedError(f"Cannot get schema for {type(table)} objects!")
+
+
 def validate_table_schema(
     table: Any,
     /,
@@ -393,7 +424,7 @@ def validate_table_schema(
     """
     error_handler = make_error_handler(errors)
 
-    actual_schema = infer_schema(table)
+    actual_schema = _infer_schema(table)
 
     # Validate columns.
     missing_columns = set(expected_schema) - set(actual_schema)

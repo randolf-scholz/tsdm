@@ -1,12 +1,8 @@
 r"""Tests for generic data utilities."""
 
-import pandas as pd
-import polars as pl
-import pyarrow as pa
-import pytest
 import torch
 
-from tsdm.datatools import infer_schema, random_partition
+from tsdm.datatools import random_partition
 
 
 def test_random_partition_dictionary_keys() -> None:
@@ -53,34 +49,3 @@ def test_random_partition_tensor_and_labels() -> None:
         for dataset_features, dataset_labels in (train_set, validation_set, test_set)
         for row, label in zip(dataset_features, dataset_labels, strict=True)
     )
-
-
-@pytest.mark.parametrize(
-    ("table", "expected_schema"),
-    [
-        (
-            pd.MultiIndex.from_arrays([[1, 2], [3, 4]], names=["left", "right"]),
-            {"left": pd.Series([1]).dtype, "right": pd.Series([1]).dtype},
-        ),
-        (pd.Index([1, 2], name="id"), {"id": pd.Series([1]).dtype}),
-        (
-            pd.Series([1, 2], name="value", index=pd.Index([3, 4], name="id")),
-            {"value": pd.Series([1]).dtype},
-        ),
-        (
-            pd.DataFrame({"value": [1, 2]}, index=pd.Index([3, 4], name="id")),
-            {"value": pd.Series([1]).dtype},
-        ),
-        (
-            pa.table({"value": [1, 2]}),
-            {"value": pa.int64()},
-        ),
-        (
-            pl.DataFrame({"value": [1, 2]}),
-            {"value": pl.Int64},
-        ),
-    ],
-)
-def test_infer_schema(table, expected_schema) -> None:
-    r"""Extract schema information from each supported table type."""
-    assert infer_schema(table) == expected_schema

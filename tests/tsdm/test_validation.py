@@ -17,6 +17,7 @@ import pytest
 
 from tsdm.validation import (
     ValidationError,
+    _infer_schema,
     validate_csv_header,
     validate_file_hash,
     validate_table_schema,
@@ -171,3 +172,34 @@ def test_validate_table_schema_ignores_index() -> None:
 def test_validate_table_schema_empty() -> None:
     r"""An empty schema requires a table without columns."""
     assert validate_table_schema(pd.DataFrame(), expected_schema={}, errors="raise")
+
+
+@pytest.mark.parametrize(
+    ("table", "expected_schema"),
+    [
+        (
+            pd.MultiIndex.from_arrays([[1, 2], [3, 4]], names=["left", "right"]),
+            {"left": pd.Series([1]).dtype, "right": pd.Series([1]).dtype},
+        ),
+        (pd.Index([1, 2], name="id"), {"id": pd.Series([1]).dtype}),
+        (
+            pd.Series([1, 2], name="value", index=pd.Index([3, 4], name="id")),
+            {"value": pd.Series([1]).dtype},
+        ),
+        (
+            pd.DataFrame({"value": [1, 2]}, index=pd.Index([3, 4], name="id")),
+            {"value": pd.Series([1]).dtype},
+        ),
+        (
+            pa.table({"value": [1, 2]}),
+            {"value": pa.int64()},
+        ),
+        (
+            pl.DataFrame({"value": [1, 2]}),
+            {"value": pl.Int64},
+        ),
+    ],
+)
+def test_infer_schema(table, expected_schema) -> None:
+    r"""Extract schema information from each supported table type."""
+    assert _infer_schema(table) == expected_schema
