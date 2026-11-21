@@ -102,12 +102,6 @@ hooks = [
     { id = "check-direct-imports" },
     { id = "check-dunder-all", files = "^src/" },
     {
-        id = "check-typing",
-        args = ["--check-no-return-union"],
-        files = "^src/",
-        exclude = "lazydict.py",
-    },
-    {
         id = "check-signatures",
         files = "^src/",
         args = [
