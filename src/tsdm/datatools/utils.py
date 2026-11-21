@@ -6,11 +6,12 @@ __all__ = [
     "timedelta_range",
     "timestamp",
     "random_partition",
+    "is_partition",
 ]
 
 import datetime as dt
 import operator
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from functools import wraps
 from typing import Any, Optional, SupportsFloat, SupportsIndex, overload
 
@@ -18,6 +19,25 @@ import numpy as np
 from numpy.random import Generator
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
+
+
+def is_partition[T](
+    partition: Iterable[Collection[T]],
+    /,
+    *,
+    union: Collection[T],
+) -> bool:
+    r"""Check that the parts are disjoint and contain no duplicate elements.
+
+    If `union` is provided, also check that the parts cover it exactly.
+    The input must support repeated iteration because it is traversed twice.
+    """
+    sets = (set(p) for p in partition)
+    part_union = set().union(*sets)
+
+    if part_union != set(union):
+        return False
+    return len(part_union) == sum(len(p) for p in partition)
 
 
 @overload

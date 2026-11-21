@@ -5,10 +5,9 @@ __all__ = [
     "folds_as_frame",
     "folds_as_sparse_frame",
     "folds_from_groups",
-    "is_partition",
 ]
 
-from collections.abc import Collection, Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Optional, SupportsIndex
 
 import numpy as np
@@ -16,25 +15,6 @@ import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 
 from .collections import IndexableDataset
-
-
-def is_partition[T](
-    partition: Iterable[Collection[T]],
-    /,
-    *,
-    union: Optional[Collection[T]] = None,
-) -> bool:
-    r"""Check that the parts are disjoint and contain no duplicate elements.
-
-    If `union` is provided, also check that the parts cover it exactly.
-    The input must support repeated iteration because it is traversed twice.
-    """
-    sets = (set(p) for p in partition)
-    part_union = set().union(*sets)
-
-    if union is not None and part_union != set(union):
-        return False
-    return len(part_union) == sum(len(p) for p in partition)
 
 
 def folds_from_groups(
