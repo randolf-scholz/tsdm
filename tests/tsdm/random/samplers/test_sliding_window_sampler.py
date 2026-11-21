@@ -1370,7 +1370,7 @@ def test_unknown_multi() -> None:
 # endregion specific tests -------------------------------------------------------------
 
 
-def type_slidingsampler_assignable() -> None:
+def check_slidingsampler_assignable() -> None:
     int_list: list[int] = [1, 2, 3]
 
     assert_type(
