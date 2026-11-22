@@ -273,3 +273,104 @@ def test_named_and_unnamed_partitions(parameter: str) -> None:
                 left is right
                 for left, right in zip(named_part, unnamed_part, strict=True)
             )
+
+
+@pytest.mark.parametrize("parameter", ["sizes", "ratios"])
+@pytest.mark.parametrize("named", [True, False])
+def test_group_allocation(parameter: str, *, named: bool) -> None:
+    r"""Group counts determine assignments regardless of the number of samples."""
+    labels = [(1, "red"), (2, "red"), (1, "red"), (3, "blue"), (1, "red")]
+    items = [[index] for index in range(len(labels))]
+    items[-1] = items[0]
+    unique_labels = list(dict.fromkeys(labels))
+    spec = {"train": 1, ("test", 0): 2, "empty": 0} if named else [1, 2, 0]
+    options = {parameter: spec}
+    parts = random_partition(items, **options, group_labels=labels, rng=42)
+    expected = random_partition(unique_labels, **options, rng=42)
+    actual_parts = list(parts.values()) if isinstance(parts, dict) else parts
+    expected_parts = list(expected.values()) if isinstance(expected, dict) else expected
+    if named:
+        assert list(parts) == list(spec)
+    for actual, expected_labels in zip(actual_parts, expected_parts, strict=True):
+        expected_items = [
+            item
+            for label in expected_labels
+            for item, item_label in zip(items, labels, strict=True)
+            if item_label == label
+        ]
+        assert len(actual) == len(expected_items)
+        assert all(
+            left is right for left, right in zip(actual, expected_items, strict=True)
+        )
+    assert len(actual_parts[-1]) == 0
+    assert parts == random_partition(items, **options, group_labels=labels, rng=42)
+
+
+@pytest.mark.parametrize("parameter", ["sizes", "ratios"])
+def test_unique_labels_match_ungrouped_partition(parameter: str) -> None:
+    r"""Each occurrence is its own group by default, including duplicate values."""
+    items = [[0], [1], [0], [1]]
+    options = {parameter: [2, 2]}
+    assert random_partition(items, **options, rng=37) == random_partition(
+        items, **options, group_labels=["d", "b", "a", "c"], rng=37
+    )
+
+
+def test_group_sizes_count_groups() -> None:
+    r"""Explicit sizes count groups, never sample counts."""
+    assert random_partition(
+        range(4), sizes=[1, 0], group_labels=["a"] * 4, rng=0, max_error=0
+    ) == ([0, 1, 2, 3], [])
+    with pytest.raises(ValueError, match="number of groups"):
+        random_partition(range(4), sizes=[4, 0], group_labels=["a"] * 4, rng=0)
+
+
+def test_group_sample_sizes_do_not_bias_assignment() -> None:
+    r"""Either unequal group can be the test set, even if it misses sample targets."""
+    labels = ["a"] * 9 + ["b"]
+    test_sets = {
+        tuple(
+            random_partition(range(10), ratios=[1, 1], group_labels=labels, rng=seed)[1]
+        )
+        for seed in range(16)
+    }
+    assert test_sets == {tuple(range(9)), (9,)}
+    assert (
+        random_partition(range(10), ratios=[9, 1], group_labels=labels, rng=0)[1] == []
+    )
+
+
+def test_group_error_checks_samples_without_retrying() -> None:
+    r"""Equal group counts can violate sample targets; failure consumes just one draw."""
+    options = {"ratios": [1, 1], "group_labels": ["a"] * 9 + ["b"]}
+    rng = Random(37)
+    reference_rng = Random(37)
+    expected = random_partition(range(10), **options, rng=reference_rng)
+    assert random_partition(range(10), **options, rng=37, max_error=0.41) == expected
+    with pytest.raises(RuntimeError, match="total variation distance"):
+        random_partition(range(10), **options, rng=rng, max_error=0.39)
+    assert rng.getstate() == reference_rng.getstate()
+
+
+@pytest.mark.parametrize("labels", [[], ["a", "b"]])
+def test_partition_invalid_group_lengths(labels) -> None:
+    with pytest.raises(ValueError, match=r"group_labels.*length"):
+        random_partition([0], ratios=[1, 1], group_labels=labels, rng=0)
+
+
+def test_partition_unordered_inputs() -> None:
+    with pytest.raises(TypeError, match=r"items.*order"):
+        random_partition({0, 1}, ratios=[1, 1], rng=0)
+    with pytest.raises(TypeError, match=r"group_labels.*order"):
+        random_partition([0, 1], ratios=[1, 1], group_labels={"a", "b"}, rng=0)
+
+
+def test_partition_unhashable_group_labels() -> None:
+    with pytest.raises(TypeError, match="unhashable"):
+        random_partition([0, 1], ratios=[1, 1], group_labels=[[0], [1]], rng=0)
+
+
+@pytest.mark.parametrize("parameter", ["sizes", "ratios"])
+def test_partition_empty_group_labels(parameter: str) -> None:
+    spec = [0, 0] if parameter == "sizes" else [1, 1]
+    assert random_partition([], **{parameter: spec}, group_labels=[], rng=0) == ([], [])
