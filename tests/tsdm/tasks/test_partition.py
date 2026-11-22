@@ -197,14 +197,16 @@ def test_exact_sizes_and_tuple_identifiers() -> None:
     assert parts == random_partition(keys, sizes=(5000, 1000, 1000), rng=42)
 
 
-def test_largest_remainder_ties_favor_later_parts() -> None:
+def test_largest_remainder_ties_favor_earlier_parts() -> None:
     parts = random_partition(range(1), ratios=(1, 1), rng=0)
-    assert tuple(len(part) for part in parts) == (0, 1)
+    assert tuple(len(part) for part in parts) == (1, 0)
+    parts = random_partition(range(5), ratios=(1, 1, 1), rng=0)
+    assert tuple(len(part) for part in parts) == (2, 2, 1)
 
 
 def test_large_finite_ratios() -> None:
     parts = random_partition(range(5), ratios=(1e308, 1e308), rng=0)
-    assert tuple(len(part) for part in parts) == (2, 3)
+    assert tuple(len(part) for part in parts) == (3, 2)
     assert is_partition(parts, union=range(5))
 
 
@@ -294,9 +296,8 @@ def test_group_allocation(parameter: str, *, named: bool) -> None:
     for actual, expected_labels in zip(actual_parts, expected_parts, strict=True):
         expected_items = [
             item
-            for label in expected_labels
             for item, item_label in zip(items, labels, strict=True)
-            if item_label == label
+            if item_label in expected_labels
         ]
         assert len(actual) == len(expected_items)
         assert all(
@@ -304,6 +305,30 @@ def test_group_allocation(parameter: str, *, named: bool) -> None:
         )
     assert len(actual_parts[-1]) == 0
     assert parts == random_partition(items, **options, group_labels=labels, rng=42)
+
+
+@pytest.mark.parametrize("named", [True, False])
+@pytest.mark.parametrize("grouped", [True, False])
+def test_random_and_repeated_partitions_agree(*, named: bool, grouped: bool) -> None:
+    r"""Successive draws agree on rounding, membership, input order, and RNG state."""
+    items = [7, 0, 6, 1, 5, 2, 4, 3]
+    labels = [0, 1, 0, 2, 3, 1, 4, 4] if grouped else None
+    ratios = {"train": 1, "valid": 1, "test": 1, "empty": 0} if named else [1, 1, 1, 0]
+    rng = Random(37)
+    reference_rng = Random(37)
+    expected = repeated_random_folds(
+        items, num_folds=3, ratios=ratios, group_labels=labels, rng=reference_rng
+    )
+    actual = [
+        random_partition(items, ratios=ratios, group_labels=labels, rng=rng)
+        for _ in range(3)
+    ]
+    assert actual == expected
+    assert rng.getstate() == reference_rng.getstate()
+    for partition in actual:
+        parts = partition.values() if isinstance(partition, dict) else partition
+        for part in parts:
+            assert part == [item for item in items if item in part]
 
 
 @pytest.mark.parametrize("parameter", ["sizes", "ratios"])

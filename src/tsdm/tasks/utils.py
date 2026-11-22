@@ -22,8 +22,9 @@ or runtime changes is required.
 
 Mappings specify named splits; results preserve their exact keys and iteration
 order. Sequences specify unnamed splits; results preserve their length and order.
-Partitions are dictionaries for named splits and tuples for unnamed splits. Fold
-generators return a list of partitions, one per fold. For nested cross-validation,
+Partitions are dictionaries for named splits and tuples for unnamed splits.
+Both fold generators return a list of partitions, one per fold.
+`rotating_folds` defaults to one fold. For nested cross-validation,
 pass only the outer training items to the inner generator to prevent leakage.
 """
 
@@ -115,7 +116,7 @@ def _validate_inputs(
 def rotating_folds[T, K](
     items: Collection[T],
     /,
-    num_folds: int,
+    num_folds: int = 1,
     *,
     chunks: Mapping[K, int],
     rng: int | Random,
@@ -126,7 +127,7 @@ def rotating_folds[T, K](
 def rotating_folds[T](
     items: Collection[T],
     /,
-    num_folds: int,
+    num_folds: int = 1,
     *,
     chunks: Sequence[int],
     rng: int | Random,
@@ -136,7 +137,7 @@ def rotating_folds[T](
 def rotating_folds[T, K](
     items: Collection[T],
     /,
-    num_folds: int,
+    num_folds: int = 1,
     *,
     chunks: Mapping[K, int] | Sequence[int],
     rng: int | Random,
@@ -149,6 +150,7 @@ def rotating_folds[T, K](
     number of chunks. Chunk sizes differ by at most one; earlier chunks receive leftovers.
     Each fold shifts split boundaries by `num_chunks // num_folds` chunks.
     This preserves the rotation policy of `datatools.folds_from_groups`.
+    By default, return a one-element list containing the initial partition.
 
     Splits assigned zero chunks are retained as empty lists. Too few
     groups can produce empty splits, including training splits. Group counts,
@@ -171,7 +173,7 @@ def rotating_folds[T, K](
         chunks: Mapping from split keys to non-negative integer chunk counts, or
             a sequence of counts. Their positive sum must be divisible by
             `num_folds`. Mapping keys are preserved exactly without normalization.
-        num_folds: Positive number of folds.
+        num_folds: Positive number of folds. Defaults to 1.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
         group_labels: Optional collection of stable, hashable labels, one per item in
@@ -181,9 +183,10 @@ def rotating_folds[T, K](
             `None` disables checking; exceeding the bound raises `RuntimeError`.
 
     Returns:
-        A list of `num_folds` partitions. Each partition is a dictionary with the
-        same keys and order as `chunks` for a mapping, or a tuple with the same
-        length and order for a sequence. Each split contains a list of items.
+        A list of `num_folds` partitions, including when `num_folds=1`. Each partition is a
+        dictionary with the same keys and order as `chunks` for a mapping, or a
+        tuple with the same length and order for a sequence. Each split contains
+        a list of items.
 
     Examples:
         Rotate training and test splits over two folds for four elements.
@@ -201,6 +204,12 @@ def rotating_folds[T, K](
 
         >>> rotating_folds(range(4), chunks=[1, 1], num_folds=2, rng=2022)
         [([0, 3], [1, 2]), ([1, 2], [0, 3])]
+
+        >>> rotating_folds(range(4), chunks=[1, 1], rng=2022)
+        [([0, 3], [1, 2])]
+        >>> [partition] = rotating_folds(range(4), chunks=[1, 1], rng=2022)
+        >>> partition
+        ([0, 3], [1, 2])
 
         ```
     """
@@ -470,9 +479,10 @@ def random_partition[T, K](
     Exactly one of `sizes` or `ratios` must be provided. Both refer to group
     counts. For ratios, compute each quota as the number of groups times its
     normalized weight, floor the quotas, and allocate leftover groups by largest
-    fractional remainder. Ties favor later splits. Shuffle distinct groups in
+    fractional remainder. Ties favor earlier splits. Shuffle distinct groups in
     first-occurrence order and assign consecutive groups using these counts.
     All assignments with the configured group counts are equally likely.
+    Collect items in their original order within each split.
 
     Group sizes do not influence allocation. Sample proportions can differ
     substantially from the targets; positive ratios can yield empty splits.
@@ -490,7 +500,7 @@ def random_partition[T, K](
         ratios: Mapping from split keys to relative weights, or a sequence of
             weights. Weights must be finite, non-negative and not all zero.
             Mutually exclusive with `sizes`. Largest remainder allocates counts,
-            breaking ties in favor of later splits.
+            breaking ties in favor of earlier splits.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
         group_labels: Optional ordered collection of stable, hashable labels,
@@ -503,15 +513,15 @@ def random_partition[T, K](
     Returns:
         A dictionary with the exact keys and order of the supplied mapping, or a
         tuple with the same length and order as the supplied sequence. Each split
-        contains a list of items in shuffled group order, preserving input order
-        within each group. Empty splits and every item occurrence are retained.
+        contains a list of items in input order. Empty splits and every item
+        occurrence are retained.
 
     Examples:
         ```pycon
         >>> random_partition(range(4), sizes=[2, 2], rng=0)
-        ([2, 0], [1, 3])
+        ([0, 2], [1, 3])
         >>> random_partition(range(4), ratios={"train": 1, "test": 1}, rng=0)
-        {'train': [2, 0], 'test': [1, 3]}
+        {'train': [0, 2], 'test': [1, 3]}
         >>> # Items with the same group label count as one unit: "a1" and "a2" form one group.
         >>> random_partition(
         ...     ["a1", "b1", "a2", "c1"],
@@ -519,17 +529,15 @@ def random_partition[T, K](
         ...     group_labels=["a", "b", "a", "c"],
         ...     rng=0,
         ... )
-        (['a1', 'a2'], ['c1', 'b1'])
+        (['a1', 'a2'], ['b1', 'c1'])
 
         ```
     """
     _validate_inputs(items, group_labels)
     rng = _normalize_rng(rng)
-    labels = range(len(items)) if group_labels is None else group_labels
-    items_by_group: dict[Label, list[T]] = {}
-    for item, label in zip(items, labels, strict=True):
-        items_by_group.setdefault(label, []).append(item)
-    num = len(items_by_group)
+    labels = list(range(len(items))) if group_labels is None else list(group_labels)
+    unique_groups = list(dict.fromkeys(labels))
+    num = len(unique_groups)
     weights: list[float] = []
 
     match sizes, ratios:
@@ -562,24 +570,30 @@ def random_partition[T, K](
             quotas = [num * weight / total for weight in normalized]
             counts = [floor(quota) for quota in quotas]
 
-            # Give later partitions precedence when fractional remainders tie.
+            # Stable descending order gives earlier splits precedence on ties.
             if remainder := num - sum(counts):
-                order = sorted(range(len(counts)), key=lambda i: quotas[i] - counts[i])
-                for index in order[-remainder:]:
+                order = sorted(
+                    range(len(counts)),
+                    key=lambda i: quotas[i] - counts[i],
+                    reverse=True,
+                )
+                for index in order[:remainder]:
                     counts[index] += 1
         case _:
             raise ValueError("Exactly one of sizes or ratios must be provided")
 
-    shuffled = list(items_by_group)
-    rng.shuffle(shuffled)
-    partitions = []
+    rng.shuffle(unique_groups)
+    assignments: dict[Label, int] = {}
     start = 0
-    for count in counts:
+    for split, count in enumerate(counts):
         stop = start + count
-        partitions.append(
-            [item for label in shuffled[start:stop] for item in items_by_group[label]]
-        )
+        assignments.update(dict.fromkeys(unique_groups[start:stop], split))
         start = stop
+
+    # Membership is random; collecting in one pass retains input order per split.
+    partitions: list[list[T]] = [[] for _ in counts]
+    for item, label in zip(items, labels, strict=True):
+        partitions[assignments[label]].append(item)
     if ratios is not None and max_error is not None:
         _check_partition_error(
             [len(part) for part in partitions], weights, max_error=max_error

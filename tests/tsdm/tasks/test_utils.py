@@ -2,7 +2,7 @@ r"""Collection-level partitioning, reproducibility, and nested fold isolation.""
 
 from collections.abc import Callable
 from functools import partial
-from random import getstate
+from random import Random, getstate
 from types import MappingProxyType
 
 import pytest
@@ -59,6 +59,59 @@ def test_rotating_fold_assignments() -> None:
     for key in range(8):
         assert sum(key in folds[fold]["test"] for fold in range(4)) == 1
         assert sum(key in folds[fold]["valid"] for fold in range(4)) == 1
+
+
+@pytest.mark.parametrize("named", [True, False])
+@pytest.mark.parametrize("grouped", [True, False])
+def test_rotating_single_partition(*, named: bool, grouped: bool) -> None:
+    r"""The default returns a one-element list that supports partition unpacking."""
+    marker = object()
+    chunks = (
+        MappingProxyType({marker: 1, "test": 1, "empty": 0}) if named else [1, 1, 0]
+    )
+    items = [[index] for index in range(8)]
+    labels = [0, 1, 0, 2, 0, 3, 2, 3] if grouped else None
+    rng = Random(12)
+    reference_rng = Random(12)
+    default = rotating_folds(items, chunks=chunks, group_labels=labels, rng=rng)
+    singleton = rotating_folds(
+        items, num_folds=1, chunks=chunks, group_labels=labels, rng=reference_rng
+    )
+    multiple = rotating_folds(
+        items, num_folds=2, chunks=chunks, group_labels=labels, rng=12
+    )
+    assert isinstance(default, list)
+    assert isinstance(singleton, list)
+    assert default == singleton
+    [single] = default
+    assert isinstance(single, dict if named else tuple)
+    assert single == multiple[0]
+    assert rng.getstate() == reference_rng.getstate()
+    if isinstance(single, dict):
+        assert list(single) == list(chunks)
+        assert next(iter(single)) is marker
+        assert single["empty"] == []
+    else:
+        assert single[-1] == []
+
+
+@pytest.mark.parametrize("named", [True, False])
+def test_rotating_single_empty_partition(*, named: bool) -> None:
+    chunks = {"train": 1, "test": 1} if named else [1, 1]
+    expected = {"train": [], "test": []} if named else ([], [])
+    assert rotating_folds([], chunks=chunks, rng=0) == [expected]
+
+
+def test_rotating_single_partition_error_check() -> None:
+    r"""The default retains sample-proportion checks for unequal groups."""
+    with pytest.raises(RuntimeError, match="total variation distance"):
+        rotating_folds(
+            range(10),
+            chunks=[1, 1],
+            group_labels=[0] * 9 + [1],
+            rng=0,
+            max_error=0.05,
+        )
 
 
 @pytest.mark.parametrize("policy", ["rotating", "repeated"])
@@ -192,7 +245,7 @@ def test_rng_is_required() -> None:
         repeated_random_folds([1], ratios={"train": 1}, num_folds=1)  # type: ignore[call-arg]
 
 
-@pytest.mark.parametrize("num_folds", [0, -1, 1.5])
+@pytest.mark.parametrize("num_folds", [None, 0, -1, 1.5])
 def test_invalid_fold_counts(num_folds) -> None:
     with pytest.raises(ValueError, match="num_folds"):
         rotating_folds([], chunks={"train": 2}, num_folds=num_folds, rng=0)
