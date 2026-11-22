@@ -19,7 +19,6 @@ from tsdm.datatools import CallableDataset, folds_as_frame
 from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import HierarchicalSampler, RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.tasks.utils import is_partition, random_partitions
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,
@@ -41,6 +40,8 @@ class DampedPendulum_Ansari2023(
         - The data generator uses SciPy's built-in RK45 solver rather than RK4.
         - Each sampled trajectory is split into an observation window of 10 seconds
             and a prediction window of 5 seconds by default.
+        - Fold keys represent repeated runs on one fixed train/validation/test split,
+            rather than cross-validation folds.
 
     ### Evaluation Protocol
 
@@ -127,25 +128,25 @@ class DampedPendulum_Ansari2023(
 
     @cached_property
     def split_masks(self) -> DataFrame:
-        r"""Create the boolean masks for each fold and partition."""
-        folds: list[dict[str, Series]] = []
-        for _ in range(self.num_folds):
-            [(train_idx, valid_idx, test_idx)] = random_partitions(
-                self.dataset.metaindex,
-                num=1,
-                sizes=(self.train_size, self.valid_size, self.test_size),
-                # NOTE: all folds are the same due to fixed random state.
-                # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-                rng=0,
-            )
-            fold = {
-                "train": Series(train_idx),
-                "valid": Series(valid_idx),
-                "test": Series(test_idx),
-            }
-            if not is_partition(fold.values(), union=self.dataset.metaindex):
-                raise ValueError("Invalid partitions!")
-            folds.append(fold)
+        r"""Reuse consecutive train/validation/test blocks for every run.
+
+        NCDSSM generates the three datasets consecutively under one seed (42 by
+        default), saves them separately, and loads them without repartitioning.
+        Our generated collection stores all trajectories together, so split it
+        in the same order. This reproduces the split structure, not the exact
+        trajectories produced by the reference generator.
+        """
+        # SEE: https://github.com/clear-nus/NCDSSM/blob/7212bba9616d81c948f507eef9eb1f7d5cf1954e/data/damped_pendulum.py#L267-L301
+        index = self.dataset.metaindex
+        train_stop = self.train_size
+        valid_stop = train_stop + self.valid_size
+        if len(index) != valid_stop + self.test_size:
+            raise ValueError("Partition sizes must sum to the number of trajectories.")
+        fold = {
+            "train": Series(index[:train_stop]),
+            "valid": Series(index[train_stop:valid_stop]),
+            "test": Series(index[valid_stop:]),
+        }
         return folds_as_frame(
-            folds, index=self.dataset.metaindex.to_list(), sparse=True
+            [fold for _ in range(self.num_folds)], index=index.to_list(), sparse=True
         )

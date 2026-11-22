@@ -25,6 +25,13 @@ def test_damped_pendulum() -> None:
     assert len(valid_indices) == 1000
     assert len(test_indices) == 1000
 
+    # Match the reference's consecutive generation order, reused for every run.
+    assert list(train_indices) == list(range(5000))
+    assert list(valid_indices) == list(range(5000, 6000))
+    assert list(test_indices) == list(range(6000, 7000))
+    for fold in range(1, task.num_folds):
+        assert task.split_masks[fold].equals(task.split_masks[0])
+
     # check pairwise disjointness
     assert set(train_indices).isdisjoint(valid_indices)
     assert set(train_indices).isdisjoint(test_indices)
