@@ -88,6 +88,7 @@ inventories = [
     "https://docs.pytest.org/en/stable/objects.inv",
     "https://docs.python.org/3/objects.inv",
     "https://docs.scipy.org/doc/scipy/objects.inv",
+    "https://scikit-learn.org/stable/objects.inv",
     "https://docs.pytorch.org/docs/stable/objects.inv",
     "https://typing-extensions.readthedocs.io/en/latest/objects.inv",
 ]

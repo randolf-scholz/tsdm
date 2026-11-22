@@ -11,7 +11,7 @@ import torch
 from tsdm.tasks.base import SplitType
 from tsdm.tasks.utils import (
     random_partitions,
-    rotating_folds,
+    rotating_partitions,
 )
 
 
@@ -23,7 +23,7 @@ def fold_generator(
     match request.param:
         case "rotating":
             return partial(
-                rotating_folds,
+                rotating_partitions,
                 chunks={"train": 1, "test": 1},
                 num=2,
                 rng=12,
@@ -41,7 +41,7 @@ def fold_generator(
 
 def test_rotating_fold_assignments() -> None:
     r"""Pin seeded assignments and verify coverage across an entire rotation."""
-    folds = rotating_folds(
+    folds = rotating_partitions(
         range(8),
         chunks={"train": 2, "valid": 1, "test": 1},
         num=4,
@@ -63,7 +63,7 @@ def test_rotating_fold_assignments() -> None:
 @pytest.mark.parametrize("named", [True, False])
 @pytest.mark.parametrize("grouped", [True, False])
 def test_rotating_single_partition(*, named: bool, grouped: bool) -> None:
-    r"""The default returns a one-element list that supports partition unpacking."""
+    r"""An explicit count of one returns a list that supports partition unpacking."""
     marker = object()
     chunks = (
         MappingProxyType({marker: 1, "test": 1, "empty": 0}) if named else [1, 1, 0]
@@ -72,15 +72,19 @@ def test_rotating_single_partition(*, named: bool, grouped: bool) -> None:
     labels = [0, 1, 0, 2, 0, 3, 2, 3] if grouped else None
     rng = Random(12)
     reference_rng = Random(12)
-    default = rotating_folds(items, chunks=chunks, group_labels=labels, rng=rng)
-    singleton = rotating_folds(
+    positional = rotating_partitions(
+        items, 1, chunks=chunks, group_labels=labels, rng=rng
+    )
+    singleton = rotating_partitions(
         items, num=1, chunks=chunks, group_labels=labels, rng=reference_rng
     )
-    multiple = rotating_folds(items, num=2, chunks=chunks, group_labels=labels, rng=12)
-    assert isinstance(default, list)
+    multiple = rotating_partitions(
+        items, num=2, chunks=chunks, group_labels=labels, rng=12
+    )
+    assert isinstance(positional, list)
     assert isinstance(singleton, list)
-    assert default == singleton
-    [single] = default
+    assert positional == singleton
+    [single] = positional
     assert isinstance(single, dict if named else tuple)
     assert single == multiple[0]
     assert rng.getstate() == reference_rng.getstate()
@@ -96,19 +100,25 @@ def test_rotating_single_partition(*, named: bool, grouped: bool) -> None:
 def test_rotating_single_empty_partition(*, named: bool) -> None:
     chunks = {"train": 1, "test": 1} if named else [1, 1]
     expected = {"train": [], "test": []} if named else ([], [])
-    assert rotating_folds([], chunks=chunks, rng=0) == [expected]
+    assert rotating_partitions([], num=1, chunks=chunks, rng=0) == [expected]
 
 
 def test_rotating_single_partition_error_check() -> None:
-    r"""The default retains sample-proportion checks for unequal groups."""
+    r"""A single fold retains sample-proportion checks for unequal groups."""
     with pytest.raises(RuntimeError, match="total variation distance"):
-        rotating_folds(
+        rotating_partitions(
             range(10),
+            num=1,
             chunks=[1, 1],
             group_labels=[0] * 9 + [1],
             rng=0,
             max_error=0.05,
         )
+
+
+def test_rotating_partitions_requires_num() -> None:
+    with pytest.raises(TypeError, match="num"):
+        rotating_partitions(range(4), chunks=[1, 1], rng=0)  # type: ignore[call-overload]
 
 
 @pytest.mark.parametrize("policy", ["rotating", "repeated"])
@@ -120,14 +130,14 @@ def test_group_integrity_and_reproducibility(policy: str) -> None:
     original_keys, original_groups = keys.copy(), group_labels.copy()
     before = getstate()
     if policy == "rotating":
-        folds = rotating_folds(
+        folds = rotating_partitions(
             keys,
             group_labels=group_labels,
             chunks={"train": 1, "test": 1},
             num=2,
             rng=12,
         )
-        again = rotating_folds(
+        again = rotating_partitions(
             tuple(keys),
             group_labels=tuple(group_labels),
             chunks={"train": 1, "test": 1},
@@ -180,9 +190,9 @@ def test_repeated_folds_advance_rng() -> None:
 
 
 def test_nested_folds_exclude_outer_test_elements() -> None:
-    outer = rotating_folds(range(12), chunks={"train": 2, "test": 1}, num=3, rng=7)
+    outer = rotating_partitions(range(12), chunks={"train": 2, "test": 1}, num=3, rng=7)
     for fold in range(3):
-        inner = rotating_folds(
+        inner = rotating_partitions(
             outer[fold]["train"],
             chunks={"train": 1, "valid": 1},
             num=2,
@@ -208,10 +218,10 @@ def test_largest_remainder_and_empty_splits() -> None:
         ] == [2, 2, 1, 0]
 
 
-def test_rotating_folds_with_boolean_items() -> None:
-    assert rotating_folds([True, False], chunks={"train": 1, "test": 1}, num=2, rng=0)[
-        0
-    ]["train"] == [True]
+def test_rotating_partitions_with_boolean_items() -> None:
+    assert rotating_partitions(
+        [True, False], chunks={"train": 1, "test": 1}, num=2, rng=0
+    )[0]["train"] == [True]
 
 
 def test_extreme_ratios_are_normalized_without_overflow() -> None:
@@ -228,14 +238,14 @@ def test_extreme_ratios_are_normalized_without_overflow() -> None:
 @pytest.mark.parametrize("rng", [None, 1.5, "42"])
 def test_rng_must_be_an_integer_or_random(rng) -> None:
     with pytest.raises(TypeError, match="rng"):
-        rotating_folds([1], chunks={"train": 1}, num=1, rng=rng)
+        rotating_partitions([1], chunks={"train": 1}, num=1, rng=rng)
     with pytest.raises(TypeError, match="rng"):
         random_partitions([1], ratios={"train": 1}, num=1, rng=rng)
 
 
 def test_rng_is_required() -> None:
     with pytest.raises(TypeError, match="rng"):
-        rotating_folds([1], chunks={"train": 1}, num=1)  # type: ignore[call-arg]
+        rotating_partitions([1], chunks={"train": 1}, num=1)  # type: ignore[call-arg]
     with pytest.raises(TypeError, match="rng"):
         random_partitions([1], ratios={"train": 1}, num=1)  # type: ignore[call-arg]
 
@@ -243,7 +253,7 @@ def test_rng_is_required() -> None:
 @pytest.mark.parametrize("num", [None, 0, -1, 1.5])
 def test_invalid_fold_counts(num) -> None:
     with pytest.raises(ValueError, match="num"):
-        rotating_folds([], chunks={"train": 2}, num=num, rng=0)
+        rotating_partitions([], chunks={"train": 2}, num=num, rng=0)
     with pytest.raises(ValueError, match="num"):
         random_partitions([], ratios={"train": 1}, num=num, rng=0)
 
@@ -261,7 +271,7 @@ def test_invalid_fold_counts(num) -> None:
 @pytest.mark.parametrize("named", [True, False])
 def test_invalid_chunk_counts(chunks, message: str, *, named: bool) -> None:
     with pytest.raises(ValueError, match=message):
-        rotating_folds(
+        rotating_partitions(
             [], chunks=chunks if named else list(chunks.values()), num=2, rng=0
         )
 
@@ -288,7 +298,7 @@ def test_invalid_ratios(ratios, message: str, *, named: bool) -> None:
 def test_arbitrary_split_names(configuration) -> None:
     r"""Former aliases and unknown names are independent, unchanged split keys."""
     items = range(sum(configuration.values()))
-    rotating = rotating_folds(items, chunks=configuration, num=1, rng=0)
+    rotating = rotating_partitions(items, chunks=configuration, num=1, rng=0)
     repeated = random_partitions(items, ratios=configuration, num=1, rng=0)
     assert list(rotating[0]) == list(configuration)
     assert list(repeated[0]) == list(configuration)
@@ -296,7 +306,7 @@ def test_arbitrary_split_names(configuration) -> None:
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
+    [(rotating_partitions, "chunks"), (random_partitions, "ratios")],
 )
 @pytest.mark.parametrize("group_labels", [None, [0, 0, 1, 1, 2, 2, 3, 3]])
 def test_named_and_unnamed_folds(
@@ -341,7 +351,7 @@ def test_named_and_unnamed_folds(
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
+    [(rotating_partitions, "chunks"), (random_partitions, "ratios")],
 )
 def test_unnamed_zero_weight_splits(fold_function, parameter: str) -> None:
     r"""Zero-weight splits remain empty, with independently mutable item lists."""
@@ -353,7 +363,7 @@ def test_unnamed_zero_weight_splits(fold_function, parameter: str) -> None:
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
+    [(rotating_partitions, "chunks"), (random_partitions, "ratios")],
 )
 @pytest.mark.parametrize("named", [True, False])
 def test_group_error_measures_items(
@@ -376,7 +386,7 @@ def test_group_error_measures_items(
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
+    [(rotating_partitions, "chunks"), (random_partitions, "ratios")],
 )
 def test_group_error_aggregates_all_splits(fold_function, parameter: str) -> None:
     r"""Four splits have TV 0.25 even though each proportion differs by only 0.125."""
@@ -394,7 +404,7 @@ def test_group_error_aggregates_all_splits(fold_function, parameter: str) -> Non
 def test_rotating_error_checks_later_folds() -> None:
     r"""Fold zero has TV 0.05, but fold one has TV 0.15 and must reject the batch."""
     with pytest.raises(RuntimeError, match=r"total variation distance 0.15"):
-        rotating_folds(range(10), chunks=[6, 2], num=4, rng=0, max_error=0.125)
+        rotating_partitions(range(10), chunks=[6, 2], num=4, rng=0, max_error=0.125)
 
 
 def test_repeated_error_checks_later_folds() -> None:
@@ -456,7 +466,7 @@ def test_equal_items_can_be_used_as_labels(
 
 def test_unordered_identifiers_are_rejected() -> None:
     with pytest.raises(TypeError, match="order"):
-        rotating_folds({1, 2}, chunks={"train": 1}, num=1, rng=0)
+        rotating_partitions({1, 2}, chunks={"train": 1}, num=1, rng=0)
     with pytest.raises(TypeError, match="order"):
         random_partitions({1, 2}, ratios={"train": 1}, num=1, rng=0)
 

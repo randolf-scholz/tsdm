@@ -12,7 +12,7 @@ from tsdm.stats.distances import total_variation_distance
 from tsdm.tasks.utils import (
     is_partition,
     random_partitions,
-    rotating_folds,
+    rotating_partitions,
 )
 
 
@@ -24,7 +24,9 @@ def partitioner(request: pytest.FixtureRequest) -> Callable[..., object]:
         case "partition":
             return partial(random_partitions, keys, num=1, sizes=(12, 8))
         case "rotating":
-            return partial(rotating_folds, keys, chunks={"train": 3, "test": 1}, num=4)
+            return partial(
+                rotating_partitions, keys, chunks={"train": 3, "test": 1}, num=4
+            )
         case "repeated":
             return partial(
                 random_partitions, keys, ratios={"train": 3, "test": 1}, num=4
@@ -44,7 +46,7 @@ def ratio_partitioner(request: pytest.FixtureRequest) -> Callable[..., object]:
         case "partition":
             return partial(random_partitions, num=1, ratios=[1, 1], rng=0)
         case "rotating":
-            return partial(rotating_folds, chunks=[1, 1], num=2, rng=0)
+            return partial(rotating_partitions, chunks=[1, 1], num=2, rng=0)
         case "repeated":
             return partial(random_partitions, ratios=[1, 1], num=2, rng=0)
         case _:
@@ -121,7 +123,7 @@ def test_invalid_max_error(
     ("function", "parameter", "options"),
     [
         (random_partitions, "ratios", {"num": 1}),
-        (rotating_folds, "chunks", {"num": 4}),
+        (rotating_partitions, "chunks", {"num": 4}),
         (random_partitions, "ratios", {"num": 4}),
     ],
 )

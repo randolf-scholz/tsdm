@@ -24,13 +24,13 @@ Mappings specify named splits; results preserve their exact keys and iteration
 order. Sequences specify unnamed splits; results preserve their length and order.
 Partitions are dictionaries for named splits and tuples for unnamed splits.
 Both fold generators return a list of partitions, one per fold.
-`rotating_folds` defaults to one fold. For nested cross-validation,
+Both require an explicit positive `num`. For nested cross-validation,
 pass only the outer training items to the inner generator to prevent leakage.
 """
 
 __all__ = [
     "random_partitions",
-    "rotating_folds",
+    "rotating_partitions",
     "is_partition",
 ]
 
@@ -112,10 +112,10 @@ def _validate_inputs(
 
 
 @overload
-def rotating_folds[T, K](
+def rotating_partitions[T, K](
     items: Collection[T],
     /,
-    num: int = 1,
+    num: int,
     *,
     chunks: Mapping[K, int],
     rng: int | Random,
@@ -123,20 +123,20 @@ def rotating_folds[T, K](
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
-def rotating_folds[T](
+def rotating_partitions[T](
     items: Collection[T],
     /,
-    num: int = 1,
+    num: int,
     *,
     chunks: Sequence[int],
     rng: int | Random,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[tuple[list[T], ...]]: ...
-def rotating_folds[T, K](
+def rotating_partitions[T, K](
     items: Collection[T],
     /,
-    num: int = 1,
+    num: int,
     *,
     chunks: Mapping[K, int] | Sequence[int],
     rng: int | Random,
@@ -149,7 +149,7 @@ def rotating_folds[T, K](
     number of chunks. Chunk sizes differ by at most one; earlier chunks receive leftovers.
     Each fold shifts split boundaries by `num_chunks // num` chunks.
     This preserves the rotation policy of `datatools.folds_from_groups`.
-    By default, return a one-element list containing the initial partition.
+    With `num=1`, return a one-element list containing the initial partition.
 
     Splits assigned zero chunks are retained as empty lists. Too few
     groups can produce empty splits, including training splits. Group counts,
@@ -169,7 +169,7 @@ def rotating_folds[T, K](
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
             allowed. Without `group_labels`, every occurrence is split independently.
-        num: Positive number of folds. Defaults to 1.
+        num: Required positive number of folds.
         chunks: Mapping from split keys to non-negative integer chunk counts, or
             a sequence of counts. Their positive sum must be divisible by
             `num`. Mapping keys are preserved exactly without normalization.
@@ -187,12 +187,22 @@ def rotating_folds[T, K](
         tuple with the same length and order for a sequence. Each split contains
         a list of items.
 
+    See Also:
+        - [`KFold`][sklearn.model_selection.KFold]: Standard train/test k-fold
+          splitting; the special case `chunks={"train": num - 1, "test": 1}`.
+        - [`GroupKFold`][sklearn.model_selection.GroupKFold]: K-fold splitting
+          with intact groups. With `shuffle=True`, allocation uses group counts.
+        - [`RepeatedKFold`][sklearn.model_selection.RepeatedKFold]: Repeats full
+          k-fold cycles with new randomization for each cycle.
+        - [`random_partitions`][tsdm.tasks.utils.random_partitions]: Independent
+          random partitions without coordinated rotation.
+
     Examples:
         Rotate training and test splits over two folds for four elements.
 
         ```pycon
         >>> from pprint import pprint
-        >>> folds = rotating_folds(
+        >>> folds = rotating_partitions(
         ...     range(4),
         ...     chunks={"train": 1, "test": 1},
         ...     num=2,
@@ -201,12 +211,12 @@ def rotating_folds[T, K](
         >>> pprint(folds, sort_dicts=False)
         [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 2], 'test': [0, 3]}]
 
-        >>> rotating_folds(range(4), chunks=[1, 1], num=2, rng=2022)
+        >>> rotating_partitions(range(4), chunks=[1, 1], num=2, rng=2022)
         [([0, 3], [1, 2]), ([1, 2], [0, 3])]
 
-        >>> rotating_folds(range(4), chunks=[1, 1], rng=2022)
+        >>> rotating_partitions(range(4), num=1, chunks=[1, 1], rng=2022)
         [([0, 3], [1, 2])]
-        >>> [partition] = rotating_folds(range(4), chunks=[1, 1], rng=2022)
+        >>> [partition] = rotating_partitions(range(4), num=1, chunks=[1, 1], rng=2022)
         >>> partition
         ([0, 3], [1, 2])
 
@@ -408,6 +418,16 @@ def random_partitions[T, K](
             with ratios; or an error check on empty inputs.
         TypeError: Unordered inputs, unhashable group labels, or an invalid RNG.
         RuntimeError: Sample proportions exceed `max_error`.
+
+    See Also:
+        - [`ShuffleSplit`][sklearn.model_selection.ShuffleSplit]: Repeated random
+          train/test splits without grouping.
+        - [`GroupShuffleSplit`][sklearn.model_selection.GroupShuffleSplit]:
+          Repeated random train/test splits with intact groups; sizes count groups.
+        - [`train_test_split`][sklearn.model_selection.train_test_split]: A single
+          train/test split, optionally stratified by class labels.
+        - [`rotating_partitions`][tsdm.tasks.utils.rotating_partitions]: Partitions
+          coordinated by rotating chunks after one shuffle.
 
     Examples:
         Specify exact counts or named relative weights.
