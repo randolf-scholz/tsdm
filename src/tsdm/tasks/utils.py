@@ -4,13 +4,14 @@ Identifiers refer to complete collection elements, never observation rows or
 sample windows. Optional group labels keep several elements in the same split.
 Split proportions apply to groups when supplied, otherwise to individual elements.
 
-Both generators partition their input exactly once per fold, retain empty
-splits, and preserve input order within each split. Reproducibility requires the
-same seed, ordered identifiers, ordered split configuration, group labels, and
-Python random implementation. Unordered sets of identifiers are rejected.
-The local RNG does not affect global random state. These stdlib algorithms do
-not reproduce historical NumPy assignments; persist assignments when exact
-reproduction across algorithm or runtime changes is required.
+Both fold generators partition their input exactly once per fold, retain empty
+splits, and preserve input order within each split. Reproducibility requires
+the same seed or initial RNG state, ordered identifiers, split configuration,
+group labels, and Python random implementation. Unordered sets of identifiers
+are rejected by the fold generators. RNGs constructed from integer seeds do not
+affect global random state. These stdlib algorithms do not reproduce historical
+NumPy assignments; persist assignments when exact reproduction across algorithm
+or runtime changes is required.
 
 Fold keys end in a `SplitType` and support any number of preceding fold indices.
 A `fold_prefix` only namespaces keys: for nested cross-validation, explicitly
@@ -31,13 +32,21 @@ from math import floor, fsum, isfinite
 from random import Random
 from typing import Any, Optional, SupportsFloat, SupportsIndex, overload
 
-import numpy as np
-from numpy.random import Generator
-
 from .base import SplitType
 
 type FoldKey = tuple[*tuple[int, ...], SplitType]
 type Folds[K] = dict[FoldKey, list[K]]
+
+
+def _normalize_rng(rng: int | Random, /) -> Random:
+    r"""Create a local RNG from a seed or reuse an existing instance unchanged."""
+    match rng:
+        case Random():
+            return rng
+        case int():
+            return Random(rng)
+        case _:
+            raise TypeError("rng must be an integer seed or a random.Random instance.")
 
 
 def _normalize_weights[StringT: str, V: float](
@@ -64,14 +73,10 @@ def _normalize_weights[StringT: str, V: float](
     return normalized
 
 
-def _validate_args(
-    keys: Collection, groups: Mapping | None, seed: int, num_folds: int
-) -> None:
+def _validate_args(keys: Collection, groups: Mapping | None, num_folds: int) -> None:
     r"""Validate keys."""
     if not isinstance(num_folds, int) or num_folds <= 0:
         raise ValueError("num_folds must be a positive integer.")
-    if not isinstance(seed, int):
-        raise TypeError("seed must be an integer")
     if isinstance(keys, AbstractSet):
         raise TypeError("keys must have a reproducible iteration order, not a set.")
     if len(set(keys)) != len(keys):
@@ -83,10 +88,10 @@ def _validate_args(
 def rotating_folds[K](
     keys: Collection[K],
     /,
-    *,
     chunks: Mapping[Any, int],  # Mapping[str & Any, int]
+    *,
     num_folds: int,
-    seed: int,
+    rng: int | Random,
     fold_prefix: Sequence[int] = (),
     groups: Mapping[K, object] | None = None,
 ) -> Folds[K]:
@@ -102,7 +107,8 @@ def rotating_folds[K](
         chunks: Ordered split names or aliases mapped to non-negative integer
             chunk counts. Their positive sum must be divisible by `num_folds`.
         num_folds: Positive number of folds.
-        seed: Required integer seed for a fresh local random generator.
+        rng: Required integer seed or existing `random.Random` instance. An
+            integer creates a local RNG; an existing instance advances in place.
         groups: Optional mapping from every identifier to a stable group label.
         fold_prefix: Non-negative outer fold indices prepended to generated keys.
 
@@ -121,7 +127,7 @@ def rotating_folds[K](
         ...     range(4),
         ...     chunks={"train": 1, "test": 1},
         ...     num_folds=2,
-        ...     seed=2022,
+        ...     rng=2022,
         ... )
         >>> pprint(folds, sort_dicts=False)
         {(0, <SplitType.TRAIN: 'train'>): [0, 3],
@@ -131,7 +137,8 @@ def rotating_folds[K](
 
         ```
     """
-    _validate_args(keys, groups=groups, seed=seed, num_folds=num_folds)
+    _validate_args(keys, groups=groups, num_folds=num_folds)
+    rng = _normalize_rng(rng)
     chunks = _normalize_weights(chunks)
     num_chunks = sum(chunks.values())
 
@@ -147,7 +154,7 @@ def rotating_folds[K](
         else {key: groups[key] for key in keys}
     )
     unique_groups = list(dict.fromkeys(labels.values()))
-    Random(seed).shuffle(unique_groups)
+    rng.shuffle(unique_groups)
 
     # Divide the shuffled groups into chunks. The first few chunks receive one
     # extra group when the group count is not divisible by the chunk count.
@@ -182,10 +189,10 @@ def rotating_folds[K](
 def repeated_random_folds[K](
     keys: Collection[K],
     /,
-    *,
     ratios: Mapping[Any, float],  # Mapping[str & Any, float]
+    *,
     num_folds: int,
-    seed: int,
+    rng: int | Random,
     groups: Optional[Mapping[K, object]] = None,
     fold_prefix: Sequence[int] = (),
 ) -> Folds[K]:
@@ -197,8 +204,9 @@ def repeated_random_folds[K](
             relative proportions, with at least one positive ratio. Allocate group
             counts by largest remainder, breaking ties by split insertion order.
         num_folds: Positive number of partitions to draw.
-        seed: Required integer seed. One local RNG advances across folds;
-            partitions may coincide by chance, especially for small inputs.
+        rng: Required integer seed or existing `random.Random` instance. One RNG
+            advances across folds; an existing instance also retains its state
+            between calls. Partitions may coincide by chance for small inputs.
         groups: Optional exact identifier-to-group mapping. Labels must be stable
             and hashable.
         fold_prefix: Non-negative outer fold indices prepended to generated keys.
@@ -216,7 +224,7 @@ def repeated_random_folds[K](
         ...     range(4),
         ...     ratios={"train": 1, "test": 1},
         ...     num_folds=2,
-        ...     seed=2022,
+        ...     rng=2022,
         ... )
         >>> pprint(folds, sort_dicts=False)
         {(0, <SplitType.TRAIN: 'train'>): [0, 3],
@@ -226,7 +234,8 @@ def repeated_random_folds[K](
 
         ```
     """
-    _validate_args(keys, groups=groups, seed=seed, num_folds=num_folds)
+    _validate_args(keys, groups=groups, num_folds=num_folds)
+    rng = _normalize_rng(rng)
     ratios = _normalize_weights(ratios)
     scale = max(ratios.values())
 
@@ -254,7 +263,6 @@ def repeated_random_folds[K](
         counts[index] += 1
 
     # Advance one local RNG across folds instead of reseeding it for each fold.
-    rng = Random(seed)
     result: Folds[K] = {}
 
     for fold in range(num_folds):
@@ -304,21 +312,21 @@ def random_partition[K](
     keys: Collection[K],
     *,
     sizes: Sequence[SupportsIndex],
-    rng: Generator | int | None = ...,
+    rng: int | Random,
 ) -> tuple[list[K], ...]: ...
 @overload
 def random_partition[K](
     keys: Collection[K],
     *,
     ratios: Sequence[SupportsFloat],
-    rng: Generator | int | None = ...,
+    rng: int | Random,
 ) -> tuple[list[K], ...]: ...
 def random_partition[K](
     keys: Collection[K],
     *,
     sizes: Sequence[SupportsIndex] | None = None,
     ratios: Sequence[SupportsFloat] | None = None,
-    rng: Generator | int | None = None,
+    rng: int | Random,
 ) -> tuple[list[K], ...]:
     r"""Create a random partition for a dataset.
 
@@ -330,42 +338,53 @@ def random_partition[K](
         keys: Keys to distribute among the partitions.
         sizes: Absolute partition counts. The counts must be non-negative and
             sum to the number of keys. Mutually exclusive with `ratios`.
-        ratios: Relative partition weights. The weights must be non-negative
+        ratios: Relative partition weights. The weights must be finite, non-negative
             and not all zero. Mutually exclusive with `sizes`.
-        rng: Random seed or generator used to shuffle the keys.
+        rng: Required integer seed or existing `random.Random` instance. An
+            integer creates a local RNG; an existing instance advances in place.
 
     Returns:
-        A tuple of key lists, one list for each requested partition.
+        A tuple of key lists in shuffled order, one per requested partition.
     """
-    if (sizes is None) == (ratios is None):
-        raise ValueError("Exactly one of sizes or ratios must be provided")
+    rng = _normalize_rng(rng)
+    num = len(keys)
 
-    rng = np.random.default_rng(rng)
-    key_map = dict(enumerate(keys))
-    num = len(key_map)
+    match sizes, ratios:
+        case [sizes, None] if sizes is not None:
+            counts = [size.__index__() for size in sizes]
+            if any(count < 0 for count in counts) or sum(counts) != num:
+                raise ValueError(
+                    "sizes must be non-negative and sum to the number of keys"
+                )
+        case [None, ratios] if ratios is not None:
+            weights = [ratio.__float__() for ratio in ratios]
 
-    if sizes is not None:
-        counts = tuple(size.__index__() for size in sizes)
-        if any(count < 0 for count in counts) or sum(counts) != num:
-            raise ValueError("sizes must be non-negative and sum to the number of keys")
-    else:
-        assert ratios is not None
-        weights = tuple(float(ratio) for ratio in ratios)
+            if any(not isfinite(weight) or weight < 0 for weight in weights):
+                raise ValueError("ratios must be finite and non-negative")
+            scale = max(weights, default=0.0)
+            if scale <= 0:
+                raise ValueError("ratios must not all be zero")
 
-        if any(weight < 0 for weight in weights) or sum(weights) <= 0:
-            raise ValueError("ratios must be non-negative and not all zero")
+            # Scale before summing to avoid overflow for large finite weights.
+            normalized = [weight / scale for weight in weights]
+            total = fsum(normalized)
+            quotas = [num * weight / total for weight in normalized]
+            counts = [floor(quota) for quota in quotas]
 
-        # Normalize the weights and assign leftovers to the largest remainders.
-        quotas = num * np.asarray(weights) / sum(weights)
-        counts = np.floor(quotas).astype(int)
+            # Give later partitions precedence when fractional remainders tie.
+            if remainder := num - sum(counts):
+                order = sorted(range(len(counts)), key=lambda i: quotas[i] - counts[i])
+                for index in order[-remainder:]:
+                    counts[index] += 1
+        case _:
+            raise ValueError("Exactly one of sizes or ratios must be provided")
 
-        if remainder := num - counts.sum():
-            idx = np.argsort(quotas - counts)
-            counts[idx[-remainder:]] += 1
-
-    indices = rng.permutation(num)
-    cuts = np.cumsum(counts[:-1])
-
-    return tuple(
-        [key_map[i] for i in partition] for partition in np.split(indices, cuts)
-    )
+    shuffled = list(keys)
+    rng.shuffle(shuffled)
+    partitions = []
+    start = 0
+    for count in counts:
+        stop = start + count
+        partitions.append(shuffled[start:stop])
+        start = stop
+    return tuple(partitions)

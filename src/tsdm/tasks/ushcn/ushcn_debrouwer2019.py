@@ -60,10 +60,10 @@ __all__ = [
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import cached_property
+from random import Random
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
-import numpy as np
 import torch
 from pandas import DataFrame, Series
 from torch import Tensor, nan as NAN, nn
@@ -230,7 +230,7 @@ class USHCN_DeBrouwer2019(
     def split_masks(self) -> DataFrame:
         r"""Create the boolean masks for each fold and partition."""
         folds: list[dict[str, Series]] = []
-        rng = np.random.default_rng(self.seed)
+        rng = Random(self.seed)
 
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         for _ in range(self.num_folds):

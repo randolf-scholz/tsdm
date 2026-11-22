@@ -128,13 +128,14 @@ class DampedPendulum_Ansari2023(
     @cached_property
     def split_masks(self) -> DataFrame:
         r"""Create the boolean masks for each fold and partition."""
-        # NOTE: all folds are the same due to fixed random state.
-        # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
         folds: list[dict[str, Series]] = []
         for _ in range(self.num_folds):
             train_idx, valid_idx, test_idx = random_partition(
                 self.dataset.metaindex,
                 sizes=(self.train_size, self.valid_size, self.test_size),
+                # NOTE: all folds are the same due to fixed random state.
+                # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+                rng=0,
             )
             fold = {
                 "train": Series(train_idx),
