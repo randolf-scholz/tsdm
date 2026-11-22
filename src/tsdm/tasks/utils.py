@@ -129,6 +129,17 @@ def rotating_folds[T, K](
     Each fold shifts split boundaries by `num_chunks // num_folds` chunks.
     This preserves the rotation policy of `datatools.folds_from_groups`.
 
+    Splits assigned zero chunks are retained as empty lists. Too few
+    groups can produce empty splits, including training splits. Group counts,
+    rather than element counts, determine the proportions when grouping is used.
+    A one-chunk test split with `num_folds` chunks visits every group once;
+    arbitrary chunk counts do not guarantee equal coverage across folds.
+
+    For hashable items, pass `groups=items` to keep equal values together. For
+    unhashable items, supply hashable labels. For lists of hashable values, use
+    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
+    unless their labels agree. Grouping preserves every occurrence.
+
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
             allowed. Without `groups`, every occurrence is split independently.
@@ -148,17 +159,6 @@ def rotating_folds[T, K](
         A list of `num_folds` partitions. Each partition is a dictionary with the
         same keys and order as `chunks` for a mapping, or a tuple with the same
         length and order for a sequence. Each split contains a list of items.
-
-    Splits assigned zero chunks are retained as empty lists. Too few
-    groups can produce empty splits, including training splits. Group counts,
-    rather than element counts, determine the proportions when grouping is used.
-    A one-chunk test split with `num_folds` chunks visits every group once;
-    arbitrary chunk counts do not guarantee equal coverage across folds.
-
-    For hashable items, pass `groups=items` to keep equal values together. For
-    unhashable items, supply hashable labels. For lists of hashable values, use
-    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
-    unless their labels agree. Grouping preserves every occurrence.
 
     Examples:
         Rotate training and test splits over two folds for four elements.
@@ -264,6 +264,15 @@ def repeated_random_folds[T, K](
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Create repeated random partitions of collection elements.
 
+    These are repeated holdouts: test sets can overlap across folds. No rotation
+    coverage is guaranteed. Zero-ratio splits yield empty lists.
+    Group proportions need not equal collection-element proportions.
+
+    For hashable items, pass `groups=items` to keep equal values together. For
+    unhashable items, supply hashable labels. For lists of hashable values, use
+    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
+    unless their labels agree. Grouping preserves every occurrence.
+
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
             allowed. Without `groups`, every occurrence is split independently.
@@ -285,15 +294,6 @@ def repeated_random_folds[T, K](
         A list of `num_folds` partitions. Each partition is a dictionary with the
         same keys and order as `ratios` for a mapping, or a tuple with the same
         length and order for a sequence. Each split contains a list of items.
-
-    These are repeated holdouts: test sets can overlap across folds. No rotation
-    coverage is guaranteed. Zero-ratio splits yield empty lists.
-    Group proportions need not equal collection-element proportions.
-
-    For hashable items, pass `groups=items` to keep equal values together. For
-    unhashable items, supply hashable labels. For lists of hashable values, use
-    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
-    unless their labels agree. Grouping preserves every occurrence.
 
     Examples:
         Draw two equal-proportion training and test partitions of four elements.
@@ -370,25 +370,6 @@ def repeated_random_folds[T, K](
     if isinstance(ratios, Mapping):
         return [dict(zip(ratios, parts, strict=True)) for parts in result]
     return result
-
-
-def is_partition[T](
-    partition: Iterable[Collection[T]],
-    /,
-    *,
-    union: Collection[T],
-) -> bool:
-    r"""Check that the parts are disjoint and contain no duplicate elements.
-
-    If `union` is provided, also check that the parts cover it exactly.
-    The input must support repeated iteration because it is traversed twice.
-    """
-    sets = (set(p) for p in partition)
-    part_union = set().union(*sets)
-
-    if part_union != set(union):
-        return False
-    return len(part_union) == sum(len(p) for p in partition)
 
 
 @overload
@@ -523,3 +504,22 @@ def random_partition[T, K](
     if isinstance(ratios, Mapping):
         return dict(zip(ratios, partitions, strict=True))
     return tuple(partitions)
+
+
+def is_partition[T](
+    partition: Iterable[Collection[T]],
+    /,
+    *,
+    union: Collection[T],
+) -> bool:
+    r"""Check that the parts are disjoint and contain no duplicate elements.
+
+    If `union` is provided, also check that the parts cover it exactly.
+    The input must support repeated iteration because it is traversed twice.
+    """
+    sets = (set(p) for p in partition)
+    part_union = set().union(*sets)
+
+    if part_union != set(union):
+        return False
+    return len(part_union) == sum(len(p) for p in partition)
