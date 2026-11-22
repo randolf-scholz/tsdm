@@ -3,6 +3,7 @@ r"""Stdlib random sources and sequence-based task partitions."""
 from collections.abc import Callable
 from functools import partial
 from random import Random, getstate
+from types import MappingProxyType
 
 import pytest
 
@@ -86,26 +87,59 @@ def test_large_finite_ratios() -> None:
 
 
 def test_empty_partitions() -> None:
-    assert random_partition([], sizes=(0, 0), rng=0) == ([], [])
-    assert random_partition([], ratios=(1, 0), rng=0) == ([], [])
+    assert random_partition([], sizes=(0, 0), rng=0) == [[], []]
+    assert random_partition([], ratios=(1, 0), rng=0) == [[], []]
+    assert random_partition([], sizes={}, rng=0) == {}
+    assert random_partition([], ratios={"train": 1, "test": 0}, rng=0) == {
+        "train": [],
+        "test": [],
+    }
 
 
 @pytest.mark.parametrize("sizes", [(-1, 3), (1, 0)])
-def test_invalid_sizes(sizes) -> None:
+@pytest.mark.parametrize("named", [True, False])
+def test_invalid_sizes(sizes, *, named: bool) -> None:
     with pytest.raises(ValueError, match="sizes"):
-        random_partition(range(2), sizes=sizes, rng=0)
+        random_partition(
+            range(2), sizes=dict(enumerate(sizes)) if named else sizes, rng=0
+        )
 
 
 @pytest.mark.parametrize(
     "ratios", [(), (0, 0), (-1, 2), (float("nan"), 1), (float("inf"), 1)]
 )
-def test_invalid_ratios(ratios) -> None:
+@pytest.mark.parametrize("named", [True, False])
+def test_invalid_ratios(ratios, *, named: bool) -> None:
     with pytest.raises(ValueError, match="ratios"):
-        random_partition(range(2), ratios=ratios, rng=0)
+        random_partition(
+            range(2), ratios=dict(enumerate(ratios)) if named else ratios, rng=0
+        )
 
 
 def test_exactly_one_allocation_mode() -> None:
     with pytest.raises(ValueError, match="Exactly one"):
-        random_partition([1], rng=0)
+        random_partition([1], rng=0)  # type: ignore[call-overload]
     with pytest.raises(ValueError, match="Exactly one"):
-        random_partition([1], sizes=(1,), ratios=(1,), rng=0)
+        random_partition([1], sizes=(1,), ratios=(1,), rng=0)  # type: ignore[call-overload]
+
+
+@pytest.mark.parametrize("parameter", ["sizes", "ratios"])
+def test_named_and_unnamed_partitions(parameter: str) -> None:
+    r"""Mapping keys retain identity and order without changing seeded assignments."""
+    marker = object()
+    spec = MappingProxyType({"train": 3, "training": 3, ("custom", 1): 2, marker: 0})
+    items = [[index % 2] for index in range(8)]
+    partitioner: Callable[..., object] = random_partition
+    named = partitioner(items, **{parameter: spec}, rng=42)
+    assert isinstance(named, dict)
+    assert all(actual is key for actual, key in zip(named, spec, strict=True))
+    assert [len(part) for part in named.values()] == [3, 3, 2, 0]
+    for counts in (list(spec.values()), tuple(spec.values())):
+        unnamed = partitioner(items, **{parameter: counts}, rng=42)
+        assert isinstance(unnamed, list)
+        assert list(named.values()) == unnamed
+        for named_part, unnamed_part in zip(named.values(), unnamed, strict=True):
+            assert all(
+                left is right
+                for left, right in zip(named_part, unnamed_part, strict=True)
+            )
