@@ -18,8 +18,6 @@ from pandas import DataFrame, Series
 from tsdm.datatools import (
     CallableDataset,
     folds_as_frame,
-    is_partition,
-    random_partition,
 )
 from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import (
@@ -28,6 +26,7 @@ from tsdm.random.samplers import (
     Sampler,
 )
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.utils import is_partition, random_partition
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,

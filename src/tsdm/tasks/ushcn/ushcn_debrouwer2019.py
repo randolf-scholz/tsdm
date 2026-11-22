@@ -69,10 +69,11 @@ from pandas import DataFrame, Series
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.datatools import folds_as_frame, is_partition, random_partition
+from tsdm.datatools import folds_as_frame
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.utils import is_partition, random_partition
 from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
 
 
