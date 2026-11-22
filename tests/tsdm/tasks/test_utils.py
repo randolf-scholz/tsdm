@@ -24,7 +24,10 @@ def fold_generator(
     match request.param:
         case "rotating":
             return partial(
-                rotating_folds, chunks={"train": 1, "test": 1}, num_folds=2, rng=12
+                rotating_folds,
+                chunks={"train": 1, "test": 1},
+                num_folds=2,
+                rng=12,
             )
         case "repeated":
             return partial(
@@ -155,14 +158,9 @@ def test_largest_remainder_and_empty_splits() -> None:
         assert [
             len(folds[fold][split]) for split in ("train", "valid", "test", "inference")
         ] == [2, 2, 1, 0]
-    assert repeated_random_folds(
-        [], ratios={"train": 1, "test": 0}, num_folds=1, rng=0
-    ) == [{"train": [], "test": []}]
 
 
-def test_empty_rotating_folds_and_boolean_identifiers() -> None:
-    empty = rotating_folds([], chunks={"train": 1, "test": 0}, num_folds=1, rng=0)
-    assert empty == [{"train": [], "test": []}]
+def test_rotating_folds_with_boolean_items() -> None:
     assert rotating_folds(
         [True, False], chunks={"train": 1, "test": 1}, num_folds=2, rng=0
     )[0]["train"] == [True]
@@ -170,7 +168,10 @@ def test_empty_rotating_folds_and_boolean_identifiers() -> None:
 
 def test_extreme_ratios_are_normalized_without_overflow() -> None:
     folds = repeated_random_folds(
-        range(5), ratios={"train": 1e308, "test": 1e308}, num_folds=1, rng=0
+        range(5),
+        ratios={"train": 1e308, "test": 1e308},
+        num_folds=1,
+        rng=0,
     )
     assert len(folds[0]["train"]) == 3
     assert len(folds[0]["test"]) == 2
@@ -238,11 +239,11 @@ def test_invalid_ratios(ratios, message: str, *, named: bool) -> None:
 @pytest.mark.parametrize("configuration", [{"train": 1, "training": 1}, {"unknown": 1}])
 def test_arbitrary_split_names(configuration) -> None:
     r"""Former aliases and unknown names are independent, unchanged split keys."""
-    expected = [{key: [] for key in configuration}]
-    assert rotating_folds([], chunks=configuration, num_folds=1, rng=0) == expected
-    assert (
-        repeated_random_folds([], ratios=configuration, num_folds=1, rng=0) == expected
-    )
+    items = range(sum(configuration.values()))
+    rotating = rotating_folds(items, chunks=configuration, num_folds=1, rng=0)
+    repeated = repeated_random_folds(items, ratios=configuration, num_folds=1, rng=0)
+    assert list(rotating[0]) == list(configuration)
+    assert list(repeated[0]) == list(configuration)
 
 
 @pytest.mark.parametrize(
@@ -292,12 +293,71 @@ def test_named_and_unnamed_folds(fold_function, parameter: str, *, groups) -> No
     ("fold_function", "parameter"),
     [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
 )
-def test_unnamed_empty_folds(fold_function, parameter: str) -> None:
-    r"""Empty inputs retain every fold and split, with independently mutable lists."""
-    folds = fold_function([], **{parameter: [2, 0]}, num_folds=2, rng=0)
-    assert folds == [([], []), ([], [])]
-    folds[0][0].append(1)
-    assert folds == [([1], []), ([], [])]
+def test_unnamed_zero_weight_splits(fold_function, parameter: str) -> None:
+    r"""Zero-weight splits remain empty, with independently mutable item lists."""
+    folds = fold_function([1, 2], **{parameter: [2, 0]}, num_folds=2, rng=0)
+    assert folds == [([1, 2], []), ([1, 2], [])]
+    folds[0][0].append(3)
+    assert folds == [([1, 2, 3], []), ([1, 2], [])]
+
+
+@pytest.mark.parametrize(
+    ("fold_function", "parameter"),
+    [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
+)
+@pytest.mark.parametrize("named", [True, False])
+def test_group_error_measures_items(
+    fold_function, parameter: str, *, named: bool
+) -> None:
+    r"""Balanced group counts do not conceal highly imbalanced item counts."""
+    spec = {"train": 1, "test": 1} if named else [1, 1]
+    partitioner = partial(
+        fold_function,
+        range(10),
+        **{parameter: spec},
+        groups=[0] * 9 + [1],
+        num_folds=2,
+        rng=0,
+    )
+    assert partitioner() == partitioner(max_error=None)
+    with pytest.raises(RuntimeError, match=r"total variation distance 0.4"):
+        partitioner(max_error=0.05)
+
+
+@pytest.mark.parametrize(
+    ("fold_function", "parameter"),
+    [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
+)
+def test_group_error_aggregates_all_splits(fold_function, parameter: str) -> None:
+    r"""Four splits have TV 0.25 even though each proportion differs by only 0.125."""
+    with pytest.raises(RuntimeError, match=r"total variation distance 0.25"):
+        fold_function(
+            range(8),
+            **{parameter: [1, 1, 1, 1]},
+            groups=[0, 0, 0, 1, 1, 1, 2, 3],
+            num_folds=2,
+            rng=0,
+            max_error=0.1875,
+        )
+
+
+def test_rotating_error_checks_later_folds() -> None:
+    r"""Fold zero has TV 0.05, but fold one has TV 0.15 and must reject the batch."""
+    with pytest.raises(RuntimeError, match=r"total variation distance 0.15"):
+        rotating_folds(range(10), chunks=[6, 2], num_folds=4, rng=0, max_error=0.125)
+
+
+def test_repeated_error_checks_later_folds() -> None:
+    r"""Fold zero balances items exactly; fold one has TV 0.125 despite equal groups."""
+    with pytest.raises(RuntimeError, match=r"total variation distance 0.125"):
+        repeated_random_folds(
+            range(8),
+            ratios=[1, 1],
+            groups=[0, 0, 0, 1, 2, 2, 3, 3],
+            num_folds=2,
+            rng=6,
+            max_error=0.05,
+        )
 
 
 @pytest.mark.parametrize("groups", [None, [0, 1, 0, 2, 0, 3, 2, 3]])
