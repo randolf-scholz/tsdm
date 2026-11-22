@@ -301,6 +301,7 @@ def repeated_random_folds[T, K](
     These are repeated holdouts: test sets can overlap across folds. No rotation
     coverage is guaranteed. Zero-ratio splits yield empty lists.
     Group proportions need not equal collection-element proportions.
+    Each fold calls `random_partition` using the same advancing RNG.
 
     Group labels can mark redundant samples, such as results from replication
     experiments. Samples with the same label always share a split to avoid data
@@ -369,60 +370,16 @@ def repeated_random_folds[T, K](
     """
     _validate_args(items, num_folds, group_labels=group_labels)
     rng = _normalize_rng(rng)
-    weights = list(ratios.values() if isinstance(ratios, Mapping) else ratios)
-    _validate_weights(weights)
-    scale = max(weights)
-
-    # Count distinct groups in element order. Without grouping, each element
-    # contributes one group, so the same allocation procedure applies.
-    labels = list(range(len(items))) if group_labels is None else list(group_labels)
-    unique_groups = list(dict.fromkeys(labels))
-
-    # Scale ratios before summing to avoid overflow for large finite ratios.
-    normalized = [ratio / scale for ratio in weights]
-    total = fsum(normalized)
-    quotas = [len(unique_groups) * ratio / total for ratio in normalized]
-    counts = [floor(quota) for quota in quotas]
-
-    # Allocate leftover groups to the largest fractional quotas. Python's stable
-    # sort breaks ties by the insertion order of the configured splits.
-    remainder_order = sorted(
-        range(len(weights)), key=lambda i: quotas[i] - counts[i], reverse=True
-    )
-    for index in remainder_order[: len(unique_groups) - sum(counts)]:
-        counts[index] += 1
-
-    # Advance one local RNG across folds instead of reseeding it for each fold.
-    result: list[tuple[list[T], ...]] = []
-
-    for _ in range(num_folds):
-        # Shuffle a fresh copy so each draw starts from the same group order.
-        shuffled = unique_groups.copy()
-        rng.shuffle(shuffled)
-
-        # Assign consecutive groups to splits using the precomputed counts.
-        assignments: dict[Label, int] = {}
-        start = 0
-        for split, count in enumerate(counts):
-            stop = start + count
-            assignments.update(dict.fromkeys(shuffled[start:stop], split))
-            start = stop
-
-        # Retain empty splits, then collect items in one pass to preserve
-        # input order without scanning all elements separately for each split.
-        parts: tuple[list[T], ...] = tuple([] for _ in counts)
-        for item, label in zip(items, labels, strict=True):
-            split = assignments[label]
-            parts[split].append(item)
-        if max_error is not None:
-            _check_partition_error(
-                [len(p) for p in parts], weights, max_error=max_error
-            )
-        result.append(parts)
-
-    if isinstance(ratios, Mapping):
-        return [dict(zip(ratios, parts, strict=True)) for parts in result]
-    return result
+    return [
+        random_partition(
+            items,
+            ratios=ratios,
+            rng=rng,
+            group_labels=group_labels,
+            max_error=max_error,
+        )
+        for _ in range(num_folds)
+    ]
 
 
 @overload

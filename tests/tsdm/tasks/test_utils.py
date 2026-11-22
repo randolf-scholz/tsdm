@@ -274,8 +274,8 @@ def test_invalid_chunk_counts(chunks, message: str, *, named: bool) -> None:
 @pytest.mark.parametrize(
     ("ratios", "message"),
     [
-        ({}, "At least one split must be configured"),
-        ({"train": 0}, "positive weight"),
+        ({}, "ratios must not all be zero"),
+        ({"train": 0}, "ratios must not all be zero"),
         ({"train": -1}, "non-negative"),
         ({"train": float("nan")}, "finite"),
         ({"train": float("inf")}, "finite"),
