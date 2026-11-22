@@ -68,7 +68,7 @@ from tsdm.encoders.pandas import FrameEncoder
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.tasks.utils import is_partition, random_partition
+from tsdm.tasks.utils import is_partition, random_partitions
 from tsdm.timeseries.pandas import TimeSeriesCollection, mimic_iv_bilos2021
 
 
@@ -262,10 +262,11 @@ class MIMIC_IV_Bilos2021(
         # NOTE: all folds are the same due to fixed random state.
         # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
         for _ in range(self.num_folds):
-            train_idx, valid_idx, test_idx = random_partition(
+            [(train_idx, valid_idx, test_idx)] = random_partitions(
                 self.IDs,
+                num=1,
                 ratios=(self.train_size, self.valid_size, self.test_size),
-                rng=self.RANDOM_STATE,
+                rng=0,  # sic
             )
             fold = {
                 "train": Series(train_idx),

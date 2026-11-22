@@ -15,18 +15,11 @@ from typing import Literal, final
 
 from pandas import DataFrame, Series
 
-from tsdm.datatools import (
-    CallableDataset,
-    folds_as_frame,
-)
+from tsdm.datatools import CallableDataset, folds_as_frame
 from tsdm.losses.sequence import mse_loss
-from tsdm.random.samplers import (
-    HierarchicalSampler,
-    RandomSampler,
-    Sampler,
-)
+from tsdm.random.samplers import HierarchicalSampler, RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.tasks.utils import is_partition, random_partition
+from tsdm.tasks.utils import is_partition, random_partitions
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,
@@ -61,6 +54,13 @@ class DampedPendulum_Ansari2023(
     >
     > [Appendix C.1] The training, validation, and test datasets consist of 5000, 1000, and 1000
     > sequences of length 15s each, respectively.
+
+    References:
+        - Neural Continuous-Discrete State Space Models <br>
+          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh <br>
+          Proceedings of the 40th International Conference on Machine Learning <br>
+          https://proceedings.mlr.press/v202/ansari23a.html <br>
+          https://github.com/clear-nus/NCDSSM
     """
 
     num_folds: int = 5
@@ -130,8 +130,9 @@ class DampedPendulum_Ansari2023(
         r"""Create the boolean masks for each fold and partition."""
         folds: list[dict[str, Series]] = []
         for _ in range(self.num_folds):
-            train_idx, valid_idx, test_idx = random_partition(
+            [(train_idx, valid_idx, test_idx)] = random_partitions(
                 self.dataset.metaindex,
+                num=1,
                 sizes=(self.train_size, self.valid_size, self.test_size),
                 # NOTE: all folds are the same due to fixed random state.
                 # SEE: https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67

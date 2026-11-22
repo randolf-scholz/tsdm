@@ -73,7 +73,7 @@ from tsdm.datatools import folds_as_frame
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.tasks.utils import is_partition, random_partition
+from tsdm.tasks.utils import is_partition, random_partitions
 from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
 
 
@@ -234,8 +234,9 @@ class USHCN_DeBrouwer2019(
 
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         for _ in range(self.num_folds):
-            train_idx, valid_idx, test_idx = random_partition(
+            [(train_idx, valid_idx, test_idx)] = random_partitions(
                 self.IDs,
+                num=1,
                 ratios=[
                     (1 - self.test_size) * (1 - self.valid_size),
                     (1 - self.test_size) * self.valid_size,

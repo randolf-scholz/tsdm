@@ -10,7 +10,6 @@ import torch
 
 from tsdm.tasks.base import SplitType
 from tsdm.tasks.utils import (
-    random_partition,
     random_partitions,
     rotating_folds,
 )
@@ -493,9 +492,9 @@ def test_empty_group_labels(
 def test_random_partition_dictionary_keys() -> None:
     r"""Partition dictionary keys into train, validation, and test datasets."""
     dataset = {f"sample-{index}": index for index in range(10)}
-    train_keys, validation_keys, test_keys = random_partition(
-        dataset.keys(), sizes=[4, 4, 2], rng=0
-    )
+    train_keys, validation_keys, test_keys = random_partitions(
+        dataset.keys(), num=1, sizes=[4, 4, 2], rng=0
+    )[0]
 
     train_set = {key: dataset[key] for key in train_keys}
     validation_set = {key: dataset[key] for key in validation_keys}
@@ -512,9 +511,9 @@ def test_random_partition_tensor_and_labels() -> None:
     r"""Partition paired tensor features and string labels by shared indices."""
     features = torch.arange(30).reshape(10, 3)
     labels = [f"label-{index}" for index in range(len(features))]
-    train_indices, validation_indices, test_indices = random_partition(
-        range(len(features)), ratios=[0.4, 0.4, 0.2], rng=0
-    )
+    train_indices, validation_indices, test_indices = random_partitions(
+        range(len(features)), num=1, ratios=[0.4, 0.4, 0.2], rng=0
+    )[0]
 
     train_set = (features[train_indices], [labels[index] for index in train_indices])
     validation_set = (
