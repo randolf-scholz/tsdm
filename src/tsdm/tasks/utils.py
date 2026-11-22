@@ -567,7 +567,8 @@ def random_partitions[T, K](
 
         ```
     """
-    _validate_args(items, num, group_labels=group_labels)
+    if not isinstance(num, int) or num <= 0:
+        raise ValueError("num must be a positive integer.")
     rng = _normalize_rng(rng)
     return [
         random_partition(
