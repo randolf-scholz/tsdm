@@ -120,6 +120,13 @@ def _normalize_values(values: Sequence[Any], /) -> list[int | None]:
 def _normalize(result: OutlierInput, /) -> Expected:
     r"""Convert a supported result to a backend-independent representation."""
     match result:
+        case pl.Series() as series:
+            return _normalize_values(series.to_list())
+        case pl.DataFrame() as frame:
+            return {
+                column: _normalize_values(values)
+                for column, values in frame.to_dict(as_series=False).items()
+            }
         case (pa.Array() | pa.ChunkedArray()) as array:
             return _normalize_values(array.to_pylist())
         case pa.Table() as table:
@@ -134,13 +141,7 @@ def _normalize(result: OutlierInput, /) -> Expected:
                 column: _normalize_values(frame[column].to_list())
                 for column in frame.columns
             }
-        case pl.Series() as series:
-            return _normalize_values(series.to_list())
-        case pl.DataFrame() as frame:
-            return {
-                column: _normalize_values(values)
-                for column, values in frame.to_dict(as_series=False).items()
-            }
+
         case _:
             raise TypeError(f"Unsupported result type: {type(result)}")
 
@@ -148,6 +149,13 @@ def _normalize(result: OutlierInput, /) -> Expected:
 def _normalize_mask(result: OutlierInput, /) -> OutlierMask:
     r"""Convert a supported boolean result to a Python representation."""
     match result:
+        case pl.Series() as series:
+            return [bool(value) for value in series.to_list()]
+        case pl.DataFrame() as frame:
+            return {
+                column: [bool(value) for value in values]
+                for column, values in frame.to_dict(as_series=False).items()
+            }
         case (pa.Array() | pa.ChunkedArray()) as array:
             return [bool(value) for value in array.to_pylist()]
         case pa.Table() as table:
@@ -161,13 +169,6 @@ def _normalize_mask(result: OutlierInput, /) -> OutlierMask:
             return {
                 column: [bool(value) for value in frame[column].to_list()]
                 for column in frame.columns
-            }
-        case pl.Series() as series:
-            return [bool(value) for value in series.to_list()]
-        case pl.DataFrame() as frame:
-            return {
-                column: [bool(value) for value in values]
-                for column, values in frame.to_dict(as_series=False).items()
             }
         case _:
             raise TypeError(f"Unsupported result type: {type(result)}")
