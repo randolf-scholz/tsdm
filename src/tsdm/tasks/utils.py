@@ -6,6 +6,11 @@ Split proportions apply to groups when supplied, otherwise to individual occurre
 Optional `max_error` bounds the total variation distance of item proportions from
 the target weights. Checking rejects empty inputs; explicit `sizes` bypass it.
 
+Group labels can mark redundant samples, such as results from replication
+experiments. Samples with the same label always belong to the same split to
+avoid data leakage. Labels describe groups to keep together, not classes for
+stratification. Both fold generators support `group_labels`.
+
 Both fold generators assign every occurrence exactly once per fold, retain empty
 splits, and preserve input order within each split. Reproducibility requires
 the same seed or initial RNG state, ordered items, split configuration,
@@ -77,17 +82,19 @@ def _check_partition_error(
 
 
 def _validate_args(
-    items: Collection, num_folds: int, /, *, groups: Collection[Label] | None
+    items: Collection, num_folds: int, /, *, group_labels: Collection[Label] | None
 ) -> None:
     r"""Validate fold counts and the ordered, positionally aligned inputs."""
     if not isinstance(num_folds, int) or num_folds <= 0:
         raise ValueError("num_folds must be a positive integer.")
     if isinstance(items, AbstractSet):
         raise TypeError("items must have a reproducible iteration order, not a set.")
-    if isinstance(groups, AbstractSet):
-        raise TypeError("groups must have a reproducible iteration order, not a set.")
-    if groups is not None and len(groups) != len(items):
-        raise ValueError("groups must have the same length as items.")
+    if isinstance(group_labels, AbstractSet):
+        raise TypeError(
+            "group_labels must have a reproducible iteration order, not a set."
+        )
+    if group_labels is not None and len(group_labels) != len(items):
+        raise ValueError("group_labels must have the same length as items.")
 
 
 @overload
@@ -98,7 +105,7 @@ def rotating_folds[T, K](
     *,
     chunks: Mapping[K, int],
     rng: int | Random,
-    groups: Collection[Label] | None = None,
+    group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
@@ -109,7 +116,7 @@ def rotating_folds[T](
     *,
     chunks: Sequence[int],
     rng: int | Random,
-    groups: Collection[Label] | None = None,
+    group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[tuple[list[T], ...]]: ...
 def rotating_folds[T, K](
@@ -119,7 +126,7 @@ def rotating_folds[T, K](
     *,
     chunks: Mapping[K, int] | Sequence[int],
     rng: int | Random,
-    groups: Collection[Label] | None = None,
+    group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Partition collection elements by rotating shuffled group chunks.
@@ -135,21 +142,25 @@ def rotating_folds[T, K](
     A one-chunk test split with `num_folds` chunks visits every group once;
     arbitrary chunk counts do not guarantee equal coverage across folds.
 
-    For hashable items, pass `groups=items` to keep equal values together. For
+    Group labels can mark redundant samples, such as results from replication
+    experiments. Samples with the same label always share a split to avoid data
+    leakage.
+
+    For hashable items, pass `group_labels=items` to keep equal values together. For
     unhashable items, supply hashable labels. For lists of hashable values, use
-    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
+    `group_labels=[tuple(item) for item in items]`. Equal items can occur in different splits
     unless their labels agree. Grouping preserves every occurrence.
 
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
-            allowed. Without `groups`, every occurrence is split independently.
+            allowed. Without `group_labels`, every occurrence is split independently.
         chunks: Mapping from split keys to non-negative integer chunk counts, or
             a sequence of counts. Their positive sum must be divisible by
             `num_folds`. Mapping keys are preserved exactly without normalization.
         num_folds: Positive number of folds.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
-        groups: Optional collection of stable, hashable labels, one per item in
+        group_labels: Optional collection of stable, hashable labels, one per item in
             iteration order. Must have the same length as `items`. Occurrences
             with equal labels stay together. Labels need not support ordering.
         max_error: Maximum item-proportion TV distance from `chunks`, in `[0, 1]`.
@@ -179,7 +190,7 @@ def rotating_folds[T, K](
 
         ```
     """
-    _validate_args(items, num_folds, groups=groups)
+    _validate_args(items, num_folds, group_labels=group_labels)
     rng = _normalize_rng(rng)
     counts = list(chunks.values() if isinstance(chunks, Mapping) else chunks)
     _validate_weights(counts)
@@ -191,7 +202,7 @@ def rotating_folds[T, K](
         raise ValueError("Total chunk count must be divisible by num_folds.")
 
     # Deduplicate groups in element order, then shuffle once for all folds.
-    labels = list(range(len(items))) if groups is None else list(groups)
+    labels = list(range(len(items))) if group_labels is None else list(group_labels)
     unique_groups = list(dict.fromkeys(labels))
     rng.shuffle(unique_groups)
 
@@ -238,7 +249,7 @@ def repeated_random_folds[T, K](
     *,
     ratios: Mapping[K, float],
     rng: int | Random,
-    groups: Collection[Label] | None = None,
+    group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
@@ -249,7 +260,7 @@ def repeated_random_folds[T](
     *,
     ratios: Sequence[float],
     rng: int | Random,
-    groups: Collection[Label] | None = None,
+    group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[tuple[list[T], ...]]: ...
 def repeated_random_folds[T, K](
@@ -259,7 +270,7 @@ def repeated_random_folds[T, K](
     *,
     ratios: Mapping[K, float] | Sequence[float],
     rng: int | Random,
-    groups: Collection[Label] | None = None,
+    group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Create repeated random partitions of collection elements.
@@ -268,14 +279,33 @@ def repeated_random_folds[T, K](
     coverage is guaranteed. Zero-ratio splits yield empty lists.
     Group proportions need not equal collection-element proportions.
 
-    For hashable items, pass `groups=items` to keep equal values together. For
+    Group labels can mark redundant samples, such as results from replication
+    experiments. Samples with the same label always share a split to avoid data
+    leakage.
+
+    Allocation first counts distinct groups in first-occurrence order. For G
+    groups and normalized split weights pᵢ, compute quotas G pᵢ and floor them.
+    Allocate the remaining groups to the largest fractional remainders, breaking
+    ties in favor of earlier splits. Each fold independently shuffles the groups
+    and assigns consecutive groups according to these fixed counts. Conditional
+    on the counts, all assignments are equally likely. Group sizes do not affect
+    allocation, so sample proportions can differ substantially from the targets.
+
+    Positive weights do not guarantee nonempty splits: with just two groups and
+    train/test weights of 9:1, quotas of 1.8 and 0.2 yield two training groups and
+    an empty test split in every fold. Even when several assignments are possible,
+    repeated partitions may coincide by chance. `max_error` checks the resulting
+    sample proportions and raises on failure; it does not retry or optimize the
+    assignment to meet sample-size targets.
+
+    For hashable items, pass `group_labels=items` to keep equal values together. For
     unhashable items, supply hashable labels. For lists of hashable values, use
-    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
+    `group_labels=[tuple(item) for item in items]`. Equal items can occur in different splits
     unless their labels agree. Grouping preserves every occurrence.
 
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
-            allowed. Without `groups`, every occurrence is split independently.
+            allowed. Without `group_labels`, every occurrence is split independently.
         ratios: Mapping from split keys to finite, non-negative relative weights,
             or a sequence of weights, with at least one positive weight. Mapping
             keys are preserved exactly without normalization. Allocate group
@@ -284,7 +314,7 @@ def repeated_random_folds[T, K](
         rng: Required integer seed or existing `random.Random` instance. One RNG
             advances across folds; an existing instance also retains its state
             between calls. Partitions may coincide by chance for small inputs.
-        groups: Optional collection of stable, hashable labels, one per item in
+        group_labels: Optional collection of stable, hashable labels, one per item in
             iteration order. Must have the same length as `items`. Occurrences
             with equal labels stay together. Labels need not support ordering.
         max_error: Maximum item-proportion TV distance from `ratios`, in `[0, 1]`.
@@ -314,7 +344,7 @@ def repeated_random_folds[T, K](
 
         ```
     """
-    _validate_args(items, num_folds, groups=groups)
+    _validate_args(items, num_folds, group_labels=group_labels)
     rng = _normalize_rng(rng)
     weights = list(ratios.values() if isinstance(ratios, Mapping) else ratios)
     _validate_weights(weights)
@@ -322,7 +352,7 @@ def repeated_random_folds[T, K](
 
     # Count distinct groups in element order. Without grouping, each element
     # contributes one group, so the same allocation procedure applies.
-    labels = list(range(len(items))) if groups is None else list(groups)
+    labels = list(range(len(items))) if group_labels is None else list(group_labels)
     unique_groups = list(dict.fromkeys(labels))
 
     # Scale ratios before summing to avoid overflow for large finite ratios.
