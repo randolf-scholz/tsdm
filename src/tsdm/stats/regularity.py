@@ -1,4 +1,4 @@
-r"""Tests and measures of time series regularity."""
+r"""NumPy/SciPy tests and measures of timestamp regularity."""
 
 __all__ = [
     # Functions

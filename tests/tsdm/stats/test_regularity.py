@@ -5,7 +5,7 @@ from collections.abc import Callable
 import numpy as np
 import pytest
 
-from tsdm.random.regularity_tests import (
+from tsdm.stats.regularity import (
     coefficient_of_variation,
     geometric_std,
     irregularity_coefficient,
