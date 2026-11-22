@@ -1,12 +1,38 @@
 r"""Collection-level partitioning, reproducibility, and nested fold isolation."""
 
+from collections.abc import Callable
+from functools import partial
 from random import getstate
 
 import pytest
 import torch
 
 from tsdm.tasks.base import SplitType
-from tsdm.tasks.utils import random_partition, repeated_random_folds, rotating_folds
+from tsdm.tasks.utils import (
+    Folds,
+    random_partition,
+    repeated_random_folds,
+    rotating_folds,
+)
+
+
+@pytest.fixture(params=["rotating", "repeated"])
+def fold_generator(request: pytest.FixtureRequest) -> Callable[..., Folds]:
+    r"""Exercise occurrence and label semantics with both fold algorithms."""
+    match request.param:
+        case "rotating":
+            return partial(
+                rotating_folds, chunks={"train": 1, "test": 1}, num_folds=2, rng=12
+            )
+        case "repeated":
+            return partial(
+                repeated_random_folds,
+                ratios={"train": 1, "test": 1},
+                num_folds=2,
+                rng=12,
+            )
+        case _:
+            raise AssertionError(request.param)
 
 
 def test_rotating_fold_assignments() -> None:
@@ -35,9 +61,10 @@ def test_rotating_fold_assignments() -> None:
 
 @pytest.mark.parametrize("policy", ["rotating", "repeated"])
 def test_group_integrity_and_reproducibility(policy: str) -> None:
-    r"""Unequal replicate groups stay intact; metadata mapping order is irrelevant."""
+    r"""Unequal replicate groups stay intact with positionally aligned labels."""
     keys = [(1, 10), (2, 20), (1, 11), (3, 30), (1, 12), (4, 40)]
-    groups = {key: (key[0], "red") for key in keys}
+    groups = [(key[0], "red") for key in keys]
+    group_by_key = dict(zip(keys, groups, strict=True))
     original_keys, original_groups = keys.copy(), groups.copy()
     before = getstate()
     if policy == "rotating":
@@ -50,7 +77,7 @@ def test_group_integrity_and_reproducibility(policy: str) -> None:
         )
         again = rotating_folds(
             tuple(keys),
-            groups=dict(reversed(list(groups.items()))),
+            groups=tuple(groups),
             chunks={"train": 1, "test": 1},
             num_folds=2,
             rng=12,
@@ -65,7 +92,7 @@ def test_group_integrity_and_reproducibility(policy: str) -> None:
         )
         again = repeated_random_folds(
             tuple(keys),
-            groups=dict(reversed(list(groups.items()))),
+            groups=tuple(groups),
             ratios={"train": 1, "test": 1},
             num_folds=2,
             rng=12,
@@ -78,8 +105,10 @@ def test_group_integrity_and_reproducibility(policy: str) -> None:
         train, test = folds[fold, SplitType.TRAIN], folds[fold, SplitType.TEST]
         assert set(train).isdisjoint(test)
         assert set(train) | set(test) == set(keys)
-        assert {groups[key] for key in train}.isdisjoint(groups[key] for key in test)
-        assert len({groups[key] for key in train}) == 2
+        assert {group_by_key[key] for key in train}.isdisjoint(
+            group_by_key[key] for key in test
+        )
+        assert len({group_by_key[key] for key in train}) == 2
         assert train == [key for key in keys if key in train]
         assert test == [key for key in keys if key in test]
 
@@ -218,11 +247,46 @@ def test_invalid_split_names(configuration) -> None:
         repeated_random_folds([], ratios=configuration, num_folds=1, rng=0)
 
 
-def test_duplicate_identifiers_are_rejected() -> None:
-    with pytest.raises(ValueError, match="identifiers"):
-        rotating_folds([1, 1], chunks={"train": 1}, num_folds=1, rng=0)
-    with pytest.raises(ValueError, match="identifiers"):
-        repeated_random_folds([1, 1], ratios={"train": 1}, num_folds=1, rng=0)
+@pytest.mark.parametrize("groups", [None, [0, 1, 0, 2, 0, 3, 2, 3]])
+def test_unhashable_occurrences_match_index_partitions(
+    fold_generator: Callable[..., Folds], groups
+) -> None:
+    r"""Equal unhashable items retain identity, multiplicity, order, and allocation."""
+    items = [[index % 2] for index in range(8)]
+    items[-1] = items[0]  # Repeated references are separate occurrences too.
+    original = items.copy()
+    folds = fold_generator(items, groups=groups)
+    expected = fold_generator(range(len(items)), groups=groups)
+    assert folds == fold_generator(items, groups=groups)
+    assert items == original
+    for key, indices in expected.items():
+        actual = folds[key]
+        assert len(actual) == len(indices)
+        assert all(
+            item is items[index] for item, index in zip(actual, indices, strict=True)
+        )
+
+
+def test_duplicate_items_split_independently(
+    fold_generator: Callable[..., Folds],
+) -> None:
+    r"""Equal items split independently unless equal labels explicitly group them."""
+    items = [1, 1, 1, 1]
+    folds = fold_generator(items)
+    assert all(part == [1, 1] for part in folds.values())
+
+
+def test_equal_items_can_be_used_as_labels(
+    fold_generator: Callable[..., Folds],
+) -> None:
+    r"""Passing items as labels keeps equal values together without losing copies."""
+    items = [1, 2, 1, 2, 1, 2]
+    folds = fold_generator(items, groups=items)
+    for fold in range(2):
+        train, test = folds[fold, SplitType.TRAIN], folds[fold, SplitType.TEST]
+        assert sorted(train + test) == sorted(items)
+        assert set(train).isdisjoint(test)
+        assert sorted([train, test]) == [[1, 1, 1], [2, 2, 2]]
 
 
 def test_unordered_identifiers_are_rejected() -> None:
@@ -232,10 +296,24 @@ def test_unordered_identifiers_are_rejected() -> None:
         repeated_random_folds({1, 2}, ratios={"train": 1}, num_folds=1, rng=0)
 
 
-@pytest.mark.parametrize("groups", [{}, {1: "a", 2: "b"}])
-def test_invalid_group_mappings(groups) -> None:
+@pytest.mark.parametrize("groups", [[], ["a", "b"]])
+def test_invalid_group_lengths(fold_generator: Callable[..., Folds], groups) -> None:
     with pytest.raises(ValueError, match="groups"):
-        rotating_folds([1], groups=groups, chunks={"train": 1}, num_folds=1, rng=0)
+        fold_generator([1], groups=groups)
+
+
+def test_unordered_labels_are_rejected(fold_generator: Callable[..., Folds]) -> None:
+    with pytest.raises(TypeError, match=r"groups.*order"):
+        fold_generator([1, 2], groups={"a", "b"})
+
+
+def test_unhashable_labels_are_rejected(fold_generator: Callable[..., Folds]) -> None:
+    with pytest.raises(TypeError, match="unhashable"):
+        fold_generator([1, 2], groups=[[1], [2]])
+
+
+def test_empty_group_labels(fold_generator: Callable[..., Folds]) -> None:
+    assert fold_generator([], groups=[]) == fold_generator([])
 
 
 def test_random_partition_dictionary_keys() -> None:

@@ -1,13 +1,13 @@
-r"""Reproducible partitions of time-series collection elements.
+r"""Reproducible partitions of collection items.
 
-Identifiers refer to complete collection elements, never observation rows or
-sample windows. Optional group labels keep several elements in the same split.
-Split proportions apply to groups when supplied, otherwise to individual elements.
+Items need not be unique or hashable. Optional hashable group labels, aligned
+with items by iteration order, keep several occurrences in the same split.
+Split proportions apply to groups when supplied, otherwise to individual occurrences.
 
-Both fold generators partition their input exactly once per fold, retain empty
+Both fold generators assign every occurrence exactly once per fold, retain empty
 splits, and preserve input order within each split. Reproducibility requires
-the same seed or initial RNG state, ordered identifiers, split configuration,
-group labels, and Python random implementation. Unordered sets of identifiers
+the same seed or initial RNG state, ordered items, split configuration,
+group labels, and Python random implementation. Unordered sets of items or labels
 are rejected by the fold generators. RNGs constructed from integer seeds do not
 affect global random state. These stdlib algorithms do not reproduce historical
 NumPy assignments; persist assignments when exact reproduction across algorithm
@@ -15,7 +15,7 @@ or runtime changes is required.
 
 Fold keys end in a `SplitType` and support any number of preceding fold indices.
 A `fold_prefix` only namespaces keys: for nested cross-validation, explicitly
-pass the outer training identifiers to the inner generator to prevent leakage.
+pass the outer training items to the inner generator to prevent leakage.
 """
 
 __all__ = [
@@ -30,12 +30,13 @@ __all__ = [
 from collections.abc import Collection, Iterable, Mapping, Sequence, Set as AbstractSet
 from math import floor, fsum, isfinite
 from random import Random
-from typing import Any, Optional, SupportsFloat, SupportsIndex, overload
+from typing import Any, SupportsFloat, SupportsIndex, overload
 
 from .base import SplitType
 
 type FoldKey = tuple[*tuple[int, ...], SplitType]
-type Folds[K] = dict[FoldKey, list[K]]
+type Folds[T] = dict[FoldKey, list[T]]
+type Label = object
 
 
 def _normalize_rng(rng: int | Random, /) -> Random:
@@ -73,28 +74,34 @@ def _normalize_weights[StringT: str, V: float](
     return normalized
 
 
-def _validate_args(keys: Collection, groups: Mapping | None, num_folds: int) -> None:
-    r"""Validate keys."""
+def _validate_args(
+    items: Collection,
+    /,
+    *,
+    groups: Collection[Label] | None,
+    num_folds: int,
+) -> None:
+    r"""Validate fold counts and the ordered, positionally aligned inputs."""
     if not isinstance(num_folds, int) or num_folds <= 0:
         raise ValueError("num_folds must be a positive integer.")
-    if isinstance(keys, AbstractSet):
-        raise TypeError("keys must have a reproducible iteration order, not a set.")
-    if len(set(keys)) != len(keys):
-        raise ValueError("Collection identifiers must be unique.")
-    if groups is not None and set(groups) != set(keys):
-        raise ValueError("groups must map exactly the supplied collection identifiers.")
+    if isinstance(items, AbstractSet):
+        raise TypeError("items must have a reproducible iteration order, not a set.")
+    if isinstance(groups, AbstractSet):
+        raise TypeError("groups must have a reproducible iteration order, not a set.")
+    if groups is not None and len(groups) != len(items):
+        raise ValueError("groups must have the same length as items.")
 
 
-def rotating_folds[K](
-    keys: Collection[K],
+def rotating_folds[T](
+    items: Collection[T],
     /,
     chunks: Mapping[Any, int],  # Mapping[str & Any, int]
     *,
     num_folds: int,
     rng: int | Random,
     fold_prefix: Sequence[int] = (),
-    groups: Mapping[K, object] | None = None,
-) -> Folds[K]:
+    groups: Collection[Label] | None = None,
+) -> Folds[T]:
     r"""Partition collection elements by rotating shuffled group chunks.
 
     Shuffle distinct groups once and distribute them over `sum(chunks.values())`
@@ -103,13 +110,16 @@ def rotating_folds[K](
     This preserves the rotation policy of `datatools.folds_from_groups`.
 
     Args:
-        keys: Collection of unique, ordered identifiers of complete elements.
+        items: Ordered collection of items; duplicates and unhashable items are
+            allowed. Without `groups`, every occurrence is split independently.
         chunks: Ordered split names or aliases mapped to non-negative integer
             chunk counts. Their positive sum must be divisible by `num_folds`.
         num_folds: Positive number of folds.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
-        groups: Optional mapping from every identifier to a stable group label.
+        groups: Optional collection of stable, hashable labels, one per item in
+            iteration order. Must have the same length as `items`. Occurrences
+            with equal labels stay together. Labels need not support ordering.
         fold_prefix: Non-negative outer fold indices prepended to generated keys.
 
     Splits assigned zero chunks and empty inputs are retained as empty lists. Too few
@@ -117,6 +127,11 @@ def rotating_folds[K](
     rather than element counts, determine the proportions when grouping is used.
     A one-chunk test split with `num_folds` chunks visits every group once;
     arbitrary chunk counts do not guarantee equal coverage across folds.
+
+    For hashable items, pass `groups=items` to keep equal values together. For
+    unhashable items, supply hashable labels. For lists of hashable values, use
+    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
+    unless their labels agree. Grouping preserves every occurrence.
 
     Examples:
         Rotate training and test splits over two folds for four elements.
@@ -137,7 +152,7 @@ def rotating_folds[K](
 
         ```
     """
-    _validate_args(keys, groups=groups, num_folds=num_folds)
+    _validate_args(items, groups=groups, num_folds=num_folds)
     rng = _normalize_rng(rng)
     chunks = _normalize_weights(chunks)
     num_chunks = sum(chunks.values())
@@ -148,18 +163,14 @@ def rotating_folds[K](
         raise ValueError("Total chunk count must divisible by num_folds.")
 
     # Deduplicate groups in element order, then shuffle once for all folds.
-    labels = (
-        {key: key for key in keys}
-        if groups is None
-        else {key: groups[key] for key in keys}
-    )
-    unique_groups = list(dict.fromkeys(labels.values()))
+    labels = list(range(len(items))) if groups is None else list(groups)
+    unique_groups = list(dict.fromkeys(labels))
     rng.shuffle(unique_groups)
 
     # Divide the shuffled groups into chunks. The first few chunks receive one
     # extra group when the group count is not divisible by the chunk count.
     base_size, num_larger_chunks = divmod(len(unique_groups), num_chunks)
-    chunk_by_group: dict[object, int] = {}
+    chunk_by_group: dict[Label, int] = {}
     start = 0
 
     for chunk in range(num_chunks):
@@ -172,34 +183,35 @@ def rotating_folds[K](
     # Later folds move these boundaries by a fixed number of chunks.
     chunk_splits = [split for split, count in chunks.items() for _ in range(count)]
     step = num_chunks // num_folds
-    result: Folds[K] = {}
+    result: Folds[T] = {}
 
     for fold in range(num_folds):
         # Retain empty splits, then rotate chunk boundaries and collect
-        # identifiers in their original order in one pass.
+        # items in their original order in one pass.
         result.update({(*fold_prefix, fold, split): [] for split in chunks})  # pyrefly: ignore[no-matching-overload]
-        for key, label in labels.items():
+        for item, label in zip(items, labels, strict=True):
             chunk = chunk_by_group[label]
             split = chunk_splits[(chunk - fold * step) % num_chunks]
-            result[(*fold_prefix, fold, split)].append(key)
+            result[(*fold_prefix, fold, split)].append(item)
 
     return result
 
 
-def repeated_random_folds[K](
-    keys: Collection[K],
+def repeated_random_folds[T](
+    items: Collection[T],
     /,
     ratios: Mapping[Any, float],  # Mapping[str & Any, float]
     *,
     num_folds: int,
     rng: int | Random,
-    groups: Optional[Mapping[K, object]] = None,
+    groups: Collection[Label] | None = None,
     fold_prefix: Sequence[int] = (),
-) -> Folds[K]:
+) -> Folds[T]:
     r"""Create repeated random partitions of collection elements.
 
     Args:
-        keys: Collection of unique, ordered identifiers of complete elements.
+        items: Ordered collection of items; duplicates and unhashable items are
+            allowed. Without `groups`, every occurrence is split independently.
         ratios: Ordered split names or aliases mapped to finite, non-negative
             relative proportions, with at least one positive ratio. Allocate group
             counts by largest remainder, breaking ties by split insertion order.
@@ -207,13 +219,19 @@ def repeated_random_folds[K](
         rng: Required integer seed or existing `random.Random` instance. One RNG
             advances across folds; an existing instance also retains its state
             between calls. Partitions may coincide by chance for small inputs.
-        groups: Optional exact identifier-to-group mapping. Labels must be stable
-            and hashable.
+        groups: Optional collection of stable, hashable labels, one per item in
+            iteration order. Must have the same length as `items`. Occurrences
+            with equal labels stay together. Labels need not support ordering.
         fold_prefix: Non-negative outer fold indices prepended to generated keys.
 
     These are repeated holdouts: test sets can overlap across folds. No rotation
     coverage is guaranteed. Empty inputs and zero-ratio splits yield empty lists.
     Group proportions need not equal collection-element proportions.
+
+    For hashable items, pass `groups=items` to keep equal values together. For
+    unhashable items, supply hashable labels. For lists of hashable values, use
+    `groups=[tuple(item) for item in items]`. Equal items can occur in different splits
+    unless their labels agree. Grouping preserves every occurrence.
 
     Examples:
         Draw two equal-proportion training and test partitions of four elements.
@@ -234,19 +252,15 @@ def repeated_random_folds[K](
 
         ```
     """
-    _validate_args(keys, groups=groups, num_folds=num_folds)
+    _validate_args(items, groups=groups, num_folds=num_folds)
     rng = _normalize_rng(rng)
     ratios = _normalize_weights(ratios)
     scale = max(ratios.values())
 
     # Count distinct groups in element order. Without grouping, each element
     # contributes one group, so the same allocation procedure applies.
-    labels = (
-        {key: key for key in keys}
-        if groups is None
-        else {key: groups[key] for key in keys}
-    )
-    unique_groups = list(dict.fromkeys(labels.values()))
+    labels = list(range(len(items))) if groups is None else list(groups)
+    unique_groups = list(dict.fromkeys(labels))
 
     # Scale ratios before summing to avoid overflow for large finite ratios.
     normalized = [ratio / scale for ratio in ratios.values()]
@@ -263,7 +277,7 @@ def repeated_random_folds[K](
         counts[index] += 1
 
     # Advance one local RNG across folds instead of reseeding it for each fold.
-    result: Folds[K] = {}
+    result: Folds[T] = {}
 
     for fold in range(num_folds):
         # Shuffle a fresh copy so each draw starts from the same group order.
@@ -271,19 +285,19 @@ def repeated_random_folds[K](
         rng.shuffle(shuffled)
 
         # Assign consecutive groups to splits using the precomputed counts.
-        assignments: dict[object, SplitType] = {}
+        assignments: dict[Label, SplitType] = {}
         start = 0
         for split, count in zip(ratios, counts, strict=True):
             stop = start + count
             assignments.update(dict.fromkeys(shuffled[start:stop], split))
             start = stop
 
-        # Retain empty splits, then collect identifiers in one pass to preserve
+        # Retain empty splits, then collect items in one pass to preserve
         # input order without scanning all elements separately for each split.
         result.update({(*fold_prefix, fold, split): [] for split in ratios})  # pyrefly: ignore[no-matching-overload]
-        for key, label in labels.items():
+        for item, label in zip(items, labels, strict=True):
             split = assignments[label]
-            result[(*fold_prefix, fold, split)].append(key)
+            result[(*fold_prefix, fold, split)].append(item)
 
     return result
 
@@ -308,53 +322,54 @@ def is_partition[T](
 
 
 @overload
-def random_partition[K](
-    keys: Collection[K],
+def random_partition[T](
+    items: Collection[T],
     *,
     sizes: Sequence[SupportsIndex],
     rng: int | Random,
-) -> tuple[list[K], ...]: ...
+) -> tuple[list[T], ...]: ...
 @overload
-def random_partition[K](
-    keys: Collection[K],
+def random_partition[T](
+    items: Collection[T],
     *,
     ratios: Sequence[SupportsFloat],
     rng: int | Random,
-) -> tuple[list[K], ...]: ...
-def random_partition[K](
-    keys: Collection[K],
+) -> tuple[list[T], ...]: ...
+def random_partition[T](
+    items: Collection[T],
     *,
     sizes: Sequence[SupportsIndex] | None = None,
     ratios: Sequence[SupportsFloat] | None = None,
     rng: int | Random,
-) -> tuple[list[K], ...]:
-    r"""Create a random partition for a dataset.
+) -> tuple[list[T], ...]:
+    r"""Create a random partition of item occurrences.
 
     Exactly one of `sizes` or `ratios` must be provided. Sizes are absolute
-    partition counts and must sum to the number of keys. Ratios are normalized
-    weights used to distribute all keys between the partitions.
+    partition counts and must sum to the number of items. Ratios are normalized
+    weights used to distribute all occurrences between the partitions.
 
     Args:
-        keys: Keys to distribute among the partitions.
+        items: Items to distribute among the partitions. Duplicates and unhashable
+            items are allowed; each occurrence is split independently.
         sizes: Absolute partition counts. The counts must be non-negative and
-            sum to the number of keys. Mutually exclusive with `ratios`.
+            sum to the number of items. Mutually exclusive with `ratios`.
         ratios: Relative partition weights. The weights must be finite, non-negative
             and not all zero. Mutually exclusive with `sizes`.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
 
     Returns:
-        A tuple of key lists in shuffled order, one per requested partition.
+        A tuple of item lists in shuffled order, one per requested partition.
     """
     rng = _normalize_rng(rng)
-    num = len(keys)
+    num = len(items)
 
     match sizes, ratios:
         case [sizes, None] if sizes is not None:
             counts = [size.__index__() for size in sizes]
             if any(count < 0 for count in counts) or sum(counts) != num:
                 raise ValueError(
-                    "sizes must be non-negative and sum to the number of keys"
+                    "sizes must be non-negative and sum to the number of items"
                 )
         case [None, ratios] if ratios is not None:
             weights = [ratio.__float__() for ratio in ratios]
@@ -379,7 +394,7 @@ def random_partition[K](
         case _:
             raise ValueError("Exactly one of sizes or ratios must be provided")
 
-    shuffled = list(keys)
+    shuffled = list(items)
     rng.shuffle(shuffled)
     partitions = []
     start = 0
