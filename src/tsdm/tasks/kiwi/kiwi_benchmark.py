@@ -202,7 +202,23 @@ class KiwiBenchmark(
 
     @cached_property
     def split_masks(self) -> DataFrame:
-        r"""Create split masks that keep replicates with the same `run_id` and `color` together."""
+        r"""Create split masks that keep replicate experiments together.
+
+        A trajectory is identified by `(run_id, experiment_id)`. Biologists run
+        multiple experiments with the same setup simultaneously, marking these
+        replicates with the same `color` within a run. Their group identity is
+        therefore `(run_id, color)`, even when their experiment identifiers differ.
+        Colors reused in different runs describe separate groups.
+
+        For example, two red experiments in run 1 must share a split; a red
+        experiment in run 2 belongs to a separate group. Splitting replicates
+        between training and evaluation would leak information about the shared
+        experimental setup. Complete trajectories are assigned before sampling
+        windows, so all windows from a trajectory inherit its split.
+
+        Split weights apply to replicate groups, not trajectory counts or numbers
+        of timestamps. Groups remain intact even when their sizes differ.
+        """
         md = self.dataset.static_covariates
         if md is None:
             raise ValueError("KIWI fold generation requires static covariates.")
