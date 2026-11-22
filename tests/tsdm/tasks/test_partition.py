@@ -17,7 +17,7 @@ from tsdm.tasks.utils import (
 )
 
 
-@pytest.fixture(params=["partition", "rotating", "repeated"])
+@pytest.fixture(params=["partition", "rotating", "repeated", "repeated_sizes"])
 def partitioner(request: pytest.FixtureRequest) -> Callable[..., object]:
     r"""Exercise each public API using the same collection identifiers."""
     keys = list(range(20))
@@ -29,6 +29,10 @@ def partitioner(request: pytest.FixtureRequest) -> Callable[..., object]:
         case "repeated":
             return partial(
                 random_partitions, keys, ratios={"train": 3, "test": 1}, num=4
+            )
+        case "repeated_sizes":
+            return partial(
+                random_partitions, keys, sizes={"train": 15, "test": 5}, num=4
             )
         case _:
             raise AssertionError(request.param)
@@ -147,11 +151,17 @@ def test_computed_threshold_is_compared_strictly(
 
 
 @pytest.mark.parametrize("named", [True, False])
-def test_explicit_sizes_skip_error_check(*, named: bool) -> None:
+@pytest.mark.parametrize("repeated", [True, False])
+def test_explicit_sizes_skip_error_check(*, named: bool, repeated: bool) -> None:
     sizes = {"train": 9, "test": 1} if named else [9, 1]
-    result = random_partition(range(10), sizes=sizes, rng=0, max_error=0)
-    parts = result.values() if isinstance(result, dict) else result
-    assert [len(part) for part in parts] == [9, 1]
+    partitions = (
+        random_partitions(range(10), num=2, sizes=sizes, rng=0, max_error=0)
+        if repeated
+        else [random_partition(range(10), sizes=sizes, rng=0, max_error=0)]
+    )
+    for partition in partitions:
+        parts = partition.values() if isinstance(partition, dict) else partition
+        assert [len(part) for part in parts] == [9, 1]
 
 
 def test_seed_and_instance_equivalence(partitioner: Callable[..., object]) -> None:
@@ -239,11 +249,14 @@ def test_invalid_ratios(ratios, *, named: bool) -> None:
         )
 
 
-def test_exactly_one_allocation_mode() -> None:
+@pytest.mark.parametrize(
+    "function", [random_partition, partial(random_partitions, num=2)]
+)
+def test_exactly_one_allocation_mode(function) -> None:
     with pytest.raises(ValueError, match="Exactly one"):
-        random_partition([1], rng=0)  # type: ignore[call-overload]
+        function([1], rng=0)
     with pytest.raises(ValueError, match="Exactly one"):
-        random_partition([1], sizes=(1,), ratios=(1,), rng=0)  # type: ignore[call-overload]
+        function([1], sizes=(1,), ratios=(1,), rng=0)
 
 
 @pytest.mark.parametrize("parameter", ["sizes", "ratios"])
@@ -307,18 +320,28 @@ def test_group_allocation(parameter: str, *, named: bool) -> None:
 
 @pytest.mark.parametrize("named", [True, False])
 @pytest.mark.parametrize("grouped", [True, False])
-def test_random_and_repeated_partitions_agree(*, named: bool, grouped: bool) -> None:
+@pytest.mark.parametrize("parameter", ["sizes", "ratios"])
+def test_random_and_repeated_partitions_agree(
+    parameter: str, *, named: bool, grouped: bool
+) -> None:
     r"""Successive draws agree on rounding, membership, input order, and RNG state."""
     items = [7, 0, 6, 1, 5, 2, 4, 3]
     labels = [0, 1, 0, 2, 3, 1, 4, 4] if grouped else None
-    ratios = {"train": 1, "valid": 1, "test": 1, "empty": 0} if named else [1, 1, 1, 0]
+    counts = [2, 2, 1, 0] if grouped else [3, 3, 2, 0]
+    values = counts if parameter == "sizes" else [1, 1, 1, 0]
+    spec = (
+        dict(zip(["train", "valid", "test", "empty"], values, strict=True))
+        if named
+        else values
+    )
+    options = {parameter: spec}
     rng = Random(37)
     reference_rng = Random(37)
     expected = random_partitions(
-        items, num=3, ratios=ratios, group_labels=labels, rng=reference_rng
+        items, num=3, **options, group_labels=labels, rng=reference_rng
     )
     actual = [
-        random_partition(items, ratios=ratios, group_labels=labels, rng=rng)
+        random_partition(items, **options, group_labels=labels, rng=rng)
         for _ in range(3)
     ]
     assert actual == expected
@@ -397,3 +420,15 @@ def test_partition_unhashable_group_labels() -> None:
 def test_partition_empty_group_labels(parameter: str) -> None:
     spec = [0, 0] if parameter == "sizes" else [1, 1]
     assert random_partition([], **{parameter: spec}, group_labels=[], rng=0) == ([], [])
+    assert random_partitions(
+        [], num=2, **{parameter: spec}, group_labels=[], rng=0
+    ) == [([], []), ([], [])]
+
+
+@pytest.mark.parametrize("sizes", [[-1, 4], [1, 1], [5, 0]])
+def test_random_partitions_invalid_sizes(sizes) -> None:
+    r"""Repeated draws retain validation of non-negative, exact group counts."""
+    with pytest.raises(ValueError, match="sizes"):
+        random_partitions(
+            range(4), num=2, sizes=sizes, group_labels=[0, 1, 0, 2], rng=0
+        )

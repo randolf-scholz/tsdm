@@ -328,59 +328,91 @@ def random_partition[T, K](
     group_labels: Optional[Collection[Label]] = None,
     max_error: Optional[float] = None,
 ) -> dict[K, list[T]] | tuple[list[T], ...]:
-    r"""Create a random partition of indivisible groups of items.
+    r"""Randomly assign indivisible groups of items to splits.
 
     Group labels can mark redundant samples, such as results from replication
     experiments. Samples with the same label always share a split to avoid data
-    leakage. Without labels, each item occurrence forms its own group.
+    leakage. These labels keep groups together; they do not stratify classes
+    across splits. Without labels, each item occurrence forms its own group.
+    Duplicates and unhashable items are allowed, and every occurrence is retained.
+    Pass `group_labels=items` to keep equal hashable items together, or supply
+    hashable labels for unhashable items. Labels need not be sortable.
 
-    Exactly one of `sizes` or `ratios` must be provided. Both refer to group
-    counts. For ratios, compute each quota as the number of groups times its
-    normalized weight, floor the quotas, and allocate leftover groups by largest
-    fractional remainder. Ties favor earlier splits. Shuffle distinct groups in
-    first-occurrence order and assign consecutive groups using these counts.
-    All assignments with the configured group counts are equally likely.
-    Collect items in their original order within each split.
+    Exactly one of `sizes` or `ratios` must be provided. Both count groups, not
+    samples. Allocation proceeds as follows:
 
-    Group sizes do not influence allocation. Sample proportions can differ
-    substantially from the targets; positive ratios can yield empty splits.
-    For example, two groups with train/test ratios of 9:1 both go to training.
-    `max_error` checks sample proportions and raises on failure without retrying
-    or optimizing the assignment.
+    1. Collect distinct group labels in first-occurrence order.
+    2. Use the exact group counts in `sizes`, or compute quotas from the number
+       of groups and normalized `ratios`. Floor the quotas, then allocate leftover
+       groups by largest fractional remainder. Ties favor earlier splits in the
+       supplied sequence or mapping. For example, five groups with ratios
+       `[1, 1, 1]` receive counts `[2, 2, 1]`.
+    3. Shuffle the groups and assign consecutive groups using these counts.
+       All assignments with the resulting group counts are equally likely.
+    4. Collect items in input order within each split, including interleaved
+       occurrences from different groups.
+
+    Group sizes never influence allocation. Sample proportions can differ
+    substantially from group proportions. Zero counts retain empty splits, and
+    even positive ratios can yield empty splits: two groups with train/test
+    ratios of 9:1 have quotas of 1.8 and 0.2, so both go to training.
+
+    `max_error` bounds the total variation distance between actual sample
+    proportions and normalized `ratios`. It checks the drawn partition and raises
+    on failure, without retries or optimization. Empty inputs have no sample
+    distribution and fail this check. With explicit `sizes`, the check is ignored.
+
+    An integer seed reproduces the same partition on each call without changing
+    global random state. Reuse a `random.Random` instance for successive draws,
+    or use `random_partitions` to draw several partitions with one advancing RNG.
+    Draws can overlap or coincide; they do not guarantee rotation coverage.
 
     Args:
-        items: Ordered collection of items to distribute among the partitions.
-            Duplicates and unhashable items are allowed. Sets are rejected.
-        sizes: Mapping from split keys to absolute group counts, or a sequence
-            of counts. Counts must be non-negative and sum to the number of
-            distinct groups (the number of items without labels).
-            Mutually exclusive with `ratios`.
-        ratios: Mapping from split keys to relative weights, or a sequence of
-            weights. Weights must be finite, non-negative and not all zero.
-            Mutually exclusive with `sizes`. Largest remainder allocates counts,
-            breaking ties in favor of earlier splits.
+        items: Ordered collection of items. Duplicates and unhashable items are
+            allowed. Unordered sets are rejected.
+        sizes: Mapping from split keys to exact non-negative group counts, or a
+            sequence of counts. Counts must sum to the number of distinct groups
+            (the number of items without labels). Mutually exclusive with `ratios`.
+        ratios: Mapping from split keys to relative group weights, or a sequence
+            of weights. Weights must be finite, non-negative, and not all zero.
+            Mutually exclusive with `sizes`.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
         group_labels: Optional ordered collection of stable, hashable labels,
-            one per item in iteration order. Must have the same length as `items`.
-            Equal labels keep occurrences together. Labels need not be sortable.
-        max_error: Maximum item-proportion TV distance from `ratios`, in `[0, 1]`.
-            `None` disables checking; exceeding the bound raises `RuntimeError`.
-            Ignored with explicit `sizes`.
+            aligned with `items` by iteration order and of the same length.
+            Occurrences with equal labels always stay together.
+        max_error: Maximum sample-proportion TV distance from `ratios`, in `[0, 1]`.
+            `None` disables checking. Ignored with explicit `sizes`.
 
     Returns:
-        A dictionary with the exact keys and order of the supplied mapping, or a
-        tuple with the same length and order as the supplied sequence. Each split
-        contains a list of items in input order. Empty splits and every item
-        occurrence are retained.
+        A dictionary preserving the exact keys and order of the supplied mapping,
+        or a tuple preserving the length and order of the supplied sequence.
+        Each split contains a list of items in input order. Empty splits and
+        every item occurrence are retained. Empty inputs yield empty splits when
+        checking is disabled; `sizes={}` yields an empty dictionary.
+
+    Raises:
+        ValueError: Invalid sizes, ratios, or input lengths; invalid `max_error`
+            with ratios; or an error check on empty inputs.
+        TypeError: Unordered inputs, unhashable group labels, or an invalid RNG.
+        RuntimeError: Sample proportions exceed `max_error`.
 
     Examples:
+        Specify exact counts or named relative weights.
+
         ```pycon
         >>> random_partition(range(4), sizes=[2, 2], rng=0)
         ([0, 2], [1, 3])
         >>> random_partition(range(4), ratios={"train": 1, "test": 1}, rng=0)
         {'train': [0, 2], 'test': [1, 3]}
-        >>> # Items with the same group label count as one unit: "a1" and "a2" form one group.
+
+        ```
+
+        Items with the same group label count as one unit: "a1" and "a2" form
+        one group, so `sizes=[1, 2]` allocates three groups containing four items.
+
+        ```pycon
+        >>> # "a1" and "a2" count as one unit because they share a group label.
         >>> random_partition(
         ...     ["a1", "b1", "a2", "c1"],
         ...     sizes=[1, 2],
@@ -469,9 +501,20 @@ def random_partitions[T, K](
     /,
     num: int,
     *,
-    ratios: Mapping[K, float],
+    sizes: Mapping[K, SupportsIndex],
     rng: int | Random,
-    group_labels: Collection[Label] | None = None,
+    group_labels: Optional[Collection[Label]] = None,
+    max_error: Optional[float] = None,
+) -> list[dict[K, list[T]]]: ...
+@overload
+def random_partitions[T, K](
+    items: Collection[T],
+    /,
+    num: int,
+    *,
+    ratios: Mapping[K, SupportsFloat],
+    rng: int | Random,
+    group_labels: Optional[Collection[Label]] = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
@@ -480,9 +523,20 @@ def random_partitions[T](
     /,
     num: int,
     *,
-    ratios: Sequence[float],
+    sizes: Sequence[SupportsIndex],
     rng: int | Random,
-    group_labels: Collection[Label] | None = None,
+    group_labels: Optional[Collection[Label]] = None,
+    max_error: Optional[float] = None,
+) -> list[tuple[list[T], ...]]: ...
+@overload
+def random_partitions[T](
+    items: Collection[T],
+    /,
+    num: int,
+    *,
+    ratios: Sequence[SupportsFloat],
+    rng: int | Random,
+    group_labels: Optional[Collection[Label]] = None,
     max_error: Optional[float] = None,
 ) -> list[tuple[list[T], ...]]: ...
 def random_partitions[T, K](
@@ -490,79 +544,34 @@ def random_partitions[T, K](
     /,
     num: int,
     *,
-    ratios: Mapping[K, float] | Sequence[float],
+    sizes: Mapping[K, SupportsIndex] | Sequence[SupportsIndex] | None = None,
+    ratios: Mapping[K, SupportsFloat] | Sequence[SupportsFloat] | None = None,
     rng: int | Random,
-    group_labels: Collection[Label] | None = None,
+    group_labels: Optional[Collection[Label]] = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
-    r"""Create repeated random partitions of collection elements.
+    r"""Draw `num` partitions using `random_partition` with one advancing RNG.
 
-    These are repeated holdouts: test sets can overlap across folds. No rotation
-    coverage is guaranteed. Zero-ratio splits yield empty lists.
-    Group proportions need not equal collection-element proportions.
-    Each fold calls `random_partition` using the same advancing RNG.
-
-    Group labels can mark redundant samples, such as results from replication
-    experiments. Samples with the same label always share a split to avoid data
-    leakage.
-
-    Allocation first counts distinct groups in first-occurrence order. For G
-    groups and normalized split weights pᵢ, compute quotas G pᵢ and floor them.
-    Allocate the remaining groups to the largest fractional remainders, breaking
-    ties in favor of earlier splits. Each fold independently shuffles the groups
-    and assigns consecutive groups according to these fixed counts. Conditional
-    on the counts, all assignments are equally likely. Group sizes do not affect
-    allocation, so sample proportions can differ substantially from the targets.
-
-    Positive weights do not guarantee nonempty splits: with just two groups and
-    train/test weights of 9:1, quotas of 1.8 and 0.2 yield two training groups and
-    an empty test split in every fold. Even when several assignments are possible,
-    repeated partitions may coincide by chance. `max_error` checks the resulting
-    sample proportions and raises on failure; it does not retry or optimize the
-    assignment to meet sample-size targets.
-
-    For hashable items, pass `group_labels=items` to keep equal values together. For
-    unhashable items, supply hashable labels. For lists of hashable values, use
-    `group_labels=[tuple(item) for item in items]`. Equal items can occur in different splits
-    unless their labels agree. Grouping preserves every occurrence.
+    This thin wrapper normalizes `rng` once and calls `random_partition` for
+    each draw. Integer seeds reproduce the full sequence without reseeding
+    between draws. Partitions may overlap or coincide; coverage is not guaranteed.
 
     Args:
-        items: Ordered collection of items; duplicates and unhashable items are
-            allowed. Without `group_labels`, every occurrence is split independently.
+        items: Items to partition; see `random_partition`.
         num: Positive number of partitions to draw.
-        ratios: Mapping from split keys to finite, non-negative relative weights,
-            or a sequence of weights, with at least one positive weight. Mapping
-            keys are preserved exactly without normalization. Allocate group
-            counts by largest remainder, breaking ties by split order.
-        rng: Required integer seed or existing `random.Random` instance. One RNG
-            advances across folds; an existing instance also retains its state
-            between calls. Partitions may coincide by chance for small inputs.
-        group_labels: Optional collection of stable, hashable labels, one per item in
-            iteration order. Must have the same length as `items`. Occurrences
-            with equal labels stay together. Labels need not support ordering.
-        max_error: Maximum item-proportion TV distance from `ratios`, in `[0, 1]`.
-            `None` disables checking; exceeding the bound raises `RuntimeError`.
+        sizes: Exact group counts; mutually exclusive with `ratios`.
+        ratios: Relative group weights; mutually exclusive with `sizes`.
+        rng: Integer seed or existing `random.Random` instance.
+        group_labels: Group labels forwarded to `random_partition`.
+        max_error: Error bound forwarded to `random_partition`.
 
     Returns:
-        A list of `num` partitions. Each partition is a dictionary with the
-        same keys and order as `ratios` for a mapping, or a tuple with the same
-        length and order for a sequence. Each split contains a list of items.
+        A list of `num` partitions, each with the structure and semantics
+        documented in `random_partition`.
 
     Examples:
-        Draw two equal-proportion training and test partitions of four elements.
-
         ```pycon
-        >>> from pprint import pprint
-        >>> folds = random_partitions(
-        ...     range(4),
-        ...     ratios={"train": 1, "test": 1},
-        ...     num=2,
-        ...     rng=2022,
-        ... )
-        >>> pprint(folds, sort_dicts=False)
-        [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 3], 'test': [0, 2]}]
-
-        >>> random_partitions(range(4), ratios=[1, 1], num=2, rng=2022)
+        >>> random_partitions(range(4), num=2, sizes=[2, 2], rng=2022)
         [([0, 3], [1, 2]), ([1, 3], [0, 2])]
 
         ```
@@ -571,9 +580,10 @@ def random_partitions[T, K](
         raise ValueError("num must be a positive integer.")
     rng = _normalize_rng(rng)
     return [
-        random_partition(
+        random_partition(  # type: ignore
             items,
             ratios=ratios,
+            sizes=sizes,
             rng=rng,
             group_labels=group_labels,
             max_error=max_error,
