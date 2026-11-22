@@ -7,3 +7,6 @@
 	path = third_party/gru_ode_bayes
 	url = git@github.com:edebrouwer/gru_ode_bayes.git
 	ignore = dirty
+[submodule "third_party/NCDSSM"]
+	path = third_party/NCDSSM
+	url = https://github.com/clear-nus/NCDSSM.git
