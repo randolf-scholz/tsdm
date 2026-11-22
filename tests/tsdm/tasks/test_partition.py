@@ -87,8 +87,8 @@ def test_large_finite_ratios() -> None:
 
 
 def test_empty_partitions() -> None:
-    assert random_partition([], sizes=(0, 0), rng=0) == [[], []]
-    assert random_partition([], ratios=(1, 0), rng=0) == [[], []]
+    assert random_partition([], sizes=(0, 0), rng=0) == ([], [])
+    assert random_partition([], ratios=(1, 0), rng=0) == ([], [])
     assert random_partition([], sizes={}, rng=0) == {}
     assert random_partition([], ratios={"train": 1, "test": 0}, rng=0) == {
         "train": [],
@@ -136,8 +136,8 @@ def test_named_and_unnamed_partitions(parameter: str) -> None:
     assert [len(part) for part in named.values()] == [3, 3, 2, 0]
     for counts in (list(spec.values()), tuple(spec.values())):
         unnamed = partitioner(items, **{parameter: counts}, rng=42)
-        assert isinstance(unnamed, list)
-        assert list(named.values()) == unnamed
+        assert isinstance(unnamed, tuple)
+        assert tuple(named.values()) == unnamed
         for named_part, unnamed_part in zip(named.values(), unnamed, strict=True):
             assert all(
                 left is right

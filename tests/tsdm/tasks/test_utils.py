@@ -281,8 +281,9 @@ def test_named_and_unnamed_folds(fold_function, parameter: str, *, groups) -> No
         unnamed = fold_function(
             items, **{parameter: counts}, num_folds=2, rng=12, groups=groups
         )
-        assert unnamed == [list(partition.values()) for partition in named]
-        assert all(isinstance(partition, list) for partition in unnamed)
+        assert isinstance(unnamed, list)
+        assert unnamed == [tuple(partition.values()) for partition in named]
+        assert all(isinstance(partition, tuple) for partition in unnamed)
         for partition in unnamed:
             assert len(partition) == len(counts)
 
@@ -294,9 +295,9 @@ def test_named_and_unnamed_folds(fold_function, parameter: str, *, groups) -> No
 def test_unnamed_empty_folds(fold_function, parameter: str) -> None:
     r"""Empty inputs retain every fold and split, with independently mutable lists."""
     folds = fold_function([], **{parameter: [2, 0]}, num_folds=2, rng=0)
-    assert folds == [[[], []], [[], []]]
+    assert folds == [([], []), ([], [])]
     folds[0][0].append(1)
-    assert folds == [[[1], []], [[], []]]
+    assert folds == [([1], []), ([], [])]
 
 
 @pytest.mark.parametrize("groups", [None, [0, 1, 0, 2, 0, 3, 2, 3]])

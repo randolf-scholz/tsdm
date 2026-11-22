@@ -15,7 +15,7 @@ or runtime changes is required.
 
 Mappings specify named splits; results preserve their exact keys and iteration
 order. Sequences specify unnamed splits; results preserve their length and order.
-Partitions are dictionaries for named splits and lists for unnamed splits. Fold
+Partitions are dictionaries for named splits and tuples for unnamed splits. Fold
 generators return a list of partitions, one per fold. For nested cross-validation,
 pass only the outer training items to the inner generator to prevent leakage.
 """
@@ -95,7 +95,7 @@ def rotating_folds[T](
     num_folds: int,
     rng: int | Random,
     groups: Collection[Label] | None = None,
-) -> list[list[list[T]]]: ...
+) -> list[tuple[list[T], ...]]: ...
 def rotating_folds[T, K](
     items: Collection[T],
     /,
@@ -104,7 +104,7 @@ def rotating_folds[T, K](
     num_folds: int,
     rng: int | Random,
     groups: Collection[Label] | None = None,
-) -> list[dict[K, list[T]]] | list[list[list[T]]]:
+) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Partition collection elements by rotating shuffled group chunks.
 
     Shuffle distinct groups once and distribute them over the configured total
@@ -127,7 +127,7 @@ def rotating_folds[T, K](
 
     Returns:
         A list of `num_folds` partitions. Each partition is a dictionary with the
-        same keys and order as `chunks` for a mapping, or a list with the same
+        same keys and order as `chunks` for a mapping, or a tuple with the same
         length and order for a sequence. Each split contains a list of items.
 
     Splits assigned zero chunks and empty inputs are retained as empty lists. Too few
@@ -156,7 +156,7 @@ def rotating_folds[T, K](
         [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 2], 'test': [0, 3]}]
 
         >>> rotating_folds(range(4), chunks=[1, 1], num_folds=2, rng=2022)
-        [[[0, 3], [1, 2]], [[1, 2], [0, 3]]]
+        [([0, 3], [1, 2]), ([1, 2], [0, 3])]
 
         ```
     """
@@ -192,12 +192,12 @@ def rotating_folds[T, K](
     # Later folds move these boundaries by a fixed number of chunks.
     chunk_splits = [split for split, count in enumerate(counts) for _ in range(count)]
     step = num_chunks // num_folds
-    result: list[list[list[T]]] = []
+    result: list[tuple[list[T], ...]] = []
 
     for fold in range(num_folds):
         # Retain empty splits, then rotate chunk boundaries and collect
         # items in their original order in one pass.
-        parts: list[list[T]] = [[] for _ in counts]
+        parts: tuple[list[T], ...] = tuple([] for _ in counts)
         for item, label in zip(items, labels, strict=True):
             chunk = chunk_by_group[label]
             split = chunk_splits[(chunk - fold * step) % num_chunks]
@@ -228,7 +228,7 @@ def repeated_random_folds[T](
     num_folds: int,
     rng: int | Random,
     groups: Collection[Label] | None = None,
-) -> list[list[list[T]]]: ...
+) -> list[tuple[list[T], ...]]: ...
 def repeated_random_folds[T, K](
     items: Collection[T],
     /,
@@ -237,7 +237,7 @@ def repeated_random_folds[T, K](
     num_folds: int,
     rng: int | Random,
     groups: Collection[Label] | None = None,
-) -> list[dict[K, list[T]]] | list[list[list[T]]]:
+) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Create repeated random partitions of collection elements.
 
     Args:
@@ -257,7 +257,7 @@ def repeated_random_folds[T, K](
 
     Returns:
         A list of `num_folds` partitions. Each partition is a dictionary with the
-        same keys and order as `ratios` for a mapping, or a list with the same
+        same keys and order as `ratios` for a mapping, or a tuple with the same
         length and order for a sequence. Each split contains a list of items.
 
     These are repeated holdouts: test sets can overlap across folds. No rotation
@@ -284,7 +284,7 @@ def repeated_random_folds[T, K](
         [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 3], 'test': [0, 2]}]
 
         >>> repeated_random_folds(range(4), ratios=[1, 1], num_folds=2, rng=2022)
-        [[[0, 3], [1, 2]], [[1, 3], [0, 2]]]
+        [([0, 3], [1, 2]), ([1, 3], [0, 2])]
 
         ```
     """
@@ -314,7 +314,7 @@ def repeated_random_folds[T, K](
         counts[index] += 1
 
     # Advance one local RNG across folds instead of reseeding it for each fold.
-    result: list[list[list[T]]] = []
+    result: list[tuple[list[T], ...]] = []
 
     for _ in range(num_folds):
         # Shuffle a fresh copy so each draw starts from the same group order.
@@ -331,7 +331,7 @@ def repeated_random_folds[T, K](
 
         # Retain empty splits, then collect items in one pass to preserve
         # input order without scanning all elements separately for each split.
-        parts: list[list[T]] = [[] for _ in counts]
+        parts: tuple[list[T], ...] = tuple([] for _ in counts)
         for item, label in zip(items, labels, strict=True):
             split = assignments[label]
             parts[split].append(item)
@@ -381,21 +381,21 @@ def random_partition[T](
     *,
     sizes: Sequence[SupportsIndex],
     rng: int | Random,
-) -> list[list[T]]: ...
+) -> tuple[list[T], ...]: ...
 @overload
 def random_partition[T](
     items: Collection[T],
     *,
     ratios: Sequence[SupportsFloat],
     rng: int | Random,
-) -> list[list[T]]: ...
+) -> tuple[list[T], ...]: ...
 def random_partition[T, K](
     items: Collection[T],
     *,
     sizes: Mapping[K, SupportsIndex] | Sequence[SupportsIndex] | None = None,
     ratios: Mapping[K, SupportsFloat] | Sequence[SupportsFloat] | None = None,
     rng: int | Random,
-) -> dict[K, list[T]] | list[list[T]]:
+) -> dict[K, list[T]] | tuple[list[T], ...]:
     r"""Create a random partition of item occurrences.
 
     Exactly one of `sizes` or `ratios` must be provided. Sizes are absolute
@@ -417,13 +417,13 @@ def random_partition[T, K](
 
     Returns:
         A dictionary with the exact keys and order of the supplied mapping, or a
-        list with the same length and order as the supplied sequence. Each split
+        tuple with the same length and order as the supplied sequence. Each split
         contains a list of items in shuffled order. Empty splits are retained.
 
     Examples:
         ```pycon
         >>> random_partition(range(4), sizes=[2, 2], rng=0)
-        [[2, 0], [1, 3]]
+        ([2, 0], [1, 3])
         >>> random_partition(range(4), ratios={"train": 1, "test": 1}, rng=0)
         {'train': [2, 0], 'test': [1, 3]}
 
@@ -482,4 +482,4 @@ def random_partition[T, K](
         return dict(zip(sizes, partitions, strict=True))
     if isinstance(ratios, Mapping):
         return dict(zip(ratios, partitions, strict=True))
-    return partitions
+    return tuple(partitions)
