@@ -13,7 +13,8 @@ import torch
 
 from tsdm.constants import RNG
 from tsdm.encoders import LinearScaler, MinMaxScaler, StandardScaler
-from tsdm.linalg.utils import get_broadcast, reduce_axes
+from tsdm.encoders.universal.linear import reduce_axes
+from tsdm.linalg.utils import get_broadcast
 from tsdm.types.aliases import Axis
 
 __logger__ = logging.getLogger(__name__)

@@ -43,18 +43,16 @@ utility = true
 [[modules]]
 path = "tsdm.datasets"
 depends_on = [
-    "tsdm.datatools",
+    "tsdm.backend",
+    "tsdm.hashutils",
     "tsdm.random",
     "tsdm.types",
-    "tsdm.hashutils",
-    "tsdm.validation", "tsdm.backend",
+    "tsdm.validation",
 ]
 
 [[modules]]
 path = "tsdm.datatools"
-depends_on = [
-    "tsdm.types",
-]
+depends_on = []
 
 [[modules]]
 path = "tsdm.decorator"
@@ -73,7 +71,6 @@ depends_on = [
     "tsdm.backend",
     "tsdm.datatools",
     "tsdm.encoders",
-    "tsdm.linalg",
     "tsdm.types",
 ]
 
@@ -84,7 +81,6 @@ depends_on = ["tsdm.types"]
 [[modules]]
 path = "tsdm.logutils"
 depends_on = [
-    "tsdm.datatools",
     "tsdm.linalg",
     "tsdm.types",
     "tsdm.viz",
@@ -152,7 +148,7 @@ depends_on = []
 
 [[modules]]
 path = "tsdm.validation"
-depends_on = ["tsdm.datatools", "tsdm.hashutils", "tsdm.types"]
+depends_on = ["tsdm.hashutils", "tsdm.types"]
 
 [[modules]]
 path = "tsdm.hashutils"

@@ -5,19 +5,108 @@ __all__ = [
     "LinearScaler",
     "MinMaxScaler",
     "StandardScaler",
+    # functions
+    "invert_axis_selection",
+    "reduce_axes",
 ]
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, cast
+from typing import Any, cast, overload
 
 from tsdm.backend import get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
-from tsdm.linalg.utils import invert_axis_selection, reduce_axes
 from tsdm.pprint import pprint_repr
-from tsdm.types.aliases import Axis
+from tsdm.types import Axis, IndexArgND
 
 type FloatArray = Any
+
+
+def invert_axis_selection(axis: Axis, /, *, ndim: int) -> tuple[int, ...]:
+    r"""Return the complement of an axis selection for a tensor of rank `ndim`.
+
+    Negative axes are normalized modulo `ndim`. An `axis` of `None` selects
+    every axis, so its complement is empty. The output order is unspecified.
+
+    The following examples show the complementary axes in sorted order:
+
+    | `ndim` | `axis`         | Complement     |
+    |--------|----------------|----------------|
+    | 4      | `None`         | `()`           |
+    | 4      | `(-3, -2, -1)` | `(0,)`         |
+    | 4      | `(-2, -1)`     | `(0, 1)`       |
+    | 4      | `(-1,)`        | `(0, 1, 2)`    |
+    | 4      | `()`           | `(0, 1, 2, 3)` |
+    """
+    match axis:
+        case None:
+            return ()
+        case int():
+            return tuple(set(range(ndim)) - {axis % ndim})
+        case tuple():
+            return tuple(set(range(ndim)) - {a % ndim for a in axis})
+        case _:
+            raise TypeError(f"axis must be None, int, or Iterable, not {type(axis)}")
+
+
+@overload
+def reduce_axes(axis: None, selection: IndexArgND) -> None: ...
+@overload
+def reduce_axes(
+    axis: int | tuple[int, ...], selection: str | list[str] | IndexArgND
+) -> tuple[int, ...]: ...
+def reduce_axes(
+    axis: Axis, selection: str | list[str] | IndexArgND
+) -> tuple[int, ...] | None:
+    r"""Reduce an axis selection to account for tensor indexing.
+
+    Given an operation `op(T, axis=axis)`, use
+    `reduced_axis = reduce_axes(axis, selection)` to obtain the axis selection
+    for `op(T[selection], axis=reduced_axis)`.
+
+    An `axis` of `None` remains `None`. Inserting dimensions with `None` is
+    unsupported for explicit axis selections; at most one ellipsis is allowed.
+    """
+    # convert to tuple
+    match axis:
+        case None:
+            return None
+        case []:
+            return ()
+        case int(a):
+            axis = (a,)
+        case _:
+            axis = tuple(axis)
+
+    match selection:
+        case None:
+            raise NotImplementedError("Slicing with None not implemented.")
+        case int() | str():
+            return axis[1:]
+        case ellipsis if ellipsis is ...:
+            return axis
+        case list(seq):
+            drop = len(seq) <= 1
+            return axis[drop:]
+        case range(start=start, stop=stop):
+            drop = (stop - start) in {0, 1}
+            return axis[drop:]
+        case tuple(tup):
+            if sum(x is Ellipsis for x in tup) > 1:
+                raise ValueError("Only one Ellipsis is allowed.")
+            if len(tup) == 0:
+                return axis
+            if Ellipsis in tup:
+                idx = tup.index(Ellipsis)
+                return (
+                    reduce_axes(axis[:idx], tup[:idx])
+                    + reduce_axes(axis[idx : idx + len(tup) - 1], tup[idx])
+                    + reduce_axes(axis[idx + len(tup) - 1 :], tup[idx + 1 :])
+                )
+            # recurse on the first element
+            return reduce_axes(axis[:1], tup[0]) + reduce_axes(axis[1:], tup[1:])
+        case _:
+            raise TypeError(f"Unknown type {type(selection)}")
 
 
 def _reduce_param(param: Any, selection: Any) -> Any:
