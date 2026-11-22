@@ -11,7 +11,7 @@ import torch
 from tsdm.tasks.base import SplitType
 from tsdm.tasks.utils import (
     random_partition,
-    repeated_random_folds,
+    random_partitions,
     rotating_folds,
 )
 
@@ -26,14 +26,14 @@ def fold_generator(
             return partial(
                 rotating_folds,
                 chunks={"train": 1, "test": 1},
-                num_folds=2,
+                num=2,
                 rng=12,
             )
         case "repeated":
             return partial(
-                repeated_random_folds,
+                random_partitions,
                 ratios={"train": 1, "test": 1},
-                num_folds=2,
+                num=2,
                 rng=12,
             )
         case _:
@@ -45,7 +45,7 @@ def test_rotating_fold_assignments() -> None:
     folds = rotating_folds(
         range(8),
         chunks={"train": 2, "valid": 1, "test": 1},
-        num_folds=4,
+        num=4,
         rng=2022,
     )
     assert folds[0]["train"] == [0, 1, 5, 6]
@@ -75,11 +75,9 @@ def test_rotating_single_partition(*, named: bool, grouped: bool) -> None:
     reference_rng = Random(12)
     default = rotating_folds(items, chunks=chunks, group_labels=labels, rng=rng)
     singleton = rotating_folds(
-        items, num_folds=1, chunks=chunks, group_labels=labels, rng=reference_rng
+        items, num=1, chunks=chunks, group_labels=labels, rng=reference_rng
     )
-    multiple = rotating_folds(
-        items, num_folds=2, chunks=chunks, group_labels=labels, rng=12
-    )
+    multiple = rotating_folds(items, num=2, chunks=chunks, group_labels=labels, rng=12)
     assert isinstance(default, list)
     assert isinstance(singleton, list)
     assert default == singleton
@@ -127,29 +125,29 @@ def test_group_integrity_and_reproducibility(policy: str) -> None:
             keys,
             group_labels=group_labels,
             chunks={"train": 1, "test": 1},
-            num_folds=2,
+            num=2,
             rng=12,
         )
         again = rotating_folds(
             tuple(keys),
             group_labels=tuple(group_labels),
             chunks={"train": 1, "test": 1},
-            num_folds=2,
+            num=2,
             rng=12,
         )
     else:
-        folds = repeated_random_folds(
+        folds = random_partitions(
             keys,
             group_labels=group_labels,
             ratios={"train": 1, "test": 1},
-            num_folds=2,
+            num=2,
             rng=12,
         )
-        again = repeated_random_folds(
+        again = random_partitions(
             tuple(keys),
             group_labels=tuple(group_labels),
             ratios={"train": 1, "test": 1},
-            num_folds=2,
+            num=2,
             rng=12,
         )
     assert folds == again
@@ -170,10 +168,10 @@ def test_group_integrity_and_reproducibility(policy: str) -> None:
 
 def test_repeated_folds_advance_rng() -> None:
     r"""A fixed seed reproduces the full sequence without resetting each fold."""
-    folds = repeated_random_folds(
+    folds = random_partitions(
         range(8),
         ratios={"train": 2, "valid": 1, "test": 1},
-        num_folds=2,
+        num=2,
         rng=2022,
     )
     assert folds[0]["train"] == [0, 1, 5, 6]
@@ -183,14 +181,12 @@ def test_repeated_folds_advance_rng() -> None:
 
 
 def test_nested_folds_exclude_outer_test_elements() -> None:
-    outer = rotating_folds(
-        range(12), chunks={"train": 2, "test": 1}, num_folds=3, rng=7
-    )
+    outer = rotating_folds(range(12), chunks={"train": 2, "test": 1}, num=3, rng=7)
     for fold in range(3):
         inner = rotating_folds(
             outer[fold]["train"],
             chunks={"train": 1, "valid": 1},
-            num_folds=2,
+            num=2,
             rng=8,
         )
         assert len(inner) == 2
@@ -201,10 +197,10 @@ def test_nested_folds_exclude_outer_test_elements() -> None:
 
 
 def test_largest_remainder_and_empty_splits() -> None:
-    folds = repeated_random_folds(
+    folds = random_partitions(
         range(5),
         ratios={"train": 1, "valid": 1, "test": 1, "inference": 0},
-        num_folds=2,
+        num=2,
         rng=0,
     )
     for fold in range(2):
@@ -214,16 +210,16 @@ def test_largest_remainder_and_empty_splits() -> None:
 
 
 def test_rotating_folds_with_boolean_items() -> None:
-    assert rotating_folds(
-        [True, False], chunks={"train": 1, "test": 1}, num_folds=2, rng=0
-    )[0]["train"] == [True]
+    assert rotating_folds([True, False], chunks={"train": 1, "test": 1}, num=2, rng=0)[
+        0
+    ]["train"] == [True]
 
 
 def test_extreme_ratios_are_normalized_without_overflow() -> None:
-    folds = repeated_random_folds(
+    folds = random_partitions(
         range(5),
         ratios={"train": 1e308, "test": 1e308},
-        num_folds=1,
+        num=1,
         rng=0,
     )
     assert len(folds[0]["train"]) == 3
@@ -233,24 +229,24 @@ def test_extreme_ratios_are_normalized_without_overflow() -> None:
 @pytest.mark.parametrize("rng", [None, 1.5, "42"])
 def test_rng_must_be_an_integer_or_random(rng) -> None:
     with pytest.raises(TypeError, match="rng"):
-        rotating_folds([1], chunks={"train": 1}, num_folds=1, rng=rng)
+        rotating_folds([1], chunks={"train": 1}, num=1, rng=rng)
     with pytest.raises(TypeError, match="rng"):
-        repeated_random_folds([1], ratios={"train": 1}, num_folds=1, rng=rng)
+        random_partitions([1], ratios={"train": 1}, num=1, rng=rng)
 
 
 def test_rng_is_required() -> None:
     with pytest.raises(TypeError, match="rng"):
-        rotating_folds([1], chunks={"train": 1}, num_folds=1)  # type: ignore[call-arg]
+        rotating_folds([1], chunks={"train": 1}, num=1)  # type: ignore[call-arg]
     with pytest.raises(TypeError, match="rng"):
-        repeated_random_folds([1], ratios={"train": 1}, num_folds=1)  # type: ignore[call-arg]
+        random_partitions([1], ratios={"train": 1}, num=1)  # type: ignore[call-arg]
 
 
-@pytest.mark.parametrize("num_folds", [None, 0, -1, 1.5])
-def test_invalid_fold_counts(num_folds) -> None:
-    with pytest.raises(ValueError, match="num_folds"):
-        rotating_folds([], chunks={"train": 2}, num_folds=num_folds, rng=0)
-    with pytest.raises(ValueError, match="num_folds"):
-        repeated_random_folds([], ratios={"train": 1}, num_folds=num_folds, rng=0)
+@pytest.mark.parametrize("num", [None, 0, -1, 1.5])
+def test_invalid_fold_counts(num) -> None:
+    with pytest.raises(ValueError, match="num"):
+        rotating_folds([], chunks={"train": 2}, num=num, rng=0)
+    with pytest.raises(ValueError, match="num"):
+        random_partitions([], ratios={"train": 1}, num=num, rng=0)
 
 
 @pytest.mark.parametrize(
@@ -260,14 +256,14 @@ def test_invalid_fold_counts(num_folds) -> None:
         ({"train": 0}, "positive weight"),
         ({"train": -1}, "non-negative"),
         ({"train": 1.5}, "integer counts"),
-        ({"train": 3}, "divisible by num_folds"),
+        ({"train": 3}, "divisible by num"),
     ],
 )
 @pytest.mark.parametrize("named", [True, False])
 def test_invalid_chunk_counts(chunks, message: str, *, named: bool) -> None:
     with pytest.raises(ValueError, match=message):
         rotating_folds(
-            [], chunks=chunks if named else list(chunks.values()), num_folds=2, rng=0
+            [], chunks=chunks if named else list(chunks.values()), num=2, rng=0
         )
 
 
@@ -284,8 +280,8 @@ def test_invalid_chunk_counts(chunks, message: str, *, named: bool) -> None:
 @pytest.mark.parametrize("named", [True, False])
 def test_invalid_ratios(ratios, message: str, *, named: bool) -> None:
     with pytest.raises(ValueError, match=message):
-        repeated_random_folds(
-            [], ratios=ratios if named else list(ratios.values()), num_folds=1, rng=0
+        random_partitions(
+            [], ratios=ratios if named else list(ratios.values()), num=1, rng=0
         )
 
 
@@ -293,15 +289,15 @@ def test_invalid_ratios(ratios, message: str, *, named: bool) -> None:
 def test_arbitrary_split_names(configuration) -> None:
     r"""Former aliases and unknown names are independent, unchanged split keys."""
     items = range(sum(configuration.values()))
-    rotating = rotating_folds(items, chunks=configuration, num_folds=1, rng=0)
-    repeated = repeated_random_folds(items, ratios=configuration, num_folds=1, rng=0)
+    rotating = rotating_folds(items, chunks=configuration, num=1, rng=0)
+    repeated = random_partitions(items, ratios=configuration, num=1, rng=0)
     assert list(rotating[0]) == list(configuration)
     assert list(repeated[0]) == list(configuration)
 
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
+    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
 )
 @pytest.mark.parametrize("group_labels", [None, [0, 0, 1, 1, 2, 2, 3, 3]])
 def test_named_and_unnamed_folds(
@@ -322,7 +318,7 @@ def test_named_and_unnamed_folds(
     )
     items = [[index] for index in range(8)]
     named = fold_function(
-        items, **{parameter: spec}, num_folds=2, rng=12, group_labels=group_labels
+        items, **{parameter: spec}, num=2, rng=12, group_labels=group_labels
     )
     assert isinstance(named, list)
     assert len(named) == 2
@@ -335,7 +331,7 @@ def test_named_and_unnamed_folds(
         )
     for counts in (list(spec.values()), tuple(spec.values())):
         unnamed = fold_function(
-            items, **{parameter: counts}, num_folds=2, rng=12, group_labels=group_labels
+            items, **{parameter: counts}, num=2, rng=12, group_labels=group_labels
         )
         assert isinstance(unnamed, list)
         assert unnamed == [tuple(partition.values()) for partition in named]
@@ -346,11 +342,11 @@ def test_named_and_unnamed_folds(
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
+    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
 )
 def test_unnamed_zero_weight_splits(fold_function, parameter: str) -> None:
     r"""Zero-weight splits remain empty, with independently mutable item lists."""
-    folds = fold_function([1, 2], **{parameter: [2, 0]}, num_folds=2, rng=0)
+    folds = fold_function([1, 2], **{parameter: [2, 0]}, num=2, rng=0)
     assert folds == [([1, 2], []), ([1, 2], [])]
     folds[0][0].append(3)
     assert folds == [([1, 2, 3], []), ([1, 2], [])]
@@ -358,7 +354,7 @@ def test_unnamed_zero_weight_splits(fold_function, parameter: str) -> None:
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
+    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
 )
 @pytest.mark.parametrize("named", [True, False])
 def test_group_error_measures_items(
@@ -371,7 +367,7 @@ def test_group_error_measures_items(
         range(10),
         **{parameter: spec},
         group_labels=[0] * 9 + [1],
-        num_folds=2,
+        num=2,
         rng=0,
     )
     assert partitioner() == partitioner(max_error=None)
@@ -381,7 +377,7 @@ def test_group_error_measures_items(
 
 @pytest.mark.parametrize(
     ("fold_function", "parameter"),
-    [(rotating_folds, "chunks"), (repeated_random_folds, "ratios")],
+    [(rotating_folds, "chunks"), (random_partitions, "ratios")],
 )
 def test_group_error_aggregates_all_splits(fold_function, parameter: str) -> None:
     r"""Four splits have TV 0.25 even though each proportion differs by only 0.125."""
@@ -390,7 +386,7 @@ def test_group_error_aggregates_all_splits(fold_function, parameter: str) -> Non
             range(8),
             **{parameter: [1, 1, 1, 1]},
             group_labels=[0, 0, 0, 1, 1, 1, 2, 3],
-            num_folds=2,
+            num=2,
             rng=0,
             max_error=0.1875,
         )
@@ -399,17 +395,17 @@ def test_group_error_aggregates_all_splits(fold_function, parameter: str) -> Non
 def test_rotating_error_checks_later_folds() -> None:
     r"""Fold zero has TV 0.05, but fold one has TV 0.15 and must reject the batch."""
     with pytest.raises(RuntimeError, match=r"total variation distance 0.15"):
-        rotating_folds(range(10), chunks=[6, 2], num_folds=4, rng=0, max_error=0.125)
+        rotating_folds(range(10), chunks=[6, 2], num=4, rng=0, max_error=0.125)
 
 
 def test_repeated_error_checks_later_folds() -> None:
     r"""Fold zero balances items exactly; fold one has TV 0.125 despite equal groups."""
     with pytest.raises(RuntimeError, match=r"total variation distance 0.125"):
-        repeated_random_folds(
+        random_partitions(
             range(8),
             ratios=[1, 1],
             group_labels=[0, 0, 0, 1, 2, 2, 3, 3],
-            num_folds=2,
+            num=2,
             rng=6,
             max_error=0.05,
         )
@@ -461,9 +457,9 @@ def test_equal_items_can_be_used_as_labels(
 
 def test_unordered_identifiers_are_rejected() -> None:
     with pytest.raises(TypeError, match="order"):
-        rotating_folds({1, 2}, chunks={"train": 1}, num_folds=1, rng=0)
+        rotating_folds({1, 2}, chunks={"train": 1}, num=1, rng=0)
     with pytest.raises(TypeError, match="order"):
-        repeated_random_folds({1, 2}, ratios={"train": 1}, num_folds=1, rng=0)
+        random_partitions({1, 2}, ratios={"train": 1}, num=1, rng=0)
 
 
 @pytest.mark.parametrize("group_labels", [[], ["a", "b"]])

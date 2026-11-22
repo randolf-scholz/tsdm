@@ -29,7 +29,7 @@ pass only the outer training items to the inner generator to prevent leakage.
 """
 
 __all__ = [
-    "repeated_random_folds",
+    "random_partitions",
     "rotating_folds",
     "random_partition",
     "is_partition",
@@ -90,11 +90,11 @@ def _check_partition_error(
 
 
 def _validate_args(
-    items: Collection, num_folds: int, /, *, group_labels: Collection[Label] | None
+    items: Collection, num: int, /, *, group_labels: Collection[Label] | None
 ) -> None:
     r"""Validate fold counts and the ordered, positionally aligned inputs."""
-    if not isinstance(num_folds, int) or num_folds <= 0:
-        raise ValueError("num_folds must be a positive integer.")
+    if not isinstance(num, int) or num <= 0:
+        raise ValueError("num must be a positive integer.")
     _validate_inputs(items, group_labels)
 
 
@@ -116,7 +116,7 @@ def _validate_inputs(
 def rotating_folds[T, K](
     items: Collection[T],
     /,
-    num_folds: int = 1,
+    num: int = 1,
     *,
     chunks: Mapping[K, int],
     rng: int | Random,
@@ -127,7 +127,7 @@ def rotating_folds[T, K](
 def rotating_folds[T](
     items: Collection[T],
     /,
-    num_folds: int = 1,
+    num: int = 1,
     *,
     chunks: Sequence[int],
     rng: int | Random,
@@ -137,7 +137,7 @@ def rotating_folds[T](
 def rotating_folds[T, K](
     items: Collection[T],
     /,
-    num_folds: int = 1,
+    num: int = 1,
     *,
     chunks: Mapping[K, int] | Sequence[int],
     rng: int | Random,
@@ -148,14 +148,14 @@ def rotating_folds[T, K](
 
     Shuffle distinct groups once and distribute them over the configured total
     number of chunks. Chunk sizes differ by at most one; earlier chunks receive leftovers.
-    Each fold shifts split boundaries by `num_chunks // num_folds` chunks.
+    Each fold shifts split boundaries by `num_chunks // num` chunks.
     This preserves the rotation policy of `datatools.folds_from_groups`.
     By default, return a one-element list containing the initial partition.
 
     Splits assigned zero chunks are retained as empty lists. Too few
     groups can produce empty splits, including training splits. Group counts,
     rather than element counts, determine the proportions when grouping is used.
-    A one-chunk test split with `num_folds` chunks visits every group once;
+    A one-chunk test split with `num` chunks visits every group once;
     arbitrary chunk counts do not guarantee equal coverage across folds.
 
     Group labels can mark redundant samples, such as results from replication
@@ -170,10 +170,10 @@ def rotating_folds[T, K](
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
             allowed. Without `group_labels`, every occurrence is split independently.
+        num: Positive number of folds. Defaults to 1.
         chunks: Mapping from split keys to non-negative integer chunk counts, or
             a sequence of counts. Their positive sum must be divisible by
-            `num_folds`. Mapping keys are preserved exactly without normalization.
-        num_folds: Positive number of folds. Defaults to 1.
+            `num`. Mapping keys are preserved exactly without normalization.
         rng: Required integer seed or existing `random.Random` instance. An
             integer creates a local RNG; an existing instance advances in place.
         group_labels: Optional collection of stable, hashable labels, one per item in
@@ -183,7 +183,7 @@ def rotating_folds[T, K](
             `None` disables checking; exceeding the bound raises `RuntimeError`.
 
     Returns:
-        A list of `num_folds` partitions, including when `num_folds=1`. Each partition is a
+        A list of `num` partitions, including when `num=1`. Each partition is a
         dictionary with the same keys and order as `chunks` for a mapping, or a
         tuple with the same length and order for a sequence. Each split contains
         a list of items.
@@ -196,13 +196,13 @@ def rotating_folds[T, K](
         >>> folds = rotating_folds(
         ...     range(4),
         ...     chunks={"train": 1, "test": 1},
-        ...     num_folds=2,
+        ...     num=2,
         ...     rng=2022,
         ... )
         >>> pprint(folds, sort_dicts=False)
         [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 2], 'test': [0, 3]}]
 
-        >>> rotating_folds(range(4), chunks=[1, 1], num_folds=2, rng=2022)
+        >>> rotating_folds(range(4), chunks=[1, 1], num=2, rng=2022)
         [([0, 3], [1, 2]), ([1, 2], [0, 3])]
 
         >>> rotating_folds(range(4), chunks=[1, 1], rng=2022)
@@ -213,7 +213,7 @@ def rotating_folds[T, K](
 
         ```
     """
-    _validate_args(items, num_folds, group_labels=group_labels)
+    _validate_args(items, num, group_labels=group_labels)
     rng = _normalize_rng(rng)
     counts = list(chunks.values() if isinstance(chunks, Mapping) else chunks)
     _validate_weights(counts)
@@ -221,8 +221,8 @@ def rotating_folds[T, K](
 
     if not all(isinstance(count, int) for count in counts):
         raise ValueError("chunks must contain non-negative integer counts.")
-    if num_chunks % num_folds:
-        raise ValueError("Total chunk count must be divisible by num_folds.")
+    if num_chunks % num:
+        raise ValueError("Total chunk count must be divisible by num.")
 
     # Deduplicate groups in element order, then shuffle once for all folds.
     labels = list(range(len(items))) if group_labels is None else list(group_labels)
@@ -244,10 +244,10 @@ def rotating_folds[T, K](
     # Each split reserves its configured number of consecutive chunks in fold zero.
     # Later folds move these boundaries by a fixed number of chunks.
     chunk_splits = [split for split, count in enumerate(counts) for _ in range(count)]
-    step = num_chunks // num_folds
+    step = num_chunks // num
     result: list[tuple[list[T], ...]] = []
 
-    for fold in range(num_folds):
+    for fold in range(num):
         # Retain empty splits, then rotate chunk boundaries and collect
         # items in their original order in one pass.
         parts: tuple[list[T], ...] = tuple([] for _ in counts)
@@ -264,122 +264,23 @@ def rotating_folds[T, K](
     return result
 
 
-@overload
-def repeated_random_folds[T, K](
-    items: Collection[T],
+def is_partition[T](
+    partition: Iterable[Collection[T]],
     /,
-    num_folds: int,
     *,
-    ratios: Mapping[K, float],
-    rng: int | Random,
-    group_labels: Collection[Label] | None = None,
-    max_error: Optional[float] = None,
-) -> list[dict[K, list[T]]]: ...
-@overload
-def repeated_random_folds[T](
-    items: Collection[T],
-    /,
-    num_folds: int,
-    *,
-    ratios: Sequence[float],
-    rng: int | Random,
-    group_labels: Collection[Label] | None = None,
-    max_error: Optional[float] = None,
-) -> list[tuple[list[T], ...]]: ...
-def repeated_random_folds[T, K](
-    items: Collection[T],
-    /,
-    num_folds: int,
-    *,
-    ratios: Mapping[K, float] | Sequence[float],
-    rng: int | Random,
-    group_labels: Collection[Label] | None = None,
-    max_error: Optional[float] = None,
-) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
-    r"""Create repeated random partitions of collection elements.
+    union: Collection[T],
+) -> bool:
+    r"""Check that the parts are disjoint and contain no duplicate elements.
 
-    These are repeated holdouts: test sets can overlap across folds. No rotation
-    coverage is guaranteed. Zero-ratio splits yield empty lists.
-    Group proportions need not equal collection-element proportions.
-    Each fold calls `random_partition` using the same advancing RNG.
-
-    Group labels can mark redundant samples, such as results from replication
-    experiments. Samples with the same label always share a split to avoid data
-    leakage.
-
-    Allocation first counts distinct groups in first-occurrence order. For G
-    groups and normalized split weights pᵢ, compute quotas G pᵢ and floor them.
-    Allocate the remaining groups to the largest fractional remainders, breaking
-    ties in favor of earlier splits. Each fold independently shuffles the groups
-    and assigns consecutive groups according to these fixed counts. Conditional
-    on the counts, all assignments are equally likely. Group sizes do not affect
-    allocation, so sample proportions can differ substantially from the targets.
-
-    Positive weights do not guarantee nonempty splits: with just two groups and
-    train/test weights of 9:1, quotas of 1.8 and 0.2 yield two training groups and
-    an empty test split in every fold. Even when several assignments are possible,
-    repeated partitions may coincide by chance. `max_error` checks the resulting
-    sample proportions and raises on failure; it does not retry or optimize the
-    assignment to meet sample-size targets.
-
-    For hashable items, pass `group_labels=items` to keep equal values together. For
-    unhashable items, supply hashable labels. For lists of hashable values, use
-    `group_labels=[tuple(item) for item in items]`. Equal items can occur in different splits
-    unless their labels agree. Grouping preserves every occurrence.
-
-    Args:
-        items: Ordered collection of items; duplicates and unhashable items are
-            allowed. Without `group_labels`, every occurrence is split independently.
-        ratios: Mapping from split keys to finite, non-negative relative weights,
-            or a sequence of weights, with at least one positive weight. Mapping
-            keys are preserved exactly without normalization. Allocate group
-            counts by largest remainder, breaking ties by split order.
-        num_folds: Positive number of partitions to draw.
-        rng: Required integer seed or existing `random.Random` instance. One RNG
-            advances across folds; an existing instance also retains its state
-            between calls. Partitions may coincide by chance for small inputs.
-        group_labels: Optional collection of stable, hashable labels, one per item in
-            iteration order. Must have the same length as `items`. Occurrences
-            with equal labels stay together. Labels need not support ordering.
-        max_error: Maximum item-proportion TV distance from `ratios`, in `[0, 1]`.
-            `None` disables checking; exceeding the bound raises `RuntimeError`.
-
-    Returns:
-        A list of `num_folds` partitions. Each partition is a dictionary with the
-        same keys and order as `ratios` for a mapping, or a tuple with the same
-        length and order for a sequence. Each split contains a list of items.
-
-    Examples:
-        Draw two equal-proportion training and test partitions of four elements.
-
-        ```pycon
-        >>> from pprint import pprint
-        >>> folds = repeated_random_folds(
-        ...     range(4),
-        ...     ratios={"train": 1, "test": 1},
-        ...     num_folds=2,
-        ...     rng=2022,
-        ... )
-        >>> pprint(folds, sort_dicts=False)
-        [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 3], 'test': [0, 2]}]
-
-        >>> repeated_random_folds(range(4), ratios=[1, 1], num_folds=2, rng=2022)
-        [([0, 3], [1, 2]), ([1, 3], [0, 2])]
-
-        ```
+    If `union` is provided, also check that the parts cover it exactly.
+    The input must support repeated iteration because it is traversed twice.
     """
-    _validate_args(items, num_folds, group_labels=group_labels)
-    rng = _normalize_rng(rng)
-    return [
-        random_partition(
-            items,
-            ratios=ratios,
-            rng=rng,
-            group_labels=group_labels,
-            max_error=max_error,
-        )
-        for _ in range(num_folds)
-    ]
+    sets = (set(p) for p in partition)
+    part_union = set().union(*sets)
+
+    if part_union != set(union):
+        return False
+    return len(part_union) == sum(len(p) for p in partition)
 
 
 @overload
@@ -562,20 +463,119 @@ def random_partition[T, K](
     return tuple(partitions)
 
 
-def is_partition[T](
-    partition: Iterable[Collection[T]],
+@overload
+def random_partitions[T, K](
+    items: Collection[T],
     /,
+    num: int,
     *,
-    union: Collection[T],
-) -> bool:
-    r"""Check that the parts are disjoint and contain no duplicate elements.
+    ratios: Mapping[K, float],
+    rng: int | Random,
+    group_labels: Collection[Label] | None = None,
+    max_error: Optional[float] = None,
+) -> list[dict[K, list[T]]]: ...
+@overload
+def random_partitions[T](
+    items: Collection[T],
+    /,
+    num: int,
+    *,
+    ratios: Sequence[float],
+    rng: int | Random,
+    group_labels: Collection[Label] | None = None,
+    max_error: Optional[float] = None,
+) -> list[tuple[list[T], ...]]: ...
+def random_partitions[T, K](
+    items: Collection[T],
+    /,
+    num: int,
+    *,
+    ratios: Mapping[K, float] | Sequence[float],
+    rng: int | Random,
+    group_labels: Collection[Label] | None = None,
+    max_error: Optional[float] = None,
+) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
+    r"""Create repeated random partitions of collection elements.
 
-    If `union` is provided, also check that the parts cover it exactly.
-    The input must support repeated iteration because it is traversed twice.
+    These are repeated holdouts: test sets can overlap across folds. No rotation
+    coverage is guaranteed. Zero-ratio splits yield empty lists.
+    Group proportions need not equal collection-element proportions.
+    Each fold calls `random_partition` using the same advancing RNG.
+
+    Group labels can mark redundant samples, such as results from replication
+    experiments. Samples with the same label always share a split to avoid data
+    leakage.
+
+    Allocation first counts distinct groups in first-occurrence order. For G
+    groups and normalized split weights pᵢ, compute quotas G pᵢ and floor them.
+    Allocate the remaining groups to the largest fractional remainders, breaking
+    ties in favor of earlier splits. Each fold independently shuffles the groups
+    and assigns consecutive groups according to these fixed counts. Conditional
+    on the counts, all assignments are equally likely. Group sizes do not affect
+    allocation, so sample proportions can differ substantially from the targets.
+
+    Positive weights do not guarantee nonempty splits: with just two groups and
+    train/test weights of 9:1, quotas of 1.8 and 0.2 yield two training groups and
+    an empty test split in every fold. Even when several assignments are possible,
+    repeated partitions may coincide by chance. `max_error` checks the resulting
+    sample proportions and raises on failure; it does not retry or optimize the
+    assignment to meet sample-size targets.
+
+    For hashable items, pass `group_labels=items` to keep equal values together. For
+    unhashable items, supply hashable labels. For lists of hashable values, use
+    `group_labels=[tuple(item) for item in items]`. Equal items can occur in different splits
+    unless their labels agree. Grouping preserves every occurrence.
+
+    Args:
+        items: Ordered collection of items; duplicates and unhashable items are
+            allowed. Without `group_labels`, every occurrence is split independently.
+        num: Positive number of partitions to draw.
+        ratios: Mapping from split keys to finite, non-negative relative weights,
+            or a sequence of weights, with at least one positive weight. Mapping
+            keys are preserved exactly without normalization. Allocate group
+            counts by largest remainder, breaking ties by split order.
+        rng: Required integer seed or existing `random.Random` instance. One RNG
+            advances across folds; an existing instance also retains its state
+            between calls. Partitions may coincide by chance for small inputs.
+        group_labels: Optional collection of stable, hashable labels, one per item in
+            iteration order. Must have the same length as `items`. Occurrences
+            with equal labels stay together. Labels need not support ordering.
+        max_error: Maximum item-proportion TV distance from `ratios`, in `[0, 1]`.
+            `None` disables checking; exceeding the bound raises `RuntimeError`.
+
+    Returns:
+        A list of `num` partitions. Each partition is a dictionary with the
+        same keys and order as `ratios` for a mapping, or a tuple with the same
+        length and order for a sequence. Each split contains a list of items.
+
+    Examples:
+        Draw two equal-proportion training and test partitions of four elements.
+
+        ```pycon
+        >>> from pprint import pprint
+        >>> folds = random_partitions(
+        ...     range(4),
+        ...     ratios={"train": 1, "test": 1},
+        ...     num=2,
+        ...     rng=2022,
+        ... )
+        >>> pprint(folds, sort_dicts=False)
+        [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 3], 'test': [0, 2]}]
+
+        >>> random_partitions(range(4), ratios=[1, 1], num=2, rng=2022)
+        [([0, 3], [1, 2]), ([1, 3], [0, 2])]
+
+        ```
     """
-    sets = (set(p) for p in partition)
-    part_union = set().union(*sets)
-
-    if part_union != set(union):
-        return False
-    return len(part_union) == sum(len(p) for p in partition)
+    _validate_args(items, num, group_labels=group_labels)
+    rng = _normalize_rng(rng)
+    return [
+        random_partition(
+            items,
+            ratios=ratios,
+            rng=rng,
+            group_labels=group_labels,
+            max_error=max_error,
+        )
+        for _ in range(num)
+    ]

@@ -12,7 +12,7 @@ from tsdm.stats.distances import total_variation_distance
 from tsdm.tasks.utils import (
     is_partition,
     random_partition,
-    repeated_random_folds,
+    random_partitions,
     rotating_folds,
 )
 
@@ -25,12 +25,10 @@ def partitioner(request: pytest.FixtureRequest) -> Callable[..., object]:
         case "partition":
             return partial(random_partition, keys, sizes=(12, 8))
         case "rotating":
-            return partial(
-                rotating_folds, keys, chunks={"train": 3, "test": 1}, num_folds=4
-            )
+            return partial(rotating_folds, keys, chunks={"train": 3, "test": 1}, num=4)
         case "repeated":
             return partial(
-                repeated_random_folds, keys, ratios={"train": 3, "test": 1}, num_folds=4
+                random_partitions, keys, ratios={"train": 3, "test": 1}, num=4
             )
         case _:
             raise AssertionError(request.param)
@@ -43,9 +41,9 @@ def ratio_partitioner(request: pytest.FixtureRequest) -> Callable[..., object]:
         case "partition":
             return partial(random_partition, ratios=[1, 1], rng=0)
         case "rotating":
-            return partial(rotating_folds, chunks=[1, 1], num_folds=2, rng=0)
+            return partial(rotating_folds, chunks=[1, 1], num=2, rng=0)
         case "repeated":
-            return partial(repeated_random_folds, ratios=[1, 1], num_folds=2, rng=0)
+            return partial(random_partitions, ratios=[1, 1], num=2, rng=0)
         case _:
             raise AssertionError(request.param)
 
@@ -120,8 +118,8 @@ def test_invalid_max_error(
     ("function", "parameter", "options"),
     [
         (random_partition, "ratios", {}),
-        (rotating_folds, "chunks", {"num_folds": 4}),
-        (repeated_random_folds, "ratios", {"num_folds": 4}),
+        (rotating_folds, "chunks", {"num": 4}),
+        (random_partitions, "ratios", {"num": 4}),
     ],
 )
 @pytest.mark.parametrize("named", [True, False])
@@ -316,8 +314,8 @@ def test_random_and_repeated_partitions_agree(*, named: bool, grouped: bool) -> 
     ratios = {"train": 1, "valid": 1, "test": 1, "empty": 0} if named else [1, 1, 1, 0]
     rng = Random(37)
     reference_rng = Random(37)
-    expected = repeated_random_folds(
-        items, num_folds=3, ratios=ratios, group_labels=labels, rng=reference_rng
+    expected = random_partitions(
+        items, num=3, ratios=ratios, group_labels=labels, rng=reference_rng
     )
     actual = [
         random_partition(items, ratios=ratios, group_labels=labels, rng=rng)
