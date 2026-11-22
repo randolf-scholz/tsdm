@@ -181,9 +181,9 @@ def total_variation_distance(p: ArrayLike, q: ArrayLike, /) -> NDArray[np.float6
 
     $$ d_{TV}(eᵢ,eⱼ) = 1 \quad (i≠j), \qquad d_{TV}(eᵢ,uₙ) = 1-1/n $$
 
-    For split proportions this measures the mass that must be reassigned,
-    ignoring grouping and integer-count constraints. For at most three
-    categories, it equals the maximum absolute difference of proportions.
+    This measures the minimum probability mass that must be reassigned between
+    categories. For at most three categories, it equals the maximum absolute
+    difference of proportions.
 
     Args:
         p: Nonnegative finite real weights of shape `(..., n)`, with `n > 0`
@@ -197,7 +197,7 @@ def total_variation_distance(p: ArrayLike, q: ArrayLike, /) -> NDArray[np.float6
     Raises:
         ValueError: If the shapes or weights are invalid.
 
-    Note:
+    Note: Interpretation of TV distance
         Total variation is the Wasserstein-1 distance for the discrete ground
         metric $ρ(i,j)=0$ if $i=j$ and $ρ(i,j)=1$ otherwise. For normalized
         inputs, let $Π(p,q)$ be the nonnegative transport matrices with row sums
@@ -212,7 +212,44 @@ def total_variation_distance(p: ArrayLike, q: ArrayLike, /) -> NDArray[np.float6
         The optimum keeps $\min(pᵢ,qᵢ)$ at each category and transports the
         remaining mass from categories with excess to those with deficits.
 
-    Examples:
+        Thus a TV distance of 0.2 means the minimum mass that must change
+        categories is 20%, giving transport cost 0.2. For example, converting
+        100 samples from counts `(80, 10, 10)` to `(60, 20, 20)` requires moving
+        10 samples from the first category to each of the other two.
+
+        For a target ratio `4:2:1`, integer rounding also matters. Suppose 100
+        samples are assigned counts `(60, 30, 10)`. Comparing these counts with
+        the target probabilities `(4/7, 2/7, 1/7)` gives:
+
+        ```pycon
+        >>> target, realized = [4, 2, 1], [60, 30, 10]
+        >>> total_variation_distance(target, realized).round(6).item()
+        0.042857
+
+        ```
+
+        The distance $3/70≈0.042857$ means moving about 4.29% of the probability
+        mass from the first two categories to the third to match the target.
+        Probability mass is divisible; individual samples are not. Since 7
+        does not divide 100, no integer counts can realize the target exactly.
+
+        The closest integer allocation is `(57, 29, 14)`: move three samples
+        from the first category and one from the second, all to the third:
+
+        ```pycon
+        >>> total_variation_distance(realized, [57, 29, 14]).round(6).item()
+        0.04
+        >>> total_variation_distance(target, [57, 29, 14]).round(6).item()
+        0.004286
+
+        ```
+
+        The first result corresponds to reassigning four of the 100 samples.
+        The second is the minimum remaining discrepancy from `4:2:1` due to
+        integer rounding.
+
+    Example: Basic numerical examples
+        ```pycon
         >>> total_variation_distance([3, 1, 1], [8, 1, 1]).round(10).item()
         0.2
         >>> total_variation_distance([1, 2], [2, 4]).item()
@@ -225,6 +262,8 @@ def total_variation_distance(p: ArrayLike, q: ArrayLike, /) -> NDArray[np.float6
         0.75
         >>> total_variation_distance([[1, 0], [1, 1]], [0, 1])
         array([1. , 0.5])
+
+        ```
     """
     x, y = _validate_weights(p, q)
     x = _normalize(x)
