@@ -8,6 +8,8 @@ site_url = "https://github.com/randolf-scholz/tsdm"
 site_author = "Randolf Scholz"
 repo_url = "https://github.com/randolf-scholz/tsdm"
 repo_name = "randolf-scholz/tsdm"
+# mkdocstrings reads ../src, which is outside Zensical's automatic source watch.
+watch = ["../src"]
 extra_css = [
     "static/css/adjacent-navigation.css",
     "static/css/layout.css",
