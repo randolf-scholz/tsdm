@@ -57,13 +57,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import (
-    Any,
-    Final,
-    NamedTuple,
-    Protocol,
-    overload,
-)
+from typing import Any, Final, NamedTuple, Protocol, overload
 from zipfile import ZipFile
 
 import numpy as np

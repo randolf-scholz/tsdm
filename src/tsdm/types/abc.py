@@ -23,13 +23,7 @@ from collections.abc import (
     Mapping,
     ValuesView,
 )
-from typing import (
-    Protocol,
-    Self,
-    cast,
-    overload,
-    runtime_checkable,
-)
+from typing import Protocol, Self, cast, overload, runtime_checkable
 
 from .protocols import SupportsKeysAndGetItem
 

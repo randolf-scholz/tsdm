@@ -18,14 +18,7 @@ __all__ = [
 import datetime as dt
 from collections.abc import Callable, Iterable, Iterator
 from enum import StrEnum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Final,
-    Literal,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view

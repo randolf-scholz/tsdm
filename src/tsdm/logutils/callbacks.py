@@ -47,13 +47,7 @@ import inspect
 import logging
 import pickle
 from abc import abstractmethod
-from collections.abc import (
-    Callable,
-    Iterable,
-    Iterator,
-    Mapping,
-    MutableSequence,
-)
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableSequence
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 from math import nan
