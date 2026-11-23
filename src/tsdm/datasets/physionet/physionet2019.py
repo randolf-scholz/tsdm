@@ -118,7 +118,7 @@ from tqdm.auto import tqdm
 
 import tsdm.backend as B
 from tsdm.datasets.base import PolarsDataset
-from tsdm.hashutils import hash_zip_contents
+from tsdm.hashing import hash_zip_contents
 from tsdm.utils import remote
 from tsdm.validation import ErrorHandler, validate_csv_header, validate_hash
 

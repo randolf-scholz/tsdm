@@ -13,7 +13,6 @@ path = "tsdm"
 depends_on = [
     "tsdm.backend",
     "tsdm.datasets",
-    "tsdm.datatools",
     "tsdm.encoders",
     "tsdm.linalg",
     "tsdm.logutils",
@@ -45,15 +44,11 @@ utility = true
 path = "tsdm.datasets"
 depends_on = [
     "tsdm.backend",
-    "tsdm.hashutils",
     "tsdm.random",
     "tsdm.types",
     "tsdm.validation",
+    "tsdm.hashing",
 ]
-
-[[modules]]
-path = "tsdm.datatools"
-depends_on = []
 
 [[modules]]
 path = "tsdm.decorator"
@@ -70,7 +65,6 @@ depends_on = [
 path = "tsdm.encoders.universal"
 depends_on = [
     "tsdm.backend",
-    "tsdm.datatools",
     "tsdm.encoders",
     "tsdm.types",
 ]
@@ -108,15 +102,11 @@ utility = true
 
 [[modules]]
 path = "tsdm.random"
-depends_on = [
-    "tsdm.datatools",
-    "tsdm.types",
-]
+depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.tasks"
 depends_on = [
-    "tsdm.datatools",
     "tsdm.encoders",
     "tsdm.losses",
     "tsdm.random",
@@ -127,10 +117,7 @@ depends_on = [
 
 [[modules]]
 path = "tsdm.timeseries"
-depends_on = [
-    "tsdm.datasets",
-    "tsdm.datatools",
-]
+depends_on = ["tsdm.datasets"]
 
 [[modules]]
 path = "tsdm.types"
@@ -146,11 +133,7 @@ utility = true
 
 [[modules]]
 path = "tsdm.validation"
-depends_on = ["tsdm.hashutils", "tsdm.types"]
-
-[[modules]]
-path = "tsdm.hashutils"
-depends_on = ["tsdm.types"]
+depends_on = ["tsdm.types", "tsdm.hashing"]
 
 [[modules]]
 path = "tsdm.stats"
@@ -159,3 +142,7 @@ depends_on = []
 [[modules]]
 path = "tsdm.plotting"
 depends_on = []
+
+[[modules]]
+path = "tsdm.hashing"
+depends_on = ["tsdm.types"]

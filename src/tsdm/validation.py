@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal, assert_never, overload
 
 from . import config
-from .hashutils import Hash, hash_array, hash_file
+from .hashing import Hash, hash_array, hash_file
 from .types import FilePath, FileStream, HasShape
 
 
