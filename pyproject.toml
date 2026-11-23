@@ -352,7 +352,7 @@ implicit_reexport = false
 # enable_error_code =[]
 # disable_error_code = []
 allow_untyped_globals = false
-allow_redefinition_new = true
+allow_redefinition = true
 local_partial_types = true
 
 # configuring error messages
