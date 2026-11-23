@@ -243,6 +243,11 @@ window.MathJax = {
     options: {  // added for https://zensical.org/docs/authoring/math/
         ignoreHtmlClass: ".*|",
         processHtmlClass: "arithmatex",
+        // Zensical's search highlighting can insert a <mark> inside a formula.
+        // For example, ?h=uniform turns \op{Uniform} into \op{<mark>Uniform</mark>}.
+        // The tag interrupts MathJax's scan between the TeX delimiters, leaving raw TeX.
+        // Pass the tag's text to the scanner so it sees the original formula.
+        includeHtmlTags: {mark: (node, adaptor) => adaptor.textContent(node)},
     }
 };
 
