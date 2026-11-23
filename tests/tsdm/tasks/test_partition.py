@@ -144,18 +144,12 @@ class TestPartitions:
         assert partitioner(rng=rng) == first
         assert partitioner(rng=rng) == second
 
-    @pytest.mark.parametrize("rng", [None, 1.5, "37"])
+    @pytest.mark.parametrize("rng", [1.5, "37"])
     def test_invalid_random_source(
         self, partitioner: Callable[..., object], rng
     ) -> None:
         with pytest.raises(TypeError, match="rng"):
             partitioner(rng=rng)
-
-    def test_random_source_is_required(
-        self, partitioner: Callable[..., object]
-    ) -> None:
-        with pytest.raises(TypeError, match="rng"):
-            partitioner()
 
     @pytest.mark.parametrize("num", [1, 4])
     @pytest.mark.parametrize("named", [True, False])
@@ -412,6 +406,18 @@ class TestRandomPartitions(TestPartitions):
                 )
             case _:
                 raise AssertionError(request.param)
+
+    def test_random_source_is_required(
+        self, partitioner: Callable[..., object]
+    ) -> None:
+        with pytest.raises(TypeError, match="rng"):
+            partitioner()
+
+    def test_none_random_source_is_invalid(
+        self, partitioner: Callable[..., object]
+    ) -> None:
+        with pytest.raises(TypeError, match="rng"):
+            partitioner(rng=None)
 
     @pytest.mark.parametrize("named", [True, False])
     @pytest.mark.parametrize("num", [1, 2])
@@ -804,7 +810,7 @@ class TestRotatatingPartition(TestPartitions):
     @pytest.mark.parametrize("named", [True, False])
     @pytest.mark.parametrize("grouped", [True, False])
     def test_without_shuffling(self, *, named: bool, grouped: bool) -> None:
-        r"""Unshuffled chunks preserve group order and do not consume RNG state."""
+        r"""Omitted and explicit None RNGs preserve group order and global RNG state."""
         items = range(8) if grouped else range(4)
         labels = ["a", "b", "a", "c", "b", "d", "c", "d"] if grouped else None
         train, test = ([0, 1, 2, 4], [3, 5, 6, 7]) if grouped else ([0, 1], [2, 3])
@@ -814,19 +820,16 @@ class TestRotatatingPartition(TestPartitions):
             if named
             else [(train, test), (test, train)]
         )
-        rng = Random(2022)
-        initial_state = rng.getstate()
-        folds = rotating_partitions(
-            items, num=2, chunks=chunks, rng=rng, shuffle=False, group_labels=labels
-        )
+        initial_state = getstate()
+        folds = rotating_partitions(items, num=2, chunks=chunks, group_labels=labels)
         assert folds == expected
-        assert rng.getstate() == initial_state
         assert (
             rotating_partitions(
-                items, num=2, chunks=chunks, rng=0, shuffle=False, group_labels=labels
+                items, num=2, chunks=chunks, rng=None, group_labels=labels
             )
             == expected
         )
+        assert getstate() == initial_state
 
     def test_rotating_fold_assignments(self) -> None:
         r"""Pin seeded assignments and verify coverage across an entire rotation."""

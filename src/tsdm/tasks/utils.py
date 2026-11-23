@@ -118,8 +118,7 @@ def rotating_partitions[T, K](
     num: int,
     *,
     chunks: Mapping[K, SupportsIndex],
-    rng: int | Random,
-    shuffle: bool = True,
+    rng: Optional[int | Random] = None,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]]: ...
@@ -130,8 +129,7 @@ def rotating_partitions[T](
     num: int,
     *,
     chunks: Sequence[SupportsIndex],
-    rng: int | Random,
-    shuffle: bool = True,
+    rng: Optional[int | Random] = None,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[tuple[list[T], ...]]: ...
@@ -141,15 +139,14 @@ def rotating_partitions[T, K](
     num: int,
     *,
     chunks: Mapping[K, SupportsIndex] | Sequence[SupportsIndex],
-    rng: int | Random,
-    shuffle: bool = True,
+    rng: Optional[int | Random] = None,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Partition collection elements by rotating optionally shuffled group chunks.
 
-    By default, shuffle distinct groups once before forming chunks. With
-    `shuffle=False`, retain their first-occurrence order instead. Distribute groups
+    By default, retain distinct groups in first-occurrence order. Supplying `rng`
+    shuffles groups once before forming chunks. Distribute groups
     over the configured total number of chunks; chunk sizes differ by at most one,
     and earlier chunks receive leftovers.
     Fold `i` rotates split boundaries by `i * num_chunks // num` chunks.
@@ -184,11 +181,10 @@ def rotating_partitions[T, K](
             a sequence of counts. Counts must support `__index__`.
             Their positive sum must be at least `num`.
             Mapping keys are preserved exactly without normalization.
-        rng: Required integer seed or existing `random.Random` instance. An
-            integer creates a local RNG; an existing instance advances in place
-            only when `shuffle=True`.
-        shuffle: Whether to shuffle groups before forming chunks. If `False`,
-            preserve first-occurrence order and leave the RNG state unchanged.
+        rng: Optional integer seed or existing `random.Random` instance to shuffle
+            groups before forming chunks. An integer creates a local RNG; an
+            existing instance advances in place. Defaults to `None`, which
+            disables shuffling and preserves first-occurrence order.
         group_labels: Optional collection of stable, hashable labels, one per item in
             iteration order. Must have the same length as `items`. Occurrences
             with equal labels stay together. Labels need not support ordering.
@@ -216,7 +212,7 @@ def rotating_partitions[T, K](
 
         ```pycon
         >>> items = [0, 1, 2, 3]
-        >>> rotating_partitions(items, num=2, chunks=[1, 1], rng=0, shuffle=False)
+        >>> rotating_partitions(items, num=2, chunks=[1, 1])
         [([0, 1], [2, 3]), ([2, 3], [0, 1])]
         >>> rotating_partitions(items, num=2, chunks=[1, 1], rng=0)
         [([0, 2], [1, 3]), ([1, 3], [0, 2])]
@@ -226,7 +222,6 @@ def rotating_partitions[T, K](
         ```
     """
     _validate_args(items, num, group_labels=group_labels)
-    rng = _normalize_rng(rng)
     counts = _normalize_counts(chunks, name="chunks")
     num_chunks = sum(counts)
 
@@ -237,8 +232,9 @@ def rotating_partitions[T, K](
     # Deduplicate groups in element order, then optionally shuffle once for all folds.
     labels = list(range(len(items))) if group_labels is None else list(group_labels)
     unique_groups = list(dict.fromkeys(labels))
-    if shuffle:
-        rng.shuffle(unique_groups)
+    if rng is not None:
+        generator = _normalize_rng(rng)
+        generator.shuffle(unique_groups)
 
     # Divide the groups into chunks. The first few chunks receive one
     # extra group when the group count is not divisible by the chunk count.
