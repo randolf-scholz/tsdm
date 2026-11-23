@@ -446,9 +446,6 @@ class TestRandomPartitions(TestPartitions):
         assert is_partition(parts, union=range(5))
 
     def test_empty_partitions(self) -> None:
-        assert random_partitions([], num=1, sizes=(0, 0), rng=0)[0] == ([], [])
-        assert random_partitions([], num=1, sizes={}, rng=0)[0] == {}
-        assert random_partitions([], num=1, sizes={}, rng=0, max_error=0)[0] == {}
         assert random_partitions([], num=1, ratios=(1, 0), rng=0)[0] == ([], [])
         assert random_partitions([], num=1, ratios={"train": 1, "test": 0}, rng=0)[
             0
@@ -457,7 +454,18 @@ class TestRandomPartitions(TestPartitions):
             "test": [],
         }
 
-    @pytest.mark.parametrize("sizes", [(-1, 3), (1, 0)])
+    @pytest.mark.parametrize("sizes", [(), (0, 0)])
+    @pytest.mark.parametrize("named", [True, False])
+    @pytest.mark.parametrize("num", [1, 2])
+    def test_sizes_require_positive_count(
+        self, sizes, num: int, *, named: bool
+    ) -> None:
+        with pytest.raises(ValueError, match=r"sizes.*positive"):
+            random_partitions(
+                [], num=num, sizes=dict(enumerate(sizes)) if named else sizes, rng=0
+            )
+
+    @pytest.mark.parametrize("sizes", [(-1, 3), (1, 0), (1.5, 0.5)])
     @pytest.mark.parametrize("named", [True, False])
     def test_invalid_sizes(self, sizes, *, named: bool) -> None:
         with pytest.raises(ValueError, match="sizes"):
@@ -646,6 +654,10 @@ class TestRandomPartitions(TestPartitions):
     def test_partition_empty_group_labels(self, parameter: str) -> None:
         spec = [0, 0] if parameter == "sizes" else [1, 1]
         options: dict[str, Any] = {parameter: spec}
+        if parameter == "sizes":
+            with pytest.raises(ValueError, match=r"sizes.*positive"):
+                random_partitions([], num=1, **options, group_labels=[], rng=0)
+            return
         assert random_partitions([], num=1, **options, group_labels=[], rng=0)[0] == (
             [],
             [],
@@ -789,6 +801,33 @@ class TestRotatatingPartition(TestPartitions):
     function = staticmethod(rotating_partitions)
     parameter_name = "chunks"
 
+    @pytest.mark.parametrize("named", [True, False])
+    @pytest.mark.parametrize("grouped", [True, False])
+    def test_without_shuffling(self, *, named: bool, grouped: bool) -> None:
+        r"""Unshuffled chunks preserve group order and do not consume RNG state."""
+        items = range(8) if grouped else range(4)
+        labels = ["a", "b", "a", "c", "b", "d", "c", "d"] if grouped else None
+        train, test = ([0, 1, 2, 4], [3, 5, 6, 7]) if grouped else ([0, 1], [2, 3])
+        chunks = {"train": 1, "test": 1} if named else [1, 1]
+        expected = (
+            [{"train": train, "test": test}, {"train": test, "test": train}]
+            if named
+            else [(train, test), (test, train)]
+        )
+        rng = Random(2022)
+        initial_state = rng.getstate()
+        folds = rotating_partitions(
+            items, num=2, chunks=chunks, rng=rng, shuffle=False, group_labels=labels
+        )
+        assert folds == expected
+        assert rng.getstate() == initial_state
+        assert (
+            rotating_partitions(
+                items, num=2, chunks=chunks, rng=0, shuffle=False, group_labels=labels
+            )
+            == expected
+        )
+
     def test_rotating_fold_assignments(self) -> None:
         r"""Pin seeded assignments and verify coverage across an entire rotation."""
         folds = rotating_partitions(
@@ -808,6 +847,25 @@ class TestRotatatingPartition(TestPartitions):
         for key in range(8):
             assert sum(key in folds[fold]["test"] for fold in range(4)) == 1
             assert sum(key in folds[fold]["valid"] for fold in range(4)) == 1
+
+    @pytest.mark.parametrize(
+        ("num", "expected_test"),
+        [(4, [3, 4, 1, 0]), (6, [3, 4, 2, 1, 0, 5])],
+    )
+    @pytest.mark.parametrize("named", [True, False])
+    def test_evenly_spaced_rotations(
+        self, num: int, expected_test: list[int], *, named: bool
+    ) -> None:
+        r"""Composite chunk counts allow distinct, evenly spaced fold offsets."""
+        chunks = {"train": 5, "test": 1} if named else [5, 1]
+        folds = rotating_partitions(range(6), num=num, chunks=chunks, rng=0)
+        parts = [
+            tuple(fold.values()) if isinstance(fold, dict) else fold for fold in folds
+        ]
+        assert [test for _, test in parts] == [[item] for item in expected_test]
+        for train, test in parts:
+            assert len(train) == 5
+            assert is_partition((train, test), union=range(6))
 
     @pytest.mark.parametrize("named", [True, False])
     @pytest.mark.parametrize("grouped", [True, False])
@@ -887,11 +945,11 @@ class TestRotatatingPartition(TestPartitions):
     @pytest.mark.parametrize(
         ("chunks", "message"),
         [
-            ({}, "At least one split must be configured"),
-            ({"train": 0}, "positive weight"),
+            ({}, "positive"),
+            ({"train": 0}, "positive"),
             ({"train": -1}, "non-negative"),
             ({"train": 1.5}, "integer counts"),
-            ({"train": 3}, "divisible by num"),
+            ({"train": 1}, "must not exceed the total chunk count"),
         ],
     )
     @pytest.mark.parametrize("named", [True, False])

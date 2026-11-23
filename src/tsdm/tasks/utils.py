@@ -34,6 +34,7 @@ __all__ = [
     "is_partition",
 ]
 
+import operator
 from collections.abc import (
     Collection,
     Iterable,
@@ -62,16 +63,22 @@ def _normalize_rng(rng: int | Random, /) -> Random:
             raise TypeError("rng must be an integer seed or a random.Random instance.")
 
 
-def _validate_weights(values: Sequence[float], /) -> None:
-    r"""Require finite, non-negative weights with a positive total."""
-    if not values:
-        raise ValueError("At least one split must be configured.")
-    if any(not isfinite(weight) for weight in values):
-        raise ValueError("Split weights must be finite.")
-    if any(weight < 0 for weight in values):
-        raise ValueError("Split weights must be non-negative.")
-    if not any(weight > 0 for weight in values):
-        raise ValueError("At least one split must have a positive weight.")
+def _normalize_counts[K](
+    values: Mapping[K, SupportsIndex] | Sequence[SupportsIndex], /, *, name: str
+) -> list[int]:
+    r"""Convert index-compatible counts to non-negative integers with a positive total."""
+    try:
+        counts = [
+            operator.index(value)  # avoids AttributeError compared to value.__index__()
+            for value in (values.values() if isinstance(values, Mapping) else values)
+        ]
+    except TypeError as exc:
+        raise ValueError(f"{name} must contain non-negative integer counts.") from exc
+    if any(count < 0 for count in counts):
+        raise ValueError(f"{name} must contain non-negative integer counts.")
+    if not any(count > 0 for count in counts):
+        raise ValueError(f"{name} must contain at least one positive count.")
+    return counts
 
 
 def _check_partition_error(
@@ -94,13 +101,6 @@ def _validate_args(
     r"""Validate fold counts and the ordered, positionally aligned inputs."""
     if not isinstance(num, int) or num <= 0:
         raise ValueError("num must be a positive integer.")
-    _validate_inputs(items, group_labels)
-
-
-def _validate_inputs(
-    items: Collection, group_labels: Collection[Label] | None, /
-) -> None:
-    r"""Require ordered items and positionally aligned group labels."""
     if isinstance(items, AbstractSet) and not isinstance(items, KeysView):
         raise TypeError("items must have a reproducible iteration order, not a set.")
     if isinstance(group_labels, AbstractSet) and not isinstance(group_labels, KeysView):
@@ -117,8 +117,9 @@ def rotating_partitions[T, K](
     /,
     num: int,
     *,
-    chunks: Mapping[K, int],
+    chunks: Mapping[K, SupportsIndex],
     rng: int | Random,
+    shuffle: bool = True,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]]: ...
@@ -128,8 +129,9 @@ def rotating_partitions[T](
     /,
     num: int,
     *,
-    chunks: Sequence[int],
+    chunks: Sequence[SupportsIndex],
     rng: int | Random,
+    shuffle: bool = True,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[tuple[list[T], ...]]: ...
@@ -138,24 +140,32 @@ def rotating_partitions[T, K](
     /,
     num: int,
     *,
-    chunks: Mapping[K, int] | Sequence[int],
+    chunks: Mapping[K, SupportsIndex] | Sequence[SupportsIndex],
     rng: int | Random,
+    shuffle: bool = True,
     group_labels: Collection[Label] | None = None,
     max_error: Optional[float] = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
-    r"""Partition collection elements by rotating shuffled group chunks.
+    r"""Partition collection elements by rotating optionally shuffled group chunks.
 
-    Shuffle distinct groups once and distribute them over the configured total
-    number of chunks. Chunk sizes differ by at most one; earlier chunks receive leftovers.
-    Each fold shifts split boundaries by `num_chunks // num` chunks.
-    This preserves the rotation policy of `datatools.folds_from_groups`.
+    By default, shuffle distinct groups once before forming chunks. With
+    `shuffle=False`, retain their first-occurrence order instead. Distribute groups
+    over the configured total number of chunks; chunk sizes differ by at most one,
+    and earlier chunks receive leftovers.
+    Fold `i` rotates split boundaries by `i * num_chunks // num` chunks.
+    The number of folds must not exceed the total chunk count, ensuring distinct
+    rotation offsets. Circular gaps between offsets differ by at most one chunk.
     With `num=1`, return a one-element list containing the initial partition.
 
     Splits assigned zero chunks are retained as empty lists. Too few
     groups can produce empty splits, including training splits. Group counts,
     rather than element counts, determine the proportions when grouping is used.
-    A one-chunk test split with `num` chunks visits every group once;
-    arbitrary chunk counts do not guarantee equal coverage across folds.
+    Splits can overlap across folds despite distinct rotation offsets.
+
+    Across `num` folds, every chunk visits a split with `count` chunks either
+    `floor(num * count / num_chunks)` or `ceil(num * count / num_chunks)` times.
+    This balances coverage between chunks to within one visit, with exact equality
+    whenever `num * count` is divisible by `num_chunks`.
 
     Group labels can mark redundant samples, such as results from replication
     experiments. Samples with the same label always share a split to avoid data
@@ -169,12 +179,16 @@ def rotating_partitions[T, K](
     Args:
         items: Ordered collection of items; duplicates and unhashable items are
             allowed. Without `group_labels`, every occurrence is split independently.
-        num: Required positive number of folds.
+        num: Required positive number of folds, at most the total chunk count.
         chunks: Mapping from split keys to non-negative integer chunk counts, or
-            a sequence of counts. Their positive sum must be divisible by
-            `num`. Mapping keys are preserved exactly without normalization.
+            a sequence of counts. Counts must support `__index__`.
+            Their positive sum must be at least `num`.
+            Mapping keys are preserved exactly without normalization.
         rng: Required integer seed or existing `random.Random` instance. An
-            integer creates a local RNG; an existing instance advances in place.
+            integer creates a local RNG; an existing instance advances in place
+            only when `shuffle=True`.
+        shuffle: Whether to shuffle groups before forming chunks. If `False`,
+            preserve first-occurrence order and leave the RNG state unchanged.
         group_labels: Optional collection of stable, hashable labels, one per item in
             iteration order. Must have the same length as `items`. Occurrences
             with equal labels stay together. Labels need not support ordering.
@@ -201,44 +215,32 @@ def rotating_partitions[T, K](
         Rotate training and test splits over two folds for four elements.
 
         ```pycon
-        >>> from pprint import pprint
-        >>> folds = rotating_partitions(
-        ...     range(4),
-        ...     chunks={"train": 1, "test": 1},
-        ...     num=2,
-        ...     rng=2022,
-        ... )
-        >>> pprint(folds, sort_dicts=False)
-        [{'train': [0, 3], 'test': [1, 2]}, {'train': [1, 2], 'test': [0, 3]}]
-
-        >>> rotating_partitions(range(4), chunks=[1, 1], num=2, rng=2022)
-        [([0, 3], [1, 2]), ([1, 2], [0, 3])]
-
-        >>> rotating_partitions(range(4), num=1, chunks=[1, 1], rng=2022)
-        [([0, 3], [1, 2])]
-        >>> [partition] = rotating_partitions(range(4), num=1, chunks=[1, 1], rng=2022)
-        >>> partition
-        ([0, 3], [1, 2])
+        >>> items = [0, 1, 2, 3]
+        >>> rotating_partitions(items, num=2, chunks=[1, 1], rng=0, shuffle=False)
+        [([0, 1], [2, 3]), ([2, 3], [0, 1])]
+        >>> rotating_partitions(items, num=2, chunks=[1, 1], rng=0)
+        [([0, 2], [1, 3]), ([1, 3], [0, 2])]
+        >>> rotating_partitions(items, num=2, chunks={"train": 1, "test": 1}, rng=0)
+        [{'train': [0, 2], 'test': [1, 3]}, {'train': [1, 3], 'test': [0, 2]}]
 
         ```
     """
     _validate_args(items, num, group_labels=group_labels)
     rng = _normalize_rng(rng)
-    counts = list(chunks.values() if isinstance(chunks, Mapping) else chunks)
-    _validate_weights(counts)
+    counts = _normalize_counts(chunks, name="chunks")
     num_chunks = sum(counts)
 
-    if not all(isinstance(count, int) for count in counts):
-        raise ValueError("chunks must contain non-negative integer counts.")
-    if num_chunks % num:
-        raise ValueError("Total chunk count must be divisible by num.")
+    # More folds than chunks would repeat rotation offsets.
+    if num > num_chunks:
+        raise ValueError("The number of folds must not exceed the total chunk count.")
 
-    # Deduplicate groups in element order, then shuffle once for all folds.
+    # Deduplicate groups in element order, then optionally shuffle once for all folds.
     labels = list(range(len(items))) if group_labels is None else list(group_labels)
     unique_groups = list(dict.fromkeys(labels))
-    rng.shuffle(unique_groups)
+    if shuffle:
+        rng.shuffle(unique_groups)
 
-    # Divide the shuffled groups into chunks. The first few chunks receive one
+    # Divide the groups into chunks. The first few chunks receive one
     # extra group when the group count is not divisible by the chunk count.
     base_size, num_larger_chunks = divmod(len(unique_groups), num_chunks)
     chunk_by_group: dict[Label, int] = {}
@@ -251,18 +253,18 @@ def rotating_partitions[T, K](
         start = stop
 
     # Each split reserves its configured number of consecutive chunks in fold zero.
-    # Later folds move these boundaries by a fixed number of chunks.
+    # Later folds distribute rotation offsets as evenly as possible around the cycle.
     chunk_splits = [split for split, count in enumerate(counts) for _ in range(count)]
-    step = num_chunks // num
     result: list[tuple[list[T], ...]] = []
 
     for fold in range(num):
+        offset = fold * num_chunks // num
         # Retain empty splits, then rotate chunk boundaries and collect
         # items in their original order in one pass.
         parts: tuple[list[T], ...] = tuple([] for _ in counts)
         for item, label in zip(items, labels, strict=True):
             chunk = chunk_by_group[label]
-            split = chunk_splits[(chunk - fold * step) % num_chunks]
+            split = chunk_splits[(chunk - offset) % num_chunks]
             parts[split].append(item)
         if max_error is not None:
             _check_partition_error([len(p) for p in parts], counts, max_error=max_error)
@@ -392,8 +394,9 @@ def random_partitions[T, K](
             allowed. Unordered sets are rejected.
         num: Required positive number of partitions to draw.
         sizes: Mapping from split keys to exact non-negative group counts, or a
-            sequence of counts. Counts must sum to the number of distinct groups
-            (the number of items without labels). Mutually exclusive with `ratios`.
+            sequence of counts. Counts must support `__index__` and sum to the
+            number of distinct groups (the number of items without labels).
+            At least one count must be positive. Mutually exclusive with `ratios`.
         ratios: Mapping from split keys to relative group weights, or a sequence
             of weights. Weights must be finite, non-negative, and not all zero.
             Mutually exclusive with `sizes`.
@@ -410,8 +413,8 @@ def random_partitions[T, K](
         is a dictionary preserving the exact keys and order of a supplied mapping,
         or a tuple preserving the length and order of a supplied sequence.
         Each split contains a list of items in input order. Empty splits and
-        every item occurrence are retained. Empty inputs yield empty splits when
-        checking is disabled; `sizes={}` yields `num` empty dictionaries.
+        every item occurrence are retained. With `ratios`, empty inputs yield
+        empty splits when checking is disabled.
 
     Raises:
         ValueError: Invalid `num`, sizes, ratios, or input lengths; invalid `max_error`
@@ -478,14 +481,9 @@ def random_partitions[T, K](
 
     match sizes, ratios:
         case [sizes, None] if sizes is not None:
-            counts = [
-                size.__index__()
-                for size in (sizes.values() if isinstance(sizes, Mapping) else sizes)
-            ]
-            if any(count < 0 for count in counts) or sum(counts) != num_groups:
-                raise ValueError(
-                    "sizes must be non-negative and sum to the number of groups"
-                )
+            counts = _normalize_counts(sizes, name="sizes")
+            if sum(counts) != num_groups:
+                raise ValueError("sizes must sum to the number of groups")
         case [None, ratios] if ratios is not None:
             weights = [
                 ratio.__float__()
