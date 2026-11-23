@@ -16,8 +16,7 @@ __all__ = [
 ]
 
 
-from . import generic, numpy, pandas, polars, pyarrow, torch  # ruff: ignore[I001]
-from . import kernels  # must be imported last
+from . import generic, kernels, numpy, pandas, polars, pyarrow, torch
 from .kernels import *  # ruff: ignore[F403]
 
 __all__ += kernels.__all__

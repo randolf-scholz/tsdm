@@ -26,9 +26,17 @@ import torch as pt
 from numpy import ndarray
 from torch import Tensor
 
-from tsdm import backend as B, constants
+from tsdm import constants
 from tsdm.types import SupportsArray
 
+from . import (
+    generic,
+    numpy as numpy_backend,
+    pandas as pandas_backend,
+    polars as polars_backend,
+    pyarrow as pyarrow_backend,
+    torch as torch_backend,
+)
 from .schemas import (
     ApplyAlongAxes,
     ArraySplitProto,
@@ -57,20 +65,20 @@ class Kernels:  # TODO: how to make this more elegant?
     r"""A collection of kernels for numerical operations."""
 
     select_outliers: dict[BackendID, SelectOutliersProto] = {
-        "arrow": B.pyarrow.select_outliers,
-        "pandas": B.pandas.select_outliers,
-        "polars": B.polars.select_outliers,
+        "arrow": pyarrow_backend.select_outliers,
+        "pandas": pandas_backend.select_outliers,
+        "polars": polars_backend.select_outliers,
     }
 
     remove_outliers: dict[BackendID, RemoveOutliersProto] = {
-        "arrow": B.pyarrow.remove_outliers,
-        "pandas": B.pandas.remove_outliers,
-        "polars": B.polars.remove_outliers,
+        "arrow": pyarrow_backend.remove_outliers,
+        "pandas": pandas_backend.remove_outliers,
+        "polars": polars_backend.remove_outliers,
     }
 
     clip: dict[BackendID, ClipProto] = {
         "numpy": np.clip,
-        "pandas": B.pandas.clip,
+        "pandas": pandas_backend.clip,
         "torch": pt.clip,
     }
 
@@ -78,62 +86,62 @@ class Kernels:  # TODO: how to make this more elegant?
         "arrow": pc.is_null,
         "numpy": np.isnan,
         "pandas": pd.isna,
-        "polars": B.polars.is_null,
+        "polars": polars_backend.is_null,
         "torch": pt.isnan,
     }
 
     nanmin: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
         "numpy": np.nanmin,  # pyrefly: ignore[bad-assignment]
-        "pandas": B.pandas.nanmin,
-        "polars": B.polars.nanmin,
-        "torch": B.torch.nanmin,
+        "pandas": pandas_backend.nanmin,
+        "polars": polars_backend.nanmin,
+        "torch": torch_backend.nanmin,
     }
 
     nanmax: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
         "numpy": np.nanmax,  # pyrefly: ignore[bad-assignment]
-        "pandas": B.pandas.nanmax,
-        "polars": B.polars.nanmax,
-        "torch": B.torch.nanmax,
+        "pandas": pandas_backend.nanmax,
+        "polars": polars_backend.nanmax,
+        "torch": torch_backend.nanmax,
     }
 
     nanmean: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
         "numpy": np.nanmean,  # pyrefly: ignore[bad-assignment]
-        "pandas": B.pandas.nanmean,
+        "pandas": pandas_backend.nanmean,
         "torch": cast("ContractionProto[Tensor]", pt.nanmean),
     }
 
     nanstd: dict[BackendID, ContractionProto] = {  # ty: ignore[invalid-assignment]
         "numpy": np.nanstd,  # pyrefly: ignore[bad-assignment]
-        "pandas": B.pandas.nanstd,
-        "torch": B.torch.nanstd,
+        "pandas": pandas_backend.nanstd,
+        "torch": torch_backend.nanstd,
     }
 
     false_like: dict[BackendID, SelfMap] = {
-        "generic": B.generic.false_like,
-        "arrow": B.pyarrow.false_like,
-        "pandas": B.pandas.false_like,
+        "generic": generic.false_like,
+        "arrow": pyarrow_backend.false_like,
+        "pandas": pandas_backend.false_like,
     }
 
     true_like: dict[BackendID, SelfMap] = {
-        "generic": B.generic.true_like,
-        "arrow": B.pyarrow.true_like,
-        "pandas": B.pandas.true_like,
+        "generic": generic.true_like,
+        "arrow": pyarrow_backend.true_like,
+        "pandas": pandas_backend.true_like,
     }
 
     null_like: dict[BackendID, SelfMap] = {
-        "arrow": B.pyarrow.null_like,
-        "pandas": B.pandas.null_like,
+        "arrow": pyarrow_backend.null_like,
+        "pandas": pandas_backend.null_like,
     }
 
     full_like: dict[BackendID, FullLikeProto] = {
-        "arrow": B.pyarrow.full_like,
+        "arrow": pyarrow_backend.full_like,
         "numpy": np.full_like,
     }
 
     copy_like: dict[BackendID, CopyLikeProto] = {
-        "numpy": B.numpy.copy_like,
-        "pandas": B.pandas.copy_like,
-        "torch": B.torch.copy_like,
+        "numpy": numpy_backend.copy_like,
+        "pandas": pandas_backend.copy_like,
+        "torch": torch_backend.copy_like,
     }
 
     to_tensor: dict[BackendID, ToTensorProto] = {
@@ -143,22 +151,22 @@ class Kernels:  # TODO: how to make this more elegant?
     }
 
     where: dict[BackendID, WhereProto] = {
-        "generic": B.generic.where,
-        "arrow": B.pyarrow.where,
+        "generic": generic.where,
+        "arrow": pyarrow_backend.where,
         "numpy": np.where,
-        "pandas": B.pandas.where,
+        "pandas": pandas_backend.where,
         "torch": pt.where,
     }
 
     strip_whitespace: dict[BackendID, StripWhitespaceProto] = {
-        "pandas": B.pandas.strip_whitespace,
-        "polars": B.polars.strip_whitespace,
-        "arrow": B.pyarrow.strip_whitespace,
+        "pandas": pandas_backend.strip_whitespace,
+        "polars": polars_backend.strip_whitespace,
+        "arrow": pyarrow_backend.strip_whitespace,
     }
 
     apply_along_axes: dict[BackendID, ApplyAlongAxes] = {
-        "numpy": B.numpy.apply_along_axes,
-        "torch": B.torch.apply_along_axes,
+        "numpy": numpy_backend.apply_along_axes,
+        "torch": torch_backend.apply_along_axes,
     }
 
     array_split: dict[BackendID, ArraySplitProto] = {
@@ -174,26 +182,26 @@ class Kernels:  # TODO: how to make this more elegant?
 
     drop_null: dict[BackendID, SelfMap] = {
         "arrow": pc.drop_null,
-        "numpy": B.numpy.drop_null,
-        "pandas": B.pandas.drop_null,
-        "polars": B.polars.drop_null,
-        "torch": B.torch.drop_null,
+        "numpy": numpy_backend.drop_null,
+        "pandas": pandas_backend.drop_null,
+        "polars": polars_backend.drop_null,
+        "torch": torch_backend.drop_null,
     }
 
     cast: dict[BackendID, CastProto] = {
         "arrow": pc.cast,
         "numpy": ndarray.astype,
-        "pandas": B.pandas.cast,
-        "polars": B.polars.cast,
+        "pandas": pandas_backend.cast,
+        "polars": polars_backend.cast,
         "torch": Tensor.to,
     }
 
     scalar: dict[BackendID, ScalarProto] = {
-        "arrow": B.pyarrow.scalar,
-        "numpy": B.numpy.scalar,
-        "pandas": B.pandas.scalar,
-        "polars": B.polars.scalar,
-        "torch": B.torch.scalar,
+        "arrow": pyarrow_backend.scalar,
+        "numpy": numpy_backend.scalar,
+        "pandas": pandas_backend.scalar,
+        "polars": polars_backend.scalar,
+        "torch": torch_backend.scalar,
     }
 
 
