@@ -5,23 +5,20 @@ __all__ = [
     "callbacks",
     "logfuncs",
     "loggers",
-    "utils",
     # Constants
     "LOGGERS",
     "LOGFUNCS",
     "CALLBACKS",
 ]
 
-from . import callbacks, logfuncs, loggers, utils
+from . import callbacks, logfuncs, loggers
 from .callbacks import *  # ruff: ignore[F403]
 from .logfuncs import *  # ruff: ignore[F403]
 from .loggers import *  # ruff: ignore[F403]
-from .utils import *  # ruff: ignore[F403]
 
 __all__ += callbacks.__all__
 __all__ += logfuncs.__all__
 __all__ += loggers.__all__
-__all__ += utils.__all__
 
 CALLBACKS: dict[str, type[callbacks.Callback]] = {
     "BestEpochTracker"    : callbacks.BestEpochTracker,

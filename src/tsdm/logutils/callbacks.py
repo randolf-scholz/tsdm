@@ -85,6 +85,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
+from tsdm.losses import Loss
 from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
@@ -101,7 +102,6 @@ from .logfuncs import (
     log_table,
     log_values,
 )
-from .utils import Loss, TargetsAndPredictions
 
 
 @runtime_checkable
@@ -646,7 +646,7 @@ class EvaluationCallback(BaseCallback):
             result = self.get_all_predictions(dataloader)
             scores[split] = {
                 name: float(
-                    metric(predictions=result.predictions, targets=result.targets)
+                    metric(predictions=result["predictions"], targets=result["targets"])
                     .cpu()
                     .item()
                 )
@@ -655,7 +655,9 @@ class EvaluationCallback(BaseCallback):
         return scores
 
     @torch.no_grad()
-    def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredictions:
+    def get_all_predictions(
+        self, dataloader: DataLoader
+    ) -> dict[Literal["targets", "predictions"], Tensor]:
         r"""Collect targets and predictions, pad with NaNs, and squeeze singleton axes.
 
         `predict_fn(model, batch)` must return targets and predictions whose
@@ -682,7 +684,7 @@ class EvaluationCallback(BaseCallback):
             padding_value=torch.nan,
         ).squeeze()
 
-        return TargetsAndPredictions(targets=targets, predictions=predictions)
+        return {"targets": targets, "predictions": predictions}
 
 
 @dataclass(slots=True)
