@@ -10,6 +10,7 @@ repo_url = "https://github.com/randolf-scholz/tsdm"
 repo_name = "randolf-scholz/tsdm"
 extra_css = [
     "static/css/adjacent-navigation.css",
+    "static/css/layout.css",
     "static/css/signatures.css",
 ]
 
