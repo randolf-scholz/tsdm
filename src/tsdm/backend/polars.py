@@ -22,7 +22,7 @@ from polars import DataFrame, Series
 
 from tsdm.types.aliases import Axis
 
-from .util import get_outlier_options
+from .generic import get_outlier_options
 
 
 def scalar(x: Any, /, dtype: Any) -> Any:

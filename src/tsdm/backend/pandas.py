@@ -50,7 +50,7 @@ from scipy import stats
 
 from tsdm.types.aliases import Axis
 
-from .util import get_outlier_options
+from .generic import get_outlier_options
 
 __logger__ = logging.getLogger(__name__)
 

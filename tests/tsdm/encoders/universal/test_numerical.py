@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 import torch
 
-from tsdm.backend.util import get_broadcast
+from tsdm.backend.generic import get_broadcast
 from tsdm.constants import RNG
 from tsdm.encoders import LinearScaler, MinMaxScaler, StandardScaler
 from tsdm.encoders.universal.linear import reduce_axes

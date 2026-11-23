@@ -50,7 +50,7 @@ from pyarrow import (
 from pyarrow.types import lib as pyarrow_lib
 from tqdm import tqdm
 
-from .util import get_outlier_options
+from .generic import get_outlier_options
 
 STR = pa.string()
 TEXT = pa.large_string()
