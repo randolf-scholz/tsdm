@@ -12,6 +12,7 @@ __all__ = [
     "linalg",
     "logutils",
     "losses",
+    "plotting",
     "pretrained",
     "random",
     "stats",
@@ -19,7 +20,6 @@ __all__ = [
     "timeseries",
     "types",
     "utils",
-    "plotting",
 ]
 
 from importlib import metadata
@@ -37,7 +37,7 @@ from . import config
 
 config.initialize_directories()
 
-from . import (  # ruff: ignore[E402]  # Initialize storage before importing dependent modules.
+lazy from . import (  # ruff: ignore[E402]  # Initialize storage before importing dependent modules.
     backend,
     datasets,
     datatools,
