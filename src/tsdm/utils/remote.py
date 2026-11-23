@@ -1,4 +1,3 @@
-# python
 r"""Implements a downloader for the TSDM-package (httpx-based)."""
 
 __all__ = [
