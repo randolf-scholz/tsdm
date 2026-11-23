@@ -14,9 +14,9 @@ from typing import Any, cast, overload
 from numpy.random import Generator
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.datatools.collections import Dataset, MapDataset, get_index
 from tsdm.pprint import pprint_repr
 from tsdm.types import SupportsGetItem
+from tsdm.types.datasets import Dataset, MapDataset, get_index
 
 from .base import BaseSampler, Sampler
 from .random_sampler import RandomSampler

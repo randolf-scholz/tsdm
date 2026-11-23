@@ -33,11 +33,11 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
-from tsdm.datatools import get_first_sample, get_last_sample, timedelta, timestamp
-from tsdm.datatools.collections import IndexableDataset
 from tsdm.types import SupportsArray
 from tsdm.types.abc import Seq
+from tsdm.types.datasets import IndexableDataset, get_first_sample, get_last_sample
 from tsdm.utils.interval import HalfOpenInterval, Interval
+from tsdm.utils.timetools import timedelta, timestamp
 
 from .base import BaseSampler
 

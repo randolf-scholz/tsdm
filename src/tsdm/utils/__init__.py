@@ -7,6 +7,7 @@ __all__ = [
     "interval",
     "lazydict",
     "remote",
+    "timetools",
     # classes
     "timer",
     "Interval",
@@ -15,7 +16,7 @@ __all__ = [
 ]
 
 
-from . import funcutils, helpers, interval, lazydict, remote
+from . import funcutils, helpers, interval, lazydict, remote, timetools
 from .helpers import *  # ruff: ignore[F403]
 from .interval import Interval
 from .lazydict import LazyDict, LazyValue

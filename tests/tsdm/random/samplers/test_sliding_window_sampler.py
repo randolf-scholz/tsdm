@@ -10,8 +10,8 @@ import pytest
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
-from tsdm.datatools.collections import IndexableDataset
 from tsdm.random.samplers import SlidingWindowSampler
+from tsdm.types.datasets import IndexableDataset
 
 MODE = SlidingWindowSampler.MODE
 type B = Literal[MODE.BOUNDS]  # -> tuple[DT, DT]

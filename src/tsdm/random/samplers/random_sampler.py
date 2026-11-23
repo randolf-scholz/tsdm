@@ -9,8 +9,8 @@ from typing import Final
 from numpy.random import Generator
 
 from tsdm.constants import RNG
-from tsdm.datatools import Dataset, get_index
 from tsdm.pprint import pprint_repr
+from tsdm.types.datasets import Dataset, get_index
 
 from .base import BaseSampler
 
