@@ -207,6 +207,7 @@ window.MathJax = {
             argmax: "\\operatorname*{arg\\,max}",
             argmin: "\\operatorname*{arg\\,min}",
             chol: "\\operatorname{chol}",  // cholesky decomposition
+            clip: "\\operatorname{clip}",
             diag: "\\operatorname{diag}",
             dist: "\\operatorname{dist}",
             logsumexp: "\\operatorname{logsumexp}",
