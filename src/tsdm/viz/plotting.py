@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable, Mapping
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import numpy as np
 import torch
@@ -47,7 +47,7 @@ def visualize_distribution(
     log: bool = True,
     loc: Location = "upper right",
     print_stats: bool = True,
-    extra_stats: Optional[dict] = None,
+    extra_stats: dict | None = None,
 ) -> None:
     r"""Plot a density histogram of the data on the supplied axes.
 
@@ -134,11 +134,11 @@ def shared_grid_plot(
     *,
     plot_func: Callable[..., None],
     plot_kwargs: Mapping[str, Any] = EMPTY_MAP,
-    titles: Optional[list[str]] = None,
-    row_headers: Optional[list[str]] = None,
-    col_headers: Optional[list[str]] = None,
-    xlabels: Optional[list[str]] = None,
-    ylabels: Optional[list[str]] = None,
+    titles: list[str] | None = None,
+    row_headers: list[str] | None = None,
+    col_headers: list[str] | None = None,
+    xlabels: list[str] | None = None,
+    ylabels: list[str] | None = None,
     subplots_kwargs: Mapping[str, Any] = EMPTY_MAP,
     # FIXME: https://github.com/numpy/numpy/issues/24738
 ) -> tuple[Figure, NDArray]:

@@ -23,7 +23,7 @@ from enum import StrEnum
 from io import TextIOWrapper
 from os import PathLike
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, assert_never, overload
+from typing import Any, ClassVar, Literal, assert_never, overload
 
 from . import config
 from .hashutils import Hash, hash_array, hash_file
@@ -182,7 +182,7 @@ def validate_file_hash(
     /,
     expected_hash: Hash | str | None,
     *,
-    hash_algorithm: Optional[str] = None,
+    hash_algorithm: str | None = None,
     errors: ErrorHandler.Mode = "raise",
     skipif_no_reference: bool = False,
 ) -> bool:
@@ -273,7 +273,7 @@ def validate_table_hash(
     *,
     skipif_no_reference: bool = False,
     errors: ErrorHandler.Mode = "warn",
-    hash_algorithm: Optional[str] = None,
+    hash_algorithm: str | None = None,
 ) -> bool:
     r"""Validate the hash of a table-like object, given a reference hash value.
 

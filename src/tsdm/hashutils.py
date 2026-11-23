@@ -61,7 +61,6 @@ from typing import (
     Any,
     Final,
     NamedTuple,
-    Optional,
     Protocol,
     overload,
 )
@@ -136,7 +135,7 @@ class Hash(NamedTuple):
             case _:
                 raise TypeError(f"Cannot create Hash from {type(arg)}.")
 
-    def to_int(self, *, base: Optional[int] = None) -> int:
+    def to_int(self, *, base: int | None = None) -> int:
         r"""Convert the stored hash value to an integer.
 
         If `base` is omitted, try bases 2, 8, 10, 16, and 36 in that order,

@@ -31,7 +31,7 @@ from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import KW_ONLY, asdict, dataclass
 from enum import StrEnum
-from typing import Any, Literal, Optional, Protocol, final, runtime_checkable
+from typing import Any, Literal, Protocol, final, runtime_checkable
 
 import numpy as np
 from numpy.random import Generator
@@ -137,13 +137,13 @@ class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
 
     _: KW_ONLY
 
-    jac: Optional[Callable[[NDArray, NDArray], NDArray]] = None
+    jac: Callable[[NDArray, NDArray], NDArray] | None = None
     method: METHOD = "RK45"
     dense_output: bool = False
     vectorized: bool = False
-    first_step: Optional[float] = None
-    max_step: Optional[float] = None
-    min_step: Optional[float] = None
+    first_step: float | None = None
+    max_step: float | None = None
+    min_step: float | None = None
     rtol: float = 1e-3
     atol: float = 1e-6
 
@@ -197,7 +197,7 @@ class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
     def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> Any: ...
 
     @abstractmethod
-    def set_rng(self, random_state: Optional[int | Generator], /) -> None:
+    def set_rng(self, random_state: int | Generator | None, /) -> None:
         r"""Set the internal random number generator of the IVP_Generator."""
         ...
 
@@ -209,7 +209,7 @@ class IVP_Generator[T: ArrayLike](TimeSeriesRV[T], Protocol):  # +T
         t: ArrayLike,
         size: Size = (),
         *,
-        random_state: Optional[int | Generator] = None,
+        random_state: int | Generator | None = None,
     ) -> T:
         r"""Random variates of the given type."""
         # set the random state
@@ -268,7 +268,7 @@ class BaseIVP_Generator(IVP_Generator[NDArray]):
         return self.ivp_solver(self.system, t, y0=y0)
 
     # endregion implementation ---------------------------------------------------------
-    def set_rng(self, random_state: Optional[int | Generator], /) -> None:
+    def set_rng(self, random_state: int | Generator | None, /) -> None:
         r"""Set the internal random number generator of the IVP_Generator."""
         match random_state:
             case (None | int()) as seed:

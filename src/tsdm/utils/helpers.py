@@ -17,7 +17,7 @@ __all__ = [
 from annotationlib import ForwardRef
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Any, ClassVar, Optional, TypeForm, cast, overload
+from typing import Any, ClassVar, TypeForm, cast, overload
 from zipfile import BadZipFile, ZipFile
 
 from tsdm.types import FilePath
@@ -253,7 +253,7 @@ def unflatten_dict[Key, Key_flat](
     return result
 
 
-def nested_paths_exist(paths: Nested[Optional[FilePath]], /) -> bool:
+def nested_paths_exist(paths: Nested[FilePath | None], /) -> bool:
     r"""Check whether the files exist.
 
     The input may contain arbitrarily nested mappings and iterables with strings
@@ -332,7 +332,7 @@ def prompt_choice(
     /,
     *,
     choices: set[str],
-    default: Optional[str] = None,
+    default: str | None = None,
     pick_by_number: bool = True,
 ) -> str:
     r"""Ask the user to pick an option.

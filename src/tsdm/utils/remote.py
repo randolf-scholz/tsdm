@@ -20,7 +20,7 @@ from html.parser import HTMLParser
 from io import IOBase
 from pathlib import Path, PurePosixPath
 from types import TracebackType
-from typing import IO, Any, Optional
+from typing import IO, Any
 from urllib.parse import unquote, urljoin, urlparse
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -56,8 +56,8 @@ def download_directory_to_zip(
     # concurrency options
     max_workers: int = 8,
     # client options
-    username: Optional[str] = None,
-    password: Optional[str] = None,
+    username: str | None = None,
+    password: str | None = None,
     headers: Mapping[str, str] = EMPTY_MAP,
     timeout: Timeout | float | None = _DEFAULT_TIMEOUT,
     # auxiliary request options
@@ -114,7 +114,7 @@ def download_from_kaggle(
     url: str,
     fname: FilePath,
     /,
-    timeout: Optional[float] = _DEFAULT_TIMEOUT_SECONDS,
+    timeout: float | None = _DEFAULT_TIMEOUT_SECONDS,
     **kaggle_options: Any,
 ) -> None:
     r"""Import a dataset from Kaggle."""
@@ -189,18 +189,18 @@ def download_from_github(url: str, fname: FilePath, /, **svn_options: Any) -> No
 
 def download(
     url: str,
-    fname: Optional[FilePath | FileStream] = None,
+    fname: FilePath | FileStream | None = None,
     *,
     # request options
-    username: Optional[str] = None,
-    password: Optional[str] = None,
+    username: str | None = None,
+    password: str | None = None,
     headers: Mapping[str, str] = EMPTY_MAP,
     request_options: Mapping[str, Any] = EMPTY_MAP,
     chunk_size: int = _DEFAULT_CHUNK_SIZE,
     # file options
     skip_existing: bool = False,
-    hash_value: Optional[str] = None,
-    hash_algorithm: Optional[str] = None,
+    hash_value: str | None = None,
+    hash_algorithm: str | None = None,
 ) -> None:
     r"""Download a file from a URL.
 
@@ -252,7 +252,7 @@ def download(
 
 
 def import_from_url(
-    url: str, fname: Optional[FilePath] = None, /, *args: Any, **kwargs: Any
+    url: str, fname: FilePath | None = None, /, *args: Any, **kwargs: Any
 ) -> None:
     r"""Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
@@ -273,9 +273,9 @@ def _download_io(
     url: str,
     file: FileStream,
     *,
-    client: Optional[Client] = None,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
+    client: Client | None = None,
+    username: str | None = None,
+    password: str | None = None,
     # auxiliary request options
     headers: Mapping[str, str] = EMPTY_MAP,
     timeout: Timeout | float | None = _DEFAULT_TIMEOUT,
@@ -344,7 +344,7 @@ class _delete_if_failed(AbstractContextManager):
             self.path.unlink()
 
 
-def _get_content_length(response: Response, /) -> Optional[int]:
+def _get_content_length(response: Response, /) -> int | None:
     r"""Get the content length in bytes from an httpx Response."""
     content_length = response.headers.get("Content-Length")
     if content_length is None:

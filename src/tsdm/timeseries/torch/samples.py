@@ -24,7 +24,7 @@ __all__ = [
 
 from collections.abc import Iterable
 from math import nan as NAN
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import torch
 from torch import Tensor
@@ -330,7 +330,7 @@ class PaddedBatch(NamedTuple):
     mq: Tensor  # B×N:   the 'queries' mask.
     mx: Tensor  # B×N×D: the 'inputs' mask.
     my: Tensor  # B×N×F: the 'targets' mask.
-    static_covariates: Optional[Tensor] = None  # B×M: stacked covariates.
+    static_covariates: Tensor | None = None  # B×M: stacked covariates.
 
 
 def collate_timeseries(batch: list[SplitTimeData]) -> PaddedBatch:

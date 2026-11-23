@@ -153,7 +153,7 @@ __all__ = [
 ]
 
 import tarfile
-from typing import Literal, Optional
+from typing import Literal
 
 import polars as pl
 from tqdm.auto import tqdm
@@ -480,7 +480,7 @@ class PhysioNet2012(PolarsDataset[Key]):
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
 
-    def clean_table(self, key: Key, /) -> Optional[pl.DataFrame]:
+    def clean_table(self, key: Key, /) -> pl.DataFrame | None:
         match key:
             case "timeseries_metadata":
                 return pl.DataFrame(

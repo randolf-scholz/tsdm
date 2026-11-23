@@ -23,7 +23,7 @@ import math
 from collections.abc import Callable, Mapping
 from inspect import Parameter
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, TypeIs
+from typing import Any, Literal, Protocol, TypeIs
 
 import torch
 import yaml
@@ -288,9 +288,9 @@ def log_metrics(
     /,
     metrics: Mapping[str, Loss],
     *,
-    inputs: Optional[Mapping[Literal["predictions", "targets"], Tensor]] = None,
-    predictions: Optional[Tensor] = None,
-    targets: Optional[Tensor] = None,
+    inputs: Mapping[Literal["predictions", "targets"], Tensor] | None = None,
+    predictions: Tensor | None = None,
+    targets: Tensor | None = None,
     key: str = "",
     name: str = "metrics",
     prefix: str = "",

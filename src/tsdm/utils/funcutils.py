@@ -36,7 +36,7 @@ from ast import AST, Name, Return, Tuple
 from collections.abc import Callable as Fn, Iterable, Iterator, Sequence
 from dataclasses import fields
 from inspect import Parameter, _ParameterKind as ParameterKind, getsource
-from typing import Any, Final, Optional, Protocol, cast, overload
+from typing import Any, Final, Protocol, cast, overload
 
 from tsdm.types.dataclass import DataclassType, is_dataclass
 from tsdm.types.nested import NestedBuiltin
@@ -128,8 +128,8 @@ def get_function_args(
     func: Fn[..., Any],
     /,
     *,
-    mandatory: Optional[bool] = None,
-    kinds: Optional[str | ParameterKind | list[ParameterKind]] = None,
+    mandatory: bool | None = None,
+    kinds: str | ParameterKind | list[ParameterKind] | None = None,
 ) -> list[Parameter]:
     r"""Filter function parameters by kind and optionality."""
     match kinds:
@@ -237,7 +237,7 @@ def get_return_typehint(func: Fn, /) -> Any:
 def is_mandatory_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_mandatory_arg(func: Fn, name: str, /) -> bool: ...
-def is_mandatory_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool:
+def is_mandatory_arg(arg: Fn | Parameter, name: str | None = None, /) -> bool:
     r"""Check whether a parameter is required and nonvariadic."""
     match arg, name:
         case Parameter(kind=kind, default=default), None:
@@ -256,7 +256,7 @@ def is_mandatory_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool
 def is_positional_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_arg(func: Fn, name: str, /) -> bool: ...
-def is_positional_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> bool:
+def is_positional_arg(arg: Fn | Parameter, name: str | None = None, /) -> bool:
     r"""Check whether a parameter accepts positional arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
@@ -276,7 +276,7 @@ def is_positional_arg(arg: Fn | Parameter, name: Optional[str] = None, /) -> boo
 def is_positional_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_positional_only_arg(func: Fn, name: str, /) -> bool: ...
-def is_positional_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
+def is_positional_only_arg(arg: Parameter | Fn, name: str | None = None, /) -> bool:
     r"""Check whether a parameter accepts only positional arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
@@ -292,7 +292,7 @@ def is_positional_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -
 def is_keyword_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_arg(func: Fn, name: str, /) -> bool: ...
-def is_keyword_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
+def is_keyword_arg(arg: Parameter | Fn, name: str | None = None, /) -> bool:
     r"""Check whether a parameter accepts keyword arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
@@ -312,7 +312,7 @@ def is_keyword_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
 def is_keyword_only_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_keyword_only_arg(func: Fn, name: str, /) -> bool: ...
-def is_keyword_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
+def is_keyword_only_arg(arg: Parameter | Fn, name: str | None = None, /) -> bool:
     r"""Check whether a parameter accepts only keyword arguments."""
     match arg, name:
         case Parameter(kind=kind), None:
@@ -328,7 +328,7 @@ def is_keyword_only_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> b
 def is_variadic_arg(param: Parameter, /) -> bool: ...
 @overload
 def is_variadic_arg(func: Fn, name: str, /) -> bool: ...
-def is_variadic_arg(arg: Parameter | Fn, name: Optional[str] = None, /) -> bool:
+def is_variadic_arg(arg: Parameter | Fn, name: str | None = None, /) -> bool:
     r"""Check whether a parameter accepts variadic arguments."""
     match arg, name:
         case Parameter(kind=kind), None:

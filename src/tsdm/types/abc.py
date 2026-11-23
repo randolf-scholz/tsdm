@@ -24,7 +24,6 @@ from collections.abc import (
     ValuesView,
 )
 from typing import (
-    Optional,
     Protocol,
     Self,
     cast,
@@ -154,10 +153,10 @@ class Map[K, V](Collection[K], Protocol):  # K, +V
     # NOTE: dict.get has default as positional-only, whereas Mapping defines it as
     #   positional-or-keyword. We follow the weaker dict definition.
     @overload
-    def get(self, key: K, /) -> Optional[V]: ...
+    def get(self, key: K, /) -> V | None: ...
     @overload
     def get[T](self, key: K, default: V | T, /) -> V | T: ...
-    def get[T](self, key: K, default: Optional[V | T] = None, /) -> Optional[V | T]:
+    def get[T](self, key: K, default: V | T | None = None, /) -> V | T | None:
         try:
             return self[key]
         except KeyError:

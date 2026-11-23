@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal, Optional, cast, overload
+from typing import Any, Literal, cast, overload
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -364,7 +364,7 @@ def force_cast[A: (Array, ChunkedArray, Table)](
 def force_cast(x: Table, /, **dtypes: DataType | str) -> Table: ...
 def force_cast(
     x: AnyArray | Table,
-    dtype: Optional[DataType | str] = None,
+    dtype: DataType | str | None = None,
     /,
     **dtypes: DataType | str,
 ) -> AnyArray | Table:

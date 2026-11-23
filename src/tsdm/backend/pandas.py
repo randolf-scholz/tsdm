@@ -39,7 +39,7 @@ import operator
 import warnings
 from collections.abc import Mapping
 from functools import reduce
-from typing import Any, Final, Literal, Optional, overload
+from typing import Any, Final, Literal, overload
 
 import numpy as np
 import pandas as pd
@@ -762,7 +762,7 @@ def describe(
 
 
 def data_overview(
-    df: DataFrame, /, *, index_col: Optional[int | str] = None, digits: int = 2
+    df: DataFrame, /, *, index_col: int | str | None = None, digits: int = 2
 ) -> DataFrame:
     r"""Get a summary of the data."""
     overview = DataFrame(index=df.columns)

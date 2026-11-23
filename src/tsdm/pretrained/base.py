@@ -57,7 +57,6 @@ from typing import (
     Any,
     ClassVar,
     Literal as L,
-    Optional,
     Self,
     _ProtocolMeta as ProtocolMeta,
     cast,
@@ -117,11 +116,11 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the class."""
-    CHECKPOINT_URL: ClassVar[Optional[str]] = None
+    CHECKPOINT_URL: ClassVar[str | None] = None
     r"""URL with overview of available model checkpoints."""
     DOWNLOAD_URL: ClassVar[str] = UNDEFINED
     r"""URL from which model checkpoints can be downloaded."""
-    DOCUMENTATION_URL: ClassVar[Optional[str]] = None
+    DOCUMENTATION_URL: ClassVar[str | None] = None
     r"""URL of online documentation for the model."""
     RAWDATA_DIR: ClassVar[Path]
     r"""Default directory where the raw data is stored."""
@@ -134,9 +133,9 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
     r"""Device which the model components are loaded to."""
     rawdata_path: Path
     r"""Path where the raw data is stored (subpath of RAWDATA_DIR)."""
-    rawdata_hash: Optional[dict[str, str]] = None
+    rawdata_hash: dict[str, str] | None = None
     r"""Dictionary of hash-method:value pairs for the raw data."""
-    download_url: Optional[str] = None
+    download_url: str | None = None
     r"""URL from which the raw data can be downloaded."""
 
     __component_files: dict[str, FilePath]
@@ -154,9 +153,9 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
         device: str | torch.device = "cpu",
         initialize: bool = True,
         reset: bool = False,
-        rawdata_file: Optional[FilePath] = None,
-        rawdata_hash: Optional[dict[str, str]] = None,
-        download_url: Optional[str] = None,
+        rawdata_file: FilePath | None = None,
+        rawdata_hash: dict[str, str] | None = None,
+        download_url: str | None = None,
     ) -> None:
         if rawdata_file is not None:
             self.rawdata_path = Path(rawdata_file)
@@ -461,7 +460,7 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
 
 
 def import_module_from_path(
-    module_dir: FilePath, /, *, module_name: Optional[str] = None
+    module_dir: FilePath, /, *, module_name: str | None = None
 ) -> ModuleType:
     r"""Return python module imported from the path.
 

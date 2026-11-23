@@ -81,7 +81,7 @@ from functools import partial
 from inspect import isbuiltin as is_builtin_function
 from math import prod
 from types import FunctionType
-from typing import Any, Final, Optional, Protocol
+from typing import Any, Final, Protocol
 
 from polars import LazyFrame
 
@@ -156,16 +156,16 @@ class ReprProtocol(Protocol):
         /,
         *,
         align: bool = ALIGN,
-        modifier: Optional[str] = None,
-        identifier: Optional[str] = None,
+        modifier: str | None = None,
+        identifier: str | None = None,
         indent: int = 0,
-        linebreaks: Optional[bool] = None,
-        maxitems: Optional[int] = None,
+        linebreaks: bool | None = None,
+        maxitems: int | None = None,
         padding: int = INDENT,
         recursive: bool | int = RECURSIVE,
-        repr_fn: Optional[Callable[..., str]] = None,
-        title: Optional[str] = None,
-        wrapped: Optional[object] = None,
+        repr_fn: Callable[..., str] | None = None,
+        title: str | None = None,
+        wrapped: object | None = None,
     ) -> str: ...
 
 
@@ -287,7 +287,7 @@ def repr_shortform(
     obj: object,
     /,
     *,
-    identifier: Optional[str] = None,
+    identifier: str | None = None,
     recursive: bool | int = False,
     **_: Any,
 ) -> str:
@@ -376,16 +376,16 @@ def repr_mapping(
     /,
     *,
     align: bool = ALIGN,
-    identifier: Optional[str] = None,
+    identifier: str | None = None,
     indent: int = 0,
-    linebreaks: Optional[bool] = None,
-    maxitems: Optional[int] = None,
-    modifier: Optional[str] = None,
+    linebreaks: bool | None = None,
+    maxitems: int | None = None,
+    modifier: str | None = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Optional[Callable[..., str]] = None,
-    title: Optional[str] = None,
-    wrapped: Optional[object] = None,
+    repr_fn: Callable[..., str] | None = None,
+    title: str | None = None,
+    wrapped: object | None = None,
 ) -> str:
     r"""Return a string representation of a mapping object.
 
@@ -538,16 +538,16 @@ def repr_sequence(
     /,
     *,
     align: bool = ALIGN,
-    identifier: Optional[str] = None,
+    identifier: str | None = None,
     indent: int = 0,
-    linebreaks: Optional[bool] = None,
-    maxitems: Optional[int] = None,
-    modifier: Optional[str] = None,
+    linebreaks: bool | None = None,
+    maxitems: int | None = None,
+    modifier: str | None = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Optional[Callable[..., str]] = None,
-    title: Optional[str] = None,
-    wrapped: Optional[object] = None,
+    repr_fn: Callable[..., str] | None = None,
+    title: str | None = None,
+    wrapped: object | None = None,
 ) -> str:
     r"""Return a string representation of a sequence object.
 
@@ -692,16 +692,16 @@ def repr_set(
     /,
     *,
     align: bool = ALIGN,
-    identifier: Optional[str] = None,
+    identifier: str | None = None,
     indent: int = 0,
-    linebreaks: Optional[bool] = None,
-    maxitems: Optional[int] = None,
-    modifier: Optional[str] = None,
+    linebreaks: bool | None = None,
+    maxitems: int | None = None,
+    modifier: str | None = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Optional[Callable[..., str]] = None,
-    title: Optional[str] = None,
-    wrapped: Optional[object] = None,
+    repr_fn: Callable[..., str] | None = None,
+    title: str | None = None,
+    wrapped: object | None = None,
 ) -> str:
     r"""Return a string representation of a set-like object."""
     # set type & wrapped
@@ -820,16 +820,16 @@ def repr_dataclass(
     /,
     *,
     align: bool = ALIGN,
-    identifier: Optional[str] = None,
+    identifier: str | None = None,
     indent: int = 0,
-    linebreaks: Optional[bool] = None,
-    maxitems: Optional[int] = None,
-    modifier: Optional[str] = None,
+    linebreaks: bool | None = None,
+    maxitems: int | None = None,
+    modifier: str | None = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Optional[Callable[..., str]] = None,
-    title: Optional[str] = None,
-    wrapped: Optional[object] = None,
+    repr_fn: Callable[..., str] | None = None,
+    title: str | None = None,
+    wrapped: object | None = None,
 ) -> str:
     r"""Return a string representation of a dataclass object.
 
@@ -892,16 +892,16 @@ def repr_namedtuple(
     /,
     *,
     align: bool = ALIGN,
-    identifier: Optional[str] = None,
+    identifier: str | None = None,
     indent: int = 0,
-    linebreaks: Optional[bool] = None,
-    maxitems: Optional[int] = None,
-    modifier: Optional[str] = None,
+    linebreaks: bool | None = None,
+    maxitems: int | None = None,
+    modifier: str | None = None,
     padding: int = INDENT,
     recursive: bool | int = RECURSIVE,
-    repr_fn: Optional[Callable[..., str]] = None,
-    title: Optional[str] = None,
-    wrapped: Optional[object] = None,
+    repr_fn: Callable[..., str] | None = None,
+    title: str | None = None,
+    wrapped: object | None = None,
 ) -> str:
     r"""Return a string representation of a namedtuple object.
 
@@ -961,10 +961,10 @@ def repr_array(
     obj: SupportsArray | LazyFrame,
     /,
     *,
-    modifier: Optional[str] = None,
-    identifier: Optional[str] = None,
-    title: Optional[str] = None,
-    maxitems: Optional[int] = MAXITEMS_INLINE,  # max number of dtypes to show
+    modifier: str | None = None,
+    identifier: str | None = None,
+    title: str | None = None,
+    maxitems: int | None = MAXITEMS_INLINE,  # max number of dtypes to show
     show_device: bool = False,
     **_: Any,
 ) -> str:

@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 import datetime as dt
-from typing import Final, Optional
+from typing import Final
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
@@ -40,7 +40,7 @@ r"""Ordered NumPy timedelta units used to choose result precision."""
 
 def sample_timestamps(
     start: str | dt.datetime | np.datetime64 = "today",
-    stop: Optional[str | dt.datetime | np.datetime64] = None,
+    stop: str | dt.datetime | np.datetime64 | None = None,
     /,
     *,
     size: int,

@@ -28,7 +28,6 @@ from typing import (
     Any,
     ClassVar,
     Final,
-    Optional,
     Protocol,
     Self,
     _ProtocolMeta as ProtocolMeta,
@@ -188,7 +187,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     r"""Default format for the dataset."""
     SOURCE_URL: ClassVar[str] = UNDEFINED
     r"""URL from which the dataset can be downloaded."""
-    INFO_URL: ClassVar[Optional[str]] = None
+    INFO_URL: ClassVar[str | None] = None
     r"""URL containing additional information about the dataset."""
     DATASET_ROOT_DIR: ClassVar[Path]  # on class:  ~/.tsdm/datasets/<name>/
     r"""Location where the dataset is stored."""
@@ -318,14 +317,14 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         webbrowser.open_new_tab(cls.INFO_URL)
 
     @classmethod
-    def reset(cls, *, version: Optional[str] = None, force: bool = False) -> None:
+    def reset(cls, *, version: str | None = None, force: bool = False) -> None:
         r"""Reset the data folders."""
         cls.reset_rawdata_files(version=version, force=force)
         cls.reset_dataset_files(version=version, force=force)
 
     @classmethod
     def reset_rawdata_files(
-        cls, *, version: Optional[str] = None, force: bool = False
+        cls, *, version: str | None = None, force: bool = False
     ) -> None:
         r"""Recreate the rawdata directory."""
         self = cls(initialize=False, version=version)
@@ -348,7 +347,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     @classmethod
     def reset_dataset_files(
-        cls, *, version: Optional[str] = None, force: bool = False
+        cls, *, version: str | None = None, force: bool = False
     ) -> None:
         r"""Recreate the dataset directory."""
         self = cls(initialize=False, version=version)
@@ -538,7 +537,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     def get_rawdata(
         self,
         *,
-        key: Optional[str] = None,
+        key: str | None = None,
         force: bool = True,
         validate: bool = True,
     ) -> None:
@@ -579,7 +578,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     # region cleaning mechanism --------------------------------------------------------
     @abstractmethod
-    def clean_table(self, key: Key, /) -> Optional[T]:
+    def clean_table(self, key: Key, /) -> T | None:
         r"""Create the cleaned table for the given key.
 
         Subclasses define the cleaning logic for each key.
@@ -592,7 +591,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     @final
     def clean(
         self,
-        key: Optional[Key] = None,
+        key: Key | None = None,
         /,
         *,
         force: bool = False,
@@ -696,7 +695,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     @final
     def load(
         self,
-        key: Optional[Key] = None,
+        key: Key | None = None,
         /,
         *,
         force: bool = False,
@@ -772,7 +771,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         r"""Check if tables are valid."""
         return self.validate_tables()
 
-    def rawdata_files_exist(self, key: Optional[str] = None, /) -> bool:
+    def rawdata_files_exist(self, key: str | None = None, /) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
             return nested_paths_exist(self.rawdata_paths)
@@ -780,7 +779,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
             raise KeyError(f"{key=} not in {self.rawdata_paths=}")
         return nested_paths_exist(self.rawdata_paths[key])
 
-    def dataset_files_exist(self, key: Optional[Key] = None, /) -> bool:
+    def dataset_files_exist(self, key: Key | None = None, /) -> bool:
         r"""Check if dataset files exist."""
         if key is None:
             return nested_paths_exist(self.dataset_paths)
@@ -789,7 +788,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         return nested_paths_exist(self.dataset_paths[key])
 
     def validate_rawdata(
-        self, fname: Optional[str] = None, /, *, errors: ErrorHandler.Mode = "warn"
+        self, fname: str | None = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         r"""Validate the rawdata files."""
         if fname is None:
@@ -846,7 +845,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         )
 
     def validate_dataset(
-        self, key: Optional[Key] = None, /, *, errors: ErrorHandler.Mode = "warn"
+        self, key: Key | None = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         r"""Validate the dataset."""
         if key is None:
@@ -898,7 +897,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
         )
 
     def validate_tables(
-        self, key: Optional[Key] = None, /, *, errors: ErrorHandler.Mode = "warn"
+        self, key: Key | None = None, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
         if key is None:
             self.LOGGER.debug("Validating tables.")

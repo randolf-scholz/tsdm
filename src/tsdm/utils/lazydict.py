@@ -23,7 +23,6 @@ from typing import (
     Concatenate,
     Final,
     Never,
-    Optional,
     Self,
     overload,
 )
@@ -71,7 +70,7 @@ class LazyValue[V]:  # +V
         args: tuple[Any, ...] = (),
         kwargs: dict[str, Any] | None = None,
         *,
-        type_hint: Optional[str] = None,
+        type_hint: str | None = None,
     ) -> None:
         self.func = func
         self.args = args
@@ -154,7 +153,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
         *,
         args: tuple = (),
         kwargs: dict[str, Any] | None = None,
-        type_hint: Optional[str] = None,
+        type_hint: str | None = None,
     ) -> LazyDict[K, V]:
         r"""Create a new LazyDict by passing the keys to a function.
 
@@ -195,7 +194,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     # @overload
     # def get_lazy[T](self, key: K, default: T, /) -> T | V | LazyValue[V]: ...
     def get_lazy[T](
-        self, key: K, default: Optional[T] = None, /
+        self, key: K, default: T | None = None, /
     ) -> V | LazyValue[V] | T | None:
         r"""Return the stored value or default without triggering lazy evaluation."""
         return super().get(key, default)
@@ -236,7 +235,7 @@ class LazyDict[K = Any, V = Any](dict[K, V]):
     def get(self, key: K, /, default: None = ...) -> V | None: ...
     @overload
     def get[T](self, key: K, /, default: T) -> V | T: ...
-    def get[T](self, key: K, /, default: Optional[T | V] = None) -> V | T | None:  # ty: ignore[incompatible-method-override]
+    def get[T](self, key: K, /, default: T | V | None = None) -> V | T | None:  # ty: ignore[incompatible-method-override]
         r"""Get the value of the key."""
         try:
             return self[key]

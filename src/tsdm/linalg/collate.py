@@ -8,7 +8,6 @@ __all__ = [
     "unpack_sequence",
 ]
 
-from typing import Optional
 
 import torch
 from torch import Tensor
@@ -64,7 +63,7 @@ def unpad_sequence(
     /,
     *,
     batch_first: bool = False,
-    lengths: Optional[Tensor] = None,
+    lengths: Tensor | None = None,
     padding_value: float = torch.nan,
 ) -> list[Tensor]:
     r"""Recover unpadded tensors from a batch produced by `pad_sequence`.

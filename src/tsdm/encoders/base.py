@@ -121,7 +121,6 @@ from typing import (
     Concatenate,
     Final,
     Literal as L,
-    Optional,
     Protocol,
     Self,
     _ProtocolMeta as ProtocolMeta,
@@ -1340,7 +1339,7 @@ class Diagonal(StaticEncoder[Any, tuple[Any, ...]]):
     reduction: Final[Reduction[tuple[Any, ...], Any]]
     r"""The function to aggregate the elements of the tuple."""
 
-    def __init__(self, num: int, /, *, reduction: Optional[Reduction] = None) -> None:
+    def __init__(self, num: int, /, *, reduction: Reduction | None = None) -> None:
         self.num = num
         self.reduction = choice(self.num) if reduction is None else reduction
 

@@ -13,7 +13,7 @@ import warnings
 from collections.abc import Iterable
 from dataclasses import KW_ONLY, dataclass, replace
 from functools import partial
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 from pandas import DataFrame, Index, Series
 
@@ -42,10 +42,10 @@ class SplitTimeData(abstract.SplitTimeData[Series | DataFrame]):
     r"""Timestamps at which predictions are requested."""
     query_mask: DataFrame
     r"""Mask indicating which target values should be predicted."""
-    target_values: Optional[DataFrame] = None  # pyright: ignore[reportIncompatibleMethodOverride]
+    target_values: DataFrame | None = None  # pyright: ignore[reportIncompatibleMethodOverride]
     r"""Target values at the query times."""
 
-    static_covariates: Optional[DataFrame] = None  # pyright: ignore[reportIncompatibleMethodOverride]
+    static_covariates: DataFrame | None = None  # pyright: ignore[reportIncompatibleMethodOverride]
     r"""Static covariates associated with the time series."""
 
     def drop_null_rows(self) -> Self:

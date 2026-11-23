@@ -45,7 +45,7 @@ from collections.abc import (
 )
 from math import floor, fsum, isfinite
 from random import Random
-from typing import Optional, SupportsFloat, SupportsIndex, overload
+from typing import SupportsFloat, SupportsIndex, overload
 
 from tsdm.stats import total_variation_distance
 
@@ -118,9 +118,9 @@ def rotating_partitions[T, K](
     num: int,
     *,
     chunks: Mapping[K, SupportsIndex],
-    rng: Optional[int | Random] = None,
+    rng: int | Random | None = None,
     group_labels: Collection[Label] | None = None,
-    max_error: Optional[float] = None,
+    max_error: float | None = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
 def rotating_partitions[T](
@@ -129,9 +129,9 @@ def rotating_partitions[T](
     num: int,
     *,
     chunks: Sequence[SupportsIndex],
-    rng: Optional[int | Random] = None,
+    rng: int | Random | None = None,
     group_labels: Collection[Label] | None = None,
-    max_error: Optional[float] = None,
+    max_error: float | None = None,
 ) -> list[tuple[list[T], ...]]: ...
 def rotating_partitions[T, K](
     items: Collection[T],
@@ -139,9 +139,9 @@ def rotating_partitions[T, K](
     num: int,
     *,
     chunks: Mapping[K, SupportsIndex] | Sequence[SupportsIndex],
-    rng: Optional[int | Random] = None,
+    rng: int | Random | None = None,
     group_labels: Collection[Label] | None = None,
-    max_error: Optional[float] = None,
+    max_error: float | None = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Partition collection elements by rotating optionally shuffled group chunks.
 
@@ -298,8 +298,8 @@ def random_partitions[T, K](
     *,
     sizes: Mapping[K, SupportsIndex],
     rng: int | Random,
-    group_labels: Optional[Collection[Label]] = None,
-    max_error: Optional[float] = None,
+    group_labels: Collection[Label] | None = None,
+    max_error: float | None = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
 def random_partitions[T, K](
@@ -309,8 +309,8 @@ def random_partitions[T, K](
     *,
     ratios: Mapping[K, SupportsFloat],
     rng: int | Random,
-    group_labels: Optional[Collection[Label]] = None,
-    max_error: Optional[float] = None,
+    group_labels: Collection[Label] | None = None,
+    max_error: float | None = None,
 ) -> list[dict[K, list[T]]]: ...
 @overload
 def random_partitions[T](
@@ -320,8 +320,8 @@ def random_partitions[T](
     *,
     sizes: Sequence[SupportsIndex],
     rng: int | Random,
-    group_labels: Optional[Collection[Label]] = None,
-    max_error: Optional[float] = None,
+    group_labels: Collection[Label] | None = None,
+    max_error: float | None = None,
 ) -> list[tuple[list[T], ...]]: ...
 @overload
 def random_partitions[T](
@@ -331,8 +331,8 @@ def random_partitions[T](
     *,
     ratios: Sequence[SupportsFloat],
     rng: int | Random,
-    group_labels: Optional[Collection[Label]] = None,
-    max_error: Optional[float] = None,
+    group_labels: Collection[Label] | None = None,
+    max_error: float | None = None,
 ) -> list[tuple[list[T], ...]]: ...
 def random_partitions[T, K](
     items: Collection[T],
@@ -342,8 +342,8 @@ def random_partitions[T, K](
     sizes: Mapping[K, SupportsIndex] | Sequence[SupportsIndex] | None = None,
     ratios: Mapping[K, SupportsFloat] | Sequence[SupportsFloat] | None = None,
     rng: int | Random,
-    group_labels: Optional[Collection[Label]] = None,
-    max_error: Optional[float] = None,
+    group_labels: Collection[Label] | None = None,
+    max_error: float | None = None,
 ) -> list[dict[K, list[T]]] | list[tuple[list[T], ...]]:
     r"""Draw `num` random partitions of indivisible groups of items.
 

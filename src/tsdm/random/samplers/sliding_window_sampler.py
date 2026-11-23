@@ -23,7 +23,6 @@ from typing import (
     Any,
     Final,
     Literal,
-    Optional,
     cast,
     overload,
 )
@@ -54,7 +53,7 @@ def compute_grid[TD: SpanLikeScalar](
     step: str | TD,
     /,
     *,
-    offset: Optional[str | TimeLikeScalar[TD]] = None,
+    offset: str | TimeLikeScalar[TD] | None = None,
 ) -> list[int]:
     r"""Return grid offsets that keep `offset + k * step` within the bounds.
 

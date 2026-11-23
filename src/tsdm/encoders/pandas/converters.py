@@ -11,7 +11,7 @@ __all__ = [
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import EllipsisType
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -37,9 +37,9 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
         - This encoder requires that the DataFrame is of a single (numerical) dtype.
     """
 
-    dtype: Optional[torch.dtype] = None
+    dtype: torch.dtype | None = None
     r"""The default dtype."""
-    device: Optional[str | torch.device] = None
+    device: str | torch.device | None = None
     r"""The device the tensors are stored in."""
     original_schema: Mapping[str, Any] = UNDEFINED
     r"""The original schema."""
@@ -120,12 +120,13 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
         self,
         schema: Mapping[str, str | list[str] | EllipsisType],
         *,
-        device: Optional[
-            str | torch.device | Mapping[str | EllipsisType, None | str | torch.device]
-        ] = None,
-        dtypes: Optional[
-            torch.dtype | Mapping[str | EllipsisType, None | torch.dtype]
-        ] = None,
+        device: str
+        | torch.device
+        | Mapping[str | EllipsisType, None | str | torch.device]
+        | None = None,
+        dtypes: torch.dtype
+        | Mapping[str | EllipsisType, None | torch.dtype]
+        | None = None,
     ) -> None:
         self.schema = {
             k: v if isinstance(v, list | EllipsisType) else [v]

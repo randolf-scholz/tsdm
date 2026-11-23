@@ -64,7 +64,6 @@ from typing import (
     Concatenate,
     Final,
     Literal,
-    Optional,
     Protocol,
     Self,
     SupportsIndex,
@@ -391,7 +390,7 @@ class BestEpochTracker(BaseCallback):
     mode: Final[Literal["min", "max"]] = "min"
     window: Final[int] = 1
     min_periods: Final[int] = 1
-    writer: Final[Optional[SummaryWriter]] = None
+    writer: Final[SummaryWriter | None] = None
     name: Final[str] = "score"
     prefix: Final[str] = ""
     postfix: Final[str] = ""
@@ -446,7 +445,7 @@ class BestEpochTracker(BaseCallback):
         return self.best_history.tail(1)
 
     @property
-    def selection_value(self) -> Optional[float]:
+    def selection_value(self) -> float | None:
         r"""Look up the winning processed value using the latest `best_step`."""
         if (best_step := self.best_history["best_step"].last()) is None:
             return None

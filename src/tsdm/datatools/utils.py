@@ -9,14 +9,14 @@ __all__ = [
 
 import datetime as dt
 from functools import wraps
-from typing import Any, Optional
+from typing import Any
 
 from pandas import Timedelta, Timestamp
 from pandas.api.typing import NaTType
 
 
 @wraps(Timedelta)
-def timedelta(value: Any = ..., unit: Optional[str] = None, **kwargs: Any) -> Timedelta:
+def timedelta(value: Any = ..., unit: str | None = None, **kwargs: Any) -> Timedelta:
     r"""Construct a `pandas.Timedelta`, raising `TypeError` if it returns `NaT`."""
     td = (
         Timedelta(unit=unit, **kwargs)

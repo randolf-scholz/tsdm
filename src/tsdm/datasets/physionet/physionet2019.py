@@ -110,7 +110,7 @@ __all__ = [
 
 import re
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 from zipfile import ZipFile
 
 import polars as pl
@@ -395,7 +395,7 @@ class PhysioNet2019(PolarsDataset[Key]):
         self.serialize_table(ts, self.dataset_paths["raw_timeseries"])
         self.serialize_table(md, self.dataset_paths["raw_metadata"])
 
-    def clean_table(self, key: Key, /) -> Optional[pl.DataFrame]:
+    def clean_table(self, key: Key, /) -> pl.DataFrame | None:
         match key:
             case "timeseries_metadata":
                 return pl.DataFrame(

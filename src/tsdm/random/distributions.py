@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import numpy as np
 from numpy.random import Generator
@@ -29,7 +29,7 @@ class RV[T](Protocol):  # +T
 
     @abstractmethod
     def rvs(
-        self, /, size: Size = (), *, random_state: Optional[int | Generator] = None
+        self, /, size: Size = (), *, random_state: int | Generator | None = None
     ) -> T: ...
 
 
@@ -43,7 +43,7 @@ class TimeSeriesRV[T](Protocol):  # +T
         t: ArrayLike,
         size: Size = (),
         *,
-        random_state: Optional[int | Generator] = None,
+        random_state: int | Generator | None = None,
     ) -> T: ...
 
 
@@ -114,7 +114,7 @@ class Dirichlet:
         alphas: ArrayLike,
         size: Size = (),
         *,
-        random_state: Optional[int | Generator] = None,
+        random_state: int | Generator | None = None,
     ) -> NDArray:
         r"""Random variates of the Dirichlet distribution."""
         alphas = np.asarray(alphas)

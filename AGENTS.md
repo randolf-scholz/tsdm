@@ -26,8 +26,6 @@ This file describes project conventions for automated agents contributing to `ts
   - Use `collections.abc` members instead of `typing` equivalents (`Iterable`, `Sequence`, `Mapping`, etc.)
   - Use builtin generics: `list[int]`, `dict[str, int]`, etc. instead of `List[int]`, `Dict[...]`, etc.
   - Use `T | U` instead of `Union[T, U]` (exceptions apply to `Optional[T]`)
-- Use `Optional[T]` for optional keyword parameters that can be `None`, and for return types that may be `None`. In
-  other cases, use `T | None`.
 - Prefer loose types for function parameters:
   - If a function argument expects a list-like input, prefer `Sequence[T]` over `list[T]`.
   - If a function argument expects a dict-like input, prefer `Mapping[K, V]` over `dict[K, V]`.

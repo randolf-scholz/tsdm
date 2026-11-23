@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Optional, SupportsIndex
+from typing import SupportsIndex
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ from .collections import IndexableDataset
 
 
 def folds_from_groups(
-    groups: Series, /, *, num_folds: int = 5, seed: Optional[int] = None, **splits: int
+    groups: Series, /, *, num_folds: int = 5, seed: int | None = None, **splits: int
 ) -> Sequence[Mapping[str, Series]]:
     r"""Create folds while keeping samples with the same group label together.
 

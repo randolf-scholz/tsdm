@@ -37,7 +37,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, ClassVar, Optional, Protocol
+from typing import Any, ClassVar, Protocol
 
 import polars as pl
 from torch import Tensor
@@ -136,35 +136,35 @@ class DefaultLogger(BaseLogger):
     checkpoint_frequency: int = 1
     r"""Positive number of epoch steps between checkpoints."""
 
-    config: Optional[JSON] = None
+    config: JSON | None = None
     r"""Configuration of the experiment."""
-    dataloaders: Optional[dict[str, DataLoader]] = None
+    dataloaders: dict[str, DataLoader] | None = None
     r"""Dataloaders used for evaluation."""
-    kernel: Optional[Tensor] = None
+    kernel: Tensor | None = None
     r"""Kernel used for the model."""
-    history: Optional[pl.DataFrame] = field(default=None, init=False)
+    history: pl.DataFrame | None = field(default=None, init=False)
     r"""Raw history owned and constructed by the evaluation callback, when present."""
-    best_history: Optional[pl.DataFrame] = field(default=None, init=False)
+    best_history: pl.DataFrame | None = field(default=None, init=False)
     r"""Winning-row history owned by the optional best-epoch callback."""
-    selection_column: Optional[str] = None
+    selection_column: str | None = None
     r"""Enable best-epoch tracking for this score column when supplied."""
     selection_window: int = 1
     r"""Number of evaluations used to smooth the selection column."""
-    best_epoch: Optional[BestEpochTracker] = field(default=None, init=False)
+    best_epoch: BestEpochTracker | None = field(default=None, init=False)
     r"""Optional best-epoch callback, constructed after the evaluation callback."""
-    hparam_dict: Optional[dict[str, Any]] = None
+    hparam_dict: dict[str, Any] | None = None
     r"""Hyperparameters used for the experiment."""
-    lr_scheduler: Optional[LRScheduler] = None
+    lr_scheduler: LRScheduler | None = None
     r"""Learning rate scheduler."""
-    metrics: Optional[dict[str, Loss]] = None
+    metrics: dict[str, Loss] | None = None
     r"""Metrics used for evaluation."""
-    model: Optional[TorchModule] = None
+    model: TorchModule | None = None
     r"""Model used for training."""
-    optimizer: Optional[TorchOptimizer] = None
+    optimizer: TorchOptimizer | None = None
     r"""Optimizer used for training."""
-    predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None
+    predict_fn: Callable[..., tuple[Tensor, Tensor]] | None = None
     r"""Function called as `predict_fn(model, batch)` to return targets and predictions."""
-    checkpointable_objects: Optional[dict[str, Any]] = None
+    checkpointable_objects: dict[str, Any] | None = None
     r"""Objects to be checkpointed."""
     # derived from other arguments
     writer: SummaryWriter = UNDEFINED
