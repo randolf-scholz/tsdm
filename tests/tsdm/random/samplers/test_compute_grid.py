@@ -14,8 +14,8 @@ from numpy import (
     timedelta64 as np_td,
 )
 
-from tsdm.datatools import timedelta as pd_td, timestamp as pd_dt
 from tsdm.random.samplers import compute_grid
+from tsdm.utils.timetools import timedelta as pd_td, timestamp as pd_dt
 
 __logger__ = logging.getLogger(__name__)
 

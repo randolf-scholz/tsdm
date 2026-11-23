@@ -441,7 +441,7 @@ class PhysioNet2019(PolarsDataset[Key]):
             return super().validate_rawdata(errors=errors)
 
         expected_hash = self.rawdata_content_hashes.get(fname, None)
-        self.LOGGER.info(f"Validating {fname!r} against hash {expected_hash!s}")
+        self.LOGGER.info(f"Validating {fname!r} against hash {expected_hash!s}")  # ruff: ignore[G004]
         path = self.rawdata_paths[fname]
         actual_hash = hash_zip_contents(path)
         return validate_hash(actual_hash, expected_hash)

@@ -929,7 +929,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     ) -> bool:
         r"""Validate one table."""
         excs: list[ValidationError] = []
-        self.LOGGER.debug(f"{key=} Validating table shape")
+        self.LOGGER.debug(f"{key=} Validating table shape")  # ruff: ignore[G004]
         try:
             shapes_match = validate_table_shape(
                 self.tables[key],  # type: ignore
@@ -940,7 +940,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
             shapes_match = False
             excs.append(exc1)
 
-        self.LOGGER.debug(f"{key=} Validating table schema")
+        self.LOGGER.debug(f"{key=} Validating table schema")  # ruff: ignore[G004]
         try:
             schema = self.table_schemas.get(key)
             schema_matches = schema is None or validate_table_schema(
@@ -950,7 +950,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
             schema_matches = False
             excs.append(exc2)
 
-        self.LOGGER.debug(f"{key=} Validating table hash")
+        self.LOGGER.debug(f"{key=} Validating table hash")  # ruff: ignore[G004]
         try:
             hash_matches = validate_table_hash(
                 self.tables[key],

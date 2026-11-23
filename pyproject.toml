@@ -113,6 +113,7 @@ include = ["pyproject.toml"]
 format.rules.array-values-order.enabled = false
 format.rules.table-keys-order.enabled = false
 
+
 # region ruff
 [tool.ruff]
 src = ["src/", "tests/"]
@@ -129,49 +130,8 @@ line-ending = "auto"
 docstring-code-format = true
 docstring-code-line-length = "dynamic"
 
-[tool.ruff.lint]
-# Allow fix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
 
-# select = [
-#    "A",     # flake8-builtins
-#    "ANN",   # flake8-annotations
-#    "ARG",   # flake8-unused-arguments
-#    "B",     # bugbear
-#    "C4",    # comprehensions
-#    "C90",   # mccabe
-#    "D",     # pydocstyle
-#    "DOC",   # pydoclint
-#    "E",     # pycodestyle
-#    "EXE",   # executable
-#    "F",     # pyflakes
-#    "FBT",   # boolean-trap
-#    "FURB",  # refurb
-#    "I",     # isort
-#    "ICN",   # import-conventions
-#    "ISC",   # implicit-str-concat
-#    "N",     # pep8-naming
-#    "NPY",   # numpy
-#    "N",     # naming
-#    "PERF",  # performance related
-#    "PGH",   # pygrep-hooks
-#    "PIE",   # pie
-#    "PL",    # pylint
-#    "PT",    # pytest
-#    # "PTH",   # path
-#    "PYI",   # pyi
-#    # "RET",   # return
-#    "RUF",   # ruff specific
-#    "S",     # flake8-bandit
-#    "S101",  # use of `assert`
-#    "SIM",   # simplify
-#    "SLOT",  # slots
-#    "TCH",   # type-checking
-#    "TRY",   # tryceratops
-#    "UP",    # pyupgrade
-#    "W",     # warnings
-# ]
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = [
     # fully ignored:
@@ -185,11 +145,6 @@ ignore = [
     "FIX", # fixme
     "T20", # flake8-print
     "TD", # todo
-    # partially ignored:
-    # flake8-builtins
-    "A005", # builtin-module-shadowing
-    # unused-arguments
-    "ARG003", # Unused class method argument
     # blind-except
     "BLE001",
     # pydocstyle
@@ -207,17 +162,12 @@ ignore = [
     "E203", # Whitespace before ':'
     "E221", # Multiple spaces before operator
     "E222", # Multiple spaces after operator
-    "E701", # Multiple statements on one line (colon)
+    "E731", # Do not assign a lambda expression, use a def
     "E741", # Ambiguous variable name (like l, O, or I)
-    # "E226",   # Missing whitespace around arithmetic operator
-    # "E231",   # Missing whitespace after ','
+    "E701", # Multiple statements on one line (colon)
     "E241", # Multiple spaces after comma
     "E271", # Multiple spaces after keyword
     "E272", # Multiple spaces before keyword
-    # refurb
-    "FURB140", # reimplemented-starmap (less efficient than comprehension)
-    #
-    "G004", # logging f-string
     # naming
     "N801", # class names should use CapWords convention
     "N803", # argument name should be lowercase
@@ -259,7 +209,6 @@ ignore = [
     "RUF002", # ambiguous-unicode-character-docstring
     "RUF003", # ambiguous-unicode-character-comment
     "RUF012", # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
-    "RUF013", # PEP 484 prohibits implicit Optional
     "RUF022", # __all__ not sorted
     "RUF036", # None not at the end of type annotation
     "RUF067", # non-empty-init-module
@@ -280,22 +229,19 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"src/tsdm/linalg/*" = ["FBT001", "FBT002", "PLR6104"]
-"src/tsdm/metrics/*" = ["PLR6301", "PLR6104"]
-"src/tsdm/models/*" = ["N803"]
-"src/tsdm/types/*" = ["ERA001"]
 "**/test*" = [
     "D100",
     "D101",
     "D104",
     "D106",
-    "PYI042",
+    "FBT001",
+    "G004",
+    "RUF012",
     "RUF046",
     "S101",
     "SIM300",
     "T20",
     "UP018",
-    "RUF046",
 ]
 
 [tool.ruff.lint.pylint]

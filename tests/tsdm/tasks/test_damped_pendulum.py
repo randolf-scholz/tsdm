@@ -4,9 +4,9 @@ import logging
 from itertools import islice
 
 from tsdm import tasks
-from tsdm.datatools import CallableDataset
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.timeseries.pandas import SplitTimeData
+from tsdm.types.datasets import CallableDataset
 
 __logger__ = logging.getLogger(__name__)
 

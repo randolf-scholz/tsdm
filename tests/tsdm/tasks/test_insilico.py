@@ -3,10 +3,10 @@ r"""Test task implementation with InSilico."""
 from pandas import DataFrame
 from torch.utils.data import DataLoader
 
-from tsdm.datatools import CallableDataset
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoTask
 from tsdm.timeseries.pandas import SplitTimeData, TimeSeriesCollection
+from tsdm.types.datasets import CallableDataset
 
 
 def test_insilico_task() -> None:
