@@ -5,6 +5,7 @@ __all__ = [
     "visualize_distribution",
     "shared_grid_plot",
     "plot_spectrum",
+    "plot_zero_count",
     "center_axes",
     "enable_latex_plotting",
     "rasterize",
@@ -43,6 +44,58 @@ type Location = Literal[
     "upper center",
     "center",
 ]
+
+
+def plot_zero_count(
+    data: ArrayLike,
+    /,
+    *,
+    time: ArrayLike | None = None,
+    ax: Axes | None = None,
+) -> Axes:
+    r"""Plot the number of zero-valued channels at each observation.
+
+    Count exact zeros across columns. Negative values, NaNs, and nulls are not
+    counted. Rows retain their input order; timestamps are not sorted.
+
+    Args:
+        data: Two-dimensional numeric data, with observations along rows and
+            channels along columns. Exclude timestamp and metadata columns.
+        time: One-dimensional coordinates with one value per row. If omitted,
+            use the row positions.
+        ax: Axes to draw on. If omitted, create a new figure and axes.
+
+    Returns:
+        Axes containing the zero-count curve. The caller owns the figure and
+        decides whether to show, save, or close it.
+
+    Raises:
+        ValueError: If `data` is not two-dimensional, or `time` is not
+            one-dimensional with one coordinate per row.
+
+    Example:
+        >>> ax = plot_zero_count([[0, 1], [0, 0], [-1, 2]])
+        >>> ax.lines[0].get_ydata().tolist()
+        [1, 2, 0]
+        >>> plt.close()
+    """
+    if isinstance(data, Tensor):
+        data = data.detach().cpu().numpy()
+    array = np.asarray(data)
+    if array.ndim != 2:
+        raise ValueError(f"Expected two-dimensional data, got shape {array.shape}.")
+
+    coordinates = np.arange(len(array)) if time is None else np.asarray(time)
+    if coordinates.ndim != 1 or len(coordinates) != len(array):
+        raise ValueError("Expected one time coordinate per data row.")
+
+    zero_counts = np.count_nonzero(array == 0, axis=1)
+    if ax is None:
+        _, ax = plt.subplots()
+    ax.plot(coordinates, zero_counts)
+    ax.set_xlabel("Observation" if time is None else "Time")
+    ax.set_ylabel("Zero count")
+    return ax
 
 
 @torch.no_grad()

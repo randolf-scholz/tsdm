@@ -44,9 +44,7 @@ __all__ = ["Electricity"]
 from typing import Literal
 from zipfile import ZipFile
 
-import matplotlib.pyplot as plt
 import polars as pl
-from matplotlib.axes import Axes
 
 from tsdm.datasets.base import PolarsDataset
 from tsdm.validation import validate_csv_header
@@ -68,32 +66,40 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
     | **Number of Web Hits:**        | 93733                  |
 
     Notes:
-        More than 200 channels are completely missing before 2012-01-01 00:15:00.
-        Three additional dates contain many missing values:
+        The source encodes missing measurements as zeros. Plotting the number
+        of zero-valued clients at each timestamp reveals two patterns:
 
-        - 2012-03-25
-        - 2013-03-31
-        - 2014-03-30
+        - An elevated zero count before 2012: 210 channels are entirely zero
+          throughout 2011 and at 2012-01-01 00:00. The count drops from 210
+          to 50 at 2012-01-01 00:15 as additional clients begin reporting.
+        - Three sharp spikes at the spring daylight saving transitions:
 
-        The affected timestamps are:
+            - 2012-03-25: up to 251 zero-valued channels.
+            - 2013-03-31: up to 242 zero-valued channels.
+            - 2014-03-30: up to 253 zero-valued channels.
 
-        - 2011-MM-DD hh:mm:ss
-        - 2012-01-01 00:00:00
-        - 2012-03-25 01:00:00
-        - 2012-03-25 01:15:00
-        - 2012-03-25 01:30:00
-        - 2012-03-25 01:45:00
-        - 2013-03-31 01:00:00
-        - 2013-03-31 01:15:00
-        - 2013-03-31 01:30:00
-        - 2013-03-31 01:45:00
-        - 2014-03-30 01:00:00
-        - 2014-03-30 01:15:00
-        - 2014-03-30 01:30:00
-        - 2014-03-30 01:45:00
+          Each spike spans the four readings at 01:00, 01:15, 01:30, and 01:45
+          in Portuguese local time. Zeros representing these gaps should be
+          treated as missing measurements rather than measured consumption.
 
-        Zeros at these timestamps represent missing measurements and should be
-        treated as `NaN`.
+        The following example makes these patterns visible. It requires
+        downloading and preprocessing the dataset and is intended for
+        interactive use.
+
+        >>> from matplotlib import pyplot as plt  # doctest: +SKIP
+        ...
+        ... from tsdm.datasets import Electricity
+        ... from tsdm.plotting import plot_zero_count
+        ...
+        ... dataset = Electricity()
+        ... ts = dataset.timeseries
+        ... ax = plot_zero_count(
+        ...     ts.drop("time").to_numpy(),
+        ...     time=ts.get_column("time").to_numpy(),
+        ... )
+        ... # The elevated band in 2011 reflects the 210 missing channels.
+        ... # The three spikes mark 2012-03-25, 2013-03-31, and 2014-03-30.
+        ... plt.show()
     """
 
     SOURCE_URL = r"https://archive.ics.uci.edu/static/public/321/"
@@ -153,14 +159,3 @@ class Electricity(PolarsDataset[Literal["timeseries"]]):
             )
 
         return ts
-
-    def make_zero_plot(self) -> Axes:
-        r"""Plot number of zero values per timestamp."""
-        ts = self.timeseries
-        zero_counts = ts.select(
-            pl.sum_horizontal(pl.exclude("time").le(0)).alias("zero-values")
-        ).to_series()
-        _, axes = plt.subplots()
-        axes.plot(ts.get_column("time").to_numpy(), zero_counts.to_numpy())
-        axes.set_ylabel("zero-values")
-        return axes
