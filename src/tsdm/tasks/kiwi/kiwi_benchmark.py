@@ -18,7 +18,6 @@ from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.datatools import CallableDataset
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -40,6 +39,7 @@ from tsdm.timeseries.pandas import (
     kiwi_benchmark,
     make_sample_factory,
 )
+from tsdm.types.datasets import CallableDataset
 from tsdm.utils import LazyDict
 
 

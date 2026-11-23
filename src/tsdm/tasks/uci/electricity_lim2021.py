@@ -16,12 +16,12 @@ import torch
 from torch import Tensor
 from torch.utils.data import TensorDataset, default_collate
 
-from tsdm.datatools import timedelta, timestamp
 from tsdm.encoders import StandardScaler
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import TimeSeries, electricity
+from tsdm.utils.timetools import timedelta, timestamp
 
 
 @pprint_repr

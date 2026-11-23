@@ -51,10 +51,6 @@ depends_on = [
 ]
 
 [[modules]]
-path = "tsdm.decorator"
-depends_on = []
-
-[[modules]]
 path = "tsdm.encoders"
 depends_on = [
     "tsdm.encoders.universal",
@@ -96,7 +92,6 @@ depends_on = [
 path = "tsdm.pprint"
 depends_on = [
     "tsdm.types",
-    "tsdm.decorator",
 ]
 utility = true
 
@@ -117,7 +112,7 @@ depends_on = [
 
 [[modules]]
 path = "tsdm.timeseries"
-depends_on = ["tsdm.datasets"]
+depends_on = ["tsdm.datasets", "tsdm.types"]
 
 [[modules]]
 path = "tsdm.types"

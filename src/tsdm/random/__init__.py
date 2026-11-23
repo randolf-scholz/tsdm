@@ -8,4 +8,4 @@ __all__ = [
 ]
 
 
-from . import distributions, generators, samplers
+lazy from . import distributions, generators, samplers

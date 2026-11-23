@@ -9,7 +9,6 @@ import numpy as np
 from numpy.typing import NDArray
 from pandas import DataFrame, MultiIndex
 
-from tsdm.datatools import CallableDataset
 from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -20,6 +19,7 @@ from tsdm.timeseries.pandas import (
     in_silico,
     make_sample_factory,
 )
+from tsdm.types.datasets import CallableDataset
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[NDArray[np.bool_]]]

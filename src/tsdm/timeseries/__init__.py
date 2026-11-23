@@ -13,7 +13,8 @@ __all__ = [
     "polars",
 ]
 
-from . import abstract, pandas, polars
+from . import abstract
 from .abstract import *  # ruff: ignore[F403]
+lazy from . import pandas, polars
 
 __all__ += abstract.__all__

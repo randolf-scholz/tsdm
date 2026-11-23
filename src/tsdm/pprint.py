@@ -85,7 +85,6 @@ from typing import Any, Final, Protocol
 
 from polars import LazyFrame
 
-from .decorator import decorator
 from .types import (
     DataclassType,
     HasDevice,
@@ -97,6 +96,7 @@ from .types import (
     is_dataclass,
     is_namedtuple,
 )
+from .utils.decorators import decorator
 
 MAXITEMS: Final[int] = 20
 r"""Default item limit for multiline representations."""

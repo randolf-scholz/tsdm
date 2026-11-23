@@ -2,6 +2,7 @@ r"""Provides utility functions."""
 
 __all__ = [
     # submodules
+    "decorators",
     "funcutils",
     "helpers",
     "interval",
@@ -15,11 +16,11 @@ __all__ = [
     "LazyValue",
 ]
 
-
-from . import funcutils, helpers, interval, lazydict, remote, timetools
+from . import helpers
 from .helpers import *  # ruff: ignore[F403]
-from .interval import Interval
-from .lazydict import LazyDict, LazyValue
-from .timer import timer
+lazy from . import decorators, funcutils, interval, lazydict, remote, timetools
+lazy from .interval import Interval
+lazy from .lazydict import LazyDict, LazyValue
+lazy from .timer import timer
 
 __all__ += helpers.__all__
