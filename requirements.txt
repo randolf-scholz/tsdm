@@ -13,7 +13,7 @@ cuda-toolkit==13.2.2 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==4.2.12
+filelock==4.3.0
     # via torch
 fonttools==4.68.0
     # via matplotlib
@@ -122,7 +122,7 @@ python-dateutil==4.0.0
     # via
     #   matplotlib
     #   pandas
-pyyaml==6.0.3
+pyyaml==6.0.4
     # via tsdm
 scipy==1.18.1
     # via tsdm
