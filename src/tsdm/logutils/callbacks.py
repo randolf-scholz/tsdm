@@ -639,11 +639,7 @@ class EvaluationCallback(BaseCallback):
         for split, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
             scores[split] = {
-                name: float(
-                    metric(predictions=result["predictions"], targets=result["targets"])
-                    .cpu()
-                    .item()
-                )
+                name: float(metric(**result).cpu().item())
                 for name, metric in self.metrics.items()
             }
         return scores
