@@ -12,7 +12,7 @@ import torch
 
 from tsdm.stats.distances import total_variation_distance
 from tsdm.tasks.base import SplitType
-from tsdm.tasks.utils import is_partition, random_partitions, rotating_partitions
+from tsdm.tasks.partitions import is_partition, random_partitions, rotating_partitions
 
 
 class TestPartitions:

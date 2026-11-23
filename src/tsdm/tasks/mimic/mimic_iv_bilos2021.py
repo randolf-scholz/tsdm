@@ -67,7 +67,7 @@ from tsdm.encoders.pandas import FrameEncoder
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.tasks.utils import is_partition, random_partitions
+from tsdm.tasks.partitions import is_partition, random_partitions
 from tsdm.timeseries.pandas import TimeSeriesCollection, mimic_iv_bilos2021
 
 

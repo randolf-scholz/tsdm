@@ -32,7 +32,7 @@ from tsdm.losses.sequence import mse_loss
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.tasks.utils import rotating_partitions
+from tsdm.tasks.partitions import rotating_partitions
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,
