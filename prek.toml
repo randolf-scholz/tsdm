@@ -136,7 +136,18 @@ hooks = [
         name = "unknown-inline-pragma",
         description = "Check for unknown inline pragmas.",
         language = "pygrep",
-        entry = '^[^\n]*\S[^\n]*\#\x20+(?!type|pyright|pyrefly|ty|noqa|fmt|shape|mypy|ruff|FIXME|SEE|NOTE|TODO)\w+:[^\n]+$',
+        entry = '''(?x)
+            ^[^\n]*\S[^\n]*  # Require non-whitespace before the pragma.
+            \#\x20+          # Comment marker followed by spaces.
+            (?!              # Exclude recognized pragma names followed by a colon.
+                (?:
+                    type|pyright|pyrefly|doctest|ty|noqa|fmt|shape|mypy|ruff
+                    |FIXME|SEE|NOTE|TODO
+                ):
+            )
+            \w+:             # Pragma name and colon.
+            [^\n]+$          # Require content after the colon.
+        ''',
         types = ["python"],
         files = "^src/|^tests/",
     },
