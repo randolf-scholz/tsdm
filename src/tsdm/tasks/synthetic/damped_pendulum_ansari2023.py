@@ -13,9 +13,9 @@ __all__ = ["DampedPendulum_Ansari2023"]
 from functools import cached_property
 from typing import Literal, final
 
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, MultiIndex
 
-from tsdm.datatools import CallableDataset, folds_as_frame
+from tsdm.datatools import CallableDataset
 from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import HierarchicalSampler, RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -137,16 +137,25 @@ class DampedPendulum_Ansari2023(
         trajectories produced by the reference generator.
         """
         # SEE: https://github.com/clear-nus/NCDSSM/blob/7212bba9616d81c948f507eef9eb1f7d5cf1954e/data/damped_pendulum.py#L267-L301
-        index = self.dataset.metaindex
+        index = Index(self.dataset.metaindex.to_list())
         train_stop = self.train_size
         valid_stop = train_stop + self.valid_size
         if len(index) != valid_stop + self.test_size:
             raise ValueError("Partition sizes must sum to the number of trajectories.")
         fold = {
-            "train": Series(index[:train_stop]),
-            "valid": Series(index[train_stop:valid_stop]),
-            "test": Series(index[valid_stop:]),
+            "train": index[:train_stop],
+            "valid": index[train_stop:valid_stop],
+            "test": index[valid_stop:],
         }
-        return folds_as_frame(
-            [fold for _ in range(self.num_folds)], index=index.to_list(), sparse=True
-        )
+        fold_masks = {
+            split: index.isin(members)
+            for split, members in sorted(fold.items())
+            if len(members)
+        }
+        masks = {
+            (fold_id, split): mask
+            for fold_id in range(self.num_folds)
+            for split, mask in fold_masks.items()
+        }
+        columns = MultiIndex.from_tuples(list(masks), names=["fold", "partition"])
+        return DataFrame(masks, index=index, columns=columns)

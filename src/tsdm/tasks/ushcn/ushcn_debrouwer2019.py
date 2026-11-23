@@ -60,16 +60,14 @@ __all__ = [
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import cached_property
-from random import Random
 from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
 import torch
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.datatools import folds_as_frame
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -229,31 +227,28 @@ class USHCN_DeBrouwer2019(
     @cached_property
     def split_masks(self) -> DataFrame:
         r"""Create the boolean masks for each fold and partition."""
-        folds: list[dict[str, Series]] = []
-        rng = Random(self.seed)
-
+        index = Index(self.IDs.to_list())
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
-        for _ in range(self.num_folds):
-            [(train_idx, valid_idx, test_idx)] = random_partitions(
-                self.IDs,
-                num=1,
-                ratios=[
-                    (1 - self.test_size) * (1 - self.valid_size),
-                    (1 - self.test_size) * self.valid_size,
-                    self.test_size,
-                ],
-                rng=rng,
-            )
-            fold = {
-                "train": Series(train_idx),
-                "valid": Series(valid_idx),
-                "test": Series(test_idx),
-            }
-            if not is_partition(fold.values(), union=self.IDs):
-                raise ValueError("Invalid partition!")
-            folds.append(fold)
-
-        return folds_as_frame(folds, index=self.IDs.to_list(), sparse=True)
+        folds = random_partitions(
+            index,
+            num=self.num_folds,
+            ratios={
+                "train": (1 - self.test_size) * (1 - self.valid_size),
+                "valid": (1 - self.test_size) * self.valid_size,
+                "test": self.test_size,
+            },
+            rng=self.seed,
+        )
+        if any(not is_partition(fold.values(), union=index) for fold in folds):
+            raise ValueError("Invalid partition!")
+        masks = {
+            (fold_id, split): index.isin(members)
+            for fold_id, fold in enumerate(folds)
+            for split, members in sorted(fold.items())
+            if members
+        }
+        columns = MultiIndex.from_tuples(list(masks), names=["fold", "partition"])
+        return DataFrame(masks, index=index, columns=columns)
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:  # ruff: ignore[ARG002]
         r"""Return the collate function for the specified split."""

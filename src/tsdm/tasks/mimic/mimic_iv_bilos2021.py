@@ -58,11 +58,10 @@ from typing import Literal, NamedTuple, cast
 from warnings import deprecated
 
 import torch
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.datatools import folds_as_frame
 from tsdm.encoders import MinMaxScaler
 from tsdm.encoders.pandas import FrameEncoder
 from tsdm.pprint import pprint_repr
@@ -258,26 +257,33 @@ class MIMIC_IV_Bilos2021(
     @cached_property
     def split_masks(self) -> DataFrame:
         r"""Create the boolean masks for each fold and partition."""
-        folds: list[dict[str, Series]] = []
+        index = Index(self.IDs.to_list())
         # NOTE: all folds are the same due to fixed random state.
         # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-        for _ in range(self.num_folds):
-            [(train_idx, valid_idx, test_idx)] = random_partitions(
-                self.IDs,
-                num=1,
-                ratios=(self.train_size, self.valid_size, self.test_size),
-                rng=0,  # sic
-            )
-            fold = {
-                "train": Series(train_idx),
-                "valid": Series(valid_idx),
-                "test": Series(test_idx),
-            }
-            if not is_partition(fold.values(), union=self.IDs):
-                raise ValueError("Invalid partitions!")
-            folds.append(fold)
-
-        return folds_as_frame(folds, index=self.IDs.to_list(), sparse=True)
+        [fold] = random_partitions(
+            index,
+            num=1,
+            ratios={
+                "train": self.train_size,
+                "valid": self.valid_size,
+                "test": self.test_size,
+            },
+            rng=0,  # sic
+        )
+        if not is_partition(fold.values(), union=index):
+            raise ValueError("Invalid partitions!")
+        fold_masks = {
+            split: index.isin(members)
+            for split, members in sorted(fold.items())
+            if members
+        }
+        masks = {
+            (fold_id, split): mask
+            for fold_id in range(self.num_folds)
+            for split, mask in fold_masks.items()
+        }
+        columns = MultiIndex.from_tuples(list(masks), names=["fold", "partition"])
+        return DataFrame(masks, index=index, columns=columns)
 
     def make_collate_fn(self, _key: SplitID, /) -> Callable[[list[Sample]], Batch]:
         r"""Return the collate function for the specified split."""

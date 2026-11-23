@@ -7,17 +7,13 @@ from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
-from pandas import DataFrame
+from pandas import DataFrame, MultiIndex
 
-from tsdm.datatools import (
-    CallableDataset,
-    folds_as_frame,
-    folds_as_sparse_frame,
-    folds_from_groups,
-)
+from tsdm.datatools import CallableDataset
 from tsdm.losses.sequence import mse_loss
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.utils import rotating_partitions
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,
@@ -85,15 +81,18 @@ class InSilicoTask(
     @cached_property
     def split_masks(self) -> DataFrame:
         r"""Boolean masks indexed by series identifier and split key."""
-        # TODO: refactor code, use **fold_kwargs, move code to base class?!?
-        idx = self.dataset.metaindex
-        df = idx.to_frame(index=False).set_index(idx.names)  # i.e. add dummy column
-        groups = df.groupby(idx.names, sort=False).ngroup()
-        folds = folds_from_groups(
-            groups, seed=2022, num_folds=8, train=6, valid=1, test=1
+        index = self.dataset.metaindex
+        folds = rotating_partitions(
+            index, num=8, chunks={"train": 6, "valid": 1, "test": 1}, rng=2022
         )
-        df = folds_as_frame(folds)
-        return folds_as_sparse_frame(df)
+        masks = {
+            (fold_id, split): index.isin(members)
+            for fold_id, fold in enumerate(folds)
+            for split, members in sorted(fold.items())
+            if members
+        }
+        columns = MultiIndex.from_tuples(list(masks), names=["fold", "partition"])
+        return DataFrame(masks, index=index, columns=columns)
 
     def make_generator(
         self, key: SplitID, /

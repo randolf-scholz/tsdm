@@ -9,20 +9,16 @@ __all__ = [
 
 from collections.abc import Callable, Mapping
 from functools import cached_property
+from random import Random
 from typing import Any, Literal, NamedTuple
 
 import torch
-from pandas import DataFrame
+from pandas import DataFrame, MultiIndex
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.datatools import (
-    CallableDataset,
-    folds_as_frame,
-    folds_as_sparse_frame,
-    folds_from_groups,
-)
+from tsdm.datatools import CallableDataset
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -37,6 +33,7 @@ from tsdm.losses.sequence import mse_loss
 from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.utils import rotating_partitions
 from tsdm.timeseries.pandas import (
     SplitTimeData,
     TimeSeriesCollection,
@@ -222,10 +219,26 @@ class KiwiBenchmark(
         md = self.dataset.static_covariates
         if md is None:
             raise ValueError("KIWI fold generation requires static covariates.")
-        groups = md.groupby(["run_id", "color"], sort=False).ngroup()
-        folds = folds_from_groups(groups, **self.fold_kwargs)
-        df = folds_as_frame(folds)
-        return folds_as_sparse_frame(df)
+        index = md.index
+        groups = md.groupby(["run_id", "color"], sort=False, dropna=False).ngroup()
+        chunks = self.fold_kwargs.copy()
+        seed = chunks.pop("seed", None)
+        num_folds = chunks.pop("num_folds", 5)
+        folds = rotating_partitions(
+            index,
+            num=num_folds,
+            chunks=chunks,
+            rng=Random() if seed is None else seed,
+            group_labels=groups,
+        )
+        masks = {
+            (fold_id, split): index.isin(members)
+            for fold_id, fold in enumerate(folds)
+            for split, members in sorted(fold.items())
+            if members
+        }
+        columns = MultiIndex.from_tuples(list(masks), names=["fold", "partition"])
+        return DataFrame(masks, index=index, columns=columns)
 
     def make_collate_fn(
         self, key: SplitID, /
@@ -248,12 +261,15 @@ class KiwiBenchmark(
                     )
                 tx, x = encoder.encode(sample.context_values).values()
                 ty, y = encoder.encode(sample.target_values).values()
+                # Restore singleton axes removed by the tensor encoder before padding.
+                x = x.reshape(sample.context_values.shape)
+                y = y.reshape(sample.target_values.shape)
                 # create a mask for looking up the target values
-                x_time.append(tx)
+                x_time.append(tx.reshape(-1))
                 x_vals.append(x)
                 x_mask.append(x.isfinite())
 
-                y_time.append(ty)
+                y_time.append(ty.reshape(-1))
                 y_vals.append(y)
                 y_mask.append(y.isfinite())
 
