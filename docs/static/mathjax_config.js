@@ -237,6 +237,9 @@ window.MathJax = {
         },
 
     },
+    output: {
+        linebreaks: {inline: false},
+    },
     options: {  // added for https://zensical.org/docs/authoring/math/
         ignoreHtmlClass: ".*|",
         processHtmlClass: "arithmatex",
