@@ -49,10 +49,10 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
+from tsdm.plotting import center_axes, kernel_heatmap, plot_spectrum, rasterize
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 from tsdm.utils import transpose_list_of_dicts
-from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 from .utils import Loss
 
@@ -506,7 +506,7 @@ def log_plot(
     Args:
         step: The current step.
         fig: The Matplotlib figure to log.
-        rasterization_options: Options to pass to `tsdm.viz.rasterize`.
+        rasterization_options: Options to pass to `tsdm.plotting.rasterize`.
         writer: The writer to log to.
         name: The name of the plot.
         prefix: The prefix of the plot.

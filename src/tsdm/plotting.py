@@ -30,7 +30,7 @@ from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
 
-from tsdm.constants import EMPTY_MAP
+from .constants import EMPTY_MAP
 
 type Location = Literal[
     "upper right",

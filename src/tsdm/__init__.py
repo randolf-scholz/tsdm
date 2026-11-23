@@ -19,7 +19,7 @@ __all__ = [
     "timeseries",
     "types",
     "utils",
-    "viz",
+    "plotting",
 ]
 
 from importlib import metadata
@@ -45,6 +45,7 @@ from . import (  # ruff: ignore[E402]  # Initialize storage before importing dep
     linalg,
     logutils,
     losses,
+    plotting,
     pretrained,
     random,
     stats,
@@ -52,5 +53,4 @@ from . import (  # ruff: ignore[E402]  # Initialize storage before importing dep
     timeseries,
     types,
     utils,
-    viz,
 )

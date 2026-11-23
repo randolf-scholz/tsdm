@@ -1,11 +1,11 @@
-r"""Test tsdm.viz plotting utilities."""
+r"""Test tsdm.plotting plotting utilities."""
 
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gamma
 
 from tests.test_utils import get_results_dir
-from tsdm.viz import visualize_distribution
+from tsdm.plotting import visualize_distribution
 
 RESULT_DIR = get_results_dir(__file__)
 

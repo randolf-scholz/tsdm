@@ -23,8 +23,8 @@ depends_on = [
     "tsdm.tasks",
     "tsdm.timeseries",
     "tsdm.types",
-    "tsdm.viz",
     "tsdm.stats",
+    "tsdm.plotting",
 ]
 
 [[modules]]
@@ -84,7 +84,7 @@ path = "tsdm.logutils"
 depends_on = [
     "tsdm.linalg",
     "tsdm.types",
-    "tsdm.viz",
+    "tsdm.plotting",
 ]
 
 [[modules]]
@@ -145,10 +145,6 @@ depends_on = [
 utility = true
 
 [[modules]]
-path = "tsdm.viz"
-depends_on = []
-
-[[modules]]
 path = "tsdm.validation"
 depends_on = ["tsdm.hashutils", "tsdm.types"]
 
@@ -158,4 +154,8 @@ depends_on = ["tsdm.types"]
 
 [[modules]]
 path = "tsdm.stats"
+depends_on = []
+
+[[modules]]
+path = "tsdm.plotting"
 depends_on = []
