@@ -6,7 +6,6 @@ __all__ = [
     # Sub-Modules
     "backend",
     "config",
-    "datatools",
     "datasets",
     "encoders",
     "linalg",
@@ -22,25 +21,12 @@ __all__ = [
     "utils",
 ]
 
-from importlib import metadata
 
-try:  # single-source version
-    __version__ = metadata.version(__package__ or __name__)
-    r"""The version number of the `tsdm` package."""
-except metadata.PackageNotFoundError:
-    __version__ = "unknown"
-    r"""The version number of the `tsdm` package."""
-finally:
-    del metadata
-
-from . import config
-
-config.initialize_directories()
-
-lazy from . import (  # ruff: ignore[E402]  # Initialize storage before importing dependent modules.
+from .constants import __version__
+lazy from . import (
     backend,
+    config,
     datasets,
-    datatools,
     encoders,
     linalg,
     logutils,
