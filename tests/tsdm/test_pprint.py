@@ -3,6 +3,7 @@ r"""Test tsdm.utils.pprint."""
 import math
 from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any, NamedTuple
 
 import numpy as np
@@ -12,22 +13,94 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.types import SupportsArray
+from tsdm.types import HasDTypes, SupportsArray, SupportsDataFrame
 from tsdm.types.dataclass import DataclassType
 from tsdm.types.namedtuple import NamedTupleType
 from tsdm.utils.pprint import (
     INDENT,
-    repr_array,
+    Identifier,
+    _repr_array,
+    _repr_dataclass,
+    _repr_mapping,
+    _repr_namedtuple,
+    _repr_sequence,
+    _repr_set,
+    _repr_table,
     repr_compact,
-    repr_dataclass,
-    repr_mapping,
-    repr_namedtuple,
     repr_object,
-    repr_sequence,
-    repr_set,
 )
 
 INDENTATION = " " * INDENT
+
+
+def test_identifier_lookup() -> None:
+    r"""Infer identifiers from object types."""
+    assert Identifier("mapping") is Identifier.MAPPING
+    assert Identifier.get("<mapping>") is None
+    assert Identifier.get("custom label") is None
+    assert Identifier.get([1]) is Identifier.SEQUENCE
+    assert Identifier.get(object()) is None
+    assert repr_compact(object(), recursive=True) == "object()"
+    with pytest.raises(ValueError, match="not a valid Identifier"):
+        Identifier("<mapping>")
+
+
+def test_pprint_types_and_functions() -> None:
+    r"""Use shared formatters for types and both kinds of functions."""
+
+    def example() -> None:
+        pass
+
+    assert Identifier.get(example) is Identifier.FUNCTION
+    assert Identifier.get(len) is Identifier.FUNCTION
+    for formatter in (repr_compact, repr_object):
+        assert formatter(int, identifier="custom") == "int<custom>"
+        assert formatter(example) == "example"
+        assert formatter(example, identifier="custom") == "example<custom>"
+        assert formatter(len) == "<built-in function len>"
+        assert formatter(len, identifier="custom") == "<custom><built-in function len>"
+
+
+def test_sequence_identifier_excludes_strings() -> None:
+    r"""Use the sequence identifier for containers, excluding strings."""
+    Identifier.SEQUENCE.validate([1])
+    with pytest.raises(AssertionError, match="excludes strings"):
+        Identifier.SEQUENCE.validate("text")
+
+
+def test_identifier_overlapping_categories() -> None:
+    r"""Validate categories independently of default dispatch order."""
+
+    @dataclass
+    class MappingDataclass(dict):
+        r"""A mapping that also matches the dataclass protocol."""
+
+    obj = MappingDataclass()
+    assert Identifier.get(obj) is Identifier.DATACLASS
+    Identifier.MAPPING.validate(obj)
+
+
+@pytest.mark.parametrize(
+    ("identifier", "label"),
+    [("custom", "<custom>"), ("déjà_vu", "<déjà_vu>"), ("", ""), (None, "")],
+)
+def test_custom_identifier(identifier: str | None, label: str) -> None:
+    r"""Display custom identifiers with angle brackets and omit empty labels."""
+    assert repr_object(1, identifier=identifier) == f"{label}1"
+    assert repr_object([1], identifier=identifier, linebreaks=False) == f"{label}[1]"
+    assert repr_object(object(), identifier=identifier) == f"object{label}()"
+    assert repr_compact(object(), identifier=identifier) == f"object{label}()"
+    assert (
+        repr_object(object(), identifier=identifier, fallback=lambda _: "fallback")
+        == f"{label}fallback"
+    )
+
+
+@pytest.mark.parametrize("identifier", ["<custom>", "custom label", "2,3", "<>"])
+def test_invalid_custom_identifier(identifier: str) -> None:
+    r"""Reject labels that fail the Python identifier syntax."""
+    with pytest.raises(ValueError, match="Invalid identifier"):
+        repr_object([1], identifier=identifier)
 
 
 @dataclass
@@ -37,6 +110,13 @@ class ExampleDataclass:
     a: int
     b: str
     c: float
+
+
+def test_identifier_for_wrapped_payload() -> None:
+    r"""Select the formatter from the payload and the label from the wrapper."""
+    wrapper = ExampleDataclass(2, "ignored", 3.0)
+    result = repr_object([1], wrapped=wrapper, linebreaks=False)
+    assert result == "ExampleDataclass<dataclass>(1)"
 
 
 class ExampleNamedTuple(NamedTuple):
@@ -110,7 +190,7 @@ def test_pprint_object(obj: object, expected: str) -> None:
 )
 def test_pprint_namedtuple(tup: NamedTupleType, expected: str) -> None:
     r"""Test pprint_namedtuple."""
-    result = repr_namedtuple(tup)
+    result = _repr_namedtuple(tup)
     expected = expected.replace("\t", INDENTATION)
     assert result == expected
 
@@ -126,7 +206,7 @@ def test_pprint_namedtuple(tup: NamedTupleType, expected: str) -> None:
 )
 def test_pprint_dataclass(dc: DataclassType, expected: str) -> None:
     r"""Test pprint_dataclass."""
-    result = repr_dataclass(dc)
+    result = _repr_dataclass(dc)
     expected = expected.replace("\t", INDENTATION)
     assert result == expected
 
@@ -146,7 +226,7 @@ def test_pprint_dataclass(dc: DataclassType, expected: str) -> None:
 )
 def test_pprint_mapping(mapping: Mapping, expected: str) -> None:
     r"""Test pprint_mapping."""
-    result = repr_mapping(mapping)
+    result = _repr_mapping(mapping)
     expected = expected.replace("\t", INDENTATION)
     assert result == expected
 
@@ -170,7 +250,7 @@ def test_pprint_mapping(mapping: Mapping, expected: str) -> None:
 )
 def test_pprint_sequence(seq: Sequence, expected: str) -> None:
     r"""Test pprint_sequence."""
-    result = repr_sequence(seq)
+    result = _repr_sequence(seq)
     expected = expected.replace("\t", INDENTATION)
     assert result == expected
 
@@ -197,13 +277,14 @@ def test_pprint_sequence(seq: Sequence, expected: str) -> None:
 )
 def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
     r"""Test pprint_set."""
-    result = repr_set(obj)
+    result = _repr_set(obj)
     expected = {exp.replace("\t", INDENTATION) for exp in expected}
     assert result in expected
 
 
 DICT_TYPE = pa.dictionary(pa.int32(), pa.string())
 TABLE_DATA = {"name": ["foo", "bar"], "value": [0.2, 0.3], "ID": [1, 2]}
+ARROW_TABLE = pa.table(TABLE_DATA)
 
 
 @pytest.mark.parametrize(
@@ -220,31 +301,67 @@ TABLE_DATA = {"name": ["foo", "bar"], "value": [0.2, 0.3], "ID": [1, 2]}
         (np.array([[1.4, 2.3], [3.2, 4.1]])          , "ndarray<2,2>[float64]"              ),
         (torch.tensor([1, 2, 3])                     , "Tensor<3>[int64]"                   ),
         (torch.tensor([[1.4, 2.3], [3.2, 4.1]])      , "Tensor<2,2>[float32]"               ),
-        (pd.DataFrame(TABLE_DATA)                    , "DataFrame<2,3>[str, float64, int64]"),
         (pd.Series([1, 2, 3])                        , "Series<3>[int64]"                   ),
         (pd.Series([1, 2, 3], dtype="int32[pyarrow]"), "Series<3>[int32]"                   ),
         (pa.array([1,2,3], type=pa.int16())          , "Int16Array<3>[int16]"               ),
         (pl.Series([1, 2, 3])                        , "Series<3>[Int64]"                   ),
         (pl.Series(["foo", "bar"])                   , "Series<2>[String]"                  ),
-        (pl.DataFrame(TABLE_DATA)                    , "DataFrame<2,3>[String, Float64, Int64]"),
         (pa.array(["foo", "bar"], type=DICT_TYPE)    , "DictionaryArray<2>[dict[int32,string]]"),
-        (pa.table(TABLE_DATA)                        , "Table<2,3>[STRING8, FLOAT64, INT64]")
     ],
 )  # fmt: skip
 def test_pprint_array(obj: SupportsArray, expected: str) -> None:
     r"""Test pprint_array."""
-    result = repr_array(obj)
+    result = _repr_array(obj)
     expected = expected.replace("\t", INDENTATION)
     assert result == expected
 
 
-def test_pprint_lazy_frame() -> None:
-    r"""Pretty-print lazy frames without materializing their rows."""
-    frame = pl.LazyFrame({"a": [1, 2], "b": ["x", "y"]})
-    expected = "LazyFrame<*,2>[Int64, String]"
+@pytest.mark.parametrize(
+    ("obj", "expected"),
+    [
+        (pd.DataFrame(TABLE_DATA), "DataFrame<2,3>[str, float64, int64]"),
+        (pl.DataFrame(TABLE_DATA), "DataFrame<2,3>[String, Float64, Int64]"),
+        (pl.LazyFrame(TABLE_DATA), "LazyFrame<*,3>[String, Float64, Int64]"),
+        (ARROW_TABLE, "Table<2,3>[STRING8, FLOAT64, INT64]"),
+        (
+            SimpleNamespace(__dataframe__=ARROW_TABLE.__dataframe__),
+            "SimpleNamespace<*,3>[STRING8, FLOAT64, INT64]",
+        ),
+        (
+            SimpleNamespace(dtypes=pd.DataFrame(TABLE_DATA).dtypes),
+            "SimpleNamespace<*,3>[str, float64, int64]",
+        ),
+        (pa.table({"value": [1]}), "Table<1,1>[INT64]"),
+    ],
+)
+def test_pprint_table(obj: SupportsDataFrame | HasDTypes, expected: str) -> None:
+    r"""Format the same data across the supported table interfaces."""
+    assert Identifier.get(obj) is Identifier.TABLE
+    assert _repr_table(obj) == expected
+    assert repr_object(obj) == expected
 
-    assert repr_array(frame) == expected
-    assert repr_object(frame) == expected
+
+def test_pprint_table_row_count_from_length() -> None:
+    r"""Use the table length as the row count when there is no shape."""
+
+    class SizedTable:
+        r"""A table exposing column dtypes and a row count."""
+
+        dtypes = ("int64", "float64")
+
+        def __len__(self) -> int:
+            return 3
+
+    assert repr_object(SizedTable()) == "SizedTable<3,2>[int64, float64]"
+
+
+def test_pprint_lazy_frame_identifier() -> None:
+    r"""Display a custom identifier for a lazy frame."""
+    frame = pl.LazyFrame(TABLE_DATA)
+    assert (
+        repr_object(frame, identifier="sample")
+        == "LazyFrame<sample>[String, Float64, Int64]"
+    )
 
 
 @pytest.mark.parametrize(

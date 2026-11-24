@@ -11,13 +11,13 @@ from pandas._typing import DtypeObj
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, WrappedEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 from .frame_encoder import FrameEncoder
 from .positional import PeriodicEncoder
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class SocialTimeEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
     r"""Social time encoding."""
@@ -64,7 +64,7 @@ class SocialTimeEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
         return pd.Series(s, name=self.original_name, dtype=self.original_dtype)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True, init=False)
 class PeriodicSocialTimeEncoder(WrappedEncoder[pd.Series, pd.DataFrame]):
     r"""Combines `SocialTimeEncoder` with `PeriodicEncoder` using the right frequencies."""

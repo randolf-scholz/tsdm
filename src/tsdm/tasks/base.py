@@ -84,9 +84,9 @@ from typing import (
 
 from torch.utils.data import DataLoader
 
-from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler
 from tsdm.types.protocols import SupportsGetItem
+from tsdm.utils import pretty_repr
 from tsdm.utils.lazydict import LazyDict
 
 
@@ -169,7 +169,7 @@ class Task[
         ...
 
 
-@pprint_repr
+@pretty_repr
 @dataclass  # (slots=True)
 class TimeSeriesTask[
     SplitKey,  # e.g. tuple[FoldID, SplitID] like (0, "train")

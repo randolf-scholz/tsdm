@@ -14,15 +14,15 @@ from typing import Any, cast, overload
 from numpy.random import Generator
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.pprint import pprint_repr
 from tsdm.types import SupportsGetItem
 from tsdm.types.datasets import Dataset, MapDataset, get_index
+from tsdm.utils import pretty_repr
 
 from .base import BaseSampler, Sampler
 from .random_sampler import RandomSampler
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Flatten a mapping of datasets into pairs of outer and inner keys.
@@ -133,7 +133,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
             yield key, next(iterators[key])
 
 
-@pprint_repr
+@pretty_repr
 class HierarchicalDataset[OuterKeyT, InnerKeyT, SampleT](
     Mapping[OuterKeyT, SupportsGetItem[InnerKeyT, SampleT]]
 ):

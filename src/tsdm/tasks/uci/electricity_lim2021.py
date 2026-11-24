@@ -17,14 +17,14 @@ from torch import Tensor
 from torch.utils.data import TensorDataset, default_collate
 
 from tsdm.encoders import StandardScaler
-from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.timeseries.pandas import TimeSeries, electricity
+from tsdm.utils import pretty_repr
 from tsdm.utils.timetools import timedelta, timestamp
 
 
-@pprint_repr
+@pretty_repr
 class Batch(NamedTuple):
     r"""A batch of input and target tensors with timestamps and masks."""
 

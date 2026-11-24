@@ -16,8 +16,8 @@ from typing import Any, cast, overload
 from tsdm.backend import get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
-from tsdm.pprint import pprint_repr
 from tsdm.types import Axis, IndexArgND
+from tsdm.utils import pretty_repr
 
 type FloatArray = Any
 
@@ -126,7 +126,7 @@ def _reduce_param(param: Any, selection: Any) -> Any:
             return tensor[selection]
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
     r"""Map data linearly as $x ↦ σ⋅x + μ$.
@@ -170,7 +170,7 @@ class LinearScaler[Arr: FloatArray](StaticEncoder[Arr, Arr]):
         return cast("Arr", (cast("Any", data) - self.loc) / self.scale)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     r"""Transform data linearly as $x ↦ (x-μ)/σ$.
@@ -228,7 +228,7 @@ class StandardScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
         return cast("Arr", cast("Any", data) * self.stdv + self.mean)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class MinMaxScaler[Arr: FloatArray](FittableEncoder[Arr, Arr]):
     r"""Map $[xₘᵢₙ, xₘₐₓ]$ linearly to $[yₘᵢₙ, yₘₐₓ]$ (default: $[0, 1]$).

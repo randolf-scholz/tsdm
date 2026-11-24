@@ -68,14 +68,14 @@ from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.tasks.partitions import is_partition, random_partitions
 from tsdm.timeseries.pandas import TimeSeriesCollection, ushcn_de_brouwer2019
+from tsdm.utils import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 class Inputs(NamedTuple):
     r"""Observation times and values, together with requested target times."""
 
@@ -84,7 +84,7 @@ class Inputs(NamedTuple):
     t_target: Tensor
 
 
-@pprint_repr
+@pretty_repr
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
@@ -94,7 +94,7 @@ class Sample(NamedTuple):
     originals: tuple[Tensor, Tensor]
 
 
-@pprint_repr
+@pretty_repr
 class Batch(NamedTuple):
     r"""A batch of input and target tensors with timestamps and masks."""
 
@@ -107,7 +107,7 @@ class Batch(NamedTuple):
     y_mask: Tensor  # B×K×D: teh target mask.
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class USHCN_SampleGenerator:
     r"""Wrapper for creating samples of the dataset."""

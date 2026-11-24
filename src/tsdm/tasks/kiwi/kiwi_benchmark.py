@@ -29,7 +29,6 @@ from tsdm.encoders import (
 )
 from tsdm.encoders.pandas import FrameAsTensorDict, FrameEncoder
 from tsdm.losses.sequence import mse_loss
-from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.tasks.partitions import rotating_partitions
@@ -40,10 +39,10 @@ from tsdm.timeseries.pandas import (
     make_sample_factory,
 )
 from tsdm.types.datasets import CallableDataset
-from tsdm.utils import LazyDict
+from tsdm.utils import LazyDict, pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 class Batch(NamedTuple):
     r"""A batch of input and target tensors with timestamps and masks."""
 

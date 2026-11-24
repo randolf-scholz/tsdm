@@ -15,7 +15,7 @@ from pyarrow import ArrowNotImplementedError
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 from tsdm.utils.timetools import timedelta, timestamp
 
 type DateTimeArray = Any
@@ -23,7 +23,7 @@ type TimeDeltaArray = Any
 type FloatArray = Any
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode TimeDelta as Float."""
@@ -75,7 +75,7 @@ class TimeDeltaEncoder[X: TimeDeltaArray, Y: FloatArray](FittableEncoder[X, Y]):
             return self.backend.cast(y, self.timedelta_dtype)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class DateTimeEncoder[X: DateTimeArray, Y: FloatArray](FittableEncoder[X, Y]):
     r"""Encode Datetime as Float."""

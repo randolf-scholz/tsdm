@@ -11,10 +11,10 @@ import pandas as pd
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""Convert a wide DataFrame to a tall DataFrame.
@@ -121,7 +121,7 @@ class TripletEncoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
         )
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class TripletDecoder(FittableEncoder[pd.DataFrame, pd.DataFrame]):
     r"""Convert a tall DataFrame to a wide DataFrame."""

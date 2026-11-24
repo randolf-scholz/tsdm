@@ -5,13 +5,13 @@ from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
 from typing import NamedTuple, Self, assert_type, overload
 
-from tsdm.pprint import (
-    pprint_dataclass,
-    pprint_mapping,
-    pprint_namedtuple,
-    pprint_repr,
-    pprint_sequence,
-    pprint_set,
+from tsdm.utils.pprint import (
+    _pretty_dataclass,
+    _pretty_mapping,
+    _pretty_namedtuple,
+    _pretty_sequence,
+    _pretty_set,
+    pretty_repr,
 )
 
 EXPECTED_SEQUENCE = """\
@@ -55,7 +55,7 @@ TestSet<set>(
 def test_pprint_namedtuple() -> None:
     r"""Test pprint_namedtuple."""
 
-    @pprint_namedtuple
+    @_pretty_namedtuple
     class TestNamedTuple(NamedTuple):
         r"""Test NamedTuple."""
 
@@ -75,7 +75,7 @@ def test_pprint_namedtuple() -> None:
 def test_pprint_repr_namedtuple() -> None:
     r"""Test pprint_namedtuple."""
 
-    @pprint_repr
+    @pretty_repr
     class TestNamedTuple(NamedTuple):
         r"""Test NamedTuple."""
 
@@ -95,7 +95,7 @@ def test_pprint_repr_namedtuple() -> None:
 def test_pprint_dataclass() -> None:
     r"""Test pprint_dataclass."""
 
-    @pprint_dataclass
+    @_pretty_dataclass
     @dataclass
     class TestDataclass:
         r"""Test Dataclass."""
@@ -106,7 +106,7 @@ def test_pprint_dataclass() -> None:
 
     # ensure decorator works statically
     assert_type(TestDataclass, type[TestDataclass])
-    cls = pprint_dataclass(TestDataclass)
+    cls = _pretty_dataclass(TestDataclass)
     assert_type(cls, type[TestDataclass])
 
     # runtime check
@@ -118,7 +118,7 @@ def test_pprint_dataclass() -> None:
 def test_pprint_repr_dataclass() -> None:
     r"""Test pprint_dataclass."""
 
-    @pprint_repr
+    @pretty_repr
     @dataclass
     class TestDataclass:
         r"""Test Dataclass."""
@@ -139,7 +139,7 @@ def test_pprint_repr_dataclass() -> None:
 def test_pprint_sequence() -> None:
     r"""Test pprint_sequence."""
 
-    @pprint_sequence
+    @_pretty_sequence
     class TestSequence(Sequence[int]):
         r"""Test Sequence."""
 
@@ -172,7 +172,7 @@ def test_pprint_sequence() -> None:
 def test_pprint_repr_sequence() -> None:
     r"""Test pprint_sequence."""
 
-    @pprint_repr
+    @pretty_repr
     class TestSequence(Sequence[int]):
         r"""Test Sequence."""
 
@@ -205,7 +205,7 @@ def test_pprint_repr_sequence() -> None:
 def test_pprint_mapping() -> None:
     r"""Test pprint_mapping."""
 
-    @pprint_mapping
+    @_pretty_mapping
     class TestMapping(Mapping[str, int]):
         r"""Test Mapping."""
 
@@ -230,7 +230,7 @@ def test_pprint_mapping() -> None:
 def test_pprint_repr_mapping() -> None:
     r"""Test pprint_mapping."""
 
-    @pprint_repr
+    @pretty_repr
     class TestMapping(Mapping[str, int]):
         r"""Test Mapping."""
 
@@ -255,7 +255,7 @@ def test_pprint_repr_mapping() -> None:
 def test_pprint_set() -> None:
     r"""Test pprint_set."""
 
-    @pprint_set
+    @_pretty_set
     class TestSet(AbstractSet[int]):
         r"""Test Set."""
 
@@ -279,7 +279,7 @@ def test_pprint_set() -> None:
 def test_pprint_repr_set() -> None:
     r"""Test pprint_set."""
 
-    @pprint_repr
+    @pretty_repr
     class TestSet(AbstractSet[int]):
         r"""Test Set."""
 
@@ -303,14 +303,14 @@ def test_pprint_repr_set() -> None:
 def test_pprint_sequence_static() -> None:
     class Foo(Sequence): ...
 
-    @pprint_sequence
+    @_pretty_sequence
     class Bar(Sequence): ...
 
-    @pprint_sequence(linebreaks=True)
+    @_pretty_sequence(linebreaks=True)
     class Baz(Sequence): ...
 
-    FooBar = pprint_sequence(Foo)
-    FooBaz = pprint_sequence(linebreaks=True)(Foo)
+    FooBar = _pretty_sequence(Foo)
+    FooBaz = _pretty_sequence(linebreaks=True)(Foo)
 
     # self-consistency
     assert_type(FooBar, type[Foo])
@@ -324,14 +324,14 @@ def test_pprint_sequence_static() -> None:
 def test_pprint_mapping_static() -> None:
     class Foo(Mapping): ...
 
-    @pprint_mapping
+    @_pretty_mapping
     class Bar(Mapping): ...
 
-    @pprint_mapping(linebreaks=True)
+    @_pretty_mapping(linebreaks=True)
     class Baz(Mapping): ...
 
-    FooBar = pprint_mapping(Foo)
-    FooBaz = pprint_mapping(linebreaks=True)(Foo)
+    FooBar = _pretty_mapping(Foo)
+    FooBaz = _pretty_mapping(linebreaks=True)(Foo)
     # self-consistency
     assert_type(FooBar, type[Foo])
     assert_type(FooBaz, type[Foo])
@@ -344,14 +344,14 @@ def test_pprint_mapping_static() -> None:
 def test_pprint_set_static() -> None:
     class Foo(AbstractSet): ...
 
-    @pprint_set
+    @_pretty_set
     class Bar(AbstractSet): ...
 
-    @pprint_set(linebreaks=True)
+    @_pretty_set(linebreaks=True)
     class Baz(AbstractSet): ...
 
-    FooBar = pprint_set(Foo)
-    FooBaz = pprint_set(linebreaks=True)(Foo)
+    FooBar = _pretty_set(Foo)
+    FooBaz = _pretty_set(linebreaks=True)(Foo)
     # self-consistency
     assert_type(FooBar, type[Foo])
     assert_type(FooBaz, type[Foo])

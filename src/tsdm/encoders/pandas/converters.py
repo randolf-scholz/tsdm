@@ -21,13 +21,13 @@ from torch import Tensor
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 type PandasDType = Any
 type PandasDTypeArg = str | type | PandasDType
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
     r"""Converts a `DataFrame` to a `torch.Tensor`.
@@ -58,7 +58,7 @@ class FrameAsTensor(FittableEncoder[DataFrame, Tensor]):
         return df.astype(self.original_schema)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
     r"""Encodes a DataFrame as a dict of Tensors.
@@ -221,7 +221,7 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
         return df
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class FrameDTypeConverter(FittableEncoder[DataFrame, DataFrame]):
     r"""Converts dtypes of a DataFrame.
@@ -291,7 +291,7 @@ def get_ellipsis_cols[T](
     return [col for col in df.columns if col in selected_columns]
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
     r"""Encodes a DataFrame as a dict of DataFrames.

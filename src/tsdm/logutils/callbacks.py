@@ -80,10 +80,10 @@ from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.losses import Loss
-from tsdm.pprint import pprint_repr, pprint_sequence
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 from tsdm.utils.funcutils import get_mandatory_kwargs
+from tsdm.utils.pprint import Identifier, pretty_repr, repr_object
 
 from .logfuncs import (
     log_config,
@@ -193,7 +193,7 @@ def is_callback(obj: object, /) -> TypeIs[Callback]:
     )
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class BaseCallback:
     r"""Base class with a mutable, keyword-only execution frequency.
@@ -232,7 +232,6 @@ class BaseCallback:
             self(step, **state_dict)
 
 
-@pprint_sequence
 class CallbackList(MutableSequence[Callback], BaseCallback):
     r"""Execute an ordered, mutable sequence of callbacks."""
 
@@ -250,6 +249,10 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
         r"""Store the callbacks and set the execution frequency of the list."""
         super().__init__(frequency=frequency)
         self.callbacks = list(iterable)
+
+    def __repr__(self) -> str:
+        r"""Display the callbacks as a sequence."""
+        return repr_object(self.callbacks, wrapped=self, identifier=Identifier.SEQUENCE)
 
     def __len__(self) -> int:
         return len(self.callbacks)

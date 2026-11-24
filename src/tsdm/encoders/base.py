@@ -132,8 +132,8 @@ from typing import (
 )
 
 from tsdm.constants import UNDEFINED
-from tsdm.pprint import pprint_mapping, pprint_repr, pprint_sequence
 from tsdm.types import DictArg, FilePath
+from tsdm.utils import pretty_repr
 from tsdm.utils.helpers import is_classvar
 
 
@@ -870,7 +870,7 @@ class StaticEncoder[X, Y](BaseEncoder[X, Y]):
     def decode(self, y: Y, /) -> X: ...
 
 
-@pprint_sequence(recursive=2)
+@pretty_repr(recursive=2)
 class EncoderList[
     X,  # invariant
     Y,  # invariant
@@ -941,7 +941,7 @@ class EncoderList[
     # endregion abstract implementation ------------------------------------------------
 
 
-@pprint_mapping(recursive=2)
+@pretty_repr(recursive=2)
 class EncoderDict[
     X,  # invariant
     Y,  # invariant
@@ -1004,7 +1004,7 @@ class EncoderDict[
         return self.new(encoders={k: simplify(e) for k, e in self.items()})
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class WrappedEncoder[X, Y](FittableEncoder[X, Y]):
     r"""Wraps an `Encoder` to a `BaseEncoder`."""
@@ -1366,7 +1366,7 @@ def diagonal[T](num: int, /, reduction: Reduction[tuple[T, ...], T] = random.cho
     return Diagonal(num, reduction=reduction)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class Choice(StaticEncoder[tuple[Any, ...], Any]):
     r"""Encoder that randomly selects one of the input values.
@@ -1426,7 +1426,7 @@ def choice(num: int | None = None, /) -> Choice:
 
 
 # region single input single output encoders -------------------------------------------
-@pprint_repr(recursive=2)
+@pretty_repr(recursive=2)
 class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
     r"""Represents function composition of encoders.
 
@@ -1573,7 +1573,7 @@ def pipe(*es: Encoder) -> Pipe:
     return Pipe(encoders)
 
 
-@pprint_repr
+@pretty_repr
 class Repeat[T, E: Encoder = Encoder](Pipe[T, T]):
     r"""Repeat copies of an encoder n times (`**`).
 
@@ -1642,7 +1642,7 @@ def repeat[T](e: Encoder[T, T], n: int, /) -> Repeat[T]:
 # FIXME: https://github.com/python/typing/issues/548
 #   We could have better type hints with HKTs
 # TODO: Use a TypeVarTuple?
-@pprint_repr(recursive=2)
+@pretty_repr(recursive=2)
 class Parallel[
     TupleIn: tuple,  # invariant
     TupleOut: tuple,  # invariant
@@ -1749,7 +1749,7 @@ def parallel(*encoders: Encoder) -> Parallel[tuple, tuple]:
     return Parallel(encoders)
 
 
-@pprint_repr
+@pretty_repr
 class Replicate[
     TupleIn: tuple,  # tuple[X, ...]
     TupleOut: tuple,  # tuple[Y, ...]
@@ -1918,7 +1918,7 @@ def replicate[X, Y](e: Encoder[X, Y], num: int, /) -> Replicate[tuple, tuple]:
 
 
 # TODO: Use TypeVarTuple?
-@pprint_repr(recursive=2)
+@pretty_repr(recursive=2)
 class Fork[
     X,  # invariant
     TupleOut: tuple,  # invariant
@@ -2051,7 +2051,7 @@ def fork[X, Y](*encoders: Encoder[X, Y]) -> Fork[X, tuple]:
     return Fork(*encoders)
 
 
-@pprint_repr
+@pretty_repr
 class Duplicate[
     X,
     Ys: tuple,  # tuple[Y, Y, ..., Y]
@@ -2258,7 +2258,7 @@ def duplicate[X, Y](
 #     return Reduce(reduction=reduction, expansion=expansion)
 
 
-@pprint_repr(recursive=2)
+@pretty_repr(recursive=2)
 class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
     r"""Combine the outputs of multiple encoders into a single value (MISO).
 

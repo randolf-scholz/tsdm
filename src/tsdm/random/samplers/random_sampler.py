@@ -9,13 +9,13 @@ from typing import Final
 from numpy.random import Generator
 
 from tsdm.constants import RNG
-from tsdm.pprint import pprint_repr
 from tsdm.types.datasets import Dataset, get_index
+from tsdm.utils import pretty_repr
 
 from .base import BaseSampler
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class RandomSampler[T](BaseSampler[T]):  # +T
     r"""Yield the items of a dataset once, optionally in a random order."""

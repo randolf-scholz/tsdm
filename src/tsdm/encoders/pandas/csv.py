@@ -11,11 +11,11 @@ import pandas as pd
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import StaticEncoder
-from tsdm.pprint import pprint_repr
 from tsdm.types.aliases import FilePath
+from tsdm.utils import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class CSVEncoder(StaticEncoder[pd.DataFrame, Path]):
     r"""Encode the data into a CSV file."""

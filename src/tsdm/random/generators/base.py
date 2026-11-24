@@ -39,8 +39,8 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.integrate import solve_ivp as scipy_solve_ivp
 
 from tsdm.constants import RNG
-from tsdm.pprint import pprint_repr
 from tsdm.random.distributions import TimeSeriesRV
+from tsdm.utils import pretty_repr
 
 type Size = int | tuple[int, ...]
 r"""Type alias for a size specified as an integer or a tuple of dimensions.
@@ -117,7 +117,7 @@ class FrozenIVPSolver[T](Protocol):
     def __call__(self, t: T, /, *, y0: T) -> T: ...
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class ScipyIVPSolver(FrozenIVPSolver[NDArray]):
     r"""Wrap `scipy.integrate.solve_ivp` with a fixed system and solver options."""

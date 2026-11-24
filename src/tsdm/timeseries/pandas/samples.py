@@ -17,14 +17,14 @@ from typing import Any, Self
 
 from pandas import DataFrame, Index, Series
 
-from tsdm.pprint import pprint_repr
 from tsdm.timeseries import abstract
 from tsdm.types.datasets import CallableDataset
+from tsdm.utils import pretty_repr
 
 from .datasets import TimeSeries, TimeSeriesCollection
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class SplitTimeData(abstract.SplitTimeData[Series | DataFrame]):
     r"""A pandas-backed prediction sample with separate context and query times."""

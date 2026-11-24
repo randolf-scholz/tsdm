@@ -34,12 +34,12 @@ from typing import Any
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 type Array = Any
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class TensorSplitter[Arr: Array](FittableEncoder[Arr, list[Arr]]):
     r"""Split tensor along specified axis."""
@@ -64,7 +64,7 @@ class TensorSplitter[Arr: Array](FittableEncoder[Arr, list[Arr]]):
         return self.backend.concatenate(y, axis=self.axis)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class TensorConcatenator[Arr: Array](FittableEncoder[list[Arr], Arr]):
     r"""Concatenate multiple tensors."""

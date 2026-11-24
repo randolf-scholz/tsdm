@@ -42,7 +42,6 @@ Examples:
 
 __all__ = [
     # CONSTANTS
-    "RECURSIVE_REPR_FUNS",
     "MAXITEMS",
     "MAXITEMS_INLINE",
     "LINEBREAKS",
@@ -57,12 +56,7 @@ __all__ = [
     "repr_object",
     "repr_compact",
     # decorators
-    "pretty_dataclass",
-    "pretty_mapping",
-    "pretty_namedtuple",
     "pretty_repr",
-    "pretty_sequence",
-    "pretty_set",
 ]
 
 import dataclasses
@@ -1076,20 +1070,8 @@ class Identifier(StrEnum):
             )
 
 
-RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
-    _repr_array,
-    _repr_table,
-    _repr_dataclass,
-    _repr_mapping,
-    _repr_namedtuple,
-    _repr_sequence,
-    repr_object,
-    repr_compact,
-]
-
-
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pretty_sequence[Cls: type[Sequence]](
+def _pretty_sequence[Cls: type[Sequence]](
     cls: Cls, /, **kwds: Unpack[ReprOptions]
 ) -> Cls:
     r"""Install a `__repr__` using `repr_sequence` on a Sequence subclass."""
@@ -1101,7 +1083,9 @@ def pretty_sequence[Cls: type[Sequence]](
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pretty_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
+def _pretty_mapping[Cls: type[Mapping]](
+    cls: Cls, /, **kwds: Unpack[ReprOptions]
+) -> Cls:
     r"""Install a `__repr__` using `repr_mapping` on a Mapping subclass."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -1111,7 +1095,9 @@ def pretty_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Unpack[ReprOptions])
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pretty_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
+def _pretty_set[Cls: type[AbstractSet]](
+    cls: Cls, /, **kwds: Unpack[ReprOptions]
+) -> Cls:
     r"""Install a `__repr__` using `repr_set` on a Set subclass."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
@@ -1121,7 +1107,7 @@ def pretty_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Unpack[ReprOptions])
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pretty_dataclass[Cls: DataclassType](
+def _pretty_dataclass[Cls: DataclassType](
     cls: Cls, /, **kwds: Unpack[ReprOptions]
 ) -> Cls:
     r"""Install a `__repr__` using `repr_dataclass` on a dataclass."""
@@ -1133,7 +1119,7 @@ def pretty_dataclass[Cls: DataclassType](
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-def pretty_namedtuple[Cls: type[NamedTupleType]](
+def _pretty_namedtuple[Cls: type[NamedTupleType]](
     cls: Cls, /, **kwds: Unpack[ReprOptions]
 ) -> Cls:
     r"""Install a `__repr__` using `repr_namedtuple` on a named tuple class."""

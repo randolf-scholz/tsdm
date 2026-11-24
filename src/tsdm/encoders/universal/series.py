@@ -13,12 +13,12 @@ from typing import Any, cast
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder, StaticEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 type FloatArray = Any
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class LinearScaler[T: FloatArray](StaticEncoder[T, T]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
@@ -38,7 +38,7 @@ class LinearScaler[T: FloatArray](StaticEncoder[T, T]):
         return (cast("Any", data) - self.loc) / self.scale
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class StandardScaler[T: FloatArray](FittableEncoder[T, T]):
     r"""Transforms data linearly $x ↦ (x-μ)/σ$."""
@@ -62,7 +62,7 @@ class StandardScaler[T: FloatArray](FittableEncoder[T, T]):
         return cast("Any", data) * self.stdv + self.mean
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class MinMaxScaler[T: FloatArray](FittableEncoder[T, T]):
     r"""Map $[xₘᵢₙ, xₘₐₓ]$ linearly to $[yₘᵢₙ, yₘₐₓ]$ (default: $[0, 1]$).

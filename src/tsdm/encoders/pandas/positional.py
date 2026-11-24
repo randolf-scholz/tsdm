@@ -10,10 +10,10 @@ from pandas._typing import DtypeObj
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class PeriodicEncoder(FittableEncoder[pd.Series, pd.DataFrame]):
     r"""Encode periodic data as sin/cos waves."""

@@ -23,15 +23,14 @@ import polars as pl
 import torch
 
 from tsdm.datasets.base import BaseDataset
-from tsdm.pprint import pprint_repr
-from tsdm.utils import remote
+from tsdm.utils import pretty_repr, remote
 
 type MIMIC_III_Zhang2024_Key = Literal[
     "LICENSE", "README", "SHA256SUMS", "full_dataset", "mimic", "variable_dict"
 ]
 
 
-@pprint_repr
+@pretty_repr
 class MIMIC_III_Record(NamedTuple):
     r"""One patient's observations, with a variable number K of timestamps.
 

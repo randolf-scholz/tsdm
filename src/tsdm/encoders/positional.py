@@ -8,13 +8,13 @@ from typing import Final
 import numpy as np
 from numpy.typing import NDArray
 
-from tsdm.pprint import pprint_repr
 from tsdm.types import SupportsArrayUfunc
+from tsdm.utils import pretty_repr
 
 from .base import StaticEncoder
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class PositionalEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
     r"""Encode time using sine and cosine components.

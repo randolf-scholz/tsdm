@@ -10,7 +10,7 @@ from torch import Tensor, nn
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import StaticEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 
 class Time2Vec(nn.Module):
@@ -63,7 +63,7 @@ class Time2Vec(nn.Module):
         return self.decode(z)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class Time2VecEncoder(StaticEncoder[Tensor, Tensor]):
     r"""Wraps Time2Vec encoder."""

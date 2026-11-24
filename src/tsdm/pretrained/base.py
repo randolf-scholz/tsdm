@@ -74,10 +74,10 @@ from tqdm.asyncio import tqdm
 from tsdm import config
 from tsdm.constants import UNDEFINED
 from tsdm.encoders import Encoder
-from tsdm.pprint import repr_mapping
 from tsdm.types import FilePath, FileStream
 from tsdm.utils import LazyDict, nested_paths_exist
 from tsdm.utils.helpers import is_zipfile
+from tsdm.utils.pprint import repr_object
 from tsdm.utils.remote import import_from_url
 
 
@@ -186,7 +186,7 @@ class PreTrainedBase(metaclass=PreTrainedMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the model."""
-        return repr_mapping(self.components, wrapped=self, identifier="PreTrainedModel")
+        return repr_object(self.components, wrapped=self, identifier="model")
 
     @classmethod
     def available_checkpoints(cls) -> Any:

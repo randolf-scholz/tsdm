@@ -43,12 +43,16 @@ from tqdm.auto import tqdm
 
 from tsdm import config
 from tsdm.constants import EMPTY_MAP, UNDEFINED
-from tsdm.pprint import repr_mapping
 from tsdm.types.aliases import FilePath, FileStream
-from tsdm.utils import nested_paths_exist, prompt_yes_no, remote
+from tsdm.utils import (
+    LazyDict,
+    nested_paths_exist,
+    prompt_yes_no,
+    remote,
+    repr_object,
+    timer,
+)
 from tsdm.utils.funcutils import get_return_typehint
-from tsdm.utils.lazydict import LazyDict
-from tsdm.utils.timer import timer
 from tsdm.validation import (
     ErrorHandler,
     ValidationError,
@@ -509,7 +513,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     def __repr__(self) -> str:
         r"""Return a formatted representation of the dataset tables."""
-        return repr_mapping(self.tables, wrapped=self, modifier=self.version)
+        return repr_object(self.tables, wrapped=self, modifier=self.version)
 
     # endregion dunder methods ---------------------------------------------------------
 

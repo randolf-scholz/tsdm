@@ -41,12 +41,12 @@ from pandas import DataFrame, Index, Series
 from tsdm import datasets
 from tsdm.constants import UNDEFINED
 from tsdm.datasets import Dataset
-from tsdm.pprint import pprint_repr
 from tsdm.timeseries import abstract
 from tsdm.timeseries.abstract import RangeSelector
+from tsdm.utils import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class TimeSeries[TimeT = Any]:
     r"""A single time series backed by a pandas DataFrame.
@@ -187,7 +187,7 @@ class TimeSeries[TimeT = Any]:
         return Series(index, index=index, name=index.name)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class TimeSeriesCollection[KeyT, TimeT = Any](Mapping[KeyT, TimeSeries[TimeT]]):
     r"""A pandas collection of time series with a shared schema.

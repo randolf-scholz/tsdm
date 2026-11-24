@@ -64,14 +64,14 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.encoders import MinMaxScaler
 from tsdm.encoders.pandas import FrameEncoder
-from tsdm.pprint import pprint_repr
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.tasks.partitions import is_partition, random_partitions
 from tsdm.timeseries.pandas import TimeSeriesCollection, mimic_iv_bilos2021
+from tsdm.utils import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 class Inputs(NamedTuple):
     r"""Observation times and values, together with requested target times."""
 
@@ -80,7 +80,7 @@ class Inputs(NamedTuple):
     t_target: Tensor
 
 
-@pprint_repr
+@pretty_repr
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
@@ -124,7 +124,7 @@ class MIMIC_IV_SampleGenerator:
         return f"{self.__class__.__name__}"
 
 
-@pprint_repr
+@pretty_repr
 class Batch(NamedTuple):
     r"""A batch of input and target tensors with timestamps and masks."""
 

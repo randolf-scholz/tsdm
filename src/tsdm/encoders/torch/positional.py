@@ -10,7 +10,7 @@ from torch import Tensor, nn
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import StaticEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 
 class PositionalEncoding(nn.Module):
@@ -68,7 +68,7 @@ class PositionalEncoding(nn.Module):
         return self.decode(t)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class PositionalEncoder(StaticEncoder[Tensor, Tensor]):
     r"""Wrap `PositionalEncoding` as a static encoder.

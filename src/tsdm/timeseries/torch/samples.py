@@ -30,15 +30,15 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.pprint import pprint_repr
 from tsdm.timeseries import abstract
+from tsdm.utils import pretty_repr
 
 type AbstractSplitTimeSample = abstract.SplitTimeData[Tensor]
 type AbstractMergedTimeSample = abstract.MergedTimeData[Tensor]
 type AbstractTripletSample = abstract.TripletTimeData[Tensor]
 
 
-@pprint_repr
+@pretty_repr
 class SplitTimeData(NamedTuple):
     r"""A prediction sample with separate context and query time axes.
 
@@ -115,7 +115,7 @@ class SplitTimeData(NamedTuple):
         return split_to_triplet(self)
 
 
-@pprint_repr
+@pretty_repr
 class MergedTimeData(NamedTuple):
     r"""A prediction sample with a shared context and query time axis.
 
@@ -187,7 +187,7 @@ class MergedTimeData(NamedTuple):
         return merged_to_triplet(self)
 
 
-@pprint_repr
+@pretty_repr
 class TripletTimeData(NamedTuple):
     r"""A prediction sample represented by time, channel, and value triplets.
 
@@ -291,7 +291,7 @@ def triplet_to_merged(sample: AbstractTripletSample) -> MergedTimeData:
     raise NotImplementedError
 
 
-@pprint_repr
+@pretty_repr
 class PaddedBatch(NamedTuple):
     r"""A padded batch of samples.
 

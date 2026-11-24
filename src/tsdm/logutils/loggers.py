@@ -49,9 +49,9 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import UNDEFINED
 from tsdm.losses import Loss
-from tsdm.pprint import pprint_mapping, pprint_repr
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
+from tsdm.utils.pprint import Identifier, pretty_repr, repr_object
 
 from .callbacks import (
     BestEpochTracker,
@@ -79,7 +79,6 @@ class Logger[CallbackT: CallbackSequence](Protocol):  # +CallbackT
         ...
 
 
-@pprint_mapping
 @dataclass(slots=True)
 class BaseLogger(Mapping[str, CallbackList]):
     r"""Base class for loggers."""
@@ -91,6 +90,10 @@ class BaseLogger(Mapping[str, CallbackList]):
         default_factory=lambda: defaultdict(CallbackList)
     )
     r"""Callback lists indexed by event key, such as `batch`, `epoch`, or `result`."""
+
+    def __repr__(self) -> str:
+        r"""Display the callback groups as a mapping."""
+        return repr_object(self.callbacks, wrapped=self, identifier=Identifier.MAPPING)
 
     def __len__(self) -> int:
         return len(self.callbacks)
@@ -118,7 +121,7 @@ class BaseLogger(Mapping[str, CallbackList]):
         self["result"].callback(step, **state_dict)
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class DefaultLogger(BaseLogger):
     r"""Register batch, epoch, and result callbacks for the supplied objects."""

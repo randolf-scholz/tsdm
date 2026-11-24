@@ -10,12 +10,12 @@ from typing import Any
 from tsdm.backend import Backend, get_backend
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import FittableEncoder
-from tsdm.pprint import pprint_repr
+from tsdm.utils import pretty_repr
 
 type FloatArray = Any
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class BoundaryEncoder(FittableEncoder[Any, Any]):
     r"""Clip or mask values outside a given range.

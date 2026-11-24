@@ -8,10 +8,10 @@ import pandas as pd
 
 from tsdm.constants import UNDEFINED
 from tsdm.encoders.base import Encoder, EncoderDict
-from tsdm.pprint import pprint_mapping
+from tsdm.utils import pretty_repr
 
 
-@pprint_mapping
+@pretty_repr
 # FIXME: https://github.com/python/cpython/issues/140596
 class FrameEncoder[K](EncoderDict[pd.DataFrame, pd.DataFrame, K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
