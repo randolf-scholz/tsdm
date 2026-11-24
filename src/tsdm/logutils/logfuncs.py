@@ -49,11 +49,20 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.losses import Loss
 from tsdm.plotting import center_axes, kernel_heatmap, plot_spectrum, rasterize
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 from tsdm.utils import transpose_list_of_dicts
+
+type Loss = Callable[[Tensor, Tensor], Tensor]
+
+
+def _eval_loss(loss: Loss, *, targets: Tensor, predictions: Tensor) -> float:
+    try:
+        return float(loss(targets=targets, predictions=predictions).cpu().item())  # type: ignore
+    except Exception:
+        # use predictions first (as in `nn.functional.cross_entropy`)
+        return float(loss(predictions, targets).cpu().item())
 
 
 class LogFunction(Protocol):
@@ -285,7 +294,7 @@ def log_metrics(
     step: int,
     writer: SummaryWriter,
     /,
-    metrics: Mapping[str, Loss],
+    metrics: Mapping[str, Callable[[Tensor, Tensor], Tensor]],
     *,
     inputs: Mapping[Literal["predictions", "targets"], Tensor] | None = None,
     predictions: Tensor | None = None,
@@ -316,7 +325,7 @@ def log_metrics(
         raise ValueError("Targets and predictions must have the same length!")
 
     scalars = {
-        key: metric(predictions=predictions, targets=targets)
+        key: _eval_loss(metric, targets=targets, predictions=predictions)
         for key, metric in metrics.items()
     }
     log_values(

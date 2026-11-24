@@ -79,7 +79,6 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.losses import Loss
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 from tsdm.utils.funcutils import get_mandatory_kwargs
@@ -96,6 +95,16 @@ from .logfuncs import (
     log_table,
     log_values,
 )
+
+type Loss = Callable[[Tensor, Tensor], Tensor]
+
+
+def _eval_loss(loss: Loss, *, targets: Tensor, predictions: Tensor) -> float:
+    try:
+        return float(loss(targets=targets, predictions=predictions).cpu().item())  # type: ignore
+    except Exception:
+        # use predictions first (as in `nn.functional.cross_entropy`)
+        return float(loss(predictions, targets).cpu().item())
 
 
 @runtime_checkable
@@ -642,7 +651,7 @@ class EvaluationCallback(BaseCallback):
         for split, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
             scores[split] = {
-                name: float(metric(**result).cpu().item())
+                name: _eval_loss(metric, **result)
                 for name, metric in self.metrics.items()
             }
         return scores

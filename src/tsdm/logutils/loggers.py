@@ -48,7 +48,6 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.constants import UNDEFINED
-from tsdm.losses import Loss
 from tsdm.types import FilePath
 from tsdm.types.nested import JSON
 from tsdm.utils.pprint import Identifier, pretty_repr, repr_object
@@ -67,6 +66,8 @@ from .callbacks import (
     ModelCallback,
     OptimizerCallback,
 )
+
+type Loss = Callable[[Tensor, Tensor], Tensor]
 
 
 class Logger[CallbackT: CallbackSequence](Protocol):  # +CallbackT
