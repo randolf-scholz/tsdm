@@ -5,7 +5,7 @@ from functools import wraps
 from inspect import getsource
 from typing import NamedTuple, Optional
 
-from tsdm.utils.decorators import DecoratorError, decorator
+from tsdm.utils.decorator import DecoratorError, decorator
 
 
 def get_exit_point_names(func: Fn, /) -> list[tuple[str, ...]]:
