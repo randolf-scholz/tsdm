@@ -11,7 +11,7 @@ __all__ = [
     "LazyDict",
     "decorator",
     "timer",
-    "pprint_repr",
+    "pretty_repr",
 ]
 
 from . import funcutils, helpers, remote, timetools
@@ -19,7 +19,7 @@ from .decorator import decorator
 from .helpers import *  # ruff: ignore[F403]
 from .interval import Interval
 from .lazydict import LazyDict
-from .pprint import pprint_repr
+from .pprint import pretty_repr
 from .timer import timer
 
 __all__ += helpers.__all__

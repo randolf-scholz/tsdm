@@ -65,12 +65,12 @@ __all__ = [
     "repr_set",
     "repr_shortform",
     # decorators
-    "pprint_dataclass",
-    "pprint_mapping",
-    "pprint_namedtuple",
-    "pprint_repr",
-    "pprint_sequence",
-    "pprint_set",
+    "pretty_dataclass",
+    "pretty_mapping",
+    "pretty_namedtuple",
+    "pretty_repr",
+    "pretty_sequence",
+    "pretty_set",
 ]
 
 import dataclasses
@@ -1070,8 +1070,8 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
-def pprint_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
+# def with_pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
+def pretty_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Install a `__repr__` using `repr_sequence` on a Sequence subclass."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -1081,8 +1081,8 @@ def pprint_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
-def pprint_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
+# def with_pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
+def pretty_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Install a `__repr__` using `repr_mapping` on a Mapping subclass."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
@@ -1092,8 +1092,8 @@ def pprint_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
-def pprint_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
+# def with_pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
+def pretty_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Install a `__repr__` using `repr_set` on a Set subclass."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
@@ -1103,8 +1103,8 @@ def pprint_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
-def pprint_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
+# def with_pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
+def pretty_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Install a `__repr__` using `repr_dataclass` on a dataclass."""
     if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
@@ -1114,8 +1114,8 @@ def pprint_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
-def pprint_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cls:
+# def with_pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
+def pretty_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Install a `__repr__` using `repr_namedtuple` on a named tuple class."""
     if not (isinstance(cls, type) and is_namedtuple(cls)):
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
@@ -1125,8 +1125,8 @@ def pprint_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cl
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def pprint_repr[T](cls: type[T], /, **kwds: Any) -> type[T]:
-def pprint_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
+# def with_pprint[T](cls: type[T], /, **kwds: Any) -> type[T]:
+def pretty_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     r"""Install a `__repr__` selected from the class's supported object category.
 
     Forward `kwds` to the selected formatter. Return the modified class, or

@@ -28,12 +28,12 @@ from typing import (
 )
 
 from .funcutils import get_return_typehint
-from .pprint import pprint_repr
+from .pprint import pretty_repr
 
 type Lazy[V] = Callable[[], V]
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class LazyValue[V]:  # +V
     r"""A placeholder for uninitialized values."""
@@ -97,7 +97,7 @@ class LazyValue[V]:  # +V
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
-@pprint_repr
+@pretty_repr
 class LazyDict[K = Any, V = Any](dict[K, V]):
     r"""Dictionary that evaluates and caches lazily registered values on access.
 

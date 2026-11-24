@@ -5,10 +5,10 @@ __all__ = ["Interval", "HalfOpenInterval", "OpenInterval", "ClosedInterval"]
 from dataclasses import KW_ONLY, dataclass
 from typing import Literal as L
 
-from .pprint import pprint_repr
+from .pprint import pretty_repr
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, frozen=True)
 class Interval[T, Left: bool, Right: bool]:
     r"""Simple interval class."""
