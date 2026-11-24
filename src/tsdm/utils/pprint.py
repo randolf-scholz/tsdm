@@ -50,12 +50,10 @@ __all__ = [
     "RECURSIVE",
     "ALIGN",
     # ABCs & Protocols
-    "Identifiers",
+    "Identifier",
     "ReprOptions",
     "ReprProtocol",
-    "Types",
     # Functions
-    "get_identifier",
     "_repr_array",
     "_repr_dataclass",
     "_repr_dtype",
@@ -77,7 +75,7 @@ __all__ = [
 import dataclasses
 import datetime as dt
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
-from enum import Enum, member
+from enum import Enum
 from functools import partial
 from math import prod
 from types import BuiltinFunctionType, FunctionType
@@ -111,51 +109,6 @@ RECURSIVE: Final[bool | int] = 1
 r"""Default recursion depth for nested representations."""
 ALIGN: Final[bool] = True
 r"""Whether mapping keys are aligned by default."""
-
-
-class Identifiers(Enum):
-    r"""Enum for identifiers."""
-
-    ARRAY = "<array>"
-    DATACLASS = "<dataclass>"
-    FUNCTION = "<function>"
-    MAPPING = "<mapping>"
-    NAMEDTUPLE = "<namedtuple>"
-    SEQUENCE = "<sequence>"
-    SET = "<set>"
-    TABLE = "<table>"
-    TYPE = "<type>"
-
-    # Fallback
-    NULL = ""
-
-    def validate(self, arg: object) -> None:
-        r"""Raise `AssertionError` if `arg` does not match this identifier.
-
-        The empty identifier accepts any object.
-        """
-        if self is Identifiers.NULL:
-            return
-        expected = Types[self.name].value
-        if not isinstance(arg, expected):
-            raise AssertionError(  # ruff: ignore[TRY004]
-                f"{self.value} requires {expected.__name__}, got {type(arg).__name__}."
-            )
-
-
-class Types(Enum):
-    r"""Enum for types."""
-
-    ARRAY = SupportsArray
-    DATACLASS = DataclassType
-    # FunctionType is a descriptor, so Enum requires an explicit member.
-    FUNCTION = member(FunctionType)
-    MAPPING = Mapping
-    NAMEDTUPLE = NamedTupleType
-    SEQUENCE = Sequence
-    SET = AbstractSet
-    TABLE = SupportsDataFrame
-    TYPE = type
 
 
 class ReprOptions(TypedDict, total=False):
@@ -199,29 +152,6 @@ class ReprProtocol(Protocol):
         title: str | None = None,
         wrapped: object | None = None,
     ) -> str: ...
-
-
-def get_identifier(obj: object, /, **_: Any) -> str:
-    r"""Return the identifier of an object."""
-    match obj:
-        case type() as cls:
-            return f"<{cls.__name__}>"
-        case SupportsArray():
-            return "<array>"
-        case SupportsDataFrame():
-            return "<table>"
-        case DataclassType():
-            return "<dataclass>"
-        case NamedTupleType():
-            return "<namedtuple>"
-        case Mapping():
-            return "<mapping>"
-        case Sequence():
-            return "<sequence>"
-        case FunctionType():
-            return "<function>"
-        case _:
-            return ""
 
 
 def _is_builtin_singleton(obj: object, /) -> bool:
@@ -363,7 +293,7 @@ def _repr_mapping(
     Args:
         obj: Mapping object.
         align: Align keys and values.
-        identifier: Identifier of the object.
+        identifier: Custom identifier displayed in angle brackets.
         indent: Number of spaces prefixed to continuation lines.
         linebreaks: Whether to split items across lines. If omitted, follow
             `recursive`. Empty mappings are always inline.
@@ -379,8 +309,8 @@ def _repr_mapping(
     Note:
         Unless `repr_fn` is supplied, recursive formatting uses `repr_generic`
         for values; nonrecursive formatting uses `repr_shortform`. Keys are
-        rendered with `str`. Builtin dictionaries use braces without a title
-        or identifier.
+        rendered with `str`. Builtin dictionaries use braces and only display
+        explicitly supplied identifiers.
 
     Examples:
         Schematic output for a custom mapping:
@@ -399,12 +329,6 @@ def _repr_mapping(
     title = title if title is not None else cls.__name__
 
     modifier = f"@{modifier}" if modifier is not None else ""
-
-    identifier = (
-        identifier if identifier is not None
-        else "<mapping>" if recursive
-        else ""
-    )  # fmt: skip
 
     linebreaks = (
         False if len(obj) < 1  # always inline if empty mapping
@@ -433,8 +357,9 @@ def _repr_mapping(
     # special treatment for dict:
     if cls is dict:
         left, right = "{", "}"
-        identifier = ""
         title = ""
+    elif identifier is None and recursive:
+        identifier = Identifier.get(wrapped)
 
     # set repr_func
     repr_func = (
@@ -482,7 +407,7 @@ def _repr_mapping(
     ]
 
     # assemble the string
-    string = f"{title}{modifier}{identifier}{left}{br}"
+    string = f"{title}{modifier}{_format_identifier(identifier)}{left}{br}"
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -557,12 +482,6 @@ def _repr_sequence(
 
     modifier = f"@{modifier}" if modifier is not None else ""
 
-    identifier = (
-        identifier if identifier is not None
-        else "<sequence>" if recursive
-        else ""
-    )  # fmt: skip
-
     linebreaks = (
         False if len(obj) < 1  # always inline if empty mapping
         else linebreaks if linebreaks is not None
@@ -584,13 +503,11 @@ def _repr_sequence(
     # special case list and tuple
     if cls is list:
         left, right = "[", "]"
-        identifier = ""
         title = ""
-
-    if cls is tuple:
-        left, right = "(", ")"
-        identifier = ""
+    elif cls is tuple:
         title = ""
+    elif identifier is None and recursive:
+        identifier = Identifier.get(wrapped)
 
     # set repr_fun
     repr_func = (
@@ -632,7 +549,7 @@ def _repr_sequence(
     ]
 
     # assemble the string
-    string = f"{title}{modifier}{identifier}{left}{br}"
+    string = f"{title}{modifier}{_format_identifier(identifier)}{left}{br}"
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -675,12 +592,6 @@ def _repr_set(
 
     modifier = f"@{modifier}" if modifier is not None else ""
 
-    identifier = (
-        identifier if identifier is not None
-        else "<set>" if recursive
-        else ""
-    )  # fmt: skip
-
     linebreaks = (
         False if len(obj) < 1  # always inline if empty mapping
         else linebreaks if linebreaks is not None
@@ -702,12 +613,9 @@ def _repr_set(
     # special case set
     if cls is set:
         left, right = "{", "}"
-        identifier = ""
         title = ""
-
-    # special case frozenset
-    if cls is frozenset:
-        identifier = ""
+    elif cls is not frozenset and identifier is None and recursive:
+        identifier = Identifier.get(wrapped)
 
     # set repr_fun
     repr_func = (
@@ -755,7 +663,7 @@ def _repr_set(
     tail_items = [to_string(i, v) for i, v in tail_iter]
 
     # assemble the string
-    string = f"{title}{modifier}{identifier}{left}{br}"
+    string = f"{title}{modifier}{_format_identifier(identifier)}{left}{br}"
 
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
@@ -806,11 +714,8 @@ def _repr_dataclass(
         else cls.__name__
     )  # fmt: skip
 
-    identifier = (
-        identifier if identifier is not None
-        else "<dataclass>" if recursive
-        else ""
-    )  # fmt: skip
+    if identifier is None:
+        identifier = (Identifier.get(wrapped) if recursive else None) or ""
 
     fields = dataclasses.fields(obj)
 
@@ -878,11 +783,8 @@ def _repr_namedtuple(
         else cls.__name__
     )  # fmt: skip
 
-    identifier = (
-        identifier if identifier is not None
-        else "<namedtuple>" if recursive
-        else ""
-    )  # fmt: skip
+    if identifier is None:
+        identifier = (Identifier.get(wrapped) if recursive else None) or ""
 
     if recursive:
         return _repr_mapping(
@@ -942,7 +844,9 @@ def _repr_array(
 
     if isinstance(obj, LazyFrame):
         schema = obj.collect_schema()
-        shape_repr = f"<*,{len(schema)}>" if identifier is None else identifier
+        shape_repr = _format_identifier(
+            f"*,{len(schema)}" if identifier is None else identifier
+        )
         vals = [_repr_dtype(dtype) for dtype in schema.values()]
 
         if len(set(vals)) <= 1:
@@ -960,11 +864,9 @@ def _repr_array(
     shape: tuple[int, ...] = (
         tuple(obj.shape) if isinstance(obj, HasShape) else tuple(obj.__array__().shape)
     )
-    match identifier, len(shape):
-        case None, _:
-            shape_repr = "" if not shape else f"<{','.join(str(dim) for dim in shape)}>"
-        case _:
-            shape_repr = "" if identifier is None else identifier
+    if identifier is None:
+        identifier = ",".join(str(dim) for dim in shape)
+    shape_repr = _format_identifier(identifier)
 
     # set modifier = device
     if not show_device:
@@ -1014,40 +916,54 @@ def _repr_array(
     return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
 
 
+def _repr_type(obj: type, /, identifier: str | None = None, **_: Any) -> str:
+    r"""Return a compact representation of a type."""
+    label = _format_identifier(identifier)
+    return f"{obj.__name__}{label}"
+
+
+def _repr_function(obj: FunctionType, /, **_: Any) -> str:
+    label = _format_identifier(obj)
+    return f"{obj.__name__}{label}"
+
+
 def repr_compact(
     obj: object,
     /,
     *,
     identifier: str | None = None,
     recursive: bool | int = False,
+    wrapped: object | None = None,
     **_: Any,
 ) -> str:
     r"""Return a compact representation using a value or its type name."""
+    label = _format_identifier(identifier)
     match obj:
         case _ if issubclass(type(obj), type):
-            return cast("type", obj).__name__
+            return f"{cast('type', obj).__name__}{label}"
 
         # functions like len, map, etc.
         case _ if type(obj) is BuiltinFunctionType:
-            return repr(obj)
+            return f"{label}{obj!r}"
 
         case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
-            return scalar_repr
+            return f"{label}{scalar_repr}"
 
         case _ if (number_repr := _repr_number(obj)) is not None:
-            return number_repr
+            return f"{label}{number_repr}"
 
         case _:
-            if identifier is None:
-                identifier = get_identifier(obj) if recursive else ""
-
-            return f"{type(obj).__name__}{identifier}()"
+            displayed = obj if wrapped is None else wrapped
+            if identifier is None and recursive:
+                label = _format_identifier(Identifier.get(displayed))
+            return f"{type(displayed).__name__}{label}()"
 
 
 def repr_object(
     obj: object,
     /,
     *,
+    identifier: str | None = None,
     fallback: Callable[..., str] = repr_compact,
     **kwargs: Any,
 ) -> str:
@@ -1055,6 +971,9 @@ def repr_object(
 
     Dispatch to specialized formatters for scalars, arrays, containers,
     dataclasses, named tuples, and dtypes. Use `fallback` for unsupported objects.
+    A custom `identifier` is displayed in angle brackets. An empty string
+    suppresses the identifier. Container formatters use the type of
+    `wrapped` for automatic identifiers when a wrapper is supplied.
 
     Examples:
         ```pycon
@@ -1065,26 +984,28 @@ def repr_object(
 
         ```
     """
-    x = kwargs.get("wrapped", obj)
+    label = _format_identifier(identifier)
+    if identifier is not None:
+        kwargs["identifier"] = identifier
 
-    match x:
-        case _ if issubclass(type(x), type):
-            return cast("type", x).__name__
+    match obj:
+        case _ if issubclass(type(obj), type):
+            return f"{cast('type', obj).__name__}{label}"
 
         # functions like len, map, etc.
         case _ if type(obj) is BuiltinFunctionType:
-            return repr(obj)
+            return f"{label}{obj!r}"
 
         case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
-            return scalar_repr
+            return f"{label}{scalar_repr}"
 
         case LazyFrame() as frame:
             return _repr_array(frame, **kwargs)
         case SupportsArray() as array:
             return _repr_array(array, **kwargs)
-        case DataclassType() as dtc:  # pyrefly: ignore[unsafe-overlap]
+        case DataclassType() as dtc:
             return _repr_dataclass(dtc, **kwargs)
-        case NamedTupleType() as ntuple:  # pyrefly: ignore[unsafe-overlap]
+        case NamedTupleType() as ntuple:
             return _repr_namedtuple(ntuple, **kwargs)
         case Mapping() as mapping:
             return _repr_mapping(mapping, **kwargs)
@@ -1093,10 +1014,47 @@ def repr_object(
         case AbstractSet() as set_:
             return _repr_set(set_, **kwargs)
         case _:
+            if fallback is repr_compact:
+                return repr_compact(obj, **kwargs)
             # avoid recursion:
             if fallback is repr:
-                return object.__repr__(obj)
-            return fallback(obj)
+                return f"{label}{object.__repr__(obj)}"
+            return f"{label}{fallback(obj)}"
+
+
+class Identifier(Enum, tuple[type, str, ReprProtocol]):
+    r"""Runtime types in the order used for identifier lookup."""
+
+    TYPE = (type, "type", _repr_type)
+    FUNCTION = (FunctionType, "function", _repr_function)
+    ARRAY = (SupportsArray, "array", _repr_array)
+    TABLE = (SupportsDataFrame, "table", _repr_array)
+    DATACLASS = (DataclassType, "dataclass", _repr_dataclass)
+    NAMEDTUPLE = (NamedTupleType, "namedtuple", _repr_namedtuple)
+    MAPPING = (Mapping, "mapping", _repr_mapping)
+    SEQUENCE = (Sequence, "sequence", _repr_sequence)
+    SET = (AbstractSet, "set", _repr_set)
+
+    @classmethod
+    def get(cls, arg: object, /) -> str | None:
+        if isinstance(arg, str):
+            return arg
+        for kind, name in cls:
+            if isinstance(arg, kind):
+                return name
+        return None
+
+    def check(self, arg: object) -> None:
+        parsed = Identifier(arg)
+        if parsed.value[1] != self.value[1]:
+            raise AssertionError
+
+
+def _format_identifier(identifier: str | None, /) -> str:
+    r"""Enclose a nonempty identifier in angle brackets."""
+    if identifier and identifier.startswith("<") and identifier.endswith(">"):
+        identifier = identifier[1:-1]
+    return f"<{identifier}>" if identifier else ""
 
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
