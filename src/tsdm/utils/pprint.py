@@ -60,10 +60,10 @@ __all__ = [
     "repr_dtype",
     "repr_mapping",
     "repr_namedtuple",
-    "repr_generic",
+    "repr_object",
     "repr_sequence",
     "repr_set",
-    "repr_shortform",
+    "repr_compact",
     # decorators
     "pretty_dataclass",
     "pretty_mapping",
@@ -284,94 +284,6 @@ def _as_number(arg: object) -> complex | float | int | None:
     return None
 
 
-def repr_shortform(
-    obj: object,
-    /,
-    *,
-    identifier: str | None = None,
-    recursive: bool | int = False,
-    **_: Any,
-) -> str:
-    r"""Return a compact representation using a value or its type name."""
-    match obj:
-        case type() as cls:
-            return cls.__name__
-
-        # functions like len, map, etc.
-        case _ if is_builtin_function(obj):
-            return repr(obj)
-
-        # python_scalars
-        case _ if _is_python_scalar(obj):
-            return repr(obj)
-
-        # 3rd party int/float/complex
-        case _ if (value := _as_number(obj)) is not None:
-            return repr(value)
-
-        case _:
-            if identifier is None:
-                identifier = get_identifier(obj) * bool(recursive)
-
-            return f"{obj.__class__.__name__}{identifier}()"
-
-
-def repr_generic(
-    obj: object,
-    /,
-    *,
-    fallback: Callable[..., str] = repr_shortform,
-    **kwargs: Any,
-) -> str:
-    r"""Return a string representation of an object.
-
-    Dispatch to specialized formatters for scalars, arrays, containers,
-    dataclasses, named tuples, and dtypes. Use `fallback` for unsupported objects.
-
-    Examples:
-        ```pycon
-        >>> repr_generic(1)
-        '1'
-        >>> repr_generic(3.14)
-        '3.14'
-
-        ```
-    """
-    x = kwargs.get("wrapped", obj)
-
-    match x:
-        case type() as cls:
-            return cls.__name__
-
-        # functions like len, map, etc.
-        case _ if is_builtin_function(obj):
-            return repr(obj)
-
-        # python_scalars
-        case _ if _is_python_scalar(obj):
-            return repr(obj)
-
-        case LazyFrame() as frame:
-            return repr_array(frame, **kwargs)
-        case SupportsArray() as array:
-            return repr_array(array, **kwargs)
-        case DataclassType() as dtc:  # pyrefly: ignore[unsafe-overlap]
-            return repr_dataclass(dtc, **kwargs)
-        case NamedTupleType() as ntuple:  # pyrefly: ignore[unsafe-overlap]
-            return repr_namedtuple(ntuple, **kwargs)
-        case Mapping() as mapping:
-            return repr_mapping(mapping, **kwargs)
-        case Sequence() as sequence:
-            return repr_sequence(sequence, **kwargs)
-        case AbstractSet() as set_:
-            return repr_set(set_, **kwargs)
-        case _:
-            # avoid recursion:
-            if fallback is repr:
-                return object.__repr__(obj)
-            return fallback(obj)
-
-
 def repr_mapping(
     obj: Mapping,
     /,
@@ -468,11 +380,7 @@ def repr_mapping(
 
     # set repr_func
     repr_func = (
-        repr_fn
-        if repr_fn is not None
-        else repr_generic
-        if recursive
-        else repr_shortform
+        repr_fn if repr_fn is not None else repr_object if recursive else repr_compact
     )
 
     # update recursive
@@ -628,11 +536,7 @@ def repr_sequence(
 
     # set repr_fun
     repr_func = (
-        repr_fn
-        if repr_fn is not None
-        else repr_generic
-        if recursive
-        else repr_shortform
+        repr_fn if repr_fn is not None else repr_object if recursive else repr_compact
     )
 
     # update recursive
@@ -749,11 +653,7 @@ def repr_set(
 
     # set repr_fun
     repr_func = (
-        repr_fn
-        if repr_fn is not None
-        else repr_generic
-        if recursive
-        else repr_shortform
+        repr_fn if repr_fn is not None else repr_object if recursive else repr_compact
     )
 
     # update recursive
@@ -1058,14 +958,102 @@ def repr_array(
     return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
 
 
+def repr_compact(
+    obj: object,
+    /,
+    *,
+    identifier: str | None = None,
+    recursive: bool | int = False,
+    **_: Any,
+) -> str:
+    r"""Return a compact representation using a value or its type name."""
+    match obj:
+        case type() as cls:
+            return cls.__name__
+
+        # functions like len, map, etc.
+        case _ if is_builtin_function(obj):
+            return repr(obj)
+
+        # python_scalars
+        case _ if _is_python_scalar(obj):
+            return repr(obj)
+
+        # 3rd party int/float/complex
+        case _ if (value := _as_number(obj)) is not None:
+            return repr(value)
+
+        case _:
+            if identifier is None:
+                identifier = get_identifier(obj) * bool(recursive)
+
+            return f"{obj.__class__.__name__}{identifier}()"
+
+
+def repr_object(
+    obj: object,
+    /,
+    *,
+    fallback: Callable[..., str] = repr_compact,
+    **kwargs: Any,
+) -> str:
+    r"""Return a string representation of an object.
+
+    Dispatch to specialized formatters for scalars, arrays, containers,
+    dataclasses, named tuples, and dtypes. Use `fallback` for unsupported objects.
+
+    Examples:
+        ```pycon
+        >>> repr_object(1)
+        '1'
+        >>> repr_object(3.14)
+        '3.14'
+
+        ```
+    """
+    x = kwargs.get("wrapped", obj)
+
+    match x:
+        case type() as cls:
+            return cls.__name__
+
+        # functions like len, map, etc.
+        case _ if is_builtin_function(obj):
+            return repr(obj)
+
+        # python_scalars
+        case _ if _is_python_scalar(obj):
+            return repr(obj)
+
+        case LazyFrame() as frame:
+            return repr_array(frame, **kwargs)
+        case SupportsArray() as array:
+            return repr_array(array, **kwargs)
+        case DataclassType() as dtc:  # pyrefly: ignore[unsafe-overlap]
+            return repr_dataclass(dtc, **kwargs)
+        case NamedTupleType() as ntuple:  # pyrefly: ignore[unsafe-overlap]
+            return repr_namedtuple(ntuple, **kwargs)
+        case Mapping() as mapping:
+            return repr_mapping(mapping, **kwargs)
+        case Sequence() as sequence:
+            return repr_sequence(sequence, **kwargs)
+        case AbstractSet() as set_:
+            return repr_set(set_, **kwargs)
+        case _:
+            # avoid recursion:
+            if fallback is repr:
+                return object.__repr__(obj)
+            return fallback(obj)
+
+
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     repr_array,
     repr_dataclass,
     repr_mapping,
     repr_namedtuple,
-    repr_generic,
+    repr_object,
     repr_sequence,
-    repr_shortform,
+    repr_compact,
 ]
 
 
@@ -1150,7 +1138,7 @@ def pretty_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     elif issubclass(cls, AbstractSet):  # pyrefly: ignore[bad-argument-type]
         repr_func = repr_set
     elif issubclass(cls, type):  # pyrefly: ignore[bad-argument-type]
-        repr_func = repr_shortform
+        repr_func = repr_compact
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
