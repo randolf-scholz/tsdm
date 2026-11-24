@@ -154,7 +154,7 @@ def _is_builtin_singleton(obj: object, /) -> bool:
 
 
 def _repr_python_scalar(arg: object, /) -> str | None:
-    r"""Format known scalars without calling subclass hooks, or return `None`."""
+    r"""Format known scalars, using native repr for datetime and timedelta subclasses."""
     if _is_builtin_singleton(arg):
         return repr(arg)
 
@@ -169,14 +169,9 @@ def _repr_python_scalar(arg: object, /) -> str | None:
         return float.__repr__(cast("float", arg))
     if issubclass(cls, complex):
         return complex.__repr__(cast("complex", arg))
-    if issubclass(cls, dt.datetime):
-        value = cast("dt.datetime", arg)
-        # Even the base formatter invokes repr() on the stored timezone.
-        if dt.datetime.tzinfo.__get__(value) is not None:
-            return None
-        return dt.datetime.__repr__(value)
-    if issubclass(cls, dt.timedelta):
-        return dt.timedelta.__repr__(cast("dt.timedelta", arg))
+    if issubclass(cls, (dt.datetime, dt.timedelta)):
+        # Subclasses can carry state the builtin repr loses, such as nanoseconds.
+        return repr(arg)
     return None
 
 

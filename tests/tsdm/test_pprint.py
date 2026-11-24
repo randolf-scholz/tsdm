@@ -507,6 +507,20 @@ def test_pprint_numpy_scalar(
 
 
 @pytest.mark.parametrize(
+    "obj",
+    [
+        pd.Timestamp("2024-01-01 00:00:00.123456789"),
+        pd.Timestamp("2024-01-01 00:00:00.123456789", tz="UTC"),
+        pd.Timedelta("123456789ns"),
+    ],
+)
+def test_pprint_datetime_subclass(obj: object) -> None:
+    r"""Preserve precision and timezone information through the native repr."""
+    assert repr_object(obj) == repr(obj)
+    assert repr_compact(obj) == repr(obj)
+
+
+@pytest.mark.parametrize(
     ("obj", "expected"),
     [
         (pd.NA, "NAType()"),  # unfortunate.
