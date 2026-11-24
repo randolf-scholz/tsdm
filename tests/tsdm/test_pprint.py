@@ -1,7 +1,7 @@
 r"""Test tsdm.utils.pprint."""
 
 import math
-from collections.abc import Iterator, Mapping, Sequence, Set as AbstractSet
+from collections.abc import Callable, Iterator, Mapping, Sequence, Set as AbstractSet
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any, NamedTuple
@@ -12,6 +12,7 @@ import polars as pl
 import pyarrow as pa
 import pytest
 import torch
+from numpy.typing import NDArray
 
 from tsdm.types import HasDTypes, SupportsArray, SupportsDataFrame
 from tsdm.types.dataclass import DataclassType
@@ -26,6 +27,7 @@ from tsdm.utils.pprint import (
     _repr_sequence,
     _repr_set,
     _repr_table,
+    pretty_repr,
     repr_compact,
     repr_object,
 )
@@ -157,6 +159,45 @@ class ExampleSequence(Sequence):
 
     def __len__(self) -> int:
         return len(self.data)
+
+
+class ArrayMapping(dict[str, int]):
+    r"""Mapping with an array view of its values."""
+
+    def __array__(self) -> NDArray[np.int64]:
+        return np.array(list(self.values()), dtype=np.int64)
+
+
+class TableMapping(ArrayMapping):
+    r"""Mapping that supports both table and array interchange."""
+
+    def __dataframe__(self) -> object:
+        return pa.table({"value": list(self.values())}).__dataframe__()
+
+
+@pytest.mark.parametrize(
+    ("base", "args", "formatter"),
+    [
+        pytest.param(TableMapping, ({"a": 1, "b": 2},), _repr_table, id="table"),
+        pytest.param(ArrayMapping, ({"a": 1, "b": 2},), _repr_array, id="array"),
+        pytest.param(ExampleDataclass, (1, "a", 1.25), _repr_dataclass, id="dataclass"),
+        pytest.param(
+            ExampleNamedTuple, (1, "a", 1.25), _repr_namedtuple, id="namedtuple"
+        ),
+        pytest.param(dict, ({"a": 1},), _repr_mapping, id="mapping"),
+        pytest.param(list, ([1, 2],), _repr_sequence, id="sequence"),
+        pytest.param(set, ({1, 2},), _repr_set, id="set"),
+    ],
+)
+def test_pretty_repr_dispatch(
+    *, base: type, args: tuple[object, ...], formatter: Callable[..., str]
+) -> None:
+    r"""Use the same formatter for decorated and undecorated representations."""
+    cls = pretty_repr(type("Decorated", (base,), {}), linebreaks=False)
+    obj = cls(*args)
+    expected = formatter(obj, linebreaks=False)
+    assert repr(obj) == repr_object(obj, linebreaks=False) == expected
+    assert repr_object(cls) == cls.__name__
 
 
 @pytest.mark.parametrize(

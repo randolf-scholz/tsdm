@@ -1149,36 +1149,21 @@ def _pretty_namedtuple[Cls: type[NamedTupleType]](
 
 @decorator  # pyrefly: ignore[bad-argument-type]
 def pretty_repr[Cls: type](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
-    r"""Install a `__repr__` selected from the class's supported object category.
+    r"""Install a `__repr__` that formats instances through `repr_object`.
 
-    Forward `kwds` to the selected formatter. Return the modified class, or
-    raise `TypeError` for unsupported classes and nonclass inputs.
+    Forward `kwds` to `repr_object`, which selects a formatter in `Identifier`
+    order based on the instance. Return the modified class, or raise
+    `TypeError` for unsupported classes and nonclass inputs.
     """
     if not isinstance(cls, type):
         raise TypeError("Must be a class!")
 
-    repr_func: Callable[..., str]
-
-    if is_dataclass(cls):
-        repr_func = _repr_dataclass
-    elif is_namedtuple(cls):
-        repr_func = _repr_namedtuple
-    elif issubclass(cls, Mapping):
-        repr_func = _repr_mapping
-    elif (
-        issubclass(cls, (SupportsArray, SupportsDataFrame))  # pyrefly: ignore[bad-argument-type]
-        or isinstance(cls, HasDTypes)
+    # Native table metadata can be exposed by a class attribute or descriptor.
+    if not (
+        isinstance(cls, HasDTypes)
+        or any(issubclass(cls, entry.kind) for entry in Identifier)
     ):
-        # Some tables can only be distinguished from arrays through instance metadata.
-        repr_func = repr_object
-    elif issubclass(cls, Sequence):  # pyrefly: ignore[bad-argument-type]
-        repr_func = _repr_sequence
-    elif issubclass(cls, AbstractSet):  # pyrefly: ignore[bad-argument-type]
-        repr_func = _repr_set
-    elif issubclass(cls, type):  # pyrefly: ignore[bad-argument-type]
-        repr_func = repr_compact
-    else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = partial(repr_func, **kwds)  # ty: ignore[invalid-assignment]
+    cls.__repr__ = partial(repr_object, **kwds)  # ty: ignore[invalid-assignment]
     return cls
