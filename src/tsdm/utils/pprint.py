@@ -78,10 +78,9 @@ import datetime as dt
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from enum import Enum
 from functools import partial
-from inspect import isbuiltin as is_builtin_function
 from math import prod
-from types import FunctionType
-from typing import Any, Final, Protocol
+from types import BuiltinFunctionType, FunctionType
+from typing import Any, Final, Protocol, cast
 
 from polars import LazyFrame
 
@@ -181,15 +180,31 @@ def _is_builtin_singleton(obj: object, /) -> bool:
     )
 
 
-def _is_python_scalar(arg: object, /) -> bool:
-    return (
-        arg is None
-        or arg is Ellipsis
-        or arg is NotImplemented
-        or isinstance(
-            arg, bool | int | float | complex | str | bytes | dt.datetime | dt.timedelta
-        )
-    )
+def _repr_python_scalar(arg: object, /) -> str | None:
+    r"""Format known scalars without calling subclass hooks, or return `None`."""
+    if _is_builtin_singleton(arg):
+        return repr(arg)
+
+    cls = type(arg)
+    if issubclass(cls, str):
+        return str.__repr__(cast("str", arg))
+    if issubclass(cls, bytes):
+        return bytes.__repr__(cast("bytes", arg))
+    if issubclass(cls, int):
+        return int.__repr__(cast("int", arg))
+    if issubclass(cls, float):
+        return float.__repr__(cast("float", arg))
+    if issubclass(cls, complex):
+        return complex.__repr__(cast("complex", arg))
+    if issubclass(cls, dt.datetime):
+        value = cast("dt.datetime", arg)
+        # Even the base formatter invokes repr() on the stored timezone.
+        if dt.datetime.tzinfo.__get__(value) is not None:
+            return None
+        return dt.datetime.__repr__(value)
+    if issubclass(cls, dt.timedelta):
+        return dt.timedelta.__repr__(cast("dt.timedelta", arg))
+    return None
 
 
 def _get_dtypes(table: object) -> list[object]:
@@ -268,7 +283,22 @@ def get_identifier(obj: object, /, **_: Any) -> str:
             return ""
 
 
-def _as_number(arg: object) -> complex | float | int | None:
+def _as_number(arg: object, /) -> complex | float | int | None:
+    r"""Extract a Python number, preserving the type of zero-dimensional scalars."""
+    # Extract the stored scalar first. Numeric hooks can turn booleans into
+    # floats or discard the imaginary part of complex values.
+    if (
+        isinstance(arg, SupportsArray)
+        and isinstance(arg, HasShape)
+        and isinstance(arg, SupportsItem)
+    ):
+        try:
+            item = arg.item() if arg.shape == () else None
+        except Exception:
+            item = None
+        if type(item) in (bool, int, float, complex):
+            return item
+
     try:  # SupportsIndex
         return arg.__index__()  # type: ignore
     except Exception:  # ruff: ignore[S110]
@@ -968,26 +998,24 @@ def repr_compact(
 ) -> str:
     r"""Return a compact representation using a value or its type name."""
     match obj:
-        case type() as cls:
-            return cls.__name__
+        case _ if issubclass(type(obj), type):
+            return cast("type", obj).__name__
 
         # functions like len, map, etc.
-        case _ if is_builtin_function(obj):
+        case _ if type(obj) is BuiltinFunctionType:
             return repr(obj)
 
-        # python_scalars
-        case _ if _is_python_scalar(obj):
-            return repr(obj)
+        case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
+            return scalar_repr
 
-        # 3rd party int/float/complex
         case _ if (value := _as_number(obj)) is not None:
             return repr(value)
 
         case _:
             if identifier is None:
-                identifier = get_identifier(obj) * bool(recursive)
+                identifier = get_identifier(obj) if recursive else ""
 
-            return f"{obj.__class__.__name__}{identifier}()"
+            return f"{type(obj).__name__}{identifier}()"
 
 
 def repr_object(
@@ -1014,16 +1042,15 @@ def repr_object(
     x = kwargs.get("wrapped", obj)
 
     match x:
-        case type() as cls:
-            return cls.__name__
+        case _ if issubclass(type(x), type):
+            return cast("type", x).__name__
 
         # functions like len, map, etc.
-        case _ if is_builtin_function(obj):
+        case _ if type(obj) is BuiltinFunctionType:
             return repr(obj)
 
-        # python_scalars
-        case _ if _is_python_scalar(obj):
-            return repr(obj)
+        case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
+            return scalar_repr
 
         case LazyFrame() as frame:
             return repr_array(frame, **kwargs)

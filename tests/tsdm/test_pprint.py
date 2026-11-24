@@ -12,20 +12,20 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.pprint import (
-    INDENT,
-    repr_array,
-    repr_dataclass,
-    repr_generic,
-    repr_mapping,
-    repr_namedtuple,
-    repr_sequence,
-    repr_set,
-    repr_shortform,
-)
 from tsdm.types import SupportsArray
 from tsdm.types.dataclass import DataclassType
 from tsdm.types.namedtuple import NamedTupleType
+from tsdm.utils.pprint import (
+    INDENT,
+    repr_array,
+    repr_compact,
+    repr_dataclass,
+    repr_mapping,
+    repr_namedtuple,
+    repr_object,
+    repr_sequence,
+    repr_set,
+)
 
 INDENTATION = " " * INDENT
 
@@ -95,7 +95,7 @@ class ExampleSequence(Sequence):
 )
 def test_pprint_object(obj: object, expected: str) -> None:
     r"""Test pprint_object."""
-    result = repr_generic(obj)
+    result = repr_object(obj)
     assert result == expected
 
 
@@ -244,7 +244,25 @@ def test_pprint_lazy_frame() -> None:
     expected = "LazyFrame<*,2>[Int64, String]"
 
     assert repr_array(frame) == expected
-    assert repr_generic(frame) == expected
+    assert repr_object(frame) == expected
+
+
+@pytest.mark.parametrize(
+    ("obj", "expected_compact", "expected_object"),
+    [
+        (np.True_, "True", "bool(True)"),
+        (np.False_, "False", "bool(False)"),
+        (np.int64(1), "1", "int64(1)"),
+        (np.float32(1.25), "1.25", "float32(1.25)"),
+        (np.complex64(1 + 2j), "(1+2j)", "complex64((1+2j))"),
+    ],
+)
+def test_pprint_numpy_scalar(
+    obj: np.generic, expected_compact: str, expected_object: str
+) -> None:
+    r"""Check compact and full representations of NumPy scalars."""
+    assert repr_compact(obj) == expected_compact
+    assert repr_object(obj) == expected_object
 
 
 @pytest.mark.parametrize(
@@ -258,5 +276,5 @@ def test_pprint_lazy_frame() -> None:
     ],
 )
 def test_print_scalar(obj, expected: str) -> None:
-    assert repr_generic(obj) == expected
-    assert repr_shortform(obj) == expected
+    assert repr_object(obj) == expected
+    assert repr_compact(obj) == expected
