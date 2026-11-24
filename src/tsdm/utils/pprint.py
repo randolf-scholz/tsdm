@@ -283,6 +283,22 @@ def _join_items(
     return "".join(f"\n{pad}{item}," for item in items) + "\n"
 
 
+def _child_formatter(
+    repr_fn: Callable[..., str] | None,
+    /,
+    *,
+    recursive: bool | int,
+    linebreaks: bool | None,
+    maxitems: int | None,
+) -> Callable[..., str]:
+    r"""Select the formatter for children, forwarding unresolved layout options."""
+    if repr_fn is not None:
+        return repr_fn
+    if recursive:
+        return partial(repr_object, linebreaks=linebreaks, maxitems=maxitems)
+    return repr_compact
+
+
 def _repr_mapping(
     obj: Mapping,
     /,
@@ -343,21 +359,21 @@ def _repr_mapping(
 
     size = len(obj)
 
-    linebreaks = (
+    multiline = (
         False if size == 0  # always inline if empty mapping
         else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
 
-    maxitems = (
+    item_limit = (
         maxitems if maxitems is not None
-        else MAXITEMS if linebreaks
+        else MAXITEMS if multiline
         else MAXITEMS_INLINE
     )  # fmt: skip
 
     max_key_length = (
         max((len(str(key)) for key in obj), default=0)
-        if (align and linebreaks)
+        if (align and multiline)
         else 0
     )  # fmt: skip
 
@@ -371,8 +387,8 @@ def _repr_mapping(
         identifier = Identifier.get(wrapped)
 
     # set repr_func
-    repr_func = (
-        repr_fn if repr_fn is not None else repr_object if recursive else repr_compact
+    repr_func = _child_formatter(
+        repr_fn, recursive=recursive, linebreaks=linebreaks, maxitems=maxitems
     )
 
     # update recursive
@@ -402,7 +418,7 @@ def _repr_mapping(
         return f"{key!s:<{max_key_length}}: {encoded_value}"
 
     # compute the item representations
-    head_end, tail_start = _item_bounds(size, maxitems)
+    head_end, tail_start = _item_bounds(size, item_limit)
     items = iter(obj.items())
     head = [to_string(key, value) for key, value in islice(items, head_end)]
     tail = (
@@ -414,7 +430,7 @@ def _repr_mapping(
         head,
         tail,
         truncated=head_end < tail_start,
-        linebreaks=linebreaks,
+        linebreaks=multiline,
         padding=padding,
     )
 
@@ -484,15 +500,15 @@ def _repr_sequence(
 
     size = len(obj)
 
-    linebreaks = (
+    multiline = (
         False if size == 0  # always inline if empty sequence
         else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
 
-    maxitems = (
+    item_limit = (
         maxitems if maxitems is not None
-        else MAXITEMS if linebreaks
+        else MAXITEMS if multiline
         else MAXITEMS_INLINE
     )  # fmt: skip
 
@@ -508,8 +524,8 @@ def _repr_sequence(
         identifier = Identifier.get(wrapped)
 
     # set repr_fun
-    repr_func = (
-        repr_fn if repr_fn is not None else repr_object if recursive else repr_compact
+    repr_func = _child_formatter(
+        repr_fn, recursive=recursive, linebreaks=linebreaks, maxitems=maxitems
     )
 
     # update recursive
@@ -539,14 +555,14 @@ def _repr_sequence(
         return encoded_value
 
     # compute the item representations
-    head_end, tail_start = _item_bounds(size, maxitems)
+    head_end, tail_start = _item_bounds(size, item_limit)
     head = [to_string(i, value) for i, value in enumerate(obj[:head_end])]
     tail = [to_string(i, value) for i, value in enumerate(obj[tail_start:], tail_start)]
     body = _join_items(
         head,
         tail,
         truncated=head_end < tail_start,
-        linebreaks=linebreaks,
+        linebreaks=multiline,
         padding=padding,
     )
 
@@ -584,15 +600,15 @@ def _repr_set(
 
     size = len(obj)
 
-    linebreaks = (
+    multiline = (
         False if size == 0  # always inline if empty set
         else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
 
-    maxitems = (
+    item_limit = (
         maxitems if maxitems is not None
-        else MAXITEMS if linebreaks
+        else MAXITEMS if multiline
         else MAXITEMS_INLINE
     )  # fmt: skip
 
@@ -606,8 +622,8 @@ def _repr_set(
         identifier = Identifier.get(wrapped)
 
     # set repr_fun
-    repr_func = (
-        repr_fn if repr_fn is not None else repr_object if recursive else repr_compact
+    repr_func = _child_formatter(
+        repr_fn, recursive=recursive, linebreaks=linebreaks, maxitems=maxitems
     )
 
     # update recursive
@@ -637,7 +653,7 @@ def _repr_set(
         return encoded_value
 
     # compute the item representations
-    head_end, tail_start = _item_bounds(size, maxitems)
+    head_end, tail_start = _item_bounds(size, item_limit)
     items = enumerate(obj)
     head = [to_string(i, value) for i, value in islice(items, head_end)]
     tail = (
@@ -649,7 +665,7 @@ def _repr_set(
         head,
         tail,
         truncated=head_end < tail_start,
-        linebreaks=linebreaks,
+        linebreaks=multiline,
         padding=padding,
     )
 
@@ -972,6 +988,9 @@ def repr_object(
     For containers and table dtype summaries, `maxitems` is a nonnegative
     limit on displayed entries, excluding the ellipsis. When entries are
     omitted, an odd limit gives the head one more entry than the tail.
+    Built-in recursive formatting forwards explicit `linebreaks` and
+    `maxitems` values to each nested formatter. A value of `None` lets each
+    formatter choose its default.
 
     Examples:
         ```pycon

@@ -323,6 +323,33 @@ def test_pprint_item_limit_multiline() -> None:
     assert repr_object([list(range(5))], padding=2) == "[\n  [0, 1, 2, 3, 4],\n]"
 
 
+def test_pprint_recursive_layout() -> None:
+    r"""Apply explicit layout options at each expanded level."""
+    data = [[0, 1, 2, 3]]
+    assert (
+        repr_object(data, recursive=2, linebreaks=False, maxitems=2) == "[[0, ..., 3]]"
+    )
+    assert repr_object(data, maxitems=2, padding=2) == "[\n  [0, ..., 3],\n]"
+    assert (
+        repr_object([[0, 1]], linebreaks=True, padding=2)
+        == "[\n  [\n    0,\n    1,\n  ],\n]"
+    )
+
+
+def test_pprint_recursive_layout_across_containers() -> None:
+    r"""Forward layout options when the nested container types differ."""
+    data = {"key": {(0, 1, 2, 3)}}
+    assert (
+        repr_object(data, recursive=2, linebreaks=False, maxitems=2)
+        == "{key: {(0, ..., 3)}}"
+    )
+
+
+def test_pprint_recursive_layout_defaults() -> None:
+    r"""Choose defaults independently for multiline and inline levels."""
+    assert repr_object([list(range(6))], padding=2) == "[\n  [0, 1, 2, ..., 4, 5],\n]"
+
+
 def test_pprint_negative_item_limit() -> None:
     r"""Reject negative item budgets."""
     with pytest.raises(ValueError, match="maxitems must be nonnegative"):
