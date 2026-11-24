@@ -54,15 +54,7 @@ __all__ = [
     "ReprOptions",
     "ReprProtocol",
     # Functions
-    "_repr_array",
-    "_repr_dataclass",
-    "_repr_dtype",
-    "_repr_mapping",
-    "_repr_namedtuple",
     "repr_object",
-    "_repr_sequence",
-    "_repr_set",
-    "_repr_table",
     "repr_compact",
     # decorators
     "pretty_dataclass",
@@ -405,7 +397,7 @@ def _repr_mapping(
     ]
 
     # assemble the string
-    string = f"{title}{modifier}{_format_identifier(identifier)}{left}{br}"
+    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{br}"
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -547,7 +539,7 @@ def _repr_sequence(
     ]
 
     # assemble the string
-    string = f"{title}{modifier}{_format_identifier(identifier)}{left}{br}"
+    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{br}"
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
     if len(obj) > maxitems:
@@ -661,7 +653,7 @@ def _repr_set(
     tail_items = [to_string(i, v) for i, v in tail_iter]
 
     # assemble the string
-    string = f"{title}{modifier}{_format_identifier(identifier)}{left}{br}"
+    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{br}"
 
     if head_items:
         string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
@@ -879,7 +871,7 @@ def _repr_table(
         modifier = str(obj.device)
     title = type(obj).__name__ if title is None else title
     modifier_repr = f"@{modifier}" if modifier is not None else ""
-    shape_repr = _format_identifier(shape if identifier is None else identifier)
+    shape_repr = f"<{shape}>" if identifier is None else Identifier.render(identifier)
     return f"{title}{modifier_repr}{shape_repr}[{', '.join(labels)}]"
 
 
@@ -899,8 +891,10 @@ def _repr_array(
         tuple(obj.shape) if isinstance(obj, HasShape) else tuple(obj.__array__().shape)
     )
     if identifier is None:
-        identifier = ",".join(str(dim) for dim in shape)
-    shape_repr = _format_identifier(identifier)
+        dimensions = ",".join(str(dim) for dim in shape)
+        shape_repr = f"<{dimensions}>" if dimensions else ""
+    else:
+        shape_repr = Identifier.render(identifier)
 
     if not show_device:
         device_repr = ""
@@ -926,14 +920,21 @@ def _repr_array(
 
 def _repr_type(obj: type, /, *, identifier: str | None = None, **_: Any) -> str:
     r"""Return a compact representation of a type."""
-    return f"{obj.__name__}{_format_identifier(identifier)}"
+    return f"{obj.__name__}{Identifier.render(identifier)}"
 
 
 def _repr_function(
-    obj: FunctionType, /, *, identifier: str | None = None, **_: Any
+    obj: FunctionType | BuiltinFunctionType,
+    /,
+    *,
+    identifier: str | None = None,
+    **_: Any,
 ) -> str:
-    r"""Return a function's name and any supplied identifier."""
-    return f"{obj.__name__}{_format_identifier(identifier)}"
+    r"""Format a Python or built-in function with any supplied identifier."""
+    label = Identifier.render(identifier)
+    if type(obj) is BuiltinFunctionType:
+        return f"{label}{obj!r}"
+    return f"{obj.__name__}{label}"
 
 
 def repr_compact(
@@ -946,26 +947,21 @@ def repr_compact(
     **_: Any,
 ) -> str:
     r"""Return a compact representation using a value or its type name."""
-    label = _format_identifier(identifier)
-    match obj:
-        case _ if issubclass(type(obj), type):
-            return f"{cast('type', obj).__name__}{label}"
+    obj_type = type(obj)
+    for entry in (Identifier.TYPE, Identifier.FUNCTION):
+        if issubclass(obj_type, entry.kind):
+            return entry.formatter(obj, identifier=identifier)
 
-        # functions like len, map, etc.
-        case _ if type(obj) is BuiltinFunctionType:
-            return f"{label}{obj!r}"
+    label = Identifier.render(identifier)
+    if (scalar_repr := _repr_python_scalar(obj)) is not None:
+        return f"{label}{scalar_repr}"
+    if (number_repr := _repr_number(obj)) is not None:
+        return f"{label}{number_repr}"
 
-        case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
-            return f"{label}{scalar_repr}"
-
-        case _ if (number_repr := _repr_number(obj)) is not None:
-            return f"{label}{number_repr}"
-
-        case _:
-            displayed = obj if wrapped is None else wrapped
-            if identifier is None and recursive:
-                label = _format_identifier(Identifier.get(displayed))
-            return f"{type(displayed).__name__}{label}()"
+    displayed = obj if wrapped is None else wrapped
+    if identifier is None and recursive:
+        label = Identifier.render(Identifier.get(displayed))
+    return f"{type(displayed).__name__}{label}()"
 
 
 def repr_object(
@@ -980,9 +976,10 @@ def repr_object(
 
     Dispatch to specialized formatters for scalars, arrays, containers,
     dataclasses, named tuples, and dtypes. Use `fallback` for unsupported objects.
-    A custom `identifier` is displayed in angle brackets. An empty string
-    suppresses the identifier. Container formatters use the type of
-    `wrapped` for automatic identifiers when a wrapper is supplied.
+    A custom `identifier` must satisfy `str.isidentifier()` and is displayed
+    in angle brackets. An empty string suppresses the identifier. Container
+    formatters use the type of `wrapped` for automatic identifiers when a
+    wrapper is supplied.
 
     Examples:
         ```pycon
@@ -993,12 +990,10 @@ def repr_object(
 
         ```
     """
-    label = _format_identifier(identifier)
+    label = Identifier.render(identifier)
     if identifier is not None:
         kwargs["identifier"] = identifier
 
-    if type(obj) is BuiltinFunctionType:
-        return f"{label}{obj!r}"
     if (scalar_repr := _repr_python_scalar(obj)) is not None:
         return f"{label}{scalar_repr}"
     if (entry := Identifier.get(obj)) is not None:
@@ -1015,20 +1010,22 @@ def repr_object(
 class Identifier(StrEnum):
     r"""Labels, runtime types, and formatters in dispatch order."""
 
-    kind: type
+    kind: type | tuple[type, ...]
     formatter: ReprProtocol
 
-    TYPE = type, "type", _repr_type
-    FUNCTION = FunctionType, "function", _repr_function
-    TABLE = SupportsDataFrame, "table", _repr_table
-    ARRAY = SupportsArray, "array", _repr_array
-    DATACLASS = DataclassType, "dataclass", _repr_dataclass
-    NAMEDTUPLE = NamedTupleType, "namedtuple", _repr_namedtuple
-    MAPPING = Mapping, "mapping", _repr_mapping
-    SEQUENCE = Sequence, "sequence", _repr_sequence
-    SET = AbstractSet, "set", _repr_set
+    TYPE = "type", type, _repr_type
+    FUNCTION = "function", (FunctionType, BuiltinFunctionType), _repr_function
+    TABLE = "table", SupportsDataFrame, _repr_table
+    ARRAY = "array", SupportsArray, _repr_array
+    DATACLASS = "dataclass", DataclassType, _repr_dataclass
+    NAMEDTUPLE = "namedtuple", NamedTupleType, _repr_namedtuple
+    MAPPING = "mapping", Mapping, _repr_mapping
+    SEQUENCE = "sequence", Sequence, _repr_sequence
+    SET = "set", AbstractSet, _repr_set
 
-    def __new__(cls, kind: type, label: str, formatter: ReprProtocol) -> Self:
+    def __new__(
+        cls, label: str, kind: type | tuple[type, ...], formatter: ReprProtocol
+    ) -> Self:
         entry = str.__new__(cls, label)
         entry._value_ = label
         entry.kind = kind
@@ -1050,19 +1047,24 @@ class Identifier(StrEnum):
         )
 
     @classmethod
-    def get(cls, arg: object, /) -> Self | None:
+    def get(cls, arg: object, /) -> Identifier | None:
         r"""Select the first applicable category."""
-        return next((entry for entry in cls if entry.matches(arg)), None)
+        return next((entry for entry in Identifier if entry.matches(arg)), None)
 
     @classmethod
-    def _missing_(cls, value: object) -> Self | None:
-        if isinstance(value, str):
-            if value.startswith("<") and value.endswith(">"):
-                return next(
-                    (entry for entry in cls if entry.value == value[1:-1]), None
-                )
-            return None
-        return cls.get(value)
+    def _missing_(cls, value: object) -> Identifier | None:
+        return None if isinstance(value, str) else Identifier.get(value)
+
+    @staticmethod
+    def render(identifier: str | None, /) -> str:
+        r"""Enclose a valid identifier in angle brackets, or omit an empty label."""
+        if not identifier:
+            return ""
+        if not str.isidentifier(identifier):
+            raise ValueError(
+                f"Invalid identifier {identifier!r}. Use a Python identifier."
+            )
+        return f"<{identifier}>"
 
     def validate(self, arg: object) -> None:
         r"""Raise an assertion error when this category does not apply."""
@@ -1072,13 +1074,6 @@ class Identifier(StrEnum):
             raise AssertionError(
                 f"<{self.value}> does not apply to {type(arg).__name__}."
             )
-
-
-def _format_identifier(identifier: str | None, /) -> str:
-    r"""Enclose a nonempty identifier in angle brackets."""
-    if identifier and identifier.startswith("<") and identifier.endswith(">"):
-        identifier = identifier[1:-1]
-    return f"<{identifier}>" if identifier else ""
 
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
