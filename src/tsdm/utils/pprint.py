@@ -51,18 +51,19 @@ __all__ = [
     "ALIGN",
     # ABCs & Protocols
     "Identifiers",
+    "ReprOptions",
     "ReprProtocol",
     "Types",
     # Functions
     "get_identifier",
-    "repr_array",
-    "repr_dataclass",
-    "repr_dtype",
-    "repr_mapping",
-    "repr_namedtuple",
+    "_repr_array",
+    "_repr_dataclass",
+    "_repr_dtype",
+    "_repr_mapping",
+    "_repr_namedtuple",
     "repr_object",
-    "repr_sequence",
-    "repr_set",
+    "_repr_sequence",
+    "_repr_set",
     "repr_compact",
     # decorators
     "pretty_dataclass",
@@ -76,11 +77,11 @@ __all__ = [
 import dataclasses
 import datetime as dt
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
-from enum import Enum
+from enum import Enum, member
 from functools import partial
 from math import prod
 from types import BuiltinFunctionType, FunctionType
-from typing import Any, Final, Protocol, cast
+from typing import Any, Final, Protocol, TypedDict, Unpack, cast
 
 from polars import LazyFrame
 
@@ -128,13 +129,27 @@ class Identifiers(Enum):
     # Fallback
     NULL = ""
 
+    def validate(self, arg: object) -> None:
+        r"""Raise `AssertionError` if `arg` does not match this identifier.
+
+        The empty identifier accepts any object.
+        """
+        if self is Identifiers.NULL:
+            return
+        expected = Types[self.name].value
+        if not isinstance(arg, expected):
+            raise AssertionError(  # ruff: ignore[TRY004]
+                f"{self.value} requires {expected.__name__}, got {type(arg).__name__}."
+            )
+
 
 class Types(Enum):
     r"""Enum for types."""
 
     ARRAY = SupportsArray
     DATACLASS = DataclassType
-    FUNCTION = FunctionType
+    # FunctionType is a descriptor, so Enum requires an explicit member.
+    FUNCTION = member(FunctionType)
     MAPPING = Mapping
     NAMEDTUPLE = NamedTupleType
     SEQUENCE = Sequence
@@ -143,11 +158,28 @@ class Types(Enum):
     TYPE = type
 
 
+class ReprOptions(TypedDict, total=False):
+    r"""Keyword options shared by recursive representation functions."""
+
+    align: bool
+    identifier: str | None
+    indent: int
+    linebreaks: bool | None
+    maxitems: int | None
+    modifier: str | None
+    padding: int
+    recursive: bool | int
+    repr_fn: Callable[..., str] | None
+    title: str | None
+    wrapped: object | None
+
+
 class ReprProtocol(Protocol):
     r"""Protocol for recursive repr functions.
 
     The general output form is `Title@Modifier<Identifier>(values)`, with
     components and delimiters depending on the represented object.
+    `ReprOptions` describes the keyword arguments as a dictionary.
     """
 
     def __call__(
@@ -167,6 +199,29 @@ class ReprProtocol(Protocol):
         title: str | None = None,
         wrapped: object | None = None,
     ) -> str: ...
+
+
+def get_identifier(obj: object, /, **_: Any) -> str:
+    r"""Return the identifier of an object."""
+    match obj:
+        case type() as cls:
+            return f"<{cls.__name__}>"
+        case SupportsArray():
+            return "<array>"
+        case SupportsDataFrame():
+            return "<table>"
+        case DataclassType():
+            return "<dataclass>"
+        case NamedTupleType():
+            return "<namedtuple>"
+        case Mapping():
+            return "<mapping>"
+        case Sequence():
+            return "<sequence>"
+        case FunctionType():
+            return "<function>"
+        case _:
+            return ""
 
 
 def _is_builtin_singleton(obj: object, /) -> bool:
@@ -263,7 +318,7 @@ def _get_dtypes(table: object) -> list[object]:
             raise TypeError(f"Unsupported object type {type(table)}.")
 
 
-def repr_dtype(dtype: object, /) -> str:
+def _repr_dtype(dtype: object, /) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
         case str(string):
@@ -274,7 +329,7 @@ def repr_dtype(dtype: object, /) -> str:
             return string
 
         case object(dtype=dtype):  # type: ignore
-            return repr_dtype(dtype)
+            return _repr_dtype(dtype)
 
         case object(index_type=index_type, value_type=value_type):  # type: ignore
             # special casing for pa.DictionaryType
@@ -284,33 +339,10 @@ def repr_dtype(dtype: object, /) -> str:
             return cls.__name__
 
         case _:
-            return repr_dtype(str(dtype))
+            return _repr_dtype(str(dtype))
 
 
-def get_identifier(obj: object, /, **_: Any) -> str:
-    r"""Return the identifier of an object."""
-    match obj:
-        case type() as cls:
-            return f"<{cls.__name__}>"
-        case SupportsArray():
-            return "<array>"
-        case SupportsDataFrame():
-            return "<table>"
-        case DataclassType():
-            return "<dataclass>"
-        case NamedTupleType():
-            return "<namedtuple>"
-        case Mapping():
-            return "<mapping>"
-        case Sequence():
-            return "<sequence>"
-        case FunctionType():
-            return "<function>"
-        case _:
-            return ""
-
-
-def repr_mapping(
+def _repr_mapping(
     obj: Mapping,
     /,
     *,
@@ -468,7 +500,7 @@ def repr_mapping(
     return string
 
 
-def repr_sequence(
+def _repr_sequence(
     obj: Sequence,
     /,
     *,
@@ -618,7 +650,7 @@ def repr_sequence(
     return string
 
 
-def repr_set(
+def _repr_set(
     obj: AbstractSet,
     /,
     *,
@@ -742,7 +774,7 @@ def repr_set(
     return string
 
 
-def repr_dataclass(
+def _repr_dataclass(
     obj: DataclassType,
     /,
     *,
@@ -783,7 +815,7 @@ def repr_dataclass(
     fields = dataclasses.fields(obj)
 
     if recursive:
-        return repr_mapping(
+        return _repr_mapping(
             {field.name: getattr(obj, field.name) for field in fields if field.repr},
             align=align,
             identifier=identifier,
@@ -798,7 +830,7 @@ def repr_dataclass(
             wrapped=wrapped,
         )
 
-    return repr_sequence(
+    return _repr_sequence(
         [field.name for field in fields if field.repr],
         align=align,
         identifier=identifier,
@@ -814,7 +846,7 @@ def repr_dataclass(
     )
 
 
-def repr_namedtuple(
+def _repr_namedtuple(
     obj: NamedTupleType,
     /,
     *,
@@ -853,7 +885,7 @@ def repr_namedtuple(
     )  # fmt: skip
 
     if recursive:
-        return repr_mapping(
+        return _repr_mapping(
             obj._asdict(),
             align=align,
             identifier=identifier,
@@ -868,7 +900,7 @@ def repr_namedtuple(
             wrapped=wrapped,
         )
 
-    return repr_sequence(
+    return _repr_sequence(
         obj._fields,
         align=align,
         identifier=identifier,
@@ -884,7 +916,7 @@ def repr_namedtuple(
     )
 
 
-def repr_array(
+def _repr_array(
     obj: SupportsArray | LazyFrame,
     /,
     *,
@@ -911,7 +943,7 @@ def repr_array(
     if isinstance(obj, LazyFrame):
         schema = obj.collect_schema()
         shape_repr = f"<*,{len(schema)}>" if identifier is None else identifier
-        vals = [repr_dtype(dtype) for dtype in schema.values()]
+        vals = [_repr_dtype(dtype) for dtype in schema.values()]
 
         if len(set(vals)) <= 1:
             vals = vals[:1]
@@ -947,7 +979,7 @@ def repr_array(
     # get the dtype-repr
     # Table-like: [dtype1, dtype2, ...]
     # Tensor-like: [dtype]
-    vals = [repr_dtype(dtype) for dtype in _get_dtypes(obj)]
+    vals = [_repr_dtype(dtype) for dtype in _get_dtypes(obj)]
 
     # if all vals are the same, show only one
     if len(set(vals)) <= 1:
@@ -974,8 +1006,6 @@ def repr_array(
             raise TypeError(f"Unsupported object type {type(obj)}.")
         case _:
             value_repr = ""
-        # case _:
-        #     raise TypeError(f"Unsupported object type {type(obj)}.")
 
     # Tensor@device<shape>dtype
     # Table@device<shape>[dtype1, dtype1, ...]
@@ -1049,19 +1079,19 @@ def repr_object(
             return scalar_repr
 
         case LazyFrame() as frame:
-            return repr_array(frame, **kwargs)
+            return _repr_array(frame, **kwargs)
         case SupportsArray() as array:
-            return repr_array(array, **kwargs)
+            return _repr_array(array, **kwargs)
         case DataclassType() as dtc:  # pyrefly: ignore[unsafe-overlap]
-            return repr_dataclass(dtc, **kwargs)
+            return _repr_dataclass(dtc, **kwargs)
         case NamedTupleType() as ntuple:  # pyrefly: ignore[unsafe-overlap]
-            return repr_namedtuple(ntuple, **kwargs)
+            return _repr_namedtuple(ntuple, **kwargs)
         case Mapping() as mapping:
-            return repr_mapping(mapping, **kwargs)
+            return _repr_mapping(mapping, **kwargs)
         case Sequence() as sequence:
-            return repr_sequence(sequence, **kwargs)
+            return _repr_sequence(sequence, **kwargs)
         case AbstractSet() as set_:
-            return repr_set(set_, **kwargs)
+            return _repr_set(set_, **kwargs)
         case _:
             # avoid recursion:
             if fallback is repr:
@@ -1070,74 +1100,74 @@ def repr_object(
 
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
-    repr_array,
-    repr_dataclass,
-    repr_mapping,
-    repr_namedtuple,
+    _repr_array,
+    _repr_dataclass,
+    _repr_mapping,
+    _repr_namedtuple,
+    _repr_sequence,
     repr_object,
-    repr_sequence,
     repr_compact,
 ]
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def with_pprint_sequence[Seq: Sequence](cls: type[Seq], /, **kwds: Any) -> type[Seq]:
-def pretty_sequence[Cls: type[Sequence]](cls: Cls, /, **kwds: Any) -> Cls:
+def pretty_sequence[Cls: type[Sequence]](
+    cls: Cls, /, **kwds: Unpack[ReprOptions]
+) -> Cls:
     r"""Install a `__repr__` using `repr_sequence` on a Sequence subclass."""
     if not issubclass(cls, Sequence):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
-    cls.__repr__ = partial(repr_sequence, **kwds)  # ty: ignore[invalid-assignment]
+    cls.__repr__ = partial(_repr_sequence, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def with_pprint_mapping[Map: Mapping](cls: type[Map], /, **kwds: Any) -> type[Map]:
-def pretty_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Any) -> Cls:
+def pretty_mapping[Cls: type[Mapping]](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
     r"""Install a `__repr__` using `repr_mapping` on a Mapping subclass."""
     if not issubclass(cls, Mapping):
         raise TypeError(f"Expected Mapping type, got {cls}.")
 
-    cls.__repr__ = partial(repr_mapping, **kwds)  # ty: ignore[invalid-assignment]
+    cls.__repr__ = partial(_repr_mapping, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def with_pprint_set[Set: AbstractSet](cls: type[Set], /, **kwds: Any) -> type[Set]:
-def pretty_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Any) -> Cls:
+def pretty_set[Cls: type[AbstractSet]](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
     r"""Install a `__repr__` using `repr_set` on a Set subclass."""
     if not issubclass(cls, AbstractSet):
         raise TypeError(f"Expected Set type, got {cls}.")
 
-    cls.__repr__ = partial(repr_set, **kwds)  # ty: ignore[invalid-assignment]
+    cls.__repr__ = partial(_repr_set, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def with_pprint_dataclass[T](cls: type[T], /, **kwds: Any) -> type[T]:
-def pretty_dataclass[Cls: DataclassType](cls: Cls, /, **kwds: Any) -> Cls:
+def pretty_dataclass[Cls: DataclassType](
+    cls: Cls, /, **kwds: Unpack[ReprOptions]
+) -> Cls:
     r"""Install a `__repr__` using `repr_dataclass` on a dataclass."""
     if not (isinstance(cls, type) and is_dataclass(cls)):
         raise TypeError(f"Expected Sequence type, got {cls}.")
 
-    cls.__repr__ = partial(repr_dataclass, **kwds)
+    cls.__repr__ = partial(_repr_dataclass, **kwds)
     return cls
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def with_pprint_namedtuple[Ntp: NTuple](cls: type[Ntp], /, **kwds: Any) -> type[Ntp]:
-def pretty_namedtuple[Cls: type[NamedTupleType]](cls: Cls, /, **kwds: Any) -> Cls:
+def pretty_namedtuple[Cls: type[NamedTupleType]](
+    cls: Cls, /, **kwds: Unpack[ReprOptions]
+) -> Cls:
     r"""Install a `__repr__` using `repr_namedtuple` on a named tuple class."""
     if not (isinstance(cls, type) and is_namedtuple(cls)):
         raise TypeError(f"Expected NamedTuple type, got {cls}.")
 
-    cls.__repr__ = partial(repr_namedtuple, **kwds)  # ty: ignore[invalid-assignment]
+    cls.__repr__ = partial(_repr_namedtuple, **kwds)  # ty: ignore[invalid-assignment]
     return cls
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]
-# def with_pprint[T](cls: type[T], /, **kwds: Any) -> type[T]:
-def pretty_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
+def pretty_repr[Cls: type](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
     r"""Install a `__repr__` selected from the class's supported object category.
 
     Forward `kwds` to the selected formatter. Return the modified class, or
@@ -1149,17 +1179,17 @@ def pretty_repr[Cls: type](cls: Cls, /, **kwds: Any) -> Cls:
     repr_func: Callable[..., str]
 
     if is_dataclass(cls):
-        repr_func = repr_dataclass
+        repr_func = _repr_dataclass
     elif is_namedtuple(cls):
-        repr_func = repr_namedtuple
+        repr_func = _repr_namedtuple
     elif issubclass(cls, Mapping):
-        repr_func = repr_mapping
+        repr_func = _repr_mapping
     elif issubclass(cls, SupportsArray):  # pyrefly: ignore[bad-argument-type]
-        repr_func = repr_array
+        repr_func = _repr_array
     elif issubclass(cls, Sequence):  # pyrefly: ignore[bad-argument-type]
-        repr_func = repr_sequence
+        repr_func = _repr_sequence
     elif issubclass(cls, AbstractSet):  # pyrefly: ignore[bad-argument-type]
-        repr_func = repr_set
+        repr_func = _repr_set
     elif issubclass(cls, type):  # pyrefly: ignore[bad-argument-type]
         repr_func = repr_compact
     else:
