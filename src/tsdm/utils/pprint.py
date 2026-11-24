@@ -1077,7 +1077,7 @@ class Identifier(StrEnum):
                 case Identifier.TABLE if (
                     isinstance(arg, HasDTypes)
                     and not isinstance(arg, HasDType)
-                    and (not isinstance(arg, HasShape) or len(arg.shape) == 2)
+                    and (not isinstance(arg, HasShape) or len(arg.shape) == 2)  # A⟹B
                 ):
                     return entry
         return None
