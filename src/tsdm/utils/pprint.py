@@ -226,6 +226,11 @@ def _repr_dtype(dtype: object, /) -> str:
             return _repr_dtype(str(dtype))
 
 
+def _repr_identifier(label: str, /) -> str:
+    r"""Enclose a nonempty label in angle brackets."""
+    return f"<{label}>" if label else ""
+
+
 def _item_bounds(size: int, maxitems: int, /) -> tuple[int, int]:
     r"""Return the exclusive head end and inclusive tail start."""
     if maxitems < 0:
@@ -404,7 +409,8 @@ def _repr_mapping(
     )
 
     # assemble the string and add indentation
-    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{body}{right}"
+    label = _repr_identifier(identifier or "")
+    string = f"{title}{modifier}{label}{left}{body}{right}"
     string = string.replace("\n", "\n" + " " * indent)
 
     return string
@@ -536,7 +542,8 @@ def _repr_sequence(
     )
 
     # assemble the string and add indentation
-    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{body}{right}"
+    label = _repr_identifier(identifier or "")
+    string = f"{title}{modifier}{label}{left}{body}{right}"
     string = string.replace("\n", "\n" + " " * indent)
 
     return string
@@ -639,7 +646,8 @@ def _repr_set(
     )
 
     # assemble the string and add indentation
-    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{body}{right}"
+    label = _repr_identifier(identifier or "")
+    string = f"{title}{modifier}{label}{left}{body}{right}"
     string = string.replace("\n", "\n" + " " * indent)
 
     return string
@@ -851,7 +859,7 @@ def _repr_table(
     shape_repr = (
         f"<{rows_repr},{num_cols}>"
         if identifier is None
-        else Identifier.render(identifier)
+        else _repr_identifier(identifier)
     )
 
     maxitems = MAXITEMS_INLINE if maxitems is None else maxitems
@@ -904,7 +912,7 @@ def _repr_array(
     )
     dtype_repr = _repr_dtype(dtype)
     shape_repr = (
-        Identifier.render(identifier)
+        _repr_identifier(identifier)
         if identifier is not None
         else f"<{','.join(str(dim) for dim in shape)}>"
         if shape
@@ -937,7 +945,8 @@ def _repr_array(
 
 def _repr_type(obj: type, /, *, identifier: str | None = None, **_: Any) -> str:
     r"""Return a compact representation of a type."""
-    return f"{obj.__name__}{Identifier.render(identifier)}"
+    label = _repr_identifier(identifier or "")
+    return f"{obj.__name__}{label}"
 
 
 def _repr_function(
@@ -948,7 +957,7 @@ def _repr_function(
     **_: Any,
 ) -> str:
     r"""Format a Python or built-in function with any supplied identifier."""
-    label = Identifier.render(identifier)
+    label = _repr_identifier(identifier or "")
     if type(obj) is BuiltinFunctionType:
         return f"{label}{obj!r}"
     return f"{obj.__name__}{label}"
@@ -966,7 +975,7 @@ def repr_compact(
         if issubclass(obj_type, entry.kind):
             return entry.formatter(obj, identifier=identifier)
 
-    label = Identifier.render(identifier)
+    label = _repr_identifier(identifier or "")
     if (scalar_repr := _repr_python_scalar(obj)) is not None:
         return f"{label}{scalar_repr}"
     if (number_repr := _repr_number(obj)) is not None:
@@ -975,7 +984,7 @@ def repr_compact(
     wrapped = options.get("wrapped")
     displayed = obj if wrapped is None else wrapped
     if identifier is None and options.get("recursive", False):
-        label = Identifier.render(Identifier.get(displayed))
+        label = _repr_identifier(Identifier.get(displayed) or "")
     return f"{type(displayed).__name__}{label}()"
 
 
@@ -990,10 +999,10 @@ def repr_object(
 
     Dispatch to specialized formatters for scalars, arrays, containers,
     dataclasses, named tuples, and dtypes. Use `fallback` for unsupported objects.
-    A custom `identifier` must satisfy `str.isidentifier()` and is displayed
-    in angle brackets. An empty string suppresses the identifier. Container
-    formatters use the type of `wrapped` for automatic identifiers when a
-    wrapper is supplied.
+    With `identifier=None`, each formatter chooses its automatic label.
+    An explicit string is displayed as given inside angle brackets, and an
+    empty string suppresses the label. Container formatters use the type of
+    `wrapped` for automatic labels when a wrapper is supplied.
 
     For containers and table dtype summaries, `maxitems` is a nonnegative
     limit on displayed entries, excluding the ellipsis. When entries are
@@ -1011,7 +1020,7 @@ def repr_object(
 
         ```
     """
-    label = Identifier.render(options.get("identifier"))
+    label = _repr_identifier(options.get("identifier") or "")
 
     if (scalar_repr := _repr_python_scalar(obj)) is not None:
         return f"{label}{scalar_repr}"
@@ -1027,7 +1036,11 @@ def repr_object(
 
 
 class Identifier(StrEnum):
-    r"""Labels, runtime types, and formatters in dispatch order."""
+    r"""Labels, runtime types, and formatters in dispatch order.
+
+    Look up a member by label with `Identifier("array")`. Use
+    `Identifier.get(obj)` to select a member for an object.
+    """
 
     kind: type | tuple[type, ...]
     formatter: ReprProtocol
@@ -1051,48 +1064,23 @@ class Identifier(StrEnum):
         entry.formatter = formatter
         return entry
 
-    def matches(self, arg: object, /) -> bool:
-        r"""Check whether this category applies to the object."""
-        if self is Identifier.SEQUENCE and isinstance(arg, str):
-            return False
-        if isinstance(arg, self.kind):
-            return True
-        # Tables can expose native column dtypes without interchange.
-        return (
-            self is Identifier.TABLE
-            and isinstance(arg, HasDTypes)
-            and not isinstance(arg, HasDType)
-            and (not isinstance(arg, HasShape) or len(arg.shape) == 2)
-        )
-
     @classmethod
     def get(cls, arg: object, /) -> Identifier | None:
         r"""Select the first applicable category."""
-        return next((entry for entry in Identifier if entry.matches(arg)), None)
-
-    @classmethod
-    def _missing_(cls, value: object) -> Identifier | None:
-        return None if isinstance(value, str) else Identifier.get(value)
-
-    @staticmethod
-    def render(identifier: str | None, /) -> str:
-        r"""Enclose a valid identifier in angle brackets, or omit an empty label."""
-        if not identifier:
-            return ""
-        if not str.isidentifier(identifier):
-            raise ValueError(
-                f"Invalid identifier {identifier!r}. Use a Python identifier."
-            )
-        return f"<{identifier}>"
-
-    def validate(self, arg: object) -> None:
-        r"""Raise an assertion error when this category does not apply."""
-        if self is Identifier.SEQUENCE and isinstance(arg, str):
-            raise AssertionError("The <sequence> identifier excludes strings.")
-        if not self.matches(arg):
-            raise AssertionError(
-                f"<{self.value}> does not apply to {type(arg).__name__}."
-            )
+        for entry in cls:
+            match entry:
+                case Identifier.SEQUENCE if isinstance(arg, str):
+                    continue
+                case _ if isinstance(arg, entry.kind):
+                    return entry
+                # Tables can expose native column dtypes without interchange.
+                case Identifier.TABLE if (
+                    isinstance(arg, HasDTypes)
+                    and not isinstance(arg, HasDType)
+                    and (not isinstance(arg, HasShape) or len(arg.shape) == 2)
+                ):
+                    return entry
+        return None
 
 
 @decorator  # pyrefly: ignore[bad-argument-type]

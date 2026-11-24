@@ -36,15 +36,17 @@ INDENTATION = " " * INDENT
 
 
 def test_identifier_lookup() -> None:
-    r"""Infer identifiers from object types."""
+    r"""Look up labels through the constructor and classify objects through `get`."""
     assert Identifier("mapping") is Identifier.MAPPING
-    assert Identifier.get("<mapping>") is None
+    assert Identifier.get("mapping") is None
     assert Identifier.get("custom label") is None
     assert Identifier.get([1]) is Identifier.SEQUENCE
     assert Identifier.get(object()) is None
     assert repr_compact(object(), recursive=True) == "object()"
     with pytest.raises(ValueError, match="not a valid Identifier"):
         Identifier("<mapping>")
+    with pytest.raises(ValueError, match="not a valid Identifier"):
+        Identifier([1])
 
 
 def test_pprint_types_and_functions() -> None:
@@ -63,28 +65,28 @@ def test_pprint_types_and_functions() -> None:
         assert formatter(len, identifier="custom") == "<custom><built-in function len>"
 
 
-def test_sequence_identifier_excludes_strings() -> None:
-    r"""Use the sequence identifier for containers, excluding strings."""
-    Identifier.SEQUENCE.validate([1])
-    with pytest.raises(AssertionError, match="excludes strings"):
-        Identifier.SEQUENCE.validate("text")
-
-
 def test_identifier_overlapping_categories() -> None:
-    r"""Validate categories independently of default dispatch order."""
+    r"""Use the first matching category for objects that match several."""
 
     @dataclass
     class MappingDataclass(dict):
         r"""A mapping that also matches the dataclass protocol."""
 
-    obj = MappingDataclass()
-    assert Identifier.get(obj) is Identifier.DATACLASS
-    Identifier.MAPPING.validate(obj)
+    assert Identifier.get(MappingDataclass()) is Identifier.DATACLASS
 
 
 @pytest.mark.parametrize(
     ("identifier", "label"),
-    [("custom", "<custom>"), ("déjà_vu", "<déjà_vu>"), ("", ""), (None, "")],
+    [
+        ("custom", "<custom>"),
+        ("déjà_vu", "<déjà_vu>"),
+        (" custom label ", "< custom label >"),
+        ("<custom>", "<<custom>>"),
+        ("2,3", "<2,3>"),
+        (Identifier.MAPPING, "<mapping>"),
+        ("", ""),
+        (None, ""),
+    ],
 )
 def test_custom_identifier(identifier: str | None, label: str) -> None:
     r"""Display custom identifiers with angle brackets and omit empty labels."""
@@ -98,13 +100,6 @@ def test_custom_identifier(identifier: str | None, label: str) -> None:
     )
 
 
-@pytest.mark.parametrize("identifier", ["<custom>", "custom label", "2,3", "<>"])
-def test_invalid_custom_identifier(identifier: str) -> None:
-    r"""Reject labels that fail the Python identifier syntax."""
-    with pytest.raises(ValueError, match="Invalid identifier"):
-        repr_object([1], identifier=identifier)
-
-
 @dataclass
 class ExampleDataclass:
     r"""Example Dataclass."""
@@ -114,11 +109,15 @@ class ExampleDataclass:
     c: float
 
 
-def test_identifier_for_wrapped_payload() -> None:
-    r"""Select the formatter from the payload and the label from the wrapper."""
+@pytest.mark.parametrize(
+    ("identifier", "expected"),
+    [(None, "ExampleDataclass<dataclass>(1)"), ("", "ExampleDataclass(1)")],
+)
+def test_identifier_for_wrapped_payload(identifier: str | None, expected: str) -> None:
+    r"""Infer the label from the wrapper unless the caller supplies one."""
     wrapper = ExampleDataclass(2, "ignored", 3.0)
-    result = repr_object([1], wrapped=wrapper, linebreaks=False)
-    assert result == "ExampleDataclass<dataclass>(1)"
+    actual = repr_object([1], wrapped=wrapper, linebreaks=False, identifier=identifier)
+    assert actual == expected
 
 
 class ExampleNamedTuple(NamedTuple):
