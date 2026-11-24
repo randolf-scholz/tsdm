@@ -5,9 +5,9 @@ import logging
 import pandas as pd
 import pytest
 import torch
+from pretrained import LinODEnet
 
 from tsdm.encoders import FittableEncoder
-from tsdm.pretrained import LinODEnet
 
 __logger__ = logging.getLogger(__name__)
 
