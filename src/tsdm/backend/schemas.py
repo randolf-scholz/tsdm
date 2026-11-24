@@ -1,7 +1,6 @@
 r"""Callback protocols for TSDM."""
 
 __all__ = [
-    "BoundaryInformation",
     "SelectOutliersProto",
     "RemoveOutliersProto",
     "StripWhitespaceProto",
@@ -24,7 +23,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable as Fn, Mapping
-from typing import Any, Protocol, TypedDict, overload
+from typing import Any, Protocol, overload
 
 from numpy.typing import ArrayLike
 
@@ -121,15 +120,6 @@ class FullLikeProto[T](Protocol):  # T
     r"""Callback protocol for the `full_like` function."""
 
     def __call__(self, x: T, /, *, fill_value: Any) -> T: ...
-
-
-class BoundaryInformation(TypedDict):
-    r"""Bounds for one variable; `None` leaves a side unbounded."""
-
-    lower_bound: float | None
-    upper_bound: float | None
-    lower_inclusive: bool | None
-    upper_inclusive: bool | None
 
 
 class SelectOutliersProto[ArrayT, TableT, MaskT = ArrayT](Protocol):

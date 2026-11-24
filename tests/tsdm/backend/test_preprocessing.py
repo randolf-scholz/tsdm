@@ -9,7 +9,6 @@ import pyarrow as pa
 import pytest
 
 import tsdm.backend as B
-from tsdm.backend.schemas import BoundaryInformation
 
 type OutlierInput = (
     pa.Array
@@ -22,18 +21,19 @@ type OutlierInput = (
 )
 type Expected = list[int | None] | dict[str, list[int | None]]
 type OutlierMask = list[bool] | dict[str, list[bool]]
+type OutlierBounds = Mapping[str, float | bool | None]
 
 FIXED_DATA: dict[str, list[int | None]] = {
     "first": [-1, 0, 1, 2, 3, None],
     "second": [0, -3, 0, 3, 3, None],
 }
-SERIES_LIMITS: BoundaryInformation = {
+SERIES_LIMITS: OutlierBounds = {
     "lower_bound": 0,
     "upper_bound": 2,
     "lower_inclusive": True,
     "upper_inclusive": True,
 }
-TABLE_LIMITS: dict[str, BoundaryInformation] = {
+TABLE_LIMITS: dict[str, OutlierBounds] = {
     "first": SERIES_LIMITS,
     "second": {
         "lower_bound": -2,
@@ -180,7 +180,7 @@ def _normalize_mask(result: OutlierInput, /) -> OutlierMask:
 @pytest.mark.parametrize("registered", [False, True])
 def test_remove_outliers(
     factory: Callable[[], OutlierInput],
-    limits: BoundaryInformation | Mapping[str, BoundaryInformation],
+    limits: OutlierBounds | Mapping[str, OutlierBounds],
     expected: Expected,
     _mask: OutlierMask,
     result_type: type[OutlierInput],
@@ -202,7 +202,7 @@ def test_remove_outliers(
 @pytest.mark.parametrize("registered", [False, True])
 def test_select_outliers(
     factory: Callable[[], OutlierInput],
-    limits: BoundaryInformation | Mapping[str, BoundaryInformation],
+    limits: OutlierBounds | Mapping[str, OutlierBounds],
     _expected: Expected,
     mask: OutlierMask,
     result_type: type[OutlierInput],
