@@ -17,7 +17,10 @@ from torch import Tensor, nn
 
 
 class NN_Metric(Protocol):
-    r"""Protocol for a PyTorch-style loss module with a `forward` method."""
+    r"""Protocol for a PyTorch-style loss module with a `forward` method.
+
+    Torch defaults to predictions first, targets second (see `nn.functional.cross_entropy`)
+    """
 
     def forward(self, predictions: Tensor, targets: Tensor, /) -> Tensor: ...
 
