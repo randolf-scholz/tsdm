@@ -1,7 +1,6 @@
 r"""Box-Cox encoder."""
 
 __all__ = [
-    "ROOT_3",
     # Classes
     "BoxCoxEncoder",
     "LogitBoxCoxEncoder",
@@ -14,7 +13,6 @@ __all__ = [
     "construct_wasserstein_loss_logit_normal",
 ]
 
-import math
 import warnings
 from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
@@ -28,44 +26,71 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.constants import UNDEFINED
-from tsdm.pprint import pprint_repr
 from tsdm.types import SupportsArrayUfunc
+from tsdm.utils import pretty_repr
 
 from .base import FittableEncoder, StaticEncoder
 
-ROOT_3: Final[float] = math.sqrt(3)
+_ROOT_3: Final[float] = 1.7320508075688772  # sqrt(3)
 
 
 def construct_wasserstein_loss_boxcox_uniform(
     x: NDArray,
     /,
     *,
-    lower: float = -ROOT_3,
-    upper: float = +ROOT_3,
+    lower: float = -_ROOT_3,
+    upper: float = +_ROOT_3,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-    r"""Construct the loss for the Uniform distribution.
+    r"""Construct a squared Wasserstein-2 loss against $p = \op{Uniform}([a, b])$.
 
-    Given an empirical distribution $x$, we assume $x$ is transformed by Box-Cox transform
-    $y(c) = \log(x+c)$ and subsequently normalized $z(c) = (y - μ) / σ$,
-    where $μ$ and $σ$ are the mean and standard deviation of $y$.
+    $$ ℒ(c) = W₂²(p, q̃_c^\emp) = ∫₀¹ \abs{F⁻¹(t) - G_c⁻¹(t)}² \dd{t} $$
+
+    After excluding NaNs, let $x₁ < ⋯ < x_K$ be the distinct observations with
+    relative frequencies $αₖ = nₖ/N$ and cumulative masses $tₖ = ∑ⱼ₌₁ᵏ αⱼ$.
+    The empirical measure is $q^\emp = ∑ₖ αₖ δ_{xₖ}$, where $δ_v$ is a unit point
+    mass at $v$. The implementation transforms it to $q̃_c^\emp = ∑ₖ αₖ δ_{zₖ(c)}$:
+
+    $$\begin{aligned}
+        uₖ(c) &= \log(xₖ+c) \\
+        zₖ(c) &= \frac{σ}{s(c)}(uₖ(c)-m(c)+μ) \\
+        m(c) &= K⁻¹∑ₖ uₖ(c)        &  s(c)² &= K⁻¹∑ₖ \abs{uₖ(c)-m(c)}²
+    \end{aligned}$$
+
+    The moments weight unique values equally, although the loss retains their
+    frequencies. Also, adding $μ$ before scaling gives mean $μσ/s(c)$ over unique
+    values, rather than $μ$; repeated observations can further change the moments.
+
+    Here, $F⁻¹$ and $G_c⁻¹$ are the target and transformed empirical quantiles.
+    Since $G_c⁻¹(t) = zₖ(c)$ on $(tₖ₋₁, tₖ]$, splitting the integral gives
+
+    $$\begin{aligned}
+        βₖ &= ∫_{tₖ₋₁}^{tₖ} F⁻¹(t) \dd{t}, & Bₖ &= -2βₖ/αₖ \\
+        C &= ∫₀¹ F⁻¹(t)² \dd{t}, & ℒ(c) &= ∑ₖ αₖ[zₖ(c)²+Bₖzₖ(c)+C]
+    \end{aligned}$$
+
+    For the uniform target, $H′ = F⁻¹$ and the coefficients are
+
+    $$\begin{aligned}
+        F⁻¹(t) &= a+(b-a)t, & H(t) &= at+½(b-a)t² \\
+        βₖ &= H(tₖ)-H(tₖ₋₁), & C &= ⅓(a²+ab+b²) = μ²+σ² \\
+        μ &= ½(a+b), & σ &= (b-a)/\sqrt{12} \\
+        a &= μ-\sqrt{3}σ, & b &= μ+\sqrt{3}σ
+    \end{aligned}$$
+
+    Args:
+        x: Observations of any shape; NaNs are excluded. At least two distinct,
+            finite values are required. Offsets must give finite $\log(xₖ+c)$ and
+            $s(c) > 0$, with every $xₖ+c > 0$.
+        lower: Target lower endpoint $a$; must be below `upper`.
+        upper: Target upper endpoint $b$; defaults give $μ = 0$, $σ = 1$.
 
     Returns:
-        Callable[[NDArray], NDArray]: The loss function that maps c to the squared
-            Wasserstein-2 loss between $z(c)$ and Uniform distribution with given mean and std.
-
-    .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]  \\
-        F⁻¹(q) &= a + (b-a)q                                         \\
-        β &= ∫ F⁻¹(q)dq = aq + ½(b-a)q²                              \\
-        C &= ∫₀¹ F⁻¹(q)² dq = ⅓(a² + ab + b²)
-
-    Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&\sqrt{12}}⋅\bmat{μ\\σ}$
-    Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/\sqrt{12}}$.
+        A callable evaluating $ℒ(c)$ elementwise, with the same shape as `c`.
     """
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
-        if (lower, upper) == (-ROOT_3, +ROOT_3):
-            return ROOT_3 * q * (q - 1)
+        if (lower, upper) == (-_ROOT_3, +_ROOT_3):
+            return _ROOT_3 * q * (q - 1)
         return lower * q + (upper - lower) * q**2 / 2
 
     a = lower
@@ -78,7 +103,7 @@ def construct_wasserstein_loss_boxcox_uniform(
     μ = (b + a) / 2
     σ = abs(b - a) / np.sqrt(12)
     B = -2 * (β / α)
-    C = 1.0 if (a, b) == (-ROOT_3, +ROOT_3) else (a**2 + a * b + b**2) / 3
+    C = 1.0 if (a, b) == (-_ROOT_3, +_ROOT_3) else (a**2 + a * b + b**2) / 3
 
     def fun(c: NDArray[np.float64]) -> NDArray[np.float64]:
         u = np.log(np.add.outer(c, unique))
@@ -94,22 +119,38 @@ def construct_wasserstein_loss_boxcox_uniform(
 def construct_wasserstein_loss_boxcox_normal(
     x: NDArray, /, *, loc: float = 0.0, scale: float = 1.0
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-    r"""Constructs the Wasserstein-2 loss.
+    r"""Construct a squared Wasserstein-2 loss against $p = \op{Normal}(μ, σ²)$.
 
-    Given an empirical distribution $x$, we assume $x$ is transformed by Box-Cox transform
-    $y(c) = \log(x+c)$ and subsequently normalized $z(c) = (y - μ) / σ$,
-    where $μ$ and $σ$ are the mean and standard deviation of $y$.
+    $$ ℒ(c) = W₂²(p, q̃_c^\emp) = ∫₀¹ [F⁻¹(t)-G_c⁻¹(t)]² \dd{t} $$
+
+    Use the empirical masses, cumulative masses, and normalization from
+    [the uniform loss][tsdm.encoders.box_cox.construct_wasserstein_loss_boxcox_uniform]:
+    $uₖ(c) = \log(xₖ+c)$ and $zₖ(c) = [uₖ(c)-m(c)+μ]σ/s(c)$.
+    The moments $m(c), s(c)$ weight unique values equally; the loss uses observation
+    frequencies $αₖ$. The mean over unique values is $μσ/s(c)$, rather than $μ$.
+
+    With $H′ = F⁻¹$, the normal target gives
+
+    $$\begin{aligned}
+        F⁻¹(t) &= μ+σ\sqrt{2}\erf⁻¹(2t-1) \\
+        h(t) &= \exp\left(-[\erf⁻¹(2t-1)]²\right) \\
+        H(t) &= μt-\frac{σ}{\sqrt{2π}}h(t) \\
+        βₖ &= H(tₖ)-H(tₖ₋₁), & Bₖ &= -2βₖ/αₖ \\
+        C &= μ²+σ², & ℒ(c) &= ∑ₖ αₖ[zₖ(c)²+Bₖzₖ(c)+C]
+    \end{aligned}$$
+
+    Here $\erf⁻¹$ is the inverse error function. By continuity, $h(0) = h(1) = 0$,
+    so $βₖ$ stays finite despite the divergent endpoint quantiles.
+
+    Args:
+        x: Observations of any shape; NaNs are excluded. At least two distinct,
+            finite values are required. Offsets must give finite $\log(xₖ+c)$ and
+            $s(c) > 0$, with every $xₖ+c > 0$.
+        loc: Target mean $μ$; defaults to zero.
+        scale: Target standard deviation $σ > 0$; defaults to one.
 
     Returns:
-        Callable[[NDArray], NDArray]: The loss function that maps c to the squared
-            Wasserstein-2 loss between $z(c)$ and $N(μ,σ²)$.
-
-    .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]      \\
-        F⁻¹(q) &= μ + σ√2\erf⁻¹(2q-1)                                    \\
-        β &= ∫ₐᵇ F⁻¹(q)dq                                                \\
-          &= (b-a)μ - σ/√(2PI) (e^{-\erf⁻¹(2b-1)²} - e^{-\erf⁻¹(2a-1)²}  \\
-        C &= ∫₀¹ F⁻¹(q)² dq = μ² + σ²
+        A callable evaluating $ℒ(c)$ elementwise, with the same shape as `c`.
     """
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -144,33 +185,38 @@ def construct_wasserstein_loss_logit_uniform(
     x: NDArray,
     /,
     *,
-    lower: float = -ROOT_3,
-    upper: float = +ROOT_3,
+    lower: float = -_ROOT_3,
+    upper: float = +_ROOT_3,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-    r"""Construct the loss for the Uniform distribution.
+    r"""Construct a squared Wasserstein-2 loss against $p = \op{Uniform}([a, b])$.
 
-    Given an empirical distribution $x$, we assume $x$ is transformed by logit transofrm
-    $y(c) = \log((x+c)/(1-x+c))$ and subsequently normalized: $z(c) = (y - μ) / σ$,
-    where $μ$ and $σ$ are the mean and standard deviation of $y$.
+    $$ ℒ(c) = W₂²(p, q̃_c^\emp) = ∫₀¹ [F⁻¹(t)-G_c⁻¹(t)]² \dd{t} $$
+
+    Use the empirical masses, normalization, and uniform coefficients from
+    [the Box-Cox loss][tsdm.encoders.box_cox.construct_wasserstein_loss_boxcox_uniform],
+    with the offset logit replacing the logarithm:
+
+    $$ uₖ(c) = \log\left(\frac{xₖ+c}{1-xₖ+c}\right) $$
+
+    The implementation uses $zₖ(c) = [uₖ(c)-m(c)+μ]σ/s(c)$, with moments over unique
+    values and observation frequencies in the loss. Its mean over unique values
+    is $μσ/s(c)$, rather than $μ$; repeated observations can further change moments.
+
+    Args:
+        x: Observations of any shape; NaNs are excluded. At least two distinct,
+            finite values are required. Offsets must give finite logarithms and
+            $s(c) > 0$, with $xₖ+c > 0$ and $1-xₖ+c > 0$. For data in $[0, 1]$,
+            any $c > 0$ satisfies the positivity conditions.
+        lower: Target lower endpoint $a$; must be below `upper`.
+        upper: Target upper endpoint $b$; defaults give $μ = 0$, $σ = 1$.
 
     Returns:
-        Callable[[NDArray], NDArray]: The loss function that maps c to the squared
-            Wasserstein-2 loss between $z(c)$ and $N(μ,σ²)$.
-
-    .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² +Bxₖ + C]  \\
-        F⁻¹(q) &= a + (b-a)q                                  \\
-        β &= ∫ F⁻¹(q)dq = aq + ½(b-a)q²                       \\
-        B &= -2(βₖ/αₖ)                                        \\
-        C &= ∫₀¹ F⁻¹(q)² dq = ⅓(a² + ab + b²)
-
-    Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&\sqrt{12}}⋅\bmat{μ\\σ}$
-    Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/\sqrt{12}}$.
+        A callable evaluating $ℒ(c)$ elementwise, with the same shape as `c`.
     """
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
-        if (lower, upper) == (-ROOT_3, +ROOT_3):
-            return ROOT_3 * q * (q - 1)
+        if (lower, upper) == (-_ROOT_3, +_ROOT_3):
+            return _ROOT_3 * q * (q - 1)
         return lower * q + (upper - lower) * q**2 / 2
 
     a = lower
@@ -183,7 +229,7 @@ def construct_wasserstein_loss_logit_uniform(
     μ = (b + a) / 2
     σ = abs(b - a) / np.sqrt(12)
     B = -2 * (β / α)
-    C = 1.0 if (a, b) == (-ROOT_3, +ROOT_3) else (a**2 + a * b + b**2) / 3
+    C = 1.0 if (a, b) == (-_ROOT_3, +_ROOT_3) else (a**2 + a * b + b**2) / 3
 
     def fun(c: NDArray[np.float64]) -> NDArray[np.float64]:
         u = np.log(np.add.outer(c, unique) / (1 + np.add.outer(c, -unique)))
@@ -199,22 +245,30 @@ def construct_wasserstein_loss_logit_uniform(
 def construct_wasserstein_loss_logit_normal(
     x: NDArray, /, *, loc: float = 0.0, scale: float = 1.0
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-    r"""Construct the loss for the Normal distribution.
+    r"""Construct a squared Wasserstein-2 loss against $p = \op{Normal}(μ, σ²)$.
 
-    Given an empirical distribution $x$, we assume $x$ is transformed by logit transofrm
-    $y(c) = \log((x+c)/(1-x+c))$ and subsequently normalized: $z(c) = (y - μ) / σ$,
-    where $μ$ and $σ$ are the mean and standard deviation of $y$.
+    $$ ℒ(c) = W₂²(p, q̃_c^\emp) = ∫₀¹ [F⁻¹(t)-G_c⁻¹(t)]² \dd{t} $$
+
+    Use the empirical masses, normalization, and normal coefficients from
+    [the Box-Cox loss][tsdm.encoders.box_cox.construct_wasserstein_loss_boxcox_normal],
+    with the offset logit replacing the logarithm:
+
+    $$ uₖ(c) = \log\left(\frac{xₖ+c}{1-xₖ+c}\right) $$
+
+    The implementation uses $zₖ(c) = [uₖ(c)-m(c)+μ]σ/s(c)$, with moments over unique
+    values and observation frequencies in the loss. Its mean over unique values
+    is $μσ/s(c)$, rather than $μ$; repeated observations can further change moments.
+
+    Args:
+        x: Observations of any shape; NaNs are excluded. At least two distinct,
+            finite values are required. Offsets must give finite logarithms and
+            $s(c) > 0$, with $xₖ+c > 0$ and $1-xₖ+c > 0$. For data in $[0, 1]$,
+            any $c > 0$ satisfies the positivity conditions.
+        loc: Target mean $μ$; defaults to zero.
+        scale: Target standard deviation $σ > 0$; defaults to one.
 
     Returns:
-        Callable[[NDArray], NDArray]: The loss function that maps c to the squared
-            Wasserstein-2 loss between $z(c)$ and $N(μ,σ²)$.
-
-    .. math::
-        W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]      \\
-        F⁻¹(q) &= μ + σ√2\erf⁻¹(2q-1)                                    \\
-        β &= ∫ₐᵇ F⁻¹(q)dq                                                \\
-          &= (b-a)μ - σ/√(2PI) (e^{-\erf⁻¹(2b-1)²} - e^{-\erf⁻¹(2a-1)²}  \\
-        C &= ∫₀¹ F⁻¹(q)² dq = μ² + σ²
+        A callable evaluating $ℒ(c)$ elementwise, with the same shape as `c`.
     """
 
     def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -243,22 +297,30 @@ def construct_wasserstein_loss_logit_normal(
     return fun
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
-    r"""Encode unbounded non-negative data with a logarithmic transform.
+    r"""Encode nonnegative data with a fitted offset $c$ that makes $x+c > 0$.
 
-    .. math::
-        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log(x+c)            \\
-        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(eʸ-c, 0)
+    $$ \op{encode}_c(x) = \log(x+c), \qquad x ∈ [0, ∞) $$
 
-    We consider multiple ideas for how to fit the parameter $c$
+    Decoding clips negative reconstructions to zero:
 
-    1. Half the minimal non-zero value: ``c = min(data[data>0])/2``
-    2. Square of the first quartile divided by the third quartile (Stahle 2002)
-    3. Value which minimizes the Wasserstein distance to
-        - a mean-0, variance-1 uniform distribution
-        - a mean-0, variance-1 normal distribution
+    $$ \op{decode}_c(y) = \max(eʸ-c, 0) $$
+
+    NaNs are excluded during fitting and propagate through encoding and decoding.
+    With $Q₁, Q₃$ denoting the non-NaN data's first and third quartiles:
+
+    1. `fixed`: use `offset_guess` as $c$.
+    2. `minimum` (default): use $c = ½\min\set{xᵢ : xᵢ > 0}$.
+       At least one positive observation is required.
+    3. `quartile`: use $c = (Q₁/Q₃)²$. The denominator must be positive.
+    4. `match-uniform` or `match-normal`: minimize the squared Wasserstein-2 loss
+       of the centered, rescaled data against a uniform or normal target with
+       mean zero and variance one.
+       At least two distinct, finite observations are required.
+
+    Matching centers and rescales only during fitting; encoding returns $\log(x+c)$.
     """
 
     class METHOD(StrEnum):
@@ -373,24 +435,32 @@ class BoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         self.offset = float(np.asarray(offset).item())
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True, init=False)
 class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
-    r"""Encode data from the interval [0,1] with a logit transform.
+    r"""Encode data from the unit interval with a fitted offset logit.
 
-    An offset c is added/subtracted to avoid log(0) and division by zero.
+    $$ \op{encode}_c(x) = \log\left(\frac{x+c}{1-x+c}\right), \qquad x ∈ [0, 1] $$
 
-    .. math::
-        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log((x + c) / (1 - (x - c)))  \\
-        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(eʸ-c, 0)
+    A positive offset $c > 0$ keeps endpoint logarithms finite.
+    Decoding clips reconstructions to $[0, 1]$:
 
-    We consider multiple ideas for how to fit the parameter $c$
+    $$ \op{decode}_c(y) = \clip\left(\frac{eʸ+(eʸ-1)c}{1+eʸ}, 0, 1\right) $$
 
-    1. Half the minimal non-zero value: ``c = min(data[data>0])/2``
-    2. Square of the first quartile divided by the third quartile (Stahle 2002)
-    3. Value which minimizes the Wasserstein distance to
-        - a mean-0, variance-1 uniform distribution
-        - a mean-0, variance-1 normal distribution
+    NaNs are excluded during fitting and propagate through encoding and decoding.
+    With $Q₁, Q₃$ denoting the non-NaN data's first and third quartiles:
+
+    1. `fixed`: use `offset_guess` as $c$.
+    2. `minimum`: use $c = ¼[\min\set{xᵢ : xᵢ > 0} + \min\set{1-xᵢ : xᵢ < 1}]$.
+       At least one observation above zero and one below one are required.
+    3. `quartile`: use $c = ½[(Q₁/Q₃)² + ((1-Q₃)/(1-Q₁))²]$, the average of
+       the squared quartile ratios for the data and its reflection $1-x$.
+       Both denominators must be positive.
+    4. `match-uniform` (default) or `match-normal`: minimize the squared Wasserstein-2
+       loss of the centered, rescaled data against a uniform or normal target with
+       mean zero and variance one. At least two distinct, finite values are required.
+
+    Matching centers and rescales only during fitting; encoding returns the logit.
     """
 
     class METHOD(StrEnum):
@@ -509,14 +579,24 @@ class LogitBoxCoxEncoder[T: SupportsArrayUfunc](FittableEncoder[T, T]):
         self.validate_params()
 
 
-@pprint_repr
+@pretty_repr
 @dataclass(slots=True)
 class LogEncoder(FittableEncoder[NDArray, NDArray]):
-    r"""Encode data on a logarithmic scale.
+    r"""Encode nonnegative data using base-two logarithms.
 
-    Values below the threshold are replaced with a constant value to avoid -inf and NaN values.
+    $$ \op{encode}(x) = \begin{cases}\log₂(x)& x>0 \\ \log₂(τ/2)& x≤0\end{cases} $$
 
-    Uses base 2 by default for lower numerical error and fast computation.
+    For finite fitting data, $τ$ (`threshold`) is the smallest positive observation;
+    at least one positive observation is required. Zeros are represented by
+    $\log₂(τ/2)$ (`replacement`), one unit below the smallest observed logarithm.
+
+    Decoding exponentiates and maps reconstructions below the threshold to zero:
+
+    $$ \op{decode}(y) = \begin{cases} 2ʸ & 2ʸ ≥ τ \\ 0 & 2ʸ < τ \end{cases} $$
+
+    Negative fitting values are rejected. NaNs propagate through encoding and
+    decoding. They are not excluded during fitting, so a NaN in the fitting data
+    also makes the threshold and replacement NaN.
     """
 
     threshold: NDArray = UNDEFINED
@@ -544,7 +624,15 @@ class LogEncoder(FittableEncoder[NDArray, NDArray]):
 
 
 class LogitEncoder[T: SupportsArrayUfunc](StaticEncoder[T, T]):
-    r"""Logit encoder."""
+    r"""Encode probabilities as log odds, without fitting any parameters.
+
+    $$ \op{encode}(x) = \log\left(\frac{x}{1-x}\right), \qquad x ∈ (0, 1) $$
+
+    Every input must lie strictly between zero and one; endpoints and NaNs are
+    rejected. Decoding applies the logistic function and clips to $[0, 1]$:
+
+    $$ \op{decode}(y) = \clip\left(\frac{1}{1+e⁻ʸ}, 0, 1\right) $$
+    """
 
     def encode[Arr: SupportsArrayUfunc](self, data: Arr, /) -> Arr:
         # NOTE: do not replace with np.any(data <= 0) since it gives wrong results for NaNs.
