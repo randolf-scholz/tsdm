@@ -9,6 +9,7 @@ __all__ = [
     "import_from_url",
 ]
 
+import io
 import logging
 import shutil
 import subprocess
@@ -270,7 +271,7 @@ def import_from_url(
 
 def _download_io(
     url: str,
-    file: FileStream,
+    file: io.Writer[bytes],
     *,
     client: Client | None = None,
     username: str | None = None,

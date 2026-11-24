@@ -13,13 +13,12 @@ __all__ = [
 
 import os
 from collections.abc import Iterable, Mapping
-from io import BytesIO
 from types import EllipsisType
 from typing import IO
 
-type FilePath = str | os.PathLike[str]
+type FilePath = str | os.PathLike[str]  # includes pathlib.Path
 r"""Type alias for strings and path-like objects identifying files."""
-type FileStream = IO[bytes] | BytesIO
+type FileStream = IO[bytes]  # Note: io.BytesIO <: IO[bytes]
 r"""Type alias for binary file-like objects."""
 type Axis = None | int | tuple[int, ...]
 r"""Type alias for a single axis, a tuple of axes, or `None` for all axes."""

@@ -498,12 +498,13 @@ def validate_csv_header(
                 )
 
             position = stream.tell()
-            text_stream = TextIOWrapper(stream, encoding="utf-8-sig", newline="")
             try:
-                reader = csv.reader(text_stream, delimiter=separator, strict=True)
-                actual_columns = next(reader, None)
+                with TextIOWrapper(
+                    stream, encoding="utf-8-sig", newline=""
+                ) as text_stream:
+                    reader = csv.reader(text_stream, delimiter=separator, strict=True)
+                    actual_columns = next(reader, None)
             finally:
-                text_stream.detach()
                 stream.seek(position)
 
     if actual_columns is None:

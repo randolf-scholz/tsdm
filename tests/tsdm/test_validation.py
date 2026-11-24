@@ -80,7 +80,7 @@ def test_validate_csv_header_compressed_stream() -> None:
         BytesIO(gzip.compress(b"a,b\n1,2\n")) as compressed,
         gzip.open(compressed, "rb") as stream,
     ):
-        validate_csv_header(stream, ["a", "b"])
+        validate_csv_header(stream, ["a", "b"])  # pyrefly: ignore[bad-argument-type]
         assert stream.tell() == 0
         assert stream.read() == b"a,b\n1,2\n"
 
