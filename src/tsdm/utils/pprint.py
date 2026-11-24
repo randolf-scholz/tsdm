@@ -62,6 +62,7 @@ __all__ = [
     "repr_object",
     "_repr_sequence",
     "_repr_set",
+    "_repr_table",
     "repr_compact",
     # decorators
     "pretty_dataclass",
@@ -74,18 +75,18 @@ __all__ = [
 
 import dataclasses
 import datetime as dt
-from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
-from enum import Enum
+from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet, Sized
+from enum import StrEnum
 from functools import partial
 from math import prod
 from types import BuiltinFunctionType, FunctionType
-from typing import Any, Final, Protocol, TypedDict, Unpack, cast
-
-from polars import LazyFrame
+from typing import Any, Final, Protocol, Self, TypedDict, Unpack, cast
 
 from tsdm.types import (
     DataclassType,
     HasDevice,
+    HasDType,
+    HasDTypes,
     HasShape,
     NamedTupleType,
     SupportsArray,
@@ -219,33 +220,30 @@ def _repr_number(arg: object, /) -> str | None:
     return None
 
 
-def _get_dtypes(table: object) -> list[object]:
-    match table:
-        case object(dtype=dtype):  # type: ignore
-            # pd.Series, torch.Tensor, np.ndarray
-            return [dtype]
-
+def _get_dtypes(arg: SupportsDataFrame | HasDTypes, /) -> list[object]:
+    r"""Return column dtypes from native metadata or dataframe interchange."""
+    match arg:
         case object(dtypes=dtypes):  # type: ignore
-            # pd.DataFrame, pd.MultiIndex, pl.DataFrame (⚠️ pd.Series also)
             return list(dtypes)
+        case SupportsDataFrame():
+            frame = arg.__dataframe__()
+            # A protocol dtype is (kind, bit width, format string, endianness).
+            dtypes = (column.dtype for column in frame.get_columns())
+            return [f"{kind.name}{width}" for kind, width, _, _ in dtypes]
+        case _:
+            raise TypeError
 
-        case SupportsDataFrame() as supports_frame:
-            # https://data-apis.org/dataframe-protocol/latest/API.html
-            frame = supports_frame.__dataframe__()
-            # Dtype = Tuple[DtypeKind, int, str, str]
-            dypes = [col.dtype for col in frame.get_columns()]
-            # use f"{kind.name}{size} for each col
-            return [f"{kind.name}{size}" for kind, size, _, _ in dypes]
 
+def _get_dtype(arg: SupportsArray, /) -> object:
+    r"""Return the dtype of a homogeneous array."""
+    match arg:
+        case object(dtype=dtype):  # type: ignore
+            return dtype
         case object(type=dtype):  # type: ignore
             # pa.Array
-            return [dtype]
-
-        case SupportsArray() as array:
-            return [array.__array__().dtype]
-
+            return dtype
         case _:
-            raise TypeError(f"Unsupported object type {type(table)}.")
+            return arg.__array__().dtype
 
 
 def _repr_dtype(dtype: object, /) -> str:
@@ -818,49 +816,85 @@ def _repr_namedtuple(
     )
 
 
-def _repr_array(
-    obj: SupportsArray | LazyFrame,
+def _repr_table(
+    obj: SupportsDataFrame | HasDTypes,
     /,
     *,
     modifier: str | None = None,
     identifier: str | None = None,
     title: str | None = None,
-    maxitems: int | None = MAXITEMS_INLINE,  # max number of dtypes to show
+    maxitems: int | None = MAXITEMS_INLINE,
     show_device: bool = False,
     **_: Any,
 ) -> str:
-    r"""Summarize an array or lazy polars frame by its type, shape, and dtypes.
+    r"""Summarize a table's shape and column dtypes without formatting its cells.
 
-    Single-element arrays also show their value. Empty and single-element arrays
-    omit dtypes. Lazy frames show an unknown row count without collecting data.
+    Supports pandas and Polars dataframes, Polars lazy frames, PyArrow tables,
+    and objects that provide the `__dataframe__` interchange protocol.
+    Column dtypes determine the width. The row count comes from `.shape` or
+    `len()` when available, and displays as `*` otherwise.
+
+    Examples:
+        ```pycon
+        >>> from types import SimpleNamespace
+        >>> import pandas as pd
+        >>> import polars as pl
+        >>> import pyarrow as pa
+        >>> data = {"name": ["foo", "bar"], "value": [0.2, 0.3], "ID": [1, 2]}
+        >>> _repr_table(pd.DataFrame(data))
+        'DataFrame<2,3>[str, float64, int64]'
+        >>> _repr_table(pl.DataFrame(data))
+        'DataFrame<2,3>[String, Float64, Int64]'
+        >>> _repr_table(pl.LazyFrame(data))
+        'LazyFrame<*,3>[String, Float64, Int64]'
+        >>> _repr_table(pa.table(data))
+        'Table<2,3>[STRING8, FLOAT64, INT64]'
+        >>> view = SimpleNamespace(__dataframe__=pa.table(data).__dataframe__)
+        >>> _repr_table(view)
+        'SimpleNamespace<*,3>[STRING8, FLOAT64, INT64]'
+
+        ```
     """
+    dtypes = _get_dtypes(obj)
+
+    match obj:
+        case object(shape=tuple(sizes)):  # type: ignore
+            num_rows, num_cols = sizes
+            assert num_cols == len(dtypes)
+        case _:
+            num_rows = len(obj) if isinstance(obj, Sized) else None
+            num_cols = len(dtypes)
+    shape = f"{'*' if num_rows is None else num_rows},{num_cols}"
+
     maxitems = MAXITEMS_INLINE if maxitems is None else maxitems
+    labels = [_repr_dtype(dtype) for dtype in dtypes]
+    if len(set(labels)) <= 1:
+        labels = labels[:1]
+    if len(labels) > maxitems:
+        head = maxitems // 2
+        tail = maxitems - head
+        labels = [*labels[:head], "...", *labels[len(labels) - tail :]]
 
-    # set type
-    cls: type = obj.__class__
+    if modifier is None and show_device and isinstance(obj, HasDevice):
+        modifier = str(obj.device)
+    title = type(obj).__name__ if title is None else title
+    modifier_repr = f"@{modifier}" if modifier is not None else ""
+    shape_repr = _format_identifier(shape if identifier is None else identifier)
+    return f"{title}{modifier_repr}{shape_repr}[{', '.join(labels)}]"
 
-    # get the type-repr
-    type_repr = title if title is not None else cls.__name__
 
-    if isinstance(obj, LazyFrame):
-        schema = obj.collect_schema()
-        shape_repr = _format_identifier(
-            f"*,{len(schema)}" if identifier is None else identifier
-        )
-        vals = [_repr_dtype(dtype) for dtype in schema.values()]
-
-        if len(set(vals)) <= 1:
-            vals = vals[:1]
-        if len(vals) > maxitems:
-            vals = [*vals[: maxitems // 2], "...", *vals[-maxitems // 2 :]]
-
-        dtype_repr = str(vals).replace("'", "")
-        modifier_repr = f"@{modifier}" if modifier is not None else ""
-        return f"{type_repr}{modifier_repr}{shape_repr}{dtype_repr}"
-
-    # set identifier = shape
-    # if multidimensional: <dim1, dim2, ...>
-    # if plain scalar: none
+def _repr_array(
+    obj: SupportsArray,
+    /,
+    *,
+    modifier: str | None = None,
+    identifier: str | None = None,
+    title: str | None = None,
+    show_device: bool = False,
+    **_: Any,
+) -> str:
+    r"""Summarize a homogeneous array by shape, dtype, or its only value."""
+    type_repr = type(obj).__name__ if title is None else title
     shape: tuple[int, ...] = (
         tuple(obj.shape) if isinstance(obj, HasShape) else tuple(obj.__array__().shape)
     )
@@ -868,7 +902,6 @@ def _repr_array(
         identifier = ",".join(str(dim) for dim in shape)
     shape_repr = _format_identifier(identifier)
 
-    # set modifier = device
     if not show_device:
         device_repr = ""
     else:
@@ -878,53 +911,29 @@ def _repr_array(
             case _:
                 device_repr = f"@{modifier}" if modifier is not None else ""
 
-    # get the dtype-repr
-    # Table-like: [dtype1, dtype2, ...]
-    # Tensor-like: [dtype]
-    vals = [_repr_dtype(dtype) for dtype in _get_dtypes(obj)]
-
-    # if all vals are the same, show only one
-    if len(set(vals)) <= 1:
-        vals = vals[:1]
-
-    # truncate the dtype-repr
-    if len(vals) > maxitems:
-        vals = [*vals[: maxitems // 2], "...", *vals[-maxitems // 2 :]]
-
-    match vals, prod(shape):
-        case _, 0 | 1:
-            # skip for scalar
-            dtype_repr = ""
+    match prod(shape):
+        case 0:
+            suffix = ""
+        case 1:
+            value = (
+                obj.item() if isinstance(obj, SupportsItem) else obj.__array__().item()
+            )
+            suffix = f"({value!s})"
         case _:
-            dtype_repr = str(vals).replace("'", "")
-
-    # determine the value-repr (show for scalars, otherwise hide)
-    match prod(shape), obj:
-        case 1, SupportsItem() as x:
-            value_repr = f"({x.item()!s})"
-        case 1, SupportsArray() as array:
-            value_repr = f"({array.__array__().item()!s})"
-        case 1, _:
-            raise TypeError(f"Unsupported object type {type(obj)}.")
-        case _:
-            value_repr = ""
-
-    # Tensor@device<shape>dtype
-    # Table@device<shape>[dtype1, dtype1, ...]
-    # Scalar@device<shape>(value)
-    # PlainScalar@device(value)
-    return f"{type_repr}{device_repr}{shape_repr}{dtype_repr}{value_repr}"
+            suffix = f"[{_repr_dtype(_get_dtype(obj))}]"
+    return f"{type_repr}{device_repr}{shape_repr}{suffix}"
 
 
-def _repr_type(obj: type, /, identifier: str | None = None, **_: Any) -> str:
+def _repr_type(obj: type, /, *, identifier: str | None = None, **_: Any) -> str:
     r"""Return a compact representation of a type."""
-    label = _format_identifier(identifier)
-    return f"{obj.__name__}{label}"
+    return f"{obj.__name__}{_format_identifier(identifier)}"
 
 
-def _repr_function(obj: FunctionType, /, **_: Any) -> str:
-    label = _format_identifier(obj)
-    return f"{obj.__name__}{label}"
+def _repr_function(
+    obj: FunctionType, /, *, identifier: str | None = None, **_: Any
+) -> str:
+    r"""Return a function's name and any supplied identifier."""
+    return f"{obj.__name__}{_format_identifier(identifier)}"
 
 
 def repr_compact(
@@ -988,66 +997,81 @@ def repr_object(
     if identifier is not None:
         kwargs["identifier"] = identifier
 
-    match obj:
-        case _ if issubclass(type(obj), type):
-            return f"{cast('type', obj).__name__}{label}"
+    if type(obj) is BuiltinFunctionType:
+        return f"{label}{obj!r}"
+    if (scalar_repr := _repr_python_scalar(obj)) is not None:
+        return f"{label}{scalar_repr}"
+    if (entry := Identifier.get(obj)) is not None:
+        return entry.formatter(obj, **kwargs)
 
-        # functions like len, map, etc.
-        case _ if type(obj) is BuiltinFunctionType:
-            return f"{label}{obj!r}"
-
-        case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
-            return f"{label}{scalar_repr}"
-
-        case LazyFrame() as frame:
-            return _repr_array(frame, **kwargs)
-        case SupportsArray() as array:
-            return _repr_array(array, **kwargs)
-        case DataclassType() as dtc:
-            return _repr_dataclass(dtc, **kwargs)
-        case NamedTupleType() as ntuple:
-            return _repr_namedtuple(ntuple, **kwargs)
-        case Mapping() as mapping:
-            return _repr_mapping(mapping, **kwargs)
-        case Sequence() as sequence:
-            return _repr_sequence(sequence, **kwargs)
-        case AbstractSet() as set_:
-            return _repr_set(set_, **kwargs)
-        case _:
-            if fallback is repr_compact:
-                return repr_compact(obj, **kwargs)
-            # avoid recursion:
-            if fallback is repr:
-                return f"{label}{object.__repr__(obj)}"
-            return f"{label}{fallback(obj)}"
+    if fallback is repr_compact:
+        return repr_compact(obj, **kwargs)
+    # Avoid calling an unsupported object's repr method again.
+    if fallback is repr:
+        return f"{label}{object.__repr__(obj)}"
+    return f"{label}{fallback(obj)}"
 
 
-class Identifier(Enum, tuple[type, str, ReprProtocol]):
-    r"""Runtime types in the order used for identifier lookup."""
+class Identifier(StrEnum):
+    r"""Labels, runtime types, and formatters in dispatch order."""
 
-    TYPE = (type, "type", _repr_type)
-    FUNCTION = (FunctionType, "function", _repr_function)
-    ARRAY = (SupportsArray, "array", _repr_array)
-    TABLE = (SupportsDataFrame, "table", _repr_array)
-    DATACLASS = (DataclassType, "dataclass", _repr_dataclass)
-    NAMEDTUPLE = (NamedTupleType, "namedtuple", _repr_namedtuple)
-    MAPPING = (Mapping, "mapping", _repr_mapping)
-    SEQUENCE = (Sequence, "sequence", _repr_sequence)
-    SET = (AbstractSet, "set", _repr_set)
+    kind: type
+    formatter: ReprProtocol
+
+    TYPE = type, "type", _repr_type
+    FUNCTION = FunctionType, "function", _repr_function
+    TABLE = SupportsDataFrame, "table", _repr_table
+    ARRAY = SupportsArray, "array", _repr_array
+    DATACLASS = DataclassType, "dataclass", _repr_dataclass
+    NAMEDTUPLE = NamedTupleType, "namedtuple", _repr_namedtuple
+    MAPPING = Mapping, "mapping", _repr_mapping
+    SEQUENCE = Sequence, "sequence", _repr_sequence
+    SET = AbstractSet, "set", _repr_set
+
+    def __new__(cls, kind: type, label: str, formatter: ReprProtocol) -> Self:
+        entry = str.__new__(cls, label)
+        entry._value_ = label
+        entry.kind = kind
+        entry.formatter = formatter
+        return entry
+
+    def matches(self, arg: object, /) -> bool:
+        r"""Check whether this category applies to the object."""
+        if self is Identifier.SEQUENCE and isinstance(arg, str):
+            return False
+        if isinstance(arg, self.kind):
+            return True
+        # Tables can expose native column dtypes without interchange.
+        return (
+            self is Identifier.TABLE
+            and isinstance(arg, HasDTypes)
+            and not isinstance(arg, HasDType)
+            and (not isinstance(arg, HasShape) or len(arg.shape) == 2)
+        )
 
     @classmethod
-    def get(cls, arg: object, /) -> str | None:
-        if isinstance(arg, str):
-            return arg
-        for kind, name in cls:
-            if isinstance(arg, kind):
-                return name
-        return None
+    def get(cls, arg: object, /) -> Self | None:
+        r"""Select the first applicable category."""
+        return next((entry for entry in cls if entry.matches(arg)), None)
 
-    def check(self, arg: object) -> None:
-        parsed = Identifier(arg)
-        if parsed.value[1] != self.value[1]:
-            raise AssertionError
+    @classmethod
+    def _missing_(cls, value: object) -> Self | None:
+        if isinstance(value, str):
+            if value.startswith("<") and value.endswith(">"):
+                return next(
+                    (entry for entry in cls if entry.value == value[1:-1]), None
+                )
+            return None
+        return cls.get(value)
+
+    def validate(self, arg: object) -> None:
+        r"""Raise an assertion error when this category does not apply."""
+        if self is Identifier.SEQUENCE and isinstance(arg, str):
+            raise AssertionError("The <sequence> identifier excludes strings.")
+        if not self.matches(arg):
+            raise AssertionError(
+                f"<{self.value}> does not apply to {type(arg).__name__}."
+            )
 
 
 def _format_identifier(identifier: str | None, /) -> str:
@@ -1059,6 +1083,7 @@ def _format_identifier(identifier: str | None, /) -> str:
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     _repr_array,
+    _repr_table,
     _repr_dataclass,
     _repr_mapping,
     _repr_namedtuple,
@@ -1142,8 +1167,12 @@ def pretty_repr[Cls: type](cls: Cls, /, **kwds: Unpack[ReprOptions]) -> Cls:
         repr_func = _repr_namedtuple
     elif issubclass(cls, Mapping):
         repr_func = _repr_mapping
-    elif issubclass(cls, SupportsArray):  # pyrefly: ignore[bad-argument-type]
-        repr_func = _repr_array
+    elif (
+        issubclass(cls, (SupportsArray, SupportsDataFrame))  # pyrefly: ignore[bad-argument-type]
+        or isinstance(cls, HasDTypes)
+    ):
+        # Some tables can only be distinguished from arrays through instance metadata.
+        repr_func = repr_object
     elif issubclass(cls, Sequence):  # pyrefly: ignore[bad-argument-type]
         repr_func = _repr_sequence
     elif issubclass(cls, AbstractSet):  # pyrefly: ignore[bad-argument-type]
