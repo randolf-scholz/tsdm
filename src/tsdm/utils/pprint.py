@@ -202,32 +202,6 @@ def _repr_number(arg: object, /) -> str | None:
     return None
 
 
-def _get_dtypes(arg: SupportsDataFrame | HasDTypes, /) -> list[object]:
-    r"""Return column dtypes from native metadata or dataframe interchange."""
-    match arg:
-        case object(dtypes=dtypes):  # type: ignore
-            return list(dtypes)
-        case SupportsDataFrame():
-            frame = arg.__dataframe__()
-            # A protocol dtype is (kind, bit width, format string, endianness).
-            dtypes = (column.dtype for column in frame.get_columns())
-            return [f"{kind.name}{width}" for kind, width, _, _ in dtypes]
-        case _:
-            raise TypeError
-
-
-def _get_dtype(arg: SupportsArray, /) -> object:
-    r"""Return the dtype of a homogeneous array."""
-    match arg:
-        case object(dtype=dtype):  # type: ignore
-            return dtype
-        case object(type=dtype):  # type: ignore
-            # pa.Array
-            return dtype
-        case _:
-            return arg.__array__().dtype
-
-
 def _repr_dtype(dtype: object, /) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
@@ -846,32 +820,50 @@ def _repr_table(
 
         ```
     """
-    dtypes = _get_dtypes(obj)
-
-    match obj:
-        case object(shape=tuple(sizes)):  # type: ignore
-            num_rows, num_cols = sizes
-            assert num_cols == len(dtypes)
+    match obj:  # determine dtypes
+        case object(dtypes=native_dtypes):  # type: ignore
+            dtypes = list(native_dtypes)
+        case SupportsDataFrame():
+            frame = obj.__dataframe__()
+            # A protocol dtype is (kind, bit width, format string, endianness).
+            protocol_dtypes = (column.dtype for column in frame.get_columns())
+            dtypes = [f"{kind.name}{width}" for kind, width, _, _ in protocol_dtypes]
         case _:
-            num_rows = len(obj) if isinstance(obj, Sized) else None
-            num_cols = len(dtypes)
-    shape = f"{'*' if num_rows is None else num_rows},{num_cols}"
+            raise TypeError
+
+    num_cols = len(dtypes)
+    match obj:  # determine shape
+        case object(shape=tuple(shape)):  # type: ignore
+            num_rows, width = shape
+            assert width == num_cols
+        case Sized():
+            num_rows = len(obj)
+        case _:
+            num_rows = None
+
+    match modifier, show_device, obj:
+        case None, True, HasDevice(device=device):
+            modifier = str(device)
+
+    type_repr = type(obj).__name__ if title is None else title
+    modifier_repr = f"@{modifier}" if modifier is not None else ""
+    rows_repr = "*" if num_rows is None else f"{num_rows}"
+    shape_repr = (
+        f"<{rows_repr},{num_cols}>"
+        if identifier is None
+        else Identifier.render(identifier)
+    )
 
     maxitems = MAXITEMS_INLINE if maxitems is None else maxitems
     labels = [_repr_dtype(dtype) for dtype in dtypes]
     if len(set(labels)) <= 1:
         labels = labels[:1]
     head_end, tail_start = _item_bounds(len(labels), maxitems)
-    body = _join_items(
+    dtypes_repr = _join_items(
         labels[:head_end], labels[tail_start:], truncated=head_end < tail_start
     )
 
-    if modifier is None and show_device and isinstance(obj, HasDevice):
-        modifier = str(obj.device)
-    title = type(obj).__name__ if title is None else title
-    modifier_repr = f"@{modifier}" if modifier is not None else ""
-    shape_repr = f"<{shape}>" if identifier is None else Identifier.render(identifier)
-    return f"{title}{modifier_repr}{shape_repr}[{body}]"
+    return f"{type_repr}{modifier_repr}{shape_repr}[{dtypes_repr}]"
 
 
 def _repr_array(
@@ -884,36 +876,62 @@ def _repr_array(
     show_device: bool = False,
     **_: Any,
 ) -> str:
-    r"""Summarize a homogeneous array by shape, dtype, or its only value."""
-    type_repr = type(obj).__name__ if title is None else title
-    shape: tuple[int, ...] = (
-        tuple(obj.shape) if isinstance(obj, HasShape) else tuple(obj.__array__().shape)
-    )
-    if identifier is None:
-        dimensions = ",".join(str(dim) for dim in shape)
-        shape_repr = f"<{dimensions}>" if dimensions else ""
-    else:
-        shape_repr = Identifier.render(identifier)
+    r"""Summarize an array by shape and dtype, showing its only value if available."""
+    match obj:  # determine the shape
+        case object(shape=tuple(shape)):  # type: ignore
+            array = None
+        case _:
+            array = obj.__array__()
+            shape = array.shape
 
-    if not show_device:
-        device_repr = ""
-    else:
-        match modifier, obj:
-            case None, HasDevice(device=device):
-                device_repr = f"@{device}"
-            case _:
-                device_repr = f"@{modifier}" if modifier is not None else ""
+    match obj:  # determine the device
+        case object(device=device):  # type: ignore
+            pass
+        case _:
+            device = None
+
+    match obj:  # determine the dtype
+        case object(dtype=dtype) | object(type=dtype):  # type: ignore
+            # PyArrow arrays expose their native dtype as `.type`.
+            pass
+        case _:
+            array = obj.__array__() if array is None else array
+            dtype = array.dtype
+
+    type_repr = type(obj).__name__ if title is None else title
+    device_repr = (
+        "" if not show_device else f"@{device}" if modifier is None else f"@{modifier}"
+    )
+    dtype_repr = _repr_dtype(dtype)
+    shape_repr = (
+        Identifier.render(identifier)
+        if identifier is not None
+        else f"<{','.join(str(dim) for dim in shape)}>"
+        if shape
+        else ""
+    )
 
     match prod(shape):
         case 0:
             suffix = ""
         case 1:
-            value = (
-                obj.item() if isinstance(obj, SupportsItem) else obj.__array__().item()
+            source = (
+                obj
+                if isinstance(obj, SupportsItem)
+                else obj.__array__()
+                if array is None
+                else array
             )
-            suffix = f"({value!s})"
+            try:
+                value = source.item()
+            except Exception:
+                # Some arrays expose metadata even when their contents are unavailable.
+                suffix = f"[{dtype_repr}]"
+            else:
+                suffix = f"({value!s})"
         case _:
-            suffix = f"[{_repr_dtype(_get_dtype(obj))}]"
+            suffix = f"[{dtype_repr}]"
+
     return f"{type_repr}{device_repr}{shape_repr}{suffix}"
 
 

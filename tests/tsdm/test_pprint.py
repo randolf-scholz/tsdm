@@ -431,6 +431,33 @@ def test_pprint_array(obj: SupportsArray, expected: str) -> None:
     assert result == expected
 
 
+def test_pprint_singleton_meta_tensor() -> None:
+    r"""Use the dtype when the tensor's only value is unavailable."""
+    tensor = torch.empty(1, device="meta", dtype=torch.float32)
+    assert repr_object(tensor) == "Tensor<1>[float32]"
+
+
+@pytest.mark.parametrize(
+    ("values", "expected"),
+    [([1], "ArrayLike<1>(1)"), ([1, 2], "ArrayLike<2>[int64]")],
+)
+def test_pprint_array_reuses_conversion(values: Sequence[int], expected: str) -> None:
+    r"""Read shape and either value or dtype from one conversion."""
+
+    class ArrayLike:
+        r"""An array provider exposing no native metadata."""
+
+        conversions = 0
+
+        def __array__(self) -> NDArray[np.int64]:
+            self.conversions += 1
+            return np.array(values, dtype=np.int64)
+
+    obj = ArrayLike()
+    assert repr_object(obj) == expected
+    assert obj.conversions == 1
+
+
 @pytest.mark.parametrize(
     ("obj", "expected"),
     [
