@@ -207,6 +207,33 @@ def _repr_python_scalar(arg: object, /) -> str | None:
     return None
 
 
+def _repr_number(arg: object, /) -> str | None:
+    r"""Format a Python number, preserving the type of zero-dimensional scalars."""
+    # Extract the stored scalar first. Numeric hooks can turn booleans into
+    # floats or discard the imaginary part of complex values.
+    try:
+        item_repr = _repr_python_scalar(arg.item()) if arg.shape == () else None  # type: ignore
+    except Exception:
+        item_repr = None
+    if item_repr is not None:
+        return item_repr
+
+    # convert scalar-likes to python scalars
+    try:
+        return int.__repr__(arg.__index__())  # type: ignore
+    except Exception:  # ruff: ignore[S110]
+        pass
+    try:
+        return float.__repr__(arg.__float__())  # type: ignore
+    except Exception:  # ruff: ignore[S110]
+        pass
+    try:
+        return complex.__repr__(arg.__complex__())  # type: ignore
+    except Exception:  # ruff: ignore[S110]
+        pass
+    return None
+
+
 def _get_dtypes(table: object) -> list[object]:
     match table:
         case object(dtype=dtype):  # type: ignore
@@ -281,37 +308,6 @@ def get_identifier(obj: object, /, **_: Any) -> str:
             return "<function>"
         case _:
             return ""
-
-
-def _as_number(arg: object, /) -> complex | float | int | None:
-    r"""Extract a Python number, preserving the type of zero-dimensional scalars."""
-    # Extract the stored scalar first. Numeric hooks can turn booleans into
-    # floats or discard the imaginary part of complex values.
-    if (
-        isinstance(arg, SupportsArray)
-        and isinstance(arg, HasShape)
-        and isinstance(arg, SupportsItem)
-    ):
-        try:
-            item = arg.item() if arg.shape == () else None
-        except Exception:
-            item = None
-        if type(item) in (bool, int, float, complex):
-            return item
-
-    try:  # SupportsIndex
-        return arg.__index__()  # type: ignore
-    except Exception:  # ruff: ignore[S110]
-        pass
-    try:  # SupportsFloat
-        return arg.__float__()  # type: ignore
-    except Exception:  # ruff: ignore[S110]
-        pass
-    try:  # SupportsComplex
-        return arg.__complex__()  # type: ignore
-    except Exception:  # ruff: ignore[S110]
-        pass
-    return None
 
 
 def repr_mapping(
@@ -1008,8 +1004,8 @@ def repr_compact(
         case _ if (scalar_repr := _repr_python_scalar(obj)) is not None:
             return scalar_repr
 
-        case _ if (value := _as_number(obj)) is not None:
-            return repr(value)
+        case _ if (number_repr := _repr_number(obj)) is not None:
+            return number_repr
 
         case _:
             if identifier is None:
