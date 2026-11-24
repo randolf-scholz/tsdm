@@ -944,13 +944,10 @@ def _repr_function(
 def repr_compact(
     obj: object,
     /,
-    *,
-    identifier: str | None = None,
-    recursive: bool | int = False,
-    wrapped: object | None = None,
-    **_: Any,
+    **options: Unpack[ReprOptions],
 ) -> str:
     r"""Return a compact representation using a value or its type name."""
+    identifier = options.get("identifier")
     obj_type = type(obj)
     for entry in (Identifier.TYPE, Identifier.FUNCTION):
         if issubclass(obj_type, entry.kind):
@@ -962,8 +959,9 @@ def repr_compact(
     if (number_repr := _repr_number(obj)) is not None:
         return f"{label}{number_repr}"
 
+    wrapped = options.get("wrapped")
     displayed = obj if wrapped is None else wrapped
-    if identifier is None and recursive:
+    if identifier is None and options.get("recursive", False):
         label = Identifier.render(Identifier.get(displayed))
     return f"{type(displayed).__name__}{label}()"
 
@@ -972,9 +970,8 @@ def repr_object(
     obj: object,
     /,
     *,
-    identifier: str | None = None,
     fallback: Callable[..., str] = repr_compact,
-    **kwargs: Any,
+    **options: Unpack[ReprOptions],
 ) -> str:
     r"""Return a string representation of an object.
 
@@ -1001,17 +998,15 @@ def repr_object(
 
         ```
     """
-    label = Identifier.render(identifier)
-    if identifier is not None:
-        kwargs["identifier"] = identifier
+    label = Identifier.render(options.get("identifier"))
 
     if (scalar_repr := _repr_python_scalar(obj)) is not None:
         return f"{label}{scalar_repr}"
     if (entry := Identifier.get(obj)) is not None:
-        return entry.formatter(obj, **kwargs)
+        return entry.formatter(obj, **options)
 
     if fallback is repr_compact:
-        return repr_compact(obj, **kwargs)
+        return repr_compact(obj, **options)
     # Avoid calling an unsupported object's repr method again.
     if fallback is repr:
         return f"{label}{object.__repr__(obj)}"
