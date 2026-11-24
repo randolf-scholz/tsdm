@@ -209,7 +209,7 @@ def download(
     if isinstance(fname, IOBase | IO):
         _download_io(
             url,
-            fname,  # ty: ignore[invalid-argument-type]
+            fname,
             username=username,
             password=password,
             headers=headers,

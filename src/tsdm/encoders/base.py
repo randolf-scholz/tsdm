@@ -562,7 +562,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         """
         # FIXME: mypy does not predict correct return type...
         result = fork(self, other)
-        assert_type(result, Fork[X, tuple[Y, Y2]])  # ty: ignore[type-assertion-failure]
+        assert_type(result, Fork[X, tuple[Y, Y2]])
         return result
 
     # TODO: automatically combine ``e1 & e2 & e3`` into a single meet?
@@ -581,7 +581,7 @@ class BaseEncoder[X, Y](Encoder[X, Y], metaclass=EncoderMeta):
         """
         # FIXME: mypy does not predict correct return type...
         result = fork(other, self)
-        assert_type(result, Fork[X, tuple[Y2, Y]])  # ty: ignore[type-assertion-failure]
+        assert_type(result, Fork[X, tuple[Y2, Y]])
         return result
 
     def __mul__(self, other: int, /) -> Fork[X, tuple[Y, ...]]:
@@ -1489,12 +1489,12 @@ class Pipe[X, Y, E: Encoder = Encoder](EncoderList[X, Y, E]):
         r"""Simplify the chained encoder."""
         # reduction 1: combine nested pipes/chains ``e >> (f >> g) = (e >> f) >> g``.
         encoders: list[Encoder] = []
-        for encoder in map(simplify, self):
+        for encoder in map(simplify, self):  # ty: ignore[invalid-argument-type]
             match encoder:
                 case Pipe() as pipe:
                     encoders.extend(pipe)
                 case _:
-                    encoders.append(encoder)  # ty: ignore[invalid-argument-type]
+                    encoders.append(encoder)
 
         # reduction 2: remove identity encoders ``e >> id = e``.
         encoders = [e for e in encoders if not isinstance(e, IdentityEncoder)]
@@ -1675,7 +1675,7 @@ class Parallel[
     """
 
     def get_slice[U, V](
-        self: Parallel[tuple[U, ...], tuple[V, ...]], arg: slice, /
+        self: Parallel[tuple[U, ...], tuple[V, ...]] | Parallel, arg: slice, /
     ) -> Parallel[tuple[U, ...], tuple[V, ...]]:
         return Parallel(self.encoders[arg])
 
@@ -1800,7 +1800,7 @@ class Replicate[
         assert len(self) == num
 
     @classmethod
-    def new[X, Y](  # type: ignore
+    def new[X, Y](  # pyrefly: ignore[bad-override]
         cls: type[Replicate], /, *, encoders: Iterable[Encoder[X, Y]]
     ) -> Replicate[tuple[X, ...], tuple[Y, ...]]:
         if cls is not Replicate:
@@ -1817,7 +1817,7 @@ class Replicate[
         return new
 
     def get_slice[U, V](
-        self: Replicate[tuple[U, ...], tuple[V, ...]], arg: slice, /
+        self: Replicate[tuple[U, ...], tuple[V, ...]] | Replicate, arg: slice, /
     ) -> Replicate[tuple[U, ...], tuple[V, ...]]:
         return Replicate.new(encoders=self.encoders[arg])
 
@@ -2116,7 +2116,7 @@ class Duplicate[
         assert len(self) == num
 
     @classmethod
-    def new[Y](  # type: ignore
+    def new[Y](  # pyrefly: ignore[bad-override]
         cls: type[Duplicate],
         /,
         *,
@@ -2319,7 +2319,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
 
     # FIXME: possibly incorrect for inhomogeneous reductions
     def get_slice[U, V](
-        self: Meet[tuple[U, ...], V], arg: slice, /
+        self: Meet[tuple[U, ...], V] | Meet, arg: slice, /
     ) -> Meet[tuple[U, ...], V]:
         return Meet(*self.encoders[arg], reduction=self.reduction)
 
@@ -2363,7 +2363,7 @@ class Meet[TupleIn: tuple, Y, E: Encoder = Encoder](EncoderList[TupleIn, Y, E]):
 
             case _:
                 return Meet(  # pyrefly: ignore[bad-return]
-                    *map(simplify, self),
+                    *map(simplify, self),  # ty: ignore[invalid-argument-type]
                     reduction=self.reduction,
                 )
 
@@ -2464,7 +2464,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         self.num = num
 
     @classmethod
-    def new[X](  # type: ignore
+    def new[X](  # pyrefly: ignore[bad-override]
         cls: type[Fold],
         /,
         *,
@@ -2484,7 +2484,9 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
         new.num = len(encoders)  # type: ignore
         return new
 
-    def get_slice[U, V](self: Fold[tuple[U, ...], V], arg: slice, /) -> Fold[tuple[U, ...], V]:  # fmt: skip
+    def get_slice[U, V](
+        self: Fold[tuple[U, ...], V] | Fold, arg: slice, /
+    ) -> Fold[tuple[U, ...], V]:
         return Fold.new(encoders=self.encoders[arg], reduction=self.reduction)
 
     def __invert__(self) -> Duplicate[Y, Xs]:
@@ -2513,7 +2515,7 @@ class Fold[Xs: tuple, Y](Meet[Xs, Y]):  # (tuple[X, ...], Y]):
 
             case _:
                 return Fold.new(  # type: ignore
-                    encoders=map(simplify, self),  # ty: ignore[invalid-argument-type]
+                    encoders=map(simplify, self),
                     reduction=self.reduction,
                 )
 

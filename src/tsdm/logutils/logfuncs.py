@@ -59,7 +59,7 @@ type Loss = Callable[..., Tensor]
 
 def _eval_loss(loss: Loss, *, targets: Tensor, predictions: Tensor) -> float:
     try:
-        return float(loss(targets=targets, predictions=predictions).cpu().item())  # type: ignore
+        return float(loss(targets=targets, predictions=predictions).cpu().item())
     except Exception:
         # use predictions first (as in `nn.functional.cross_entropy`)
         return float(loss(predictions, targets).cpu().item())

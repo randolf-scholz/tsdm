@@ -13,13 +13,13 @@ cuda-toolkit==13.2.2 ; sys_platform == 'linux'
     # via torch
 cycler==0.12.1
     # via matplotlib
-filelock==4.3.0
+filelock==4.3.1
     # via torch
 fonttools==4.68.0
     # via matplotlib
 fsspec==2026.9.0
     # via torch
-grpcio==1.85.3
+grpcio==1.85.4
     # via tensorboard
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
@@ -98,7 +98,7 @@ nvidia-nvshmem-cu13==3.7.2 ; sys_platform == 'linux'
     # via torch
 nvidia-nvtx==13.2.86 ; (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')
     # via cuda-toolkit
-packaging==26.3
+packaging==26.4
     # via
     #   matplotlib
     #   tensorboard
@@ -108,9 +108,9 @@ pillow==13.0.0
     # via
     #   matplotlib
     #   tensorboard
-polars==2.1.0
+polars==2.2.0
     # via tsdm
-polars-runtime-32==2.1.0
+polars-runtime-32==2.2.0
     # via polars
 protobuf==7.36.2
     # via tensorboard

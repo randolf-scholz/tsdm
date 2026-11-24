@@ -59,7 +59,7 @@ DEFAULT_CHUNK_SIZE: Final[int] = 1024 * 1024
 r"""Default chunk size in bytes for file integrity checks."""
 
 
-_LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 _LOGGER.debug("Initializing folder structure")
 for _directory in (LOG_DIR, MODEL_DIR, DATASET_DIR):
     _directory.mkdir(parents=True, exist_ok=True)
