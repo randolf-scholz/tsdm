@@ -282,6 +282,53 @@ def test_pprint_set(obj: AbstractSet, expected: set[str]) -> None:
     assert result in expected
 
 
+@pytest.mark.parametrize(
+    ("limit", "sequence", "mapping", "set_items"),
+    [
+        (0, "[...]", "{...}", "..."),
+        (1, "['first', ...]", "{a: 'first', ...}", "'a', ..."),
+        (2, "['first', ..., 'last']", "{a: 'first', ..., e: 'last'}", "'a', ..., 'e'"),
+        (
+            3,
+            "['first', 'second', ..., 'last']",
+            "{a: 'first', b: 'second', ..., e: 'last'}",
+            "'a', 'b', ..., 'e'",
+        ),
+        (
+            5,
+            "['first', 'second', 'third', 'fourth', 'last']",
+            "{a: 'first', b: 'second', c: 'third', d: 'fourth', e: 'last'}",
+            "'a', 'b', 'c', 'd', 'e'",
+        ),
+    ],
+)
+def test_pprint_item_limit(
+    *, limit: int, sequence: str, mapping: str, set_items: str
+) -> None:
+    r"""Use the same item budget for sequences, mappings, and sets."""
+    data = ["first", "second", "third", "fourth", "last"]
+    entries = dict(zip("abcde", data, strict=True))
+    assert repr_object(data, maxitems=limit, linebreaks=False) == sequence
+    assert repr_object(entries, maxitems=limit, linebreaks=False) == mapping
+    assert (
+        repr_object(entries.keys(), maxitems=limit, linebreaks=False)
+        == f"dict_keys<set>({set_items})"
+    )
+
+
+def test_pprint_item_limit_multiline() -> None:
+    r"""Treat the ellipsis as a single rendered entry in multiline output."""
+    assert repr_object([], maxitems=0, linebreaks=True) == "[]"
+    assert repr_object([1], maxitems=0, linebreaks=True, padding=2) == "[\n  ...,\n]"
+    assert repr_object([list(range(5))], padding=2) == "[\n  [0, 1, 2, 3, 4],\n]"
+
+
+def test_pprint_negative_item_limit() -> None:
+    r"""Reject negative item budgets."""
+    with pytest.raises(ValueError, match="maxitems must be nonnegative"):
+        repr_object([1], maxitems=-1)
+
+
 DICT_TYPE = pa.dictionary(pa.int32(), pa.string())
 TABLE_DATA = {"name": ["foo", "bar"], "value": [0.2, 0.3], "ID": [1, 2]}
 ARROW_TABLE = pa.table(TABLE_DATA)
@@ -353,6 +400,15 @@ def test_pprint_table_row_count_from_length() -> None:
             return 3
 
     assert repr_object(SizedTable()) == "SizedTable<3,2>[int64, float64]"
+
+
+def test_pprint_table_dtype_limit() -> None:
+    r"""Give the head the extra label when a table's dtype budget is odd."""
+    table = SimpleNamespace(dtypes=["int8", "int16", "int32", "int64", "float64"])
+    assert (
+        repr_object(table, maxitems=3)
+        == "SimpleNamespace<*,5>[int8, int16, ..., float64]"
+    )
 
 
 def test_pprint_lazy_frame_identifier() -> None:

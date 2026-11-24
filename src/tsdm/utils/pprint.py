@@ -64,6 +64,7 @@ import datetime as dt
 from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet, Sized
 from enum import StrEnum
 from functools import partial
+from itertools import islice
 from math import prod
 from types import BuiltinFunctionType, FunctionType
 from typing import Any, Final, Protocol, Self, TypedDict, Unpack, cast
@@ -256,6 +257,32 @@ def _repr_dtype(dtype: object, /) -> str:
             return _repr_dtype(str(dtype))
 
 
+def _item_bounds(size: int, maxitems: int, /) -> tuple[int, int]:
+    r"""Return the exclusive head end and inclusive tail start."""
+    if maxitems < 0:
+        raise ValueError("maxitems must be nonnegative.")
+    if size <= maxitems:
+        return size, size
+    return (maxitems + 1) // 2, size - maxitems // 2
+
+
+def _join_items(
+    head: Sequence[str],
+    tail: Sequence[str],
+    /,
+    *,
+    truncated: bool,
+    linebreaks: bool = False,
+    padding: int = INDENT,
+) -> str:
+    r"""Join rendered items, inserting an ellipsis for the omitted middle."""
+    items = [*head, "...", *tail] if truncated else head
+    if not linebreaks:
+        return ", ".join(items)
+    pad = " " * padding
+    return "".join(f"\n{pad}{item}," for item in items) + "\n"
+
+
 def _repr_mapping(
     obj: Mapping,
     /,
@@ -281,7 +308,7 @@ def _repr_mapping(
         indent: Number of spaces prefixed to continuation lines.
         linebreaks: Whether to split items across lines. If omitted, follow
             `recursive`. Empty mappings are always inline.
-        maxitems: Item limit used to truncate long mappings.
+        maxitems: Maximum number of entries to display, excluding the ellipsis.
         modifier: Modifier of the object.
         padding: Number of spaces added at each nesting level.
         recursive: Whether to format nested values recursively, or an integer
@@ -314,8 +341,10 @@ def _repr_mapping(
 
     modifier = f"@{modifier}" if modifier is not None else ""
 
+    size = len(obj)
+
     linebreaks = (
-        False if len(obj) < 1  # always inline if empty mapping
+        False if size == 0  # always inline if empty mapping
         else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
@@ -332,10 +361,6 @@ def _repr_mapping(
         else 0
     )  # fmt: skip
 
-    # set separators
-    br = "\n" if linebreaks else ""
-    sep = "," if linebreaks else ", "
-    pad = " " * padding * linebreaks
     left, right = "(", ")"
 
     # special treatment for dict:
@@ -376,34 +401,25 @@ def _repr_mapping(
 
         return f"{key!s:<{max_key_length}}: {encoded_value}"
 
-    # precompute the item representations
-    head_half = maxitems // 2
-    tail_half = max(len(obj) - head_half, head_half)
-    head_items = [
-        to_string(key, value)
-        for i, (key, value) in enumerate(obj.items())
-        if i < head_half
-    ]
-    tail_items = [
-        to_string(key, value)
-        for i, (key, value) in enumerate(obj.items())
-        if i >= tail_half
-    ]
+    # compute the item representations
+    head_end, tail_start = _item_bounds(size, maxitems)
+    items = iter(obj.items())
+    head = [to_string(key, value) for key, value in islice(items, head_end)]
+    tail = (
+        [to_string(k, value) for k, value in islice(items, tail_start - head_end, None)]
+        if tail_start < size
+        else []
+    )
+    body = _join_items(
+        head,
+        tail,
+        truncated=head_end < tail_start,
+        linebreaks=linebreaks,
+        padding=padding,
+    )
 
-    # assemble the string
-    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{br}"
-    if head_items:
-        string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
-    if len(obj) > maxitems:
-        string += f"{sep}{br}{pad}..."
-    if tail_items:
-        string += f"{sep}{br}"
-        string += f"{sep}{br}".join(f"{pad}{item}" for item in tail_items)
-    if linebreaks:  # trailing comma
-        string += f"{sep}{br}"
-    string += f"{right}"
-
-    # add indent
+    # assemble the string and add indentation
+    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{body}{right}"
     string = string.replace("\n", "\n" + " " * indent)
 
     return string
@@ -466,8 +482,10 @@ def _repr_sequence(
 
     modifier = f"@{modifier}" if modifier is not None else ""
 
+    size = len(obj)
+
     linebreaks = (
-        False if len(obj) < 1  # always inline if empty mapping
+        False if size == 0  # always inline if empty sequence
         else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
@@ -478,10 +496,6 @@ def _repr_sequence(
         else MAXITEMS_INLINE
     )  # fmt: skip
 
-    # set separators
-    br = "\n" if linebreaks else ""
-    sep = "," if linebreaks else ", "
-    pad = " " * padding * linebreaks
     left, right = "(", ")"
 
     # special case list and tuple
@@ -524,28 +538,20 @@ def _repr_sequence(
 
         return encoded_value
 
-    # precompute the item representations
-    head_half = maxitems // 2
-    tail_half = max(len(obj) - head_half, head_half)
-    head_items = [to_string(i, v) for i, v in enumerate(obj[:head_half], start=0)]
-    tail_items = [
-        to_string(i, v) for i, v in enumerate(obj[tail_half:], start=tail_half)
-    ]
+    # compute the item representations
+    head_end, tail_start = _item_bounds(size, maxitems)
+    head = [to_string(i, value) for i, value in enumerate(obj[:head_end])]
+    tail = [to_string(i, value) for i, value in enumerate(obj[tail_start:], tail_start)]
+    body = _join_items(
+        head,
+        tail,
+        truncated=head_end < tail_start,
+        linebreaks=linebreaks,
+        padding=padding,
+    )
 
-    # assemble the string
-    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{br}"
-    if head_items:
-        string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
-    if len(obj) > maxitems:
-        string += f"{sep}{br}{pad}..."
-    if tail_items:
-        string += f"{sep}{br}"
-        string += f"{sep}{br}".join(f"{pad}{item}" for item in tail_items)
-    if linebreaks:  # trailing comma
-        string += f"{sep}{br}"
-    string += f"{right}"
-
-    # add indent
+    # assemble the string and add indentation
+    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{body}{right}"
     string = string.replace("\n", "\n" + " " * indent)
 
     return string
@@ -576,8 +582,10 @@ def _repr_set(
 
     modifier = f"@{modifier}" if modifier is not None else ""
 
+    size = len(obj)
+
     linebreaks = (
-        False if len(obj) < 1  # always inline if empty mapping
+        False if size == 0  # always inline if empty set
         else linebreaks if linebreaks is not None
         else bool(recursive)  # fallback
     )  # fmt: skip
@@ -588,10 +596,6 @@ def _repr_set(
         else MAXITEMS_INLINE
     )  # fmt: skip
 
-    # set separators
-    br = "\n" if linebreaks else ""
-    sep = "," if linebreaks else ", "
-    pad = " " * padding * linebreaks
     left, right = "(", ")"
 
     # special case set
@@ -632,35 +636,25 @@ def _repr_set(
 
         return encoded_value
 
-    # precompute the item representations
-    head_count = maxitems // 2
-    tail_count = max(len(obj) - head_count, head_count)
+    # compute the item representations
+    head_end, tail_start = _item_bounds(size, maxitems)
+    items = enumerate(obj)
+    head = [to_string(i, value) for i, value in islice(items, head_end)]
+    tail = (
+        [to_string(i, value) for i, value in islice(items, tail_start - head_end, None)]
+        if tail_start < size
+        else []
+    )
+    body = _join_items(
+        head,
+        tail,
+        truncated=head_end < tail_start,
+        linebreaks=linebreaks,
+        padding=padding,
+    )
 
-    # setup iterators
-    iterator = iter(obj)  # shared iterator
-    head_iter = zip(range(head_count), iterator, strict=False)
-    drop_iter = zip(range(head_count, tail_count - 1), iterator, strict=False)
-    tail_iter = zip(range(tail_count, len(obj)), iterator, strict=False)
-    head_items = [to_string(i, v) for i, v in head_iter]
-    for _ in drop_iter:
-        pass
-    tail_items = [to_string(i, v) for i, v in tail_iter]
-
-    # assemble the string
-    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{br}"
-
-    if head_items:
-        string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
-    if len(obj) > maxitems:
-        string += f"{sep}{br}{pad}..."
-    if tail_items:
-        string += f"{sep}{br}"
-        string += f"{sep}{br}".join(f"{pad}{item}" for item in tail_items)
-    if linebreaks:  # trailing comma
-        string += f"{sep}{br}"
-    string += f"{right}"
-
-    # add indent
+    # assemble the string and add indentation
+    string = f"{title}{modifier}{Identifier.render(identifier)}{left}{body}{right}"
     string = string.replace("\n", "\n" + " " * indent)
 
     return string
@@ -856,17 +850,17 @@ def _repr_table(
     labels = [_repr_dtype(dtype) for dtype in dtypes]
     if len(set(labels)) <= 1:
         labels = labels[:1]
-    if len(labels) > maxitems:
-        head = maxitems // 2
-        tail = maxitems - head
-        labels = [*labels[:head], "...", *labels[len(labels) - tail :]]
+    head_end, tail_start = _item_bounds(len(labels), maxitems)
+    body = _join_items(
+        labels[:head_end], labels[tail_start:], truncated=head_end < tail_start
+    )
 
     if modifier is None and show_device and isinstance(obj, HasDevice):
         modifier = str(obj.device)
     title = type(obj).__name__ if title is None else title
     modifier_repr = f"@{modifier}" if modifier is not None else ""
     shape_repr = f"<{shape}>" if identifier is None else Identifier.render(identifier)
-    return f"{title}{modifier_repr}{shape_repr}[{', '.join(labels)}]"
+    return f"{title}{modifier_repr}{shape_repr}[{body}]"
 
 
 def _repr_array(
@@ -974,6 +968,10 @@ def repr_object(
     in angle brackets. An empty string suppresses the identifier. Container
     formatters use the type of `wrapped` for automatic identifiers when a
     wrapper is supplied.
+
+    For containers and table dtype summaries, `maxitems` is a nonnegative
+    limit on displayed entries, excluding the ellipsis. When entries are
+    omitted, an odd limit gives the head one more entry than the tail.
 
     Examples:
         ```pycon
