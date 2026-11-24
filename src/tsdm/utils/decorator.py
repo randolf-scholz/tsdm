@@ -9,7 +9,6 @@ __all__ = [
     "ParametrizedPolymorphism",
     # Functions
     "decorator",
-    "rpartial",
 ]
 
 import logging
@@ -18,33 +17,6 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Protocol, Self, overload
-
-
-class Polymorphism[**P = []](Protocol):
-    r"""Protocol for callables that preserve the type of their first argument."""
-
-    def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
-
-
-def rpartial[**P, R](  # +R
-    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Fn[..., R]:
-    r"""Apply positional arguments from the right.
-
-    Return a wrapper that appends `fixed_args` to its positional arguments.
-    Fixed keyword arguments override keyword arguments supplied to the wrapper.
-
-    References:
-        - [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial).
-        - [Typeshed's partial annotations](https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129).
-    """
-
-    @wraps(func)
-    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
-        # FIXME: https://github.com/python/typeshed/issues/8703
-        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
-
-    return __wrapper
 
 
 @dataclass(slots=True, frozen=True)
@@ -84,6 +56,13 @@ class Decorator[T_in, T_out, **P](Protocol):
     def __call__(self, obj: T_in, /, *args: P.args, **kwargs: P.kwargs) -> T_out: ...
 
 
+class Polymorphism[**P = []](Protocol):
+    r"""Protocol for callables that preserve the type of their first argument."""
+
+    # gradual upper bound since bounding by upper scoped type variable not supported
+    def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
+
+
 class ParametrizedDecorator[T_in, T_out, **P](Protocol):
     r"""Protocol for parametrized decorators."""
 
@@ -111,6 +90,7 @@ class ParametrizedPolymorphism[**P](Protocol):
     __annotations__: dict[str, Any]
 
     # fmt: off
+    # gradual upper bound since bounding by upper scoped type variable not supported
     @overload  # @decorator / decorator(obj, *args, **kwargs)
     def __call__[T: Any](self, obj: T, /, *arg: P.args, **kwargs: P.kwargs) -> T: ...
     @overload  # @decorator(*args, **kwargs)
@@ -206,9 +186,30 @@ def decorator[**P](deco: Polymorphism[P], /) -> ParametrizedPolymorphism[P]:
                 args,
                 kwargs,
             )
-            return rpartial(deco, *args, **kwargs)
+            return _rpartial(deco, *args, **kwargs)
 
         logger.debug("@decorator used in FUNCTIONAL/BARE mode.")
         return deco(obj, *args, **kwargs)
 
     return _deco  # pyright: ignore[reportReturnType]
+
+
+def _rpartial[**P, R](  # +R
+    func: Fn[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Fn[..., R]:
+    r"""Apply positional arguments from the right.
+
+    Return a wrapper that appends `fixed_args` to its positional arguments.
+    Additional keyword arguments .
+
+    References:
+        - [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial).
+        - [Typeshed's partial annotations](https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129).
+    """
+
+    @wraps(func)
+    def __wrapper(*args: Any, **kwargs: Any) -> R:
+        # FIXME: https://github.com/python/typeshed/issues/8703
+        return func(*args, *fixed_args, **fixed_kwargs, **kwargs)
+
+    return __wrapper
