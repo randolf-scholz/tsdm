@@ -142,7 +142,7 @@ hooks = [
             (?!              # Exclude recognized pragma names followed by a colon.
                 (?:
                     type|pyright|pyrefly|doctest|ty|noqa|fmt|shape|mypy|ruff
-                    |FIXME|SEE|NOTE|TODO
+                    |(?i:FIXME|SEE|NOTE|TODO)
                 ):
             )
             \w+:             # Pragma name and colon.
