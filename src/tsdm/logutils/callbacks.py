@@ -96,7 +96,7 @@ from .logfuncs import (
     log_values,
 )
 
-type Loss = Callable[[Tensor, Tensor], Tensor]
+type Loss = Callable[..., Tensor]
 
 
 def _eval_loss(loss: Loss, *, targets: Tensor, predictions: Tensor) -> float:

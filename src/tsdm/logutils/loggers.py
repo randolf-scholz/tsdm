@@ -67,7 +67,7 @@ from .callbacks import (
     OptimizerCallback,
 )
 
-type Loss = Callable[[Tensor, Tensor], Tensor]
+type Loss = Callable[..., Tensor]
 
 
 class Logger[CallbackT: CallbackSequence](Protocol):  # +CallbackT
