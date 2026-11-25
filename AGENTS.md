@@ -62,15 +62,23 @@ This file describes project conventions for automated agents contributing to `ts
   `$$\n\begin{aligned}\n <eq>\n \end{aligned}\n$$`
 - Equations shouldn't have a trailing dot.
 
-## Testing conventions
+## Testing
+
+### Conventions
 
 - Mocking is discouraged. Avoid `unittest.mock` (`Mock`, `MagicMock`, `patch`) and monkeypatching when real
   components or fixtures can exercise the behavior.
 - Prefer small, deterministic inputs, real components, and pytest fixtures. Use temporary files and directories
   for filesystem tests, and context managers or fixture teardown to close resources.
 - Assert observable results and state rather than mocked call counts or private implementation details.
+- Keep `assert` statements on one line. For comparisons that would span multiple lines, assign `actual` and
+  `expected` first, then write `assert actual == expected`.
+- Use `UPPER_SNAKE_CASE` for constants defined on test classes, including static inputs and expected results.
+- For named test cases, pass the mapping directly to `pytest.mark.parametrize`, for example
+  `@pytest.mark.parametrize("case", TABLE_FACTORIES)`. Use descriptive string keys as case IDs and look up the
+  value inside the test with `factory = TABLE_FACTORIES[case]`.
 
-## Running tests, formatting, and linting
+### Running tests, formatting, and linting
 
 - use `uv run <tool>` for all project-local Python commands, including `python`, `pytest`, `ruff`, `pyrefly`, and
   `pyright`.

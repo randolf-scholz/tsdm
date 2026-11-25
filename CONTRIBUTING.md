@@ -44,16 +44,26 @@ git switch -c feature-xyz
 Source code lives in `src/`, and tests live in `tests/`. Add or update tests
 for behavior affected by your change.
 
-### Testing conventions
+## Testing
 
-Prefer tests that use real components and small, deterministic inputs.
-Use pytest fixtures and temporary files or directories to isolate tests, and
-close resources with context managers or fixture teardown.
+### Conventions
 
-Mocking is discouraged, including `unittest.mock` (`Mock`, `MagicMock`,
-`patch`) and monkeypatching when real components or fixtures can exercise the
-behavior. Assert observable results and state rather than mocked call counts
-or private implementation details.
+- Prefer real components and small, deterministic inputs.
+- Use pytest fixtures and temporary files or directories to isolate tests, and
+  close resources with context managers or fixture teardown.
+- Avoid `unittest.mock` (`Mock`, `MagicMock`, `patch`) and monkeypatching when
+  real components or fixtures can exercise the behavior.
+- Assert observable results and state rather than mocked call counts or private
+  implementation details.
+- Keep `assert` statements on one line. For comparisons that would span
+  multiple lines, assign `actual` and `expected` first, then write
+  `assert actual == expected`.
+- Use `UPPER_SNAKE_CASE` for constants defined on test classes, including
+  static inputs and expected results.
+- For named test cases, use a mapping keyed by descriptive strings. Pass the
+  mapping directly with `@pytest.mark.parametrize("case", TABLE_FACTORIES)`
+  and look up the value inside the test with `factory = TABLE_FACTORIES[case]`.
+  Pytest uses the keys as case IDs.
 
 ### Run the checks
 
