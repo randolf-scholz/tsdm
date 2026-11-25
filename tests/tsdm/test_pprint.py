@@ -94,10 +94,8 @@ def test_custom_identifier(identifier: str | None, label: str) -> None:
     assert repr_object([1], identifier=identifier, linebreaks=False) == f"{label}[1]"
     assert repr_object(object(), identifier=identifier) == f"object{label}()"
     assert repr_compact(object(), identifier=identifier) == f"object{label}()"
-    assert (
-        repr_object(object(), identifier=identifier, fallback=lambda _: "fallback")
-        == f"{label}fallback"
-    )
+    actual = repr_object(object(), identifier=identifier, fallback=lambda _: "fallback")
+    assert actual == f"{label}fallback"
 
 
 @dataclass
@@ -350,10 +348,8 @@ def test_pprint_item_limit(
     entries = dict(zip("abcde", data, strict=True))
     assert repr_object(data, maxitems=limit, linebreaks=False) == sequence
     assert repr_object(entries, maxitems=limit, linebreaks=False) == mapping
-    assert (
-        repr_object(entries.keys(), maxitems=limit, linebreaks=False)
-        == f"dict_keys<set>({set_items})"
-    )
+    actual = repr_object(entries.keys(), maxitems=limit, linebreaks=False)
+    assert actual == f"dict_keys<set>({set_items})"
 
 
 def test_pprint_item_limit_multiline() -> None:
@@ -366,23 +362,18 @@ def test_pprint_item_limit_multiline() -> None:
 def test_pprint_recursive_layout() -> None:
     r"""Apply explicit layout options at each expanded level."""
     data = [[0, 1, 2, 3]]
-    assert (
-        repr_object(data, recursive=2, linebreaks=False, maxitems=2) == "[[0, ..., 3]]"
-    )
+    actual = repr_object(data, recursive=2, linebreaks=False, maxitems=2)
+    assert actual == "[[0, ..., 3]]"
     assert repr_object(data, maxitems=2, padding=2) == "[\n  [0, ..., 3],\n]"
-    assert (
-        repr_object([[0, 1]], linebreaks=True, padding=2)
-        == "[\n  [\n    0,\n    1,\n  ],\n]"
-    )
+    actual = repr_object([[0, 1]], linebreaks=True, padding=2)
+    assert actual == "[\n  [\n    0,\n    1,\n  ],\n]"
 
 
 def test_pprint_recursive_layout_across_containers() -> None:
     r"""Forward layout options when the nested container types differ."""
     data = {"key": {(0, 1, 2, 3)}}
-    assert (
-        repr_object(data, recursive=2, linebreaks=False, maxitems=2)
-        == "{key: {(0, ..., 3)}}"
-    )
+    actual = repr_object(data, recursive=2, linebreaks=False, maxitems=2)
+    assert actual == "{key: {(0, ..., 3)}}"
 
 
 def test_pprint_recursive_layout_defaults() -> None:
@@ -499,19 +490,15 @@ def test_pprint_table_row_count_from_length() -> None:
 def test_pprint_table_dtype_limit() -> None:
     r"""Give the head the extra label when a table's dtype budget is odd."""
     table = SimpleNamespace(dtypes=["int8", "int16", "int32", "int64", "float64"])
-    assert (
-        repr_object(table, maxitems=3)
-        == "SimpleNamespace<*,5>[int8, int16, ..., float64]"
-    )
+    actual = repr_object(table, maxitems=3)
+    assert actual == "SimpleNamespace<*,5>[int8, int16, ..., float64]"
 
 
 def test_pprint_lazy_frame_identifier() -> None:
     r"""Display a custom identifier for a lazy frame."""
     frame = pl.LazyFrame(TABLE_DATA)
-    assert (
-        repr_object(frame, identifier="sample")
-        == "LazyFrame<sample>[String, Float64, Int64]"
-    )
+    actual = repr_object(frame, identifier="sample")
+    assert actual == "LazyFrame<sample>[String, Float64, Int64]"
 
 
 @pytest.mark.parametrize(
