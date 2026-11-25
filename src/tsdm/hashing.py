@@ -173,7 +173,13 @@ def hash_file(
 
     Returns:
         The hexadecimal digest and algorithm name.
+
+    Raises:
+        ValueError: If `block_size` is not positive.
     """
+    if block_size <= 0:
+        raise ValueError("block_size must be positive.")
+
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
 
     with open(filepath, "rb") as file_handle:
@@ -200,14 +206,24 @@ def hash_zip_contents(
 
     It is *independent* of zip container metadata such as timestamps, compression method,
     extra fields, file order in the central directory, etc.
+
+    Raises:
+        ValueError: If `chunk_size` is not positive or member names are duplicated.
     """
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be positive.")
+
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
     algorithm = hasher.name
     item_hashes: dict[str, bytes] = {}
     with ZipFile(file, "r") as zf:
-        for name in zf.namelist():
+        for info in zf.infolist():
+            name = info.filename
+            if name in item_hashes:
+                raise ValueError(f"Duplicate ZIP member name: {name!r}.")
+
             member_hasher = hashlib.new(algorithm)
-            with zf.open(name, "r") as member:
+            with zf.open(info, "r") as member:
                 while chunk := member.read(chunk_size):
                     member_hasher.update(chunk)
 
