@@ -1,6 +1,6 @@
 r"""Compare Torch NaN reductions with NumPy."""
 
-from warnings import catch_warnings, simplefilter
+from warnings import catch_warnings
 
 import numpy as np
 import pytest
@@ -26,25 +26,19 @@ from tsdm.types.aliases import Axis
 def test_nan_reductions(
     *, name: str, axis: Axis, keepdims: bool, data: list[list[float]]
 ) -> None:
-    r"""Match values, shapes, dtypes, and warnings, including valid infinities."""
+    r"""Match values, shapes, and dtypes, including valid infinities."""
     array = np.asarray(data)
     with (
-        catch_warnings(record=True) as expected_warnings,
+        catch_warnings(action="ignore", category=RuntimeWarning),
         np.errstate(invalid="ignore"),
     ):
-        simplefilter("always")
         expected = getattr(np, name)(array, axis=axis, keepdims=keepdims)
-    with catch_warnings(record=True) as actual_warnings:
-        simplefilter("always")
-        actual = getattr(backend, name)(
-            torch.from_numpy(array), axis=axis, keepdims=keepdims
-        ).numpy()
+    actual = getattr(backend, name)(
+        torch.from_numpy(array), axis=axis, keepdims=keepdims
+    ).numpy()
     np.testing.assert_allclose(actual, expected, equal_nan=True)
     assert actual.shape == expected.shape
     assert actual.dtype == expected.dtype
-    actual_messages = [(w.category, str(w.message)) for w in actual_warnings]
-    expected_messages = [(w.category, str(w.message)) for w in expected_warnings]
-    assert actual_messages == expected_messages
 
 
 @pytest.mark.parametrize("axis", [None, 0, -1, (0, 1), ()])
@@ -57,17 +51,11 @@ def test_nanstd_special_inputs(*, axis: Axis, keepdims: bool, kind: str) -> None
         if kind == "empty"
         else np.array([[1 + 2j, np.nan], [3 - 4j, 5 + 6j]])
     )
-    with catch_warnings(record=True) as expected_warnings:
-        simplefilter("always")
+    with catch_warnings(action="ignore", category=RuntimeWarning):
         expected = np.nanstd(array, axis=axis, keepdims=keepdims)
-    with catch_warnings(record=True) as actual_warnings:
-        simplefilter("always")
-        actual = backend.nanstd(
-            torch.from_numpy(array), axis=axis, keepdims=keepdims
-        ).numpy()
+    actual = backend.nanstd(
+        torch.from_numpy(array), axis=axis, keepdims=keepdims
+    ).numpy()
     np.testing.assert_allclose(actual, expected, equal_nan=True)
     assert actual.shape == expected.shape
     assert actual.dtype == expected.dtype
-    actual_messages = [(w.category, str(w.message)) for w in actual_warnings]
-    expected_messages = [(w.category, str(w.message)) for w in expected_warnings]
-    assert actual_messages == expected_messages

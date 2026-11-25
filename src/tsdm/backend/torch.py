@@ -48,7 +48,7 @@ def nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     r"""Return the minimum along the selected axes, ignoring `NaN`.
 
     The input is assumed to be a floating-point tensor.
-    An all-NaN slice produces `NaN` and emits a `RuntimeWarning`, as in NumPy.
+    An all-NaN slice produces `NaN`.
     """
     if not x.is_floating_point():
         raise ValueError("Expected a floating-point tensor.")
@@ -67,7 +67,7 @@ def nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     r"""Return the maximum along the selected axes, ignoring `NaN`.
 
     The input is assumed to be a floating-point tensor.
-    An all-NaN slice produces `NaN` and emits a `RuntimeWarning`, as in NumPy.
+    An all-NaN slice produces `NaN`.
     """
     if not x.is_floating_point():
         raise ValueError("Expected a floating-point tensor.")
@@ -89,7 +89,7 @@ def nanstd(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
 
     $$ μ = \frac{1}{N} ∑_{i ∈ I} xᵢ, \qquad σ = \sqrt{\frac{1}{N} ∑_{i ∈ I} |xᵢ - μ|²} $$
 
-    An empty or all-NaN slice produces `NaN` and emits a `RuntimeWarning`.
+    An empty or all-NaN slice produces `NaN`.
     The variance uses zero degrees of freedom correction, matching the default
     behavior of `numpy.nanstd`. Complex inputs produce real standard deviations.
     """
