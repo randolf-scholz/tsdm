@@ -9,7 +9,6 @@ __all__ = [
     "validate_csv_header",
     "validate_file_hash",
     "validate_hash",
-    "validate_table_hash",
     "validate_table_schema",
     "validate_table_shape",
 ]
@@ -26,7 +25,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal, assert_never, overload
 
 from . import config
-from .hashing import Hash, hash_array, hash_file
+from .hashing import Hash, hash_file
 from .types import FilePath, FileStream, HasShape
 
 
@@ -263,65 +262,6 @@ def validate_file_hash(
             finally:
                 stream.seek(position)
             actual_hash = Hash(hasher.hexdigest(), hasher.name)
-    return validate_hash(actual_hash, expected_hash, errors=error_handler)
-
-
-def validate_table_hash(
-    table: Any,
-    /,
-    expected_hash: Hash | str | None,
-    *,
-    skipif_no_reference: bool = False,
-    errors: ErrorHandler.Mode = "warn",
-    hash_algorithm: str | None = None,
-) -> bool:
-    r"""Validate the hash of a table-like object, given a reference hash value.
-
-    Args:
-        table: The table to validate.
-        expected_hash: The reference hash value.
-        hash_algorithm: Algorithm to use. If omitted, use the reference algorithm
-            when available; otherwise warn and use `config.DEFAULT_HASH_METHOD`.
-        errors: Message policy: `"ignore"`, `"log"`, `"warn"`, or `"raise"`.
-        skipif_no_reference: Whether to return `True` without hashing when the
-            reference hash is missing.
-
-    Returns:
-        Whether the digest matches, or validation was explicitly skipped.
-
-    Raises:
-        ValidationError: If `errors="raise"` and the digest does not match.
-    """
-    # Try to determine the hash algorithm from the array type
-    cls = type(table)
-    name = f"{cls} of shape={table.shape}"
-    expected_hash = Hash.from_value(expected_hash)
-    error_handler = make_error_handler(errors, prefix=f"{name!s}: ")
-
-    if expected_hash is None and skipif_no_reference:
-        return True
-
-    # Determine the hash algorithm
-    match hash_algorithm:
-        case str(hash_alg):
-            pass
-        case None:
-            match expected_hash:
-                case Hash(hash_algorithm=str(hash_alg)):
-                    pass  # assume same algorithm as reference
-                case _:
-                    warnings.warn(
-                        "No hash algorithm given for reference hash!"
-                        f"Using {config.DEFAULT_HASH_METHOD!r} as default.",
-                        UserWarning,
-                        stacklevel=2,
-                    )
-                    hash_alg = config.DEFAULT_HASH_METHOD
-        case _:
-            raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
-
-    # Compute the hash.
-    actual_hash = hash_array(table, hash_alg)
     return validate_hash(actual_hash, expected_hash, errors=error_handler)
 
 

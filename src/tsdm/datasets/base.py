@@ -57,7 +57,6 @@ from tsdm.validation import (
     ErrorHandler,
     ValidationError,
     validate_file_hash,
-    validate_table_hash,
     validate_table_schema,
     validate_table_shape,
 )
@@ -178,7 +177,6 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     - `rawdata_hashes`: Reference hashes for raw files, checked after `get_rawdata`.
     - `dataset_hashes`: Reference hashes for cleaned files, checked by `clean` and `load`.
-    - `table_hashes`: Reference hashes for in-memory tables, checked by `validate_tables`.
     - `table_schemas`: Reference schemas for in-memory tables, checked by `validate_tables`.
     """
 
@@ -231,8 +229,6 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     r"""READ-ONLY: Shapes for the raw dataset tables."""
     dataset_hashes: Mapping[Key, str | None] = EMPTY_MAP
     r"""READ-ONLY: Hashes of the cleaned dataset files."""
-    table_hashes: Mapping[Key, str | None] = EMPTY_MAP
-    r"""READ-ONLY: Hashes of the in-memory cleaned dataset tables."""
     table_schemas: Mapping[Key, Mapping[str, Any]] = EMPTY_MAP
     r"""READ-ONLY: Schemas of the in-memory cleaned dataset tables."""
     table_shapes: Mapping[Key, tuple[int, ...]] = EMPTY_MAP
@@ -931,7 +927,7 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
     def validate_table(
         self, key: Key, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
-        r"""Validate one table."""
+        r"""Validate one table's shape and schema."""
         excs: list[ValidationError] = []
         self.LOGGER.debug(f"{key=} Validating table shape")  # ruff: ignore[G004]
         try:
@@ -954,22 +950,10 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
             schema_matches = False
             excs.append(exc2)
 
-        self.LOGGER.debug(f"{key=} Validating table hash")  # ruff: ignore[G004]
-        try:
-            hash_matches = validate_table_hash(
-                self.tables[key],
-                expected_hash=self.table_hashes.get(key),
-                skipif_no_reference=True,
-                errors=errors,
-            )
-        except ValidationError as exc3:
-            hash_matches = False
-            excs.append(exc3)
-
         if excs:
             raise ValidationError from ExceptionGroup("Table validation failed", excs)
 
-        return shapes_match and schema_matches and hash_matches
+        return shapes_match and schema_matches
 
     # endregion validation methods -----------------------------------------------------
 
