@@ -364,8 +364,8 @@ class TestPartitions:
     ) -> None:
         r"""Former aliases and unknown names are independent, unchanged split keys."""
         items = range(sum(configuration.values()))
-        partitions = fold_function(items, **{parameter: configuration}, num=1, rng=0)
-        assert list(partitions[0]) == list(configuration)
+        [partition] = fold_function(items, **{parameter: configuration}, num=1, rng=0)
+        assert list(partition) == list(configuration)
 
     @pytest.mark.parametrize("num", [None, 0, -1, 1.5])
     def test_invalid_counts(self, num, fold_function, parameter: str) -> None:
@@ -433,32 +433,28 @@ class TestRandomPartitions(TestPartitions):
 
     def test_exact_sizes_and_tuple_identifiers(self) -> None:
         keys = [(index, "series") for index in range(7000)]
-        parts = random_partitions(keys, num=1, sizes=(5000, 1000, 1000), rng=42)[0]
+        [parts] = random_partitions(keys, num=1, sizes=(5000, 1000, 1000), rng=42)
         assert tuple(len(part) for part in parts) == (5000, 1000, 1000)
         assert is_partition(parts, union=keys)
-        assert (
-            parts == random_partitions(keys, num=1, sizes=(5000, 1000, 1000), rng=42)[0]
-        )
+        [repeated] = random_partitions(keys, num=1, sizes=(5000, 1000, 1000), rng=42)
+        assert parts == repeated
 
     def test_largest_remainder_ties_favor_earlier_parts(self) -> None:
-        parts = random_partitions(range(1), num=1, ratios=(1, 1), rng=0)[0]
+        [parts] = random_partitions(range(1), num=1, ratios=(1, 1), rng=0)
         assert tuple(len(part) for part in parts) == (1, 0)
-        parts = random_partitions(range(5), num=1, ratios=(1, 1, 1), rng=0)[0]
+        [parts] = random_partitions(range(5), num=1, ratios=(1, 1, 1), rng=0)
         assert tuple(len(part) for part in parts) == (2, 2, 1)
 
     def test_large_finite_ratios(self) -> None:
-        parts = random_partitions(range(5), num=1, ratios=(1e308, 1e308), rng=0)[0]
+        [parts] = random_partitions(range(5), num=1, ratios=(1e308, 1e308), rng=0)
         assert tuple(len(part) for part in parts) == (3, 2)
         assert is_partition(parts, union=range(5))
 
     def test_empty_partitions(self) -> None:
-        assert random_partitions([], num=1, ratios=(1, 0), rng=0)[0] == ([], [])
-        assert random_partitions([], num=1, ratios={"train": 1, "test": 0}, rng=0)[
-            0
-        ] == {
-            "train": [],
-            "test": [],
-        }
+        [unnamed] = random_partitions([], num=1, ratios=(1, 0), rng=0)
+        assert unnamed == ([], [])
+        [named] = random_partitions([], num=1, ratios={"train": 1, "test": 0}, rng=0)
+        assert named == {"train": [], "test": []}
 
     @pytest.mark.parametrize("sizes", [(), (0, 0)])
     @pytest.mark.parametrize("named", [True, False])
@@ -477,7 +473,7 @@ class TestRandomPartitions(TestPartitions):
         with pytest.raises(ValueError, match="sizes"):
             random_partitions(
                 range(2), num=1, sizes=dict(enumerate(sizes)) if named else sizes, rng=0
-            )[0]
+            )
 
     @pytest.mark.parametrize(
         "ratios", [(), (0, 0), (-1, 2), (float("nan"), 1), (float("inf"), 1)]
@@ -490,7 +486,7 @@ class TestRandomPartitions(TestPartitions):
                 num=1,
                 ratios=dict(enumerate(ratios)) if named else ratios,
                 rng=0,
-            )[0]
+            )
 
     @pytest.mark.parametrize("num", [1, 2])
     def test_exactly_one_allocation_mode(self, num: int) -> None:
@@ -507,19 +503,19 @@ class TestRandomPartitions(TestPartitions):
             {"train": 3, "training": 3, ("custom", 1): 2, marker: 0}
         )
         items = [[index % 2] for index in range(8)]
-        named = (
-            random_partitions(items, num=1, sizes=spec, rng=42)[0]
+        [named] = (
+            random_partitions(items, num=1, sizes=spec, rng=42)
             if parameter == "sizes"
-            else random_partitions(items, num=1, ratios=spec, rng=42)[0]
+            else random_partitions(items, num=1, ratios=spec, rng=42)
         )
         assert isinstance(named, dict)
         assert all(actual is key for actual, key in zip(named, spec, strict=True))
         assert [len(part) for part in named.values()] == [3, 3, 2, 0]
         for counts in (list(spec.values()), tuple(spec.values())):
-            unnamed = (
-                random_partitions(items, num=1, sizes=counts, rng=42)[0]
+            [unnamed] = (
+                random_partitions(items, num=1, sizes=counts, rng=42)
                 if parameter == "sizes"
-                else random_partitions(items, num=1, ratios=counts, rng=42)[0]
+                else random_partitions(items, num=1, ratios=counts, rng=42)
             )
             assert isinstance(unnamed, tuple)
             assert tuple(named.values()) == unnamed
@@ -539,10 +535,10 @@ class TestRandomPartitions(TestPartitions):
         unique_labels = list(dict.fromkeys(labels))
         spec = {"train": 1, ("test", 0): 2, "empty": 0} if named else [1, 2, 0]
         options: dict[str, Any] = {parameter: spec}
-        parts = random_partitions(items, num=1, **options, group_labels=labels, rng=42)[
-            0
-        ]
-        expected = random_partitions(unique_labels, num=1, **options, rng=42)[0]
+        [parts] = random_partitions(
+            items, num=1, **options, group_labels=labels, rng=42
+        )
+        [expected] = random_partitions(unique_labels, num=1, **options, rng=42)
         actual_parts = list(parts.values()) if isinstance(parts, dict) else parts
         expected_parts = (
             list(expected.values()) if isinstance(expected, dict) else expected
@@ -561,12 +557,10 @@ class TestRandomPartitions(TestPartitions):
                 for left, right in zip(actual, expected_items, strict=True)
             )
         assert len(actual_parts[-1]) == 0
-        assert (
-            parts
-            == random_partitions(items, num=1, **options, group_labels=labels, rng=42)[
-                0
-            ]
+        [repeated] = random_partitions(
+            items, num=1, group_labels=labels, rng=42, **options
         )
+        assert parts == repeated
 
     @pytest.mark.parametrize("named", [True, False])
     @pytest.mark.parametrize("grouped", [True, False])
@@ -590,8 +584,8 @@ class TestRandomPartitions(TestPartitions):
         expected = random_partitions(
             items, num=3, **options, group_labels=labels, rng=reference_rng
         )
-        actual = [
-            random_partitions(items, num=1, **options, group_labels=labels, rng=rng)[0]
+        actual: list[tuple[list[int], ...]] = [  # pyrefly: ignore[bad-assignment]
+            *random_partitions(items, num=1, **options, group_labels=labels, rng=rng)  # pyrefly: ignore[invalid-annotation]
             for _ in range(3)
         ]
         assert actual == expected
@@ -606,54 +600,50 @@ class TestRandomPartitions(TestPartitions):
         r"""Each occurrence is its own group by default, including duplicate values."""
         items = [[0], [1], [0], [1]]
         options: dict[str, Any] = {parameter: [2, 2]}
-        assert (
-            random_partitions(items, num=1, **options, rng=37)[0]
-            == random_partitions(
-                items, num=1, **options, group_labels=["d", "b", "a", "c"], rng=37
-            )[0]
+        [actual] = random_partitions(items, num=1, **options, rng=37)
+        [expected] = random_partitions(
+            items, num=1, group_labels=["d", "b", "a", "c"], rng=37, **options
         )
+        assert actual == expected
 
     def test_group_sizes_count_groups(self) -> None:
         r"""Explicit sizes count groups, never sample counts."""
-        assert random_partitions(
+        [actual] = random_partitions(
             range(4), num=1, sizes=[1, 0], group_labels=["a"] * 4, rng=0, max_error=0
-        )[0] == ([0, 1, 2, 3], [])
+        )
+        assert actual == ([0, 1, 2, 3], [])
         with pytest.raises(ValueError, match="number of groups"):
             random_partitions(
                 range(4), num=1, sizes=[4, 0], group_labels=["a"] * 4, rng=0
-            )[0]
+            )
 
     def test_group_sample_sizes_do_not_bias_assignment(self) -> None:
         r"""Either unequal group can be the test set, even if it misses sample targets."""
         labels = ["a"] * 9 + ["b"]
-        test_sets = {
-            tuple(
-                random_partitions(
-                    range(10), num=1, ratios=[1, 1], group_labels=labels, rng=seed
-                )[0][1]
+        test_sets = set()
+        for seed in range(16):
+            [(_, test)] = random_partitions(
+                range(10), num=1, ratios=[1, 1], group_labels=labels, rng=seed
             )
-            for seed in range(16)
-        }
+            test_sets.add(tuple(test))
         assert test_sets == {tuple(range(9)), (9,)}
-        assert (
-            random_partitions(
-                range(10), num=1, ratios=[9, 1], group_labels=labels, rng=0
-            )[0][1]
-            == []
+        [actual] = random_partitions(
+            range(10), num=1, ratios=[9, 1], group_labels=labels, rng=0
         )
+        assert actual[1] == []
 
     def test_group_error_checks_samples_without_retrying(self) -> None:
         r"""Equal group counts can violate sample targets; failure consumes just one draw."""
         options: dict[str, Any] = {"ratios": [1, 1], "group_labels": ["a"] * 9 + ["b"]}
         rng = Random(37)
         reference_rng = Random(37)
-        expected = random_partitions(range(10), num=1, **options, rng=reference_rng)[0]
-        assert (
-            random_partitions(range(10), num=1, **options, rng=37, max_error=0.41)[0]
-            == expected
+        [expected] = random_partitions(range(10), num=1, rng=reference_rng, **options)
+        [actual] = random_partitions(
+            range(10), num=1, rng=37, max_error=0.41, **options
         )
+        assert actual == expected
         with pytest.raises(RuntimeError, match="total variation distance"):
-            random_partitions(range(10), num=1, **options, rng=rng, max_error=0.39)[0]
+            random_partitions(range(10), num=1, rng=rng, max_error=0.39, **options)
         assert rng.getstate() == reference_rng.getstate()
 
     @pytest.mark.parametrize("parameter", ["sizes", "ratios"])
@@ -664,10 +654,8 @@ class TestRandomPartitions(TestPartitions):
             with pytest.raises(ValueError, match=r"sizes.*positive"):
                 random_partitions([], num=1, **options, group_labels=[], rng=0)
             return
-        assert random_partitions([], num=1, **options, group_labels=[], rng=0)[0] == (
-            [],
-            [],
-        )
+        [actual] = random_partitions([], num=1, **options, group_labels=[], rng=0)
+        assert actual == ([], [])
         assert random_partitions([], num=2, **options, group_labels=[], rng=0) == [
             ([], []),
             ([], []),
@@ -708,14 +696,14 @@ class TestRandomPartitions(TestPartitions):
             ] == [2, 2, 1, 0]
 
     def test_extreme_ratios_are_normalized_without_overflow(self) -> None:
-        folds = random_partitions(
+        [fold] = random_partitions(
             range(5),
             ratios={"train": 1e308, "test": 1e308},
             num=1,
             rng=0,
         )
-        assert len(folds[0]["train"]) == 3
-        assert len(folds[0]["test"]) == 2
+        assert len(fold["train"]) == 3
+        assert len(fold["test"]) == 2
 
     def test_repeated_error_checks_later_folds(self) -> None:
         r"""Fold zero balances items exactly; fold one has TV 0.125 despite equal groups."""
@@ -732,9 +720,9 @@ class TestRandomPartitions(TestPartitions):
     def test_random_partition_dictionary_keys(self) -> None:
         r"""Partition dictionary keys into train, validation, and test datasets."""
         dataset = {f"sample-{index}": index for index in range(10)}
-        train_keys, validation_keys, test_keys = random_partitions(
+        [(train_keys, validation_keys, test_keys)] = random_partitions(
             dataset.keys(), num=1, sizes=[4, 4, 2], rng=0
-        )[0]
+        )
 
         train_set = {key: dataset[key] for key in train_keys}
         validation_set = {key: dataset[key] for key in validation_keys}
@@ -744,17 +732,16 @@ class TestRandomPartitions(TestPartitions):
         assert train_set.keys().isdisjoint(validation_set)
         assert train_set.keys().isdisjoint(test_set)
         assert validation_set.keys().isdisjoint(test_set)
-        assert (
-            train_set.keys() | validation_set.keys() | test_set.keys() == dataset.keys()
-        )
+        actual = train_set.keys() | validation_set.keys() | test_set.keys()
+        assert actual == dataset.keys()
 
     def test_random_partition_tensor_and_labels(self) -> None:
         r"""Partition paired tensor features and string labels by shared indices."""
         features = torch.arange(30).reshape(10, 3)
         labels = [f"label-{index}" for index in range(len(features))]
-        train_indices, validation_indices, test_indices = random_partitions(
+        [(train_indices, validation_indices, test_indices)] = random_partitions(
             range(len(features)), num=1, ratios=[0.4, 0.4, 0.2], rng=0
-        )[0]
+        )
 
         train_set = (
             features[train_indices],
@@ -823,12 +810,10 @@ class TestRotatatingPartition(TestPartitions):
         initial_state = getstate()
         folds = rotating_partitions(items, num=2, chunks=chunks, group_labels=labels)
         assert folds == expected
-        assert (
-            rotating_partitions(
-                items, num=2, chunks=chunks, rng=None, group_labels=labels
-            )
-            == expected
+        actual = rotating_partitions(
+            items, num=2, chunks=chunks, rng=None, group_labels=labels
         )
+        assert actual == expected
         assert getstate() == initial_state
 
     def test_rotating_fold_assignments(self) -> None:
@@ -941,9 +926,10 @@ class TestRotatatingPartition(TestPartitions):
                     assert set(members).isdisjoint(outer[fold]["test"])
 
     def test_rotating_partitions_with_boolean_items(self) -> None:
-        assert rotating_partitions(
-            [True, False], chunks={"train": 1, "test": 1}, num=2, rng=0
-        )[0]["train"] == [True]
+        [actual] = rotating_partitions(
+            [True, False], chunks={"train": 1, "test": 1}, num=1, rng=0
+        )
+        assert actual["train"] == [True]
 
     @pytest.mark.parametrize(
         ("chunks", "message"),
