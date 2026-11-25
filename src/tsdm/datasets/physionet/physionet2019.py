@@ -266,10 +266,6 @@ class PhysioNet2019(PolarsDataset[Key]):
 
     rawdata_files = ["training_setA.zip", "training_setB.zip"]
     rawdata_hashes = {
-        "training_setA.zip": None,
-        "training_setB.zip": None,
-    }
-    rawdata_content_hashes = {
         "training_setA.zip": "zip:C8B68113750A7A817150C723D8438BE4431716A5BADA88899A9F50D43E76DD81",
         "training_setB.zip": "zip:37ED047C7F5A0834F90BB3C03E9F17199F98489D09CFEF51CD92B61E60B960C3",
     }
@@ -433,15 +429,16 @@ class PhysioNet2019(PolarsDataset[Key]):
         self.LOGGER.info("Downloading %s from %s", fname, url)
         remote.download_directory_to_zip(url, path, add_toplevel_dir=False)
 
-    def validate_rawdata(
-        self, fname: str | None = None, *, errors: ErrorHandler.Mode = "raise"
+    def validate_rawdata_file(
+        self, fname: str, /, *, errors: ErrorHandler.Mode = "warn"
     ) -> bool:
-        r"""Validate a single rawdata file."""
-        if fname is None:
-            return super().validate_rawdata(errors=errors)
-
-        expected_hash = self.rawdata_content_hashes.get(fname, None)
-        self.LOGGER.info(f"Validating {fname!r} against hash {expected_hash!s}")  # ruff: ignore[G004]
+        r"""Compare a raw data archive's contents with its reference digest."""
         path = self.rawdata_paths[fname]
+        if not path.exists():
+            ErrorHandler(errors).emit(f"Raw data file does not exist: {path!s}")
+            return False
+
+        expected_hash = self.rawdata_hashes.get(fname)
+        self.LOGGER.info("Validating %r against hash %s", fname, expected_hash)
         actual_hash = hash_zip_contents(path)
-        return validate_hash(actual_hash, expected_hash)
+        return validate_hash(actual_hash, expected_hash, errors=errors)
