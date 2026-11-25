@@ -58,7 +58,7 @@ OUTLIER_CASES = [
         SERIES_LIMITS,
         SERIES_EXPECTED,
         SERIES_MASK,
-        pa.ChunkedArray,
+        pa.BooleanArray,
         id="pyarrow-chunked-array",
     ),
     pytest.param(
