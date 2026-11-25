@@ -1,7 +1,8 @@
 r"""Tests for tabular preprocessing helpers."""
 
-from collections.abc import Callable, Mapping, Sequence
-from typing import Any
+from collections.abc import Callable, Mapping
+from functools import partial
+from typing import Any, NamedTuple
 
 import pandas as pd
 import polars as pl
@@ -10,359 +11,257 @@ import pytest
 
 import tsdm.backend as B
 
-type OutlierInput = (
-    pa.Array
-    | pa.ChunkedArray
-    | pa.Table
-    | pd.Series
-    | pd.DataFrame
-    | pl.Series
-    | pl.DataFrame
-)
-type Expected = list[int | None] | dict[str, list[int | None]]
-type OutlierMask = list[bool] | dict[str, list[bool]]
+type Table = pa.Table | pd.DataFrame | pl.DataFrame
+type TableFactory = Callable[..., Table]
+type Tabular = Table | pa.Array | pa.ChunkedArray | pd.Series | pl.Series
+type Values[T] = list[T] | dict[str, list[T]]
 type OutlierBounds = Mapping[str, float | bool | None]
 
-FIXED_DATA: dict[str, list[int | None]] = {
-    "first": [-1, 0, 1, 2, 3, None],
-    "second": [0, -3, 0, 3, 3, None],
-}
-SERIES_LIMITS: OutlierBounds = {
-    "lower_bound": 0,
-    "upper_bound": 2,
-    "lower_inclusive": True,
-    "upper_inclusive": True,
-}
-TABLE_LIMITS: dict[str, OutlierBounds] = {
-    "first": SERIES_LIMITS,
-    "second": {
-        "lower_bound": -2,
-        "upper_bound": 2,
-        "lower_inclusive": True,
-        "upper_inclusive": True,
-    },
-}
-SERIES_EXPECTED: list[int | None] = [0, 1, 2, None]
-TABLE_EXPECTED: dict[str, list[int | None]] = {
-    "first": [None, 0, 1, 2, None],
-    "second": [0, None, 0, None, None],
-}
-SERIES_MASK: list[bool] = [True, False, False, False, True, False]
-TABLE_MASK: dict[str, list[bool]] = {
-    "first": [True, False, False, False, True, False],
-    "second": [False, True, False, True, True, False],
-}
-OUTLIER_CASES = [
-    pytest.param(
-        lambda: pa.chunked_array([FIXED_DATA["first"][:3], FIXED_DATA["first"][3:]]),
-        SERIES_LIMITS,
-        SERIES_EXPECTED,
-        SERIES_MASK,
-        pa.BooleanArray,
-        id="pyarrow-chunked-array",
-    ),
-    pytest.param(
-        lambda: pa.array(FIXED_DATA["first"]),
-        SERIES_LIMITS,
-        SERIES_EXPECTED,
-        SERIES_MASK,
-        pa.Array,
-        id="pyarrow-array",
-    ),
-    pytest.param(
-        lambda: pa.table(FIXED_DATA),
-        TABLE_LIMITS,
-        TABLE_EXPECTED,
-        TABLE_MASK,
-        pa.Table,
-        id="pyarrow-table",
-    ),
-    pytest.param(
-        lambda: pd.Series(FIXED_DATA["first"], name="first"),
-        SERIES_LIMITS,
-        SERIES_EXPECTED,
-        SERIES_MASK,
-        pd.Series,
-        id="pandas-series",
-    ),
-    pytest.param(
-        lambda: pd.DataFrame(FIXED_DATA),
-        TABLE_LIMITS,
-        TABLE_EXPECTED,
-        TABLE_MASK,
-        pd.DataFrame,
-        id="pandas-dataframe",
-    ),
-    pytest.param(
-        lambda: pl.Series("first", FIXED_DATA["first"]),
-        SERIES_LIMITS,
-        SERIES_EXPECTED,
-        SERIES_MASK,
-        pl.Series,
-        id="polars-series",
-    ),
-    pytest.param(
-        lambda: pl.DataFrame(FIXED_DATA),
-        TABLE_LIMITS,
-        TABLE_EXPECTED,
-        TABLE_MASK,
-        pl.DataFrame,
-        id="polars-dataframe",
-    ),
-]
+
+class TestCase(NamedTuple):
+    factory: Callable[[], Tabular]
+    limits: OutlierBounds | Mapping[str, OutlierBounds]
+    expected_values: Values[int | None]
+    expected_mask: Values[bool]
+    mask_type: type[Tabular] | None = None
 
 
-def _normalize_values(values: Sequence[Any], /) -> list[int | None]:
-    r"""Convert backend-specific null values to Python ``None``."""
-    return [None if pd.isna(value) else int(value) for value in values]
+TABLE_FACTORIES: dict[str, TableFactory] = {
+    "pandas": pd.DataFrame,
+    "polars": pl.DataFrame,
+    "pyarrow": pa.table,
+}
 
 
-def _normalize(result: OutlierInput, /) -> Expected:
-    r"""Convert a supported result to a backend-independent representation."""
-    match result:
-        case pl.Series() as series:
-            return _normalize_values(series.to_list())
-        case pl.DataFrame() as frame:
-            return {
-                column: _normalize_values(values)
-                for column, values in frame.to_dict(as_series=False).items()
-            }
-        case (pa.Array() | pa.ChunkedArray()) as array:
-            return _normalize_values(array.to_pylist())
-        case pa.Table() as table:
-            return {
-                column: _normalize_values(values)
-                for column, values in table.to_pydict().items()
-            }
-        case pd.Series() as series:
-            return _normalize_values(series.to_list())
-        case pd.DataFrame() as frame:
-            return {
-                column: _normalize_values(frame[column].to_list())
-                for column in frame.columns
-            }
-
+def _values(obj: Tabular, /) -> Values[Any]:
+    r"""Convert backend values to Python values, using `None` for nulls."""
+    match obj:
+        case pl.Series():
+            return obj.to_list()
+        case pl.DataFrame():
+            return obj.to_dict(as_series=False)
+        case pa.Array() | pa.ChunkedArray():
+            return obj.to_pylist()
+        case pa.Table():
+            return obj.to_pydict()
+        case pd.Series():
+            return obj.astype(object).where(obj.notna(), None).to_list()
+        case pd.DataFrame():
+            return obj.astype(object).where(obj.notna(), None).to_dict(orient="list")
         case _:
-            raise TypeError(f"Unsupported result type: {type(result)}")
+            raise TypeError(f"Unsupported result type: {type(obj)}")
 
 
-def _normalize_mask(result: OutlierInput, /) -> OutlierMask:
-    r"""Convert a supported boolean result to a Python representation."""
-    match result:
-        case pl.Series() as series:
-            return [bool(value) for value in series.to_list()]
-        case pl.DataFrame() as frame:
-            return {
-                column: [bool(value) for value in values]
-                for column, values in frame.to_dict(as_series=False).items()
-            }
-        case (pa.Array() | pa.ChunkedArray()) as array:
-            return [bool(value) for value in array.to_pylist()]
-        case pa.Table() as table:
-            return {
-                column: [bool(value) for value in values]
-                for column, values in table.to_pydict().items()
-            }
-        case pd.Series() as series:
-            return [bool(value) for value in series.to_list()]
-        case pd.DataFrame() as frame:
-            return {
-                column: [bool(value) for value in frame[column].to_list()]
-                for column in frame.columns
-            }
-        case _:
-            raise TypeError(f"Unsupported result type: {type(result)}")
-
-
-@pytest.mark.parametrize(
-    ("factory", "limits", "expected", "_mask", "result_type"), OUTLIER_CASES
-)
-@pytest.mark.parametrize("registered", [False, True])
-def test_remove_outliers(
-    factory: Callable[[], OutlierInput],
-    limits: OutlierBounds | Mapping[str, OutlierBounds],
-    expected: Expected,
-    _mask: OutlierMask,
-    result_type: type[OutlierInput],
-    *,
-    registered: bool,
-) -> None:
-    r"""Remove outliers consistently across all supported tabular backends."""
-    obj = factory()
-    backend = _backend(obj, registered=registered)
-    result = backend.remove_outliers(obj, limits)
-
-    assert isinstance(result, result_type)
-    assert _normalize(result) == expected
-
-
-@pytest.mark.parametrize(
-    ("factory", "limits", "_expected", "mask", "result_type"), OUTLIER_CASES
-)
-@pytest.mark.parametrize("registered", [False, True])
-def test_select_outliers(
-    factory: Callable[[], OutlierInput],
-    limits: OutlierBounds | Mapping[str, OutlierBounds],
-    _expected: Expected,
-    mask: OutlierMask,
-    result_type: type[OutlierInput],
-    *,
-    registered: bool,
-) -> None:
-    r"""Select outliers consistently across all supported tabular backends."""
-    obj = factory()
-    backend = _backend(obj, registered=registered)
-    result = backend.select_outliers(obj, limits)
-
-    assert isinstance(result, result_type)
-    assert _normalize_mask(result) == mask
-
-
-def _backend(obj: OutlierInput, /, *, registered: bool) -> Any:
+def _backend(obj: Tabular, /, *, registered: bool = False) -> Any:
     r"""Choose the direct module or its registered kernel collection."""
     if registered:
         return B.get_backend(obj)
     match obj:
-        case pa.Array() | pa.ChunkedArray() | pa.Table():
-            return B.pyarrow
-        case pd.Series() | pd.DataFrame():
-            return B.pandas
         case pl.Series() | pl.DataFrame():
             return B.polars
+        case pd.Series() | pd.DataFrame():
+            return B.pandas
+        case pa.Array() | pa.ChunkedArray() | pa.Table():
+            return B.pyarrow
         case _:
-            raise TypeError(type(obj))
+            raise TypeError(f"Unsupported backend for {type(obj)}")
 
 
-@pytest.mark.parametrize("backend", [B.pandas, B.polars, B.pyarrow])
-def test_limits_formats(backend: Any) -> None:
-    r"""Accept native limits tables and keyword bounds with equivalent results."""
-    columns = {
-        "variable": list(TABLE_LIMITS),
-        "description": ["First variable", "Second variable"],
-        **{
-            key: [bounds[key] for bounds in TABLE_LIMITS.values()]
-            for key in SERIES_LIMITS
+class TestOutliers:
+    SERIES_DATA = [-1, 0, 1, 2, 3, None]
+    TABLE_DATA = {
+        "first": SERIES_DATA,
+        "second": [0, -3, 0, 3, 3, None],
+    }
+    KEYWORD_LIMITS: dict[str, dict[str, float | bool | None]] = {
+        "lower_bound": {"first": 0, "second": -2},
+        "upper_bound": {"first": 2, "second": 2},
+        "lower_inclusive": {"first": True, "second": True},
+        "upper_inclusive": {"first": True, "second": True},
+    }
+    SERIES_LIMITS: OutlierBounds = {
+        bound: columns["first"] for bound, columns in KEYWORD_LIMITS.items()
+    }
+    TABLE_LIMITS: dict[str, OutlierBounds] = {
+        "first": SERIES_LIMITS,
+        "second": {
+            bound: columns["second"] for bound, columns in KEYWORD_LIMITS.items()
         },
     }
-    obj: Any
-    limits: Any
-    match backend:
-        case B.pandas:
-            obj = pd.DataFrame(FIXED_DATA)
-            limits = pd.DataFrame(columns)
-        case B.polars:
-            obj = pl.DataFrame(FIXED_DATA)
-            limits = pl.DataFrame(columns)
-        case B.pyarrow:
-            obj = pa.table(FIXED_DATA)
-            limits = pa.table(columns)
-        case _:
-            raise TypeError(backend)
-    keywords = {
-        key: dict(zip(columns["variable"], columns[key], strict=True))
-        for key in SERIES_LIMITS
+    LIMITS_COLUMNS = {
+        "variable": list(TABLE_DATA),
+        "description": ["First variable", "Second variable"],
+        **{bound: list(columns.values()) for bound, columns in KEYWORD_LIMITS.items()},
     }
-    assert _normalize(backend.remove_outliers(obj, limits)) == TABLE_EXPECTED
-    assert _normalize(backend.remove_outliers(obj, **keywords)) == TABLE_EXPECTED
-    assert _normalize(backend.remove_outliers(obj, keywords)) == TABLE_EXPECTED
-    assert _normalize_mask(backend.select_outliers(obj, limits)) == TABLE_MASK
-    assert _normalize_mask(backend.select_outliers(obj, **keywords)) == TABLE_MASK
-    assert _normalize_mask(backend.select_outliers(obj, keywords)) == TABLE_MASK
-    if isinstance(limits, pd.DataFrame):
-        assert (
-            _normalize(backend.remove_outliers(obj, limits.set_index("variable")))
-            == TABLE_EXPECTED
+    SERIES_EXPECTED = [0, 1, 2, None]
+    TABLE_EXPECTED = {
+        "first": [None, 0, 1, 2, None],
+        "second": [0, None, 0, None, None],
+    }
+    SERIES_MASK = [True, False, False, False, True, False]
+    TABLE_MASK = {
+        "first": SERIES_MASK,
+        "second": [False, True, False, True, True, False],
+    }
+    CASES: dict[str, TestCase] = {
+        "pyarrow-chunked-array": TestCase(
+            factory=partial(pa.chunked_array, [SERIES_DATA[:3], SERIES_DATA[3:]]),
+            limits=SERIES_LIMITS,
+            expected_values=SERIES_EXPECTED,
+            expected_mask=SERIES_MASK,
+            mask_type=pa.BooleanArray,
+        ),
+        "pyarrow-array": TestCase(
+            factory=partial(pa.array, SERIES_DATA),
+            limits=SERIES_LIMITS,
+            expected_values=SERIES_EXPECTED,
+            expected_mask=SERIES_MASK,
+            mask_type=pa.BooleanArray,
+        ),
+        "pyarrow-table": TestCase(
+            factory=partial(pa.table, TABLE_DATA),
+            limits=TABLE_LIMITS,
+            expected_values=TABLE_EXPECTED,
+            expected_mask=TABLE_MASK,
+        ),
+        "pandas-series": TestCase(
+            factory=partial(pd.Series, SERIES_DATA, name="first"),
+            limits=SERIES_LIMITS,
+            expected_values=SERIES_EXPECTED,
+            expected_mask=SERIES_MASK,
+        ),
+        "pandas-dataframe": TestCase(
+            factory=partial(pd.DataFrame, TABLE_DATA),
+            limits=TABLE_LIMITS,
+            expected_values=TABLE_EXPECTED,
+            expected_mask=TABLE_MASK,
+        ),
+        "polars-series": TestCase(
+            factory=partial(pl.Series, "first", SERIES_DATA),
+            limits=SERIES_LIMITS,
+            expected_values=SERIES_EXPECTED,
+            expected_mask=SERIES_MASK,
+        ),
+        "polars-dataframe": TestCase(
+            factory=partial(pl.DataFrame, TABLE_DATA),
+            limits=TABLE_LIMITS,
+            expected_values=TABLE_EXPECTED,
+            expected_mask=TABLE_MASK,
+        ),
+    }
+    FOREIGN_TABLE_FACTORIES = {
+        f"{name}-with-{foreign_name}": (factory, foreign_factory)
+        for name, factory in TABLE_FACTORIES.items()
+        for foreign_name, foreign_factory in TABLE_FACTORIES.items()
+        if name != foreign_name
+    }
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("registered", [False, True])
+    def test_remove_outliers(self, case: str, *, registered: bool) -> None:
+        r"""Remove outliers and preserve the input container type."""
+        test_case = self.CASES[case]
+        obj = test_case.factory()
+        backend = _backend(obj, registered=registered)
+        result = backend.remove_outliers(obj, test_case.limits)
+
+        assert isinstance(result, type(obj))
+        assert _values(result) == test_case.expected_values
+
+    @pytest.mark.parametrize("case", CASES)
+    @pytest.mark.parametrize("registered", [False, True])
+    def test_select_outliers(self, case: str, *, registered: bool) -> None:
+        r"""Select outliers with the backend's boolean mask container."""
+        test_case = self.CASES[case]
+        obj = test_case.factory()
+        backend = _backend(obj, registered=registered)
+        result = backend.select_outliers(obj, test_case.limits)
+
+        assert isinstance(result, test_case.mask_type or type(obj))
+        assert _values(result) == test_case.expected_mask
+
+    @pytest.mark.parametrize("case", TABLE_FACTORIES)
+    def test_limits_formats(self, case: str) -> None:
+        r"""Accept native limits tables, bound mappings, and keyword bounds."""
+        factory = TABLE_FACTORIES[case]
+        obj = factory(self.TABLE_DATA)
+        limits = factory(self.LIMITS_COLUMNS)
+        backend = _backend(obj)
+        remove = backend.remove_outliers
+        select = backend.select_outliers
+
+        assert _values(remove(obj, limits)) == self.TABLE_EXPECTED
+        assert _values(remove(obj, self.KEYWORD_LIMITS)) == self.TABLE_EXPECTED
+        assert _values(remove(obj, **self.KEYWORD_LIMITS)) == self.TABLE_EXPECTED
+        assert _values(select(obj, limits)) == self.TABLE_MASK
+        assert _values(select(obj, self.KEYWORD_LIMITS)) == self.TABLE_MASK
+        assert _values(select(obj, **self.KEYWORD_LIMITS)) == self.TABLE_MASK
+
+    def test_indexed_pandas_limits(self) -> None:
+        r"""Use the pandas limits index to identify variables."""
+        obj = pd.DataFrame(self.TABLE_DATA)
+        limits = pd.DataFrame(self.LIMITS_COLUMNS).set_index("variable")
+
+        assert _values(B.pandas.remove_outliers(obj, limits)) == self.TABLE_EXPECTED
+        assert _values(B.pandas.select_outliers(obj, limits)) == self.TABLE_MASK
+
+    @pytest.mark.parametrize("case", TABLE_FACTORIES)
+    def test_conflicting_limits(self, case: str) -> None:
+        r"""Reject positional limits combined with keyword bounds."""
+        factory = TABLE_FACTORIES[case]
+        obj = factory(self.TABLE_DATA)
+        limits = factory(self.LIMITS_COLUMNS)
+
+        with pytest.raises(ValueError, match="both"):
+            _backend(obj).remove_outliers(obj, limits, **self.KEYWORD_LIMITS)
+
+    @pytest.mark.parametrize("case", TABLE_FACTORIES)
+    @pytest.mark.parametrize("operation", ["select_outliers", "remove_outliers"])
+    def test_missing_boundary_mappings(self, case: str, *, operation: str) -> None:
+        r"""Reject table calls with incomplete boundary keywords."""
+        factory = TABLE_FACTORIES[case]
+        obj = factory(self.TABLE_DATA)
+        kernel = getattr(_backend(obj), operation)
+
+        with pytest.raises(TypeError):
+            kernel(obj, lower_bound=0)
+
+    @pytest.mark.parametrize("case", FOREIGN_TABLE_FACTORIES)
+    @pytest.mark.parametrize("operation", ["select_outliers", "remove_outliers"])
+    def test_foreign_limits_table(self, case: str, *, operation: str) -> None:
+        r"""Require explicit conversion of limits tables from a different backend."""
+        factory, foreign_factory = self.FOREIGN_TABLE_FACTORIES[case]
+        obj = factory(self.TABLE_DATA)
+        limits = foreign_factory(self.LIMITS_COLUMNS)
+
+        with pytest.raises(TypeError, match="mapping of outlier limits"):
+            getattr(_backend(obj), operation)(obj, limits)
+
+
+class TestStripWhitespace:
+    DATA = {"first": [" a ", None], "second": [" b ", " c "], "number": [1, 2]}
+    PANDAS_DTYPES = {"first": "string", "second": "string"}
+    FIRST_TRIMMED = ["a", None]
+    SELECTED_TRIMMED = {**DATA, "first": FIRST_TRIMMED}
+    ALL_TRIMMED = {**SELECTED_TRIMMED, "second": ["b", "c"]}
+
+    @pytest.mark.parametrize("case", TABLE_FACTORIES)
+    @pytest.mark.parametrize("registered", [False, True])
+    def test_strip_whitespace(self, case: str, *, registered: bool) -> None:
+        r"""Trim selected or all string columns, retaining nulls and numeric values."""
+        factory = TABLE_FACTORIES[case]
+        obj = (
+            pd.DataFrame(self.DATA).astype(self.PANDAS_DTYPES)
+            if factory is pd.DataFrame
+            else factory(self.DATA)
         )
-        assert (
-            _normalize_mask(backend.select_outliers(obj, limits.set_index("variable")))
-            == TABLE_MASK
-        )
-    with pytest.raises(ValueError, match="both"):
-        backend.remove_outliers(obj, limits, **keywords)
-    with pytest.raises(ValueError, match="Missing boundary"):
-        backend.select_outliers(obj, lower_bound=0)
+        kernel = _backend(obj, registered=registered)
 
+        assert _values(kernel.strip_whitespace(obj, "first")) == self.SELECTED_TRIMMED
+        assert _values(kernel.strip_whitespace(obj)) == self.ALL_TRIMMED
+        assert _values(obj) == self.DATA
 
-@pytest.mark.parametrize(
-    ("backend", "factory", "foreign_factory"),
-    [
-        (backend, factory, foreign_factory)
-        for backend, factory in [
-            (B.pandas, pd.DataFrame),
-            (B.polars, pl.DataFrame),
-            (B.pyarrow, pa.table),
-        ]
-        for foreign_factory in [pd.DataFrame, pl.DataFrame, pa.table]
-        if foreign_factory is not factory
-    ],
-)
-@pytest.mark.parametrize("operation", ["select_outliers", "remove_outliers"])
-def test_foreign_limits_table(
-    backend: Any,
-    factory: Callable[..., Any],
-    foreign_factory: Callable[..., Any],
-    *,
-    operation: str,
-) -> None:
-    r"""Require explicit conversion of limits tables from a different backend."""
-    limits = foreign_factory(
-        {
-            "variable": ["first"],
-            **{key: [value] for key, value in SERIES_LIMITS.items()},
-        }
-    )
-    obj = factory({"first": FIXED_DATA["first"]})
-    with pytest.raises(TypeError, match="mapping of outlier limits"):
-        getattr(backend, operation)(obj, limits)
-
-
-@pytest.mark.parametrize("backend", [B.pandas, B.polars, B.pyarrow])
-@pytest.mark.parametrize("registered", [False, True])
-def test_strip_whitespace(backend: Any, *, registered: bool) -> None:
-    r"""Trim selected or all string columns, retaining nulls and numeric values."""
-    data = {"first": [" a ", None], "second": [" b ", " c "], "number": [1, 2]}
-    obj: Any
-    match backend:
-        case B.pandas:
-            obj = pd.DataFrame(data).astype({"first": "string", "second": "string"})
-        case B.polars:
-            obj = pl.DataFrame(data)
-        case B.pyarrow:
-            obj = pa.table(data)
-        case _:
-            raise TypeError(backend)
-    kernel: Any = B.get_backend(obj) if registered else backend
-    assert _string_values(kernel.strip_whitespace(obj, "first")) == {
-        **data,
-        "first": ["a", None],
-    }
-    assert _string_values(kernel.strip_whitespace(obj)) == {
-        **data,
-        "first": ["a", None],
-        "second": ["b", "c"],
-    }
-    assert _string_values(obj) == data
-    series = obj["first"]
-    result = kernel.strip_whitespace(series)
-    values = (
-        result.to_pylist() if isinstance(result, pa.ChunkedArray) else result.to_list()
-    )
-    assert values[0] == "a"
-    assert pd.isna(values[1])
-    with pytest.raises(ValueError, match="columns"):
-        kernel.strip_whitespace(series, "first")
-
-
-def _string_values(frame: Any, /) -> dict[str, list[Any]]:
-    r"""Normalize string tables, preserving nulls as `None`."""
-    match frame:
-        case pd.DataFrame():
-            return (
-                frame.astype(object).where(frame.notna(), None).to_dict(orient="list")
-            )
-        case pl.DataFrame():
-            return frame.to_dict(as_series=False)
-        case pa.Table():
-            return frame.to_pydict()
-        case _:
-            raise TypeError(type(frame))
+        series = obj["first"]
+        assert _values(kernel.strip_whitespace(series)) == self.FIRST_TRIMMED
+        with pytest.raises(ValueError, match="columns"):
+            kernel.strip_whitespace(series, "first")

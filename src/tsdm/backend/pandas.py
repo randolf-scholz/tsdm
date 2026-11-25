@@ -315,8 +315,8 @@ def _select_outliers_dataframe(
     r"""Detect outliers in a DataFrame, given boundary values."""
     given_bounds = set.intersection(
         *(
-            set(d.keys())
-            for d in [lower_bound, upper_bound, lower_inclusive, upper_inclusive]
+            set(bounds)
+            for bounds in (lower_bound, upper_bound, lower_inclusive, upper_inclusive)
         )
     )
     if missing_bounds := set(df.columns) - given_bounds:
@@ -411,8 +411,8 @@ def _remove_outliers_dataframe[F: DataFrame](
     df = df.copy()
     given_bounds = set.union(
         *(
-            set(d.keys())
-            for d in [lower_bound, upper_bound, lower_inclusive, upper_inclusive]
+            set(bounds)
+            for bounds in (lower_bound, upper_bound, lower_inclusive, upper_inclusive)
         )
     )
 

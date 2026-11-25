@@ -26,9 +26,9 @@ TASKS = {
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("task_cls", TASKS.values(), ids=TASKS)
-def test_tasks(task_cls: type) -> None:
-    task = task_cls()
+@pytest.mark.parametrize("case", TASKS)
+def test_tasks(case: str) -> None:
+    task = TASKS[case]()
     key = (0, "train")
     dataloader = task.make_dataloader(key)
     next(iter(dataloader))
