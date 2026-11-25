@@ -499,11 +499,12 @@ def validate_csv_header(
 
             position = stream.tell()
             try:
-                with TextIOWrapper(
-                    stream, encoding="utf-8-sig", newline=""
-                ) as text_stream:
+                text_stream = TextIOWrapper(stream, encoding="utf-8-sig", newline="")
+                try:
                     reader = csv.reader(text_stream, delimiter=separator, strict=True)
                     actual_columns = next(reader, None)
+                finally:
+                    text_stream.detach()
             finally:
                 stream.seek(position)
 
