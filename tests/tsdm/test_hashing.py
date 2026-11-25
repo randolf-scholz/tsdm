@@ -1,6 +1,6 @@
 r"""Tests for file and archive hashing."""
 
-from hashlib import sha256
+from hashlib import sha3_256, sha256
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
@@ -24,46 +24,41 @@ def test_hash_file_restores_stream_position() -> None:
 
     with BytesIO(payload) as stream:
         stream.seek(4)
-        actual = hash_file(stream, block_size=3)
+        actual = hash_file(stream)
         assert actual == expected
         assert stream.tell() == 4
 
 
-@pytest.mark.parametrize("block_size", [0, -1])
-def test_hash_file_rejects_nonpositive_block_size(
-    tmp_path: Path, block_size: int
-) -> None:
-    r"""An invalid block size raises before opening the file."""
-    with pytest.raises(ValueError, match="block_size must be positive"):
-        hash_file(tmp_path / "missing.bin", block_size=block_size)
+def test_hash_file_uses_selected_algorithm(tmp_path: Path) -> None:
+    r"""A path is hashed with the supplied algorithm."""
+    payload = b"test payload"
+    path = tmp_path / "data.bin"
+    path.write_bytes(payload)
+    expected = Hash(sha3_256(payload).hexdigest(), "sha3_256")
+    assert hash_file(path, algorithm="sha3_256") == expected
 
 
-@pytest.mark.parametrize("chunk_size", [0, -1])
-def test_hash_zip_contents_rejects_nonpositive_chunk_size(chunk_size: int) -> None:
-    r"""An invalid chunk size raises before opening the archive."""
-    with (
-        BytesIO() as archive,
-        pytest.raises(ValueError, match="chunk_size must be positive"),
-    ):
-        hash_zip_contents(archive, chunk_size=chunk_size)
-
-
-def test_hash_zip_contents_rejects_duplicate_member_names() -> None:
-    r"""A ZIP with two entries sharing a name has no content digest."""
+def test_hash_zip_contents_rejects_duplicates_before_reading_members() -> None:
+    r"""Duplicate names are reported before a corrupt member can be read."""
     with BytesIO() as stream:
         with ZipFile(stream, "w") as archive:
             archive.writestr("data.csv", b"first")
+            archive.writestr("a.csv", b"intact member", compress_type=ZIP_STORED)
             with pytest.warns(UserWarning, match="Duplicate name"):
                 archive.writestr("data.csv", b"second")
+        corrupted = stream.getvalue().replace(b"intact member", b"broken member", 1)
 
-        with pytest.raises(ValueError, match=r"Duplicate ZIP member name: 'data\.csv'"):
-            hash_zip_contents(stream)
+    with (
+        BytesIO(corrupted) as stream,
+        pytest.raises(ValueError, match=r"Duplicate ZIP member names in .*'data\.csv'"),
+    ):
+        hash_zip_contents(stream)
 
 
-def test_hash_zip_contents_legacy_digest() -> None:
-    r"""The legacy digest ignores member order, timestamps, and compression."""
-    expected = "sha256:C8BBF09515240CED8F26E6719690973F97957F608496B8AE4623C6E38F69FD2E"
-    members = {"b.txt": b"b", "a.txt": b"a"}
+def test_hash_zip_contents_is_stable_across_repacks() -> None:
+    r"""The digest ignores member order, timestamps, and compression."""
+    expected = "sha256:c50236f189987f04e1701dd0e4929f6ff1a71df0739cf1ca54a82dba56a1fa4a"
+    members = {"b.txt": b"b", "café.txt": b"a"}
 
     with BytesIO() as original, BytesIO() as repacked:
         with ZipFile(original, "w") as archive:
@@ -83,6 +78,6 @@ def test_hash_zip_contents_reports_selected_algorithm() -> None:
     with BytesIO() as stream:
         with ZipFile(stream, "w") as archive:
             archive.writestr("data.csv", b"payload")
-        actual = hash_zip_contents(stream, "sha3_256")
+        actual = hash_zip_contents(stream, algorithm="sha3_256")
 
     assert actual.hash_algorithm == "sha3_256"

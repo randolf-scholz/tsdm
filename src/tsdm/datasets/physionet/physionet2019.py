@@ -266,8 +266,8 @@ class PhysioNet2019(PolarsDataset[Key]):
 
     rawdata_files = ["training_setA.zip", "training_setB.zip"]
     rawdata_hashes = {
-        "training_setA.zip": "sha256:C8B68113750A7A817150C723D8438BE4431716A5BADA88899A9F50D43E76DD81",
-        "training_setB.zip": "sha256:37ED047C7F5A0834F90BB3C03E9F17199F98489D09CFEF51CD92B61E60B960C3",
+        "training_setA.zip": "sha256:47289077b688bddea07d847917dc9dfb47bd08f229a03741d0a4de23a91dfa28",
+        "training_setB.zip": "sha256:5dd0475d1ec9c1f81c7dd8b192321063b9fbb1c8a342ecfded1b024b9cc13c2a",
     }
     r"""Aggregated digests of ZIP member names and uncompressed contents."""
     rawdata_schema = RAWDATA_SCHEMA

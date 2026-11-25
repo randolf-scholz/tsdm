@@ -32,6 +32,7 @@ import dataclasses
 import datetime as dt
 import hashlib
 import math
+import re
 import struct
 from collections import Counter
 from collections.abc import (
@@ -42,7 +43,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from types import EllipsisType, NoneType, NotImplementedType
-from typing import Any
+from typing import Any, Final, NamedTuple, Protocol, overload
 
 import numpy as np
 import pandas as pd
@@ -50,8 +51,63 @@ import polars as pl
 import pyarrow as pa
 from numpy.typing import NDArray
 
-from tsdm.hashing import Hash, Hasher
 from tsdm.types import DataclassType, SupportsArray
+
+HASH_REGEX: Final = re.compile(r"^(?:(?P<alg>[\w-]+):)?(?P<value>[0-9A-Za-z]+)$")
+r"""Regular expression to match hash values."""
+
+
+class Hasher(Protocol):
+    r"""Protocol for hash functions."""
+
+    @property
+    def name(self) -> str: ...
+    def digest(self) -> bytes: ...
+    def hexdigest(self) -> str: ...
+
+
+class Hash(NamedTuple):
+    r"""Hash value with optional algorithm."""
+
+    hash_value: str
+    hash_algorithm: str | None
+
+    @overload
+    @classmethod
+    def from_value(cls, arg: None, /) -> None: ...
+    @overload
+    @classmethod
+    def from_value(cls, arg: str | bytes | Hash, /) -> Hash: ...
+    @classmethod
+    def from_value(cls, arg: str | bytes | Hash | None, /) -> Hash | None:
+        r"""Parse a hash string or encode digest bytes as hexadecimal.
+
+        Strings have the form `value` or `algorithm:value`, with an alphanumeric
+        value. Existing `Hash` objects and `None` are returned unchanged.
+
+        Raises:
+            ValueError: If a string does not match the hash syntax.
+            TypeError: If the argument has an unsupported type.
+        """
+        match arg:
+            case None:
+                return None
+            case Hash():
+                return arg
+            case bytes():
+                return cls(arg.hex(), None)
+            case str(s):
+                match = HASH_REGEX.fullmatch(s)
+                if match is None:
+                    raise ValueError(f"Invalid hash value: {s!r}")
+                return cls(match.group("value"), match.group("alg"))
+            case _:
+                raise TypeError(f"Cannot create Hash from {type(arg)}.")
+
+    def __str__(self) -> str:
+        if self.hash_algorithm is None:
+            return self.hash_value
+        return f"{self.hash_algorithm}:{self.hash_value}"
 
 
 def tokenize_type(arg: type, /) -> bytes:

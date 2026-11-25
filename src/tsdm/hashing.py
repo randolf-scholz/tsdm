@@ -3,8 +3,6 @@ r"""Hash function utils."""
 __all__ = [
     # Constants
     "HASH_REGEX",
-    # Protocols
-    "Hasher",
     # Classes
     "Hash",
     # Functions
@@ -14,27 +12,14 @@ __all__ = [
 
 import hashlib
 import re
-from collections.abc import Buffer
 from os import PathLike
-from typing import Final, NamedTuple, Protocol, overload
+from typing import Final, NamedTuple, overload
 from zipfile import ZipFile
 
 from .types import FilePath, FileStream
 
-HASH_REGEX: Final[re.Pattern] = re.compile(
-    r"^(?:(?P<alg>[\w-]+):)?(?P<value>[0-9A-Za-z]+)$"
-)
+HASH_REGEX: Final = re.compile(r"^(?:(?P<alg>[\w-]+):)?(?P<value>[0-9A-Za-z]+)$")
 r"""Regular expression to match hash values."""
-
-
-class Hasher(Protocol):
-    r"""Protocol for hash functions."""
-
-    @property
-    def name(self) -> str: ...
-    def update(self, data: Buffer, /) -> None: ...
-    def digest(self) -> bytes: ...
-    def hexdigest(self) -> str: ...
 
 
 class Hash(NamedTuple):
@@ -81,42 +66,29 @@ class Hash(NamedTuple):
         return f"{self.hash_algorithm}:{self.hash_value}"
 
 
-def hash_file(
-    file: FilePath | FileStream,
-    hasher: str | Hasher = "sha256",
-    /,
-    *,
-    block_size: int = 65536,
-) -> Hash:
+def hash_file(file: FilePath | FileStream, /, algorithm: str = "sha256") -> Hash:
     r"""Hash a file or seekable binary stream, using SHA-256 by default.
 
-    Read from the beginning in blocks of `block_size` bytes, which must be positive.
-    Restore a caller-owned stream's original position even if hashing fails.
-    A supplied hasher is updated in place, including any existing state.
+    Hash from the beginning with `hashlib.file_digest`. Restore a caller-owned
+    stream's original position even if hashing fails.
+
+    Args:
+        file: A path or a seekable binary stream supported by `hashlib.file_digest`.
+        algorithm: Name of a fixed-output hash function supported by `hashlib`.
 
     Returns:
-        The hexadecimal digest and algorithm name.
-
-    Raises:
-        ValueError: If `block_size` is not positive.
+        The lowercase hexadecimal digest and algorithm name.
     """
-    if block_size <= 0:
-        raise ValueError("block_size must be positive.")
-
-    hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
-
     match file:
         case str() | PathLike():
             with open(file, "rb") as stream:
-                while block := stream.read(block_size):
-                    hasher.update(block)
+                hasher = hashlib.file_digest(stream, algorithm)
 
         case stream:
             position = stream.tell()
             try:
                 stream.seek(0)
-                while block := stream.read(block_size):
-                    hasher.update(block)
+                hasher = hashlib.file_digest(stream, algorithm)  # type: ignore  # lacks getbuffer()
             finally:
                 stream.seek(position)
 
@@ -124,53 +96,41 @@ def hash_file(
 
 
 def hash_zip_contents(
-    file: FilePath | FileStream,
-    hasher: str | Hasher = "sha256",
-    /,
-    *,
-    chunk_size: int = 1024 * 1024,
+    file: FilePath | FileStream, /, algorithm: str = "sha256"
 ) -> Hash:
-    r"""Hash the *contents* of a zip archive (stable w.r.t. zip metadata).
+    r"""Hash the aggregate contents of a ZIP archive.
 
-    The resulting digest depends only on:
+    For each member in filename order, feed two raw digests into the archive
+    hash: the digest of its UTF-8 name and then the digest of its uncompressed
+    contents. All steps use the same fixed-output hash function. The checksum
+    is independent of ZIP metadata such as timestamps, compression, and member
+    order.
 
-    - the member names
-    - the uncompressed bytes of each member
-
-    It is *independent* of zip container metadata such as timestamps, compression method,
-    extra fields, file order in the central directory, etc.
+    Args:
+        file: A ZIP archive path or a seekable binary stream.
+        algorithm: Name of a fixed-output hash function supported by `hashlib`.
 
     Returns:
-        The uppercase aggregate digest and the name of the hash function used.
+        The lowercase hexadecimal aggregate digest and algorithm name.
 
     Raises:
-        ValueError: If `chunk_size` is not positive or member names are duplicated.
+        ValueError: If member names are duplicated.
     """
-    if chunk_size <= 0:
-        raise ValueError("chunk_size must be positive.")
-
-    hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
-    algorithm = hasher.name
-    item_hashes: dict[str, bytes] = {}
-    with ZipFile(file, "r") as zf:
-        for info in zf.infolist():
-            name = info.filename
-            if name in item_hashes:
-                raise ValueError(f"Duplicate ZIP member name: {name!r}.")
-
-            member_hasher = hashlib.new(algorithm)
-            with zf.open(info, "r") as member:
-                while chunk := member.read(chunk_size):
-                    member_hasher.update(chunk)
-
-            # Preserve the legacy digest of (name, (hexdigest, algorithm)).
-            digest_record = f"'{member_hasher.hexdigest()}''{member_hasher.name}'"
-            record_hash = hashlib.new(algorithm, digest_record.encode()).digest()
-            item_hashes[name] = hashlib.new(
-                algorithm, f"'{name}'".encode() + record_hash
-            ).digest()
-
     archive_hasher = hashlib.new(algorithm)
-    for item_hash in sorted(set(item_hashes.values())):
-        archive_hasher.update(item_hash)
-    return Hash(archive_hasher.hexdigest().upper(), archive_hasher.name)
+
+    with ZipFile(file, "r") as zf:
+        members = sorted(zf.infolist(), key=lambda i: i.filename)
+
+        if len({i.filename for i in members}) != len(members):
+            raise ValueError(f"Duplicate ZIP member names in {members}")
+
+        for info in members:
+            with zf.open(info, "r") as stream:
+                content_hash = hashlib.file_digest(stream, algorithm)  # type: ignore  # lacks getbuffer()
+
+            name_tokens = info.filename.encode("utf-8")
+            name_hash = hashlib.new(algorithm, name_tokens)
+            archive_hasher.update(name_hash.digest())
+            archive_hasher.update(content_hash.digest())
+
+    return Hash(archive_hasher.hexdigest(), archive_hasher.name)

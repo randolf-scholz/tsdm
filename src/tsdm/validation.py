@@ -177,8 +177,8 @@ def validate_file_hash(
     r"""Validate a file or binary stream against a reference hash.
 
     Paths ending in `.parquet` are rejected because their binary representation
-    is not stable. Streams must support seeking; their original position is
-    restored even if reading fails.
+    is not stable. Streams must be seekable and supported by
+    `hashlib.file_digest`. Their original position is restored even if reading fails.
 
     Args:
         path_or_stream: The file or binary stream to validate. Streams are hashed from the
