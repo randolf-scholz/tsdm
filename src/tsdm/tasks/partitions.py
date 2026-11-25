@@ -282,12 +282,10 @@ def is_partition[T](
     If `union` is provided, also check that the parts cover it exactly.
     The input must support repeated iteration because it is traversed twice.
     """
-    sets = (set(p) for p in partition)
-    part_union = set().union(*sets)
-
-    if part_union != set(union):
+    partition_union = {*p for p in partition}  # pyrefly: ignore[not-a-type]
+    if partition_union != set(union):
         return False
-    return len(part_union) == sum(len(p) for p in partition)
+    return len(partition_union) == sum(len(p) for p in partition)
 
 
 @overload
