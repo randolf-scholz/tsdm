@@ -14,7 +14,6 @@ __all__ = [
 ]
 
 import csv
-import hashlib
 import logging
 import warnings
 from collections.abc import Iterable, Mapping
@@ -248,20 +247,7 @@ def validate_file_hash(
         case _:
             raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
 
-    # Compute the hash
-    match path_or_stream:
-        case str() | PathLike():
-            actual_hash = hash_file(path_or_stream, hash_alg)
-        case stream:
-            position = stream.tell()
-            hasher = hashlib.new(hash_alg)
-            try:
-                stream.seek(0)
-                for byte_block in iter(lambda: stream.read(65536), b""):
-                    hasher.update(byte_block)
-            finally:
-                stream.seek(position)
-            actual_hash = Hash(hasher.hexdigest(), hasher.name)
+    actual_hash = hash_file(path_or_stream, hash_alg)
     return validate_hash(actual_hash, expected_hash, errors=error_handler)
 
 

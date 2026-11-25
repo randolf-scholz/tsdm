@@ -19,6 +19,7 @@ import hashlib
 import re
 import string
 from collections.abc import Buffer
+from os import PathLike
 from typing import Final, NamedTuple, Protocol, overload
 from zipfile import ZipFile
 
@@ -48,10 +49,6 @@ class Hash(NamedTuple):
 
     hash_value: str
     hash_algorithm: str | None
-
-    def __hash__(self) -> int:
-        # forward compatibility in case fields are added later.
-        return hash((self.hash_algorithm, self.hash_value))
 
     @overload
     @classmethod
@@ -160,15 +157,16 @@ def to_base(n: int, base: int, /) -> list[int]:
 
 
 def hash_file(
-    filepath: FilePath,
+    file: FilePath | FileStream,
     hasher: str | Hasher = "sha256",
     /,
     *,
     block_size: int = 65536,
 ) -> Hash:
-    r"""Hash a file's bytes, using SHA-256 by default.
+    r"""Hash a file or seekable binary stream, using SHA-256 by default.
 
-    Read the file in blocks of `block_size` bytes, which must be positive.
+    Read from the beginning in blocks of `block_size` bytes, which must be positive.
+    Restore a caller-owned stream's original position even if hashing fails.
     A supplied hasher is updated in place, including any existing state.
 
     Returns:
@@ -182,12 +180,23 @@ def hash_file(
 
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
 
-    with open(filepath, "rb") as file_handle:
-        for byte_block in iter(lambda: file_handle.read(block_size), b""):
-            hasher.update(byte_block)
+    if isinstance(file, str | PathLike):
+        with open(file, "rb") as stream:
+            return _hash_stream(stream, hasher, block_size=block_size)
 
-    hash_value = hasher.hexdigest()
-    return Hash(hash_value, hasher.name)
+    position = file.tell()
+    try:
+        file.seek(0)
+        return _hash_stream(file, hasher, block_size=block_size)
+    finally:
+        file.seek(position)
+
+
+def _hash_stream(stream: FileStream, hasher: Hasher, /, *, block_size: int) -> Hash:
+    r"""Hash bytes from the stream's current position to EOF."""
+    while block := stream.read(block_size):
+        hasher.update(block)
+    return Hash(hasher.hexdigest(), hasher.name)
 
 
 def hash_zip_contents(

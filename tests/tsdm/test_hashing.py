@@ -1,12 +1,32 @@
 r"""Tests for file and archive hashing."""
 
+from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
 
 import pytest
 
-from tsdm.hashing import hash_file, hash_zip_contents
+from tsdm.hashing import Hash, hash_file, hash_zip_contents
+
+
+def test_hash_key_matches_equivalent_tuple() -> None:
+    r"""A tuple can look up a dictionary entry keyed by an equal Hash."""
+    key = Hash("abc", "sha256")
+    checksums: dict[tuple[str, str | None], str] = {key: "payload"}
+    assert checksums[("abc", "sha256")] == "payload"
+
+
+def test_hash_file_restores_stream_position() -> None:
+    r"""A caller-owned stream is hashed from the beginning and stays usable."""
+    payload = b"test payload"
+    expected = Hash(sha256(payload).hexdigest(), "sha256")
+
+    with BytesIO(payload) as stream:
+        stream.seek(4)
+        actual = hash_file(stream, block_size=3)
+        assert actual == expected
+        assert stream.tell() == 4
 
 
 @pytest.mark.parametrize("block_size", [0, -1])
