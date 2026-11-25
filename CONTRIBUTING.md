@@ -55,9 +55,9 @@ for behavior affected by your change.
   real components or fixtures can exercise the behavior.
 - Assert observable results and state rather than mocked call counts or private
   implementation details.
-- Keep `assert` statements on one line. For comparisons that would span
-  multiple lines, assign `actual` and `expected` first, then write
-  `assert actual == expected`.
+- Keep `assert` statements on one line. Assign longer expressions to variables
+  such as `actual` or `expected` and keep short expressions inline. Prefer
+  assigning a function result to a variable before indexing it.
 - Use `UPPER_SNAKE_CASE` for constants defined on test classes, including
   static inputs and expected results.
 - For named test cases, use a mapping keyed by descriptive strings. Pass the
