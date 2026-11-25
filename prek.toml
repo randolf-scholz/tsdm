@@ -156,7 +156,12 @@ hooks = [
         name = "multiline-assert",
         description = "Avoid multi-line assert statements.",
         language = "pygrep",
-        entry = '^\x20*assert\x20[^\n\#]*[\(\[\{](\x20+#.*)?$',
+        entry = '''(?x)
+            # Exempt direct all/any calls, including negated forms.
+            ^ \x20* assert \x20+ (?! (not\x20+)?(all|any)\( )
+            # Match a line ending with an opening delimiter and an optional comment.
+            [^\n\#]* [\(\[\{]\x20* (\#.*)? $
+        ''',
         types = ["python"],
         files = "^src/|^tests/",
     },

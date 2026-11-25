@@ -21,12 +21,10 @@ DISTANCES = (fisher_rao_distance, hellinger_distance, total_variation_distance)
 def test_simplex_geometry(n: int) -> None:
     r"""Check the vertex and center formulas, including the singleton simplex."""
     vertex, center = np.eye(n)[0], np.full(n, 1 / n)
-    assert fisher_rao_distance(vertex, center) == pytest.approx(
-        2 * np.arccos(1 / np.sqrt(n))
-    )
-    assert hellinger_distance(vertex, center) == pytest.approx(
-        np.sqrt(1 - 1 / np.sqrt(n))
-    )
+    expected_fisher_rao = 2 * np.arccos(1 / np.sqrt(n))
+    expected_hellinger = np.sqrt(1 - 1 / np.sqrt(n))
+    assert fisher_rao_distance(vertex, center) == pytest.approx(expected_fisher_rao)
+    assert hellinger_distance(vertex, center) == pytest.approx(expected_hellinger)
     assert total_variation_distance(vertex, center) == pytest.approx(1 - 1 / n)
 
     if n > 1:
@@ -96,9 +94,8 @@ def test_small_distances() -> None:
 def test_hellinger_fisher_rao_relation() -> None:
     r"""The two square-root geometries obey the documented chord–arc relation."""
     p, q = [3, 1, 1], [4, 2, 1]
-    assert hellinger_distance(p, q) == pytest.approx(
-        np.sqrt(2) * np.sin(fisher_rao_distance(p, q) / 4)
-    )
+    expected = np.sqrt(2) * np.sin(fisher_rao_distance(p, q) / 4)
+    assert hellinger_distance(p, q) == pytest.approx(expected)
 
 
 @pytest.mark.parametrize("distance", DISTANCES)

@@ -63,11 +63,10 @@ def test_task_with_opaque_split_keys() -> None:
     assert task.collate_fns[10]([1, 2]) == [1, 2]
     assert list(task.make_dataloader(10, batch_size=2, pin_memory=False)) == [[1, 2]]
     assert list(task.make_dataloader(20, batch_size=2, pin_memory=False)) == [[4, 5]]
-    assert list(
-        task.make_dataloader(
-            10, batch_size=2, drop_last=False, collate_fn=sum, pin_memory=False
-        )
-    ) == [3, 3]
+    loader = task.make_dataloader(
+        10, batch_size=2, drop_last=False, collate_fn=sum, pin_memory=False
+    )
+    assert list(loader) == [3, 3]
 
 
 def test_task_rejects_empty_split_keys() -> None:

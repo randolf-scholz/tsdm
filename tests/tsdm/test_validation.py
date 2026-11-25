@@ -134,9 +134,10 @@ def test_validate_file_hash_skips_missing_reference(tmp_path) -> None:
 )
 def test_validate_table_schema(table: Any, expected_dtype: Any) -> None:
     r"""Schema order is ignored and `None` skips only its column's dtype check."""
-    assert validate_table_schema(
+    valid = validate_table_schema(
         table, expected_schema={"label": None, "value": expected_dtype}, errors="raise"
     )
+    assert valid
 
 
 @pytest.mark.parametrize(
@@ -154,9 +155,10 @@ def test_validate_table_schema_mismatch(
     r"""Missing names, extra names, and checked dtype mismatches fail validation."""
     table = pd.DataFrame({"value": [1]}, index=pd.Index([2], name="id"))
 
-    assert not validate_table_schema(
+    valid = validate_table_schema(
         table, expected_schema=expected_schema, errors="ignore"
     )
+    assert not valid
     with pytest.warns(UserWarning, match=message):
         assert not validate_table_schema(table, expected_schema=expected_schema)
     with pytest.raises(ValidationError, match=message):

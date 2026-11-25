@@ -524,6 +524,6 @@ def test_time_loss_normalization(
         return
 
     expected = 2 * prod(channel_shape)
-    assert abs(result - expected) < rtol * abs(expected) + atol, (
-        f"tolerance exceeded! {shape=}, {result=}, {expected=}"
-    )
+    tolerance = rtol * abs(expected) + atol
+    error = abs(result - expected)
+    assert error < tolerance, f"tolerance exceeded! {shape=}, {result=}, {expected=}"

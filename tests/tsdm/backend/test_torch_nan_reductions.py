@@ -42,9 +42,9 @@ def test_nan_reductions(
     np.testing.assert_allclose(actual, expected, equal_nan=True)
     assert actual.shape == expected.shape
     assert actual.dtype == expected.dtype
-    assert [(w.category, str(w.message)) for w in actual_warnings] == [
-        (w.category, str(w.message)) for w in expected_warnings
-    ]
+    actual_messages = [(w.category, str(w.message)) for w in actual_warnings]
+    expected_messages = [(w.category, str(w.message)) for w in expected_warnings]
+    assert actual_messages == expected_messages
 
 
 @pytest.mark.parametrize("axis", [None, 0, -1, (0, 1), ()])
@@ -68,6 +68,6 @@ def test_nanstd_special_inputs(*, axis: Axis, keepdims: bool, kind: str) -> None
     np.testing.assert_allclose(actual, expected, equal_nan=True)
     assert actual.shape == expected.shape
     assert actual.dtype == expected.dtype
-    assert [(w.category, str(w.message)) for w in actual_warnings] == [
-        (w.category, str(w.message)) for w in expected_warnings
-    ]
+    actual_messages = [(w.category, str(w.message)) for w in actual_warnings]
+    expected_messages = [(w.category, str(w.message)) for w in expected_warnings]
+    assert actual_messages == expected_messages

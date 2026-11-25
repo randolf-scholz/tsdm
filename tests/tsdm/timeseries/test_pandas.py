@@ -90,9 +90,8 @@ def test_timeseries_collection_getitem(
     actual = collection[key]
 
     assert isinstance(actual, expected_type)
-    assert actual.timeseries["value"].tolist() == (
-        [10, 20] if expected_series == ["a"] else [30, 40]
-    )
+    expected_values = [10, 20] if expected_series == ["a"] else [30, 40]
+    assert actual.timeseries["value"].tolist() == expected_values
     assert actual.static_covariates is not None
     assert actual.static_covariates.index.tolist() == expected_series
     if isinstance(actual, TimeSeries):

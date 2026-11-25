@@ -51,9 +51,9 @@ def test_full_like(arr: pa.Array | pa.ChunkedArray, *, fill_value: Any) -> None:
     assert arr.to_pylist() == original
     assert isinstance(result, pa.ChunkedArray) == isinstance(arr, pa.ChunkedArray)
     if isinstance(arr, pa.ChunkedArray):
-        assert [len(chunk) for chunk in result.chunks] == [
-            len(chunk) for chunk in arr.chunks
-        ]
+        actual_sizes = [len(chunk) for chunk in result.chunks]
+        expected_sizes = [len(chunk) for chunk in arr.chunks]
+        assert actual_sizes == expected_sizes
 
 
 @pytest.mark.parametrize(
@@ -83,6 +83,6 @@ def test_null_like(values: pa.Array, *, chunked: bool) -> None:
     assert arr.to_pylist() == original
     assert isinstance(result, pa.ChunkedArray) == chunked
     if chunked:
-        assert [len(chunk) for chunk in result.chunks] == [
-            len(chunk) for chunk in arr.chunks
-        ]
+        actual_sizes = [len(chunk) for chunk in result.chunks]
+        expected_sizes = [len(chunk) for chunk in arr.chunks]
+        assert actual_sizes == expected_sizes

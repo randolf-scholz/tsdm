@@ -103,7 +103,5 @@ class TestSequenceLoss:
         assert predictions.grad is not None
         assert torch.isfinite(predictions.grad).all()
         assert case.mask is not None
-        assert torch.equal(
-            predictions.grad[~case.mask],
-            torch.zeros_like(predictions.grad[~case.mask]),
-        )
+        masked_grad = predictions.grad[~case.mask]
+        assert torch.equal(masked_grad, torch.zeros_like(masked_grad))

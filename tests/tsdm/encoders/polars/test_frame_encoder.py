@@ -100,7 +100,9 @@ def test_frame_encoder_fit_reports_all_failures() -> None:
     errors = exc_info.value.exceptions
     assert calls == ["run", "value"]
     assert [str(error) for error in errors] == ["run", "value"]
-    assert [error.__notes__ for error in errors] == [
+    actual_errrors = [error.__notes__ for error in errors]
+    expected_errrors = [
         ["FrameEncoder[run]: Failed to fit FailingEncoder."],
         ["FrameEncoder[value]: Failed to fit FailingEncoder."],
     ]
+    assert actual_errrors == expected_errrors

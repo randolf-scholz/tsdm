@@ -50,7 +50,8 @@ def nanmin(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     The input is assumed to be a floating-point tensor.
     An all-NaN slice produces `NaN` and emits a `RuntimeWarning`, as in NumPy.
     """
-    assert x.is_floating_point(), "Expected a floating-point tensor."
+    if not x.is_floating_point():
+        raise ValueError("Expected a floating-point tensor.")
     if axis == ():
         # Reduce an added singleton axis to preserve NumPy's elementwise behavior.
         # XREF: https://github.com/pytorch/pytorch/issues/29137.
@@ -68,7 +69,8 @@ def nanmax(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     The input is assumed to be a floating-point tensor.
     An all-NaN slice produces `NaN` and emits a `RuntimeWarning`, as in NumPy.
     """
-    assert x.is_floating_point(), "Expected a floating-point tensor."
+    if not x.is_floating_point():
+        raise ValueError("Expected a floating-point tensor.")
     if axis == ():
         # Reduce an added singleton axis to preserve NumPy's elementwise behavior.
         # XREF: https://github.com/pytorch/pytorch/issues/29137.
@@ -91,9 +93,8 @@ def nanstd(x: Tensor, /, *, axis: Axis = None, keepdims: bool = False) -> Tensor
     The variance uses zero degrees of freedom correction, matching the default
     behavior of `numpy.nanstd`. Complex inputs produce real standard deviations.
     """
-    assert x.is_floating_point() or x.is_complex(), (
-        "Expected a floating-point or complex tensor."
-    )
+    if not (x.is_floating_point() or x.is_complex()):
+        raise ValueError("Expected a floating-point or complex tensor.")
     if axis == ():
         # NumPy reduces no axes for axis=(); Torch reduces all axes for dim=().
         # Reduce an added singleton axis to preserve NumPy's elementwise behavior.

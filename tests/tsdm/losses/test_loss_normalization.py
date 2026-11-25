@@ -50,6 +50,6 @@ def test_loss_normalization(
         "MSE_Loss": 2,
         "RMSE_Loss": sqrt(2),
     }[loss.__name__]
-    assert abs(result - expected) < rtol * abs(expected) + atol, (
-        f"tolerance exceeded! {shape=}, {result=}, {expected=}"
-    )
+    tolerance = rtol * abs(expected) + atol
+    error = abs(result - expected)
+    assert error < tolerance, f"tolerance exceeded! {shape=}, {result=}, {expected=}"

@@ -222,10 +222,8 @@ def test_existing_table_and_exact_step_labels() -> None:
     assert tracker.best_history.is_empty()
     tracker(13)
     assert tracker.best_history["step"].to_list() == [3, 13]
-    assert tracker.best.drop("step", "best_step").row(0, named=True) == {
-        "loss": 1.0,
-        "count": 7,
-    }
+    best = tracker.best.drop("step", "best_step").row(0, named=True)
+    assert best == {"loss": 1.0, "count": 7}
     tracker(23)
     assert tracker.best_history["best_step"].to_list() == [3, 13, 13]
     assert tracker.best_history.schema["count"] == pl.Int64
@@ -249,9 +247,9 @@ def test_selection_history_and_raw_winning_row() -> None:
     )
     tracker(63)
     assert tracker.processed_history.columns == ["step", "holdout/loss"]
-    assert tracker.processed_history["holdout/loss"].to_list() == pytest.approx(
-        [None, 5.0, 14 / 3, 2.5, 6.0, None, 5.0]
-    )
+    actual_losses = tracker.processed_history["holdout/loss"].to_list()
+    expected_losses = [None, 5.0, 14 / 3, 2.5, 6.0, None, 5.0]
+    assert actual_losses == pytest.approx(expected_losses)
     # The low mean at the NaN epoch is inspectable but cannot make that raw row win.
     assert tracker.best["best_step"].item() == 23
     assert tracker.selection_value == pytest.approx(14 / 3)
@@ -266,9 +264,11 @@ def test_tracker_catches_up_with_rolling_windows() -> None:
     tracker = BestEpochTracker(history, selection_column="holdout/loss", window=3)
     tracker(110)
     assert tracker.processed_history["step"].to_list() == list(range(0, 120, 10))
-    assert tracker.processed_history["holdout/loss"].to_list() == pytest.approx(
-        [fmean(losses[max(0, end - 2) : end + 1]) for end in range(len(losses))]
-    )
+    actual_losses = tracker.processed_history["holdout/loss"].to_list()
+    expected_losses = [
+        fmean(losses[max(0, end - 2) : end + 1]) for end in range(len(losses))
+    ]
+    assert actual_losses == pytest.approx(expected_losses)
     assert tracker.best_history.height == tracker.processed_history.height == 12
     previous = tracker.best_history.clone(), tracker.processed_history.clone()
     tracker(110)
@@ -392,11 +392,12 @@ def test_wide_metric_names_and_metadata_collisions(
         values = {split: dict.fromkeys(metrics, 30.0 - step) for split in splits}
         evaluation.append_history(step, values)
         tracker(step)
-    assert tracker.best.drop("step", "best_step").row(0, named=True) == {
+    expected = {
         f"{split}/{metric}": value
         for split, metrics in values.items()
         for metric, value in metrics.items()
     }
+    assert tracker.best.drop("step", "best_step").row(0, named=True) == expected
     assert tracker.best_history.columns == [*evaluation.history.columns, "best_step"]
     for name, table in [
         ("history", evaluation.history),
@@ -510,9 +511,8 @@ def test_callback_frequencies_and_final_reporting(
     else:
         hparams(report_step)
     assert_frame_equal(evaluation.history, raw_history)
-    assert tracker.processed_history["step"].to_list() == (
-        [2, 4, 6] if finalize else [2, 4]
-    )
+    expected_steps = [2, 4, 6] if finalize else [2, 4]
+    assert tracker.processed_history["step"].to_list() == expected_steps
     assert tracker.best["best_step"].item() == (6 if finalize else 4)
     selected_scores = (
         {"loss": 4.0, "error": 2.0} if finalize else {"loss": 1.0, "error": 1.0}

@@ -140,9 +140,8 @@ class TestLpLoss:
         assert predictions.grad.shape == predictions.shape
         assert torch.isfinite(predictions.grad).all()
         assert torch.all(predictions.grad[mask] != 0)
-        assert torch.equal(
-            predictions.grad[~mask], torch.zeros_like(predictions.grad[~mask])
-        )
+        masked_grad = predictions.grad[~mask]
+        assert torch.equal(masked_grad, torch.zeros_like(masked_grad))
 
     def test_separates_sample_and_channel_weights(self) -> None:
         r"""Sample weights apply after channel-weighted norm reduction."""

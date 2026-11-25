@@ -128,9 +128,9 @@ def test_combined_encoder(encoder: Encoder) -> None:
 
     # check NaN-pattern
     xhat_test = DataFrame(test_encoded["X"], dtype="float32")
-    assert (xhat_test.isna().to_numpy() == test_data.isna().to_numpy()).all(), (
-        "NaN pattern mismatch"
-    )
+    actual_mask = xhat_test.isna().to_numpy()
+    expected_mask = test_data.isna().to_numpy()
+    assert (actual_mask == expected_mask).all(), "NaN pattern mismatch"
     # NOTE: we cannot expect mean and std to be 0 and 1 for test data.
 
     # check that decoded matches with original

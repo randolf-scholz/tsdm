@@ -27,9 +27,10 @@ def test_download_disables_read_timeout(
     remote.download("https://example.com/data", target)
 
     assert target.read_bytes() == b"test payload"
-    assert captured_timeout == {
+    expected_timeout = {
         "connect": 10,
         "read": None,
         "write": 10,
         "pool": 10,
     }
+    assert captured_timeout == expected_timeout

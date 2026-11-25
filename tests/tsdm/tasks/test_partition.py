@@ -169,9 +169,10 @@ class TestPartitions:
             for part in partitions
         ]
         error = total_variation_distance(counts, [3, 1]).max().item()
-        assert fold_function(
+        accepted = fold_function(
             range(10), **{parameter: spec}, **options, rng=0, max_error=error
         )
+        assert accepted
         with pytest.raises(RuntimeError, match="total variation distance"):
             fold_function(
                 range(10),
@@ -210,9 +211,8 @@ class TestPartitions:
                 actual is key for actual, key in zip(partition, spec, strict=True)
             )
             assert partition[marker] == partition[17] == partition[None] == []
-            assert sorted(
-                item[0] for part in partition.values() for item in part
-            ) == list(range(8))
+            indices = sorted(item[0] for part in partition.values() for item in part)
+            assert indices == list(range(8))
         for counts in (list(spec.values()), tuple(spec.values())):
             unnamed = fold_function(
                 items, **{parameter: counts}, num=2, rng=12, group_labels=group_labels
@@ -349,10 +349,10 @@ class TestPartitions:
             train, test = folds[fold]["train"], folds[fold]["test"]
             assert set(train).isdisjoint(test)
             assert set(train) | set(test) == set(keys)
-            assert {group_by_key[key] for key in train}.isdisjoint(
-                group_by_key[key] for key in test
-            )
-            assert len({group_by_key[key] for key in train}) == 2
+            train_groups = {group_by_key[key] for key in train}
+            test_groups = {group_by_key[key] for key in test}
+            assert train_groups.isdisjoint(test_groups)
+            assert len(train_groups) == 2
             assert train == [key for key in keys if key in train]
             assert test == [key for key in keys if key in test]
 
@@ -656,10 +656,8 @@ class TestRandomPartitions(TestPartitions):
             return
         [actual] = random_partitions([], num=1, **options, group_labels=[], rng=0)
         assert actual == ([], [])
-        assert random_partitions([], num=2, **options, group_labels=[], rng=0) == [
-            ([], []),
-            ([], []),
-        ]
+        partitions = random_partitions([], num=2, **options, group_labels=[], rng=0)
+        assert partitions == [([], []), ([], [])]
 
     @pytest.mark.parametrize("sizes", [[-1, 4], [1, 1], [5, 0]])
     def test_random_partitions_invalid_sizes(self, sizes) -> None:
@@ -690,10 +688,11 @@ class TestRandomPartitions(TestPartitions):
             rng=0,
         )
         for fold in range(2):
-            assert [
+            split_sizes = [
                 len(folds[fold][split])
                 for split in ("train", "valid", "test", "inference")
-            ] == [2, 2, 1, 0]
+            ]
+            assert split_sizes == [2, 2, 1, 0]
 
     def test_extreme_ratios_are_normalized_without_overflow(self) -> None:
         [fold] = random_partitions(
@@ -753,12 +752,11 @@ class TestRandomPartitions(TestPartitions):
         )
         test_set = (features[test_indices], [labels[index] for index in test_indices])
 
-        assert tuple(
-            features.shape for features, _ in (train_set, validation_set, test_set)
-        ) == ((4, 3), (4, 3), (2, 3))
-        assert tuple(
-            len(labels) for _, labels in (train_set, validation_set, test_set)
-        ) == (4, 4, 2)
+        splits = train_set, validation_set, test_set
+        feature_shapes = tuple(features.shape for features, _ in splits)
+        label_counts = tuple(len(labels) for _, labels in splits)
+        assert feature_shapes == ((4, 3), (4, 3), (2, 3))
+        assert label_counts == (4, 4, 2)
         assert all(
             torch.equal(row, features[int(label.removeprefix("label-"))])
             for dataset_features, dataset_labels in (

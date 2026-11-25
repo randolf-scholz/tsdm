@@ -752,15 +752,12 @@ def test_sliding_window_sampler_discrete(
     # compare with expected results
     expected = EXPECTED_RESULTS_DISCRETE_DATA[MODE(mode)][horizons, stride, drop_last]
 
-    assert len(sampler) == len(expected), (
-        "LENGTH MISMATCH!"
-        f"\nsampler:\n{result}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
-    )
+    message = "LENGTH MISMATCH!\nsampler:\n{}\nexpected:\n{}\ngrid={}\n"
+    assert len(sampler) == len(expected), message.format(result, expected, sampler.grid)
 
+    sample_message = "SAMPLE MISMATCH!sample:\n{}\nexpected:\n{}\ngrid={}\n"
     for m1, m2 in zip(sampler, expected, strict=True):
-        assert np.array_equal(m1, m2), (
-            f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
-        )
+        assert np.array_equal(m1, m2), sample_message.format(m1, m2, sampler.grid)
 
 
 # write parametrized unit test with the above data for all modes
@@ -793,15 +790,12 @@ def test_sliding_window_sampler_continuous(
     # compare with expected results
     expected = EXPECTED_RESULTS_CONTINUOUS_DATA[MODE(mode)][horizons, stride, drop_last]
 
-    assert len(sampler) == len(expected), (
-        "LENGTH MISMATCH!"
-        f"\nsampler:\n{result}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
-    )
+    message = "LENGTH MISMATCH!\nsampler:\n{}\nexpected:\n{}\ngrid={}\n"
+    assert len(sampler) == len(expected), message.format(result, expected, sampler.grid)
 
+    sample_message = "SAMPLE MISMATCH!sample:\n{}\nexpected:\n{}\ngrid={}\n"
     for m1, m2 in zip(sampler, expected, strict=True):
-        assert np.array_equal(m1, m2), (
-            f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
-        )
+        assert np.array_equal(m1, m2), sample_message.format(m1, m2, sampler.grid)
 
 
 # dates 2020-01-01 to 2020-01-10
@@ -1225,22 +1219,18 @@ def test_bounds_single() -> None:
     assert_type(result, list[tuple[int, int]])
     assert_type(sample, tuple[int, int])
 
-    assert result == [
+    expected = [
         (11, 14),
         (13, 16),
         (15, 18),
         (17, 20),
         (19, 22),
     ]
+    assert result == expected
 
     # try with drop_last=True
     sampler.drop_last = True
-    assert list(sampler) == [
-        (11, 14),
-        (13, 16),
-        (15, 18),
-        (17, 20),
-    ]
+    assert list(sampler) == expected[:-1]
 
 
 def test_bounds_multi() -> None:
@@ -1264,12 +1254,13 @@ def test_bounds_multi() -> None:
     assert_type(sample, list[tuple[int, int]])
     assert_type(sample[0], tuple[int, int])
 
-    assert result == [
+    expected = [
         [(11, 14), (14, 15)],
         [(13, 16), (16, 17)],
         [(15, 18), (18, 19)],
         [(17, 20), (20, 21)],
     ]
+    assert result == expected
 
 
 def test_slices_single() -> None:
@@ -1291,22 +1282,18 @@ def test_slices_single() -> None:
     assert_type(result, list["slice[int, int, int]"])
     assert_type(sample, "slice[int, int, int]")
 
-    assert result == [
+    expected = [
         slice(11, 14, None),
         slice(13, 16, None),
         slice(15, 18, None),
         slice(17, 20, None),
         slice(19, 22, None),
     ]
+    assert result == expected
 
     # try with drop_last=True
     sampler.drop_last = True
-    assert list(sampler) == [
-        slice(11, 14, None),
-        slice(13, 16, None),
-        slice(15, 18, None),
-        slice(17, 20, None),
-    ]
+    assert list(sampler) == expected[:-1]
 
 
 def test_slices_multi() -> None:
@@ -1329,12 +1316,13 @@ def test_slices_multi() -> None:
     assert_type(sample, list["slice[int, int, int]"])
     assert_type(sample[0], "slice[int, int, int]")
 
-    assert result == [
+    expected = [
         [slice(11, 14, None), slice(14, 15, None)],
         [slice(13, 16, None), slice(16, 17, None)],
         [slice(15, 18, None), slice(18, 19, None)],
         [slice(17, 20, None), slice(20, 21, None)],
     ]
+    assert result == expected
 
 
 def test_unknown_single() -> None:

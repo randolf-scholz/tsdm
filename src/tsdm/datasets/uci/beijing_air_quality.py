@@ -234,12 +234,17 @@ class BeijingAirQuality(PolarsDataset[Key]):
             raise ValueError(f"Missing columns in timeseries: {missing_cols}")
 
         ts = ts.with_columns(pl.col("wd").cast(pl.Categorical)).select(*target_schema)
-        assert set(ts.get_column("wd").drop_nulls().unique().to_list()) == {
+
+        # validate the categories
+        actual_categories = set(ts.get_column("wd").drop_nulls().unique().to_list())
+        expected_categories = {
             "E", "ENE", "ESE",
             "N", "NE", "NNE", "NNW", "NW",
             "S", "SE", "SSE", "SSW", "SW",
             "W", "WNW", "WSW",
         }  # fmt: skip
+        assert actual_categories == expected_categories
+
         return ts
 
     @staticmethod
