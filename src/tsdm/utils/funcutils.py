@@ -138,7 +138,7 @@ def get_function_args(
         case str() | ParameterKind():
             allowed_kinds = get_parameter_kind(kinds)
         case Sequence():
-            allowed_kinds = set().union(*map(get_parameter_kind, kinds))
+            allowed_kinds = {*get_parameter_kind(kind) for kind in kinds}  # pyrefly: ignore[invalid-annotation]
         case _:
             raise ValueError(f"Unknown type for kinds: {type(kinds)}")
 

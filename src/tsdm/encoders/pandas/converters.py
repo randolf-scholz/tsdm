@@ -175,11 +175,11 @@ class FrameAsTensorDict(FittableEncoder[DataFrame, dict[str, Tensor]]):
                 f"\ndevice: {self.device}"
             )
 
-        if missing_cols := set().union(*self.target_schema.values()) - set(
-            data.columns
-        ):
+        schema_cols = {*cols for cols in self.target_schema.values()}  # pyrefly: ignore[not-a-type]
+        data_cols = set(data.columns)
+        if missing_cols := schema_cols - data_cols:
             raise ValueError(f"Missing columns {missing_cols}!")
-        if extra_cols := set(data.columns) - set().union(*self.target_schema.values()):
+        if extra_cols := data_cols - schema_cols:
             raise ValueError(f"Extra columns {extra_cols}!")
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
@@ -330,11 +330,11 @@ class FrameAsDict(FittableEncoder[DataFrame, dict[str, DataFrame]]):
             else:
                 self.target_schema[group] = cols
 
-        if missing_cols := set().union(*self.target_schema.values()) - set(
-            data.columns
-        ):
+        schema_cols = {*cols for cols in self.target_schema.values()}  # pyrefly: ignore[not-a-type]
+        data_cols = set(data.columns)
+        if missing_cols := schema_cols - data_cols:
             raise ValueError(f"Missing columns {missing_cols}!")
-        if extra_cols := set(data.columns) - set().union(*self.target_schema.values()):
+        if extra_cols := data_cols - schema_cols:
             raise ValueError(f"Extra columns {extra_cols}!")
 
     def encode(self, data: DataFrame, /) -> dict[str, DataFrame]:

@@ -275,9 +275,9 @@ def _gather_types(obj: object, /) -> set[BackendID]:
     """
     match obj:
         case (tuple() | set() | frozenset() | list()) as container:
-            return set().union(*map(_gather_types, container))
+            return {*_gather_types(item) for item in container}  # pyrefly: ignore[invalid-annotation, bad-return]
         case dict(mapping):
-            return set().union(*map(_gather_types, mapping.values()))
+            return {*_gather_types(item) for item in mapping.values()}  # pyrefly: ignore[invalid-annotation, bad-return]
         case Tensor():
             return {"torch"}
         case pd.DataFrame() | pd.Series() | pd.Index():

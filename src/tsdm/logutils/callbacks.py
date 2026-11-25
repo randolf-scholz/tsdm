@@ -250,7 +250,7 @@ class CallbackList(MutableSequence[Callback], BaseCallback):
     @property
     def required_kwargs(self) -> set[str]:
         r"""Union of the keyword argument names required by the child callbacks."""
-        return set().union(*(callback.required_kwargs for callback in self.callbacks))
+        return {*callback.required_kwargs for callback in self.callbacks}  # pyrefly: ignore[not-a-type, bad-return]
 
     def __init__(
         self, iterable: Iterable[Callback] = (), /, *, frequency: int = 1
