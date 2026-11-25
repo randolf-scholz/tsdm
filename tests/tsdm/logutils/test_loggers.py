@@ -10,9 +10,15 @@ from torch.utils.tensorboard.writer import SummaryWriter
 
 import tsdm
 from tests.test_utils import get_results_dir
-from tsdm.logutils import BaseLogger, DefaultLogger, log_table
+from tsdm.logutils import LOGFUNCS, BaseLogger, DefaultLogger, is_logfunc, log_table
 
 RESULT_DIR = get_results_dir(__file__)
+
+
+def test_registered_log_function_signatures() -> None:
+    r"""Every registered function accepts the shared logging arguments."""
+    for name, func in LOGFUNCS.items():
+        assert is_logfunc(func), name
 
 
 def test_base_logger() -> None:
@@ -27,9 +33,9 @@ def test_base_logger() -> None:
     assert cb.required_kwargs == {"targets", "predictions"}
     logger.add_callback("batch", cb)
     # run callbacks
-    targets = torch.randn(10, 3)
-    predictions = torch.randn(10, 3)
-    logger["batch"].callback(1, predictions=predictions, targets=targets)
+    y = torch.randn(10, 3)
+    y_pred = torch.randn(10, 3)
+    logger["batch"].callback(1, predictions=y_pred, targets=y)
     print(logger)
 
 
@@ -59,29 +65,33 @@ def test_log_table(tmp_path: Path) -> None:
         tmp_path,
         table,
         serializer=partial(DataFrame.to_csv, index=False),
-        name="metrics.csv",
-        prefix="validation",
-        postfix="final",
+        identifier="validation:metrics:final.csv",
     )
 
     assert (tmp_path / "validation:metrics:final-3.csv").read_text() == "values\n1\n2\n"
 
 
 @pytest.mark.parametrize(
-    ("name", "filename"),
+    ("identifier", "filename"),
     [
         ("metrics.csv.gz", "metrics-3.csv.gz"),
         ("metrics", "metrics-3"),
         ("", "3"),
     ],
 )
-def test_log_table_filename(tmp_path: Path, name: str, filename: str) -> None:
+def test_log_table_filename(tmp_path: Path, identifier: str, filename: str) -> None:
     r"""Preserve filename suffixes and support arbitrary serializer return values."""
 
     def serialize(table: str, path: Path, /) -> int:
         return path.write_text(table)
 
     with SummaryWriter(tmp_path) as writer:
-        log_table(3, writer, "values\n1\n2\n", serializer=serialize, name=name)
+        log_table(
+            3,
+            writer,
+            "values\n1\n2\n",
+            serializer=serialize,
+            identifier=identifier,
+        )
 
     assert (tmp_path / filename).read_text() == "values\n1\n2\n"

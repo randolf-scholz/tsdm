@@ -333,9 +333,7 @@ class ConfigCallback(BaseCallback):
 
     # Optional parameters
     fmt: Literal["json", "yaml", "toml"] = "yaml"
-    name: str = "config"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "config"
 
     def __call__(self, step: int, /, **_: Any) -> None:
         r"""Save the configuration to a file identified by `step`."""
@@ -344,9 +342,7 @@ class ConfigCallback(BaseCallback):
             self.writer,
             config=self.config,
             fmt=self.fmt,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -365,8 +361,8 @@ class BestEpochTracker(BaseCallback):
     All owned DataFrames likewise retain their identity through in-place appends.
     Selection settings and the writer are fixed: changing them would mix
     incompatible selection criteria or redirect CSV appends away from the
-    header created during initialization. Logging names are also fixed;
-    the inherited execution frequency remains mutable.
+    header created during initialization. The logging identifier is also fixed.
+    The inherited execution frequency remains mutable.
 
     Calling with a step label processes all unseen rows through that exact step;
     row positions are never interpreted as step labels. Repeated calls for an
@@ -397,9 +393,7 @@ class BestEpochTracker(BaseCallback):
     window: Final[int] = 1
     min_periods: Final[int] = 1
     writer: Final[SummaryWriter | None] = None
-    name: Final[str] = "score"
-    prefix: Final[str] = ""
-    postfix: Final[str] = ""
+    identifier: Final[str] = "score"
 
     best_history: Final[pl.DataFrame] = field(init=False)
     processed_history: Final[pl.DataFrame] = field(init=False, repr=False)
@@ -488,9 +482,7 @@ class BestEpochTracker(BaseCallback):
                         self.writer,
                         scalars={metric: nan if value is None else float(value)},
                         key=split,
-                        name=self.name,
-                        prefix=self.prefix,
-                        postfix=self.postfix,
+                        identifier=self.identifier,
                     )
 
             self.processed_history.vstack(processed, in_place=True)
@@ -551,8 +543,8 @@ class EvaluationCallback(BaseCallback):
     Dataloader and metric bindings are fixed because their keys define the schema;
     keep those keys unchanged when mutating the mappings. The writer is fixed
     because its log directory contains the initialized CSV header. The model,
-    prediction function, and logging names are also fixed bindings. Model state
-    may change in place between evaluations, as may the execution frequency.
+    prediction function, and logging identifier are also fixed bindings. Model
+    state may change in place between evaluations, as may the execution frequency.
 
     Initialization creates `history.csv` with its header in `writer.log_dir`,
     refusing to overwrite an existing file. Each append writes only the new row.
@@ -568,9 +560,7 @@ class EvaluationCallback(BaseCallback):
     dataloaders: Final[Mapping[str, DataLoader]]
     metrics: Final[Mapping[str, Loss]]
     writer: Final[SummaryWriter]
-    name: Final[str] = "metrics"
-    prefix: Final[str] = ""
-    postfix: Final[str] = ""
+    identifier: Final[str] = "metrics"
     history: Final[pl.DataFrame] = field(init=False)
 
     def __post_init__(self) -> None:
@@ -609,9 +599,7 @@ class EvaluationCallback(BaseCallback):
                 self.writer,
                 scalars=values,
                 key=split,
-                name=self.name,
-                prefix=self.prefix,
-                postfix=self.postfix,
+                identifier=self.identifier,
             )
 
     def append_history(self, step: int, scores: MetricScores, /) -> None:
@@ -790,9 +778,7 @@ class KernelCallback(BaseCallback):
     log_scaled_norms: bool = True
     log_spectrum: bool = True
 
-    name: str = "kernel"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "kernel"
 
     def __call__(self, step: int, /, **_: Any) -> None:
         log_kernel(
@@ -807,9 +793,7 @@ class KernelCallback(BaseCallback):
             log_norms=self.log_norms,
             log_scaled_norms=self.log_scaled_norms,
             log_spectrum=self.log_spectrum,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -824,18 +808,14 @@ class LRSchedulerCallback(BaseCallback):
     writer: SummaryWriter
 
     # Optional Parameters
-    name: str = "lr_scheduler"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "lr_scheduler"
 
     def __call__(self, step: int, /, **_: Any) -> None:
         log_lr_scheduler(
             step,
             self.writer,
             lr_scheduler=self.lr_scheduler,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -851,9 +831,7 @@ class MetricsCallback(BaseCallback):
 
     # Optional Parameters
     key: str = ""
-    name: str = "metrics"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "metrics"
 
     def __call__(  # ty: ignore[incompatible-method-override]
         self, step: int, /, *, targets: Tensor, predictions: Tensor, **_: Any
@@ -865,9 +843,7 @@ class MetricsCallback(BaseCallback):
             predictions=predictions,
             targets=targets,
             key=self.key,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -884,9 +860,7 @@ class ModelCallback(BaseCallback):
     # Optional Parameters
     log_histograms: bool = False
     log_norms: bool = True
-    name: str = "model"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "model"
 
     def __call__(self, step: int, /, **_: Any) -> None:
         log_model(
@@ -895,9 +869,7 @@ class ModelCallback(BaseCallback):
             model=self.model,
             log_histograms=self.log_histograms,
             log_norms=self.log_norms,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -914,9 +886,7 @@ class OptimizerCallback(BaseCallback):
     # Optional Parameters
     log_histograms: bool = False
     log_norms: bool = True
-    name: str = "optimizer"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "optimizer"
 
     def __call__(self, step: int, /, **_: Any) -> None:
         log_optimizer(
@@ -925,9 +895,7 @@ class OptimizerCallback(BaseCallback):
             optimizer=self.optimizer,
             log_histograms=self.log_histograms,
             log_norms=self.log_norms,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -943,9 +911,7 @@ class ScalarsCallback(BaseCallback):
 
     # Optional Parameters
     key: str = ""
-    name: str = "metrics"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "metrics"
 
     def __call__(self, step: int, /, **state_dict: Any) -> None:
         for key, value in state_dict.items():
@@ -956,9 +922,7 @@ class ScalarsCallback(BaseCallback):
             self.writer,
             scalars=self.scalars,
             key=self.key,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -966,7 +930,7 @@ class ScalarsCallback(BaseCallback):
 class TableCallback[T](BaseCallback):
     r"""Log a table to disk using the supplied serializer.
 
-    Include the desired suffix in `name`, for example `"tables.parquet"`.
+    Include the desired suffix in `identifier`, for example `"tables.parquet"`.
     Configure backend options on `serializer`, for example with
     `functools.partial`.
     """
@@ -977,11 +941,7 @@ class TableCallback[T](BaseCallback):
 
     writer: SummaryWriter | FilePath
     serializer: Callable[[T, Path], object]
-    name: str
-
-    # Optional Parameters
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str
 
     def __call__(self, step: int, /, **_: Any) -> None:
         log_table(
@@ -989,9 +949,7 @@ class TableCallback[T](BaseCallback):
             self.writer,
             table=self.table,
             serializer=self.serializer,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )
 
 
@@ -1007,9 +965,7 @@ class PlotCallback(BaseCallback):
     rasterization_options: Mapping[str, Any] = EMPTY_MAP
 
     writer: SummaryWriter
-    name: str = "plot"
-    prefix: str = ""
-    postfix: str = ""
+    identifier: str = "plot"
 
     def __call__(self, step: int, /, **_: Any) -> None:
         try:
@@ -1022,7 +978,5 @@ class PlotCallback(BaseCallback):
             self.writer,
             fig=fig,
             rasterization_options=self.rasterization_options,
-            name=self.name,
-            prefix=self.prefix,
-            postfix=self.postfix,
+            identifier=self.identifier,
         )

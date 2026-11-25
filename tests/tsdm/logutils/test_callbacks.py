@@ -18,9 +18,7 @@ def test_table_callback(tmp_path: Path) -> None:
         pl.DataFrame({"values": [1, 2]}),
         writer=tmp_path,
         serializer=pl.DataFrame.write_parquet,
-        name="metrics.parquet",
-        prefix="validation",
-        postfix="final",
+        identifier="validation:metrics:final.parquet",
         frequency=2,
     )
 

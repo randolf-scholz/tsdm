@@ -21,7 +21,6 @@ import inspect
 import json
 import math
 from collections.abc import Callable, Mapping
-from inspect import Parameter
 from pathlib import Path
 from typing import Any, Literal, Protocol, TypeIs
 
@@ -65,41 +64,38 @@ def _eval_loss(loss: Loss, *, targets: Tensor, predictions: Tensor) -> float:
         return float(loss(predictions, targets).cpu().item())
 
 
-class LogFunction(Protocol):
-    r"""Protocol for logging functions."""
+class LogFunction[T](Protocol):
+    r"""Shared signature for logging functions with function-specific options."""
 
     def __call__(
         self,
         step: int,
         writer: SummaryWriter,
-        logged_object: Any,
+        logged_object: T,
         /,
-        *,
-        name: str = "",
-        prefix: str = "",
-        postfix: str = "",
+        *args: Any,
+        identifier: str,
+        **kwargs: Any,
     ) -> None:
-        r"""Log the supplied object to TensorBoard at `step`."""
+        r"""Log the supplied object at `step` under `identifier`."""
         ...
 
 
-def is_logfunc(func: object, /) -> TypeIs[LogFunction]:
-    r"""Check whether a callable has a signature compatible with a logging function.
+def is_logfunc(func: object, /) -> TypeIs[LogFunction[Any]]:
+    r"""Check whether a callable accepts three positional arguments and `identifier=`.
 
-    Require at least six parameters, with the first three accepting positional
-    arguments. This is a signature heuristic; parameter names, annotations,
-    and the remaining parameter kinds are not checked. Signature inspection
-    errors propagate to the caller.
+    Check only the shared call signature. Individual functions can require
+    additional arguments. Signature inspection errors propagate to the caller.
     """
     if not callable(func):
         return False
 
     sig = inspect.signature(func)
-    params = list(sig.parameters.values())
-    return len(params) >= 6 and all(
-        p.kind in {Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD}
-        for p in params[:3]
-    )
+    try:
+        sig.bind_partial(0, None, None, identifier="")
+    except TypeError:
+        return False
+    return True
 
 
 def log_config(
@@ -109,19 +105,14 @@ def log_config(
     config: JSON,
     *,
     fmt: Literal["json", "yaml", "toml"] = "yaml",
-    name: str = "config",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "config",
 ) -> None:
     r"""Save a configuration as a JSON or YAML file in the logging directory.
 
     Use `writer.log_dir` when given a `SummaryWriter`, or the supplied path
     otherwise. The destination directory must already exist. The filename is
-    `{identifier}-{step}.{fmt}`, where optional `prefix` and `postfix`
-    surround `name`, separated by colons. TOML output raises
-    `NotImplementedError`.
+    `{identifier}-{step}.{fmt}`. TOML output raises `NotImplementedError`.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path /= f"{identifier}-{step}.{fmt}"
 
@@ -154,9 +145,7 @@ def log_kernel(
     log_norms: bool = True,
     log_scaled_norms: bool = True,
     log_spectrum: bool = True,
-    name: str = "kernel",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "kernel",
 ) -> None:
     r"""Log scalar diagnostics and figures for a square, two-dimensional kernel.
 
@@ -166,7 +155,6 @@ def log_kernel(
     Each invocation logs at the supplied `step`; scheduling is handled by the
     caller or callback. A nonsquare or nonmatrix kernel raises `ValueError`.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     K = kernel
     if K.ndim != 2 or K.shape[0] != K.shape[1]:
         raise ValueError("Kernel must be a square matrix!")
@@ -278,12 +266,9 @@ def log_lr_scheduler(
     /,
     lr_scheduler: TorchLRScheduler,
     *,
-    name: str = "lr_scheduler",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "lr_scheduler",
 ) -> None:
     r"""Log the learning rate returned by the scheduler's `get_last_lr` method."""
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     cls_name = lr_scheduler.__class__.__name__
     lr = lr_scheduler.get_last_lr()
     writer.add_scalar(f"{identifier}:{cls_name}/lr", lr, step)
@@ -300,9 +285,7 @@ def log_metrics(
     predictions: Tensor | None = None,
     targets: Tensor | None = None,
     key: str = "",
-    name: str = "metrics",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "metrics",
 ) -> None:
     r"""Evaluate metrics on targets and predictions and log the resulting scalars.
 
@@ -333,9 +316,7 @@ def log_metrics(
         writer,
         scalars=scalars,
         key=key,
-        name=name,
-        prefix=prefix,
-        postfix=postfix,
+        identifier=identifier,
     )
 
 
@@ -348,9 +329,7 @@ def log_model(
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
-    name: str = "model",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "model",
 ) -> None:
     r"""Log aggregate norms and histograms of model parameters and their gradients.
 
@@ -358,8 +337,6 @@ def log_model(
     are skipped when logging histograms. Use `log_norms` and `log_histograms`
     to select the outputs.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
-
     variables: dict[str, Tensor] = dict(model.named_parameters())
     gradients: dict[str, Tensor] = {
         k: w.grad for k, w in variables.items() if w.grad is not None
@@ -394,18 +371,13 @@ def log_optimizer(
     log_histograms: bool = True,
     log_norms: bool = True,
     log_extras: bool = True,
-    name: str = "optimizer",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "optimizer",
 ) -> None:
     r"""Log optimizer parameters, gradients, and additional state tensors.
 
-    In tags, optional `prefix` and `postfix` surround `name`, separated by
-    colons. The `log_norms`, `log_histograms`, and `log_extras` switches
+    The `log_norms`, `log_histograms`, and `log_extras` switches
     select aggregate norms, histograms, and additional state such as momentum.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
-
     # NOTE: optimizer.state is of kind
     #  dict[tensor, {step: Tensor, exp_avg: Tensor, exp_avg_sq: Tensor}}]
     optim_state: dict[Tensor, dict[str, Tensor]] = optimizer.state
@@ -449,18 +421,13 @@ def log_values(
     scalars: Mapping[str, Tensor | float],
     *,
     key: str = "",
-    name: str = "metrics",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "metrics",
 ) -> None:
     r"""Log a mapping of precomputed scalar values to TensorBoard.
 
     Values may be Python numbers or scalar tensors.
     Each entry is logged at `step` under `{identifier}:{entry_name}/{key}`.
-    In the identifier, optional `prefix` and `postfix` surround `name`,
-    separated by colons.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     for ident, scalar in scalars.items():
         writer.add_scalar(f"{identifier}:{ident}/{key}", scalar, step)
 
@@ -472,29 +439,25 @@ def log_table[T](
     table: T,
     *,
     serializer: Callable[[T, Path], object],
-    name: str,
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str,
 ) -> None:
     r"""Serialize a table to a file in the logging directory.
 
     Use `writer.log_dir` when given a `SummaryWriter`, or the supplied path
     otherwise. The destination directory must already exist. The filename is
-    `{identifier}-{step}{suffix}`, with the hyphen omitted for an empty
-    identifier. The suffix is taken from `name`, so `name="metrics.csv"`
-    produces `metrics-3.csv` at step 3. Names without a suffix produce
-    extensionless files. Optional `prefix` and `postfix` surround the name's
-    stem, separated by colons.
+    `{stem}-{step}{suffix}`, using the stem and suffixes from `identifier`.
+    For example, `identifier="metrics.csv.gz"` produces `metrics-3.csv.gz`
+    at step 3. An identifier without a suffix produces an extensionless file.
+    An empty identifier uses only the step as the filename.
 
     Call `serializer(table, path)` to write the file; its return value is
     ignored. Configure serialization options on the callable, for example
     with `functools.partial`. The suffix does not select the serializer.
     """
-    suffix = "".join(Path(name).suffixes)
-    stem = name.removesuffix(suffix)
-    identifier = f"{prefix + ':' * bool(prefix)}{stem}{':' * bool(postfix) + postfix}"
+    suffix = "".join(Path(identifier).suffixes)
+    stem = identifier.removesuffix(suffix)
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path /= f"{identifier + '-' * bool(identifier)}{step}{suffix}"
+    path /= f"{stem + '-' * bool(stem)}{step}{suffix}"
     serializer(table, path)
 
 
@@ -505,9 +468,7 @@ def log_plot(
     fig: Figure,
     *,
     rasterization_options: Mapping[str, Any] = EMPTY_MAP,
-    name: str = "forecastplot",
-    prefix: str = "",
-    postfix: str = "",
+    identifier: str = "forecastplot",
 ) -> None:
     r"""Rasterize an existing Matplotlib figure and log it to TensorBoard.
 
@@ -516,11 +477,8 @@ def log_plot(
         fig: The Matplotlib figure to log.
         rasterization_options: Options to pass to `tsdm.plotting.rasterize`.
         writer: The writer to log to.
-        name: The name of the plot.
-        prefix: The prefix of the plot.
-        postfix: The postfix of the plot.
+        identifier: The TensorBoard tag for the plot.
     """
-    identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
     # rasterize the figure
     image = rasterize(fig, **rasterization_options)
-    writer.add_image(f"{identifier}", image, step, dataformats="HWC")
+    writer.add_image(identifier, image, step, dataformats="HWC")
