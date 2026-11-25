@@ -18,7 +18,7 @@ def local_dataset(tmp_path: Path) -> PhysioNet2019:
         DATASET_ROOT_DIR = tmp_path
         rawdata_hashes = dict.fromkeys(
             PhysioNet2019.rawdata_files,
-            "zip:82FDFF688DE8D1ECB000D3549F9445D63174E9C9A37A5DE14DFB27292592F0E1",
+            "sha256:82FDFF688DE8D1ECB000D3549F9445D63174E9C9A37A5DE14DFB27292592F0E1",
         )
 
     dataset = LocalPhysioNet2019(initialize=False, verbose=False)

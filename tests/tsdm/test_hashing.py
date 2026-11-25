@@ -62,7 +62,7 @@ def test_hash_zip_contents_rejects_duplicate_member_names() -> None:
 
 def test_hash_zip_contents_legacy_digest() -> None:
     r"""The legacy digest ignores member order, timestamps, and compression."""
-    expected = "zip:C8BBF09515240CED8F26E6719690973F97957F608496B8AE4623C6E38F69FD2E"
+    expected = "sha256:C8BBF09515240CED8F26E6719690973F97957F608496B8AE4623C6E38F69FD2E"
     members = {"b.txt": b"b", "a.txt": b"a"}
 
     with BytesIO() as original, BytesIO() as repacked:
@@ -76,3 +76,13 @@ def test_hash_zip_contents_legacy_digest() -> None:
 
         assert str(hash_zip_contents(original)) == expected
         assert str(hash_zip_contents(repacked)) == expected
+
+
+def test_hash_zip_contents_reports_selected_algorithm() -> None:
+    r"""The result names the hash function selected for the archive."""
+    with BytesIO() as stream:
+        with ZipFile(stream, "w") as archive:
+            archive.writestr("data.csv", b"payload")
+        actual = hash_zip_contents(stream, "sha3_256")
+
+    assert actual.hash_algorithm == "sha3_256"

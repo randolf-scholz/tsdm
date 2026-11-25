@@ -105,22 +105,21 @@ def hash_file(
 
     hasher = hashlib.new(hasher) if isinstance(hasher, str) else hasher
 
-    if isinstance(file, str | PathLike):
-        with open(file, "rb") as stream:
-            return _hash_stream(stream, hasher, block_size=block_size)
+    match file:
+        case str() | PathLike():
+            with open(file, "rb") as stream:
+                while block := stream.read(block_size):
+                    hasher.update(block)
 
-    position = file.tell()
-    try:
-        file.seek(0)
-        return _hash_stream(file, hasher, block_size=block_size)
-    finally:
-        file.seek(position)
+        case stream:
+            position = stream.tell()
+            try:
+                stream.seek(0)
+                while block := stream.read(block_size):
+                    hasher.update(block)
+            finally:
+                stream.seek(position)
 
-
-def _hash_stream(stream: FileStream, hasher: Hasher, /, *, block_size: int) -> Hash:
-    r"""Hash bytes from the stream's current position to EOF."""
-    while block := stream.read(block_size):
-        hasher.update(block)
     return Hash(hasher.hexdigest(), hasher.name)
 
 
@@ -140,6 +139,9 @@ def hash_zip_contents(
 
     It is *independent* of zip container metadata such as timestamps, compression method,
     extra fields, file order in the central directory, etc.
+
+    Returns:
+        The uppercase aggregate digest and the name of the hash function used.
 
     Raises:
         ValueError: If `chunk_size` is not positive or member names are duplicated.
@@ -171,4 +173,4 @@ def hash_zip_contents(
     archive_hasher = hashlib.new(algorithm)
     for item_hash in sorted(set(item_hashes.values())):
         archive_hasher.update(item_hash)
-    return Hash(hash_value=archive_hasher.hexdigest().upper(), hash_algorithm="zip")
+    return Hash(archive_hasher.hexdigest().upper(), archive_hasher.name)
