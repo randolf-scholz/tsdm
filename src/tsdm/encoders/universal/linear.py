@@ -64,6 +64,7 @@ def reduce_axes(
     `reduced_axis = reduce_axes(axis, selection)` to obtain the axis selection
     for `op(T[selection], axis=reduced_axis)`.
 
+    Slice indices preserve axes, including when they select zero or one entry.
     An `axis` of `None` remains `None`. Inserting dimensions with `None` is
     unsupported for explicit axis selections; at most one ellipsis is allowed.
     """
@@ -83,6 +84,8 @@ def reduce_axes(
             raise NotImplementedError("Slicing with None not implemented.")
         case int() | str():
             return axis[1:]
+        case slice():
+            return axis
         case ellipsis if ellipsis is ...:
             return axis
         case list(seq):
