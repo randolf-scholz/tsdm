@@ -31,18 +31,16 @@ def test_caching() -> None:
     with timer() as t:
         _ = ds.timeseries
 
-    pre_cache_time = t.elapsed_time
+    uncached_time = t.elapsed_time
 
     with timer() as t:
         _ = ds.timeseries
 
-    post_cache_time = t.elapsed_time
+    cached_time = t.elapsed_time
 
-    LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
+    LOGGER.info("%f, %f", uncached_time, cached_time)
 
-    assert 100 * post_cache_time <= pre_cache_time, (
-        f"{post_cache_time=}, {pre_cache_time=}"
-    )
+    assert 100 * cached_time <= uncached_time, f"{cached_time=}, {uncached_time=}"
 
     LOGGER.info("%s passes caching test ✔.")
 
