@@ -23,7 +23,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, ClassVar, Literal, assert_never, overload
 
-from . import config
 from .hashing import Hash, hash_file
 from .types import FilePath, FileStream, HasShape
 
@@ -117,9 +116,9 @@ def validate_hash(
 ) -> bool:
     r"""Compare a hash value against a reference hash value.
 
-    Compare digest strings exactly, including case. Algorithm-name differences
-    are reported in the diagnostic message; the result depends on the digest
-    strings. Two missing hashes pass, while exactly one missing hash fails.
+    Compare the digest strings exactly, including case. If both hashes specify
+    an algorithm, their labels must also match. Two missing hashes pass, while
+    exactly one missing hash fails.
 
     Args:
         hash_value: The hash value to validate.
@@ -128,10 +127,10 @@ def validate_hash(
             and `"raise"`.
 
     Returns:
-        Whether the digest strings match, or both hashes are missing.
+        Whether the hashes match, or both hashes are missing.
 
     Raises:
-        ValidationError: If `errors="raise"` and the digest comparison fails.
+        ValidationError: If `errors="raise"` and the hashes are incompatible.
     """
     error_handler = make_error_handler(errors)
     actual_hash = Hash.from_value(hash_value)
@@ -147,29 +146,20 @@ def validate_hash(
         case _, None:
             msg = "⚠️  No reference hash given, skipping validation."
             hashes_match = False
-        case _, _:
-            assert actual_hash is not None  # needed for type checker
-            assert expected_hash is not None  # needed for type checker
-            algs_match = actual_hash.hash_algorithm == expected_hash.hash_algorithm
-            hashes_match = actual_hash.hash_value == expected_hash.hash_value
-
-            if not algs_match:
-                msg = (
-                    f"Hash algorithm mismatch:"
-                    f" {actual_hash.hash_algorithm!r} ≠ {expected_hash.hash_algorithm!r}."
-                )
-            elif not hashes_match:
-                msg = (
-                    f"Hash mismatch: ❌️"
-                    f"\n\texpected: {expected_hash!s}"
-                    f"\n\tactual  : {actual_hash!s}"
-                )
+        case Hash() as actual, Hash() as expected:
+            actual_algorithm = actual.hash_algorithm
+            expected_algorithm = expected.hash_algorithm
+            if (
+                actual_algorithm is not None
+                and expected_algorithm is not None
+                and actual_algorithm != expected_algorithm
+            ):
+                hashes_match = False
+                msg = f"Hash algorithm mismatch: {actual_algorithm!r} ≠ {expected_algorithm!r}."
             else:
-                msg = (
-                    f"Hashes match! ✅️"
-                    f"\n\texpected: {expected_hash!s}"
-                    f"\n\tactual  : {actual_hash!s}"
-                )
+                hashes_match = actual.hash_value == expected.hash_value
+                status = "Hashes match! ✅️" if hashes_match else "Hash mismatch: ❌️"
+                msg = f"{status}\n\texpected: {expected!s}\n\tactual  : {actual!s}"
 
     error_handler.emit(msg, valid=hashes_match)
     return hashes_match
@@ -194,8 +184,8 @@ def validate_file_hash(
         path_or_stream: The file or binary stream to validate. Streams are hashed from the
             beginning and returned to their original position afterwards.
         expected_hash: The reference hash value.
-        hash_algorithm: Algorithm to use. If omitted, use the reference algorithm
-            when available; otherwise warn and use `config.DEFAULT_HASH_METHOD`.
+        hash_algorithm: Algorithm to use. If omitted, the reference must name it.
+            If both are supplied, they must agree.
         errors: Message policy: `"warn"`, `"raise"`, `"log"`, or `"ignore"`.
             Defaults to `"raise"`.
         skipif_no_reference: Whether to return `True` without hashing when the
@@ -205,8 +195,8 @@ def validate_file_hash(
         Whether the digest matches, or validation was explicitly skipped.
 
     Raises:
-        ValidationError: If `errors="raise"` and the file is rejected or its
-            digest does not match the reference.
+        ValidationError: If `errors="raise"` and the file, algorithm, or digest
+            fails validation.
     """
     # region input validation ----------------------------------------------------------
     match path_or_stream:
@@ -228,26 +218,29 @@ def validate_file_hash(
         error_handler.emit(msg)
         return False
 
-    # Determine the hash algorithm to use.
-    match hash_algorithm:
-        case str(hash_alg):
-            pass
-        case None:
-            match expected_hash:
-                case Hash(hash_algorithm=str(hash_alg)):
-                    pass  # assume same algorithm as reference
-                case _:
-                    warnings.warn(
-                        "No hash algorithm given for reference hash!"
-                        f"Using {config.DEFAULT_HASH_METHOD!r} as default.",
-                        UserWarning,
-                        stacklevel=2,
-                    )
-                    hash_alg = config.DEFAULT_HASH_METHOD
-        case _:
-            raise TypeError(f"Invalid hash algorithm type: {type(hash_algorithm)}")
+    if expected_hash is None:
+        error_handler.emit("No reference hash given.")
+        return False
 
-    actual_hash = hash_file(path_or_stream, hash_alg)
+    reference_algorithm = expected_hash.hash_algorithm
+    algorithm = reference_algorithm if hash_algorithm is None else hash_algorithm
+    if algorithm is None:
+        error_handler.emit(
+            "Expected hash must specify an algorithm or hash_algorithm must be given."
+        )
+        return False
+    if not isinstance(algorithm, str):
+        raise TypeError(f"Invalid hash algorithm type: {type(algorithm)}")
+    if reference_algorithm is not None and reference_algorithm != algorithm:
+        error_handler.emit(
+            f"Hash algorithm mismatch: requested {algorithm!r}, "
+            f"reference specifies {reference_algorithm!r}."
+        )
+        return False
+
+    actual_hash = hash_file(path_or_stream, algorithm)
+    # hashlib can report the chosen algorithm under its canonical name.
+    expected_hash = Hash(expected_hash.hash_value, actual_hash.hash_algorithm)
     return validate_hash(actual_hash, expected_hash, errors=error_handler)
 
 

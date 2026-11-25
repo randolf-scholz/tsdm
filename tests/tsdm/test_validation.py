@@ -20,6 +20,7 @@ from tsdm.validation import (
     _infer_schema,
     validate_csv_header,
     validate_file_hash,
+    validate_hash,
     validate_table_schema,
 )
 
@@ -92,6 +93,69 @@ def test_validate_csv_header_non_seekable() -> None:
         with pytest.raises(ValueError, match="non-seekable"):
             validate_csv_header(stream, ["a"])
         assert not stream.closed
+
+
+@pytest.mark.parametrize(
+    ("actual", "expected"),
+    [
+        ("abcd", "abcd"),
+        ("sha256:abcd", "sha256:abcd"),
+        ("sha256:abcd", "abcd"),
+        ("abcd", "sha256:abcd"),
+    ],
+)
+def test_validate_hash_accepts_matching_digests(actual: str, expected: str) -> None:
+    r"""Matching digests pass with missing or matching algorithm labels."""
+    assert validate_hash(actual, expected)
+
+
+@pytest.mark.parametrize(
+    ("actual", "expected", "message"),
+    [
+        ("sha256:abcd", "sha3_256:abcd", "Hash algorithm mismatch"),
+        ("sha256:abcd", "SHA-256:abcd", "Hash algorithm mismatch"),
+        ("abcd", "ef01", "Hash mismatch"),
+        ("sha256:abcd", "ef01", "Hash mismatch"),
+        ("abcd", "sha256:ef01", "Hash mismatch"),
+    ],
+)
+def test_validate_hash_rejects_mismatches(
+    actual: str, expected: str, message: str
+) -> None:
+    r"""A digest mismatch or conflicting algorithm label fails validation."""
+    with pytest.raises(ValidationError, match=message):
+        validate_hash(actual, expected)
+    assert not validate_hash(actual, expected, errors="ignore")
+
+
+@pytest.mark.parametrize(
+    ("prefix", "algorithm"), [("", "sha256"), ("sha256:", "sha256"), ("SHA-256:", None)]
+)
+def test_validate_file_hash_selects_algorithm(
+    prefix: str, algorithm: str | None
+) -> None:
+    r"""A file checksum algorithm can come from the reference or the caller."""
+    payload = b"test payload"
+    expected = f"{prefix}{sha256(payload).hexdigest()}"
+    with BytesIO(payload) as stream:
+        assert validate_file_hash(stream, expected, hash_algorithm=algorithm)
+
+
+@pytest.mark.parametrize(
+    ("reference", "algorithm", "message"),
+    [
+        ("abcd", None, "Expected hash must specify an algorithm"),
+        ("sha3_256:abcd", "sha256", "Hash algorithm mismatch"),
+        ("SHA-256:abcd", "sha256", "Hash algorithm mismatch"),
+    ],
+)
+def test_validate_file_hash_checks_algorithm_before_reading(
+    tmp_path: Path, reference: str, algorithm: str | None, message: str
+) -> None:
+    r"""Missing or conflicting algorithms fail before the file is opened."""
+    path = tmp_path / "missing.bin"
+    with pytest.raises(ValidationError, match=message):
+        validate_file_hash(path, reference, hash_algorithm=algorithm)
 
 
 def test_validate_file_hash_stream_restores_position() -> None:
