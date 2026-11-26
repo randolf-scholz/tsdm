@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from tsdm.types.abc import Seq
+from tsdm.types import Seq
 
 
 def test_sequence_protocol() -> None:

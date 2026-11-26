@@ -26,8 +26,7 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
-from tsdm.types import SupportsArray
-from tsdm.types.abc import Seq
+from tsdm.types import Seq, SupportsArray
 from tsdm.types.datasets import IndexableDataset, get_first_sample, get_last_sample
 from tsdm.utils.interval import HalfOpenInterval, Interval
 from tsdm.utils.timetools import timedelta, timestamp
@@ -404,6 +403,7 @@ class SlidingWindowSampler[
 
         # region __init__ overloads ----------------------------------------------------
         # fmt: off
+        # Seq's membership signature lets type checkers select ONE for a string.
         # HORIZON=MULTI ----------------------------------------------------------------
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](

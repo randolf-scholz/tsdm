@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 
 from tests.test_utils.assertions import assert_protocol
-from tsdm.types.abc import Map
 from tsdm.types.datasets import MapDataset
 
 logging.basicConfig(level=logging.INFO)
@@ -27,13 +26,6 @@ def test_map_dataset(name: str) -> None:
     r"""Test object."""
     dataset = DATASETS[name]
     assert_protocol(dataset, MapDataset)
-
-
-@pytest.mark.parametrize("name", DATASETS)
-def test_pandas_mapping(name: str) -> None:
-    r"""Test object."""
-    dataset = DATASETS[name]
-    assert_protocol(dataset, Map)
 
 
 def test_map_dataset_mapping() -> None:

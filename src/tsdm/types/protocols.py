@@ -21,13 +21,15 @@ __all__ = [
     "SupportsDataFrame",
     "SupportsItem",
     "SupportsRound",
+    # Protocols
+    "Seq",
     # functions
     "implements",
 ]
 
 
 from abc import abstractmethod
-from collections.abc import Collection
+from collections.abc import Collection, Iterator
 from types import GenericAlias
 from typing import (
     Any,
@@ -255,6 +257,28 @@ class SupportsRound(Protocol):
     @overload
     @abstractmethod
     def round(self, *, decimals: int) -> Self: ...
+
+
+@runtime_checkable
+class Seq[T](Protocol):  # +T
+    r"""Lightweight protocol version of `collections.abc.Sequence`.
+
+    The membership signature accepts any `object`, which excludes `str` and
+    `bytes` in structural type checks that enforce the parameter type.
+    Runtime protocol checks inspect member presence and accept both types.
+
+    References:
+        - [Typeshed typing stubs](https://github.com/python/typeshed/blob/main/stdlib/typing.pyi)
+        - [CPython collection ABCs](https://github.com/python/cpython/blob/main/Lib/_collections_abc.py)
+    """
+
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[T]: ...
+    def __contains__(self, value: object, /) -> bool: ...
+    @overload
+    def __getitem__(self, index: int, /) -> T: ...
+    @overload
+    def __getitem__(self, index: slice, /) -> Seq[T]: ...
 
 
 def implements[T](cls: type[T], /, *protos: type | GenericAlias) -> type[T]:

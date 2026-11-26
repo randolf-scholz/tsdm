@@ -2,7 +2,6 @@ r"""Type aliases, protocols, and runtime type checks for TSDM."""
 
 __all__ = [
     # Submodules
-    "abc",
     "aliases",
     "dataclass",
     "namedtuple",
@@ -14,7 +13,7 @@ __all__ = [
     "is_namedtuple",
 ]
 
-from . import abc, aliases, dataclass, namedtuple, protocols
+from . import aliases, dataclass, namedtuple, protocols
 from .aliases import *  # ruff: ignore[F403]
 from .dataclass import DataclassType, is_dataclass
 from .namedtuple import NamedTupleType, is_namedtuple

@@ -1358,6 +1358,21 @@ def test_unknown_multi() -> None:
 # endregion specific tests -------------------------------------------------------------
 
 
+def test_string_horizon_overloads() -> None:
+    r"""A duration string is one horizon, and a list of strings is multiple."""
+    single = SlidingWindowSampler(
+        PYTHON_DATES, horizons="3D", stride="1D", mode=MODE.MASK
+    )
+    multi = SlidingWindowSampler(
+        PYTHON_DATES, horizons=["3D", "1D"], stride="1D", mode=MODE.MASK
+    )
+
+    assert_type(single, SlidingWindowSampler[dt.datetime, M, ONE])
+    assert_type(multi, SlidingWindowSampler[dt.datetime, M, MULTI])
+    assert not single.multi_horizon
+    assert multi.multi_horizon
+
+
 def check_slidingsampler_assignable() -> None:
     int_list: list[int] = [1, 2, 3]
 
