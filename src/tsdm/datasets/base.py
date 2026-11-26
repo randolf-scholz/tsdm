@@ -44,14 +44,7 @@ from tqdm.auto import tqdm
 from tsdm import config
 from tsdm.constants import EMPTY_MAP, UNDEFINED
 from tsdm.types.aliases import FilePath, FileStream
-from tsdm.utils import (
-    LazyDict,
-    nested_paths_exist,
-    prompt_yes_no,
-    remote,
-    repr_object,
-    timer,
-)
+from tsdm.utils import LazyDict, prompt_yes_no, remote, repr_object, timer
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.validation import (
     ErrorHandler,
@@ -773,19 +766,21 @@ class BaseDataset[Key: str, T](Mapping[Key, T], metaclass=DatasetMeta):  # Key, 
 
     def rawdata_files_exist(self, key: str | None = None, /) -> bool:
         r"""Check if raw data files exist."""
+        paths = self.rawdata_paths
         if key is None:
-            return nested_paths_exist(self.rawdata_paths)
-        if key not in self.rawdata_paths:
+            return all(path.exists() for path in paths.values())
+        if key not in paths:
             raise KeyError(f"{key=} not in {self.rawdata_paths=}")
-        return nested_paths_exist(self.rawdata_paths[key])
+        return paths[key].exists()
 
     def dataset_files_exist(self, key: Key | None = None, /) -> bool:
         r"""Check if dataset files exist."""
+        paths = self.dataset_paths
         if key is None:
-            return nested_paths_exist(self.dataset_paths)
-        if key not in self.dataset_paths:
+            return all(path.exists() for path in paths.values())
+        if key not in paths:
             raise KeyError(f"{key=} not in {self.dataset_paths=}")
-        return nested_paths_exist(self.dataset_paths[key])
+        return paths[key].exists()
 
     def validate_rawdata(
         self, fname: str | None = None, /, *, errors: ErrorHandler.Mode = "warn"

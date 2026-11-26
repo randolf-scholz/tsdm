@@ -25,7 +25,6 @@ __all__ = [
     "is_positional_only_arg",
     "is_variadic_arg",
     "prod_fn",
-    "recurse_on_nested_builtin",
     "yield_return_nodes",
     "tags",
 ]
@@ -39,7 +38,6 @@ from inspect import Parameter, _ParameterKind as ParameterKind, getsource
 from typing import Any, Final, Protocol, cast, overload
 
 from tsdm.types.dataclass import DataclassType, is_dataclass
-from tsdm.types.nested import NestedBuiltin
 
 KEYWORD_ONLY: Final = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY: Final = Parameter.POSITIONAL_ONLY
@@ -353,55 +351,3 @@ def prod_fn(*funcs: Fn[[Any], Any]) -> Fn[[tuple], tuple]:
         return tuple(f(arg) for f, arg in zip(funcs, args, strict=True))
 
     return __prod_fn
-
-
-def recurse_on_nested_builtin[T, R](
-    arg: NestedBuiltin[T],
-    /,
-    *,
-    leaf_fn: Fn[[T], R],
-    leaf_type: type[T],
-    # optional arguments
-    leaf_priotizied: bool = False,
-) -> NestedBuiltin[R]:
-    r"""Recursively apply a function to the leaves of a nested data structure.
-
-    Args:
-        arg: Nested data structure to apply the function to.
-        leaf_fn: Function to apply to the leaf nodes.
-        leaf_type: Type of the leaf nodes.
-        leaf_priotizied: Whether to check the leaf type before container types.
-            If false, supported containers are traversed even if they match
-            `leaf_type`.
-
-    Returns:
-        A structure with the same container types and transformed leaf values.
-
-    Raises:
-        TypeError: If a value is neither a supported builtin container nor a leaf.
-    """
-
-    def recurse(obj: NestedBuiltin[T], /) -> NestedBuiltin[R]:
-        match obj:
-            case leaf if leaf_priotizied and isinstance(leaf, leaf_type):
-                return leaf_fn(leaf)
-            case dict(mapping):
-                return {k: recurse(v) for k, v in mapping.items()}
-            case list(seq):
-                return [recurse(obj) for obj in seq]
-            case tuple(seq):
-                return tuple(recurse(obj) for obj in seq)
-            case frozenset(items):
-                return frozenset(recurse(obj) for obj in items)
-            case set(items):
-                # FIXME: https://github.com/python/typeshed/issues/9571
-                return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
-            case leaf if isinstance(leaf, leaf_type):
-                return leaf_fn(leaf)
-            case _:
-                raise TypeError(
-                    f"Unsupported type: {type(obj)} not an instance of {leaf_type} or one of the builtin containers"
-                    f" {dict, list, tuple, frozenset, set}."
-                )
-
-    return recurse(arg)

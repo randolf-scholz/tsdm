@@ -7,7 +7,6 @@ __all__ = [
     "is_dunder",
     "is_private",
     "is_zipfile",
-    "nested_paths_exist",
     "prompt_choice",
     "prompt_yes_no",
     "transpose_list_of_dicts",
@@ -16,12 +15,11 @@ __all__ = [
 
 from annotationlib import ForwardRef
 from collections.abc import Callable, Iterable, Mapping
-from pathlib import Path
 from typing import Any, ClassVar, TypeForm, cast, overload
 from zipfile import BadZipFile, ZipFile
 
 from tsdm.types import FilePath
-from tsdm.types.nested import Nested, NestedDict, NestedMapping
+from tsdm.types.nested import NestedDict, NestedMapping
 
 
 @overload
@@ -251,28 +249,6 @@ def unflatten_dict[Key, Key_flat](
         else:
             result[outer_key] = item
     return result
-
-
-def nested_paths_exist(paths: Nested[FilePath | None], /) -> bool:
-    r"""Check whether the files exist.
-
-    The input may contain arbitrarily nested mappings and iterables with strings
-    or `Path` objects as leaves. Mapping keys are ignored. `None` and empty
-    containers are treated as having no missing paths.
-    """
-    match paths:
-        case None:
-            return True
-        case str(string):
-            return Path(string).exists()
-        case Path() as path:
-            return path.exists()
-        case Mapping() as mapping:
-            return all(nested_paths_exist(f) for f in mapping.values())
-        case Iterable() as iterable:
-            return all(nested_paths_exist(f) for f in iterable)
-        case _:
-            raise TypeError(f"Unknown type for rawdata_file: {type(paths)}")
 
 
 def transpose_list_of_dicts[K, V](lst: Iterable[dict[K, V]], /) -> dict[K, list[V]]:

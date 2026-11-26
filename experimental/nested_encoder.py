@@ -1,22 +1,94 @@
 r"""Experimental encoders."""
 
-__all__ = ["NDArrayToTensor", "NestedEncoder", "nest_encoder"]
+__all__ = [
+    "NDArrayToTensor",
+    "NestedEncoder",
+    "nest_encoder",
+    "NestedBuiltin",
+    "recurse_on_nested_builtin",
+]
 
 from dataclasses import KW_ONLY, dataclass
+from typing import Callable as Fn
 
 import numpy as np
 import torch
 from numpy.typing import NDArray
 from torch import Tensor
 
-from tsdm.pprint import pprint_repr
+from tsdm.encoders.base import Encoder, FittableEncoder, StaticEncoder, invert, simplify
 from tsdm.types.nested import NestedBuiltin
-from tsdm.utils.funcutils import recurse_on_nested_builtin
+from tsdm.utils import pretty_repr
 
-from .base import Encoder, FittableEncoder, StaticEncoder, invert, simplify
+type NestedBuiltin[T] = (
+    T
+    | tuple[T, ...]  # leaf-tuple
+    | tuple[NestedBuiltin[T], ...]
+    | set[T]  # leaf-set
+    | set[NestedBuiltin[T]]
+    | frozenset[T]  # leaf-frozenset
+    | frozenset[NestedBuiltin[T]]
+    | list[T]  # leaf-list
+    | list[NestedBuiltin[T]]
+    | dict[str, T]  # leaf-dict
+    | dict[str, NestedBuiltin[T]]
+)
+r"""Type alias for leaves nested in tuples, sets, frozensets, lists, or dictionaries."""
 
 
-@pprint_repr
+def recurse_on_nested_builtin[T, R](
+    arg: NestedBuiltin[T],
+    /,
+    *,
+    leaf_fn: Fn[[T], R],
+    leaf_type: type[T],
+    # optional arguments
+    leaf_priotizied: bool = False,
+) -> NestedBuiltin[R]:
+    r"""Recursively apply a function to the leaves of a nested data structure.
+
+    Args:
+        arg: Nested data structure to apply the function to.
+        leaf_fn: Function to apply to the leaf nodes.
+        leaf_type: Type of the leaf nodes.
+        leaf_priotizied: Whether to check the leaf type before container types.
+            If false, supported containers are traversed even if they match
+            `leaf_type`.
+
+    Returns:
+        A structure with the same container types and transformed leaf values.
+
+    Raises:
+        TypeError: If a value is neither a supported builtin container nor a leaf.
+    """
+
+    def recurse(obj: NestedBuiltin[T], /) -> NestedBuiltin[R]:
+        match obj:
+            case leaf if leaf_priotizied and isinstance(leaf, leaf_type):
+                return leaf_fn(leaf)
+            case dict(mapping):
+                return {k: recurse(v) for k, v in mapping.items()}
+            case list(seq):
+                return [recurse(obj) for obj in seq]
+            case tuple(seq):
+                return tuple(recurse(obj) for obj in seq)
+            case frozenset(items):
+                return frozenset(recurse(obj) for obj in items)
+            case set(items):
+                # FIXME: https://github.com/python/typeshed/issues/9571
+                return {recurse(obj) for obj in items}  # pyright: ignore[reportUnhashable]
+            case leaf if isinstance(leaf, leaf_type):
+                return leaf_fn(leaf)
+            case _:
+                raise TypeError(
+                    f"Unsupported type: {type(obj)} not an instance of {leaf_type} or one of the builtin containers"
+                    f" {dict, list, tuple, frozenset, set}."
+                )
+
+    return recurse(arg)
+
+
+@pretty_repr
 @dataclass(slots=True)
 class NestedEncoder[X, Y](FittableEncoder[NestedBuiltin[X], NestedBuiltin[Y]]):
     r"""Apply an encoder recursively to nested data structure.
