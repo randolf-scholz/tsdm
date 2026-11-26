@@ -49,8 +49,7 @@ from tsdm.linalg import (
     schatten_norm,
 )
 from tsdm.plotting import center_axes, kernel_heatmap, plot_spectrum, rasterize
-from tsdm.types import FilePath
-from tsdm.types.nested import JSON
+from tsdm.types import JSON, FilePath
 from tsdm.utils import transpose_list_of_dicts
 
 type Loss = Callable[..., Tensor]

@@ -79,8 +79,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
 from tsdm.constants import EMPTY_MAP
-from tsdm.types import FilePath
-from tsdm.types.nested import JSON
+from tsdm.types import JSON, FilePath
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.pprint import Identifier, pretty_repr, repr_object
 

@@ -7,7 +7,6 @@ __all__ = [
     "dataclass",
     "namedtuple",
     "protocols",
-    "nested",
     # Special
     "DataclassType",
     "NamedTupleType",
@@ -15,7 +14,7 @@ __all__ = [
     "is_namedtuple",
 ]
 
-from . import abc, aliases, dataclass, namedtuple, nested, protocols
+from . import abc, aliases, dataclass, namedtuple, protocols
 from .aliases import *  # ruff: ignore[F403]
 from .dataclass import DataclassType, is_dataclass
 from .namedtuple import NamedTupleType, is_namedtuple
