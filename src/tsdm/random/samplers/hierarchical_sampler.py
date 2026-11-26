@@ -15,7 +15,7 @@ from numpy.random import Generator
 
 from tsdm.constants import EMPTY_MAP, RNG
 from tsdm.types import SupportsGetItem
-from tsdm.types.datasets import Dataset, MapDataset, get_index
+from tsdm.types.datasets import Dataset, MapDataset
 from tsdm.utils import pretty_repr
 
 from .base import BaseSampler, Sampler
@@ -31,6 +31,10 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     nested sampler is exhausted; with `early_stop=True` all groups contribute
     the same number of samples.
 
+    `len(sampler)` counts the pairs yielded during iteration. `sampler.keys()`
+    exposes the outer groups, and `dict(sampler)` maps those groups to their
+    subsamplers.
+
     Example:
         ```pycon
         >>> from tsdm.random.samplers import HierarchicalSampler, RandomSampler
@@ -39,6 +43,7 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
         ... )
         >>> list(sampler)
         [('A', 1), ('A', 2), ('A', 3), ('B', 4), ('B', 5), ('B', 6)]
+
         ```
 
     Args:
@@ -64,8 +69,6 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
     r"""Generator used to shuffle the combined schedule."""
 
     # derived fields
-    index: Collection[K] = field(init=False)
-    r"""Outer keys available in the source mapping."""
     sizes: Mapping[K, int] = field(init=False)
     r"""Number of available inner keys for each outer key."""
     partition: list[K] = field(init=False)
@@ -90,23 +93,25 @@ class HierarchicalSampler[K, K2](BaseSampler[tuple[K, K2]]):
             if subsamplers is not EMPTY_MAP
             else {
                 key: RandomSampler(self.data[key], shuffle=self.shuffle)
-                for key in self.data.keys()  # ruff: ignore[SIM118]
+                for key in self.keys()
             }
         )
 
-        self.index: Collection[K] = get_index(self.data)
-
         # get the sizes of the subsamplers
         self.sizes: Mapping[K, int] = {
-            key: len(self.subsamplers[key]) for key in self.index
+            key: len(self.subsamplers[key]) for key in self.keys()
         }
 
         # duplicate the outer keys according to the sizes of the subsamplers
         self.partition: list[K] = list(
-            chain(*([key] * min(self.sizes.values()) for key in self.index))
+            chain(*([key] * min(self.sizes.values()) for key in self.keys()))
             if self.early_stop
-            else chain(*([key] * self.sizes[key] for key in self.index))
+            else chain(*([key] * self.sizes[key] for key in self.keys()))
         )
+
+    def keys(self) -> Collection[K]:
+        r"""Return the outer keys used to look up per-group samplers."""
+        return self.data.keys()
 
     def __len__(self) -> int:
         r"""Return the number of key pairs yielded during iteration."""

@@ -27,7 +27,7 @@ from numpy.typing import NDArray
 
 from tsdm.constants import RNG
 from tsdm.types import Seq, SupportsArray
-from tsdm.types.datasets import IndexableDataset, get_first_sample, get_last_sample
+from tsdm.types.datasets import Dataset, IndexableDataset, MapDataset
 from tsdm.utils.interval import HalfOpenInterval, Interval
 from tsdm.utils.timetools import timedelta, timestamp
 
@@ -554,8 +554,20 @@ class SlidingWindowSampler[
         super().__init__(shuffle=shuffle, rng=rng)
 
         # region set basic attributes --------------------------------------------------
-        self.tmin = cast("DType", get_first_sample(data_source))  # type: ignore
-        self.tmax = cast("DType", get_last_sample(data_source))  # type: ignore
+        # Array-backed sources such as pandas Series can also expose sample keys.
+        match cast("Dataset[DT] | SupportsArray", data_source):
+            case MapDataset() as dataset:
+                first_sample = dataset[next(iter(dataset.keys()))]
+                *_, last_key = dataset.keys()
+                last_sample = dataset[last_key]
+            case IndexableDataset() as dataset:
+                first_sample = next(iter(dataset))
+                last_sample = next(reversed(dataset))
+            case _:
+                raise TypeError(f"Got unsupported data type {type(data_source)}.")
+
+        self.tmin = cast("DType", first_sample)
+        self.tmax = cast("DType", last_sample)
         zero_td = cast("Any", self.tmin - self.tmin)  # type: ignore
         dt_type: type[DType] = type(self.tmin)
         td_type: type[Any] = type(zero_td)

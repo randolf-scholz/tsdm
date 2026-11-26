@@ -8,6 +8,7 @@ import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from tsdm.random.samplers import HierarchicalSampler, RandomSampler
+from tsdm.types import SupportsKeysAndGetItem
 
 
 def exhaust_iterable(obj: Iterable, /) -> None:
@@ -36,6 +37,19 @@ def test_hierarchical_sampler() -> None:
     assert len(sampler) == len(key_pairs)
     assert set(sampler) == key_pairs
     assert list(sampler) != list(key_pairs)  # can fail with low probability
+
+
+def test_hierarchical_sampler_dict() -> None:
+    r"""Dictionary conversion exposes subsamplers by their outer keys."""
+    data = {"first": [1, 2], "second": [3]}
+    subsamplers = {key: RandomSampler(group) for key, group in data.items()}
+    sampler = HierarchicalSampler(data, subsamplers=subsamplers)
+
+    assert dict(sampler) == subsamplers
+    assert isinstance(sampler, SupportsKeysAndGetItem)
+    assert list(sampler.keys()) == ["first", "second"]
+    assert list(sampler) == [("first", 1), ("first", 2), ("second", 3)]
+    assert len(sampler) == 3
 
 
 @pytest.fixture

@@ -9,7 +9,7 @@ from typing import Final
 from numpy.random import Generator
 
 from tsdm.constants import RNG
-from tsdm.types.datasets import Dataset, get_index
+from tsdm.types.datasets import Dataset, IndexableDataset, MapDataset
 from tsdm.utils import pretty_repr
 
 from .base import BaseSampler
@@ -30,19 +30,31 @@ class RandomSampler[T](BaseSampler[T]):  # +T
     r"""Generator used to create the optional permutation."""
 
     index: Sequence = field(init=False)
-    size: int = field(init=False)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "index", get_index(self.data))
-        object.__setattr__(self, "size", len(self.index))
+        match self.data:
+            case MapDataset() as dataset:
+                index = list(dataset.keys())
+            case IndexableDataset() as dataset:
+                index = list(range(len(dataset)))
+            case _:
+                raise TypeError(f"Got unsupported data type {type(self.data)}.")
+
+        object.__setattr__(self, "index", index)
+
+    @property
+    def size(self) -> int:
+        r"""Number of items yielded by the sampler."""
+        return len(self)
 
     def __len__(self) -> int:
-        return self.size
+        return len(self.index)
 
     def __iter__(self) -> Iterator[T]:
-        perm = self.rng.permutation(self.size) if self.shuffle else range(self.size)
         data = self.data
         index = self.index
+        size = len(index)
+        perm = self.rng.permutation(size) if self.shuffle else range(size)
 
         for n in perm:
             yield data[index[n]]
