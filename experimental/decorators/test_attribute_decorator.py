@@ -3,7 +3,7 @@ r"""Tests the attribute decorator."""
 from collections.abc import Callable as Fn
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import Any, ClassVar, Optional, Self, cast, overload
+from typing import Any, ClassVar, Self, cast, overload
 
 import pytest
 
@@ -70,10 +70,10 @@ class attribute[T, R](metaclass=_AttrMeta):
     payload: R = field(default=SENTINEL, init=False)
 
     @overload
-    def __get__(self, obj: None, obj_type: Optional[type] = ..., /) -> Self: ...
+    def __get__(self, obj: None, obj_type: type | None = ..., /) -> Self: ...
     @overload
-    def __get__(self, obj: T, obj_type: Optional[type] = ..., /) -> R: ...
-    def __get__(self, obj: T | None, obj_type: Optional[type] = None, /) -> Self | R:
+    def __get__(self, obj: T, obj_type: type | None = ..., /) -> R: ...
+    def __get__(self, obj: T | None, obj_type: type | None = None, /) -> Self | R:
         if obj is None:
             return self
         if self.payload is self.DELETED:

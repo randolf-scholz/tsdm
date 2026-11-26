@@ -3,7 +3,7 @@ import textwrap
 from collections.abc import Callable as Fn, Sequence
 from functools import wraps
 from inspect import getsource
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from tsdm.utils.decorator import DecoratorError, decorator
 
@@ -33,8 +33,8 @@ def return_namedtuple[**P](
     func: Fn[P, tuple],
     /,
     *,
-    name: Optional[str] = None,
-    field_names: Optional[Sequence[str]] = None,
+    name: str | None = None,
+    field_names: Sequence[str] | None = None,
 ) -> Fn[P, tuple]:
     r"""Convert a function's return type to a namedtuple."""
     # noinspection PyUnresolvedReferences

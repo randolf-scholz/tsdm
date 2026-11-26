@@ -4,7 +4,6 @@ r"""Static type tests for Numerical Array assignments."""
 from datetime import datetime, timedelta
 from typing import Any, Never, reveal_type
 
-from experimental.numerical_types import SpanLikeScalar, TimeLikeScalar
 from experimental.numerical_types import (
     BooleanArray,
     ComplexArray,
@@ -12,8 +11,10 @@ from experimental.numerical_types import (
     FloatArray,
     IntegerArray,
     SpanLikeArray,
+    SpanLikeScalar,
     TimedeltaArray,
     TimeLikeArray,
+    TimeLikeScalar,
 )
 from experimental.tests.fixtures import ARRAYS1D, types0d
 

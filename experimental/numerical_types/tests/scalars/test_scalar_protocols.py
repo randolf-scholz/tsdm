@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import pytest
+from tests.test_utils import pytest_xfail
 
 from experimental.numerical_types.scalars import (
     AdditiveScalar,
@@ -19,7 +20,6 @@ from experimental.numerical_types.scalars import (
     TimedeltaScalar,
     TimeLikeScalar,
 )
-from test_utils.assertions import check_shared_interface
 from experimental.tests.fixtures import (
     BOOL as PY_BOOL,
     COMPLEX as PY_COMPLEX,
@@ -27,7 +27,7 @@ from experimental.tests.fixtures import (
     INT as PY_INT,
     SCALARS,
 )
-from tests.test_utils import pytest_xfail
+from test_utils.assertions import check_shared_interface
 
 ORDERED_SCALARS: dict[str, OrderedScalar] = {
     "np_bool"      : SCALARS.NP.BOOL,

@@ -4,6 +4,7 @@ r"""Test numerical arrays."""
 from typing import TYPE_CHECKING
 
 import pytest
+from tests.test_utils import assert_protocol, pytest_xfail
 
 from experimental.numerical_types import (
     BooleanArray,
@@ -22,7 +23,6 @@ from experimental.tests.fixtures import (
     INT,
     TIMEDELTA,
 )
-from tests.test_utils import assert_protocol, pytest_xfail
 
 BOOL_ARRAYS: dict[str, BooleanArray] = {
     "numpy[bool]"     : ARRAYS1D.NP.BOOL,

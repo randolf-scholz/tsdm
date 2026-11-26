@@ -8,8 +8,8 @@ __all__ = [
     "recurse_on_nested_builtin",
 ]
 
+from collections.abc import Callable as Fn
 from dataclasses import KW_ONLY, dataclass
-from typing import Callable as Fn
 
 import numpy as np
 import torch
@@ -17,7 +17,6 @@ from numpy.typing import NDArray
 from torch import Tensor
 
 from tsdm.encoders.base import Encoder, FittableEncoder, StaticEncoder, invert, simplify
-from tsdm.types.nested import NestedBuiltin
 from tsdm.utils import pretty_repr
 
 type NestedBuiltin[T] = (

@@ -3,8 +3,8 @@ r"""Tests for time related types."""
 from typing import Literal
 
 from experimental.numerical_types import SpanLikeScalar, TimeLikeScalar
-from test_utils.assertions import check_shared_interface, supports_issubclass
 from experimental.tests.fixtures import SCALARS
+from test_utils.assertions import check_shared_interface, supports_issubclass
 
 # region setup -------------------------------------------------------------------------
 type PY_TD = Literal[

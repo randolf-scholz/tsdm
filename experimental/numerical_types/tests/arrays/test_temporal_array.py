@@ -13,8 +13,8 @@ from experimental.numerical_types import (
     TimeLikeArray,
     TimeLikeScalar,
 )
-from test_utils import pytest_xfail
 from experimental.tests.fixtures import ARRAYS1D, SCALARS
+from test_utils import pytest_xfail
 
 # region setup -------------------------------------------------------------------------
 type KEY_NP = Literal["numpy[np_float]", "numpy[np_int]", "numpy[np_time]"]

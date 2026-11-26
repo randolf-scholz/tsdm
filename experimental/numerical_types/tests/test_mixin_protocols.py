@@ -2,6 +2,8 @@ r"""Test other protocols."""
 
 import numpy as np
 import pytest
+from tests.test_utils.assertions import assert_protocol
+
 from experimental.numerical_types import (
     SupportsArray,
     SupportsArrayUfunc,
@@ -14,8 +16,6 @@ from experimental.numerical_types import (
     SupportsNdim,
     SupportsShape,
 )
-
-from tests.test_utils.assertions import assert_protocol
 
 from .fixtures import ARRAYS1D, ARRAYS2D, SERIES, TABLES
 

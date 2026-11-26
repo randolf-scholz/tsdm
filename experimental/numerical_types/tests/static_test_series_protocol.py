@@ -5,22 +5,20 @@ from typing import Never
 
 from experimental.numerical_types import (
     BooleanArray,
-    ComplexArray,
-    DatetimeArray,
-    FloatArray,
-    IntegerArray,
-    SpanLikeArray,
-    TimedeltaArray,
-    TimeLikeArray,
-)
-from experimental.numerical_types import (
     BooleanSeries,
+    ComplexArray,
     ComplexSeries,
+    DatetimeArray,
     DatetimeSeries,
+    FloatArray,
     FloatSeries,
+    IntegerArray,
     IntegerSeries,
+    SpanLikeArray,
     SpanLikeSeries,
+    TimedeltaArray,
     TimedeltaSeries,
+    TimeLikeArray,
     TimeLikeSeries,
 )
 
