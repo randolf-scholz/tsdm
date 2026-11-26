@@ -4,12 +4,8 @@ __all__ = [
     "JSON",
     "TOML",
     "YAML",
-    # Nested ABCs
-    "NestedMapping",
-    "NestedDict",
 ]
 
-from collections.abc import Mapping
 from datetime import datetime
 
 type JSON_LEAF = None | bool | int | float | str
@@ -29,9 +25,3 @@ r"""Type alias for TOML-like values with nested lists and string-keyed dictionar
 This in-memory representation includes `None`; it does not enforce TOML's
 serialization constraints.
 """
-
-
-type NestedMapping[K, V] = Mapping[K, V | NestedMapping[K, V]]
-r"""Type alias for mappings whose values are leaves or recursively nested mappings."""
-type NestedDict[K, V] = dict[K, V | NestedDict[K, V]]
-r"""Type alias for dictionaries whose values are leaves or recursively nested dictionaries."""

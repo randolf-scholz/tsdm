@@ -1,6 +1,9 @@
 r"""Utility functions."""
 
 __all__ = [
+    # Types
+    "NestedDict",
+    "NestedMapping",
     # Functions
     "flatten_dict",
     "is_classvar",
@@ -19,7 +22,11 @@ from typing import Any, ClassVar, TypeForm, cast, overload
 from zipfile import BadZipFile, ZipFile
 
 from tsdm.types import FilePath
-from tsdm.types.nested import NestedDict, NestedMapping
+
+type NestedMapping[K, V] = Mapping[K, V | NestedMapping[K, V]]
+r"""Type alias for mappings whose values are leaves or recursively nested mappings."""
+type NestedDict[K, V] = dict[K, V | NestedDict[K, V]]
+r"""Type alias for dictionaries whose values are leaves or recursively nested dictionaries."""
 
 
 @overload
