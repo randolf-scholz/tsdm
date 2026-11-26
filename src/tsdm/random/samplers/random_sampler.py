@@ -4,15 +4,18 @@ __all__ = ["RandomSampler"]
 
 from collections.abc import Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Final
+from typing import Any, Final
 
 from numpy.random import Generator
 
 from tsdm.constants import RNG
-from tsdm.types.datasets import Dataset, IndexableDataset, MapDataset
+from tsdm.types import IndexableDataset, MapDataset
 from tsdm.utils import pretty_repr
 
 from .base import BaseSampler
+
+type Dataset[V] = IndexableDataset[V] | MapDataset[Any, V]  # +V
+r"""Type alias for a generic dataset."""
 
 
 @pretty_repr

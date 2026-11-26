@@ -14,12 +14,14 @@ from typing import Any, cast, overload
 from numpy.random import Generator
 
 from tsdm.constants import EMPTY_MAP, RNG
-from tsdm.types import SupportsGetItem
-from tsdm.types.datasets import Dataset, MapDataset
+from tsdm.types import IndexableDataset, MapDataset, SupportsGetItem
 from tsdm.utils import pretty_repr
 
 from .base import BaseSampler, Sampler
 from .random_sampler import RandomSampler
+
+type Dataset[V] = IndexableDataset[V] | MapDataset[Any, V]  # +V
+r"""Type alias for a generic dataset."""
 
 
 @pretty_repr

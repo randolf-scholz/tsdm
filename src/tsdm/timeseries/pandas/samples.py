@@ -18,7 +18,7 @@ from typing import Any, Self
 from pandas import DataFrame, Index, Series
 
 from tsdm.timeseries import abstract
-from tsdm.types.datasets import CallableDataset
+from tsdm.types import CallableDataset
 from tsdm.utils import pretty_repr
 
 from .datasets import TimeSeries, TimeSeriesCollection

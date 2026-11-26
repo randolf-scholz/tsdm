@@ -11,7 +11,7 @@ import pyarrow as pa
 import pytest
 import torch
 
-from tsdm.types.datasets import IndexableDataset
+from tsdm.types import IndexableDataset
 
 EXPECTED_BUILTINS: dict[type, bool] = {
     EllipsisType       : False,

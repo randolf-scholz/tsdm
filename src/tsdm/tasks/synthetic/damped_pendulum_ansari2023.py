@@ -24,7 +24,7 @@ from tsdm.timeseries.pandas import (
     damped_pendulum_ansari2023,
     make_sample_factory,
 )
-from tsdm.types.datasets import CallableDataset
+from tsdm.types import CallableDataset
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleKey = tuple[int, list[slice]]

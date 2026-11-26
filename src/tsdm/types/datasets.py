@@ -1,22 +1,16 @@
 r"""Generic dataset types, protocols, and adapters."""
 
 __all__ = [
-    # ABCs & Protocols
-    "Dataset",
     "IndexableDataset",
     "MapDataset",
-    # Classes
     "CallableDataset",
 ]
 
 from abc import abstractmethod
 from collections.abc import Callable, Collection, Iterator, Mapping
-from typing import Any, Protocol, overload, runtime_checkable
+from typing import Protocol, overload, runtime_checkable
 
 from .protocols import protocol_exclude
-
-type Dataset[V] = IndexableDataset[V] | MapDataset[Any, V]  # +V
-r"""Type alias for a generic dataset."""
 
 
 @runtime_checkable

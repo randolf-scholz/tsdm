@@ -19,7 +19,7 @@ from tsdm.timeseries.pandas import (
     in_silico,
     make_sample_factory,
 )
-from tsdm.types.datasets import CallableDataset
+from tsdm.types import CallableDataset
 
 type SplitID = tuple[int, Literal["train", "test", "valid"]]
 type SampleID = tuple[int, list[NDArray[np.bool_]]]

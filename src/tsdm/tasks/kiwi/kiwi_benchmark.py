@@ -38,7 +38,7 @@ from tsdm.timeseries.pandas import (
     kiwi_benchmark,
     make_sample_factory,
 )
-from tsdm.types.datasets import CallableDataset
+from tsdm.types import CallableDataset
 from tsdm.utils import LazyDict, pretty_repr
 
 

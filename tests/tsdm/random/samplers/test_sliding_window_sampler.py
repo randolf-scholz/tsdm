@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 
 from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingWindowSampler
-from tsdm.types.datasets import IndexableDataset
+from tsdm.types import IndexableDataset
 
 MODE = SlidingWindowSampler.MODE
 type B = Literal[MODE.BOUNDS]  # -> tuple[DT, DT]
@@ -986,6 +986,16 @@ def test_float_data(example: str, mode: MODE) -> None:
 
 # region specific tests ----------------------------------------------------------------
 # NOTE: here we have statically known mode, so they should be type checked.
+def test_series_with_nonconsecutive_index() -> None:
+    r"""Read a Series' endpoints by position when its labels are sparse."""
+    data = pd.Series([1, 3, 5], index=[10, 20, 30])
+    sampler = SlidingWindowSampler(
+        data, stride=2, horizons=2, mode=MODE.BOUNDS, drop_last=True
+    )
+
+    assert list(sampler) == [(1, 3), (3, 5)]
+
+
 def test_pandas_timestamps() -> None:
     r"""Test the SlidingWindowSampler."""
     timedeltas = pd.Series(pd.to_timedelta(RNG.uniform(size=200), "m"))

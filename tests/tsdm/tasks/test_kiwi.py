@@ -11,7 +11,7 @@ from tsdm.encoders import FittableEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark
 from tsdm.timeseries.pandas import SplitTimeData, TimeSeriesCollection
-from tsdm.types.datasets import CallableDataset
+from tsdm.types import CallableDataset
 from tsdm.utils.timetools import timedelta
 
 __logger__ = logging.getLogger(__name__)

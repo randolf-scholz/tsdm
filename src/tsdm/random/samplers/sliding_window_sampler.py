@@ -26,8 +26,7 @@ from numpy.random import Generator
 from numpy.typing import NDArray
 
 from tsdm.constants import RNG
-from tsdm.types import Seq, SupportsArray
-from tsdm.types.datasets import Dataset, IndexableDataset, MapDataset
+from tsdm.types import IndexableDataset, Seq
 from tsdm.utils.interval import HalfOpenInterval, Interval
 from tsdm.utils.timetools import timedelta, timestamp
 
@@ -408,7 +407,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
@@ -418,7 +417,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
@@ -428,7 +427,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["mask", MODE.MASK],
@@ -438,7 +437,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, I, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["interval", MODE.INTERVAL],
@@ -448,7 +447,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["index", MODE.INDEX],
@@ -458,7 +457,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["points", MODE.POINTS],
@@ -468,7 +467,7 @@ class SlidingWindowSampler[
         @overload  # unknown mode
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, MULTI],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: MODE | Mode | str,
@@ -479,7 +478,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, S, ONE],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["slice", MODE.SLICE],
@@ -489,7 +488,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, B, ONE],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["bounds", MODE.BOUNDS],
@@ -499,7 +498,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, M, ONE],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["mask", MODE.MASK],
@@ -509,7 +508,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, X, ONE],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["index", MODE.INDEX],
@@ -519,7 +518,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, P, ONE],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: Literal["points", MODE.POINTS],
@@ -529,7 +528,7 @@ class SlidingWindowSampler[
         @overload
         def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
             self: SlidingWindowSampler[DT, UNKNOWN, ONE],
-            data_source: IndexableDataset[DT] | SupportsArray,
+            data_source: IndexableDataset[DT],
             /,
             *,
             mode: MODE | Mode | str,
@@ -541,7 +540,7 @@ class SlidingWindowSampler[
 
     def __init__[DT: TimeLikeScalar, TD: SpanLikeScalar](
         self,
-        data_source: IndexableDataset[DT] | SupportsArray,
+        data_source: IndexableDataset[DT],
         /,
         *,
         mode: ModeVar | Mode | str,
@@ -554,17 +553,12 @@ class SlidingWindowSampler[
         super().__init__(shuffle=shuffle, rng=rng)
 
         # region set basic attributes --------------------------------------------------
-        # Array-backed sources such as pandas Series can also expose sample keys.
-        match cast("Dataset[DT] | SupportsArray", data_source):
-            case MapDataset() as dataset:
-                first_sample = dataset[next(iter(dataset.keys()))]
-                *_, last_key = dataset.keys()
-                last_sample = dataset[last_key]
-            case IndexableDataset() as dataset:
-                first_sample = next(iter(dataset))
-                last_sample = next(reversed(dataset))
-            case _:
-                raise TypeError(f"Got unsupported data type {type(data_source)}.")
+        # Note: For a pandas Series, reversed() falls back to integer __getitem__ calls,
+        #   starting at len(data_source) - 1. Series treats that integer as a label,
+        #   which can raise KeyError. The slice [-1:] selects the last row by position.
+        # Note: next(iter(data_source)) makes this compatible with weirdly indexed datasets.
+        first_sample = next(iter(data_source))
+        last_sample = next(iter(data_source[-1:]))
 
         self.tmin = cast("DType", first_sample)
         self.tmax = cast("DType", last_sample)
