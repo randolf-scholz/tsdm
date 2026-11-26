@@ -28,7 +28,6 @@ __all__ = [
 ]
 
 
-from abc import abstractmethod
 from collections.abc import Collection, Iterator
 from types import GenericAlias
 from typing import (
@@ -79,7 +78,6 @@ class SupportsBool(Protocol):
 class SupportsGetItem[K, V](Protocol):  # -K, +V
     r"""Protocol for objects that support `__getitem__`."""
 
-    @abstractmethod
     def __getitem__(self, key: K, /) -> V: ...
 
 
@@ -87,9 +85,8 @@ class SupportsGetItem[K, V](Protocol):  # -K, +V
 class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
     r"""Protocol for objects that support `__getitem__` and `keys`."""
 
-    @abstractmethod
     def keys(self) -> Collection[K]: ...
-    @abstractmethod
+
     def __getitem__(self, key: K, /) -> V: ...
 
 
@@ -97,9 +94,8 @@ class SupportsKeysAndGetItem[K, V](Protocol):  # K, +V
 class SupportsLenAndGetItem[V](Protocol):  # +V
     r"""Protocol for objects with integer indexing and `__len__`."""
 
-    @abstractmethod
     def __len__(self) -> int: ...
-    @abstractmethod
+
     def __getitem__(self, index: int, /) -> V: ...
 
 
@@ -107,10 +103,8 @@ class SupportsSlicing[V](SupportsGetItem[int, V], Protocol):  # +V
     r"""Protocol for objects that support slicing with integer indices."""
 
     @overload
-    @abstractmethod
     def __getitem__(self, index: int, /) -> V: ...
     @overload
-    @abstractmethod
     def __getitem__(self, index: slice, /) -> Self: ...
 
 
@@ -119,7 +113,6 @@ class HasShape(Protocol):
     r"""Protocol for objects with a `shape` property containing integer dimensions."""
 
     @property
-    @abstractmethod
     def shape(self) -> tuple[int, ...]: ...
 
 
@@ -128,7 +121,6 @@ class HasNDim(Protocol):
     r"""Protocol for objects with an integer `ndim` property."""
 
     @property
-    @abstractmethod
     def ndim(self) -> int: ...
 
 
@@ -137,7 +129,6 @@ class HasDevice[DeviceT = Any](Protocol):
     r"""Protocol for objects that support `device`."""
 
     @property
-    @abstractmethod
     def device(self) -> DeviceT: ...
 
 
@@ -156,7 +147,6 @@ class HasDType[DTypeT = Any](Protocol):
     """
 
     @property
-    @abstractmethod
     def dtype(self) -> DTypeT: ...
 
 
@@ -170,7 +160,6 @@ class HasDTypes[DTypeT = Any](Protocol):
     """
 
     @property
-    @abstractmethod
     def dtypes(self) -> Collection[DTypeT]: ...
 
 
@@ -182,7 +171,6 @@ class SupportsArray[ScalarT: np.generic](Protocol):
         - [NumPy array C API](https://numpy.org/doc/stable/reference/c-api/array.html)
     """
 
-    @abstractmethod
     def __array__(self) -> NDArray[ScalarT]:
         r"""Return a NumPy array representation of the object."""
         ...
@@ -209,7 +197,6 @@ class SupportsArrayUfunc(SupportsArray, Protocol):
         - [NumPy universal functions](https://numpy.org/doc/stable/reference/ufuncs.html)
     """
 
-    @abstractmethod
     def __array_ufunc__(
         self,
         ufunc: np.ufunc,
@@ -230,7 +217,6 @@ class SupportsDataFrame[DataFrameT = Any](Protocol):
         - [DataFrame interchange protocol](https://data-apis.org/dataframe-protocol/latest/index.html)
     """
 
-    @abstractmethod
     def __dataframe__(self) -> DataFrameT: ...
 
 
@@ -242,7 +228,6 @@ class SupportsItem[Scalar](Protocol):  # +T
     element and raises an error otherwise, including for empty tensors.
     """
 
-    @abstractmethod
     def item(self) -> Scalar: ...
 
 
@@ -252,10 +237,8 @@ class SupportsRound(Protocol):
 
     # FIXME: https://github.com/python/typing/discussions/1782
     @overload
-    @abstractmethod
     def round(self) -> Self: ...
     @overload
-    @abstractmethod
     def round(self, *, decimals: int) -> Self: ...
 
 
