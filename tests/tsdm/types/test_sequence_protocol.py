@@ -5,6 +5,7 @@ from typing import assert_type
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 
 from tsdm.types import Seq
@@ -34,9 +35,13 @@ def test_sequence_protocol() -> None:
     assert isinstance(seq_tup, Sequence)
     assert isinstance(seq_tup, Seq)
 
-    # check string
-    seq_str: str = "foo"
-    assert isinstance(seq_str, Sequence)
+
+@pytest.mark.parametrize("value", ["foo", b"foo"], ids=["str", "bytes"])
+def test_seq_excludes_strings(value: object) -> None:
+    r"""Strings and bytes satisfy Sequence and are excluded from Seq at runtime."""
+    assert not isinstance(value, Seq)
+    assert not issubclass(type(value), Seq)
+    assert isinstance(value, Sequence)
 
 
 def test_seq_inference() -> None:

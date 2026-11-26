@@ -1,4 +1,4 @@
-r"""Generic dataset types, protocols, and access utilities."""
+r"""Generic dataset types, protocols, and adapters."""
 
 __all__ = [
     # ABCs & Protocols
@@ -7,22 +7,13 @@ __all__ = [
     "MapDataset",
     # Classes
     "CallableDataset",
-    # Functions
-    "get_first_sample",
-    "get_index",
-    "get_last_sample",
 ]
 
 from abc import abstractmethod
 from collections.abc import Callable, Collection, Iterator, Mapping
-from typing import (
-    Any,
-    Protocol,
-    TypeIs,
-    _ProtocolMeta as ProtocolMeta,
-    overload,
-    runtime_checkable,
-)
+from typing import Any, Protocol, overload, runtime_checkable
+
+from .protocols import protocol_exclude
 
 type Dataset[V] = IndexableDataset[V] | MapDataset[Any, V]  # +V
 r"""Type alias for a generic dataset."""
@@ -51,20 +42,10 @@ class MapDataset[K, V](Protocol):  # +V
         ...
 
 
-class _IndexableDatasetMeta(ProtocolMeta):
-    def __instancecheck__(self, other: object, /) -> TypeIs[IndexableDataset]:
-        if isinstance(other, str | bytes | Mapping):
-            return False
-        return super().__instancecheck__(other)
-
-    def __subclasscheck__(self, other: type, /) -> TypeIs[type[IndexableDataset]]:
-        if issubclass(other, str | bytes | Mapping):
-            return False
-        return super().__subclasscheck__(other)
-
-
 @runtime_checkable
-class IndexableDataset[T](Protocol, metaclass=_IndexableDatasetMeta):  # +T
+class IndexableDataset[T](
+    Protocol, metaclass=protocol_exclude, excluded=(str, bytes, Mapping)
+):  # +T
     r"""Protocol for a dataset indexed by consecutive integer positions.
 
     Every index in `range(len(dataset))` must be valid, and iteration must yield
@@ -124,50 +105,3 @@ class CallableDataset[K, V]:
 
     def __getitem__(self, key: K, /) -> V:
         return self.function(key)
-
-
-@overload
-def get_index[K, V](dataset: MapDataset[K, V], /) -> list[K]: ...  # pyright: ignore[reportOverlappingOverload]
-@overload
-def get_index[V](dataset: IndexableDataset[V], /) -> list[int]: ...
-def get_index(dataset: Dataset, /) -> list:
-    r"""Return the dataset's keys as a list.
-
-    - For pandas-like datasets, return the row index labels.
-    - For map-style datasets, return the keys in iteration order.
-    - For indexable datasets, return `list(range(len(dataset)))`.
-
-    Raises:
-        TypeError: If the dataset does not implement a supported protocol.
-    """
-    match dataset:
-        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
-        case MapDataset() as map_dataset:
-            return list(map_dataset.keys())
-        case IndexableDataset() as indexable_dataset:
-            return list(range(len(indexable_dataset)))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-def get_first_sample[T](dataset: Dataset[T], /) -> T:
-    r"""Return the first element of the dataset."""
-    match dataset:
-        case MapDataset() as map_dataset:
-            return map_dataset[next(iter(map_dataset.keys()))]
-        case IndexableDataset() as indexable_dataset:
-            return next(iter(indexable_dataset))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-def get_last_sample[T](dataset: Dataset[T], /) -> T:
-    r"""Return the last element of the dataset."""
-    match dataset:
-        case MapDataset() as map_dataset:
-            *_, last_key = map_dataset.keys()
-            return map_dataset[last_key]
-        case IndexableDataset() as indexable_dataset:
-            return next(reversed(indexable_dataset))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")

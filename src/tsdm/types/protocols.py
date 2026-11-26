@@ -23,8 +23,9 @@ __all__ = [
     "SupportsRound",
     # Protocols
     "Seq",
-    # functions
+    # Runtime checks
     "implements",
+    "protocol_exclude",
 ]
 
 
@@ -35,6 +36,7 @@ from typing import (
     Literal,
     Protocol,
     Self,
+    _ProtocolMeta as ProtocolMeta,
     get_origin,
     is_protocol,
     overload,
@@ -242,13 +244,53 @@ class SupportsRound(Protocol):
     def round(self, *, decimals: int) -> Self: ...
 
 
+class protocol_exclude(ProtocolMeta):
+    r"""Exclude types from runtime protocol checks via the `excluded` class keyword.
+
+    Subclasses inherit the exclusions of their bases.
+    """
+
+    _abc_excluded_types: tuple[type, ...]
+
+    # Mypy disallows Self in metaclasses.
+    def __new__[MetaT: protocol_exclude](  # ruff: ignore[PYI019]
+        cls: type[MetaT],
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        /,
+        *,
+        excluded: tuple[type, ...] = (),
+        **kwargs: Any,
+    ) -> MetaT:
+        inherited = (
+            excluded_type
+            for base in bases
+            if isinstance(base, protocol_exclude)
+            for excluded_type in base._abc_excluded_types  # ruff: ignore[SLF001]
+        )
+        # typing skips names prefixed with _abc_ when it collects protocol members.
+        namespace["_abc_excluded_types"] = (*inherited, *excluded)
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+    def __instancecheck__(self, instance: object, /) -> bool:
+        if isinstance(instance, self._abc_excluded_types):
+            return False
+        return super().__instancecheck__(instance)
+
+    def __subclasscheck__(self, subclass: type, /) -> bool:
+        if issubclass(subclass, self._abc_excluded_types):
+            return False
+        return super().__subclasscheck__(subclass)
+
+
 @runtime_checkable
-class Seq[T](Protocol):  # +T
+class Seq[T](Protocol, metaclass=protocol_exclude, excluded=(str, bytes)):  # +T
     r"""Lightweight protocol version of `collections.abc.Sequence`.
 
     The membership signature accepts any `object`, which excludes `str` and
     `bytes` in structural type checks that enforce the parameter type.
-    Runtime protocol checks inspect member presence and accept both types.
+    Runtime `isinstance` and `issubclass` checks also exclude both types.
 
     References:
         - [Typeshed typing stubs](https://github.com/python/typeshed/blob/main/stdlib/typing.pyi)
