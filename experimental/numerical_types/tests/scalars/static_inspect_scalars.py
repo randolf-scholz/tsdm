@@ -1,5 +1,5 @@
 r"""Inspection tests for scalar types."""
-# ruff: file-ignore[PLR2044]
+# ruff: file-ignore[PLR2044, PYI042]
 
 from datetime import datetime, timedelta
 from typing import assert_type, reveal_type

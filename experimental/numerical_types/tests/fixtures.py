@@ -1,5 +1,5 @@
 r"""Module defining various scalar and array types for different backends."""
-# ruff: file-ignore[A003]
+# ruff: file-ignore[A003, PYI042]
 
 import datetime as dt
 from abc import ABC, abstractmethod
@@ -10,10 +10,6 @@ import pandas as pd
 import polars as pl
 import pyarrow as pa
 import torch as pt
-from tsdm.datatools import (
-    timedelta as make_pd_timedelta,
-    timestamp as make_pd_timestamp,
-)
 
 type Array1D[_SCT: np.generic] = np.ndarray[tuple[int], np.dtype[_SCT]]
 type Array2D[_SCT: np.generic] = np.ndarray[tuple[int, int], np.dtype[_SCT]]
@@ -475,8 +471,8 @@ class PANDAS_PA:
 class PANDAS:
     class SCALARS:
         # fmt: off
-        DATETIME  : types0d.pd.datetime  = make_pd_timestamp(DATETIME)
-        TIMEDELTA : types0d.pd.timedelta = make_pd_timedelta(TIMEDELTA)
+        DATETIME  : types0d.pd.datetime  = pd.Timestamp(DATETIME)
+        TIMEDELTA : types0d.pd.timedelta = pd.Timedelta(TIMEDELTA)
         # fmt: on
 
 
